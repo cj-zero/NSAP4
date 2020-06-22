@@ -1,10 +1,13 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
 using OpenAuth.App;
 using OpenAuth.Repository.Domain;
 
@@ -46,6 +49,17 @@ namespace OpenAuth.WebApi.Controllers
             }
 
             return result;
+        }
+        [HttpGet("{dirName}/{fileName}")]
+        [AllowAnonymous]
+        public IActionResult Download(string dirName, string fileName)
+        {
+            var filePath = Path.Combine(AppContext.BaseDirectory, dirName, fileName);
+
+            var f = new FileExtensionContentTypeProvider();
+            f.TryGetContentType(filePath, out string contentType);
+            var fileStream = new FileStream(filePath, FileMode.Open);
+            return File(fileStream, contentType);
         }
     }
 }
