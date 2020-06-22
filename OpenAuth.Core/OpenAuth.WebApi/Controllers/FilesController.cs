@@ -55,7 +55,8 @@ namespace OpenAuth.WebApi.Controllers
         public IActionResult Download(string dirName, string fileName)
         {
             var filePath = Path.Combine(AppContext.BaseDirectory, dirName, fileName);
-
+            if (!System.IO.File.Exists(filePath))
+                return NotFound($"fileName:{fileName} is not exists");
             var f = new FileExtensionContentTypeProvider();
             f.TryGetContentType(filePath, out string contentType);
             var fileStream = new FileStream(filePath, FileMode.Open);
