@@ -58,7 +58,7 @@ namespace OpenAuth.App
             get { return _strategy.Resources; }
         }
 
-        public List<Org> Orgs
+        public List<OpenAuth.Repository.Domain.Org> Orgs
         {
             get { return _strategy.Orgs; }
         }

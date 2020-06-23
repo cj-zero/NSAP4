@@ -12,14 +12,14 @@ using OpenAuth.Repository.Interface;
 
 namespace OpenAuth.App
 {
-    public class CertinfoApp : BaseApp<Certinfo>
+    public class CertPlcApp : BaseApp<Certplc>
     {
         private RevelanceManagerApp _revelanceApp;
 
         /// <summary>
         /// 加载列表
         /// </summary>
-        public TableData Load(QueryCertinfoListReq request)
+        public TableData Load(QueryCertPlcListReq request)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -27,7 +27,7 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
 
-            var properties = loginContext.GetProperties("certinfo");
+            var properties = loginContext.GetProperties("certplc");
 
             if (properties == null || properties.Count == 0)
             {
@@ -36,14 +36,10 @@ namespace OpenAuth.App
 
 
             var result = new TableData();
-            var objs = UnitWork.Find<Certinfo>(null);
+            var objs = UnitWork.Find<Certplc>(null);
             if (!string.IsNullOrEmpty(request.key))
             {
                 objs = objs.Where(u => u.Id.Contains(request.key));
-            }
-            if (!string.IsNullOrEmpty(request.CertNo))
-            {
-                objs = objs.Where(u => u.CertNo.Contains(request.CertNo));
             }
 
 
@@ -56,64 +52,38 @@ namespace OpenAuth.App
             return result;
         }
 
-        public void Add(AddOrUpdateCertinfoReq req)
+        public void Add(AddOrUpdateCertPlcReq req)
         {
-            var obj = req.MapTo<Certinfo>();
+            var obj = req.MapTo<Certplc>();
             //todo:补充或调整自己需要的字段
             obj.CreateTime = DateTime.Now;
             var user = _auth.GetCurrentUser().User;
-            //obj.CreateUserId = user.Id;
-            //obj.CreateUserName = user.Name;
             Repository.Add(obj);
         }
-        public async Task AddAsync(AddOrUpdateCertinfoReq req, CancellationToken cancellationToken = default)
+        public async Task AddAsync(AddOrUpdateCertPlcReq req, CancellationToken cancellationToken = default)
         {
-            var obj = req.MapTo<Certinfo>();
+            var obj = req.MapTo<Certplc>();
             //todo:补充或调整自己需要的字段
             obj.CreateTime = DateTime.Now;
             var user = _auth.GetCurrentUser().User;
-            //obj.CreateUserId = user.Id;
-            //obj.CreateUserName = user.Name;
             await Repository.AddAsync(obj, cancellationToken);
         }
 
-        public void Update(AddOrUpdateCertinfoReq obj)
+         public void Update(AddOrUpdateCertPlcReq obj)
         {
             var user = _auth.GetCurrentUser().User;
-            UnitWork.Update<Certinfo>(u => u.Id == obj.Id, u => new Certinfo
+            UnitWork.Update<Certplc>(u => u.Id == obj.Id, u => new Certplc
             {
                 CertNo = obj.CertNo,
-                CertPath = obj.CertPath,
-                PdfPath = obj.PdfPath,
-                BaseInfoPath = obj.BaseInfoPath,
+                PlcGuid = obj.PlcGuid,
                 CreateTime = obj.CreateTime,
-                //UpdateTime = DateTime.Now,
-                //UpdateUserId = user.Id,
-                //UpdateUserName = user.Name
                 //todo:补充或调整自己需要的字段
             });
 
         }
-        public async Task UpdateAsync(AddOrUpdateCertinfoReq obj, CancellationToken cancellationToken = default)
-        {
-            var user = _auth.GetCurrentUser().User;
-            await UnitWork.UpdateAsync<Certinfo>(u => u.Id == obj.Id, u => new Certinfo
-            {
-                CertNo = obj.CertNo,
-                CertPath = obj.CertPath,
-                PdfPath = obj.PdfPath,
-                BaseInfoPath = obj.BaseInfoPath,
-                CreateTime = obj.CreateTime,
-                //UpdateTime = DateTime.Now,
-                //UpdateUserId = user.Id,
-                //UpdateUserName = user.Name
-                //todo:补充或调整自己需要的字段
-            }, cancellationToken);
-            await UnitWork.SaveAsync();
-        }
             
 
-        public CertinfoApp(IUnitWork unitWork, IRepository<Certinfo> repository,
+        public CertPlcApp(IUnitWork unitWork, IRepository<Certplc> repository,
             RevelanceManagerApp app, IAuth auth) : base(unitWork, repository,auth)
         {
             _revelanceApp = app;

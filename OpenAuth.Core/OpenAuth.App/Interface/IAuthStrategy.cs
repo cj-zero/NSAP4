@@ -32,7 +32,7 @@ namespace OpenAuth.App
 
          List<Resource> Resources { get; }
 
-         List<Org> Orgs { get; }
+         List<OpenAuth.Repository.Domain.Org> Orgs { get; }
 
          User User
         {

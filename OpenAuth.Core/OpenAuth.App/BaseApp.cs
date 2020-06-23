@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.Repository.Core;
 using OpenAuth.Repository.Domain;
@@ -82,6 +85,14 @@ namespace OpenAuth.App
             Repository.Delete(u => ids.Contains(u.Id));
         }
         /// <summary>
+        /// 按条件删除
+        /// </summary>
+        /// <param name="ids"></param>
+        public void Delete(Expression<Func<T, bool>> exp)
+        {
+            Repository.Delete(exp);
+        }
+        /// <summary>
         /// 按id批量删除
         /// </summary>
         /// <param name="ids"></param>
@@ -89,14 +100,30 @@ namespace OpenAuth.App
         {
             await Repository.DeleteAsync(u => ids.Contains(u.Id), cancellationToken);
         }
+        /// <summary>
+        /// 按条件删除
+        /// </summary>
+        /// <param name="ids"></param>
+        public async System.Threading.Tasks.Task DeleteAsync(Expression<Func<T, bool>> exp, CancellationToken cancellationToken = default)
+        {
+            await Repository.DeleteAsync(exp, cancellationToken);
+        }
 
         public T Get(string id)
         {
             return Repository.FindSingle(u => u.Id == id);
         }
+        public T Get(Expression<Func<T, bool>> exp)
+        {
+            return Repository.FindSingle(exp);
+        }
         public Task<T> GetAsync(string id, CancellationToken cancellationToken = default)
         {
             return Repository.FindSingleAsync(u => u.Id == id, cancellationToken);
+        }
+        public Task<T> GetAsync(Expression<Func<T, bool>> exp, CancellationToken cancellationToken = default)
+        {
+            return Repository.FindSingleAsync(exp, cancellationToken);
         }
 
         /// <summary>
@@ -137,6 +164,24 @@ namespace OpenAuth.App
             }
 
             entity.CascadeId = cascadeId;
+        }
+
+        public bool CheckExist(Expression<Func<T, bool>> exp)
+        {
+            return Repository.IsExist(exp);
+        }
+        public Task<bool> CheckExistAsync(Expression<Func<T, bool>> exp, CancellationToken cancellationToken = default)
+        {
+            return Repository.IsExistAsync(exp, cancellationToken);
+        }
+
+        public List<T> GetAll(Expression<Func<T, bool>> exp)
+        {
+            return Repository.Find(exp).ToList();
+        }
+        public Task<List<T>> GetAllAsync(Expression<Func<T, bool>> exp, CancellationToken cancellationToken = default)
+        {
+            return Repository.Find(exp).ToListAsync(cancellationToken);
         }
     }
 }

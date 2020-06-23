@@ -16,9 +16,9 @@ namespace OpenAuth.WebApi.Controllers
         private readonly OrgManagerApp _app;
 
         [HttpGet]
-        public Response<Org> Get(string id)
+        public Response<OpenAuth.Repository.Domain.Org> Get(string id)
         {
-            var result = new Response<Org>();
+            var result = new Response<OpenAuth.Repository.Domain.Org>();
             try
             {
                 result.Result = _app.Get(id);
@@ -34,9 +34,9 @@ namespace OpenAuth.WebApi.Controllers
 
         //添加或修改
         [HttpPost]
-        public Response<Org> Add(Org obj)
+        public Response<OpenAuth.Repository.Domain.Org> Add(OpenAuth.Repository.Domain.Org obj)
         {
-            var result = new Response<Org>();
+            var result = new Response<OpenAuth.Repository.Domain.Org>();
             try
             {
                 _app.Add(obj);
@@ -53,7 +53,7 @@ namespace OpenAuth.WebApi.Controllers
 
         //添加或修改
         [HttpPost]
-        public Response Update(Org obj)
+        public Response Update(OpenAuth.Repository.Domain.Org obj)
         {
             var result = new Response();
             try

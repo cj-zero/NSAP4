@@ -120,10 +120,10 @@ namespace OpenAuth.App
         /// <summary>
         /// 加载用户的所有机构
         /// </summary>
-        public IEnumerable<Org> LoadByUser(string userId)
+        public IEnumerable<OpenAuth.Repository.Domain.Org> LoadByUser(string userId)
         {
             var result = from userorg in UnitWork.Find<Relevance>(null)
-                join org in UnitWork.Find<Org>(null) on userorg.SecondId equals org.Id
+                join org in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on userorg.SecondId equals org.Id
                 where userorg.FirstId == userId && userorg.Key == Define.USERORG
                 select org;
             return result;

@@ -19,15 +19,13 @@ namespace OpenAuth.Repository.Domain
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("certinfo")]
-    public partial class Certinfo : Entity
+    [Table("Certplc")]
+    public partial class Certplc : Entity
     {
-        public Certinfo()
+        public Certplc()
         {
           this.CertNo= string.Empty;
-          this.CertPath= string.Empty;
-          this.PdfPath= string.Empty;
-          this.BaseInfoPath= string.Empty;
+          this.PlcGuid= string.Empty;
           this.CreateTime= DateTime.Now;
         }
 
@@ -38,20 +36,10 @@ namespace OpenAuth.Repository.Domain
         [Description("证书编号")]
         public string CertNo { get; set; }
         /// <summary>
-        /// 证书路径
+        /// 下位机GUID
         /// </summary>
-        [Description("证书路径")]
-        public string CertPath { get; set; }
-        /// <summary>
-        /// 证书PDF路径
-        /// </summary>
-        [Description("证书PDF路径")]
-        public string PdfPath { get; set; }
-        /// <summary>
-        /// 证书基础信息路径
-        /// </summary>
-        [Description("证书基础信息路径")]
-        public string BaseInfoPath { get; set; }
+        [Description("下位机GUID")]
+        public string PlcGuid { get; set; }
         /// <summary>
         /// 创建时间
         /// </summary>

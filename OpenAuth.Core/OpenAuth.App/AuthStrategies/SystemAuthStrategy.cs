@@ -77,9 +77,9 @@ namespace OpenAuth.App
             get { return UnitWork.Find<Resource>(null).ToList(); }
         }
 
-        public List<Org> Orgs
+        public List<OpenAuth.Repository.Domain.Org> Orgs
         {
-            get { return UnitWork.Find<Org>(null).ToList(); }
+            get { return UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).ToList(); }
         }
 
         public User User

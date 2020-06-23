@@ -99,7 +99,7 @@ namespace OpenAuth.Mvc
         
         public void ConfigureContainer(ContainerBuilder builder)
         {
-            AutofacExt.InitAutofac(builder);
+            AutofacExt.InitAutofac(builder, Configuration);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

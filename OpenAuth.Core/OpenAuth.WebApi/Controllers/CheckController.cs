@@ -143,9 +143,9 @@ namespace OpenAuth.WebApi.Controllers
         /// 获取登录用户的所有可访问的组织信息
         /// </summary>
         [HttpGet]
-        public Response<List<Org>> GetOrgs()
+        public Response<List<OpenAuth.Repository.Domain.Org>> GetOrgs()
         {
-            var result = new Response<List<Org>>();
+            var result = new Response<List<OpenAuth.Repository.Domain.Org>>();
             try
             {
                 result.Result = _authStrategyContext.Orgs;
@@ -212,6 +212,38 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 result.Result = _authStrategyContext.Modules;
+            }
+            catch (CommonException ex)
+            {
+                if (ex.Code == Define.INVALID_TOKEN)
+                {
+                    result.Code = ex.Code;
+                    result.Message = ex.Message;
+                }
+                else
+                {
+                    result.Code = 500;
+                    result.Message = ex.InnerException != null
+                        ? "OpenAuth.WebAPI数据库访问失败:" + ex.InnerException.Message
+                        : "OpenAuth.WebAPI数据库访问失败:" + ex.Message;
+                }
+
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取模块下拉框信息
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public Response<List<ModuleDropdownView>> GetDropdownModules()
+        {
+            var result = new Response<List<ModuleDropdownView>>();
+            try
+            {
+                result.Result = _authStrategyContext.Modules.Select(m => new ModuleDropdownView { Id = m.Id, Name = m.Name }).ToList();
             }
             catch (CommonException ex)
             {

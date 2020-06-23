@@ -8,7 +8,7 @@ using OpenAuth.Repository.Interface;
 
 namespace OpenAuth.App
 {
-    public class OrgManagerApp : BaseApp<Org>
+    public class OrgManagerApp : BaseApp<OpenAuth.Repository.Domain.Org>
     {
         private RevelanceManagerApp _revelanceApp;
         /// <summary>
@@ -17,7 +17,7 @@ namespace OpenAuth.App
         /// <param name="org">The org.</param>
         /// <returns>System.Int32.</returns>
         /// <exception cref="System.Exception">未能找到该组织的父节点信息</exception>
-        public string Add(Org org)
+        public string Add(OpenAuth.Repository.Domain.Org org)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -43,7 +43,7 @@ namespace OpenAuth.App
             return org.Id;
         }
 
-        public string Update(Org org)
+        public string Update(OpenAuth.Repository.Domain.Org org)
         {
             ChangeModuleCascade(org);
 
@@ -85,18 +85,18 @@ namespace OpenAuth.App
         /// 加载特定用户的部门
         /// </summary>
         /// <param name="userId">The user unique identifier.</param>
-        public List<Org> LoadForUser(string userId)
+        public List<OpenAuth.Repository.Domain.Org> LoadForUser(string userId)
         {
             //用户角色与自己分配到的角色ID
             var ids =
                 UnitWork.Find<Relevance>(
                     u =>u.FirstId == userId && u.Key == Define.USERORG).Select(u => u.SecondId).ToList();
 
-            if (!ids.Any()) return new List<Org>();
-            return UnitWork.Find<Org>(u => ids.Contains(u.Id)).ToList();
+            if (!ids.Any()) return new List<OpenAuth.Repository.Domain.Org>();
+            return UnitWork.Find<OpenAuth.Repository.Domain.Org>(u => ids.Contains(u.Id)).ToList();
         }
 
-        public OrgManagerApp(IUnitWork unitWork, IRepository<Org> repository,IAuth auth, 
+        public OrgManagerApp(IUnitWork unitWork, IRepository<OpenAuth.Repository.Domain.Org> repository,IAuth auth, 
             RevelanceManagerApp revelanceApp) : base(unitWork, repository, auth)
         {
             _revelanceApp = revelanceApp;

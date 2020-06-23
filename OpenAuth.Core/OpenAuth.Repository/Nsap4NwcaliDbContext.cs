@@ -17,5 +17,6 @@ namespace OpenAuth.Repository
         }
 
         public virtual DbSet<Certinfo> Certinfos { get; set; }
+        public virtual DbSet<Certplc> Certplcs { get; set; }
     }
 }
