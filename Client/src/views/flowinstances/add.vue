@@ -237,9 +237,11 @@
               _this.loading = false
               return
             }
-            console.log(_this.postObj.frmType)
+            // console.log(_this.postObj.frmType)
             if (_this.postObj.frmType === 1) { // 使用的是自定义的页面提交
+            
               _this.postObj.frmData = JSON.stringify(_this.$refs.frmData.getData())
+              
             } else if (_this.postObj.frmType === 0) { // 解析表单中提交的数据
               const frmdata = {}
               for (let i = 0; i < _this.$refs.frmData.elements.length; i++) {
@@ -249,6 +251,7 @@
             } else {
               _this.$refs.createdForm.getData().then(res => {
                 _this.postObj.frmData = JSON.stringify(res)
+                   console.log(_this.postObj.frmData )
                 _this.handleAdd()
               }).catch(() => {
                 _this.loading = false

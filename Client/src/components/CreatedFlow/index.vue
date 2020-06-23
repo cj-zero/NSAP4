@@ -15,7 +15,8 @@
                 size="mini"
                 :icon="tool.icon"
                 :type="currentTool.type == tool.type ? 'primary': 'default'"
-                @click="selectTool(tool.type)"
+                @click="selectTool(tool.type)" 
+                
                 style="font-size: 16px;width: 100px;">
               </el-button>
             </el-button-group>
@@ -162,16 +163,16 @@
 import Draggable from 'vuedraggable'
 import FlowArea from './modules/FlowArea'
 
-// import jsplumb from 'jsplumb'
 import { jsPlumb } from 'jsplumb'
 import { tools, commonNodes, highNodes, laneNodes } from './config/basic-node-config.js'
+//引入jsplumb配置
 import { flowConfig } from './config/args-config.js'
 // import { startSvg, endSvg, commonSvg, freedomSvg, gatewaySvg, eventSvg, childFlowSvg, xLaneSvg, yLaneSvg, lanePoolSvg } from './config/basic-icon-config.js'
 // import html2canvas from 'html2canvas'
 // import canvg from 'canvg'
 import { ZFSN } from './util/ZFSN.js'
 import FlowAttr from './modules/FlowAttr'
-// import SettingModal from './modules/SettingModal'
+// import SettingModal fromodulesm './modules/SettingModal'
 // import ShortcutModal from './modules/ShortcutModal'
 // import UsingDocModal from './modules/UsingDocModal'
 // import TestModal from './modules/TestModal'
@@ -597,12 +598,14 @@ export default {
       callback(node)
     },
     selectTool(type) {
+
       if (this.currentTool.type === type) {
         return
       }
+     
       const tool = tools.filter(t => t.type === type)
       if (tool && tool.length >= 0) this.currentTool = tool[0]
-
+//确定当下使用的工具方式
       switch (type) {
         case 'drag':
           this.changeToDrag()
@@ -620,7 +623,9 @@ export default {
     },
     changeToDrag() {
       const that = this
+      console.log(that.flowData)
       this.$nextTick(() => {
+        //nodes 所有节点  line连线  
         that.flowData.nodes.forEach(function(node) {
           const f = that.plumb.toggleDraggable(node.id)
           if (!f) {

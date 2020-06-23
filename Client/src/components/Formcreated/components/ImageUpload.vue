@@ -167,6 +167,7 @@ export default {
         reader.readAsDataURL(file)
         reader.onload = () => {
           if (this.editIndex >= 0) {
+            console.log(reader.result)
             this.$set(this.fileList, this.editIndex, {
               key,
               url: reader.result,
@@ -206,14 +207,18 @@ export default {
       xhr.onreadystatechange = () => {
         if (xhr.readyState === 4) {
           const resData = JSON.parse(xhr.response)
-          console.log('resData', resData)
+          // console.log('resData', resData)
+       
           if (resData && resData.result && resData.result.length > 0) {
             this.$set(this.fileList, this.fileList.findIndex(item => item.key === key), {
               ...this.fileList[this.fileList.findIndex(item => item.key === key)],
-              url: `${process.env.BASE_IMG_URL}/${resData.result[0].filePath}`,
+               url: `${process.env.VUE_APP_BASE_API}/files/Download/${resData.result[0].filePath}`,
+             
+             // url: `${resData.result[0].filePath}`,
               isImg: ['.jpg', '.jpeg', '.png', '.svg', '.gif'].indexOf(resData.result[0].fileType) >= 0 || false,
               percent: 100
             })
+                console.log(this.fileList)
             setTimeout(() => {
               this.$set(this.fileList, this.fileList.findIndex(item => item.key === key), {
                 ...this.fileList[this.fileList.findIndex(item => item.key === key)],
