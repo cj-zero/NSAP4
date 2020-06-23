@@ -100,6 +100,53 @@ namespace OpenAuth.WebApi.Controllers
             };
         }
 
+
+        [HttpGet("baseInfo/{certNo}")]
+        public async Task<IActionResult> DownloadBaseInfo(string certNo)
+        {
+            var cert = await _certinfoApp.GetAsync(c => c.CertNo.Equals(certNo));
+            if (cert is null)
+                return new NotFoundResult();
+            var fileStream = new FileStream(cert.BaseInfoPath, FileMode.Open);
+            return File(fileStream, "application/vnd.ms-excel");
+        }
+
+        [HttpGet("cert/{certNo}")]
+        public async Task<IActionResult> DownloadCert(string certNo)
+        {
+            var cert = await _certinfoApp.GetAsync(c => c.CertNo.Equals(certNo));
+            if (cert is null)
+                return new NotFoundResult();
+            var fileStream = new FileStream(cert.CertPath, FileMode.Open);
+            return File(fileStream, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        }
+        [HttpGet("certPdf/{certNo}")]
+        public async Task<IActionResult> DownloadCertPdf(string certNo)
+        {
+            var cert = await _certinfoApp.GetAsync(c => c.CertNo.Equals(certNo));
+            if (cert is null)
+                return new NotFoundResult();
+            if (!string.IsNullOrWhiteSpace(cert.PdfPath))
+            {
+                var fileStream = new FileStream(cert.PdfPath, FileMode.Open);
+                return File(fileStream, "application/pdf");
+            }
+            var pdfPath = WordHandler.DocConvertToPdf(cert.CertPath);
+            if (!pdfPath.Equals("false"))
+            {
+                cert.PdfPath = pdfPath;
+                await _certinfoApp.UpdateAsync(cert.MapTo<AddOrUpdateCertinfoReq>());
+                var fileStream = new FileStream(pdfPath, FileMode.Open);
+                return File(fileStream, "application/pdf");
+            }
+            return new NotFoundResult();
+        }
+        [HttpGet("certNo/{plcGuid}")]
+        public async Task<IActionResult> GetCertNoList(string plcGuid)
+        {
+            var certNos = (await _certPlcApp.GetAllAsync(p => p.PlcGuid.Equals(plcGuid))).OrderByDescending(c => c.CertNo).Select(cp => cp.CertNo);
+            return Ok(certNos);
+        }
         /// <summary>
         /// 构建证书模板参数
         /// </summary>
