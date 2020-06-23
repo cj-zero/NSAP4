@@ -23,7 +23,7 @@ export function getPullDown() {
   }
   export function add(data) {
     return request({
-      url: '/certinfos/add',
+      url: '/ModuleFlowSchemes/Add',
       method: 'post',
       data
     })

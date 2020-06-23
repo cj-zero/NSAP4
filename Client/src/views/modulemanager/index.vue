@@ -134,7 +134,18 @@
             <el-input v-model="menuTemp.name"></el-input>
           </el-form-item>
           <el-form-item size="small" :label="'DOM ID'">
-            <el-input v-model="menuTemp.domId"></el-input>
+            <!-- <el-input v-model="menuTemp.domId"></el-input> -->
+                    <el-autocomplete
+            style="width:100%;"
+            v-model="menuTemp.domId"
+            :fetch-suggestions="querySearch"
+            placeholder="请输入DOM ID"
+            @select="changeValue"
+          ></el-autocomplete>
+          <!-- <el-select @change="changeValue" class="filter-item" size="mini" v-model="menuTemp.domId" placeholder="请选择domid">
+            <el-option v-for="item in  domList" :key="item.id" :label="item.name" :value="item.id">
+          </el-option>
+        </el-select> -->
           </el-form-item>
           <el-form-item size="small" :label="'样式'">
             <el-input v-model="menuTemp.class"></el-input>
@@ -217,6 +228,7 @@ export default {
       ],
       selectMenus: [], // 菜单列表选中的值
       tableKey: 0,
+      restaurants:[],
       list: [], // 菜单列表
       total: 0,
       currentModule: null, // 左边模块treetable当前选中的项
@@ -349,9 +361,32 @@ export default {
     this.getList()
   },
   mounted() {
+    this.restaurants = this.loadAll();
     this.getModulesTree()
   },
   methods: {
+    loadAll(){
+      return [
+        {id:0,name:'编辑',class:'ayui-btn-normal',icon:'layui-icon-edit',value:'btnEdit'},
+        {id:1,name:'删除',class:'ayui-btn-danger',icon:'layui-icon-delete',value:'btnDel'},
+        {id:2,name:'添加',class:'ayui-btn-normal',icon:'layui-icon-add-1',value:'btnAdd'}
+      ]
+    },
+    changeValue(value){
+      this.menuTemp.class=value.class
+          this.menuTemp.icon=value.icon
+          this.menuTemp.name=value.name
+    },
+      querySearch(queryString, cb) {
+        var restaurants = this.restaurants;
+        var results = queryString ? restaurants.filter(this.createFilter(queryString)) : restaurants;
+        // 调用 callback 返回建议列表的数据
+        cb(results);
+      },
+        createFilter(queryString) {
+        return (restaurant) => {
+          return (restaurant.value.toLowerCase().indexOf(queryString.toLowerCase()) === 0);
+        };},
     rowClick(row) {
       this.$refs.mainTable.clearSelection()
       this.$refs.mainTable.toggleRowSelection(row)
