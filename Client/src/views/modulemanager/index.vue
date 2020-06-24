@@ -123,31 +123,32 @@
           <el-button size="mini" v-else type="primary" @click="updateData">确认</el-button>
         </div>
       </el-dialog>
-      <!--菜单编辑对话框-->
+      <!--菜单编辑/添加对话框-->
       <el-dialog v-el-drag-dialog class="dialog-mini" width="500px" :title="textMap[dialogMenuStatus]" :visible.sync="dialogMenuVisible">
         <el-form :rules="rules" ref="menuForm" :model="menuTemp" label-position="right" label-width="100px">
           <el-form-item size="small" :label="'Id'" prop="id" v-show="dialogMenuStatus=='update'">
             <span>{{menuTemp.id}}</span>
           </el-form-item>
-
-          <el-form-item size="small" :label="'名称'" prop="name">
-            <el-input v-model="menuTemp.name"></el-input>
-          </el-form-item>
-          <el-form-item size="small"  :label="'DOM ID'">
+     <el-form-item size="small"  :label="'DOM ID'">
             <!-- <el-input v-model="menuTemp.domId"></el-input> -->
               <el-autocomplete
+               suffix-icon="el-icon-caret-bottom"
               style="width:100%;"
-      class="inline-input"
-      v-model="menuTemp.domId"
-      :fetch-suggestions="querySearch"
-      placeholder="请输入DOM ID"
-      @select="changeValue"
-    ></el-autocomplete>
+              class="inline-input"
+              v-model="menuTemp.domId"
+              :fetch-suggestions="querySearch"
+              placeholder="请输入DOM ID"
+              @select="changeValue"
+            ></el-autocomplete>
           <!-- <el-select @change="changeValue" class="filter-item" size="mini" v-model="menuTemp.domId" placeholder="请选择domid">
             <el-option v-for="item in  domList" :key="item.id" :label="item.name" :value="item.id">
           </el-option>
         </el-select> -->
           </el-form-item>
+          <el-form-item size="small" :label="'名称'" prop="name">
+            <el-input v-model="menuTemp.name"></el-input>
+          </el-form-item>
+     
           <el-form-item size="small" :label="'样式'">
             <el-input v-model="menuTemp.class"></el-input>
           </el-form-item>
@@ -368,14 +369,22 @@ export default {
   methods: {
     loadAll(){
       return [
-        {id:0,dom:'btnEdit',class:'ayui-btn-normal',icon:'layui-icon-edit',value:'btnEdit'},
-        {id:1,dom:'btnDel',class:'ayui-btn-danger',icon:'layui-icon-delete',value:'btnDel'},
-        {id:2,dom:'btnAdd',class:'ayui-btn-normal',icon:'layui-icon-add-1',value:'btnAdd'}
+        {id:0,name:'编辑',class:'ayui-btn-normal',icon:'layui-icon-edit',value:'btnEdit'},
+        {id:1,name:'删除',class:'ayui-btn-danger',icon:'layui-icon-delete',value:'btnDel'},
+        {id:2,name:'添加',class:'ayui-btn-normal',icon:'layui-icon-add-1',value:'btnAdd'},
+          {id:3,name:'详情',class:'layui-btn-normal',icon:'layui-icon-search',value:'btnDetail'},
+            {id:4,name:'添加菜单',class:'ayui-btn-normal',icon:'layui-icon-add-1',value:'btnAddMenu'}
       ]
     },
+
+
+
+
+
     changeValue(value){
       this.menuTemp.class=value.class
-          this.menuTemp.icon=value.icon
+      this.menuTemp.icon=value.icon
+      this.menuTemp.name=value.name
     },
       querySearch(queryString, cb) {
         var restaurants = this.restaurants;

@@ -60,6 +60,8 @@
 // import Viewer from 'viewerjs'
 import Draggable from 'vuedraggable'
 import Model from './Model'
+// import mapState  from 'vuex'
+// import * as dowmWey from 'flowinstances'
 // import * as qiniu from 'qiniu-js'
 // require('viewerjs/dist/viewer.css')
 export default {
@@ -308,8 +310,9 @@ console.log(this.action,'图片组件接受的参数')
       }
     },
     handlePreviewFile(item) {
+      console.log(`${item.url}?token=${this.$store.state.user.token}`)
       if (!item.isImg) {
-        window.location.href = item.url
+       window.location.href = `${item.url}?token=${this.$store.state.user.token}`
         return
       }
       this.previewVisible = true
