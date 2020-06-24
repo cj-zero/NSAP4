@@ -133,15 +133,16 @@
           <el-form-item size="small" :label="'名称'" prop="name">
             <el-input v-model="menuTemp.name"></el-input>
           </el-form-item>
-          <el-form-item size="small" :label="'DOM ID'">
+          <el-form-item size="small"  :label="'DOM ID'">
             <!-- <el-input v-model="menuTemp.domId"></el-input> -->
-                    <el-autocomplete
-            style="width:100%;"
-            v-model="menuTemp.domId"
-            :fetch-suggestions="querySearch"
-            placeholder="请输入DOM ID"
-            @select="changeValue"
-          ></el-autocomplete>
+              <el-autocomplete
+              style="width:100%;"
+      class="inline-input"
+      v-model="menuTemp.domId"
+      :fetch-suggestions="querySearch"
+      placeholder="请输入DOM ID"
+      @select="changeValue"
+    ></el-autocomplete>
           <!-- <el-select @change="changeValue" class="filter-item" size="mini" v-model="menuTemp.domId" placeholder="请选择domid">
             <el-option v-for="item in  domList" :key="item.id" :label="item.name" :value="item.id">
           </el-option>
@@ -367,15 +368,14 @@ export default {
   methods: {
     loadAll(){
       return [
-        {id:0,name:'编辑',class:'ayui-btn-normal',icon:'layui-icon-edit',value:'btnEdit'},
-        {id:1,name:'删除',class:'ayui-btn-danger',icon:'layui-icon-delete',value:'btnDel'},
-        {id:2,name:'添加',class:'ayui-btn-normal',icon:'layui-icon-add-1',value:'btnAdd'}
+        {id:0,dom:'btnEdit',class:'ayui-btn-normal',icon:'layui-icon-edit',value:'btnEdit'},
+        {id:1,dom:'btnDel',class:'ayui-btn-danger',icon:'layui-icon-delete',value:'btnDel'},
+        {id:2,dom:'btnAdd',class:'ayui-btn-normal',icon:'layui-icon-add-1',value:'btnAdd'}
       ]
     },
     changeValue(value){
       this.menuTemp.class=value.class
           this.menuTemp.icon=value.icon
-          this.menuTemp.name=value.name
     },
       querySearch(queryString, cb) {
         var restaurants = this.restaurants;

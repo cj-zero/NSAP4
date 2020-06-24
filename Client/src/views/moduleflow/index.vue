@@ -70,7 +70,7 @@
       </div>
       <el-dialog
         v-el-drag-dialog
-        class="dialog-mini"
+        
         width="500px"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
@@ -81,15 +81,14 @@
           ref="dataForm"
           :model="temp"
           label-position="right"
-          label-width="100px"
+          label-width="120px"
         >
-          <el-form-item size="small" label="Id" prop="id">
-            <el-input v-model="temp.id"></el-input>
-          </el-form-item>
-          <el-form-item size="small" label="flowSchemeId" prop="certNo">
+
+          <el-form-item  label="flowSchemeId" prop="certNo">
             <el-select
               class="filter-item"
-              size="mini"
+              style="width:100%;"
+              @change="select_flow"
               v-model="temp.flowSchemeId"
               placeholder="选择流程设计表单"
             >
@@ -101,10 +100,11 @@
               ></el-option>
             </el-select>
           </el-form-item>
-          <el-form-item size="small" label="moduleId" prop="certPath">
+          <el-form-item  label="moduleId"  prop="certPath">
             <!-- <el-input v-model="temp.certPath"></el-input> -->
-            <el-select class="filter-item" size="mini" v-model="temp.moduleId" placeholder="选择模块">
+            <el-select style="width:100%;" class="filter-item"  @change="select_module"  v-model="temp.moduleId" placeholder="选择模块">
               <el-option
+             
                 v-for="item in  pullDownList"
                 :key="item.id"
                 :label="item.name"
@@ -112,12 +112,12 @@
               ></el-option>
             </el-select>
           </el-form-item>
-          <el-form-item size="small" label="PdfPath" prop="pdfPath">
+          <!-- <el-form-item size="small" label="moduleName" prop="pdfPath">
             <el-input v-model="temp.moduleName"></el-input>
           </el-form-item>
-          <el-form-item size="small" label="BaseInfoPath" prop="baseInfoPath">
+          <el-form-item size="small" label="schmeName" prop="baseInfoPath">
             <el-input v-model="temp.schmeName"></el-input>
-          </el-form-item>
+          </el-form-item> -->
         </el-form>
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
@@ -130,7 +130,7 @@
 </template>
 
 <script>
-import * as certinfos from "@/api/bindform";
+import * as certinfos from "@/api/moduleflow";
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
@@ -166,7 +166,6 @@ export default {
         { key: 0, display_name: "正常" }
       ],
       temp: {
-        id: "", // Id
         moduleId: "", // CertNo
         flowSchemeId: "", // CertPath
         moduleName: "", // PdfPath
@@ -259,16 +258,27 @@ export default {
         this.total = response.count;
         this.listLoading = false;
       });
-      certinfos.getPullDown().then(response => {
-        console.log(response.data);
+      certinfos.GetDropdownFlow().then(response => {
         this.flowList = response.result;
         this.listLoading = false;
       });
-      certinfos.GetDropdownFlow().then(response => {
-        console.log(response.data);
+      certinfos.getPullDown().then(response => {
         this.pullDownList = response.result;
         this.listLoading = false;
       });
+    },
+    select_flow(result){
+      let value = this.flowList.filter(item=>{
+        return item.id==result
+      })
+      this.temp.schmeName=value[0].name
+    },
+      select_module(result){
+       let value = this.pullDownList.filter(item=>{
+        return item.id==result
+      })
+      console.log(result,value[0],this.pullDownList)
+      this.temp.moduleName=value[0].name
     },
     handleFilter() {
       this.listQuery.page = 1;

@@ -117,6 +117,7 @@
       }).then(response => {
         this.postObj = response.result
         this.createdFormData = this.setCreatedFormData(JSON.parse(response.result.frmContentData))
+        console.log(this.createdFormData)
         this.defaultValue = JSON.parse(response.result.frmData)
       }).catch(err => {
         console.log(err)

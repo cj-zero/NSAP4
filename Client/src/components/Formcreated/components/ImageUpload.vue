@@ -129,10 +129,12 @@ export default {
     return {
       previewVisible: false,
       previewUrl: '',
+      //value不知道从哪传来的证书数据
       fileList: this.value.map(item => {
         return {
           key: item.key ? item.key : (new Date().getTime()) + '_' + Math.ceil(Math.random() * 99999),
-          url: item.url,
+           url: this.changeUrl(item.url),
+          // url: item.url,
           isImg: item.isImg,
           percent: item.percent ? item.percent : 100,
           status: item.status ? item.status : 'success'
@@ -154,9 +156,17 @@ export default {
     }
   },
   mounted() {
+    console.log(this.fileList,'fileList')
     this.$emit('input', this.fileList)
   },
   methods: {
+    changeUrl(url){
+      if(url.indexOf('http')!==-1){
+        return url
+      }else{
+        return `${process.env.VUE_APP_BASE_API}${url}`
+      }
+    },
     handleChange() {
       const files = this.$refs.uploadInput.files
       console.log('files>>>>>', files)
@@ -197,7 +207,7 @@ export default {
     uplaodAction(res, file, key) {
       // const changeIndex = this.fileList.findIndex(item => item.key === key)
       const xhr = new XMLHttpRequest()
-
+console.log(this.action,'图片组件接受的参数')
       const url = this.action
       xhr.open('POST', url, true)
       // xhr.setRequestHeader('Content-Type', 'multipart/form-data')
