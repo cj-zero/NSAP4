@@ -19,14 +19,32 @@
       
                <el-table-column prop="id" label="Id" show-overflow-tooltip></el-table-column>
                <el-table-column prop="certNo" label="CertNo" show-overflow-tooltip></el-table-column>
-               <el-table-column prop="certPath" label="CertPath" show-overflow-tooltip></el-table-column>
-               <el-table-column prop="pdfPath" label="PdfPath" show-overflow-tooltip></el-table-column>
-               <el-table-column prop="baseInfoPath" label="BaseInfoPath" show-overflow-tooltip></el-table-column>
-               <el-table-column prop="createTime" label="CreateTime" show-overflow-tooltip></el-table-column>
+              <el-table-column prop="createTime" label="CreateTime" show-overflow-tooltip></el-table-column>
+               <el-table-column prop="activityName" label="activityName" show-overflow-tooltip></el-table-column>
 
 
-      <el-table-column align="center" label="操作" width="230" class-name="small-padding fixed-width">
+      <el-table-column align="center" label="操作" width="350" >
         <template slot-scope="scope">
+        <el-dropdown style="margin:0 10px;" @command="downFile">
+  <el-button type="primary" size="mini">
+    下载<i class="el-icon-arrow-down el-icon--right"></i>
+  </el-button>
+  <el-dropdown-menu slot="dropdown" >
+    <el-dropdown-item :command="scope.row.certNo+1">下载证书基础信息</el-dropdown-item>
+    <el-dropdown-item :command="scope.row.certNo+2">下载证书PDF</el-dropdown-item>
+
+  </el-dropdown-menu>
+</el-dropdown>
+    <!-- <el-dropdown  size="small" split-button @change="downFile">
+  <el-button type="primary">
+    更多菜单<i class="el-icon-arrow-down el-icon--right"></i>
+  </el-button>
+  <el-dropdown-menu slot="dropdown">
+    <el-dropdown-item>下载证书基础信息</el-dropdown-item>
+    <el-dropdown-item>下载证书PDF</el-dropdown-item>
+  </el-dropdown-menu>
+</el-dropdown> -->
+       
           <el-button  type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
           <el-button v-if="scope.row.disable!=true" size="mini" type="danger" @click="handleModifyStatus(scope.row,true)">停用</el-button>
         </template>
@@ -84,6 +102,7 @@ export default {
       multipleSelection: [], // 列表checkbox选中的值
       tableKey: 0,
       list: null,
+      down_value:'',
       total: 0,
       listLoading: true,
       listQuery: { // 查询条件
@@ -92,6 +111,10 @@ export default {
         key: undefined,
         appId: undefined
       },
+      // options_down:[
+      //   {value: `${process.env.VUE_APP_BASE_API}/api/Cert/DownloadBaseInfo/`,label:'下载证书基础信息'},
+      //   {value: `${process.env.VUE_APP_BASE_API}/api/Cert/DownloadCertPdf/`,label:'下载证书PDF'},
+      // ],
       statusOptions: [
         { key: 1, display_name: '停用' },
         { key: 0, display_name: '正常' }
@@ -144,6 +167,20 @@ export default {
     this.getList()
   },
   methods: {
+    downFile(result){
+      const len = result.length
+       let num1 = result.slice(0,len-1)
+       let num2 = result.slice(len-1,len)
+      if(num2==1){
+       console.log(`${process.env.VUE_APP_BASE_API}/api/Cert/DownloadBaseInfo/${num1}?token=${this.$store.state.user.token}`)
+        window.location.href = `${process.env.VUE_APP_BASE_API}/Cert/DownloadBaseInfo/${num1}?token=${this.$store.state.user.token}`
+      }else{
+              //  console.log(`${process.env.VUE_APP_BASE_API}/Cert/DownloadBaseInfo/${num1}?token=${this.$store.state.user.token}`)
+        console.log(num1,num2)
+        window.location.href = `${process.env.VUE_APP_BASE_API}/Cert/DownloadCertPdf/${num1}?token=${this.$store.state.user.token}`
+
+      }
+    },
     rowClick(row) {
       this.$refs.mainTable.clearSelection()
       this.$refs.mainTable.toggleRowSelection(row)
