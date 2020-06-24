@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Infrastructure;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
@@ -71,6 +72,11 @@ namespace OpenAuth.App
         public FormResp FindSingle(string id)
         {
             var form = Get(id);
+            return form.MapTo<FormResp>();
+        }
+        public async Task<FormResp> FindSingleAsync(string id)
+        {
+            var form = await GetAsync(id);
             return form.MapTo<FormResp>();
         }
 

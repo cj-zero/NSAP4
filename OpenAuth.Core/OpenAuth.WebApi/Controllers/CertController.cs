@@ -26,6 +26,8 @@ namespace OpenAuth.WebApi.Controllers
     {
         private readonly CertinfoApp _certinfoApp;
         private readonly CertPlcApp _certPlcApp;
+        private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
+        private readonly FlowInstanceApp _flowInstanceApp;
         private static readonly string BaseCertDir = Path.Combine(Directory.GetCurrentDirectory(), "certs");
         private static readonly Dictionary<int, double> PoorCoefficients = new Dictionary<int, double>()
         {
@@ -37,10 +39,12 @@ namespace OpenAuth.WebApi.Controllers
 
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
 
-        public CertController(CertinfoApp certinfoApp, CertPlcApp certPlcApp)
+        public CertController(CertinfoApp certinfoApp, CertPlcApp certPlcApp, ModuleFlowSchemeApp moduleFlowSchemeApp, FlowInstanceApp flowInstanceApp)
         {
             _certinfoApp = certinfoApp;
             _certPlcApp = certPlcApp;
+            _moduleFlowSchemeApp = moduleFlowSchemeApp;
+            _flowInstanceApp = flowInstanceApp;
         }
 
         [HttpPost]
@@ -83,9 +87,11 @@ namespace OpenAuth.WebApi.Controllers
             var result = WordHandler.DOCTemplateConvert(templatePath, tagetPath, modelList);
             if (result)
             {
+                var flowInstanceId = await CreateFlow(baseInfo.CertificateNumber);
                 var c = await _certinfoApp.GetAsync(s => s.CertNo.Equals(baseInfo.CertificateNumber));
                 c.CertPath = tagetPath;
                 c.BaseInfoPath = baseInfoTagetPath;
+                c.FlowInstanceId = flowInstanceId;
                 var obj = c.MapTo<AddOrUpdateCertinfoReq>();
                 await _certinfoApp.UpdateAsync(obj);
             }
@@ -101,7 +107,7 @@ namespace OpenAuth.WebApi.Controllers
         }
 
 
-        [HttpGet("baseInfo/{certNo}")]
+        [HttpGet("{certNo}")]
         public async Task<IActionResult> DownloadBaseInfo(string certNo)
         {
             var cert = await _certinfoApp.GetAsync(c => c.CertNo.Equals(certNo));
@@ -111,7 +117,7 @@ namespace OpenAuth.WebApi.Controllers
             return File(fileStream, "application/vnd.ms-excel");
         }
 
-        [HttpGet("cert/{certNo}")]
+        [HttpGet("{certNo}")]
         public async Task<IActionResult> DownloadCert(string certNo)
         {
             var cert = await _certinfoApp.GetAsync(c => c.CertNo.Equals(certNo));
@@ -120,7 +126,7 @@ namespace OpenAuth.WebApi.Controllers
             var fileStream = new FileStream(cert.CertPath, FileMode.Open);
             return File(fileStream, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
         }
-        [HttpGet("certPdf/{certNo}")]
+        [HttpGet("{certNo}")]
         public async Task<IActionResult> DownloadCertPdf(string certNo)
         {
             var cert = await _certinfoApp.GetAsync(c => c.CertNo.Equals(certNo));
@@ -141,7 +147,7 @@ namespace OpenAuth.WebApi.Controllers
             }
             return new NotFoundResult();
         }
-        [HttpGet("certNo/{plcGuid}")]
+        [HttpGet("{plcGuid}")]
         public async Task<IActionResult> GetCertNoList(string plcGuid)
         {
             var certNos = (await _certPlcApp.GetAllAsync(p => p.PlcGuid.Equals(plcGuid))).OrderByDescending(c => c.CertNo).Select(cp => cp.CertNo);
@@ -737,6 +743,24 @@ namespace OpenAuth.WebApi.Controllers
             var acceptanceStr = acceptance.ToString($"f{j - 3}");
             var uncertaintyStr = uncertainty.ToString($"f{j - 3}");
             return (indicationStr, measuredValueStr, errorStr, acceptanceStr, uncertaintyStr);
+        }
+
+        private async Task<string> CreateFlow(string certNo)
+        {
+            try
+            {
+                var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("校准证书"));
+                var req = new AddFlowInstanceReq();
+                req.SchemeId = mf.FlowSchemeId;
+                req.FrmType = 2;
+                req.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
+                req.CustomName = $"校准证书{certNo}审批";
+                req.FrmData = $"{{\"certNo\":\"{certNo}\",\"cert\":[{{\"key\":\"{DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString()}\",\"url\":\"/Cert/DownloadCertPdf/{certNo}\",\"percent\":100,\"status\":\"success\",\"isImg\":false}}]}}";
+                return await _flowInstanceApp.CreateInstanceAndGetIdAsync(req);
+            }catch(Exception ex)
+            {
+                return "";
+            }
         }
 
     }

@@ -62,5 +62,6 @@ namespace OpenAuth.Repository.Domain
         /// 工作流程绑定Id
         /// </summary>
         public string FlowInstanceId { get; set; }
+        public virtual FlowInstance FlowInstance { get; set; }
     }
 }

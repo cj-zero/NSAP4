@@ -47,6 +47,7 @@ namespace OpenAuth.App.Request
         /// 
         /// </summary>
         public System.DateTime CreateTime { get; set; }
+        public string FlowInstanceId { get; set; }
         
          //todo:添加自己的请求字段
     }

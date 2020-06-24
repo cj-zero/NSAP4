@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace OpenAuth.App
 {
@@ -125,6 +126,92 @@ namespace OpenAuth.App
             AddTransHistory(wfruntime);
             UnitWork.Save();
             return true;
+        }
+        /// <summary>
+        /// 创建一个实例并获取实例Id
+        /// </summary>
+        /// <returns></returns>
+        public async Task<string> CreateInstanceAndGetIdAsync(AddFlowInstanceReq addFlowInstanceReq)
+        {
+            FlowScheme scheme = null;
+            if (!string.IsNullOrEmpty(addFlowInstanceReq.SchemeId))
+            {
+                scheme = await _flowSchemeApp.GetAsync(addFlowInstanceReq.SchemeId);
+            }
+
+            if ((scheme == null) && !string.IsNullOrEmpty(addFlowInstanceReq.SchemeCode))
+            {
+                scheme = await _flowSchemeApp.FindByCodeAsync(addFlowInstanceReq.SchemeCode);
+            }
+
+            if (scheme == null)
+            {
+                throw new Exception("该流程模板已不存在，请重新设计流程");
+            }
+
+            addFlowInstanceReq.SchemeContent = scheme.SchemeContent;
+
+            var form = await _formApp.FindSingleAsync(scheme.FrmId);
+            if (form == null)
+            {
+                throw new Exception("该流程模板对应的表单已不存在，请重新设计流程");
+            }
+
+            addFlowInstanceReq.FrmContentData = form.ContentData;
+            addFlowInstanceReq.FrmContentParse = form.ContentParse;
+            addFlowInstanceReq.FrmType = form.FrmType;
+            addFlowInstanceReq.FrmId = form.Id;
+
+            var flowInstance = addFlowInstanceReq.MapTo<FlowInstance>();
+
+            //创建运行实例
+            var wfruntime = new FlowRuntime(flowInstance);
+            var user = _auth.GetCurrentUser();
+
+            #region 根据运行实例改变当前节点状态
+
+            flowInstance.ActivityId = wfruntime.nextNodeId;
+            flowInstance.ActivityType = wfruntime.GetNextNodeType();
+            flowInstance.ActivityName = wfruntime.nextNode.name;
+            flowInstance.PreviousId = wfruntime.currentNodeId;
+            flowInstance.CreateUserId = user.User.Id;
+            flowInstance.CreateUserName = user.User.Account;
+            flowInstance.MakerList = (wfruntime.GetNextNodeType() != 4 ? GetNextMakers(wfruntime) : "");
+            flowInstance.IsFinish = (wfruntime.GetNextNodeType() == 4 ? 1 : 0);
+
+            await UnitWork.AddAsync(flowInstance);
+            wfruntime.flowInstanceId = flowInstance.Id;
+
+            if (flowInstance.FrmType == 1)
+            {
+                var t = Type.GetType("OpenAuth.App."+ flowInstance.DbName +"App");
+                ICustomerForm icf = (ICustomerForm) _serviceProvider.GetService(t);
+                await icf.AddAsync(flowInstance.Id, flowInstance.FrmData);
+            }
+
+            #endregion 根据运行实例改变当前节点状态
+
+            #region 流程操作记录
+
+            FlowInstanceOperationHistory processOperationHistoryEntity = new FlowInstanceOperationHistory
+            {
+                InstanceId = flowInstance.Id,
+                CreateUserId = user.User.Id,
+                CreateUserName = user.User.Name,
+                CreateDate = DateTime.Now,
+                Content = "【创建】"
+                          + user.User.Name
+                          + "创建了一个流程进程【"
+                          + addFlowInstanceReq.Code + "/"
+                          + addFlowInstanceReq.CustomName + "】"
+            };
+            await UnitWork.AddAsync(processOperationHistoryEntity);
+
+            #endregion 流程操作记录
+
+            await AddTransHistoryAsync(wfruntime);
+            await UnitWork.SaveAsync();
+            return flowInstance.Id;
         }
 
         /// <summary>
@@ -534,6 +621,27 @@ namespace OpenAuth.App
         {
             var tag = _auth.GetCurrentUser().User;
             UnitWork.Add(new FlowInstanceTransitionHistory
+            {
+                InstanceId = wfruntime.flowInstanceId,
+                CreateUserId = tag.Id,
+                CreateUserName = tag.Name,
+                FromNodeId = wfruntime.currentNodeId,
+                FromNodeName = wfruntime.currentNode.name,
+                FromNodeType = wfruntime.currentNodeType,
+                ToNodeId = wfruntime.nextNodeId,
+                ToNodeName = wfruntime.nextNode.name,
+                ToNodeType = wfruntime.nextNodeType,
+                IsFinish = wfruntime.nextNodeType == 4 ? 1 : 0,
+                TransitionSate = 0
+            });
+        }
+        /// <summary>
+        /// 添加扭转记录
+        /// </summary>
+        private async Task AddTransHistoryAsync(FlowRuntime wfruntime)
+        {
+            var tag = _auth.GetCurrentUser().User;
+            await UnitWork.AddAsync(new FlowInstanceTransitionHistory
             {
                 InstanceId = wfruntime.flowInstanceId,
                 CreateUserId = tag.Id,

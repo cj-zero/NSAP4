@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -26,6 +28,10 @@ namespace OpenAuth.App
         public FlowScheme FindByCode(string code)
         {
             return Repository.FindSingle(u => u.SchemeCode == code);
+        }
+        public async Task<FlowScheme> FindByCodeAsync(string code, CancellationToken cancellationToken = default)
+        {
+            return await Repository.FindSingleAsync(u => u.SchemeCode == code);
         }
 
         public void Update(FlowScheme flowScheme)

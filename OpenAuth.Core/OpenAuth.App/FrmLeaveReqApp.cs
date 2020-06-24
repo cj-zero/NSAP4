@@ -4,7 +4,7 @@ using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
-
+using System.Threading.Tasks;
 
 namespace OpenAuth.App
 {
@@ -29,6 +29,11 @@ namespace OpenAuth.App
             Repository.Add(obj);
         }
         
+        public async Task AddAsync(FrmLeaveReq obj)
+        {
+            await Repository.AddAsync(obj);
+        }
+        
         public void Update(FrmLeaveReq obj)
         {
             UnitWork.Update<FrmLeaveReq>(u => u.Id == obj.Id, u => new FrmLeaveReq
@@ -49,6 +54,12 @@ namespace OpenAuth.App
             var req = JsonHelper.Instance.Deserialize<FrmLeaveReq>(frmData);
             req.FlowInstanceId = flowInstanceId;
             Add(req);
+        }
+        public async Task AddAsync(string flowInstanceId, string frmData)
+        {
+            var req = JsonHelper.Instance.Deserialize<FrmLeaveReq>(frmData);
+            req.FlowInstanceId = flowInstanceId;
+            await AddAsync(req);
         }
     }
 }
