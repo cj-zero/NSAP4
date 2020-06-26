@@ -46,17 +46,17 @@
           <el-table-column
             align="center"
             label="操作"
-            width="230"
+            width="120"
             class-name="small-padding fixed-width"
           >
             <template slot-scope="scope">
               <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
-              <el-button
+              <!-- <el-button
                 v-if="scope.row.disable!=true"
                 size="mini"
                 type="danger"
                 @click="handleModifyStatus(scope.row,true)"
-              >停用</el-button>
+              >停用</el-button> -->
             </template>
           </el-table-column>
         </el-table>
@@ -81,10 +81,21 @@
           ref="dataForm"
           :model="temp"
           label-position="right"
-          label-width="120px"
+          label-width="80px"
         >
-
-          <el-form-item  label="flowSchemeId" prop="certNo">
+          <el-form-item  label="模块"  prop="certPath">
+            <!-- <el-input v-model="temp.certPath"></el-input> -->
+            <el-select style="width:100%;" class="filter-item" disabled  @change="select_module"  v-model="temp.moduleId" placeholder="选择模块">
+              <el-option
+             
+                v-for="item in  pullDownList"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item  label="流程" prop="certNo">
             <el-select
               class="filter-item"
               style="width:100%;"
@@ -100,24 +111,6 @@
               ></el-option>
             </el-select>
           </el-form-item>
-          <el-form-item  label="moduleId"  prop="certPath">
-            <!-- <el-input v-model="temp.certPath"></el-input> -->
-            <el-select style="width:100%;" class="filter-item"  @change="select_module"  v-model="temp.moduleId" placeholder="选择模块">
-              <el-option
-             
-                v-for="item in  pullDownList"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-              ></el-option>
-            </el-select>
-          </el-form-item>
-          <!-- <el-form-item size="small" label="moduleName" prop="pdfPath">
-            <el-input v-model="temp.moduleName"></el-input>
-          </el-form-item>
-          <el-form-item size="small" label="schmeName" prop="baseInfoPath">
-            <el-input v-model="temp.schmeName"></el-input>
-          </el-form-item> -->
         </el-form>
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>

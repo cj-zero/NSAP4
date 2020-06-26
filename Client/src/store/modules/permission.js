@@ -40,6 +40,7 @@ const permission = {
 
     GenerateRoutes({ commit }, data) {
       return new Promise(resolve => {
+        
         (async() => {
           const newPaths = []
           await data.modules.forEach((value) => {
