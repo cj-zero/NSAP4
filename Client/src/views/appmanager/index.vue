@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
@@ -37,31 +37,53 @@
         >
           <el-table-column type="selection" align="center" width="55"></el-table-column>
 
-          <el-table-column prop="id" label="Id" show-overflow-tooltip></el-table-column>
-          <el-table-column prop="certNo" align="center" label="证书号" show-overflow-tooltip></el-table-column>
-          <el-table-column prop="createTime" align="center" label="创建时间" show-overflow-tooltip></el-table-column>
-          <el-table-column prop="activityName" align="center" label="流程名称" show-overflow-tooltip></el-table-column>
-
-          <el-table-column align="center" label="操作" width="120">
+          <el-table-column prop="id" label="id" width="50" show-overflow-tooltip></el-table-column>
+          <el-table-column
+            prop="name"
+            label="应用名称"
+            min-width="120"
+            align="center"
+            show-overflow-tooltip
+          ></el-table-column>
+          <el-table-column prop="appSecxet" label="应用密匙" align="center" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="appKey" align="center" label="AppKey" show-overflow-tooltip></el-table-column>
+          <el-table-column
+            prop="description"
+            align="center"
+            label="应用描述"
+            min-width="150"
+            show-overflow-tooltip
+          ></el-table-column>
+          <el-table-column prop="icon" label="应用图标" align="center" show-overflow-tooltip>
             <template slot-scope="scope">
-              <el-dropdown style="margin:0 10px;" @command="downFile">
-                <el-button type="primary" size="mini">
-                  下载
-                  <i class="el-icon-arrow-down el-icon--right"></i>
-                </el-button>
-                <el-dropdown-menu slot="dropdown">
-                  <el-dropdown-item :command="scope.row.certNo+1">下载证书基础信息</el-dropdown-item>
-                  <el-dropdown-item :command="scope.row.certNo+2">下载证书PDF</el-dropdown-item>
-                </el-dropdown-menu>
-              </el-dropdown>
-
-              <!-- <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
-              <el-button
+                <i :class="`${scope.row.icon}`"></i> 
+              <!-- <span>{{scope.row.icon}}</span> -->
+            </template>
+          </el-table-column>
+          <el-table-column label="是否可用" align="center" show-overflow-tooltip>
+            <template slot-scope="scope">
+              <el-link
+                size="mini"
+                :type="`${scope.row.disable===false?'danger':'success'}`"
+              >{{scope.row.disable?'是':'否'}}</el-link>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createTime" label="创建日期" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="createUser" label="创建人" show-overflow-tooltip></el-table-column>
+          <el-table-column
+            align="center"
+            label="操作"
+            width="120"
+            class-name="small-padding fixed-width"
+          >
+            <template slot-scope="scope">
+              <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
+              <!-- <el-button
                 v-if="scope.row.disable!=true"
                 size="mini"
                 type="danger"
                 @click="handleModifyStatus(scope.row,true)"
-              >停用</el-button> -->
+              >停用</el-button>-->
             </template>
           </el-table-column>
         </el-table>
@@ -73,10 +95,8 @@
           @pagination="handleCurrentChange"
         />
       </div>
-
       <el-dialog
         v-el-drag-dialog
-        class="dialog-mini"
         width="500px"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
@@ -86,23 +106,34 @@
           ref="dataForm"
           :model="temp"
           label-position="right"
-          label-width="100px"
+          label-width="80px"
         >
-          <el-form-item size="small" label="Id" prop="id">
+         <!-- <el-form-item size="small" :label="'ID'" prop="name">
             <el-input v-model="temp.id"></el-input>
+          </el-form-item> -->
+          <el-form-item size="small" :label="'应用名称'" prop="name">
+            <el-input v-model="temp.name"></el-input>
           </el-form-item>
-          <el-form-item size="small" label="CertNo" prop="certNo">
-            <el-input v-model="temp.certNo"></el-input>
+
+          <el-form-item size="small" :label="'应用描述'">
+            <el-input v-model="temp.description"></el-input>
           </el-form-item>
-          <el-form-item size="small" label="CertPath" prop="certPath">
-            <el-input v-model="temp.certPath"></el-input>
+          <el-form-item size="small" :label="'应用密匙'">
+            <el-input v-model="temp.appSecxet"></el-input>
           </el-form-item>
-          <el-form-item size="small" label="PdfPath" prop="pdfPath">
-            <el-input v-model="temp.pdfPath"></el-input>
+          <el-form-item size="small" :label="'appKey'">
+            <el-input v-model="temp.appKey"></el-input>
           </el-form-item>
-          <el-form-item size="small" label="BaseInfoPath" prop="baseInfoPath">
-            <el-input v-model="temp.baseInfoPath"></el-input>
+          <el-form-item size="small" :label="'应用图标'">
+            <!-- <el-input-number v-model="temp.icon" :min="0" :max="10" ></el-input-number> -->
+            <!-- <i :class="el-icon-share"></i> -->
+            <el-input v-model="temp.icon"></el-input>
           </el-form-item>
+          <el-form-item size="small" :label="'是否可用'">
+            <el-switch v-model="temp.disable" active-text="是" inactive-text="否"></el-switch>
+          </el-form-item>
+         
+        
         </el-form>
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
@@ -115,7 +146,7 @@
 </template>
 
 <script>
-import * as certinfos from "@/api/certinfos";
+import * as certinfos from "@/api/appmanager";
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
@@ -133,7 +164,10 @@ export default {
       multipleSelection: [], // 列表checkbox选中的值
       tableKey: 0,
       list: null,
-      down_value: "",
+      flowList: null,
+      flowList_value: "",
+      pullDownList_value: "",
+      pullDownList: null,
       total: 0,
       listLoading: true,
       listQuery: {
@@ -143,21 +177,18 @@ export default {
         key: undefined,
         appId: undefined
       },
-      // options_down:[
-      //   {value: `${process.env.VUE_APP_BASE_API}/api/Cert/DownloadBaseInfo/`,label:'下载证书基础信息'},
-      //   {value: `${process.env.VUE_APP_BASE_API}/api/Cert/DownloadCertPdf/`,label:'下载证书PDF'},
-      // ],
       statusOptions: [
         { key: 1, display_name: "停用" },
         { key: 0, display_name: "正常" }
       ],
-      temp: {
+       temp : {
         id: "", // Id
-        certNo: "", // CertNo
-        certPath: "", // CertPath
-        pdfPath: "", // PdfPath
-        baseInfoPath: "", // BaseInfoPath
-        extendInfo: "" // 其他信息,防止最后加逗号，可以删除
+        appSecxet: "",
+        appKey: "", 
+        icon: "", 
+        disable: "" ,
+        createTime:"",
+        createUser:"",
       },
       dialogFormVisible: false,
       dialogStatus: "",
@@ -201,21 +232,6 @@ export default {
     this.getList();
   },
   methods: {
-    downFile(result) {
-      const len = result.length;
-      let num1 = result.slice(0, len - 1);
-      let num2 = result.slice(len - 1, len);
-      if (num2 == 1) {
-        console.log(
-          `${process.env.VUE_APP_BASE_API}/api/Cert/DownloadBaseInfo/${num1}?token=${this.$store.state.user.token}`
-        );
-        window.location.href = `${process.env.VUE_APP_BASE_API}/Cert/DownloadBaseInfo/${num1}?X-Token=${this.$store.state.user.token}`;
-      } else {
-        //  console.log(`${process.env.VUE_APP_BASE_API}/Cert/DownloadBaseInfo/${num1}?token=${this.$store.state.user.token}`)
-        console.log(num1, num2);
-        window.location.href = `${process.env.VUE_APP_BASE_API}/Cert/DownloadCertPdf/${num1}?X-Token=${this.$store.state.user.token}`;
-      }
-    },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.$refs.mainTable.toggleRowSelection(row);
@@ -261,6 +277,7 @@ export default {
         this.listLoading = false;
       });
     },
+
     handleFilter() {
       this.listQuery.page = 1;
       this.getList();
@@ -284,13 +301,13 @@ export default {
     },
     resetTemp() {
       this.temp = {
-        id: "",
-        certNo: "",
-        certPath: "",
-        pdfPath: "",
-        baseInfoPath: "",
-        createTime: "",
-        extendInfo: ""
+        id: "", // Id
+        appSecxet: "",
+        appKey: "", 
+        icon: "", 
+        disable: "" ,
+        createTime:"",
+        createUser:"",
       };
     },
     handleCreate() {

@@ -140,10 +140,6 @@
               placeholder="请输入DOM ID"
               @select="changeValue"
             ></el-autocomplete>
-          <!-- <el-select @change="changeValue" class="filter-item" size="mini" v-model="menuTemp.domId" placeholder="请选择domid">
-            <el-option v-for="item in  domList" :key="item.id" :label="item.name" :value="item.id">
-          </el-option>
-        </el-select> -->
           </el-form-item>
           <el-form-item size="small" :label="'名称'" prop="name">
             <el-input v-model="menuTemp.name"></el-input>
