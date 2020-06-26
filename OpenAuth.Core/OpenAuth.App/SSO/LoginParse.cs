@@ -3,6 +3,7 @@
  * 处理登录逻辑，验证客户段提交的账号密码，保存登录信息
  */
 using System;
+using System.Linq;
 using Infrastructure;
 using Infrastructure.Cache;
 using OpenAuth.Repository.Domain;
@@ -17,11 +18,11 @@ namespace OpenAuth.App.SSO
         //这个地方使用IRepository<User> 而不使用UserManagerApp是防止循环依赖
         public IRepository<User> _app;
         private ICacheContext _cacheContext;
-        private AppInfoService _appInfoService;
+        private readonly IRepository<Application> _appManager;
 
-        public LoginParse( AppInfoService infoService, ICacheContext cacheContext, IRepository<User> userApp)
+        public LoginParse(IRepository<Application> appManager, ICacheContext cacheContext, IRepository<User> userApp)
         {
-            _appInfoService = infoService;
+            _appManager = appManager;
             _cacheContext = cacheContext;
             _app = userApp;
         }
@@ -33,7 +34,7 @@ namespace OpenAuth.App.SSO
             {
                 model.Trim();
                 //获取应用信息
-                var appInfo = _appInfoService.Get(model.AppKey);
+                var appInfo = _appManager.Find(app=>app.AppKey.Equals(model.AppKey)).FirstOrDefault();
                 if (appInfo == null)
                 {
                     throw  new Exception("应用不存在");
