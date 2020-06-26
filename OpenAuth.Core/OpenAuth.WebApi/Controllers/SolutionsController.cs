@@ -1,28 +1,28 @@
 ﻿using System;
-using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.Serve;
 
 namespace OpenAuth.WebApi.Controllers
 {
     /// <summary>
-    /// 模块工作流程绑定操作
+    /// 服务解决方案管理
     /// </summary>
     [Route("api/[controller]/[action]")]
     [ApiController]
-    public class ModuleFlowSchemesController : ControllerBase
+    public class SolutionsController : ControllerBase
     {
-        private readonly ModuleFlowSchemeApp _app;
+        private readonly SolutionApp _app;
         
         //获取详情
         [HttpGet]
-        public Response<ModuleFlowScheme> Get(string id)
+        public Response<Solution> Get(string id)
         {
-            var result = new Response<ModuleFlowScheme>();
+            var result = new Response<Solution>();
             try
             {
                 result.Result = _app.Get(id);
@@ -38,15 +38,12 @@ namespace OpenAuth.WebApi.Controllers
 
         //添加
        [HttpPost]
-        public async Task<Response> Add(AddOrUpdateModuleFlowSchemeReq obj)
+        public Response Add(AddOrUpdateSolutionReq obj)
         {
             var result = new Response();
             try
             {
-                var exist = await _app.CheckExistAsync(m => m.ModuleId.Equals(obj.ModuleId));
-                if (exist)
-                    throw new Exception("当前模块已绑定流程，每个模块只能绑定一个流程");
-                await _app.AddAsync(obj);
+                _app.Add(obj);
 
             }
             catch (Exception ex)
@@ -60,7 +57,7 @@ namespace OpenAuth.WebApi.Controllers
 
         //修改
        [HttpPost]
-        public Response Update(AddOrUpdateModuleFlowSchemeReq obj)
+        public Response Update(AddOrUpdateSolutionReq obj)
         {
             var result = new Response();
             try
@@ -81,7 +78,7 @@ namespace OpenAuth.WebApi.Controllers
         /// 加载列表
         /// </summary>
         [HttpGet]
-        public TableData Load([FromQuery]QueryModuleFlowSchemeListReq request)
+        public TableData Load([FromQuery]QuerySolutionListReq request)
         {
             return _app.Load(request);
         }
@@ -107,7 +104,7 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
-        public ModuleFlowSchemesController(ModuleFlowSchemeApp app) 
+        public SolutionsController(SolutionApp app) 
         {
             _app = app;
         }
