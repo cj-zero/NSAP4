@@ -63,7 +63,7 @@
 </template>
 
 <script>
-    // import Layout from '@/views/layout/Layout'
+     import Layout from '@/views/layout/Layout'
     import * as flowinstances from '@/api/flowinstances'
     import waves from '@/directive/waves' // 水波纹指令
     import Sticky from '@/components/Sticky'
@@ -147,59 +147,59 @@
       },
       created() {
         this.getList()
-        // var addRouter = [{
-        //   path: '/flowinstances',
-        //   component: Layout,
-        //   redirect: 'noredirect',
-        //   name: 'flowinstances',
-        //   meta: {
-        //     title: '流程中心',
-        //     icon: 'guide'
-        //   },
-        //   children: [
-        //     {
-        //       path: '/flowinstances/detail/:id',
-        //       component: () =>
-        //       import('@/views/flowinstances/detail'),
-        //       name: 'flowinstanceDtl',
-        //       isDetail: true,
-        //       hidden: true,
-        //       meta: {
-        //         notauth: true,
-        //         title: '流程详情',
-        //         noCache: true,
-        //         icon: 'list'
-        //       }
-        //     },
-        //     {
-        //       path: 'verify/:id',
-        //       component: () =>
-        //                     import('@/views/flowinstances/verify'),
-        //       name: 'verifyFlowinstance',
-        //       hidden: true,
-        //       meta: {
-        //         notauth: true,
-        //         title: '处理流程',
-        //         noCache: true,
-        //         icon: 'list'
-        //       }
-        //     },
+        var addRouter = [{
+          path: '/flowinstances',
+          component: Layout,
+          redirect: 'noredirect',
+          name: 'flowinstances',
+          meta: {
+            title: '流程中心',
+            icon: 'guide'
+          },
+          children: [
+            {
+              path: '/flowinstances/detail/:id',
+              component: () =>
+              import('@/views/flowinstances/detail'),
+              name: 'flowinstanceDtl',
+              isDetail: true,
+              hidden: true,
+              meta: {
+                notauth: true,
+                title: '流程详情',
+                noCache: true,
+                icon: 'list'
+              }
+            },
+            {
+              path: 'verify/:id',
+              component: () =>
+                            import('@/views/flowinstances/verify'),
+              name: 'verifyFlowinstance',
+              hidden: true,
+              meta: {
+                notauth: true,
+                title: '处理流程',
+                noCache: true,
+                icon: 'list'
+              }
+            },
 
-        //     {
-        //       path: 'add',
-        //       component: () =>
-        //                     import('@/views/flowinstances/add'),
-        //       name: 'instanceAdd',
-        //       meta: {
-        //         notauth: true,
-        //         title: '发起流程',
-        //         noCache: true,
-        //         icon: 'star'
-        //       }
-        //     }
-        //   ]
-        // }]
-        // this.$router.addRoutes(addRouter)
+            {
+              path: 'add',
+              component: () =>
+                            import('@/views/flowinstances/add'),
+              name: 'instanceAdd',
+              meta: {
+                notauth: true,
+                title: '发起流程',
+                noCache: true,
+                icon: 'star'
+              }
+            }
+          ]
+        }]
+        this.$router.addRoutes(addRouter)
       },
       methods: {
         rowClick(row) {
