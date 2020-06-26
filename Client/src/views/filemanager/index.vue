@@ -106,47 +106,44 @@
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
-        <el-form
-          :rules="rules"
-          ref="dataForm"
-          :model="temp"
-          label-position="right"
-          label-width="80px"
+      <el-upload
+  :action="baseURL +'/Files/Upload'"
+  list-type="picture-card"
+  @submit="submit1"
+  :auto-upload="false">
+    <i slot="default" class="el-icon-plus"></i>
+    <div slot="file" slot-scope="{file}">
+      <img
+        class="el-upload-list__item-thumbnail"
+        :src="file.url" alt=""
+      >
+      <span class="el-upload-list__item-actions">
+        <span
+          class="el-upload-list__item-preview"
+          @click="handlePictureCardPreview(file)"
         >
-          <el-form-item size="small" :label="'应用名称'" prop="name">
-            <el-input v-model="temp.name"></el-input>
-          </el-form-item>
-
-          <el-form-item size="small" :label="'应用描述'">
-            <el-input v-model="temp.description"></el-input>
-          </el-form-item>
-          <el-form-item size="small" :label="'应用密匙'">
-            <el-input v-model="temp.appSecxet"></el-input>
-          </el-form-item>
-          <el-form-item size="small" :label="'appKey'">
-            <el-input v-model="temp.appKey"></el-input>
-          </el-form-item>
-          <el-form-item size="small" :label="'应用图标'">
-            <!-- <el-input-number v-model="temp.icon" :min="0" :max="10" ></el-input-number> -->
-            <el-autocomplete
-              suffix-icon="el-icon-caret-bottom"
-              style="width:100%;"
-              class="inline-input"
-              v-model="temp.icon"
-              :fetch-suggestions="querySearch"
-              placeholder="请输入应用图标"
-            >
-              <i :class="`${temp.icon?temp.icon:''}`" slot="suffix"></i>
-            </el-autocomplete>
-            <!-- <el-input v-model="temp.icon"></el-input> -->
-          </el-form-item>
-          <el-form-item size="small" :label="'是否可用'">
-            <el-switch v-model="temp.disable" active-text="是" inactive-text="否"></el-switch>
-          </el-form-item>
-        </el-form>
+          <i class="el-icon-zoom-in"></i>
+        </span>
+        <span
+          v-if="!disabled"
+          class="el-upload-list__item-delete"
+          @click="handleDownload(file)"
+        >
+          <i class="el-icon-download"></i>
+        </span>
+        <span
+          v-if="!disabled"
+          class="el-upload-list__item-delete"
+          @click="handleRemove(file)"
+        >
+          <i class="el-icon-delete"></i>
+        </span>
+      </span>
+    </div>
+</el-upload>
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
-          <el-button size="mini" v-if="dialogStatus=='create'" type="primary" @click="createData">确认</el-button>
+          <el-button size="mini" v-if="dialogStatus=='create'" type="primary" @click="upFile">确认</el-button>
           <el-button size="mini" v-else type="primary" @click="updateData">确认</el-button>
         </div>
       </el-dialog>
@@ -170,6 +167,7 @@ export default {
   },
   data() {
     return {
+      baseURL:process.env.VUE_APP_BASE_API ,
       multipleSelection: [], // 列表checkbox选中的值
       tableKey: 0,
       list: null,
@@ -186,6 +184,9 @@ export default {
         key: undefined,
         appId: undefined
       },
+        dialogImageUrl: '',
+        dialogVisible: false,
+        disabled: false,
       statusOptions: [
         { key: 1, display_name: "停用" },
         { key: 0, display_name: "正常" }
@@ -203,7 +204,7 @@ export default {
       dialogStatus: "",
       textMap: {
         update: "编辑",
-        create: "添加"
+        create: "文件上传"
       },
       restaurants: [],
       dialogPvVisible: false,
@@ -239,12 +240,27 @@ export default {
     }
   },
   mounted() {
+    console.log(process.env)
     this.restaurants = this.loadAll();
   },
   created() {
     this.getList();
   },
   methods: {
+          handleRemove(file) {
+        console.log(file);
+      },
+      handlePictureCardPreview(file) {
+        this.dialogImageUrl = file.url;
+        this.dialogVisible = true;
+      },
+      handleDownload(file) {
+        console.log(file);
+      },
+      submit1(res){
+        console.log(res)
+      },
+      upFile(){},
     loadAll() {
       return [
         { id: 0, value: "el-icon-s-tools", label: "设置" },
@@ -360,7 +376,7 @@ export default {
       this.dialogStatus = "create";
       this.dialogFormVisible = true;
       this.$nextTick(() => {
-        this.$refs["dataForm"].clearValidate();
+        // this.$refs["dataForm"].clearValidate();
       });
     },
     createData() {
@@ -386,7 +402,7 @@ export default {
       this.dialogStatus = "update";
       this.dialogFormVisible = true;
       this.$nextTick(() => {
-        this.$refs["dataForm"].clearValidate();
+        // this.$refs["dataForm"].clearValidate();
       });
     },
     updateData() {
