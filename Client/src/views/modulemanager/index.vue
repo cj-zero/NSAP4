@@ -374,9 +374,6 @@ export default {
     },
 
 
-
-
-
     changeValue(value){
       this.menuTemp.class=value.class
       this.menuTemp.icon=value.icon

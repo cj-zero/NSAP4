@@ -56,7 +56,8 @@
           ></el-table-column>
           <el-table-column prop="icon" label="应用图标" align="center" show-overflow-tooltip>
             <template slot-scope="scope">
-                <i :class="`${scope.row.icon}`"></i> 
+                <!-- <i :class="`${scope.row.icon}`"></i>  -->
+                <span>{{getUrl(scope.row.id)}}</span>
               <!-- <span>{{scope.row.icon}}</span> -->
             </template>
           </el-table-column>
@@ -68,8 +69,8 @@
               >{{scope.row.disable?'是':'否'}}</el-link>
             </template>
           </el-table-column>
-          <el-table-column prop="createTime" label="创建日期" show-overflow-tooltip></el-table-column>
-          <el-table-column prop="createUser" label="创建人" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="createTime" align="center" label="创建日期" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="createUser" align="center" label="创建人" show-overflow-tooltip></el-table-column>
           <el-table-column
             align="center"
             label="操作"
@@ -108,9 +109,9 @@
           label-position="right"
           label-width="80px"
         >
-         <!-- <el-form-item size="small" :label="'ID'" prop="name">
+     <el-form-item size="small" :label="'应用名称'" >
             <el-input v-model="temp.id"></el-input>
-          </el-form-item> -->
+          </el-form-item>
           <el-form-item size="small" :label="'应用名称'" prop="name">
             <el-input v-model="temp.name"></el-input>
           </el-form-item>
@@ -126,8 +127,21 @@
           </el-form-item>
           <el-form-item size="small" :label="'应用图标'">
             <!-- <el-input-number v-model="temp.icon" :min="0" :max="10" ></el-input-number> -->
-            <!-- <i :class="el-icon-share"></i> -->
-            <el-input v-model="temp.icon"></el-input>
+              <el-autocomplete
+               suffix-icon="el-icon-caret-bottom"
+              style="width:100%;"
+              class="inline-input"
+              v-model="temp.icon"
+              :fetch-suggestions="querySearch"
+              placeholder="请输入应用图标"
+             
+            >
+              <i
+    :class="`${temp.icon?temp.icon:''}`"
+    slot="suffix">
+  </i>
+  </el-autocomplete>
+            <!-- <el-input v-model="temp.icon"></el-input> -->
           </el-form-item>
           <el-form-item size="small" :label="'是否可用'">
             <el-switch v-model="temp.disable" active-text="是" inactive-text="否"></el-switch>
@@ -181,8 +195,8 @@ export default {
         { key: 1, display_name: "停用" },
         { key: 0, display_name: "正常" }
       ],
+ 
        temp : {
-        id: "", // Id
         appSecxet: "",
         appKey: "", 
         icon: "", 
@@ -196,6 +210,7 @@ export default {
         update: "编辑",
         create: "添加"
       },
+       restaurants:[],
       dialogPvVisible: false,
       pvData: [],
       rules: {
@@ -228,10 +243,47 @@ export default {
       return statusMap[disable];
     }
   },
+    mounted() {
+    this.restaurants = this.loadAll();
+
+  },
   created() {
     this.getList();
   },
   methods: {
+        getUrl(result){
+          console.log(result)
+      //       let url=   certinfos.getImgUrl(result).then(response => {
+      //            console.log(response)
+      //   this.listLoading = false;
+      //   return response
+      // });
+      // return url
+        },
+           loadAll(){
+      return [
+         {id:0, value:'el-icon-s-tools',label:'设置'} ,
+         {id:1, value:'el-icon-question',label:'问题'} ,
+         { id:2,value:'el-icon-info',label:'详情'} ,
+         {id:3, value:'el-icon-circle-plus',label:'添加'} ,
+         {id:4, value:'el-icon-upload',label:'上传'} ,
+         {id:5, value:'el-icon-bell',label:'消息'} ,
+         {id:6, value:'el-icon-s-operation',label:'菜单'} ,
+         {id:7, value:'el-icon-s-custom',label:'个人中心'} ,
+         {id:8, value:'el-icon-date',label:'日期'} ,
+         {id:9, value:'el-icon-edit-outline',label:'编辑'} ,
+         {id:10, value:'el-icon-folder-opened',label:'文件'}
+      ]  },
+          createFilter(queryString) {
+        return (restaurant) => {
+          return (restaurant.value.toLowerCase().indexOf(queryString.toLowerCase()) === 0);
+        };},
+          querySearch(queryString, cb) {
+        var restaurants = this.restaurants;
+        var results = queryString ? restaurants.filter(this.createFilter(queryString)) : restaurants;
+        // 调用 callback 返回建议列表的数据
+        cb(results);
+      },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.$refs.mainTable.toggleRowSelection(row);
@@ -301,7 +353,6 @@ export default {
     },
     resetTemp() {
       this.temp = {
-        id: "", // Id
         appSecxet: "",
         appKey: "", 
         icon: "", 

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
@@ -37,11 +37,45 @@
         >
           <el-table-column type="selection" align="center" width="55"></el-table-column>
 
-          <el-table-column prop="id" label="id" show-overflow-tooltip></el-table-column>
-          <el-table-column prop="moduleName" align="center"  label="模块名称" show-overflow-tooltip></el-table-column>
-          <el-table-column prop="schemeName" align="center"  label="流程名称" show-overflow-tooltip></el-table-column>
-
+          <el-table-column prop="id" label="id" width="120" show-overflow-tooltip></el-table-column>
           <el-table-column
+            prop="fileName"
+            label="文件名称"
+            min-width="120"
+            align="center"
+            show-overflow-tooltip
+          ></el-table-column>
+          <el-table-column prop="filePath" label="文件路径" align="center" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="description" align="center" label="描述" show-overflow-tooltip></el-table-column>
+          <el-table-column
+            prop="fileType"
+            align="center"
+            label="文件类型"
+            min-width="50"
+            show-overflow-tooltip
+          ></el-table-column>
+          <el-table-column prop="fileSize" label="文件大小" align="center" show-overflow-tooltip>
+            <template slot-scope="scope">
+              <!-- <i :class="`${scope.row.icon}`"></i> -->
+              <span>{{scope.row.fileSize}}kB</span>
+            </template>
+          </el-table-column>
+            <el-table-column prop="enable" align="center" label="扩展名称" show-overflow-tooltip></el-table-column>
+          <el-table-column label="是否可用" align="center" show-overflow-tooltip>
+            <template slot-scope="scope">
+              <el-link
+                size="mini"
+                :type="`${scope.row.enable===false?'danger':'success'}`"
+              >{{scope.row.enable?'是':'否'}}</el-link>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createUserId" align="center" label="上传人" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="createUserName" align="center" label="上传人姓名" show-overflow-tooltip></el-table-column>
+              <el-table-column prop="createTime" align="center" label="上传时间" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="thumbnail" align="center" label="缩略图" show-overflow-tooltip></el-table-column>
+              <el-table-column prop="belongApp" align="center" label="所属应用" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="belongAppId" align="center" label="所属应用ID" show-overflow-tooltip></el-table-column>
+          <!-- <el-table-column
             align="center"
             label="操作"
             width="120"
@@ -49,14 +83,14 @@
           >
             <template slot-scope="scope">
               <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
-              <!-- <el-button
+            <el-button
                 v-if="scope.row.disable!=true"
                 size="mini"
                 type="danger"
                 @click="handleModifyStatus(scope.row,true)"
-              >停用</el-button> -->
+              >停用</el-button>
             </template>
-          </el-table-column>
+          </el-table-column> --> 
         </el-table>
         <pagination
           v-show="total>0"
@@ -68,12 +102,10 @@
       </div>
       <el-dialog
         v-el-drag-dialog
-        
         width="500px"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
-      
         <el-form
           :rules="rules"
           ref="dataForm"
@@ -81,33 +113,35 @@
           label-position="right"
           label-width="80px"
         >
-          <el-form-item  label="模块"  prop="certPath">
-            <!-- <el-input v-model="temp.certPath"></el-input> -->
-            <el-select style="width:100%;" class="filter-item" disabled  @change="select_module"  v-model="temp.moduleId" placeholder="选择模块">
-              <el-option
-             
-                v-for="item in  pullDownList"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-              ></el-option>
-            </el-select>
+          <el-form-item size="small" :label="'应用名称'" prop="name">
+            <el-input v-model="temp.name"></el-input>
           </el-form-item>
-          <el-form-item  label="流程" prop="certNo">
-            <el-select
-              class="filter-item"
+
+          <el-form-item size="small" :label="'应用描述'">
+            <el-input v-model="temp.description"></el-input>
+          </el-form-item>
+          <el-form-item size="small" :label="'应用密匙'">
+            <el-input v-model="temp.appSecxet"></el-input>
+          </el-form-item>
+          <el-form-item size="small" :label="'appKey'">
+            <el-input v-model="temp.appKey"></el-input>
+          </el-form-item>
+          <el-form-item size="small" :label="'应用图标'">
+            <!-- <el-input-number v-model="temp.icon" :min="0" :max="10" ></el-input-number> -->
+            <el-autocomplete
+              suffix-icon="el-icon-caret-bottom"
               style="width:100%;"
-              @change="select_flow"
-              v-model="temp.flowSchemeId"
-              placeholder="选择流程设计表单"
+              class="inline-input"
+              v-model="temp.icon"
+              :fetch-suggestions="querySearch"
+              placeholder="请输入应用图标"
             >
-              <el-option
-                v-for="item in  flowList"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-              ></el-option>
-            </el-select>
+              <i :class="`${temp.icon?temp.icon:''}`" slot="suffix"></i>
+            </el-autocomplete>
+            <!-- <el-input v-model="temp.icon"></el-input> -->
+          </el-form-item>
+          <el-form-item size="small" :label="'是否可用'">
+            <el-switch v-model="temp.disable" active-text="是" inactive-text="否"></el-switch>
           </el-form-item>
         </el-form>
         <div slot="footer">
@@ -121,7 +155,7 @@
 </template>
 
 <script>
-import * as certinfos from "@/api/moduleflow";
+import * as certinfos from "@/api/filemanager";
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
@@ -156,12 +190,14 @@ export default {
         { key: 1, display_name: "停用" },
         { key: 0, display_name: "正常" }
       ],
+
       temp: {
-        moduleId: "", // CertNo
-        flowSchemeId: "", // CertPath
-        moduleName: "", // PdfPath
-        schmeName: "", // BaseInfoPath
-        // extendInfo: "" // 其他信息,防止最后加逗号，可以删除
+        appSecxet: "",
+        appKey: "",
+        icon: "",
+        disable: "",
+        createTime: "",
+        createUser: ""
       },
       dialogFormVisible: false,
       dialogStatus: "",
@@ -169,6 +205,7 @@ export default {
         update: "编辑",
         create: "添加"
       },
+      restaurants: [],
       dialogPvVisible: false,
       pvData: [],
       rules: {
@@ -201,10 +238,44 @@ export default {
       return statusMap[disable];
     }
   },
+  mounted() {
+    this.restaurants = this.loadAll();
+  },
   created() {
     this.getList();
   },
   methods: {
+    loadAll() {
+      return [
+        { id: 0, value: "el-icon-s-tools", label: "设置" },
+        { id: 1, value: "el-icon-question", label: "问题" },
+        { id: 2, value: "el-icon-info", label: "详情" },
+        { id: 3, value: "el-icon-circle-plus", label: "添加" },
+        { id: 4, value: "el-icon-upload", label: "上传" },
+        { id: 5, value: "el-icon-bell", label: "消息" },
+        { id: 6, value: "el-icon-s-operation", label: "菜单" },
+        { id: 7, value: "el-icon-s-custom", label: "个人中心" },
+        { id: 8, value: "el-icon-date", label: "日期" },
+        { id: 9, value: "el-icon-edit-outline", label: "编辑" },
+        { id: 10, value: "el-icon-folder-opened", label: "文件" }
+      ];
+    },
+    createFilter(queryString) {
+      return restaurant => {
+        return (
+          restaurant.value.toLowerCase().indexOf(queryString.toLowerCase()) ===
+          0
+        );
+      };
+    },
+    querySearch(queryString, cb) {
+      var restaurants = this.restaurants;
+      var results = queryString
+        ? restaurants.filter(this.createFilter(queryString))
+        : restaurants;
+      // 调用 callback 返回建议列表的数据
+      cb(results);
+    },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.$refs.mainTable.toggleRowSelection(row);
@@ -244,33 +315,14 @@ export default {
     },
     getList() {
       this.listLoading = true;
-      certinfos.getList(this.listQuery).then(response => {
+      certinfos.getList().then(response => {
         this.list = response.data;
+        console.log(this.list);
         this.total = response.count;
         this.listLoading = false;
       });
-      certinfos.GetDropdownFlow().then(response => {
-        this.flowList = response.result;
-        this.listLoading = false;
-      });
-      certinfos.getPullDown().then(response => {
-        this.pullDownList = response.result;
-        this.listLoading = false;
-      });
     },
-    select_flow(result){
-      let value = this.flowList.filter(item=>{
-        return item.id==result
-      })
-      this.temp.schmeName=value[0].name
-    },
-      select_module(result){
-       let value = this.pullDownList.filter(item=>{
-        return item.id==result
-      })
-      console.log(result,value[0],this.pullDownList)
-      this.temp.moduleName=value[0].name
-    },
+
     handleFilter() {
       this.listQuery.page = 1;
       this.getList();
@@ -294,11 +346,12 @@ export default {
     },
     resetTemp() {
       this.temp = {
-       id: "", // Id
-        moduleId: "", // CertNo
-        flowSchemeId: "", // CertPath
-        moduleName: "", // PdfPath
-        schmeName: "", // BaseInfoPath
+        appSecxet: "",
+        appKey: "",
+        icon: "",
+        disable: "",
+        createTime: "",
+        createUser: ""
       };
     },
     handleCreate() {

@@ -2,7 +2,7 @@ import request from '@/utils/request'
 
 export function getList() {
   return request({
-    url: '/Applications/Load',  //加载应用列表
+    url: '/Files/Load',  //加载应用列表
     method: 'get',
     
   })
@@ -15,10 +15,12 @@ export function getList() {
       data
     })
   }
-  export function getImgUrl(data) {     
+
+  export function upFile(data) {
     return request({
-      url:`/Files/Download/${data}`,
-      method: 'get',
+      url: '/Files/Upload',
+      method: 'post',
+      data
     })
   }
 
