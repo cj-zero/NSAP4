@@ -2,6 +2,8 @@
 using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
+using Org.BouncyCastle.Ocsp;
+using System.Threading.Tasks;
 
 namespace OpenAuth.WebApi.Controllers
 {
@@ -31,6 +33,22 @@ namespace OpenAuth.WebApi.Controllers
                 data = applications,
                 count = applications.Count
             };
+        }
+        /// <summary>
+        /// 新增或更新应用信息
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task AddOrUpdate([FromBody]AddOrUpdateAppReq request)
+        {
+            if(string.IsNullOrWhiteSpace(request.Id))
+            {
+                await _app.AddAsync(request);
+            }
+            else
+            {
+                await _app.UpdateAsync(request);
+            }
         }
 
     }

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Infrastructure;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.Repository.Domain;
@@ -21,10 +23,22 @@ namespace OpenAuth.App
             }
             Repository.Add(Application);
         }
-
-        public void Update(Application Application)
+        public async Task AddAsync(AddOrUpdateAppReq req)
         {
-            Repository.Update(Application);
+            if (string.IsNullOrEmpty(req.Id))
+            {
+                req.Id = Guid.NewGuid().ToString();
+            }
+            await Repository.AddAsync(req.MapTo<Application>());
+        }
+
+        public void Update(AddOrUpdateAppReq req)
+        {
+            Repository.Update(req.MapTo<Application>());
+        }
+        public async Task UpdateAsync(AddOrUpdateAppReq req)
+        {
+            await Repository.UpdateAsync(req.MapTo<Application>());
         }
 
 

@@ -62,7 +62,7 @@ namespace OpenAuth.Mvc.Controllers
         }
 
        [HttpPost]
-        public string Update(Application obj)
+        public string Update(AddOrUpdateAppReq obj)
         {
             Response resp = new Response();
             try
