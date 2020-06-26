@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -123,6 +124,22 @@ namespace OpenAuth.App
 
                 _dbFilePath = Path.Combine(folder , newName);
             }
+        }
+
+        /// <summary>
+        /// 获取文件详情
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <returns></returns>
+        public async Task<UploadFile> GetFileAsync(string fileId)
+        {
+            var file = await Repository.FindSingleAsync(f => f.Id.Equals(fileId));
+            file.FilePath = Path.Combine(_filePath, file.FilePath);
+            if (!string.IsNullOrWhiteSpace(file.Thumbnail))
+            {
+                file.Thumbnail = Path.Combine(_filePath, file.Thumbnail);
+            }
+            return file;
         }
     }
 }
