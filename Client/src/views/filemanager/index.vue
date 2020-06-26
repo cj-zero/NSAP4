@@ -35,62 +35,72 @@
           @row-click="rowClick"
           @selection-change="handleSelectionChange"
         >
-          <el-table-column type="selection" align="center" width="55"></el-table-column>
+            <el-table-column type="expand">
+              <template slot-scope="props">
+                <el-form label-position="left" inline class="demo-table-expand">
+                  <el-form-item label="所属应用">
+                    <span>{{ props.row.belongApp }}</span>
+                  </el-form-item>
+                  <el-form-item label="所属应用ID">
+                    <span>{{ props.row.belongAppId }}</span>
+                  </el-form-item>
+                  <el-form-item label="上传人">
+                    <span>{{ props.row.createUserId }}</span>
+                  </el-form-item>
+                  <el-form-item label="文件类型">
+                    <span>{{ props.row.fileType }}</span>
+                  </el-form-item>
+                  <el-form-item label="描述">
+                    <span>{{ props.row.description }}</span>
+                  </el-form-item>
+                  <el-form-item label="扩展名称">
+                    <span>{{ props.row.enable }}</span>
+                  </el-form-item>
+                       <!-- <el-table-column  label="id" >
+                  <span>{{ props.row.id }}</span>
+               </el-table-column> -->
+                  <el-form-item label="商品描述">
+                    <span>{{ props.row.desc }}</span>
+                  </el-form-item>
+          
 
-          <el-table-column prop="id" label="id" width="120" show-overflow-tooltip></el-table-column>
-          <el-table-column
-            prop="fileName"
-            label="文件名称"
-            min-width="120"
-            align="center"
-            show-overflow-tooltip
-          ></el-table-column>
-          <el-table-column prop="filePath" label="文件路径" align="center" show-overflow-tooltip></el-table-column>
-          <el-table-column prop="description" align="center" label="描述" show-overflow-tooltip></el-table-column>
-          <el-table-column
-            prop="fileType"
-            align="center"
-            label="文件类型"
-            min-width="50"
-            show-overflow-tooltip
-          ></el-table-column>
-          <el-table-column prop="fileSize" label="文件大小" align="center" show-overflow-tooltip>
-            <template slot-scope="scope">
-              <!-- <i :class="`${scope.row.icon}`"></i> -->
-              <span>{{scope.row.fileSize}}kB</span>
-            </template>
-          </el-table-column>
-            <el-table-column prop="enable" align="center" label="扩展名称" show-overflow-tooltip></el-table-column>
-          <el-table-column label="是否可用" align="center" show-overflow-tooltip>
+               <!-- <el-table-column label="是否可用" align="center" >
             <template slot-scope="scope">
               <el-link
                 size="mini"
                 :type="`${scope.row.enable===false?'danger':'success'}`"
               >{{scope.row.enable?'是':'否'}}</el-link>
             </template>
-          </el-table-column>
-          <el-table-column prop="createUserId" align="center" label="上传人" show-overflow-tooltip></el-table-column>
-          <el-table-column prop="createUserName" align="center" label="上传人姓名" show-overflow-tooltip></el-table-column>
-              <el-table-column prop="createTime" align="center" label="上传时间" show-overflow-tooltip></el-table-column>
-          <el-table-column prop="thumbnail" align="center" label="缩略图" show-overflow-tooltip></el-table-column>
-              <el-table-column prop="belongApp" align="center" label="所属应用" show-overflow-tooltip></el-table-column>
-          <el-table-column prop="belongAppId" align="center" label="所属应用ID" show-overflow-tooltip></el-table-column>
-          <!-- <el-table-column
-            align="center"
-            label="操作"
+          </el-table-column> -->
+                </el-form>
+              </template>
+            </el-table-column>
+                   <el-table-column prop="id"  label="id" show-overflow-tooltip>
+               </el-table-column>
+          <el-table-column
+            prop="fileName"
+            label="文件名称"
             width="120"
-            class-name="small-padding fixed-width"
-          >
+            align="center"
+            show-overflow-tooltip
+          ></el-table-column>
+          <el-table-column prop="filePath" label="文件路径" align="center" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="fileSize" width="100" label="文件大小" align="center" show-overflow-tooltip>
             <template slot-scope="scope">
-              <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
-            <el-button
-                v-if="scope.row.disable!=true"
-                size="mini"
-                type="danger"
-                @click="handleModifyStatus(scope.row,true)"
-              >停用</el-button>
+              <span>{{scope.row.fileSize}}kB</span>
             </template>
-          </el-table-column> --> 
+          </el-table-column>
+  
+          <el-table-column prop="createUserName" align="center" width="100" label="上传人姓名" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="createTime" align="center" sortable label="上传时间" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="thumbnail" align="center" label="缩略图" show-overflow-tooltip>
+            <template slot-scope="scope">
+                <img style="width:50px;height:50px;" @click="handlePreviewFile(baseURL +'/files/Download/'+scope.row.id)" :src="baseURL +'/files/Download/'+scope.row.id" alt="">
+
+            </template>
+          </el-table-column>
+
+
         </el-table>
         <pagination
           v-show="total>0"
@@ -106,47 +116,55 @@
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
-      <el-upload
-  :action="baseURL +'/Files/Upload'"
-  list-type="picture-card"
-  @submit="submit1"
-  :auto-upload="false">
-    <i slot="default" class="el-icon-plus"></i>
-    <div slot="file" slot-scope="{file}">
-      <img
-        class="el-upload-list__item-thumbnail"
-        :src="file.url" alt=""
-      >
-      <span class="el-upload-list__item-actions">
-        <span
-          class="el-upload-list__item-preview"
-          @click="handlePictureCardPreview(file)"
+        
+        <el-upload
+          :action="baseURL +'/Files/Upload/'"
+          list-type="picture-card"
+          @on-success='submit1'
+          :auto-upload="true"
         >
-          <i class="el-icon-zoom-in"></i>
-        </span>
-        <span
-          v-if="!disabled"
-          class="el-upload-list__item-delete"
-          @click="handleDownload(file)"
-        >
-          <i class="el-icon-download"></i>
-        </span>
-        <span
-          v-if="!disabled"
-          class="el-upload-list__item-delete"
-          @click="handleRemove(file)"
-        >
-          <i class="el-icon-delete"></i>
-        </span>
-      </span>
-    </div>
-</el-upload>
+          <i slot="default" class="el-icon-plus"></i>
+          <div slot="file" slot-scope="{file}">
+            <img class="el-upload-list__item-thumbnail" :src="file.url" alt />
+            <span class="el-upload-list__item-actions">
+              <span class="el-upload-list__item-preview" @click="handlePictureCardPreview(file)">
+                <i class="el-icon-zoom-in"></i>
+              </span>
+              <span
+                v-if="!disabled"
+                class="el-upload-list__item-delete"
+                @click="handleDownload(file)"
+              >
+                <i class="el-icon-download"></i>
+              </span>
+              <span
+                v-if="!disabled"
+                class="el-upload-list__item-delete"
+                @click="handleRemove(file)"
+              >
+                <i class="el-icon-delete"></i>
+              </span>
+            </span>
+          </div>
+        </el-upload>
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
           <el-button size="mini" v-if="dialogStatus=='create'" type="primary" @click="upFile">确认</el-button>
           <el-button size="mini" v-else type="primary" @click="updateData">确认</el-button>
         </div>
       </el-dialog>
+        <Model
+      :visible="previewVisible"
+      @on-close="previewVisible = false"
+      ref="formPreview"
+      width="600px"
+      form
+    >
+      <img :src="previewUrl" alt="" style="display: block;width: 80%;margin: 0 auto;">
+      <template slot="action">
+        <el-button size="mini" @click="previewVisible = false">关闭</el-button>
+      </template>
+    </Model>
     </div>
   </div>
 </template>
@@ -155,21 +173,25 @@
 import * as certinfos from "@/api/filemanager";
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
+// import Sortable from 'sortablejs'
 import permissionBtn from "@/components/PermissionBtn";
 import Pagination from "@/components/Pagination";
+// import Upload from '@/components/Formcreated/components/ImageUpload'
 import elDragDialog from "@/directive/el-dragDialog";
+import Model from '@/components/Formcreated/components/Model'
 export default {
   name: "certinfos",
-  components: { Sticky, permissionBtn, Pagination },
+  components: { Sticky, permissionBtn, Pagination ,Model },
   directives: {
     waves,
     elDragDialog
   },
   data() {
     return {
-      baseURL:process.env.VUE_APP_BASE_API ,
+      baseURL: process.env.VUE_APP_BASE_API,
       multipleSelection: [], // 列表checkbox选中的值
       tableKey: 0,
+      previewUrl:'',
       list: null,
       flowList: null,
       flowList_value: "",
@@ -184,14 +206,14 @@ export default {
         key: undefined,
         appId: undefined
       },
-        dialogImageUrl: '',
-        dialogVisible: false,
-        disabled: false,
+      dialogImageUrl: "",
+      dialogVisible: false,
+      disabled: false,
       statusOptions: [
         { key: 1, display_name: "停用" },
         { key: 0, display_name: "正常" }
       ],
-
+previewVisible: false,
       temp: {
         appSecxet: "",
         appKey: "",
@@ -240,27 +262,36 @@ export default {
     }
   },
   mounted() {
-    console.log(process.env)
+
     this.restaurants = this.loadAll();
   },
   created() {
     this.getList();
   },
   methods: {
-          handleRemove(file) {
-        console.log(file);
-      },
-      handlePictureCardPreview(file) {
-        this.dialogImageUrl = file.url;
-        this.dialogVisible = true;
-      },
-      handleDownload(file) {
-        console.log(file);
-      },
-      submit1(res){
-        console.log(res)
-      },
-      upFile(){},
+    handleRemove(file) {
+      console.log(file);
+    },
+    handlePictureCardPreview(file) {
+      this.dialogImageUrl = file.url;
+      this.dialogVisible = true;
+    },
+    handleDownload(file) {
+      console.log(file);
+    },
+    submit1(res) {
+      console.log(res);
+    },
+    upFile() {},
+      //列拖拽
+     handlePreviewFile(item) {
+      // if (!item.isImg) {
+      //  window.location.href = `${item.url}?X-Token=${this.$store.state.user.token}`
+      //   return
+      // }
+      this.previewVisible = true
+      this.previewUrl = item
+    },
     loadAll() {
       return [
         { id: 0, value: "el-icon-s-tools", label: "设置" },
@@ -331,9 +362,9 @@ export default {
     },
     getList() {
       this.listLoading = true;
-      certinfos.getList().then(response => {
+      certinfos.getList(this.listQuery).then(response => {
         this.list = response.data;
-        console.log(this.list);
+        console.log(this.listQuery);
         this.total = response.count;
         this.listLoading = false;
       });
@@ -447,8 +478,20 @@ export default {
   }
 };
 </script>
-<style>
+<style scoped>
 .dialog-mini .el-select {
   width: 100%;
 }
+  .demo-table-expand {
+    font-size: 0;
+  }
+  .demo-table-expand label {
+    width: 90px;
+    color: #99a9bf;
+  }
+  .demo-table-expand .el-form-item {
+    margin-right: 0;
+    margin-bottom: 0;
+    width: 50%;
+  }
 </style>

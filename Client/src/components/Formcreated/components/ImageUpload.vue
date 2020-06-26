@@ -310,9 +310,8 @@ console.log(this.action,'图片组件接受的参数')
       }
     },
     handlePreviewFile(item) {
-      console.log(`${item.url}?token=${this.$store.state.user.token}`)
       if (!item.isImg) {
-       window.location.href = `${item.url}?token=${this.$store.state.user.token}`
+       window.location.href = `${item.url}?X-Token=${this.$store.state.user.token}`
         return
       }
       this.previewVisible = true

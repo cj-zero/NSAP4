@@ -1,10 +1,10 @@
 import request from '@/utils/request'
 
-export function getList() {
+export function getList(params) {
   return request({
     url: '/Files/Load',  //加载应用列表
     method: 'get',
-    
+    params
   })
 }
 

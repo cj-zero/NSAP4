@@ -10,7 +10,7 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "@riophae/vue-treeselect": "0.0.36",
+    "@riophae/vue-treeselect": "^0.4.0",
     "axios": "^0.19.0",
     "core-js": "^3.6.4",
     "echarts": "3.8.5",
@@ -41,6 +41,7 @@
     "eslint-plugin-vue": "^6.2.2",
     "node-sass": "^4.7.2",
     "sass-loader": "^8.0.0",
+    "sortablejs": "^1.10.2",
     "svg-sprite-loader": "^5.0.0",
     "vue-template-compiler": "^2.6.11"
   },

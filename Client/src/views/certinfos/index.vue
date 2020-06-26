@@ -206,9 +206,7 @@ export default {
       let num1 = result.slice(0, len - 1);
       let num2 = result.slice(len - 1, len);
       if (num2 == 1) {
-        console.log(
-          `${process.env.VUE_APP_BASE_API}/api/Cert/DownloadBaseInfo/${num1}?token=${this.$store.state.user.token}`
-        );
+     
         window.location.href = `${process.env.VUE_APP_BASE_API}/Cert/DownloadBaseInfo/${num1}?X-Token=${this.$store.state.user.token}`;
       } else {
         //  console.log(`${process.env.VUE_APP_BASE_API}/Cert/DownloadBaseInfo/${num1}?token=${this.$store.state.user.token}`)
