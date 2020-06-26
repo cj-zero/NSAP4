@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.Repository.Domain;
@@ -48,8 +49,18 @@ namespace OpenAuth.App
            
             return applications.ToList();
         }
+        public async Task<List<Application>> GetPageAsync(QueryAppListReq request)
+        {
+            var applications = await UnitWork.Find<Application>(null)
+                .OrderBy(u => u.CreateTime)
+                .Skip((request.page - 1) * request.limit)
+                .Take(request.limit).ToListAsync();
 
-        public AppManager(IUnitWork unitWork, IRepository<Application> repository,IAuth auth) : base(unitWork, repository, auth)
+
+            return applications;
+        }
+
+        public AppManager(IUnitWork unitWork, IRepository<Application> repository, IAuth auth) : base(unitWork, repository, auth)
         {
         }
     }

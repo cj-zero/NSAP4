@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Infrastructure;
+using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using Org.BouncyCastle.Ocsp;
+using System;
 using System.Threading.Tasks;
 
 namespace OpenAuth.WebApi.Controllers
@@ -25,9 +27,9 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public TableData Load([FromQuery]QueryAppListReq request)
+        public async Task<TableData> Load([FromQuery]QueryAppListReq request)
         {
-            var applications = _app.GetList(request);
+            var applications = await _app.GetPageAsync(request);
             return new TableData
             {
                 data = applications,
@@ -39,16 +41,25 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpPost]
-        public async Task AddOrUpdate([FromBody]AddOrUpdateAppReq request)
+        public async Task<Response> AddOrUpdate([FromBody]AddOrUpdateAppReq request)
         {
-            if(string.IsNullOrWhiteSpace(request.Id))
+            var result = new Response();
+            try
             {
-                await _app.AddAsync(request);
-            }
-            else
+                if (string.IsNullOrWhiteSpace(request.Id))
+                {
+                    await _app.AddAsync(request);
+                }
+                else
+                {
+                    await _app.UpdateAsync(request);
+                }
+            }catch(Exception ex)
             {
-                await _app.UpdateAsync(request);
+                result.Code = 500;
+                result.Message = ex.Message;
             }
+            return result;
         }
 
     }
