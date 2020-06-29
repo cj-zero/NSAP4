@@ -20,19 +20,14 @@
           @click="handleFilter"
         >搜索</el-button>
 
-                    <el-select size="mini"  v-model="checkboxVal"   multiple
-    collapse-tags
-     placeholder="请选择">
-            <el-option
-              v-for="item of formTheadOptions"
-              :key="`col_${item}`"
-              :label="item"
-              :value="item">
-            </el-option>
-          </el-select>
-          <!-- <el-checkbox-group v-model="checkboxVal" >
-         <el-checkbox v-for="item of formTheadOptions" :label="item" :key="`col_${item}`">{{item}}</el-checkbox>
-          </el-checkbox-group> -->
+        <!-- <el-select size="mini" v-model="checkboxVal" multiple collapse-tags placeholder="请选择">
+          <el-option
+            v-for="item of formTheadOptions"
+            :key="`col_${item}`"
+            :label="item"
+            :value="item"
+          ></el-option>
+        </el-select>-->
 
         <permission-btn moduleName="solutions" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
@@ -49,22 +44,21 @@
           highlight-current-row
           style="width: 100%;"
           @row-click="rowClick"
-          @selection-change="handleSelectionChange" >
-          <el-table-column show-overflow-tooltip v-for="fruit in formThead" align="center" :key="fruit" :label="headLabel[fruit]">
-
-            <template slot-scope="scope"  >
-              <span v-if="fruit === 'status'">
-                {{stateValue[scope.row[fruit]-1]}}
-              </span>
-               <span v-if="fruit === 'subject'">
-               {{scope.row[fruit]}}
-              </span>
-             <span v-if="!(fruit ==='status'||fruit ==='subject')">{{scope.row[fruit]}}</span>
+          @selection-change="handleSelectionChange"
+        >
+          <el-table-column
+            show-overflow-tooltip
+            v-for="fruit in defaultFormThead"
+            align="center"
+            :key="fruit"
+            :label="headLabel[fruit]"
+          >
+            <template slot-scope="scope">
+              <span v-if="fruit === 'status'">{{stateValue[scope.row[fruit]-1]}}</span>
+              <span v-if="fruit === 'subject'">{{scope.row[fruit]}}</span>
+              <span v-if="!(fruit ==='status'||fruit ==='subject')">{{scope.row[fruit]}}</span>
             </template>
           </el-table-column>
-
-            <!-- </template>
-          </el-table-column> -->
         </el-table>
         <pagination
           v-show="total>0"
@@ -74,19 +68,20 @@
           @pagination="handleCurrentChange"
         />
       </div>
-
       <el-dialog
         v-el-drag-dialog
         class="dialog-mini"
         width="500px"
         :title="textMap[dialogStatus]"
-        :visible.sync="dialogFormVisible" >
+        :visible.sync="dialogFormVisible"
+      >
         <el-form
           :rules="rules"
           ref="dataForm"
           :model="temp"
           label-position="right"
-          label-width="100px">
+          label-width="100px"
+        >
           <el-form-item size="small" label="Id" prop="id">
             <el-input disabled v-model="temp.id"></el-input>
           </el-form-item>
@@ -129,21 +124,32 @@
           <el-button size="mini" v-else type="primary" @click="updateData">确认</el-button>
         </div>
       </el-dialog>
+      <el-dialog v-el-drag-dialog :visible.sync="dialogTable" center width="800px">
+        <DynamicTable
+          :formThead.sync="formTheadOptions"
+          :defaultForm.sync="defaultFormThead"
+          @close="dialogTable=false"
+        ></DynamicTable>
+          <span slot="footer" class="dialog-footer">
+    <el-button @click="dialogTable = false">取 消</el-button>
+    <el-button type="primary" @click="dialogTable = false">确 定</el-button>
+  </span>
+      </el-dialog>
     </div>
   </div>
 </template>
 
 <script>
-const defaultFormThead = [ "sltCode","status","cause","descriptio","subject","updateUserName"];
 import * as solutions from "@/api/solutions";
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
 import Pagination from "@/components/Pagination";
+import DynamicTable from "@/components/DynamicTable";
 import elDragDialog from "@/directive/el-dragDialog";
 export default {
   name: "solutions",
-  components: { Sticky, permissionBtn, Pagination },
+  components: { Sticky, permissionBtn, Pagination, DynamicTable },
   directives: {
     waves,
     elDragDialog
@@ -152,30 +158,48 @@ export default {
     return {
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
-      formTheadOptions: [
-        "id",
+      defaultFormThead: [
         "sltCode",
         "status",
         "cause",
-        "subject",
-        "symptom",
         "descriptio",
-        "updateUserName",
-        "createTime"
+        "subject",
+        "updateUserName"
       ],
-      headLabel:{
-        id:'ID',
-        sltCode:'编号',
-          status:'状态',
-        cause:'原因',
-          subject:'解决方案',
-        symptom:'症状',
-          descriptio:'备注',
-        updateUserName:'更新人名字',
-          createTime:'创建时间'
+      formTheadOptions: [
+        { name: "id" ,label:'ID'},
+        { name: "sltCode" ,label:'编号' },
+        { name: "status" ,label:'状态' },
+        { name: "cause"  ,label:'原因'},
+        { name: "subject" ,label:'解决方案' },
+        { name: "symptom" ,label:'症状' },
+        { name: "descriptio"  ,label:'备注'},
+        { name: "updateUserName"  ,label:'更新人名字'},
+        { name: "createTime" ,label:'创建时间' }
+        // "id",
+        // "sltCode",
+        // "status",
+        // "cause",
+        // "subject",
+        // "symptom",
+        // "descriptio",
+        // "updateUserName",
+        // "createTime"
+      ],
+      headLabel: {
+        id: "ID",
+        sltCode: "编号",
+        status: "状态",
+        cause: "原因",
+        subject: "解决方案",
+        symptom: "症状",
+        descriptio: "备注",
+        updateUserName: "更新人名字",
+        createTime: "创建时间"
       },
-      checkboxVal: defaultFormThead, // checkboxVal
-      formThead: defaultFormThead, // 默认表头 Default header
+
+      // checkboxVal: defaultFormThead, // checkboxVal
+      // formThead: defaultFormThead, // 默认表头 Default header
       tableKey: 0,
       list: null,
       total: 0,
@@ -188,7 +212,7 @@ export default {
         key: undefined,
         appId: undefined
       },
-      stateValue:['发布','检查','内部'],
+      stateValue: ["发布", "检查", "内部"],
       statusOptions: [
         { key: 1, display_name: "发布" },
         { key: 2, display_name: "检查" },
@@ -205,6 +229,7 @@ export default {
         extendInfo: "" // 其他信息,防止最后加逗号，可以删除
       },
       dialogFormVisible: false,
+      dialogTable: false,
       dialogStatus: "",
       textMap: {
         update: "编辑",
@@ -243,10 +268,16 @@ export default {
     }
   },
   watch: {
-    checkboxVal(valArr) {
-      this.formThead = this.formTheadOptions.filter(
+    // checkboxVal(valArr) {
+      // this.formThead = this.formTheadOptions.filter(
+      //   i => valArr.indexOf(i) >= 0
+      // );
+      defaultFormThead(valArr){
+            this.formTheadOptions = this.formTheadOptions.filter(
         i => valArr.indexOf(i) >= 0
-      );
+      )
+       
+      // }
       this.key = this.key + 1; // 为了保证table 每次都会重渲 In order to ensure the table will be re-rendered each time
     }
   },
@@ -254,6 +285,9 @@ export default {
     this.getList();
   },
   methods: {
+    changeTable(result){
+      console.log(result)
+    },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.$refs.mainTable.toggleRowSelection(row);
@@ -268,10 +302,11 @@ export default {
           break;
         case "btnEdit":
           if (this.multipleSelection.length !== 1) {
-            this.$message({
-              message: "只能选中一个进行编辑",
-              type: "error"
-            });
+            // this.$message({
+            //   message: "只能选中一个进行编辑",
+            //   type: "error"
+            // });
+            this.dialogTable = true;
             return;
           }
           this.handleUpdate(this.multipleSelection[0]);
