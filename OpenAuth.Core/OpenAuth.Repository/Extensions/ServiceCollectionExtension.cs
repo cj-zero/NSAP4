@@ -29,6 +29,7 @@ namespace OpenAuth.Repository.Extensions
             var configuration = services.BuildServiceProvider().GetRequiredService<IConfiguration>();
             string connectionString = "";
             var connectionStringName = typeof(T).GetCustomAttributeValue<ConnectionStringAttribute, string>(a => a.ConnectionStringName);
+            var contextDbType = typeof(T).GetCustomAttributeValue<ConnectionStringAttribute, string>(a => a.DbType);
             if (string.IsNullOrWhiteSpace(connectionStringName))
             {
                 connectionString = typeof(T).GetCustomAttributeValue<ConnectionStringAttribute, string>(a => a.ConnectionString);
@@ -39,13 +40,20 @@ namespace OpenAuth.Repository.Extensions
             }
             if (!string.IsNullOrWhiteSpace(connectionString))
             {
-                var dbType = ((ConfigurationSection)configuration.GetSection("AppSetting:DbType")).Value;
-                if (dbType == "SqlServer")
+                string dbType;
+                if (!string.IsNullOrWhiteSpace(contextDbType))
+                {
+                    dbType = contextDbType;
+                }
+                else
+                    dbType = ((ConfigurationSection)configuration.GetSection("AppSetting:DbType")).Value;
+
+                if (dbType.ToLower() == "sqlserver") //sqlserver
                 {
                     services.AddDbContext<T>(options =>
                         options.UseSqlServer(connectionString));
                 }
-                else  //mysql
+                else if (dbType.ToLower() == "mysql") //mysql
                 {
                     services.AddDbContext<T>(options =>
                         options.UseMySql(connectionString));

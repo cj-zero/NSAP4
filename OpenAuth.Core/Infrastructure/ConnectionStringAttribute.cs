@@ -14,5 +14,7 @@ namespace Infrastructure
 
         public string ConnectionStringName { get; set; }
         public string ConnectionString { get; set; }
+
+        public string DbType { get; set; }
     }
 }
