@@ -159,6 +159,7 @@ export default {
   },
   mounted() {
     console.log(this.fileList,'fileList')
+    console.log(this.value,'value')
     this.$emit('input', this.fileList)
   },
   methods: {
@@ -209,7 +210,6 @@ export default {
     uplaodAction(res, file, key) {
       // const changeIndex = this.fileList.findIndex(item => item.key === key)
       const xhr = new XMLHttpRequest()
-console.log(this.action,'图片组件接受的参数')
       const url = this.action
       xhr.open('POST', url, true)
       // xhr.setRequestHeader('Content-Type', 'multipart/form-data')
