@@ -33,41 +33,41 @@ namespace OpenAuth.Repository.Domain
           this.UpdDt= DateTime.Now;
         }
 
-        
+
         /// <summary>
-        /// 
+        /// 企业名称
         /// </summary>
-        [Description("")]
+        [Description("企业名称")]
         public string CorpName { get; set; }
         /// <summary>
-        /// 
+        /// 企业简介
         /// </summary>
-        [Description("")]
+        [Description("企业简介")]
         public string CorpDesc { get; set; }
         /// <summary>
-        /// 
+        /// 办公地址全称
         /// </summary>
-        [Description("")]
+        [Description("办公地址全称")]
         public string OfficeAddr { get; set; }
         /// <summary>
-        /// 
+        /// 办公地址简写
         /// </summary>
-        [Description("")]
+        [Description("办公地址简写")]
         public string OA { get; set; }
         /// <summary>
-        /// 
+        /// 电话
         /// </summary>
-        [Description("")]
+        [Description("电话")]
         public string Tel { get; set; }
         /// <summary>
-        /// 
+        /// 传真
         /// </summary>
-        [Description("")]
+        [Description("传真")]
         public string Fax { get; set; }
         /// <summary>
-        /// 
+        /// 更新时间
         /// </summary>
-        [Description("")]
+        [Description("更新时间")]
         public System.DateTime UpdDt { get; set; }
     }
 }

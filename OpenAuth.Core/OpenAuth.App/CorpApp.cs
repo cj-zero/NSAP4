@@ -69,7 +69,7 @@ namespace OpenAuth.App
                 OA = obj.OA,
                 Tel = obj.Tel,
                 Fax = obj.Fax,
-                UpdDt = obj.UpdDt,
+                UpdDt = DateTime.Now,
                 //todo:补充或调整自己需要的字段
             });
 
