@@ -48,5 +48,6 @@ namespace OpenAuth.Repository
         public virtual DbSet<OpenJob> OpenJobs { get; set; }
 
         public virtual DbSet<ModuleFlowScheme> Moduleflowschemes { get; set; }
+        public virtual DbSet<Corp> Corps { get; set; }
     }
 }
