@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NetOffice.Extensions.Conversion;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
@@ -47,21 +48,21 @@ namespace Infrastructure.Extensions
         private static TReturn _getAttributeValue<TAttribute, TReturn>(Type sourceType, Func<TAttribute, TReturn> attributeFunc, string propertyName)
             where TAttribute : Attribute
         {
-            var cacheKey = BuildKey<TAttribute>(sourceType, propertyName);
+            var cacheKey = BuildKey<TAttribute>(sourceType, propertyName, attributeFunc.Method.GetHashCode().ToString());
             var value = Cache.GetOrAdd(cacheKey, k => GetValue(sourceType, attributeFunc, propertyName));
             if (value is TReturn) return (TReturn)Cache[cacheKey];
             return default(TReturn);
         }
 
-        private static string BuildKey<TAttribute>(Type type, string propertyName) where TAttribute : Attribute
+        private static string BuildKey<TAttribute>(Type type, string propertyName, string methodHash) where TAttribute : Attribute
         {
             var attributeName = typeof(TAttribute).FullName;
             if (string.IsNullOrEmpty(propertyName))
             {
-                return type.FullName + "." + attributeName;
+                return type.FullName + "." + attributeName + methodHash;
             }
 
-            return type.FullName + "." + propertyName + "." + attributeName;
+            return type.FullName + "." + propertyName + "." + attributeName + methodHash;
         }
 
         private static TReturn GetValue<TAttribute, TReturn>(this Type type, Func<TAttribute, TReturn> attributeValueAction, string name)

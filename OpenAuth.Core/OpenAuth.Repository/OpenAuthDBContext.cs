@@ -4,7 +4,7 @@ using OpenAuth.Repository.Domain;
 
 namespace OpenAuth.Repository
 {
-    [ConnectionString("OpenAuthDBContext")]
+    [ConnectionString("OpenAuthDBContext", DbType = "MySql")]
     public partial class OpenAuthDBContext : DbContext
     {
 
