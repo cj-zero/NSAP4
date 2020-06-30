@@ -140,6 +140,10 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
+        /// <summary>
+        /// 获取公司列表
+        /// </summary>
+        [HttpGet]
         public Response<List<Corp>> GetCorp()
         {
             var result = new Response<List<Corp>>();
