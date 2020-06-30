@@ -36,12 +36,13 @@ namespace OpenAuth.WebApi.Controllers
         private readonly IAuth _authUtil;
         private ILogger _logger;
         private AuthStrategyContext _authStrategyContext;
-
-        public CheckController(IAuth authUtil, ILogger<CheckController> logger)
+        private CorpApp _corpApp;
+        public CheckController(IAuth authUtil, ILogger<CheckController> logger, CorpApp corpApp)
         {
             _authUtil = authUtil;
             _logger = logger;
             _authStrategyContext = _authUtil.GetCurrentUser();
+            _corpApp = corpApp;
         }
         
         /// <summary>
@@ -139,16 +140,44 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
+        public Response<List<Corp>> GetCorp()
+        {
+            var result = new Response<List<Corp>>();
+            try
+            {
+                result.Result = _corpApp.GetAll(null);
+            }
+            catch (CommonException ex)
+            {
+                if (ex.Code == Define.INVALID_TOKEN)
+                {
+                    result.Code = ex.Code;
+                    result.Message = ex.Message;
+                }
+                else
+                {
+                    result.Code = 500;
+                    result.Message = ex.InnerException != null
+                        ? "OpenAuth.WebAPI数据库访问失败:" + ex.InnerException.Message
+                        : "OpenAuth.WebAPI数据库访问失败:" + ex.Message;
+                }
+
+            }
+            return result;
+        }
         /// <summary>
         /// 获取登录用户的所有可访问的组织信息
         /// </summary>
         [HttpGet]
-        public Response<List<OpenAuth.Repository.Domain.Org>> GetOrgs()
+        public Response<List<OpenAuth.Repository.Domain.Org>> GetOrgs(string corpId)
         {
             var result = new Response<List<OpenAuth.Repository.Domain.Org>>();
             try
             {
-                result.Result = _authStrategyContext.Orgs;
+                if (!string.IsNullOrWhiteSpace(corpId))
+                    result.Result = _authStrategyContext.Orgs.Where(org => org.CorpId.Equals(corpId)).ToList();
+                else
+                    result.Result = _authStrategyContext.Orgs;
             }
             catch (CommonException ex)
             {
@@ -169,6 +198,8 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
+
+
 
         /// <summary>
         /// 加载机构的全部下级机构
