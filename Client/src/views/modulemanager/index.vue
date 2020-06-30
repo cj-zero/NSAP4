@@ -369,6 +369,8 @@ export default {
         {id:1,name:'删除',class:'ayui-btn-danger',icon:'layui-icon-delete',value:'btnDel'},
         {id:2,name:'添加',class:'ayui-btn-normal',icon:'layui-icon-add-1',value:'btnAdd'},
           {id:3,name:'详情',class:'layui-btn-normal',icon:'layui-icon-search',value:'btnDetail'},
+        {id:5,name:'导出',class:'layui-btn-normal',icon:'el-icon-printer',value:'btnOut'},
+            {id:6,name:'表格排序',class:'ayui-btn-normal',icon:'el-icon-thumb',value:'editTable'},
             {id:4,name:'添加菜单',class:'ayui-btn-normal',icon:'layui-icon-add-1',value:'btnAddMenu'}
       ]
     },

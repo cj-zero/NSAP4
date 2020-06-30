@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
@@ -20,20 +20,12 @@
           @click="handleFilter"
         >搜索</el-button>
 
-        <!-- <el-select size="mini" v-model="checkboxVal" multiple collapse-tags placeholder="请选择">
-          <el-option
-            v-for="item of formTheadOptions"
-            :key="`col_${item}`"
-            :label="item"
-            :value="item"
-          ></el-option>
-        </el-select>-->
-
-        <permission-btn moduleName="solutions" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
+        <permission-btn moduleName="callserve" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
     </sticky>
     <div class="app-container">
       <div class="bg-white">
+       <zxsearch></zxsearch>
         <el-table
           ref="mainTable"
           :key="key"
@@ -46,15 +38,21 @@
           @row-click="rowClick"
           @selection-change="handleSelectionChange"
         >
+          <el-table-column type="selection" fixed align="center" width="55"></el-table-column>
+
           <el-table-column
             show-overflow-tooltip
             v-for="fruit in defaultFormThead"
             align="center"
             :key="fruit"
+            style="background-color:silver;"
             :label="headLabel[fruit]"
           >
             <template slot-scope="scope">
-              <span v-if="fruit === 'status'" :class="[scope.row[fruit]===1?'greenWord':(scope.row[fruit]===2?'orangeWord':'redWord')]">{{stateValue[scope.row[fruit]-1]}}</span>
+              <span
+                v-if="fruit === 'status'"
+                :class="[scope.row[fruit]===1?'greenWord':(scope.row[fruit]===2?'orangeWord':'redWord')]"
+              >{{stateValue[scope.row[fruit]-1]}}</span>
               <span v-if="fruit === 'subject'">{{scope.row[fruit]}}</span>
               <span v-if="!(fruit ==='status'||fruit ==='subject')">{{scope.row[fruit]}}</span>
             </template>
@@ -71,30 +69,25 @@
       <el-dialog
         v-el-drag-dialog
         class="dialog-mini"
-        width="500px"
+        width="1000px"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
-        <el-form
+      <zxform
+      :form="temp"
+          labelposition="right"
+          labelwidth="100px"
+          refValue="dataForm"
+      ></zxform>
+        <!-- <el-form
           :rules="rules"
           ref="dataForm"
           :model="temp"
           label-position="right"
-          label-width="100px"
-        >
+          label-width="100px">
           <el-form-item size="small" label="Id" prop="id">
             <el-input disabled v-model="temp.id"></el-input>
           </el-form-item>
-          <!-- <el-form-item size="small" label="SltCode">
-            <el-select class="filter-item" v-model="temp.sltCode" placeholder="Please select">
-              <el-option
-                v-for="item in  statusOptions"
-                :key="item.key"
-                :label="item.display_name"
-                :value="item.key"
-              ></el-option>
-            </el-select>
-          </el-form-item>-->
           <el-form-item size="small" label="解决方案" prop="subject">
             <el-input v-model="temp.subject"></el-input>
           </el-form-item>
@@ -117,7 +110,7 @@
               ></el-option>
             </el-select>
           </el-form-item>
-        </el-form>
+        </el-form> -->
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
           <el-button size="mini" v-if="dialogStatus=='create'" type="primary" @click="createData">确认</el-button>
@@ -130,10 +123,10 @@
           :defaultForm.sync="defaultFormThead"
           @close="dialogTable=false"
         ></DynamicTable>
-          <span slot="footer" class="dialog-footer">
-    <el-button @click="dialogTable = false">取 消</el-button>
-    <el-button type="primary" @click="dialogTable = false">确 定</el-button>
-  </span>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="dialogTable = false">取 消</el-button>
+          <el-button type="primary" @click="dialogTable = false">确 定</el-button>
+        </span>
       </el-dialog>
     </div>
   </div>
@@ -147,9 +140,12 @@ import permissionBtn from "@/components/PermissionBtn";
 import Pagination from "@/components/Pagination";
 import DynamicTable from "@/components/DynamicTable";
 import elDragDialog from "@/directive/el-dragDialog";
+import zxsearch from "./search";
+import zxform from "./form";
+import { callserve, count } from "@/mock/serve";
 export default {
   name: "solutions",
-  components: { Sticky, permissionBtn, Pagination, DynamicTable },
+  components: { Sticky, permissionBtn, Pagination, DynamicTable ,zxsearch ,zxform},
   directives: {
     waves,
     elDragDialog
@@ -159,40 +155,38 @@ export default {
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
       defaultFormThead: [
-        "sltCode",
-        "status",
-        "cause",
-        "descriptio",
-        "subject",
-        "updateUserName"
+        "priority",
+        "calltype",
+        "callstatus",
+        "moneyapproval",
+        "kehidaima",
+        "kehumingcheng"
       ],
       formTheadOptions: [
-        { name: "id" ,label:'ID'},
-        { name: "sltCode" ,label:'编号' },
-        { name: "status" ,label:'状态' },
-        { name: "cause"  ,label:'原因'},
-        { name: "subject" ,label:'解决方案' },
-        { name: "symptom" ,label:'症状' },
-        { name: "descriptio"  ,label:'备注'},
-        { name: "updateUserName"  ,label:'更新人名字'},
-        { name: "createTime" ,label:'创建时间' }
+        { name: "id", label: "ID" },
+        { name: "priority", label: "优先级" },
+        { name: "calltype", label: "呼叫类型" },
+        { name: "callstatus", label: "呼叫状态" },
+        { name: "kehidaima", label: "客户代码" },
+        { name: "jiedanyuan", label: "接单员" },
+        { name: "moneyapproval", label: "费用审核" },
+        { name: "kehumingcheng", label: "客户名称" },
+        { name: "zhuti", label: "主题" }
       ],
-                  // this.dialogTable = true;
+      // this.dialogTable = true;
 
       headLabel: {
         id: "ID",
-        sltCode: "编号",
-        status: "状态",
-        cause: "原因",
-        subject: "解决方案",
-        symptom: "症状",
-        descriptio: "备注",
-        updateUserName: "更新人名字",
-        createTime: "创建时间"
+        priority: "优先级",
+        calltype: "呼叫类型",
+        callstatus: "呼叫状态",
+        kehidaima: "客户代码",
+        jiedanyuan: "接单员",
+        moneyapproval: "费用审核",
+        kehumingcheng: "客户名称",
+        zhuti: "主题"
       },
 
-      // checkboxVal: defaultFormThead, // checkboxVal
-      // formThead: defaultFormThead, // 默认表头 Default header
       tableKey: 0,
       list: null,
       total: 0,
@@ -225,8 +219,8 @@ export default {
       dialogTable: false,
       dialogStatus: "",
       textMap: {
-        update: "编辑",
-        create: "添加"
+        update: "编辑呼叫服务单",
+        create: "新建呼叫服务单"
       },
       dialogPvVisible: false,
       pvData: [],
@@ -262,14 +256,14 @@ export default {
   },
   watch: {
     // checkboxVal(valArr) {
-      // this.formThead = this.formTheadOptions.filter(
-      //   i => valArr.indexOf(i) >= 0
-      // );
-      defaultFormThead(valArr){
-            this.formTheadOptions = this.formTheadOptions.filter(
+    // this.formThead = this.formTheadOptions.filter(
+    //   i => valArr.indexOf(i) >= 0
+    // );
+    defaultFormThead(valArr) {
+      this.formTheadOptions = this.formTheadOptions.filter(
         i => valArr.indexOf(i) >= 0
-      )
-       
+      );
+
       // }
       this.key = this.key + 1; // 为了保证table 每次都会重渲 In order to ensure the table will be re-rendered each time
     }
@@ -277,9 +271,15 @@ export default {
   created() {
     this.getList();
   },
+  mounted() {
+    //   console.log(callserve)
+  },
   methods: {
-    changeTable(result){
-      console.log(result)
+    onSubmit() {
+      console.log("submit!");
+    },
+    changeTable(result) {
+      console.log(result);
     },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
@@ -295,14 +295,16 @@ export default {
           break;
         case "editTable":
           this.dialogTable = true;
-          // if (this.multipleSelection.length !== 1) {
-          //   this.$message({
-          //     message: "只能选中一个进行编辑",
-          //     type: "error"
-          //   });
-          //   return;
-          // }
-          // this.handleUpdate(this.multipleSelection[0]);
+          break;
+        case "btnEdit":
+          if (this.multipleSelection.length !== 1) {
+            this.$message({
+              message: "只能选中一个进行编辑",
+              type: "error"
+            });
+            return;
+          }
+          this.handleUpdate(this.multipleSelection[0]);
           break;
         case "btnDel":
           if (this.multipleSelection.length < 1) {
@@ -320,11 +322,15 @@ export default {
     },
     getList() {
       this.listLoading = true;
-      solutions.getList(this.listQuery).then(response => {
-        this.list = response.data;
-        this.total = response.count;
-        this.listLoading = false;
-      });
+      //此处接入模拟数据 mock
+      this.list = callserve;
+      this.total = count;
+      this.listLoading = false;
+      //   solutions.getList(this.listQuery).then(response => {
+      //     this.list = response.data;
+      //     this.total = response.count;
+      //     this.listLoading = false;
+      //   });
     },
     handleFilter() {
       this.listQuery.page = 1;
@@ -446,13 +452,13 @@ export default {
 .dialog-mini .el-select {
   width: 100%;
 }
-.greenWord{
-  color:green;
+.greenWord {
+  color: green;
 }
-.orangeWord{
-  color:orange;
+.orangeWord {
+  color: orange;
 }
-.redWord{
-  color:orangered;
+.redWord {
+  color: orangered;
 }
 </style>
