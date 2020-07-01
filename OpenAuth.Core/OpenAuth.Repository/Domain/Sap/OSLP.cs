@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("OSLP")]
-    public partial class OSLP : Entity
+    public partial class OSLP
     {
         public OSLP()
         {
@@ -39,6 +39,11 @@ namespace OpenAuth.Repository.Domain.Sap
         }
 
         
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int SlpCode { get; set; }
         /// <summary>
         /// 
         /// </summary>

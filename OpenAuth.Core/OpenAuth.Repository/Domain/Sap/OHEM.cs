@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("OHEM")]
-    public partial class OHEM : Entity
+    public partial class OHEM
     {
         public OHEM()
         {
@@ -138,6 +138,11 @@ namespace OpenAuth.Repository.Domain.Sap
         }
 
         
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int empID { get; set; }
         /// <summary>
         /// 
         /// </summary>

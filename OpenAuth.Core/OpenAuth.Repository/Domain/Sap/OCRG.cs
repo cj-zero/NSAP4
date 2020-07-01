@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("OCRG")]
-    public partial class OCRG : Entity
+    public partial class OCRG
     {
         public OCRG()
         {
@@ -34,6 +34,11 @@ namespace OpenAuth.Repository.Domain.Sap
         }
 
         
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int GroupCode { get; set; }
         /// <summary>
         /// 
         /// </summary>

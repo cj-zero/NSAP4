@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("OCRY")]
-    public partial class OCRY : Entity
+    public partial class OCRY 
     {
         public OCRY()
         {
@@ -38,6 +38,11 @@ namespace OpenAuth.Repository.Domain.Sap
         }
 
         
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string Code { get; set; }
         /// <summary>
         /// 
         /// </summary>

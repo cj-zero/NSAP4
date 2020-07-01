@@ -35,6 +35,18 @@ namespace OpenAuth.Repository.Domain.Sap
         /// 
         /// </summary>
         [Description("")]
+        public string Code { get; set; }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string Country { get; set; }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
         public string Name { get; set; }
         /// <summary>
         /// 

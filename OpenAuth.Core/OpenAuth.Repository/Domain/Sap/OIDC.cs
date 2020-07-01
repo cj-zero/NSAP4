@@ -20,13 +20,19 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("OIDC")]
-    public partial class OIDC : Entity
+    public partial class OIDC
     {
         public OIDC()
         {
           this.Name= string.Empty;
         }
 
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string Code { get; set; }
         
         /// <summary>
         /// 

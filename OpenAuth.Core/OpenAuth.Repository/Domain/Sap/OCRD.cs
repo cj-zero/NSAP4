@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("OCRD")]
-    public partial class OCRD : Entity
+    public partial class OCRD
     {
         public OCRD()
         {
@@ -332,6 +332,11 @@ namespace OpenAuth.Repository.Domain.Sap
         }
 
         
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string CardCode { get; set; }
         /// <summary>
         /// 
         /// </summary>
