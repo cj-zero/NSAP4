@@ -56,7 +56,8 @@
           ></el-table-column>
           <el-table-column prop="icon" label="应用图标" align="center" show-overflow-tooltip>
             <template slot-scope="scope">
-                <span>{{getUrl(scope.row.id)}}</span>
+              <span>{{getUrl(scope.row.id)}}</span>
+              <!-- <span>{{scope.row.id}}</span> -->
             </template>
           </el-table-column>
           <el-table-column label="是否可用" align="center" show-overflow-tooltip>
@@ -107,7 +108,7 @@
           label-position="right"
           label-width="80px"
         >
-     <el-form-item size="small" :label="'应用ID'" >
+          <el-form-item size="small" :label="'应用ID'" v-if="dialogStatus==='update'">
             <el-input v-model="temp.id"></el-input>
           </el-form-item>
           <el-form-item size="small" :label="'应用名称'" prop="name">
@@ -138,12 +139,10 @@
     slot="suffix">
   </i>
   </el-autocomplete>
-          </el-form-item> -->
+          </el-form-item>-->
           <el-form-item size="small" :label="'是否可用'">
             <el-switch v-model="temp.disable" active-text="是" inactive-text="否"></el-switch>
           </el-form-item>
-         
-        
         </el-form>
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
@@ -157,8 +156,8 @@
 
 <script>
 import * as certinfos from "@/api/appmanager";
-import {getInfo} from  "@/api/login"
-import {timeToFormat} from '@/utils'
+import { getInfo } from "@/api/login";
+import { timeToFormat } from "@/utils";
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
@@ -193,18 +192,18 @@ export default {
         { key: 1, display_name: "停用" },
         { key: 0, display_name: "正常" }
       ],
- 
-       temp : {
-         name:'',
-         id:'',
-         description:'',
+
+      temp: {
+        name: "",
+        id: "",
+        description: "",
         appSecxet: "",
-        appKey: "", 
-        disable: true ,
-        createTime:"",
-        returnUrl:null,
-        createUser:"",
-        icon:''
+        appKey: "",
+        disable: true,
+        createTime: "",
+        returnUrl: null,
+        createUser: "",
+        icon: ""
       },
       dialogFormVisible: false,
       dialogStatus: "",
@@ -212,7 +211,7 @@ export default {
         update: "编辑",
         create: "添加"
       },
-       restaurants:[],
+      restaurants: [],
       dialogPvVisible: false,
       pvData: [],
       rules: {
@@ -245,47 +244,58 @@ export default {
       return statusMap[disable];
     }
   },
-    mounted() {
+  mounted() {
     this.restaurants = this.loadAll();
- 
-  },
-  created() {
     this.getList();
   },
+  created() {
+    
+  },
   methods: {
-        getUrl(result){
-      
-            let url=   certinfos.getImgUrl(result).then(response => {
-                 console.log(response)
-        this.listLoading = false;
-        return response
-      });
-      return url
-        },
-           loadAll(){
+    getUrl(result) {
+      let url = ''
+        certinfos
+        .getImgUrl(result)
+        .then(response => {
+          this.listLoading = false;
+          url = response .returnUrl
+        })
+        .catch(() => {
+          url = ''
+        });
+      return url?url:'图片不存在';
+    },
+    loadAll() {
       return [
-         {id:0, value:'el-icon-s-tools',label:'设置'} ,
-         {id:1, value:'el-icon-question',label:'问题'} ,
-         { id:2,value:'el-icon-info',label:'详情'} ,
-         {id:3, value:'el-icon-circle-plus',label:'添加'} ,
-         {id:4, value:'el-icon-upload',label:'上传'} ,
-         {id:5, value:'el-icon-bell',label:'消息'} ,
-         {id:6, value:'el-icon-s-operation',label:'菜单'} ,
-         {id:7, value:'el-icon-s-custom',label:'个人中心'} ,
-         {id:8, value:'el-icon-date',label:'日期'} ,
-         {id:9, value:'el-icon-edit-outline',label:'编辑'} ,
-         {id:10, value:'el-icon-folder-opened',label:'文件'}
-      ]  },
-          createFilter(queryString) {
-        return (restaurant) => {
-          return (restaurant.value.toLowerCase().indexOf(queryString.toLowerCase()) === 0);
-        };},
-          querySearch(queryString, cb) {
-        var restaurants = this.restaurants;
-        var results = queryString ? restaurants.filter(this.createFilter(queryString)) : restaurants;
-        // 调用 callback 返回建议列表的数据
-        cb(results);
-      },
+        { id: 0, value: "el-icon-s-tools", label: "设置" },
+        { id: 1, value: "el-icon-question", label: "问题" },
+        { id: 2, value: "el-icon-info", label: "详情" },
+        { id: 3, value: "el-icon-circle-plus", label: "添加" },
+        { id: 4, value: "el-icon-upload", label: "上传" },
+        { id: 5, value: "el-icon-bell", label: "消息" },
+        { id: 6, value: "el-icon-s-operation", label: "菜单" },
+        { id: 7, value: "el-icon-s-custom", label: "个人中心" },
+        { id: 8, value: "el-icon-date", label: "日期" },
+        { id: 9, value: "el-icon-edit-outline", label: "编辑" },
+        { id: 10, value: "el-icon-folder-opened", label: "文件" }
+      ];
+    },
+    createFilter(queryString) {
+      return restaurant => {
+        return (
+          restaurant.value.toLowerCase().indexOf(queryString.toLowerCase()) ===
+          0
+        );
+      };
+    },
+    querySearch(queryString, cb) {
+      var restaurants = this.restaurants;
+      var results = queryString
+        ? restaurants.filter(this.createFilter(queryString))
+        : restaurants;
+      // 调用 callback 返回建议列表的数据
+      cb(results);
+    },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.$refs.mainTable.toggleRowSelection(row);
@@ -356,10 +366,10 @@ export default {
     resetTemp() {
       this.temp = {
         appSecxet: "",
-        appKey: "", 
-        disable: true ,
-        createTime:"",
-        createUser:"",
+        appKey: "",
+        disable: true,
+        createTime: "",
+        createUser: ""
       };
     },
     handleCreate() {
@@ -371,34 +381,36 @@ export default {
         this.$refs["dataForm"].clearValidate();
       });
     },
-  
-   async createData() {
+
+    async createData() {
       // 保存提交
       this.$refs["dataForm"].validate(valid => {
         if (valid) {
-                 this.temp.createTime= timeToFormat('ymd')
-             this.temp.icon= ''
-             this.temp.returnUrl=null
-             getInfo().then((res)=>{
-          this.temp.createUser= res.result
-             certinfos.add(this.temp).then(() => {
-            this.list.unshift(this.temp);
-            this.dialogFormVisible = false;
-            this.$notify({
-              title: "成功",
-              message: "创建成功",
-              type: "success",
-              duration: 2000
-            });
-          }).catch((error)=>{
-                  this.$notify.error({
-              title: '创建失败',
-              message: error.title,
-              duration: 2000
-            });
-          })
-          })
-      
+          this.temp.createTime = timeToFormat("ymd");
+          this.temp.icon = "";
+          this.temp.returnUrl = null;
+          getInfo().then(res => {
+            this.temp.createUser = res.result;
+            certinfos
+              .add(this.temp)
+              .then(() => {
+                this.list.unshift(this.temp);
+                this.dialogFormVisible = false;
+                this.$notify({
+                  title: "成功",
+                  message: "创建成功",
+                  type: "success",
+                  duration: 2000
+                });
+              })
+              .catch(error => {
+                this.$notify.error({
+                  title: "创建失败",
+                  message: error.title,
+                  duration: 2000
+                });
+              });
+          });
         }
       });
     },

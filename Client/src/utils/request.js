@@ -58,13 +58,13 @@ service.interceptors.response.use(
     }
   },
   error => {
-    console.log('err' + error)// for debug
-    Message({
-      message: '请先启动OpenAuth.WebApi，再刷新本页面，异常详情：' + error.message,
-      type: 'error',
-      duration: 10 * 1000
-    })
-    return Promise.reject(error)
+    // console.log('err' + error)// for debug
+    // Message({
+    //   message: '请先启动OpenAuth.WebApi，再刷新本页面，异常详情：' + error.message,
+    //   type: 'error',
+    //   duration: 10 * 1000
+    // })
+     return Promise.reject(error)
   }
 )
 
