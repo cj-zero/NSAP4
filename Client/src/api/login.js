@@ -45,9 +45,17 @@ export function getModulesTree() {
   })
 }
 
-export function getOrgs() {
+export function getOrgs(params) {
   return request({
-    url: '/check/getorgs',
+    url: '/check/getorgs/',
+    method: 'get',
+     params
+  })
+}
+
+export function getCorp() {
+  return request({
+    url: '/Check/GetCorp',
     method: 'get',
     params: { token: getToken() }
   })
