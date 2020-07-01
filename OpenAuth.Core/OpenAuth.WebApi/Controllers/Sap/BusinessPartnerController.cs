@@ -15,7 +15,7 @@ namespace OpenAuth.WebApi.Controllers.Sap
     /// <summary>
     /// 业务伙伴
     /// </summary>
-    [Route("Sap/api/[controller]/[action]")]
+    [Route("api/Sap/[controller]/[action]")]
     [ApiController]
     public class BusinessPartnerController : ControllerBase
     {
