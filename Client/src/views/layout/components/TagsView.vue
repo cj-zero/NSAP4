@@ -30,7 +30,7 @@ export default {
   },
   computed: {
     visitedViews() {
-      console.log(this.$store.state.tagsView.visitedViews)
+      // console.log(this.$store.state.tagsView.visitedViews)
       return this.$store.state.tagsView.visitedViews
     }
   },
@@ -52,7 +52,7 @@ export default {
   },
   methods: {
     generateRoute() {
-      console.log(this.$route)
+      // console.log(this.$route)
       if (this.$route.name) {
         return this.$route
       }
@@ -62,7 +62,7 @@ export default {
       return route.path === this.$route.path
     },
     addViewTags() {
-      console.log('add')
+      // console.log('add')
       const route = this.generateRoute()
       if (!route) {
         return false
