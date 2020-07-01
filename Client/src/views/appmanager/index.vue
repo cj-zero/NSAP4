@@ -56,9 +56,7 @@
           ></el-table-column>
           <el-table-column prop="icon" label="应用图标" align="center" show-overflow-tooltip>
             <template slot-scope="scope">
-                <!-- <i :class="`${scope.row.icon}`"></i>  -->
                 <span>{{getUrl(scope.row.id)}}</span>
-              <!-- <span>{{scope.row.icon}}</span> -->
             </template>
           </el-table-column>
           <el-table-column label="是否可用" align="center" show-overflow-tooltip>
@@ -109,7 +107,7 @@
           label-position="right"
           label-width="80px"
         >
-     <el-form-item size="small" :label="'应用名称'" >
+     <el-form-item size="small" :label="'应用ID'" >
             <el-input v-model="temp.id"></el-input>
           </el-form-item>
           <el-form-item size="small" :label="'应用名称'" prop="name">
@@ -125,8 +123,7 @@
           <el-form-item size="small" :label="'appKey'">
             <el-input v-model="temp.appKey"></el-input>
           </el-form-item>
-          <el-form-item size="small" :label="'应用图标'">
-            <!-- <el-input-number v-model="temp.icon" :min="0" :max="10" ></el-input-number> -->
+          <!-- <el-form-item size="small" :label="'应用图标'">
               <el-autocomplete
                suffix-icon="el-icon-caret-bottom"
               style="width:100%;"
@@ -137,12 +134,11 @@
              
             >
               <i
-    :class="`${temp.icon?temp.icon:''}`"
+    :class="[temp.icon?temp.icon:'']"
     slot="suffix">
   </i>
   </el-autocomplete>
-            <!-- <el-input v-model="temp.icon"></el-input> -->
-          </el-form-item>
+          </el-form-item> -->
           <el-form-item size="small" :label="'是否可用'">
             <el-switch v-model="temp.disable" active-text="是" inactive-text="否"></el-switch>
           </el-form-item>
@@ -161,6 +157,8 @@
 
 <script>
 import * as certinfos from "@/api/appmanager";
+import {getInfo} from  "@/api/login"
+import {timeToFormat} from '@/utils'
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
@@ -197,12 +195,16 @@ export default {
       ],
  
        temp : {
+         name:'',
+         id:'',
+         description:'',
         appSecxet: "",
         appKey: "", 
-        icon: "", 
-        disable: "" ,
+        disable: true ,
         createTime:"",
+        returnUrl:null,
         createUser:"",
+        icon:''
       },
       dialogFormVisible: false,
       dialogStatus: "",
@@ -245,20 +247,20 @@ export default {
   },
     mounted() {
     this.restaurants = this.loadAll();
-
+ 
   },
   created() {
     this.getList();
   },
   methods: {
         getUrl(result){
-          console.log(result)
-      //       let url=   certinfos.getImgUrl(result).then(response => {
-      //            console.log(response)
-      //   this.listLoading = false;
-      //   return response
-      // });
-      // return url
+      
+            let url=   certinfos.getImgUrl(result).then(response => {
+                 console.log(response)
+        this.listLoading = false;
+        return response
+      });
+      return url
         },
            loadAll(){
       return [
@@ -355,8 +357,7 @@ export default {
       this.temp = {
         appSecxet: "",
         appKey: "", 
-        icon: "", 
-        disable: "" ,
+        disable: true ,
         createTime:"",
         createUser:"",
       };
@@ -370,11 +371,17 @@ export default {
         this.$refs["dataForm"].clearValidate();
       });
     },
-    createData() {
+  
+   async createData() {
       // 保存提交
       this.$refs["dataForm"].validate(valid => {
         if (valid) {
-          certinfos.add(this.temp).then(() => {
+                 this.temp.createTime= timeToFormat('ymd')
+             this.temp.icon= ''
+             this.temp.returnUrl=null
+             getInfo().then((res)=>{
+          this.temp.createUser= res.result
+             certinfos.add(this.temp).then(() => {
             this.list.unshift(this.temp);
             this.dialogFormVisible = false;
             this.$notify({
@@ -383,7 +390,15 @@ export default {
               type: "success",
               duration: 2000
             });
-          });
+          }).catch((error)=>{
+                  this.$notify.error({
+              title: '创建失败',
+              message: error.title,
+              duration: 2000
+            });
+          })
+          })
+      
         }
       });
     },

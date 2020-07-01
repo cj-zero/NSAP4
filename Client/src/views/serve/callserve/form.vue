@@ -129,46 +129,73 @@
       </el-col>
       <el-col :span="8">
           <el-form-item label="呼叫状态">
-          <el-input v-model="form.name"></el-input>
+          <el-input v-model="form.name" disabled></el-input>
         </el-form-item>
       </el-col>
       <el-col :span="8">
-          <el-form-item label="最新电话号码">
-          <el-input v-model="form.name"></el-input>
-        </el-form-item>
-      </el-col>
-    </el-row>
-      <el-row type="flex" class="row-bg" justify="space-around">
-      <el-col :span="8">
-        <el-form-item label="终端客户">
-          <el-input v-model="form.name"></el-input>
-        </el-form-item>
-      </el-col>
-      <el-col :span="8">
-          <el-form-item label="电话号码">
-          <el-input v-model="form.name"></el-input>
-        </el-form-item>
-      </el-col>
-      <el-col :span="8">
-          <el-form-item label="最新电话号码">
-          <el-input v-model="form.name"></el-input>
+          <el-form-item label="创建日期">
+              <el-date-picker
+              size="mini"
+              type="date"
+              placeholder="选择开始日期"
+              v-model="form.startTime"
+              style="width: 100%;"
+            ></el-date-picker>
         </el-form-item>
       </el-col>
     </el-row>
       <el-row type="flex" class="row-bg" justify="space-around">
       <el-col :span="8">
-        <el-form-item label="终端客户">
+        <el-form-item label="呼叫类型">
           <el-input v-model="form.name"></el-input>
         </el-form-item>
       </el-col>
       <el-col :span="8">
-          <el-form-item label="电话号码">
+          <el-form-item label="优先级">
           <el-input v-model="form.name"></el-input>
         </el-form-item>
       </el-col>
       <el-col :span="8">
-          <el-form-item label="最新电话号码">
+          <el-form-item label="预约时间">
+                <el-date-picker
+              disabled
+              size="mini"
+              type="date"
+              placeholder="选择开始日期"
+              v-model="form.startTime"
+              style="width: 100%;"
+            ></el-date-picker>
+        </el-form-item>
+      </el-col>
+    </el-row>
+      <el-row type="flex" class="row-bg" justify="space-around">
+      <el-col :span="8">
+        <el-form-item label="问题类型">
           <el-input v-model="form.name"></el-input>
+        </el-form-item>
+      </el-col>
+      <el-col :span="8">
+          <el-form-item label="清算日期">
+                   <el-date-picker
+              disabled
+              size="mini"
+              type="date"
+              placeholder="选择日期"
+              v-model="form.startTime"
+              style="width: 100%;"
+            ></el-date-picker>
+        </el-form-item>
+      </el-col>
+      <el-col :span="8">
+          <el-form-item label="结束时间">
+             <el-date-picker
+              disabled
+              size="mini"
+              type="date"
+              placeholder="选择日期"
+              v-model="form.startTime"
+              style="width: 100%;"
+            ></el-date-picker>
         </el-form-item>
       </el-col>
     </el-row>
@@ -182,6 +209,15 @@
           <el-input v-model="form.name"></el-input>
       </el-col>
     </el-row>
+      <el-form-item >
+    <el-checkbox-group v-model="form.type">
+      <el-checkbox label="售后审核" name="type"></el-checkbox>
+      <el-checkbox label="销售审核" name="type"></el-checkbox>
+    </el-checkbox-group>
+  </el-form-item>
+    <el-form-item label="备注" prop="desc">
+    <el-input type="textarea" v-model="form.desc"></el-input>
+  </el-form-item>
   </el-form>
 </template>
 

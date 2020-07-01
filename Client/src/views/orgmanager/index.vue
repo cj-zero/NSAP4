@@ -210,6 +210,7 @@
           parentName: '',
           parentId: null,
           name: '',
+          Corp:'',
           status: 0
         },
         dialogFormVisible: false,
@@ -420,7 +421,7 @@
       },
       getOrgTree(id) {
         var _this = this // 记录vuecomponent
-        login.getOrgs({id:id?id:null}).then(response => {
+        login.getOrgs({corpId:id?id:null}).then(response => {
           _this.orgs = response.result.map(function(item) {
             return {
               id: item.id,

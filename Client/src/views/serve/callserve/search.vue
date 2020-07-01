@@ -4,7 +4,7 @@
     <el-row :gutter="10">
       <el-col :span="4">
         <el-form-item label="历史账单">
-          <el-select size="mini" v-model="form.region" placeholder="请选择">
+          <el-select  v-model="form.region" placeholder="请选择">
             <el-option label="账单一" value="shanghai"></el-option>
             <el-option label="账单二" value="beijing"></el-option>
           </el-select>
@@ -12,7 +12,7 @@
       </el-col>
       <el-col :span="4">
         <el-form-item label="服务ID">
-          <el-select size="mini" v-model="form.region" placeholder="请选择">
+          <el-select  v-model="form.region" placeholder="请选择">
             <el-option label="服务一" value="shanghai"></el-option>
             <el-option label="服务二" value="beijing"></el-option>
           </el-select>
@@ -20,7 +20,7 @@
       </el-col>
       <el-col :span="4">
         <el-form-item label="呼叫状态">
-          <el-select size="mini" v-model="form.region" placeholder="请选择呼叫状态">
+          <el-select  v-model="form.region" placeholder="请选择呼叫状态">
             <el-option label="状态一" value="shanghai"></el-option>
             <el-option label="状态二" value="beijing"></el-option>
           </el-select>
@@ -28,12 +28,12 @@
       </el-col>
       <el-col :span="4">
         <el-form-item label="客户">
-          <el-input size="mini" v-model="form.name"></el-input>
+          <el-input  v-model="form.name"></el-input>
         </el-form-item>
       </el-col>
       <el-col :span="4">
         <el-form-item label="序列号">
-          <el-input size="mini" v-model="form.name"></el-input>
+          <el-input  v-model="form.name"></el-input>
         </el-form-item>
       </el-col>
      
@@ -41,12 +41,12 @@
     <el-row :gutter="10">
          <el-col :span="4">
         <el-form-item label="接单员">
-          <el-input size="mini" v-model="form.name"></el-input>
+          <el-input  v-model="form.name"></el-input>
         </el-form-item>
       </el-col>
       <el-col :span="4">
         <el-form-item label="问题类型">
-          <el-input size="mini" v-model="form.name"></el-input>
+          <el-input  v-model="form.name"></el-input>
         </el-form-item>
       </el-col>
 
@@ -54,7 +54,7 @@
         <el-form-item label="选择日期">
           <el-col :span="11">
             <el-date-picker
-              size="mini"
+              
               type="date"
               placeholder="选择开始日期"
               v-model="form.startTime"
@@ -64,7 +64,7 @@
           <el-col class="line" :span="2">-</el-col>
           <el-col :span="11">
             <el-date-picker
-              size="mini"
+              
               type="date"
               placeholder="选择结束时间"
               v-model="form.endTime"
@@ -73,9 +73,9 @@
           </el-col>
         </el-form-item>
       </el-col>
-      <el-col :span="3">
+      <el-col :span="4">
         <el-form-item>
-          <el-button size="mini" type="primary" @click="onSubmit">搜索</el-button>
+          <el-button  type="primary" @click="onSubmit">搜索</el-button>
         </el-form-item>
       </el-col>
     </el-row>
