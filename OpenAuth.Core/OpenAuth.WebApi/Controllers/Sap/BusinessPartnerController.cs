@@ -12,6 +12,9 @@ using OpenAuth.App.Sap.Request;
 
 namespace OpenAuth.WebApi.Controllers.Sap
 {
+    /// <summary>
+    /// 业务伙伴
+    /// </summary>
     [Route("Sap/api/[controller]/[action]")]
     [ApiController]
     public class BusinessPartnerController : ControllerBase
@@ -22,6 +25,11 @@ namespace OpenAuth.WebApi.Controllers.Sap
         {
             _businessPartnerApp = businessPartnerApp;
         }
+        /// <summary>
+        /// 业务伙伴分页查询
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
         [HttpGet]
         public async Task<TableData> Load([FromQuery]QueryBusinessPartnerListReq req)
         {
