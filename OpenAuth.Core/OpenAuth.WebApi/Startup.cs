@@ -65,8 +65,8 @@ namespace OpenAuth.WebApi
                 option.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Version = "v1",
-                    Title = " OpenAuth.WebApi",
-                    Description = "by yubaolee"
+                    Title = " NSAP4 API",
+                    Description = "By Neware-R7"
                 });
                 
                 logger.LogInformation($"api doc basepath:{AppContext.BaseDirectory}");
@@ -199,6 +199,7 @@ namespace OpenAuth.WebApi
             // specifying the Swagger JSON endpoint.
             app.UseSwaggerUI(c =>
             {
+                c.DocumentTitle = "NSAP4 API";
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "V1 Docs");
                 c.DocExpansion(DocExpansion.None);
                 c.OAuthClientId("OpenAuth.WebApi");  //oauth客户端名称
