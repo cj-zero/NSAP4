@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OpenAuth.App.Interface;
@@ -133,7 +134,9 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<UploadFile> GetFileAsync(string fileId)
         {
-            var file = await Repository.FindSingleAsync(f => f.Id.Equals(fileId));
+            var file = await Repository.Find(f => f.Id.Equals(fileId)).FirstOrDefaultAsync();
+            if (file is null)
+                return null;
             file.FilePath = Path.Combine(_filePath, file.FilePath);
             if (!string.IsNullOrWhiteSpace(file.Thumbnail))
             {

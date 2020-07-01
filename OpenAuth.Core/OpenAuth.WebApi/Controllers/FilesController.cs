@@ -112,7 +112,8 @@ namespace OpenAuth.WebApi.Controllers
         public async Task<IActionResult> Download(string fileId, bool isThumbnail)
         {
             var file = await _app.GetFileAsync(fileId);
-            
+            if(file is null)
+                return NotFound($"fileId:{fileId} is not exists");
             var filePath = file.FilePath;
             if (isThumbnail)
                 filePath = file.Thumbnail;
