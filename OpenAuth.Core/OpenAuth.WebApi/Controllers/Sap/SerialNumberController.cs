@@ -11,6 +11,9 @@ using OpenAuth.App.Sap.Service;
 
 namespace OpenAuth.WebApi.Controllers.Sap
 {
+    /// <summary>
+    /// 序列号
+    /// </summary>
     [Route("api/Sap/[controller]/[action]")]
     [ApiController]
     public class SerialNumberController : ControllerBase
@@ -22,6 +25,11 @@ namespace OpenAuth.WebApi.Controllers.Sap
             _serialNumberApp = serialNumberApp;
         }
 
+        /// <summary>
+        /// 序列号查询
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
         [HttpGet]
         public async Task<TableData> Get([FromQuery]QuerySerialNumberListReq req)
         {
