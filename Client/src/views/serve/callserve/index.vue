@@ -72,10 +72,12 @@
           @pagination="handleCurrentChange"
         />
       </div>
+      <!--   v-el-drag-dialog
+        width="1000px"  新建呼叫服务单 -->
       <el-dialog
-        v-el-drag-dialog
-        class="dialog-mini"
         width="1000px"
+        class="dialog-mini"
+        
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >

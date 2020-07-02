@@ -1,17 +1,19 @@
 <template>
   <div class="tags-view-container">
     <scroll-pane class='tags-view-wrapper' ref='scrollPane'>
-      <router-link ref='tag' class="tags-view-item" :class="isActive(tag)?'active':''" v-for="(tag, index) in Array.from(visitedViews)"
+      <router-link ref='tag' width="110px" class="tags-view-item" :class="isActive(tag)?'active':''" v-for="(tag, index) in Array.from(visitedViews)"
         :to="tag" :key="`${index}_${tag.path}`" @contextmenu.prevent.native="openMenu(tag,$event)">
         {{tag.title}}
         <span class='el-icon-close' @click.prevent.stop='closeSelectedTag(tag)'></span>
       </router-link>
     </scroll-pane>
     <ul class='contextmenu' v-show="visible" :style="{left:left+'px',top:top+'px'}">
-      <li @click="addViewTags_copy">复制页面</li>
-       <li @click="closeSelectedTag(selectedTag)">关闭</li>
+     
+       <li @click="closeSelectedTag(selectedTag)">关闭本页面</li>
       <li @click="closeOthersTags">关闭其他</li>
       <li @click="closeAllTags">全部关闭</li>
+      <li @click="onLoad">刷新页面</li>
+       <li @click="addViewTags_copy">复制页面</li>
     </ul>
   </div>
 </template>
@@ -57,6 +59,10 @@ export default {
         return this.$route
       }
       return false
+    },
+    onLoad(){
+      
+window.location.reload(true)
     },
     isActive(route) {
       return route.path === this.$route.path
@@ -114,8 +120,8 @@ export default {
       this.visible = true
       this.selectedTag = tag
       const offsetLeft = this.$el.getBoundingClientRect().left // container margin left
-      this.left = e.clientX - offsetLeft + 15 // 15: margin right
-      this.top = e.clientY
+      this.left = e.clientX - offsetLeft -35 // 15: margin right
+      this.top = e.clientY -15
     },
     closeMenu() {
       this.visible = false

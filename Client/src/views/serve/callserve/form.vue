@@ -70,48 +70,44 @@
         </el-form-item>
       </el-col>
     </el-row>
-     <el-form-item label="服务类型" prop="resource">
-          <el-radio-group v-model="form.name">
-            <el-radio label="免费"></el-radio>
-            <el-radio label="收费"></el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <hr>
+    <el-form-item label="服务类型" prop="resource">
+      <el-radio-group v-model="form.name">
+        <el-radio label="免费"></el-radio>
+        <el-radio label="收费"></el-radio>
+      </el-radio-group>
+    </el-form-item>
+    <hr />
     <!-- 选择制造商序列号 -->
-   <formAdd></formAdd>
-    <el-dialog
-  title="提示"
-  :visible.sync="dialogPartner"
-  width="90%"
-  >
-      <formPartner :partnerList='partnerList'></formPartner>
+    <formAdd :SerialNumberList="SerialNumberList"></formAdd>
+    <el-dialog title="选择业务伙伴" width="90%" :visible.sync="dialogPartner">
+      <formPartner :partnerList="partnerList" ></formPartner>
 
-  <span slot="footer" class="dialog-footer">
-    <el-button @click="dialogPartner = false">取 消</el-button>
-    <el-button type="primary" @click="dialogPartner = false">确 定</el-button>
-  </span>
-</el-dialog>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="dialogPartner = false">取 消</el-button>
+        <el-button type="primary" @click="dialogPartner = false">确 定</el-button>
+      </span>
+    </el-dialog>
   </el-form>
 </template>
 
 <script>
-import { getPartner } from "@/api/callserve";
-import formPartner from "./formPartner"
-import formAdd from "./formAdd"
+import { getPartner ,getSerialNumber } from "@/api/callserve";
+import formPartner from "./formPartner";
+import formAdd from "./formAdd";
 export default {
-  name:'formTable',
-   components:{formPartner ,formAdd},
+  name: "formTable",
+  components: { formPartner, formAdd },
   props: ["modelValue", "refValue", "labelposition", "labelwidth"],
- 
 
   data() {
     return {
       partnerList: [],
+      SerialNumberList: [], //序列号列表
       state: "",
-      dialogPartner:false,
+      dialogPartner: false,
       form: {
         cardCode: "",
-        cardName:'',//客户名称
+        cardName: "", //客户名称
         region: "",
         date1: "",
         date2: "",
@@ -124,13 +120,8 @@ export default {
   },
 
   mounted() {
-    getPartner()
-      .then(res => {
-        this.partnerList = res.data;
-      })
-      .catch(error => {
-        console.log(error);
-      });
+    this.getPartnerList();
+    this.getSerialNumberList();
   },
   methods: {
     querySearch(queryString, cb) {
@@ -143,22 +134,41 @@ export default {
     },
     createFilter(queryString) {
       return partnerList => {
+        console.log(partnerList)
         return (
+          
           partnerList.cardCode
             .toLowerCase()
             .indexOf(queryString.toLowerCase()) === 0
         );
       };
     },
+    getSerialNumberList() {
+      getSerialNumber()
+        .then(res => {
+          this.SerialNumberList = res.data;
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    getPartnerList() {
+      getPartner()
+        .then(res => {
+          this.partnerList = res.data;
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
     handleSelect(item) {
-     
       this.form.cardCode = item.cardCode;
-      this.form.cardName =item.cardName
-      this.form.cntctPrsn =item.cntctPrsn
+      this.form.cardName = item.cardName;
+      this.form.cntctPrsn = item.cntctPrsn;
     },
     handleIconClick() {
-
-this.dialogPartner = true    },
+      this.dialogPartner = true;
+    },
     onSubmit() {
       console.log("submit!");
     },

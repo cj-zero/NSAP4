@@ -6,22 +6,22 @@
           <el-form-item label="制造商序列号">
             <el-autocomplete
               popper-class="my-autocomplete"
-              v-model="form.name"
+              v-model="form.manufSN"
               :fetch-suggestions="querySearch"
               placeholder="请输入内容"
               @select="handleSelect"
             >
               <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
-              <template slot-scope="{ form }">
-                <div class="name">{{ form.cardCode }}</div>
-                <span class="addr">{{ form.cardName }}</span>
+              <template slot-scope="{ item }">
+                <div class="name">{{ item.manufSN }}</div>
+                <span class="addr">{{ item.custmrName }}</span>
               </template>
             </el-autocomplete>
           </el-form-item>
         </el-col>
         <el-col :span="8">
           <el-form-item label="内部序列号">
-            <el-input v-model="form.name" disabled></el-input>
+            <el-input v-model="form.internalSN" disabled></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="8">
@@ -31,7 +31,7 @@
               size="mini"
               type="date"
               placeholder="选择开始日期"
-              v-model="form.startTime"
+              v-model="form.dlvryDate"
               style="width: 100%;"
             ></el-date-picker>
           </el-form-item>
@@ -40,12 +40,12 @@
       <el-row type="flex" class="row-bg" justify="space-around">
         <el-col :span="8">
           <el-form-item label="物料编码">
-            <el-input v-model="form.name" disabled></el-input>
+            <el-input v-model="form.itemCode" disabled></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="16">
           <el-form-item label="物料描述">
-            <el-input disabled v-model="form.name"></el-input>
+            <el-input disabled v-model="form.itemName"></el-input>
           </el-form-item>
         </el-col>
       </el-row>
@@ -167,68 +167,177 @@
         <el-input type="textarea" v-model="form.desc"></el-input>
       </el-form-item>
     </div>
+    <el-dialog destroy-on-close title="选择制造商序列号" width="90%" :visible.sync="dialogfSN">
+      <div style="width:200px;margin:10px 0;">
+        <el-autocomplete
+          popper-class="my-autocomplete"
+          v-model="inputSearch"
+          :fetch-suggestions="querySearch"
+          placeholder="内容制造商序列号"
+          @select="searchSelect"
+          @input="searchList"
+        >
+          <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
+          <template slot-scope="{ item }">
+            <div class="name">{{ item.manufSN }}</div>
+            <span class="addr">{{ item.custmrName }}</span>
+          </template>
+        </el-autocomplete>
+      </div>
+      <fromfSN :SerialNumberList="filterSerialNumberList" @change-Form="changeForm"></fromfSN>
+
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="dialogfSN = false">取 消</el-button>
+        <el-button type="primary" @click="pushForm">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { getPartner } from "@/api/callserve";
+// import { getPartner } from "@/api/callserve";
+import fromfSN from './fromfSN'
 export default {
-    // components:{formAdd},
-    data(){
-        return{
-            partnerList: [],
-            formList:[
-        {name:'1'},{name:'2'}
-            ],
-                  form: {
-        cardCode: "",
-        cardName:'',//客户名称
+  components:{fromfSN},
+  props: ["SerialNumberList"],
+  data() {
+    return {
+         filterSerialNumberList: [],
+         formListStart:[], //未加工的表格数据
+      dialogfSN:false,
+      inputSearch: '',
+      formList: [ {
+        manufSN: "",
+        internalSN: "", //内部序列号
+        itemCode: "", //物料编码
+        itemName: "",  //物料描述
+        dlvryDate: "",
+        delivery: false,
+        type: [],
+        resource: "",
+        name: ""
+      }],
+      ifFormPush:false, //表单是否被动态添加过
+      form: {
+        manufSN: "",
+        custmrName: "", //客户名称
         region: "",
         date1: "",
         date2: "",
         delivery: false,
         type: [],
         resource: "",
-        desc: ""
+        name: ""
       }
-        }
-
-    },
-              mounted() {
-    getPartner()
-      .then(res => {
-        this.partnerList = res.data;
-      })
-      .catch(error => {
-        console.log(error);
-      });
+    };
   },
-    methods: {
-           handleIconClick() {
+  created() {
+     this.filterSerialNumberList=this.SerialNumberList
+    // getPartner()
+    //   .then(res => {
+    //     // this.partnerList = res.data;
+    //   })
+    //   .catch(error => {
+    //     console.log(error);
+    //   });
+  },
+  computed:{
+  //  SerialNumberList: {
+  //     get: function(a) {
+  //       return a
+  //     },
+  //     set: function(a) {
+  //        return a
+  //     }
+  //   }
+  },
+  methods: {
+    changeForm(res){
+      this.formListStart =res
+    },
+    pushForm(){
+      this.dialogfSN = false
+      console.log(this.formListStart)
+      if(!this.ifFormPush){
+         this.formList[0].manufSN=this.formListStart[0].manufSN
+           this.formList[0].internalSN=this.formListStart[0].internalSN
+           this.formList[0].itemCode=this.formListStart[0].itemCode
+           this.formList[0].itemName=this.formListStart[0].itemName
+             this.formList[0].dlvryDate=this.formListStart[0].dlvryDate
+           
+        for(let i=1;i<this.formListStart.length;i++){
+         
+           this.formList.push({
+               manufSN:this.formListStart[i].manufSN,
+        internalSN:this.formListStart[i].internalSN,
+        itemCode: this.formListStart[i].itemCode, 
+        itemName: this.formListStart[i].itemName,  
+        dlvryDate:this.formListStart[i].dlvryDate
+           })
+        }
+        this.ifFormPush =true
+      }else{
+        // this.formList=[]
+         this.ifFormPush =true
+        //  console.log()
+  for(let i=this.formList.length-1;i<this.formListStart.length;i++){
+           this.formList.push({
+               manufSN:this.formListStart[i].manufSN,
+        internalSN:this.formListStart[i].internalSN,
+        itemCode: this.formListStart[i].itemCode, 
+        itemName: this.formListStart[i].itemName,  
+        dlvryDate:this.formListStart[i].dlvryDate
+
+           })
+ 
+      
+        }
+      }
+    },
+    handleIconClick() {
+      this.dialogfSN= true
+    },
+    searchList(res){
+      if (!res) {
+        this.filterSerialNumberList=this.SerialNumberList
+      } else{
+        let list=this.SerialNumberList.filter(item=>
+       {return item.manufSN.indexOf(res) >0 })
+              this.filterSerialNumberList=list
+      }
     },
     querySearch(queryString, cb) {
-      var partnerList = this.partnerList;
+    
+      var filterSerialNumberList =  this.SerialNumberList
       var results = queryString
-        ? partnerList.filter(this.createFilter(queryString))
-        : partnerList;
+        ? filterSerialNumberList.filter(this.createFilter(queryString))
+        : filterSerialNumberList;
       // 调用 callback 返回建议列表的数据
       cb(results);
     },
     createFilter(queryString) {
-      return partnerList => {
+      return filterSerialNumberList => {
         return (
-          partnerList.cardCode
+          filterSerialNumberList.manufSN
             .toLowerCase()
             .indexOf(queryString.toLowerCase()) === 0
         );
       };
     },
-        handleSelect(item) {
-     console.log(item)
-      
+    handleSelect(item) {
+      console.log(item);
     },
+    searchSelect(res){
+      let newList =
+       this.filterSerialNumberList.filter(item=>
+        item.manufSN===res.manufSN
+      )
+     this.inputSearch=res.manufSN
+    this.filterSerialNumberList=newList
     }
-}
+ 
+  }
+};
 </script>
 
 <style>
