@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("OINS")]
-    public partial class OINS : Entity
+    public partial class OINS
     {
         public OINS()
         {
@@ -64,6 +64,11 @@ namespace OpenAuth.Repository.Domain.Sap
         }
 
         
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int insID { get; set; }
         /// <summary>
         /// 
         /// </summary>

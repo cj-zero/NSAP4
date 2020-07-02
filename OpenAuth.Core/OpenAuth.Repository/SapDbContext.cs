@@ -26,6 +26,11 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<OCRY>().HasKey(o => o.Code);
             modelBuilder.Entity<OCST>().HasKey(o => new { o.Code, o.Country });
             #endregion
+            #region 序列号
+            modelBuilder.Entity<OINS>().HasKey(o => o.insID);
+            modelBuilder.Entity<CTR1>().HasKey(o => new { o.ContractID, o.Line });
+            #endregion
+
         }
         //public virtual DbSet<AAC1> Aac1s { get; set; }
         //public virtual DbSet<AACP> Aacps { get; set; }
@@ -550,7 +555,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<CTBR> Ctbrs { get; set; }
         //public virtual DbSet<CTG1> Ctg1s { get; set; }
         //public virtual DbSet<CTNS> Ctns { get; set; }
-        //public virtual DbSet<CTR1> Ctr1s { get; set; }
+        public virtual DbSet<CTR1> Ctr1s { get; set; }
         //public virtual DbSet<CTR2> Ctr2s { get; set; }
         //public virtual DbSet<CUDC> Cudcs { get; set; }
         //public virtual DbSet<CUFD> Cufds { get; set; }
@@ -1319,7 +1324,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<OIMT> Oimts { get; set; }
         //public virtual DbSet<OINC> Oincs { get; set; }
         //public virtual DbSet<OIND> Oinds { get; set; }
-        //public virtual DbSet<OINS> Oins { get; set; }
+        public virtual DbSet<OINS> Oins { get; set; }
         //public virtual DbSet<OINV> Oinvs { get; set; }
         //public virtual DbSet<OIOD> Oiods { get; set; }
         //public virtual DbSet<OIPD> Oipds { get; set; }

@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("CTR1")]
-    public partial class CTR1 : Entity
+    public partial class CTR1
     {
         public CTR1()
         {
@@ -37,6 +37,16 @@ namespace OpenAuth.Repository.Domain.Sap
         }
 
         
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int ContractID { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int Line { get; set; }
         /// <summary>
         /// 
         /// </summary>

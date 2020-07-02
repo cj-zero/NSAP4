@@ -11,5 +11,10 @@ namespace OpenAuth.App.Sap.Request
         /// 客户代码或者客户名称
         /// </summary>
         public string CardCodeOrCardName { get; set; }
+       
+        /// <summary>
+        /// 制造商序列号
+        /// </summary>
+        public string ManufSN { get; set; }
     }
 }

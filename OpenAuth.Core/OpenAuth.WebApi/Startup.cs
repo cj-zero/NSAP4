@@ -193,7 +193,7 @@ namespace OpenAuth.WebApi
                 endpoints.MapControllers();
             });
 
-          app.UseSwagger();
+            app.UseSwagger();
 
             // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), 
             // specifying the Swagger JSON endpoint.

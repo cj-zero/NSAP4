@@ -2,44 +2,35 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
-using OpenAuth.App.Request;
 using OpenAuth.App.Response;
-using OpenAuth.App.Sap.BusinessPartner;
 using OpenAuth.App.Sap.Request;
+using OpenAuth.App.Sap.Service;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace OpenAuth.WebApi.Controllers.Sap
 {
-    /// <summary>
-    /// 业务伙伴
-    /// </summary>
     [Route("api/Sap/[controller]/[action]")]
     [ApiController]
-    public class BusinessPartnerController : ControllerBase
+    public class SerialNumberController : ControllerBase
     {
-        private readonly BusinessPartnerApp _businessPartnerApp;
+        private readonly SerialNumberApp _serialNumberApp;
 
-        public BusinessPartnerController(BusinessPartnerApp businessPartnerApp)
+        public SerialNumberController(SerialNumberApp serialNumberApp)
         {
-            _businessPartnerApp = businessPartnerApp;
+            _serialNumberApp = serialNumberApp;
         }
-        /// <summary>
-        /// 业务伙伴分页查询
-        /// </summary>
-        /// <param name="req"></param>
-        /// <returns></returns>
+
         [HttpGet]
-        public async Task<TableData> Load([FromQuery]QueryBusinessPartnerListReq req)
+        public async Task<TableData> Get([FromQuery]QuerySerialNumberListReq req)
         {
             var result = new TableData();
             try
             {
-                result = await _businessPartnerApp.Get(req);
+                result = await _serialNumberApp.Find(req);
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 result.code = 500;
                 result.msg = ex.InnerException?.Message ?? ex.Message;
