@@ -37,7 +37,7 @@
         >
           <el-table-column type="selection" align="center" width="55"></el-table-column>
 
-          <el-table-column prop="id" label="id" width="50" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="id" align="center" label="id" min-width="50" show-overflow-tooltip></el-table-column>
           <el-table-column
             prop="name"
             label="应用名称"
@@ -45,13 +45,13 @@
             align="center"
             show-overflow-tooltip
           ></el-table-column>
-          <el-table-column prop="appSecxet" label="应用密匙" align="center" show-overflow-tooltip></el-table-column>
-          <el-table-column prop="appKey" align="center" label="AppKey" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="appSecret" label="应用密匙" align="center" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="appKey" width='100px' align="center" label="AppKey" show-overflow-tooltip></el-table-column>
           <el-table-column
             prop="description"
             align="center"
             label="应用描述"
-            min-width="150"
+            min-width="120"
             show-overflow-tooltip
           ></el-table-column>
           <el-table-column prop="icon" label="应用图标" align="center" show-overflow-tooltip>
@@ -60,7 +60,7 @@
               <!-- <span>{{scope.row.id}}</span> -->
             </template>
           </el-table-column>
-          <el-table-column label="是否可用" align="center" show-overflow-tooltip>
+          <el-table-column label="是否可用" align="center" width='100px' show-overflow-tooltip>
             <template slot-scope="scope">
               <el-link
                 size="mini"
@@ -69,7 +69,7 @@
             </template>
           </el-table-column>
           <el-table-column prop="createTime" align="center" label="创建日期" show-overflow-tooltip></el-table-column>
-          <el-table-column prop="createUser" align="center" label="创建人" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="createUser" align="center" width='100px' label="创建人" show-overflow-tooltip></el-table-column>
           <el-table-column
             align="center"
             label="操作"

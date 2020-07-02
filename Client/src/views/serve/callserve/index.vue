@@ -39,6 +39,12 @@
           @selection-change="handleSelectionChange"
         >
           <el-table-column type="selection" fixed align="center" width="55"></el-table-column>
+          <el-table-column  fixed align="center" label="服务ID"  width="100">
+            <template slot-scope="scope">
+                <el-link type="primary">{{scope.row.serveid}}</el-link>
+
+            </template>
+          </el-table-column>
 
           <el-table-column
             show-overflow-tooltip
@@ -163,7 +169,7 @@ export default {
         "kehumingcheng"
       ],
       formTheadOptions: [
-        { name: "id", label: "ID" },
+        // { name: "serveid", label: "ID" },
         { name: "priority", label: "优先级" },
         { name: "calltype", label: "呼叫类型" },
         { name: "callstatus", label: "呼叫状态" },
@@ -176,7 +182,7 @@ export default {
       // this.dialogTable = true;
 
       headLabel: {
-        id: "ID",
+        // serveid: "ID",
         priority: "优先级",
         calltype: "呼叫类型",
         callstatus: "呼叫状态",
