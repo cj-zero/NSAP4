@@ -1,11 +1,12 @@
 <template>
   <div>
-      <el-tree
+    <el-tree
   :data="data"
   show-checkbox
+  default-expand-all
   node-key="id"
-  :default-expanded-keys="[2, 3]"
-  :default-checked-keys="[5]"
+  ref="tree"
+  highlight-current
   :props="defaultProps">
 </el-tree>
   </div>
@@ -15,7 +16,7 @@
 export default {
    data() {
       return {
-        data: [{
+          data: [{
           id: 1,
           label: '一级 1',
           children: [{
@@ -55,6 +56,7 @@ export default {
           label: 'label'
         }
       };
+}
 }
 </script>
 

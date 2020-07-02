@@ -41,7 +41,7 @@
           <el-table-column type="selection" fixed align="center" width="55"></el-table-column>
           <el-table-column  fixed align="center" label="服务ID"  width="100">
             <template slot-scope="scope">
-                <el-link type="primary">{{scope.row.serveid}}</el-link>
+                <el-link type="primary" @click="openTree">{{scope.row.serveid}}</el-link>
 
             </template>
           </el-table-column>
@@ -85,38 +85,7 @@
           labelwidth="100px"
           refValue="dataForm"
       ></zxform>
-        <!-- <el-form
-          :rules="rules"
-          ref="dataForm"
-          :model="temp"
-          label-position="right"
-          label-width="100px">
-          <el-form-item size="small" label="Id" prop="id">
-            <el-input disabled v-model="temp.id"></el-input>
-          </el-form-item>
-          <el-form-item size="small" label="解决方案" prop="subject">
-            <el-input v-model="temp.subject"></el-input>
-          </el-form-item>
-          <el-form-item size="small" label="原因" prop="cause">
-            <el-input v-model="temp.cause"></el-input>
-          </el-form-item>
-          <el-form-item size="small" label="症状" prop="symptom">
-            <el-input v-model="temp.symptom"></el-input>
-          </el-form-item>
-          <el-form-item size="small" label="备注" prop="descriptio">
-            <el-input v-model="temp.descriptio"></el-input>
-          </el-form-item>
-          <el-form-item size="small" label="Status">
-            <el-select class="filter-item" v-model="temp.status" placeholder="Please select">
-              <el-option
-                v-for="item in  statusOptions"
-                :key="item.key"
-                :label="item.display_name"
-                :value="item.key"
-              ></el-option>
-            </el-select>
-          </el-form-item>
-        </el-form> -->
+
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
           <el-button size="mini" v-if="dialogStatus=='create'" type="primary" @click="createData">确认</el-button>
@@ -134,6 +103,17 @@
           <el-button type="primary" @click="dialogTable = false">确 定</el-button>
         </span>
       </el-dialog>
+         <el-dialog v-el-drag-dialog :visible.sync="dialogTree" center width="300px">
+        <treeList
+
+          @close="dialogTree=false"
+        ></treeList>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="dialogTree = false">取 消</el-button>
+          <el-button type="primary" @click="dialogTree = false">确 定</el-button>
+        </span>
+      </el-dialog>
+      
     </div>
   </div>
 </template>
@@ -148,10 +128,11 @@ import DynamicTable from "@/components/DynamicTable";
 import elDragDialog from "@/directive/el-dragDialog";
 import zxsearch from "./search";
 import zxform from "./form";
+import treeList from "./treeList"
 import { callserve, count } from "@/mock/serve";
 export default {
   name: "solutions",
-  components: { Sticky, permissionBtn, Pagination, DynamicTable ,zxsearch ,zxform},
+  components: { Sticky, permissionBtn, Pagination, DynamicTable ,zxsearch ,zxform ,treeList},
   directives: {
     waves,
     elDragDialog
@@ -223,6 +204,7 @@ export default {
       },
       dialogFormVisible: false,
       dialogTable: false,
+      dialogTree:false,
       dialogStatus: "",
       textMap: {
         update: "编辑呼叫服务单",
@@ -281,6 +263,10 @@ export default {
     //   console.log(callserve)
   },
   methods: {
+    openTree(e){
+      console.log(e)
+      this.dialogTree = true
+    },
     onSubmit() {
       console.log("submit!");
     },
