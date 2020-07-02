@@ -114,18 +114,14 @@
            <el-form-item size="small" :label="'密码'">
             <el-input v-model="temp.password" :placeholder="dialogStatus=='update'?'如果为空则不修改密码':'如果为空则默认与账号相同'"></el-input>
           </el-form-item>
-          <el-form-item size="small" :label="'状态'">
-            <el-select class="filter-item" v-model="temp.status" placeholder="Please select">
+          <el-form-item size="small" :label="'状态'" >
+            <el-select class="filter-item" v-model="temp.status" style="width:100%;"  placeholder="Please select">
               <el-option v-for="item in  statusOptions" :key="item.key" :label="item.display_name" :value="item.key">
               </el-option>
             </el-select>
           </el-form-item>
-          <el-form-item size="small" :label="'所属机构'">
-            <treeselect v-if="dialogFormVisible" :options="orgsTree" :default-expand-level="3" :multiple="true" :flat="true" :open-on-click="true"
-              :open-on-focus="true" :clear-on-select="true" v-model="selectOrgs"></treeselect>
-          </el-form-item>
-          <el-form-item size="small" :label="'所属公司'">
-                <el-select v-model="temp.Corp" placeholder="请选择">
+                    <el-form-item size="small" :label="'所属公司'" >
+                <el-select v-model="temp.Corp" clearable placeholder="请选择" style="width:100%;" @change="handleClick">
                 <el-option
                   v-for="item in CorpTree"
                   :key="`cor_${item.id}`"
@@ -134,8 +130,13 @@
                 </el-option>
               </el-select>
           </el-form-item>
+          <el-form-item size="small" :label="'所属机构'" v-if="dialogFormVisible&&temp.Corp">
+            <treeselect  :options="orgsTree" :default-expand-level="3" disable :multiple="true" :flat="true" :open-on-click="true"
+              :open-on-focus="true" :clear-on-select="true" v-model="selectOrgs"></treeselect>
+          </el-form-item>
+
           <el-form-item size="small" :label="'描述'">
-            <el-input type="textarea" :autosize="{ minRows: 2, maxRows: 4}" placeholder="Please input" v-model="temp.description">
+            <el-input type="textarea" :autosize="{ minRows: 2, maxRows: 4}" placeholder="请输入" v-model="temp.description">
             </el-input>
           </el-form-item>
         </el-form>
@@ -256,7 +257,8 @@
     },
     computed: {
       selectOrgs: {
-        get: function() {
+        get: function(a) {
+          console.log(a)
           if (this.dialogStatus === 'update') {
             return this.temp.organizationIds && this.temp.organizationIds.split(',')
           } else {
@@ -333,8 +335,17 @@
         this.getList()
       },
                handleClick(data) {
-         this.currentCorpId = data.id
-        this.getOrgTree(data.id)
+                 let dataId = ''
+                 if((typeof data) ==='string'){
+                   dataId=data
+                   this.currentCorpId = data
+                 }else{
+                   this.currentCorpId = data.id
+                   dataId=data.id
+                 }
+                //  if(Object.propotype.toString.call(data) ===String){}
+        //  this.currentCorpId = data
+         this.getOrgTree(dataId)
       },
       getAllUsers() {
         this.listQuery.orgId = ''

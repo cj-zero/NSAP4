@@ -16,7 +16,8 @@
       <el-table-column
         prop="cardName"
         label="客户名称"
-        width="200">
+        align="center"
+        min-width="120">
       </el-table-column>
   
        <el-table-column
@@ -39,23 +40,28 @@
         label="货币种类">
       </el-table-column>
        <el-table-column
-        prop="balance"
         align="center"
         label="科目余额"
         width="120">
+        <template slot-scope="scope">
+            <span :class="[scope.row.balance>=0?'redColor':'greenColro']">{{scope.row.balance}}0000</span>
+        </template>
       </el-table-column>
       <el-table-column
         prop="address"
+        align="center"
         label="开票地址"
-        width="180">
+        min-width="180">
       </el-table-column>
       <el-table-column
         prop="address2"
-        label="收货地址">
+        label="收货地址"
+         min-width="180">
       </el-table-column>
         <el-table-column
         prop="u_FPLB"
         align="center"
+        width="120px"
         label="发票类别">
       </el-table-column>
     </el-table>
@@ -84,6 +90,11 @@ console.log(a)
 }
 </script>
 
-<style>
-
+<style lang="scss" scope>
+    .redColor{
+        color:red;
+    }
+    .greenColro{
+        color:green;
+    }
 </style>

@@ -78,159 +78,7 @@
         </el-form-item>
         <hr>
     <!-- 选择制造商序列号 -->
-    <el-row type="flex" class="row-bg" justify="space-around">
-      <el-col :span="8">
-        <el-form-item label="制造商序列号">
-          <el-input v-model="form.name"></el-input>
-        </el-form-item>
-      </el-col>
-      <el-col :span="8">
-        <el-form-item label="内部序列号">
-          <el-input v-model="form.name" disabled></el-input>
-        </el-form-item>
-      </el-col>
-      <el-col :span="8">
-        <el-form-item label="保修结束日期">
-          <el-date-picker
-            disabled
-            size="mini"
-            type="date"
-            placeholder="选择开始日期"
-            v-model="form.startTime"
-            style="width: 100%;"
-          ></el-date-picker>
-        </el-form-item>
-      </el-col>
-    </el-row>
-    <el-row type="flex" class="row-bg" justify="space-around">
-      <el-col :span="8">
-        <el-form-item label="物料编码">
-          <el-input v-model="form.name" disabled></el-input>
-        </el-form-item>
-      </el-col>
-      <el-col :span="16">
-        <el-form-item label="物料描述">
-          <el-input disabled v-model="form.name"></el-input>
-        </el-form-item>
-      </el-col>
-    </el-row>
-    <!-- <el-row type="flex" class="row-bg" justify="space-around">
-      <el-col :span="8"> -->
-   
-      <!-- </el-col>
-      <el-col :span="8"> -->
-        <el-form-item>
-          <el-checkbox-group v-model="form.type">
-            <el-checkbox label="售后审核" name="type"></el-checkbox>
-            <el-checkbox label="销售审核" name="type"></el-checkbox>
-          </el-checkbox-group>
-        </el-form-item>
-      <!-- </el-col>
-    </el-row> -->
-    <el-row type="flex" class="row-bg" justify="space-around">
-      <el-col :span="16">
-        <el-form-item label="呼叫主题">
-          <el-input v-model="form.name"></el-input>
-        </el-form-item>
-      </el-col>
-      <el-col :span="8">
-        <el-form-item label="接单员">
-          <el-input disabled v-model="form.name"></el-input>
-        </el-form-item>
-      </el-col>
-    </el-row>
-    <el-row type="flex" class="row-bg" justify="space-around">
-      <el-col :span="8">
-        <el-form-item label="呼叫来源">
-          <el-input v-model="form.name"></el-input>
-        </el-form-item>
-      </el-col>
-      <el-col :span="8">
-        <el-form-item label="呼叫状态">
-          <el-input v-model="form.name" disabled></el-input>
-        </el-form-item>
-      </el-col>
-      <el-col :span="8">
-        <el-form-item label="创建日期">
-          <el-date-picker
-            size="mini"
-            type="date"
-            placeholder="选择开始日期"
-            v-model="form.startTime"
-            style="width: 100%;"
-          ></el-date-picker>
-        </el-form-item>
-      </el-col>
-    </el-row>
-    <el-row type="flex" class="row-bg" justify="space-around">
-      <el-col :span="8">
-        <el-form-item label="呼叫类型">
-          <el-input v-model="form.name"></el-input>
-        </el-form-item>
-      </el-col>
-      <el-col :span="8">
-        <el-form-item label="优先级">
-          <el-input v-model="form.name"></el-input>
-        </el-form-item>
-      </el-col>
-      <el-col :span="8">
-        <el-form-item label="预约时间">
-          <el-date-picker
-            disabled
-            size="mini"
-            type="date"
-            placeholder="选择开始日期"
-            v-model="form.startTime"
-            style="width: 100%;"
-          ></el-date-picker>
-        </el-form-item>
-      </el-col>
-    </el-row>
-    <el-row type="flex" class="row-bg" justify="space-around">
-      <el-col :span="8">
-        <el-form-item label="问题类型">
-          <el-input v-model="form.name"></el-input>
-        </el-form-item>
-      </el-col>
-      <el-col :span="8">
-        <el-form-item label="清算日期">
-          <el-date-picker
-            disabled
-            size="mini"
-            type="date"
-            placeholder="选择日期"
-            v-model="form.startTime"
-            style="width: 100%;"
-          ></el-date-picker>
-        </el-form-item>
-      </el-col>
-      <el-col :span="8">
-        <el-form-item label="结束时间">
-          <el-date-picker
-            disabled
-            size="mini"
-            type="date"
-            placeholder="选择日期"
-            v-model="form.startTime"
-            style="width: 100%;"
-          ></el-date-picker>
-        </el-form-item>
-      </el-col>
-    </el-row>
-    <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
-      <el-col :span="8">
-        <el-form-item label="地址标识">
-          <el-input v-model="form.name"></el-input>
-        </el-form-item>
-      </el-col>
-      <el-col :span="16">
-        <el-input v-model="form.name"></el-input>
-      </el-col>
-    </el-row>
-
-    <el-form-item label="备注" prop="desc">
-      <el-input type="textarea" v-model="form.desc"></el-input>
-    </el-form-item>
+   <formAdd></formAdd>
     <el-dialog
   title="提示"
   :visible.sync="dialogPartner"
@@ -249,9 +97,10 @@
 <script>
 import { getPartner } from "@/api/callserve";
 import formPartner from "./formPartner"
+import formAdd from "./formAdd"
 export default {
   name:'formTable',
-   components:{formPartner},
+   components:{formPartner ,formAdd},
   props: ["modelValue", "refValue", "labelposition", "labelwidth"],
  
 
