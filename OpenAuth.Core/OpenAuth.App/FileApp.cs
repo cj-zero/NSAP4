@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OpenAuth.App.Files;
 using OpenAuth.App.Interface;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
@@ -22,8 +23,9 @@ namespace OpenAuth.App
         private string _filePath;
         private string _dbFilePath;   //数据库中的文件路径
         private string _dbThumbnail;   //数据库中的缩略图路径
+        private IFileStore _fileStore;
 
-        public FileApp( IOptions<AppSetting> setOptions, IUnitWork unitWork, IRepository<UploadFile> repository, ILogger<FileApp> logger, IAuth auth)
+        public FileApp( IOptions<AppSetting> setOptions, IUnitWork unitWork, IRepository<UploadFile> repository, ILogger<FileApp> logger, IAuth auth, IFileStore fileStore)
             :base(unitWork, repository, auth)
         {
             _logger = logger;
@@ -32,20 +34,21 @@ namespace OpenAuth.App
             {
                 _filePath = AppContext.BaseDirectory;
             }
+            _fileStore = fileStore;
         }
 
-        public List<UploadFile> Add(IFormFileCollection files)
+        public async Task<List<UploadFile>> Add(IFormFileCollection files)
         {
             var result = new List<UploadFile>();
             foreach (var file in files)
             {
-                result.Add(Add(file));
+                result.Add(await Add(file));
             }
 
             return result;
         }
 
-        public UploadFile Add(IFormFile file)
+        public async Task<UploadFile> Add(IFormFile file)
         {
             if (file != null)
             {
@@ -56,31 +59,34 @@ namespace OpenAuth.App
             {
                 _logger.LogWarning("收到新文件为空");
             }
-            if (file != null && file.Length > 0 && file.Length < 10485760)
-            {
-                using (var binaryReader = new BinaryReader(file.OpenReadStream()))
-                {
-                    var fileName = Path.GetFileName(file.FileName);
-                    var data = binaryReader.ReadBytes((int)file.Length);
-                    UploadFile(fileName, data);
+            var uploadResult = await _fileStore.UploadFile(file);
+            await Repository.AddAsync(uploadResult);
+            return uploadResult;
+            //if (file != null && file.Length > 0 && file.Length < 10485760)
+            //{
+            //    using (var binaryReader = new BinaryReader(file.OpenReadStream()))
+            //    {
+            //        var fileName = Path.GetFileName(file.FileName);
+            //        var data = binaryReader.ReadBytes((int)file.Length);
+            //        UploadFile(fileName, data);
 
-                    var filedb = new UploadFile
-                    {
-                        FilePath = _dbFilePath,
-                        Thumbnail = _dbThumbnail,
-                        FileName = fileName,
-                        FileSize = file.Length,
-                        FileType = Path.GetExtension(fileName),
-                        Extension = Path.GetExtension(fileName)
-                    };
-                    Repository.Add(filedb);
-                    return filedb;
-                }
-            }
-            else
-            {
-                throw new Exception("文件过大");
-            }
+            //        var filedb = new UploadFile
+            //        {
+            //            FilePath = _dbFilePath,
+            //            Thumbnail = _dbThumbnail,
+            //            FileName = fileName,
+            //            FileSize = file.Length,
+            //            FileType = Path.GetExtension(fileName),
+            //            Extension = Path.GetExtension(fileName)
+            //        };
+            //        Repository.Add(filedb);
+            //        return filedb;
+            //    }
+            //}
+            //else
+            //{
+            //    throw new Exception("文件过大");
+            //}
         }
 
         private void UploadFile(string fileName, byte[] fileBuffers)
@@ -137,12 +143,26 @@ namespace OpenAuth.App
             var file = await Repository.Find(f => f.Id.Equals(fileId)).FirstOrDefaultAsync();
             if (file is null)
                 return null;
-            file.FilePath = Path.Combine(_filePath, file.FilePath);
-            if (!string.IsNullOrWhiteSpace(file.Thumbnail))
-            {
-                file.Thumbnail = Path.Combine(_filePath, file.Thumbnail);
-            }
+            //file.FilePath = Path.Combine(_filePath, file.FilePath);
+            //if (!string.IsNullOrWhiteSpace(file.Thumbnail))
+            //{
+            //    file.Thumbnail = Path.Combine(_filePath, file.Thumbnail);
+            //}
             return file;
+        }
+        /// <summary>
+        /// 获取文件流
+        /// </summary>
+        /// <returns></returns>
+        public async Task<Stream> GetFileStreamAsync(string bucketName, string fileName)
+        {
+            //file.FilePath = Path.Combine(_filePath, file.FilePath);
+            //if (!string.IsNullOrWhiteSpace(file.Thumbnail))
+            //{
+            //    file.Thumbnail = Path.Combine(_filePath, file.Thumbnail);
+            //}
+            var stream = await _fileStore.DownloadFile(bucketName, fileName);
+            return stream;
         }
     }
 }

@@ -23,6 +23,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Minio;
+using OpenAuth.App.Files;
 using OpenAuth.App.Interface;
 using OpenAuth.App.SSO;
 using OpenAuth.Repository;
@@ -88,6 +90,12 @@ namespace OpenAuth.App
         
         public static void InitAutofac(ContainerBuilder builder, Microsoft.Extensions.Configuration.IConfiguration configuration)
         {
+            // 注册minio文件服务客户端
+            var minioAddress = configuration.GetValue<string>("Minio:Address");
+            var minioKey = configuration.GetValue<string>("Minio:AppKey");
+            var minioSecret = configuration.GetValue<string>("Minio:AppSecret");
+            builder.RegisterInstance<MinioClient>(new MinioClient(minioAddress, minioKey, minioSecret));
+            builder.RegisterType<MinioFileStore>().As<IFileStore>();
             //注册数据库基础操作和工作单元
             builder.RegisterGeneric(typeof(BaseRepository<>)).As(typeof(IRepository<>));
             builder.RegisterType(typeof(UnitWork)).As(typeof(IUnitWork));

@@ -4,6 +4,14 @@
 // <author>www.cnblogs.com/yubaolee</author>
 // <date>2019-03-07</date>
 // <summary>生成缩略图</summary>
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.Formats.Bmp;
+using SixLabors.ImageSharp.Formats.Gif;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.Primitives;
+using System.IO;
 
 namespace Infrastructure
 {
@@ -14,6 +22,7 @@ namespace Infrastructure
             string thumbnailPath,
             int width=120, int height=90, string mode="H")
         {
+
             //Image originalImage = Image.FromFile(originalImagePath);
             //int towidth = width;
             //int toheight = height;
@@ -72,6 +81,33 @@ namespace Infrastructure
             //    bitmap.Dispose();
             //    g.Dispose();
             //}
+        }
+        public static Stream MakeThumbnail(Stream imgStreamint, string ext, int width= 120, int height = 90)
+        {
+            IImageEncoder encoder = default;
+            switch (ext)
+            {
+                case ".jpg" :
+                case ".jpeg":
+                    encoder = new JpegEncoder();
+                    break;
+                case ".png":
+                    encoder = new JpegEncoder();
+                    break;
+                case ".bmp":
+                    encoder = new BmpEncoder();
+                    break;
+                case ".gif":
+                    encoder = new GifEncoder();
+                    break;
+                default:
+                    break;
+            }
+            var img = Image.Load(imgStreamint);
+            var a = img.Clone(x => x.Resize(width, height));
+            var imgThumbnailStream = new MemoryStream();
+            a.Save(imgThumbnailStream, encoder);
+            return imgThumbnailStream;
         }
     }
 }

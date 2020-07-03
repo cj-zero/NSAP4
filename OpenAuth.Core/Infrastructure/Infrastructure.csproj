@@ -16,6 +16,7 @@
     <PackageReference Include="EnyimMemcachedCore" Version="2.1.5" />
     <PackageReference Include="log4net" Version="2.0.8" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.2" />
+    <PackageReference Include="Minio" Version="3.1.13" />
     <PackageReference Include="NetOfficeFw.Word" Version="1.7.4.8" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="NPOI" Version="2.5.1" />
@@ -23,6 +24,7 @@
     <PackageReference Include="NUnit" Version="3.12.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.16.0" />
+    <PackageReference Include="Veldrid.ImageSharp" Version="4.7.0" />
   </ItemGroup>
 
   <ItemGroup>

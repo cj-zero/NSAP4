@@ -92,6 +92,14 @@ namespace OpenAuth.Repository.Domain
 	    /// 所属应用ID
 	    /// </summary>
         public string BelongAppId { get; set; }
+        /// <summary>
+        /// 上传方式Minio/本地/其他
+        /// </summary>
+        public string UploadMode { get; set; }
+        /// <summary>
+        /// Minio桶名
+        /// </summary>
+        public string BucketName { get; set; }
 
     }
 }

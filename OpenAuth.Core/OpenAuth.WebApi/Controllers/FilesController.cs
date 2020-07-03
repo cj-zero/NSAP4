@@ -80,12 +80,12 @@ namespace OpenAuth.WebApi.Controllers
         /// <returns>服务器存储的文件信息</returns>
         [HttpPost]
         [AllowAnonymous]
-        public Response<IList<UploadFile>> Upload(IFormFileCollection files)
+        public async Task<Response<IList<UploadFile>>> Upload(IFormFileCollection files)
         {
             var result = new Response<IList<UploadFile>>();
             try
             {
-                result.Result = _app.Add(files);
+                result.Result = await _app.Add(files);
             }
             catch (Exception ex)
             {
@@ -107,6 +107,7 @@ namespace OpenAuth.WebApi.Controllers
             var fileStream = new FileStream(filePath, FileMode.Open);
             return File(fileStream, contentType);
         }
+
         [HttpGet("{fileId}")]
         [AllowAnonymous]
         public async Task<IActionResult> Download(string fileId, bool isThumbnail)
@@ -114,14 +115,15 @@ namespace OpenAuth.WebApi.Controllers
             var file = await _app.GetFileAsync(fileId);
             if(file is null)
                 return NotFound($"fileId:{fileId} is not exists");
-            var filePath = file.FilePath;
-            if (isThumbnail)
-                filePath = file.Thumbnail;
-            if (!System.IO.File.Exists(filePath))
-                return NotFound($"fileName:{file.FileName} is not exists");
+            //var filePath = file.FilePath;
+            //if (isThumbnail)
+            //    filePath = file.Thumbnail;
+            //if (!System.IO.File.Exists(filePath))
+            //    return NotFound($"fileName:{file.FileName} is not exists");
+
             var f = new FileExtensionContentTypeProvider();
-            f.TryGetContentType(filePath, out string contentType);
-            var fileStream = new FileStream(filePath, FileMode.Open);
+            f.TryGetContentType(file.FileName, out string contentType);
+            var fileStream = await _app.GetFileStreamAsync(file.BucketName, file.FilePath);
             return File(fileStream, contentType);
         }
     }
