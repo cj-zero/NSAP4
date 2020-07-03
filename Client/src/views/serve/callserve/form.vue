@@ -70,34 +70,30 @@
         </el-form-item>
       </el-col>
     </el-row>
-    <el-form-item label="" prop="resource">
-
-
-            <el-radio-group v-model="form.name">
-              <el-radio label="售后审核"></el-radio>
-              <el-radio label="销售审核"></el-radio>
-            </el-radio-group>
+    <el-form-item label prop="resource">
+      <el-radio-group v-model="form.name">
+        <el-radio label="售后审核"></el-radio>
+        <el-radio label="销售审核"></el-radio>
+      </el-radio-group>
     </el-form-item>
-    <hr />
     <!-- 选择制造商序列号 -->
     <formAdd :SerialNumberList="SerialNumberList"></formAdd>
-    <el-dialog title="选择业务伙伴" width="90%"  @open="openDialog" :visible.sync="dialogPartner">
-      <el-row  style="margin:10px 0;">
+    <el-dialog title="选择业务伙伴" width="90%" @open="openDialog" :visible.sync="dialogPartner">
+      <el-row style="margin:10px 0;">
         <el-col :span="2">
           <el-button type="text">客户代码:</el-button>
         </el-col>
-          <el-col :span="2" >
-          <el-input @input="searchList" v-model="inputSearch" placeholder="请输入客户代码">
-          </el-input>
+        <el-col :span="2">
+          <el-input @input="searchList" v-model="inputSearch" placeholder="请输入客户代码"></el-input>
         </el-col>
-         <el-col :span="2" style="margin-left:10px;">
+        <el-col :span="2" style="margin-left:10px;">
           <el-button type="text">制造商序列号:</el-button>
         </el-col>
-         <el-col :span="2" >
-            <el-input  ></el-input>
+        <el-col :span="2">
+          <el-input></el-input>
         </el-col>
-     </el-row>
-      <formPartner :partnerList="filterPartnerList" ></formPartner>
+      </el-row>
+      <formPartner :partnerList="filterPartnerList"></formPartner>
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogPartner = false">取 消</el-button>
         <el-button type="primary" @click="dialogPartner = false">确 定</el-button>
@@ -107,7 +103,7 @@
 </template>
 
 <script>
-import { getPartner ,getSerialNumber } from "@/api/callserve";
+import { getPartner, getSerialNumber } from "@/api/callserve";
 import formPartner from "./formPartner";
 import formAdd from "./formAdd";
 export default {
@@ -118,7 +114,7 @@ export default {
   data() {
     return {
       partnerList: [],
-      filterPartnerList:[],
+      filterPartnerList: [],
       inputSearch: "",
       SerialNumberList: [], //序列号列表
       state: "",
@@ -131,7 +127,7 @@ export default {
         date2: "",
         delivery: false,
         type: [],
-        name:'', //服务类型
+        name: "", //服务类型
         resource: "",
         desc: ""
       }
@@ -141,18 +137,19 @@ export default {
   mounted() {
     this.getPartnerList();
     this.getSerialNumberList();
-      this.filterPartnerList = this.partnerList;
+    this.filterPartnerList = this.partnerList;
   },
   methods: {
-        openDialog() {   //打开前赋值
+    openDialog() {
+      //打开前赋值
       this.filterPartnerList = this.partnerList;
     },
-        searchList(res){
-              if (!res) {
+    searchList(res) {
+      if (!res) {
         this.filterPartnerList = this.partnerList;
       } else {
         let list = this.partnerList.filter(item => {
-          return item.cardCode.toLowerCase().indexOf(res.toLowerCase()) ===0;
+          return item.cardCode.toLowerCase().indexOf(res.toLowerCase()) === 0;
         });
         this.filterPartnerList = list;
       }
@@ -167,9 +164,8 @@ export default {
     },
     createFilter(queryString) {
       return partnerList => {
-        console.log(partnerList)
+        console.log(partnerList);
         return (
-          
           partnerList.cardCode
             .toLowerCase()
             .indexOf(queryString.toLowerCase()) === 0

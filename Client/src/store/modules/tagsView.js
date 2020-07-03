@@ -22,6 +22,10 @@ const tagsView = {
         state.cachedViews.push(view.name)
       }
     },
+    DEL_CACHED_VIEW: (state, view) => {
+      const index = state.cachedViews.indexOf(view.name)
+      index > -1 && state.cachedViews.splice(index, 1)
+    },
     DEL_VISITED_VIEWS: (state, view) => {
       for (const [i, v] of state.visitedViews.entries()) {
         if (v.path === view.path) {
@@ -74,6 +78,12 @@ const tagsView = {
       return new Promise((resolve) => {
         commit('DEL_OTHERS_VIEWS', view)
         resolve([...state.visitedViews])
+      })
+    },
+    delCachedView({ commit, state }, view) {
+      return new Promise(resolve => {
+        commit('DEL_CACHED_VIEW', view)
+        resolve([...state.cachedViews])
       })
     },
     delAllViews({ commit, state }) {

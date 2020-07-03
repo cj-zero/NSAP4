@@ -12,7 +12,7 @@
        <li @click="closeSelectedTag(selectedTag)">关闭本页面</li>
       <li @click="closeOthersTags">关闭其他</li>
       <li @click="closeAllTags">全部关闭</li>
-      <li @click="onLoad">刷新页面</li>
+      <li @click="refreshSelectedTag(selectedTag)">刷新页面</li>
        <li @click="addViewTags_copy">复制页面</li>
     </ul>
   </div>
@@ -60,10 +60,17 @@ export default {
       }
       return false
     },
-    onLoad(){
-      
-window.location.reload(true)
+        refreshSelectedTag(view) {
+      this.$store.dispatch('TagsView/delCachedView', view).then(() => {
+        const { fullPath } = view
+        this.$nextTick(() => {
+          this.$router.replace({
+            path: '/redirect' + fullPath
+          })
+        })
+      })
     },
+
     isActive(route) {
       return route.path === this.$route.path
     },
