@@ -71,10 +71,12 @@
       </el-col>
     </el-row>
     <el-form-item label="服务类型" prop="resource">
-      <el-radio-group v-model="form.name">
-        <el-radio label="免费"></el-radio>
-        <el-radio label="收费"></el-radio>
-      </el-radio-group>
+
+
+            <el-radio-group v-model="form.name">
+              <el-radio label="售后审核"></el-radio>
+              <el-radio label="销售审核"></el-radio>
+            </el-radio-group>
     </el-form-item>
     <hr />
     <!-- 选择制造商序列号 -->
@@ -113,6 +115,7 @@ export default {
         date2: "",
         delivery: false,
         type: [],
+        name:'', //服务类型
         resource: "",
         desc: ""
       }

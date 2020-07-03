@@ -220,7 +220,7 @@ export default {
       multipleSelection: [], // 列表checkbox选中的值
       tableKey: 0,
       options: {
-        action: `${process.env.VUE_APP_BASE_API}/api/Files/Upload`,
+        action: `${process.env.VUE_APP_BASE_API}/Files/Upload`,
         defaultValue: [],
         disabled: false,
         isDelete: false,

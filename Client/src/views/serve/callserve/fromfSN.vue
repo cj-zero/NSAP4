@@ -2,6 +2,7 @@
 <div>
     <el-table
     :data="SerialNumberList"
+    v-if="SerialNumberList.length>0"
     border
     ref="singleTable"
    highlight-current-row
@@ -55,6 +56,7 @@ export default {
   data() {
     return {
        currentRow: [] ,//选择项
+       dataList:[],
          listQuery: {
         // 查询条件
         page: 1,
@@ -75,7 +77,7 @@ export default {
     }
   },
     mounted() {
-    console.log(this.SerialNumberList);
+    //   console.log(this.SerialNumberList)
   },
   methods:{
      handleChange(val) {
@@ -84,10 +86,7 @@ export default {
       // this.getList();
     },
    handleSelectionChange(val) {
-
       this.$emit("change-Form",val)
-        // this.currentRow = val;
-        // console.log(val)
       }
 
 }

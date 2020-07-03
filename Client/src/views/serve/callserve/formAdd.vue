@@ -1,173 +1,362 @@
 <template>
   <div>
-    <div v-for="(form,index) in formList" :key="`key_${index}`">
-      <el-row type="flex" class="row-bg" justify="space-around">
-        <el-col :span="8">
-          <el-form-item label="制造商序列号">
-            <el-autocomplete
-              popper-class="my-autocomplete"
-              v-model="form.manufSN"
-              :fetch-suggestions="querySearch"
-              placeholder="请输入内容"
-              @select="handleSelect"
-            >
-              <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
-              <template slot-scope="{ item }">
-                <div class="name">{{ item.manufSN }}</div>
-                <span class="addr">{{ item.custmrName }}</span>
-              </template>
-            </el-autocomplete>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="内部序列号">
-            <el-input v-model="form.internalSN" disabled></el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="保修结束日期">
-            <el-date-picker
-              disabled
-              size="mini"
-              type="date"
-              placeholder="选择开始日期"
-              v-model="form.dlvryDate"
-              style="width: 100%;"
-            ></el-date-picker>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row type="flex" class="row-bg" justify="space-around">
-        <el-col :span="8">
-          <el-form-item label="物料编码">
-            <el-input v-model="form.itemCode" disabled></el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="16">
-          <el-form-item label="物料描述">
-            <el-input disabled v-model="form.itemName"></el-input>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <!-- <el-row type="flex" class="row-bg" justify="space-around">
-      <el-col :span="8">-->
-
-      <!-- </el-col>
-      <el-col :span="8">-->
-      <el-form-item>
-        <el-checkbox-group v-model="form.name">
-          <el-checkbox label="售后审核" name="type"></el-checkbox>
-          <el-checkbox label="销售审核" name="type"></el-checkbox>
-        </el-checkbox-group>
-      </el-form-item>
-      <!-- </el-col>
-      </el-row>-->
-      <el-row type="flex" class="row-bg" justify="space-around">
-        <el-col :span="16">
-          <el-form-item label="呼叫主题">
-            <el-input v-model="form.name"></el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="接单员">
-            <el-input disabled v-model="form.name"></el-input>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row type="flex" class="row-bg" justify="space-around">
-        <el-col :span="8">
-          <el-form-item label="呼叫来源">
-            <el-input v-model="form.name"></el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="呼叫状态">
-            <el-input v-model="form.name" disabled></el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="创建日期">
-            <el-date-picker
-              size="mini"
-              type="date"
-              placeholder="选择开始日期"
-              v-model="form.startTime"
-              style="width: 100%;"
-            ></el-date-picker>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row type="flex" class="row-bg" justify="space-around">
-        <el-col :span="8">
-          <el-form-item label="呼叫类型">
-            <el-input v-model="form.name"></el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="优先级">
-            <el-input v-model="form.name"></el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="预约时间">
-            <el-date-picker
-              disabled
-              size="mini"
-              type="date"
-              placeholder="选择开始日期"
-              v-model="form.startTime"
-              style="width: 100%;"
-            ></el-date-picker>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row type="flex" class="row-bg" justify="space-around">
-        <el-col :span="8">
-          <el-form-item label="问题类型">
-            <el-input v-model="form.name"></el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="清算日期">
-            <el-date-picker
-              disabled
-              size="mini"
-              type="date"
-              placeholder="选择日期"
-              v-model="form.startTime"
-              style="width: 100%;"
-            ></el-date-picker>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="结束时间">
-            <el-date-picker
-              disabled
-              size="mini"
-              type="date"
-              placeholder="选择日期"
-              v-model="form.startTime"
-              style="width: 100%;"
-            ></el-date-picker>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
-        <el-col :span="8">
-          <el-form-item label="地址标识">
-            <el-input v-model="form.name"></el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="16">
+    <el-row type="flex" class="row-bg" justify="space-around">
+      <el-col :span="8">
+        <el-form-item label="制造商序列号">
+          <el-autocomplete
+            popper-class="my-autocomplete"
+            v-model="form.manufSN"
+            :fetch-suggestions="querySearch"
+            placeholder="请输入内容"
+            @select="handleSelect"
+          >
+            <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
+            <template slot-scope="{ item }">
+              <div class="name">{{ item.manufSN }}</div>
+              <span class="addr">{{ item.custmrName }}</span>
+            </template>
+          </el-autocomplete>
+        </el-form-item>
+      </el-col>
+      <el-col :span="8">
+        <el-form-item label="内部序列号">
+          <el-input v-model="form.internalSN" disabled></el-input>
+        </el-form-item>
+      </el-col>
+      <el-col :span="8">
+        <el-form-item label="保修结束日期">
+          <el-date-picker
+            disabled
+            type="date"
+            placeholder="选择开始日期"
+            v-model="form.dlvryDate"
+            style="width: 100%;"
+          ></el-date-picker>
+        </el-form-item>
+      </el-col>
+    </el-row>
+    <el-row type="flex" class="row-bg" justify="space-around">
+      <el-col :span="8">
+        <el-form-item label="物料编码">
+          <el-input v-model="form.itemCode" disabled></el-input>
+        </el-form-item>
+      </el-col>
+      <el-col :span="16">
+        <el-form-item label="物料描述">
+          <el-input disabled v-model="form.itemName"></el-input>
+        </el-form-item>
+      </el-col>
+    </el-row>
+    <el-form-item>
+      <el-radio-group v-model="form.name">
+        <el-radio label="免费"></el-radio>
+        <el-radio label="收费"></el-radio>
+      </el-radio-group>
+    </el-form-item>
+    <!-- </el-col>
+    </el-row>-->
+    <el-row type="flex" class="row-bg" justify="space-around">
+      <el-col :span="16">
+        <el-form-item label="呼叫主题">
           <el-input v-model="form.name"></el-input>
-        </el-col>
-      </el-row>
+        </el-form-item>
+      </el-col>
+      <el-col :span="8">
+        <el-form-item label="接单员">
+          <el-input disabled v-model="form.name"></el-input>
+        </el-form-item>
+      </el-col>
+    </el-row>
+    <el-row type="flex" class="row-bg" justify="space-around">
+      <el-col :span="8">
+        <el-form-item label="呼叫来源">
+                <el-select v-model="form.name" clearable placeholder="请选择">
+                <el-option
+                  v-for="item in options_sourse"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value">
+                </el-option>
+              </el-select>
+        </el-form-item>
+      </el-col>
+      <el-col :span="8">
+        <el-form-item label="呼叫状态">
+          <el-input v-model="form.name" disabled></el-input>
+        </el-form-item>
+      </el-col>
+      <el-col :span="8">
+        <el-form-item label="创建日期">
+          <el-date-picker
+            type="date"
+            placeholder="选择开始日期"
+            v-model="form.startTime"
+            style="width: 100%;"
+          ></el-date-picker>
+        </el-form-item>
+      </el-col>
+    </el-row>
+    <el-row type="flex" class="row-bg" justify="space-around">
+      <el-col :span="8">
+        <el-form-item label="呼叫类型">
+         <el-select v-model="form.name" clearable placeholder="请选择">
+                <el-option
+                  v-for="item in options_type"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value">
+                </el-option>
+              </el-select>
+        </el-form-item>
+      </el-col>
+      <el-col :span="8">
+        <el-form-item label="优先级">
+              <el-select v-model="form.name" clearable placeholder="请选择">
+                <el-option
+                  v-for="item in options_quick"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value">
+                </el-option>
+              </el-select>
+        </el-form-item>
+      </el-col>
+      <el-col :span="8">
+        <el-form-item label="预约时间">
+          <el-date-picker
+            disabled
+            type="date"
+            placeholder="选择开始日期"
+            v-model="form.startTime"
+            style="width: 100%;"
+          ></el-date-picker>
+        </el-form-item>
+      </el-col>
+    </el-row>
+    <el-row type="flex" class="row-bg" justify="space-around">
+      <el-col :span="8">
+        <el-form-item label="问题类型">
+          <el-input v-model="form.name"></el-input>
+        </el-form-item>
+      </el-col>
+      <el-col :span="8">
+        <el-form-item label="清算日期">
+          <el-date-picker
+            disabled
+            type="date"
+            placeholder="选择日期"
+            v-model="form.startTime"
+            style="width: 100%;"
+          ></el-date-picker>
+        </el-form-item>
+      </el-col>
+      <el-col :span="8">
+        <el-form-item label="结束时间">
+          <el-date-picker
+            disabled
+            type="date"
+            placeholder="选择日期"
+            v-model="form.startTime"
+            style="width: 100%;"
+          ></el-date-picker>
+        </el-form-item>
+      </el-col>
+    </el-row>
+    <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
+      <el-col :span="8">
+        <el-form-item label="地址标识">
+          <el-input v-model="form.name"></el-input>
+        </el-form-item>
+      </el-col>
+      <el-col :span="16">
+        <el-input v-model="form.name"></el-input>
+      </el-col>
+    </el-row>
 
-      <el-form-item label="备注" prop="desc">
-        <el-input type="textarea" v-model="form.desc"></el-input>
-      </el-form-item>
-    </div>
-    <el-dialog destroy-on-close title="选择制造商序列号" width="90%" :visible.sync="dialogfSN">
+    <el-form-item label="备注" prop="desc">
+      <el-input type="textarea" v-model="form.desc"></el-input>
+    </el-form-item>
+    <!-- form数组，不包括第一项 -->
+    <el-collapse v-model="activeNames" v-if="formList.length">
+      <el-collapse-item title="展开更多序列号表单" name="1">
+        <div
+          v-for="(form,index) in formList"
+          :key="`key_${index}`"
+          style="border:1px solid silver;padding:5px;margin:2px;"
+        >
+          <el-row type="flex" class="row-bg" justify="space-around">
+            <el-col :span="8">
+              <el-form-item label="制造商序列号">
+                <el-autocomplete
+                  popper-class="my-autocomplete"
+                  v-model="form.manufSN"
+                  :fetch-suggestions="querySearch"
+                  placeholder="请输入内容"
+                  @select="handleSelect"
+                >
+                  <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
+                  <template slot-scope="{ item }">
+                    <div class="name">{{ item.manufSN }}</div>
+                    <span class="addr">{{ item.custmrName }}</span>
+                  </template>
+                </el-autocomplete>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="内部序列号">
+                <el-input v-model="form.internalSN" disabled></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="保修结束日期">
+                <el-date-picker
+                  disabled
+                  type="date"
+                  placeholder="选择开始日期"
+                  v-model="form.dlvryDate"
+                  style="width: 100%;"
+                ></el-date-picker>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row type="flex" class="row-bg" justify="space-around">
+            <el-col :span="8">
+              <el-form-item label="物料编码">
+                <el-input v-model="form.itemCode" disabled></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="16">
+              <el-form-item label="物料描述">
+                <el-input disabled v-model="form.itemName"></el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item>
+            <el-radio-group v-model="form.name">
+              <el-radio label="免费"></el-radio>
+              <el-radio label="收费"></el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <!-- </el-col>
+          </el-row>-->
+          <el-row type="flex" class="row-bg" justify="space-around">
+            <el-col :span="16">
+              <el-form-item label="呼叫主题">
+                <el-input v-model="form.name"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="接单员">
+                <el-input disabled v-model="form.name"></el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row type="flex" class="row-bg" justify="space-around">
+            <el-col :span="8">
+              <el-form-item label="呼叫来源">
+                 <el-select v-model="form.name" clearable placeholder="请选择">
+                <el-option
+                  v-for="item in options_sourse"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value">
+                </el-option>
+              </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="呼叫状态">
+                <el-input v-model="form.name" disabled></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="创建日期">
+                <el-date-picker
+                  type="date"
+                  placeholder="选择开始日期"
+                  v-model="form.startTime"
+                  style="width: 100%;"
+                ></el-date-picker>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row type="flex" class="row-bg" justify="space-around">
+            <el-col :span="8">
+              <el-form-item label="呼叫类型">
+                <el-input v-model="form.name"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="优先级">
+                <el-input v-model="form.name"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="预约时间">
+                <el-date-picker
+                  disabled
+                  type="date"
+                  placeholder="选择开始日期"
+                  v-model="form.startTime"
+                  style="width: 100%;"
+                ></el-date-picker>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row type="flex" class="row-bg" justify="space-around">
+            <el-col :span="8">
+              <el-form-item label="问题类型">
+                <el-input v-model="form.name"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="清算日期">
+                <el-date-picker
+                  disabled
+                  type="date"
+                  placeholder="选择日期"
+                  v-model="form.startTime"
+                  style="width: 100%;"
+                ></el-date-picker>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="结束时间">
+                <el-date-picker
+                  disabled
+                  type="date"
+                  placeholder="选择日期"
+                  v-model="form.startTime"
+                  style="width: 100%;"
+                ></el-date-picker>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
+            <el-col :span="8">
+              <el-form-item label="地址标识">
+                <el-input v-model="form.name"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="16">
+              <el-input v-model="form.name"></el-input>
+            </el-col>
+          </el-row>
+
+          <el-form-item label="备注" prop="desc">
+            <el-input type="textarea" v-model="form.desc"></el-input>
+          </el-form-item>
+        </div>
+      </el-collapse-item>
+    </el-collapse>
+    <!--  -->
+    <el-dialog
+      destroy-on-close
+      title="选择制造商序列号"
+      @open="openDialog"
+      width="90%"
+      :visible.sync="dialogfSN"
+    >
       <div style="width:200px;margin:10px 0;">
         <el-autocomplete
           popper-class="my-autocomplete"
@@ -196,119 +385,141 @@
 
 <script>
 // import { getPartner } from "@/api/callserve";
-import fromfSN from './fromfSN'
+import fromfSN from "./fromfSN";
 export default {
-  components:{fromfSN},
+  components: { fromfSN },
   props: ["SerialNumberList"],
   data() {
     return {
-         filterSerialNumberList: [],
-         formListStart:[], //未加工的表格数据
-      dialogfSN:false,
-      inputSearch: '',
-      formList: [ {
+      filterSerialNumberList: [],
+      formListStart: [], //选择的表格数据
+            formList: [ ],//表单依赖的表格数据
+      dialogfSN: false,
+      inputSearch: "",
+      activeNames: ["1"], //活跃名称
+      form: {
         manufSN: "",
         internalSN: "", //内部序列号
         itemCode: "", //物料编码
-        itemName: "",  //物料描述
+        itemName: "", //物料描述
         dlvryDate: "",
         delivery: false,
         type: [],
         resource: "",
         name: ""
-      }],
-      ifFormPush:false, //表单是否被动态添加过
-      form: {
-        manufSN: "",
-        custmrName: "", //客户名称
-        region: "",
-        date1: "",
-        date2: "",
-        delivery: false,
-        type: [],
-        resource: "",
-        name: ""
-      }
+      },
+      options_sourse:[
+        {value:'电话' ,label:'电话'},
+         {value:'钉钉' ,label:'钉钉'},
+          {value:'QQ' ,label:'QQ'},
+           {value:'微信' ,label:'微信'},
+            {value:'邮件' ,label:'邮件'},
+             {value:'APP' ,label:'APP'},
+              {value:'Web' ,label:'Web'},
+      ],
+      options_type:[
+          {value:'提交呼叫' ,label:'提交呼叫'},
+         {value:'在线解答（已解决）' ,label:'在线解答（已解决）'}  
+      ],  //呼叫类型
+      options_quick:[
+          {value:'高' ,label:'高'},
+            {value:'中' ,label:'中'},
+              {value:'底' ,label:'底'},
+      ],
+      ifFormPush: false //表单是否被动态添加过
     };
   },
-  created() {
-     this.filterSerialNumberList=this.SerialNumberList
-    // getPartner()
-    //   .then(res => {
-    //     // this.partnerList = res.data;
-    //   })
-    //   .catch(error => {
-    //     console.log(error);
-    //   });
+  created() {},
+
+  mounted() {
+    this.filterSerialNumberList = this.SerialNumberList;
   },
-  computed:{
-  //  SerialNumberList: {
-  //     get: function(a) {
-  //       return a
-  //     },
-  //     set: function(a) {
-  //        return a
-  //     }
-  //   }
+  watch: {
+    // filterSerialNumberList: function(newQuestion, oldQuestion) {
+    //   // console.log(newQuestion, oldQuestion);
+    // }
+  },
+  computed: {
+    //  SerialNumberList: {
+    //     get: function(a) {
+    //       return a
+    //     },
+    //     set: function(a) {
+    //        return a
+    //     }
+    //   }
   },
   methods: {
-    changeForm(res){
-      this.formListStart =res
+    openDialog() {
+      this.filterSerialNumberList = this.SerialNumberList;
     },
-    pushForm(){
-      this.dialogfSN = false
+    changeForm(res) {
+      this.formListStart = res;
       console.log(this.formListStart)
-      if(!this.ifFormPush){
-         this.formList[0].manufSN=this.formListStart[0].manufSN
-           this.formList[0].internalSN=this.formListStart[0].internalSN
-           this.formList[0].itemCode=this.formListStart[0].itemCode
-           this.formList[0].itemName=this.formListStart[0].itemName
-             this.formList[0].dlvryDate=this.formListStart[0].dlvryDate
-           
-        for(let i=1;i<this.formListStart.length;i++){
-         
-           this.formList.push({
-               manufSN:this.formListStart[i].manufSN,
-        internalSN:this.formListStart[i].internalSN,
-        itemCode: this.formListStart[i].itemCode, 
-        itemName: this.formListStart[i].itemName,  
-        dlvryDate:this.formListStart[i].dlvryDate
-           })
-        }
-        this.ifFormPush =true
-      }else{
-        // this.formList=[]
-         this.ifFormPush =true
-        //  console.log()
-  for(let i=this.formList.length-1;i<this.formListStart.length;i++){
-           this.formList.push({
-               manufSN:this.formListStart[i].manufSN,
-        internalSN:this.formListStart[i].internalSN,
-        itemCode: this.formListStart[i].itemCode, 
-        itemName: this.formListStart[i].itemName,  
-        dlvryDate:this.formListStart[i].dlvryDate
+    },
+    pushForm() {
+      this.dialogfSN = false;
+      if (!this.ifFormPush) {
+        this.formList[0].manufSN = this.formListStart[0].manufSN;
+        this.formList[0].internalSN = this.formListStart[0].internalSN;
+        this.formList[0].itemCode = this.formListStart[0].itemCode;
+        this.formList[0].itemName = this.formListStart[0].itemName;
+        this.formList[0].dlvryDate = this.formListStart[0].dlvryDate;
 
-           })
- 
-      
+        for (let i = 0; i < this.formListStart.length; i++) {
+          this.formList.push({
+            manufSN: this.formListStart[i].manufSN,
+            internalSN: this.formListStart[i].internalSN,
+            itemCode: this.formListStart[i].itemCode,
+            itemName: this.formListStart[i].itemName,
+            dlvryDate: this.formListStart[i].dlvryDate
+          });
+
+          //   this.formList[i+1]={}
+          //      this.formList[i+1].manufSN = this.formListStart[i].manufSN;
+          // this.formList[i+1].internalSN = this.formListStart[i].internalSN;
+          // this.formList[i+1].itemCode = this.formListStart[i].itemCode;
+          // this.formList[i+1].itemName = this.formListStart[i].itemName;
+          // this.formList[i+1].dlvryDate = this.formListStart[i].dlvryDate;
+
+          // this.
+          // this.formList[i]({
+          //   manufSN: this.formListStart[i].manufSN,
+          //   internalSN: this.formListStart[i].internalSN,
+          //   itemCode: this.formListStart[i].itemCode,
+          //   itemName: this.formListStart[i].itemName,
+          //   dlvryDate: this.formListStart[i].dlvryDate
+          // });
+        }
+        this.ifFormPush = true;
+      } else {
+        this.ifFormPush = true;
+        for (let i = 0; i < this.formListStart.length; i++) {
+          this.formList.push({
+            manufSN: this.formListStart[i].manufSN,
+            internalSN: this.formListStart[i].internalSN,
+            itemCode: this.formListStart[i].itemCode,
+            itemName: this.formListStart[i].itemName,
+            dlvryDate: this.formListStart[i].dlvryDate
+          });
         }
       }
     },
     handleIconClick() {
-      this.dialogfSN= true
+      this.dialogfSN = true;
     },
-    searchList(res){
+    searchList(res) {
       if (!res) {
-        this.filterSerialNumberList=this.SerialNumberList
-      } else{
-        let list=this.SerialNumberList.filter(item=>
-       {return item.manufSN.indexOf(res) >0 })
-              this.filterSerialNumberList=list
+        this.filterSerialNumberList = this.SerialNumberList;
+      } else {
+        let list = this.SerialNumberList.filter(item => {
+          return item.manufSN.indexOf(res) > 0;
+        });
+        this.filterSerialNumberList = list;
       }
     },
     querySearch(queryString, cb) {
-    
-      var filterSerialNumberList =  this.SerialNumberList
+      var filterSerialNumberList = this.SerialNumberList;
       var results = queryString
         ? filterSerialNumberList.filter(this.createFilter(queryString))
         : filterSerialNumberList;
@@ -327,15 +538,13 @@ export default {
     handleSelect(item) {
       console.log(item);
     },
-    searchSelect(res){
-      let newList =
-       this.filterSerialNumberList.filter(item=>
-        item.manufSN===res.manufSN
-      )
-     this.inputSearch=res.manufSN
-    this.filterSerialNumberList=newList
+    searchSelect(res) {
+      let newList = this.filterSerialNumberList.filter(
+        item => item.manufSN === res.manufSN
+      );
+      this.inputSearch = res.manufSN;
+      this.filterSerialNumberList = newList;
     }
- 
   }
 };
 </script>
