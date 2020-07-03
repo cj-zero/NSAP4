@@ -56,8 +56,7 @@
           ></el-table-column>
           <el-table-column prop="icon" label="应用图标" align="center" show-overflow-tooltip>
             <template slot-scope="scope">
-              <span>{{getUrl(scope.row.id)}}</span>
-              <!-- <span>{{scope.row.id}}</span> -->
+              <img :src="`${baseURL}/files/Download/${scope.row.id}?X-Token=${tokenValue}`" alt="">
             </template>
           </el-table-column>
           <el-table-column label="是否可用" align="center" width='100px' show-overflow-tooltip>
@@ -124,22 +123,6 @@
           <el-form-item size="small" :label="'appKey'">
             <el-input v-model="temp.appKey"></el-input>
           </el-form-item>
-          <!-- <el-form-item size="small" :label="'应用图标'">
-              <el-autocomplete
-               suffix-icon="el-icon-caret-bottom"
-              style="width:100%;"
-              class="inline-input"
-              v-model="temp.icon"
-              :fetch-suggestions="querySearch"
-              placeholder="请输入应用图标"
-             
-            >
-              <i
-    :class="[temp.icon?temp.icon:'']"
-    slot="suffix">
-  </i>
-  </el-autocomplete>
-          </el-form-item>-->
           <el-form-item size="small" :label="'是否可用'">
             <el-switch v-model="temp.disable" active-text="是" inactive-text="否"></el-switch>
           </el-form-item>
@@ -174,6 +157,8 @@ export default {
     return {
       multipleSelection: [], // 列表checkbox选中的值
       tableKey: 0,
+      baseURL: process.env.VUE_APP_BASE_API,
+      tokenValue:this.$store.state.user.token,
       list: null,
       flowList: null,
       flowList_value: "",
@@ -252,19 +237,21 @@ export default {
     
   },
   methods: {
-    getUrl(result) {
-      let url = ''
-        certinfos
-        .getImgUrl(result)
-        .then(response => {
-          this.listLoading = false;
-          url = response .returnUrl
-        })
-        .catch(() => {
-          url = ''
-        });
-      return url?url:'图片不存在';
-    },
+    // getUrl(result) {
+    //   let url = ''
+    //     certinfos
+    //     .getImgUrl(result)
+    //     .then(response => {
+    //       this.listLoading = false;
+    //     // url=  `${baseURL}/files/Download/${scope.row.id}?X-Token=${tokenValue}`
+    //     //    = response .returnUrl
+    //     console.log(response .returnUrl ,'url')
+    //     })
+    //     .catch(() => {
+    //       url = ''
+    //     });
+    //   return url?url:'图片不存在';
+    // },
     loadAll() {
       return [
         { id: 0, value: "el-icon-s-tools", label: "设置" },
