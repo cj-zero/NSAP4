@@ -1,7 +1,7 @@
 <template>
 <div>
     <el-table
-    :data="partnerList"
+    :data="toCallList"
     border
     ref="singleTable"
    highlight-current-row
@@ -28,18 +28,17 @@
     <el-table-column prop="u_FPLB" align="center" width="120px" label="发票类别"></el-table-column>
   </el-table>
         <pagination
-          v-show="partnerList.length>0"
-          :total="partnerList.length"
+          v-show="toCallList.length>0"
+          :total="toCallList.length"
           :page.sync="listQuery.page"
           :limit.sync="listQuery.limit"
           @pagination="handleChange"
         />
-       <el-dialog title="最近呼叫ID" width="90%"  @open="openDialog" :visible.sync="dialogCallId">
+       <el-dialog title="选择业务伙伴" width="90%"  @open="openDialog" :visible.sync="dialogPartner">
 
-      <callId :toCallList="toCallList"></callId>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="dialogCallId = false">取 消</el-button>
-        <el-button type="primary" @click="dialogCallId = false">确 定</el-button>
+        <el-button @click="dialogPartner = false">取 消</el-button>
+        <el-button type="primary" @click="dialogPartner = false">确 定</el-button>
       </span>
     </el-dialog>
 </div>
@@ -48,21 +47,18 @@
 
 <script>
 import Pagination from "@/components/Pagination";
-import callId from "./callId";
+
 export default {
-  props: ["partnerList" ],
-    components: {  Pagination ,callId},
+  props: ["toCallList" ],
+    components: {  Pagination },
 
   data() {
     return {
        currentRow: [] ,//选择项
        dialogPartner:'',
-       dialogCallId:false,
          listQuery: {
         // 查询条件
         page: 1,
-        CallList:[],
-        toCallList:[],
         limit: 10,
         key: undefined,
         appId: undefined
@@ -70,7 +66,7 @@ export default {
     };
   },
   compunted: {
-    partnerList: {
+    toCallList: {
       get: function(a) {
         console.log(a);
       },
@@ -80,11 +76,12 @@ export default {
     }
   },
     mounted() {
-    console.log(this.partnerList);
+    console.log(this.toCallList);
   },
   methods:{
           openDialog() {   //打开前赋值
-      this.toCallList = this.CallList
+      // this.filterPartnerList = this.partnerList;
+      console.log(11)
     },
      handleChange(val) {
       this.listQuery.page = val.page;
@@ -92,20 +89,8 @@ export default {
       // this.getList();
     },
    handleCurrentChange(val) {
-        this.currentRow = val;
         console.log(val)
-        if(val.frozenFor=='Y'){
-              this.$message({
-              message: `${val.cardName}账户被冻结，无法操作`,
-              type: 'error'
-            })
-        }else{
-             this.$message({
-              message: `抱歉，${val.cardName}没有呼叫ID数据`,
-              type: 'warning'
-            })
-// this.dialogCallId=true
-        }
+ 
         
       }
 

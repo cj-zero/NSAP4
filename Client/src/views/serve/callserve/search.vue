@@ -54,7 +54,6 @@
         <el-form-item label="选择日期">
           <el-col :span="11">
             <el-date-picker
-              
               type="date"
               placeholder="选择开始日期"
               v-model="form.startTime"
@@ -64,7 +63,6 @@
           <el-col class="line" :span="2">-</el-col>
           <el-col :span="11">
             <el-date-picker
-              
               type="date"
               placeholder="选择结束时间"
               v-model="form.endTime"

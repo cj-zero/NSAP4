@@ -70,7 +70,6 @@
             align="center"
             show-overflow-tooltip
           ></el-table-column>
-          <el-table-column prop="filePath" label="文件路径" align="center" show-overflow-tooltip></el-table-column>
           <el-table-column
             prop="fileSize"
             width="100"
@@ -101,8 +100,8 @@
             <template slot-scope="scope">
               <img
                 style="width:50px;height:50px;"
-                @click="handlePreviewFile(baseURL +'/files/Download/'+scope.row.id)"
-                :src="baseURL +'/files/Download/'+scope.row.id"
+                @click="handlePreviewFile(`${baseURL}/files/Download/${scope.row.id}?X-Token=${tokenValue}`)"
+                :src="`${baseURL}/files/Download/${scope.row.id}?X-Token=${tokenValue}`"
                 alt
               />
             </template>
@@ -219,6 +218,7 @@ export default {
       baseURL: process.env.VUE_APP_BASE_API,
       multipleSelection: [], // 列表checkbox选中的值
       tableKey: 0,
+      tokenValue:this.$store.state.user.token,
       options: {
         action: `${process.env.VUE_APP_BASE_API}/Files/Upload`,
         defaultValue: [],

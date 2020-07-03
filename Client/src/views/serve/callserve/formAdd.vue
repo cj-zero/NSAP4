@@ -47,7 +47,7 @@
         </el-form-item>
       </el-col>
     </el-row>
-    <el-form-item>
+    <el-form-item label="服务类型">
       <el-radio-group v-model="form.name">
         <el-radio label="免费"></el-radio>
         <el-radio label="收费"></el-radio>
@@ -178,7 +178,7 @@
     </el-form-item>
     <!-- form数组，不包括第一项 -->
     <el-collapse v-model="activeNames" v-if="formList.length">
-      <el-collapse-item title="展开更多序列号表单" name="1">
+      <el-collapse-item title="展开更多序列号表单" style="color:green;" name="1">
         <div
           v-for="(form,index) in formList"
           :key="`key_${index}`"
@@ -231,7 +231,7 @@
               </el-form-item>
             </el-col>
           </el-row>
-          <el-form-item>
+          <el-form-item label="服务类型">
             <el-radio-group v-model="form.name">
               <el-radio label="免费"></el-radio>
               <el-radio label="收费"></el-radio>
@@ -460,36 +460,22 @@ export default {
     pushForm() {
       this.dialogfSN = false;
       if (!this.ifFormPush) {
-        this.formList[0].manufSN = this.formListStart[0].manufSN;
-        this.formList[0].internalSN = this.formListStart[0].internalSN;
-        this.formList[0].itemCode = this.formListStart[0].itemCode;
-        this.formList[0].itemName = this.formListStart[0].itemName;
-        this.formList[0].dlvryDate = this.formListStart[0].dlvryDate;
+        this.form.manufSN = this.formListStart[0].manufSN;
+        this.form.internalSN = this.formListStart[0].internalSN;
+        this.form.itemCode = this.formListStart[0].itemCode;
+        this.form.itemName = this.formListStart[0].itemName;
+        this.form.dlvryDate = this.formListStart[0].dlvryDate;
 
-        for (let i = 0; i < this.formListStart.length; i++) {
+      const newList  = this.formListStart.splice(1,this.formListStart.length)
+     console.log( newList)
+        for (let i = 0; i < newList.length; i++) {
           this.formList.push({
-            manufSN: this.formListStart[i].manufSN,
-            internalSN: this.formListStart[i].internalSN,
-            itemCode: this.formListStart[i].itemCode,
-            itemName: this.formListStart[i].itemName,
-            dlvryDate: this.formListStart[i].dlvryDate
+            manufSN: newList[i].manufSN,
+            internalSN: newList[i].internalSN,
+            itemCode: newList[i].itemCode,
+            itemName: newList[i].itemName,
+            dlvryDate: newList[i].dlvryDate
           });
-
-          //   this.formList[i+1]={}
-          //      this.formList[i+1].manufSN = this.formListStart[i].manufSN;
-          // this.formList[i+1].internalSN = this.formListStart[i].internalSN;
-          // this.formList[i+1].itemCode = this.formListStart[i].itemCode;
-          // this.formList[i+1].itemName = this.formListStart[i].itemName;
-          // this.formList[i+1].dlvryDate = this.formListStart[i].dlvryDate;
-
-          // this.
-          // this.formList[i]({
-          //   manufSN: this.formListStart[i].manufSN,
-          //   internalSN: this.formListStart[i].internalSN,
-          //   itemCode: this.formListStart[i].itemCode,
-          //   itemName: this.formListStart[i].itemName,
-          //   dlvryDate: this.formListStart[i].dlvryDate
-          // });
         }
         this.ifFormPush = true;
       } else {

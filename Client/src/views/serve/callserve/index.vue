@@ -25,7 +25,7 @@
     </sticky>
     <div class="app-container">
       <div class="bg-white">
-       <zxsearch></zxsearch>
+        <zxsearch></zxsearch>
         <el-table
           ref="mainTable"
           :key="key"
@@ -39,10 +39,9 @@
           @selection-change="handleSelectionChange"
         >
           <el-table-column type="selection" fixed align="center" width="55"></el-table-column>
-          <el-table-column  fixed align="center" label="服务ID"  width="100">
+          <el-table-column fixed align="center" label="服务ID" width="100">
             <template slot-scope="scope">
-                <el-link type="primary" @click="openTree">{{scope.row.serveid}}</el-link>
-
+              <el-link type="primary" @click="openTree">{{scope.row.serveid}}</el-link>
             </template>
           </el-table-column>
 
@@ -73,20 +72,14 @@
         />
       </div>
       <!--   v-el-drag-dialog
-        width="1000px"  新建呼叫服务单 -->
+      width="1000px"  新建呼叫服务单-->
       <el-dialog
         width="1000px"
         class="dialog-mini"
-        
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
-      <zxform
-      :form="temp"
-          labelposition="right"
-          labelwidth="100px"
-          refValue="dataForm"
-      ></zxform>
+        <zxform :form="temp" labelposition="right" labelwidth="100px" refValue="dataForm"></zxform>
 
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
@@ -105,17 +98,13 @@
           <el-button type="primary" @click="dialogTable = false">确 定</el-button>
         </span>
       </el-dialog>
-         <el-dialog v-el-drag-dialog :visible.sync="dialogTree" center width="300px">
-        <treeList
-
-          @close="dialogTree=false"
-        ></treeList>
+      <el-dialog v-el-drag-dialog :visible.sync="dialogTree" center width="300px">
+        <treeList @close="dialogTree=false"></treeList>
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialogTree = false">取 消</el-button>
           <el-button type="primary" @click="dialogTree = false">确 定</el-button>
         </span>
       </el-dialog>
-      
     </div>
   </div>
 </template>
@@ -130,11 +119,19 @@ import DynamicTable from "@/components/DynamicTable";
 import elDragDialog from "@/directive/el-dragDialog";
 import zxsearch from "./search";
 import zxform from "./form";
-import treeList from "./treeList"
+import treeList from "./treeList";
 import { callserve, count } from "@/mock/serve";
 export default {
   name: "solutions",
-  components: { Sticky, permissionBtn, Pagination, DynamicTable ,zxsearch ,zxform ,treeList},
+  components: {
+    Sticky,
+    permissionBtn,
+    Pagination,
+    DynamicTable,
+    zxsearch,
+    zxform,
+    treeList
+  },
   directives: {
     waves,
     elDragDialog
@@ -206,7 +203,7 @@ export default {
       },
       dialogFormVisible: false,
       dialogTable: false,
-      dialogTree:false,
+      dialogTree: false,
       dialogStatus: "",
       textMap: {
         update: "编辑呼叫服务单",
@@ -265,9 +262,9 @@ export default {
     //   console.log(callserve)
   },
   methods: {
-    openTree(e){
-      console.log(e)
-      this.dialogTree = true
+    openTree(e) {
+      console.log(e);
+      this.dialogTree = true;
     },
     onSubmit() {
       console.log("submit!");
@@ -286,6 +283,9 @@ export default {
       switch (domId) {
         case "btnAdd":
           this.handleCreate();
+          break;
+        case "btnDetail" :
+          this.open()
           break;
         case "editTable":
           this.dialogTable = true;
@@ -326,6 +326,23 @@ export default {
       //     this.listLoading = false;
       //   });
     },
+       open() {
+        this.$confirm('确认已完成回访?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          this.$message({
+            type: 'success',
+            message: '操作成功!'
+          });
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消操作'
+          });          
+        });
+      },
     handleFilter() {
       this.listQuery.page = 1;
       this.getList();

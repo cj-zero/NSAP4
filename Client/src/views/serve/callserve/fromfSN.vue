@@ -100,4 +100,7 @@ export default {
 .greenColro {
   color: green;
 }
+.el-form /deep/ .el-collapse-item__header{
+    color:green;
+}
 </style>

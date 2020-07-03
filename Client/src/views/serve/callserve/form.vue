@@ -70,7 +70,7 @@
         </el-form-item>
       </el-col>
     </el-row>
-    <el-form-item label="服务类型" prop="resource">
+    <el-form-item label="" prop="resource">
 
 
             <el-radio-group v-model="form.name">
@@ -81,9 +81,23 @@
     <hr />
     <!-- 选择制造商序列号 -->
     <formAdd :SerialNumberList="SerialNumberList"></formAdd>
-    <el-dialog title="选择业务伙伴" width="90%" :visible.sync="dialogPartner">
-      <formPartner :partnerList="partnerList" ></formPartner>
-
+    <el-dialog title="选择业务伙伴" width="90%"  @open="openDialog" :visible.sync="dialogPartner">
+      <el-row  style="margin:10px 0;">
+        <el-col :span="2">
+          <el-button type="text">客户代码:</el-button>
+        </el-col>
+          <el-col :span="2" >
+          <el-input @input="searchList" v-model="inputSearch" placeholder="请输入客户代码">
+          </el-input>
+        </el-col>
+         <el-col :span="2" style="margin-left:10px;">
+          <el-button type="text">制造商序列号:</el-button>
+        </el-col>
+         <el-col :span="2" >
+            <el-input  ></el-input>
+        </el-col>
+     </el-row>
+      <formPartner :partnerList="filterPartnerList" ></formPartner>
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogPartner = false">取 消</el-button>
         <el-button type="primary" @click="dialogPartner = false">确 定</el-button>
@@ -104,6 +118,8 @@ export default {
   data() {
     return {
       partnerList: [],
+      filterPartnerList:[],
+      inputSearch: "",
       SerialNumberList: [], //序列号列表
       state: "",
       dialogPartner: false,
@@ -125,8 +141,22 @@ export default {
   mounted() {
     this.getPartnerList();
     this.getSerialNumberList();
+      this.filterPartnerList = this.partnerList;
   },
   methods: {
+        openDialog() {   //打开前赋值
+      this.filterPartnerList = this.partnerList;
+    },
+        searchList(res){
+              if (!res) {
+        this.filterPartnerList = this.partnerList;
+      } else {
+        let list = this.partnerList.filter(item => {
+          return item.cardCode.toLowerCase().indexOf(res.toLowerCase()) ===0;
+        });
+        this.filterPartnerList = list;
+      }
+    },
     querySearch(queryString, cb) {
       var partnerList = this.partnerList;
       var results = queryString
