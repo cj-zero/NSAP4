@@ -6,7 +6,6 @@
           v-model="listQuery.key">
         </el-input>
 
-        <!-- <el-button class="filter-item" type="success" v-waves icon="el-icon-search" @click="handleFilter">搜索</el-button> -->
         <permission-btn moduleName='modulemanager' :size="'mini'" v-on:btn-event="onBtnClicked"></permission-btn>
 
         <el-checkbox size="mini" style='margin-left:15px;' @change='tableKey=tableKey+1' v-model="showDescription">Id/描述</el-checkbox>

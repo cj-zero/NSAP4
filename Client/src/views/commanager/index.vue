@@ -44,7 +44,7 @@
             align="center"
             show-overflow-tooltip
           ></el-table-column>
-          <el-table-column prop="corpName" label="结构名称" align="center" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="corpName" label="机构名称" align="center" show-overflow-tooltip></el-table-column>
           <el-table-column prop="fax" align="center" label="传真" show-overflow-tooltip></el-table-column>
           <el-table-column
             prop="oa"

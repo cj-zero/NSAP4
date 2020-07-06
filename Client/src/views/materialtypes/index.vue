@@ -18,35 +18,30 @@
 
       
                <el-table-column prop="id" label="Id" show-overflow-tooltip></el-table-column>
-               <el-table-column prop="typeAlias" label="TypeAlias" show-overflow-tooltip></el-table-column>
-               <el-table-column prop="typeName" label="TypeName" show-overflow-tooltip></el-table-column>
-               <el-table-column prop="parentId" label="ParentId" show-overflow-tooltip></el-table-column>
-               <el-table-column prop="typeLevel" label="TypeLevel" show-overflow-tooltip></el-table-column>
-               <el-table-column prop="orderIdx" label="OrderIdx" show-overflow-tooltip></el-table-column>
-               <el-table-column prop="codingExp" label="CodingExp" show-overflow-tooltip></el-table-column>
-               <el-table-column prop="descExp" label="DescExp" show-overflow-tooltip></el-table-column>
-               <el-table-column prop="valid" label="Valid" show-overflow-tooltip></el-table-column>
-               <el-table-column prop="updTime" label="UpdTime" show-overflow-tooltip></el-table-column>
-               <el-table-column prop="codeRuleFlag" label="CodeRuleFlag" show-overflow-tooltip></el-table-column>
-               <el-table-column prop="userId" label="UserId" show-overflow-tooltip></el-table-column>
-               <el-table-column prop="attachFlag" label="AttachFlag" show-overflow-tooltip></el-table-column>
-            <el-table-column min-width="80px" label="MacTime">
+               <el-table-column prop="typeAlias" label="类型编码" show-overflow-tooltip></el-table-column>
+               <el-table-column prop="typeName" label="类型名称" show-overflow-tooltip></el-table-column>
+               <el-table-column prop="parentId" label="父类ID" show-overflow-tooltip></el-table-column>
+               <el-table-column prop="typeLevel" label="类型层级" show-overflow-tooltip></el-table-column>
+               <el-table-column prop="orderIdx" label="排序编号" show-overflow-tooltip></el-table-column>
+               <el-table-column prop="codingExp" label="编码示例" show-overflow-tooltip></el-table-column>
+               <el-table-column prop="descExp" label="描述示例" show-overflow-tooltip></el-table-column>
+               <el-table-column prop="updTime" label="更新时间" show-overflow-tooltip></el-table-column>
+               <el-table-column prop="codeRuleFlag" label="是否设置编码规范" show-overflow-tooltip></el-table-column>
+               <el-table-column prop="userId" label="对应采购员" show-overflow-tooltip></el-table-column>
+               <el-table-column prop="attachFlag" label="附件标识" show-overflow-tooltip></el-table-column>
+            <el-table-column min-width="80px" label="加工工时">
             <template slot-scope="scope">
               <span>{{scope.row.macTime|filterInt}}</span>
             </template>
           </el-table-column>
-               <el-table-column prop="macPrice" label="MacPrice" show-overflow-tooltip></el-table-column>
-               <el-table-column prop="forBomAttFlag" label="ForBomAttFlag" show-overflow-tooltip></el-table-column>
-            <el-table-column min-width="80px" label="type_id">
-            <template slot-scope="scope">
-              <span>{{scope.row.typeId|filterInt}}</span>
-            </template>
-          </el-table-column>
-            <el-table-column min-width="80px" label="parent_id">
+               <el-table-column prop="macPrice" label="加工单价" show-overflow-tooltip></el-table-column>
+               <el-table-column prop="forBomAttFlag" label="是否拥有BOM附件" show-overflow-tooltip></el-table-column>
+ 
+            <!-- <el-table-column min-width="80px" label="parent_id">
             <template slot-scope="scope">
               <span>{{scope.row.parentId|filterInt}}</span>
             </template>
-          </el-table-column>
+          </el-table-column> -->
 
 
       <el-table-column align="center" label="操作" width="230" class-name="small-padding fixed-width">
@@ -61,70 +56,52 @@
 
     <el-dialog v-el-drag-dialog   class="dialog-mini" width="500px" :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
       <el-form :rules="rules" ref="dataForm" :model="temp" label-position="right" label-width="100px">
-      
-              <el-form-item size="small" label="Id" prop="id">
-                <el-input v-model="temp.id"></el-input>
-              </el-form-item>
-              <el-form-item size="small" label="TypeAlias" prop="typeAlias">
+              <el-form-item size="small" label="类型编码" prop="typeAlias">
                 <el-input v-model="temp.typeAlias"></el-input>
               </el-form-item>
-              <el-form-item size="small" label="TypeName" prop="typeName">
+              <el-form-item size="small" label="类型名称" prop="typeName">
                 <el-input v-model="temp.typeName"></el-input>
               </el-form-item>
-              <el-form-item size="small" label="ParentId" prop="parentId">
+              <el-form-item size="small" label="父类ID" prop="parentId">
                 <el-input v-model="temp.parentId"></el-input>
               </el-form-item>
-              <el-form-item size="small" label="TypeLevel" prop="typeLevel">
+              <el-form-item size="small" label="类型层级" prop="typeLevel">
                 <el-input v-model="temp.typeLevel"></el-input>
               </el-form-item>
-              <el-form-item size="small" label="OrderIdx" prop="orderIdx">
+              <el-form-item size="small" label="排序编号" prop="orderIdx">
                 <el-input v-model="temp.orderIdx"></el-input>
               </el-form-item>
-              <el-form-item size="small" label="CodingExp" prop="codingExp">
+              <el-form-item size="small" label="编码示例" prop="codingExp">
                 <el-input v-model="temp.codingExp"></el-input>
               </el-form-item>
-              <el-form-item size="small" label="DescExp" prop="descExp">
+              <el-form-item size="small" label="描述示例" prop="descExp">
                 <el-input v-model="temp.descExp"></el-input>
               </el-form-item>
-              <el-form-item size="small" label="Valid" prop="valid">
-                <el-input v-model="temp.valid"></el-input>
-              </el-form-item>
-              <el-form-item size="small" label="UpdTime" prop="updTime">
+              <el-form-item size="small" label="更新时间" prop="updTime">
                 <el-input v-model="temp.updTime"></el-input>
               </el-form-item>
-              <el-form-item size="small" label="CodeRuleFlag" prop="codeRuleFlag">
+              <el-form-item size="small" label="是否设置编码规范" prop="codeRuleFlag">
                 <el-input v-model="temp.codeRuleFlag"></el-input>
               </el-form-item>
-              <el-form-item size="small" label="UserId" prop="userId">
+              <el-form-item size="small" label="对应采购员" prop="userId">
                 <el-input v-model="temp.userId"></el-input>
               </el-form-item>
-              <el-form-item size="small" label="AttachFlag" prop="attachFlag">
+              <el-form-item size="small" label="附件标识" prop="attachFlag">
                 <el-input v-model="temp.attachFlag"></el-input>
               </el-form-item>
-            <el-form-item size="small" label="MacTime">
+            <el-form-item size="small" label="加工工时">
               <el-select class="filter-item" v-model="temp.macTime" placeholder="Please select">
                  <el-option v-for="item in  statusOptions" :key="item.key" :label="item.display_name" :value="item.key">
                 </el-option>
               </el-select>
             </el-form-item>
-              <el-form-item size="small" label="MacPrice" prop="macPrice">
+              <el-form-item size="small" label="加工单价" prop="macPrice">
                 <el-input v-model="temp.macPrice"></el-input>
               </el-form-item>
-              <el-form-item size="small" label="ForBomAttFlag" prop="forBomAttFlag">
+              <el-form-item size="small" label="是否拥有BOM附件" prop="forBomAttFlag">
                 <el-input v-model="temp.forBomAttFlag"></el-input>
               </el-form-item>
-            <el-form-item size="small" label="type_id">
-              <el-select class="filter-item" v-model="temp.typeId" placeholder="Please select">
-                 <el-option v-for="item in  statusOptions" :key="item.key" :label="item.display_name" :value="item.key">
-                </el-option>
-              </el-select>
-            </el-form-item>
-            <el-form-item size="small" label="parent_id">
-              <el-select class="filter-item" v-model="temp.parentId" placeholder="Please select">
-                 <el-option v-for="item in  statusOptions" :key="item.key" :label="item.display_name" :value="item.key">
-                </el-option>
-              </el-select>
-            </el-form-item>
+
       </el-form>
       <div slot="footer" >
         <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>

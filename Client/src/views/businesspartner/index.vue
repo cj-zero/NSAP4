@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
@@ -18,65 +18,53 @@
           icon="el-icon-search"
           @click="handleFilter"
         >搜索</el-button>
-        <permission-btn moduleName="problemtypes" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
+        <permission-btn moduleName="businesspartner" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
     </sticky>
     <div class="app-container">
-      <el-row class="fh" :gutter="20">
-        <el-col :span="10" class="fh ls-border">
-          <!--  -->
-          <el-card shadow="never" class="body-small" style="height: 100%;overflow:auto;">
-            <el-link type="primary">全部问题类型》》</el-link>
-          </el-card>
-          <el-table
-            ref="singleTable"
-            :data="listParent"
-            highlight-current-row
-            @current-change="handleCurrentChange"
-            style="width: 100%"
-          >
-            <el-table-column property="id" align="center" label="问题ID"></el-table-column>
-            <el-table-column property="description" align="center" label="描述" min-width="50"></el-table-column>
-            <el-table-column align="center" label="是否停用" width="80">
-              <template slot-scope="scope">{{scope.row.inuseFlag==false?'否':'是'}}</template>
-            </el-table-column>
-            <el-table-column property="orderIdx" align="center" label="排序" width="50"></el-table-column>
-          </el-table>
-        </el-col>
+      <div class="bg-white">
+        <el-table
+          ref="mainTable"
+          :key="tableKey"
+          :data="list"
+          v-loading="listLoading"
+          border
+          fit
+          highlight-current-row
+          style="width: 100%;"
+          @row-click="rowClick"
+          @selection-change="handleSelectionChange"
+        >
+          <!-- <el-table-column type="selection" align="center" width="55"></el-table-column> -->
 
-        <el-col :span="14" class="fh">
-          <el-card shadow="never" class="body-small" style="height: 100%;overflow:auto;">
-            <el-link type="primary" @click=" listChild=result1">全部问题类型>></el-link>
-            <el-link type="info" v-if="typeQuestion">{{typeQuestion}}</el-link>
-          </el-card>
-          <el-table
-            ref="singleTable"
-            :data="listChild"
-            highlight-current-row
-            style="width: 100%"
+          <el-table-column
+            prop="cardName"
+            label="客户名称"
+            min-width="120"
             align="center"
-            @current-change="handleSelectionChange"
-          >
-            <el-table-column property="id" align="center" label="问题ID"></el-table-column>
-            <el-table-column property="description" align="center" label="描述" min-width="50"></el-table-column>
-            <el-table-column align="center" label="是否停用" width="80">
-              <template slot-scope="scope">{{scope.row.inuseFlag==false?'否':'是'}}</template>
-            </el-table-column>
-            <el-table-column property="orderIdx" align="center" label="排序" width="50"></el-table-column>
-          </el-table>
-          <pagination
-            v-show="listChild.length>0"
-            :total="listChild.length"
-            :page.sync="listQuery.page"
-            :limit.sync="listQuery.limit"
-            @pagination="handleCurrentChange"
-          ></pagination>
-        </el-col>
-      </el-row>
+            show-overflow-tooltip
+          ></el-table-column>
+          <el-table-column prop="cardCode" label="客户代码" align="center" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="address" label="客户地址" align="center" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="cellular" label="客户电话" align="center" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="groupName" label="groupName" align="center" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="cntctPrsn" label="cntctPrsn" align="center" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="slpName" label="slpName" align="center" show-overflow-tooltip></el-table-column>
 
+
+         <el-table-column prop="updateDate" label="updateDate"  show-overflow-tooltip></el-table-column>
+
+        </el-table>
+        <pagination
+          v-show="total>0"
+          :total="total"
+          :page.sync="listQuery.page"
+          :limit.sync="listQuery.limit"
+          @pagination="handleCurrentChange"
+        />
+      </div>
       <el-dialog
         v-el-drag-dialog
-        class="dialog-mini"
         width="500px"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
@@ -86,23 +74,30 @@
           ref="dataForm"
           :model="temp"
           label-position="right"
-          label-width="100px"
+          label-width="80px"
         >
-     
-          <el-form-item size="small" label="名称" prop="name">
+     <el-form-item size="small" :label="'应用名称'" >
+            <el-input v-model="temp.id"></el-input>
+          </el-form-item>
+          <el-form-item size="small" :label="'应用名称'" prop="name">
             <el-input v-model="temp.name"></el-input>
           </el-form-item>
-          <el-form-item size="small" label="描述" prop="description">
+
+          <el-form-item size="small" :label="'应用描述'">
             <el-input v-model="temp.description"></el-input>
           </el-form-item>
-          <el-form-item size="small" label="是否停用" prop="inuseFlag">
-            <el-switch v-model="temp.inuseFlag"  active-text="是"  inactive-text="否"></el-switch>
+          <el-form-item size="small" :label="'应用密匙'">
+            <el-input v-model="temp.appSecxet"></el-input>
           </el-form-item>
-
-
-          <el-form-item size="small" label="排序" prop="prblmTypID">
-            <el-input-number v-model="temp.orderIdx" :min="0" label="描述文字"></el-input-number>
+          <el-form-item size="small" :label="'appKey'">
+            <el-input v-model="temp.appKey"></el-input>
           </el-form-item>
+    
+          <el-form-item size="small" :label="'是否可用'">
+            <el-switch v-model="temp.disable" active-text="是" inactive-text="否"></el-switch>
+          </el-form-item>
+         
+        
         </el-form>
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
@@ -115,16 +110,14 @@
 </template>
 
 <script>
-import * as problemtypes from "@/api/problemtypes";
+import * as businesspartner from "@/api/businesspartner";
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
-import Pagination from "@/components/Pagination";
-
 import permissionBtn from "@/components/PermissionBtn";
-// import Pagination from "@/components/Pagination";
+import Pagination from "@/components/Pagination";
 import elDragDialog from "@/directive/el-dragDialog";
 export default {
-  name: "problemtypes",
+  name: "businesspartner",
   components: { Sticky, permissionBtn, Pagination },
   directives: {
     waves,
@@ -132,10 +125,13 @@ export default {
   },
   data() {
     return {
-      multipleSelection: null, // 列表checkbox选中的值
+      multipleSelection: [], // 列表checkbox选中的值
       tableKey: 0,
-      listParent: [],
-      listChild: [],
+      list: null,
+      flowList: null,
+      flowList_value: "",
+      pullDownList_value: "",
+      pullDownList: null,
       total: 0,
       listLoading: true,
       listQuery: {
@@ -145,17 +141,18 @@ export default {
         key: undefined,
         appId: undefined
       },
-      whoEdit: null,
       statusOptions: [
         { key: 1, display_name: "停用" },
         { key: 0, display_name: "正常" }
       ],
-      result1: [],
-      temp: {
-        name: "", // Name
-        description: "", // Description
-        inuseFlag: false, // InuseFlag
-        orderIdx: 0 // OrderIdx
+ 
+       temp : {
+        appSecxet: "",
+        appKey: "", 
+        icon: "", 
+        disable: "" ,
+        createTime:"",
+        createUser:"",
       },
       dialogFormVisible: false,
       dialogStatus: "",
@@ -163,7 +160,7 @@ export default {
         update: "编辑",
         create: "添加"
       },
-      typeQuestion: "",
+       restaurants:[],
       dialogPvVisible: false,
       pvData: [],
       rules: {
@@ -196,19 +193,24 @@ export default {
       return statusMap[disable];
     }
   },
+    mounted() {
+
+  },
   created() {
     this.getList();
   },
   methods: {
+        getUrl(result){
+          console.log(result)
+
+        },
+        
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.$refs.mainTable.toggleRowSelection(row);
     },
     handleSelectionChange(val) {
       this.multipleSelection = val;
-      if (val.parentId == ""||!val.parentId) {
-        this.whoEdit = true;
-      }
     },
     onBtnClicked: function(domId) {
       console.log("you click:" + domId);
@@ -217,14 +219,14 @@ export default {
           this.handleCreate();
           break;
         case "btnEdit":
-          if (!this.multipleSelection) {
+          if (this.multipleSelection.length !== 1) {
             this.$message({
-              message: "请点击需要编辑的项",
+              message: "请点击需要编辑的数据",
               type: "error"
             });
             return;
           }
-          this.handleUpdate(this.multipleSelection);
+          this.handleUpdate(this.multipleSelection[0]);
           break;
         case "btnDel":
           if (this.multipleSelection.length < 1) {
@@ -242,14 +244,13 @@ export default {
     },
     getList() {
       this.listLoading = true;
-      problemtypes.getList(this.listQuery).then(response => {
-        this.listParent = response.data.filter(item => item.parentId == "");
-        this.result1 = response.data.filter(item => item.parentId !== "");
-        this.listChild = this.result1;
+      businesspartner.getList(this.listQuery).then(response => {
+        this.list = response.data;
         this.total = response.count;
         this.listLoading = false;
       });
     },
+
     handleFilter() {
       this.listQuery.page = 1;
       this.getList();
@@ -259,12 +260,9 @@ export default {
       this.getList();
     },
     handleCurrentChange(val) {
-      // this.listQuery.page = val.page;
-      // this.listQuery.limit = val.limit;
-      this.handleSelectionChange(val);
-      this.typeQuestion = val.name;
-      let newList = this.result1.filter(item => item.parentId == val.id);
-      this.listChild = newList;
+      this.listQuery.page = val.page;
+      this.listQuery.limit = val.limit;
+      this.getList();
     },
     handleModifyStatus(row, disable) {
       // 模拟修改状态
@@ -276,13 +274,12 @@ export default {
     },
     resetTemp() {
       this.temp = {
-        name: "",
-        description: "",
-        inuseFlag: false,
-        parentId: "",
-        orderIdx: "",
-        prblmTypID: "",
-        parentTypeID: "",
+        appSecxet: "",
+        appKey: "", 
+        icon: "", 
+        disable: "" ,
+        createTime:"",
+        createUser:"",
       };
     },
     handleCreate() {
@@ -298,14 +295,8 @@ export default {
       // 保存提交
       this.$refs["dataForm"].validate(valid => {
         if (valid) {
-          problemtypes.add(this.temp).then(() => {
-            let newList = [];
-            if (this.whoEdit) {
-              newList = this.listParent;
-            } else {
-              newList = this.listChild;
-            }
-            newList.unshift(this.temp);
+          businesspartner.add(this.temp).then(() => {
+            this.list.unshift(this.temp);
             this.dialogFormVisible = false;
             this.$notify({
               title: "成功",
@@ -330,20 +321,12 @@ export default {
       // 更新提交
       this.$refs["dataForm"].validate(valid => {
         if (valid) {
-          console.log(valid);
           const tempData = Object.assign({}, this.temp);
-          problemtypes.update(tempData).then(() => {
-             let newList = [];
-            if (this.whoEdit) {
-              newList = this.listParent;
-            } else {
-              newList = this.listChild;
-            }
-            
-            for (const v of newList) {
+          businesspartner.update(tempData).then(() => {
+            for (const v of this.list) {
               if (v.id === this.temp.id) {
-                const index = newList.indexOf(v);
-                newList.splice(index, 1, this.temp);
+                const index = this.list.indexOf(v);
+                this.list.splice(index, 1, this.temp);
                 break;
               }
             }
@@ -360,7 +343,7 @@ export default {
     },
     handleDelete(rows) {
       // 多行删除
-      problemtypes.del(rows.map(u => u.id)).then(() => {
+      businesspartner.del(rows.map(u => u.id)).then(() => {
         this.$notify({
           title: "成功",
           message: "删除成功",
