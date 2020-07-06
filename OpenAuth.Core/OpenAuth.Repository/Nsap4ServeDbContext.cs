@@ -1,5 +1,6 @@
 ﻿using Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.Serve;
 using System;
 using System.Collections.Generic;
@@ -14,5 +15,6 @@ namespace OpenAuth.Repository
         {
         }
         public virtual DbSet<Solution> Solutions { get; set; }
+        public virtual DbSet<ProblemType> Problemtypes { get; set; }
     }
 }
