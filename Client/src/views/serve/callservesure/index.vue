@@ -20,7 +20,7 @@
           @click="handleFilter"
         >搜索</el-button>
 
-        <permission-btn moduleName="callserve" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
+        <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
     </sticky>
     <div class="app-container">
@@ -33,12 +33,11 @@
           v-loading="listLoading"
           border
           fit
-          highlight-current-row
           style="width: 100%;"
+          highlight-current-row
+    @current-change="handleSelectionChange"
           @row-click="rowClick"
-          @selection-change="handleSelectionChange"
         >
-          <el-table-column type="selection" fixed align="center" width="55"></el-table-column>
           <el-table-column fixed align="center" label="服务ID" width="100">
             <template slot-scope="scope">
               <el-link type="primary" @click="openTree">{{scope.row.serveid}}</el-link>
@@ -50,6 +49,7 @@
             v-for="fruit in defaultFormThead"
             align="center"
             :key="fruit"
+            :sortable="fruit=='chaungjianriqi'?true:false"
             style="background-color:silver;"
             :label="headLabel[fruit]"
           >
@@ -74,14 +74,27 @@
       <!--   v-el-drag-dialog
       width="1000px"  新建呼叫服务单-->
       <el-dialog
-        width="1000px"
+        fullscreen
         class="dialog-mini"
-        
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
-        <zxform :form="temp" labelposition="right" labelwidth="100px" :isEdit='true' refValue="dataForm"></zxform>
+           <el-row :gutter="20" type="flex" class="row-bg" justify="space-around">
+            <el-col :span="12" >
+      <customerupload style="position:sticky;top:0;">
 
+      </customerupload>
+            </el-col>
+              <el-col :span="12">
+        <zxform
+          :form="temp"
+          labelposition="right"
+          labelwidth="100px"
+          :isEdit="true"
+          refValue="dataForm"
+        ></zxform>
+</el-col>
+           </el-row>
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
           <el-button size="mini" v-if="dialogStatus=='create'" type="primary" @click="createData">确认</el-button>
@@ -89,18 +102,18 @@
         </div>
       </el-dialog>
       <!-- 只能查看的表单 -->
-         <el-dialog
-        width="1200px"
-        class="dialog-mini"
-        
-        title="服务单详情"
-        :visible.sync="dialogFormView"
-      >
-        <zxform :form="temp" labelposition="right" labelwidth="100px" :isEdit='false' refValue="dataForm"></zxform>
+      <el-dialog width="1200px" class="dialog-mini" title="服务单详情" :visible.sync="dialogFormView">
+        <zxform
+          :form="temp"
+          labelposition="right"
+          labelwidth="100px"
+          :isEdit="false"
+          refValue="dataForm"
+        ></zxform>
 
         <div slot="footer">
           <el-button size="mini" @click="dialogFormView = false">取消</el-button>
-          <el-button size="mini"  type="primary" @click="dialogFormView = false">确认</el-button>
+          <el-button size="mini" type="primary" @click="dialogFormView = false">确认</el-button>
         </div>
       </el-dialog>
       <el-dialog v-el-drag-dialog :visible.sync="dialogTable" center width="800px">
@@ -134,8 +147,9 @@ import Pagination from "@/components/Pagination";
 import DynamicTable from "@/components/DynamicTable";
 import elDragDialog from "@/directive/el-dragDialog";
 import zxsearch from "./search";
-import zxform from "./form";
-import treeList from "./treeList";
+import customerupload from "./customerupload";
+import zxform from "../callserve/form";
+import treeList from "../callserve/treeList";
 import { callserve, count } from "@/mock/serve";
 export default {
   name: "solutions",
@@ -146,7 +160,8 @@ export default {
     DynamicTable,
     zxsearch,
     zxform,
-    treeList
+    treeList,
+    customerupload
   },
   directives: {
     waves,
@@ -159,6 +174,7 @@ export default {
       defaultFormThead: [
         "priority",
         "calltype",
+        "chaungjianriqi",
         "callstatus",
         "moneyapproval",
         "kehidaima",
@@ -180,6 +196,7 @@ export default {
       headLabel: {
         // serveid: "ID",
         priority: "优先级",
+        chaungjianriqi:'创建时间',
         calltype: "呼叫类型",
         callstatus: "呼叫状态",
         kehidaima: "客户代码",
@@ -194,7 +211,7 @@ export default {
       total: 0,
       listLoading: true,
       showDescription: false,
-      dialogFormView:false,
+      dialogFormView: false,
       listQuery: {
         // 查询条件
         page: 1,
@@ -281,7 +298,7 @@ export default {
   methods: {
     openTree() {
       // this.dialogTree = true;  树形图
-      this.dialogFormView = true
+      this.dialogFormView = true;
     },
     onSubmit() {
       console.log("submit!");
@@ -295,22 +312,23 @@ export default {
     },
     handleSelectionChange(val) {
       this.multipleSelection = val;
+      console.log(val)
     },
     onBtnClicked: function(domId) {
       switch (domId) {
         case "btnAdd":
           this.handleCreate();
           break;
-        case "btnDetail" :
-          this.open()
+        case "btnDetail":
+          this.open();
           break;
         case "editTable":
           this.dialogTable = true;
           break;
         case "btnEdit":
-          if (this.multipleSelection.length !== 1) {
+          if (!this.multipleSelection) {
             this.$message({
-              message: "只能选中一个进行编辑",
+              message: "请点击需要编辑的数据",
               type: "error"
             });
             return;
@@ -318,7 +336,7 @@ export default {
           this.handleUpdate(this.multipleSelection[0]);
           break;
         case "btnDel":
-          if (this.multipleSelection.length < 1) {
+          if (!this.multipleSelection) {
             this.$message({
               message: "至少删除一个",
               type: "error"
@@ -331,10 +349,14 @@ export default {
           break;
       }
     },
+    
     getList() {
       this.listLoading = true;
       //此处接入模拟数据 mock
-      this.list = callserve;
+    //   let newList = callserve.filter(item=>{
+
+    //   })
+       this.list = callserve;
       this.total = count;
       this.listLoading = false;
       //   solutions.getList(this.listQuery).then(response => {
@@ -343,23 +365,25 @@ export default {
       //     this.listLoading = false;
       //   });
     },
-       open() {
-        this.$confirm('确认已完成回访?', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }).then(() => {
+    open() {
+      this.$confirm("确认已完成回访?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      })
+        .then(() => {
           this.$message({
-            type: 'success',
-            message: '操作成功!'
+            type: "success",
+            message: "操作成功!"
           });
-        }).catch(() => {
+        })
+        .catch(() => {
           this.$message({
-            type: 'info',
-            message: '已取消操作'
-          });          
+            type: "info",
+            message: "已取消操作"
+          });
         });
-      },
+    },
     handleFilter() {
       this.listQuery.page = 1;
       this.getList();

@@ -84,7 +84,7 @@ export default {
       this.$store.dispatch('addVisitedViews', route)
     },
     addViewTags_copy(){
-      console.log('copy')
+      
             const route = this.generateRoute()
       if (!route) {
         return false

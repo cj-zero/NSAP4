@@ -482,7 +482,7 @@ export default {
             code: item.code,
             url: item.url,
             cascadeId: item.cascadeId,
-            isSys: item.isSys
+            isSys: item.isSys 
           }
         })
         var modulestmp = JSON.parse(JSON.stringify(_this.modules))
