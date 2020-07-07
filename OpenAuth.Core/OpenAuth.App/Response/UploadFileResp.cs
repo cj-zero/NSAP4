@@ -6,6 +6,7 @@ namespace OpenAuth.App.Response
 {
     public class UploadFileResp
     {
+        public string Id { get; set; }
         /// <summary>
 	    /// 文件名称
 	    /// </summary>
