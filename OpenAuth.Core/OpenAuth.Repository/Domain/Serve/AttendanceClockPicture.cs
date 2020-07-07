@@ -27,6 +27,10 @@ namespace OpenAuth.Repository.Domain
         }
 
         /// <summary>
+        /// 打卡记录流水Id
+        /// </summary>
+        public string AttendanceClockId { get; set; }
+        /// <summary>
         /// 图片Id
         /// </summary>
         [Description("图片Id")]

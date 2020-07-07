@@ -27,6 +27,11 @@ namespace OpenAuth.Repository.Domain
         }
 
         /// <summary>
+        /// 服务单Id
+        /// </summary>
+        [Description("服务单Id")]
+        public int ServiceOrderId { get; set; }
+        /// <summary>
         /// 图片Id
         /// </summary>
         [Description("图片Id")]

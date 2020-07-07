@@ -34,8 +34,4 @@
     <ProjectReference Include="..\OpenAuth.Repository\OpenAuth.Repository.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Serve\Request\" />
-  </ItemGroup>
-
 </Project>

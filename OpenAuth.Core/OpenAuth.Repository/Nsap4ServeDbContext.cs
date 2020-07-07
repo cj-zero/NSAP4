@@ -18,14 +18,6 @@ namespace OpenAuth.Repository
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<CompletionReportPicture>()
-            .HasKey(c => new { c.Id, c.PictureId });
-            modelBuilder.Entity<AttendanceClockPicture>()
-            .HasKey(c => new { c.Id, c.PictureId });
-            modelBuilder.Entity<ServiceOrderPicture>()
-            .HasKey(c => new { c.Id, c.PictureId });
-            modelBuilder.Entity<ServiceOrderMessagePicture>()
-            .HasKey(c => new { c.Id, c.PictureId });
         }
         public virtual DbSet<Solution> Solutions { get; set; }
         public virtual DbSet<ProblemType> Problemtypes { get; set; }

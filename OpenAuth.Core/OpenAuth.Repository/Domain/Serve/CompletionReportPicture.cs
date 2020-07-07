@@ -27,6 +27,11 @@ namespace OpenAuth.Repository.Domain
         }
 
         /// <summary>
+        /// 完工报告图片Id
+        /// </summary>
+        [Description("完工报告图片Id")]
+        public string CompletionReport { get; set; }
+        /// <summary>
         /// 图片Id
         /// </summary>
         [Description("图片Id")]
