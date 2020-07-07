@@ -14,7 +14,30 @@ namespace OpenAuth.Repository
         public Nsap4ServeDbContext(DbContextOptions<Nsap4ServeDbContext> options) : base(options)
         {
         }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<CompletionReportPicture>()
+            .HasKey(c => new { c.Id, c.PictureId });
+            modelBuilder.Entity<AttendanceClockPicture>()
+            .HasKey(c => new { c.Id, c.PictureId });
+            modelBuilder.Entity<ServiceOrderPicture>()
+            .HasKey(c => new { c.Id, c.PictureId });
+            modelBuilder.Entity<ServiceOrderMessagePicture>()
+            .HasKey(c => new { c.Id, c.PictureId });
+        }
         public virtual DbSet<Solution> Solutions { get; set; }
         public virtual DbSet<ProblemType> Problemtypes { get; set; }
+        public virtual DbSet<AttendanceClock> Attendanceclocks { get; set; }
+        public virtual DbSet<AttendanceClockPicture> Attendanceclockpictures { get; set; }
+        public virtual DbSet<CompletionReport> Completionreports { get; set; }
+        public virtual DbSet<CompletionReportPicture> Completionreportpictures { get; set; }
+        public virtual DbSet<ServiceOrder> Serviceorders { get; set; }
+        public virtual DbSet<ServiceOrderMessage> Serviceordermessages { get; set; }
+        public virtual DbSet<ServiceOrderMessagePicture> Serviceordermessagepictures { get; set; }
+        public virtual DbSet<ServiceOrderMessageUser> Serviceordermessageusers { get; set; }
+        public virtual DbSet<ServiceOrderPicture> Serviceorderpictures { get; set; }
+        public virtual DbSet<ServiceWorkOrder> Serviceworkorders { get; set; }
     }
 }
