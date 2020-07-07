@@ -17,7 +17,7 @@ using OpenAuth.Repository.Core;
 namespace OpenAuth.Repository.Domain
 {
     /// <summary>
-	/// 
+	/// 完工报告表
 	/// </summary>
     [Table("completionreport")]
     public partial class CompletionReport : Entity

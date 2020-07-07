@@ -27,11 +27,11 @@ namespace OpenAuth.Repository.Domain
           this.PictureId= string.Empty;
         }
 
-        
+
         /// <summary>
-        /// 
+        /// 图片Id
         /// </summary>
-        [Description("")]
+        [Description("图片Id")]
         public string PictureId { get; set; }
     }
 }

@@ -26,6 +26,10 @@ namespace OpenAuth.Repository.Domain
         {
         }
 
+        /// <summary>
+        /// 图片Id
+        /// </summary>
+        [Description("图片Id")]
         public string PictureId { get; set; }
 
     }

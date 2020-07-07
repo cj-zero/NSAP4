@@ -17,7 +17,7 @@ using OpenAuth.Repository.Core;
 namespace OpenAuth.Repository.Domain
 {
     /// <summary>
-	/// 
+	/// 服务单消息流水记录表
 	/// </summary>
     [Table("serviceordermessage")]
     public partial class ServiceOrderMessage : Entity
@@ -32,50 +32,50 @@ namespace OpenAuth.Repository.Domain
           this.CreateTime= DateTime.Now;
         }
 
-        
+
         /// <summary>
-        /// 
+        /// 服务单Id
         /// </summary>
-        [Description("")]
-        [Browsable(false)]
+        [Description("服务单Id")]
+        //[Browsable(false)]
         public int? ServiceOrderId { get; set; }
         /// <summary>
-        /// 
+        /// 工单Id
         /// </summary>
-        [Description("")]
-        [Browsable(false)]
+        [Description("工单Id")]
+        //[Browsable(false)]
         public int? ServiceWordOrderId { get; set; }
         /// <summary>
-        /// 
+        /// 工单对应技术员名称
         /// </summary>
-        [Description("")]
+        [Description("工单对应技术员名称")]
         public string FroTechnicianName { get; set; }
         /// <summary>
-        /// 
+        /// 技术员Id
         /// </summary>
-        [Description("")]
+        [Description("技术员Id")]
         [Browsable(false)]
         public string FroTechnicianId { get; set; }
         /// <summary>
-        /// 
+        /// 消息内容
         /// </summary>
-        [Description("")]
+        [Description("消息内容")]
         public string Content { get; set; }
         /// <summary>
-        /// 
+        /// 回复人名字
         /// </summary>
-        [Description("")]
+        [Description("回复人名字")]
         public string Replier { get; set; }
         /// <summary>
-        /// 
+        /// 回复人Id
         /// </summary>
-        [Description("")]
+        [Description("回复人Id")]
         [Browsable(false)]
         public string ReplierId { get; set; }
         /// <summary>
-        /// 
+        /// 创建时间
         /// </summary>
-        [Description("")]
+        [Description("创建时间")]
         public System.DateTime? CreateTime { get; set; }
     }
 }

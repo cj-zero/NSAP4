@@ -17,7 +17,7 @@ using OpenAuth.Repository.Core;
 namespace OpenAuth.Repository.Domain
 {
     /// <summary>
-	/// 
+	/// 消息通知的用户明细
 	/// </summary>
     [Table("serviceordermessageuser")]
     public partial class ServiceOrderMessageUser : Entity
@@ -30,34 +30,34 @@ namespace OpenAuth.Repository.Domain
           this.CreateTime= DateTime.Now;
         }
 
-        
+
         /// <summary>
-        /// 
+        /// 接受消息用户Id
         /// </summary>
-        [Description("")]
+        [Description("接受消息用户Id")]
         [Browsable(false)]
         public string FroUserId { get; set; }
         /// <summary>
-        /// 
+        /// 发消息用户Id
         /// </summary>
-        [Description("")]
+        [Description("发消息用户Id")]
         [Browsable(false)]
         public string FromUserId { get; set; }
         /// <summary>
-        /// 
+        /// 消息Id
         /// </summary>
-        [Description("")]
+        [Description("消息Id")]
         [Browsable(false)]
         public string MessageId { get; set; }
         /// <summary>
-        /// 
+        /// 是否已读
         /// </summary>
-        [Description("")]
-        public ushort? HasRead { get; set; }
+        [Description("是否已读")]
+        public bool HasRead { get; set; }
         /// <summary>
-        /// 
+        /// 创建时间
         /// </summary>
-        [Description("")]
+        [Description("创建时间")]
         public System.DateTime? CreateTime { get; set; }
     }
 }

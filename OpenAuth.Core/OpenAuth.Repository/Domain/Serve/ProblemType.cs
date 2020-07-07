@@ -17,7 +17,7 @@ using OpenAuth.Repository.Core;
 namespace OpenAuth.Repository.Domain
 {
     /// <summary>
-	/// 
+	/// 问题类型表
 	/// </summary>
     [Table("problemtype")]
     public partial class ProblemType : Entity

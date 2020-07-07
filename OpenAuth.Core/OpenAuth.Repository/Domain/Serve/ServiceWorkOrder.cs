@@ -17,7 +17,7 @@ using OpenAuth.Repository.Core;
 namespace OpenAuth.Repository.Domain
 {
     /// <summary>
-	/// 
+	/// 工单表
 	/// </summary>
     [Table("serviceworkorder")]
     public partial class ServiceWorkOrder : Entity
@@ -48,169 +48,179 @@ namespace OpenAuth.Repository.Domain
           this.CompletionReportId= string.Empty;
         }
 
-        
+
         /// <summary>
-        /// 
+        /// 服务单Id
         /// </summary>
-        [Description("")]
-        [Browsable(false)]
+        [Description("服务单Id")]
+        //[Browsable(false)]
         public int ServiceOrderId { get; set; }
         /// <summary>
-        /// 
+        /// 优先级 4-紧急 3-高 2-中 1-低
         /// </summary>
-        [Description("")]
+        [Description("优先级 4-紧急 3-高 2-中 1-低")]
         public int? Priority { get; set; }
         /// <summary>
-        /// 
+        /// 服务类型 1-免费 2-收费
         /// </summary>
-        [Description("")]
+        [Description("服务类型 1-免费 2-收费")]
         public int? FeeType { get; set; }
         /// <summary>
-        /// 
+        /// 省
         /// </summary>
-        [Description("")]
+        [Description("省")]
         public string Province { get; set; }
         /// <summary>
-        /// 
+        /// 市
         /// </summary>
-        [Description("")]
+        [Description("市")]
         public string City { get; set; }
         /// <summary>
-        /// 
+        /// 详细地址
         /// </summary>
-        [Description("")]
+        [Description("详细地址")]
         public string Addr { get; set; }
         /// <summary>
-        /// 
+        /// 经度
         /// </summary>
-        [Description("")]
+        [Description("经度")]
         public decimal? Longitude { get; set; }
         /// <summary>
-        /// 
+        /// 纬度
         /// </summary>
-        [Description("")]
+        [Description("纬度")]
         public decimal? Latitude { get; set; }
         /// <summary>
-        /// 
+        /// 工单提交时间
         /// </summary>
-        [Description("")]
+        [Description("工单提交时间")]
         public System.DateTime? SubmitDate { get; set; }
         /// <summary>
-        /// 
+        /// 工单提交用户Id
         /// </summary>
-        [Description("")]
+        [Description("工单提交用户Id")]
         [Browsable(false)]
         public string SubmitUserId { get; set; }
         /// <summary>
-        /// 
+        /// APP用户Id
         /// </summary>
-        [Description("")]
-        [Browsable(false)]
+        [Description("APP用户Id")]
+        //[Browsable(false)]
         public int? AppUserId { get; set; }
         /// <summary>
-        /// 
+        /// 接单人用户Id
         /// </summary>
-        [Description("")]
+        [Description("接单人用户Id")]
         [Browsable(false)]
         public string RecepUserId { get; set; }
         /// <summary>
-        /// 
+        /// 备注
         /// </summary>
-        [Description("")]
+        [Description("备注")]
         public string Remark { get; set; }
         /// <summary>
-        /// 
+        /// 呼叫状态
+        /// 1-待确认
+        /// 2-已确认
+        /// 3-已取消
+        /// 4-待处理
+        /// 5-已排配
+        /// 6-已外出
+        /// 7-已挂起
+        /// 8-已接收
+        /// 9-已解决
+        /// 10-已回访
         /// </summary>
-        [Description("")]
+        [Description("呼叫状态")]
         public int? Status { get; set; }
         /// <summary>
-        /// 
+        /// App当前流程处理用户Id
         /// </summary>
-        [Description("")]
-        [Browsable(false)]
+        [Description("App当前流程处理用户Id")]
+        //[Browsable(false)]
         public int? CurrentUserId { get; set; }
         /// <summary>
-        /// 
+        /// 呼叫主题
         /// </summary>
-        [Description("")]
+        [Description("呼叫主题")]
         public string FromTheme { get; set; }
         /// <summary>
-        /// 
+        /// 呼叫来源  1-电话 2-APP 
         /// </summary>
-        [Description("")]
-        [Browsable(false)]
+        [Description("呼叫来源  1-电话 2-APP ")]
+        //[Browsable(false)]
         public int? FromId { get; set; }
         /// <summary>
-        /// 
+        /// 问题类型Id
         /// </summary>
-        [Description("")]
-        [Browsable(false)]
+        [Description("问题类型")]
+        //[Browsable(false)]
         public string ProblemTypeId { get; set; }
         /// <summary>
-        /// 
+        /// 呼叫类型1-提交呼叫 2-在线解答（已解决）
         /// </summary>
-        [Description("")]
+        [Description("呼叫类型")]
         public int? FromType { get; set; }
         /// <summary>
-        /// 
+        /// 物料编码
         /// </summary>
-        [Description("")]
+        [Description("物料编码")]
         public string MaterialCode { get; set; }
         /// <summary>
-        /// 
+        /// 物料描述
         /// </summary>
-        [Description("")]
+        [Description("物料描述")]
         public string MaterialDescription { get; set; }
         /// <summary>
-        /// 
+        /// 制造商序列号
         /// </summary>
-        [Description("")]
+        [Description("制造商序列号")]
         public string ManufacturerSerialNumber { get; set; }
         /// <summary>
-        /// 
+        /// 内部序列号
         /// </summary>
-        [Description("")]
+        [Description("内部序列号")]
         public string InternalSerialNumber { get; set; }
         /// <summary>
-        /// 
+        /// 保修结束日期
         /// </summary>
-        [Description("")]
+        [Description("保修结束日期")]
         public System.DateTime? WarrantyEndDate { get; set; }
         /// <summary>
-        /// 
+        /// 创建日期
         /// </summary>
-        [Description("")]
+        [Description("创建日期")]
         public System.DateTime? CreateTime { get; set; }
         /// <summary>
-        /// 
+        /// 预约日期
         /// </summary>
-        [Description("")]
+        [Description("预约日期")]
         public System.DateTime? BookingDate { get; set; }
         /// <summary>
-        /// 
+        /// 上门时间
         /// </summary>
-        [Description("")]
+        [Description("上门时间")]
         public System.DateTime? VisitTime { get; set; }
         /// <summary>
-        /// 
+        /// 清算日期
         /// </summary>
-        [Description("")]
+        [Description("清算日期")]
         public System.DateTime? LiquidationDate { get; set; }
         /// <summary>
-        /// 
+        /// 解决方案Id
         /// </summary>
-        [Description("")]
+        [Description("解决方案Id")]
         [Browsable(false)]
         public string SolutionId { get; set; }
         /// <summary>
-        /// 
+        /// 地址标识
         /// </summary>
-        [Description("")]
+        [Description("地址标识")]
         public string AddressDesignator { get; set; }
         /// <summary>
-        /// 
+        /// 完工报告Id
         /// </summary>
-        [Description("")]
+        [Description("完工报告Id")]
         [Browsable(false)]
         public string CompletionReportId { get; set; }
     }

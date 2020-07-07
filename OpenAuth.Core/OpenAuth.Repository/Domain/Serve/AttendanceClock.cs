@@ -17,7 +17,7 @@ using OpenAuth.Repository.Core;
 namespace OpenAuth.Repository.Domain
 {
     /// <summary>
-	/// 
+	/// 打卡记录表
 	/// </summary>
     [Table("attendanceclock")]
     public partial class AttendanceClock : Entity
@@ -37,79 +37,79 @@ namespace OpenAuth.Repository.Domain
           this.Ip= string.Empty;
         }
 
-        
+
         /// <summary>
-        /// 
+        /// 姓名
         /// </summary>
-        [Description("")]
+        [Description("姓名")]
         public string Name { get; set; }
         /// <summary>
-        /// 
+        /// 打卡人用户Id
         /// </summary>
-        [Description("")]
+        [Description("打卡人用户Id")]
         [Browsable(false)]
         public string UserId { get; set; }
         /// <summary>
-        /// 
+        /// 部门
         /// </summary>
-        [Description("")]
+        [Description("部门")]
         public string Org { get; set; }
         /// <summary>
-        /// 
+        /// 部门Id
         /// </summary>
-        [Description("")]
+        [Description("部门Id")]
         [Browsable(false)]
         public string OrgId { get; set; }
         /// <summary>
-        /// 
+        /// 日期
         /// </summary>
-        [Description("")]
+        [Description("日期")]
         public System.DateTime? ClockDate { get; set; }
         /// <summary>
-        /// 
+        /// 时间
         /// </summary>
-        [Description("")]
+        [Description("时间")]
         public System.TimeSpan? ClockTime { get; set; }
         /// <summary>
-        /// 
+        /// 经度
         /// </summary>
-        [Description("")]
+        [Description("经度")]
         public decimal? Longitude { get; set; }
         /// <summary>
-        /// 
+        /// 纬度
         /// </summary>
-        [Description("")]
+        [Description("纬度")]
         public decimal? Latitude { get; set; }
         /// <summary>
-        /// 
+        /// 地点
         /// </summary>
-        [Description("")]
+        [Description("地点")]
         public string Location { get; set; }
         /// <summary>
-        /// 
+        /// 详细地点
         /// </summary>
-        [Description("")]
+        [Description("详细地点")]
         public string SpecificLocation { get; set; }
         /// <summary>
-        /// 
+        /// 拜访对象
         /// </summary>
-        [Description("")]
+        [Description("拜访对象")]
         public string VisitTo { get; set; }
         /// <summary>
-        /// 
+        /// 备注
         /// </summary>
-        [Description("")]
+        [Description("备注")]
         public string Remark { get; set; }
         /// <summary>
-        /// 
+        /// 手机标识
         /// </summary>
-        [Description("")]
+        [Description("手机标识")]
         [Browsable(false)]
         public string PhoneId { get; set; }
         /// <summary>
-        /// 
+        /// Ip地址
         /// </summary>
-        [Description("")]
+        [Description("Ip地址")]
         public string Ip { get; set; }
     }
 }

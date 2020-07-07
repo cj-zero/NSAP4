@@ -17,7 +17,7 @@ using OpenAuth.Repository.Core;
 namespace OpenAuth.Repository.Domain
 {
     /// <summary>
-	/// 
+	/// 完工报告图片表
 	/// </summary>
     [Table("completionreportpicture")]
     public partial class CompletionReportPicture : Entity
@@ -26,6 +26,10 @@ namespace OpenAuth.Repository.Domain
         {
         }
 
+        /// <summary>
+        /// 图片Id
+        /// </summary>
+        [Description("图片Id")]
         public string PictureId { get; set; }
 
     }

@@ -17,7 +17,7 @@ using OpenAuth.Repository.Core;
 namespace OpenAuth.Repository.Domain.Serve
 {
     /// <summary>
-	/// 
+	/// 解决方案
 	/// </summary>
     [Table("solution")]
     public partial class Solution : Entity

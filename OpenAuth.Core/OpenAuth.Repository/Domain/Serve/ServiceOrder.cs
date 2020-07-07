@@ -17,7 +17,7 @@ using OpenAuth.Repository.Core;
 namespace OpenAuth.Repository.Domain
 {
     /// <summary>
-	/// 
+	/// 服务单
 	/// </summary>
     [Table("serviceorder")]
     public partial class ServiceOrder : Entity
@@ -39,93 +39,91 @@ namespace OpenAuth.Repository.Domain
           this.CreateUserId= string.Empty;
         }
 
-        
+
         /// <summary>
-        /// 
+        /// 客户代码
         /// </summary>
-        [Description("")]
-        [Browsable(false)]
+        [Description("客户代码")]
         public string CustomerId { get; set; }
         /// <summary>
-        /// 
+        /// 客户名称
         /// </summary>
-        [Description("")]
+        [Description("客户名称")]
         public string CustomerName { get; set; }
         /// <summary>
-        /// 
+        /// 联系人
         /// </summary>
-        [Description("")]
+        [Description("联系人")]
         public string Contacter { get; set; }
         /// <summary>
-        /// 
+        /// 联系人电话
         /// </summary>
-        [Description("")]
+        [Description("联系人电话")]
         public string ContactTel { get; set; }
         /// <summary>
-        /// 
+        /// 主管名字
         /// </summary>
-        [Description("")]
+        [Description("主管名字")]
         public string Supervisor { get; set; }
         /// <summary>
-        /// 
+        /// 主管用户Id
         /// </summary>
-        [Description("")]
+        [Description("主管用户Id")]
         [Browsable(false)]
         public string SupervisorId { get; set; }
         /// <summary>
-        /// 
+        /// 销售名字
         /// </summary>
-        [Description("")]
+        [Description("销售名字")]
         public string SalesMan { get; set; }
         /// <summary>
-        /// 
+        /// 销售用户Id
         /// </summary>
-        [Description("")]
+        [Description("销售用户Id")]
         [Browsable(false)]
         public string SalesManId { get; set; }
         /// <summary>
-        /// 
+        /// 最新联系人
         /// </summary>
-        [Description("")]
+        [Description("最新联系人")]
         public string NewestContacter { get; set; }
         /// <summary>
-        /// 
+        /// 最新联系人电话号码
         /// </summary>
-        [Description("")]
+        [Description("最新联系人电话号码")]
         public string NewestContactTel { get; set; }
         /// <summary>
-        /// 
+        /// 终端客户
         /// </summary>
-        [Description("")]
+        [Description("终端客户")]
         public string TerminalCustomer { get; set; }
         /// <summary>
-        /// 
+        /// 服务合同
         /// </summary>
-        [Description("")]
-        [Browsable(false)]
+        [Description("服务合同")]
         public int? ContractId { get; set; }
         /// <summary>
-        /// 
+        /// 创建时间
         /// </summary>
-        [Description("")]
+        [Description("创建时间")]
         public System.DateTime? CreateTime { get; set; }
         /// <summary>
-        /// 
+        /// 创建人Id
         /// </summary>
-        [Description("")]
+        [Description("创建人Id")]
         [Browsable(false)]
         public string CreateUserId { get; set; }
         /// <summary>
-        /// 
+        /// App用户Id
         /// </summary>
-        [Description("")]
-        [Browsable(false)]
+        [Description("App用户Id")]
+        //[Browsable(false)]
         public int? AppUserId { get; set; }
         /// <summary>
-        /// 
+        /// App技术主管Id
         /// </summary>
-        [Description("")]
-        [Browsable(false)]
+        [Description("App技术主管Id")]
+        //[Browsable(false)]
         public int? ManagerId { get; set; }
     }
 }
