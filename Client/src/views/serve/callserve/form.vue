@@ -9,7 +9,7 @@
               <el-form-item label="客户代码">
                 <el-autocomplete
                   popper-class="my-autocomplete"
-                  v-model="form.cardCode"
+                  v-model="form.customerId"
                   :fetch-suggestions="querySearch"
                   placeholder="请输入内容"
                   @select="handleSelect"
@@ -32,19 +32,19 @@
             </el-col>
             <el-col :span="8">
               <el-form-item label="服务合同">
-                <el-input v-model="form.name" disabled></el-input>
+                <el-input v-model="form.contractId" disabled></el-input>
               </el-form-item>
             </el-col>
           </el-row>
           <el-row type="flex" class="row-bg" justify="space-around">
             <el-col :span="8">
               <el-form-item label="客户名称">
-                <el-input v-model="form.cardName" disabled></el-input>
+                <el-input v-model="form.customerName" disabled></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="8">
               <el-form-item label="联系人">
-                <el-select v-model="form.cntctPrsn" placeholder="请选择">
+                <el-select v-model="form.contacter" placeholder="请选择">
                   <el-option label="服务一" value="shanghai"></el-option>
                   <el-option label="服务二" value="beijing"></el-option>
                 </el-select>
@@ -52,24 +52,24 @@
             </el-col>
             <el-col :span="8">
               <el-form-item label="最近联系人">
-                <el-input v-model="form.name"></el-input>
+                <el-input v-model="form.newestContacter"></el-input>
               </el-form-item>
             </el-col>
           </el-row>
           <el-row type="flex" class="row-bg" justify="space-around">
             <el-col :span="8">
               <el-form-item label="终端客户">
-                <el-input v-model="form.name"></el-input>
+                <el-input v-model="form.terminalCustomer"></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="8">
               <el-form-item label="电话号码">
-                <el-input v-model="form.name"></el-input>
+                <el-input v-model="form.contactTel"></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="8">
               <el-form-item label="最新电话号码">
-                <el-input v-model="form.name"></el-input>
+                <el-input v-model="form.newestContactTel"></el-input>
               </el-form-item>
             </el-col>
           </el-row>
@@ -163,17 +163,24 @@ export default {
         { people: "实习生小李", word: "123", img: "" }
       ],
       form: {
-        cardCode: "",
-        cardName: "", //客户名称
-        region: "",
-        date1: "",
-        date2: "",
-        delivery: false,
-        type: [],
-        name: "", //服务类型
-        resource: "",
-        desc: ""
-      }
+        customerId:'',//客户代码,
+        customerName:'',//客户名称,
+        contacter	:'',//联系人,
+        contactTel:'',//联系人电话,
+        supervisor:'',//主管名字,
+        supervisorId :'',//主管用户Id,
+        salesMan:'',//销售名字,
+        salesManId:'',//销售用户Id,
+        newestContacter	:'',//最新联系人,
+        newestContactTel	:'',//最新联系人电话号码,
+        terminalCustomer:'',//终端客户,
+        contractId:'',//服务合同
+        serviceWorkOrders:[
+          {
+            
+          }
+        ]
+              }
     };
   },
   watch: {},
@@ -235,9 +242,9 @@ export default {
         });
     },
     handleSelect(item) {
-      this.form.cardCode = item.cardCode;
-      this.form.cardName = item.cardName;
-      this.form.cntctPrsn = item.cntctPrsn;
+      this.form.customerId = item.cardCode;
+      this.form.customerName = item.cardName;
+      this.form.contacter = item.cntctPrsn;
     },
     handleIconClick() {
       this.dialogPartner = true;
