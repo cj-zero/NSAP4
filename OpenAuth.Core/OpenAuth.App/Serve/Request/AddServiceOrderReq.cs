@@ -64,5 +64,7 @@ namespace OpenAuth.App.Request
         /// 服务单关联的工单
         /// </summary>
         public virtual List<AddServiceWorkOrderReq> ServiceWorkOrders { get; set; }
+
+        public virtual List<FileBind> Pictures { get; set; }
     }
 }

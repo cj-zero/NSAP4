@@ -67,15 +67,16 @@ namespace OpenAuth.Repository
             return Filter(exp).Count();
         }
 
-        public void Add(T entity)
+        public T Add(T entity)
         {
             if (string.IsNullOrEmpty(entity.Id))
             {
                 entity.Id = Guid.NewGuid().ToString();
             }
-            _context.Set<T>().Add(entity);
+            var o = _context.Set<T>().Add(entity);
             Save();
             _context.Entry(entity).State = EntityState.Detached;
+            return o.Entity;
         }
 
         /// <summary>
@@ -179,15 +180,16 @@ namespace OpenAuth.Repository
             return await Filter(exp).CountAsync(cancellationToken);
         }
 
-        public async Task AddAsync(T entity, CancellationToken cancellationToken = default)
+        public async Task<T> AddAsync(T entity, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(entity.Id))
             {
                 entity.Id = Guid.NewGuid().ToString();
             }
-            await _context.Set<T>().AddAsync(entity, cancellationToken);
+            var o = await _context.Set<T>().AddAsync(entity, cancellationToken);
             await SaveAsync(cancellationToken);
             _context.Entry(entity).State = EntityState.Detached;
+            return o.Entity;
         }
 
         public async Task BatchAddAsync(T[] entities, CancellationToken cancellationToken = default)

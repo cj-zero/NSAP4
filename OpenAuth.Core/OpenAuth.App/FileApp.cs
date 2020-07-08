@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OpenAuth.App.Files;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 
@@ -37,9 +38,15 @@ namespace OpenAuth.App
             _fileStore = fileStore;
         }
 
-        public async Task<List<UploadFile>> Add(IFormFileCollection files)
+        public async Task<List<UploadFileResp>> Add(IFormFileCollection files)
         {
-            var result = new List<UploadFile>();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var result = new List<UploadFileResp>();
             foreach (var file in files)
             {
                 result.Add(await Add(file));
@@ -48,7 +55,7 @@ namespace OpenAuth.App
             return result;
         }
 
-        public async Task<UploadFile> Add(IFormFile file)
+        public async Task<UploadFileResp> Add(IFormFile file)
         {
             if (file != null)
             {
@@ -62,8 +69,8 @@ namespace OpenAuth.App
             var uploadResult = await _fileStore.UploadFile(file);
             uploadResult.CreateUserName = _auth.GetUserName();
             uploadResult.CreateUserId = Guid.Parse(_auth.GetCurrentUser().User.Id);
-            await Repository.AddAsync(uploadResult);
-            return uploadResult;
+            var a = await Repository.AddAsync(uploadResult);
+            return uploadResult.MapTo<UploadFileResp>();
             //if (file != null && file.Length > 0 && file.Length < 10485760)
             //{
             //    using (var binaryReader = new BinaryReader(file.OpenReadStream()))

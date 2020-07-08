@@ -67,7 +67,7 @@ namespace OpenAuth.WebApi.Controllers
 
             var propertyStr = string.Join(',', properties.Select(u => u.Key));
             result.columnHeaders = properties;
-            result.data = objs.OrderBy(u => u.Id)
+            result.data = objs.OrderByDescending(u => u.CreateTime)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).Select($"new ({propertyStr})");
             result.count = objs.Count();
@@ -79,10 +79,10 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="files"></param>
         /// <returns>服务器存储的文件信息</returns>
         [HttpPost]
-        [AllowAnonymous]
-        public async Task<Response<IList<UploadFile>>> Upload(IFormFileCollection files)
+        //[AllowAnonymous]
+        public async Task<Response<IList<UploadFileResp>>> Upload([FromForm]IFormFileCollection files)
         {
-            var result = new Response<IList<UploadFile>>();
+            var result = new Response<IList<UploadFileResp>>();
             try
             {
                 result.Result = await _app.Add(files);
@@ -96,7 +96,6 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
         [HttpGet("{dirName}/{fileName}")]
-        [AllowAnonymous]
         public IActionResult Download(string dirName, string fileName)
         {
             var filePath = Path.Combine(AppContext.BaseDirectory, dirName, fileName);
@@ -109,7 +108,6 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         [HttpGet("{fileId}")]
-        [AllowAnonymous]
         public async Task<IActionResult> Download(string fileId, bool isThumbnail)
         {
             var file = await _app.GetFileAsync(fileId);

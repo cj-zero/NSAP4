@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -61,7 +63,27 @@ namespace OpenAuth.App
                 swo.SubmitUserId = loginContext.User.Id;
             });
 
-            await UnitWork.AddAsync(obj);
+            var o = await UnitWork.AddAsync(obj);
+            var pictures = req.Pictures.MapToList<ServiceOrderPicture>();
+            pictures.ForEach(p => p.ServiceOrderId = o.Id);
+            await UnitWork.BatchAddAsync(pictures.ToArray());
+        }
+
+        /// <summary>
+        /// 获取服务单详情
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<ServiceOrder> GetDetails(int id)
+        {
+
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var obj = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(id)).Include(s => s.ServiceWorkOrders).FirstOrDefaultAsync();
+            return obj;
         }
 
     }

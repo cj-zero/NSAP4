@@ -34,8 +34,8 @@ namespace OpenAuth.Repository.Interface
         int GetCount(Expression<Func<T, bool>> exp = null);
         Task<int> GetCountAsync(Expression<Func<T, bool>> exp = null, CancellationToken cancellationToken = default);
 
-        void Add(T entity);
-        Task AddAsync(T entity, CancellationToken cancellationToken = default);
+        T Add(T entity);
+        Task<T> AddAsync(T entity, CancellationToken cancellationToken = default);
 
         Task BatchAddAsync(T[] entities, CancellationToken cancellationToken = default);
 

@@ -40,7 +40,7 @@ namespace OpenAuth.Repository.Interface
         Task<int> GetCountAsync<T>(Expression<Func<T, bool>> exp = null, CancellationToken cancellationToken = default) where T:class;
 
         void Add<T>(T entity) where T : class;
-        Task AddAsync<T>(T entity, CancellationToken cancellationToken = default) where T: class;
+        Task<T> AddAsync<T>(T entity, CancellationToken cancellationToken = default) where T: class;
 
         void BatchAdd<T>(T[] entities) where T: class;
         Task BatchAddAsync<T>(T[] entities, CancellationToken cancellationToken = default) where T: class;

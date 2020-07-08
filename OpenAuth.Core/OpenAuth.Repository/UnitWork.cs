@@ -216,13 +216,14 @@ namespace OpenAuth.Repository
             return await Filter(exp).CountAsync();
         }
 
-        public async Task AddAsync<T>(T entity, CancellationToken cancellationToken = default) where T : class
+        public async Task<T> AddAsync<T>(T entity, CancellationToken cancellationToken = default) where T : class
         {
             //if (string.IsNullOrEmpty(entity.Id))
             //{
             //    entity.Id = Guid.NewGuid().ToString();
             //}
-            await GetDbContext<T>().Set<T>().AddAsync(entity, cancellationToken);
+            var e = await GetDbContext<T>().Set<T>().AddAsync(entity, cancellationToken);
+            return e.Entity;
         }
 
         public async Task BatchAddAsync<T>(T[] entities, CancellationToken cancellationToken = default) where T : class

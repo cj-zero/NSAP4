@@ -90,12 +90,15 @@ namespace OpenAuth.App
             return result;
         }
 
-        public void Add(AddOrUpdateAttendanceClockReq req)
+        public async Task Add(AddOrUpdateAttendanceClockReq req)
         {
             var obj = req.MapTo<AttendanceClock>();
             //todo:补充或调整自己需要的字段
             var user = _auth.GetCurrentUser().User;
-            Repository.Add(obj);
+            var o = await Repository.AddAsync(obj);
+            var pistures = req.Pictures.MapToList<AttendanceClockPicture>();
+            pistures.ForEach(p => p.AttendanceClockId = o.Id);
+            await UnitWork.BatchAddAsync(pistures.ToArray());
         }
 
          public void Update(AddOrUpdateAttendanceClockReq obj)

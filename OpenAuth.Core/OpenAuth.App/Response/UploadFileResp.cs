@@ -14,7 +14,7 @@ namespace OpenAuth.App.Response
         /// <summary>
 	    /// 文件路径
 	    /// </summary>
-        public string FilePath { get; set; }
+        //public string FilePath { get; set; }
         /// <summary>
 	    /// 描述
 	    /// </summary>

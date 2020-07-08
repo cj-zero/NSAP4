@@ -85,6 +85,6 @@ namespace OpenAuth.App.Request
         public string Ip { get; set; }
         
          //todo:添加自己的请求字段
-        public List<AttendanceClockPictureReq> AttendanceClockPictures { get; set; }
+        public List<FileBind> Pictures { get; set; }
     }
 }
