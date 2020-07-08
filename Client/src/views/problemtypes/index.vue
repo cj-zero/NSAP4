@@ -22,10 +22,10 @@
       </div>
     </sticky>
     <div class="app-container">
-      <el-row class="fh" :gutter="20">
-        <el-col :span="10" class="fh ls-border">
+      <el-row class="fh" :gutter="20" style="height: 100%;">
+        <el-col :span="10" class="fh ls-border" style="height: 100%;border: 1px solid #EBEEF5;">
           <!--  -->
-          <el-card shadow="never" class="body-small" style="height: 100%;overflow:auto;">
+          <el-card shadow="never" class="body-small" style="height:100%;overflow:auto;">
             <el-link type="primary">全部问题类型》》</el-link>
           </el-card>
           <el-table

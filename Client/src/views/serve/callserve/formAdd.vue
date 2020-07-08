@@ -4,12 +4,12 @@
       <el-row type="flex" class="row-bg" justify="space-around">
         <el-col :span="8">
           <el-form-item label="内部序列号">
-            <el-input v-model="form.internalSN" disabled></el-input>
+            <el-input v-model="form.internalSerialNumber" disabled></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="8">
           <el-form-item label="服务类型">
-            <el-radio-group v-model="form.name">
+            <el-radio-group v-model="form.feeType">
               <el-radio label="免费"></el-radio>
               <el-radio label="收费"></el-radio>
             </el-radio-group>
@@ -47,7 +47,7 @@
         </el-col>
         <el-col :span="8">
           <el-form-item label="内部序列号">
-            <el-input v-model="form.internalSN" disabled></el-input>
+            <el-input v-model="form.internalSerialNumber" disabled></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="8">
@@ -210,28 +210,32 @@
           :key="`key_${index}`"
           style="border:1px solid silver;padding:5px;margin:2px;"
         >
+          <el-row type="flex" class="row-bg" justify="space-around">
+            <el-col :span="8">
+              <el-form-item label="内部序列号">
+                <el-input v-model="form.internalSerialNumber" disabled></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="服务类型">
+                <el-radio-group v-model="form.feeType">
+                  <el-radio label="免费"></el-radio>
+                  <el-radio label="收费"></el-radio>
+                </el-radio-group>
+              </el-form-item>
+            </el-col>
 
-                <el-row type="flex" class="row-bg" justify="space-around">
-        <el-col :span="8">
-          <el-form-item label="内部序列号">
-            <el-input v-model="form.internalSN" disabled></el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="服务类型">
-            <el-radio-group v-model="form.name">
-              <el-radio label="免费"></el-radio>
-              <el-radio label="收费"></el-radio>
-            </el-radio-group>
-          </el-form-item>
-        </el-col>
-
-        <el-col :span="8">
-          <el-switch v-model="form.edit" active-text="是否批量修改后续订单"></el-switch>
-          <el-button type="danger" v-if="formList.length>0" style="margin:0 10px;" size="mini" @click="deleteForm(1)">删除</el-button>
-        </el-col>
-
-      </el-row>
+            <el-col :span="8">
+              <el-switch v-model="form.edit" active-text="是否批量修改后续订单"></el-switch>
+              <el-button
+                type="danger"
+                v-if="formList.length>0"
+                style="margin:0 10px;"
+                size="mini"
+                @click="deleteForm(1)"
+              >删除</el-button>
+            </el-col>
+          </el-row>
           <el-row type="flex" class="row-bg" justify="space-around">
             <el-col :span="8">
               <el-form-item label="制造商序列号">
@@ -252,7 +256,7 @@
             </el-col>
             <el-col :span="8">
               <el-form-item label="内部序列号">
-                <el-input v-model="form.internalSN" disabled></el-input>
+                <el-input v-model="form.internalSerialNumber" disabled></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="8">
@@ -280,7 +284,7 @@
             </el-col>
           </el-row>
           <el-form-item label="服务类型">
-            <el-radio-group v-model="form.name">
+            <el-radio-group v-model="form.feeType">
               <el-radio label="免费"></el-radio>
               <el-radio label="收费"></el-radio>
             </el-radio-group>
@@ -449,17 +453,43 @@ export default {
       dialogfSN: false,
       inputSearch: "",
       activeNames: ["1"], //活跃名称
+      // form: {
+      //   manufSN: "",
+      //   internalSN: "", //内部序列号
+      //   itemCode: "", //物料编码
+      //   itemName: "", //物料描述
+      //   dlvryDate: "",
+      //   delivery: false,
+      //   type: [],
+      //   resource: "",
+      //   name: "",
+      //   edit:1,
+      // },
       form: {
-        manufSN: "",
-        internalSN: "", //内部序列号
-        itemCode: "", //物料编码
-        itemName: "", //物料描述
-        dlvryDate: "",
-        delivery: false,
-        type: [],
-        resource: "",
-        name: "",
-        edit:1,
+        priority: 1, //优先级 4-紧急 3-高 2-中 1-低
+        feeType: "", //服务类型 1-免费 2-收费
+        province: "", //省
+        city: "", //市
+        addr: "", //详细地址
+        longitude: "", //经度
+        latitude: "", //纬度
+        submitDate: "", //工单提交时间
+        recepUserId: null, //接单人用户Id
+        remark: "", //备注
+        status: 1, //呼叫状态 1-待确认 2-已确认 3-已取消 4-待处理 5-已排配 6-已外出 7-已挂起 8-已接收 9-已解决 10-已回访
+        fromTheme: "", //App当前流程处理用户Id
+        fromId: 1, //呼叫来源 1-电话 2-APP
+        problemTypeId: "", //问题类型Id
+        fromType: 2, //呼叫类型1-提交呼叫 2-在线解答（已解决）
+        materialCode: "", //物料编码
+        materialDescription: "", //物料描述
+        manufacturerSerialNumber: "", //制造商序列号
+        internalSerialNumber: "", //内部序列号
+        warrantyEndDate: "", //保修结束日期
+        bookingDate: "", //预约日期
+        visitTime: "", //上门时间
+        liquidationDate: "", //清算日期
+        addressDesignator: "" //地址标识
       },
       options_sourse: [
         { value: "电话", label: "电话" },
@@ -514,7 +544,7 @@ export default {
       this.dialogfSN = false;
       if (!this.ifFormPush) {
         this.form.manufSN = this.formListStart[0].manufSN;
-        this.form.internalSN = this.formListStart[0].internalSN;
+        this.form.internalSerialNumber = this.formListStart[0].internalSerialNumber;
         this.form.itemCode = this.formListStart[0].itemCode;
         this.form.itemName = this.formListStart[0].itemName;
         this.form.dlvryDate = this.formListStart[0].dlvryDate;
@@ -523,7 +553,7 @@ export default {
         for (let i = 0; i < newList.length; i++) {
           this.formList.push({
             manufSN: newList[i].manufSN,
-            internalSN: newList[i].internalSN,
+            internalSerialNumber: newList[i].internalSerialNumber,
             itemCode: newList[i].itemCode,
             itemName: newList[i].itemName,
             dlvryDate: newList[i].dlvryDate
@@ -535,7 +565,7 @@ export default {
         for (let i = 0; i < this.formListStart.length; i++) {
           this.formList.push({
             manufSN: this.formListStart[i].manufSN,
-            internalSN: this.formListStart[i].internalSN,
+            internalSerialNumber: this.formListStart[i].internalSerialNumber,
             itemCode: this.formListStart[i].itemCode,
             itemName: this.formListStart[i].itemName,
             dlvryDate: this.formListStart[i].dlvryDate
@@ -585,7 +615,7 @@ export default {
             type: "warning"
           })(() => {
             this.form.manufSN = this.formList[0].manufSN;
-            this.form.internalSN = this.formList[0].internalSN;
+            this.form.internalSerialNumber = this.formList[0].internalSerialNumber;
             this.form.itemCode = this.formList[0].itemCode;
             this.form.itemName = this.formList[0].itemName;
             this.form.dlvryDate = this.formList[0].dlvryDate;
@@ -594,7 +624,7 @@ export default {
             for (let i = 0; i < newList.length; i++) {
               this.formList.push({
                 manufSN: newList[i].manufSN,
-                internalSN: newList[i].internalSN,
+                internalSerialNumber: newList[i].internalSerialNumber,
                 itemCode: newList[i].itemCode,
                 itemName: newList[i].itemName,
                 dlvryDate: newList[i].dlvryDate
