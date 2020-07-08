@@ -4,16 +4,22 @@ using System.Text;
 
 namespace Infrastructure.AutoMapper
 {
-    public sealed class AutoInjectAttribute : Attribute
+    /// <summary>
+    /// 自动映射特性标签
+    /// </summary>
+    public sealed class AutoMapToAttribute : Attribute
     {
-        public Type SourceType { get; }
         public Type TargetType { get; }
 
         public bool ReverseMap { get; }
 
-        public AutoInjectAttribute(Type sourceType, Type targetType, bool reverseMap = true)
+        /// <summary>
+        /// 自动映射特性标签
+        /// </summary>
+        /// <param name="targetType">映射目标类型</param>
+        /// <param name="reverseMap">是否反向映射，默认true</param>
+        public AutoMapToAttribute(Type targetType, bool reverseMap = true)
         {
-            SourceType = sourceType;
             TargetType = targetType;
             ReverseMap = reverseMap;
         }

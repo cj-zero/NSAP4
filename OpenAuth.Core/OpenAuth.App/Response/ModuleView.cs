@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
 using Infrastructure;
+using Infrastructure.AutoMapper;
 using OpenAuth.Repository.Domain;
 
 namespace OpenAuth.App.Response
 {
+    [AutoMapTo(typeof(Module))]
     public class ModuleView
     {
         /// <summary>

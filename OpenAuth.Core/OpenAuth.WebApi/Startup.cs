@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Autofac;
 using IdentityServer4.AccessTokenValidation;
+using Infrastructure.AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +39,8 @@ namespace OpenAuth.WebApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            //配置autoMapper
+            services.AddAutoMapper();
             services.AddSingleton(provider =>
             {
                 var service = provider.GetRequiredService<ILogger<StartupLogger>>();
@@ -175,7 +178,8 @@ namespace OpenAuth.WebApi
             {
                 app.UseDeveloperExceptionPage();
             }
-
+            // 配置静态autoMapper
+            AutoMapperHelper.UseStateAutoMapper(app);
             //可以访问根目录下面的静态文件
             var staticfile = new StaticFileOptions {FileProvider = new PhysicalFileProvider(AppContext.BaseDirectory) };
             app.UseStaticFiles(staticfile);

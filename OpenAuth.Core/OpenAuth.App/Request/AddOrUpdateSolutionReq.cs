@@ -12,7 +12,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
+using Infrastructure.AutoMapper;
 using OpenAuth.Repository.Core;
+using OpenAuth.Repository.Domain.Serve;
 
 namespace OpenAuth.App.Request
 {
@@ -20,6 +22,7 @@ namespace OpenAuth.App.Request
 	/// 
 	/// </summary>
     [Table("solution")]
+    [AutoMapTo(typeof(Solution))]
     public partial class AddOrUpdateSolutionReq 
     {
 

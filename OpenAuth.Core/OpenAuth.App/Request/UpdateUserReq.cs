@@ -1,4 +1,5 @@
 ﻿using Infrastructure;
+using Infrastructure.AutoMapper;
 using OpenAuth.Repository.Domain;
 
 namespace OpenAuth.App.Request
@@ -6,6 +7,7 @@ namespace OpenAuth.App.Request
     /// <summary>
     /// 添加或修改用户信息的请求
     /// </summary>
+    [AutoMapTo(typeof(User))]
     public  class UpdateUserReq
     {
         /// <summary>

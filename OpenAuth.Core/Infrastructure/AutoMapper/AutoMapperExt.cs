@@ -17,6 +17,7 @@ using AutoMapper;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Infrastructure.AutoMapper;
 
 namespace Infrastructure
 {
@@ -25,18 +26,19 @@ namespace Infrastructure
         /// <summary>
         ///  类型映射
         /// </summary>
-        public static T MapTo<T>(this object obj, Action<IMapperConfigurationExpression> mapperConfigExp = null)
+        public static T MapTo<T>(this object obj)
         {
             if (obj == null) return default(T);
-            MapperConfiguration config;
-            if (mapperConfigExp != null)
+            try
             {
-                config = new MapperConfiguration(mapperConfigExp);
+                return AutoMapperHelper.Map<T>(obj);
             }
-            else 
-                config = new MapperConfiguration(cfg=>cfg.CreateMap(obj.GetType(),typeof(T)));
-            var mapper = config.CreateMapper();
-            return mapper.Map<T>(obj);
+            catch(Exception ex)
+            {
+                var config = new MapperConfiguration(cfg => cfg.CreateMap(obj.GetType(), typeof(T)));
+                var mapper = config.CreateMapper();
+                return mapper.Map<T>(obj);
+            }
         }
 
         /// <summary>
@@ -44,11 +46,18 @@ namespace Infrastructure
         /// </summary>
         public static List<TDestination> MapToList<TDestination>(this IEnumerable source)
         {
-            Type sourceType = source.GetType().GetGenericArguments()[0];  //获取枚举的成员类型
-            var config = new MapperConfiguration(cfg => cfg.CreateMap(sourceType, typeof(TDestination)));
-            var mapper = config.CreateMapper();
+            try
+            {
+                return AutoMapperHelper.Map<List<TDestination>>(source);
+            }
+            catch (Exception ex)
+            {
+                Type sourceType = source.GetType().GetGenericArguments()[0];  //获取枚举的成员类型
+                var config = new MapperConfiguration(cfg => cfg.CreateMap(sourceType, typeof(TDestination)));
+                var mapper = config.CreateMapper();
 
-            return mapper.Map<List<TDestination>>(source);
+                return mapper.Map<List<TDestination>>(source);
+            }
         }
 
         /// <summary>
@@ -56,10 +65,17 @@ namespace Infrastructure
         /// </summary>
         public static List<TDestination> MapToList<TSource, TDestination>(this IEnumerable<TSource> source)
         {
-            var config = new MapperConfiguration(cfg => cfg.CreateMap(typeof(TSource), typeof(TDestination)));
-            var mapper = config.CreateMapper();
+            try
+            {
+                return AutoMapperHelper.Map<List<TDestination>>(source);
+            }
+            catch (Exception ex)
+            {
+                var config = new MapperConfiguration(cfg => cfg.CreateMap(typeof(TSource), typeof(TDestination)));
+                var mapper = config.CreateMapper();
 
-            return mapper.Map<List<TDestination>>(source);
+                return mapper.Map<List<TDestination>>(source);
+            }
         }
 
         /// <summary>
@@ -70,10 +86,16 @@ namespace Infrastructure
             where TDestination : class
         {
             if (source == null) return destination;
-
-            var config = new MapperConfiguration(cfg => cfg.CreateMap(typeof(TSource), typeof(TDestination)));
-            var mapper = config.CreateMapper();
-            return mapper.Map<TDestination>(source);
+            try
+            {
+                return AutoMapperHelper.Map<TSource, TDestination>(source);
+            }
+            catch (Exception ex)
+            {
+                var config = new MapperConfiguration(cfg => cfg.CreateMap(typeof(TSource), typeof(TDestination)));
+                var mapper = config.CreateMapper();
+                return mapper.Map<TDestination>(source);
+            }
         }
 
     }

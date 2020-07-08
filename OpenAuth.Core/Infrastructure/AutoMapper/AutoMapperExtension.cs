@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 
 namespace Infrastructure.AutoMapper
@@ -14,6 +15,11 @@ namespace Infrastructure.AutoMapper
     {
         public static IServiceCollection AddAutoMapper(this IServiceCollection service)
         {
+            var factory = new AutoInjectFactory();
+            var assemblys = AppDomain.CurrentDomain.GetAssemblies();
+            factory.AddAssemblys(assemblys);
+            service.TryAddSingleton(factory);
+
             service.TryAddSingleton<MapperConfigurationExpression>();
             service.TryAddSingleton(serviceProvider =>
             {
@@ -30,7 +36,7 @@ namespace Infrastructure.AutoMapper
 
                 var instance = new MapperConfiguration(mapperConfigurationExpression);
 
-                instance.AssertConfigurationIsValid();
+                //instance.AssertConfigurationIsValid();
 
                 return instance;
             });
@@ -49,10 +55,10 @@ namespace Infrastructure.AutoMapper
         {
             return applicationBuilder.ApplicationServices.GetRequiredService<MapperConfigurationExpression>();
         }
-        public static void UseAutoInject(this IApplicationBuilder applicationBuilder, params Assembly[] assemblys)
+        public static void UseMapperAutoInject(this IApplicationBuilder applicationBuilder)
         {
             var factory = applicationBuilder.ApplicationServices.GetRequiredService<AutoInjectFactory>();
-
+            var assemblys = AppDomain.CurrentDomain.GetAssemblies();
             factory.AddAssemblys(assemblys);
         }
     }

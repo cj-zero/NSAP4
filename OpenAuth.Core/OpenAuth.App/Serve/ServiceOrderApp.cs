@@ -52,7 +52,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var obj = req.MapTo<ServiceOrder>(cfg => { cfg.CreateMap<AddServiceWorkOrderReq, ServiceWorkOrder>(); cfg.CreateMap<AddServiceOrderReq, ServiceOrder>(); });
+            var obj = req.MapTo<ServiceOrder>();
             obj.CreateTime = DateTime.Now;
             obj.CreateUserId = loginContext.User.Id;
             obj.RecepUserId = loginContext.User.Id;

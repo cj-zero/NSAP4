@@ -13,10 +13,12 @@
 // ***********************************************************************
 
 using Infrastructure;
+using Infrastructure.AutoMapper;
 using OpenAuth.Repository.Domain;
 
 namespace OpenAuth.App.Response
 {
+    [AutoMapTo(typeof(Role))]
     public partial class RoleView
     {
         /// <summary>

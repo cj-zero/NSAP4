@@ -1,9 +1,11 @@
 ﻿using System;
 using Infrastructure;
+using Infrastructure.AutoMapper;
 using OpenAuth.Repository.Domain;
 
 namespace OpenAuth.App.Response
 {
+    [AutoMapTo(typeof(User))]
     public  class UserView
     {
         /// <summary>

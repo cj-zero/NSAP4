@@ -1,9 +1,12 @@
-﻿using System;
+﻿using Infrastructure.AutoMapper;
+using OpenAuth.Repository.Domain;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace OpenAuth.App.Response
 {
+    [AutoMapTo(typeof(UploadFile))]
     public class UploadFileResp
     {
         public string Id { get; set; }

@@ -14,13 +14,12 @@ namespace Infrastructure.AutoMapper
         {
             foreach (var assembly in assemblys)
             {
-                var atributes = assembly.GetTypes()
-                    .Where(_type => _type.GetCustomAttribute<AutoInjectAttribute>() != null)
-                    .Select(_type => _type.GetCustomAttribute<AutoInjectAttribute>());
-
-                foreach (var atribute in atributes)
+                var types = assembly.GetTypes()
+                    .Where(_type => _type.GetCustomAttribute<AutoMapToAttribute>() != null);
+                foreach (var type in types)
                 {
-                    ConvertList.Add((atribute.SourceType, atribute.TargetType, atribute.ReverseMap));
+                    var atribute = type.GetCustomAttribute<AutoMapToAttribute>();
+                    ConvertList.Add((type, atribute.TargetType, atribute.ReverseMap));
                 }
             }
         }

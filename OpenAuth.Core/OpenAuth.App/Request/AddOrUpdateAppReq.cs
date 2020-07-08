@@ -1,9 +1,12 @@
-﻿using System;
+﻿using Infrastructure.AutoMapper;
+using System;
 using System.Collections.Generic;
 using System.Text;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace OpenAuth.App.Request
 {
+    [AutoMapTo(typeof(Application))]
     public class AddOrUpdateAppReq
     {
         public string Id { get; set; }

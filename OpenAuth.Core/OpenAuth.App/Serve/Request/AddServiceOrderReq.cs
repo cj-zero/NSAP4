@@ -1,10 +1,12 @@
-﻿using OpenAuth.Repository.Domain;
+﻿using Infrastructure.AutoMapper;
+using OpenAuth.Repository.Domain;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace OpenAuth.App.Request
 {
+    [AutoMapTo(typeof(ServiceOrder))]
     public class AddServiceOrderReq
     {
         /// <summary>

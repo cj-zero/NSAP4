@@ -9,6 +9,8 @@
 // File: AppInfo.cs
 // ***********************************************************************
 
+using Infrastructure.AutoMapper;
+using OpenAuth.Repository.Domain;
 using System;
 
 namespace OpenAuth.App.SSO
@@ -16,6 +18,7 @@ namespace OpenAuth.App.SSO
     /// <summary>
     /// 应用程序信息
     /// </summary>
+    [AutoMapTo(typeof(Application))]
     public class AppInfo
     {
         public string AppKey { get; set; }

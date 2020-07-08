@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 
 namespace OpenAuth.Mvc.Controllers
@@ -29,9 +30,9 @@ namespace OpenAuth.Mvc.Controllers
         /// <param name="files"></param>
         /// <returns>服务器存储的文件信息</returns>
         [HttpPost]
-        public async Task<Response<IList<UploadFile>>> Upload(IFormFileCollection files)
+        public async Task<Response<IList<UploadFileResp>>> Upload(IFormFileCollection files)
         {
-            var result = new Response<IList<UploadFile>>();
+            var result = new Response<IList<UploadFileResp>>();
             try
             {
                 result.Result = await _app.Add(files);
