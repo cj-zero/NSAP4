@@ -31,5 +31,6 @@ namespace OpenAuth.Repository
         public virtual DbSet<ServiceOrderMessageUser> Serviceordermessageusers { get; set; }
         public virtual DbSet<ServiceOrderPicture> Serviceorderpictures { get; set; }
         public virtual DbSet<ServiceWorkOrder> Serviceworkorders { get; set; }
+        public virtual DbSet<ServiceOrderLog> Serviceorderlogs { get; set; }
     }
 }

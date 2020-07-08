@@ -49,5 +49,6 @@ namespace OpenAuth.Repository
 
         public virtual DbSet<ModuleFlowScheme> Moduleflowschemes { get; set; }
         public virtual DbSet<Corp> Corps { get; set; }
+        public virtual DbSet<AppUserMap> AppUserMaps { get; set; }
     }
 }
