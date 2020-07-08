@@ -37,88 +37,88 @@ namespace OpenAuth.Repository.Domain
 
 
         /// <summary>
-        /// 
+        /// 类型编码
         /// </summary>
-        [Description("")]
+        [Description("类型编码")]
         public string TypeAlias { get; set; }
         /// <summary>
-        /// 
+        /// 类型名称
         /// </summary>
-        [Description("")]
+        [Description("类型名称")]
         public string TypeName { get; set; }
         /// <summary>
-        /// 
+        /// 父类ID
         /// </summary>
-        [Description("")]
+        [Description("父类ID")]
         [Browsable(false)]
         public string ParentId { get; set; }
         /// <summary>
-        /// 
+        /// 类型层级
         /// </summary>
-        [Description("")]
+        [Description("类型层级")]
         public uint TypeLevel { get; set; }
         /// <summary>
-        /// 
+        /// 排序编号
         /// </summary>
-        [Description("")]
+        [Description("排序编号")]
         [Browsable(false)]
         public uint OrderIdx { get; set; }
         /// <summary>
-        /// 
+        /// 编码示例
         /// </summary>
-        [Description("")]
+        [Description("编码示例")]
         public string CodingExp { get; set; }
         /// <summary>
-        /// 
+        /// 描述示例
         /// </summary>
-        [Description("")]
+        [Description("描述示例")]
         public string DescExp { get; set; }
         /// <summary>
-        /// 
+        /// 有效性
         /// </summary>
-        [Description("")]
+        [Description("有效性")]
         public ushort Valid { get; set; }
         /// <summary>
-        /// 
+        /// 更新时间
         /// </summary>
-        [Description("")]
+        [Description("更新时间")]
         public System.DateTime UpdTime { get; set; }
         /// <summary>
-        /// 
+        /// 是否设置编码规范
         /// </summary>
-        [Description("")]
+        [Description("是否设置编码规范")]
         public ushort CodeRuleFlag { get; set; }
         /// <summary>
-        /// 
+        /// 对应采购员
         /// </summary>
-        [Description("")]
+        [Description("对应采购员")]
         [Browsable(false)]
         public string UserId { get; set; }
         /// <summary>
-        /// 
+        /// 附件标识
         /// </summary>
-        [Description("")]
+        [Description("附件标识")]
         public ushort AttachFlag { get; set; }
         /// <summary>
-        /// 
+        /// 加工工时
         /// </summary>
-        [Description("")]
+        [Description("加工工时")]
         public int MacTime { get; set; }
         /// <summary>
-        /// 
+        /// 加工单价
         /// </summary>
-        [Description("")]
+        [Description("加工单价")]
         public decimal MacPrice { get; set; }
         /// <summary>
-        /// 
+        /// 是否拥有BOM附件
         /// </summary>
-        [Description("")]
+        [Description("是否拥有BOM附件")]
         public ushort ForBomAttFlag { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? type_id { get; set; }
+        public int type_id { get; set; }
         /// <summary>
         /// 
         /// </summary>

@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("CRD1")]
-    public partial class CRD1 : Entity
+    public partial class CRD1
     {
         public CRD1()
         {
@@ -221,5 +221,10 @@ namespace OpenAuth.Repository.Domain.Sap
         /// </summary>
         [Description("")]
         public string U_Active { get; set; }
+
+        [Description("客户编号")]
+        public string CardCode { get; set; }
+        [Description("地址标识")]
+        public string Address { get; set; }
     }
 }

@@ -25,6 +25,8 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<OHEM>().HasKey(o => o.empID);
             modelBuilder.Entity<OCRY>().HasKey(o => o.Code);
             modelBuilder.Entity<OCST>().HasKey(o => new { o.Code, o.Country });
+            modelBuilder.Entity<OCPR>().HasKey(o => o.CntctCode);
+            modelBuilder.Entity<CRD1>().HasKey(o => new { o.CardCode,o.Address});
             #endregion
             #region 序列号
             modelBuilder.Entity<OINS>().HasKey(o => o.insID);
@@ -483,7 +485,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<CPV7> Cpv7s { get; set; }
         //public virtual DbSet<CPV8> Cpv8s { get; set; }
         //public virtual DbSet<CPV9> Cpv9s { get; set; }
-        //public virtual DbSet<CRD1> Crd1s { get; set; }
+        public virtual DbSet<CRD1> Crd1s { get; set; }
         //public virtual DbSet<CRD11> Crd11s { get; set; }
         //public virtual DbSet<CRD12> Crd12s { get; set; }
         //public virtual DbSet<CRD2> Crd2s { get; set; }
@@ -1150,7 +1152,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<OCPI> Ocpis { get; set; }
         //public virtual DbSet<OCPL> Ocpls { get; set; }
         //public virtual DbSet<OCPN> Ocpns { get; set; }
-        //public virtual DbSet<OCPR> Ocprs { get; set; }
+        public virtual DbSet<OCPR> Ocprs { get; set; }
         //public virtual DbSet<OCPT> Ocpts { get; set; }
         //public virtual DbSet<OCPV> Ocpvs { get; set; }
         //public virtual DbSet<OCQG> Ocqgs { get; set; }

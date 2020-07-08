@@ -46,5 +46,27 @@ namespace OpenAuth.WebApi.Controllers.Sap
             }
             return result;
         }
+
+        /// <summary>
+        /// 服务呼叫需要用到的客户信息
+        /// </summary>
+        /// <param name="cardCode">客户编号</param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response<BusinessPartnerDetailsResp>> GetCardInfoForServe(string cardCode)
+        {
+            var result = new Response<BusinessPartnerDetailsResp>();
+            try
+            {
+                result.Result = await _businessPartnerApp.GetDetails(cardCode);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
     }
 }
