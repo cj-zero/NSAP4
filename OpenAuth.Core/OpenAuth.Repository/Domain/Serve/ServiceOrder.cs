@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain
 	/// 服务单
 	/// </summary>
     [Table("serviceorder")]
-    public partial class ServiceOrder : Entity
+    public partial class ServiceOrder
     {
         public ServiceOrder()
         {
@@ -39,6 +39,10 @@ namespace OpenAuth.Repository.Domain
           this.CreateUserId= string.Empty;
         }
 
+        /// <summary>
+        /// 服务单Id
+        /// </summary>
+        public int Id { get; set; }
 
         /// <summary>
         /// 客户代码
@@ -98,11 +102,6 @@ namespace OpenAuth.Repository.Domain
         [Description("终端客户")]
         public string TerminalCustomer { get; set; }
         /// <summary>
-        /// 服务合同
-        /// </summary>
-        [Description("服务合同")]
-        public int? ContractId { get; set; }
-        /// <summary>
         /// 创建时间
         /// </summary>
         [Description("创建时间")]
@@ -120,10 +119,26 @@ namespace OpenAuth.Repository.Domain
         //[Browsable(false)]
         public int? AppUserId { get; set; }
         /// <summary>
+        /// 接单人用户Id
+        /// </summary>
+        [Description("接单人用户Id")]
+        [Browsable(false)]
+        public string RecepUserId { get; set; }
+        /// <summary>
+        /// 接单人姓名
+        /// </summary>
+        [Description("接单人姓名")]
+        public string RecepUserName { get; set; }
+        /// <summary>
         /// App技术主管Id
         /// </summary>
         [Description("App技术主管Id")]
         //[Browsable(false)]
         public int? ManagerId { get; set; }
+
+        /// <summary>
+        /// 服务单关联的工单
+        /// </summary>
+        public virtual List<ServiceWorkOrder> ServiceWorkOrders { get; set; }
     }
 }

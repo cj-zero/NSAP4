@@ -10,9 +10,12 @@ using OpenAuth.App.Response;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace OpenAuth.WebApi.Controllers.Serve
+namespace OpenAuth.WebApi.Controllers
 {
-    [Route("api/[controller]/[action]")]
+    /// <summary>
+    /// 考勤打卡
+    /// </summary>
+    [Route("api/serve/[controller]/[action]")]
     [ApiController]
     public class AttendanceClockController : Controller
     {

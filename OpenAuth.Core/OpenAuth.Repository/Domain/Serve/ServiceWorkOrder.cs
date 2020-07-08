@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain
 	/// 工单表
 	/// </summary>
     [Table("serviceworkorder")]
-    public partial class ServiceWorkOrder : Entity
+    public partial class ServiceWorkOrder
     {
         public ServiceWorkOrder()
         {
@@ -30,7 +30,6 @@ namespace OpenAuth.Repository.Domain
           this.Addr= string.Empty;
           this.SubmitDate= DateTime.Now;
           this.SubmitUserId= string.Empty;
-          this.RecepUserId= string.Empty;
           this.Remark= string.Empty;
           this.FromTheme= string.Empty;
           this.ProblemTypeId= string.Empty;
@@ -47,7 +46,10 @@ namespace OpenAuth.Repository.Domain
           this.AddressDesignator= string.Empty;
           this.CompletionReportId= string.Empty;
         }
-
+        /// <summary>
+        /// 工单ID
+        /// </summary>
+        public int Id { get; set; }
 
         /// <summary>
         /// 服务单Id
@@ -108,28 +110,12 @@ namespace OpenAuth.Repository.Domain
         //[Browsable(false)]
         public int? AppUserId { get; set; }
         /// <summary>
-        /// 接单人用户Id
-        /// </summary>
-        [Description("接单人用户Id")]
-        [Browsable(false)]
-        public string RecepUserId { get; set; }
-        /// <summary>
         /// 备注
         /// </summary>
         [Description("备注")]
         public string Remark { get; set; }
         /// <summary>
-        /// 呼叫状态
-        /// 1-待确认
-        /// 2-已确认
-        /// 3-已取消
-        /// 4-待处理
-        /// 5-已排配
-        /// 6-已外出
-        /// 7-已挂起
-        /// 8-已接收
-        /// 9-已解决
-        /// 10-已回访
+        /// 呼叫状态 1-待确认 2-已确认 3-已取消 4-待处理 5-已排配 6-已外出 7-已挂起 8-已接收 9-已解决 10-已回访
         /// </summary>
         [Description("呼叫状态")]
         public int? Status { get; set; }
@@ -223,5 +209,10 @@ namespace OpenAuth.Repository.Domain
         [Description("完工报告Id")]
         [Browsable(false)]
         public string CompletionReportId { get; set; }
+        /// <summary>
+        /// 服务合同
+        /// </summary>
+        [Description("服务合同")]
+        public string ContractId { get; set; }
     }
 }

@@ -16,6 +16,7 @@ using System;
 using AutoMapper;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Infrastructure
 {
@@ -24,11 +25,16 @@ namespace Infrastructure
         /// <summary>
         ///  类型映射
         /// </summary>
-        public static T MapTo<T>(this object obj)
+        public static T MapTo<T>(this object obj, Action<IMapperConfigurationExpression> mapperConfigExp = null)
         {
             if (obj == null) return default(T);
-
-            var config = new MapperConfiguration(cfg=>cfg.CreateMap(obj.GetType(),typeof(T)));
+            MapperConfiguration config;
+            if (mapperConfigExp != null)
+            {
+                config = new MapperConfiguration(mapperConfigExp);
+            }
+            else 
+                config = new MapperConfiguration(cfg=>cfg.CreateMap(obj.GetType(),typeof(T)));
             var mapper = config.CreateMapper();
             return mapper.Map<T>(obj);
         }

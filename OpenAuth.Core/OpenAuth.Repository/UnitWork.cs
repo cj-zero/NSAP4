@@ -106,12 +106,12 @@ namespace OpenAuth.Repository
             return Filter(exp).Count();
         }
 
-        public void Add<T>(T entity) where T : Entity
+        public void Add<T>(T entity) where T : class
         {
-            if (string.IsNullOrEmpty(entity.Id))
-            {
-                entity.Id = Guid.NewGuid().ToString();
-            }
+            //if (string.IsNullOrEmpty(entity.Id))
+            //{
+            //    entity.Id = Guid.NewGuid().ToString();
+            //}
             GetDbContext<T>().Set<T>().Add(entity);
         }
 
@@ -119,12 +119,12 @@ namespace OpenAuth.Repository
         /// 批量添加
         /// </summary>
         /// <param name="entities">The entities.</param>
-        public void BatchAdd<T>(T[] entities) where T : Entity
+        public void BatchAdd<T>(T[] entities) where T : class
         {
-            foreach (var entity in entities)
-            {
-                entity.Id = Guid.NewGuid().ToString();
-            }
+            //foreach (var entity in entities)
+            //{
+            //    entity.Id = Guid.NewGuid().ToString();
+            //}
             GetDbContext<T>().Set<T>().AddRange(entities);
         }
 
@@ -216,21 +216,21 @@ namespace OpenAuth.Repository
             return await Filter(exp).CountAsync();
         }
 
-        public async Task AddAsync<T>(T entity, CancellationToken cancellationToken = default) where T : Entity
+        public async Task AddAsync<T>(T entity, CancellationToken cancellationToken = default) where T : class
         {
-            if (string.IsNullOrEmpty(entity.Id))
-            {
-                entity.Id = Guid.NewGuid().ToString();
-            }
+            //if (string.IsNullOrEmpty(entity.Id))
+            //{
+            //    entity.Id = Guid.NewGuid().ToString();
+            //}
             await GetDbContext<T>().Set<T>().AddAsync(entity, cancellationToken);
         }
 
-        public async Task BatchAddAsync<T>(T[] entities, CancellationToken cancellationToken = default) where T : Entity
+        public async Task BatchAddAsync<T>(T[] entities, CancellationToken cancellationToken = default) where T : class
         {
-            foreach (var entity in entities)
-            {
-                entity.Id = Guid.NewGuid().ToString();
-            }
+            //foreach (var entity in entities)
+            //{
+            //    entity.Id = Guid.NewGuid().ToString();
+            //}
             await GetDbContext<T>().Set<T>().AddRangeAsync(entities, cancellationToken);
         }
 

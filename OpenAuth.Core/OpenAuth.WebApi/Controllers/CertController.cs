@@ -53,57 +53,68 @@ namespace OpenAuth.WebApi.Controllers
             var file = Request.Form.Files[0];
             var handler = new ExcelHandler(file.OpenReadStream());
             var baseInfo = handler.GetBaseInfo();
-
-            //用信号量代替锁
-            await semaphoreSlim.WaitAsync();
             try
             {
-                baseInfo.CertificateNumber = await CertificateNoGenerate("O");
-                await _certinfoApp.AddAsync(new AddOrUpdateCertinfoReq() { CertNo = baseInfo.CertificateNumber });
-            }
-            finally
-            {
-                semaphoreSlim.Release();
-            }
-            handler.SetValue(baseInfo.CertificateNumber, 15, 1);
-            DirUtil.CheckOrCreateDir(Path.Combine(BaseCertDir, baseInfo.CertificateNumber));
-            var baseInfoTagetPath = Path.Combine(BaseCertDir, baseInfo.CertificateNumber, $"BaseInfo{baseInfo.CertificateNumber}.xls");
-            handler.Save(baseInfoTagetPath);
-            var plcDataDic = new Dictionary<string, List<NwcaliPLCData>>();
-            var plcRepetitiveMeasurementDataDic = new Dictionary<string, List<NwcaliPLCRepetitiveMeasurementData>>();
 
-            foreach (var plc in baseInfo.PCPLCs)
+                //用信号量代替锁
+                await semaphoreSlim.WaitAsync();
+                try
+                {
+                    baseInfo.CertificateNumber = await CertificateNoGenerate("O");
+                    await _certinfoApp.AddAsync(new AddOrUpdateCertinfoReq() { CertNo = baseInfo.CertificateNumber });
+                }
+                finally
+                {
+                    semaphoreSlim.Release();
+                }
+                handler.SetValue(baseInfo.CertificateNumber, 15, 1);
+                DirUtil.CheckOrCreateDir(Path.Combine(BaseCertDir, baseInfo.CertificateNumber));
+                var baseInfoTagetPath = Path.Combine(BaseCertDir, baseInfo.CertificateNumber, $"BaseInfo{baseInfo.CertificateNumber}.xls");
+                handler.Save(baseInfoTagetPath);
+                var plcDataDic = new Dictionary<string, List<NwcaliPLCData>>();
+                var plcRepetitiveMeasurementDataDic = new Dictionary<string, List<NwcaliPLCRepetitiveMeasurementData>>();
+
+                foreach (var plc in baseInfo.PCPLCs)
+                {
+                    var list = handler.GetNWCaliPLCData($"下位机{plc.No}");
+                    plcDataDic.Add($"下位机{plc.No}", list);
+                    var list2 = handler.GetNWCaliPLCRepetitiveMeasurementData($"下位机{plc.No}重复性测量");
+                    if (list2.Count > 0)
+                        plcRepetitiveMeasurementDataDic.Add($"下位机{plc.No}重复性测量", list2);
+                    await _certPlcApp.AddAsync(new AddOrUpdateCertPlcReq { CertNo = baseInfo.CertificateNumber, PlcGuid = plc.Guid });
+                }
+                var modelList = BuildWordModels(baseInfo, plcDataDic, plcRepetitiveMeasurementDataDic);
+                var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Calibration Certificate(word).docx");
+                var tagetPath = Path.Combine(BaseCertDir, baseInfo.CertificateNumber, $"Cert{baseInfo.CertificateNumber}.docx");
+                var result = WordHandler.DOCTemplateConvert(templatePath, tagetPath, modelList);
+                if (result)
+                {
+                    var flowInstanceId = await CreateFlow(baseInfo.CertificateNumber);
+                    var c = await _certinfoApp.GetAsync(s => s.CertNo.Equals(baseInfo.CertificateNumber));
+                    c.CertPath = tagetPath;
+                    c.BaseInfoPath = baseInfoTagetPath;
+                    c.FlowInstanceId = flowInstanceId;
+                    var obj = c.MapTo<AddOrUpdateCertinfoReq>();
+                    await _certinfoApp.UpdateAsync(obj);
+                }
+                else
+                {
+                    await _certinfoApp.DeleteAsync(s => s.CertNo.Equals(baseInfo.CertificateNumber));
+                    await _certPlcApp.DeleteAsync(s => s.CertNo.Equals(baseInfo.CertificateNumber));
+                }
+                return new Response<bool>()
+                {
+                    Result = true
+                };
+            }catch(Exception ex)
             {
-                var list = handler.GetNWCaliPLCData($"下位机{plc.No}");
-                plcDataDic.Add($"下位机{plc.No}", list);
-                var list2 = handler.GetNWCaliPLCRepetitiveMeasurementData($"下位机{plc.No}重复性测量");
-                if (list2.Count > 0)
-                    plcRepetitiveMeasurementDataDic.Add($"下位机{plc.No}重复性测量", list2);
-                await _certPlcApp.AddAsync(new AddOrUpdateCertPlcReq { CertNo = baseInfo.CertificateNumber, PlcGuid = plc.Guid });
+                return new Response<bool>()
+                {
+                    Code = 500,
+                    Message = ex.Message,
+                    Result = false
+                };
             }
-            var modelList = BuildWordModels(baseInfo, plcDataDic, plcRepetitiveMeasurementDataDic);
-            var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Calibration Certificate(word).docx");
-            var tagetPath = Path.Combine(BaseCertDir, baseInfo.CertificateNumber, $"Cert{baseInfo.CertificateNumber}.docx");
-            var result = WordHandler.DOCTemplateConvert(templatePath, tagetPath, modelList);
-            if (result)
-            {
-                var flowInstanceId = await CreateFlow(baseInfo.CertificateNumber);
-                var c = await _certinfoApp.GetAsync(s => s.CertNo.Equals(baseInfo.CertificateNumber));
-                c.CertPath = tagetPath;
-                c.BaseInfoPath = baseInfoTagetPath;
-                c.FlowInstanceId = flowInstanceId;
-                var obj = c.MapTo<AddOrUpdateCertinfoReq>();
-                await _certinfoApp.UpdateAsync(obj);
-            }
-            else
-            {
-                await _certinfoApp.DeleteAsync(s => s.CertNo.Equals(baseInfo.CertificateNumber));
-                await _certPlcApp.DeleteAsync(s => s.CertNo.Equals(baseInfo.CertificateNumber));
-            }
-            return new Response<bool>()
-            {
-                Result = true
-            };
         }
 
 
