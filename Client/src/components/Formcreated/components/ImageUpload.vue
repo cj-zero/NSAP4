@@ -159,7 +159,7 @@ export default {
   },
   mounted() {
     console.log(this.fileList,'fileList')
-    console.log(this.value,'value')
+    // console.log(this.value,'value')
     this.$emit('input', this.fileList)
   },
   methods: {

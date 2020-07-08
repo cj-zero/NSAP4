@@ -1,12 +1,32 @@
 <template>
   <div>
     <div style="border:1px silver solid;padding:5px;margin-left:10px;">
-      <el-form-item label>
-        <div class="showSort">
-          <el-button type="danger" v-if="formList.length>0" size="mini" @click="deleteForm(1)">删除</el-button>
-          <el-button type="success" size="mini">编辑</el-button>
-        </div>
-      </el-form-item>
+      <el-row type="flex" class="row-bg" justify="space-around">
+        <el-col :span="8">
+          <el-form-item label="内部序列号">
+            <el-input v-model="form.internalSN" disabled></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="服务类型">
+            <el-radio-group v-model="form.name">
+              <el-radio label="免费"></el-radio>
+              <el-radio label="收费"></el-radio>
+            </el-radio-group>
+          </el-form-item>
+        </el-col>
+
+        <el-col :span="8">
+          <el-switch v-model="form.edit" active-text="是否批量修改后续订单"></el-switch>
+          <el-button
+            type="danger"
+            v-if="formList.length>0"
+            style="margin:0 10px;"
+            size="mini"
+            @click="deleteForm(1)"
+          >删除</el-button>
+        </el-col>
+      </el-row>
       <el-row type="flex" class="row-bg" justify="space-around">
         <el-col :span="8">
           <el-form-item label="制造商序列号">
@@ -54,12 +74,7 @@
           </el-form-item>
         </el-col>
       </el-row>
-      <el-form-item label="服务类型">
-        <el-radio-group v-model="form.name">
-          <el-radio label="免费"></el-radio>
-          <el-radio label="收费"></el-radio>
-        </el-radio-group>
-      </el-form-item>
+
       <!-- </el-col>
       </el-row>-->
       <el-row type="flex" class="row-bg" justify="space-around">
@@ -195,12 +210,28 @@
           :key="`key_${index}`"
           style="border:1px solid silver;padding:5px;margin:2px;"
         >
-          <el-form-item label>
-            <div class="showSort">
-              <el-button type="danger" size="mini" @click="deleteForm(form,index)">删除</el-button>
-              <el-button type="success" size="mini">编辑</el-button>
-            </div>
+
+                <el-row type="flex" class="row-bg" justify="space-around">
+        <el-col :span="8">
+          <el-form-item label="内部序列号">
+            <el-input v-model="form.internalSN" disabled></el-input>
           </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="服务类型">
+            <el-radio-group v-model="form.name">
+              <el-radio label="免费"></el-radio>
+              <el-radio label="收费"></el-radio>
+            </el-radio-group>
+          </el-form-item>
+        </el-col>
+
+        <el-col :span="8">
+          <el-switch v-model="form.edit" active-text="是否批量修改后续订单"></el-switch>
+          <el-button type="danger" v-if="formList.length>0" style="margin:0 10px;" size="mini" @click="deleteForm(1)">删除</el-button>
+        </el-col>
+
+      </el-row>
           <el-row type="flex" class="row-bg" justify="space-around">
             <el-col :span="8">
               <el-form-item label="制造商序列号">
@@ -406,6 +437,7 @@
 <script>
 // import { getPartner } from "@/api/callserve";
 import fromfSN from "./fromfSN";
+
 export default {
   components: { fromfSN },
   props: ["SerialNumberList"],
@@ -426,7 +458,8 @@ export default {
         delivery: false,
         type: [],
         resource: "",
-        name: ""
+        name: "",
+        edit:1,
       },
       options_sourse: [
         { value: "电话", label: "电话" },
@@ -544,26 +577,40 @@ export default {
       console.log(item);
     },
     deleteForm(res) {
-      console.log(this.formList);
       if (!res || res === 1) {
         if (res === 1) {
-          this.form.manufSN = this.formList[0].manufSN;
-          this.form.internalSN = this.formList[0].internalSN;
-          this.form.itemCode = this.formList[0].itemCode;
-          this.form.itemName = this.formList[0].itemName;
-          this.form.dlvryDate = this.formList[0].dlvryDate;
-          const newList = this.formList.splice(1, this.formList.length);
-          this.formList = [];
-          for (let i = 0; i < newList.length; i++) {
-            this.formList.push({
-              manufSN: newList[i].manufSN,
-              internalSN: newList[i].internalSN,
-              itemCode: newList[i].itemCode,
-              itemName: newList[i].itemName,
-              dlvryDate: newList[i].dlvryDate
+          this.$confirm(`此操作将删除该表单, 是否继续?`, "提示", {
+            confirmButtonText: "确定",
+            cancelButtonText: "取消",
+            type: "warning"
+          })(() => {
+            this.form.manufSN = this.formList[0].manufSN;
+            this.form.internalSN = this.formList[0].internalSN;
+            this.form.itemCode = this.formList[0].itemCode;
+            this.form.itemName = this.formList[0].itemName;
+            this.form.dlvryDate = this.formList[0].dlvryDate;
+            const newList = this.formList.splice(1, this.formList.length);
+            this.formList = [];
+            for (let i = 0; i < newList.length; i++) {
+              this.formList.push({
+                manufSN: newList[i].manufSN,
+                internalSN: newList[i].internalSN,
+                itemCode: newList[i].itemCode,
+                itemName: newList[i].itemName,
+                dlvryDate: newList[i].dlvryDate
+              });
+            }
+            this.ifFormPush = true;
+            this.$message({
+              type: "success",
+              message: "删除成功!"
             });
-          }
-          this.ifFormPush = true;
+          }).catch(() => {
+            this.$message({
+              type: "info",
+              message: "已取消删除"
+            });
+          });
         } else {
           this.$message({
             type: "warning",

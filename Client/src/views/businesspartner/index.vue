@@ -52,7 +52,7 @@
           <el-table-column prop="slpName" label="slpName" align="center" show-overflow-tooltip></el-table-column>
 
 
-         <el-table-column prop="updateDate" label="updateDate"  show-overflow-tooltip></el-table-column>
+         <el-table-column prop="updateDate" label="更新时间"  show-overflow-tooltip></el-table-column>
 
         </el-table>
         <pagination
@@ -65,7 +65,7 @@
       </div>
       <el-dialog
         v-el-drag-dialog
-        width="500px"
+        width="800px"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
@@ -74,27 +74,32 @@
           ref="dataForm"
           :model="temp"
           label-position="right"
-          label-width="80px"
+          label-width="100px"
         >
-     <el-form-item size="small" :label="'应用名称'" >
-            <el-input v-model="temp.id"></el-input>
+     <el-form-item size="small" :label="'客户名称'" >
+            <el-input v-model="temp.cardName"></el-input>
           </el-form-item>
-          <el-form-item size="small" :label="'应用名称'" prop="name">
-            <el-input v-model="temp.name"></el-input>
+          <el-form-item size="small" :label="'客户代码'" >
+            <el-input v-model="temp.cardCode"></el-input>
           </el-form-item>
 
-          <el-form-item size="small" :label="'应用描述'">
-            <el-input v-model="temp.description"></el-input>
+          <el-form-item size="small" :label="'客户地址'">
+            <el-input v-model="temp.address"></el-input>
           </el-form-item>
-          <el-form-item size="small" :label="'应用密匙'">
-            <el-input v-model="temp.appSecxet"></el-input>
+          <el-form-item size="small" :label="'客户电话'">
+            <el-input v-model="temp.cellular"></el-input>
           </el-form-item>
-          <el-form-item size="small" :label="'appKey'">
-            <el-input v-model="temp.appKey"></el-input>
+          <el-form-item size="small" :label="'groupName'">
+            <el-input v-model="temp.groupName"></el-input>
           </el-form-item>
-    
-          <el-form-item size="small" :label="'是否可用'">
-            <el-switch v-model="temp.disable" active-text="是" inactive-text="否"></el-switch>
+         <el-form-item size="small" :label="'cntctPrsn'">
+            <el-input v-model="temp.cntctPrsn"></el-input>
+          </el-form-item>    
+           <el-form-item size="small" :label="'slpName'">
+            <el-input v-model="temp.slpName"></el-input>
+          </el-form-item>   
+            <el-form-item size="small" :label="'更新时间'">
+            <el-input v-model="temp.updateDate"></el-input>
           </el-form-item>
          
         
@@ -147,12 +152,14 @@ export default {
       ],
  
        temp : {
-        appSecxet: "",
-        appKey: "", 
-        icon: "", 
-        disable: "" ,
-        createTime:"",
-        createUser:"",
+        cardName: "",
+        cardCode: "", 
+        address: "", 
+        cellular: "" ,
+        groupName:"",
+        cntctPrsn:"",
+        slpName:"",
+        updateDate:"",
       },
       dialogFormVisible: false,
       dialogStatus: "",
@@ -216,17 +223,25 @@ export default {
       console.log("you click:" + domId);
       switch (domId) {
         case "btnAdd":
-          this.handleCreate();
+               this.$message({
+              message: "暂无数据",
+              type: "warning"
+            });
+        //   this.handleCreate();
           break;
         case "btnEdit":
-          if (this.multipleSelection.length !== 1) {
-            this.$message({
-              message: "请点击需要编辑的数据",
-              type: "error"
+                this.$message({
+              message: "暂无数据",
+              type: "warning"
             });
-            return;
-          }
-          this.handleUpdate(this.multipleSelection[0]);
+        //   if (this.multipleSelection.length !== 1) {
+        //     this.$message({
+        //       message: "请点击需要编辑的数据",
+        //       type: "error"
+        //     });
+        //     return;
+        //   }
+        //   this.handleUpdate(this.multipleSelection[0]);
           break;
         case "btnDel":
           if (this.multipleSelection.length < 1) {
@@ -274,12 +289,14 @@ export default {
     },
     resetTemp() {
       this.temp = {
-        appSecxet: "",
-        appKey: "", 
-        icon: "", 
-        disable: "" ,
-        createTime:"",
-        createUser:"",
+             cardName: "",
+        cardCode: "", 
+        address: "", 
+        cellular: "" ,
+        groupName:"",
+        cntctPrsn:"",
+        slpName:"",
+        updateDate:"",
       };
     },
     handleCreate() {
