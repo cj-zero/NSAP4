@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("OCPR")]
-    public partial class OCPR : Entity
+    public partial class OCPR
     {
         public OCPR()
         {
@@ -347,5 +347,10 @@ namespace OpenAuth.Repository.Domain.Sap
         /// </summary>
         [Description("")]
         public string U_PRX_Pwd { get; set; }
+
+        [Description("")]
+        public int CntctCode { get; set; }
+
+        
     }
 }

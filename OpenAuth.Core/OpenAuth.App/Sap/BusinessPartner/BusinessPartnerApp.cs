@@ -103,5 +103,50 @@ namespace OpenAuth.App.Sap.BusinessPartner
             result.count = query.Count();
             return result;
         }
+        /// <summary>
+        /// 通过客户编码得到业务伙伴名称，联系人与地址列表
+        /// </summary>
+        /// <param name="cardCode">客户编码</param>
+        /// <returns></returns>
+        public async Task<BusinessPartnerDetailsResp> GetDetails(string cardCode)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            //var properties = loginContext.GetProperties("businesspartner");
+
+            //if (properties == null || properties.Count == 0)
+            //{
+            //    throw new Exception("当前登录用户没有访问该模块字段的权限，请联系管理员配置");
+            //}
+            var obj = from a in UnitWork.Find<OCRD>(null)
+                      join b in UnitWork.Find<OSLP>(null) on a.SlpCode equals b.SlpCode into ab
+                      from b in ab.DefaultIfEmpty()
+                      join e in UnitWork.Find<OHEM>(null) on a.DfTcnician equals e.empID into ae
+                      from e in ae.DefaultIfEmpty()
+                      select new { a, b, e };
+            obj = obj.Where(o => o.a.CardCode.Equals(cardCode));
+
+            var query = obj.Select(q => new
+            {
+                q.a.CardCode,
+                q.a.CardName,
+                q.a.CntctPrsn,
+                q.a.Phone1,
+                q.a.SlpCode,
+                q.b.SlpName,
+                TechID= q.a.DfTcnician,
+                TechName= $"{q.e.lastName ?? ""}{q.e.firstName}",
+                CntctPrsnList = UnitWork.Find<OCPR>(null).Where(o => o.CardCode.Equals(q.a.CardCode)).ToList(),
+                AddressList = UnitWork.Find<CRD1>(null).Where(o => o.CardCode.Equals(q.a.CardCode)).ToList(),
+            });
+
+            var rltList = await query.FirstOrDefaultAsync();
+            var result = rltList.MapTo<BusinessPartnerDetailsResp>();
+            return result;
+        }
     }
 }
