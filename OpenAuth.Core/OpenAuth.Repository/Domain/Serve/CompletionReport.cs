@@ -13,6 +13,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using OpenAuth.Repository.Core;
+using OpenAuth.Repository.Domain.Serve;
 
 namespace OpenAuth.Repository.Domain
 {
@@ -48,146 +49,150 @@ namespace OpenAuth.Repository.Domain
           this.CreateUserId= string.Empty;
         }
 
-        
+
         /// <summary>
-        /// 
+        /// 服务工单Id
         /// </summary>
-        [Description("")]
+        [Description("服务工单Id")]
         [Browsable(false)]
         public int? ServiceWorkOrderId { get; set; }
         /// <summary>
-        /// 
+        /// 服务单Id
         /// </summary>
-        [Description("")]
+        [Description("服务单Id")]
         [Browsable(false)]
         public int? ServiceOrderId { get; set; }
         /// <summary>
-        /// 
+        /// 呼叫主题
         /// </summary>
-        [Description("")]
+        [Description("呼叫主题")]
         public string FromTheme { get; set; }
         /// <summary>
-        /// 
+        /// 客户代码
         /// </summary>
-        [Description("")]
+        [Description("客户代码")]
         [Browsable(false)]
         public string CustomerId { get; set; }
         /// <summary>
-        /// 
+        /// 客户名称
         /// </summary>
-        [Description("")]
+        [Description("客户名称")]
         public string CustomerName { get; set; }
         /// <summary>
-        /// 
+        /// 联系人
         /// </summary>
-        [Description("")]
+        [Description("联系人")]
         public string Contacter { get; set; }
         /// <summary>
-        /// 
+        /// 联系人电话
         /// </summary>
-        [Description("")]
+        [Description("联系人电话")]
         public string ContactTel { get; set; }
         /// <summary>
-        /// 
+        /// 终端客户
         /// </summary>
-        [Description("")]
+        [Description("终端客户")]
         public string TerminalCustomer { get; set; }
         /// <summary>
-        /// 
+        /// 物料编码
         /// </summary>
-        [Description("")]
+        [Description("物料编码")]
         public string MaterialCode { get; set; }
         /// <summary>
-        /// 
+        /// 制造商序列号
         /// </summary>
-        [Description("")]
+        [Description("制造商序列号")]
         public string ManufacturerSerialNumber { get; set; }
         /// <summary>
-        /// 
+        /// 技术员Id
         /// </summary>
-        [Description("")]
+        [Description("技术员Id")]
         [Browsable(false)]
         public string TechnicianId { get; set; }
         /// <summary>
-        /// 
+        /// 技术员名称
         /// </summary>
-        [Description("")]
+        [Description("技术员名称")]
         public string TechnicianName { get; set; }
         /// <summary>
-        /// 
+        /// 出差时间
         /// </summary>
-        [Description("")]
+        [Description("出差时间")]
         public System.DateTime? BusinessTripDate { get; set; }
         /// <summary>
-        /// 
+        /// 结束时间
         /// </summary>
-        [Description("")]
+        [Description("结束时间")]
         public System.DateTime? EndDate { get; set; }
         /// <summary>
-        /// 
+        /// 出差天数
         /// </summary>
-        [Description("")]
+        [Description("出差天数")]
         public int? BusinessTripDays { get; set; }
         /// <summary>
-        /// 
+        /// 出发地点
         /// </summary>
-        [Description("")]
+        [Description("出发地点")]
         public string Becity { get; set; }
         /// <summary>
-        /// 
+        /// 到达地点
         /// </summary>
-        [Description("")]
+        [Description("到达地点")]
         public string Destination { get; set; }
         /// <summary>
-        /// 
+        /// 经度
         /// </summary>
-        [Description("")]
+        [Description("经度")]
         public decimal? Longitude { get; set; }
         /// <summary>
-        /// 
+        /// 纬度
         /// </summary>
-        [Description("")]
+        [Description("纬度")]
         public decimal? Latitude { get; set; }
         /// <summary>
-        /// 
+        /// 完工地址
         /// </summary>
-        [Description("")]
+        [Description("完工地址")]
         public string CompleteAddress { get; set; }
         /// <summary>
-        /// 
+        /// 问题描述及解决方案
         /// </summary>
-        [Description("")]
+        [Description("问题描述及解决方案")]
         public string ProblemDescription { get; set; }
         /// <summary>
-        /// 
+        /// 解决方案Id
         /// </summary>
-        [Description("")]
+        [Description("解决方案Id")]
         [Browsable(false)]
         public string SolutionId { get; set; }
         /// <summary>
-        /// 
+        /// 解决方案
         /// </summary>
-        [Description("")]
+        public virtual Solution Solution { get; set; }
+        /// <summary>
+        /// 更换物资明细
+        /// </summary>
+        [Description("更换物资明细")]
         public string ReplacementMaterialDetails { get; set; }
         /// <summary>
-        /// 
+        /// 遗留问题
         /// </summary>
-        [Description("")]
+        [Description("遗留问题")]
         public string Legacy { get; set; }
         /// <summary>
-        /// 
+        /// 备注
         /// </summary>
-        [Description("")]
+        [Description("备注")]
         public string Remark { get; set; }
         /// <summary>
-        /// 
+        /// 创建时间
         /// </summary>
-        [Description("")]
+        [Description("创建时间")]
         public System.DateTime? CreateTime { get; set; }
         /// <summary>
-        /// 
+        /// 创建人ID
         /// </summary>
-        [Description("")]
+        [Description("创建人ID")]
         [Browsable(false)]
         public string CreateUserId { get; set; }
         /// <summary>

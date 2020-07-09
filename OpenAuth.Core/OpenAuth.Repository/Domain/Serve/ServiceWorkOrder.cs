@@ -140,9 +140,14 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 问题类型Id
         /// </summary>
-        [Description("问题类型")]
+        [Description("问题类型Id")]
         //[Browsable(false)]
         public string ProblemTypeId { get; set; }
+        /// <summary>
+        /// 问题类型
+        /// </summary>
+        [Description("问题类型")]
+        public virtual ProblemType ProblemType { get; set; }
         /// <summary>
         /// 呼叫类型1-提交呼叫 2-在线解答（已解决）
         /// </summary>
