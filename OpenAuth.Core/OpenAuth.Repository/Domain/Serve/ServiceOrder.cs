@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
+using AutoMapper.Configuration.Annotations;
 using OpenAuth.Repository.Core;
 
 namespace OpenAuth.Repository.Domain
@@ -130,6 +131,11 @@ namespace OpenAuth.Repository.Domain
         [Description("接单人姓名")]
         public string RecepUserName { get; set; }
         /// <summary>
+        /// 服务单状态 1-待确认 2-已确认 3-已取消
+        /// </summary>
+        [Description("服务单状态")]
+        public int Status { get; set; }
+        /// <summary>
         /// App技术主管Id
         /// </summary>
         [Description("App技术主管Id")]
@@ -152,6 +158,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 服务单关联的图片
         /// </summary>
+        [Ignore]
         public virtual List<ServiceOrderPicture> ServiceOrderPictures { get; set; }
     }
 }

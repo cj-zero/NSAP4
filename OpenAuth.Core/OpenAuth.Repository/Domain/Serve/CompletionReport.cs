@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
+using AutoMapper.Configuration.Annotations;
 using OpenAuth.Repository.Core;
 using OpenAuth.Repository.Domain.Serve;
 
@@ -198,6 +199,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 完工报告关联的图片
         /// </summary>
+        [Ignore]
         public virtual List<CompletionReportPicture> CompletionReportPictures { get; set; }
     }
 }

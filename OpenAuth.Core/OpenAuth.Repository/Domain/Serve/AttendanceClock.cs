@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
+using AutoMapper.Configuration.Annotations;
 using OpenAuth.Repository.Core;
 
 namespace OpenAuth.Repository.Domain
@@ -116,6 +117,7 @@ namespace OpenAuth.Repository.Domain
         /// 打卡记录图片
         /// </summary>
         [Description("打卡记录图片")]
+        [Ignore]
         public virtual List<AttendanceClockPicture> AttendanceClockPictures { get; set; }
     }
 }
