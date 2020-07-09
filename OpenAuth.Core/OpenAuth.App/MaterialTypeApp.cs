@@ -50,7 +50,7 @@ namespace OpenAuth.App
             return result;
         }
 
-        public void Add(AddOrUpdateMaterialTypeReq req)
+        public void Add(AddOrUpdatematerialtypeReq req)
         {
             var obj = req.MapTo<MaterialType>();
             //todo:补充或调整自己需要的字段
@@ -61,7 +61,7 @@ namespace OpenAuth.App
             Repository.Add(obj);
         }
 
-         public void Update(AddOrUpdateMaterialTypeReq obj)
+         public void Update(AddOrUpdatematerialtypeReq obj)
         {
             var user = _auth.GetCurrentUser().User;
             UnitWork.Update<MaterialType>(u => u.Id == obj.Id, u => new MaterialType

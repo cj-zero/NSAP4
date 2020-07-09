@@ -14,28 +14,28 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using OpenAuth.Repository.Core;
 
-namespace OpenAuth.Repository.Domain
+namespace OpenAuth.App.Request
 {
     /// <summary>
-	/// 完工报告图片表
+	/// 
 	/// </summary>
     [Table("completionreportpicture")]
-    public partial class CompletionReportPicture : Entity
+    public partial class AddOrUpdateCompletionReportPictureReq 
     {
-        public CompletionReportPicture()
-        {
-        }
 
         /// <summary>
-        /// 完工报告图片Id
+        /// 
         /// </summary>
-        [Description("完工报告图片Id")]
+        public string Id { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
         public string CompletionReportId { get; set; }
         /// <summary>
-        /// 图片Id
+        /// 
         /// </summary>
-        [Description("图片Id")]
         public string PictureId { get; set; }
-
+        
+         //todo:添加自己的请求字段
     }
 }
