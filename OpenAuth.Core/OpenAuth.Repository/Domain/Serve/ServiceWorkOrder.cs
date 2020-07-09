@@ -116,7 +116,7 @@ namespace OpenAuth.Repository.Domain
         [Description("备注")]
         public string Remark { get; set; }
         /// <summary>
-        /// 呼叫状态 1-待确认 2-已确认 3-已取消 4-待处理 5-已排配 6-已外出 7-已挂起 8-已接收 9-已解决 10-已回访
+        /// 呼叫状态  1-待处理 2-已排配 3-已外出 4-已挂起 5-已接收 6-已解决 7-已回访
         /// </summary>
         [Description("呼叫状态")]
         public int? Status { get; set; }

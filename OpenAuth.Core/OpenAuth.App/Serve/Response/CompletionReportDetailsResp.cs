@@ -1,4 +1,5 @@
-﻿using Infrastructure.AutoMapper;
+﻿using AutoMapper.Configuration.Annotations;
+using Infrastructure.AutoMapper;
 using OpenAuth.Repository.Domain;
 using System;
 using System.Collections.Generic;
@@ -112,6 +113,7 @@ namespace OpenAuth.App.Response
         /// <summary>
         /// 完工报告关联的图片
         /// </summary>
-        public virtual List<UploadFileResp> CompletionReportPictures { get; set; }
+        [Ignore]
+        public virtual List<UploadFileResp> Files { get; set; }
     }
 }

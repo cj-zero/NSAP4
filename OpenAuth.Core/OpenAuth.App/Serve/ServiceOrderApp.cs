@@ -76,15 +76,67 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<ServiceOrder> GetDetails(int id)
         {
-
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var obj = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(id)).Include(s => s.ServiceWorkOrders).FirstOrDefaultAsync();
+            var obj = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(id))
+                .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.CompletionReport).ThenInclude(c=>c.CompletionReportPictures)
+                .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.CompletionReport).ThenInclude(c=>c.Solution)
+                .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
+                .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.Solution)
+                .Include(s => s.ServiceOrderPictures).FirstOrDefaultAsync();
+            var result = obj.MapTo<ServiceOrderDetailsResp>();
+            var serviceOrderPictureIds = obj.ServiceOrderPictures.Select(s => s.PictureId).ToList();
+            var files = await UnitWork.Find<UploadFile>(f => serviceOrderPictureIds.Contains(f.Id)).ToListAsync();
+            result.Files = files.MapTo<List<UploadFileResp>>();
+            result.ServiceWorkOrders.ForEach(async s => 
+            {
+                if(s.CompletionReport != null)
+                {
+                    var completionReportPictures = obj.ServiceWorkOrders.First(sw => sw.Id.Equals(s.Id))
+                            ?.CompletionReport?.CompletionReportPictures.Select(c => c.PictureId).ToList();
+
+                    var completionReportFiles = await UnitWork.Find<UploadFile>(f => completionReportPictures.Contains(f.Id)).ToListAsync();
+                    s.CompletionReport.Files = completionReportFiles.MapTo<List<UploadFileResp>>();
+                }
+            });
             return obj;
         }
 
+        /// <summary>
+        /// 修改服务单状态
+        /// </summary>
+        /// <param name="id">服务单Id</param>
+        /// <param name="status">1-待确认 2-已确认 3-已取消</param>
+        /// <returns></returns>
+        public async Task ModifyServiceOrderStatus(int id, int status)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(id), u => new ServiceOrder { Status = status });
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
+        /// 修改服务工单状态
+        /// </summary>
+        /// <param name="id">工单Id</param>
+        /// <param name="status">1-待处理 2-已排配 3-已外出 4-已挂起 5-已接收 6-已解决 7-已回访</param>
+        /// <returns></returns>
+        public async Task ModifyServiceWorkOrderStatus(int id, int status)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id.Equals(id), u => new ServiceWorkOrder { Status = status });
+            await UnitWork.SaveAsync();
+        }
     }
 }

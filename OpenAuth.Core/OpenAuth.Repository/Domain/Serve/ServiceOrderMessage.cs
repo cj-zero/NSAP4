@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
+using AutoMapper.Configuration.Annotations;
 using OpenAuth.Repository.Core;
 
 namespace OpenAuth.Repository.Domain
@@ -77,5 +78,10 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("创建时间")]
         public System.DateTime? CreateTime { get; set; }
+        /// <summary>
+        /// 服务单消息流水记录表
+        /// </summary>
+        [Ignore]
+        public virtual List<ServiceOrderMessagePicture> ServiceOrderMessagePictures { get; set; }
     }
 }
