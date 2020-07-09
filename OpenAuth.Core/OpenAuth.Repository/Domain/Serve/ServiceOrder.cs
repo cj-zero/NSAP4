@@ -177,5 +177,10 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Ignore]
         public virtual List<ServiceOrderPicture> ServiceOrderPictures { get; set; }
+
+        /// <summary>
+        /// 服务单关联制作商序列号，物料
+        /// </summary>
+        public virtual List<ServiceOrderSerial> ServiceOrderSerials { get; set; }
     }
 }
