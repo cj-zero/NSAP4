@@ -190,5 +190,9 @@ namespace OpenAuth.Repository.Domain
         [Description("")]
         [Browsable(false)]
         public string CreateUserId { get; set; }
+        /// <summary>
+        /// 完工报告关联的图片
+        /// </summary>
+        public virtual List<CompletionReportPicture> CompletionReportPictures { get; set; }
     }
 }

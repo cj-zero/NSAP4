@@ -67,7 +67,7 @@ namespace OpenAuth.App
                 _logger.LogWarning("收到新文件为空");
             }
             var uploadResult = await _fileStore.UploadFile(file);
-            uploadResult.CreateUserName = _auth.GetUserName();
+            uploadResult.CreateUserName = _auth.GetCurrentUser().User.Name;
             uploadResult.CreateUserId = Guid.Parse(_auth.GetCurrentUser().User.Id);
             var a = await Repository.AddAsync(uploadResult);
             return uploadResult.MapTo<UploadFileResp>();

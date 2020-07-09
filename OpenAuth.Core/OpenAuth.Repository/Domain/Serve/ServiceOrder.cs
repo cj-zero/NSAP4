@@ -135,10 +135,23 @@ namespace OpenAuth.Repository.Domain
         [Description("App技术主管Id")]
         //[Browsable(false)]
         public int? ManagerId { get; set; }
+        /// <summary>
+        /// 是否关单
+        /// </summary>
+        [Browsable(false)]
+        public bool IsClose { get; set; }
+        /// <summary>
+        /// 是否修改过
+        /// </summary>
+        public bool IsModified { get; set; }
 
         /// <summary>
         /// 服务单关联的工单
         /// </summary>
         public virtual List<ServiceWorkOrder> ServiceWorkOrders { get; set; }
+        /// <summary>
+        /// 服务单关联的图片
+        /// </summary>
+        public virtual List<ServiceOrderPicture> ServiceOrderPictures { get; set; }
     }
 }

@@ -13,6 +13,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using OpenAuth.Repository.Core;
+using OpenAuth.Repository.Domain.Serve;
 
 namespace OpenAuth.Repository.Domain
 {
@@ -198,6 +199,7 @@ namespace OpenAuth.Repository.Domain
         [Description("解决方案Id")]
         [Browsable(false)]
         public string SolutionId { get; set; }
+        public virtual Solution Solution { get; set; }
         /// <summary>
         /// 地址标识
         /// </summary>
@@ -209,6 +211,11 @@ namespace OpenAuth.Repository.Domain
         [Description("完工报告Id")]
         [Browsable(false)]
         public string CompletionReportId { get; set; }
+        /// <summary>
+        /// 完工报告
+        /// </summary>
+        [Description("完工报告")]
+        public virtual CompletionReport CompletionReport { get; set; }
         /// <summary>
         /// 服务合同
         /// </summary>
