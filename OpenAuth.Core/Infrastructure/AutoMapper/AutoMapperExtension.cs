@@ -24,6 +24,8 @@ namespace Infrastructure.AutoMapper
             service.TryAddSingleton(serviceProvider =>
             {
                 var mapperConfigurationExpression = serviceProvider.GetRequiredService<MapperConfigurationExpression>();
+                mapperConfigurationExpression.ConfigurationExpression();
+
                 var factory = serviceProvider.GetRequiredService<AutoInjectFactory>();
 
                 foreach (var (sourceType, targetType, reverseMap) in factory.ConvertList)
