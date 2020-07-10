@@ -23,7 +23,7 @@ namespace OpenAuth.App.Request
 	/// </summary>
     [Table("materialtype")]
     [AutoMapTo(typeof(MaterialType))]
-    public partial class AddOrUpdateMaterialTypeReq 
+    public partial class AddOrUpdatematerialtypeReq 
     {
 
         /// <summary>

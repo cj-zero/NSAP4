@@ -5,23 +5,24 @@ using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
+using System.Threading.Tasks;
 
 namespace OpenAuth.WebApi.Controllers
 {
     /// <summary>
-    /// materialtype操作
+    /// completionreport操作
     /// </summary>
     [Route("api/[controller]/[action]")]
     [ApiController]
-    public class MaterialTypesController : ControllerBase
+    public class CompletionReportsController : ControllerBase
     {
-        private readonly MaterialTypeApp _app;
+        private readonly CompletionReportApp _app;
         
         //获取详情
         [HttpGet]
-        public Response<MaterialType> Get(string id)
+        public Response<CompletionReport> Get(string id)
         {
-            var result = new Response<MaterialType>();
+            var result = new Response<CompletionReport>();
             try
             {
                 result.Result = _app.Get(id);
@@ -37,13 +38,12 @@ namespace OpenAuth.WebApi.Controllers
 
         //添加
        [HttpPost]
-        public Response Add(AddOrUpdatematerialtypeReq obj)
+        public async Task<Response> Add(AddOrUpdateCompletionReportReq obj)
         {
             var result = new Response();
             try
             {
-                _app.Add(obj);
-
+                await _app.Add(obj);
             }
             catch (Exception ex)
             {
@@ -56,7 +56,7 @@ namespace OpenAuth.WebApi.Controllers
 
         //修改
        [HttpPost]
-        public Response Update(AddOrUpdatematerialtypeReq obj)
+        public Response Update(AddOrUpdateCompletionReportReq obj)
         {
             var result = new Response();
             try
@@ -77,7 +77,7 @@ namespace OpenAuth.WebApi.Controllers
         /// 加载列表
         /// </summary>
         [HttpGet]
-        public TableData Load([FromQuery]QueryMaterialTypeListReq request)
+        public TableData Load([FromQuery]QueryCompletionReportListReq request)
         {
             return _app.Load(request);
         }
@@ -103,7 +103,7 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
-        public MaterialTypesController(MaterialTypeApp app) 
+        public CompletionReportsController(CompletionReportApp app) 
         {
             _app = app;
         }

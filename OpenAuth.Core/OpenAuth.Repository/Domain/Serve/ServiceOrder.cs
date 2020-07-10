@@ -152,6 +152,23 @@ namespace OpenAuth.Repository.Domain
         public bool IsModified { get; set; }
 
         /// <summary>
+        /// 地址
+        /// </summary>
+        [Description("地址")]
+        public string Address { get; set; }
+        /// <summary>
+        /// 地区
+        /// </summary>
+        [Description("地区")]
+        public string AddressCity { get; set; }
+        /// <summary>
+        /// 服务内容
+        /// </summary>
+        [Description("服务内容")]
+        public string Services { get; set; }
+
+
+        /// <summary>
         /// 服务单关联的工单
         /// </summary>
         public virtual List<ServiceWorkOrder> ServiceWorkOrders { get; set; }

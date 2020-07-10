@@ -17,25 +17,33 @@ using OpenAuth.Repository.Core;
 namespace OpenAuth.Repository.Domain
 {
     /// <summary>
-	/// 完工报告图片表
+	/// 
 	/// </summary>
-    [Table("completionreportpicture")]
-    public partial class CompletionReportPicture : Entity
+    [Table("serviceorderserial")]
+    public partial class ServiceOrderSerial : Entity
     {
-        public CompletionReportPicture()
+        public ServiceOrderSerial()
         {
+          this.ItemCode= string.Empty;
+          this.MSerialNum= string.Empty;
         }
 
+        
         /// <summary>
-        /// 完工报告图片Id
+        /// 
         /// </summary>
-        [Description("完工报告图片Id")]
-        public string CompletionReportId { get; set; }
+        [Description("")]
+        [Browsable(false)]
+        public int? ServiceOrderId { get; set; }
         /// <summary>
-        /// 图片Id
+        /// 
         /// </summary>
-        [Description("图片Id")]
-        public string PictureId { get; set; }
-
+        [Description("")]
+        public string ItemCode { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string MSerialNum { get; set; }
     }
 }
