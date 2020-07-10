@@ -138,5 +138,12 @@ namespace OpenAuth.App
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id.Equals(id), u => new ServiceWorkOrder { Status = status });
             await UnitWork.SaveAsync();
         }
+
+        public async Task<List<ServiceOrder>> FindTimeoutOrder()
+        {
+            var query = UnitWork.Find<ServiceOrder>(null);
+            query = query.Where(s => s.Status == 1 && (DateTime.Now - s.CreateTime).Value.Hours >= 24);
+            return await query.ToListAsync();
+        }
     }
 }

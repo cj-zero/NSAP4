@@ -31,44 +31,44 @@ namespace OpenAuth.Repository.Domain
           this.CreateUserName= string.Empty;
         }
 
-        
+
         /// <summary>
-        /// 
+        /// 服务单Id
         /// </summary>
-        [Description("")]
+        [Description("服务单Id")]
         [Browsable(false)]
         public int? ServiceOrderId { get; set; }
         /// <summary>
-        /// 
+        /// 工单Id
         /// </summary>
-        [Description("")]
+        [Description("工单Id")]
         [Browsable(false)]
         public int? ServiceWorkOrderId { get; set; }
         /// <summary>
-        /// 
+        /// 操作动作
         /// </summary>
-        [Description("")]
+        [Description("操作动作")]
         public string Action { get; set; }
         /// <summary>
-        /// 
+        /// 动作类型
         /// </summary>
-        [Description("")]
+        [Description("动作类型")]
         public string ActionType { get; set; }
         /// <summary>
-        /// 
+        /// 操作时间
         /// </summary>
-        [Description("")]
+        [Description("操作时间")]
         public System.DateTime? CreateTime { get; set; }
         /// <summary>
-        /// 
+        /// 操作人Id
         /// </summary>
-        [Description("")]
+        [Description("操作人Id")]
         [Browsable(false)]
         public string CreateUserId { get; set; }
         /// <summary>
-        /// 
+        /// 操作人名字
         /// </summary>
-        [Description("")]
+        [Description("操作人名字")]
         public string CreateUserName { get; set; }
     }
 }

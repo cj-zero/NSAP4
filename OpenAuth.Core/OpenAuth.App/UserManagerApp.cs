@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -157,6 +159,17 @@ namespace OpenAuth.App
                 count = users.Count(),
                 data = users.Skip((request.page - 1) * request.limit).Take(request.limit)
             };
+        }
+        public async Task<List<User>> LoadByRoleName(string roleName)
+        {
+            var role = await UnitWork.Find<Role>(r => r.Name.Equals(roleName)).FirstOrDefaultAsync();
+            var users = from userRole in UnitWork.Find<Relevance>(u =>
+                    u.SecondId == role.Id && u.Key == Define.USERROLE)
+                join user in UnitWork.Find<User>(null) on userRole.FirstId equals user.Id into temp
+                from c in temp.DefaultIfEmpty()
+                select c;
+
+            return await users.ToListAsync();
         }
 
         /// <summary>
