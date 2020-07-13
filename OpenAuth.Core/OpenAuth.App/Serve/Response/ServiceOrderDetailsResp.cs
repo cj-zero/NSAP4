@@ -70,5 +70,7 @@ namespace OpenAuth.App.Response
         /// </summary>
         [Ignore]
         public virtual List<UploadFileResp> Files { get; set; }
+
+        public virtual List<ServiceOrderSerial> ServiceOrderSNs { get; set; }
     }
 }

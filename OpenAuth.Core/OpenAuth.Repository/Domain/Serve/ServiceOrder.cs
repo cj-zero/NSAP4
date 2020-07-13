@@ -181,6 +181,6 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 服务单关联制作商序列号，物料
         /// </summary>
-        public virtual List<ServiceOrderSerial> ServiceOrderSerials { get; set; }
+        public virtual List<ServiceOrderSerial> ServiceOrderSNs { get; set; }
     }
 }

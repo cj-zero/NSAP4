@@ -9,7 +9,7 @@ using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
-
+using Infrastructure.Extensions;
 
 namespace OpenAuth.App
 {
@@ -137,6 +137,53 @@ namespace OpenAuth.App
             }
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id.Equals(id), u => new ServiceWorkOrder { Status = status });
             await UnitWork.SaveAsync();
+        }
+
+        public async Task<TableData> UnConfirmedServiceOrderList( QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+            var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceOrderSNs)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.Id.Equals(Convert.ToInt32(req.QryServiceOrderId)))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.Status.Equals(Convert.ToInt32(req.QryState)))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.CustomerId.Contains(req.QryCustomer) || q.CustomerName.Contains(req.QryCustomer))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceOrderSNs.Any(a=>a.ManufSN.Contains(req.QryManufSN)))
+                         .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime <= req.QryCreateTimeTo)
+            .OrderBy(r => r.CreateTime).Select(q => new
+            {
+                q.Id,
+                q.CustomerId,
+                q.CustomerName,
+                q.Services,
+                q.CreateTime,
+                q.Contacter,
+                q.ContactTel,
+                q.Supervisor,
+                q.SalesMan,
+                q.ServiceOrderSNs.FirstOrDefault(a => a.ManufSN.Contains(req.QryManufSN)).ManufSN,
+                q.ServiceOrderSNs.FirstOrDefault(a => a.ManufSN.Contains(req.QryManufSN)).ItemCode,
+            });
+
+
+            result.data =
+            (await query//.OrderBy(u => u.Id)
+            .Skip((req.page - 1) * req.limit)
+            .Take(req.limit).ToListAsync());//.GroupBy(o => o.Id).ToList();
+            result.count = query.Count();
+            return result;
+        }
+
+        public async Task<ServiceOrderDetailsResp> GetUnConfirmedServiceOrderDetails(int id)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var obj = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(id))
+                .Include(s=>s.ServiceOrderSNs)
+                .Include(s => s.ServiceOrderPictures).FirstOrDefaultAsync();
+            var result = obj.MapTo<ServiceOrderDetailsResp>();
+            return result;
         }
     }
 }

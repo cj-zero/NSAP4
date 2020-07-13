@@ -25,7 +25,7 @@ namespace OpenAuth.Repository.Domain
         public ServiceOrderSerial()
         {
           this.ItemCode= string.Empty;
-          this.MSerialNum= string.Empty;
+          this.ManufSN = string.Empty;
         }
 
         
@@ -44,6 +44,6 @@ namespace OpenAuth.Repository.Domain
         /// 
         /// </summary>
         [Description("")]
-        public string MSerialNum { get; set; }
+        public string ManufSN { get; set; }
     }
 }

@@ -68,5 +68,7 @@ namespace OpenAuth.App.Request
         public virtual List<AddServiceWorkOrderReq> ServiceWorkOrders { get; set; }
 
         public virtual List<FileBind> Pictures { get; set; }
+
+        public virtual List<ServiceOrderSerial> ServiceOrderSNs { get; set; }
     }
 }

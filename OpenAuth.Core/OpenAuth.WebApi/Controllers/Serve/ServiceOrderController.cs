@@ -9,6 +9,7 @@ using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 
+
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace OpenAuth.WebApi.Controllers
@@ -65,5 +66,39 @@ namespace OpenAuth.WebApi.Controllers
             }
             return Task.FromResult(result);
         }
+
+        [HttpGet]
+        public async Task<TableData> UnConfirmedServiceOrderList([FromQuery] QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.UnConfirmedServiceOrderList(req);
+            }
+            catch (Exception ex)
+            {
+                result.code = 500;
+                result.msg = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        [HttpGet]
+        public async Task<Response<ServiceOrderDetailsResp>> GetUnConfirmedServiceOrderDetails(int serviceOrderId)
+        {
+            var result = new Response<ServiceOrderDetailsResp>();
+            try
+            {
+                result.Result = await _serviceOrderApp.GetUnConfirmedServiceOrderDetails(serviceOrderId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
     }
 }
