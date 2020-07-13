@@ -59,11 +59,6 @@ namespace OpenAuth.App
             obj.CreateUserId = loginContext.User.Id;
             obj.RecepUserId = loginContext.User.Id;
             obj.RecepUserName = loginContext.User.Name;
-            obj.ServiceWorkOrders.ForEach(swo => 
-            {
-                swo.CreateTime = DateTime.Now;
-                swo.SubmitUserId = loginContext.User.Id;
-            });
 
             var o = await UnitWork.AddAsync<ServiceOrder, int>(obj);
             var pictures = req.Pictures.MapToList<ServiceOrderPicture>();
@@ -71,6 +66,7 @@ namespace OpenAuth.App
             await UnitWork.BatchAddAsync(pictures.ToArray());
             var from = obj.FromId == 1 ? "电话" : "APP";
             await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"{from}提交服务单", ActionType = "呼叫服务提单", ServiceOrderId = o.Id });
+            await UnitWork.SaveAsync();
         }
 
         /// <summary>

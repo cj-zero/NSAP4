@@ -204,6 +204,7 @@ namespace OpenAuth.App
         {
             var obj = req.MapTo<AppUserMap>();
             await UnitWork.AddAsync(obj);
+            await UnitWork.SaveAsync();
         }
 
         /// <summary>
