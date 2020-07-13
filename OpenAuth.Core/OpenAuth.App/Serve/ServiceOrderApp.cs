@@ -16,11 +16,13 @@ namespace OpenAuth.App
     public class ServiceOrderApp : OnlyUnitWorkBaeApp
     {
         private RevelanceManagerApp _revelanceApp;
+        private ServiceOrderLogApp _serviceOrderLogApp;
 
         public ServiceOrderApp(IUnitWork unitWork,
-            RevelanceManagerApp app, IAuth auth) : base(unitWork, auth)
+            RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, IAuth auth) : base(unitWork, auth)
         {
             _revelanceApp = app;
+            _serviceOrderLogApp = serviceOrderLogApp;
         }
         /// <summary>
         /// 加载列表
@@ -67,6 +69,8 @@ namespace OpenAuth.App
             var pictures = req.Pictures.MapToList<ServiceOrderPicture>();
             pictures.ForEach(p => p.ServiceOrderId = o.Id);
             await UnitWork.BatchAddAsync(pictures.ToArray());
+            var from = obj.FromId == 1 ? "电话" : "APP";
+            await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"{from}提交服务单", ActionType = "呼叫服务提单", ServiceOrderId = obj.Id });
         }
 
         /// <summary>
@@ -120,6 +124,8 @@ namespace OpenAuth.App
             }
             await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(id), u => new ServiceOrder { Status = status });
             await UnitWork.SaveAsync();
+            var statusStr = status == 2 ? "已确认" : status == 3 ? "已取消" : "待确认";
+            await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"修改服务单状态为:{statusStr}", ActionType = "修改服务单状态", ServiceOrderId = id });
         }
 
         /// <summary>
@@ -137,6 +143,9 @@ namespace OpenAuth.App
             }
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id.Equals(id), u => new ServiceWorkOrder { Status = status });
             await UnitWork.SaveAsync();
+
+            var statusStr = status == 2 ? "已排配" : status == 3 ? "已外出" : status == 4 ? "已挂起" : status == 5 ? "已接收" : status == 6 ? "已解决" : status == 7 ? "已回访" : "待处理";
+            await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"修改服务工单单状态为:{statusStr}", ActionType = "修改服务工单状态", ServiceWorkOrderId = id });
         }
         /// <summary>
         /// 查询超24小时为处理的订单
