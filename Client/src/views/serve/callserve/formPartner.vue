@@ -80,7 +80,7 @@ export default {
     }
   },
     mounted() {
-    console.log(this.partnerList);
+    this.toCallList = this.CallList
   },
   methods:{
           openDialog() {   //打开前赋值

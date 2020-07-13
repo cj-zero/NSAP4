@@ -3,7 +3,7 @@
     <div style="border:1px silver solid;padding:5px;margin-left:10px;">
       <el-row type="flex" class="row-bg" justify="space-around">
         <el-col :span="8">
-          <el-form-item label="内部序列号">
+          <el-form-item label="工单ID">
             <el-input v-model="form.internalSerialNumber" disabled></el-input>
           </el-form-item>
         </el-col>
@@ -32,7 +32,7 @@
           <el-form-item label="制造商序列号">
             <el-autocomplete
               popper-class="my-autocomplete"
-              v-model="form.manufSN"
+              v-model="form.manufacturerSerialNumber"
               :fetch-suggestions="querySearch"
               placeholder="请输入内容"
               @select="handleSelect"
@@ -51,21 +51,24 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="保修结束日期">
+            <el-form-item label="服务合同">
+                <el-input v-model="form.internalSerialNumber" disabled></el-input>
+              </el-form-item>
+          <!-- <el-form-item label="保修结束日期">
             <el-date-picker
               disabled
               type="date"
               placeholder="选择开始日期"
-              v-model="form.dlvryDate"
+              v-model="form.warrantyEndDate"
               style="width: 100%;"
             ></el-date-picker>
-          </el-form-item>
+          </el-form-item> -->
         </el-col>
       </el-row>
       <el-row type="flex" class="row-bg" justify="space-around">
         <el-col :span="8">
           <el-form-item label="物料编码">
-            <el-input v-model="form.itemCode" disabled></el-input>
+            <el-input v-model="form.materialCode" disabled></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="16">
@@ -84,35 +87,12 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="接单员">
-            <el-input disabled v-model="form.name"></el-input>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row type="flex" class="row-bg" justify="space-around">
-        <el-col :span="8">
-          <el-form-item label="呼叫来源">
-            <el-select v-model="form.name" clearable placeholder="请选择">
-              <el-option
-                v-for="item in options_sourse"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-              ></el-option>
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="呼叫状态">
-            <el-input v-model="form.name" disabled></el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="创建日期">
+          <el-form-item label="保修结束日期">
             <el-date-picker
+              disabled
               type="date"
               placeholder="选择开始日期"
-              v-model="form.startTime"
+              v-model="form.warrantyEndDate"
               style="width: 100%;"
             ></el-date-picker>
           </el-form-item>
@@ -120,15 +100,31 @@
       </el-row>
       <el-row type="flex" class="row-bg" justify="space-around">
         <el-col :span="8">
-          <el-form-item label="呼叫类型">
-            <el-select v-model="form.name" clearable placeholder="请选择">
-              <el-option
-                v-for="item in options_type"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-              ></el-option>
-            </el-select>
+        <el-form-item label="呼叫类型">
+                <el-input v-model="form.fromType"></el-input>
+              </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="呼叫状态">
+            <el-input v-model="form.status" disabled></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+           <el-form-item label="清算日期">
+                <el-date-picker
+                  disabled
+                  type="date"
+                  placeholder="选择日期"
+                  v-model="form.liquidationDate"
+                  style="width: 100%;"
+                ></el-date-picker>
+              </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row type="flex" class="row-bg" justify="space-around">
+        <el-col :span="8">
+       <el-form-item label="问题类型">
+            <el-input v-model="form.problemTypeId"></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="8">
@@ -149,29 +145,19 @@
               disabled
               type="date"
               placeholder="选择开始日期"
-              v-model="form.startTime"
+              v-model="form.bookingDate"
               style="width: 100%;"
             ></el-date-picker>
           </el-form-item>
         </el-col>
       </el-row>
       <el-row type="flex" class="row-bg" justify="space-around">
-        <el-col :span="8">
-          <el-form-item label="问题类型">
-            <el-input v-model="form.name"></el-input>
+        <el-col :span="16">
+          <el-form-item label="解决方案">
+            <el-input v-model="form.problemTypeId"></el-input>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="清算日期">
-            <el-date-picker
-              disabled
-              type="date"
-              placeholder="选择日期"
-              v-model="form.startTime"
-              style="width: 100%;"
-            ></el-date-picker>
-          </el-form-item>
-        </el-col>
+
         <el-col :span="8">
           <el-form-item label="结束时间">
             <el-date-picker
@@ -184,19 +170,10 @@
           </el-form-item>
         </el-col>
       </el-row>
-      <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
-        <el-col :span="8">
-          <el-form-item label="地址标识">
-            <el-input v-model="form.name"></el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="16">
-          <el-input v-model="form.name"></el-input>
-        </el-col>
-      </el-row>
 
-      <el-form-item label="备注" prop="desc">
-        <el-input type="textarea" v-model="form.desc"></el-input>
+
+      <el-form-item label="备注" prop="remark">
+        <el-input type="textarea" v-model="form.remark"></el-input>
       </el-form-item>
       <el-form-item label>
         <div class="showSort">1/{{formList.length+1}}</div>
@@ -212,7 +189,7 @@
         >
           <el-row type="flex" class="row-bg" justify="space-around">
             <el-col :span="8">
-              <el-form-item label="内部序列号">
+              <el-form-item label="工单ID">
                 <el-input v-model="form.internalSerialNumber" disabled></el-input>
               </el-form-item>
             </el-col>
@@ -241,7 +218,7 @@
               <el-form-item label="制造商序列号">
                 <el-autocomplete
                   popper-class="my-autocomplete"
-                  v-model="form.manufSN"
+                  v-model="form.manufacturerSerialNumber"
                   :fetch-suggestions="querySearch"
                   placeholder="请输入内容"
                   @select="handleSelect"
@@ -260,21 +237,24 @@
               </el-form-item>
             </el-col>
             <el-col :span="8">
-              <el-form-item label="保修结束日期">
+               <el-form-item label="服务合同">
+                <el-input v-model="form.internalSerialNumber" disabled></el-input>
+              </el-form-item>
+              <!-- <el-form-item label="保修结束日期">
                 <el-date-picker
                   disabled
                   type="date"
                   placeholder="选择开始日期"
-                  v-model="form.dlvryDate"
+                  v-model="form.warrantyEndDate"
                   style="width: 100%;"
                 ></el-date-picker>
-              </el-form-item>
+              </el-form-item> -->
             </el-col>
           </el-row>
           <el-row type="flex" class="row-bg" justify="space-around">
             <el-col :span="8">
               <el-form-item label="物料编码">
-                <el-input v-model="form.itemCode" disabled></el-input>
+                <el-input v-model="form.materialCode" disabled></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="16">
@@ -299,34 +279,36 @@
             </el-col>
             <el-col :span="8">
               <el-form-item label="接单员">
-                <el-input disabled v-model="form.name"></el-input>
+                <el-form-item label="保修结束日期">
+            <el-date-picker
+              disabled
+              type="date"
+              placeholder="选择开始日期"
+              v-model="form.warrantyEndDate"
+              style="width: 100%;"
+            ></el-date-picker>
+          </el-form-item>
               </el-form-item>
             </el-col>
           </el-row>
           <el-row type="flex" class="row-bg" justify="space-around">
             <el-col :span="8">
-              <el-form-item label="呼叫来源">
-                <el-select v-model="form.name" clearable placeholder="请选择">
-                  <el-option
-                    v-for="item in options_sourse"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                  ></el-option>
-                </el-select>
+           <el-form-item label="呼叫类型">
+                <el-input v-model="form.fromType"></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="8">
               <el-form-item label="呼叫状态">
-                <el-input v-model="form.name" disabled></el-input>
+                <el-input v-model="form.status" disabled></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="8">
-              <el-form-item label="创建日期">
+                 <el-form-item label="清算日期">
                 <el-date-picker
+                  disabled
                   type="date"
-                  placeholder="选择开始日期"
-                  v-model="form.startTime"
+                  placeholder="选择日期"
+                  v-model="form.liquidationDate"
                   style="width: 100%;"
                 ></el-date-picker>
               </el-form-item>
@@ -334,9 +316,9 @@
           </el-row>
           <el-row type="flex" class="row-bg" justify="space-around">
             <el-col :span="8">
-              <el-form-item label="呼叫类型">
-                <el-input v-model="form.name"></el-input>
-              </el-form-item>
+               <el-form-item label="问题类型">
+            <el-input v-model="form.problemTypeId"></el-input>
+          </el-form-item>
             </el-col>
             <el-col :span="8">
               <el-form-item label="优先级">
@@ -349,29 +331,18 @@
                   disabled
                   type="date"
                   placeholder="选择开始日期"
-                  v-model="form.startTime"
+                  v-model="form.bookingDate"
                   style="width: 100%;"
                 ></el-date-picker>
               </el-form-item>
             </el-col>
           </el-row>
           <el-row type="flex" class="row-bg" justify="space-around">
-            <el-col :span="8">
-              <el-form-item label="问题类型">
-                <el-input v-model="form.name"></el-input>
-              </el-form-item>
-            </el-col>
-            <el-col :span="8">
-              <el-form-item label="清算日期">
-                <el-date-picker
-                  disabled
-                  type="date"
-                  placeholder="选择日期"
-                  v-model="form.startTime"
-                  style="width: 100%;"
-                ></el-date-picker>
-              </el-form-item>
-            </el-col>
+           <el-col :span="16">
+          <el-form-item label="解决方案">
+            <el-input v-model="form.problemTypeId"></el-input>
+          </el-form-item>
+        </el-col>
             <el-col :span="8">
               <el-form-item label="结束时间">
                 <el-date-picker
@@ -384,19 +355,10 @@
               </el-form-item>
             </el-col>
           </el-row>
-          <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
-            <el-col :span="8">
-              <el-form-item label="地址标识">
-                <el-input v-model="form.name"></el-input>
-              </el-form-item>
-            </el-col>
-            <el-col :span="16">
-              <el-input v-model="form.name"></el-input>
-            </el-col>
-          </el-row>
 
-          <el-form-item label="备注" prop="desc">
-            <el-input type="textarea" v-model="form.desc"></el-input>
+
+          <el-form-item label="备注" prop="remark">
+            <el-input type="textarea" v-model="form.remark"></el-input>
           </el-form-item>
           <el-form-item label>
             <div class="showSort">{{index+2}}/{{formList.length+1}}</div>
@@ -613,7 +575,7 @@ export default {
             confirmButtonText: "确定",
             cancelButtonText: "取消",
             type: "warning"
-          })(() => {
+          }).then(() => {
             this.form.manufSN = this.formList[0].manufSN;
             this.form.internalSerialNumber = this.formList[0].internalSerialNumber;
             this.form.itemCode = this.formList[0].itemCode;
