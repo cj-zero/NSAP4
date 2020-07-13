@@ -181,6 +181,7 @@
 import { flowConfig } from '../config/args-config.js'
 import vdr from 'vue-draggable-resizable-gorkys'
 import 'vue-draggable-resizable-gorkys/dist/VueDraggableResizable.css'
+import {mapGetters, mapActions} from 'vuex'
 
 export default {
   props: ['select', 'selectGroup', 'node', 'plumb', 'currentTool', 'isShowContent'],
@@ -196,7 +197,7 @@ export default {
   data() {
     return {
       contentHtml: '',
-      currentSelect: this.select,
+      // currentSelect: this.select,
       currentSelectGroup: this.selectGroup,
       setInfo: {
         NodeRejectType: 0, // 驳回类型
@@ -212,7 +213,15 @@ export default {
       }
     }
   },
+  computed: {
+    ...mapGetters({
+      currentSelect: 'currentSelect'
+    })
+  },
   methods: {
+    ...mapActions({
+      saveCurrentSelect: 'saveCurrentSelect'
+    }),
     onResize: function(x, y, width, height) {
       this.node.width = width
       this.node.height = height
@@ -249,7 +258,8 @@ export default {
           that.$emit('hideAlignLine')
         }
       })
-      that.currentSelect = { ...that.node, setInfo: this.setInfo }
+      const currentSelect = { ...that.node, setInfo: that.node.setInfo || this.setInfo }
+      that.saveCurrentSelect(currentSelect)
       that.currentSelectGroup = []
     },
     selectNode() {
@@ -257,7 +267,8 @@ export default {
         return
       }
       const that = this
-      that.currentSelect = this.node
+      const currentSelect = Object.assign({}, this.node)
+      that.saveCurrentSelect(currentSelect)
       that.$emit('isMultiple', flag => {
         if (!flag) {
           that.currentSelectGroup = []
@@ -313,15 +324,15 @@ export default {
     }
   },
   watch: {
-    select(val) {
-      this.currentSelect = val
-    },
-    currentSelect: {
-      handler(val) {
-        this.$emit('update:select', val)
-      },
-      deep: true
-    },
+    // select(val) {
+    //   this.currentSelect = val
+    // },
+    // currentSelect: {
+    //   handler(val) {
+    //     this.$emit('update:select', val)
+    //   },
+    //   deep: true
+    // },
     selectGroup(val) {
       this.currentSelectGroup = val
     },

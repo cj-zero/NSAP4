@@ -6,6 +6,7 @@
           v-model="listQuery.key">
         </el-input>
 
+        <!-- <el-button class="filter-item" type="success" v-waves icon="el-icon-search" @click="handleFilter">搜索</el-button> -->
         <permission-btn moduleName='modulemanager' :size="'mini'" v-on:btn-event="onBtnClicked"></permission-btn>
 
         <el-checkbox size="mini" style='margin-left:15px;' @change='tableKey=tableKey+1' v-model="showDescription">Id/描述</el-checkbox>
@@ -104,6 +105,20 @@
           <el-form-item size="small" :label="'模块标识'">
             <el-input v-model="temp.code"></el-input>
           </el-form-item>
+          <el-form-item size="small" :label="'图标'">
+            <el-popover
+              placement="top-start"
+              width="400"
+              trigger="click"
+              content="这是一段内容,这是一段内容,这是一段内容,这是一段内容。">
+              <el-input slot="reference" v-model="temp.iconName"></el-input>
+              <el-row class="selectIcon-box">
+                <el-col :class="{'active': temp.iconName === item.font_class}" :span="3" v-for="(item,index) in iconData.glyphs" :key="index">
+                  <i :class="`${iconData.font_family} ${iconData.css_prefix_text}${item.font_class}`" @click="handleChangeTempIcon(item)"></i>
+                </el-col>
+              </el-row>
+            </el-popover>
+          </el-form-item>
           <el-form-item size="small" :label="'url'">
             <el-input v-model="temp.url"></el-input>
           </el-form-item>
@@ -122,33 +137,36 @@
           <el-button size="mini" v-else type="primary" @click="updateData">确认</el-button>
         </div>
       </el-dialog>
-      <!--菜单编辑/添加对话框-->
+      <!--菜单编辑对话框-->
       <el-dialog v-el-drag-dialog class="dialog-mini" width="500px" :title="textMap[dialogMenuStatus]" :visible.sync="dialogMenuVisible">
         <el-form :rules="rules" ref="menuForm" :model="menuTemp" label-position="right" label-width="100px">
           <el-form-item size="small" :label="'Id'" prop="id" v-show="dialogMenuStatus=='update'">
             <span>{{menuTemp.id}}</span>
           </el-form-item>
-     <el-form-item size="small"  :label="'DOM ID'">
-            <!-- <el-input v-model="menuTemp.domId"></el-input> -->
-              <el-autocomplete
-               suffix-icon="el-icon-caret-bottom"
-              style="width:100%;"
-              class="inline-input"
-              v-model="menuTemp.domId"
-              :fetch-suggestions="querySearch"
-              placeholder="请输入DOM ID"
-              @select="changeValue"
-            ></el-autocomplete>
-          </el-form-item>
+
           <el-form-item size="small" :label="'名称'" prop="name">
             <el-input v-model="menuTemp.name"></el-input>
           </el-form-item>
-     
+          <el-form-item size="small" :label="'DOM ID'">
+            <el-input v-model="menuTemp.domId"></el-input>
+          </el-form-item>
           <el-form-item size="small" :label="'样式'">
             <el-input v-model="menuTemp.class"></el-input>
           </el-form-item>
           <el-form-item size="small" :label="'图标'">
-            <el-input v-model="menuTemp.icon"></el-input>
+            <!-- <el-input v-model="menuTemp.icon"></el-input> -->
+            <el-popover
+              placement="top-start"
+              width="400"
+              trigger="click"
+              content="这是一段内容,这是一段内容,这是一段内容,这是一段内容。">
+              <el-input slot="reference" v-model="menuTemp.icon"></el-input>
+              <el-row class="selectIcon-box">
+                <el-col :class="{'active': menuTemp.icon === item.font_class}" :span="3" v-for="(item,index) in iconData.glyphs" :key="index">
+                  <i :class="`${iconData.font_family} ${iconData.css_prefix_text}${item.font_class}`" @click="menuTemp.icon = item.font_class"></i>
+                </el-col>
+              </el-row>
+            </el-popover>
           </el-form-item>
            <el-form-item size="small" :label="'排序'">
              <el-input-number v-model="menuTemp.sort" :min="0" :max="10" ></el-input-number>
@@ -185,6 +203,7 @@ import waves from '@/directive/waves' // 水波纹指令
 import Sticky from '@/components/Sticky'
 import permissionBtn from '@/components/PermissionBtn'
 import elDragDialog from '@/directive/el-dragDialog'
+import iconData from '@/assets/public/css/comIconfont/iconfont/iconfont.json'
 export default {
   name: 'modulemanager',
   components: {
@@ -200,6 +219,7 @@ export default {
   },
   data() {
     return {
+      iconData: iconData,
       normalizer(node) {
         // treeselect定义字段
         return {
@@ -225,7 +245,6 @@ export default {
       ],
       selectMenus: [], // 菜单列表选中的值
       tableKey: 0,
-      restaurants:[],
       list: [], // 菜单列表
       total: 0,
       currentModule: null, // 左边模块treetable当前选中的项
@@ -249,6 +268,7 @@ export default {
         url: '',
         code: '',
         sortNo: 0,
+        iconName: '',
         parentId: null,
         name: '',
         status: 0,
@@ -356,40 +376,16 @@ export default {
   },
   created() {
     this.getList()
+    console.log('iconData>>>>>>>', this.iconData)
   },
   mounted() {
-    this.restaurants = this.loadAll();
     this.getModulesTree()
   },
   methods: {
-    loadAll(){
-      return [
-        {id:0,name:'编辑',class:'ayui-btn-normal',icon:'layui-icon-edit',value:'btnEdit'},
-        {id:1,name:'删除',class:'ayui-btn-danger',icon:'layui-icon-delete',value:'btnDel'},
-        {id:2,name:'添加',class:'ayui-btn-normal',icon:'layui-icon-add-1',value:'btnAdd'},
-          {id:3,name:'详情',class:'layui-btn-normal',icon:'layui-icon-search',value:'btnDetail'},
-        {id:5,name:'导出',class:'layui-btn-normal',icon:'el-icon-printer',value:'btnOut'},
-            {id:6,name:'表格排序',class:'ayui-btn-normal',icon:'el-icon-thumb',value:'editTable'},
-            {id:4,name:'添加菜单',class:'ayui-btn-normal',icon:'layui-icon-add-1',value:'btnAddMenu'}
-      ]
+    handleChangeTempIcon(item){
+      this.temp.iconName = item.font_class
+      console.log(item, this.temp,this.temp.iconName === item.font_class,this.temp.iconName,  item.font_class)
     },
-
-
-    changeValue(value){
-      this.menuTemp.class=value.class
-      this.menuTemp.icon=value.icon
-      this.menuTemp.name=value.name
-    },
-      querySearch(queryString, cb) {
-        var restaurants = this.restaurants;
-        var results = queryString ? restaurants.filter(this.createFilter(queryString)) : restaurants;
-        // 调用 callback 返回建议列表的数据
-        cb(results);
-      },
-        createFilter(queryString) {
-        return (restaurant) => {
-          return (restaurant.value.toLowerCase().indexOf(queryString.toLowerCase()) === 0);
-        };},
     rowClick(row) {
       this.$refs.mainTable.clearSelection()
       this.$refs.mainTable.toggleRowSelection(row)
@@ -478,11 +474,12 @@ export default {
             sortNo: item.sortNo,
             id: item.id,
             name: item.name,
+            iconName: item.iconName,
             parentId: item.parentId || null,
             code: item.code,
             url: item.url,
             cascadeId: item.cascadeId,
-            isSys: item.isSys 
+            isSys: item.isSys
           }
         })
         var modulestmp = JSON.parse(JSON.stringify(_this.modules))
@@ -509,6 +506,7 @@ export default {
         id: undefined,
         cascadeId: '',
         url: '',
+        iconName: '',
         code: '',
         parentId: null,
         name: '',
@@ -562,6 +560,7 @@ export default {
     },
     handleUpdate(row) {
       // 弹出编辑框
+      console.log('row', row)
       this.temp = Object.assign({}, row) // copy obj
       if (this.temp.children) { // 点击含有子节点树结构时，带有的children会造成提交的时候json死循环
         this.temp.children = null
@@ -697,7 +696,7 @@ export default {
 }
 </script>
 
-<style>
+<style lang="scss">
 .text {
     font-size: 14px;
 }
@@ -718,5 +717,25 @@ export default {
 
 .el-card__header {
     padding: 12px 20px;
+}
+.selectIcon-box{
+  text-align: center;
+  border: 1px solid #eeeeee;
+  border-right: 0;
+  border-bottom: 0;
+  .el-col{
+    padding: 10px 0;
+    border-right: 1px solid #eeeeee;
+    border-bottom: 1px solid #eeeeee;
+    &.active{
+      .iconfont{
+        color: #409EFF;
+      }
+    }
+  }
+  .iconfont{
+    cursor: pointer;
+    font-size: 20px;
+  }
 }
 </style>

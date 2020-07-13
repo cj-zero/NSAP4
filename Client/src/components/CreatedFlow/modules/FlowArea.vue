@@ -103,6 +103,7 @@ import draggable from 'vuedraggable'
 import { flowConfig } from '../config/args-config.js'
 import { ZFSN } from '../util/ZFSN.js'
 import FlowNode from './FlowNode'
+import {mapGetters, mapActions} from 'vuex'
 // import { connect } from 'tls';
 // import html2canvas from 'html2canvas'
 // import canvg from 'canvg'
@@ -116,7 +117,7 @@ export default {
   data() {
     return {
       ctx: null,
-      currentSelect: this.select,
+      // currentSelect: this.select,
       currentSelectGroup: this.selectGroup,
       states: [{
         type: '4',
@@ -190,8 +191,16 @@ export default {
       clipboard: []
     }
   },
+  computed: {
+    ...mapGetters({
+      currentSelect: 'currentSelect'
+    })
+  },
   mounted() {},
   methods: {
+    ...mapActions({
+      saveCurrentSelect: 'saveCurrentSelect'
+    }),
     handleMoveEnd({ newIndex, oldIndex }) {
       console.log(newIndex, oldIndex)
     },
@@ -732,7 +741,8 @@ export default {
       }
     },
     selectContainer() {
-      this.currentSelect = {}
+      const currentSelect = {}
+      this.saveCurrentSelect(currentSelect)
       this.$emit('getShortcut')
     },
     isMultiple(callback) {
@@ -796,23 +806,23 @@ export default {
     }
   },
   watch: {
-    select(val) {
-      this.currentSelect = val
-      if (this.tempLinkId !== '') {
-        document.getElementById(this.tempLinkId) && document.getElementById(this.tempLinkId).classList && document.getElementById(this.tempLinkId).classList.remove('link-active')
-        this.tempLinkId = ''
-      }
-      if (this.currentSelect.type === 'sl') {
-        this.tempLinkId = this.currentSelect.id
-        document.getElementById(this.currentSelect.id).classList.add('link-active')
-      }
-    },
-    currentSelect: {
-      handler(val) {
-        this.$emit('update:select', val)
-      },
-      deep: true
-    },
+    // select(val) {
+    //   this.currentSelect = val
+    //   if (this.tempLinkId !== '') {
+    //     document.getElementById(this.tempLinkId) && document.getElementById(this.tempLinkId).classList && document.getElementById(this.tempLinkId).classList.remove('link-active')
+    //     this.tempLinkId = ''
+    //   }
+    //   if (this.currentSelect.type === 'sl') {
+    //     this.tempLinkId = this.currentSelect.id
+    //     document.getElementById(this.currentSelect.id).classList.add('link-active')
+    //   }
+    // },
+    // currentSelect: {
+    //   handler(val) {
+    //     this.$emit('update:select', val)
+    //   },
+    //   deep: true
+    // },
     selectGroup(val) {
       this.currentSelectGroup = val
       if (this.currentSelectGroup.length <= 0) this.plumb.clearDragSelection()

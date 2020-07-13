@@ -3,21 +3,33 @@
     <!-- <el-table-column align="center" type="selection" width="30"></el-table-column> -->
     <el-table-column v-if="columns.length===0" width="150">
       <template slot-scope="scope">
+        <!-- <span v-for="space in scope.row._level" class="ms-tree-space" :key="space">1</span> -->
+        <!-- <span class="tree-ctrl" v-if="iconShow(0,scope.row)" @click="toggleExpanded(scope.$index)">
+          <i v-if="!scope.row._expanded" class="el-icon-plus"></i>
+          <i v-else class="el-icon-minus"></i>
+        </span> -->
         {{scope.$index}}
       </template>
     </el-table-column>
-    <el-table-column v-else v-for="(column, index) in columns" :key="column.value" :label="column.text" align="center" :width="column.width">
+    <el-table-column v-else v-for="(column, index) in columns" :key="column.value" :label="column.text" :width="column.width">
       <template slot-scope="scope">
+     
+        <!-- <span v-if="index === 0" v-for="space in scope.row._level" class="ms-tree-space" :key="space">
+        </span> -->
+        <!-- <span class="tree-ctrl" v-if="iconShow(index,scope.row)" @click="toggleExpanded(scope.$index)">
+          <i v-if="!scope.row._expanded" class="el-icon-plus"></i>
+          <i v-else class="el-icon-minus"></i>
+        </span> -->
         <template>
            <span v-if="index === 0 && scope.row.parentId" >
             <el-radio v-model="radioCheck" :label="scope.row.id">{{scope.row[column.value]}}</el-radio>
            </span>
-     
             <template v-else>
-              <span >{{scope.row[column.value]}}</span>
-  
+              {{scope.row[column.value]}}
             </template>
         </template>
+        
+       
       </template>
     </el-table-column>
     <slot></slot>
@@ -75,7 +87,7 @@ export default {
       this.$emit('row-click', row)
     },
     handleSelectionChange(val) {
-      // console.log('subtable select:' + val)
+      console.log('subtable select:' + val)
       this.$emit('selection-change', val)
     },
     // showRow: function(row) {

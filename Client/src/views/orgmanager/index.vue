@@ -16,16 +16,6 @@
         <el-col :span="4" style="height: 100%;border: 1px solid #EBEEF5;">
           <el-card shadow="never" class="body-small" style="height: 100%;overflow:auto;">
             <div slot="header" class="clearfix">
-              <el-button type="text" style="padding: 0 11px" @click="getCorpTree">所有公司>></el-button>
-            </div>
-
-            <el-tree :data="CorpTree" :expand-on-click-node="false" default-expand-all :props="defaultProps"
-              @node-click="handleClick"></el-tree>
-          </el-card>
-        </el-col>
-          <el-col :span="4" style="height: 100%;border: 1px solid #EBEEF5;">
-          <el-card shadow="never" class="body-small" style="height: 100%;overflow:auto;">
-            <div slot="header" class="clearfix">
               <el-button type="text" style="padding: 0 11px" @click="getAllOrgs">所有机构>></el-button>
             </div>
 
@@ -33,7 +23,7 @@
               @node-click="handleNodeClick"></el-tree>
           </el-card>
         </el-col>
-        <el-col :span="16" style="height: 100%;">
+        <el-col :span="20" style="height: 100%;">
           <div class="bg-white" style="height: 100%;">
             <el-table ref="mainTable" :key='tableKey' :data="list" v-loading="listLoading" border fit
               highlight-current-row style="width: 100%;" height="calc(100% - 52px)" @row-click="rowClick" @selection-change="handleSelectionChange">
@@ -181,7 +171,6 @@
         subLists: [],
         total: 0,
         currentOrgId: '',
-        currentCorpId: '',
         listLoading: true,
         listQuery: { // 查询条件
           page: 1,
@@ -202,15 +191,12 @@
         showDescription: false,
         orgs: [], // 用户可访问到的组织列表
         orgsTree: [], // 用户可访问到的所有机构组成的树
-        Corp: [], // 用户可访问到的公司列表
-        CorpTree: [], // 用户可访问到的所有公司组成的树
         temp: {
           id: undefined,
           cascadeId: '',
           parentName: '',
           parentId: null,
           name: '',
-          Corp:'',
           status: 0
         },
         dialogFormVisible: false,
@@ -323,7 +309,6 @@
     },
     mounted() {
       this.getOrgTree()
-      this.getCorpTree()
     },
     methods: {
       loadRoleUsers() {
@@ -353,10 +338,6 @@
       handleNodeClick(data) {
         this.currentOrgId = data.id
         this.getList()
-      },
-         handleClick(data) {
-         this.currentCorpId = data.id
-        this.getOrgTree(data.id)
       },
       getAllOrgs() {
         this.currentOrgId = ''
@@ -419,9 +400,9 @@
         this.list = this.subLists.slice((this.listQuery.page - 1) * this.listQuery.limit, this.listQuery.page * (this.listQuery.limit))
         this.roleUsers.selectUsers = this.list.map(() => { return { users: [], Texts: '' } })
       },
-      getOrgTree(id) {
+      getOrgTree() {
         var _this = this // 记录vuecomponent
-        login.getOrgs({corpId:id?id:null}).then(response => {
+        login.getOrgs().then(response => {
           _this.orgs = response.result.map(function(item) {
             return {
               id: item.id,
@@ -433,34 +414,6 @@
           _this.orgsTree = listToTreeSelect(orgstmp)
         })
       },
-      // getOrgList(){
-      //          var _this = this // 记录vuecomponent
-      //   login.getOrgs().then(response => {
-      //     _this.orgs = response.result.map(function(item) {
-      //       return {
-      //         id: item.id,
-      //         label: item.name,
-      //         parentId: item.parentId || null
-      //       }
-      //     })
-      //     var orgstmp = JSON.parse(JSON.stringify(_this.orgs))
-      //     _this.orgsTree = listToTreeSelect(orgstmp)
-      //   })
-      // },
-            getCorpTree() {
-        var _this = this // 记录vuecomponent
-        login.getCorp().then(response => {
-          _this.Corp = response.result.map(function(item) {
-            return {
-              id: item.id,
-              label: item.corpName
-            }
-          })
-          _this.CorpTree = _this.Corp
-
-        })
-      },
-      
       handleFilter() {
         this.listQuery.page = 1
         this.getList()
