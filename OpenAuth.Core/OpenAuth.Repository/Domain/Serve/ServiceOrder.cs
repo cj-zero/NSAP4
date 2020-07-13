@@ -25,19 +25,22 @@ namespace OpenAuth.Repository.Domain
     {
         public ServiceOrder()
         {
-          this.CustomerId= string.Empty;
-          this.CustomerName= string.Empty;
-          this.Contacter= string.Empty;
-          this.ContactTel= string.Empty;
-          this.Supervisor= string.Empty;
-          this.SupervisorId= string.Empty;
-          this.SalesMan= string.Empty;
-          this.SalesManId= string.Empty;
-          this.NewestContacter= string.Empty;
-          this.NewestContactTel= string.Empty;
-          this.TerminalCustomer= string.Empty;
-          this.CreateTime= DateTime.Now;
-          this.CreateUserId= string.Empty;
+            this.CustomerId = string.Empty;
+            this.CustomerName = string.Empty;
+            this.Contacter = string.Empty;
+            this.ContactTel = string.Empty;
+            this.Supervisor = string.Empty;
+            this.SupervisorId = string.Empty;
+            this.SalesMan = string.Empty;
+            this.SalesManId = string.Empty;
+            this.NewestContacter = string.Empty;
+            this.NewestContactTel = string.Empty;
+            this.TerminalCustomer = string.Empty;
+            this.CreateTime = DateTime.Now;
+            this.CreateUserId = string.Empty;
+            this.Province = string.Empty;
+            this.City = string.Empty;
+            this.Addr = string.Empty;
         }
 
         /// <summary>
@@ -167,6 +170,37 @@ namespace OpenAuth.Repository.Domain
         [Description("服务内容")]
         public string Services { get; set; }
 
+        /// <summary>
+        /// 省
+        /// </summary>
+        [Description("省")]
+        public string Province { get; set; }
+        /// <summary>
+        /// 市
+        /// </summary>
+        [Description("市")]
+        public string City { get; set; }
+        /// <summary>
+        /// 详细地址
+        /// </summary>
+        [Description("详细地址")]
+        public string Addr { get; set; }
+        /// <summary>
+        /// 经度
+        /// </summary>
+        [Description("经度")]
+        public decimal? Longitude { get; set; }
+        /// <summary>
+        /// 纬度
+        /// </summary>
+        [Description("纬度")]
+        public decimal? Latitude { get; set; }
+        /// <summary>
+        /// 呼叫来源  1-电话 2-APP 
+        /// </summary>
+        [Description("呼叫来源  1-电话 2-APP ")]
+        //[Browsable(false)]
+        public int? FromId { get; set; }
 
         /// <summary>
         /// 服务单关联的工单
