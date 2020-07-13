@@ -1,10 +1,10 @@
 import request from '@/utils/request'
 
-export function getList() {
+export function getList(params) {
     return request({
       url: '/Sap/BusinessPartner/Load',  //业务伙伴分页查询
       method: 'get',
-      
+      params
     })
   }
 

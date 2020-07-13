@@ -32,7 +32,7 @@
             ref="singleTable"
             :data="listParent"
             highlight-current-row
-            @current-change="handleCurrentChange"
+            @current-change="handleCurrent"
             style="width: 100%"
           >
             <el-table-column property="id" align="center" label="问题ID"></el-table-column>
@@ -64,13 +64,24 @@
             </el-table-column>
             <el-table-column property="orderIdx" align="center" label="排序" width="50"></el-table-column>
           </el-table>
-          <pagination
+          <!-- <pagination
             v-show="listChild.length>0"
             :total="listChild.length"
             :page.sync="listQuery.page"
             :limit.sync="listQuery.limit"
-            @pagination="handleCurrentChange"
-          ></pagination>
+            @pagination="handlePageChange"
+          ></pagination> -->
+              <!-- <el-pagination
+            style="background-color:#ffffff;"
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+      :current-page="currentPage"
+      :page-sizes="[5, 10, 20, 30, 40]"
+      :page-size="20"
+      layout="total, sizes, prev, pager, next, jumper"
+        v-show="listChild.length>0"
+            :total="listChild.length">
+    </el-pagination> -->
         </el-col>
       </el-row>
 
@@ -118,14 +129,14 @@
 import * as problemtypes from "@/api/problemtypes";
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
-import Pagination from "@/components/Pagination";
+// import Pagination from "@/components/Pagination";
 
 import permissionBtn from "@/components/PermissionBtn";
-// import Pagination from "@/components/Pagination";
+
 import elDragDialog from "@/directive/el-dragDialog";
 export default {
   name: "problemtypes",
-  components: { Sticky, permissionBtn, Pagination },
+  components: { Sticky, permissionBtn },
   directives: {
     waves,
     elDragDialog
@@ -145,6 +156,8 @@ export default {
         key: undefined,
         appId: undefined
       },
+      currentPage:1,
+      currentSize:20,
       whoEdit: null,
       statusOptions: [
         { key: 1, display_name: "停用" },
@@ -254,11 +267,34 @@ export default {
       this.listQuery.page = 1;
       this.getList();
     },
-    handleSizeChange(val) {
-      this.listQuery.limit = val;
-      this.getList();
+    // handleSizeChange(val) {
+    //   this.listQuery.limit = val;
+    //   this.getList();
+    // },
+          handleSizeChange(val) {
+        console.log(`每页 ${val} 条`);
+        this.currentSize=val
+      },
+  //     handleCurrentChange(val) {
+  //       console.log(`当前页: ${val}`,this.currentSize);
+  //       // let maxLength = Math.ceil(this.listChild.length/this.currentSize*1)
+  //       // this.listChild = newList;
+  // //       console.log(this.result1,this.multipleSelection)
+  //         if(this.multipleSelection){
+  //                let newList = this.result1.filter(item => item.parentId ==  this.multipleSelection.parentId);
+     
+  //      this.listChild = newList
+  //         }else{
+  //  let newList = this.result1
+  //      this.listChild = newList
+  //          }
+        
+  //     },
+    handlePageChange(val){
+       let newList = this.result1.filter(item => item.parentId == val.id);
+      this.listChild = newList;
     },
-    handleCurrentChange(val) {
+    handleCurrent(val) {
       // this.listQuery.page = val.page;
       // this.listQuery.limit = val.limit;
       this.handleSelectionChange(val);

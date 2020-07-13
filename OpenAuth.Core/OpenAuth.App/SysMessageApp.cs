@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Infrastructure;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
@@ -42,6 +43,10 @@ namespace OpenAuth.App
         public void Add(SysMessage obj)
         {
             Repository.Add(obj);
+        }
+        public async Task AddAsync(SysMessage obj)
+        {
+            await Repository.AddAsync(obj);
         }
         
         public void Update(SysMessage obj)

@@ -31,7 +31,10 @@
               </el-form-item>
             </el-col>
             <el-col :span="8">
-              <el-form-item label="服务合同">
+              <!-- <el-form-item label="服务合同">
+                <el-input v-model="form.contractId" disabled></el-input>
+              </el-form-item>-->
+              <el-form-item label="接单员">
                 <el-input v-model="form.contractId" disabled></el-input>
               </el-form-item>
             </el-col>
@@ -74,7 +77,27 @@
             </el-col>
           </el-row>
           <el-row :gutter="20">
-            <el-col :span="16"></el-col>
+            <el-col :span="8">
+              <el-form-item label="呼叫来源">
+                <el-select v-model="form.newestContactTel" placeholder="请选择">
+                  <el-option
+                    v-for="item in callSourse"
+                    :key="item.value"
+                    :label="item.value"
+                    :value="item.value"
+                  ></el-option>
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="创建日期">
+                <el-date-picker
+                  v-model="form.newestContactTel"
+                  type="datetime"
+                  placeholder="选择日期时间"
+                ></el-date-picker>
+              </el-form-item>
+            </el-col>
             <el-col :span="8">
               <el-form-item label prop="resource">
                 <el-radio-group v-model="form.name">
@@ -84,6 +107,26 @@
               </el-form-item>
             </el-col>
           </el-row>
+            <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
+        <el-col :span="8">
+          <el-form-item label="地址标识">
+            <el-input v-model="form.addressDesignator"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="16">
+          <el-input v-model="form.name"></el-input>
+        </el-col>
+      </el-row>
+           <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
+        <el-col :span="8">
+          <el-form-item label="现地址">
+            <el-input v-model="form.addressDesignator"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="16">
+          <el-input v-model="form.name"></el-input>
+        </el-col>
+      </el-row>
 
           <!-- 选择制造商序列号 -->
           <formAdd :SerialNumberList="SerialNumberList"></formAdd>
@@ -162,25 +205,30 @@ export default {
         { people: "门卫", word: "123", img: "" },
         { people: "实习生小李", word: "123", img: "" }
       ],
+      callSourse: [
+        { value: "电话" },
+        { value: "钉钉" },
+        { value: "QQ" },
+        { value: "微信" },
+        { value: "邮件" },
+        { value: "App" },
+        { value: "Web" }
+      ],
       form: {
-        customerId:'',//客户代码,
-        customerName:'',//客户名称,
-        contacter	:'',//联系人,
-        contactTel:'',//联系人电话,
-        supervisor:'',//主管名字,
-        supervisorId :'',//主管用户Id,
-        salesMan:'',//销售名字,
-        salesManId:'',//销售用户Id,
-        newestContacter	:'',//最新联系人,
-        newestContactTel	:'',//最新联系人电话号码,
-        terminalCustomer:'',//终端客户,
-        contractId:'',//服务合同
-        serviceWorkOrders:[
-          {
-            
-          }
-        ]
-              }
+        customerId: "", //客户代码,
+        customerName: "", //客户名称,
+        contacter: "", //联系人,
+        contactTel: "", //联系人电话,
+        supervisor: "", //主管名字,
+        supervisorId: "", //主管用户Id,
+        salesMan: "", //销售名字,
+        salesManId: "", //销售用户Id,
+        newestContacter: "", //最新联系人,
+        newestContactTel: "", //最新联系人电话号码,
+        terminalCustomer: "", //终端客户,
+        contractId: "", //服务合同
+        serviceWorkOrders: [{}]
+      }
     };
   },
   watch: {},
