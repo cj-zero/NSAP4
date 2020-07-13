@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
@@ -134,7 +135,28 @@ namespace OpenAuth.WebApi.Controllers
         {
             return _app.LoadByRole(request);
         }
-        
+        /// <summary>
+        /// 根据用户角色查询用户，可用用户名做条件搜索
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> LoadByRoleName([FromQuery]QueryUserListByRoleNameReq request)
+        {
+            return await _app.LoadByRoleName(request);
+        }
+        /// <summary>
+        /// 绑定App用户Id
+        /// </summary>
+        /// <param name="appUserMap"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> BindAppUser(AddOrUpdateAppUserMapReq request)
+        {
+            await _app.BindAppUser(request);
+            return new Response();
+        }
+
         public UsersController(UserManagerApp app) 
         {
             _app = app;

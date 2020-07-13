@@ -65,12 +65,12 @@ namespace OpenAuth.App
                 swo.SubmitUserId = loginContext.User.Id;
             });
 
-            var o = await UnitWork.AddAsync(obj);
+            var o = await UnitWork.AddAsync<ServiceOrder, int>(obj);
             var pictures = req.Pictures.MapToList<ServiceOrderPicture>();
             pictures.ForEach(p => p.ServiceOrderId = o.Id);
             await UnitWork.BatchAddAsync(pictures.ToArray());
             var from = obj.FromId == 1 ? "电话" : "APP";
-            await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"{from}提交服务单", ActionType = "呼叫服务提单", ServiceOrderId = obj.Id });
+            await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"{from}提交服务单", ActionType = "呼叫服务提单", ServiceOrderId = o.Id });
         }
 
         /// <summary>
