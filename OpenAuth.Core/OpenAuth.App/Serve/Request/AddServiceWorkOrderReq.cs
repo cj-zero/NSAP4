@@ -18,26 +18,6 @@ namespace OpenAuth.App.Request
         /// </summary>
         public int? FeeType { get; set; }
         /// <summary>
-        /// 省
-        /// </summary>
-        public string Province { get; set; }
-        /// <summary>
-        /// 市
-        /// </summary>
-        public string City { get; set; }
-        /// <summary>
-        /// 详细地址
-        /// </summary>
-        public string Addr { get; set; }
-        /// <summary>
-        /// 经度
-        /// </summary>
-        public decimal? Longitude { get; set; }
-        /// <summary>
-        /// 纬度
-        /// </summary>
-        public decimal? Latitude { get; set; }
-        /// <summary>
         /// 工单提交时间
         /// </summary>
         public System.DateTime? SubmitDate { get; set; }
@@ -52,15 +32,11 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// App当前流程处理用户Id
         /// </summary>
+        public int? CurrentUserId { get; set; }
         /// <summary>
         /// 呼叫主题
         /// </summary>
         public string FromTheme { get; set; }
-        /// <summary>
-        /// 呼叫来源  1-电话 2-APP 
-        /// </summary>
-        //[Browsable(false)]
-        public int? FromId { get; set; }
         /// <summary>
         /// 问题类型Id
         /// </summary>
@@ -102,10 +78,6 @@ namespace OpenAuth.App.Request
         /// 清算日期
         /// </summary>
         public System.DateTime? LiquidationDate { get; set; }
-        /// <summary>
-        /// 地址标识
-        /// </summary>
-        public string AddressDesignator { get; set; }
         /// <summary>
         /// 服务合同
         /// </summary>
