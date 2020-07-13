@@ -12,9 +12,9 @@
         <el-checkbox size="small" style='margin-left:15px;' @change='tableKey=tableKey+1' v-model="showDescription">Id/描述</el-checkbox>
       </div>
     </sticky>
-    <div class="app-container flex-item">
-          <div class="bg-white fh">
-            <el-table ref="mainTable" :key='tableKey' :data="list" v-loading="listLoading" border fit
+    <div class="app-container flex-item" style="height:100%;">
+          <div class="bg-white fh" style="height:100%;">
+            <el-table ref="mainTable" :key='tableKey' max-height="100%"  :data="list" v-loading="listLoading" border fit
               highlight-current-row style="width: 100%;" height="calc(100% - 52px)" @row-click="rowClick" @selection-change="handleSelectionChange">
               <el-table-column align="center" type="selection" width="55">
               </el-table-column>
