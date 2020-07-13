@@ -13,7 +13,7 @@
       <li @click="closeOthersTags">关闭其他</li>
       <li @click="closeAllTags">全部关闭</li>
       <li @click="refreshSelectedTag(selectedTag)">刷新页面</li>
-       <li @click="addViewTags_copy">复制页面</li>
+       <li @click="addViewTags_copy(selectedTag)">复制页面</li>
     </ul>
   </div>
 </template>
@@ -83,13 +83,17 @@ export default {
       }
       this.$store.dispatch('addVisitedViews', route)
     },
-    addViewTags_copy(){
-      
-            const route = this.generateRoute()
-      if (!route) {
-        return false
-      }
-      this.$store.dispatch('copyVisitedViews', route)
+    addViewTags_copy(page){
+console.log(page)
+            this.$router.push(
+              { path: `${page.fullPath}/${new Date().getTime()}` }
+              );
+
+      //       const route = this.generateRoute()
+      // if (!route) {
+      //   return false
+      // }
+      // this.$store.dispatch('copyVisitedViews', route)
     },
     moveToCurrentTag() {
       const tags = this.$refs.tag

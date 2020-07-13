@@ -21,15 +21,63 @@
         <permission-btn moduleName="problemtypes" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
     </sticky>
-    <el-card shadow="never" class="card-body-none fh" style="height:100%;">
-      <!-- <div slot="header" class="clearfix">
-        <el-button type="text" style="padding: 0 11px" @click="getAllMenus">所有菜单>></el-button>
-      </div> -->
-      <tree-table   @row-click="rowClick" @selection-change="handleSelectionChange" highlight-current-row :data="modulesTree" :columns="columns" border></tree-table>
-    <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="handleCurrentChange" />
-
-    </el-card>
     <div class="app-container">
+      <el-row class="fh" :gutter="20" style="height: 100%;">
+        <el-col :span="10" class="fh ls-border" style="height: 100%;border: 1px solid #EBEEF5;">
+          <!--  -->
+          <el-card shadow="never" class="body-small" style="height:100%;overflow:auto;">
+            <el-link type="primary">全部类型》》</el-link>
+          </el-card>
+          <el-table
+            ref="singleTable"
+            :data="listParent"
+            highlight-current-row
+            @current-change="handleCurrent"
+            style="width: 100%"
+          >
+            <el-table-column property="id" align="center" label="问题ID"></el-table-column>
+            <el-table-column property="description" align="center" label="描述" min-width="50"></el-table-column>
+            <el-table-column align="center" label="是否停用" width="80">
+              <template slot-scope="scope">{{scope.row.inuseFlag==false?'否':'是'}}</template>
+            </el-table-column>
+            <el-table-column property="orderIdx" align="center" label="排序" width="50"></el-table-column>
+          </el-table>
+        </el-col>
+
+        <el-col :span="14" class="fh">
+          <el-card shadow="never" class="body-small" style="height: 100%;overflow:auto;">
+            <el-link type="primary" @click=" listChild=result1">全部细分类型>></el-link>
+            <el-link type="info" v-if="typeQuestion">{{typeQuestion}}</el-link>
+          </el-card>
+          <el-table
+            ref="singleTable"
+            :data="listChild_list"
+            highlight-current-row
+            style="width: 100%"
+            align="center"
+            @current-change="handleSelectionChange"
+          >
+            <el-table-column property="id" align="center" label="问题ID"></el-table-column>
+            <el-table-column property="description" align="center" label="描述" min-width="50"></el-table-column>
+            <el-table-column align="center" label="是否停用" width="80">
+              <template slot-scope="scope">{{scope.row.inuseFlag==false?'否':'是'}}</template>
+            </el-table-column>
+            <el-table-column property="orderIdx" align="center" label="排序" width="50"></el-table-column>
+          </el-table>
+          <el-pagination
+            style="background-color:#ffffff;"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            :current-page="currentPage"
+            :page-sizes="[5, 10, 20, 30, 40]"
+            :page-size="20"
+            layout="total, sizes, prev, pager, next, jumper"
+            v-show="listChild.length>0"
+            :total="listChild.length"
+          ></el-pagination>
+        </el-col>
+      </el-row>
+
       <el-dialog
         v-el-drag-dialog
         class="dialog-mini"
@@ -71,25 +119,27 @@
 <script>
 import * as problemtypes from "@/api/problemtypes";
 import waves from "@/directive/waves"; // 水波纹指令
-import Pagination from '@/components/Pagination'
 import Sticky from "@/components/Sticky";
-import permissionBtn from "@/components/PermissionBtn";
-import elDragDialog from "@/directive/el-dragDialog";
-import treeTable from "@/components/TreeTable";
+// import Pagination from "@/components/Pagination";
 
+import permissionBtn from "@/components/PermissionBtn";
+
+import elDragDialog from "@/directive/el-dragDialog";
 export default {
   name: "problemtypes",
-  components: { Sticky, permissionBtn, treeTable,Pagination },
+  components: { Sticky, permissionBtn },
   directives: {
     waves,
     elDragDialog
   },
   data() {
     return {
-      multipleSelection: '', // 列表checkbox选中的值
+      multipleSelection: null, // 列表checkbox选中的值
       tableKey: 0,
-      modulesTree: [],
-      total:0,
+      listParent: [],
+      listChild_list: [],
+      listChild:[],
+      total: 0,
       listLoading: true,
       listQuery: {
         // 查询条件
@@ -98,29 +148,9 @@ export default {
         key: undefined,
         appId: undefined
       },
-      columns: [
-        // treetable的列名
-        {
-          text: "问题ID",
-          value: "id"
-        },
-        {
-          text: "描述",
-          value: "description"
-        },
-        {
-          text: "是否停用",
-          value: "inuseFlag",
-          width:'100px'
-        },
-        {
-          text: "排序",
-          value: "orderIdx",
-          width:'100px'
-        }
-      ],
       currentPage: 1,
       currentSize: 20,
+      whoEdit: null,
       statusOptions: [
         { key: 1, display_name: "停用" },
         { key: 0, display_name: "正常" }
@@ -129,7 +159,7 @@ export default {
       temp: {
         name: "", // Name
         description: "", // Description
-        inuseFlag: true, // InuseFlag
+        inuseFlag: false, // InuseFlag
         orderIdx: 0 // OrderIdx
       },
       dialogFormVisible: false,
@@ -174,15 +204,20 @@ export default {
   created() {
     this.getList();
   },
+  watch:{
+    currentSize:{
+      handler(){
+    this.listChild_list= this.result1.slice(0,this.currentSize)
 
+      console.log(this.currentSize)
+      }
+
+    }
+  },
   methods: {
-     handleCurrentChange() {
-      this.getList()
-    },
     rowClick(row) {
-      this.multipleSelection=row
-      // this.$refs.mainTable.clearSelection();
-      // this.$refs.mainTable.toggleRowSelection(row);
+      this.$refs.mainTable.clearSelection();
+      this.$refs.mainTable.toggleRowSelection(row);
     },
     handleSelectionChange(val) {
       this.multipleSelection = val;
@@ -223,31 +258,11 @@ export default {
     getList() {
       this.listLoading = true;
       problemtypes.getList(this.listQuery).then(response => {
-        let arr1 = response.data;
-        let arr = [];
-        arr1.map(item => {
-          if(item.inuseFlag==0){
-           item.inuseFlag='正常'
-          }else{
-             item.inuseFlag='停用'
-          }
-          if (item.parentId == "") {
-            item.children = [];
-            for (let i = 0; i < arr1.length; i++) {
-              if (item.id == arr1[i].parentId) {
-                
-                item.children.push(arr1[i]);
-                //翻页之后  没有子元素出现
-              }
-            }
-            arr.push(item);
-            // console.log(arr)
-
-          }
-        });
-        console.log(this.modulesTree)
-        this.modulesTree = arr;
-        this.total = response.count
+        this.listParent = response.data.filter(item => item.parentId == "");
+        this.result1 = response.data.filter(item => item.parentId !== "");
+        this.listChild = this.result1; //分页的数组
+        this.listChild_list= this.result1.slice(0,this.currentSize)
+        this.total = response.count;
         this.listLoading = false;
       });
     },
@@ -255,20 +270,50 @@ export default {
       this.listQuery.page = 1;
       this.getList();
     },
-  changeSwitchopen(){
-       if(this.temp.inuseFlag=='正常'){
-        this.temp.inuseFlag=false
-      }else{
-        this.temp.inuseFlag=true
-      }  
-  },
-    changeSwitch(){
-       if(this.temp.inuseFlag==true){
-        this.temp.inuseFlag=1
-      }else{
-        this.temp.inuseFlag=0
-      }  
-  },
+    // handleSizeChange(val) {
+    //   this.listQuery.limit = val;
+    //   this.getList();
+    // },
+    handleSizeChange(val) {
+      console.log(`每页 ${val} 条`);
+      this.currentSize = val;
+    },
+    handleCurrentChange(val) {
+      console.log(`当前页: ${val}`, `每页 ${this.currentSize} 条`);
+
+      if (this.multipleSelection) {
+        console.log(1)
+        let newList = this.result1.slice((val-1)*this.currentSize,val*this.currentSize)
+
+        this.listChild_list = newList;
+      } else {
+         console.log(2)
+               let newList = this.result1.slice((val-1)*this.currentSize,val*this.currentSize)
+
+        this.listChild_list = newList;
+        console.log(this.listChild_list)
+      }
+    },
+    handlePageChange(val) {
+      let newList = this.result1.filter(item => item.parentId == val.id);
+      this.listChild = newList;
+    },
+    handleCurrent(val) {
+      // this.listQuery.page = val.page;
+      // this.listQuery.limit = val.limit;
+      this.handleSelectionChange(val);
+      this.typeQuestion = val.name;
+      let newList = this.result1.filter(item => item.parentId == val.id);
+      this.listChild = newList;
+    },
+    handleModifyStatus(row, disable) {
+      // 模拟修改状态
+      this.$message({
+        message: "操作成功",
+        type: "success"
+      });
+      row.disable = disable;
+    },
     resetTemp() {
       this.temp = {
         name: "",
@@ -293,9 +338,14 @@ export default {
       // 保存提交
       this.$refs["dataForm"].validate(valid => {
         if (valid) {
-    this.changeSwitch()
           problemtypes.add(this.temp).then(() => {
-      this.getList()
+            let newList = [];
+            if (this.whoEdit) {
+              newList = this.listParent;
+            } else {
+              newList = this.listChild;
+            }
+            newList.unshift(this.temp);
             this.dialogFormVisible = false;
             this.$notify({
               title: "成功",
@@ -310,7 +360,6 @@ export default {
     handleUpdate(row) {
       // 弹出编辑框
       this.temp = Object.assign({}, row); // copy obj
-  this.changeSwitchopen()
       this.dialogStatus = "update";
       this.dialogFormVisible = true;
       this.$nextTick(() => {
@@ -321,11 +370,23 @@ export default {
       // 更新提交
       this.$refs["dataForm"].validate(valid => {
         if (valid) {
-this.changeSwitch()        
-       const tempData = Object.assign({}, this.temp);
+          console.log(valid);
+          const tempData = Object.assign({}, this.temp);
           problemtypes.update(tempData).then(() => {
-            this.getList()
+            let newList = [];
+            if (this.whoEdit) {
+              newList = this.listParent;
+            } else {
+              newList = this.listChild;
+            }
 
+            for (const v of newList) {
+              if (v.id === this.temp.id) {
+                const index = newList.indexOf(v);
+                newList.splice(index, 1, this.temp);
+                break;
+              }
+            }
             this.dialogFormVisible = false;
             this.$notify({
               title: "成功",
