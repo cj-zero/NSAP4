@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-// aaa
+
 export function assign(data) {
   var obj = data
   return request({
