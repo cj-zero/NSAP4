@@ -33,41 +33,41 @@ namespace OpenAuth.Repository.Domain
 
         
         /// <summary>
-        /// 
+        /// 头
         /// </summary>
-        [Description("")]
+        [Description("头")]
         public string Title { get; set; }
         /// <summary>
-        /// 
+        /// 详细内容
         /// </summary>
-        [Description("")]
+        [Description("详细内容")]
         public string Details { get; set; }
         /// <summary>
-        /// 
+        /// 时间
         /// </summary>
-        [Description("")]
+        [Description("时间")]
         public System.DateTime CreateTime { get; set; }
         /// <summary>
-        /// 
+        /// 创建人Id
         /// </summary>
-        [Description("")]
+        [Description("创建人Id")]
         [Browsable(false)]
         public string CreateUserId { get; set; }
         /// <summary>
-        /// 
+        /// 创建人
         /// </summary>
-        [Description("")]
+        [Description("创建人")]
         public string CreateUserName { get; set; }
         /// <summary>
-        /// 
+        /// 服务单Id
         /// </summary>
-        [Description("")]
+        [Description("服务单Id")]
         [Browsable(false)]
         public uint? ServiceOrderId { get; set; }
         /// <summary>
-        /// 
+        /// 工单Id
         /// </summary>
-        [Description("")]
+        [Description("工单Id")]
         public uint? ServiceWorkOrder { get; set; }
     }
 }

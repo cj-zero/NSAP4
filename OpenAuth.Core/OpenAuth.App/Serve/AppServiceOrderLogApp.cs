@@ -73,9 +73,6 @@ namespace OpenAuth.App
                 CreateUserName = obj.CreateUserName,
                 ServiceOrderId = obj.ServiceOrderId,
                 ServiceWorkOrder = obj.ServiceWorkOrder,
-                UpdateTime = DateTime.Now,
-                UpdateUserId = user.Id,
-                UpdateUserName = user.Name
                 //todo:补充或调整自己需要的字段
             });
 
