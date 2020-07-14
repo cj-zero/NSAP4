@@ -240,7 +240,7 @@ export default {
       dialogTree: false,
       dialogStatus: "",
       textMap: {
-        update: "编辑呼叫服务单",
+        update: "确认呼叫服务单",
         create: "新建呼叫服务单"
       },
       dialogPvVisible: false,

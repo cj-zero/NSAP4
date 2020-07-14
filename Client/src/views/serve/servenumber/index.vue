@@ -73,32 +73,7 @@
       </div>
       <!--   v-el-drag-dialog
       width="1000px"  新建呼叫服务单-->
-      <el-dialog
-        fullscreen
-        class="dialog-mini"
-        :title="textMap[dialogStatus]"
-        :visible.sync="dialogFormVisible"
-      >
-           <el-row :gutter="20" type="flex" class="row-bg" justify="space-around">
-            <el-col :span="12" >
- 
-            </el-col>
-              <el-col :span="12">
-        <zxform
-          :form="temp"
-          labelposition="right"
-          labelwidth="100px"
-          :isEdit="true"
-          refValue="dataForm"
-        ></zxform>
-</el-col>
-           </el-row>
-        <div slot="footer">
-          <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
-          <el-button size="mini" v-if="dialogStatus=='create'" type="primary" @click="createData">确认</el-button>
-          <el-button size="mini" v-else type="primary" @click="updateData">确认</el-button>
-        </div>
-      </el-dialog>
+
       <!-- 只能查看的表单 -->
       <el-dialog width="1200px" class="dialog-mini" title="服务单详情" :visible.sync="dialogFormView">
         <zxform
