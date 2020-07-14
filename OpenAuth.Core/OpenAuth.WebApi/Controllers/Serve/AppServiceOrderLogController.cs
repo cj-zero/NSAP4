@@ -5,24 +5,23 @@ using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
-using System.Threading.Tasks;
 
 namespace OpenAuth.WebApi.Controllers
 {
     /// <summary>
-    /// completionreport操作
+    /// appserviceorderlog操作
     /// </summary>
     [Route("api/serve/[controller]/[action]")]
     [ApiController]
-    public class CompletionReportsController : ControllerBase
+    public class AppServiceOrderLogController : ControllerBase
     {
-        private readonly CompletionReportApp _app;
+        private readonly AppServiceOrderLogApp _app;
         
         //获取详情
         [HttpGet]
-        public Response<CompletionReport> Get(string id)
+        public Response<AppServiceOrderLog> Get(string id)
         {
-            var result = new Response<CompletionReport>();
+            var result = new Response<AppServiceOrderLog>();
             try
             {
                 result.Result = _app.Get(id);
@@ -38,12 +37,13 @@ namespace OpenAuth.WebApi.Controllers
 
         //添加
        [HttpPost]
-        public async Task<Response> Add(AddOrUpdateCompletionReportReq obj)
+        public Response Add(AddOrUpdateAppServiceOrderLogReq obj)
         {
             var result = new Response();
             try
             {
-                await _app.Add(obj);
+                _app.Add(obj);
+
             }
             catch (Exception ex)
             {
@@ -56,7 +56,7 @@ namespace OpenAuth.WebApi.Controllers
 
         //修改
        [HttpPost]
-        public Response Update(AddOrUpdateCompletionReportReq obj)
+        public Response Update(AddOrUpdateAppServiceOrderLogReq obj)
         {
             var result = new Response();
             try
@@ -77,7 +77,7 @@ namespace OpenAuth.WebApi.Controllers
         /// 加载列表
         /// </summary>
         [HttpGet]
-        public TableData Load([FromQuery]QueryCompletionReportListReq request)
+        public TableData Load([FromQuery]QueryAppServiceOrderLogListReq request)
         {
             return _app.Load(request);
         }
@@ -103,7 +103,7 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
-        public CompletionReportsController(CompletionReportApp app) 
+        public AppServiceOrderLogController(AppServiceOrderLogApp app) 
         {
             _app = app;
         }
