@@ -63,22 +63,26 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var query = from a in UnitWork.Find<ServiceOrder>(s => s.AppUserId.Equals(request.AppUserId))
-                        select new
+            var query = UnitWork.Find<ServiceOrder>(s => s.AppUserId.Equals(request.AppUserId))
+                        .Select(a => new
                         {
                             a.Id,
                             a.Province, a.City, a.Area, a.Addr,
                             a.CustomerId, a.CustomerName, a.ContactTel, a.Contacter,
                             a.AppUserId,
+                            a.CreateTime,
                             ServiceWorkOrders = a.ServiceWorkOrders.Select(o => new
                             {
                                 o.Id,o.InternalSerialNumber,o.ManufacturerSerialNumber,o.Priority,o.Status,o.MaterialCode,o.MaterialDescription
                             }).ToList()
-                        };
+                        });
 
 
             var count = await query.CountAsync();
-            var list = await query.Skip(request.page-1 * request.limit).Take(request.limit).ToListAsync();
+            var list = await query
+                .OrderByDescending(a => a.Id)
+                .Skip((request.page - 1) * request.limit).Take(request.limit)
+                .ToListAsync();
 
             var result = new TableData();
             result.count = count;
