@@ -29,20 +29,20 @@ namespace OpenAuth.Repository.Domain
 
         
         /// <summary>
-        /// 
+        /// NSAP的UserId
         /// </summary>
-        [Description("")]
+        [Description("NSAP的UserId")]
         public string UserID { get; set; }
         /// <summary>
-        /// 
+        /// app的UserId
         /// </summary>
-        [Description("")]
+        [Description("App的UserId")]
         [Browsable(false)]
         public int? AppUserId { get; set; }
         /// <summary>
-        /// 
+        /// App的UserRole
         /// </summary>
-        [Description("")]
+        [Description("App的UserRole")]
         public int? AppUserRole { get; set; }
     }
 }

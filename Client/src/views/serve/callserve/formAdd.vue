@@ -16,16 +16,20 @@
           </el-form-item>
         </el-col>
 
-        <el-col :span="8">
-          <el-switch v-model="form.edit" active-text="是否批量修改后续订单"></el-switch>
-          <el-button
-            type="danger"
-            v-if="formList.length>0"
-            style="margin:0 10px;"
-            size="mini"
-            @click="deleteForm(1)"
-          >删除</el-button>
-        </el-col>
+       <el-col :span="6" style="height:40px;line-height:40px;">
+              
+              <el-switch v-model="form.edit" active-text="是否批量修改后续订单"></el-switch>
+             
+            </el-col>
+            <el-col :span="2" style="height:40px;line-height:40px;">
+               <el-button
+                type="danger"
+                v-if="formList.length>0"
+                style="margin:0 10px;"
+                size="mini"
+                @click="deleteForm(1)"
+              >删除</el-button>
+            </el-col>
       </el-row>
       <el-row type="flex" class="row-bg" justify="space-around">
         <el-col :span="8">
@@ -202,14 +206,18 @@
               </el-form-item>
             </el-col>
 
-            <el-col :span="8">
+            <el-col :span="6" style="height:40px;line-height:40px;">
+              
               <el-switch v-model="form.edit" active-text="是否批量修改后续订单"></el-switch>
-              <el-button
+             
+            </el-col>
+            <el-col :span="2" style="height:40px;line-height:40px;">
+               <el-button
                 type="danger"
                 v-if="formList.length>0"
                 style="margin:0 10px;"
                 size="mini"
-                @click="deleteForm(1)"
+                @click="deleteForm(form)"
               >删除</el-button>
             </el-col>
           </el-row>

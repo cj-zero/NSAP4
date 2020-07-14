@@ -55,6 +55,10 @@ namespace OpenAuth.App.Request
         public string TerminalCustomer { get; set; }
 
         /// <summary>
+        /// 地址标识
+        /// </summary>
+        public string AddressDesignator { get; set; }
+        /// <summary>
         /// 接单人用户Id
         /// </summary>
         public string RecepUserId { get; set; }
@@ -62,6 +66,36 @@ namespace OpenAuth.App.Request
         /// 接单人姓名
         /// </summary>
         public string RecepUserName { get; set; }
+        /// <summary>
+        /// 详细地址
+        /// </summary>
+        public string Address { get; set; }
+        /// <summary>
+        /// 省
+        /// </summary>
+        public string Province { get; set; }
+        /// <summary>
+        /// 市
+        /// </summary>
+        public string City { get; set; }
+        /// <summary>
+        /// 地区
+        /// </summary>
+        public string Addr { get; set; }
+        /// <summary>
+        /// 经度
+        /// </summary>
+        public decimal? Longitude { get; set; }
+        /// <summary>
+        /// 纬度
+        /// </summary>
+        public decimal? Latitude { get; set; }
+        /// <summary>
+        /// 呼叫来源  1-电话 2-APP 
+        /// </summary>
+        //[Browsable(false)]
+        public int? FromId { get; set; }
+
         /// <summary>
         /// 服务单关联的工单
         /// </summary>

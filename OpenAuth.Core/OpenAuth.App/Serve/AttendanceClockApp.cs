@@ -99,6 +99,7 @@ namespace OpenAuth.App
             var pistures = req.Pictures.MapToList<AttendanceClockPicture>();
             pistures.ForEach(p => p.AttendanceClockId = o.Id);
             await UnitWork.BatchAddAsync(pistures.ToArray());
+            await UnitWork.SaveAsync();
         }
 
          public void Update(AddOrUpdateAttendanceClockReq obj)
@@ -122,7 +123,7 @@ namespace OpenAuth.App
                 Ip = obj.Ip,
                 //todo:补充或调整自己需要的字段
             });
-
+            UnitWork.Save();
         }
             
     }

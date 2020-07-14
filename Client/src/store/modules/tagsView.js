@@ -14,6 +14,7 @@ const tagsView = {
       }
     },
     COPY_VISITED_VIEWS:(state, view)=>{
+      console.log(view)
       // if (state.visitedViews.some(v => v.path === view.path)) return
       state.visitedViews.push(Object.assign({}, view, {
         title: view.meta.title || 'no-name'

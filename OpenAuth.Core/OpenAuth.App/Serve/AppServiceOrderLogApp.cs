@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Threading.Tasks;
 using Infrastructure;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
@@ -11,14 +10,14 @@ using OpenAuth.Repository.Interface;
 
 namespace OpenAuth.App
 {
-    public class ServiceOrderLogApp : BaseApp<ServiceOrderLog>
+    public class AppServiceOrderLogApp : BaseApp<AppServiceOrderLog>
     {
         private RevelanceManagerApp _revelanceApp;
 
         /// <summary>
         /// 加载列表
         /// </summary>
-        public TableData Load(QueryServiceOrderLogListReq request)
+        public TableData Load(QueryAppServiceOrderLogListReq request)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -26,7 +25,7 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
 
-            var properties = loginContext.GetProperties("serviceorderlog");
+            var properties = loginContext.GetProperties("appserviceorderlog");
 
             if (properties == null || properties.Count == 0)
             {
@@ -35,7 +34,7 @@ namespace OpenAuth.App
 
 
             var result = new TableData();
-            var objs = UnitWork.Find<ServiceOrderLog>(null);
+            var objs = UnitWork.Find<AppServiceOrderLog>(null);
             if (!string.IsNullOrEmpty(request.key))
             {
                 objs = objs.Where(u => u.Id.Contains(request.key));
@@ -51,9 +50,9 @@ namespace OpenAuth.App
             return result;
         }
 
-        public void Add(AddOrUpdateServiceOrderLogReq req)
+        public void Add(AddOrUpdateAppServiceOrderLogReq req)
         {
-            var obj = req.MapTo<ServiceOrderLog>();
+            var obj = req.MapTo<AppServiceOrderLog>();
             //todo:补充或调整自己需要的字段
             obj.CreateTime = DateTime.Now;
             var user = _auth.GetCurrentUser().User;
@@ -61,36 +60,26 @@ namespace OpenAuth.App
             obj.CreateUserName = user.Name;
             Repository.Add(obj);
         }
-        public async Task AddAsync(AddOrUpdateServiceOrderLogReq req)
-        {
-            var obj = req.MapTo<ServiceOrderLog>();
-            //todo:补充或调整自己需要的字段
-            obj.CreateTime = DateTime.Now;
-            var user = _auth.GetCurrentUser().User;
-            obj.CreateUserId = user.Id;
-            obj.CreateUserName = user.Name;
-            await Repository.AddAsync(obj);
-        }
 
-         public void Update(AddOrUpdateServiceOrderLogReq obj)
+         public void Update(AddOrUpdateAppServiceOrderLogReq obj)
         {
             var user = _auth.GetCurrentUser().User;
-            UnitWork.Update<ServiceOrderLog>(u => u.Id == obj.Id, u => new ServiceOrderLog
+            UnitWork.Update<AppServiceOrderLog>(u => u.Id == obj.Id, u => new AppServiceOrderLog
             {
-                ServiceOrderId = obj.ServiceOrderId,
-                ServiceWorkOrderId = obj.ServiceWorkOrderId,
-                Action = obj.Action,
-                ActionType = obj.ActionType,
+                Title = obj.Title,
+                Details = obj.Details,
                 CreateTime = obj.CreateTime,
                 CreateUserId = obj.CreateUserId,
                 CreateUserName = obj.CreateUserName,
+                ServiceOrderId = obj.ServiceOrderId,
+                ServiceWorkOrder = obj.ServiceWorkOrder,
                 //todo:补充或调整自己需要的字段
             });
 
         }
             
 
-        public ServiceOrderLogApp(IUnitWork unitWork, IRepository<ServiceOrderLog> repository,
+        public AppServiceOrderLogApp(IUnitWork unitWork, IRepository<AppServiceOrderLog> repository,
             RevelanceManagerApp app, IAuth auth) : base(unitWork, repository,auth)
         {
             _revelanceApp = app;

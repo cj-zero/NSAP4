@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
+using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
@@ -170,6 +171,40 @@ namespace OpenAuth.App
                 select c;
 
             return await users.ToListAsync();
+        }
+        /// <summary>
+        /// 根据用户角色查询用户，可用用户名做条件搜索
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> LoadByRoleName(QueryUserListByRoleNameReq request)
+        {
+            var role = await UnitWork.Find<Role>(r => r.Name.Equals(request.RoleName)).FirstOrDefaultAsync();
+            var users = from userRole in UnitWork.Find<Relevance>(u =>
+                    u.SecondId == role.Id && u.Key == Define.USERROLE)
+                join user in UnitWork.Find<User>(null) on userRole.FirstId equals user.Id into temp
+                from c in temp.DefaultIfEmpty()
+                select new { c.Id, c.Name };
+            users = users.WhereIf(!string.IsNullOrWhiteSpace(request.UserName), u => u.Name.Contains(request.UserName));
+            var count = await users.CountAsync();
+            var data = await users.Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
+            return new TableData
+            {
+                count = count,
+                data = data
+            };
+        }
+
+        /// <summary>
+        /// 绑定App用户Id
+        /// </summary>
+        /// <param name="appUserMap"></param>
+        /// <returns></returns>
+        public async Task BindAppUser(AddOrUpdateAppUserMapReq req)
+        {
+            var obj = req.MapTo<AppUserMap>();
+            await UnitWork.AddAsync(obj);
+            await UnitWork.SaveAsync();
         }
 
         /// <summary>
