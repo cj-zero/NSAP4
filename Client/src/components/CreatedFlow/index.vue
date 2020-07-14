@@ -15,7 +15,8 @@
                 size="mini"
                 :icon="tool.icon"
                 :type="currentTool.type == tool.type ? 'primary': 'default'"
-                @click="selectTool(tool.type)"
+                @click="selectTool(tool.type)" 
+                
                 style="font-size: 16px;width: 100px;">
               </el-button>
             </el-button-group>
@@ -63,6 +64,12 @@
       <el-main style="padding:0;">
         <el-container style="height: 100%;">
           <el-header class="header-option" style="height: auto;" v-if="!isShowContent">
+            <!-- <el-tooltip content="保存流程" placement="bottom">
+              <el-button @click="saveFlow" class="header-option-button" size="small" icon="el-icon-document-copy"></el-button>
+            </el-tooltip> -->
+            <!-- <el-tooltip content="生成流程图片" placement="bottom">
+              <el-button @click="toImage" class="header-option-button" size="small" icon="el-icon-picture-outline"></el-button>
+            </el-tooltip> -->
             <el-popover title="确认要重新绘制吗？" placement="bottom" v-model="isShowPopover">
               <div style="text-align: center;">
                 <el-button size="small" @click="isShowPopover = false">取消</el-button>
@@ -72,6 +79,32 @@
                 <el-button class="header-option-button" size="small" icon="el-icon-refresh-left"></el-button>
               </el-tooltip>
             </el-popover>
+            <!-- <el-tooltip :content="flowData.config.showGridText" placement="bottom">
+              <el-button
+                @click="toggleShowGrid"
+                class="header-option-button"
+                size="small"
+                :icon="flowData.config.showGridIcon">
+              </el-button>
+            </el-tooltip> -->
+            <!-- <el-tooltip content="设置" placement="bottom">
+              <el-button @click="setting" class="header-option-button" size="small" icon="el-icon-s-tools"></el-button>
+            </el-tooltip> -->
+            <!-- <el-popover
+              placement="bottom"
+              v-model="isShowPopover">
+              <div style="text-align: center;">
+                <p style="text-align: left;"><i class="el-icon-warning" style="color: red;padding-right: 6px;font-size: 16px;" />请选择帮助项：</p>
+                <el-button size="small" @click="usingDoc">使用文档</el-button>
+                <el-button type="primary" size="small" @click="shortcutHelper">快捷键大全</el-button>
+              </div>
+              <el-tooltip slot="reference" content="帮助" placement="bottom">
+                <el-button class="header-option-button" size="small" icon="el-icon-s-help"></el-button>
+              </el-tooltip>
+            </el-popover> -->
+            <!-- <el-tooltip content="退出" placement="bottom">
+              <el-button @click="exit" class="header-option-button" size="small" icon="el-icon-switch-button"></el-button>
+            </el-tooltip> -->
           </el-header>
           <el-main class="content" style="padding: 0;">
             <flow-area
@@ -102,8 +135,7 @@
 				theme="light"
 				class="attr-area"
 				@mousedown.stop="loseShortcut" v-if="!isShowContent">
-				<!-- <flow-attr :plumb="plumb" :flowData="flowData" :formTemplate="formTemplate" :select.sync="currentSelect"></flow-attr> -->
-				<flow-attr :plumb="plumb" :flowData="flowData" :formTemplate="formTemplate"></flow-attr>
+				<flow-attr :plumb="plumb" :flowData="flowData" :formTemplate="formTemplate" :select.sync="currentSelect"></flow-attr>
 			</el-aside>
 		</el-container>
 		<el-dialog
@@ -121,6 +153,8 @@
 				<img :src="flowPicture.url" />
 			</div>
 		</el-dialog>
+		<!-- <setting-modal ref="settingModal"></setting-modal> -->
+		<!-- <shortcut-modal ref="shortcutModal"></shortcut-modal> -->
 	</div>
 </template>
 
@@ -128,19 +162,46 @@
 
 import Draggable from 'vuedraggable'
 import FlowArea from './modules/FlowArea'
+
 import { jsPlumb } from 'jsplumb'
 import { tools, commonNodes, highNodes, laneNodes } from './config/basic-node-config.js'
+//引入jsplumb配置
 import { flowConfig } from './config/args-config.js'
+// import { startSvg, endSvg, commonSvg, freedomSvg, gatewaySvg, eventSvg, childFlowSvg, xLaneSvg, yLaneSvg, lanePoolSvg } from './config/basic-icon-config.js'
+// import html2canvas from 'html2canvas'
+// import canvg from 'canvg'
 import { ZFSN } from './util/ZFSN.js'
 import FlowAttr from './modules/FlowAttr'
-import {mapGetters, mapActions} from 'vuex'
+// import SettingModal fromodulesm './modules/SettingModal'
+// import ShortcutModal from './modules/ShortcutModal'
+// import UsingDocModal from './modules/UsingDocModal'
+// import TestModal from './modules/TestModal'
 
 export default {
   name: 'vfd',
   components: {
     Draggable,
+
+    // jsplumb,
+    // flowConfig,
+    // html2canvas,
+    // canvg,
     FlowArea,
-    FlowAttr
+    FlowAttr,
+    // SettingModal,
+    // ShortcutModal,
+    // UsingDocModal,
+    // TestModal,
+    // StartIcon: { template: startSvg },
+    // EndIcon: { template: endSvg },
+    // CommonIcon: { template: commonSvg },
+    // FreedomIcon: { template: freedomSvg },
+    // GatewayIcon: { template: gatewaySvg },
+    // EventIcon: { template: eventSvg },
+    // ChildFlowIcon: { template: childFlowSvg },
+    // XLaneIcon: { template: xLaneSvg },
+    // YLaneIcon: { template: yLaneSvg },
+    // LanePoolIcon: { template: lanePoolSvg }
   },
   props: ['schemeContent', 'isEdit', 'formTemplate', 'isShowContent'],
   mounted() {
@@ -199,7 +260,7 @@ export default {
         icon: 'drag',
         name: '拖拽'
       },
-      // currentSelect: {},
+      currentSelect: {},
       currentSelectGroup: [],
       activeShortcut: true,
       linkContextMenuData: flowConfig.contextMenu.sl,
@@ -211,11 +272,6 @@ export default {
       }
     }
   },
-  computed: {
-    ...mapGetters({
-      currentSelect: 'currentSelect'
-    })
-  },
   watch: {
     currentSelect: {
       deep: true,
@@ -223,7 +279,6 @@ export default {
         const list = this.currentSelect.type === 'sl' ? this.flowData.lines : this.flowData.nodes
         const index = list.findIndex(item => item.id === this.currentSelect.id)
         index >= 0 && this.$set(list, index, this.currentSelect)
-        
       }
     },
     schemeContent() {
@@ -237,9 +292,6 @@ export default {
     }
   },
   methods: {
-    ...mapActions({
-      saveCurrentSelect: 'saveCurrentSelect'
-    }),
     groupSchemeContent() {
       // const reg = /\\/g // 使用replace方法将全部匹配正则表达式的转义符替换为空
       // console.log('ceshi', JSON.parse(this.schemeContent.replace(reg, '')))
@@ -375,20 +427,18 @@ export default {
           }
           document.getElementById(id).addEventListener('contextmenu', function(e) {
             that.showLinkContextMenu(e)
-            const currentSelect = that.flowData.lines.filter(l => l.id === id)[0]
-            that.saveCurrentSelect(currentSelect)
+            that.currentSelect = that.flowData.lines.filter(l => l.id === id)[0]
           })
           document.getElementById(id).addEventListener('click', function(e) {
             const event = window.event || e
             event.stopPropagation()
-            const currentSelect = that.flowData.lines.filter(l => l.id === id)[0]
+            that.currentSelect = that.flowData.lines.filter(l => l.id === id)[0]
             const Compares = [{
               FieldName: '',
               Operation: '',
               Value: ''
             }]
-            currentSelect.Compares = that.currentSelect.Compares || Compares
-            that.saveCurrentSelect(currentSelect)
+            that.currentSelect.Compares = that.currentSelect.Compares || Compares
           })
           if (that.flowData.status !== flowConfig.flowStatus.LOADING) that.flowData.lines.push(o)
         })
@@ -491,6 +541,7 @@ export default {
       const that = this
       that.flowData.status = flowConfig.flowStatus.LOADING
       this.plumb.ready(() => {
+        // that.plumb.batch(() => {
         const lines = Object.assign([], that.flowData.lines)
         that.$nextTick(() => {
           lines.forEach((link) => {
@@ -518,12 +569,17 @@ export default {
               })
             }
           })
-          const currentSelect = {}
-          that.saveCurrentSelect(currentSelect)
+          that.currentSelect = {}
           that.currentSelectGroup = []
           that.flowData.status = flowConfig.flowStatus.MODIFY
         })
+        // }, true)
       })
+      // const canvasSize = that.computeCanvasSize()
+      // that.$refs.flowArea.container.pos = {
+      //   top: -canvasSize.minY + 100,
+      //   left: -canvasSize.minX + 100
+      // }
     },
     findNodeConfig(belongto, type, callback) {
       let node = null
@@ -542,12 +598,14 @@ export default {
       callback(node)
     },
     selectTool(type) {
+
       if (this.currentTool.type === type) {
         return
       }
+     
       const tool = tools.filter(t => t.type === type)
       if (tool && tool.length >= 0) this.currentTool = tool[0]
-
+//确定当下使用的工具方式
       switch (type) {
         case 'drag':
           this.changeToDrag()
@@ -565,7 +623,9 @@ export default {
     },
     changeToDrag() {
       const that = this
+      console.log(that.flowData)
       this.$nextTick(() => {
+        //nodes 所有节点  line连线  
         that.flowData.nodes.forEach(function(node) {
           const f = that.plumb.toggleDraggable(node.id)
           if (!f) {
@@ -591,8 +651,7 @@ export default {
         }
       })
 
-      const currentSelect = {}
-      that.saveCurrentSelect(currentSelect)
+      that.currentSelect = {}
       that.currentSelectGroup = []
     },
     changeToZoomIn() {
@@ -674,8 +733,7 @@ export default {
       that.flowData.nodes.forEach(function(node) {
         that.plumb.remove(node.id)
       })
-      const currentSelect = {}
-      that.saveCurrentSelect(currentSelect)
+      that.currentSelect = {}
       that.currentSelectGroup = []
       that.flowData.nodes = []
       that.flowData.lines = []
@@ -730,8 +788,7 @@ export default {
       lines.splice(lines.findIndex(link => (link.from === from && link.to === to)), 1)
       that.flowData.lines = Object.assign([], lines)
       // console.log('lines', that.flowData.lines)
-      const currentSelect = {}
-      that.saveCurrentSelect(currentSelect)
+      that.currentSelect = {}
     },
     loseShortcut() {
       this.activeShortcut = false
@@ -775,13 +832,11 @@ export default {
         })
         that.plumb.repaintEverything()
       } else if (that.currentSelect.id) {
-        const currentSelect = {...that.currentSelect}
         if (isX) {
-          currentSelect.left += m
+          that.currentSelect.left += m
         } else {
-          currentSelect.top += m
+          that.currentSelect.top += m
         }
-        that.saveCurrentSelect(currentSelect)
         that.plumb.repaintEverything()
       }
     }

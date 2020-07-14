@@ -63,7 +63,7 @@
 </template>
 
 <script>
-    import Layout from '@/views/layout/Layout'
+     import Layout from '@/views/layout/Layout'
     import * as flowinstances from '@/api/flowinstances'
     import waves from '@/directive/waves' // 水波纹指令
     import Sticky from '@/components/Sticky'
@@ -158,10 +158,11 @@
           },
           children: [
             {
-              path: 'detail/:id',
+              path: '/flowinstances/detail/:id',
               component: () =>
-                            import('@/views/flowinstances/detail'),
+              import('@/views/flowinstances/detail'),
               name: 'flowinstanceDtl',
+              isDetail: true,
               hidden: true,
               meta: {
                 notauth: true,
@@ -267,7 +268,9 @@
           row.isFinish = isFinish
         },
         handleUpdate(row) { // 弹出编辑框
-          this.$router.push('/flowinstances/detail/' + row.id)
+          // this.$router.push('/flowinstances/detail/' + row.id)
+          this.$router.push({name:'flowinstanceDtl',params:{id:row.id}})
+          
         },
         handleDelete(rows) { // 多行删除
           flowinstances.del(rows.map(u => u.id)).then(() => {

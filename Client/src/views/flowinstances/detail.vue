@@ -100,13 +100,24 @@
         }]
       }
     },
+//           beforeRouteLeave (to, from, next) {
+//   const answer = window.confirm('Do you really want to leave? you have unsaved changes!')
+//   if (answer) {
+//     next()
+//   } else {
+//     next(false)
+//   }
+// },
     created() {
-      const id = this.$route.params && this.$route.params.id
+      // if(this.$route.params && this.$route.params.id) {localStorage.setItem('paramsV', this.$route.params.id)}
+       const id = this.$route.params&&this.$route.params.id
+       // const id = this.$route.query && this.$route.query.id
       apiFlowinstances.get({
         id: id
       }).then(response => {
         this.postObj = response.result
         this.createdFormData = this.setCreatedFormData(JSON.parse(response.result.frmContentData))
+        console.log(this.createdFormData)
         this.defaultValue = JSON.parse(response.result.frmData)
       }).catch(err => {
         console.log(err)

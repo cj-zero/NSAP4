@@ -14,7 +14,17 @@
     </sticky>
     <div class="app-container flex-item">
       <el-row :gutter="4" class="fh">
-        <el-col :span="6" class="fh ls-border">
+             <el-col :span="4" style="height: 100%;border: 1px solid #EBEEF5;">
+          <el-card shadow="never" class="body-small" style="height: 100%;overflow:auto;">
+            <div slot="header" class="clearfix">
+              <el-button type="text" style="padding: 0 11px" @click="getCorpTree">所有公司>></el-button>
+            </div>
+
+            <el-tree :data="CorpTree" :expand-on-click-node="false" default-expand-all :props="defaultProps"
+              @node-click="handleClick"></el-tree>
+          </el-card>
+        </el-col>
+        <el-col :span="4" class="fh ls-border">
           <el-card shadow="never" class="body-small fh" style="overflow: auto">
             <div slot="header" class="clearfix">
               <el-button type="text" style="padding: 0 11px" @click="getAllUsers">全部用户>></el-button>
@@ -25,7 +35,7 @@
           </el-card>
 
         </el-col>
-        <el-col :span="18" class="fh">
+        <el-col :span="16" class="fh">
           <div class="bg-white fh">
             <el-table ref="mainTable" :key='tableKey' :data="list" v-loading="listLoading" border fit
               highlight-current-row style="width: 100%;" height="calc(100% - 52px)" @row-click="rowClick" @selection-change="handleSelectionChange">
@@ -104,18 +114,29 @@
            <el-form-item size="small" :label="'密码'">
             <el-input v-model="temp.password" :placeholder="dialogStatus=='update'?'如果为空则不修改密码':'如果为空则默认与账号相同'"></el-input>
           </el-form-item>
-          <el-form-item size="small" :label="'状态'">
-            <el-select class="filter-item" v-model="temp.status" placeholder="Please select">
+          <el-form-item size="small" :label="'状态'" >
+            <el-select class="filter-item" v-model="temp.status" style="width:100%;"  placeholder="Please select">
               <el-option v-for="item in  statusOptions" :key="item.key" :label="item.display_name" :value="item.key">
               </el-option>
             </el-select>
           </el-form-item>
-          <el-form-item size="small" :label="'所属机构'">
-            <treeselect v-if="dialogFormVisible" :options="orgsTree" :default-expand-level="3" :multiple="true" :flat="true" :open-on-click="true"
+                    <el-form-item size="small" :label="'所属公司'" >
+                <el-select v-model="temp.Corp" clearable placeholder="请选择" style="width:100%;" @change="handleClick">
+                <el-option
+                  v-for="item in CorpTree"
+                  :key="`cor_${item.id}`"
+                  :label="item.label"
+                  :value="item.id">
+                </el-option>
+              </el-select>
+          </el-form-item>
+          <el-form-item size="small" :label="'所属机构'" v-if="dialogFormVisible&&temp.Corp">
+            <treeselect  :options="orgsTree" :default-expand-level="3" disable :multiple="true" :flat="true" :open-on-click="true"
               :open-on-focus="true" :clear-on-select="true" v-model="selectOrgs"></treeselect>
           </el-form-item>
+
           <el-form-item size="small" :label="'描述'">
-            <el-input type="textarea" :autosize="{ minRows: 2, maxRows: 4}" placeholder="Please input" v-model="temp.description">
+            <el-input type="textarea" :autosize="{ minRows: 2, maxRows: 4}" placeholder="请输入" v-model="temp.description">
             </el-input>
           </el-form-item>
         </el-form>
@@ -184,6 +205,7 @@
         list: null,
         total: 0,
         listLoading: true,
+        currentCorpId: '',
         listQuery: { // 查询条件
           page: 1,
           limit: 20,
@@ -203,6 +225,8 @@
         showDescription: false,
         orgs: [], // 用户可访问到的组织列表
         orgsTree: [], // 用户可访问到的所有机构组成的树
+            Corp: [], // 用户可访问到的公司列表
+        CorpTree: [], // 用户可访问到的所有公司组成的树
         selectRoles: [], // 用户分配的角色
         temp: {
           id: undefined,
@@ -233,7 +257,8 @@
     },
     computed: {
       selectOrgs: {
-        get: function() {
+        get: function(a) {
+          console.log(a)
           if (this.dialogStatus === 'update') {
             return this.temp.organizationIds && this.temp.organizationIds.split(',')
           } else {
@@ -268,27 +293,59 @@
       this.getList()
     },
     mounted() {
-      var _this = this // 记录vuecomponent
-      login.getOrgs().then(response => {
-        _this.orgs = response.result.map(function(item) {
-          return {
-            id: item.id,
-            label: item.name,
-            parentId: item.parentId || null
-          }
-        })
-        var orgstmp = JSON.parse(JSON.stringify(_this.orgs))
-        _this.orgsTree = listToTreeSelect(orgstmp)
-      })
+      this.getOrgTree()
+        this.getCorpTree()
+
+      
     },
     methods: {
       rowClick(row) {
         this.$refs.mainTable.clearSelection()
         this.$refs.mainTable.toggleRowSelection(row)
       },
+                  getCorpTree() {
+        var _this = this // 记录vuecomponent
+        login.getCorp().then(response => {
+          _this.Corp = response.result.map(function(item) {
+            return {
+              id: item.id,
+              label: item.corpName
+            }
+          })
+          _this.CorpTree = _this.Corp
+
+        })
+      },
+            getOrgTree(id) {
+        var _this = this // 记录vuecomponent
+        login.getOrgs({corpId:id?id:null}).then(response => {
+          _this.orgs = response.result.map(function(item) {
+            return {
+              id: item.id,
+              label: item.name,
+              parentId: item.parentId || null
+            }
+          })
+          var orgstmp = JSON.parse(JSON.stringify(_this.orgs))
+          _this.orgsTree = listToTreeSelect(orgstmp)
+        })
+      },
       handleNodeClick(data) {
         this.listQuery.orgId = data.id
         this.getList()
+      },
+               handleClick(data) {
+                 let dataId = ''
+                 if((typeof data) ==='string'){
+                   dataId=data
+                   this.currentCorpId = data
+                 }else{
+                   this.currentCorpId = data.id
+                   dataId=data.id
+                 }
+                //  if(Object.propotype.toString.call(data) ===String){}
+        //  this.currentCorpId = data
+         this.getOrgTree(dataId)
       },
       getAllUsers() {
         this.listQuery.orgId = ''

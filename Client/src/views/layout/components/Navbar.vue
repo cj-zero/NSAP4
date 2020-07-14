@@ -1,7 +1,7 @@
 <template>
   <el-menu class="navbar" mode="horizontal">
 		<div class="logo">
-			<img class="user-avatar" :src="logo">OpenAuth.Pro
+			<img class="user-avatar" :src="logo">NSAP-V4.0
 		</div>
     <hamburger class="hamburger-container" :toggleClick="toggleSideBar" :isActive="sidebar.opened"></hamburger>
     <!-- <breadcrumb></breadcrumb> -->

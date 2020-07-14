@@ -7,7 +7,6 @@ import tagsView from './modules/tagsView'
 import permission from './modules/permission'
 import dataPrivilegerules from './modules/dataPrivilegerules'
 import storage from './modules/storage'
-import flow from './modules/flow'
 import getters from './getters'
 import { vuexOidcCreateStoreModule } from 'vuex-oidc'
 
@@ -22,19 +21,16 @@ const store = new Vuex.Store({
     dataPrivilegerules,
     storage,
     tagsView,
-    flow,
     oidcStore: vuexOidcCreateStoreModule(
-      // process.env.OIDC,
-      // process.env.VUE_APP_OIDC,
       {
-        authority: '"http://localhost:12796"',
-        clientId: '"WMS"',
-        redirectUri: '"http://localhost:1803/#/oidc-callback"',
-        postLogoutRedirectUri:'"http://localhost:1803"',
-        responseType: '"code"',
-        scope: '"openid profile openauthapi"',
-        automaticSilentRenew: true,
-        silentRedirectUri: '"http://localhost:1803/silent-renew-oidc.html"'
+        authority: process.env.VUE_APP_OIDC_AUTHORITY,
+        clientId: process.env.VUE_APP_OIDC_CLIENTID,
+        redirectUri: process.env.VUE_APP_OIDC_REDIRECTURI,
+        postLogoutRedirectUri:process.env.VUE_APP_OIDC_POSTLOGOUTREDIRECTURI,
+        responseType: process.env.VUE_APP_OIDC_RESPONSETYPE,
+        scope: process.env.VUE_APP_OIDC_SCOPE,
+        automaticSilentRenew: process.env.VUE_APP_OIDC_AUTOMATICSILENTRENEW ,
+        silentRedirectUri: process.env.VUE_APP_OIDC_SILENTREDIRECTURI
       },
       // Optional OIDC store settings
       {

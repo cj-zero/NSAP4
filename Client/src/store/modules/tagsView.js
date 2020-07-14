@@ -13,6 +13,20 @@ const tagsView = {
         state.cachedViews.push(view.name)
       }
     },
+    COPY_VISITED_VIEWS:(state, view)=>{
+      console.log(view)
+      // if (state.visitedViews.some(v => v.path === view.path)) return
+      state.visitedViews.push(Object.assign({}, view, {
+        title: view.meta.title || 'no-name'
+      }))
+      if (!view.meta.noCache) {
+        state.cachedViews.push(view.name)
+      }
+    },
+    DEL_CACHED_VIEW: (state, view) => {
+      const index = state.cachedViews.indexOf(view.name)
+      index > -1 && state.cachedViews.splice(index, 1)
+    },
     DEL_VISITED_VIEWS: (state, view) => {
       for (const [i, v] of state.visitedViews.entries()) {
         if (v.path === view.path) {
@@ -52,6 +66,9 @@ const tagsView = {
     addVisitedViews({ commit }, view) {
       commit('ADD_VISITED_VIEWS', view)
     },
+    copyVisitedViews({ commit }, view){
+      commit('COPY_VISITED_VIEWS', view)
+    },
     delVisitedViews({ commit, state }, view) {
       return new Promise((resolve) => {
         commit('DEL_VISITED_VIEWS', view)
@@ -62,6 +79,12 @@ const tagsView = {
       return new Promise((resolve) => {
         commit('DEL_OTHERS_VIEWS', view)
         resolve([...state.visitedViews])
+      })
+    },
+    delCachedView({ commit, state }, view) {
+      return new Promise(resolve => {
+        commit('DEL_CACHED_VIEW', view)
+        resolve([...state.cachedViews])
       })
     },
     delAllViews({ commit, state }) {

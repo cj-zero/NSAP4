@@ -18,8 +18,6 @@ import '@/icons' // icon
 import '@/permission' // permission control
 import '@/assets/public/css/iconfont/iconfont.css'
 import '@/assets/public/css/iconfont/iconfont.js'
-import '@/assets/public/css/comIconfont/iconfont/iconfont.css'
-import '@/assets/public/css/comIconfont/iconfont/iconfont.js'
 
 // 请假条表单和详情
 import FrmLeaveReqAdd from '@/views/forms/userDefine/frmLeaveReq/add'

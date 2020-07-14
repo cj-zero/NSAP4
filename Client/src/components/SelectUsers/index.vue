@@ -25,9 +25,9 @@
     props: ['users', 'userNames', 'orgId'],
     data() { // todo:兼容layui的样式、图标
       return {
-        // selectUsers: this.users,
+        selectUsers: this.users,
         // userNames: '',
-        // names: this.userNames,
+        names: this.userNames,
         defaultSelectUsers: this.users,
         orgUsers: [],
         orgs: [],
@@ -36,28 +36,10 @@
         selectUserList: []
       }
     },
-    computed: {
-      selectUsers:{
-        get(){
-          return this.users
-        },
-        set(val){
-          this.$emit('users-change', 'users', val)
-        }
-      },
-      names:{
-        get(){
-          return this.userNames
-        },
-        set(val){
-          this.$emit('users-change', 'Texts', val)
-        }
-      }
-    },
     watch: {
-      // selectUsers() {
-      //   this.$emit('users-change', this.selectUsers, this.names)
-      // },
+      selectUsers() {
+        this.$emit('users-change', this.selectUsers, this.names)
+      },
       userNames() {
         this.names = this.userNames
         this.groupList()

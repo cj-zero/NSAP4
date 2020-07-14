@@ -19,32 +19,16 @@
     props: ['roles', 'userNames'],
     data() { // todo:兼容layui的样式、图标
       return {
-        // selectRoles: this.roles,
-        // names: this.userNames,
+        selectRoles: this.roles,
+        names: this.userNames,
         selectDialog: false,
-        selectRoleList: [],
-        flag: false
-      }
-    },
-    computed: {
-      selectRoles:{
-        get(){
-          return this.roles
-        },
-        set(val){
-          this.$emit('roles-change', 'roles', val)
-        }
-      },
-      names:{
-        get(){
-          return this.userNames
-        },
-        set(val){
-          this.$emit('roles-change', 'Texts', val)
-        }
+        selectRoleList: []
       }
     },
     watch: {
+      selectRoles() {
+        this.$emit('roles-change', this.selectRoles, this.names)
+      },
       userNames() {
         this.names = this.userNames
         this.groupList()
