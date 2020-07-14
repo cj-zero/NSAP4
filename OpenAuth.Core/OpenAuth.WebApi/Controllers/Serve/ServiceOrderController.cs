@@ -82,6 +82,11 @@ namespace OpenAuth.WebApi.Controllers
             return Task.FromResult(result);
         }
 
+        /// <summary>
+        /// 待确认服务呼叫列表
+        /// </summary>
+        /// <param name="req">查询条件对象</param>
+        /// <returns></returns>
         [HttpGet]
         public async Task<TableData> UnConfirmedServiceOrderList([FromQuery] QueryServiceOrderListReq req)
         {
@@ -98,6 +103,11 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 待确认服务申请信息
+        /// </summary>
+        /// <param name="id">服务单ID</param>
+        /// <returns></returns>
         [HttpGet]
         public async Task<Response<ServiceOrderDetailsResp>> GetUnConfirmedServiceOrderDetails(int serviceOrderId)
         {
