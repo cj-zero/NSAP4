@@ -6,7 +6,8 @@ using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
-
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace OpenAuth.App
 {
@@ -76,6 +77,22 @@ namespace OpenAuth.App
             RevelanceManagerApp app, IAuth auth) : base(unitWork, repository,auth)
         {
             _revelanceApp = app;
+        }
+
+        public async Task<UserView> GetFirstNsapUser(int appUserId)
+        {
+            var obj = from c in UnitWork.Find<AppUserMap>(null)
+                      join d in UnitWork.Find<User>(null) on c.UserID equals d.Id into cd
+                      from d in cd.DefaultIfEmpty()
+                      select new { c, d };
+            obj = obj.Where(o => o.c.AppUserId.Equals(appUserId));
+            var query = await obj.Select(q => new
+            {
+                q.d.Id,
+                q.d.Name
+            }).FirstOrDefaultAsync();
+            var firstUser = query.MapTo<UserView>();
+            return firstUser;
         }
     }
 }

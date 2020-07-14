@@ -133,5 +133,8 @@ namespace OpenAuth.App.Response
         /// 服务合同
         /// </summary>
         public string ContractId { get; set; }
+
+       
+       
     }
 }

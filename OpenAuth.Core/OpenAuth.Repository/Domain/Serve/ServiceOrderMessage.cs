@@ -83,5 +83,7 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Ignore]
         public virtual List<ServiceOrderMessagePicture> ServiceOrderMessagePictures { get; set; }
+
+       
     }
 }

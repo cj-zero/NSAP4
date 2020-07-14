@@ -62,6 +62,19 @@ namespace OpenAuth.App.Response
         public string RecepUserName { get; set; }
 
         /// <summary>
+        /// 省
+        /// </summary>
+        public string Province { get; set; }
+        /// <summary>
+        /// 市
+        /// </summary>
+        public string City { get; set; }
+        /// <summary>
+        /// 详细地址
+        /// </summary>
+        public string Addr { get; set; }
+
+        /// <summary>
         /// 服务单关联的工单
         /// </summary>
         public virtual List<ServiceWorkOrderDetailsResp> ServiceWorkOrders { get; set; }

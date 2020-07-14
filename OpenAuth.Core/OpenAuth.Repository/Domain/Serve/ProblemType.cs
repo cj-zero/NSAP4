@@ -57,6 +57,5 @@ namespace OpenAuth.Repository.Domain
         [Description("显示顺序")]
         [Browsable(false)]
         public int OrderIdx { get; set; }
-  
     }
 }

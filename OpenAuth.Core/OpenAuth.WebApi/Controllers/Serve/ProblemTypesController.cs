@@ -77,9 +77,9 @@ namespace OpenAuth.WebApi.Controllers
         /// 加载列表
         /// </summary>
         [HttpGet]
-        public TableData Load([FromQuery] QueryProblemTypeListReq request)
+        public TableData Load()
         {
-            return _app.Load(request);
+            return _app.Load();
         }
 
         /// <summary>
