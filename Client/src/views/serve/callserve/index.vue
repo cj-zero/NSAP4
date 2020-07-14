@@ -26,7 +26,8 @@
     <div class="app-container">
       <div class="bg-white">
         <zxsearch></zxsearch>
-        <el-table
+        <serveTable @handleSelection="handleSelec" @openList="openTree"></serveTable>
+        <!-- <el-table
           ref="mainTable"
           :key="key"
           :data="list"
@@ -36,8 +37,7 @@
           highlight-current-row
           style="width: 100%;"
           @row-click="rowClick"
-          @selection-change="handleSelectionChange"
-        >
+          @selection-change="handleSelectionChange">
           <el-table-column type="selection" fixed align="center" width="55"></el-table-column>
           <el-table-column fixed align="center" label="服务ID" width="100">
             <template slot-scope="scope">
@@ -62,7 +62,7 @@
               <span v-if="!(fruit ==='status'||fruit ==='subject')">{{scope.row[fruit]}}</span>
             </template>
           </el-table-column>
-        </el-table>
+        </el-table> -->
         <pagination
           v-show="total>0"
           :total="total"
@@ -76,7 +76,6 @@
       <el-dialog
         width="1000px"
         class="dialog-mini"
-        
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
@@ -135,6 +134,7 @@ import DynamicTable from "@/components/DynamicTable";
 import elDragDialog from "@/directive/el-dragDialog";
 import zxsearch from "./search";
 import zxform from "./form";
+import serveTable from "../serveTable";
 import treeList from "./treeList";
 import { callserve, count } from "@/mock/serve";
 export default {
@@ -146,7 +146,8 @@ export default {
     DynamicTable,
     zxsearch,
     zxform,
-    treeList
+    treeList,
+    serveTable
   },
   directives: {
     waves,
@@ -176,18 +177,6 @@ export default {
         { name: "zhuti", label: "主题" }
       ],
       // this.dialogTable = true;
-
-      headLabel: {
-        // serveid: "ID",
-        priority: "优先级",
-        calltype: "呼叫类型",
-        callstatus: "呼叫状态",
-        kehidaima: "客户代码",
-        jiedanyuan: "接单员",
-        moneyapproval: "费用审核",
-        kehumingcheng: "客户名称",
-        zhuti: "主题"
-      },
 
       tableKey: 0,
       list: null,
@@ -279,9 +268,9 @@ export default {
     //   console.log(callserve)
   },
   methods: {
-    openTree() {
+    openTree(value) {
       // this.dialogTree = true;  树形图
-      this.dialogFormView = true
+      this.dialogFormView = value
     },
     onSubmit() {
       console.log("submit!");
@@ -293,7 +282,8 @@ export default {
       this.$refs.mainTable.clearSelection();
       this.$refs.mainTable.toggleRowSelection(row);
     },
-    handleSelectionChange(val) {
+    handleSelec(val) {
+      // console.log(val)
       this.multipleSelection = val;
     },
     onBtnClicked: function(domId) {

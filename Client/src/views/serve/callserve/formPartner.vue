@@ -5,9 +5,15 @@
     border
     ref="singleTable"
    highlight-current-row
-    @current-change="handleCurrentChange"
+    @current-change="getPartner"
+    @row-dblclick="handleCurrentChange"
     style="width: 100%"
   >
+    <!-- <el-table-column>
+      <template slot-scope='scope'>
+              <el-radio v-model="radio" fixed :label="scope.row.cardCode" @click="checkOne(scope.row)"></el-radio>
+      </template>
+    </el-table-column> -->
     <el-table-column prop="cardCode" fixed label="客户代码" width="80"></el-table-column>
     <el-table-column prop="cardName" label="客户名称" align="center" min-width="120"></el-table-column>
         <el-table-column align="center" label="状态冻结" width="120">
@@ -35,8 +41,8 @@
           @pagination="handleChange"
         />
        <el-dialog title="最近呼叫ID" width="90%"  @open="openDialog" :visible.sync="dialogCallId">
-
-      <callId :toCallList="toCallList"></callId>
+<callId ></callId>
+      <!-- <callId :toCallList="CallList"></callId> -->
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogCallId = false">取 消</el-button>
         <el-button type="primary" @click="dialogCallId = false">确 定</el-button>
@@ -61,6 +67,7 @@ export default {
          listQuery: {
         // 查询条件
         page: 1,
+        radio:'1',
         CallList:[],
         toCallList:[],
         limit: 10,
@@ -80,20 +87,28 @@ export default {
     }
   },
     mounted() {
-    this.toCallList = this.CallList
+      console.log(this.partnerList)
+    // this.toCallList = this.CallList
   },
   methods:{
-          openDialog() {   //打开前赋值
-      this.toCallList = this.CallList
+          openDialog() {   //打开前赋值给近期服务单
+
+      // this.CallList = this.partnerList
     },
+    // checkOne(value){
+    //   console.log(value)
+    // },
      handleChange(val) {
       this.listQuery.page = val.page;
       this.listQuery.limit = val.limit;
       // this.getList();
     },
+    getPartner(val){
+      console.log(val)
+      this.$emit('getChildValue',val)
+    },
    handleCurrentChange(val) {
         this.currentRow = val;
-        console.log(val)
         if(val.frozenFor=='Y'){
               this.$message({
               message: `${val.cardName}账户被冻结，无法操作`,
@@ -104,7 +119,7 @@ export default {
               message: `抱歉，${val.cardName}没有呼叫ID数据`,
               type: 'warning'
             })
-// this.dialogCallId=true
+//  this.dialogCallId=true
         }
         
       }

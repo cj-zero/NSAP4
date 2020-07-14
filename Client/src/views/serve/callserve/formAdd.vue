@@ -16,20 +16,18 @@
           </el-form-item>
         </el-col>
 
-       <el-col :span="6" style="height:40px;line-height:40px;">
-              
-              <el-switch v-model="form.edit" active-text="是否批量修改后续订单"></el-switch>
-             
-            </el-col>
-            <el-col :span="2" style="height:40px;line-height:40px;">
-               <el-button
-                type="danger"
-                v-if="formList.length>0"
-                style="margin:0 10px;"
-                size="mini"
-                @click="deleteForm(1)"
-              >删除</el-button>
-            </el-col>
+        <el-col :span="6" style="height:40px;line-height:40px;">
+          <el-switch v-model="form.edit" active-text="是否批量修改后续订单"></el-switch>
+        </el-col>
+        <el-col :span="2" style="height:40px;line-height:40px;">
+          <el-button
+            type="danger"
+            v-if="formList.length>0"
+            style="margin:0 10px;"
+            size="mini"
+            @click="deleteForm(1)"
+          >删除</el-button>
+        </el-col>
       </el-row>
       <el-row type="flex" class="row-bg" justify="space-around">
         <el-col :span="8">
@@ -55,18 +53,9 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-            <el-form-item label="服务合同">
-                <el-input v-model="form.internalSerialNumber" disabled></el-input>
-              </el-form-item>
-          <!-- <el-form-item label="保修结束日期">
-            <el-date-picker
-              disabled
-              type="date"
-              placeholder="选择开始日期"
-              v-model="form.warrantyEndDate"
-              style="width: 100%;"
-            ></el-date-picker>
-          </el-form-item> -->
+          <el-form-item label="服务合同">
+            <el-input v-model="form.contractId" disabled></el-input>
+          </el-form-item>
         </el-col>
       </el-row>
       <el-row type="flex" class="row-bg" justify="space-around">
@@ -77,7 +66,7 @@
         </el-col>
         <el-col :span="16">
           <el-form-item label="物料描述">
-            <el-input disabled v-model="form.itemName"></el-input>
+            <el-input disabled v-model="form.materialDescription"></el-input>
           </el-form-item>
         </el-col>
       </el-row>
@@ -87,7 +76,7 @@
       <el-row type="flex" class="row-bg" justify="space-around">
         <el-col :span="16">
           <el-form-item label="呼叫主题">
-            <el-input v-model="form.name"></el-input>
+            <el-input v-model="form.fromTheme"></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="8">
@@ -104,9 +93,9 @@
       </el-row>
       <el-row type="flex" class="row-bg" justify="space-around">
         <el-col :span="8">
-        <el-form-item label="呼叫类型">
-                <el-input v-model="form.fromType"></el-input>
-              </el-form-item>
+          <el-form-item label="呼叫类型">
+            <el-input v-model="form.fromType"></el-input>
+          </el-form-item>
         </el-col>
         <el-col :span="8">
           <el-form-item label="呼叫状态">
@@ -114,21 +103,33 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-           <el-form-item label="清算日期">
-                <el-date-picker
-                  disabled
-                  type="date"
-                  placeholder="选择日期"
-                  v-model="form.liquidationDate"
-                  style="width: 100%;"
-                ></el-date-picker>
-              </el-form-item>
+          <el-form-item label="清算日期">
+            <el-date-picker
+              disabled
+              type="date"
+              placeholder="选择日期"
+              v-model="form.liquidationDate"
+              style="width: 100%;"
+            ></el-date-picker>
+          </el-form-item>
         </el-col>
       </el-row>
       <el-row type="flex" class="row-bg" justify="space-around">
         <el-col :span="8">
-       <el-form-item label="问题类型">
-            <el-input v-model="form.problemTypeId"></el-input>
+          <el-form-item label="问题类型">
+            <el-input
+              v-model="form.problemTypeId"
+              v-if="!form.problemTypeId"
+              :label="problemLabel"
+              @focus="()=>{proplemTree=true,sortForm=1}"
+            ></el-input>
+            <!-- <el-tree :data="dataTree" :props="defaultProps" @node-click="NodeClick"></el-tree> -->
+            <div
+              type="text"
+              style="border:1px silver solid;border-radius:5px;padding:0 10px;"
+              v-if="form.problemTypeId"
+              @click="()=>{proplemTree=true,sortForm=1}"
+            >{{switchType(form.problemTypeId)}}</div>
           </el-form-item>
         </el-col>
         <el-col :span="8">
@@ -175,7 +176,6 @@
         </el-col>
       </el-row>
 
-
       <el-form-item label="备注" prop="remark">
         <el-input type="textarea" v-model="form.remark"></el-input>
       </el-form-item>
@@ -207,12 +207,10 @@
             </el-col>
 
             <el-col :span="6" style="height:40px;line-height:40px;">
-              
               <el-switch v-model="form.edit" active-text="是否批量修改后续订单"></el-switch>
-             
             </el-col>
             <el-col :span="2" style="height:40px;line-height:40px;">
-               <el-button
+              <el-button
                 type="danger"
                 v-if="formList.length>0"
                 style="margin:0 10px;"
@@ -245,8 +243,8 @@
               </el-form-item>
             </el-col>
             <el-col :span="8">
-               <el-form-item label="服务合同">
-                <el-input v-model="form.internalSerialNumber" disabled></el-input>
+              <el-form-item label="服务合同">
+                <el-input v-model="form.contractId" disabled></el-input>
               </el-form-item>
               <!-- <el-form-item label="保修结束日期">
                 <el-date-picker
@@ -256,7 +254,7 @@
                   v-model="form.warrantyEndDate"
                   style="width: 100%;"
                 ></el-date-picker>
-              </el-form-item> -->
+              </el-form-item>-->
             </el-col>
           </el-row>
           <el-row type="flex" class="row-bg" justify="space-around">
@@ -267,7 +265,7 @@
             </el-col>
             <el-col :span="16">
               <el-form-item label="物料描述">
-                <el-input disabled v-model="form.itemName"></el-input>
+                <el-input disabled v-model="form.materialDescription"></el-input>
               </el-form-item>
             </el-col>
           </el-row>
@@ -282,26 +280,24 @@
           <el-row type="flex" class="row-bg" justify="space-around">
             <el-col :span="16">
               <el-form-item label="呼叫主题">
-                <el-input v-model="form.name"></el-input>
+                <el-input v-model="form.fromTheme"></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="8">
-              <el-form-item label="接单员">
-                <el-form-item label="保修结束日期">
-            <el-date-picker
-              disabled
-              type="date"
-              placeholder="选择开始日期"
-              v-model="form.warrantyEndDate"
-              style="width: 100%;"
-            ></el-date-picker>
-          </el-form-item>
+              <el-form-item label="保修结束日期">
+                <el-date-picker
+                  disabled
+                  type="date"
+                  placeholder="选择开始日期"
+                  v-model="form.warrantyEndDate"
+                  style="width: 100%;"
+                ></el-date-picker>
               </el-form-item>
             </el-col>
           </el-row>
           <el-row type="flex" class="row-bg" justify="space-around">
             <el-col :span="8">
-           <el-form-item label="呼叫类型">
+              <el-form-item label="呼叫类型">
                 <el-input v-model="form.fromType"></el-input>
               </el-form-item>
             </el-col>
@@ -311,7 +307,7 @@
               </el-form-item>
             </el-col>
             <el-col :span="8">
-                 <el-form-item label="清算日期">
+              <el-form-item label="清算日期">
                 <el-date-picker
                   disabled
                   type="date"
@@ -324,9 +320,9 @@
           </el-row>
           <el-row type="flex" class="row-bg" justify="space-around">
             <el-col :span="8">
-               <el-form-item label="问题类型">
-            <el-input v-model="form.problemTypeId"></el-input>
-          </el-form-item>
+              <el-form-item label="问题类型">
+                <!-- <el-input v-model="form.problemTypeId"></el-input> -->
+              </el-form-item>
             </el-col>
             <el-col :span="8">
               <el-form-item label="优先级">
@@ -346,11 +342,11 @@
             </el-col>
           </el-row>
           <el-row type="flex" class="row-bg" justify="space-around">
-           <el-col :span="16">
-          <el-form-item label="解决方案">
-            <el-input v-model="form.problemTypeId"></el-input>
-          </el-form-item>
-        </el-col>
+            <el-col :span="16">
+              <el-form-item label="解决方案">
+                <el-input v-model="form.problemTypeId"></el-input>
+              </el-form-item>
+            </el-col>
             <el-col :span="8">
               <el-form-item label="结束时间">
                 <el-date-picker
@@ -364,7 +360,6 @@
             </el-col>
           </el-row>
 
-
           <el-form-item label="备注" prop="remark">
             <el-input type="textarea" v-model="form.remark"></el-input>
           </el-form-item>
@@ -375,6 +370,15 @@
       </el-collapse-item>
     </el-collapse>
     <!--  -->
+    <el-dialog
+      :title="`第${sortForm}工单`"
+      center
+      :visible.sync="proplemTree"
+      width="500px"
+      height="500px"
+    >
+      <problemtype @node-click="NodeClick" :dataTree="dataTree"></problemtype>
+    </el-dialog>
     <el-dialog
       destroy-on-close
       title="选择制造商序列号"
@@ -411,43 +415,36 @@
 <script>
 // import { getPartner } from "@/api/callserve";
 import fromfSN from "./fromfSN";
-
+import * as problemtypes from "@/api/problemtypes";
+import problemtype from "./problemtype"
 export default {
-  components: { fromfSN },
+  components: { fromfSN ,problemtype},
   props: ["SerialNumberList"],
   data() {
     return {
+      defaultProps:{
+        label:'name',
+        children:'childTypes'
+      },//树形控件的显示状态
+      sortForm:'',
+      problemLabel:'',
+      dataTree:[],//问题类型的组合
+      proplemTree:false,
       filterSerialNumberList: [],
       formListStart: [], //选择的表格数据
       formList: [], //表单依赖的表格数据
       dialogfSN: false,
       inputSearch: "",
       activeNames: ["1"], //活跃名称
-      // form: {
-      //   manufSN: "",
-      //   internalSN: "", //内部序列号
-      //   itemCode: "", //物料编码
-      //   itemName: "", //物料描述
-      //   dlvryDate: "",
-      //   delivery: false,
-      //   type: [],
-      //   resource: "",
-      //   name: "",
-      //   edit:1,
-      // },
       form: {
         priority: 1, //优先级 4-紧急 3-高 2-中 1-低
         feeType: "", //服务类型 1-免费 2-收费
-        province: "", //省
-        city: "", //市
-        addr: "", //详细地址
-        longitude: "", //经度
-        latitude: "", //纬度
         submitDate: "", //工单提交时间
         recepUserId: null, //接单人用户Id
         remark: "", //备注
         status: 1, //呼叫状态 1-待确认 2-已确认 3-已取消 4-待处理 5-已排配 6-已外出 7-已挂起 8-已接收 9-已解决 10-已回访
-        fromTheme: "", //App当前流程处理用户Id
+        currentUserId: "", //App当前流程处理用户Id
+        fromTheme	: "", //呼叫主题
         fromId: 1, //呼叫来源 1-电话 2-APP
         problemTypeId: "", //问题类型Id
         fromType: 2, //呼叫类型1-提交呼叫 2-在线解答（已解决）
@@ -456,10 +453,10 @@ export default {
         manufacturerSerialNumber: "", //制造商序列号
         internalSerialNumber: "", //内部序列号
         warrantyEndDate: "", //保修结束日期
-        bookingDate: "", //预约日期
+        bookingDate: "", //预约时间
         visitTime: "", //上门时间
         liquidationDate: "", //清算日期
-        addressDesignator: "" //地址标识
+        contractId: "", //服务合同
       },
       options_sourse: [
         { value: "电话", label: "电话" },
@@ -486,6 +483,16 @@ export default {
 
   mounted() {
     this.filterSerialNumberList = this.SerialNumberList;
+//获取问题类型的数据
+    problemtypes
+      .getList()
+      .then(res => {
+        this.dataTree = res.data;
+      })
+      .catch(error => {
+        console.log(error);
+      });
+
   },
   watch: {
     // filterSerialNumberList: function(newQuestion, oldQuestion) {
@@ -503,6 +510,27 @@ export default {
     //   }
   },
   methods: {
+    NodeClick(res){
+ this.form.problemTypeId=res.id
+ this.problemLabel=  res.name
+   this.proplemTree = false
+    },
+    switchType(val){
+    let vall = ''
+     this.dataTree.filter(item=>{
+       if(item.id == val){
+         vall=item.name
+       }
+       
+       item.childTypes.filter(item=>{
+             if(item.id == val){
+          vall=item.name
+       }
+         })
+     
+        return vall
+     })
+    },
     openDialog() {
       this.filterSerialNumberList = this.SerialNumberList;
     },
@@ -513,20 +541,17 @@ export default {
     pushForm() {
       this.dialogfSN = false;
       if (!this.ifFormPush) {
-        this.form.manufSN = this.formListStart[0].manufSN;
-        this.form.internalSerialNumber = this.formListStart[0].internalSerialNumber;
-        this.form.itemCode = this.formListStart[0].itemCode;
-        this.form.itemName = this.formListStart[0].itemName;
-        this.form.dlvryDate = this.formListStart[0].dlvryDate;
-
+        this.form.manufacturerSerialNumber = this.formListStart[0].manufSN;
+        this.form.internalSerialNumber = this.formListStart[0].internalSN;
+        this.form.materialCode = this.formListStart[0].itemCode;
+        this.form.materialDescription = this.formListStart[0].itemName;
         const newList = this.formListStart.splice(1, this.formListStart.length);
         for (let i = 0; i < newList.length; i++) {
           this.formList.push({
-            manufSN: newList[i].manufSN,
-            internalSerialNumber: newList[i].internalSerialNumber,
-            itemCode: newList[i].itemCode,
-            itemName: newList[i].itemName,
-            dlvryDate: newList[i].dlvryDate
+            manufacturerSerialNumber: newList[i].manufSN,
+            internalSerialNumber: newList[i].internalSN,
+            materialCode: newList[i].itemCode,
+            materialDescription: newList[i].itemName
           });
         }
         this.ifFormPush = true;
@@ -534,11 +559,10 @@ export default {
         this.ifFormPush = true;
         for (let i = 0; i < this.formListStart.length; i++) {
           this.formList.push({
-            manufSN: this.formListStart[i].manufSN,
-            internalSerialNumber: this.formListStart[i].internalSerialNumber,
-            itemCode: this.formListStart[i].itemCode,
-            itemName: this.formListStart[i].itemName,
-            dlvryDate: this.formListStart[i].dlvryDate
+            manufacturerSerialNumber: this.formListStart[i].manufSN,
+            internalSerialNumber: this.formListStart[i].internalSN,
+            materialCode: this.formListStart[i].itemCode,
+            materialDescription: this.formListStart[i].itemName,
           });
         }
       }
