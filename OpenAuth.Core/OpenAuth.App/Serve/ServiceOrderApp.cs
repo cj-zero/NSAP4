@@ -153,7 +153,11 @@ namespace OpenAuth.App
             query = query.Where(s => s.Status == 1 && (DateTime.Now - s.CreateTime).Value.Hours >= 24);
             return await query.ToListAsync();
         }
-
+        /// <summary>
+        /// 待确认服务呼叫列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
         public async Task<TableData> UnConfirmedServiceOrderList( QueryServiceOrderListReq req)
         {
             var result = new TableData();
@@ -187,6 +191,11 @@ namespace OpenAuth.App
             return result;
         }
 
+        /// <summary>
+        /// 待确认服务申请信息
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public async Task<ServiceOrderDetailsResp> GetUnConfirmedServiceOrderDetails(int id)
         {
             var loginContext = _auth.GetCurrentUser();
@@ -242,5 +251,7 @@ namespace OpenAuth.App
             await UnitWork.AddAsync<ServiceWorkOrder, int>(obj);
             await UnitWork.SaveAsync();
         }
+
+       
     }
 }

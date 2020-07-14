@@ -102,7 +102,11 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
-
+        /// <summary>
+        /// 填写完工报告单页面需要取到的服务工单信息。
+        /// </summary>
+        /// <param name="ServiceWorkOrderId">工单ID</param>
+        /// <returns></returns>
         [HttpGet]
         public async Task<Response<CompletionReportDetailsResp>> GetOrderWorkInfoForAdd(int ServiceWorkOrderId)
         {
