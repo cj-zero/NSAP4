@@ -10,6 +10,7 @@ using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 using Infrastructure.Extensions;
+using System.Reactive;
 
 namespace OpenAuth.App
 {
@@ -47,7 +48,7 @@ namespace OpenAuth.App
             return result;
         }
 
-        public async Task Add(AddServiceOrderReq req)
+        public async Task<ServiceOrder> Add(AddServiceOrderReq req)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -62,11 +63,11 @@ namespace OpenAuth.App
 
             var o = await UnitWork.AddAsync<ServiceOrder, int>(obj);
             var pictures = req.Pictures.MapToList<ServiceOrderPicture>();
-            pictures.ForEach(p => p.ServiceOrderId = o.Id);
+            pictures.ForEach(p => { p.ServiceOrderId = o.Id; p.PictureType = 1; });
             await UnitWork.BatchAddAsync(pictures.ToArray());
             var from = obj.FromId == 1 ? "电话" : "APP";
-            await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"{from}提交服务单", ActionType = "呼叫服务提单", ServiceOrderId = o.Id });
             await UnitWork.SaveAsync();
+            return o;
         }
 
         /// <summary>
@@ -121,7 +122,6 @@ namespace OpenAuth.App
             await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(id), u => new ServiceOrder { Status = status });
             await UnitWork.SaveAsync();
             var statusStr = status == 2 ? "已确认" : status == 3 ? "已取消" : "待确认";
-            await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"修改服务单状态为:{statusStr}", ActionType = "修改服务单状态", ServiceOrderId = id });
         }
 
         /// <summary>
@@ -199,6 +199,48 @@ namespace OpenAuth.App
                 .Include(s => s.ServiceOrderPictures).FirstOrDefaultAsync();
             var result = obj.MapTo<ServiceOrderDetailsResp>();
             return result;
+        }
+
+        /// <summary>
+        /// 创建工单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task CreateWorkOrder(UpdateServiceOrderReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            await UnitWork.UpdateAsync(request.MapTo<ServiceOrder>()); 
+            var pictures = request.Pictures.MapToList<ServiceOrderPicture>();
+            pictures.ForEach(p => { p.ServiceOrderId = request.Id; p.PictureType = 2; });
+            await UnitWork.BatchAddAsync(pictures.ToArray());
+            await UnitWork.SaveAsync();
+        }
+        /// <summary>
+        /// 删除一个工单
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task DeleteWorkOrder(int id)
+        {
+            await UnitWork.DeleteAsync<ServiceWorkOrder>(s => s.Id.Equals(id));
+
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
+        /// 新增一个工单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task AddWorkOrder(AddServiceWorkOrderReq request)
+        {
+            var obj = request.MapTo<ServiceWorkOrder>();
+            await UnitWork.AddAsync<ServiceWorkOrder, int>(obj);
+            await UnitWork.SaveAsync();
         }
     }
 }

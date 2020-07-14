@@ -1,12 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
+using System.Threading.Tasks;
 using Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
-
+using Org.BouncyCastle.Ocsp;
 
 namespace OpenAuth.App
 {
@@ -50,7 +54,31 @@ namespace OpenAuth.App
             return result;
         }
 
-        public void Add(AddOrUpdateAppServiceOrderLogReq req)
+        /// <summary>
+        /// 查询服务单和工单的执行记录
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<List<OrderLogListResp>> GetOrderLog(GetOrderLogListReq request)
+        {
+            var list = new List<OrderLogListResp>();
+            var objs = UnitWork.Find<AppServiceOrderLog>(null);
+            var orderLogs = await objs.Where(a => a.ServiceOrderId.Equals(request.ServiceOrderId)).Select(a => new OrderLogListResp { Title = a.Title, Details = a.Details, CreateTime = a.CreateTime }).ToListAsync();
+            list.AddRange(orderLogs);
+            if(!(request.ServiceWorkOrderId is null))
+            {
+                var workOrderLogs = await objs.Where(a => a.ServiceWorkOrder.Equals(request.ServiceWorkOrderId.Value)).Select(a => new OrderLogListResp { Title = a.Title, Details = a.Details, CreateTime = a.CreateTime }).ToListAsync();
+                list.AddRange(workOrderLogs);
+            }
+            return list.OrderByDescending(l => l.CreateTime).ToList();
+        }
+
+        /// <summary>
+        /// 插入记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task AddAsync(AddOrUpdateAppServiceOrderLogReq req)
         {
             var obj = req.MapTo<AppServiceOrderLog>();
             //todo:补充或调整自己需要的字段
@@ -58,7 +86,7 @@ namespace OpenAuth.App
             var user = _auth.GetCurrentUser().User;
             obj.CreateUserId = user.Id;
             obj.CreateUserName = user.Name;
-            Repository.Add(obj);
+            await Repository.AddAsync(obj);
         }
 
          public void Update(AddOrUpdateAppServiceOrderLogReq obj)

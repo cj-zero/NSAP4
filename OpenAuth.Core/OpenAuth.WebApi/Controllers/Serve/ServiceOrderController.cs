@@ -22,10 +22,12 @@ namespace OpenAuth.WebApi.Controllers
     public class ServiceOrderController : Controller
     {
         private readonly ServiceOrderApp _serviceOrderApp;
+        private AppServiceOrderLogApp _appServiceOrderLogApp;
 
-        public ServiceOrderController(ServiceOrderApp serviceOrderApp)
+        public ServiceOrderController(ServiceOrderApp serviceOrderApp, AppServiceOrderLogApp appServiceOrderLogApp)
         {
             _serviceOrderApp = serviceOrderApp;
+            _appServiceOrderLogApp = appServiceOrderLogApp;
         }
         /// <summary>
         /// 新增服务单
@@ -38,8 +40,21 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Response();
             try
             {
-                await _serviceOrderApp.Add(addServiceOrderReq);
-            }catch(Exception ex)
+                var order = await _serviceOrderApp.Add(addServiceOrderReq);
+                await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+                {
+                    Title = "提交成功",
+                    Details = "已收到您的反馈，正在为您分配客服中。",
+                    ServiceOrderId = order.Id
+                });
+                await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+                {
+                    Title = "已分配专属客服",
+                    Details = "已为您分配专属客服进行处理，如有消息将第一时间通知您，请耐心等候。",
+                    ServiceOrderId = order.Id
+                });
+            }
+            catch(Exception ex)
             {
                 result.Code = 500;
                 result.Message = ex.Message;
@@ -100,5 +115,73 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+
+        /// <summary>
+        /// 创建工单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> CreateWorkOrder(UpdateServiceOrderReq request)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.CreateWorkOrder(request);
+                await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+                {
+                    Title = "客服确认售后信息",
+                    Details = "客服确认售后信息，将交至技术员。",
+                    ServiceOrderId = request.Id
+                });
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        /// 删除一个工单
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        public async Task<Response> DeleteWorkOrder([FromQuery]int id) 
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.DeleteWorkOrder(id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 新增一个工单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<Response> AddWorkOrder(AddServiceWorkOrderReq request) 
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.AddWorkOrder(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }
