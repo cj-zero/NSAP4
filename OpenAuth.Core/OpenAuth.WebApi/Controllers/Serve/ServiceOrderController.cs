@@ -83,6 +83,26 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// app查询服务单列表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> AppLoad([FromQuery]AppQueryServiceOrderListReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.AppLoad(request);
+            }
+            catch (Exception ex)
+            {
+                result.code = 500;
+                result.msg = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
         /// 待确认服务呼叫列表
         /// </summary>
         /// <param name="req">查询条件对象</param>

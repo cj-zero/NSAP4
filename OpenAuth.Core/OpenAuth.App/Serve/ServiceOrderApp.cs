@@ -12,6 +12,7 @@ using OpenAuth.Repository.Interface;
 using Infrastructure.Extensions;
 using System.Reactive;
 using Org.BouncyCastle.Ocsp;
+using MySqlX.XDevAPI.Relational;
 
 namespace OpenAuth.App
 {
@@ -46,7 +47,44 @@ namespace OpenAuth.App
 
 
             var result = new TableData();
+
             return result;
+        }
+
+        /// <summary>
+        /// app查询服务单列表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> AppLoad(AppQueryServiceOrderListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var query = from a in UnitWork.Find<ServiceOrder>(s => s.AppUserId.Equals(request.AppUserId))
+                        select new
+                        {
+                            a.Id,
+                            a.Province, a.City, a.Area, a.Addr,
+                            a.CustomerId, a.CustomerName, a.ContactTel, a.Contacter,
+                            a.AppUserId,
+                            ServiceWorkOrders = a.ServiceWorkOrders.Select(o => new
+                            {
+                                o.Id,o.InternalSerialNumber,o.ManufacturerSerialNumber,o.Priority,o.Status,o.MaterialCode,o.MaterialDescription
+                            }).ToList()
+                        };
+
+
+            var count = await query.CountAsync();
+            var list = await query.Skip(request.page-1 * request.limit).Take(request.limit).ToListAsync();
+
+            var result = new TableData();
+            result.count = count;
+            result.data = list;
+            return result;
+
         }
 
         public async Task<ServiceOrder> Add(AddServiceOrderReq req)
