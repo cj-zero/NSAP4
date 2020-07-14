@@ -2,22 +2,22 @@
   <div>
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
-        <el-input
+        <!-- <el-input
           @keyup.enter.native="handleFilter"
           size="mini"
           style="width: 200px;"
           class="filter-item"
           :placeholder="'名称'"
           v-model="listQuery.key"
-        ></el-input>
+        ></el-input> -->
 
-        <el-button
+        <!-- <el-button
           class="filter-item"
           size="mini"
           v-waves
           icon="el-icon-search"
           @click="handleFilter"
-        >搜索</el-button>
+        >搜索</el-button> -->
         <permission-btn moduleName="problemtypes" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
     </sticky>
@@ -26,7 +26,7 @@
         <el-button type="text" style="padding: 0 11px" @click="getAllMenus">所有菜单>></el-button>
       </div> -->
       <tree-table   @row-click="rowClick" @selection-change="handleSelectionChange" highlight-current-row :data="modulesTree" :columns="columns" border></tree-table>
-    <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="handleCurrentChange" />
+    <!-- <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="handleCurrentChange" /> -->
 
     </el-card>
     <div class="app-container">
@@ -71,7 +71,7 @@
 <script>
 import * as problemtypes from "@/api/problemtypes";
 import waves from "@/directive/waves"; // 水波纹指令
-import Pagination from '@/components/Pagination'
+// import Pagination from '@/components/Pagination'
 import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
 import elDragDialog from "@/directive/el-dragDialog";
@@ -79,7 +79,7 @@ import treeTable from "@/components/TreeTable";
 
 export default {
   name: "problemtypes",
-  components: { Sticky, permissionBtn, treeTable,Pagination },
+  components: { Sticky, treeTable,permissionBtn },
   directives: {
     waves,
     elDragDialog
@@ -100,24 +100,22 @@ export default {
       },
       columns: [
         // treetable的列名
-        {
-          text: "问题ID",
-          value: "id"
-        },
+        // {
+        //   text: "问题ID",
+        //   value: "id"
+        // },
         {
           text: "描述",
           value: "description"
         },
         {
           text: "是否停用",
-          value: "inuseFlag",
-          width:'100px'
+          value: "inuseFlag"
         },
-        {
-          text: "排序",
-          value: "orderIdx",
-          width:'100px'
-        }
+        // {
+        //   text: "排序",
+        //   value: "orderIdx"
+        // }
       ],
       currentPage: 1,
       currentSize: 20,

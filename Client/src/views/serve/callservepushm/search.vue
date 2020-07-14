@@ -13,6 +13,11 @@
       </el-col>
 
       <el-col :span="4">
+        <el-form-item label="工单ID" size="medium">
+          <el-input  v-model="form.name"></el-input>
+        </el-form-item>
+      </el-col>
+      <el-col :span="4">
         <el-form-item label="呼叫状态" size="medium">
           <el-select  v-model="form.region" placeholder="请选择呼叫状态">
             <el-option label="待确认" value="1"></el-option>
@@ -27,12 +32,35 @@
           <el-input  v-model="form.name"></el-input>
         </el-form-item>
       </el-col>
-      <el-col :span="4">
+           <el-col :span="4">
         <el-form-item label="序列号" size="medium">
           <el-input  v-model="form.name"></el-input>
         </el-form-item>
       </el-col>
-      <el-col :span="8">
+              <el-col :span="4">
+        <el-form-item label="接单员" size="medium">
+          <el-input  v-model="form.name"></el-input>
+        </el-form-item>
+      </el-col>
+              
+     
+    </el-row>
+    <el-row  :gutter="10">
+              <el-col :span="4">
+        <el-form-item label="技术员" size="medium">
+          <el-input  v-model="form.name"></el-input>
+        </el-form-item>
+      </el-col>
+            <el-col :span="4">
+        <el-form-item label="问题类型" size="medium">
+          <el-select  v-model="form.region" placeholder="请选择呼叫状态">
+            <el-option label="待确认" value="1"></el-option>
+            <el-option label="已确认" value="2"></el-option>
+            <el-option label="已取消" value="3"></el-option>
+          </el-select>
+        </el-form-item>
+      </el-col>
+         <el-col :span="8">
         <el-form-item label="创建日期" size="medium">
           <el-col :span="11">
             <el-date-picker

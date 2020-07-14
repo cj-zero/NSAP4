@@ -9,8 +9,8 @@
     <el-table-column v-else v-for="(column, index) in columns" :key="column.value" :label="column.text" align="center" :width="column.width">
       <template slot-scope="scope">
         <template>
-           <span v-if="index === 0 && scope.row.parentId" >
-            <el-radio v-model="radioCheck" :label="scope.row.id">{{scope.row[column.value]}}</el-radio>
+           <span style="width:100px;display:inline-block;" v-if="index === 0 && scope.row.parentId" >
+            <el-radio v-model="radioCheck" :label="scope.row.id" ><span style="width:80px;display:inline-block;">{{scope.row[column.value]}}</span></el-radio>
            </span>
      
             <template v-else>
