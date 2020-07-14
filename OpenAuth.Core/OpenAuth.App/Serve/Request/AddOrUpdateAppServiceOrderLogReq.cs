@@ -50,11 +50,11 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 
         /// </summary>
-        public uint? ServiceOrderId { get; set; }
+        public int? ServiceOrderId { get; set; }
         /// <summary>
         /// 
         /// </summary>
-        public uint? ServiceWorkOrder { get; set; }
+        public int? ServiceWorkOrder { get; set; }
         
          //todo:添加自己的请求字段
     }

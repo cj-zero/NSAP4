@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
@@ -34,15 +36,35 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
+        /// <summary>
+        /// 获取服务单和工单的状态记录
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response<List<OrderLogListResp>>> GetOrderLog([FromQuery]GetOrderLogListReq request)
+        {
+            var result = new Response<List<OrderLogListResp>>();
+            try
+            {
+                result.Result = await _app.GetOrderLog(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
 
+            return result;
+        }
         //添加
        [HttpPost]
-        public Response Add(AddOrUpdateAppServiceOrderLogReq obj)
+        public async Task<Response> Add(AddOrUpdateAppServiceOrderLogReq obj)
         {
             var result = new Response();
             try
             {
-                _app.Add(obj);
+                await _app.AddAsync(obj);
 
             }
             catch (Exception ex)
@@ -86,12 +108,12 @@ namespace OpenAuth.WebApi.Controllers
         /// 批量删除
         /// </summary>
        [HttpPost]
-        public Response Delete([FromBody]string[] ids)
+        public async Task<Response> Delete([FromBody]string[] ids)
         {
             var result = new Response();
             try
             {
-                _app.Delete(ids);
+                await _app.DeleteAsync(ids);
 
             }
             catch (Exception ex)

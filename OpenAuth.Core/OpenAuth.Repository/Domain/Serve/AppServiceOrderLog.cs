@@ -63,11 +63,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("服务单Id")]
         [Browsable(false)]
-        public uint? ServiceOrderId { get; set; }
+        public int? ServiceOrderId { get; set; }
         /// <summary>
         /// 工单Id
         /// </summary>
         [Description("工单Id")]
-        public uint? ServiceWorkOrder { get; set; }
+        public int? ServiceWorkOrder { get; set; }
     }
 }
