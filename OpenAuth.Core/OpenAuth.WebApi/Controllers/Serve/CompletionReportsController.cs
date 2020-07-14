@@ -103,6 +103,23 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        [HttpGet]
+        public async Task<Response<CompletionReportDetailsResp>> GetOrderWorkInfoForAdd(int ServiceWorkOrderId)
+        {
+            var result = new Response<CompletionReportDetailsResp>();
+            try
+            {
+                result.Result = await _app.GetOrderWorkInfoForAdd(ServiceWorkOrderId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
         public CompletionReportsController(CompletionReportApp app) 
         {
             _app = app;

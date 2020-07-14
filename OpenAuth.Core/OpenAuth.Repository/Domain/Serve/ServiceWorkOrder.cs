@@ -192,5 +192,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("服务合同")]
         public string ContractId { get; set; }
+        /// <summary>
+        /// 技术员留言消息
+        /// </summary>
+        [Description("技术员留言消息")]
+        public virtual List<ServiceOrderMessage> ServiceOrderMessages { get; set; }
+
+
     }
 }

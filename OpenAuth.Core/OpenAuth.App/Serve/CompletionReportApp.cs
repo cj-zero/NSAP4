@@ -7,13 +7,23 @@ using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+
 
 namespace OpenAuth.App
 {
     public class CompletionReportApp : BaseApp<CompletionReport>
     {
         private RevelanceManagerApp _revelanceApp;
+        private readonly AppUserMapApp _appUserMapApp;
 
+        public CompletionReportApp(IUnitWork unitWork, IRepository<CompletionReport> repository, AppUserMapApp appUserMapApp,
+            RevelanceManagerApp app, IAuth auth) : base(unitWork, repository, auth)
+        {
+            _revelanceApp = app;
+            _appUserMapApp = appUserMapApp;
+        }
         /// <summary>
         /// 加载列表
         /// </summary>
@@ -104,12 +114,55 @@ namespace OpenAuth.App
             });
 
         }
+
+        /// <summary>
+        /// 填写完工报告单页面需要取到的服务工单信息。
+        /// </summary>
+        /// <param name="serviceOrderWorkId">工单ID</param>
+        /// <returns></returns>
+        public async Task<CompletionReportDetailsResp> GetOrderWorkInfoForAdd(int serviceWorkOrderId)
+        {
+            var result = new TableData();
+            var obj = from a in UnitWork.Find<ServiceWorkOrder>(null)
+                      join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
+                      from b in ab.DefaultIfEmpty()
+                      select new { a, b };
+            obj = obj.Where(o => o.a.Id.Equals(serviceWorkOrderId));
+            var query = await obj.Select(q => new
+            {
+                q.a.FromTheme,
+                q.a.CurrentUserId,
+                q.b.CustomerId,
+                q.b.CustomerName,
+                q.b.TerminalCustomer,
+                ServiceWorkOrderId = q.a.ServiceOrderId,
+                ServiceOrderId = q.a.Id,
+                q.b.Contacter,
+                q.b.ContactTel,
+                q.a.ManufacturerSerialNumber,
+                q.a.MaterialCode
+            }).FirstOrDefaultAsync();
+            var thisworkdetail = query.MapTo<CompletionReportDetailsResp>();
+            thisworkdetail.TheNsapUser = await _appUserMapApp.GetFirstNsapUser(thisworkdetail.CurrentUserId);
+            thisworkdetail.TechnicianName = thisworkdetail.TheNsapUser.Name;
+            thisworkdetail.Files = new List<UploadFileResp>();
+            if (thisworkdetail != null && thisworkdetail.TheNsapUser != null)
+            {
+                var msgList = await UnitWork.Find<ServiceOrderMessage>(w => w.ServiceWordOrderId.Equals(thisworkdetail.ServiceWorkOrderId) && w.FroTechnicianId.Equals(thisworkdetail.TheNsapUser.Id)).ToListAsync();
+                thisworkdetail.ServieOrderMsgs = msgList.MapTo<List<ServiceOrderMessage>>();
+                thisworkdetail.ServieOrderMsgs.ForEach(async s =>
+                {
+                    var msgpics = s.ServiceOrderMessagePictures.Select(c => c.PictureId).ToList();
+                    var picfiles = await UnitWork.Find<UploadFile>(f => msgpics.Contains(f.Id)).ToListAsync();
+                    thisworkdetail.Files.AddRange(picfiles.MapTo<List<UploadFileResp>>());
+                });
+
+            }
+
+            return thisworkdetail;
+        }
+        
             
 
-        public CompletionReportApp(IUnitWork unitWork, IRepository<CompletionReport> repository,
-            RevelanceManagerApp app, IAuth auth) : base(unitWork, repository,auth)
-        {
-            _revelanceApp = app;
-        }
     }
 }

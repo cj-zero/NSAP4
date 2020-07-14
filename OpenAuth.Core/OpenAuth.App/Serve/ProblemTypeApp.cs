@@ -17,7 +17,7 @@ namespace OpenAuth.App
         /// <summary>
         /// 加载列表
         /// </summary>
-        public TableData Load(QueryProblemTypeListReq request)
+        public TableData Load()
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -34,18 +34,21 @@ namespace OpenAuth.App
 
 
             var result = new TableData();
-            var objs = UnitWork.Find<ProblemType>(null);
-            if (!string.IsNullOrEmpty(request.key))
+            var objs =  UnitWork.Find<ProblemType>(null).Where(o=>o.ParentId.Trim().Length.Equals(0)).Select(f=> new
             {
-                objs = objs.Where(u => u.Id.Contains(request.key));
-            }
+                f.Id,
+                f.Name,
+                f.InuseFlag,
+                f.OrderIdx,
+                f.Description,
+                f.ParentId,
+                ChildTypes = UnitWork.Find<ProblemType>(null).Where(o1 => o1.ParentId.Equals(f.Id)).ToList()
+            }).ToList();
 
 
             var propertyStr = string.Join(',', properties.Select(u => u.Key));
             result.columnHeaders = properties;
-            result.data = objs.OrderBy(u => u.Id)
-                .Skip((request.page - 1) * request.limit)
-                .Take(request.limit).Select($"new ({propertyStr})");
+            result.data = objs;
             result.count = objs.Count();
             return result;
         }

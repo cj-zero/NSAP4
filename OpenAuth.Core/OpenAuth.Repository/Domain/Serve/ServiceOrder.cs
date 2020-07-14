@@ -154,16 +154,16 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public bool IsModified { get; set; }
 
-        /// <summary>
-        /// 地址
-        /// </summary>
-        [Description("地址")]
-        public string Address { get; set; }
-        /// <summary>
-        /// 地区
-        /// </summary>
-        [Description("地区")]
-        public string AddressCity { get; set; }
+        ///// <summary>
+        ///// 地址
+        ///// </summary>
+        //[Description("地址")]
+        //public string Address { get; set; }
+        ///// <summary>
+        ///// 地区
+        ///// </summary>
+        //[Description("地区")]
+        //public string AddressCity { get; set; }
         /// <summary>
         /// 服务内容
         /// </summary>

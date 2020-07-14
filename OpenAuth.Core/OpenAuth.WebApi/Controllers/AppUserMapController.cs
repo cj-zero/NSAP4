@@ -5,6 +5,7 @@ using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
+using System.Threading.Tasks;
 
 namespace OpenAuth.WebApi.Controllers
 {
@@ -106,6 +107,22 @@ namespace OpenAuth.WebApi.Controllers
         public AppUserMapController(AppUserMapApp app) 
         {
             _app = app;
+        }
+
+        [HttpGet] 
+        public async Task<Response<UserView>> GetFirstNsapUser(int appUserId)
+        {
+            var result = new Response<UserView>();
+            try
+            {
+                result.Result = await _app.GetFirstNsapUser(appUserId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
         }
     }
 }
