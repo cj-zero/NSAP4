@@ -41,7 +41,6 @@ namespace OpenAuth.Repository.Domain
           this.VisitTime= DateTime.Now;
           this.LiquidationDate= DateTime.Now;
           this.SolutionId= string.Empty;
-          this.AddressDesignator= string.Empty;
           this.CompletionReportId= string.Empty;
         }
         /// <summary>
@@ -171,11 +170,6 @@ namespace OpenAuth.Repository.Domain
         [Browsable(false)]
         public string SolutionId { get; set; }
         public virtual Solution Solution { get; set; }
-        /// <summary>
-        /// 地址标识
-        /// </summary>
-        [Description("地址标识")]
-        public string AddressDesignator { get; set; }
         /// <summary>
         /// 完工报告Id
         /// </summary>

@@ -18,6 +18,10 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string CustomerName { get; set; }
         /// <summary>
+        /// 服务内容
+        /// </summary>
+        public string Services { get; set; }
+        /// <summary>
         /// 联系人
         /// </summary>
         public string Contacter { get; set; }
@@ -26,38 +30,13 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string ContactTel { get; set; }
         /// <summary>
-        /// 主管名字
+        /// App用户Id
         /// </summary>
-        public string Supervisor { get; set; }
+        public int? AppUserId { get; set; }
         /// <summary>
-        /// 主管用户Id
+        /// App技术主管Id
         /// </summary>
-        public string SupervisorId { get; set; }
-        /// <summary>
-        /// 销售名字
-        /// </summary>
-        public string SalesMan { get; set; }
-        /// <summary>
-        /// 销售用户Id
-        /// </summary>
-        public string SalesManId { get; set; }
-        /// <summary>
-        /// 最新联系人
-        /// </summary>
-        public string NewestContacter { get; set; }
-        /// <summary>
-        /// 最新联系人电话号码
-        /// </summary>
-        public string NewestContactTel { get; set; }
-        /// <summary>
-        /// 终端客户
-        /// </summary>
-        public string TerminalCustomer { get; set; }
-
-        /// <summary>
-        /// 地址标识
-        /// </summary>
-        public string AddressDesignator { get; set; }
+        public int? ManagerId { get; set; }
         /// <summary>
         /// 接单人用户Id
         /// </summary>
@@ -67,10 +46,6 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string RecepUserName { get; set; }
         /// <summary>
-        /// 详细地址
-        /// </summary>
-        public string Address { get; set; }
-        /// <summary>
         /// 省
         /// </summary>
         public string Province { get; set; }
@@ -79,7 +54,11 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string City { get; set; }
         /// <summary>
-        /// 地区
+        /// 区
+        /// </summary>
+        public string Area { get; set; }
+        /// <summary>
+        /// 详细地址
         /// </summary>
         public string Addr { get; set; }
         /// <summary>

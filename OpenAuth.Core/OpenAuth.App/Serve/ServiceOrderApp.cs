@@ -11,6 +11,7 @@ using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 using Infrastructure.Extensions;
 using System.Reactive;
+using Org.BouncyCastle.Ocsp;
 
 namespace OpenAuth.App
 {
@@ -60,6 +61,7 @@ namespace OpenAuth.App
             obj.CreateUserId = loginContext.User.Id;
             obj.RecepUserId = loginContext.User.Id;
             obj.RecepUserName = loginContext.User.Name;
+            obj.Status = 1;
 
             var o = await UnitWork.AddAsync<ServiceOrder, int>(obj);
             var pictures = req.Pictures.MapToList<ServiceOrderPicture>();
@@ -252,6 +254,47 @@ namespace OpenAuth.App
             await UnitWork.SaveAsync();
         }
 
+        /// <summary>
+        /// 修改工单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task UpdateWorkOrder(UpdateWorkOrderReq request)
+        {
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id.Equals(request.Id), e => new ServiceWorkOrder
+            {
+                FeeType = request.FeeType,
+                SolutionId = request.SolutionId,
+                Remark =request.Remark,
+                ProblemTypeId = request.ProblemTypeId,
+                Priority = request.Priority,
+                FromTheme = request.FromTheme,
+                FromType = request.FromType
+            });
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
+        /// 修改服务单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task ModifyServiceOrder(ModifyServiceOrderReq request)
+        {
+            await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(request.Id), e => new ServiceOrder
+            {
+                NewestContacter = request.NewestContacter,
+                NewestContactTel = request.NewestContactTel,
+                Province = request.Province,
+                City = request.City,
+                Area = request.Area,
+                Addr = request.Addr,
+                AddressDesignator = request.AddressDesignator,
+                Address = request.Address,
+                TerminalCustomer = request.TerminalCustomer
+            });
+            await UnitWork.SaveAsync();
+        }
        
     }
 }

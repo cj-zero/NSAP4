@@ -41,6 +41,8 @@ namespace OpenAuth.Repository.Domain
             this.Province = string.Empty;
             this.City = string.Empty;
             this.Addr = string.Empty;
+            this.Area = string.Empty;
+            this.Address = string.Empty;
             this.AddressDesignator = string.Empty;
         }
 
@@ -155,16 +157,16 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public bool IsModified { get; set; }
 
-        ///// <summary>
-        ///// 地址
-        ///// </summary>
-        //[Description("地址")]
-        //public string Address { get; set; }
-        ///// <summary>
-        ///// 地区
-        ///// </summary>
-        //[Description("地区")]
-        //public string AddressCity { get; set; }
+        /// <summary>
+        /// 地址标识
+        /// </summary>
+        [Description("地址标识")]
+        public string AddressDesignator { get; set; }
+        /// <summary>
+        /// 地址
+        /// </summary>
+        [Description("地址")]
+        public string Address { get; set; }
         /// <summary>
         /// 服务内容
         /// </summary>
@@ -182,9 +184,14 @@ namespace OpenAuth.Repository.Domain
         [Description("市")]
         public string City { get; set; }
         /// <summary>
-        /// 地区
+        /// 区
         /// </summary>
-        [Description("地区")]
+        [Description("区")]
+        public string Area { get; set; }
+        /// <summary>
+        /// 详细地址
+        /// </summary>
+        [Description("详细地址")]
         public string Addr { get; set; }
         /// <summary>
         /// 经度
@@ -202,11 +209,6 @@ namespace OpenAuth.Repository.Domain
         [Description("呼叫来源  1-电话 2-APP ")]
         //[Browsable(false)]
         public int? FromId { get; set; }
-        /// <summary>
-        /// 地址标识
-        /// </summary>
-        [Description("地址标识")]
-        public string AddressDesignator { get; set; }
 
         /// <summary>
         /// 服务单关联的工单

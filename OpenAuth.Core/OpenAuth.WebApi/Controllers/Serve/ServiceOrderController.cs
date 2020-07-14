@@ -106,7 +106,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 待确认服务申请信息
         /// </summary>
-        /// <param name="id">服务单ID</param>
+        /// <param name="serviceOrderId">服务单ID</param>
         /// <returns></returns>
         [HttpGet]
         public async Task<Response<ServiceOrderDetailsResp>> GetUnConfirmedServiceOrderDetails(int serviceOrderId)
@@ -179,12 +179,55 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
+        [HttpPost]
         public async Task<Response> AddWorkOrder(AddServiceWorkOrderReq request) 
         {
             var result = new Response();
             try
             {
                 await _serviceOrderApp.AddWorkOrder(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        /// 更新修改工单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> UpdateWorkOrder(UpdateWorkOrderReq request)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.UpdateWorkOrder(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 修改服务单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> ModifyServiceOrder(ModifyServiceOrderReq request)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.ModifyServiceOrder(request);
             }
             catch (Exception ex)
             {
