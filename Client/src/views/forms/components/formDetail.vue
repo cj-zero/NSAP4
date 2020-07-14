@@ -127,10 +127,8 @@
       }
     },
     mounted() {
-      // console.log(this.$route.query,)
       this.postForm.frmType = this.$route.query['frmType'] !== undefined ? this.$route.query['frmType'] : 2
       if (!this.isEdit) {
-        console.log(defaultForm)
         this.postForm = Object.assign({}, defaultForm)
       } else {
         // ueditor需要准备好了调用数据，frmtype为2时，不调用ueditor

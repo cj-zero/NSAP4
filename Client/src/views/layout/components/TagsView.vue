@@ -1,19 +1,16 @@
 <template>
   <div class="tags-view-container">
     <scroll-pane class='tags-view-wrapper' ref='scrollPane'>
-      <router-link ref='tag' width="110px" class="tags-view-item" :class="isActive(tag)?'active':''" v-for="(tag, index) in Array.from(visitedViews)"
-        :to="tag" :key="`${index}_${tag.path}`" @contextmenu.prevent.native="openMenu(tag,$event)">
+      <router-link ref='tag' class="tags-view-item" :class="isActive(tag)?'active':''" v-for="tag in Array.from(visitedViews)"
+        :to="tag" :key="tag.path" @contextmenu.prevent.native="openMenu(tag,$event)">
         {{tag.title}}
         <span class='el-icon-close' @click.prevent.stop='closeSelectedTag(tag)'></span>
       </router-link>
     </scroll-pane>
     <ul class='contextmenu' v-show="visible" :style="{left:left+'px',top:top+'px'}">
-     
-       <li @click="closeSelectedTag(selectedTag)">关闭本页面</li>
+      <li @click="closeSelectedTag(selectedTag)">关闭</li>
       <li @click="closeOthersTags">关闭其他</li>
       <li @click="closeAllTags">全部关闭</li>
-      <li @click="refreshSelectedTag(selectedTag)">刷新页面</li>
-       <li @click="addViewTags_copy(selectedTag)">复制页面</li>
     </ul>
   </div>
 </template>
@@ -32,7 +29,6 @@ export default {
   },
   computed: {
     visitedViews() {
-      // console.log(this.$store.state.tagsView.visitedViews)
       return this.$store.state.tagsView.visitedViews
     }
   },
@@ -54,46 +50,21 @@ export default {
   },
   methods: {
     generateRoute() {
-      // console.log(this.$route)
+      console.log(this.$route)
       if (this.$route.name) {
         return this.$route
       }
       return false
     },
-        refreshSelectedTag(view) {
-          console.log(view)
-      this.$store.dispatch('delCachedView', view).then(() => {
-        const { fullPath } = view
-        this.$nextTick(() => {
-          this.$router.replace({
-            path: '/redirect' + fullPath
-          })
-        })
-      })
-    },
-
     isActive(route) {
       return route.path === this.$route.path
     },
     addViewTags() {
-      // console.log('add')
       const route = this.generateRoute()
       if (!route) {
         return false
       }
       this.$store.dispatch('addVisitedViews', route)
-    },
-    addViewTags_copy(page){
-console.log(page)
-            this.$router.push(
-              { path: `${page.fullPath}/${new Date().getTime()}` }
-              );
-
-      //       const route = this.generateRoute()
-      // if (!route) {
-      //   return false
-      // }
-      // this.$store.dispatch('copyVisitedViews', route)
     },
     moveToCurrentTag() {
       const tags = this.$refs.tag
@@ -132,8 +103,8 @@ console.log(page)
       this.visible = true
       this.selectedTag = tag
       const offsetLeft = this.$el.getBoundingClientRect().left // container margin left
-      this.left = e.clientX - offsetLeft -35 // 15: margin right
-      this.top = e.clientY -15
+      this.left = e.clientX - offsetLeft + 15 // 15: margin right
+      this.top = e.clientY
     },
     closeMenu() {
       this.visible = false

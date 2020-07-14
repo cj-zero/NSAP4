@@ -14,7 +14,7 @@ service.interceptors.request.use(config => {
   if (store.getters.token) {
     config.headers['X-Token'] = getToken() // 让每个请求携带自定义token 请根据实际情况自行修改
   }
-  console.log(process.env.VUE_APP_BASE_API)
+
   if (store.getters.isIdentityAuth) {
     config.headers['Authorization'] = 'Bearer ' + store.getters.oidcAccessToken
   }
@@ -58,13 +58,13 @@ service.interceptors.response.use(
     }
   },
   error => {
-    // console.log('err' + error)// for debug
-    // Message({
-    //   message: '请先启动OpenAuth.WebApi，再刷新本页面，异常详情：' + error.message,
-    //   type: 'error',
-    //   duration: 10 * 1000
-    // })
-     return Promise.reject(error)
+    console.log('err' + error)// for debug
+    Message({
+      message: '请先启动OpenAuth.WebApi，再刷新本页面，异常详情：' + error.message,
+      type: 'error',
+      duration: 10 * 1000
+    })
+    return Promise.reject(error)
   }
 )
 

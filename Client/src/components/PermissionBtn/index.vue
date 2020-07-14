@@ -1,6 +1,7 @@
 <template>
 	<div class="filter-items">
-		<el-button :icon="changeIcon(btn.icon)"  :size="size" v-for="btn of buttons" v-bind:key="btn.Id" class="filter-item" @click="$emit('btn-event',btn.domId)">{{btn.name}}</el-button>
+    <el-button  :size="size" v-for="btn of buttons" v-bind:key="btn.Id" class="filter-item" @click="$emit('btn-event',btn.domId)"><i :class="`iconfont icon-${btn.icon}`"></i>{{btn.name}}</el-button>
+		<!-- <el-button :icon="changeIcon(btn.icon)"  :size="size" v-for="btn of buttons" v-bind:key="btn.Id" class="filter-item" @click="$emit('btn-event',btn.domId)">{{btn.name}}</el-button> -->
 	</div>
 </template>
 
@@ -62,13 +63,17 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .btn-bottom {
     margin-bottom: 0;
 }
 .filter-items {
     display: inline-block;
     margin-left: 20px;
+    .iconfont{
+      margin-right: 3px;
+      font-size: 11px;
+    }
 }
 .svg-icon {
     width: 1em;

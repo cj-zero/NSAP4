@@ -4,8 +4,8 @@
       <img class="leftImg" src="~@/assets/login/left.png" alt="">
       <el-form class="login-form" autoComplete="on" :model="loginForm" :rules="loginRules" ref="loginForm"
         label-position="left">
-        <h3 class="title">NSAP-V4.0</h3>
-        <p class="tips">NSAP-V4.0 管理系统</p>
+        <h3 class="title">OpenAuth.Pro</h3>
+        <p class="tips">OpenAuth.Core企业版</p>
         <el-form-item prop="username">
           <span class="svg-container svg-container_login">
             <svg-icon icon-class="user" />
@@ -31,6 +31,9 @@
             登 录
           </el-button>
         </el-form-item>
+         <p class="tips"> 默认System登录后，你可以无法无天</p>
+        <p class="tips">admin/admin登录后，会少一点权限，资源管理/分类管理的字段会少一点</p>
+        <p class="tips">test/test登录后，权限会更少,资源管理/分类管理的字段也更少</p>
       </el-form>
     </div>
       

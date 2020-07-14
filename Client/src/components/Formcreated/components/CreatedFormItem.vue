@@ -217,7 +217,6 @@ export default {
   },
   created() {
     if (this.formData.options.remote && this.remote[this.formData.options.remoteFunc]) {
-      // console.log(this.formData.type)
       this.remote[this.formData.options.remoteFunc]((data) => {
         this.formData.options.remoteOptions = data.map(item => {
           return {
@@ -229,14 +228,10 @@ export default {
       })
     }
     if (this.formData.type === 'imgupload' && this.formData.options.isQiniu) {
-       
       this.remote[this.formData.options.tokenFunc]((data) => {
         this.formData.options.token = data
       })
     }
-  },
-  mounted(){
-    console.log(this.formData,'formData')
   },
   methods: {
   },
