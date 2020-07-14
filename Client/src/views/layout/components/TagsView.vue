@@ -34,12 +34,14 @@ export default {
       visible: false,
       top: 0,
       left: 0,
+      Shiftid: "", //记录上一次时间戳
       selectedTag: {}
     };
   },
   computed: {
     visitedViews() {
-      // console.log(this.$store.state.tagsView.visitedViews)
+      console.log(this.$store.state.tagsView.visitedViews);
+      //页面加载mounted前执行
       return this.$store.state.tagsView.visitedViews;
     }
   },
@@ -58,13 +60,27 @@ export default {
   },
   mounted() {
     this.addViewTags();
+    //页面挂载执行
   },
   methods: {
     generateRoute() {
-            console.log(this.$route)
-
+      // console.log(this.$route)
+      let times = new Date().getTime();
       if (this.$route.name) {
-        return this.$route;
+        // return this.$route;
+        let newRoute = {
+          fullPath: `${this.$route.path}?Shiftid=${times}`,
+          hash: this.$route.hash,
+          matched: this.$route.matched,
+          meta: this.$route.meta,
+          name: this.$route.name,
+          params: this.$route.params,
+          path: this.$route.path,
+          query: {
+            Shiftid: times
+          }
+        };
+        return newRoute;
       }
       return false;
     },
@@ -80,32 +96,34 @@ export default {
     },
 
     isActive(route) {
-      return route.path === this.$route.path;
+      // return route.path === this.$route.path;
+      return route.fullPath === this.$route.fullPath;
     },
     addViewTags() {
+      //获取store储存的tag，
       let route = this.generateRoute();
-       route.query.Shiftid=new Date().getTime() 
-             console.log(route)
+      //  let times = new Date().getTime()
+
+      // this.Shiftid = new Date().getTime()
 
       if (!route) {
         return false;
       }
-       
 
       this.$store.dispatch("addVisitedViews", route);
     },
-    addViewTags_copy(page) {
-      console.log(page);
-                   this.$router.push(
-  { path:page.fullPath, query: { Shiftid:new Date().getTime() }}
-                    );
-    
-                  let that = this
-      const route =  that.generateRoute();
+    async addViewTags_copy(page) {
+      const route = await this.generateRoute();
+      await this.$store.dispatch("copyVisitedViews", route);
+      //  let times = new Date().getTime()
+      await this.$router.push({
+        path: page.fullPath,
+        query: { Shiftid: route.query.Shiftid }
+      });
+
       if (!route) {
         return false;
       }
-      this.$store.dispatch("copyVisitedViews", route);
     },
     moveToCurrentTag() {
       const tags = this.$refs.tag;
