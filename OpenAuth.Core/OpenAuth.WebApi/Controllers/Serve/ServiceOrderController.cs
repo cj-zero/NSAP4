@@ -93,7 +93,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
-                result = await _serviceOrderApp.UnConfirmedServiceOrderList(req);
+                result.data = await _serviceOrderApp.UnConfirmedServiceOrderList(req);
             }
             catch (Exception ex)
             {
@@ -174,11 +174,13 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
         /// <summary>
         /// 新增一个工单
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
+        [HttpPost]
         public async Task<Response> AddWorkOrder(AddServiceWorkOrderReq request) 
         {
             var result = new Response();
@@ -193,5 +195,47 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// 呼叫服务未派单页面左侧树数据源
+        /// </summary>
+        /// <param name="req">页面查询条件</param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> UnsignedWorkOrderTree([FromQuery] QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result.data = await _serviceOrderApp.UnsignedWorkOrderTree(req);
+            }
+            catch (Exception ex)
+            {
+                result.code = 500;
+                result.msg = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 呼叫服务未派单右侧查询列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> UnsignedWorkOrderList([FromQuery] QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result.data = await _serviceOrderApp.UnsignedWorkOrderList(req);
+            }
+            catch (Exception ex)
+            {
+                result.code = 500;
+                result.msg = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
     }
 }

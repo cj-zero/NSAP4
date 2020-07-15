@@ -35,7 +35,22 @@ namespace OpenAuth.App.Request
         /// 创建日期至查询条件
         /// </summary>
         public DateTime? QryCreateTimeTo { get; set; }
-
+        /// <summary>
+        /// 接单员
+        /// </summary>
+        public string QryRecepUser { get; set; }
+        /// <summary>
+        /// 工单技术员
+        /// </summary>
+        public string QryTechName { get; set; }
+        /// <summary>
+        /// 问题类型
+        /// </summary>
+        public string QryProblemType { get; set; }
+        /// <summary>
+        /// 物料类别（多选)
+        /// </summary>
+        public List<string> QryMaterialTypes { get; set; }
 
     }
 }
