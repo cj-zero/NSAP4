@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div style="border:1px silver solid;padding:5px;margin-left:10px;">
+    <div style="border:1px silver solid;padding:5px;margin-left:20px;">
       <el-row type="flex" class="row-bg" justify="space-around">
         <el-col :span="8">
           <el-form-item label="工单ID">
@@ -407,8 +407,8 @@
       </el-collapse-item>
     </el-collapse>
     <!--  -->
-    <el-dialog :title="`第${sortForm}工单`" center :visible.sync="proplemTree" width="1000px">
-      <problemtype @node-click="NodeClick" :dataTree="dataTree"></problemtype>
+    <el-dialog :title="`第${sortForm}工单`"  center :visible.sync="proplemTree" width="1000px">
+      <problemtype @node-click="NodeClick" style="text-align:centers;" :dataTree="dataTree"></problemtype>
     </el-dialog>
     <el-dialog
       :title="`第${sortTable}个工单的解决方案`"
@@ -430,6 +430,7 @@
       </span>
     </el-dialog>
     <el-dialog
+    :append-to-body="true"
       destroy-on-close
       title="选择制造商序列号"
       @open="openDialog"
@@ -459,6 +460,7 @@
         <el-button type="primary" @click="pushForm">确 定</el-button>
       </span>
     </el-dialog>
+
   </div>
 </template>
 
@@ -575,7 +577,9 @@ export default {
     //   }
   },
   methods: {
+
     pageChange(res){
+      //
       this.listLoading = true;
           solutions.getList(res).then(response => {
             console.log(response)

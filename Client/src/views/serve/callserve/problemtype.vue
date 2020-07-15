@@ -1,5 +1,5 @@
 <template>
-<div style="height:500px;overflow-y:scroll;text-align:centers;">
+<div style="overflow-y:scroll;text-align:centers;">
   <el-tree class="treeCenter" :data="dataTree" default-expand-all :props="defaultProps" @node-click="handleNodeClick"></el-tree>
 
 </div>
