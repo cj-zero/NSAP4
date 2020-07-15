@@ -110,21 +110,21 @@
             <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
         <el-col :span="8">
           <el-form-item label="地址标识">
-            <el-input v-model="form.addressDesignator"></el-input>
+            <el-input v-model="form.name"></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="16">
-          <el-input v-model="form.name"></el-input>
+          <el-input v-model="form.addressDesignator"></el-input>
         </el-col>
       </el-row>
            <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
         <el-col :span="8">
           <el-form-item label="现地址">
-            <el-input v-model="form.addressDesignator"></el-input>
+            <el-input v-model="form.name"></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="16">
-          <el-input v-model="form.name"></el-input>
+          <el-input v-model="form.addressDesignator"></el-input>
         </el-col>
       </el-row>
 
@@ -145,7 +145,7 @@
                 <el-input></el-input>
               </el-col>
             </el-row>
-            <formPartner :partnerList="filterPartnerList"></formPartner>
+            <formPartner :partnerList="filterPartnerList" @getChildValue="ChildValue"></formPartner>
             <span slot="footer" class="dialog-footer">
               <el-button @click="dialogPartner = false">取 消</el-button>
               <el-button type="primary" @click="dialogPartner = false">确 定</el-button>
@@ -227,8 +227,18 @@ export default {
         newestContactTel: "", //最新联系人电话号码,
         terminalCustomer: "", //终端客户,
         contractId: "", //服务合同
-        serviceWorkOrders: [{}]
-      }
+        addressDesignator:'',//地址标识
+        recepUserId:'',//接单人用户ID
+        address:'',//详细地址
+        province:'',//省
+        city:'',//市
+        addr:'',//地区
+        longitude	:'',//number经度
+        latitude:'',//	number纬度
+        fromId	:'',//integer($int32)呼叫来源 1-电话 2-APP
+        pictures:[{pictureId:''}],//
+                serviceWorkOrders: []
+              }
     };
   },
   watch: {},
@@ -293,6 +303,18 @@ export default {
       this.form.customerId = item.cardCode;
       this.form.customerName = item.cardName;
       this.form.contacter = item.cntctPrsn;
+            this.form.contactTel = item.cellular
+this.form.addressDesignator=item.address
+      this.form.salesMan=item.slpName
+    },
+    ChildValue(val){
+      console.log(val)
+            this.form.customerId = val.cardCode;
+      this.form.customerName = val.cardName;
+      this.form.contacter = val.cntctPrsn;
+      this.form.contactTel = val.cellular
+      this.form.addressDesignator=val.address
+      this.form.salesMan=val.slpName
     },
     handleIconClick() {
       this.dialogPartner = true;

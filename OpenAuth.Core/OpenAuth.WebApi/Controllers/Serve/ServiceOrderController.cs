@@ -83,6 +83,26 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// app查询服务单列表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> AppLoad([FromQuery]AppQueryServiceOrderListReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.AppLoad(request);
+            }
+            catch (Exception ex)
+            {
+                result.code = 500;
+                result.msg = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
         /// 待确认服务呼叫列表
         /// </summary>
         /// <param name="req">查询条件对象</param>
@@ -106,7 +126,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 待确认服务申请信息
         /// </summary>
-        /// <param name="id">服务单ID</param>
+        /// <param name="serviceOrderId">服务单ID</param>
         /// <returns></returns>
         [HttpGet]
         public async Task<Response<ServiceOrderDetailsResp>> GetUnConfirmedServiceOrderDetails(int serviceOrderId)
@@ -187,6 +207,48 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 await _serviceOrderApp.AddWorkOrder(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        /// 更新修改工单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> UpdateWorkOrder(UpdateWorkOrderReq request)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.UpdateWorkOrder(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 修改服务单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> ModifyServiceOrder(ModifyServiceOrderReq request)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.ModifyServiceOrder(request);
             }
             catch (Exception ex)
             {

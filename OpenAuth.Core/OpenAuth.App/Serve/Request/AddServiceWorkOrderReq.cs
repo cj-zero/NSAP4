@@ -10,6 +10,10 @@ namespace OpenAuth.App.Request
     public class AddServiceWorkOrderReq
     {
         /// <summary>
+        /// 服务单Id
+        /// </summary>
+        public int ServiceOrderId { get; set; }
+        /// <summary>
         /// 优先级 4-紧急 3-高 2-中 1-低
         /// </summary>
         public int? Priority { get; set; }
