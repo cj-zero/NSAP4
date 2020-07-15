@@ -67,13 +67,14 @@ namespace OpenAuth.App
                         .Select(a => new
                         {
                             a.Id,
-                            a.Province, a.City, a.Area, a.Addr,
-                            a.CustomerId, a.CustomerName, a.ContactTel, a.Contacter,
                             a.AppUserId,
+                            a.Services,
                             a.CreateTime,
+                            a.Status,
                             ServiceWorkOrders = a.ServiceWorkOrders.Select(o => new
                             {
-                                o.Id,o.InternalSerialNumber,o.ManufacturerSerialNumber,o.Priority,o.Status,o.MaterialCode,o.MaterialDescription
+                                o.Id,o.Status,o.FromTheme,
+                                ProblemType = o.ProblemType.Description
                             }).ToList()
                         });
 
@@ -88,7 +89,6 @@ namespace OpenAuth.App
             result.count = count;
             result.data = list;
             return result;
-
         }
 
         public async Task<ServiceOrder> Add(AddServiceOrderReq req)
