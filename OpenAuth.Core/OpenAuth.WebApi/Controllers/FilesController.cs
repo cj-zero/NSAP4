@@ -95,6 +95,32 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
+
+
+        /// <summary>
+        ///  App批量上传文件接口
+        /// </summary>
+        /// <param name="files"></param>
+        /// <returns>服务器存储的文件信息</returns>
+        [HttpPost]
+        //[AllowAnonymous]
+        public async Task<Response<IList<UploadFileResp>>> AppUpload()
+        {
+            var files = Request.Form.Files;
+            var result = new Response<IList<UploadFileResp>>();
+            try
+            {
+                result.Result = await _app.Add(files);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+
+            return result;
+        }
+
         [HttpGet("{dirName}/{fileName}")]
         public IActionResult Download(string dirName, string fileName)
         {

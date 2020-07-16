@@ -305,6 +305,7 @@ namespace OpenAuth.WebApi.Controllers
         /// 客服新建服务单
         /// </summary>
         /// <returns></returns>
+        [HttpPost]
         public async Task<Response> CustomerServiceAgentCreateOrder(CustomerServiceAgentCreateOrderReq req)
         {
             var result = new Response();
