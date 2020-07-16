@@ -131,5 +131,13 @@ namespace OpenAuth.App.Response
         {
             get; set;
         }
+        /// <summary>
+        /// 故障描述
+        /// </summary>
+        public string TroubleDescription { get; set; }
+        /// <summary>
+        /// 过程描述
+        /// </summary>
+        public string ProcessDescription { get; set; }
     }
 }

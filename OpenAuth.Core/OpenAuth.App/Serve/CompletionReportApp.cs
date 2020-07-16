@@ -135,12 +135,14 @@ namespace OpenAuth.App
                 q.b.CustomerId,
                 q.b.CustomerName,
                 q.b.TerminalCustomer,
-                ServiceWorkOrderId = q.a.ServiceOrderId,
-                ServiceOrderId = q.a.Id,
+                ServiceWorkOrderId = q.a.Id,
+                ServiceOrderId = q.a.ServiceOrderId,
                 q.b.Contacter,
                 q.b.ContactTel,
                 q.a.ManufacturerSerialNumber,
-                q.a.MaterialCode
+                q.a.MaterialCode,
+                q.a.TroubleDescription,
+                q.a.ProcessDescription
             }).FirstOrDefaultAsync();
             var thisworkdetail = query.MapTo<CompletionReportDetailsResp>();
             thisworkdetail.TheNsapUser = await _appUserMapApp.GetFirstNsapUser(thisworkdetail.CurrentUserId);
@@ -148,11 +150,12 @@ namespace OpenAuth.App
             thisworkdetail.Files = new List<UploadFileResp>();
             if (thisworkdetail != null && thisworkdetail.TheNsapUser != null)
             {
-                var msgList = await UnitWork.Find<ServiceOrderMessage>(w => w.ServiceWordOrderId.Equals(thisworkdetail.ServiceWorkOrderId) && w.FroTechnicianId.Equals(thisworkdetail.TheNsapUser.Id)).ToListAsync();
+                var msgList = await UnitWork.Find<ServiceOrderMessage>(w => w.ServiceWorkOrderId.Equals(thisworkdetail.ServiceWorkOrderId) && w.FroTechnicianId.Equals(thisworkdetail.TheNsapUser.Id)).ToListAsync();
+                
                 thisworkdetail.ServieOrderMsgs = msgList.MapTo<List<ServiceOrderMessage>>();
                 thisworkdetail.ServieOrderMsgs.ForEach(async s =>
                 {
-                    var msgpics = s.ServiceOrderMessagePictures.Select(c => c.PictureId).ToList();
+                    var msgpics =UnitWork.Find<ServiceOrderMessagePicture>(m=>m.ServiceOrderMessageId.Equals(s.Id)).Select(c => c.PictureId).ToList();
                     var picfiles = await UnitWork.Find<UploadFile>(f => msgpics.Contains(f.Id)).ToListAsync();
                     thisworkdetail.Files.AddRange(picfiles.MapTo<List<UploadFileResp>>());
                 });
