@@ -77,6 +77,7 @@
       <!-- 只能查看的表单 -->
       <el-dialog width="1200px" class="dialog-mini" title="服务单详情" :visible.sync="dialogFormView">
         <zxform
+        formName="查看"
           :form="temp"
           labelposition="right"
           labelwidth="100px"

@@ -6,7 +6,7 @@
           <el-form :model="form" :ref="refValue" :disabled="!isEdit" :label-width="labelwidth">
             <div
               style="font-size:22px;text-align:center;padding-bottom:10px ; margin-bottom:10px ;border-bottom:1px solid silver;"
-            >新建呼叫服务单</div>
+            >{{formName}}呼叫服务单</div>
             <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="8">
                 <el-form-item label="客户代码">
@@ -218,7 +218,7 @@ import formAdd from "./formAdd";
 export default {
   name: "formTable",
   components: { formPartner, formAdd, zmap, Pagination },
-  props: ["modelValue", "refValue", "labelposition", "labelwidth", "isEdit"],
+  props: ["modelValue", "refValue", "labelposition", "labelwidth", "isEdit" ,"formName"],
   //  ##isEdit是否可以编辑
   data() {
     return {
@@ -305,26 +305,31 @@ export default {
       //打开前赋值
       this.filterPartnerList = this.partnerList;
     },
-    searchList(res) {
-      if (!res) {
-        this.filterPartnerList = this.partnerList;
-      } else {
-        let list = this.partnerList.filter(item => {
-          return item.cardCode.toLowerCase().indexOf(res.toLowerCase()) === 0;
-        });
-        this.filterPartnerList = list;
-      }
+    searchList() {
+      this.listQuery.CardCodeOrCardName = this.inputSearch
+      this.getPartnerList()
+      // if (!res) {
+      //   this.filterPartnerList = this.partnerList;
+      // } else {
+      //   let list = this.partnerList.filter(item => {
+      //     return item.cardCode.toLowerCase().indexOf(res.toLowerCase()) === 0;
+      //   });
+      //   this.filterPartnerList = list;
+      // }
     },
-    searSerial(res) {
-      if (!res) {
-        this.filterPartnerList = this.partnerList;
-      } else {
-        let list = this.partnerList.filter(item => {
-          console.log(item)
-          // return item.internalSerialNumber.toLowerCase().indexOf(res.toLowerCase()) === 0;
-        });
-        this.filterPartnerList = list;
-      }
+    searSerial() {
+      // SerialList
+      this.listQuery.ManufSN = this.inputSerial
+      this.getPartnerList()
+      // if (!res) {
+      //   this.filterPartnerList = this.partnerList;
+      // } else {
+      //   let list = this.partnerList.filter(item => {
+      //     console.log(item)
+      //     // return item.internalSerialNumber.toLowerCase().indexOf(res.toLowerCase()) === 0;
+      //   });
+      //   this.filterPartnerList = list;
+      // }
     },
     querySearch(queryString, cb) {
       var partnerList = this.partnerList;

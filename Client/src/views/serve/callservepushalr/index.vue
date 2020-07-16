@@ -85,6 +85,7 @@
             </el-col>
               <el-col :span="12">
         <zxform
+        formName="新建"
           :form="temp"
           labelposition="right"
           labelwidth="100px"
@@ -103,6 +104,7 @@
       <el-dialog width="1200px" class="dialog-mini" title="服务单详情" :visible.sync="dialogFormView">
         <zxform
           :form="temp"
+          formName="查看"
           labelposition="right"
           labelwidth="100px"
           :isEdit="false"
