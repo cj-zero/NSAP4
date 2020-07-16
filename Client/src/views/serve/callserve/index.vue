@@ -79,7 +79,7 @@
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
-        <zxform :form="temp" labelposition="right" labelwidth="100px" :isEdit='true' refValue="dataForm"></zxform>
+        <zxform :form="temp" formName="新建" labelposition="right" labelwidth="100px" :isEdit='true' refValue="dataForm"></zxform>
 
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
@@ -95,7 +95,7 @@
         title="服务单详情"
         :visible.sync="dialogFormView"
       >
-        <zxform :form="temp" labelposition="right" labelwidth="100px" :isEdit='false' refValue="dataForm"></zxform>
+        <zxform :form="temp" formName="查看" labelposition="right" labelwidth="100px" :isEdit='false' refValue="dataForm"></zxform>
 
         <div slot="footer">
           <el-button size="mini" @click="dialogFormView = false">取消</el-button>

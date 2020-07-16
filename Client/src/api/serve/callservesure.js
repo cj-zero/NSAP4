@@ -9,9 +9,9 @@ export function getTableList(params) {
     })
   }
 
-  export function add(params) {
+  export function SerialList(params) {
     return request({
-      url: '/Sap/SerialNumber/Get',  //加载业务伙伴
+      url: '/Sap/SerialNumber/Get',  //序列号查询
       method: 'get',
       params
     })
@@ -46,3 +46,10 @@ export function getForm(data) {
       method: 'post',
       data
     })}
+
+    export function add(data) {
+      return request({
+        url: '/certinfos/delete',
+        method: 'post',
+        data
+      })}
