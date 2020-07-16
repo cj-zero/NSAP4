@@ -20,7 +20,7 @@ namespace OpenAuth.App.Response
     /// <summary>
     /// table的返回数据
     /// </summary>
-    public class TableData
+    public class TableData<T>
     {
         /// <summary>
         /// 状态码
@@ -44,7 +44,7 @@ namespace OpenAuth.App.Response
         /// <summary>
         /// 数据内容
         /// </summary>
-        public dynamic data;
+        public T data;
 
         public TableData()
         {
@@ -52,5 +52,11 @@ namespace OpenAuth.App.Response
             msg = "加载成功";
             columnHeaders = new List<KeyDescription>();
         }
+    }
+    /// <summary>
+    /// table的返回数据
+    /// </summary>
+    public class TableData : TableData<dynamic>
+    {
     }
 }

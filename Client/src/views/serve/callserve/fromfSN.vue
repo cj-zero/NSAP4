@@ -4,6 +4,7 @@
     :data="SerialNumberList"
     v-if="SerialNumberList.length>0"
     border
+    :loading="serLoading"
     ref="singleTable"
    highlight-current-row
  @selection-change="handleSelectionChange"
@@ -35,23 +36,15 @@
     </el-table-column>
    
   </el-table>
-        <pagination
-          v-show="SerialNumberList.length>0"
-          :total="SerialNumberList.length"
-          :page.sync="listQuery.page"
-          :limit.sync="listQuery.limit"
-          @pagination="handleChange"
-        />
+    
 </div>
 
 </template>
 
 <script>
-import Pagination from "@/components/Pagination";
 
 export default {
-  props: ["SerialNumberList" ],
-    components: {  Pagination},
+  props: ["SerialNumberList" ,'serLoading'],
 
   data() {
     return {
@@ -76,15 +69,21 @@ export default {
       }
     }
   },
+  watch:{
+        SerialNumberList: function(a){
+        console.log(a)
+    }
+  },
+  
     mounted() {
     //   console.log(this.SerialNumberList)
   },
   methods:{
-     handleChange(val) {
-      this.listQuery.page = val.page;
-      this.listQuery.limit = val.limit;
-      // this.getList();
-    },
+    //  handleChange(val) {
+    //   this.listQuery.page = val.page;
+    //   this.listQuery.limit = val.limit;
+    //   // this.getList();
+    // },
    handleSelectionChange(val) {
       this.$emit("change-Form",val)
       }

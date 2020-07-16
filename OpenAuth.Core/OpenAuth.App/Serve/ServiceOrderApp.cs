@@ -14,6 +14,7 @@ using System.Reactive;
 using Org.BouncyCastle.Ocsp;
 using MySqlX.XDevAPI.Relational;
 using System.Linq.Expressions;
+using SharpDX.Direct3D11;
 
 namespace OpenAuth.App
 {
@@ -92,6 +93,11 @@ namespace OpenAuth.App
             return result;
         }
 
+        /// <summary>
+        /// APP提交服务单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
         public async Task<ServiceOrder> Add(AddServiceOrderReq req)
         {
             var loginContext = _auth.GetCurrentUser();
@@ -110,7 +116,6 @@ namespace OpenAuth.App
             var pictures = req.Pictures.MapToList<ServiceOrderPicture>();
             pictures.ForEach(p => { p.ServiceOrderId = o.Id; p.PictureType = 1; });
             await UnitWork.BatchAddAsync(pictures.ToArray());
-            var from = obj.FromId == 1 ? "电话" : "APP";
             await UnitWork.SaveAsync();
             return o;
         }
@@ -267,7 +272,9 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            await UnitWork.UpdateAsync(request.MapTo<ServiceOrder>()); 
+            var obj = request.MapTo<ServiceOrder>();
+            obj.Status = 2;
+            await UnitWork.UpdateAsync<ServiceOrder>(o => o.Id.Equals(request.Id), s => obj); 
             var pictures = request.Pictures.MapToList<ServiceOrderPicture>();
             pictures.ForEach(p => { p.ServiceOrderId = request.Id; p.PictureType = 2; });
             await UnitWork.BatchAddAsync(pictures.ToArray());
@@ -369,6 +376,20 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 客服新建服务单
+        /// </summary>
+        /// <returns></returns>
+        public async Task CustomerServiceAgentCreateOrder(CustomerServiceAgentCreateOrderReq req)
+        {
+            var obj = req.MapTo<ServiceOrder>();
+            obj.Status = 2;
+            var e = await UnitWork.AddAsync<ServiceOrder,int>(obj);
+            var pictures = req.Pictures.MapToList<ServiceOrderPicture>();
+            pictures.ForEach(p => { p.ServiceOrderId = e.Id; p.PictureType = 2; });
+            await UnitWork.BatchAddAsync(pictures.ToArray());
+            await UnitWork.SaveAsync();
+        }
+        /// <summary>
         /// 派单工单列表
         /// </summary>
         /// <param name="req"></param>
@@ -418,5 +439,47 @@ namespace OpenAuth.App
             result.count = query.Count();
             return result;
         }
+
+        /// <summary>
+        /// 技术员查看工单列表
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> GetTechnicianServiceWorkOrder(TechnicianServiceWorkOrderReq req)
+        {
+            var result = new TableData();
+            var query = UnitWork.Find<ServiceWorkOrder>(s=>s.Status == req.TechnicianId).Select(s=>new 
+            { 
+                s.Id, s.AppUserId, s.FromTheme,
+                ProblemType = s.ProblemType.Description,
+                s.CreateTime,
+                s.Status,
+                s.ServiceOrder.Latitude,
+                s.ServiceOrder.Longitude,
+                s.MaterialCode, 
+            });
+            var list = await query
+            .Skip((req.page - 1) * req.limit)
+            .Take(req.limit).ToListAsync();
+            var count = await query.CountAsync();
+            result.data = list;
+            result.data = count;
+            return result;
+        }
+
+        /// <summary>
+        /// 技术员接单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task TechnicianTakeOrder(TechnicianTakeOrderReq req)
+        {
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id.Equals(req.ServiceWorkOrderId), o => new ServiceWorkOrder
+            {
+                Status = 2,
+                CurrentUserId = req.TechnicianId
+            });
+            await UnitWork.SaveAsync();
+        }
+
     }
 }

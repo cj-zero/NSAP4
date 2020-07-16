@@ -55,6 +55,10 @@ namespace OpenAuth.Repository.Domain
         //[Browsable(false)]
         public int ServiceOrderId { get; set; }
         /// <summary>
+        /// 服务单
+        /// </summary>
+        public virtual ServiceOrder ServiceOrder { get; set; }
+        /// <summary>
         /// 优先级 4-紧急 3-高 2-中 1-低
         /// </summary>
         [Description("优先级 4-紧急 3-高 2-中 1-低")]

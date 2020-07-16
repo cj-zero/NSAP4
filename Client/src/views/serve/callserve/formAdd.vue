@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div style="border:1px silver solid;padding:5px;margin-left:20px;">
+    <div class="addClass">
       <el-row type="flex" class="row-bg" justify="space-around">
         <el-col :span="8">
           <el-form-item label="工单ID">
@@ -108,6 +108,14 @@
         <el-col :span="8">
           <el-form-item label="呼叫状态">
             <el-input v-model="form.status" disabled></el-input>
+            <el-select v-model="form.priority" clearable placeholder="请选择">
+              <el-option
+                v-for="item in options_quick"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="8">
@@ -319,7 +327,7 @@
             </el-col>
             <el-col :span="8">
               <el-form-item label="呼叫状态">
-                <el-input v-model="item.status" disabled></el-input>
+                <select name id></select>
               </el-form-item>
             </el-col>
             <el-col :span="8">
@@ -407,12 +415,19 @@
       </el-collapse-item>
     </el-collapse>
     <!--  -->
-    <el-dialog :title="`第${sortForm}工单`"  center :visible.sync="proplemTree" width="1000px">
-      <problemtype @node-click="NodeClick" style="text-align:centers;" :dataTree="dataTree"></problemtype>
+    <el-dialog
+      class="addClass1"
+      :title="`第${sortForm}工单`"
+      center
+      :visible.sync="proplemTree"
+      width="250px"
+    >
+      <problemtype @node-click="NodeClick" style :dataTree="dataTree"></problemtype>
     </el-dialog>
     <el-dialog
       :title="`第${sortTable}个工单的解决方案`"
       center
+      class="addClass1"
       loading
       :visible.sync="solutionOpen"
       width="1000px"
@@ -430,8 +445,9 @@
       </span>
     </el-dialog>
     <el-dialog
-    :append-to-body="true"
+      :append-to-body="true"
       destroy-on-close
+      class="addClass1"
       title="选择制造商序列号"
       @open="openDialog"
       width="90%"
@@ -453,27 +469,38 @@
           </template>
         </el-autocomplete>
       </div>
-      <fromfSN :SerialNumberList="filterSerialNumberList" @change-Form="changeForm"></fromfSN>
-
+      <fromfSN
+        :SerialNumberList="filterSerialNumberList"
+        :loading="serLoading"
+        @change-Form="changeForm"
+      ></fromfSN>
+      <pagination
+        v-show="SerialCount>0"
+        :total="SerialCount"
+        :page.sync="listQuery.page"
+        :limit.sync="listQuery.limit"
+        @pagination="handleChange"
+      />
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogfSN = false">取 消</el-button>
         <el-button type="primary" @click="pushForm">确 定</el-button>
       </span>
     </el-dialog>
-
   </div>
 </template>
 
 <script>
-// import { getPartner } from "@/api/callserve";
+import { getSerialNumber } from "@/api/callserve";
+import Pagination from "@/components/Pagination";
+
 import fromfSN from "./fromfSN";
 import * as problemtypes from "@/api/problemtypes";
 import * as solutions from "@/api/solutions";
 import problemtype from "./problemtype";
 import solution from "./solution";
 export default {
-  components: { fromfSN, problemtype, solution },
-  props: ["SerialNumberList"],
+  components: { fromfSN, problemtype, solution, Pagination },
+  // props: ["SerialNumberList"],
   data() {
     return {
       defaultProps: {
@@ -488,8 +515,9 @@ export default {
       datasolution: [], //解决方案集合
       solutionCount: "",
       listLoading: true,
-
       proplemTree: false,
+      serLoading: true,
+      SerialNumberList: [],
       filterSerialNumberList: [],
       formListStart: [], //选择的表格数据
       formList: [], //表单依赖的表格数据
@@ -528,15 +556,33 @@ export default {
         { value: "APP", label: "APP" },
         { value: "Web", label: "Web" }
       ],
+      options_status: [
+        { label: "已回访", value: 10 },
+        { label: "已解决", value: 9 },
+        { label: "已接收", value: 8 },
+        { label: "已挂起", value: 7 },
+        { label: "已外出", value: 6 },
+        { label: "已排配", value: 5 },
+        { label: "待处理", value: 4 },
+        { label: "已取消", value: 3 },
+        { label: "已确认", value: 2 },
+        { label: "待确认", value: 1 }
+      ],
       options_type: [
-        { value: "1", label: "提交呼叫" },
-        { value: "2", label: "在线解答（已解决）" }
+        { value: 1, label: "提交呼叫" },
+        { value: 2, label: "在线解答" }
       ], //呼叫类型
       options_quick: [
-        { value: "高", label: "高" },
-        { value: "中", label: "中" },
-        { value: "底", label: "底" }
+        { label: "紧急", value: 4 },
+        { label: "高", value: 3 },
+        { label: "中", value: 2 },
+        { label: "低", value: 1 }
       ],
+      listQuery: {
+        page: 1,
+        limit: 10
+      },
+      SerialCount: "",
       ifFormPush: false //表单是否被动态添加过
     };
   },
@@ -544,7 +590,7 @@ export default {
 
   mounted() {
     this.listLoading = true;
-    this.filterSerialNumberList = this.SerialNumberList;
+    this.getSerialNumberList();
     //获取问题类型的数据
     problemtypes
       .getList()
@@ -554,39 +600,41 @@ export default {
       .catch(error => {
         console.log(error);
       });
-
     solutions.getList().then(response => {
       this.datasolution = response.data;
       this.solutionCount = response.count;
       this.listLoading = false;
     });
   },
-  watch: {
-    // filterSerialNumberList: function(newQuestion, oldQuestion) {
-    //   // console.log(newQuestion, oldQuestion);
-    // }
-  },
-  computed: {
-    //  SerialNumberList: {
-    //     get: function(a) {
-    //       return a
-    //     },
-    //     set: function(a) {
-    //        return a
-    //     }
-    //   }
-  },
-  methods: {
 
-    pageChange(res){
-      //
+  methods: {
+    getSerialNumberList() {
       this.listLoading = true;
-          solutions.getList(res).then(response => {
-            console.log(response)
-      this.datasolution = response.data;
-      this.solutionCount = response.count;
-      this.listLoading = false;
-    });
+      this.serLoading = false;
+      getSerialNumber(this.listQuery)
+        .then(res => {
+          this.SerialNumberList = res.data;
+          this.filterSerialNumberList = this.SerialNumberList;
+          this.SerialCount = res.count;
+          this.serLoading = false;
+          this.listLoading = false;
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    handleChange(val) {
+      this.listQuery.page = val.page;
+      this.listQuery.limit = val.limit;
+      this.getSerialNumberList();
+    },
+    pageChange(res) {
+      this.listLoading = true;
+      solutions.getList(res).then(response => {
+        this.datasolution = response.data;
+        this.solutionCount = response.count;
+        this.listLoading = false;
+      });
     },
     solutionget(res) {
       this.datasolution = res;
@@ -785,6 +833,25 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.addClass1 {
+  ::v-deep .el-dialog__header {
+    .el-dialog__title {
+      color: white;
+    }
+    background: lightslategrey;
+  }
+  ::v-deep .el-dialog__body {
+    padding: 10px 20px;
+  }
+  //   ::v-deep .el-dialog__footer{
+  //   background: lightslategrey;
+  // }
+}
+.addClass {
+  border: 1px silver solid;
+  padding: 5px;
+  margin-left: 20px;
+}
 .showSort {
   float: right;
   height: 30px;
