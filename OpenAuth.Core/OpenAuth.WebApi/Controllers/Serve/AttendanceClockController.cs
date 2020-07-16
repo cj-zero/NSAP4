@@ -34,7 +34,11 @@ namespace OpenAuth.WebApi.Controllers
         {
             return _app.Load(request);
         }
-        //获取详情
+        /// <summary>
+        /// 获取详情
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpGet]
         public async Task<Response<AttendanceClockDetailsResp>> Get(string id)
         {
@@ -42,6 +46,27 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 result.Result = await _app.GetDetails(id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+        /// <summary>
+        /// 打卡
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response> Clock(AddOrUpdateAttendanceClockReq req)
+        {
+            var result = new Response();
+            try
+            {
+                 await _app.Add(req);
             }
             catch (Exception ex)
             {

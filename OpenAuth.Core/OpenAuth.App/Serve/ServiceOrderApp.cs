@@ -76,16 +76,35 @@ namespace OpenAuth.App
                             ServiceWorkOrders = a.ServiceWorkOrders.Select(o => new
                             {
                                 o.Id,o.Status,o.FromTheme,
-                                ProblemType = o.ProblemType.Description
+                                ProblemType = o.ProblemType.Description,
+                                o.ManufacturerSerialNumber,
+                                o.MaterialCode,
+                                o.CurrentUserId,
+                                MaterialType = o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-"))
                             }).ToList()
                         });
 
 
             var count = await query.CountAsync();
-            var list = await query
+            var list = (await query
                 .OrderByDescending(a => a.Id)
                 .Skip((request.page - 1) * request.limit).Take(request.limit)
-                .ToListAsync();
+                .ToListAsync())
+                .Select(a => new
+                {
+                    a.Id,
+                    a.AppUserId,
+                    a.Services,
+                    a.CreateTime,
+                    a.Status,
+                    ServiceWorkOrders = a.ServiceWorkOrders.GroupBy(o=>o.MaterialType).Select(s=>new
+                    {
+                        MaterialType = s.Key,
+                        Count = s.Count(),
+                        Orders = s.ToList()
+                    }
+                    ).ToList()
+                });
 
             var result = new TableData();
             result.count = count;
@@ -113,6 +132,7 @@ namespace OpenAuth.App
             obj.Status = 1;
 
             var o = await UnitWork.AddAsync<ServiceOrder, int>(obj);
+            await UnitWork.SaveAsync();
             var pictures = req.Pictures.MapToList<ServiceOrderPicture>();
             pictures.ForEach(p => { p.ServiceOrderId = o.Id; p.PictureType = 1; });
             await UnitWork.BatchAddAsync(pictures.ToArray());
@@ -279,6 +299,8 @@ namespace OpenAuth.App
             pictures.ForEach(p => { p.ServiceOrderId = request.Id; p.PictureType = 2; });
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
+
+            await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"客服:{loginContext.User.Name}创建工单", ActionType = "创建工单", ServiceOrderId = obj.Id });
         }
         /// <summary>
         /// 删除一个工单
@@ -381,13 +403,21 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task CustomerServiceAgentCreateOrder(CustomerServiceAgentCreateOrderReq req)
         {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
             var obj = req.MapTo<ServiceOrder>();
             obj.Status = 2;
             var e = await UnitWork.AddAsync<ServiceOrder,int>(obj);
+            await UnitWork.SaveAsync();
             var pictures = req.Pictures.MapToList<ServiceOrderPicture>();
             pictures.ForEach(p => { p.ServiceOrderId = e.Id; p.PictureType = 2; });
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
+
+            await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"客服:{loginContext.User.Name}创建服务单", ActionType = "创建工单", ServiceOrderId = e.Id });
         }
         /// <summary>
         /// 派单工单列表
@@ -396,6 +426,11 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<TableData> UnsignedWorkOrderList(QueryServiceOrderListReq req)
         {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
             var result = new TableData();
             var query = from a in UnitWork.Find<ServiceWorkOrder>(null)
                         join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
@@ -453,6 +488,11 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<TableData> GetTechnicianServiceWorkOrder(TechnicianServiceWorkOrderReq req)
         {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
             var result = new TableData();
             var query = UnitWork.Find<ServiceWorkOrder>(s=>s.Status == req.TechnicianId).Select(s=>new 
             { 
@@ -480,12 +520,19 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task TechnicianTakeOrder(TechnicianTakeOrderReq req)
         {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id.Equals(req.ServiceWorkOrderId), o => new ServiceWorkOrder
             {
                 Status = 2,
                 CurrentUserId = req.TechnicianId
             });
             await UnitWork.SaveAsync();
+
+            await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{req.TechnicianId}接单工单：{req.ServiceWorkOrderId}", ActionType = "技术员接单", ServiceOrderId = req.ServiceWorkOrderId });
         }
 
     }

@@ -75,13 +75,19 @@ namespace OpenAuth.App.Request
         //[Browsable(false)]
         public int? FromId { get; set; }
 
-        /// <summary>
-        /// 服务单关联的工单
-        /// </summary>
+        ///// <summary>
+        ///// 服务单关联的工单
+        ///// </summary>
         //public virtual List<AddServiceWorkOrderReq> ServiceWorkOrders { get; set; }
 
+        /// <summary>
+        /// 服务单关联的图片
+        /// </summary>
         public virtual List<FileBind> Pictures { get; set; }
 
+        /// <summary>
+        /// 序列号物料编码
+        /// </summary>
         public virtual List<ServiceOrderSerial> ServiceOrderSNs { get; set; }
     }
 }
