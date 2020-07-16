@@ -86,6 +86,10 @@ namespace OpenAuth.App.Request
         /// 服务合同
         /// </summary>
         public string ContractId { get; set; }
+        /// <summary>
+        /// 解决方案Id
+        /// </summary>
+        public string SolutionId { get; set; }
         public string TroubleDescription { get; set; }
         /// <summary>
         /// 过程描述

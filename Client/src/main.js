@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import layer from 'vue-layer'
-
+import VueAMap from 'vue-amap';
+// import { lazyAMapApiLoaderInstance } from 'vue-amap';
 import 'normalize.css/normalize.css'// A modern alternative to CSS resets
 
 import ElementUI from 'element-ui'
@@ -31,7 +32,19 @@ import FrmLeaveReqDetail from '@/views/forms/userDefine/frmLeaveReq/detail'
 
 Vue.use(ElementUI, { locale })
 Vue.use(VueContextMenu)
-
+Vue.use(VueAMap);
+VueAMap.initAMapApiLoader({
+  key: '24cc78e9598a08b90c8a256a8ec30bee',
+  plugin: ['AMap.Autocomplete', 'AMap.PlaceSearch', 'AMap.Scale', 'AMap.OverView', 'AMap.ToolBar', 'AMap.MapType', 'AMap.PolyEditor', 'AMap.CircleEditor'],
+  // 默认高德 sdk 版本为 1.4.4
+  v: '1.4.4'
+});
+// lazyAMapApiLoaderInstance.load().then(() => {
+//   // your code ...
+//   this.map = new AMap.Map('amapContainer', {
+//     center: new AMap.LngLat(121.59996, 31.197646)
+//   });
+// });
 Vue.config.productionTip = false
 Vue.prototype.$layer = layer(Vue, {
   msgtime: 3

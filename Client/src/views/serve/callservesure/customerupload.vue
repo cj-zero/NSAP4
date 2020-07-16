@@ -1,6 +1,6 @@
 <template>
-  <el-form label-width="100px" disabled :model="form" class="demo-form-inline" >
-      <div style="font-size:26px;fint-weight:900;text-align:center;margin:10px 0;">客户上传信息</div>
+  <el-form label-width="100px" disabled :model="form"  class="demo-form-inline" >
+      <div style="font-size:22px;text-align:center;padding-bottom:10px ; margin-bottom:10px ;border-bottom:1px solid silver;">服务申请信息</div>
     <el-row type="flex" class="row-bg" justify="space-around">
       <el-col :span="8">
         <el-form-item label="客户代码">

@@ -1,6 +1,6 @@
 <template>
-<div style="height:500px;overflow-y:scroll;text-align:centers;">
-  <el-tree :data="dataTree" default-expand-all :props="defaultProps" @node-click="handleNodeClick"></el-tree>
+<div style="overflow-y:scroll;text-align:centers;">
+  <el-tree class="treeCenter" :data="dataTree" default-expand-all :props="defaultProps" @node-click="handleNodeClick"></el-tree>
 
 </div>
 </template>
@@ -30,5 +30,16 @@ export default {
 };
 </script>
 
-<style>
-</style>
+<style lang="scss" scoped>
+ .treeCenter {
+   ::v-deep .el-tree-node__content{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 26px;
+    cursor: pointer;
+}
+ }
+</style>>
+
+

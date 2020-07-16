@@ -1,9 +1,12 @@
 <template>
-  <div class="form">
+<div>
+  <div class="form" style="border:1px solid silver;;">
     <el-row :gutter="20">
       <el-col :span="isEdit?24:18">
         <el-form :model="form" :ref="refValue" :disabled="!isEdit" :label-width="labelwidth">
-          <div style="padding:10px 0;"></div>
+          <div
+            style="font-size:22px;text-align:center;padding-bottom:10px ; margin-bottom:10px ;border-bottom:1px solid silver;"
+          >新建呼叫服务单</div>
           <el-row type="flex" class="row-bg" justify="space-around">
             <el-col :span="8">
               <el-form-item label="客户代码">
@@ -107,30 +110,48 @@
               </el-form-item>
             </el-col>
           </el-row>
-            <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
-        <el-col :span="8">
-          <el-form-item label="地址标识">
-            <el-input v-model="form.name"></el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="16">
-          <el-input v-model="form.addressDesignator"></el-input>
-        </el-col>
-      </el-row>
-           <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
-        <el-col :span="8">
-          <el-form-item label="现地址">
-            <el-input v-model="form.name"></el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="16">
-          <el-input v-model="form.addressDesignator"></el-input>
-        </el-col>
-      </el-row>
+          <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
+            <el-col :span="8">
+              <el-form-item label="地址标识">
+                <el-input v-model="form.name"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="16">
+              <el-input v-model="form.addressDesignator"></el-input>
+            </el-col>
+          </el-row>
+          <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
+            <el-col :span="8">
+              <el-form-item label="现地址">
+                <el-input v-model="form.name"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="16">
+              <el-input v-model="form.addressDesignator" >
+ <el-button slot="append" icon="el-icon-position"  @click="openMap"></el-button>
+              </el-input>
+
+            </el-col>
+          </el-row>
 
           <!-- 选择制造商序列号 -->
           <formAdd :SerialNumberList="SerialNumberList"></formAdd>
-          <el-dialog title="选择业务伙伴" width="90%" @open="openDialog" :visible.sync="dialogPartner">
+            <el-drawer
+              title="我是标题"
+              size="70%"
+              :with-header="false"
+              :visible.sync="drawerMap"
+              direction="ttb"
+              >
+              <zmap></zmap>
+            </el-drawer>
+          <el-dialog
+            title="选择业务伙伴"
+            append-to-body
+            width="90%"
+            @open="openDialog"
+            :visible.sync="dialogPartner"
+          >
             <el-row style="margin:10px 0;">
               <el-col :span="2">
                 <el-button type="text">客户代码:</el-button>
@@ -175,20 +196,24 @@
       </el-col>
     </el-row>
   </div>
+  
+</div>
 </template>
 
 <script>
 import { getPartner, getSerialNumber } from "@/api/callserve";
+import zmap from "@/components/amap";
 import formPartner from "./formPartner";
 import formAdd from "./formAdd";
 export default {
   name: "formTable",
-  components: { formPartner, formAdd },
+  components: { formPartner, formAdd, zmap },
   props: ["modelValue", "refValue", "labelposition", "labelwidth", "isEdit"],
   //  ##isEdit是否可以编辑
   data() {
     return {
       partnerList: [],
+      drawerMap: false, //地图控件
       filterPartnerList: [],
       inputSearch: "",
       SerialNumberList: [], //序列号列表
@@ -227,21 +252,25 @@ export default {
         newestContactTel: "", //最新联系人电话号码,
         terminalCustomer: "", //终端客户,
         contractId: "", //服务合同
-        addressDesignator:'',//地址标识
-        recepUserId:'',//接单人用户ID
-        address:'',//详细地址
-        province:'',//省
-        city:'',//市
-        addr:'',//地区
-        longitude	:'',//number经度
-        latitude:'',//	number纬度
-        fromId	:'',//integer($int32)呼叫来源 1-电话 2-APP
-        pictures:[{pictureId:''}],//
-                serviceWorkOrders: []
-              }
+        addressDesignator: "", //地址标识
+        recepUserId: "", //接单人用户ID
+        address: "", //详细地址
+        province: "", //省
+        city: "", //市
+        addr: "", //地区
+        longitude: "", //number经度
+        latitude: "", //	number纬度
+        fromId: "", //integer($int32)呼叫来源 1-电话 2-APP
+        pictures: [{ pictureId: "" }], //
+        serviceWorkOrders: []
+      }
     };
   },
-  watch: {},
+  watch: {
+    drawerMap:function(a){
+ console.log(a)
+    }
+  },
 
   mounted() {
     this.getPartnerList();
@@ -249,6 +278,14 @@ export default {
     this.filterPartnerList = this.partnerList;
   },
   methods: {
+    handleClose() {
+      //  ##地图关闭之前执行的操作
+      console.log(22)
+      //  this.drawerMap=false
+    },
+    openMap(){
+      this.drawerMap=true
+    },
     openDialog() {
       //打开前赋值
       this.filterPartnerList = this.partnerList;
@@ -303,18 +340,18 @@ export default {
       this.form.customerId = item.cardCode;
       this.form.customerName = item.cardName;
       this.form.contacter = item.cntctPrsn;
-            this.form.contactTel = item.cellular
-this.form.addressDesignator=item.address
-      this.form.salesMan=item.slpName
+      this.form.contactTel = item.cellular;
+      this.form.addressDesignator = item.address;
+      this.form.salesMan = item.slpName;
     },
-    ChildValue(val){
-      console.log(val)
-            this.form.customerId = val.cardCode;
+    ChildValue(val) {
+      console.log(val);
+      this.form.customerId = val.cardCode;
       this.form.customerName = val.cardName;
       this.form.contacter = val.cntctPrsn;
-      this.form.contactTel = val.cellular
-      this.form.addressDesignator=val.address
-      this.form.salesMan=val.slpName
+      this.form.contactTel = val.cellular;
+      this.form.addressDesignator = val.address;
+      this.form.salesMan = val.slpName;
     },
     handleIconClick() {
       this.dialogPartner = true;

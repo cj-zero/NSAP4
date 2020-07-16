@@ -74,7 +74,7 @@
       <!--   v-el-drag-dialog
       width="1000px"  新建呼叫服务单-->
       <el-dialog
-        fullscreen
+        width="90%"
         class="dialog-mini"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
@@ -82,7 +82,6 @@
            <el-row :gutter="20" type="flex" class="row-bg" justify="space-around">
             <el-col :span="12" >
       <customerupload style="position:sticky;top:0;">
-
       </customerupload>
             </el-col>
               <el-col :span="12">
