@@ -23,7 +23,16 @@
         <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
     </sticky>
-    <div class="app-container">
+    <div class="app-container flex-item">
+      <el-row class="fh">
+         <!-- <el-col :span="10" class="fh ls-border">
+          <el-card shadow="never" class="card-body-none fh" style="overflow-y: auto">
+            <div slot="header" class="clearfix">
+              <el-button type="text" style="padding: 0 11px" @click="getAllMenus">所有菜单>></el-button>
+            </div>
+						<tree-table highlight-current-row :data="modulesTree" :columns="columns" @row-click="treeClick" border></tree-table>
+          </el-card>
+        </el-col> -->
       <div class="bg-white">
         <zxsearch></zxsearch>
         <el-table
@@ -33,16 +42,15 @@
           v-loading="listLoading"
           border
           fit
+            tooltip-effect="dark"
+    @selection-change="handleSelectionChange"
           style="width: 100%;"
           highlight-current-row
-    @current-change="handleSelectionChange"
           @row-click="rowClick"
         >
-          <el-table-column fixed align="center" label="服务ID" width="100">
-            <template slot-scope="scope">
-              <el-link type="primary" @click="openTree">{{scope.row.serveid}}</el-link>
-            </template>
-          </el-table-column>
+            <el-table-column
+      type="selection"
+      width="55">
 
           <el-table-column
             show-overflow-tooltip
@@ -71,6 +79,7 @@
           @pagination="handleCurrentChange"
         />
       </div>
+       </el-row>
       <!--   v-el-drag-dialog
       width="1000px"  新建呼叫服务单-->
       <el-dialog
@@ -79,21 +88,19 @@
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
-           <el-row :gutter="20" type="flex" class="row-bg" justify="space-around">
-            <el-col :span="12" >
- 
-            </el-col>
-              <el-col :span="12">
-        <zxform
-          :form="temp"
-          formName="新建"
-          labelposition="right"
-          labelwidth="100px"
-          :isEdit="true"
-          refValue="dataForm"
-        ></zxform>
-</el-col>
-           </el-row>
+        <el-row :gutter="20" type="flex" class="row-bg" justify="space-around">
+          <el-col :span="12"></el-col>
+          <el-col :span="12">
+            <zxform
+              :form="temp"
+              formName="新建"
+              labelposition="right"
+              labelwidth="100px"
+              :isEdit="true"
+              refValue="dataForm"
+            ></zxform>
+          </el-col>
+        </el-row>
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
           <el-button size="mini" v-if="dialogStatus=='create'" type="primary" @click="createData">确认</el-button>
@@ -103,7 +110,7 @@
       <!-- 只能查看的表单 -->
       <el-dialog width="1200px" class="dialog-mini" title="服务单详情" :visible.sync="dialogFormView">
         <zxform
-        formName="查看"
+          formName="查看"
           :form="temp"
           labelposition="right"
           labelwidth="100px"
@@ -140,6 +147,7 @@
 
 <script>
 import * as solutions from "@/api/solutions";
+ import * as callservepushm from "@/api/serve/callservepushm";
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
@@ -194,7 +202,7 @@ export default {
       headLabel: {
         // serveid: "ID",
         priority: "优先级",
-        chaungjianriqi:'创建时间',
+        chaungjianriqi: "创建时间",
         calltype: "呼叫类型",
         callstatus: "呼叫状态",
         kehidaima: "客户代码",
@@ -288,9 +296,12 @@ export default {
     }
   },
   created() {
-    this.getList();
+    this.getLeftList();
+    this.getRightList()
   },
   mounted() {
+     this.list = callserve;
+      this.total = count;
     //   console.log(callserve)
   },
   methods: {
@@ -310,7 +321,7 @@ export default {
     },
     handleSelectionChange(val) {
       this.multipleSelection = val;
-      console.log(val)
+      console.log(val);
     },
     onBtnClicked: function(domId) {
       switch (domId) {
@@ -347,21 +358,31 @@ export default {
           break;
       }
     },
-    
-    getList() {
+
+    getLeftList() {
       this.listLoading = true;
       //此处接入模拟数据 mock
-    //   let newList = callserve.filter(item=>{
+      //   let newList = callserve.filter(item=>{
 
-    //   })
-       this.list = callserve;
-      this.total = count;
+      //   })
+     
       this.listLoading = false;
-      //   solutions.getList(this.listQuery).then(response => {
-      //     this.list = response.data;
-      //     this.total = response.count;
-      //     this.listLoading = false;
-      //   });
+        callservepushm.getLeftList(this.listQuery).then(response => {
+          console.log(response)
+          // this.list = response.data;
+          // this.total = response.count;
+          this.listLoading = false;
+        });
+    },
+        getRightList() {
+      this.listLoading = true;
+
+        callservepushm.getRightList(this.listQuery).then(response => {
+          console.log(response)
+          // this.list = response.data;
+          // this.total = response.count;
+          this.listLoading = false;
+        });
     },
     open() {
       this.$confirm("确认已完成回访?", "提示", {

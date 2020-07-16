@@ -1,23 +1,24 @@
 
 import request from '@/utils/request'
 
-export function getTableList(params) {
+export function getList(params) {
     return request({
-      url: '/serve/ServiceOrder/UnConfirmedServiceOrderList',  //服务单查询
+      url: '/serve/AttendanceClock/Load',  //加载考勤列表
       method: 'get',
       params
     })
   }
 
-  export function SerialList(params) {
+  export function getRightList(params) {
     return request({
-      url: '/Sap/SerialNumber/Get',  //序列号查询
+      url: '/serve/ServiceOrder/UnsignedWorkOrderList',  //呼叫服务未派单页面右侧树数据源
       method: 'get',
       params
     })
   }
 
 export function getForm(data) {
+  console.log(data)
     return request({
       url: `/serve/ServiceOrder/GetUnConfirmedServiceOrderDetails?serviceOrderId=${data}`,
       method: 'get'
