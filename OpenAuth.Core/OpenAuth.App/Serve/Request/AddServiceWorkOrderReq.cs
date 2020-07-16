@@ -90,5 +90,10 @@ namespace OpenAuth.App.Request
         /// 解决方案Id
         /// </summary>
         public string SolutionId { get; set; }
+        public string TroubleDescription { get; set; }
+        /// <summary>
+        /// 过程描述
+        /// </summary>
+        public string ProcessDescription { get; set; }
     }
 }

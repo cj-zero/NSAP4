@@ -45,7 +45,7 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("工单Id")]
         //[Browsable(false)]
-        public int? ServiceWordOrderId { get; set; }
+        public int? ServiceWorkOrderId { get; set; }
         /// <summary>
         /// 工单对应技术员名称
         /// </summary>
