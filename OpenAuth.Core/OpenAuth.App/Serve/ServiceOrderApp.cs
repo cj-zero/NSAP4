@@ -420,15 +420,22 @@ namespace OpenAuth.App
                 q.a.FromType,
                 q.a.Status,
                 q.b.CustomerId,
+                q.b.TerminalCustomer,
                 q.b.CustomerName,
                 q.a.FromTheme,
                 q.a.CreateTime,
                 q.b.RecepUserName,
+                TechName="",
                 q.a.ManufacturerSerialNumber,
                 q.a.MaterialCode,
                 q.a.MaterialDescription,
+                q.b.Contacter,
+                q.b.ContactTel,
+                q.b.Supervisor,
+                q.b.SalesMan,
                 ServiceWorkOrderId = q.a.Id,
                 ProblemTypeName = q.c.Name,
+                q.a.CurrentUserId,
             });
 
 
