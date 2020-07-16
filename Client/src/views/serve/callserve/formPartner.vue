@@ -33,13 +33,7 @@
     <el-table-column prop="address2" label="收货地址" min-width="180"></el-table-column>
     <el-table-column prop="u_FPLB" align="center" width="120px" label="发票类别"></el-table-column>
   </el-table>
-        <pagination
-          v-show="partnerList.length>0"
-          :total="partnerList.length"
-          :page.sync="listQuery.page"
-          :limit.sync="listQuery.limit"
-          @pagination="handleChange"
-        />
+
        <el-dialog title="最近呼叫ID" width="90%"  @open="openDialog" :visible.sync="dialogCallId">
 <callId ></callId>
       <!-- <callId :toCallList="CallList"></callId> -->
@@ -53,11 +47,10 @@
 </template>
 
 <script>
-import Pagination from "@/components/Pagination";
 import callId from "./callId";
 export default {
-  props: ["partnerList" ],
-    components: {  Pagination ,callId},
+  props: ["partnerList" ,'count' ],
+    components: { callId},
 
   data() {
     return {
@@ -87,8 +80,12 @@ export default {
     }
   },
     mounted() {
-      console.log(this.partnerList)
-    // this.toCallList = this.CallList
+      // console.log(this.partnerList)
+  },
+    watch: {
+    partnerList:function(a){
+         console.log(a);
+    }
   },
   methods:{
           openDialog() {   //打开前赋值给近期服务单
@@ -98,13 +95,8 @@ export default {
     // checkOne(value){
     //   console.log(value)
     // },
-     handleChange(val) {
-      this.listQuery.page = val.page;
-      this.listQuery.limit = val.limit;
-      // this.getList();
-    },
+
     getPartner(val){
-      console.log(val)
       this.$emit('getChildValue',val)
     },
    handleCurrentChange(val) {

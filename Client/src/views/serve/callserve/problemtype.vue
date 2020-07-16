@@ -1,5 +1,5 @@
 <template>
-<div style="overflow-y:scroll;text-align:centers;">
+<div style="overflow-y:scroll;text-align:centers;height:500px;">
   <el-tree class="treeCenter" :data="dataTree" default-expand-all :props="defaultProps" @node-click="handleNodeClick"></el-tree>
 
 </div>
@@ -35,7 +35,7 @@ export default {
    ::v-deep .el-tree-node__content{
     display: flex;
     align-items: center;
-    justify-content: center;
+    // justify-content: center;
     height: 26px;
     cursor: pointer;
 }
