@@ -395,9 +395,8 @@ namespace OpenAuth.App
             var resultsql = query.OrderBy(r => r.a.CreateTime).Select(q => new
             {
                 ServiceOrderId=q.b.Id,
-                ServiceWorkOrderId=q.a.Id, 
                 q.a.Priority,
-                ProblemTypeName=q.c.Name,
+                q.a.FromType,
                 q.a.Status,
                 q.b.CustomerId,
                 q.b.CustomerName,
@@ -406,7 +405,9 @@ namespace OpenAuth.App
                 q.b.RecepUserName,
                 q.a.ManufacturerSerialNumber,
                 q.a.MaterialCode,
-                q.a.MaterialDescription
+                q.a.MaterialDescription,
+                ServiceWorkOrderId = q.a.Id,
+                ProblemTypeName = q.c.Name,
             });
 
 
