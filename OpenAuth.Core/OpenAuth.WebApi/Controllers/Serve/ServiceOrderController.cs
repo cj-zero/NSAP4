@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
@@ -24,13 +25,14 @@ namespace OpenAuth.WebApi.Controllers
         private readonly ServiceOrderApp _serviceOrderApp;
         private AppServiceOrderLogApp _appServiceOrderLogApp;
 
+        static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
         public ServiceOrderController(ServiceOrderApp serviceOrderApp, AppServiceOrderLogApp appServiceOrderLogApp)
         {
             _serviceOrderApp = serviceOrderApp;
             _appServiceOrderLogApp = appServiceOrderLogApp;
         }
         /// <summary>
-        /// 新增服务单
+        /// App提交服务单
         /// </summary>
         /// <param name="addServiceOrderReq"></param>
         /// <returns></returns>
@@ -299,5 +301,80 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 客服新建服务单
+        /// </summary>
+        /// <returns></returns>
+        public async Task<Response> CustomerServiceAgentCreateOrder(CustomerServiceAgentCreateOrderReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.CustomerServiceAgentCreateOrder(req);
+            }
+            catch (Exception ex) 
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 技术员查看工单列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetPendingServiceWorkOrder([FromQuery]TechnicianServiceWorkOrderReq req)
+        {
+
+            var result = new TableData();
+            try
+            {
+                result.data = await _serviceOrderApp.GetTechnicianServiceWorkOrder(req);
+            }
+            catch (Exception ex)
+            {
+                result.code = 500;
+                result.msg = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 技术员接单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> TechnicianTakeOrder(TechnicianTakeOrderReq req)
+        {
+            var result = new Response();
+
+            try
+            {
+                //用信号量代替锁
+                await semaphoreSlim.WaitAsync();
+                try
+                {
+                    await _serviceOrderApp.TechnicianTakeOrder(req);
+                }
+                finally
+                {
+                    semaphoreSlim.Release();
+                }
+                await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+                {
+                    Title = "移转至技术员",
+                    Details = "以为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
+                    ServiceWorkOrder = req.ServiceWorkOrderId
+                });
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }
