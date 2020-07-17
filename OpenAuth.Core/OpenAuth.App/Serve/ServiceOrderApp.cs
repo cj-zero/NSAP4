@@ -389,14 +389,21 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.a.ProblemTypeId.Equals(req.QryProblemType))
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime <= req.QryCreateTimeTo);
             var workorderlist = await query.OrderBy(r => r.a.CreateTime).Select(q => new
-            {
+            {  
                 ServiceOrderId=q.b.Id,
                 MaterialType=q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))
-            }).ToListAsync();
-            result.data = workorderlist;
+            }).Distinct().ToListAsync();
+
+            var grouplistsql = from c in workorderlist
+                               group c by c.ServiceOrderId into g
+                               let MTypes = g.Select(o => o.MaterialType.ToString()).ToArray()
+                               select new { ServiceOrderId = g.Key, MaterialTypes = MTypes };
+            var grouplist = grouplistsql.ToList();
+
+            result.data = grouplist;
             return result;
         }
-
+        
         /// <summary>
         /// 客服新建服务单
         /// </summary>
