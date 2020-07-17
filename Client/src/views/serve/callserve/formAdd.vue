@@ -452,7 +452,6 @@ export default {
       this.solutionCount = response.count;
       this.listLoading = false;
     });
-    this.serviceOrderIdn = this.serviceOrderId
   },
     watch:{
       formList:{
@@ -545,18 +544,18 @@ export default {
 
     pushForm() {
       this.dialogfSN = false;
-      let serviceOrder = localStorage.getItem('serviceOrderId')
+      // let serviceOrder = localStorage.getItem('serviceOrderId')
      if (!this.ifFormPush) {
         this.formList[0].manufacturerSerialNumber = this.formListStart[0].manufSN;
         this.formList[0].internalSerialNumber = this.formListStart[0].internalSN;
         this.formList[0].materialCode = this.formListStart[0].itemCode;
-         this.formList[0].serviceOrderId = serviceOrder
+        //  this.formList[0].serviceOrderId = serviceOrder
         this.formList[0].materialDescription = this.formListStart[0].itemName;
         const newList = this.formListStart.splice(1, this.formListStart.length);
         for (let i = 0; i < newList.length; i++) {
           this.formList.push({
             manufacturerSerialNumber: newList[i].manufSN,
-            serviceOrderId:serviceOrder,
+            // serviceOrderId:serviceOrder,
             internalSerialNumber: newList[i].internalSN,
             materialCode: newList[i].itemCode,
             materialDescription: newList[i].itemName
@@ -570,7 +569,7 @@ export default {
           this.formList.push({
             manufacturerSerialNumber: this.formListStart[i].manufSN,
             internalSerialNumber: this.formListStart[i].internalSN,
-            serviceOrderId:serviceOrder,
+            // serviceOrderId:serviceOrder,
             materialCode: this.formListStart[i].itemCode,
             materialDescription: this.formListStart[i].itemName
           });

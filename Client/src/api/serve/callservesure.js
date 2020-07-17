@@ -54,6 +54,14 @@ export function getForm(data) {
       data
     })
   }
+  
+  export function forServe(data) {    
+    return request({ ///api/Sap/BusinessPartner/GetCardInfoForServe
+      url: '/Sap/BusinessPartner/GetCardInfoForServe',
+      method: 'get',
+      data
+    })
+  }
   export function update(data) {
     return request({
       url: '/certinfos/delete',

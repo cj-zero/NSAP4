@@ -51,7 +51,7 @@
             <el-table-column type="selection" width="55"></el-table-column>
             <el-table-column
               show-overflow-tooltip
-              v-for="(fruit,index)in formTheadOptions"
+              v-for="(fruit,index) in formTheadOptions"
               align="center"
               :key="`ind${index}`"
               :sortable="fruit=='chaungjianriqi'?true:false"

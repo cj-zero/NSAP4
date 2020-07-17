@@ -44,7 +44,7 @@
                 <el-input v-model="form.contractId" disabled></el-input>
                 </el-form-item>-->
                 <el-form-item label="接单员">
-                  <el-input v-model="form.contractId" disabled></el-input>
+                  <el-input v-model="form.recepUserName" disabled></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -92,7 +92,7 @@
                     <el-option
                       v-for="item in callSourse"
                       :key="item.value"
-                      :label="item.value"
+                      :label="item.label"
                       :value="item.value"
                     ></el-option>
                   </el-select>
@@ -237,7 +237,6 @@
 
 <script>
 import { getPartner } from "@/api/callserve";
-import {mapState} from 'vuex'
 import * as callservesure from "@/api/serve/callservesure";
 import Pagination from "@/components/Pagination";
 import zmap from "@/components/amap";
@@ -282,13 +281,9 @@ export default {
         { people: "实习生小李", word: "123", img: "" }
       ],
       callSourse: [
-        { value: "电话" },
-        { value: "钉钉" },
-        { value: "QQ" },
-        { value: "微信" },
-        { value: "邮件" },
-        { value: "App" },
-        { value: "Web" }
+        { label: "电话" ,value:1},
+        { label: "钉钉" ,value:2},
+   
       ],
       serviceOrderId: "",
       form: {
@@ -358,14 +353,15 @@ export default {
   },
   mounted() {
     this.getPartnerList();
+    this.getPartnerInfo()
     this.setForm(this.customer)
   },
-  compunted:{...mapState(['name'])},
   methods: {
     setForm(val){
       Object.assign(this.form,val) 
+      this.form.recepUserName= this.$store.state.user.name
+
       // this.form.
-      console.log(this.name)
   //  this.form.customerId = val.customerId;
   //       this.form.customerName = val.customerName;
   //       this.form.contacter = val.contacter;
@@ -374,11 +370,9 @@ export default {
   //       this.form.salesMan = val.salesMan;
   //       this.form.city = val.city;
   //       this.form.id = val.id;
-        localStorage.setItem("serviceOrderId", val.id);
-        // this.form.addr = val.addr;
+        // localStorage.setItem("serviceOrderId", val.id);
     },
     postServe() {
-      this.form.recepUserName="System"
       this.form.province="深圳"
       callservesure
         .CreateWorkOrder(this.form)
@@ -395,6 +389,9 @@ export default {
             type: "error"
           });
         });
+    },
+    getPartnerInfo(){
+      callservesure.forServe()
     },
     changeForm(val) {
       this.form.serviceWorkOrders = val;

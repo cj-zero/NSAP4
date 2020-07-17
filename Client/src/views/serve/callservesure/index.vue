@@ -363,6 +363,7 @@ export default {
   },
   methods: {
     openCustoner() {
+      this.loadingBtn = false;
       if (this.formValue && this.formValue.customerId) {
         this.customer = this.formValue;
       } else {
@@ -540,9 +541,9 @@ export default {
     updateData() {
       // 更新提交
       this.loadingBtn = true;
-      setTimeout(function(){
+      setTimeout(function() {
         this.loadingBtn = false;
-      },5000)
+      }, 5000);
       this.sure = true;
       // this.dialogFormVisible =false
       // this.$refs["dataForm"].validate(valid => {
