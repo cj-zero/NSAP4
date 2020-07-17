@@ -1,0 +1,261 @@
+<template>
+  <div>
+    <!-- <sticky :className="'sub-navbar'">
+      <div class="filter-container">
+        <el-input
+          @keyup.enter.native="handleFilter"
+          size="mini"
+          style="width: 200px;"
+          class="filter-item"
+          :placeholder="'名称'"
+          v-model="listQuery.key"
+        ></el-input>
+        <el-button
+          class="filter-item"
+          size="mini"
+          style="margin:0 15px;"
+          v-waves
+          icon="el-icon-search"
+          @click="handleFilter"
+        >搜索</el-button>
+        <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
+      </div>
+    </sticky> -->
+    <div class="app-container">
+      <div class="bg-white">
+        <el-form ref="listQuery" :model="listQuery" label-width="80px">
+          <div style="padding:10px 0;"></div>
+          <el-row :gutter="10">
+            <el-col :span="4">
+              <el-form-item label="服务ID" size="medium">
+                <el-select v-model="listQuery.QryServiceOrderId" placeholder="请选择">
+                  <el-option label="服务一" value="shanghai"></el-option>
+                  <el-option label="服务二" value="beijing"></el-option>
+                </el-select>
+              </el-form-item>
+            </el-col>
+
+            <el-col :span="4">
+              <el-form-item label="呼叫状态" size="medium">
+                <el-select v-model="listQuery.QryState" placeholder="请选择呼叫状态">
+                  <el-option label="全部" value></el-option>
+
+                  <el-option label="待确认" value="1"></el-option>
+                  <el-option label="已确认" value="2"></el-option>
+                  <el-option label="已取消" value="3"></el-option>
+                </el-select>
+              </el-form-item>
+            </el-col>
+
+            <el-col :span="4">
+              <el-form-item label="客户" size="medium">
+                <el-input v-model="listQuery.QryCustomer"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="4">
+              <el-form-item label="序列号" size="medium">
+                <el-input v-model="listQuery.QryManufSN"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="创建日期" size="medium">
+                <el-col :span="11">
+                  <el-date-picker
+                    type="date"
+                    placeholder="选择开始日期"
+                    v-model="listQuery.QryCreateTimeFrom"
+                    style="width: 100%;"
+                  ></el-date-picker>
+                </el-col>
+                <el-col class="line" :span="2">至</el-col>
+                <el-col :span="11">
+                  <el-date-picker
+                    type="date"
+                    placeholder="选择结束时间"
+                    v-model="listQuery.QryCreateTimeTo"
+                    style="width: 100%;"
+                  ></el-date-picker>
+                </el-col>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
+        <el-table
+          ref="mainTable"
+          :data="list"
+          v-loading="listLoading"
+          border
+          fit
+          style="width: 100%;"
+          highlight-current-row
+          @current-change="handleSelectionChange"
+          @row-click="rowClick"
+        >
+          <!-- <el-table-column     v-for="(fruit,index) in formTheadOptions"  :key="`ind${index}`">
+              <el-radio v-model="fruit.id" ></el-radio>
+          </el-table-column>-->
+
+          <el-table-column
+            show-overflow-tooltip
+            v-for="(fruit,index) in formTheadOptions"
+            align="center"
+            :key="`ind${index}`"
+            :sortable="fruit=='chaungjianriqi'?true:false"
+            style="background-color:silver;"
+            :label="fruit.label"
+          >
+            <template slot-scope="scope">
+              <span
+                v-if="fruit.name === 'status'"
+                :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
+              >{{stateValue[scope.row[fruit.name]-1]}}</span>
+              <span v-if="fruit.name === 'subject'">{{scope.row[fruit.name]}}</span>
+              <span
+                v-if="!(fruit.name ==='status'||fruit.name ==='subject'||fruit.name ==='id')"
+              >{{scope.row[fruit.name]}}</span>
+            </template>
+          </el-table-column>
+        </el-table>
+        <pagination
+          v-show="total>0"
+          :total="total"
+          :page.sync="listQuery.page"
+          :limit.sync="listQuery.limit"
+          @pagination="handleCurrentChange"
+        />
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import * as callservecheck from "@/api/serve/callservecheck";
+import waves from "@/directive/waves"; // 水波纹指令
+// import Sticky from "@/components/Sticky";
+// import permissionBtn from "@/components/PermissionBtn";
+import Pagination from "@/components/Pagination";
+import elDragDialog from "@/directive/el-dragDialog";
+export default {
+  name: "callservecheck",
+  components: {
+    Pagination
+  },
+  directives: {
+    waves,
+    elDragDialog
+  },
+  data() {
+    return {
+      multipleSelection: [], // 列表checkbox选中的值
+      formTheadOptions: [
+        { name: "Id", label: "Id" },
+        { name: "Name", label: "姓名" },
+         { name: "Org", label: "职位" },
+        { name: "Org", label: "部门" },
+        { name: "ClockTime", label: "打卡时间" },
+        { name: "Location", label: "地点" },
+        { name: "SpecificLocation", label: "详细地址" },
+        { name: "VisitTo", label: "拜访对象" },
+        { name: "Remark", label: "备注" },
+        { name: "AttendanceClockPictures", label: "图片" },
+      ],
+      tableKey: 0,
+      formValue: {},
+      list: null,
+      total: 0,
+      listLoading: true,
+      showDescription: false,
+      listQuery: {
+        // 查询条件
+        page: 1,
+        limit: 20,
+        key: undefined
+      },
+      temp: {
+        id: "", // Id
+        sltCode: "", // SltCode
+        subject: "", // Subject
+        cause: "", // Cause
+        symptom: "", // Symptom
+        descriptio: "", // Descriptio
+        status: "", // Status
+        extendInfo: "" // 其他信息,防止最后加逗号，可以删除
+      },
+      checkd: "",
+      dialogFormVisible: false,
+      dialogTable: false,
+      dialogTree: false,
+      dialogStatus: "",
+      pvData: [],
+      rules: {
+        appId: [
+          { required: true, message: "必须选择一个应用", trigger: "change" }
+        ],
+        name: [{ required: true, message: "名称不能为空", trigger: "blur" }]
+      },
+      downloadLoading: false
+    };
+  },
+
+  created() {
+    this.getList();
+  },
+
+  methods: {
+
+
+    changeTable(result) {
+      console.log(result);
+    },
+    rowClick(row) {
+      this.$refs.mainTable.clearSelection();
+      this.$refs.mainTable.toggleRowSelection(row);
+    },
+    handleSelectionChange(val) {
+      this.multipleSelection = val;
+    },
+  
+    getList() {
+      this.listLoading = true;
+
+      callservecheck.getList(this.listQuery).then(response => {
+          console.log(response)
+        // this.total = response.data.count;
+        // this.list = response.data.data;
+        this.listLoading = false;
+      });
+    },
+
+    handleFilter() {
+      this.listQuery.page = 1;
+      this.getList();
+    },
+    handleSizeChange(val) {
+      this.listQuery.limit = val;
+      this.getList();
+    },
+    handleCurrentChange(val) {
+      this.listQuery.page = val.page;
+      this.listQuery.limit = val.limit;
+      this.getList();
+    },
+
+
+  }
+
+}
+</script>
+<style>
+    .dialog-mini .el-select {
+    width: 100%;
+    }
+    .greenWord {
+    color: green;
+    }
+    .orangeWord {
+    color: orange;
+    }
+    .redWord {
+    color: orangered;
+    }
+</style>

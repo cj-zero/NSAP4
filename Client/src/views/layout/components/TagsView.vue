@@ -40,7 +40,7 @@ export default {
   },
   computed: {
     visitedViews() {
-      console.log(this.$store.state.tagsView.visitedViews);
+      // console.log(this.$store.state.tagsView.visitedViews);
       //页面加载mounted前执行
       return this.$store.state.tagsView.visitedViews;
     }

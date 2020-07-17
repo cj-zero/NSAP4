@@ -117,12 +117,9 @@ export default {
       }
     };
   },
-  watch: {
-    form: function(val) {
-      console.log(val);
-    }
-  },
+
   mounted() {
+    
     // console.log(1,this.formVal)
   }
 };
