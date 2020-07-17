@@ -64,8 +64,10 @@
       }
       return {
         loginForm: {
-          username: 'System',
-          password: '123456'
+          // username: 'System',
+          // password: '123456'
+           username: '',
+          password: ''
         },
         loginRules: {
           username: [{

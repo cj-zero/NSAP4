@@ -162,8 +162,15 @@
         </el-row>
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
-          <el-button size="mini" v-if="dialogStatus=='create'" type="primary" @click="createData">确认</el-button>
-          <el-button size="mini" v-else type="primary" @click="updateData">确认</el-button>
+          <el-button
+            size="mini"
+            v-if="dialogStatus=='create'"
+            type="primary"
+            :loading="loadingBtn"
+            @click="createData"
+          >确认</el-button>
+          <el-button size="mini" v-else type="primary" :loading="loadingBtn" @click="updateData">确认</el-button>
+          <!-- <el-button size="mini"  >加载中</el-button> -->
         </div>
       </el-dialog>
       <!-- 只能查看的表单 -->
@@ -243,6 +250,7 @@ export default {
       formValue: {},
       list: null,
       total: 0,
+      loadingBtn: false,
       listLoading: true,
       showDescription: false,
       dialogFormView: false,
@@ -334,19 +342,18 @@ export default {
       }
     },
     formValue: {
-      deep:true,
-      handler(){
-    if(this.formValue&&this.formValue.customerId){
-        this.customer = this.formValue
-    }else{
-         this.$message({
-          message: '没有发现客户代码，请手动选择',
-          type: 'warning'
-        });
-    }
+      deep: true,
+      handler() {
+        if (this.formValue && this.formValue.customerId) {
+          this.customer = this.formValue;
+        } else {
+          this.$message({
+            message: "没有发现客户代码，请手动选择",
+            type: "warning"
+          });
+        }
       }
-
-    },
+    }
   },
   created() {
     this.getList();
@@ -423,7 +430,6 @@ export default {
 
     getList() {
       this.listLoading = true;
-
       callservesure.getTableList(this.listQuery).then(response => {
         this.total = response.data.count;
         this.list = response.data.data;
@@ -528,10 +534,15 @@ export default {
       });
     },
     closeDia() {
+      this.loadingBtn = false;
       this.dialogFormVisible = false;
     },
     updateData() {
       // 更新提交
+      this.loadingBtn = true;
+      setTimeout(function(){
+        this.loadingBtn = false;
+      },5000)
       this.sure = true;
       // this.dialogFormVisible =false
       // this.$refs["dataForm"].validate(valid => {

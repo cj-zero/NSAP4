@@ -365,7 +365,7 @@ export default {
           priority: 1, //优先级 4-紧急 3-高 2-中 1-低
           feeType: 1, //服务类型 1-免费 2-收费
           submitDate: "", //工单提交时间
-          recepUserId: null, //接单人用户Id
+          recepUserId: "", //接单人用户Id
           remark: "", //备注
           status: 1, //呼叫状态 1-待确认 2-已确认 3-已取消 4-待处理 5-已排配 6-已外出 7-已挂起 8-已接收 9-已解决 10-已回访
           currentUserId: "", //App当前流程处理用户Id
