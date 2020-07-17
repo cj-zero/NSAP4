@@ -3,13 +3,19 @@
     <div class="form" style="border:1px solid silver;;">
       <el-row :gutter="20">
         <el-col :span="isEdit?24:18">
-          <el-form :model="form" :ref="refValue" :disabled="!isEdit" :label-width="labelwidth">
+          <el-form
+            :model="form"
+            :rules="rules"
+            :ref="refValue"
+            :disabled="!isEdit"
+            :label-width="labelwidth"
+          >
             <div
               style="font-size:22px;text-align:center;padding-bottom:10px ; margin-bottom:10px ;border-bottom:1px solid silver;"
             >{{formName}}呼叫服务单</div>
             <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="8">
-                <el-form-item label="客户代码">
+                <el-form-item label="客户代码" prop="customerId">
                   <el-autocomplete
                     popper-class="my-autocomplete"
                     v-model="form.customerId"
@@ -27,7 +33,7 @@
               </el-col>
               <el-col :span="8">
                 <el-form-item label="服务ID">
-                  <el-select v-model="form.region" disabled placeholder="请选择">
+                  <el-select v-model="form.id" disabled placeholder="请选择">
                     <el-option label="服务一" value="shanghai"></el-option>
                     <el-option label="服务二" value="beijing"></el-option>
                   </el-select>
@@ -44,7 +50,7 @@
             </el-row>
             <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="8">
-                <el-form-item label="客户名称">
+                <el-form-item label="客户名称" prop="customerName">
                   <el-input v-model="form.customerName" disabled></el-input>
                 </el-form-item>
               </el-col>
@@ -81,8 +87,8 @@
             </el-row>
             <el-row :gutter="20">
               <el-col :span="8">
-                <el-form-item label="呼叫来源">
-                  <el-select v-model="form.newestContactTel" placeholder="请选择">
+                <el-form-item label="呼叫来源" prop="fromId">
+                  <el-select v-model="form.fromId" placeholder="请选择">
                     <el-option
                       v-for="item in callSourse"
                       :key="item.value"
@@ -94,18 +100,14 @@
               </el-col>
               <el-col :span="8">
                 <el-form-item label="创建日期">
-                  <el-date-picker
-                    v-model="form.newestContactTel"
-                    type="datetime"
-                    placeholder="选择日期时间"
-                  ></el-date-picker>
+                  <el-date-picker v-model="form.createTime" type="date" placeholder="选择日期时间"></el-date-picker>
                 </el-form-item>
               </el-col>
               <el-col :span="8">
-                <el-form-item label prop="resource">
-                  <el-radio-group v-model="form.name">
-                    <el-radio label="售后审核"></el-radio>
-                    <el-radio label="销售审核"></el-radio>
+                <el-form-item label>
+                  <el-radio-group v-model="form.name" disabled>
+                    <el-radio>售后主管:{{form.supervisor}}</el-radio>
+                    <el-radio>售后审核:{{form.salesMan}}</el-radio>
                   </el-radio-group>
                 </el-form-item>
               </el-col>
@@ -113,28 +115,53 @@
             <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
               <el-col :span="8">
                 <el-form-item label="地址标识">
-                  <el-input v-model="form.name"></el-input>
+                  <el-input v-model="form.addressDesignator"></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="16">
-                <el-input v-model="form.addressDesignator"></el-input>
+                <el-input v-model="form.address"></el-input>
               </el-col>
             </el-row>
             <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
               <el-col :span="8">
                 <el-form-item label="现地址">
-                  <el-input v-model="form.name"></el-input>
+                  <el-input v-model="form.city"></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="16">
-                <el-input v-model="form.addressDesignator">
+                <el-input v-model="form.addr">
                   <el-button slot="append" icon="el-icon-position" @click="openMap"></el-button>
                 </el-input>
               </el-col>
             </el-row>
-
+            <el-row
+              :gutter="10"
+              type="flex"
+              style="margin:0 0 10px 0 ;"
+              class="row-bg"
+              justify="space-around"
+            >
+              <el-col :span="20">
+                <!-- <el-input v-model="form.addr">
+                  <el-button slot="append" icon="el-icon-position" @click="openMap"></el-button>
+                </el-input>-->
+              </el-col>
+              <el-col :span="4" style="line-height:40px;">
+                <el-button
+                  type="primary"
+                  v-if="isEditForm"
+                  icon="el-icon-share"
+                  @click="postService"
+                >确定</el-button>
+              </el-col>
+            </el-row>
             <!-- 选择制造商序列号 -->
-            <formAdd ></formAdd>
+            <formAdd
+              :isEdit="isEdit"
+              :isEditForm="isEditForm"
+              @change-form="changeForm"
+              :serviceOrderId="serviceOrderId"
+            ></formAdd>
             <!-- <formAdd :SerialNumberList="SerialNumberList"></formAdd> -->
 
             <el-drawer
@@ -210,6 +237,7 @@
 
 <script>
 import { getPartner } from "@/api/callserve";
+import * as callservesure from "@/api/serve/callservesure";
 import Pagination from "@/components/Pagination";
 
 import zmap from "@/components/amap";
@@ -218,17 +246,28 @@ import formAdd from "./formAdd";
 export default {
   name: "formTable",
   components: { formPartner, formAdd, zmap, Pagination },
-  props: ["modelValue", "refValue", "labelposition", "labelwidth", "isEdit" ,"formName"],
-  //  ##isEdit是否可以编辑
+  props: [
+    "modelValue",
+    "refValue",
+    "labelposition",
+    "labelwidth",
+    "isEdit",
+    "formName",
+    "isEditForm",
+    "customer",
+    "sure"
+  ],
+  //  ##isEdit是否可以编辑  ##customer获取服务端的信息
   data() {
     return {
       partnerList: [],
       drawerMap: false, //地图控件
       filterPartnerList: [],
       inputSearch: "",
-      inputSerial:'',
+      inputSerial: "",
       // SerialNumberList: [], //序列号列表
       state: "",
+
       parentCount: "",
       dialogPartner: false,
       activeName: 1,
@@ -251,6 +290,7 @@ export default {
         { value: "App" },
         { value: "Web" }
       ],
+      serviceOrderId: "",
       form: {
         customerId: "", //客户代码,
         customerName: "", //客户名称,
@@ -267,8 +307,11 @@ export default {
         addressDesignator: "", //地址标识
         recepUserId: "", //接单人用户ID
         address: "", //详细地址
+        createTime: "",
+        id: "", //服务单id
         province: "", //省
         city: "", //市
+        area: "",
         addr: "", //地区
         longitude: "", //number经度
         latitude: "", //	number纬度
@@ -276,18 +319,99 @@ export default {
         pictures: [{ pictureId: "" }], //
         serviceWorkOrders: []
       },
+      rules: {
+        customerId: [
+          { required: true, message: "请输入客户代码", trigger: "blur" }
+        ],
+        customerName: [
+          { required: true, message: "请输入客户名称", trigger: "change" }
+        ],
+        newestContactTel: [
+          { required: true, message: "请输入呼叫来源", trigger: "change" }
+        ]
+      },
       listQuery: {
         page: 1,
         limit: 10
       }
     };
   },
+  watch: {
+    isEditForm: {
+      handler(val) {
+        console.log(val);
+      }
+    },
+    customer: {
+      handler(val) {
+     this.setForm(val)
+      }
+    },
+    sure:{
+      handler(val){
+        if(val==true){
+          this.postServe()
+        }
+      }
+    }
+  },
   mounted() {
     this.getPartnerList();
-    // this.getSerialNumberList();
-    // this.filterPartnerList = this.partnerList;
+    this.setForm(this.customer)
   },
   methods: {
+    setForm(val){
+   this.form.customerId = val.customerId;
+        this.form.customerName = val.customerName;
+        this.form.contacter = val.contacter;
+        this.form.createTime = val.createTime;
+        this.form.supervisor = val.supervisor;
+        this.form.salesMan = val.salesMan;
+        this.form.city = val.city;
+        this.form.id = val.id;
+        localStorage.setItem("serviceOrderId", val.id);
+        this.form.addr = val.addr;
+    },
+    postServe() {
+      callservesure
+        .CreateWorkOrder(this.form)
+        .then(() => {
+          this.$message({
+            message: "创建服务单成功",
+            type: "success"
+          });
+          this.$emit('close-Dia',"y")
+        })
+        .catch(res => {
+          this.$message({
+            message: `${res}`,
+            type: "error"
+          });
+        });
+    },
+    changeForm(val) {
+      this.form.serviceWorkOrders = val;
+      console.log(this.form);
+    },
+    postService() {
+      callservesure
+        .updateService(this.form)
+        .then(() => {
+          this.$message({
+            message: "修改服务单成功",
+            type: "success"
+          });
+        })
+        .catch(res => {
+          this.$message({
+            message: `${res}`,
+            type: "error"
+          });
+        });
+    },
+    usecustomerId(val) {
+      console.log(val);
+    },
     handleChange(val) {
       this.listQuery.page = val.page;
       this.listQuery.limit = val.limit;
@@ -306,8 +430,8 @@ export default {
       this.filterPartnerList = this.partnerList;
     },
     searchList() {
-      this.listQuery.CardCodeOrCardName = this.inputSearch
-      this.getPartnerList()
+      this.listQuery.CardCodeOrCardName = this.inputSearch;
+      this.getPartnerList();
       // if (!res) {
       //   this.filterPartnerList = this.partnerList;
       // } else {
@@ -319,8 +443,8 @@ export default {
     },
     searSerial() {
       // SerialList
-      this.listQuery.ManufSN = this.inputSerial
-      this.getPartnerList()
+      this.listQuery.ManufSN = this.inputSerial;
+      this.getPartnerList();
       // if (!res) {
       //   this.filterPartnerList = this.partnerList;
       // } else {
@@ -348,7 +472,6 @@ export default {
         );
       };
     },
-
     getPartnerList() {
       getPartner(this.listQuery)
         .then(res => {
@@ -390,7 +513,7 @@ export default {
       this.dialogStatus = "update";
       this.dialogFormVisible = true;
       this.$nextTick(() => {
-        this.$refs["dataForm"].clearValidate();
+        // this.$refs["dataForm"].clearValidate();
       });
     }
   },
@@ -400,7 +523,7 @@ export default {
     this.dialogStatus = "create";
     this.dialogFormVisible = true;
     this.$nextTick(() => {
-      this.$refs["dataForm"].clearValidate();
+      // this.$refs["dataForm"].clearValidate();
     });
   }
 };
@@ -408,32 +531,26 @@ export default {
 
 <style lang="scss" scoped>
 .form {
-  // position: relative;
-  // .formDiv{
-  //   position: absolute;
-  //   right:-200px;
-  //   top:0;
-  // }
   .lastWord {
     position: sticky;
     top: 0;
     // width: 200px;
   }
 }
-.addClass1{
-  ::v-deep .el-dialog__header{
-    .el-dialog__title{
-    color:white ;
+.addClass1 {
+  ::v-deep .el-dialog__header {
+    .el-dialog__title {
+      color: white;
     }
-      .el-dialog__close{
-     color:white ;
-  }
+    .el-dialog__close {
+      color: white;
+    }
     background: lightslategrey;
   }
-  ::v-deep .el-dialog__body{
-padding:10px 20px;
+  ::v-deep .el-dialog__body {
+    padding: 10px 20px;
   }
- 
+
   //   ::v-deep .el-dialog__footer{
   //   background: lightslategrey;
   // }

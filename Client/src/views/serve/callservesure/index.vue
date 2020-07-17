@@ -22,7 +22,7 @@
         <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
     </sticky>
-    <div class="app-container ">
+    <div class="app-container">
       <div class="bg-white">
         <el-form ref="listQuery" :model="listQuery" label-width="80px">
           <div style="padding:10px 0;"></div>
@@ -137,6 +137,8 @@
         width="90%"
         class="dialog-mini"
         @open="openCustoner"
+        @close="closeCustoner"
+        destroy-on-close
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
@@ -152,6 +154,9 @@
               labelwidth="100px"
               :isEdit="true"
               refValue="dataForm"
+              :sure="sure"
+              :customer="customer"
+              @close-Dia="closeDia"
             ></zxform>
           </el-col>
         </el-row>
@@ -220,6 +225,7 @@ export default {
     return {
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
+      sure: false,
       formTheadOptions: [
         { name: "id", label: "服务单ID" },
         { name: "customerId", label: "客户代码" },
@@ -273,6 +279,7 @@ export default {
         status: "", // Status
         extendInfo: "" // 其他信息,防止最后加逗号，可以删除
       },
+      customer: {},
       checkd: "",
       dialogFormVisible: false,
       dialogTable: false,
@@ -328,10 +335,9 @@ export default {
     },
     formValue: {
       deep:true,
-      handler(val){
-        console.log(val.customerId)
+      handler(){
     if(this.formValue&&this.formValue.customerId){
-      // this.form.customerId
+        this.customer = this.formValue
     }else{
          this.$message({
           message: '没有发现客户代码，请手动选择',
@@ -339,9 +345,8 @@ export default {
         });
     }
       }
- 
-  },
 
+    },
   },
   created() {
     this.getList();
@@ -351,8 +356,17 @@ export default {
   },
   methods: {
     openCustoner() {
-      //  this.formValu = this.formValue
-      // this.dialogTree = true;  树形图
+      if (this.formValue && this.formValue.customerId) {
+        this.customer = this.formValue;
+      } else {
+        this.$message({
+          message: "没有发现客户代码，请手动选择",
+          type: "warning"
+        });
+      }
+    },
+    closeCustoner() {
+      this.getList();
     },
     openTree() {
       this.dialogFormView = true;
@@ -382,6 +396,7 @@ export default {
           this.dialogTable = true;
           break;
         case "btnEdit":
+          // console.log(this.multipleSelection);
           if (!this.multipleSelection.id) {
             this.$message({
               message: "请点击需要编辑的数据",
@@ -512,29 +527,34 @@ export default {
         });
       });
     },
+    closeDia() {
+      this.dialogFormVisible = false;
+    },
     updateData() {
       // 更新提交
-      this.$refs["dataForm"].validate(valid => {
-        if (valid) {
-          const tempData = Object.assign({}, this.temp);
-          callservesure.update(tempData).then(() => {
-            for (const v of this.list) {
-              if (v.id === this.temp.id) {
-                const index = this.list.indexOf(v);
-                this.list.splice(index, 1, this.temp);
-                break;
-              }
-            }
-            this.dialogFormVisible = false;
-            this.$notify({
-              title: "成功",
-              message: "更新成功",
-              type: "success",
-              duration: 2000
-            });
-          });
-        }
-      });
+      this.sure = true;
+      // this.dialogFormVisible =false
+      // this.$refs["dataForm"].validate(valid => {
+      //   if (valid) {
+      //     const tempData = Object.assign({}, this.temp);
+      //     callservesure.update(tempData).then(() => {
+      //       for (const v of this.list) {
+      //         if (v.id === this.temp.id) {
+      //           const index = this.list.indexOf(v);
+      //           this.list.splice(index, 1, this.temp);
+      //           break;
+      //         }
+      //       }
+      //       this.dialogFormVisible = false;
+      //       this.$notify({
+      //         title: "成功",
+      //         message: "更新成功",
+      //         type: "success",
+      //         duration: 2000
+      //       });
+      //     });
+      //   }
+      // });
     },
     handleDelete(rows) {
       // 多行删除
@@ -568,3 +588,5 @@ export default {
   color: orangered;
 }
 </style>
+
+

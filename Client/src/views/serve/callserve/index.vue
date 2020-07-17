@@ -27,42 +27,6 @@
       <div class="bg-white">
         <zxsearch></zxsearch>
         <serveTable @handleSelection="handleSelec" @openList="openTree"></serveTable>
-        <!-- <el-table
-          ref="mainTable"
-          :key="key"
-          :data="list"
-          v-loading="listLoading"
-          border
-          fit
-          highlight-current-row
-          style="width: 100%;"
-          @row-click="rowClick"
-          @selection-change="handleSelectionChange">
-          <el-table-column type="selection" fixed align="center" width="55"></el-table-column>
-          <el-table-column fixed align="center" label="服务ID" width="100">
-            <template slot-scope="scope">
-              <el-link type="primary" @click="openTree">{{scope.row.serveid}}</el-link>
-            </template>
-          </el-table-column>
-
-          <el-table-column
-            show-overflow-tooltip
-            v-for="fruit in defaultFormThead"
-            align="center"
-            :key="fruit"
-            style="background-color:silver;"
-            :label="headLabel[fruit]"
-          >
-            <template slot-scope="scope">
-              <span
-                v-if="fruit === 'status'"
-                :class="[scope.row[fruit]===1?'greenWord':(scope.row[fruit]===2?'orangeWord':'redWord')]"
-              >{{stateValue[scope.row[fruit]-1]}}</span>
-              <span v-if="fruit === 'subject'">{{scope.row[fruit]}}</span>
-              <span v-if="!(fruit ==='status'||fruit ==='subject')">{{scope.row[fruit]}}</span>
-            </template>
-          </el-table-column>
-        </el-table> -->
         <pagination
           v-show="total>0"
           :total="total"
@@ -91,15 +55,28 @@
          <el-dialog
         width="1200px"
         class="dialog-mini"
-        
         title="服务单详情"
         :visible.sync="dialogFormView"
       >
-        <zxform :form="temp" formName="查看" labelposition="right" labelwidth="100px" :isEdit='false' refValue="dataForm"></zxform>
+        <zxform :form="temp" formName="查看" labelposition="right" labelwidth="100px"  :isEdit='true' refValue="dataForm"></zxform>
 
         <div slot="footer">
           <el-button size="mini" @click="dialogFormView = false">取消</el-button>
           <el-button size="mini"  type="primary" @click="dialogFormView = false">确认</el-button>
+        </div>
+      </el-dialog>
+      <!-- 编辑服务单 -->
+               <el-dialog
+        width="1200px"
+        class="dialog-mini"
+        title="服务单编辑"
+        :visible.sync="FormEdit"
+      >
+        <zxform :form="temp" formName="编辑" labelposition="right" :isEditForm='true' labelwidth="100px" :isEdit='true' refValue="dataForm"></zxform>
+
+        <div slot="footer">
+          <el-button size="mini" @click="FormEdit = false">取消</el-button>
+          <el-button size="mini"  type="primary" @click="FormEdit = false">确认</el-button>
         </div>
       </el-dialog>
       <el-dialog v-el-drag-dialog :visible.sync="dialogTable" center width="800px">
@@ -208,6 +185,7 @@ export default {
         extendInfo: "" // 其他信息,防止最后加逗号，可以删除
       },
       dialogFormVisible: false,
+      FormEdit:false,
       dialogTable: false,
       dialogTree: false,
       dialogStatus: "",
@@ -419,7 +397,7 @@ export default {
       // 弹出编辑框
       this.temp = Object.assign({}, row); // copy obj
       this.dialogStatus = "update";
-      this.dialogFormVisible = true;
+      this.FormEdit = true;
       this.$nextTick(() => {
         this.$refs["dataForm"].clearValidate();
       });

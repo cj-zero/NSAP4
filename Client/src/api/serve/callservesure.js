@@ -24,6 +24,7 @@ export function getForm(data) {
       
     })
   }
+
   export function getImgUrl(data) {     
     return request({
       url:`/Files/Download/${data}`,
@@ -31,14 +32,35 @@ export function getForm(data) {
     })
   }
 
-  export function update(data) {    
-    return request({
-      url: '/Applications/AddOrUpdate',
+  export function updateService(data) {    
+    return request({ //修改服务端
+      url: '/serve/ServiceOrder/ModifyServiceOrder',
       method: 'post',
       data
     })
   }
   
+  export function CreateWorkOrder(data) {    
+    return request({ //创建工单
+      url: '/serve/ServiceOrder/CreateWorkOrder',
+      method: 'post',
+      data
+    })
+  }
+  export function addWorkOrder(data) {    
+    return request({ //新增一个工单
+      url: '/serve/ServiceOrder/AddWorkOrder',
+      method: 'post',
+      data
+    })
+  }
+  export function update(data) {
+    return request({
+      url: '/certinfos/delete',
+      method: 'post',
+      data
+    })}
+
   export function del(data) {
     return request({
       url: '/certinfos/delete',

@@ -77,7 +77,8 @@
         <el-row type="flex" class="row-bg" justify="space-around">
           <el-col :span="12">
             <el-form-item label="制造商序列号">
-              <el-input v-model="item.manufSN"></el-input>
+              <!-- <el-input v-model="item.manufSN"></el-input> -->
+              <div style="border:1px solid #E4E7ED;background-color:#F5F7FA;border-radius:5px;padding-left:5px;">{{item.manufSN}}</div>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -103,12 +104,8 @@
 
 <script>
 export default {
-  props: {form:
-    {   type: Object,
-      default: () => ({})}
-  }
-    
-  ,
+  props: { form: { type: Object, default: () => ({}) } },
+
   data() {
     return {
       formV: {
@@ -119,7 +116,6 @@ export default {
   },
 
   mounted() {
-    
     // console.log(1,this.formVal)
   }
 };
