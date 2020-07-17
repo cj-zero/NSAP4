@@ -17,6 +17,12 @@ namespace ApiGateway
 {
     public class Startup
     {
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        IConfiguration Configuration { get; }
         // This method gets called by the runtime. Use this method to add services to the container.
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
@@ -28,16 +34,12 @@ namespace ApiGateway
                 {
                     x.WithDictionaryHandle();
                 }).AddPolly();
-            services.AddCors();
+            //services.AddCors();
 
             //todo: 如果正式 环境请用下面的方式限制随意访问跨域
-            //var origins = new[]
-            //{
-            //    "http://localhost:1803",
-            //    "http://localhost:52789"
-            //};
-            //services.AddCors(option => option.AddPolicy("cors", policy =>
-            //      policy.AllowAnyHeader().AllowAnyMethod().AllowCredentials().WithOrigins(origins)));
+            var origins = Configuration.GetSection("CorsUrls").Value.Split(",");
+            services.AddCors(option => option.AddPolicy("cors", policy =>
+                  policy.AllowAnyHeader().AllowAnyMethod().AllowCredentials().WithOrigins(origins)));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
