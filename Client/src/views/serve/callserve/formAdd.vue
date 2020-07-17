@@ -8,7 +8,7 @@
       <el-row type="flex" class="row-bg" justify="space-around">
         <el-col :span="8">
           <el-form-item label="工单ID">
-            <el-input v-model="item.serviceOrderId" disabled></el-input>
+            <el-input  disabled></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="7">
@@ -361,7 +361,7 @@ export default {
       formListStart: [], //选择的表格数据
       formList: [
         {
-          serviceOrderId:'',
+          // serviceOrderId:'',
           priority: 1, //优先级 4-紧急 3-高 2-中 1-低
           feeType: 1, //服务类型 1-免费 2-收费
           submitDate: "", //工单提交时间
