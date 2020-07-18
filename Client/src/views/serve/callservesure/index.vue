@@ -162,14 +162,14 @@
         </el-row>
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
-          <el-button
+          <!-- <el-button
             size="mini"
             v-if="dialogStatus=='create'"
             type="primary"
             :loading="loadingBtn"
             @click="createData"
-          >确认</el-button>
-          <el-button size="mini" v-else type="primary" :loading="loadingBtn" @click="updateData">确认</el-button>
+          >确认</el-button> -->
+          <el-button size="mini"  type="primary" :loading="loadingBtn" @click="updateData">确认</el-button>
           <!-- <el-button size="mini"  >加载中</el-button> -->
         </div>
       </el-dialog>
@@ -232,7 +232,7 @@ export default {
     return {
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
-      sure: false,
+      sure: 0,
       formTheadOptions: [
         { name: "id", label: "服务单ID" },
         { name: "customerId", label: "客户代码" },
@@ -333,7 +333,6 @@ export default {
     listQuery: {
       deep: true,
       handler(val) {
-        console.log(val);
         callservesure.getTableList(val).then(response => {
           this.total = response.data.count;
           this.list = response.data.data;
@@ -344,13 +343,18 @@ export default {
     formValue: {
       deep: true,
       handler() {
-        if (this.formValue && this.formValue.customerId) {
+        
+        if (this.formValue && this.formValue.customerId ) {
           this.customer = this.formValue;
         } else {
-          this.$message({
+          
+          if(!this.dialogFormVisible){
+           this.$message({
             message: "没有发现客户代码，请手动选择",
             type: "warning"
           });
+          }
+      
         }
       }
     }
@@ -500,9 +504,9 @@ export default {
       this.resetTemp();
       this.dialogStatus = "create";
       this.dialogFormVisible = true;
-      this.$nextTick(() => {
-        this.$refs["dataForm"].clearValidate();
-      });
+      // this.$nextTick(() => {
+      //   this.$refs["dataForm"].clearValidate();
+      // });
     },
     createData() {
       // 保存提交
@@ -529,9 +533,9 @@ export default {
         // console.log(this.formValue);
         this.dialogStatus = "update";
         this.dialogFormVisible = true;
-        this.$nextTick(() => {
-          this.$refs["dataForm"].clearValidate();
-        });
+        // this.$nextTick(() => {
+        //   this.$refs["dataForm"].clearValidate();
+        // });
       });
     },
     closeDia() {
@@ -540,11 +544,11 @@ export default {
     },
     updateData() {
       // 更新提交
-      this.loadingBtn = true;
-      setTimeout(function() {
-        this.loadingBtn = false;
-      }, 5000);
-      this.sure = true;
+      // this.loadingBtn = true;
+      // setTimeout(function() {
+      //   this.loadingBtn = false;
+      // }, 5000);
+      this.sure = this.sure + 1; //向form表单发送提交通知
       // this.dialogFormVisible =false
       // this.$refs["dataForm"].validate(valid => {
       //   if (valid) {

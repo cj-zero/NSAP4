@@ -16,7 +16,7 @@
             <el-radio-group v-model="item.feeType">
             
               <el-radio :label="1">免费</el-radio>
-    <el-radio :label="2">收费</el-radio>
+             <el-radio :label="2">收费</el-radio>
             </el-radio-group>
           </el-form-item>
         </el-col>
@@ -356,6 +356,8 @@ export default {
       listLoading: true,
       proplemTree: false,
       serLoading: true,
+      addressList:[],//客户地址集合
+      cntctPrsnList:[],//客户联系人集合
       SerialNumberList: [],
       filterSerialNumberList: [],
       formListStart: [], //选择的表格数据
@@ -539,19 +541,22 @@ export default {
     },
     changeForm(res) {
       this.formListStart = res;
-      console.log(res,this.formListStart);
+      // console.log(res,this.formListStart);
     },
 
     pushForm() {
       this.dialogfSN = false;
+      console.log(this.formListStart)
       // let serviceOrder = localStorage.getItem('serviceOrderId')
      if (!this.ifFormPush) {
+       console.log(this.formListStart[0])
         this.formList[0].manufacturerSerialNumber = this.formListStart[0].manufSN;
         this.formList[0].internalSerialNumber = this.formListStart[0].internalSN;
         this.formList[0].materialCode = this.formListStart[0].itemCode;
         //  this.formList[0].serviceOrderId = serviceOrder
         this.formList[0].materialDescription = this.formListStart[0].itemName;
         const newList = this.formListStart.splice(1, this.formListStart.length);
+        console.log(newList)
         for (let i = 0; i < newList.length; i++) {
           this.formList.push({
             manufacturerSerialNumber: newList[i].manufSN,
@@ -595,7 +600,7 @@ export default {
       })
     },
     searchList() {
-         this.listQuery.manufSN = this.inputSearch
+         this.listQuery.manufacturerSerialNumber = this.inputSearch
          this.getSerialNumberList()
       // if (!res) {
       //   this.filterSerialNumberList = this.SerialNumberList;

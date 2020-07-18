@@ -93,7 +93,8 @@
         }
       }
       return {
-        baseURL: process.env.BASE_API, // api的base_url
+        // baseURL: process.env.BASE_API, // api的base_url
+          baseURL: process.env.VUE_APP_BASE_API, // api的base_url
         temp: {
           id: '', // ID
           userName: '', // 请假人姓名

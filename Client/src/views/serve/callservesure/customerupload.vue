@@ -13,10 +13,6 @@
         <el-form-item label="服务ID">
           <el-input v-model="form.id"></el-input>
 
-          <!-- <el-select v-model="form.id" placeholder="请选择">
-            <el-option label="服务一" value="shanghai"></el-option>
-            <el-option label="服务二" value="beijing"></el-option>
-          </el-select>-->
         </el-form-item>
       </el-col>
       <el-col :span="8">
@@ -34,11 +30,6 @@
       <el-col :span="8">
         <el-form-item label="联系人">
           <el-input v-model="form.contacter"></el-input>
-
-          <!-- <el-select v-model="form.name" placeholder="请选择">
-            <el-option label="服务一" value="shanghai"></el-option>
-            <el-option label="服务二" value="beijing"></el-option>
-          </el-select>-->
         </el-form-item>
       </el-col>
       <el-col :span="8">
@@ -61,9 +52,9 @@
     </el-row>
     <el-row type="flex" class="row-bg" justify="space-around">
       <el-col :span="24">
-        <el-form-item label="服务内容">
+        <!-- <el-form-item label="服务内容">
           <el-input type="textarea" v-model="form.serviceWorkOrders"></el-input>
-        </el-form-item>
+        </el-form-item> -->
       </el-col>
     </el-row>
     <el-row
@@ -78,7 +69,7 @@
           <el-col :span="12">
             <el-form-item label="制造商序列号">
               <!-- <el-input v-model="item.manufSN"></el-input> -->
-              <div style="border:1px solid #E4E7ED;background-color:#F5F7FA;border-radius:5px;padding-left:5px;">{{item.manufSN}}</div>
+              <div style="border:1px solid #E4E7ED;background-color:#F5F7FA;border-radius:5px;padding-left:5px;">{{item.manufSN?item.manufSN:'暂无数据'}}</div>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -86,11 +77,7 @@
               <el-input v-model="item.itemCode"></el-input>
             </el-form-item>
           </el-col>
-          <!-- <el-col :span="12">
-            <el-form-item label="物料编码">
-              <el-input v-model="item.itemCode"></el-input>
-            </el-form-item>
-          </el-col>-->
+     
         </el-row>
       </el-col>
       <el-col :span="8">
@@ -104,19 +91,21 @@
 
 <script>
 export default {
-  props: { form: { type: Object, default: () => ({}) } },
-
+  // props: { form: { type: Object, default: () => ({}) } },
+props:['form'],
   data() {
     return {
       formV: {
         name: "",
         cardCode: ""
-      }
+      },
+     
     };
   },
 
   mounted() {
-    // console.log(1,this.formVal)
+  
+  
   }
 };
 </script>

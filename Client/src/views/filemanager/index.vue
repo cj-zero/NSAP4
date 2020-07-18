@@ -220,7 +220,7 @@ export default {
       tableKey: 0,
       tokenValue:this.$store.state.user.token,
       options: {
-        action: `${process.env.VUE_APP_BASE_API}/Files/Upload`,
+        action: `${process.env.VUE_APP_BASE_API}/Files/Upload?X-Token=${this.$store.state.user.token}`,
         defaultValue: [],
         disabled: false,
         isDelete: false,

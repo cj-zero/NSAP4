@@ -57,9 +57,8 @@ export function getForm(data) {
   
   export function forServe(data) {    
     return request({ ///api/Sap/BusinessPartner/GetCardInfoForServe
-      url: '/Sap/BusinessPartner/GetCardInfoForServe',
-      method: 'get',
-      data
+      url: `/Sap/BusinessPartner/GetCardInfoForServe?cardCode=${data}`,
+      method: 'get'
     })
   }
   export function update(data) {

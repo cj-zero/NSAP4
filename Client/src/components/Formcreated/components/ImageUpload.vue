@@ -142,6 +142,7 @@ export default {
           status: item.status ? item.status : 'success'
         }
       }),
+      
       viewer: null,
       uploadId: 'upload_' + new Date().getTime(),
       editIndex: -1,

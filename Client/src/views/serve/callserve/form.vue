@@ -6,7 +6,7 @@
           <el-form
             :model="form"
             :rules="rules"
-            :ref="refValue"
+            :ref="form"
             :disabled="!isEdit"
             :label-width="labelwidth"
           >
@@ -57,8 +57,12 @@
               <el-col :span="8">
                 <el-form-item label="联系人">
                   <el-select v-model="form.contacter" placeholder="请选择">
-                    <el-option label="服务一" value="shanghai"></el-option>
-                    <el-option label="服务二" value="beijing"></el-option>
+                    <el-option
+                      v-for="(item,index) in cntctPrsnList"
+                      :key="`inx${index}`"
+                      :label="item.name"
+                      :value="item.name"
+                    ></el-option>
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -75,13 +79,25 @@
                 </el-form-item>
               </el-col>
               <el-col :span="8">
-                <el-form-item label="电话号码">
-                  <el-input v-model="form.contactTel"></el-input>
+                <el-form-item
+                  label="电话号码"
+                >
+                  <el-input  v-model.number="form.contactTel"></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="8">
-                <el-form-item label="最新电话号码">
-                  <el-input v-model="form.newestContactTel"></el-input>
+                <!-- <el-form-item
+                  label="最新电话号码"
+                  prop="newestContactTel"
+                  :rules="[
+                    { type: 'number', message: '电话号码格式有误'}
+                  ]"
+                > -->
+                    <el-form-item
+                  label="最新电话号码"
+               
+                >
+                  <el-input  v-model.number="form.newestContactTel"></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -100,14 +116,19 @@
               </el-col>
               <el-col :span="8">
                 <el-form-item label="创建日期">
-                  <el-date-picker v-model="form.createTime" type="date" placeholder="选择日期时间"></el-date-picker>
+                  <el-date-picker
+                    v-model="form.createTime"
+                    style="width: 100%;"
+                    type="date"
+                    placeholder="选择日期时间"
+                  ></el-date-picker>
                 </el-form-item>
               </el-col>
               <el-col :span="8">
                 <el-form-item label>
                   <el-radio-group v-model="form.name" disabled>
-                    <el-radio>售后主管:{{form.supervisor}}</el-radio>
-                    <el-radio>售后审核:{{form.salesMan}}</el-radio>
+                    <el-radio style="color:red;">售后审核:{{form.supervisor}}</el-radio>
+                    <el-radio style="color:red;">销售审核:{{form.salesMan}}</el-radio>
                   </el-radio-group>
                 </el-form-item>
               </el-col>
@@ -115,7 +136,19 @@
             <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
               <el-col :span="8">
                 <el-form-item label="地址标识">
-                  <el-input v-model="form.addressDesignator"></el-input>
+                  <!-- <el-input v-model="form.addressDesignator"></el-input> -->
+                  <el-select
+                    v-model="form.addressDesignator"
+                    @change="changeAddr"
+                    placeholder="请选择"
+                  >
+                    <el-option
+                      v-for="(item,index) in addressList"
+                      :key="`inx${index}`"
+                      :label="item.address"
+                      :value="item.address"
+                    ></el-option>
+                  </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="16">
@@ -134,6 +167,23 @@
                 </el-input>
               </el-col>
             </el-row>
+            <!-- //上传图片组件暂时放在这里 -->
+             <el-row   
+              :gutter="10"
+              type="flex"
+              style="margin:0 0 10px 0 ;"
+              class="row-bg"
+            >
+   <el-col :span="1" style="line-height:40px;"> 
+              </el-col>
+               <el-col :span="2" style="line-height:40px;"> 
+                 <div style="font-size:12px;color:#606266;">上传图片</div>
+              </el-col>
+              <el-col :span="20">
+                  <upLoadImage setImage="100px"></upLoadImage>
+              </el-col>
+ 
+            </el-row>
             <el-row
               :gutter="10"
               type="flex"
@@ -142,9 +192,6 @@
               justify="space-around"
             >
               <el-col :span="20">
-                <!-- <el-input v-model="form.addr">
-                  <el-button slot="append" icon="el-icon-position" @click="openMap"></el-button>
-                </el-input>-->
               </el-col>
               <el-col :span="4" style="line-height:40px;">
                 <el-button
@@ -171,7 +218,15 @@
               :visible.sync="drawerMap"
               direction="ttb"
             >
-              <zmap></zmap>
+              <zmap @drag="dragmap"></zmap>
+              <el-row :gutter="12" style="height:40px;">
+                <el-col :span="20">
+                  <el-card shadow="never">当前选择:{{allAddress.address?allAddress.address:'暂未选择地点'}}</el-card>
+                </el-col>
+                <el-col :span="4" style="height:40px;line-height:40px;">
+                  <el-button type="primary" style="margin-top:10px;" @click="chooseAddre">确定选择</el-button>
+                </el-col>
+              </el-row>
             </el-drawer>
             <el-dialog
               title="选择业务伙伴"
@@ -187,9 +242,6 @@
                 <el-form-item label="制造商序列号:">
                   <el-input @input="searSerial" v-model="inputSerial" placeholder="制造商序列号"></el-input>
                 </el-form-item>
-                <!-- <el-form-item>
-    <el-button type="primary" @click="onSubmit">查询</el-button>
-                </el-form-item>-->
               </el-form>
               <formPartner
                 :partnerList="filterPartnerList"
@@ -240,11 +292,12 @@ import { getPartner } from "@/api/callserve";
 import * as callservesure from "@/api/serve/callservesure";
 import Pagination from "@/components/Pagination";
 import zmap from "@/components/amap";
+import upLoadImage from "@/components/upLoadFile";
 import formPartner from "./formPartner";
 import formAdd from "./formAdd";
 export default {
   name: "formTable",
-  components: { formPartner, formAdd, zmap, Pagination },
+  components: { formPartner, formAdd, zmap, Pagination ,upLoadImage},
   props: [
     "modelValue",
     "refValue",
@@ -260,13 +313,18 @@ export default {
   data() {
     return {
       partnerList: [],
+      setImage:{
+        width:'100px',
+        height:'100px',
+      },
       drawerMap: false, //地图控件
       filterPartnerList: [],
       inputSearch: "",
       inputSerial: "",
       // SerialNumberList: [], //序列号列表
       state: "",
-
+      addressList: [], //用户地址列表
+      cntctPrsnList: [], //联系人列表
       parentCount: "",
       dialogPartner: false,
       activeName: 1,
@@ -281,9 +339,8 @@ export default {
         { people: "实习生小李", word: "123", img: "" }
       ],
       callSourse: [
-        { label: "电话" ,value:1},
-        { label: "钉钉" ,value:2},
-   
+        { label: "电话", value: 1 },
+        { label: "APP", value: 2 }
       ],
       serviceOrderId: "",
       form: {
@@ -299,7 +356,7 @@ export default {
         newestContactTel: "", //最新联系人电话号码,
         terminalCustomer: "", //终端客户,recepUserName
         contractId: "", //服务合同
-        recepUserName:'System',//接单员
+        recepUserName: "System", //接单员
         addressDesignator: "", //地址标识
         recepUserId: "", //接单人用户ID
         address: "", //详细地址
@@ -315,6 +372,7 @@ export default {
         pictures: [{ pictureId: "" }], //
         serviceWorkOrders: []
       },
+      allAddress: {}, //选择地图的合集
       rules: {
         customerId: [
           { required: true, message: "请输入客户代码", trigger: "blur" }
@@ -340,64 +398,123 @@ export default {
     },
     customer: {
       handler(val) {
-     this.setForm(val)
+        this.setForm(val);
       }
     },
-    sure:{
-      handler(val){
-        if(val==true){
-          this.postServe()
+    sure: {
+      handler(val) {
+        if (val) {
+          //接受确定通知，开始提交订单
+          this.postServe("form");
         }
+      }
+    },
+    "form.customerId": {
+      handler(val) {
+        this.getPartnerInfo(val);
       }
     }
   },
   mounted() {
     this.getPartnerList();
-    this.getPartnerInfo()
-    this.setForm(this.customer)
+    this.setForm(this.customer);
   },
   methods: {
-    setForm(val){
-      Object.assign(this.form,val) 
-      this.form.recepUserName= this.$store.state.user.name
+    dragmap(res) {
+      console.log(res);
+      this.allAddress = res;
+    },
+    chooseAddre() {
+      this.form.city = this.allAddress.regeocode.addressComponent.city;
+      this.form.addr = this.allAddress.address;
+      this.longitude = this.allAddress.position.lng;
+      this.latitude = this.allAddress.position.latss;
+      this.drawerMap = false;
+    },
+    setForm(val) {
+      Object.assign(this.form, val);
+      this.form.recepUserName = this.$store.state.user.name;
 
       // this.form.
-  //  this.form.customerId = val.customerId;
-  //       this.form.customerName = val.customerName;
-  //       this.form.contacter = val.contacter;
-  //       this.form.createTime = val.createTime;
-  //       this.form.supervisor = val.supervisor;
-  //       this.form.salesMan = val.salesMan;
-  //       this.form.city = val.city;
-  //       this.form.id = val.id;
-        // localStorage.setItem("serviceOrderId", val.id);
+      //  this.form.customerId = val.customerId;
+      //       this.form.customerName = val.customerName;
+      //       this.form.contacter = val.contacter;
+      //       this.form.createTime = val.createTime;
+      //       this.form.supervisor = val.supervisor;
+      //       this.form.salesMan = val.salesMan;
+      //       this.form.city = val.city;
+      //       this.form.id = val.id;
+      // localStorage.setItem("serviceOrderId", val.id);
     },
+
     postServe() {
-      this.form.province="深圳"
-      callservesure
-        .CreateWorkOrder(this.form)
-        .then(() => {
+      //创建整个工单
+      console.log(this.form.serviceWorkOrders);
+      if (this.form.serviceWorkOrders.length > 0) {
+        let chec = this.form.serviceWorkOrders.every(
+          item => item.fromTheme !== ""
+        );
+        if (chec) {
+          callservesure
+            .CreateWorkOrder(this.form)
+            .then(() => {
+              this.$message({
+                message: "创建服务单成功",
+                type: "success"
+              });
+              this.$emit("close-Dia", "y");
+            })
+            .catch(res => {
+              this.$message({
+                message: `${res}`,
+                type: "error"
+              });
+            });
+        } else {
           this.$message({
-            message: "创建服务单成功",
-            type: "success"
-          });
-          this.$emit('close-Dia',"y")
-        })
-        .catch(res => {
-          this.$message({
-            message: `${res}`,
+            message: `请将必填项填写完整`,
             type: "error"
           });
+        }
+      }else{
+        this.$message({
+            message: `请将必填项填写完整`,
+            type: "error"
+          });
+      }
+    },
+    getPartnerInfo(num) {
+      callservesure
+        .forServe(num)
+        .then(res => {
+          this.addressList = res.result.addressList;
+          this.cntctPrsnList = res.result.cntctPrsnList;
+          this.form.supervisor = res.result.techID;
+          // this.$message({
+          //   message: "修改服务单成功",
+          //   type: "success"
+          // });
+        })
+        .catch(() => {
+          // this.$message({
+          //   message: `未找到此客户代码对应信息，请检查`,
+          //   type: "error",
+          //   duration: "5000"
+          // });
+          
+
         });
     },
-    getPartnerInfo(){
-      callservesure.forServe()
+    changeAddr(val) {
+      let res = this.addressList.filter(item => item.address == val);
+      this.form.address = res[0].building;
     },
     changeForm(val) {
       this.form.serviceWorkOrders = val;
       console.log(this.form);
     },
     postService() {
+      //更新服务单
       callservesure
         .updateService(this.form)
         .then(() => {
@@ -449,15 +566,6 @@ export default {
       // SerialList
       this.listQuery.ManufSN = this.inputSerial;
       this.getPartnerList();
-      // if (!res) {
-      //   this.filterPartnerList = this.partnerList;
-      // } else {
-      //   let list = this.partnerList.filter(item => {
-      //     console.log(item)
-      //     // return item.internalSerialNumber.toLowerCase().indexOf(res.toLowerCase()) === 0;
-      //   });
-      //   this.filterPartnerList = list;
-      // }
     },
     querySearch(queryString, cb) {
       var partnerList = this.partnerList;
@@ -493,7 +601,8 @@ export default {
       this.form.customerName = item.cardName;
       this.form.contacter = item.cntctPrsn;
       this.form.contactTel = item.cellular;
-      this.form.addressDesignator = item.address;
+      // this.form.addressDesignator = item.address;
+      this.form.address = item.address;
       this.form.salesMan = item.slpName;
     },
     ChildValue(val) {
@@ -502,7 +611,8 @@ export default {
       this.form.customerName = val.cardName;
       this.form.contacter = val.cntctPrsn;
       this.form.contactTel = val.cellular;
-      this.form.addressDesignator = val.address;
+      // this.form.addressDesignator = val.address;
+      this.form.address = val.address;
       this.form.salesMan = val.slpName;
     },
     handleIconClick() {
@@ -516,9 +626,9 @@ export default {
       this.temp = Object.assign({}, row); // copy obj
       this.dialogStatus = "update";
       this.dialogFormVisible = true;
-      this.$nextTick(() => {
-        // this.$refs["dataForm"].clearValidate();
-      });
+      // this.$nextTick(() => {
+      //   this.$refs["form"].clearValidate();
+      // });
     }
   },
   handleCreate() {
@@ -526,9 +636,9 @@ export default {
     this.resetTemp();
     this.dialogStatus = "create";
     this.dialogFormVisible = true;
-    this.$nextTick(() => {
-      // this.$refs["dataForm"].clearValidate();
-    });
+    // this.$nextTick(() => {
+    //   this.$refs["form"].clearValidate();
+    // });
   }
 };
 </script>
