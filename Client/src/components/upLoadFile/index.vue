@@ -10,6 +10,7 @@
       list-type="picture-card"
       :auto-upload="true"
       :width="setImage"
+      :on-success="successBack"
     >
       <i slot="default" class="el-icon-plus"></i>
       <div slot="file" slot-scope="{file}">
@@ -45,7 +46,8 @@ export default {
     fileList:[],
     headers:{
       "X-Token":this.$store.state.user.token
-    }
+    },
+    pictures:[],
     }
   },
   watch:{
@@ -66,7 +68,12 @@ export default {
     },
     handleDownload(file) {
       console.log(file);
-    }
+    },
+    successBack(res){
+      this.pictures.push({pictureId:res.result[0].id}) 
+      this.$emit('get-ImgList',this.pictures)
+    },
+ 
   }
 };
 </script>

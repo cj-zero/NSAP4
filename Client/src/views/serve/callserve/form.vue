@@ -172,10 +172,34 @@
             >
               <el-col :span="1" style="line-height:40px;"></el-col>
               <el-col :span="2" style="line-height:40px;">
-                <div style="font-size:12px;color:#606266;">上传图片</div>
+                <div style="font-size:12px;color:#606266;width:100px;">上传图片</div>
               </el-col>
               <el-col :span="20">
-                <upLoadImage setImage="100px"></upLoadImage>
+                <upLoadImage setImage="100px" @get-ImgList="getImgList"></upLoadImage>
+              </el-col>
+            </el-row>
+            <el-row
+              v-if="!isEdit&&form.serviceOrderPictures.length"
+              :gutter="10"
+              type="flex"
+              style="margin:0 0 10px 0 ;"
+              class="row-bg"
+            >
+              <el-col :span="1" style="line-height:40px;"></el-col>
+              <el-col :span="2" style="line-height:40px;">
+                <div style="font-size:12px;color:#606266;width:100px;">上传图片列表</div>
+              </el-col>
+              <el-col :span="20" v-if="form.serviceOrderPictures.length">
+                <div class="demo-image__lazy">
+                  <el-image
+                    style="width:60px;height:50px;display:inline-block;margin:0 10px;"
+                    @click="handlePreviewFile(`${baseURL}/files/Download/${url.pictureId}?X-Token=${tokenValue}`)"
+                    v-for="url in form.serviceOrderPictures"
+                    :key="url.id"
+                    :src="`${baseURL}/files/Download/${url.pictureId}?X-Token=${tokenValue}`"
+                    lazy
+                  ></el-image>
+                </div>
               </el-col>
             </el-row>
             <el-row
@@ -274,6 +298,18 @@
           </el-collapse>
         </el-col>
       </el-row>
+      <Model
+        :visible="previewVisible"
+        @on-close="previewVisible = false"
+        ref="formPreview"
+        width="600px"
+        form
+      >
+        <img :src="previewUrl" alt style="display: block;width: 80%;margin: 0 auto;" />
+        <template slot="action">
+          <el-button size="mini" @click="previewVisible = false">关闭</el-button>
+        </template>
+      </Model>
     </div>
   </div>
 </template>
@@ -284,11 +320,13 @@ import * as callservesure from "@/api/serve/callservesure";
 import Pagination from "@/components/Pagination";
 import zmap from "@/components/amap";
 import upLoadImage from "@/components/upLoadFile";
+import Model from "@/components/Formcreated/components/Model";
+
 import formPartner from "./formPartner";
 import formAdd from "./formAdd";
 export default {
   name: "formTable",
-  components: { formPartner, formAdd, zmap, Pagination, upLoadImage },
+  components: { formPartner, formAdd, zmap, Pagination, upLoadImage, Model },
   props: [
     "modelValue",
     "refValue",
@@ -303,7 +341,12 @@ export default {
   //  ##isEdit是否可以编辑  ##customer获取服务端的信息
   data() {
     return {
+      baseURL: process.env.VUE_APP_BASE_API,
+      tokenValue: this.$store.state.user.token,
+      previewUrl: "", //预览图片的定义
+
       partnerList: [],
+      previewVisible: false, //图片预览的dia
       setImage: {
         width: "100px",
         height: "100px"
@@ -360,7 +403,7 @@ export default {
         longitude: "", //number经度
         latitude: "", //	number纬度
         fromId: "", //integer($int32)呼叫来源 1-电话 2-APP
-        pictures: [{ pictureId: "" }], //
+        pictures: [], //
         serviceWorkOrders: []
       },
       isEditAdd: true, //add页面的编辑状态
@@ -402,6 +445,7 @@ export default {
         }
       }
     },
+
     "form.customerId": {
       handler(val) {
         this.getPartnerInfo(val);
@@ -430,6 +474,18 @@ export default {
     this.isEditAdd = this.isEdit;
   },
   methods: {
+    handlePreviewFile(item) {
+      //预览图片
+
+      this.previewVisible = true;
+      this.previewUrl = item;
+    },
+    getImgList(val) {
+      //获取图片列表
+
+      this.form.pictures = val;
+      console.log(this.form);
+    },
     dragmap(res) {
       this.allAddress = res;
     },

@@ -177,14 +177,20 @@
         </div>
       </el-dialog>
       <!-- 只能查看的表单 -->
-      <el-dialog width="1200px" class="dialog-mini" title="服务单详情" destroy-on-close @open="openDetail" :visible.sync="dialogFormView">
+      <el-dialog
+        width="1200px"
+        class="dialog-mini"
+        title="服务单详情"
+        destroy-on-close
+        @open="openDetail"
+        :visible.sync="dialogFormView"
+      >
         <zxform
           :form="temp"
           formName="查看"
           labelposition="right"
           labelwidth="100px"
           :isEdit="false"
-         
           :refValue="dataForm"
         ></zxform>
 
@@ -234,7 +240,7 @@ export default {
   },
   data() {
     return {
-      radio:'',//单选
+      radio: "", //单选
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
       sure: 0,
@@ -310,8 +316,8 @@ export default {
         ],
         name: [{ required: true, message: "名称不能为空", trigger: "blur" }]
       },
-      dataForm:{},//传递的表单props
-      dataForm1:{},//获取的详情表单
+      dataForm: {}, //传递的表单props
+      dataForm1: {}, //获取的详情表单
       downloadLoading: false
     };
   },
@@ -381,19 +387,19 @@ export default {
         });
       }
     },
-     openDetail(){
-        this.dataForm = this.dataForm1
-     },
+    openDetail() {
+      this.dataForm = this.dataForm1;
+    },
     closeCustoner() {
       this.getList();
     },
     openTree(res) {
-          this.listLoading = true;
+      this.listLoading = true;
       callservesure.GetDetails(res).then(res => {
-        if(res.code==200){
-        this.dataForm1 =  res.result
-        this.dialogFormView = true;
-        }        
+        if (res.code == 200) {
+          this.dataForm1 = res.result;
+          this.dialogFormView = true;
+        }
         this.listLoading = false;
       });
     },
@@ -405,8 +411,8 @@ export default {
     },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
-            this.multipleSelection = row;
-
+      this.multipleSelection = row;
+      this.radio = row.id
       this.$refs.mainTable.toggleRowSelection(row);
     },
     // handleSelectionChange(val) {
@@ -618,13 +624,13 @@ export default {
 .redWord {
   color: orangered;
 }
-.table_label{
-    ::v-deep.el-radio {
-  margin-left: 6px;
-}
-::v-deep.el-radio__label {
-  display: none;
-}
+.table_label {
+  ::v-deep.el-radio {
+    margin-left: 6px;
+  }
+  ::v-deep.el-radio__label {
+    display: none;
+  }
 }
 </style>
 
