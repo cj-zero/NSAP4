@@ -4,8 +4,8 @@
       <img class="leftImg" src="~@/assets/login/left.png" alt="">
       <el-form class="login-form" autoComplete="on" :model="loginForm" :rules="loginRules" ref="loginForm"
         label-position="left">
-        <h3 class="title">NSAP-V4.0</h3>
-        <p class="tips">NSAP-V4.0 管理系统</p>
+        <h3 class="title">nSAP-V4.0</h3>
+        <p class="tips">nSAP-V4.0 管理系统</p>
         <el-form-item prop="username">
           <span class="svg-container svg-container_login">
             <svg-icon icon-class="user" />
