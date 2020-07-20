@@ -10,7 +10,7 @@
         <el-row type="flex" class="row-bg" justify="space-around">
           <el-col :span="8">
             <el-form-item label="工单ID">
-              <el-input disabled></el-input>
+              <el-input disabled v-model="item.id"></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="7">
@@ -117,13 +117,15 @@
         </el-row>
         <el-row type="flex" class="row-bg" justify="space-around">
           <el-col :span="8">
-            <el-form-item label="呼叫类型">
-              <el-select
-                v-model="item.fromType"
-                prop="fromType"
+            <el-form-item label="呼叫类型"
+              prop="fromType"
                 :rules="{
               required: true, message: '呼叫类型不能为空', trigger: 'blur'
             }"
+            >
+              <el-select
+                v-model="item.fromType"
+              
                 clearable
               >
                 <el-option
@@ -162,13 +164,13 @@
         </el-row>
         <el-row type="flex" class="row-bg" justify="space-around">
           <el-col :span="8">
-            <el-form-item label="问题类型">
-              <el-input
-                v-model="item.problemTypeId"
-                prop="problemTypeId"
+            <el-form-item label="问题类型"    prop="problemTypeId"
                 :rules="{
               required: true, message: '问题类型不能为空', trigger: 'blur'
-            }"
+            }">
+              <el-input
+                v-model="item.problemTypeId"
+             
                 v-if="!item.problemTypeId"
                 @focus="()=>{proplemTree=true,sortForm=index+1}"
               ></el-input>
@@ -207,7 +209,7 @@
           </el-col>
         </el-row>
         <el-row type="flex" class="row-bg" justify="space-around">
-          <el-col :span="16">
+          <el-col :span="16" v-if="item.fromType===2">
             <el-form-item label="解决方案">
               <el-input
                 v-model="item.solutionId"
@@ -461,7 +463,6 @@ export default {
     propForm: {
       deep: true,
       immediate: true,
-
       handler(val) {
         console.log(val);
         if (val.length) {
@@ -507,7 +508,6 @@ export default {
         this.formList[this.sortForm - 1].problemTypeId = res.id;
         this.problemLabel = res.name;
         this.proplemTree = false;
-      
     },
     solutionClick(res) {
       this.formList[this.sortTable - 1].solutionId = res.id;

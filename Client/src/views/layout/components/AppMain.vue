@@ -5,7 +5,7 @@
         <router-view :key="key"></router-view>
       </keep-alive>
        <!-- <keep-alive >
-        <router-view ></router-view>
+        <router-view :key="key"></router-view>
       </keep-alive> -->
     </transition>
   </section>

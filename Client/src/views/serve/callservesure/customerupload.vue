@@ -52,9 +52,9 @@
     </el-row>
     <el-row type="flex" class="row-bg" justify="space-around">
       <el-col :span="24">
-        <!-- <el-form-item label="服务内容">
-          <el-input type="textarea" v-model="form.serviceWorkOrders"></el-input>
-        </el-form-item> -->
+        <el-form-item label="服务内容">
+          <el-input type="textarea" v-model="form.services"></el-input>
+        </el-form-item>
       </el-col>
     </el-row>
     <el-row

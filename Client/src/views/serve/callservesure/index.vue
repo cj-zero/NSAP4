@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div style="position:absolute;">
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <el-input
@@ -22,17 +22,14 @@
         <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
     </sticky>
-    <div class="app-container">
-      <div class="bg-white">
+    <div class="app-container" >
+      <div class="bg-white" >
         <el-form ref="listQuery" :model="listQuery" label-width="80px">
           <div style="padding:10px 0;"></div>
           <el-row :gutter="10">
             <el-col :span="4">
               <el-form-item label="服务ID" size="medium">
-                <el-select v-model="listQuery.QryServiceOrderId" placeholder="请选择">
-                  <el-option label="服务一" value="shanghai"></el-option>
-                  <el-option label="服务二" value="beijing"></el-option>
-                </el-select>
+                        <el-input v-model="listQuery.QryServiceOrderId"></el-input>
               </el-form-item>
             </el-col>
 
@@ -62,7 +59,6 @@
               <el-form-item label="创建日期" size="medium">
                 <el-col :span="11">
                   <el-date-picker
-                    type="date"
                     placeholder="选择开始日期"
                     v-model="listQuery.QryCreateTimeFrom"
                     style="width: 100%;"
@@ -71,7 +67,6 @@
                 <el-col class="line" :span="2">至</el-col>
                 <el-col :span="11">
                   <el-date-picker
-                    type="date"
                     placeholder="选择结束时间"
                     v-model="listQuery.QryCreateTimeTo"
                     style="width: 100%;"
@@ -118,7 +113,7 @@
               >{{scope.row.id}}</el-link>
               <span
                 v-if="fruit.name === 'status'"
-                :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
+                :class="[scope.row[fruit.name]===1?'orangeWord':(scope.row[fruit.name]===2?'greenWord':'redWord')]"
               >{{stateValue[scope.row[fruit.name]-1]}}</span>
               <span v-if="fruit.name === 'subject'">{{scope.row[fruit.name]}}</span>
               <span
@@ -247,6 +242,7 @@ export default {
       formTheadOptions: [
         { name: "id", label: "服务单ID" },
         { name: "customerId", label: "客户代码" },
+        { name: "status", label: "状态" },
         { name: "customerName", label: "客户名称" },
         { name: "createTime", label: "创建日期" },
         { name: "contacter", label: "联系人" },
@@ -282,11 +278,11 @@ export default {
         // QryProblemType:"",//问题类型
         // QryMaterialTypes:""//物料类别（多选)
       },
-      stateValue: ["发布", "检查", "内部"],
+      stateValue: ["待确认", "已确认", "已取消"],
       statusOptions: [
-        { key: 1, display_name: "发布" },
-        { key: 2, display_name: "检查" },
-        { key: 3, display_name: "内部" }
+        { key: 1, display_name: "待确认" },
+        { key: 2, display_name: "已确认" },
+        { key: 3, display_name: "已取消" }
       ],
       temp: {
         id: "", // Id
@@ -437,6 +433,13 @@ export default {
             });
             return;
           }
+              if (this.multipleSelection.status===2) {
+            this.$message({
+              message: "该服务单已经被确认过",
+              type: "warning"
+            });
+            return;
+          }
           this.handleUpdate(this.multipleSelection);
           break;
         case "btnDel":
@@ -482,7 +485,7 @@ export default {
         });
     },
     handleFilter() {
-      this.listQuery.page = 1;
+      // this.listQuery.page = 1;
       this.getList();
     },
     handleSizeChange(val) {

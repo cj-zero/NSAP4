@@ -1,8 +1,9 @@
 <template>
   <div>
-    <div class="form" style="border:1px solid silver;;">
+    <div class="form" style="border:1px solid silver;">
       <el-row :gutter="20">
-        <el-col :span="isEdit?24:18">
+        <!-- <el-col :span="isEdit?24:18">右边是派单的 -->
+            <el-col :span="24">
           <el-form
             :model="form"
             :rules="rules"
@@ -55,7 +56,7 @@
                 </el-form-item>
               </el-col>
               <el-col :span="8">
-                <el-form-item label="联系人">
+                <el-form-item label="联系人" prop="contacter">
                   <el-select v-model="form.contacter" placeholder="请选择">
                     <el-option
                       v-for="(item,index) in cntctPrsnList"
@@ -110,7 +111,7 @@
                 </el-form-item>
               </el-col>
               <el-col :span="8">
-                <el-form-item label="创建日期">
+                <el-form-item label="创建时间" prop="createTime">
                   <el-date-picker
                     v-model="form.createTime"
                     style="width: 100%;"
@@ -207,8 +208,7 @@
               type="flex"
               style="margin:0 0 10px 0 ;"
               class="row-bg"
-              justify="space-around"
-            >
+              justify="space-around">
               <el-col :span="20"></el-col>
               <el-col :span="4" style="line-height:40px;">
                 <el-button
@@ -229,7 +229,31 @@
             ></formAdd>
             <!-- <formAdd :SerialNumberList="SerialNumberList"></formAdd> -->
 
-            <el-dialog title="选择地址" width="1000px" :visible.sync="drawerMap" direction="ttb">
+ 
+          </el-form>
+        </el-col>
+        <!-- <el-col :span="6" class="lastWord" v-if="!isEdit" >   暂时不用派单
+          <el-collapse accordion>
+            <el-collapse-item
+              :title="`技术员：${item.people}`"
+              :key="`key_${index}`"
+              v-for="(item, index) in wordList"
+              :name="index"
+            >
+              <el-form label-position="top" label-width="80px" :model="item">
+                <el-form-item label="留言">
+                  <el-input v-model="item.word"></el-input>
+                </el-form-item>
+                <el-form-item label="活动形式">
+                  <el-input v-model="item.img"></el-input>
+                </el-form-item>
+                <el-button type="primary">立即创建</el-button>
+              </el-form>
+            </el-collapse-item>
+          </el-collapse>
+        </el-col> -->
+      </el-row>
+                 <el-dialog title="选择地址" width="1000px" :visible.sync="drawerMap" direction="ttb">
               <zmap @drag="dragmap"></zmap>
               <el-row :gutter="12" slot="footer" class="dialog-footer" style="height:30px;">
                 <el-col :span="20">当前选择:{{allAddress.address?allAddress.address:'暂未选择地点'}}</el-col>
@@ -248,8 +272,7 @@
               class="addClass1"
               width="90%"
               @open="openDialog"
-              :visible.sync="dialogPartner"
-            >
+              :visible.sync="dialogPartner" >
               <el-form :inline="true" class="demo-form-inline">
                 <el-form-item label="客户代码:">
                   <el-input @input="searchList" v-model="inputSearch" placeholder="客户代码"></el-input>
@@ -275,29 +298,6 @@
                 <el-button type="primary" @click="dialogPartner = false">确 定</el-button>
               </span>
             </el-dialog>
-          </el-form>
-        </el-col>
-        <el-col :span="6" class="lastWord" v-if="!isEdit">
-          <el-collapse accordion>
-            <el-collapse-item
-              :title="`技术员：${item.people}`"
-              :key="`key_${index}`"
-              v-for="(item, index) in wordList"
-              :name="index"
-            >
-              <el-form label-position="top" label-width="80px" :model="item">
-                <el-form-item label="留言">
-                  <el-input v-model="item.word"></el-input>
-                </el-form-item>
-                <el-form-item label="活动形式">
-                  <el-input v-model="item.img"></el-input>
-                </el-form-item>
-                <el-button type="primary">立即创建</el-button>
-              </el-form>
-            </el-collapse-item>
-          </el-collapse>
-        </el-col>
-      </el-row>
       <Model
         :visible="previewVisible"
         @on-close="previewVisible = false"
@@ -402,7 +402,7 @@ export default {
         addr: "", //地区
         longitude: "", //number经度
         latitude: "", //	number纬度
-        fromId: "", //integer($int32)呼叫来源 1-电话 2-APP
+        fromId: 1, //integer($int32)呼叫来源 1-电话 2-APP
         pictures: [], //
         serviceWorkOrders: []
       },
@@ -416,8 +416,14 @@ export default {
         customerName: [
           { required: true, message: "请输入客户名称", trigger: "change" }
         ],
-        newestContactTel: [
+        fromId: [
           { required: true, message: "请输入呼叫来源", trigger: "change" }
+        ],
+        contacter: [
+          { required: true, message: "请选择联系人", trigger: "change" }
+        ],
+        createTime: [
+          { required: true, message: "请选择创建时间", trigger: "change" }
         ]
       },
       listQuery: {
@@ -474,9 +480,9 @@ export default {
     this.isEditAdd = this.isEdit;
   },
   methods: {
+
     handlePreviewFile(item) {
       //预览图片
-
       this.previewVisible = true;
       this.previewUrl = item;
     },
@@ -506,7 +512,7 @@ export default {
       console.log(this.form.serviceWorkOrders);
       if (this.form.serviceWorkOrders.length > 0) {
         let chec = this.form.serviceWorkOrders.every(
-          item => item.fromTheme !== ""
+          item => item.fromTheme !== ""&&item.fromType !== ""&&item.problemTypeId !== ""
         );
         if (chec) {
           callservesure
