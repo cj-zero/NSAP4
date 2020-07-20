@@ -169,6 +169,7 @@
             </el-row>
             <!-- //上传图片组件暂时放在这里 -->
              <el-row   
+             v-if="isEdit"
               :gutter="10"
               type="flex"
               style="margin:0 0 10px 0 ;"
@@ -204,30 +205,30 @@
             </el-row>
             <!-- 选择制造商序列号 -->
             <formAdd
-              :isEdit="isEdit"
+              :isEdit="isEditAdd"
               :isEditForm="isEditForm"
               @change-form="changeForm"
               :serviceOrderId="serviceOrderId"
+              :propForm="propForm"
             ></formAdd>
             <!-- <formAdd :SerialNumberList="SerialNumberList"></formAdd> -->
 
-            <el-drawer
-              title="我是标题"
-              size="70%"
-              :with-header="false"
+            <el-dialog
+              title="选择地址"
+              width="1000px"
               :visible.sync="drawerMap"
               direction="ttb"
             >
               <zmap @drag="dragmap"></zmap>
-              <el-row :gutter="12" style="height:40px;">
+              <el-row :gutter="12"  slot="footer" class="dialog-footer" style="height:30px;">
                 <el-col :span="20">
-                  <el-card shadow="never">当前选择:{{allAddress.address?allAddress.address:'暂未选择地点'}}</el-card>
+                  当前选择:{{allAddress.address?allAddress.address:'暂未选择地点'}}
                 </el-col>
-                <el-col :span="4" style="height:40px;line-height:40px;">
-                  <el-button type="primary" style="margin-top:10px;" @click="chooseAddre">确定选择</el-button>
+                <el-col :span="4" style="height:30px;line-height:30px;">
+                  <el-button type="primary" size="mini" style="margin-top:10px;" @click="chooseAddre">确定选择</el-button>
                 </el-col>
               </el-row>
-            </el-drawer>
+            </el-dialog>
             <el-dialog
               title="选择业务伙伴"
               class="addClass1"
@@ -372,7 +373,9 @@ export default {
         pictures: [{ pictureId: "" }], //
         serviceWorkOrders: []
       },
+      isEditAdd:true,//add页面的编辑状态
       allAddress: {}, //选择地图的合集
+      propForm:[],
       rules: {
         customerId: [
           { required: true, message: "请输入客户代码", trigger: "blur" }
@@ -413,15 +416,31 @@ export default {
       handler(val) {
         this.getPartnerInfo(val);
       }
+    },
+      refValue:{
+      deep:true,
+      handler(val){
+         if(val){
+ Object.assign(this.form,val)
+           this.propForm = this.refValue.serviceWorkOrders
+         }
+          
+    // this.propForm = this.refValue.serviceWorkOrders
+      },
+     immediate: true
     }
+  },
+  created(){
+  //  Object.assign(this.form,this.refValue)
+    // this.propForm = this.refValue.serviceWorkOrders
   },
   mounted() {
     this.getPartnerList();
     this.setForm(this.customer);
+    this.isEditAdd = this.isEdit
   },
   methods: {
     dragmap(res) {
-      console.log(res);
       this.allAddress = res;
     },
     chooseAddre() {
@@ -434,17 +453,6 @@ export default {
     setForm(val) {
       Object.assign(this.form, val);
       this.form.recepUserName = this.$store.state.user.name;
-
-      // this.form.
-      //  this.form.customerId = val.customerId;
-      //       this.form.customerName = val.customerName;
-      //       this.form.contacter = val.contacter;
-      //       this.form.createTime = val.createTime;
-      //       this.form.supervisor = val.supervisor;
-      //       this.form.salesMan = val.salesMan;
-      //       this.form.city = val.city;
-      //       this.form.id = val.id;
-      // localStorage.setItem("serviceOrderId", val.id);
     },
 
     postServe() {

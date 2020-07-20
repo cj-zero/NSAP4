@@ -153,7 +153,6 @@
               labelposition="right"
               labelwidth="100px"
               :isEdit="true"
-              refValue="dataForm"
               :sure="sure"
               :customer="customer"
               @close-Dia="closeDia"
@@ -168,20 +167,21 @@
             type="primary"
             :loading="loadingBtn"
             @click="createData"
-          >确认</el-button> -->
-          <el-button size="mini"  type="primary" :loading="loadingBtn" @click="updateData">确认</el-button>
+          >确认</el-button>-->
+          <el-button size="mini" type="primary" :loading="loadingBtn" @click="updateData">确认</el-button>
           <!-- <el-button size="mini"  >加载中</el-button> -->
         </div>
       </el-dialog>
       <!-- 只能查看的表单 -->
-      <el-dialog width="1200px" class="dialog-mini" title="服务单详情" :visible.sync="dialogFormView">
+      <el-dialog width="1200px" class="dialog-mini" title="服务单详情" destroy-on-close @open="openDetail" :visible.sync="dialogFormView">
         <zxform
           :form="temp"
           formName="查看"
           labelposition="right"
           labelwidth="100px"
           :isEdit="false"
-          refValue="dataForm"
+         
+          :refValue="dataForm"
         ></zxform>
 
         <div slot="footer">
@@ -305,6 +305,8 @@ export default {
         ],
         name: [{ required: true, message: "名称不能为空", trigger: "blur" }]
       },
+      dataForm:{},//传递的表单props
+      dataForm1:{},//获取的详情表单
       downloadLoading: false
     };
   },
@@ -343,18 +345,15 @@ export default {
     formValue: {
       deep: true,
       handler() {
-        
-        if (this.formValue && this.formValue.customerId ) {
+        if (this.formValue && this.formValue.customerId) {
           this.customer = this.formValue;
         } else {
-          
-          if(!this.dialogFormVisible){
-           this.$message({
-            message: "没有发现客户代码，请手动选择",
-            type: "warning"
-          });
+          if (!this.dialogFormVisible) {
+            this.$message({
+              message: "没有发现客户代码，请手动选择",
+              type: "warning"
+            });
           }
-      
         }
       }
     }
@@ -377,11 +376,24 @@ export default {
         });
       }
     },
+     openDetail(){
+        this.dataForm = this.dataForm1
+     },
     closeCustoner() {
       this.getList();
     },
-    openTree() {
-      this.dialogFormView = true;
+    openTree(res) {
+      
+          this.listLoading = true;
+      callservesure.GetDetails(res).then(res => {
+        if(res.code==200){
+          
+        this.dataForm1 =  res.result
+        console.log(this.dataForm1)
+        this.dialogFormView = true;
+        }        
+        this.listLoading = false;
+      });
     },
     onSubmit() {
       console.log("submit!");

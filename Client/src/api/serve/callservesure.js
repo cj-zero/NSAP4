@@ -18,13 +18,21 @@ export function getTableList(params) {
   }
 
 export function getForm(data) {
-    return request({
+    return request({   //待确认服务申请信息
       url: `/serve/ServiceOrder/GetUnConfirmedServiceOrderDetails?serviceOrderId=${data}`,
       method: 'get'
       
     })
   }
 
+  export function GetDetails(data) {    
+    return request({ ///api/serve/ServiceOrder/GetDetails
+      url: '/serve/ServiceOrder/GetDetails',
+      method: 'get',
+      params:{id:data}
+    })
+  }
+  
   export function getImgUrl(data) {     
     return request({
       url:`/Files/Download/${data}`,
@@ -55,8 +63,8 @@ export function getForm(data) {
     })
   }
   
-  export function forServe(data) {    
-    return request({ ///api/Sap/BusinessPartner/GetCardInfoForServe
+  export function forServe(data) {      
+    return request({ //查看客户代码详细信息
       url: `/Sap/BusinessPartner/GetCardInfoForServe?cardCode=${data}`,
       method: 'get'
     })

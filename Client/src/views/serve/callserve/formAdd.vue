@@ -4,7 +4,7 @@
     <div v-for="(item,index) in formList"
       :key="`key_${index}`"
       style="border:1px solid silver;padding:5px;margin-left:20px;">
-    <el-form :model="item" label-width="105px" :ref="'itemForm'+ index" >
+    <el-form :model="item" :disabled="!isEdit" label-width="105px" :ref="'itemForm'+ index" >
       <el-row type="flex" class="row-bg" justify="space-around">
         <el-col :span="8">
           <el-form-item label="工单ID">
@@ -339,7 +339,7 @@ import problemtype from "./problemtype";
 import solution from "./solution";
 export default {
   components: { fromfSN, problemtype, solution, Pagination },
-  props:["isEdit","isEditForm","serviceOrderId"],
+  props:["isEdit","isEditForm","serviceOrderId","propForm"],
   data() {
     return {
       defaultProps: {
@@ -438,7 +438,6 @@ export default {
 
   mounted() {
     this.listLoading = true;
-    // console.log(this.isEditForm)
     this.getSerialNumberList();
     //获取问题类型的数据
     problemtypes
@@ -462,9 +461,20 @@ export default {
           this.$emit("change-form",val)
         }
       },
+      propForm:{
+            deep:true,
+                 immediate: true,
 
-    
+        handler(val){
+          console.log(val)
+          if(val.length){
+         this.formList= val
+
+          }
+        }
+      }    
     },
+
   methods: {
     getSerialNumberList() {
       this.listLoading = true;
@@ -509,7 +519,6 @@ export default {
       }
     },
     solutionClick(res) {
-      console.log(this.sortTable,this.formList)
        this.formList[this.sortTable-1].solutionId = res.id;
         // this.problemLabel = res.name;
         this.solutionOpen = false;
@@ -549,7 +558,6 @@ export default {
       console.log(this.formListStart)
       // let serviceOrder = localStorage.getItem('serviceOrderId')
      if (!this.ifFormPush) {
-       console.log(this.formListStart[0])
         this.formList[0].manufacturerSerialNumber = this.formListStart[0].manufSN;
         this.formList[0].internalSerialNumber = this.formListStart[0].internalSN;
         this.formList[0].materialCode = this.formListStart[0].itemCode;
@@ -585,7 +593,7 @@ export default {
       this.dialogfSN = true;
     },
     postWorkOrder(result){
-      console.log(result)
+      console.log(result)   //新增工单
       callservesure.addWorkOrder(result).then(()=>{
          this.$message({
             message: "新增工单成功",
