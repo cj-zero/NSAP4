@@ -24,7 +24,10 @@ export default {
   },
   methods: {
     handleNodeClick(value) {
-      this.$emit("node-click", value);
+      if(value.parentId){
+        this.$emit("node-click", value);
+      }
+      
     }
   }
 };
@@ -40,6 +43,6 @@ export default {
     cursor: pointer;
 }
  }
-</style>>
+</style>
 
 

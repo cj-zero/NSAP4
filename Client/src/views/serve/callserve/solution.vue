@@ -164,7 +164,7 @@ export default {
       this.$emit("solution-click", row);
     //   this.$emit("solution-get", this.list);
     },
-    getList() {
+    getList()   {
         //        this.listLoading = true;
 
         //    solutions.getList(this.listQuery).then(res => {

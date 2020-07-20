@@ -83,6 +83,7 @@
         </el-form>
         <el-table
           ref="mainTable"
+          class="table_label"
           :key="key"
           :data="list"
           v-loading="listLoading"
@@ -90,13 +91,16 @@
           fit
           style="width: 100%;"
           highlight-current-row
-          @current-change="handleSelectionChange"
           @row-click="rowClick"
         >
           <!-- <el-table-column     v-for="(fruit,index) in formTheadOptions"  :key="`ind${index}`">
               <el-radio v-model="fruit.id" ></el-radio>
           </el-table-column>-->
-
+          <el-table-column width="50">
+            <template slot-scope="scope">
+              <el-radio v-model="radio" :label="scope.row.id"></el-radio>
+            </template>
+          </el-table-column>
           <el-table-column
             show-overflow-tooltip
             v-for="(fruit,index) in formTheadOptions"
@@ -230,6 +234,7 @@ export default {
   },
   data() {
     return {
+      radio:'',//单选
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
       sure: 0,
@@ -383,13 +388,10 @@ export default {
       this.getList();
     },
     openTree(res) {
-      
           this.listLoading = true;
       callservesure.GetDetails(res).then(res => {
         if(res.code==200){
-          
         this.dataForm1 =  res.result
-        console.log(this.dataForm1)
         this.dialogFormView = true;
         }        
         this.listLoading = false;
@@ -403,11 +405,12 @@ export default {
     },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
+            this.multipleSelection = row;
+
       this.$refs.mainTable.toggleRowSelection(row);
     },
-    handleSelectionChange(val) {
-      this.multipleSelection = val;
-    },
+    // handleSelectionChange(val) {
+    // },
     onBtnClicked: function(domId) {
       switch (domId) {
         case "btnAdd":
@@ -423,7 +426,7 @@ export default {
           // console.log(this.multipleSelection);
           if (!this.multipleSelection.id) {
             this.$message({
-              message: "请点击需要编辑的数据",
+              message: "请选择需要编辑的数据",
               type: "error"
             });
             return;
@@ -602,7 +605,7 @@ export default {
   }
 };
 </script>
-<style>
+<style lang="scss" scoped>
 .dialog-mini .el-select {
   width: 100%;
 }
@@ -615,6 +618,16 @@ export default {
 .redWord {
   color: orangered;
 }
+.table_label{
+    ::v-deep.el-radio {
+  margin-left: 6px;
+}
+::v-deep.el-radio__label {
+  display: none;
+}
+}
 </style>
+
+
 
 

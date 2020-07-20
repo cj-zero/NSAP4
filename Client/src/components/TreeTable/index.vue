@@ -10,7 +10,7 @@
       <template slot-scope="scope">
         <template>
            <span style="width:100px;display:inline-block;" v-if="index === 0 && scope.row.parentId" >
-            <el-radio v-model="radioCheck" :label="scope.row.id" ><span style="width:80px;display:inline-block;">{{scope.row[column.value]}}</span></el-radio>
+            <el-radio v-model="radioCheck" :label="scope.row.id" ><span style="width:80px;display:inline-block;text-align:left;">{{scope.row[column.value]}}</span></el-radio>
            </span>
      
             <template v-else>

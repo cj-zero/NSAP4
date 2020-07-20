@@ -1,54 +1,54 @@
 <template>
   <div class="addClass1">
     <!-- form数组，不包括第一项 -->
-    <div v-for="(item,index) in formList"
+    <div
+      v-for="(item,index) in formList"
       :key="`key_${index}`"
-      style="border:1px solid silver;padding:5px;margin-left:20px;">
-    <el-form :model="item" :disabled="!isEdit" label-width="105px" :ref="'itemForm'+ index" >
-      <el-row type="flex" class="row-bg" justify="space-around">
-        <el-col :span="8">
-          <el-form-item label="工单ID">
-            <el-input  disabled></el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="7">
-          <el-form-item label="服务类型">
-            <el-radio-group v-model="item.feeType">
-            
-              <el-radio :label="1">免费</el-radio>
-             <el-radio :label="2">收费</el-radio>
-            </el-radio-group>
-          </el-form-item>
-        </el-col>
+      style="border:1px solid silver;padding:5px;margin-left:20px;"
+    >
+      <el-form :model="item" :disabled="!isEdit" label-width="105px" :ref="'itemForm'+ index">
+        <el-row type="flex" class="row-bg" justify="space-around">
+          <el-col :span="8">
+            <el-form-item label="工单ID">
+              <el-input disabled></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="7">
+            <el-form-item label="服务类型">
+              <el-radio-group v-model="item.feeType">
+                <el-radio :label="1">免费</el-radio>
+                <el-radio :label="2">收费</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
 
-        <el-col :span="5" style="height:40px;line-height:40px;">
-          <el-switch v-model="item.edit" active-text="修改后续订单"></el-switch>
-        </el-col>
-        <el-col :span="2" style="height:40px;line-height:40px;">
-          <el-button
-            type="danger"
-            v-if="formList.length>1"
-            size="mini"
-            style="margin-right:20px;"
-
-            icon="el-icon-delete"
-            @click="deleteForm(item)"
-          >删除</el-button>
-        </el-col>
-                <el-col :span="2" style="height:40px;line-height:40px;">
-          <el-button
-            type="primary"
-            v-if="isEditForm"
-            size="mini"
-            icon="el-icon-share"
-            @click="handleIconClick"
-          >新增</el-button>
-        </el-col>
-      </el-row>
-      <el-row type="flex" class="row-bg" justify="space-around">
-        <el-col :span="8">
-          <el-form-item label="制造商序列号">
-            <!-- <el-autocomplete
+          <el-col :span="5" style="height:40px;line-height:40px;">
+            <el-switch v-model="item.edit" active-text="修改后续订单"></el-switch>
+          </el-col>
+          <el-col :span="2" style="height:40px;line-height:40px;">
+            <el-button
+              type="danger"
+              v-if="formList.length>1"
+              size="mini"
+              style="margin-right:20px;"
+              icon="el-icon-delete"
+              @click="deleteForm(item)"
+            >删除</el-button>
+          </el-col>
+          <el-col :span="2" style="height:40px;line-height:40px;">
+            <el-button
+              type="primary"
+              v-if="isEditForm"
+              size="mini"
+              icon="el-icon-share"
+              @click="handleIconClick"
+            >新增</el-button>
+          </el-col>
+        </el-row>
+        <el-row type="flex" class="row-bg" justify="space-around">
+          <el-col :span="8">
+            <el-form-item label="制造商序列号">
+              <!-- <el-autocomplete
               popper-class="my-autocomplete"
               v-model="item.manufacturerSerialNumber"
               :fetch-suggestions="querySearch"
@@ -60,197 +60,196 @@
                 <div class="name">{{ item1.manufSN }}</div>
                 <span class="addr">{{ item1.custmrName }}</span>
               </template>
-            </el-autocomplete> -->
-         
-            <el-input v-model="item.manufacturerSerialNumber" :disabled="isEditForm">
-                <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
-            </el-input>
-   
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="内部序列号">
-            <el-input v-model="item.internalSerialNumber" disabled></el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="服务合同">
-            <el-input v-model="item.contractId" disabled></el-input>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row type="flex" class="row-bg" justify="space-around">
-        <el-col :span="8">
-          <el-form-item label="物料编码">
-            <el-input v-model="item.materialCode" disabled></el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="16">
-          <el-form-item label="物料描述">
-            <el-input disabled v-model="item.materialDescription"></el-input>
-          </el-form-item>
-        </el-col>
-      </el-row>
+              </el-autocomplete>-->
 
-      <el-row type="flex" class="row-bg" justify="space-around">
-        <el-col :span="16">
-          <el-form-item                               
-            label="呼叫主题"
-            prop="fromTheme"
-            :rules="{
+              <el-input v-model="item.manufacturerSerialNumber" :disabled="isEditForm">
+                <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
+              </el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="内部序列号">
+              <el-input v-model="item.internalSerialNumber" disabled></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="服务合同">
+              <el-input v-model="item.contractId" disabled></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row type="flex" class="row-bg" justify="space-around">
+          <el-col :span="8">
+            <el-form-item label="物料编码">
+              <el-input v-model="item.materialCode" disabled></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="16">
+            <el-form-item label="物料描述">
+              <el-input disabled v-model="item.materialDescription"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row type="flex" class="row-bg" justify="space-around">
+          <el-col :span="16">
+            <el-form-item
+              label="呼叫主题"
+              prop="fromTheme"
+              :rules="{
               required: true, message: '呼叫主题不能为空', trigger: 'blur'
             }"
-          >
-            <el-input v-model="item.fromTheme"></el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="保修结束日期">
-            <el-date-picker
-              disabled
-              type="date"
-              placeholder="选择开始日期"
-              v-model="item.warrantyEndDate"
-              style="width: 100%;"
-            ></el-date-picker>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row type="flex" class="row-bg" justify="space-around">
-        <el-col :span="8">
-          <el-form-item label="呼叫类型">
- 
-            <el-select v-model="item.fromType"
+            >
+              <el-input v-model="item.fromTheme"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="保修结束日期">
+              <el-date-picker
+                disabled
+                type="date"
+                placeholder="选择开始日期"
+                v-model="item.warrantyEndDate"
+                style="width: 100%;"
+              ></el-date-picker>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row type="flex" class="row-bg" justify="space-around">
+          <el-col :span="8">
+            <el-form-item label="呼叫类型">
+              <el-select
+                v-model="item.fromType"
                 prop="fromType"
-            :rules="{
+                :rules="{
               required: true, message: '呼叫类型不能为空', trigger: 'blur'
             }"
-             clearable>
-              <el-option
-                v-for="item in options_type"
-                :key="item.label"
-                :label="item.label"
-                :value="item.value"
-              ></el-option>
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="呼叫状态">
-            <!-- <el-input v-model="form.status" disabled></el-input> -->
-            <el-select v-model="item.status" :disabled="isEdit" clearable placeholder="请选择">
-              <el-option
-                v-for="ite in options_status"
-                :key="ite.value"
-                :label="ite.label"
-                :value="ite.value"
-              ></el-option>
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="清算日期">
-            <el-date-picker
-              disabled
-              type="date"
-              placeholder="选择日期"
-              v-model="item.liquidationDate"
-              style="width: 100%;"
-            ></el-date-picker>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row type="flex" class="row-bg" justify="space-around">
-        <el-col :span="8">
-          <el-form-item label="问题类型">
-            <el-input
-              v-model="item.problemTypeId"
-                     prop="problemTypeId"
-            :rules="{
+                clearable
+              >
+                <el-option
+                  v-for="item in options_type"
+                  :key="item.label"
+                  :label="item.label"
+                  :value="item.value"
+                ></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="呼叫状态">
+              <!-- <el-input v-model="form.status" disabled></el-input> -->
+              <el-select v-model="item.status" :disabled="isEdit" clearable placeholder="请选择">
+                <el-option
+                  v-for="ite in options_status"
+                  :key="ite.value"
+                  :label="ite.label"
+                  :value="ite.value"
+                ></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="清算日期">
+              <el-date-picker
+                disabled
+                type="date"
+                placeholder="选择日期"
+                v-model="item.liquidationDate"
+                style="width: 100%;"
+              ></el-date-picker>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row type="flex" class="row-bg" justify="space-around">
+          <el-col :span="8">
+            <el-form-item label="问题类型">
+              <el-input
+                v-model="item.problemTypeId"
+                prop="problemTypeId"
+                :rules="{
               required: true, message: '问题类型不能为空', trigger: 'blur'
             }"
-              v-if="!item.problemTypeId"
-              @focus="()=>{proplemTree=true,sortForm=index+2}"
-            ></el-input>
-            <div
-              type="text"
-              style="border:1px silver solid;border-radius:5px;padding:0 10px;"
-              v-if="item.problemTypeId"
-              @click="()=>{proplemTree=true,sortForm=index+2}"
-            >{{switchType(item.problemTypeId)}}</div>
-          </el-form-item>
-          <!-- <el-input v-model="form.problemTypeId"></el-input> -->
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="优先级">
-            <!-- <el-input v-model="item.priority"></el-input> -->
-                  <el-select v-model="item.priority"  clearable placeholder="请选择">
-              <el-option
-                v-for="ite in options_quick"
-                :key="ite.value"
-                :label="ite.label"
-                :value="ite.value"
-              ></el-option>
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="预约时间">
-            <el-date-picker
-              disabled
-              type="date"
-              placeholder="选择开始日期"
-              v-model="item.bookingDate"
-              style="width: 100%;"
-            ></el-date-picker>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row type="flex" class="row-bg" justify="space-around">
-        <el-col :span="16">
-          <el-form-item label="解决方案">
-            <el-input
-              v-model="item.solutionId"
-              v-if="!item.solutionId"
-              @focus="()=>{solutionOpen=true,sortTable=index+1}"
-            ></el-input>
-            <div
-              type="text"
-              style="border:1px silver solid;border-radius:5px;padding:0 10px;"
-              v-if="item.solutionId"
-              @click="()=>{solutionOpen=true,sortTable=index+1}"
-            >{{switchSo(item.solutionId)}}</div>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="结束时间">
-            <el-date-picker
-              disabled
-              type="date"
-              placeholder="选择日期"
-              v-model="item.startTime"
-              style="width: 100%;"
-            ></el-date-picker>
-          </el-form-item>
-        </el-col>
-      </el-row>
+                v-if="!item.problemTypeId"
+                @focus="()=>{proplemTree=true,sortForm=index+1}"
+              ></el-input>
+              <div
+                type="text"
+                style="border:1px silver solid;border-radius:5px;padding:0 10px;"
+                v-if="item.problemTypeId"
+                @click="()=>{proplemTree=true,sortForm=index+1}"
+              >{{switchType(item.problemTypeId)}}</div>
+            </el-form-item>
+            <!-- <el-input v-model="form.problemTypeId"></el-input> -->
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="优先级">
+              <!-- <el-input v-model="item.priority"></el-input> -->
+              <el-select v-model="item.priority" clearable placeholder="请选择">
+                <el-option
+                  v-for="ite in options_quick"
+                  :key="ite.value"
+                  :label="ite.label"
+                  :value="ite.value"
+                ></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="预约时间">
+              <el-date-picker
+                disabled
+                type="date"
+                placeholder="选择开始日期"
+                v-model="item.bookingDate"
+                style="width: 100%;"
+              ></el-date-picker>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row type="flex" class="row-bg" justify="space-around">
+          <el-col :span="16">
+            <el-form-item label="解决方案">
+              <el-input
+                v-model="item.solutionId"
+                v-if="!item.solutionId"
+                @focus="()=>{solutionOpen=true,sortTable=index+1}"
+              ></el-input>
+              <div
+                type="text"
+                style="border:1px silver solid;border-radius:5px;padding:0 10px;"
+                v-if="item.solutionId"
+                @click="()=>{solutionOpen=true,sortTable=index+1}"
+              >{{switchSo(item.solutionId)}}</div>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="结束时间">
+              <el-date-picker
+                disabled
+                type="date"
+                placeholder="选择日期"
+                v-model="item.startTime"
+                style="width: 100%;"
+              ></el-date-picker>
+            </el-form-item>
+          </el-col>
+        </el-row>
 
-      <el-form-item label="备注" prop="remark">
-        <el-input type="textarea" v-model="item.remark"></el-input>
-      </el-form-item>
-      <!-- <el-form-item label>
+        <el-form-item label="备注" prop="remark">
+          <el-input type="textarea" v-model="item.remark"></el-input>
+        </el-form-item>
+        <!-- <el-form-item label>
               <el-button
             type="primary"
             icon="el-icon-share"
             @click="postWorkOrder(item)"
           >确定</el-button>
-      </el-form-item> -->
-      <el-form-item label>
-        <div class="showSort">{{index+1}}/{{formList.length}}</div>
-      </el-form-item>
-    </el-form>
+        </el-form-item>-->
+        <el-form-item label>
+          <div class="showSort">{{index+1}}/{{formList.length}}</div>
+        </el-form-item>
+      </el-form>
     </div>
-
 
     <!--  -->
     <el-dialog
@@ -339,7 +338,7 @@ import problemtype from "./problemtype";
 import solution from "./solution";
 export default {
   components: { fromfSN, problemtype, solution, Pagination },
-  props:["isEdit","isEditForm","serviceOrderId","propForm"],
+  props: ["isEdit", "isEditForm", "serviceOrderId", "propForm"],
   data() {
     return {
       defaultProps: {
@@ -356,8 +355,8 @@ export default {
       listLoading: true,
       proplemTree: false,
       serLoading: true,
-      addressList:[],//客户地址集合
-      cntctPrsnList:[],//客户联系人集合
+      addressList: [], //客户地址集合
+      cntctPrsnList: [], //客户联系人集合
       SerialNumberList: [],
       filterSerialNumberList: [],
       formListStart: [], //选择的表格数据
@@ -385,11 +384,10 @@ export default {
           liquidationDate: "", //清算日期
           contractId: "", //服务合同
           solutionId: "", //解决方案
-          troubleDescription:'',
-          processDescription:''
+          troubleDescription: "",
+          processDescription: ""
         }
       ], //表单依赖的表格数据
-       
 
       dialogfSN: false,
       inputSearch: "",
@@ -421,7 +419,6 @@ export default {
         { value: 2, label: "在线解答" }
       ], //呼叫类型
       options_quick: [
-        { label: "紧急", value: 4 },
         { label: "高", value: 3 },
         { label: "中", value: 2 },
         { label: "低", value: 1 }
@@ -454,26 +451,25 @@ export default {
       this.listLoading = false;
     });
   },
-    watch:{
-      formList:{
-        deep:true,
-        handler(val){
-          this.$emit("change-form",val)
-        }
-      },
-      propForm:{
-            deep:true,
-                 immediate: true,
-
-        handler(val){
-          console.log(val)
-          if(val.length){
-         this.formList= val
-
-          }
-        }
-      }    
+  watch: {
+    formList: {
+      deep: true,
+      handler(val) {
+        this.$emit("change-form", val);
+      }
     },
+    propForm: {
+      deep: true,
+      immediate: true,
+
+      handler(val) {
+        console.log(val);
+        if (val.length) {
+          this.formList = val;
+        }
+      }
+    }
+  },
 
   methods: {
     getSerialNumberList() {
@@ -508,21 +504,15 @@ export default {
       this.datasolution = res;
     },
     NodeClick(res) {
-      if (this.sortForm == 1) {
-        this.form.problemTypeId = res.id;
+        this.formList[this.sortForm - 1].problemTypeId = res.id;
         this.problemLabel = res.name;
         this.proplemTree = false;
-      } else {
-        this.formList[this.sortForm - 2].problemTypeId = res.id;
-        this.problemLabel = res.name;
-        this.proplemTree = false;
-      }
+      
     },
     solutionClick(res) {
-       this.formList[this.sortTable-1].solutionId = res.id;
-        // this.problemLabel = res.name;
-        this.solutionOpen = false;
-      
+      this.formList[this.sortTable - 1].solutionId = res.id;
+      // this.problemLabel = res.name;
+      this.solutionOpen = false;
     },
     switchType(val) {
       let vall = "";
@@ -543,28 +533,29 @@ export default {
     },
     switchSo(val) {
       let res = this.datasolution.filter(item => item.id == val);
-      return res[0].subject;
+       return res.length?res[0].subject:'请选择'
     },
     openDialog() {
       this.filterSerialNumberList = this.SerialNumberList;
     },
     changeForm(res) {
       this.formListStart = res;
+
       // console.log(res,this.formListStart);
     },
 
     pushForm() {
       this.dialogfSN = false;
-      console.log(this.formListStart)
+      console.log(this.formListStart);
       // let serviceOrder = localStorage.getItem('serviceOrderId')
-     if (!this.ifFormPush) {
+      if (!this.ifFormPush) {
         this.formList[0].manufacturerSerialNumber = this.formListStart[0].manufSN;
         this.formList[0].internalSerialNumber = this.formListStart[0].internalSN;
         this.formList[0].materialCode = this.formListStart[0].itemCode;
         //  this.formList[0].serviceOrderId = serviceOrder
         this.formList[0].materialDescription = this.formListStart[0].itemName;
         const newList = this.formListStart.splice(1, this.formListStart.length);
-        console.log(newList)
+        console.log(newList);
         for (let i = 0; i < newList.length; i++) {
           this.formList.push({
             manufacturerSerialNumber: newList[i].manufSN,
@@ -592,24 +583,26 @@ export default {
     handleIconClick() {
       this.dialogfSN = true;
     },
-    postWorkOrder(result){
-      console.log(result)   //新增工单
-      callservesure.addWorkOrder(result).then(()=>{
-         this.$message({
+    postWorkOrder(result) {
+      console.log(result); //新增工单
+      callservesure
+        .addWorkOrder(result)
+        .then(() => {
+          this.$message({
             message: "新增工单成功",
-          type: 'success'
-         });
-         
-      }).catch(res=>{
-         this.$message({
+            type: "success"
+          });
+        })
+        .catch(res => {
+          this.$message({
             message: `${res}`,
-          type: 'error'
-         });
-      })
+            type: "error"
+          });
+        });
     },
     searchList() {
-         this.listQuery.manufacturerSerialNumber = this.inputSearch
-         this.getSerialNumberList()
+      this.listQuery.manufacturerSerialNumber = this.inputSearch;
+      this.getSerialNumberList();
       // if (!res) {
       //   this.filterSerialNumberList = this.SerialNumberList;
       // } else {
@@ -624,7 +617,7 @@ export default {
       var results = queryString
         ? filterSerialNumberList.filter(this.createFilter(queryString))
         : filterSerialNumberList;
-        console.log(results)
+      console.log(results);
       // 调用 callback 返回建议列表的数据
       cb(results);
     },
@@ -685,18 +678,18 @@ export default {
     .el-dialog__title {
       color: white;
     }
-          .el-dialog__close{
-     color:white ;
-  }
-  
+    .el-dialog__close {
+      color: white;
+    }
+
     background: lightslategrey;
   }
   ::v-deep .el-dialog__body {
     padding: 10px 20px;
   }
-   ::v-deep .el-button--mini {
-     padding: 7px 8px;
-   }
+  ::v-deep .el-button--mini {
+    padding: 7px 8px;
+  }
   //   ::v-deep .el-dialog__footer{
   //   background: lightslategrey;
   // }

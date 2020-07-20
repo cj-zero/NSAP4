@@ -79,10 +79,8 @@
                 </el-form-item>
               </el-col>
               <el-col :span="8">
-                <el-form-item
-                  label="电话号码"
-                >
-                  <el-input  v-model.number="form.contactTel"></el-input>
+                <el-form-item label="电话号码">
+                  <el-input v-model.number="form.contactTel"></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="8">
@@ -92,12 +90,9 @@
                   :rules="[
                     { type: 'number', message: '电话号码格式有误'}
                   ]"
-                > -->
-                    <el-form-item
-                  label="最新电话号码"
-               
-                >
-                  <el-input  v-model.number="form.newestContactTel"></el-input>
+                >-->
+                <el-form-item label="最新电话号码">
+                  <el-input v-model.number="form.newestContactTel"></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -168,22 +163,20 @@
               </el-col>
             </el-row>
             <!-- //上传图片组件暂时放在这里 -->
-             <el-row   
-             v-if="isEdit"
+            <el-row
+              v-if="isEdit"
               :gutter="10"
               type="flex"
               style="margin:0 0 10px 0 ;"
               class="row-bg"
             >
-   <el-col :span="1" style="line-height:40px;"> 
-              </el-col>
-               <el-col :span="2" style="line-height:40px;"> 
-                 <div style="font-size:12px;color:#606266;">上传图片</div>
+              <el-col :span="1" style="line-height:40px;"></el-col>
+              <el-col :span="2" style="line-height:40px;">
+                <div style="font-size:12px;color:#606266;">上传图片</div>
               </el-col>
               <el-col :span="20">
-                  <upLoadImage setImage="100px"></upLoadImage>
+                <upLoadImage setImage="100px"></upLoadImage>
               </el-col>
- 
             </el-row>
             <el-row
               :gutter="10"
@@ -192,8 +185,7 @@
               class="row-bg"
               justify="space-around"
             >
-              <el-col :span="20">
-              </el-col>
+              <el-col :span="20"></el-col>
               <el-col :span="4" style="line-height:40px;">
                 <el-button
                   type="primary"
@@ -213,19 +205,17 @@
             ></formAdd>
             <!-- <formAdd :SerialNumberList="SerialNumberList"></formAdd> -->
 
-            <el-dialog
-              title="选择地址"
-              width="1000px"
-              :visible.sync="drawerMap"
-              direction="ttb"
-            >
+            <el-dialog title="选择地址" width="1000px" :visible.sync="drawerMap" direction="ttb">
               <zmap @drag="dragmap"></zmap>
-              <el-row :gutter="12"  slot="footer" class="dialog-footer" style="height:30px;">
-                <el-col :span="20">
-                  当前选择:{{allAddress.address?allAddress.address:'暂未选择地点'}}
-                </el-col>
+              <el-row :gutter="12" slot="footer" class="dialog-footer" style="height:30px;">
+                <el-col :span="20">当前选择:{{allAddress.address?allAddress.address:'暂未选择地点'}}</el-col>
                 <el-col :span="4" style="height:30px;line-height:30px;">
-                  <el-button type="primary" size="mini" style="margin-top:10px;" @click="chooseAddre">确定选择</el-button>
+                  <el-button
+                    type="primary"
+                    size="mini"
+                    style="margin-top:10px;"
+                    @click="chooseAddre"
+                  >确定选择</el-button>
                 </el-col>
               </el-row>
             </el-dialog>
@@ -298,7 +288,7 @@ import formPartner from "./formPartner";
 import formAdd from "./formAdd";
 export default {
   name: "formTable",
-  components: { formPartner, formAdd, zmap, Pagination ,upLoadImage},
+  components: { formPartner, formAdd, zmap, Pagination, upLoadImage },
   props: [
     "modelValue",
     "refValue",
@@ -314,9 +304,9 @@ export default {
   data() {
     return {
       partnerList: [],
-      setImage:{
-        width:'100px',
-        height:'100px',
+      setImage: {
+        width: "100px",
+        height: "100px"
       },
       drawerMap: false, //地图控件
       filterPartnerList: [],
@@ -373,9 +363,9 @@ export default {
         pictures: [{ pictureId: "" }], //
         serviceWorkOrders: []
       },
-      isEditAdd:true,//add页面的编辑状态
+      isEditAdd: true, //add页面的编辑状态
       allAddress: {}, //选择地图的合集
-      propForm:[],
+      propForm: [],
       rules: {
         customerId: [
           { required: true, message: "请输入客户代码", trigger: "blur" }
@@ -417,27 +407,27 @@ export default {
         this.getPartnerInfo(val);
       }
     },
-      refValue:{
-      deep:true,
-      handler(val){
-         if(val){
- Object.assign(this.form,val)
-           this.propForm = this.refValue.serviceWorkOrders
-         }
-          
-    // this.propForm = this.refValue.serviceWorkOrders
+    refValue: {
+      deep: true,
+      handler(val) {
+        if (val) {
+          Object.assign(this.form, val);
+          this.propForm = this.refValue.serviceWorkOrders;
+        }
+
+        // this.propForm = this.refValue.serviceWorkOrders
       },
-     immediate: true
+      immediate: true
     }
   },
-  created(){
-  //  Object.assign(this.form,this.refValue)
+  created() {
+    //  Object.assign(this.form,this.refValue)
     // this.propForm = this.refValue.serviceWorkOrders
   },
   mounted() {
     this.getPartnerList();
     this.setForm(this.customer);
-    this.isEditAdd = this.isEdit
+    this.isEditAdd = this.isEdit;
   },
   methods: {
     dragmap(res) {
@@ -484,11 +474,11 @@ export default {
             type: "error"
           });
         }
-      }else{
+      } else {
         this.$message({
-            message: `请将必填项填写完整`,
-            type: "error"
-          });
+          message: `请将必填项填写完整`,
+          type: "error"
+        });
       }
     },
     getPartnerInfo(num) {
@@ -509,8 +499,6 @@ export default {
           //   type: "error",
           //   duration: "5000"
           // });
-          
-
         });
     },
     changeAddr(val) {
