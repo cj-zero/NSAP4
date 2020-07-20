@@ -45,6 +45,7 @@ namespace OpenAuth.Repository.Interface
 
         void BatchAdd<T>(T[] entities) where T: Entity;
         Task BatchAddAsync<T>(T[] entities, CancellationToken cancellationToken = default) where T: Entity;
+        Task BatchAddAsync<T, TKey>(T[] entities, CancellationToken cancellationToken = default) where T: class;
 
         /// <summary>
         /// 更新一个实体的所有属性

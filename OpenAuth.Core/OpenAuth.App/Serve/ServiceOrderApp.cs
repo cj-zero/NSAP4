@@ -15,6 +15,8 @@ using Org.BouncyCastle.Ocsp;
 using MySqlX.XDevAPI.Relational;
 using System.Linq.Expressions;
 using SharpDX.Direct3D11;
+using System.Runtime.CompilerServices;
+using OpenAuth.Repository.Domain.Sap;
 
 namespace OpenAuth.App
 {
@@ -113,6 +115,61 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// app查询服务单详情
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<Response<dynamic>> AppLoadServiceOrderDetails(AppQueryServiceOrderReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var query = UnitWork.Find<ServiceOrder>(s => s.AppUserId.Equals(request.AppUserId) && s.Id.Equals(request.ServiceOrderId))
+                        .Select(a => new
+                        {
+                            a.Id,
+                            a.AppUserId,
+                            a.Services,
+                            a.CreateTime,
+                            a.Status,
+                            ServiceWorkOrders = a.ServiceWorkOrders.Select(o => new
+                            {
+                                o.Id,
+                                o.Status,
+                                o.FromTheme,
+                                ProblemType = o.ProblemType.Description,
+                                o.ManufacturerSerialNumber,
+                                o.MaterialCode,
+                                o.CurrentUserId,
+                                MaterialType = o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-"))
+                            }).ToList()
+                        });
+
+            var data = await query.Select(a => new
+            {
+                a.Id,
+                a.AppUserId,
+                a.Services,
+                a.CreateTime,
+                a.Status,
+                ServiceWorkOrders = a.ServiceWorkOrders.GroupBy(o => o.MaterialType).Select(s => new
+                {
+                    MaterialType = s.Key,
+                    Count = s.Count(),
+                    Orders = s.ToList()
+                }
+                    ).ToList()
+            }).FirstOrDefaultAsync();
+                
+
+            var result = new Response<dynamic>();
+            result.Result = data;
+            return result;
+        }
+
+        /// <summary>
         /// APP提交服务单
         /// </summary>
         /// <param name="req"></param>
@@ -130,6 +187,30 @@ namespace OpenAuth.App
             obj.RecepUserId = loginContext.User.Id;
             obj.RecepUserName = loginContext.User.Name;
             obj.Status = 1;
+
+
+            var obj2 = from a in UnitWork.Find<OCRD>(null)
+                      join b in UnitWork.Find<OSLP>(null) on a.SlpCode equals b.SlpCode into ab
+                      from b in ab.DefaultIfEmpty()
+                      join e in UnitWork.Find<OHEM>(null) on a.DfTcnician equals e.empID into ae
+                      from e in ae.DefaultIfEmpty()
+                      select new { a, b, e };
+            obj2 = obj2.Where(o => o.a.CardCode.Equals(obj.CustomerId));
+
+            var query = obj2.Select(q => new
+            {
+                q.a.CardCode,
+                q.a.CardName,
+                q.a.CntctPrsn,
+                q.a.Phone1,
+                q.a.SlpCode,
+                q.b.SlpName,
+                TechID = q.a.DfTcnician,
+                TechName = $"{q.e.lastName ?? ""}{q.e.firstName}"
+            });
+            var o2 = await query.FirstOrDefaultAsync();
+            obj.SalesMan = o2.SlpName;
+            obj.Supervisor = o2.TechName;
 
             var o = await UnitWork.AddAsync<ServiceOrder, int>(obj);
             await UnitWork.SaveAsync();
@@ -153,8 +234,8 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var obj = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(id))
-                .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.CompletionReport).ThenInclude(c=>c.CompletionReportPictures)
-                .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.CompletionReport).ThenInclude(c=>c.Solution)
+                //.Include(s => s.ServiceWorkOrders).ThenInclude(s => s.CompletionReport).ThenInclude(c=>c.CompletionReportPictures)
+                //.Include(s => s.ServiceWorkOrders).ThenInclude(s => s.CompletionReport).ThenInclude(c=>c.Solution)
                 .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                 .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.Solution)
                 .Include(s => s.ServiceOrderPictures).FirstOrDefaultAsync();
@@ -162,17 +243,17 @@ namespace OpenAuth.App
             var serviceOrderPictureIds = obj.ServiceOrderPictures.Select(s => s.PictureId).ToList();
             var files = await UnitWork.Find<UploadFile>(f => serviceOrderPictureIds.Contains(f.Id)).ToListAsync();
             result.Files = files.MapTo<List<UploadFileResp>>();
-            result.ServiceWorkOrders.ForEach(async s => 
-            {
-                if(s.CompletionReport != null)
-                {
-                    var completionReportPictures = obj.ServiceWorkOrders.First(sw => sw.Id.Equals(s.Id))
-                            ?.CompletionReport?.CompletionReportPictures.Select(c => c.PictureId).ToList();
+            //result.ServiceWorkOrders.ForEach(async s => 
+            //{
+            //    if(s.CompletionReport != null)
+            //    {
+            //        var completionReportPictures = obj.ServiceWorkOrders.First(sw => sw.Id.Equals(s.Id))
+            //                ?.CompletionReport?.CompletionReportPictures.Select(c => c.PictureId).ToList();
 
-                    var completionReportFiles = await UnitWork.Find<UploadFile>(f => completionReportPictures.Contains(f.Id)).ToListAsync();
-                    s.CompletionReport.Files = completionReportFiles.MapTo<List<UploadFileResp>>();
-                }
-            });
+            //        var completionReportFiles = await UnitWork.Find<UploadFile>(f => completionReportPictures.Contains(f.Id)).ToListAsync();
+            //        s.CompletionReport.Files = completionReportFiles.MapTo<List<UploadFileResp>>();
+            //    }
+            //});
             return obj;
         }
 
@@ -248,6 +329,7 @@ namespace OpenAuth.App
                 q.ContactTel,
                 q.Supervisor,
                 q.SalesMan,
+                q.Status,
                 q.ServiceOrderSNs.FirstOrDefault(a => a.ManufSN.Contains(req.QryManufSN)).ManufSN,
                 q.ServiceOrderSNs.FirstOrDefault(a => a.ManufSN.Contains(req.QryManufSN)).ItemCode,
             });
@@ -294,7 +376,30 @@ namespace OpenAuth.App
             }
             var obj = request.MapTo<ServiceOrder>();
             obj.Status = 2;
-            await UnitWork.UpdateAsync<ServiceOrder>(o => o.Id.Equals(request.Id), s => obj); 
+            await UnitWork.UpdateAsync<ServiceOrder>(o => o.Id.Equals(request.Id), s => new ServiceOrder { 
+                    Status = 2,
+                    Addr = obj.Addr,
+                    Address = obj.Address,
+                    AddressDesignator = obj.AddressDesignator,
+                    Services = obj.Services,
+                    Province = obj.Province,
+                    City = obj.City,
+                    Area = obj.Area,
+                    CustomerId = obj.CustomerId,
+                    CustomerName = obj.CustomerName,
+                    Contacter = obj.Contacter,
+                    ContactTel = obj.ContactTel,
+                    NewestContacter = obj.NewestContacter,
+                    NewestContactTel = obj.NewestContactTel,
+                    FromId = obj.FromId,
+                    TerminalCustomer = obj.TerminalCustomer,
+                    SalesMan = obj.SalesMan,
+                    SalesManId = obj.SalesManId,
+                    Supervisor = obj.Supervisor,
+                    SupervisorId = obj.SupervisorId,
+                });
+            obj.ServiceWorkOrders.ForEach(s => { s.ServiceOrderId = obj.Id; s.SubmitDate = DateTime.Now; s.SubmitUserId = loginContext.User.Id; s.AppUserId = obj.AppUserId; });
+            await UnitWork.BatchAddAsync<ServiceWorkOrder,int>(obj.ServiceWorkOrders.ToArray());
             var pictures = request.Pictures.MapToList<ServiceOrderPicture>();
             pictures.ForEach(p => { p.ServiceOrderId = request.Id; p.PictureType = 2; });
             await UnitWork.BatchAddAsync(pictures.ToArray());
@@ -501,7 +606,7 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var result = new TableData();
-            var query = UnitWork.Find<ServiceWorkOrder>(s=>s.Status == req.TechnicianId).Select(s=>new 
+            var query = UnitWork.Find<ServiceWorkOrder>(s=>s.Status == req.Status).Select(s=>new 
             { 
                 s.Id, s.AppUserId, s.FromTheme,
                 ProblemType = s.ProblemType.Description,
@@ -542,5 +647,18 @@ namespace OpenAuth.App
             await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{req.TechnicianId}接单工单：{req.ServiceWorkOrderId}", ActionType = "技术员接单", ServiceOrderId = req.ServiceWorkOrderId });
         }
 
+        /// <summary>
+        /// 获取服务单图片Id列表
+        /// </summary>
+        /// <param name="id">报价单Id</param>
+        /// <param name="type">1-客户上传 2-客服上传</param>
+        /// <returns></returns>
+        public async Task<List<UploadFileResp>> GetServiceOrderPictures(int id, int type)
+        {
+            var idList = await UnitWork.Find<ServiceOrderPicture>(p => p.ServiceOrderId.Equals(id) && p.PictureType.Equals(type)).Select(p=>p.PictureId).ToListAsync();
+            var files = await UnitWork.Find<UploadFile>(f=>idList.Contains(f.Id)).ToListAsync();
+            var list = files.MapTo<List<UploadFileResp>>();
+            return list;
+        }
     }
 }

@@ -5,11 +5,13 @@ using System.Text;
 
 namespace OpenAuth.App.Request
 {
-    public class TechnicianServiceWorkOrderReq : PageReq
+    public class AppQueryServiceOrderReq
     {
-        [Required]
-        public int TechnicianId { get; set; }
 
-        public int Status { get; set; }
+        [Required]
+        public int AppUserId { get; set; }
+
+        [Required]
+        public int ServiceOrderId { get; set; }
     }
 }

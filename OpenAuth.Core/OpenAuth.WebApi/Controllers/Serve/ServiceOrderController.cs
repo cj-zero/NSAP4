@@ -9,6 +9,7 @@ using NetOffice.Extensions.Invoker;
 using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
+using OpenAuth.Repository.Domain;
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -104,6 +105,29 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+
+        /// <summary>
+        /// app查询服务单详情
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response<dynamic>> AppLoadServiceOrderDetails([FromQuery]AppQueryServiceOrderReq request) 
+        {
+            var result = new Response<dynamic>();
+            try
+            {
+                result = await _serviceOrderApp.AppLoadServiceOrderDetails(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
         /// <summary>
         /// 待确认服务呼叫列表
         /// </summary>
@@ -369,6 +393,55 @@ namespace OpenAuth.WebApi.Controllers
                     Details = "以为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
                     ServiceWorkOrder = req.ServiceWorkOrderId
                 });
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+
+
+        /// <summary>
+        /// 获取服务单图片Id列表
+        /// </summary>
+        /// <param name="id">报价单Id</param>
+        /// <param name="type">1-客户上传 2-客服上传</param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response<List<UploadFileResp>>> GetServiceOrderPictures(int id, int type)
+        {
+            var result = new Response<List<UploadFileResp>>();
+
+            try
+            {
+                result.Result = await _serviceOrderApp.GetServiceOrderPictures(id, type);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        /// 获取服务单详情
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response<ServiceOrder>> GetDetails(int id) 
+        {
+
+            var result = new Response<ServiceOrder>();
+
+            try
+            {
+                result.Result = await _serviceOrderApp.GetDetails(id);
             }
             catch (Exception ex)
             {

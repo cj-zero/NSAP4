@@ -40,8 +40,6 @@ namespace OpenAuth.Repository.Domain
           this.BookingDate= DateTime.Now;
           this.VisitTime= DateTime.Now;
           this.LiquidationDate= DateTime.Now;
-          this.SolutionId= string.Empty;
-          this.CompletionReportId= string.Empty;
         }
         /// <summary>
         /// 工单ID
@@ -183,8 +181,8 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 完工报告
         /// </summary>
-        [Description("完工报告")]
-        public virtual CompletionReport CompletionReport { get; set; }
+        //[Description("完工报告")]
+        //public virtual CompletionReport CompletionReport { get; set; }
         /// <summary>
         /// 服务合同
         /// </summary>

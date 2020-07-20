@@ -276,5 +276,10 @@ namespace OpenAuth.Repository
             var e = await GetDbContext<T>().Set<T>().AddAsync(entity, cancellationToken);
             return e.Entity;
         }
+
+        public async Task BatchAddAsync<T, TKey>(T[] entities, CancellationToken cancellationToken = default) where T : class
+        {
+            await GetDbContext<T>().Set<T>().AddRangeAsync(entities, cancellationToken);
+        }
     }
 }
