@@ -64,8 +64,8 @@ namespace OpenAuth.App
             //properties.Add(new KeyDescription() { Key = "FlowInstanceActivityName", Browsable = true, Description = "FlowInstanceActivityName", Type = "String" });
             var propertyStr = string.Join(',', properties.Select(u => u.Key));
             result.columnHeaders = properties;
-            result.data = view;//list.AsQueryable().Select($"new ({propertyStr},FlowInstance)");
-            result.count = objs.Count();
+            result.Data = view;//list.AsQueryable().Select($"new ({propertyStr},FlowInstance)");
+            result.Count = objs.Count();
             return result;
         }
 

@@ -50,10 +50,10 @@ namespace OpenAuth.App.Sap.Service
                 q.a.itemCode,
                 q.a.itemName
             });
-            result.data = await query2//.OrderBy(u => u.Id)
+            result.Data = await query2//.OrderBy(u => u.Id)
                 .Skip((req.page - 1) * req.limit)
                 .Take(req.limit).ToListAsync(); ///Select($"new ({propertyStr})");
-            result.count = query2.Count();
+            result.Count = query2.Count();
             return result;
         }
     }

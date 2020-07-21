@@ -33,10 +33,10 @@ namespace OpenAuth.App
                 objs = objs.Where(u => u.Title.Contains(request.key) || u.Id.Contains(request.key));
             }
 
-            result.data = objs.OrderBy(u => u.Id)
+            result.Data = objs.OrderBy(u => u.Id)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit);
-            result.count = objs.Count();
+            result.Count = objs.Count();
             return result;
         }
 

@@ -27,10 +27,10 @@ namespace OpenAuth.App
                 forms = forms.Where(u => u.Name.Contains(request.key) || u.Id.Contains(request.key));
             }
 
-            result.data = forms.OrderByDescending(u => u.CreateDate)
+            result.Data = forms.OrderByDescending(u => u.CreateDate)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToList();
-            result.count = forms.Count();
+            result.Count = forms.Count();
             return result;
         }
 

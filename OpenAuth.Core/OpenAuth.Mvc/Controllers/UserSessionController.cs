@@ -86,8 +86,8 @@ namespace OpenAuth.Mvc.Controllers
 
             return JsonHelper.Instance.Serialize(new TableData
             {
-                data = query.ToList(),
-                count = query.Count(),
+                Data = query.ToList(),
+                Count = query.Count(),
             });
 
         }
@@ -141,16 +141,16 @@ namespace OpenAuth.Mvc.Controllers
                 var list = _authStrategyContext.GetProperties(moduleCode);
                 return JsonHelper.Instance.Serialize(new TableData
                 {
-                    data = list,
-                    count = list.Count(),
+                    Data = list,
+                    Count = list.Count(),
                 });
             }
             catch (Exception ex)
             {
                 return JsonHelper.Instance.Serialize(new TableData
                     {
-                        msg =ex.Message,
-                        code = 500,
+                        Message =ex.Message,
+                        Code = 500,
                     });
             }
         }
@@ -170,8 +170,8 @@ namespace OpenAuth.Mvc.Controllers
                 {
                     return JsonHelper.Instance.Serialize(new TableData
                     {
-                        msg ="未找到指定的节点",
-                        code = 500,
+                        Message ="未找到指定的节点",
+                        Code = 500,
                     });
                 }
                 cascadeId = org.CascadeId;
@@ -181,8 +181,8 @@ namespace OpenAuth.Mvc.Controllers
 
             return JsonHelper.Instance.Serialize(new TableData
             {
-                data = query.ToList(),
-                count = query.Count(),
+                Data = query.ToList(),
+                Count = query.Count(),
             });
         }
 

@@ -67,10 +67,10 @@ namespace OpenAuth.WebApi.Controllers
 
             var propertyStr = string.Join(',', properties.Select(u => u.Key));
             result.columnHeaders = properties;
-            result.data = objs.OrderByDescending(u => u.CreateTime)
+            result.Data = objs.OrderByDescending(u => u.CreateTime)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).Select($"new ({propertyStr})");
-            result.count = objs.Count();
+            result.Count = objs.Count();
             return result;
         }
         /// <summary>

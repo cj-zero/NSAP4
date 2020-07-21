@@ -32,8 +32,8 @@ namespace OpenAuth.WebApi.Controllers
             var applications = await _app.GetPageAsync(request);
             return new TableData
             {
-                data = applications,
-                count = applications.Count
+                Data = applications,
+                Count = applications.Count
             };
         }
         /// <summary>

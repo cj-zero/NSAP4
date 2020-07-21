@@ -25,16 +25,16 @@ namespace OpenAuth.App.Response
         /// <summary>
         /// 状态码
         /// </summary>
-        public int code;
+        public int Code;
         /// <summary>
         /// 操作消息
         /// </summary>
-        public string msg;
+        public string Message;
 
         /// <summary>
         /// 总记录条数
         /// </summary>
-        public int count;
+        public int Count;
 
         /// <summary>
         ///  返回的列表头信息
@@ -44,12 +44,12 @@ namespace OpenAuth.App.Response
         /// <summary>
         /// 数据内容
         /// </summary>
-        public T data;
+        public T Data;
 
         public TableData()
         {
-            code = 200;
-            msg = "加载成功";
+            Code = 200;
+            Message = "加载成功";
             columnHeaders = new List<KeyDescription>();
         }
     }

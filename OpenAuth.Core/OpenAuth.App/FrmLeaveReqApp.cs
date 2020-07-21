@@ -19,8 +19,8 @@ namespace OpenAuth.App
         {
              return new TableData
             {
-                count = Repository.GetCount(null),
-                data = Repository.Find(request.page, request.limit, "Id desc")
+                Count = Repository.GetCount(null),
+                Data = Repository.Find(request.page, request.limit, "Id desc")
             };
         }
 

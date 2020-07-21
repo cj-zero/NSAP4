@@ -47,10 +47,10 @@ namespace OpenAuth.App.Sap.BusinessPartner
 
             //var propertyStr = string.Join(',', properties.Select(u => u.Key));
             //result.columnHeaders = properties;
-            result.data = await query2//.OrderBy(u => u.Id)
+            result.Data = await query2//.OrderBy(u => u.Id)
                 .Skip((req.page - 1) * req.limit)
                 .Take(req.limit).ToListAsync();///Select($"new ({propertyStr})");
-            result.count = query2.Count();
+            result.Count = query2.Count();
             return result;
         }
         public async Task<TableData> Get(QueryBusinessPartnerListReq req)
@@ -97,10 +97,10 @@ namespace OpenAuth.App.Sap.BusinessPartner
 
             //var propertyStr = string.Join(',', properties.Select(u => u.Key));
             //result.columnHeaders = properties;
-            result.data = await query2//.OrderBy(u => u.Id)
+            result.Data = await query2//.OrderBy(u => u.Id)
                 .Skip((req.page - 1) * req.limit)
                 .Take(req.limit).ToListAsync();///Select($"new ({propertyStr})");
-            result.count = query.Count();
+            result.Count = query.Count();
             return result;
         }
         /// <summary>

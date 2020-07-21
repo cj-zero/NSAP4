@@ -77,10 +77,10 @@ namespace OpenAuth.App
 
             var propertyStr = string.Join(',', properties.Select(u => u.Key));
             result.columnHeaders = properties;
-            result.data = resources.OrderBy(u => u.TypeId)
+            result.Data = resources.OrderBy(u => u.TypeId)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).Select($"new ({propertyStr})");
-            result.count = resources.Count();
+            result.Count = resources.Count();
             return result;
         }
 

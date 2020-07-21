@@ -573,9 +573,9 @@ namespace OpenAuth.App
                     waitExp = waitExp.And(t => t.CustomName.Contains(request.key));
                 }
 
-                result.count = UnitWork.Find(waitExp).Count();
+                result.Count = UnitWork.Find(waitExp).Count();
 
-                result.data = UnitWork.Find(request.page, request.limit, "CreateDate descending", waitExp).ToList();
+                result.Data = UnitWork.Find(request.page, request.limit, "CreateDate descending", waitExp).ToList();
             }
             else if (request.type == "disposed")  //已办事项（即我参与过的流程）
             {
@@ -591,10 +591,10 @@ namespace OpenAuth.App
                     query = query.Where(t => t.CustomName.Contains(request.key));
                 }
 
-                result.data = query.OrderByDescending(u => u.CreateDate)
+                result.Data = query.OrderByDescending(u => u.CreateDate)
                     .Skip((request.page - 1) * request.limit)
                     .Take(request.limit).ToList();
-                result.count = instances.Count();
+                result.Count = instances.Count();
             }
             else  //我的流程
             {
@@ -606,8 +606,8 @@ namespace OpenAuth.App
                     myFlowExp = myFlowExp.And(t => t.CustomName.Contains(request.key));
                 }
 
-                result.count = UnitWork.Find(myFlowExp).Count();
-                result.data = UnitWork.Find(request.page, request.limit,
+                result.Count = UnitWork.Find(myFlowExp).Count();
+                result.Data = UnitWork.Find(request.page, request.limit,
                     "CreateDate descending", myFlowExp).ToList();
             }
 

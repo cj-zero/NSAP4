@@ -41,8 +41,8 @@ namespace OpenAuth.WebApi.Controllers.Sap
             }
             catch (Exception ex) 
             {
-                result.code = 500;
-                result.msg = ex.InnerException?.Message ?? ex.Message;
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
             }
             return result;
         }

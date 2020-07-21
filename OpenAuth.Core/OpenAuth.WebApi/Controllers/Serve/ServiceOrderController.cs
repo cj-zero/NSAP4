@@ -76,11 +76,11 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
-                result.data = _serviceOrderApp.Load(query);
+                result.Data = _serviceOrderApp.Load(query);
             }catch(Exception ex)
             {
-                result.code = 500;
-                result.msg = ex.Message;
+                result.Code = 500;
+                result.Message = ex.Message;
             }
             return Task.FromResult(result);
         }
@@ -100,8 +100,8 @@ namespace OpenAuth.WebApi.Controllers
             }
             catch (Exception ex)
             {
-                result.code = 500;
-                result.msg = ex.Message;
+                result.Code = 500;
+                result.Message = ex.Message;
             }
             return result;
         }
@@ -139,12 +139,12 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
-                result.data = await _serviceOrderApp.UnConfirmedServiceOrderList(req);
+                result.Data = await _serviceOrderApp.UnConfirmedServiceOrderList(req);
             }
             catch (Exception ex)
             {
-                result.code = 500;
-                result.msg = ex.InnerException?.Message ?? ex.Message;
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
             }
             return result;
         }
@@ -295,12 +295,12 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
-                result.data = await _serviceOrderApp.UnsignedWorkOrderTree(req);
+                result.Data = await _serviceOrderApp.UnsignedWorkOrderTree(req);
             }
             catch (Exception ex)
             {
-                result.code = 500;
-                result.msg = ex.InnerException?.Message ?? ex.Message;
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
             }
             return result;
         }
@@ -315,12 +315,12 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
-                result.data = await _serviceOrderApp.UnsignedWorkOrderList(req);
+                result.Data = await _serviceOrderApp.UnsignedWorkOrderList(req);
             }
             catch (Exception ex)
             {
-                result.code = 500;
-                result.msg = ex.InnerException?.Message ?? ex.Message;
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
             }
             return result;
         }
@@ -356,12 +356,12 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
-                result.data = await _serviceOrderApp.GetTechnicianServiceWorkOrder(req);
+                result.Data = await _serviceOrderApp.GetTechnicianServiceWorkOrder(req);
             }
             catch (Exception ex)
             {
-                result.code = 500;
-                result.msg = ex.InnerException?.Message ?? ex.Message;
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
             }
             return result;
         }
@@ -442,6 +442,49 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 result.Result = await _serviceOrderApp.GetDetails(id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        /// 技术员工单池列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetTechnicianServiceWorkOrderPool([FromQuery]PageReq req) 
+        {
+            var result = new TableData();
+
+            try
+            {
+                result = await _serviceOrderApp.GetTechnicianServiceWorkOrderPool(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        /// 技术员预约工单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<Response> BookingWorkOrder(BookingWorkOrderReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.BookingWorkOrder(req);
             }
             catch (Exception ex)
             {

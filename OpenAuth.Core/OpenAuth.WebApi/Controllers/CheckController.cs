@@ -221,8 +221,8 @@ namespace OpenAuth.WebApi.Controllers
                 {
                     return new TableData
                     {
-                        msg = "未找到指定的节点",
-                        code = 500,
+                        Message = "未找到指定的节点",
+                        Code = 500,
                     };
                 }
                 cascadeId = org.CascadeId;
@@ -232,8 +232,8 @@ namespace OpenAuth.WebApi.Controllers
 
             return new TableData
             {
-                data = query.ToList(),
-                count = query.Count(),
+                Data = query.ToList(),
+                Count = query.Count(),
             };
         }
 

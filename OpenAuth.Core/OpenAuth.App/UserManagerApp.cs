@@ -66,8 +66,8 @@ namespace OpenAuth.App
 
             return new TableData
             {
-                count = records,
-                data = userviews,
+                Count = records,
+                Data = userviews,
             };
         }
 
@@ -157,8 +157,8 @@ namespace OpenAuth.App
 
             return new TableData
             {
-                count = users.Count(),
-                data = users.Skip((request.page - 1) * request.limit).Take(request.limit)
+                Count = users.Count(),
+                Data = users.Skip((request.page - 1) * request.limit).Take(request.limit)
             };
         }
         public async Task<List<User>> LoadByRoleName(string roleName)
@@ -190,8 +190,8 @@ namespace OpenAuth.App
             var data = await users.Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
             return new TableData
             {
-                count = count,
-                data = data
+                Count = count,
+                Data = data
             };
         }
 

@@ -109,8 +109,8 @@ namespace OpenAuth.App
                 });
 
             var result = new TableData();
-            result.count = count;
-            result.data = list;
+            result.Count = count;
+            result.Data = list;
             return result;
         }
 
@@ -335,11 +335,11 @@ namespace OpenAuth.App
             });
 
 
-            result.data =
+            result.Data =
             (await query//.OrderBy(u => u.Id)
             .Skip((req.page - 1) * req.limit)
             .Take(req.limit).ToListAsync());//.GroupBy(o => o.Id).ToList();
-            result.count = query.Count();
+            result.Count = query.Count();
             return result;
         }
 
@@ -505,7 +505,7 @@ namespace OpenAuth.App
                                select new { ServiceOrderId = g.Key, MaterialTypes = MTypes };
             var grouplist = grouplistsql.ToList();
 
-            result.data = grouplist;
+            result.Data = grouplist;
             return result;
         }
         
@@ -586,11 +586,11 @@ namespace OpenAuth.App
             });
 
 
-            result.data =
+            result.Data =
             (await resultsql
             .Skip((req.page - 1) * req.limit)
             .Take(req.limit).ToListAsync());//.GroupBy(o => o.Id).ToList();
-            result.count = query.Count();
+            result.Count = query.Count();
             return result;
         }
 
@@ -620,10 +620,57 @@ namespace OpenAuth.App
             .Skip((req.page - 1) * req.limit)
             .Take(req.limit).ToListAsync();
             var count = await query.CountAsync();
-            result.data = list;
-            result.data = count;
+            result.Data = list;
+            result.Count = count;
             return result;
         }
+
+
+        /// <summary>
+        /// 技术员工单池列表
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> GetTechnicianServiceWorkOrderPool(PageReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = new TableData();
+            var query = UnitWork.Find<ServiceOrder>(s => s.Status == 2).Select(s => new
+            {
+                s.Latitude,
+                s.Longitude,
+                s.Status,
+                s.Services,
+                s.CreateTime,
+                s.AppUserId,
+                ServiceWrokOrder = s.ServiceWorkOrders.Where(o=>o.Status == 1).Select(o=> new {
+                    o.Id,
+                    o.AppUserId,
+                    o.FromTheme,
+                    ProblemType = o.ProblemType.Description,
+                    o.CreateTime,
+                    o.Status,
+                    o.MaterialCode,
+                    MaterialType = o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
+                    o.FeeType,
+                    o.InternalSerialNumber,
+                    o.ManufacturerSerialNumber,
+                    o.Priority,
+                    o.Remark
+                })
+            });
+            var list = await query
+            .Skip((req.page - 1) * req.limit)
+            .Take(req.limit).ToListAsync();
+            var count = await query.CountAsync();
+            result.Data = list;
+            result.Count = count;
+            return result;
+        }
+
 
         /// <summary>
         /// 技术员接单
@@ -659,6 +706,42 @@ namespace OpenAuth.App
             var files = await UnitWork.Find<UploadFile>(f=>idList.Contains(f.Id)).ToListAsync();
             var list = files.MapTo<List<UploadFileResp>>();
             return list;
+        }
+
+        /// <summary>
+        /// 技术员预约工单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task BookingWorkOrder(BookingWorkOrderReq req)
+        {
+            var order = await UnitWork.FindSingleAsync<ServiceWorkOrder>(s => s.Id.Equals(req.WorkOrderId));
+            if(order != null)
+            {
+                if (order.CurrentUserId.Equals(req.CurrentUserId))
+                {
+                    await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id.Equals(req.WorkOrderId), o => new ServiceWorkOrder
+                    {
+                        BookingDate = req.BookingDate
+                    });
+                    await UnitWork.SaveAsync();
+                    await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{req.CurrentUserId}预约工单{req.WorkOrderId}", ActionType = "预约工单", ServiceWorkOrderId = req.WorkOrderId });
+                }
+                else
+                {
+                    throw new CommonException("当前技术员无法预约此工单。", 9001);
+                }
+            }
+            else
+            {
+                throw new CommonException("当前工单号不存在。", 9002);
+            }
+        }
+
+
+        public Task<List<UploadFileResp>> GetAllowSendOrderUser()
+        {
+            return null;
         }
     }
 }

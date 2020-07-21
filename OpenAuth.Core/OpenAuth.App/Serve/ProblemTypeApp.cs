@@ -48,8 +48,8 @@ namespace OpenAuth.App
 
             var propertyStr = string.Join(',', properties.Select(u => u.Key));
             result.columnHeaders = properties;
-            result.data = objs;
-            result.count = objs.Count();
+            result.Data = objs;
+            result.Count = objs.Count();
             return result;
         }
 

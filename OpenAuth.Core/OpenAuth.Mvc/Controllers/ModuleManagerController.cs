@@ -163,8 +163,8 @@ namespace OpenAuth.Mvc.Controllers
              
             var data = new TableData
             {
-                data = module.Elements,
-                count = module.Elements.Count(),
+                Data = module.Elements,
+                Count = module.Elements.Count(),
             };
             return JsonHelper.Instance.Serialize(data);
         }
