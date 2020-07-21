@@ -75,6 +75,10 @@ namespace OpenAuth.App
                             a.Services,
                             a.CreateTime,
                             a.Status,
+                            a.Province,
+                            a.City,
+                            a.Area,
+                            a.Addr,
                             ServiceWorkOrders = a.ServiceWorkOrders.Select(o => new
                             {
                                 o.Id,o.Status,o.FromTheme,
@@ -99,6 +103,10 @@ namespace OpenAuth.App
                     a.Services,
                     a.CreateTime,
                     a.Status,
+                    a.Province,
+                    a.City,
+                    a.Area,
+                    a.Addr,
                     ServiceWorkOrders = a.ServiceWorkOrders.GroupBy(o=>o.MaterialType).Select(s=>new
                     {
                         MaterialType = s.Key,
@@ -694,7 +702,7 @@ namespace OpenAuth.App
 
 
         /// <summary>
-        /// 技术员查看工单列表
+        /// 技术员查看未完成工单列表
         /// </summary>
         /// <returns></returns>
         public async Task<TableData> GetTechnicianServiceWorkOrder(TechnicianServiceWorkOrderReq req)
@@ -704,20 +712,120 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+
             var result = new TableData();
-            var query = UnitWork.Find<ServiceWorkOrder>(s=>s.Status == req.Status).Select(s=>new 
-            { 
-                s.Id, s.AppUserId, s.FromTheme,
+            var query = UnitWork.Find<ServiceWorkOrder>(s => s.Status > 1 && s.Status < 8).Select(s => new
+            {
+                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.ServiceOrder.Latitude.Value), Convert.ToDouble(s.ServiceOrder.Longitude.Value), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
+                s.Id,
+                s.AppUserId,
+                s.FromTheme,
                 ProblemType = s.ProblemType.Description,
                 s.CreateTime,
                 s.Status,
-                s.ServiceOrder.Latitude,
-                s.ServiceOrder.Longitude,
-                s.MaterialCode, 
+                s.MaterialCode,
+                MaterialType = s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")),
+                s.FeeType,
+                s.InternalSerialNumber,
+                s.ManufacturerSerialNumber,
+                s.Priority,
+                s.Remark,
+                Latitude = s.ServiceOrder.Latitude,
+                Longitude = s.ServiceOrder.Longitude
             });
-            var list = await query
+
+            var list = (await query
             .Skip((req.page - 1) * req.limit)
-            .Take(req.limit).ToListAsync();
+            .Take(req.limit).ToListAsync()).Select(s => new
+            {
+                s.Id,
+                s.AppUserId,
+                s.FromTheme,
+                ProblemType = s.ProblemType,
+                s.CreateTime,
+                s.Status,
+                s.MaterialCode,
+                MaterialType = s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")),
+                s.FeeType,
+                s.InternalSerialNumber,
+                s.ManufacturerSerialNumber,
+                s.Priority,
+                s.Remark,
+                Latitude = s.Latitude,
+                Longitude = s.Longitude,
+                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
+            }).GroupBy(s=>s.MaterialType).Select(a => new
+            {
+                MaterialType = a.Key,
+                Count = a.Count(),
+                Orders = a.ToList()
+            }).ToList();
+
+            var count = await query.CountAsync();
+            result.Data = list;
+            result.Count = count;
+            return result;
+        }
+        /// <summary>
+        /// 技术员查看已完成工单列表
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> GetTechnicianFinishServiceWorkOrder(TechnicianServiceWorkOrderReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var result = new TableData();
+            var query = UnitWork.Find<ServiceWorkOrder>(s => s.Status == 8).Select(s => new
+            {
+                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.ServiceOrder.Latitude.Value), Convert.ToDouble(s.ServiceOrder.Longitude.Value), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
+                s.Id,
+                s.AppUserId,
+                s.FromTheme,
+                ProblemType = s.ProblemType.Description,
+                s.CreateTime,
+                s.Status,
+                s.MaterialCode,
+                MaterialType = s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")),
+                s.FeeType,
+                s.InternalSerialNumber,
+                s.ManufacturerSerialNumber,
+                s.Priority,
+                s.Remark,
+                Latitude = s.ServiceOrder.Latitude,
+                Longitude = s.ServiceOrder.Longitude
+            });
+
+            var list = (await query
+            .Skip((req.page - 1) * req.limit)
+            .Take(req.limit).ToListAsync()).Select(s=>new 
+            {
+                s.Id,
+                s.AppUserId,
+                s.FromTheme,
+                ProblemType = s.ProblemType,
+                s.CreateTime,
+                s.Status,
+                s.MaterialCode,
+                MaterialType = s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")),
+                s.FeeType,
+                s.InternalSerialNumber,
+                s.ManufacturerSerialNumber,
+                s.Priority,
+                s.Remark,
+                Latitude = s.Latitude,
+                Longitude = s.Longitude,
+                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude??0), Convert.ToDouble(s.Longitude??0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
+            }).GroupBy(s=>s.MaterialType).Select(a => new
+            {
+                MaterialType = a.Key,
+                Count = a.Count(),
+                Orders = a.ToList()
+            }).ToList();
+
             var count = await query.CountAsync();
             result.Data = list;
             result.Count = count;
@@ -729,7 +837,7 @@ namespace OpenAuth.App
         /// 技术员工单池列表
         /// </summary>
         /// <returns></returns>
-        public async Task<TableData> GetTechnicianServiceWorkOrderPool(PageReq req)
+        public async Task<TableData> GetTechnicianServiceWorkOrderPool(TechnicianServiceWorkOrderPoolReq req)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -739,13 +847,18 @@ namespace OpenAuth.App
             var result = new TableData();
             var query = UnitWork.Find<ServiceOrder>(s => s.Status == 2).Select(s => new
             {
+                s.Id,
                 s.Latitude,
                 s.Longitude,
                 s.Status,
                 s.Services,
                 s.CreateTime,
                 s.AppUserId,
-                ServiceWrokOrder = s.ServiceWorkOrders.Where(o=>o.Status == 1).Select(o=> new {
+                s.Province,
+                s.City,
+                s.Area,
+                s.Addr,
+                ServiceWorkOrders = s.ServiceWorkOrders.Where(o=>o.Status == 1).Select(o=> new {
                     o.Id,
                     o.AppUserId,
                     o.FromTheme,
@@ -758,12 +871,35 @@ namespace OpenAuth.App
                     o.InternalSerialNumber,
                     o.ManufacturerSerialNumber,
                     o.Priority,
-                    o.Remark
+                    o.Remark,
                 })
             });
-            var list = await query
+
+            var list = (await query
             .Skip((req.page - 1) * req.limit)
-            .Take(req.limit).ToListAsync();
+            .Take(req.limit).ToListAsync()).Select(a => new
+            {
+                a.Id,
+                a.Latitude,
+                a.Longitude,
+                a.Status,
+                a.Services,
+                a.CreateTime,
+                a.AppUserId,
+                a.Province,
+                a.City,
+                a.Area,
+                a.Addr,
+                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(a.Latitude ?? 0), Convert.ToDouble(a.Longitude??0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
+                ServiceWorkOrders = a.ServiceWorkOrders.GroupBy(o => o.MaterialType).Select(s => new
+                    {
+                        MaterialType = s.Key,
+                        Count = s.Count(),
+                        Orders = s.ToList()
+                    }
+                ).ToList()
+            });
+
             var count = await query.CountAsync();
             result.Data = list;
             result.Count = count;
@@ -821,7 +957,8 @@ namespace OpenAuth.App
                 {
                     await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id.Equals(req.WorkOrderId), o => new ServiceWorkOrder
                     {
-                        BookingDate = req.BookingDate
+                        BookingDate = req.BookingDate,
+                        Status = 3
                     });
                     await UnitWork.SaveAsync();
                     await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{req.CurrentUserId}预约工单{req.WorkOrderId}", ActionType = "预约工单", ServiceWorkOrderId = req.WorkOrderId });
@@ -837,6 +974,36 @@ namespace OpenAuth.App
             }
         }
 
+        /// <summary>
+        /// 技术员核对设备
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task CheckTheEquipment(CheckTheEquipmentReq req)
+        {
+
+            var order = await UnitWork.FindSingleAsync<ServiceWorkOrder>(s => s.Id.Equals(req.WorkOrderId));
+            if (order != null)
+            {
+                if (order.CurrentUserId.Equals(req.CurrentUserId))
+                {
+                    await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id.Equals(req.WorkOrderId), o => new ServiceWorkOrder
+                    {
+                        Status = 4
+                    });
+                    await UnitWork.SaveAsync();
+                    await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{req.CurrentUserId}核对工单{req.WorkOrderId}设备", ActionType = "核对设备", ServiceWorkOrderId = req.WorkOrderId });
+                }
+                else
+                {
+                    throw new CommonException("当前技术员无法核对此工单设备。", 9001);
+                }
+            }
+            else
+            {
+                throw new CommonException("当前工单号不存在。", 9002);
+            }
+        }
 
         public Task<List<UploadFileResp>> GetAllowSendOrderUser()
         {

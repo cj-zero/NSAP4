@@ -345,7 +345,7 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
         /// <summary>
-        /// 技术员查看工单列表
+        /// 技术员查看未完成工单列表
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
@@ -365,6 +365,28 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+
+        /// <summary>
+        /// 技术员查看已完成工单列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetTechnicianFinishServiceWorkOrder([FromQuery]TechnicianServiceWorkOrderReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result.Data = await _serviceOrderApp.GetTechnicianFinishServiceWorkOrder(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
         /// <summary>
         /// 技术员接单
         /// </summary>
@@ -457,7 +479,7 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetTechnicianServiceWorkOrderPool([FromQuery]PageReq req) 
+        public async Task<TableData> GetTechnicianServiceWorkOrderPool([FromQuery]TechnicianServiceWorkOrderPoolReq req) 
         {
             var result = new TableData();
 
@@ -479,12 +501,35 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
+        [HttpPost]
         public async Task<Response> BookingWorkOrder(BookingWorkOrderReq req)
         {
             var result = new Response();
             try
             {
                 await _serviceOrderApp.BookingWorkOrder(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        /// 技术员核对设备
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> CheckTheEquipment(CheckTheEquipmentReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.CheckTheEquipment(req);
             }
             catch (Exception ex)
             {

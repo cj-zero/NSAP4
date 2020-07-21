@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -18,7 +19,7 @@ namespace OpenAuth.App
         /// <summary>
         /// 加载列表
         /// </summary>
-        public TableData Load(QueryServiceOrderLogListReq request)
+        public async Task<TableData> Load(QueryServiceOrderLogListReq request)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -26,12 +27,12 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
 
-            var properties = loginContext.GetProperties("serviceorderlog");
+            //var properties = loginContext.GetProperties("serviceorderlog");
 
-            if (properties == null || properties.Count == 0)
-            {
-                throw new Exception("当前登录用户没有访问该模块字段的权限，请联系管理员配置");
-            }
+            //if (properties == null || properties.Count == 0)
+            //{
+            //    throw new Exception("当前登录用户没有访问该模块字段的权限，请联系管理员配置");
+            //}
 
 
             var result = new TableData();
@@ -42,11 +43,11 @@ namespace OpenAuth.App
             }
 
 
-            var propertyStr = string.Join(',', properties.Select(u => u.Key));
-            result.columnHeaders = properties;
-            result.Data = objs.OrderBy(u => u.Id)
+            //var propertyStr = string.Join(',', properties.Select(u => u.Key));
+            //result.columnHeaders = properties;
+            result.Data = await objs.OrderBy(u => u.Id)
                 .Skip((request.page - 1) * request.limit)
-                .Take(request.limit).Select($"new ({propertyStr})");
+                .Take(request.limit).ToListAsync();
             result.Count = objs.Count();
             return result;
         }
