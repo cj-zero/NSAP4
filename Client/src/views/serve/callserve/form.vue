@@ -17,7 +17,9 @@
             <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="8">
                 <el-form-item label="客户代码" prop="customerId">
-                  <el-autocomplete
+               <el-input  v-model="form.customerId" ><i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i></el-input>
+
+                  <!-- <el-autocomplete
                     popper-class="my-autocomplete"
                     v-model="form.customerId"
                     :fetch-suggestions="querySearch"
@@ -29,7 +31,7 @@
                       <div class="name">{{ item.cardCode }}</div>
                       <span class="addr">{{ item.cardName }}</span>
                     </template>
-                  </el-autocomplete>
+                  </el-autocomplete> -->
                 </el-form-item>
               </el-col>
               <el-col :span="8">
@@ -512,7 +514,24 @@ export default {
             item.problemTypeId !== ""
         );
         if (chec) {
-          callservesure
+         if(this.$route.path==="/serve/callserve"){
+     callservesure
+            .CreateOrder(this.form)
+            .then(() => {
+              this.$message({
+                message: "创建服务单成功",
+                type: "success"
+              });
+              this.$emit("close-Dia", "y");
+            })
+            .catch(res => {
+              this.$message({
+                message: `${res}`,
+                type: "error"
+              });
+            });
+         }else{
+        callservesure
             .CreateWorkOrder(this.form)
             .then(() => {
               this.$message({
@@ -527,6 +546,8 @@ export default {
                 type: "error"
               });
             });
+         }
+  
         } else {
           this.$message({
             message: `请将必填项填写完整`,

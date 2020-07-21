@@ -165,12 +165,12 @@
         <el-row type="flex" class="row-bg" justify="space-around">
           <el-col :span="8">
             <el-form-item label="问题类型"    prop="problemTypeId"
-                :rules="{
-              required: true, message: '问题类型不能为空', trigger: 'blur'
-            }">
+                >
               <el-input
+              :rules="{
+              required: true, message: '问题类型不能为空', trigger: 'blur'
+            }"
                 v-model="item.problemTypeId"
-             
                 v-if="!item.problemTypeId"
                 @focus="()=>{proplemTree=true,sortForm=index+1}"
               ></el-input>
@@ -261,7 +261,7 @@
       :visible.sync="proplemTree"
       width="250px"
     >
-      <problemtype @node-click="NodeClick" style :dataTree="dataTree"></problemtype>
+      <problemtype @node-click="NodeClick"  :dataTree="dataTree"></problemtype>
     </el-dialog>
     <el-dialog
       :title="`第${sortTable}个工单的解决方案`"
@@ -506,6 +506,7 @@ export default {
     },
     NodeClick(res) {
         this.formList[this.sortForm - 1].problemTypeId = res.id;
+        console.log(this.formList)
         this.problemLabel = res.name;
         this.proplemTree = false;
     },

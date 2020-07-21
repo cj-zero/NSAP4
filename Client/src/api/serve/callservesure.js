@@ -33,9 +33,11 @@ export function getForm(data) {
     })
   }
 
-  export function CreateOrder() {     //客服新建服务单
+  export function CreateOrder(data) {     //客服新建服务单
     return request({
-      url:"/serve/ServiceOrder/CustomerServiceAgentCreateOrder"
+      url:"/serve/ServiceOrder/CustomerServiceAgentCreateOrder",
+      method: 'post',
+      data
     })
   }
   

@@ -132,12 +132,11 @@
       <!--   v-el-drag-dialog
       width="1000px"  新建呼叫服务单-->
       <el-dialog
-        width="90%"
+        width="70%"
         class="dialog-mini"
         @open="openCustoner"
         @close="closeCustoner"
         destroy-on-close
-        :modal="false"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
@@ -636,24 +635,24 @@ export default {
     display: none;
   }
 }
-.mainPage {
-  ::v-deep .el-dialog__wrapper {
-    position: absolute;
-       .el-dialog__header {
-        .el-dialog__title {
-          color: white;
-        }
-        .el-dialog__close {
-          color: white;
-        }
-        background: lightslategrey;
-      }
-     .el-dialog__body {
-    padding: 10px 20px;
-  }
-  }
+// .mainPage {
+//   ::v-deep .el-dialog__wrapper {
+//     position: absolute;
+//        .el-dialog__header {
+//         .el-dialog__title {
+//           color: white;
+//         }
+//         .el-dialog__close {
+//           color: white;
+//         }
+//         background: lightslategrey;
+//       }
+//      .el-dialog__body {
+//     padding: 10px 20px;
+//   }
+//   }
 
-}
+// }
 
 
 </style>

@@ -100,7 +100,7 @@
             ></zxform>
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
-          <el-button size="mini" type="primary" :loading="loadingBtn" @click="updateData">确认</el-button>
+          <el-button size="mini" type="primary" :loading="loadingBtn" @click="createData">确认</el-button>
           <!-- <el-button size="mini"  >加载中</el-button> -->
         </div>
       </el-dialog>
@@ -459,21 +459,23 @@ export default {
       // });
     },
     createData() {
+            this.sure = this.sure + 1; //向form表单发送提交通知
+
       // 保存提交
-      this.$refs["dataForm"].validate(valid => {
-        if (valid) {
-          callservesure.add(this.temp).then(() => {
-            this.list.unshift(this.temp);
-            this.dialogFormVisible = false;
-            this.$notify({
-              title: "成功",
-              message: "创建成功",
-              type: "success",
-              duration: 2000
-            });
-          });
-        }
-      });
+      // this.$refs["dataForm"].validate(valid => {
+      //   if (valid) {
+      //     callservesure.add(this.temp).then(() => {
+      //       this.list.unshift(this.temp);
+      //       this.dialogFormVisible = false;
+      //       this.$notify({
+      //         title: "成功",
+      //         message: "创建成功",
+      //         type: "success",
+      //         duration: 2000
+      //       });
+      //     });
+      //   }
+      // });
     },
     handleUpdate(row) {
       // 弹出编辑框
@@ -493,34 +495,8 @@ export default {
       this.dialogFormVisible = false;
     },
     updateData() {
-      // 更新提交
-      // this.loadingBtn = true;
-      // setTimeout(function() {
-      //   this.loadingBtn = false;
-      // }, 5000);
-      this.sure = this.sure + 1; //向form表单发送提交通知
-      // this.dialogFormVisible =false
-      // this.$refs["dataForm"].validate(valid => {
-      //   if (valid) {
-      //     const tempData = Object.assign({}, this.temp);
-      //     callservesure.update(tempData).then(() => {
-      //       for (const v of this.list) {
-      //         if (v.id === this.temp.id) {
-      //           const index = this.list.indexOf(v);
-      //           this.list.splice(index, 1, this.temp);
-      //           break;
-      //         }
-      //       }
-      //       this.dialogFormVisible = false;
-      //       this.$notify({
-      //         title: "成功",
-      //         message: "更新成功",
-      //         type: "success",
-      //         duration: 2000
-      //       });
-      //     });
-      //   }
-      // });
+
+      // this.sure = this.sure + 1; //向form表单发送提交通知
     },
     handleDelete(rows) {
       // 多行删除
