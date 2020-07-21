@@ -101,11 +101,7 @@ export default {
         appId: undefined
       },
       columns: [
-        // treetable的列名
-        // {
-        //   text: "问题ID",
-        //   value: "id"
-        // },
+   
         {
           text: "描述",
           value: "description"
@@ -114,10 +110,7 @@ export default {
           text: "是否停用",
           value: "inuseFlag"
         }
-        // {
-        //   text: "排序",
-        //   value: "orderIdx"
-        // }
+
       ],
       currentPage: 1,
       currentSize: 20,

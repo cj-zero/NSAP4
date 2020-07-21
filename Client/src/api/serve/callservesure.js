@@ -77,6 +77,23 @@ export function getForm(data) {
       method: 'get'
     })
   }
+  
+  export function leftList() {      
+    return request({ //呼叫服务(客服)页面左侧树数据源
+      url: "/serve/ServiceOrder/ServiceWorkOrderTree",
+      method: 'get',
+
+    })
+  }
+
+  export function rightList(data) {      
+    return request({ //呼叫服务(客服)右侧查询列表
+      url: "/serve/ServiceOrder/ServiceWorkOrderList",
+      method: 'get',
+      params:data
+    })
+  }
+
   export function update(data) {
     return request({
       url: '/certinfos/delete',

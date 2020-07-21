@@ -25,7 +25,36 @@
     <div class="app-container">
    
       <div class="bg-white">
-           <zxsearch></zxsearch>
+           <zxsearch @change-Search='changeSearch'></zxsearch>
+           <el-row class="fh">
+        <el-col :span="3" class="fh ls-border">
+          <el-card shadow="never" class="card-body-none fh" >
+    
+ <el-table
+    :data="modulesTree"
+    style="width: 100%;margin-bottom: 20px;"
+    max-height="500px"
+    row-key="label"
+    border
+    @row-click="checkServeId"
+    @header-click="checkServeId(true)"
+    default-expand-all
+    :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
+    <el-table-column
+      prop="label"
+      style="color:green;"
+      label="全部服务单列表>>"
+      min-width="180px"
+      >
+          <template slot-scope="scope" >
+              {{scope.row.label}}
+          </template>
+    </el-table-column>
+ 
+  </el-table>
+          </el-card>
+        </el-col>
+            <el-col :span="21" class="fh">
         <el-table
           ref="mainTable"
           class="table_label"
@@ -36,14 +65,9 @@
           fit
           style="width: 100%;"
           highlight-current-row
-          @row-click="rowClick"
-        >
+          @row-click="rowClick" >
 
-          <el-table-column width="50">
-            <template slot-scope="scope">
-              <el-radio v-model="radio" :label="scope.row.id"></el-radio>
-            </template>
-          </el-table-column>
+
           <el-table-column
             show-overflow-tooltip
             v-for="(fruit,index) in formTheadOptions"
@@ -53,23 +77,26 @@
             style="background-color:silver;"
             :label="fruit.label"
           >
-            <template slot-scope="scope">
-              <el-link
-                v-if="fruit.name === 'id'"
-                type="primary"
-                @click="openTree(scope.row.id)"
-              >{{scope.row.id}}</el-link>
-              <span
-                v-if="fruit.name === 'status'"
-                :class="[scope.row[fruit.name]===1?'orangeWord':(scope.row[fruit.name]===2?'greenWord':'redWord')]"
-              >{{stateValue[scope.row[fruit.name]-1]}}</span>
-              <span v-if="fruit.name === 'subject'">{{scope.row[fruit.name]}}</span>
-              <span
-                v-if="!(fruit.name ==='status'||fruit.name ==='subject'||fruit.name ==='id')"
-              >{{scope.row[fruit.name]}}</span>
-            </template>
+          <template slot-scope="scope">
+                  <el-link
+                    v-if="fruit.name === 'serviceOrderId'"
+                    type="primary"
+                    @click="openTree(scope.row.serviceOrderId)"
+                  >{{scope.row.serviceOrderId}}</el-link>
+                  <span
+                    v-if="fruit.name === 'status'"
+                    :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
+                  >{{stateValue[scope.row[fruit.name]]}}</span>
+                  <span v-if="fruit.name === 'fromType'">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
+                  <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
+                  <span
+                    v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
+                  >{{scope.row[fruit.name]}}</span>
+                </template>
           </el-table-column>
         </el-table>
+           </el-col>
+      </el-row>
         <pagination
           v-show="total>0"
           :total="total"
@@ -78,8 +105,7 @@
           @pagination="handleCurrentChange"
         />
       </div>
-      <!--   v-el-drag-dialog
-      width="1000px"  新建呼叫服务单-->
+     
       <el-dialog
         width="800px"
         class="dialog-mini"
@@ -145,6 +171,7 @@ import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
 import Pagination from "@/components/Pagination";
+// import treeTable from "@/components/TreeTable";
 
 import elDragDialog from "@/directive/el-dragDialog";
 // import zxsearch from "./search";
@@ -174,20 +201,31 @@ export default {
       key: 1, // table key
       sure: 0,
       formTheadOptions: [
-        { name: "id", label: "服务单ID" },
+        // { name: "id", label: "服务单ID" },
+           { name: "serviceOrderId", label: "工单ID", ifFixed: true },
+        { name: "priority", label: "优先级" },
+        { name: "fromType", label: "呼叫类型", width: "100px" },
         { name: "customerId", label: "客户代码" },
         { name: "status", label: "状态" },
         { name: "customerName", label: "客户名称" },
         { name: "createTime", label: "创建日期" },
         { name: "contacter", label: "联系人" },
-        { name: "services", label: "服务内容" },
+        // { name: "services", label: "服务内容" },
         { name: "contactTel", label: "电话号码" },
         { name: "supervisor", label: "售后主管" },
         { name: "salesMan", label: "销售员" },
-        { name: "manufSN", label: "制造商序列号" },
-        { name: "itemCode", label: "物料编码" }
+        // { name: "manufSN", label: "制造商序列号" },
+        // { name: "itemCode", label: "物料编码" }
+      ],
+     stateValue: ["待确认", "已确认", "已取消"],
+      statusOptions: [
+        { key: 1, display_name: "待确认" },
+        { key: 2, display_name: "已确认" },
+        { key: 3, display_name: "已取消" }
       ],
 
+      modulesTree:[],
+      priorityOptions: ["低", "中", "高"],
       tableKey: 0,
       formValue: {},
       list: null,
@@ -203,22 +241,17 @@ export default {
         key: undefined,
         appId: undefined,
         QryServiceOrderId: "", //查询服务ID查询条件
-        QryState: "", //呼叫状态查询条件
-        QryCustomer: "", //客户查询条件
-        QryManufSN: "", // 制造商序列号查询条件
-        QryCreateTimeFrom: "", //创建日期从查询条件
-        QryCreateTimeTo: "" //创建日期至查询条件
+        // QryState: "", //呼叫状态查询条件
+        // QryCustomer: "", //客户查询条件
+        // QryManufSN: "", // 制造商序列号查询条件
+        // QryCreateTimeFrom: "", //创建日期从查询条件
+        // QryCreateTimeTo: "" //创建日期至查询条件
         // QryRecepUser:"",//接单员
         // QryTechName:"",//工单技术员
         // QryProblemType:"",//问题类型
         // QryMaterialTypes:""//物料类别（多选)
       },
-      stateValue: ["待确认", "已确认", "已取消"],
-      statusOptions: [
-        { key: 1, display_name: "待确认" },
-        { key: 2, display_name: "已确认" },
-        { key: 3, display_name: "已取消" }
-      ],
+
       temp: {
         id: "", // Id
         sltCode: "", // SltCode
@@ -240,6 +273,7 @@ export default {
         create: "新建呼叫服务单",
         info:'查看呼叫服务单'
       },
+ 
       dialogPvVisible: false,
       pvData: [],
       rules: {
@@ -278,7 +312,7 @@ export default {
     listQuery: {
       deep: true,
       handler(val) {
-        callservesure.getTableList(val).then(response => {
+        callservesure.rightList(val).then(response => {
           this.total = response.data.count;
           this.list = response.data.data;
           this.listLoading = false;
@@ -302,13 +336,25 @@ export default {
     }
   },
   created() {
-    this.getList();
+ 
   },
   mounted() {
     //   console.log(callserve)
+       this.getList();
+    this.getLeftList()
   },
   methods: {
+checkServeId(res){
+  if(res.children){
+    // console.log()
+    this.listQuery.QryServiceOrderId = res.label.split('服务ID')[1]
+  }
+   if(res===true){
+    // console.log()
+    this.listQuery.QryServiceOrderId = ''
+  }
 
+},
     openDetail() {
       this.dataForm = this.dataForm1;
     },
@@ -382,14 +428,46 @@ export default {
           break;
       }
     },
-
+    changeSearch(res){
+      console.log(res)
+      if(res===1){
+        this.getList()
+      }else{
+        Object.assign(this.listQuery,res)
+      }
+    },
     getList() {
       this.listLoading = true;
-      callservesure.getTableList(this.listQuery).then(response => {
+      callservesure.rightList(this.listQuery).then(response => {
+        // console.log(response)
         this.total = response.data.count;
         this.list = response.data.data;
         this.listLoading = false;
       });
+    },
+    getLeftList(){
+        this.listLoading = true;
+        let arr =[]
+      callservesure.leftList().then(res => {
+            let resul =  res.data.data
+        for(let i=0;i<resul.length;i++){
+          arr[i] =[]
+         arr[i].label=`服务ID${resul[i].serviceOrderId}`;
+         arr[i].children=[]
+            resul[i].workOrderId.map(item1 => {
+            arr[i].children.push({ label:  `工单ID${item1}`});
+          });
+        // arr[i].push({a:1}) 
+        }
+      this.modulesTree=arr
+        console.log(res)
+        // this.total = response.data.count;
+        // this.list = response.data.data;
+        // this.listLoading = false;
+      });
+    },
+    handleNodeClick(res){
+      console.log(res)
     },
     open() {
       this.$confirm("确认已完成回访?", "提示", {
