@@ -508,7 +508,43 @@ namespace OpenAuth.App
             result.Data = grouplist;
             return result;
         }
-        
+
+        /// <summary>
+        /// 呼叫服务（客服）左侧树
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> ServiceWorkOrderTree(QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+            var query = from a in UnitWork.Find<ServiceWorkOrder>(null)
+                        join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
+                        from b in ab.DefaultIfEmpty()
+                        select new { a, b };
+
+            query = query.WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.b.Id.Equals(Convert.ToInt32(req.QryServiceOrderId)))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId), q => q.a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.a.Status.Equals(Convert.ToInt32(req.QryState)))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.b.CustomerId.Contains(req.QryCustomer) || q.b.CustomerName.Contains(req.QryCustomer))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.a.ManufacturerSerialNumber.Contains(req.QryManufSN))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.b.RecepUserName.Contains(req.QryRecepUser))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.a.ProblemTypeId.Equals(req.QryProblemType))
+                         .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime <= req.QryCreateTimeTo);
+            var workorderlist = await query.OrderBy(r => r.a.CreateTime).Select(q => new
+            {
+                ServiceOrderId = q.b.Id,
+                ServiceWorkOrderId = q.a.Id
+            }).Distinct().ToListAsync();
+
+            var grouplistsql = from c in workorderlist
+                               group c by c.ServiceOrderId into g
+                               let WTypes = g.Select(o => o.ServiceWorkOrderId.ToString()).ToArray()
+                               select new { ServiceOrderId = g.Key, WorkOrderId = WTypes };
+            var grouplist = grouplistsql.ToList();
+
+            result.Data = grouplist;
+            return result;
+        }
         /// <summary>
         /// 客服新建服务单
         /// </summary>
@@ -536,7 +572,7 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        public async Task<TableData> UnsignedWorkOrderList(QueryServiceOrderListReq req)
+        public async Task<TableData> ServiceWorkOrderList(QueryServiceOrderListReq req)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -552,17 +588,79 @@ namespace OpenAuth.App
                         select new { a, b, c};
 
             query = query.WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.b.Id.Equals(Convert.ToInt32(req.QryServiceOrderId)))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId), q => q.a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.a.Status.Equals(Convert.ToInt32(req.QryState)))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.b.CustomerId.Contains(req.QryCustomer) || q.b.CustomerName.Contains(req.QryCustomer))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.a.ManufacturerSerialNumber.Contains(req.QryManufSN))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.b.RecepUserName.Contains(req.QryRecepUser))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.c.Name.Contains(req.QryProblemType))
+                         .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime <= req.QryCreateTimeTo);
+
+            var resultsql = query.OrderBy(r => r.a.CreateTime).Select(q => new
+            {
+                ServiceOrderId=q.b.Id,
+                ServiceWorkOrderId=q.a.Id,
+                q.a.Priority,
+                q.a.FromType,
+                q.a.Status,
+                q.b.CustomerId,
+                q.b.CustomerName,
+                q.b.TerminalCustomer,
+                q.a.FromTheme,
+                q.a.CreateTime,
+                q.b.RecepUserName,
+                TechName="",
+                q.a.ManufacturerSerialNumber,
+                q.a.MaterialCode,
+                q.a.MaterialDescription,
+                q.b.Contacter,
+                q.b.ContactTel,
+                q.b.Supervisor,
+                q.b.SalesMan,
+                q.a.CurrentUserId,
+            });
+
+
+            result.Data =
+            (await resultsql
+            .Skip((req.page - 1) * req.limit)
+            .Take(req.limit).ToListAsync());//.GroupBy(o => o.Id).ToList();
+            result.Count = query.Count();
+            return result;
+        }
+
+        /// <summary>
+        /// 呼叫服务（客服)工单列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> UnsignedWorkOrderList(QueryServiceOrderListReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = new TableData();
+            var query = from a in UnitWork.Find<ServiceWorkOrder>(null)
+                        join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
+                        from b in ab.DefaultIfEmpty()
+                        join c in UnitWork.Find<ProblemType>(null) on a.ProblemTypeId equals c.Id into ac
+                        from c in ac.DefaultIfEmpty()
+                        select new { a, b, c };
+
+            query = query.WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.b.Id.Equals(Convert.ToInt32(req.QryServiceOrderId)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.a.Status.Equals(Convert.ToInt32(req.QryState)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.b.CustomerId.Contains(req.QryCustomer) || q.b.CustomerName.Contains(req.QryCustomer))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.a.ManufacturerSerialNumber.Contains(req.QryManufSN))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.b.RecepUserName.Contains(req.QryRecepUser))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.c.Name.Contains(req.QryProblemType))
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime <= req.QryCreateTimeTo)
-                         .WhereIf(req.QryMaterialTypes != null && req.QryMaterialTypes.Count > 0, q=>req.QryMaterialTypes.Contains( q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))));
+                         .WhereIf(req.QryMaterialTypes != null && req.QryMaterialTypes.Count > 0, q => req.QryMaterialTypes.Contains(q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))));
 
             var resultsql = query.OrderBy(r => r.a.CreateTime).Select(q => new
             {
-                ServiceOrderId=q.b.Id,
+                ServiceOrderId = q.b.Id,
                 q.a.Priority,
                 q.a.FromType,
                 q.a.Status,
@@ -572,7 +670,7 @@ namespace OpenAuth.App
                 q.a.FromTheme,
                 q.a.CreateTime,
                 q.b.RecepUserName,
-                TechName="",
+                TechName = "",
                 q.a.ManufacturerSerialNumber,
                 q.a.MaterialCode,
                 q.a.MaterialDescription,
@@ -593,6 +691,7 @@ namespace OpenAuth.App
             result.Count = query.Count();
             return result;
         }
+
 
         /// <summary>
         /// 技术员查看工单列表

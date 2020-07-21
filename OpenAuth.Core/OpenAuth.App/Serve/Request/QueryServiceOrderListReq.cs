@@ -12,6 +12,7 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string? QryServiceOrderId { get; set; }
 
+        public string QryServiceWorkOrderId { get; set; }
         /// <summary>
         /// 呼叫状态查询条件
         /// </summary>
