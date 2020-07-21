@@ -20,7 +20,6 @@ export default {
   },
   mounted() {
     this.filterSerialNumberList = this.SerialNumberList;
-
   },
   methods: {
     handleNodeClick(value) {

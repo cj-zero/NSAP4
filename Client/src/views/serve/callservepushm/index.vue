@@ -10,7 +10,6 @@
           :placeholder="'名称'"
           v-model="listQuery.key"
         ></el-input>
-
         <el-button
           class="filter-item"
           size="mini"
@@ -19,63 +18,70 @@
           icon="el-icon-search"
           @click="handleFilter"
         >搜索</el-button>
-
         <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
     </sticky>
     <div class="app-container flex-item">
+      <zxsearch @change-Search="changeSearch"></zxsearch>
       <el-row class="fh">
-        <!-- <el-col :span="10" class="fh ls-border">
+        <el-col :span="4" class="fh ls-border">
           <el-card shadow="never" class="card-body-none fh" style="overflow-y: auto">
-            <div slot="header" class="clearfix">
-              <el-button type="text" style="padding: 0 11px" @click="getAllMenus">所有菜单>></el-button>
-            </div>
-						<tree-table highlight-current-row :data="modulesTree" :columns="columns" @row-click="treeClick" border></tree-table>
+            <el-tree :data="modulesTree" default-expand-all show-checkbox node-key="label"
+    check-strictly ref="treeForm"  @check-change="handleNodeClick" :props="defaultProps"></el-tree>
           </el-card>
-        </el-col>-->
-        <div class="bg-white">
-          <zxsearch></zxsearch>
-          <el-table
-            ref="mainTable"
-            :key="key"
-            :data="list"
-            v-loading="listLoading"
-            border
-            fit
-            tooltip-effect="dark"
-            @selection-change="handleSelectionChange"
-            style="width: 100%;"
-            highlight-current-row
-            @row-click="rowClick"
-          >
-            <el-table-column type="selection" width="55"></el-table-column>
-            <el-table-column
-              show-overflow-tooltip
-              v-for="(fruit,index) in formTheadOptions"
-              align="center"
-              :key="`ind${index}`"
-              :sortable="fruit=='chaungjianriqi'?true:false"
-              style="background-color:silver;"
-              :label="fruit.label"
+        </el-col>
+        <el-col :span="20" class="fh">
+          <div class="bg-white">
+            <el-table
+              ref="mainTable"
+              :key="key"
+              :data="list"
+              v-loading="listLoading"
+              border
+              fit
+              tooltip-effect="dark"
+              style="width: 100%;"
+              highlight-current-row
+              @row-click="rowClick"
             >
-              <template slot-scope="scope">
-                <!-- <span
-                  v-if="fruit === 'status'"
-                  :class="[scope.row[fruit]===1?'greenWord':(scope.row[fruit]===2?'orangeWord':'redWord')]"
-                >{{stateValue[scope.row[fruit]-1]}}</span>
-                <span v-if="fruit === 'subject'">{{scope.row[fruit]}}</span> -->
-                <span >{{scope.row[fruit.name]}}</span>
-              </template>
-            </el-table-column>
-          </el-table>
-          <pagination
-            v-show="total>0"
-            :total="total"
-            :page.sync="listQuery.page"
-            :limit.sync="listQuery.limit"
-            @pagination="handleCurrentChange"
-          />
-        </div>
+              <el-table-column
+                show-overflow-tooltip
+                v-for="(fruit,index) in formTheadOptions"
+                align="center"
+                :key="`ind${index}`"
+                :sortable="fruit=='chaungjianriqi'?true:false"
+                style="background-color:silver;"
+                :label="fruit.label"
+                :fixed="fruit.ifFixed"
+                :width="fruit.width"
+              >
+                <template slot-scope="scope">
+                  <el-link
+                    v-if="fruit.name === 'serviceOrderId'"
+                    type="primary"
+                    @click="openTree(scope.row.serviceOrderId)"
+                  >{{scope.row.serviceOrderId}}</el-link>
+                  <span
+                    v-if="fruit.name === 'status'"
+                    :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
+                  >{{stateValue[scope.row[fruit.name]]}}</span>
+                  <span v-if="fruit.name === 'fromType'">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
+                  <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
+                  <span
+                    v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
+                  >{{scope.row[fruit.name]}}</span>
+                </template>
+              </el-table-column>
+            </el-table>
+            <pagination
+              v-show="total>0"
+              :total="total"
+              :page.sync="listQuery.page"
+              :limit.sync="listQuery.limit"
+              @pagination="handleCurrentChange"
+            />
+          </div>
+        </el-col>
       </el-row>
       <!--   v-el-drag-dialog
       width="1000px"  新建呼叫服务单-->
@@ -105,14 +111,20 @@
         </div>
       </el-dialog>
       <!-- 只能查看的表单 -->
-      <el-dialog width="1200px" class="dialog-mini" title="服务单详情" :visible.sync="dialogFormView">
+      <el-dialog
+        width="1000px"
+        class="dialog-mini"
+        title="服务单详情"
+        destroy-on-close
+        :visible.sync="dialogFormView"
+      >
         <zxform
-          formName="查看"
           :form="temp"
+          formName="查看"
           labelposition="right"
           labelwidth="100px"
           :isEdit="false"
-          refValue="dataForm"
+          :refValue="dataForm"
         ></zxform>
 
         <div slot="footer">
@@ -145,6 +157,7 @@
 <script>
 import * as solutions from "@/api/solutions";
 import * as callservepushm from "@/api/serve/callservepushm";
+import * as callservesure from "@/api/serve/callservesure";
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
@@ -154,6 +167,8 @@ import elDragDialog from "@/directive/el-dragDialog";
 import zxsearch from "./search";
 import zxform from "../callserve/form";
 import treeList from "../callserve/treeList";
+// import treeTable from "@/components/TreeTableMlt";
+
 // import { callserve, count } from "@/mock/serve";
 export default {
   name: "solutions",
@@ -183,37 +198,36 @@ export default {
         "kehidaima",
         "kehumingcheng"
       ],
+      modulesTree: [], // 左侧数据构成的树
       formTheadOptions: [
-        //  { name: "serveid", label: "工单ID" },
-        { name: "createTime", label: "创建日期" },
+        { name: "serviceOrderId", label: "工单ID", ifFixed: true },
+        { name: "priority", label: "优先级" },
+        { name: "fromType", label: "呼叫类型", width: "100px" },
+        { name: "status", label: "呼叫状态" },
+        { name: "status", label: "费用审核" },
         { name: "customerId", label: "客户代码" },
-        { name: "customerName", label: "呼叫状态" },
+        { name: "terminalCustomer", label: "终端客户" },
+        { name: "customerName", label: "客户名称" },
         { name: "fromTheme", label: "呼叫主题" },
-        { name: "manufacturerSerialNumber", label: "接单员" },
-        { name: "materialCode", label: "费用审核" },
-        { name: "materialDescription", label: "客户名称" },
-        { name: "priority", label: "主题" },
-        { name: "problemTypeName", label: "客户代码" },
+        { name: "createTime", label: "创建日期" },
         { name: "recepUserName", label: "接单员" },
-        { name: "serviceOrderId", label: "费用审核" },
-        { name: "serviceWorkOrderId", label: "客户名称" },
-        { name: "status", label: "呼叫状态" }
+        { name: "techName", label: "技术员" },
+        { name: "manufacturerSerialNumber", label: "制造商序列号" },
+        { name: "materialCode", label: "物料编码" },
+        { name: "materialDescription", label: "物料描述" },
+        { name: "contacter", label: "联系人" },
+        { name: "contactTel", label: "电话号码" },
+        { name: "supervisor", label: "售后主管" },
+        { name: "salesMan", label: "销售员" }
+        // "serviceWorkOrderId": 1,
+        // "problemTypeName": "数值异常",
+        // "currentUserId": 1
       ],
-      // this.dialogTable = true;
 
-      headLabel: {
-        // serveid: "ID",
-        priority: "优先级",
-        chaungjianriqi: "创建时间",
-        calltype: "呼叫类型",
-        callstatus: "呼叫状态",
-        kehidaima: "客户代码",
-        jiedanyuan: "接单员",
-        moneyapproval: "费用审核",
-        kehumingcheng: "客户名称",
-        zhuti: "主题"
+      defaultProps: {
+        children: "children",
+        label: "label"
       },
-
       tableKey: 0,
       list: null,
       total: 0,
@@ -225,14 +239,25 @@ export default {
         page: 1,
         limit: 20,
         key: undefined,
-        appId: undefined
+        appId: undefined,
+        Name: "", //	Description
+        QryServiceOrderId: "", //- 查询服务ID查询条件
+        QryState: "", //- 呼叫状态查询条件
+        QryCustomer: "", //- 客户查询条件
+        QryManufSN: "", // - 制造商序列号查询条件
+        QryCreateTimeFrom: "", //- 创建日期从查询条件
+        QryCreateTimeTo: "", //- 创建日期至查询条件
+        QryRecepUser: "", //- 接单员
+        QryTechName: "", // - 工单技术员
+        QryProblemType: "" // - 问题类型
       },
-      stateValue: ["发布", "检查", "内部"],
+      stateValue: ["待确认", "已确认", "已取消"],
       statusOptions: [
-        { key: 1, display_name: "发布" },
-        { key: 2, display_name: "检查" },
-        { key: 3, display_name: "内部" }
+        { key: 1, display_name: "待确认" },
+        { key: 2, display_name: "已确认" },
+        { key: 3, display_name: "已取消" }
       ],
+      priorityOptions: ["低", "中", "高"],
       temp: {
         id: "", // Id
         sltCode: "", // SltCode
@@ -251,6 +276,7 @@ export default {
         update: "确认呼叫服务单",
         create: "新建呼叫服务单"
       },
+      dataForm: {}, //获取的详情表单
       dialogPvVisible: false,
       pvData: [],
       rules: {
@@ -284,15 +310,10 @@ export default {
     }
   },
   watch: {
-    // checkboxVal(valArr) {
-    // this.formThead = this.formTheadOptions.filter(
-    //   i => valArr.indexOf(i) >= 0
-    // );
     defaultFormThead(valArr) {
       this.formTheadOptions = this.formTheadOptions.filter(
         i => valArr.indexOf(i) >= 0
       );
-
       // }
       this.key = this.key + 1; // 为了保证table 每次都会重渲 In order to ensure the table will be re-rendered each time
     }
@@ -307,9 +328,30 @@ export default {
     //   console.log(callserve)
   },
   methods: {
-    openTree() {
-      // this.dialogTree = true;  树形图
-      this.dialogFormView = true;
+    changeSearch(val) {
+      if (val === 1) {
+        this.getRightList();
+      } else {
+        Object.assign(this.listQuery, val);
+        console.log(this.listQuery);
+      }
+    },
+    openTree(res) {
+      this.listLoading = true;
+      callservesure.GetDetails(res).then(res => {
+        if (res.code == 200) {
+          this.dataForm = res.result;
+          this.dialogFormView = true;
+        }
+        this.listLoading = false;
+      });
+    },
+    treeClick(data) {
+      // 左侧treetable点击事件
+      console.log(data);
+      // this.currentModule = data
+      // this.currentModule.parent = null
+      // this.getList()
     },
     onSubmit() {
       console.log("submit!");
@@ -318,13 +360,14 @@ export default {
       console.log(result);
     },
     rowClick(row) {
+      this.multipleSelection = row;
       this.$refs.mainTable.clearSelection();
       this.$refs.mainTable.toggleRowSelection(row);
     },
-    handleSelectionChange(val) {
-      this.multipleSelection = val;
-      console.log(val);
-    },
+    // handleSelectionChange(val) {
+    //   this.multipleSelection = val;
+    //   console.log(val);
+    // },
     onBtnClicked: function(domId) {
       switch (domId) {
         case "btnAdd":
@@ -360,23 +403,54 @@ export default {
           break;
       }
     },
+    // @check-change="handleClick"
+//  handleClick(data, checked){
+//                  if(checked == true){
+//                      this.checkedId = data.label;
+//                      this.$refs.treeForm.setCheckedNodes([data]);
+//                  }
+//             },
+            // nodeClick(data,data1){
+            //   if(data.children){
+            //     console.log(1)
+            //     this.$refs.treeForm.setCheckedKeys([]);
+            //     this.$refs.treeForm.setCheckedNodes([data])
+            //   }
+            // },
+handleNodeClick(data, checked) {
+    if(checked === true) {
+        this.checkedId = data.label;
+        this.$refs.treeForm.setCheckedKeys([data.label]);
+    } else {
+        if (this.checkedId == data.label) {
+            this.$refs.treeForm.setCheckedKeys([data.label]);
+        }
+    }
+},
 
     getLeftList() {
       this.listLoading = true;
-
-      this.listLoading = false;
-      callservepushm.getLeftList(this.listQuery).then(response => {
-        console.log(response);
-        // this.list = response.data;
-        // this.total = response.count;
+       let arr =[]
+      callservepushm.getLeftList().then(res => {
+       let resul =  res.data.data
+        for(let i=0;i<resul.length;i++){
+          arr[i] =[]
+         arr[i].label=`服务ID${resul[i].serviceOrderId}`;
+         arr[i].children=[]
+            resul[i].materialTypes.map(item1 => {
+            arr[i].children.push({ label:  `物料类型ID${item1}`});
+          });
+        // arr[i].push({a:1}) 
+        }
+      this.modulesTree=arr
+       
+        });
         this.listLoading = false;
-      });
     },
     getRightList() {
       this.listLoading = true;
       callservepushm.getRightList(this.listQuery).then(response => {
         this.list = response.data.data;
-        console.log(this.list);
         // this.list = response.data;
         this.total = response.data.count;
         this.listLoading = false;
@@ -403,16 +477,16 @@ export default {
     },
     handleFilter() {
       this.listQuery.page = 1;
-      this.getList();
+      // this.getList();
     },
     handleSizeChange(val) {
       this.listQuery.limit = val;
-      this.getList();
+      // this.getList();
     },
     handleCurrentChange(val) {
       this.listQuery.page = val.page;
       this.listQuery.limit = val.limit;
-      this.getList();
+      // this.getList();
     },
     handleModifyStatus(row, disable) {
       // 模拟修改状态

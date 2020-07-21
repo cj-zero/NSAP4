@@ -3,7 +3,7 @@
     <div class="form" style="border:1px solid silver;">
       <el-row :gutter="20">
         <!-- <el-col :span="isEdit?24:18">右边是派单的 -->
-            <el-col :span="24">
+        <el-col :span="24">
           <el-form
             :model="form"
             :rules="rules"
@@ -208,7 +208,8 @@
               type="flex"
               style="margin:0 0 10px 0 ;"
               class="row-bg"
-              justify="space-around">
+              justify="space-around"
+            >
               <el-col :span="20"></el-col>
               <el-col :span="4" style="line-height:40px;">
                 <el-button
@@ -228,8 +229,6 @@
               :propForm="propForm"
             ></formAdd>
             <!-- <formAdd :SerialNumberList="SerialNumberList"></formAdd> -->
-
- 
           </el-form>
         </el-col>
         <!-- <el-col :span="6" class="lastWord" v-if="!isEdit" >   暂时不用派单
@@ -251,53 +250,49 @@
               </el-form>
             </el-collapse-item>
           </el-collapse>
-        </el-col> -->
+        </el-col>-->
       </el-row>
-                 <el-dialog title="选择地址" width="1000px" :visible.sync="drawerMap" direction="ttb">
-              <zmap @drag="dragmap"></zmap>
-              <el-row :gutter="12" slot="footer" class="dialog-footer" style="height:30px;">
-                <el-col :span="20">当前选择:{{allAddress.address?allAddress.address:'暂未选择地点'}}</el-col>
-                <el-col :span="4" style="height:30px;line-height:30px;">
-                  <el-button
-                    type="primary"
-                    size="mini"
-                    style="margin-top:10px;"
-                    @click="chooseAddre"
-                  >确定选择</el-button>
-                </el-col>
-              </el-row>
-            </el-dialog>
-            <el-dialog
-              title="选择业务伙伴"
-              class="addClass1"
-              width="90%"
-              @open="openDialog"
-              :visible.sync="dialogPartner" >
-              <el-form :inline="true" class="demo-form-inline">
-                <el-form-item label="客户代码:">
-                  <el-input @input="searchList" v-model="inputSearch" placeholder="客户代码"></el-input>
-                </el-form-item>
-                <el-form-item label="制造商序列号:">
-                  <el-input @input="searSerial" v-model="inputSerial" placeholder="制造商序列号"></el-input>
-                </el-form-item>
-              </el-form>
-              <formPartner
-                :partnerList="filterPartnerList"
-                :count="parentCount"
-                @getChildValue="ChildValue"
-              ></formPartner>
-              <pagination
-                v-show="parentCount>0"
-                :total="parentCount"
-                :page.sync="listQuery.page"
-                :limit.sync="listQuery.limit"
-                @pagination="handleChange"
-              />
-              <span slot="footer" class="dialog-footer">
-                <el-button @click="dialogPartner = false">取 消</el-button>
-                <el-button type="primary" @click="dialogPartner = false">确 定</el-button>
-              </span>
-            </el-dialog>
+      <el-dialog title="选择地址" width="1000px" :visible.sync="drawerMap" direction="ttb">
+        <zmap @drag="dragmap"></zmap>
+        <el-row :gutter="12" slot="footer" class="dialog-footer" style="height:30px;">
+          <el-col :span="20">当前选择:{{allAddress.address?allAddress.address:'暂未选择地点'}}</el-col>
+          <el-col :span="4" style="height:30px;line-height:30px;">
+            <el-button type="primary" size="mini" style="margin-top:10px;" @click="chooseAddre">确定选择</el-button>
+          </el-col>
+        </el-row>
+      </el-dialog>
+      <el-dialog
+        title="选择业务伙伴"
+        class="addClass1"
+        width="90%"
+        @open="openDialog"
+        :visible.sync="dialogPartner"
+      >
+        <el-form :inline="true" class="demo-form-inline">
+          <el-form-item label="客户代码:">
+            <el-input @input="searchList" v-model="inputSearch" placeholder="客户代码"></el-input>
+          </el-form-item>
+          <el-form-item label="制造商序列号:">
+            <el-input @input="searSerial" v-model="inputSerial" placeholder="制造商序列号"></el-input>
+          </el-form-item>
+        </el-form>
+        <formPartner
+          :partnerList="filterPartnerList"
+          :count="parentCount"
+          @getChildValue="ChildValue"
+        ></formPartner>
+        <pagination
+          v-show="parentCount>0"
+          :total="parentCount"
+          :page.sync="listQuery.page"
+          :limit.sync="listQuery.limit"
+          @pagination="handleChange"
+        />
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="dialogPartner = false">取 消</el-button>
+          <el-button type="primary" @click="dialogPartner = false">确 定</el-button>
+        </span>
+      </el-dialog>
       <Model
         :visible="previewVisible"
         @on-close="previewVisible = false"
@@ -480,7 +475,6 @@ export default {
     this.isEditAdd = this.isEdit;
   },
   methods: {
-
     handlePreviewFile(item) {
       //预览图片
       this.previewVisible = true;
@@ -512,7 +506,10 @@ export default {
       console.log(this.form.serviceWorkOrders);
       if (this.form.serviceWorkOrders.length > 0) {
         let chec = this.form.serviceWorkOrders.every(
-          item => item.fromTheme !== ""&&item.fromType !== ""&&item.problemTypeId !== ""
+          item =>
+            item.fromTheme !== "" &&
+            item.fromType !== "" &&
+            item.problemTypeId !== ""
         );
         if (chec) {
           callservesure
@@ -727,6 +724,7 @@ export default {
   //   background: lightslategrey;
   // }
 }
+
 .my-autocomplete {
   li {
     line-height: normal;

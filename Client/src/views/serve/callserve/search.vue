@@ -96,6 +96,14 @@ export default {
       }
     };
   },
+    watch: {
+    listQuery: {
+      deep: true,
+      handler(val) {
+        this.$emit("change-Search", val);
+      }
+    }
+  },
   methods: {
     // onSubmit() {
     //   console.log("submit!");

@@ -32,6 +32,12 @@ export function getForm(data) {
       params:{id:data}
     })
   }
+
+  export function CreateOrder() {     //客服新建服务单
+    return request({
+      url:"/serve/ServiceOrder/CustomerServiceAgentCreateOrder"
+    })
+  }
   
   export function getImgUrl(data) {     
     return request({

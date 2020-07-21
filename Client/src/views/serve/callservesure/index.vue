@@ -1,5 +1,5 @@
 <template>
-  <div style="position:absolute;">
+  <div style="position:relative;" class="mainPage">
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <el-input
@@ -22,14 +22,15 @@
         <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
     </sticky>
-    <div class="app-container" >
-      <div class="bg-white" >
+    <div class="app-container">
+
+      <div class="bg-white">
         <el-form ref="listQuery" :model="listQuery" label-width="80px">
           <div style="padding:10px 0;"></div>
           <el-row :gutter="10">
             <el-col :span="4">
               <el-form-item label="服务ID" size="medium">
-                        <el-input v-model="listQuery.QryServiceOrderId"></el-input>
+                <el-input v-model="listQuery.QryServiceOrderId"></el-input>
               </el-form-item>
             </el-col>
 
@@ -88,9 +89,7 @@
           highlight-current-row
           @row-click="rowClick"
         >
-          <!-- <el-table-column     v-for="(fruit,index) in formTheadOptions"  :key="`ind${index}`">
-              <el-radio v-model="fruit.id" ></el-radio>
-          </el-table-column>-->
+
           <el-table-column width="50">
             <template slot-scope="scope">
               <el-radio v-model="radio" :label="scope.row.id"></el-radio>
@@ -138,6 +137,7 @@
         @open="openCustoner"
         @close="closeCustoner"
         destroy-on-close
+        :modal="false"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
@@ -253,6 +253,7 @@ export default {
         { name: "manufSN", label: "制造商序列号" },
         { name: "itemCode", label: "物料编码" }
       ],
+
       tableKey: 0,
       formValue: {},
       list: null,
@@ -408,7 +409,7 @@ export default {
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.multipleSelection = row;
-      this.radio = row.id
+      this.radio = row.id;
       this.$refs.mainTable.toggleRowSelection(row);
     },
     // handleSelectionChange(val) {
@@ -433,7 +434,7 @@ export default {
             });
             return;
           }
-              if (this.multipleSelection.status===2) {
+          if (this.multipleSelection.status === 2) {
             this.$message({
               message: "该服务单已经被确认过",
               type: "warning"
@@ -635,6 +636,26 @@ export default {
     display: none;
   }
 }
+.mainPage {
+  ::v-deep .el-dialog__wrapper {
+    position: absolute;
+       .el-dialog__header {
+        .el-dialog__title {
+          color: white;
+        }
+        .el-dialog__close {
+          color: white;
+        }
+        background: lightslategrey;
+      }
+     .el-dialog__body {
+    padding: 10px 20px;
+  }
+  }
+
+}
+
+
 </style>
 
 
