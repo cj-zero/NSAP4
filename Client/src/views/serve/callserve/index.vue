@@ -28,7 +28,7 @@
            <zxsearch @change-Search='changeSearch'></zxsearch>
            <el-row class="fh">
         <el-col :span="3" class="fh ls-border">
-          <el-card shadow="never" class="card-body-none fh" >
+          <el-card shadow="never" class="card-body-none fh bg-head" >
     
  <el-table
     :data="modulesTree"
@@ -40,6 +40,7 @@
     @header-click="checkServeId(true)"
     default-expand-all
     :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
+
     <el-table-column
       prop="label"
       style="color:green;"
@@ -47,7 +48,8 @@
       min-width="180px"
       >
           <template slot-scope="scope" >
-              {{scope.row.label}}
+              <el-radio v-if="scope.row.children" v-model="radio" :label="scope.row.label"></el-radio>
+              <span v-else> {{scope.row.label}}</span>
           </template>
     </el-table-column>
  
@@ -66,8 +68,6 @@
           style="width: 100%;"
           highlight-current-row
           @row-click="rowClick" >
-
-
           <el-table-column
             show-overflow-tooltip
             v-for="(fruit,index) in formTheadOptions"
@@ -106,8 +106,9 @@
         />
       </div>
      
-      <el-dialog
-        width="800px"
+     <!-- 客服新建服务单 -->
+      <el-dialog   
+        width="900px"
         class="dialog-mini"
         @close="closeCustoner"
         destroy-on-close
@@ -127,12 +128,36 @@
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
           <el-button size="mini" type="primary" :loading="loadingBtn" @click="createData">确认</el-button>
-          <!-- <el-button size="mini"  >加载中</el-button> -->
+        </div>
+      </el-dialog>
+           <!-- 客服编辑服务单 -->
+      <el-dialog   
+        width="900px"
+        class="dialog-mini"
+        @close="closeCustoner"
+        destroy-on-close
+        :title="textMap[dialogStatus]"
+        :visible.sync="FormUpdate"
+      >
+            <zxform
+              :form="temp"
+              formName="编辑"
+              labelposition="right"
+              labelwidth="100px"
+              isEditForm=true
+              :isEdit="true"
+              :sure="sure"
+              :customer="customer"
+              @close-Dia="closeDia"
+            ></zxform>
+        <div slot="footer">
+          <el-button size="mini" @click="FormUpdate = false">取消</el-button>
+          <el-button size="mini" type="primary" :loading="loadingBtn" @click="FormUpdate">确认</el-button>
         </div>
       </el-dialog>
       <!-- 只能查看的表单 -->
       <el-dialog
-        width="800px"
+        width="900px"
         class="dialog-mini"
         title="服务单详情"
         destroy-on-close
@@ -269,8 +294,9 @@ export default {
       dialogTable: false,
       dialogTree: false,
       dialogStatus: "",
+      FormUpdate:false, //编辑表单的dialog
       textMap: {
-        update: "确认呼叫服务单",
+        update: "编辑呼叫服务单",
         create: "新建呼叫服务单",
         info:'查看呼叫服务单'
       },
@@ -348,10 +374,11 @@ export default {
 checkServeId(res){
   if(res.children){
     // console.log()
-    this.listQuery.QryServiceOrderId = res.label.split('服务单号')[1]
+    this.listQuery.QryServiceOrderId = res.label.split('服务单号：')[1]
   }
    if(res===true){
     // console.log()
+    this.radio=''
     this.listQuery.QryServiceOrderId = ''
   }
 
@@ -381,7 +408,6 @@ checkServeId(res){
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.multipleSelection = row;
-      this.radio = row.id;
       this.$refs.mainTable.toggleRowSelection(row);
     },
     // handleSelectionChange(val) {
@@ -398,8 +424,8 @@ checkServeId(res){
           this.dialogTable = true;
           break;
         case "btnEdit":
-          // console.log(this.multipleSelection);
-          if (!this.multipleSelection.id) {
+           console.log(this.multipleSelection);
+          if (!this.multipleSelection.serviceOrderId) {
             this.$message({
               message: "请选择需要编辑的数据",
               type: "error"
@@ -430,7 +456,6 @@ checkServeId(res){
       }
     },
     changeSearch(res){
-      console.log(res)
       if(res===1){
         this.getList()
       }else{
@@ -453,15 +478,14 @@ checkServeId(res){
             let resul =  res.data.data
         for(let i=0;i<resul.length;i++){
           arr[i] =[]
-         arr[i].label=`服务单号${resul[i].serviceOrderId}`;
+         arr[i].label=`服务单号：${resul[i].serviceOrderId}`;
          arr[i].children=[]
             resul[i].workOrderId.map(item1 => {
-            arr[i].children.push({ label:  `工单号${item1}`});
+            arr[i].children.push({ label:  `工单号：${item1}`});
           });
         // arr[i].push({a:1}) 
         }
       this.modulesTree=arr
-        console.log(res)
         // this.total = response.data.count;
         // this.list = response.data.data;
         // this.listLoading = false;
@@ -558,18 +582,20 @@ checkServeId(res){
     },
     handleUpdate(row) {
       // 弹出编辑框
-      this.temp = Object.assign({}, row); // copy obj
-      callservesure.getForm(row.id).then(response => {
+      // this.temp = Object.assign({}, row); // copy obj
+      callservesure.getForm(row.serviceOrderId).then(response => {
         this.formValue = response.result;
-        // console.log(this.formValue);
         this.dialogStatus = "update";
-        this.dialogFormVisible = true;
-        // this.$nextTick(() => {
-        //   this.$refs["dataForm"].clearValidate();
-        // });
+        this.FormUpdate = true;
+      
       });
     },
-    closeDia() {
+    closeDia(a) {
+      if(a===1){
+      // this.FormUpdate = false
+      this.getList()
+      }
+
       this.loadingBtn = false;
       this.dialogFormVisible = false;
     },
@@ -615,6 +641,11 @@ checkServeId(res){
   ::v-deep.el-radio__label {
     display: none;
   }
+}
+.bg-head{
+  ::v-deep .el-table thead{
+  color:green;
+}
 }
 // .mainPage {
 //   ::v-deep .el-dialog__wrapper {

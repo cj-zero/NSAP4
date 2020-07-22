@@ -8,6 +8,7 @@
             :model="form"
             :rules="rules"
             :ref="form"
+            class="rowStyle"
             :disabled="!isEdit"
             :label-width="labelwidth"
           >
@@ -17,7 +18,7 @@
             <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="8">
                 <el-form-item label="客户代码" prop="customerId">
-               <el-input  v-model="form.customerId" ><i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i></el-input>
+               <el-input size="mini" v-model="form.customerId" ><i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i></el-input>
 
                   <!-- <el-autocomplete
                     popper-class="my-autocomplete"
@@ -36,7 +37,7 @@
               </el-col>
               <el-col :span="8">
                 <el-form-item label="服务ID">
-                  <el-select v-model="form.id" disabled placeholder="请选择">
+                  <el-select size="mini" v-model="form.id" disabled placeholder="请选择">
                     <el-option label="服务一" value="shanghai"></el-option>
                     <el-option label="服务二" value="beijing"></el-option>
                   </el-select>
@@ -47,19 +48,19 @@
                 <el-input v-model="form.contractId" disabled></el-input>
                 </el-form-item>-->
                 <el-form-item label="接单员">
-                  <el-input v-model="form.recepUserName" disabled></el-input>
+                  <el-input size="mini" v-model="form.recepUserName" disabled></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="8">
                 <el-form-item label="客户名称" prop="customerName">
-                  <el-input v-model="form.customerName" disabled></el-input>
+                  <el-input size="mini" v-model="form.customerName" disabled></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="8">
                 <el-form-item label="联系人" prop="contacter">
-                  <el-select v-model="form.contacter" placeholder="请选择">
+                  <el-select size="mini" v-model="form.contacter" placeholder="请选择">
                     <el-option
                       v-for="(item,index) in cntctPrsnList"
                       :key="`inx${index}`"
@@ -71,19 +72,19 @@
               </el-col>
               <el-col :span="8">
                 <el-form-item label="最近联系人">
-                  <el-input v-model="form.newestContacter"></el-input>
+                  <el-input size="mini" v-model="form.newestContacter"></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="8">
                 <el-form-item label="终端客户">
-                  <el-input v-model="form.terminalCustomer"></el-input>
+                  <el-input size="mini" v-model="form.terminalCustomer"></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="8">
                 <el-form-item label="电话号码">
-                  <el-input v-model.number="form.contactTel"></el-input>
+                  <el-input size="mini" v-model.number="form.contactTel"></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="8">
@@ -95,14 +96,14 @@
                   ]"
                 >-->
                 <el-form-item label="最新电话号码">
-                  <el-input v-model.number="form.newestContactTel"></el-input>
+                  <el-input size="mini" v-model.number="form.newestContactTel"></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="20">
               <el-col :span="8">
                 <el-form-item label="呼叫来源" prop="fromId">
-                  <el-select v-model="form.fromId" placeholder="请选择">
+                  <el-select size="mini" v-model="form.fromId" placeholder="请选择">
                     <el-option
                       v-for="item in callSourse"
                       :key="item.value"
@@ -115,6 +116,7 @@
               <el-col :span="8">
                 <el-form-item label="创建时间" prop="createTime">
                   <el-date-picker
+                  size="mini"
                     v-model="form.createTime"
                     style="width: 100%;"
                     type="date"
@@ -136,6 +138,7 @@
                 <el-form-item label="地址标识">
                   <!-- <el-input v-model="form.addressDesignator"></el-input> -->
                   <el-select
+                  size="mini"
                     v-model="form.addressDesignator"
                     @change="changeAddr"
                     placeholder="请选择"
@@ -150,18 +153,18 @@
                 </el-form-item>
               </el-col>
               <el-col :span="16">
-                <el-input v-model="form.address"></el-input>
+                <el-input size="mini" style="height:40px;line-height:40px;margin-bottom:10px;" v-model="form.address"></el-input>
               </el-col>
             </el-row>
-            <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
+            <el-row :gutter="10" >
               <el-col :span="8">
                 <el-form-item label="现地址">
-                  <el-input v-model="form.city"></el-input>
+                  <el-input size="mini" v-model="form.city"></el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="16">
-                <el-input v-model="form.addr">
-                  <el-button slot="append" icon="el-icon-position" @click="openMap"></el-button>
+              <el-col :span="16" style="height:40px;line-height:40px;margin-bottom:10px;">
+                <el-input size="mini" v-model="form.addr">
+                  <el-button size="mini" slot="append" icon="el-icon-position" @click="openMap"></el-button>
                 </el-input>
               </el-col>
             </el-row>
@@ -177,8 +180,17 @@
               <el-col :span="2" style="line-height:40px;">
                 <div style="font-size:12px;color:#606266;width:100px;">上传图片</div>
               </el-col>
-              <el-col :span="20">
+              <el-col :span="18">
                 <upLoadImage setImage="100px" @get-ImgList="getImgList"></upLoadImage>
+              </el-col>
+                    <el-col :span="2" style="line-height:40px;">
+                <el-button
+                  type="primary"
+                  size="small"
+                  v-if="isEditForm"
+                  icon="el-icon-share"
+                  @click="postService"
+                >确定修改</el-button>
               </el-col>
             </el-row>
             <el-row
@@ -213,14 +225,7 @@
               justify="space-around"
             >
               <el-col :span="20"></el-col>
-              <el-col :span="4" style="line-height:40px;">
-                <el-button
-                  type="primary"
-                  v-if="isEditForm"
-                  icon="el-icon-share"
-                  @click="postService"
-                >确定</el-button>
-              </el-col>
+        
             </el-row>
             <!-- 选择制造商序列号 -->
             <formAdd
@@ -602,6 +607,8 @@ export default {
             message: "修改服务单成功",
             type: "success"
           });
+          this.$emit("close-Dia",1)
+          // this.formUpdate = false
         })
         .catch(res => {
           this.$message({
@@ -749,7 +756,11 @@ export default {
   //   background: lightslategrey;
   // }
 }
-
+.rowStyle{
+  ::v-deep .el-form-item{
+    margin-bottom:5px;
+  }
+}
 .my-autocomplete {
   li {
     line-height: normal;
