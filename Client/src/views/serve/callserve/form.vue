@@ -471,6 +471,10 @@ export default {
     //  Object.assign(this.form,this.refValue)
     // this.propForm = this.refValue.serviceWorkOrders
   },
+  provide:function(){
+    return {
+      form:this.form}
+  },
   mounted() {
     this.getPartnerList();
     this.setForm(this.customer);
@@ -505,7 +509,7 @@ export default {
 
     postServe() {
       //创建整个工单
-      console.log(this.form.serviceWorkOrders);
+     
       if (this.form.serviceWorkOrders.length > 0) {
         let chec = this.form.serviceWorkOrders.every(
           item =>
