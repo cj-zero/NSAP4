@@ -516,7 +516,7 @@ namespace OpenAuth.App
             result.Data = grouplist;
             return result;
         }
-
+        /*
         /// <summary>
         /// 呼叫服务（客服）左侧树
         /// </summary>
@@ -553,6 +553,7 @@ namespace OpenAuth.App
             result.Data = grouplist;
             return result;
         }
+        */
         /// <summary>
         /// 客服新建服务单
         /// </summary>
@@ -588,44 +589,30 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var result = new TableData();
-            var query = from a in UnitWork.Find<ServiceWorkOrder>(null)
-                        join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
-                        from b in ab.DefaultIfEmpty()
-                        join c in UnitWork.Find<ProblemType>(null) on a.ProblemTypeId equals c.Id into ac
-                        from c in ac.DefaultIfEmpty()
-                        select new { a, b, c};
+           
+            var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceWorkOrders)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.Id.Equals(Convert.ToInt32(req.QryServiceOrderId)))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId), q => q.ServiceWorkOrders.Any(a => a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId))))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.ServiceWorkOrders.Any(a => a.Status.Equals(Convert.ToInt32(req.QryState))))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.CustomerId.Contains(req.QryCustomer) || q.CustomerName.Contains(req.QryCustomer))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceWorkOrders.Any(a => a.ManufacturerSerialNumber.Contains(req.QryManufSN)))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.RecepUserName.Contains(req.QryRecepUser))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ServiceWorkOrders.Any(a => a.ProblemTypeId.Equals(req.QryProblemType)))
+                .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.ServiceWorkOrders.Any(a=> a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo));
 
-            query = query.WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.b.Id.Equals(Convert.ToInt32(req.QryServiceOrderId)))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId), q => q.a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.a.Status.Equals(Convert.ToInt32(req.QryState)))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.b.CustomerId.Contains(req.QryCustomer) || q.b.CustomerName.Contains(req.QryCustomer))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.a.ManufacturerSerialNumber.Contains(req.QryManufSN))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.b.RecepUserName.Contains(req.QryRecepUser))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.c.Name.Contains(req.QryProblemType))
-                         .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime <= req.QryCreateTimeTo);
-
-            var resultsql = query.OrderBy(r => r.a.CreateTime).Select(q => new
+            var resultsql = query.Select(q => new
             {
-                ServiceOrderId=q.b.Id,
-                ServiceWorkOrderId=q.a.Id,
-                q.a.Priority,
-                q.a.FromType,
-                q.a.Status,
-                q.b.CustomerId,
-                q.b.CustomerName,
-                q.b.TerminalCustomer,
-                q.a.FromTheme,
-                q.a.CreateTime,
-                q.b.RecepUserName,
+                ServiceOrderId=q.Id,
+                q.CustomerId,
+                q.CustomerName,
+                q.TerminalCustomer,
+                q.RecepUserName,
+                q.Contacter,
+                q.ContactTel,
+                q.Supervisor,
+                q.SalesMan,
                 TechName="",
-                q.a.ManufacturerSerialNumber,
-                q.a.MaterialCode,
-                q.a.MaterialDescription,
-                q.b.Contacter,
-                q.b.ContactTel,
-                q.b.Supervisor,
-                q.b.SalesMan,
-                q.a.CurrentUserId,
+                q.ServiceWorkOrders
             });
 
 
