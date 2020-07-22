@@ -66,7 +66,12 @@
                 <span class="addr">{{ item1.custmrName }}</span>
               </template>
               </el-autocomplete>-->
-              <el-input size="small" maxlength="0" v-model="item.manufacturerSerialNumber" :disabled="isEditForm">
+              <el-input
+                size="small"
+                maxlength="0"
+                v-model="item.manufacturerSerialNumber"
+                :disabled="isEditForm"
+              >
                 <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
               </el-input>
             </el-form-item>
@@ -96,7 +101,7 @@
         </el-row>
 
         <el-row type="flex" class="row-bg" justify="space-around">
-          <el-col :span="16">
+          <el-col :span="24">
             <el-form-item
               label="呼叫主题"
               prop="fromTheme"
@@ -105,11 +110,6 @@
             }"
             >
               <el-input size="small" v-model="item.fromTheme"></el-input>
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="技术员">
-              <el-input size="small" disabled></el-input>
             </el-form-item>
           </el-col>
         </el-row>
@@ -167,27 +167,23 @@
         <el-row type="flex" class="row-bg" justify="space-around">
           <el-col :span="8">
             <el-form-item label="问题类型" prop="problemTypeId">
-              <!-- <el-input
-                size="small"
-                :rules="{
-              required: true, message: '问题类型不能为空', trigger: 'blur'
-            }"
+              <el-input
                 v-model="item.problemTypeId"
-                v-if="!item.problemTypeId"
-              type="text"
+                readonly
+                size="small"
+                prop="problemTypeId"
+                :rules="{
+              required: true, message: '问题类型不能为空', trigger: 'blur' }"
+                @focus="()=>{proplemTree=true,sortForm=index+1}"
               >
-                 @focus="()=>{proplemTree=true,sortForm=index+1}"
-             <i class="el-icon-search el-input__icon" slot="suffix" @click="()=>{proplemTree=true,sortForm=index+1}"></i>
-              </el-input> -->
-              <div
-                disabled
-                type="text"
-                style="border:1px silver solid;border-radius:5px;padding:0 10px;height:32px;line-height:32px;"
-              >{{switchType(item.problemTypeId)}}        
-                   <i class="el-icon-search el-input__icon" style="line-height:32px;float:right;" slot="suffix" @click="()=>{proplemTree=true,sortForm=index+1}"></i>
-              </div>
+                <el-button
+                  size="mini"
+                  slot="append"
+                  icon="el-icon-search"
+                  @click="()=>{proplemTree=true,sortForm=index+1}"
+                ></el-button>
+              </el-input>
             </el-form-item>
-            <!-- <el-input v-model="form.problemTypeId"></el-input> -->
           </el-col>
           <el-col :span="8">
             <el-form-item label="优先级">
@@ -217,25 +213,11 @@
         </el-row>
         <el-row type="flex" class="row-bg" justify="space-around">
           <el-col :span="8">
-            <!-- :disabled="item.fromType===2?true:false" -->
-            <el-form-item label="解决方案">
-              <!-- <el-input
-                size="small"
-                  :disabled="item.fromType!==2"
-                v-model="item.solutionId"
-                v-if="!item.solutionId"
-                @focus="()=>{solutionOpen=true,sortTable=index+1}"
-              ></el-input> -->
-              <div
-                type="text"
-                class="soluClass"
-                @click="()=>{solutionOpen=true,sortTable=index+1}"
-              >{{switchSo(item.solutionId)}}
-        <i class="el-icon-search el-input__icon" style="line-height:32px;float:right;" slot="suffix" @click="()=>{solutionOpen=true,sortTable=index+1}"></i>
-
-              </div>
+            <el-form-item label="技术员">
+              <el-input size="small" disabled></el-input>
             </el-form-item>
           </el-col>
+
           <el-col :span="8">
             <el-form-item label="保修结束日期">
               <el-date-picker
@@ -262,35 +244,48 @@
           </el-col>
         </el-row>
 
+        <el-form-item label="解决方案">
+          <el-input
+            v-model="item.solutionId"
+            @focus="()=>{solutionOpen=true,sortTable=index+1}"
+            :disabled="item.fromType!==2"
+            readonly
+          >
+            <el-button
+              size="mini"
+              slot="append"
+              icon="el-icon-search"
+              @click="()=>{solutionOpen=true,sortTable=index+1}"
+            ></el-button>
+          </el-input>
+        </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input type="textarea" size="small" v-model="item.remark"></el-input>
         </el-form-item>
-           <el-form-item  v-if="isEditForm">
-        <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
-          <el-col :span="6"></el-col>
-          <el-col :span="3">
+        <el-form-item v-if="isEditForm">
+          <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
+            <el-col :span="6"></el-col>
+            <el-col :span="3">
               <el-button
                 type="success"
                 size="small"
                 icon="el-icon-share"
                 @click="postWorkOrder(item)"
               >确定新增</el-button>
-          </el-col>
-          <el-col :span="3">
+            </el-col>
+            <el-col :span="3">
               <el-button
                 size="small"
                 type="primary"
                 icon="el-icon-share"
                 @click="postWorkOrder(item)"
               >确定修改</el-button>
-          </el-col>
-          <el-col :span="3">
+            </el-col>
+            <el-col :span="3">
               <div class="showSort">{{index+1}}/{{formList.length}}</div>
-         
-          </el-col>
-        </el-row>
-                </el-form-item>
-
+            </el-col>
+          </el-row>
+        </el-form-item>
       </el-form>
     </div>
 
@@ -322,7 +317,7 @@
       <!-- <span slot="footer" class="dialog-footer">
         <el-button size="small" @click="solutionOpen = false">取 消</el-button>
         <el-button size="small" type="primary" @click="solutionOpen=false">确 定</el-button>
-      </span> -->
+      </span>-->
     </el-dialog>
     <el-dialog
       :append-to-body="true"
@@ -568,13 +563,14 @@ export default {
       this.datasolution = res;
     },
     NodeClick(res) {
-      this.formList[this.sortForm - 1].problemTypeId = res.id;
-      console.log(this.formList);
+       this.formList[this.sortForm - 1].problemType = res.id;
+      this.formList[this.sortForm - 1].problemTypeId = res.name;
       this.problemLabel = res.name;
       this.proplemTree = false;
     },
     solutionClick(res) {
-      this.formList[this.sortTable - 1].solutionId = res.id;
+       this.formList[this.sortTable - 1].solution = res.id;
+      this.formList[this.sortTable - 1].solutionId = res.subject;
       // this.problemLabel = res.name;
       this.solutionOpen = false;
     },
@@ -770,11 +766,11 @@ export default {
   border: 1px silver solid;
   border-radius: 5px;
   padding: 0 10px;
-  overflow-x: hidden;
-  height: 40px;
-  ::-webkit-scrollbar {
-    width: 1px !important;
-  }
+  // overflow-x: hidden;
+  // height: 40px;
+  // ::-webkit-scrollbar {
+  //   width: 1px !important;
+  // }
 }
 .addClass {
   border: 1px silver solid;
