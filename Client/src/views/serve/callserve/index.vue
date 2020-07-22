@@ -202,7 +202,7 @@ export default {
       sure: 0,
       formTheadOptions: [
         // { name: "id", label: "服务单ID" },
-           { name: "serviceOrderId", label: "工单ID", ifFixed: true },
+           { name: "serviceOrderId", label: "服务单ID", ifFixed: true },
         { name: "priority", label: "优先级" },
         { name: "fromType", label: "呼叫类型", width: "100px" },
         { name: "customerId", label: "客户代码" },
