@@ -57,12 +57,17 @@ namespace OpenAuth.App
 
         public async Task Add(AddOrUpdateSolutionReq req)
         {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
             var maxCode = await Repository.Find(null).Select(s => s.SltCode).MaxAsync();
             req.SltCode = ++maxCode;
             var obj = req.MapTo<Solution>();
             //todo:补充或调整自己需要的字段
             obj.CreateTime = DateTime.Now;
-            var user = _auth.GetCurrentUser().User;
+            var user = loginContext.User;
             obj.CreateUserId = user.Id;
             obj.CreateUserName = user.Name;
             await Repository.AddAsync(obj);
