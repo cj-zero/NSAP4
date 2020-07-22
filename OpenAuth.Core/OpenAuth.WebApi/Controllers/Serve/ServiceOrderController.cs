@@ -345,18 +345,18 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
         /// <summary>
-        /// 技术员查看未完成工单列表
+        /// 技术员查看服务单单列表
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetPendingServiceWorkOrder([FromQuery]TechnicianServiceWorkOrderReq req)
+        public async Task<TableData> GetTechnicianServiceOrder([FromQuery]TechnicianServiceWorkOrderReq req)
         {
 
             var result = new TableData();
             try
             {
-                result.Data = await _serviceOrderApp.GetTechnicianServiceWorkOrder(req);
+                result = await _serviceOrderApp.GetTechnicianServiceOrder(req);
             }
             catch (Exception ex)
             {
@@ -366,18 +366,17 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
-
         /// <summary>
-        /// 技术员查看已完成工单列表
+        /// 获取技术员服务单工单列表
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetTechnicianFinishServiceWorkOrder([FromQuery]TechnicianServiceWorkOrderReq req)
+        public async Task<TableData> GetAppTechnicianServiceWorkOrder([FromQuery]GetAppTechnicianServiceWorkOrderReq req)
         {
             var result = new TableData();
             try
             {
-                result.Data = await _serviceOrderApp.GetTechnicianFinishServiceWorkOrder(req);
+                result = await _serviceOrderApp.GetAppTechnicianServiceWorkOrder(req);
             }
             catch (Exception ex)
             {

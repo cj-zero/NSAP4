@@ -213,7 +213,7 @@ export default {
       ],
       temp: {
         id: "", // Id
-        sltCode: "", // SltCode
+        sltCode: 0, // SltCode
         subject: "", // Subject
         cause: "", // Cause
         symptom: "", // Symptom
@@ -350,7 +350,7 @@ export default {
     resetTemp() {
       this.temp = {
         id: "",
-        sltCode: "",
+        sltCode: 0,
         subject: "",
         cause: "",
         symptom: "",

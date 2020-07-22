@@ -38,10 +38,9 @@
               <el-form-item label="呼叫状态" size="medium">
                 <el-select v-model="listQuery.QryState" placeholder="请选择呼叫状态">
                   <el-option label="全部" value></el-option>
-
-                  <el-option label="待确认" value="1"></el-option>
-                  <el-option label="已确认" value="2"></el-option>
-                  <el-option label="已取消" value="3"></el-option>
+                  <el-option label="待确认" :value='1'></el-option>
+                  <el-option label="已确认" :value='2'></el-option>
+                  <el-option label="已取消" :value='3'></el-option>
                 </el-select>
               </el-form-item>
             </el-col>
@@ -268,7 +267,7 @@ export default {
         key: undefined,
         appId: undefined,
         QryServiceOrderId: "", //查询服务ID查询条件
-        QryState: "", //呼叫状态查询条件
+        QryState: 1, //呼叫状态查询条件
         QryCustomer: "", //客户查询条件
         QryManufSN: "", // 制造商序列号查询条件
         QryCreateTimeFrom: "", //创建日期从查询条件

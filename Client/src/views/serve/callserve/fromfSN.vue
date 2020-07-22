@@ -2,11 +2,11 @@
 <div>
     <el-table
     :data="SerialNumberList"
-    v-if="SerialNumberList.length>0"
     border
     :loading="serLoading"
     ref="singleTable"
    highlight-current-row
+   empty-text="抱歉，找不到该客户代码所属的制造商序列号"
  @selection-change="handleSelectionChange"
      style="width: 100%"
   >

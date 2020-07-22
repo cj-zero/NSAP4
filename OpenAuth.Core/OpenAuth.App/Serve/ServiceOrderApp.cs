@@ -217,8 +217,11 @@ namespace OpenAuth.App
                 TechName = $"{q.e.lastName ?? ""}{q.e.firstName}"
             });
             var o2 = await query.FirstOrDefaultAsync();
-            obj.SalesMan = o2.SlpName;
-            obj.Supervisor = o2.TechName;
+            if (o2 != null)
+            {
+                obj.SalesMan = o2.SlpName;
+                obj.Supervisor = o2.TechName;
+            }
 
             var o = await UnitWork.AddAsync<ServiceOrder, int>(obj);
             await UnitWork.SaveAsync();
@@ -691,126 +694,54 @@ namespace OpenAuth.App
 
 
         /// <summary>
-        /// 技术员查看未完成工单列表
+        /// 技术员查看服务单列表
         /// </summary>
         /// <returns></returns>
-        public async Task<TableData> GetTechnicianServiceWorkOrder(TechnicianServiceWorkOrderReq req)
+        public async Task<TableData> GetTechnicianServiceOrder(TechnicianServiceWorkOrderReq req)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.TechnicianId)
+                .WhereIf(req.Type == 1, s => s.Status.Value < 7 && s.Status.Value > 1)
+                .WhereIf(req.Type == 2, s => s.Status.Value >= 7)
+                .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+
+            var query = UnitWork.Find<ServiceOrder>(s=>serviceOrderIds.Contains(s.Id))
+                .Select(s=>new {
+                    s.Id,
+                    s.AppUserId,
+                    s.Services,
+                    s.Latitude,
+                    s.Longitude,
+                    s.Province,s.City,s.Area,s.Addr,s.Contacter,s.ContactTel,s.NewestContacter,s.NewestContactTel,
+                    s.Status,
+                    s.CreateTime
+                });
 
             var result = new TableData();
-            var query = UnitWork.Find<ServiceWorkOrder>(s => s.Status > 1 && s.Status < 8).Select(s => new
-            {
-                s.Id,
-                s.AppUserId,
-                s.FromTheme,
-                ProblemType = s.ProblemType.Description,
-                s.CreateTime,
-                s.Status,
-                s.MaterialCode,
-                MaterialType = s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")),
-                s.FeeType,
-                s.InternalSerialNumber,
-                s.ManufacturerSerialNumber,
-                s.Priority,
-                s.Remark,
-                Latitude = s.ServiceOrder.Latitude,
-                Longitude = s.ServiceOrder.Longitude
-            });
-
             var list = (await query
             .Skip((req.page - 1) * req.limit)
             .Take(req.limit).ToListAsync()).Select(s => new
             {
                 s.Id,
                 s.AppUserId,
-                s.FromTheme,
-                ProblemType = s.ProblemType,
-                s.CreateTime,
+                s.Services,
+                s.Latitude,
+                s.Longitude,
+                s.Province,
+                s.City,
+                s.Area,
+                s.Addr,
+                s.Contacter,
+                s.ContactTel,
+                s.NewestContacter,
+                s.NewestContactTel,
                 s.Status,
-                s.MaterialCode,
-                MaterialType = s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")),
-                s.FeeType,
-                s.InternalSerialNumber,
-                s.ManufacturerSerialNumber,
-                s.Priority,
-                s.Remark,
-                Latitude = s.Latitude,
-                Longitude = s.Longitude,
+                s.CreateTime,
                 Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
-            }).GroupBy(s=>s.MaterialType).Select(a => new
-            {
-                MaterialType = a.Key,
-                Count = a.Count(),
-                Orders = a.ToList()
-            }).ToList();
-
-            var count = await query.CountAsync();
-            result.Data = list;
-            result.Count = count;
-            return result;
-        }
-        /// <summary>
-        /// 技术员查看已完成工单列表
-        /// </summary>
-        /// <returns></returns>
-        public async Task<TableData> GetTechnicianFinishServiceWorkOrder(TechnicianServiceWorkOrderReq req)
-        {
-            var loginContext = _auth.GetCurrentUser();
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-
-            var result = new TableData();
-            var query = UnitWork.Find<ServiceWorkOrder>(s => s.Status == 8).Select(s => new
-            {
-                s.Id,
-                s.AppUserId,
-                s.FromTheme,
-                ProblemType = s.ProblemType.Description,
-                s.CreateTime,
-                s.Status,
-                s.MaterialCode,
-                MaterialType = s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")),
-                s.FeeType,
-                s.InternalSerialNumber,
-                s.ManufacturerSerialNumber,
-                s.Priority,
-                s.Remark,
-                Latitude = s.ServiceOrder.Latitude,
-                Longitude = s.ServiceOrder.Longitude
-            });
-
-            var list = (await query
-            .Skip((req.page - 1) * req.limit)
-            .Take(req.limit).ToListAsync()).Select(s=>new 
-            {
-                s.Id,
-                s.AppUserId,
-                s.FromTheme,
-                ProblemType = s.ProblemType,
-                s.CreateTime,
-                s.Status,
-                s.MaterialCode,
-                MaterialType = s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")),
-                s.FeeType,
-                s.InternalSerialNumber,
-                s.ManufacturerSerialNumber,
-                s.Priority,
-                s.Remark,
-                Latitude = s.Latitude,
-                Longitude = s.Longitude,
-                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude??0), Convert.ToDouble(s.Longitude??0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
-            }).GroupBy(s=>s.MaterialType).Select(a => new
-            {
-                MaterialType = a.Key,
-                Count = a.Count(),
-                Orders = a.ToList()
             }).ToList();
 
             var count = await query.CountAsync();
@@ -906,6 +837,13 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var b = await CheckCanTakeOrder(req.TechnicianId);
+
+            if (!b)
+            {
+                throw new CommonException("当前技术员接单已满6单服务单", 90004);
+            }
+
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id.Equals(req.ServiceWorkOrderId), o => new ServiceWorkOrder
             {
                 Status = 2,
@@ -992,9 +930,62 @@ namespace OpenAuth.App
             }
         }
 
+        /// <summary>
+        /// 查询可以被派单的技术员列表
+        /// </summary>
+        /// <returns></returns>
         public Task<List<UploadFileResp>> GetAllowSendOrderUser()
         {
             return null;
+        }
+
+        /// <summary>
+        /// 获取技术员服务单工单列表
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> GetAppTechnicianServiceWorkOrder(GetAppTechnicianServiceWorkOrderReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var query = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.TechnicianId);
+            var listQuery = query.WhereIf(req.Type == 1, s => s.Status > 1 && s.Status < 7)
+                .WhereIf(req.Type == 2, s => s.Status >= 7)
+                .Select(s=>new 
+                { 
+                    s.Id,
+                    ProblemType = s.ProblemType.Description,
+                    s.Priority,
+                    s.CreateTime,
+                    s.InternalSerialNumber,
+                    s.ManufacturerSerialNumber,
+                    s.MaterialCode,
+                    s.Status
+                });
+            var result = new TableData();
+            var list = await listQuery
+            .Skip((req.page - 1) * req.limit)
+            .Take(req.limit).ToListAsync();
+
+            var count = await listQuery.CountAsync();
+            result.Data = list;
+            result.Count = count;
+            return result;
+
+        }
+
+        /// <summary>
+        /// 判断用户是否到达接单上限
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        private async Task<bool> CheckCanTakeOrder(int id)
+        {
+            var count = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == id && s.Status.Value >= 7).Select(s => s.ServiceOrderId).Distinct().CountAsync();
+
+            return count < 6;
         }
     }
 }

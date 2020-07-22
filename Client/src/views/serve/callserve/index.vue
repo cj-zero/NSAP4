@@ -1,5 +1,5 @@
 <template>
-  <div style="position:relative;" >
+  <div style="position:relative;">
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <el-input
@@ -23,61 +23,60 @@
       </div>
     </sticky>
     <div class="app-container">
-   
       <div class="bg-white">
-           <zxsearch @change-Search='changeSearch'></zxsearch>
-           <el-row class="fh">
-        <el-col :span="3" class="fh ls-border">
-          <el-card shadow="never" class="card-body-none fh" >
-    
- <el-table
-    :data="modulesTree"
-    style="width: 100%;margin-bottom: 20px;"
-    max-height="500px"
-    row-key="label"
-    border
-    @row-click="checkServeId"
-    @header-click="checkServeId(true)"
-    default-expand-all
-    :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
-    <el-table-column
-      prop="label"
-      style="color:green;"
-      label="全部服务单列表>>"
-      min-width="180px"
-      >
-          <template slot-scope="scope" >
-              {{scope.row.label}}
-          </template>
-    </el-table-column>
- 
-  </el-table>
-          </el-card>
-        </el-col>
-            <el-col :span="21" class="fh">
-        <el-table
-          ref="mainTable"
-          class="table_label"
-          :key="key"
-          :data="list"
-          v-loading="listLoading"
-          border
-          fit
-          style="width: 100%;"
-          highlight-current-row
-          @row-click="rowClick" >
-
-
-          <el-table-column
-            show-overflow-tooltip
-            v-for="(fruit,index) in formTheadOptions"
-            align="center"
-            :key="`ind${index}`"
-            :sortable="fruit=='chaungjianriqi'?true:false"
-            style="background-color:silver;"
-            :label="fruit.label"
-          >
-          <template slot-scope="scope">
+        <zxsearch @change-Search="changeSearch"></zxsearch>
+        <!-- <el-row class="fh">
+          <el-col :span="3" class="fh ls-border">
+            <el-card shadow="never" class="card-body-none fh bg-head">
+              <el-table
+                :data="modulesTree"
+                style="width: 100%;margin-bottom: 20px;"
+                max-height="500px"
+                row-key="label"
+                border
+                @row-click="checkServeId"
+                @header-click="checkServeId(true)"
+                default-expand-all
+                :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
+                <el-table-column
+                  prop="label"
+                  style="color:green;"
+                  label="全部服务单列表>>"
+                  min-width="180px"
+                >
+                  <template slot-scope="scope">
+                    <el-radio v-if="scope.row.children" v-model="radio" :label="scope.row.label"></el-radio>
+                    <span v-else>{{scope.row.label}}</span>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </el-card>
+          </el-col>
+          <el-col :span="21" class="fh"> -->
+            <el-table
+            row-key="label"
+               :tree-props="{children: 'serviceWorkOrders', hasChildren: 'hasChildren'}"
+              ref="mainTable"
+              class="table_label"
+              :key="key"
+              :data="list"
+              v-loading="listLoading"
+              border
+              fit
+              style="width: 100%;"
+              highlight-current-row
+              @row-click="rowClick"
+            >
+              <el-table-column
+                show-overflow-tooltip
+                v-for="(fruit,index) in formTheadOptions"
+                align="center"
+                :key="`ind${index}`"
+                :sortable="fruit=='chaungjianriqi'?true:false"
+                style="background-color:silver;"
+                :label="fruit.label"
+              >
+                <template slot-scope="scope">
                   <el-link
                     v-if="fruit.name === 'serviceOrderId'"
                     type="primary"
@@ -93,10 +92,10 @@
                     v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
                   >{{scope.row[fruit.name]}}</span>
                 </template>
-          </el-table-column>
-        </el-table>
-           </el-col>
-      </el-row>
+              </el-table-column>
+            </el-table>
+          <!-- </el-col>
+        </el-row> -->
         <pagination
           v-show="total>0"
           :total="total"
@@ -105,7 +104,8 @@
           @pagination="handleCurrentChange"
         />
       </div>
-     
+
+      <!-- 客服新建服务单 -->
       <el-dialog
         width="800px"
         class="dialog-mini"
@@ -114,25 +114,49 @@
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
-            <zxform
-              :form="temp"
-              formName="新建"
-              labelposition="right"
-              labelwidth="100px"
-              :isEdit="true"
-              :sure="sure"
-              :customer="customer"
-              @close-Dia="closeDia"
-            ></zxform>
+        <zxform
+          :form="temp"
+          formName="新建"
+          labelposition="right"
+          labelwidth="100px"
+          :isEdit="true"
+          :sure="sure"
+          :customer="customer"
+          @close-Dia="closeDia"
+        ></zxform>
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
           <el-button size="mini" type="primary" :loading="loadingBtn" @click="createData">确认</el-button>
-          <!-- <el-button size="mini"  >加载中</el-button> -->
+        </div>
+      </el-dialog>
+      <!-- 客服编辑服务单 -->
+      <el-dialog
+        width="800px"
+        class="dialog-mini"
+        @close="closeCustoner"
+        destroy-on-close
+        :title="textMap[dialogStatus]"
+        :visible.sync="FormUpdate"
+      >
+        <zxform
+          :form="temp"
+          formName="编辑"
+          labelposition="right"
+          labelwidth="100px"
+          isEditForm="true"
+          :isEdit="true"
+          :sure="sure"
+          :customer="customer"
+          @close-Dia="closeDia"
+        ></zxform>
+        <div slot="footer">
+          <el-button size="mini" @click="FormUpdate = false">取消</el-button>
+          <el-button size="mini" type="primary" :loading="loadingBtn" @click="FormUpdate">确认</el-button>
         </div>
       </el-dialog>
       <!-- 只能查看的表单 -->
       <el-dialog
-        width="800px"
+        width="900px"
         class="dialog-mini"
         title="服务单详情"
         destroy-on-close
@@ -202,8 +226,8 @@ export default {
       sure: 0,
       formTheadOptions: [
         // { name: "id", label: "服务单ID" },
-           { name: "serviceOrderId", label: "服务单号", ifFixed: true },
-              { name: "serviceWorkOrderId", label: "工单号"},
+        { name: "serviceOrderId", label: "服务单号", ifFixed: true },
+        { name: "id", label: "工单号" },
         { name: "priority", label: "优先级" },
         { name: "fromType", label: "呼叫类型", width: "100px" },
         { name: "customerId", label: "客户代码" },
@@ -214,18 +238,18 @@ export default {
         // { name: "services", label: "服务内容" },
         { name: "contactTel", label: "电话号码" },
         { name: "supervisor", label: "售后主管" },
-        { name: "salesMan", label: "销售员" },
+        { name: "salesMan", label: "销售员" }
         // { name: "manufSN", label: "制造商序列号" },
         // { name: "itemCode", label: "物料编码" }
       ],
-     stateValue: ["待确认", "已确认", "已取消"],
+      stateValue: ["待确认", "已确认", "已取消"],
       statusOptions: [
         { key: 1, display_name: "待确认" },
         { key: 2, display_name: "已确认" },
         { key: 3, display_name: "已取消" }
       ],
 
-      modulesTree:[],
+      modulesTree: [],
       priorityOptions: ["低", "中", "高"],
       tableKey: 0,
       formValue: {},
@@ -241,7 +265,7 @@ export default {
         limit: 20,
         key: undefined,
         appId: undefined,
-        QryServiceOrderId: "", //查询服务单号查询条件
+        QryServiceOrderId: "" //查询服务单号查询条件
         // QryState: "", //呼叫状态查询条件
         // QryCustomer: "", //客户查询条件
         // QryManufSN: "", // 制造商序列号查询条件
@@ -269,12 +293,13 @@ export default {
       dialogTable: false,
       dialogTree: false,
       dialogStatus: "",
+      FormUpdate: false, //编辑表单的dialog
       textMap: {
-        update: "确认呼叫服务单",
+        update: "编辑呼叫服务单",
         create: "新建呼叫服务单",
-        info:'查看呼叫服务单'
+        info: "查看呼叫服务单"
       },
- 
+
       dialogPvVisible: false,
       pvData: [],
       rules: {
@@ -313,11 +338,19 @@ export default {
     listQuery: {
       deep: true,
       handler(val) {
-        callservesure.rightList(val).then(response => {
-          this.total = response.data.count;
-          this.list = response.data.data;
-          this.listLoading = false;
-        });
+           let arr = [];
+      callservesure.rightList(val).then(response => {
+            let resul = response.data.data;
+        for (let i = 0; i < resul.length; i++) {
+          arr[i] = resul[i];
+          arr[i].label = `服务${resul[i].serviceOrderId}`;
+          resul[i].serviceWorkOrders.map((item1,index) => {
+            arr[i].serviceWorkOrders[index].label= `工单${item1.id}` ;
+          })
+        }
+        this.total = response.data.count;
+        this.list =resul;
+      })
       }
     },
     formValue: {
@@ -336,26 +369,24 @@ export default {
       }
     }
   },
-  created() {
- 
-  },
+  created() {},
   mounted() {
     //   console.log(callserve)
-       this.getList();
-    this.getLeftList()
+    this.getList();
+    this.getLeftList();
   },
   methods: {
-checkServeId(res){
-  if(res.children){
-    // console.log()
-    this.listQuery.QryServiceOrderId = res.label.split('服务单号')[1]
-  }
-   if(res===true){
-    // console.log()
-    this.listQuery.QryServiceOrderId = ''
-  }
-
-},
+    checkServeId(res) {
+      if (res.children) {
+        // console.log()
+        this.listQuery.QryServiceOrderId = res.label.split("服务单号：")[1];
+      }
+      if (res === true) {
+        // console.log()
+        this.radio = "";
+        this.listQuery.QryServiceOrderId = "";
+      }
+    },
     openDetail() {
       this.dataForm = this.dataForm1;
     },
@@ -381,7 +412,6 @@ checkServeId(res){
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.multipleSelection = row;
-      this.radio = row.id;
       this.$refs.mainTable.toggleRowSelection(row);
     },
     // handleSelectionChange(val) {
@@ -398,8 +428,8 @@ checkServeId(res){
           this.dialogTable = true;
           break;
         case "btnEdit":
-          // console.log(this.multipleSelection);
-          if (!this.multipleSelection.id) {
+          console.log(this.multipleSelection);
+          if (!this.multipleSelection.serviceOrderId) {
             this.$message({
               message: "请选择需要编辑的数据",
               type: "error"
@@ -429,46 +459,50 @@ checkServeId(res){
           break;
       }
     },
-    changeSearch(res){
-      console.log(res)
-      if(res===1){
-        this.getList()
-      }else{
-        Object.assign(this.listQuery,res)
+    changeSearch(res) {
+      if (res === 1) {
+        this.getList();
+      } else {
+        Object.assign(this.listQuery, res);
       }
     },
     getList() {
       this.listLoading = true;
+      let arr = [];
       callservesure.rightList(this.listQuery).then(response => {
-        // console.log(response)
+            let resul = response.data.data;
+        for (let i = 0; i < resul.length; i++) {
+          arr[i] = resul[i];
+          arr[i].label = `服务${resul[i].serviceOrderId}`;
+          resul[i].serviceWorkOrders.map((item1,index) => {
+            arr[i].serviceWorkOrders[index].label= `工单${item1.id}` ;
+          });
+        }
+        // this.modulesTree = ;
         this.total = response.data.count;
-        this.list = response.data.data;
+        this.list =resul;
+        console.log(this.list)
         this.listLoading = false;
       });
     },
-    getLeftList(){
-        this.listLoading = true;
-        let arr =[]
-      callservesure.leftList().then(res => {
-            let resul =  res.data.data
-        for(let i=0;i<resul.length;i++){
-          arr[i] =[]
-         arr[i].label=`服务单号${resul[i].serviceOrderId}`;
-         arr[i].children=[]
-            resul[i].workOrderId.map(item1 => {
-            arr[i].children.push({ label:  `工单号${item1}`});
-          });
-        // arr[i].push({a:1}) 
-        }
-      this.modulesTree=arr
-        console.log(res)
-        // this.total = response.data.count;
-        // this.list = response.data.data;
-        // this.listLoading = false;
-      });
+    getLeftList() {
+      // this.listLoading = true;  //获取左侧菜单
+      // let arr = [];
+      // callservesure.leftList().then(res => {
+      //   let resul = res.data.data;
+      //   for (let i = 0; i < resul.length; i++) {
+      //     arr[i] = [];
+      //     arr[i].label = `服务单号：${resul[i].serviceOrderId}`;
+      //     arr[i].children = [];
+      //     resul[i].workOrderId.map(item1 => {
+      //       arr[i].children.push({ label: `工单号：${item1}` });
+      //     });
+      //   }
+      //   this.modulesTree = arr;
+      // });
     },
-    handleNodeClick(res){
-      console.log(res)
+    handleNodeClick(res) {
+      console.log(res);
     },
     open() {
       this.$confirm("确认已完成回访?", "提示", {
@@ -538,7 +572,7 @@ checkServeId(res){
       // });
     },
     createData() {
-            this.sure = this.sure + 1; //向form表单发送提交通知
+      this.sure = this.sure + 1; //向form表单发送提交通知
 
       // 保存提交
       // this.$refs["dataForm"].validate(valid => {
@@ -558,23 +592,23 @@ checkServeId(res){
     },
     handleUpdate(row) {
       // 弹出编辑框
-      this.temp = Object.assign({}, row); // copy obj
-      callservesure.getForm(row.id).then(response => {
+      // this.temp = Object.assign({}, row); // copy obj
+      callservesure.getForm(row.serviceOrderId).then(response => {
         this.formValue = response.result;
-        // console.log(this.formValue);
         this.dialogStatus = "update";
-        this.dialogFormVisible = true;
-        // this.$nextTick(() => {
-        //   this.$refs["dataForm"].clearValidate();
-        // });
+        this.FormUpdate = true;
       });
     },
-    closeDia() {
+    closeDia(a) {
+      if (a === 1) {
+        // this.FormUpdate = false
+        this.getList();
+      }
+
       this.loadingBtn = false;
       this.dialogFormVisible = false;
     },
     updateData() {
-
       // this.sure = this.sure + 1; //向form表单发送提交通知
     },
     handleDelete(rows) {
@@ -616,6 +650,11 @@ checkServeId(res){
     display: none;
   }
 }
+.bg-head {
+  ::v-deep .el-table thead {
+    color: green;
+  }
+}
 // .mainPage {
 //   ::v-deep .el-dialog__wrapper {
 //     position: absolute;
@@ -634,8 +673,6 @@ checkServeId(res){
 //   }
 
 // }
-
-
 </style>
 
 

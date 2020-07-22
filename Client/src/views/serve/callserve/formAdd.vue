@@ -6,24 +6,30 @@
       :key="`key_${index}`"
       style="border:1px solid silver;padding:5px;margin-left:20px;"
     >
-      <el-form :model="item" :disabled="!isEdit" label-width="105px" :ref="'itemForm'+ index">
+      <el-form
+        :model="item"
+        :disabled="!isEdit"
+        label-width="90px"
+        class="rowStyle"
+        :ref="'itemForm'+ index"
+      >
         <el-row type="flex" class="row-bg" justify="space-around">
           <el-col :span="8">
             <el-form-item label="工单ID">
-              <el-input disabled v-model="item.id"></el-input>
+              <el-input size="small" disabled v-model="item.id"></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="7">
             <el-form-item label="服务类型">
-              <el-radio-group v-model="item.feeType">
+              <el-radio-group size="small" v-model="item.feeType">
                 <el-radio :label="1">免费</el-radio>
                 <el-radio :label="2">收费</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
 
-          <el-col :span="5" style="height:40px;line-height:40px;">
-            <el-switch v-model="item.edit" active-text="修改后续订单"></el-switch>
+          <el-col :span="5" style="height:40px;line-height:40px;font-size:13px;">
+            <el-switch size="small" v-model="item.edit" active-text="修改后续订单" :width="20"></el-switch>
           </el-col>
           <el-col :span="2" style="height:40px;line-height:40px;">
             <el-button
@@ -37,7 +43,7 @@
           </el-col>
           <el-col :span="2" style="height:40px;line-height:40px;">
             <el-button
-              type="primary"
+              type="success"
               v-if="isEditForm"
               size="mini"
               icon="el-icon-share"
@@ -55,38 +61,36 @@
               placeholder="请输入内容"
               @select="handleSelect"
             >
-            
               <template slot-scope="{ item1 }">
                 <div class="name">{{ item1.manufSN }}</div>
                 <span class="addr">{{ item1.custmrName }}</span>
               </template>
               </el-autocomplete>-->
-
-              <el-input v-model="item.manufacturerSerialNumber" :disabled="isEditForm">
+              <el-input size="small" maxlength="0" v-model="item.manufacturerSerialNumber" :disabled="isEditForm">
                 <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
               </el-input>
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="内部序列号">
-              <el-input v-model="item.internalSerialNumber" disabled></el-input>
+              <el-input size="small" v-model="item.internalSerialNumber" disabled></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="服务合同">
-              <el-input v-model="item.contractId" disabled></el-input>
+              <el-input size="small" v-model="item.contractId" disabled></el-input>
             </el-form-item>
           </el-col>
         </el-row>
         <el-row type="flex" class="row-bg" justify="space-around">
           <el-col :span="8">
             <el-form-item label="物料编码">
-              <el-input v-model="item.materialCode" disabled></el-input>
+              <el-input size="small" v-model="item.materialCode" disabled></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="16">
             <el-form-item label="物料描述">
-              <el-input disabled v-model="item.materialDescription"></el-input>
+              <el-input size="small" disabled v-model="item.materialDescription"></el-input>
             </el-form-item>
           </el-col>
         </el-row>
@@ -100,34 +104,25 @@
               required: true, message: '呼叫主题不能为空', trigger: 'blur'
             }"
             >
-              <el-input v-model="item.fromTheme"></el-input>
+              <el-input size="small" v-model="item.fromTheme"></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="保修结束日期">
-              <el-date-picker
-                disabled
-                type="date"
-                placeholder="选择开始日期"
-                v-model="item.warrantyEndDate"
-                style="width: 100%;"
-              ></el-date-picker>
+            <el-form-item label="技术员">
+              <el-input size="small" disabled></el-input>
             </el-form-item>
           </el-col>
         </el-row>
         <el-row type="flex" class="row-bg" justify="space-around">
           <el-col :span="8">
-            <el-form-item label="呼叫类型"
+            <el-form-item
+              label="呼叫类型"
               prop="fromType"
-                :rules="{
+              :rules="{
               required: true, message: '呼叫类型不能为空', trigger: 'blur'
             }"
             >
-              <el-select
-                v-model="item.fromType"
-              
-                clearable
-              >
+              <el-select v-model="item.fromType" size="small" clearable>
                 <el-option
                   v-for="item in options_type"
                   :key="item.label"
@@ -140,7 +135,13 @@
           <el-col :span="8">
             <el-form-item label="呼叫状态">
               <!-- <el-input v-model="form.status" disabled></el-input> -->
-              <el-select v-model="item.status" :disabled="isEdit" clearable placeholder="请选择">
+              <el-select
+                size="small"
+                v-model="item.status"
+                :disabled="isEdit"
+                clearable
+                placeholder="请选择"
+              >
                 <el-option
                   v-for="ite in options_status"
                   :key="ite.value"
@@ -153,6 +154,7 @@
           <el-col :span="8">
             <el-form-item label="清算日期">
               <el-date-picker
+                size="small"
                 disabled
                 type="date"
                 placeholder="选择日期"
@@ -164,29 +166,33 @@
         </el-row>
         <el-row type="flex" class="row-bg" justify="space-around">
           <el-col :span="8">
-            <el-form-item label="问题类型"    prop="problemTypeId"
-                >
-              <el-input
-              :rules="{
+            <el-form-item label="问题类型" prop="problemTypeId">
+              <!-- <el-input
+                size="small"
+                :rules="{
               required: true, message: '问题类型不能为空', trigger: 'blur'
             }"
                 v-model="item.problemTypeId"
                 v-if="!item.problemTypeId"
-                @focus="()=>{proplemTree=true,sortForm=index+1}"
-              ></el-input>
+              type="text"
+              >
+                 @focus="()=>{proplemTree=true,sortForm=index+1}"
+             <i class="el-icon-search el-input__icon" slot="suffix" @click="()=>{proplemTree=true,sortForm=index+1}"></i>
+              </el-input> -->
               <div
+                disabled
                 type="text"
-                style="border:1px silver solid;border-radius:5px;padding:0 10px;"
-                v-if="item.problemTypeId"
-                @click="()=>{proplemTree=true,sortForm=index+1}"
-              >{{switchType(item.problemTypeId)}}</div>
+                style="border:1px silver solid;border-radius:5px;padding:0 10px;height:32px;line-height:32px;"
+              >{{switchType(item.problemTypeId)}}        
+                   <i class="el-icon-search el-input__icon" style="line-height:32px;float:right;" slot="suffix" @click="()=>{proplemTree=true,sortForm=index+1}"></i>
+              </div>
             </el-form-item>
             <!-- <el-input v-model="form.problemTypeId"></el-input> -->
           </el-col>
           <el-col :span="8">
             <el-form-item label="优先级">
               <!-- <el-input v-model="item.priority"></el-input> -->
-              <el-select v-model="item.priority" clearable placeholder="请选择">
+              <el-select v-model="item.priority" size="small" clearable placeholder="请选择">
                 <el-option
                   v-for="ite in options_quick"
                   :key="ite.value"
@@ -200,6 +206,7 @@
             <el-form-item label="预约时间">
               <el-date-picker
                 disabled
+                size="small"
                 type="date"
                 placeholder="选择开始日期"
                 v-model="item.bookingDate"
@@ -209,24 +216,42 @@
           </el-col>
         </el-row>
         <el-row type="flex" class="row-bg" justify="space-around">
-          <el-col :span="16" v-if="item.fromType===2">
+          <el-col :span="8">
+            <!-- :disabled="item.fromType===2?true:false" -->
             <el-form-item label="解决方案">
-              <el-input
+              <!-- <el-input
+                size="small"
+                  :disabled="item.fromType!==2"
                 v-model="item.solutionId"
                 v-if="!item.solutionId"
                 @focus="()=>{solutionOpen=true,sortTable=index+1}"
-              ></el-input>
+              ></el-input> -->
               <div
                 type="text"
-                style="border:1px silver solid;border-radius:5px;padding:0 10px;"
-                v-if="item.solutionId"
+                class="soluClass"
                 @click="()=>{solutionOpen=true,sortTable=index+1}"
-              >{{switchSo(item.solutionId)}}</div>
+              >{{switchSo(item.solutionId)}}
+        <i class="el-icon-search el-input__icon" style="line-height:32px;float:right;" slot="suffix" @click="()=>{solutionOpen=true,sortTable=index+1}"></i>
+
+              </div>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="保修结束日期">
+              <el-date-picker
+                disabled
+                size="small"
+                type="date"
+                placeholder="选择开始日期"
+                v-model="item.warrantyEndDate"
+                style="width: 100%;"
+              ></el-date-picker>
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="结束时间">
               <el-date-picker
+                size="small"
                 disabled
                 type="date"
                 placeholder="选择日期"
@@ -238,18 +263,34 @@
         </el-row>
 
         <el-form-item label="备注" prop="remark">
-          <el-input type="textarea" v-model="item.remark"></el-input>
+          <el-input type="textarea" size="small" v-model="item.remark"></el-input>
         </el-form-item>
-        <!-- <el-form-item label>
+           <el-form-item  v-if="isEditForm">
+        <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
+          <el-col :span="6"></el-col>
+          <el-col :span="3">
               <el-button
-            type="primary"
-            icon="el-icon-share"
-            @click="postWorkOrder(item)"
-          >确定</el-button>
-        </el-form-item>-->
-        <el-form-item label>
-          <div class="showSort">{{index+1}}/{{formList.length}}</div>
-        </el-form-item>
+                type="success"
+                size="small"
+                icon="el-icon-share"
+                @click="postWorkOrder(item)"
+              >确定新增</el-button>
+          </el-col>
+          <el-col :span="3">
+              <el-button
+                size="small"
+                type="primary"
+                icon="el-icon-share"
+                @click="postWorkOrder(item)"
+              >确定修改</el-button>
+          </el-col>
+          <el-col :span="3">
+              <div class="showSort">{{index+1}}/{{formList.length}}</div>
+         
+          </el-col>
+        </el-row>
+                </el-form-item>
+
       </el-form>
     </div>
 
@@ -261,7 +302,7 @@
       :visible.sync="proplemTree"
       width="250px"
     >
-      <problemtype @node-click="NodeClick"  :dataTree="dataTree"></problemtype>
+      <problemtype @node-click="NodeClick" :dataTree="dataTree"></problemtype>
     </el-dialog>
     <el-dialog
       :title="`第${sortTable}个工单的解决方案`"
@@ -278,10 +319,10 @@
         :listLoading="listLoading"
         @page-Change="pageChange"
       ></solution>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="solutionOpen = false">取 消</el-button>
-        <el-button type="primary" @click="solutionOpen=false">确 定</el-button>
-      </span>
+      <!-- <span slot="footer" class="dialog-footer">
+        <el-button size="small" @click="solutionOpen = false">取 消</el-button>
+        <el-button size="small" type="primary" @click="solutionOpen=false">确 定</el-button>
+      </span> -->
     </el-dialog>
     <el-dialog
       :append-to-body="true"
@@ -428,7 +469,7 @@ export default {
       listQuery: {
         page: 1,
         limit: 10,
-        CardCode:""
+        CardCode: ""
       },
       SerialCount: "",
       ifFormPush: false //表单是否被动态添加过
@@ -471,29 +512,29 @@ export default {
         }
       }
     },
-    "form.customerId":{
-           deep: true,
+    "form.customerId": {
+      deep: true,
       handler(val) {
-        this.listQuery.CardCode=val
-            getSerialNumber(this.listQuery)
-        .then(res => {
-          this.SerialNumberList = res.data;
-          this.filterSerialNumberList = this.SerialNumberList;
-          this.SerialCount = res.count;
-        })
-        .catch(error => {
-          console.log(error);
-        });
+        this.listQuery.CardCode = val;
+        getSerialNumber(this.listQuery)
+          .then(res => {
+            this.SerialNumberList = res.data;
+            this.filterSerialNumberList = this.SerialNumberList;
+            this.SerialCount = res.count;
+          })
+          .catch(error => {
+            console.log(error);
+          });
       }
-    },
+    }
   },
   // updated(){
-    
+
   //     this.listQuery.customerId=this.form.customerId
   //   // }
   //   // console.log(this.form.customerId)
   // },
-  inject:['form'],
+  inject: ["form"],
   methods: {
     getSerialNumberList() {
       this.listLoading = true;
@@ -527,10 +568,10 @@ export default {
       this.datasolution = res;
     },
     NodeClick(res) {
-        this.formList[this.sortForm - 1].problemTypeId = res.id;
-        console.log(this.formList)
-        this.problemLabel = res.name;
-        this.proplemTree = false;
+      this.formList[this.sortForm - 1].problemTypeId = res.id;
+      console.log(this.formList);
+      this.problemLabel = res.name;
+      this.proplemTree = false;
     },
     solutionClick(res) {
       this.formList[this.sortTable - 1].solutionId = res.id;
@@ -556,7 +597,7 @@ export default {
     },
     switchSo(val) {
       let res = this.datasolution.filter(item => item.id == val);
-       return res.length?res[0].subject:'请选择'
+      return res.length ? res[0].subject : "请选择";
     },
     openDialog() {
       this.filterSerialNumberList = this.SerialNumberList;
@@ -716,6 +757,24 @@ export default {
   //   ::v-deep .el-dialog__footer{
   //   background: lightslategrey;
   // }
+}
+.rowStyle {
+  ::v-deep .el-form-item {
+    margin-bottom: 10px;
+  }
+  ::v-deep .el-switch__label {
+    font-size: 10px;
+  }
+}
+.soluClass {
+  border: 1px silver solid;
+  border-radius: 5px;
+  padding: 0 10px;
+  overflow-x: hidden;
+  height: 40px;
+  ::-webkit-scrollbar {
+    width: 1px !important;
+  }
 }
 .addClass {
   border: 1px silver solid;
