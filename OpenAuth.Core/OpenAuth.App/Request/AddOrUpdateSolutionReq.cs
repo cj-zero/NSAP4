@@ -54,30 +54,6 @@ namespace OpenAuth.App.Request
         /// 
         /// </summary>
         public int? Status { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        public string CreateUserId { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        public string CreateUserName { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        public System.DateTime? CreateTime { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        public string UpdateUserId { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        public System.DateTime? UpdateTime { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        public string UpdateUserName { get; set; }
         
          //todo:添加自己的请求字段
     }

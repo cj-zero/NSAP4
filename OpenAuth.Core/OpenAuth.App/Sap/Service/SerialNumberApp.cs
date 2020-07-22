@@ -28,7 +28,8 @@ namespace OpenAuth.App.Sap.Service
         {
             var result = new TableData();
             var query = from a in UnitWork.Find<OINS>(null)
-                        join b in UnitWork.Find<CTR1>(null) on a.insID equals b.InsID
+                        join b in UnitWork.Find<CTR1>(null) on a.insID equals b.InsID into ab
+                        from b in ab.DefaultIfEmpty()
                         select new {
                             a,b
                         };

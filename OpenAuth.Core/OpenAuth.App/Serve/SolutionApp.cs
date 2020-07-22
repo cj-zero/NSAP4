@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Infrastructure;
+using Infrastructure.Extensions;
+using Microsoft.EntityFrameworkCore;
+using NPOI.SS.Formula.Functions;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -38,28 +42,30 @@ namespace OpenAuth.App
             var objs = UnitWork.Find<Solution>(null);
             if (!string.IsNullOrEmpty(request.key))
             {
-                objs = objs.Where(u => u.Id.Contains(request.key));
+                objs = objs.Where(u => u.Id.Contains(request.key) || u.Subject.Contains(request.key)).WhereIf(int.TryParse(request.key, out int code), u => u.SltCode == code);
             }
 
 
             var propertyStr = string.Join(',', properties.Select(u => u.Key));
             result.columnHeaders = properties;
-            result.Data = objs.OrderBy(u => u.Id)
+            result.Data = objs.OrderByDescending(u => u.SltCode)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).Select($"new ({propertyStr})");
             result.Count = objs.Count();
             return result;
         }
 
-        public void Add(AddOrUpdateSolutionReq req)
+        public async Task Add(AddOrUpdateSolutionReq req)
         {
+            var maxCode = await Repository.Find(null).Select(s => s.SltCode).MaxAsync();
+            req.SltCode = ++maxCode;
             var obj = req.MapTo<Solution>();
             //todo:补充或调整自己需要的字段
             obj.CreateTime = DateTime.Now;
             var user = _auth.GetCurrentUser().User;
             obj.CreateUserId = user.Id;
             obj.CreateUserName = user.Name;
-            Repository.Add(obj);
+            await Repository.AddAsync(obj);
         }
 
          public void Update(AddOrUpdateSolutionReq obj)
@@ -73,9 +79,6 @@ namespace OpenAuth.App
                 Symptom = obj.Symptom,
                 Descriptio = obj.Descriptio,
                 Status = obj.Status,
-                CreateUserId = obj.CreateUserId,
-                CreateUserName = obj.CreateUserName,
-                CreateTime = obj.CreateTime,
                 UpdateTime = DateTime.Now,
                 UpdateUserId = user.Id,
                 UpdateUserName = user.Name
