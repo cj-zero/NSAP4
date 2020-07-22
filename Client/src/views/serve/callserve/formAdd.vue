@@ -427,7 +427,8 @@ export default {
       ],
       listQuery: {
         page: 1,
-        limit: 10
+        limit: 10,
+        CardCode:""
       },
       SerialCount: "",
       ifFormPush: false //表单是否被动态添加过
@@ -469,9 +470,30 @@ export default {
           this.formList = val;
         }
       }
-    }
+    },
+    "form.customerId":{
+           deep: true,
+      handler(val) {
+        this.listQuery.CardCode=val
+            getSerialNumber(this.listQuery)
+        .then(res => {
+          this.SerialNumberList = res.data;
+          this.filterSerialNumberList = this.SerialNumberList;
+          this.SerialCount = res.count;
+        })
+        .catch(error => {
+          console.log(error);
+        });
+      }
+    },
   },
-
+  // updated(){
+    
+  //     this.listQuery.customerId=this.form.customerId
+  //   // }
+  //   // console.log(this.form.customerId)
+  // },
+  inject:['form'],
   methods: {
     getSerialNumberList() {
       this.listLoading = true;

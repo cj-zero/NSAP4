@@ -202,7 +202,8 @@ export default {
       sure: 0,
       formTheadOptions: [
         // { name: "id", label: "服务单ID" },
-           { name: "serviceOrderId", label: "工单ID", ifFixed: true },
+           { name: "serviceOrderId", label: "服务单号", ifFixed: true },
+              { name: "serviceWorkOrderId", label: "工单号"},
         { name: "priority", label: "优先级" },
         { name: "fromType", label: "呼叫类型", width: "100px" },
         { name: "customerId", label: "客户代码" },
@@ -240,7 +241,7 @@ export default {
         limit: 20,
         key: undefined,
         appId: undefined,
-        QryServiceOrderId: "", //查询服务ID查询条件
+        QryServiceOrderId: "", //查询服务单号查询条件
         // QryState: "", //呼叫状态查询条件
         // QryCustomer: "", //客户查询条件
         // QryManufSN: "", // 制造商序列号查询条件
@@ -347,7 +348,7 @@ export default {
 checkServeId(res){
   if(res.children){
     // console.log()
-    this.listQuery.QryServiceOrderId = res.label.split('服务ID')[1]
+    this.listQuery.QryServiceOrderId = res.label.split('服务单号')[1]
   }
    if(res===true){
     // console.log()
@@ -452,10 +453,10 @@ checkServeId(res){
             let resul =  res.data.data
         for(let i=0;i<resul.length;i++){
           arr[i] =[]
-         arr[i].label=`服务ID${resul[i].serviceOrderId}`;
+         arr[i].label=`服务单号${resul[i].serviceOrderId}`;
          arr[i].children=[]
             resul[i].workOrderId.map(item1 => {
-            arr[i].children.push({ label:  `工单ID${item1}`});
+            arr[i].children.push({ label:  `工单号${item1}`});
           });
         // arr[i].push({a:1}) 
         }

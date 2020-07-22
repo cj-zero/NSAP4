@@ -17,8 +17,8 @@
       <el-col :span="4">
         <el-form-item label="呼叫状态">
           <el-select v-model="form.QryState" placeholder="请选择呼叫状态">
-            <el-option label="状态一" value="shanghai"></el-option>
-            <el-option label="状态二" value="beijing"></el-option>
+            <el-option v-for="(item,index) in callStatus" :key="index" :label="item.label" :value="item.value"></el-option>
+          
           </el-select>
         </el-form-item>
       </el-col>
@@ -103,7 +103,17 @@ export default {
       page:1,//
       limit:20,
       key:'',
-    }
+    },
+    callStatus:[
+   {  value: 1,label:'待处理'},
+   {  value: 2,label:'已排配'},   
+   {  value: 3,label:'已外出'},
+      {  value: 4,label:'已挂起'},
+         {  value: 5,label:'已接收'},
+            {  value: 6,label:'已解决'},
+               {  value: 7,label:'已回访'},
+
+    ]
   }
   },
     watch: {
