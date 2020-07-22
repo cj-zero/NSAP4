@@ -716,7 +716,6 @@ namespace OpenAuth.App
             var result = new TableData();
             var query = UnitWork.Find<ServiceWorkOrder>(s => s.Status > 1 && s.Status < 8).Select(s => new
             {
-                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.ServiceOrder.Latitude.Value), Convert.ToDouble(s.ServiceOrder.Longitude.Value), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
                 s.Id,
                 s.AppUserId,
                 s.FromTheme,
@@ -781,7 +780,6 @@ namespace OpenAuth.App
             var result = new TableData();
             var query = UnitWork.Find<ServiceWorkOrder>(s => s.Status == 8).Select(s => new
             {
-                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.ServiceOrder.Latitude.Value), Convert.ToDouble(s.ServiceOrder.Longitude.Value), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
                 s.Id,
                 s.AppUserId,
                 s.FromTheme,
