@@ -66,7 +66,7 @@
                 <span class="addr">{{ item1.custmrName }}</span>
               </template>
               </el-autocomplete>-->
-              <el-input size="small" v-model="item.manufacturerSerialNumber" :disabled="isEditForm">
+              <el-input size="small" maxlength="0" v-model="item.manufacturerSerialNumber" :disabled="isEditForm">
                 <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
               </el-input>
             </el-form-item>
@@ -167,30 +167,33 @@
         <el-row type="flex" class="row-bg" justify="space-around">
           <el-col :span="8">
             <el-form-item label="问题类型" prop="problemTypeId">
-              <el-input
+              <!-- <el-input
                 size="small"
                 :rules="{
               required: true, message: '问题类型不能为空', trigger: 'blur'
             }"
                 v-model="item.problemTypeId"
                 v-if="!item.problemTypeId"
-                @focus="()=>{proplemTree=true,sortForm=index+1}"
-              ></el-input>
+              type="text"
+              >
+                 @focus="()=>{proplemTree=true,sortForm=index+1}"
+             <i class="el-icon-search el-input__icon" slot="suffix" @click="()=>{proplemTree=true,sortForm=index+1}"></i>
+              </el-input> -->
               <div
+                disabled
                 type="text"
-                style="border:1px silver solid;border-radius:5px;padding:0 10px;"
-                v-if="item.problemTypeId"
-                @click="()=>{proplemTree=true,sortForm=index+1}"
-              >{{switchType(item.problemTypeId)}}</div>
+                style="border:1px silver solid;border-radius:5px;padding:0 10px;height:32px;line-height:32px;"
+              >{{switchType(item.problemTypeId)}}        
+                   <i class="el-icon-search el-input__icon" style="line-height:32px;float:right;" slot="suffix" @click="()=>{proplemTree=true,sortForm=index+1}"></i>
+              </div>
             </el-form-item>
             <!-- <el-input v-model="form.problemTypeId"></el-input> -->
           </el-col>
           <el-col :span="8">
             <el-form-item label="优先级">
               <!-- <el-input v-model="item.priority"></el-input> -->
-              <el-select v-model="item.priority" clearable placeholder="请选择">
+              <el-select v-model="item.priority" size="small" clearable placeholder="请选择">
                 <el-option
-                  size="small"
                   v-for="ite in options_quick"
                   :key="ite.value"
                   :label="ite.label"
@@ -216,18 +219,21 @@
           <el-col :span="8">
             <!-- :disabled="item.fromType===2?true:false" -->
             <el-form-item label="解决方案">
-              <el-input
+              <!-- <el-input
                 size="small"
+                  :disabled="item.fromType!==2"
                 v-model="item.solutionId"
                 v-if="!item.solutionId"
                 @focus="()=>{solutionOpen=true,sortTable=index+1}"
-              ></el-input>
+              ></el-input> -->
               <div
                 type="text"
                 class="soluClass"
-                v-if="item.solutionId"
                 @click="()=>{solutionOpen=true,sortTable=index+1}"
-              >{{switchSo(item.solutionId)}}</div>
+              >{{switchSo(item.solutionId)}}
+        <i class="el-icon-search el-input__icon" style="line-height:32px;float:right;" slot="suffix" @click="()=>{solutionOpen=true,sortTable=index+1}"></i>
+
+              </div>
             </el-form-item>
           </el-col>
           <el-col :span="8">
@@ -313,10 +319,10 @@
         :listLoading="listLoading"
         @page-Change="pageChange"
       ></solution>
-      <span slot="footer" class="dialog-footer">
+      <!-- <span slot="footer" class="dialog-footer">
         <el-button size="small" @click="solutionOpen = false">取 消</el-button>
         <el-button size="small" type="primary" @click="solutionOpen=false">确 定</el-button>
-      </span>
+      </span> -->
     </el-dialog>
     <el-dialog
       :append-to-body="true"

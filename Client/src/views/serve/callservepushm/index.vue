@@ -21,7 +21,7 @@
         <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
     </sticky>
-    <div class="app-container flex-item">
+    <div class="app-container flex-item bg-white">
       <zxsearch @change-Search="changeSearch"></zxsearch>
       <el-row class="fh">
         <el-col :span="4" class="fh ls-border">

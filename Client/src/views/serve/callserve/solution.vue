@@ -88,7 +88,7 @@ export default {
         subject: "解决方案"
       },
       headWidth: {
-        subject: "500px"
+        subject: "700px"
       },
 
       // checkboxVal: defaultFormThead, // checkboxVal

@@ -119,7 +119,8 @@
                   size="mini"
                     v-model="form.createTime"
                     style="width: 100%;"
-                    type="date"
+                    type="datetime"
+                    value-format="yyyy-MM-dd hh-mm-ss"
                     placeholder="选择日期时间"
                   ></el-date-picker>
                 </el-form-item>
@@ -376,7 +377,12 @@ export default {
       ],
       callSourse: [
         { label: "电话", value: 1 },
-        { label: "APP", value: 2 }
+        { label: "钉钉", value: 2 },
+            { label: "QQ", value: 3 },
+        { label: "微信", value: 4 },
+            { label: "邮件", value: 5 },
+        { label: "APP", value: 6 },
+  { label: "web", value: 7 },
       ],
       serviceOrderId: "",
       form: {
