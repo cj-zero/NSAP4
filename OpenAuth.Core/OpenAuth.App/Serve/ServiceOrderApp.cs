@@ -612,6 +612,8 @@ namespace OpenAuth.App
                 q.Supervisor,
                 q.SalesMan,
                 TechName="",
+                ServiceStatus=q.Status,
+                ServiceCreateTime=q.CreateTime,
                 q.ServiceWorkOrders
             });
 
