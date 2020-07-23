@@ -75,3 +75,11 @@ export function logout() {
     method: 'post'
   })
 }
+
+
+export function GetQrCode() {
+  return request({
+    url: '/QrCode/Get',
+    method: 'get'
+  })
+}

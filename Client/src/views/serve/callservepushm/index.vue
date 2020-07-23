@@ -26,8 +26,11 @@
       <el-row class="fh">
         <el-col :span="4" class="fh ls-border">
           <el-card shadow="never" class="card-body-none fh" style="overflow-y: auto">
-            <el-tree :data="modulesTree" default-expand-all show-checkbox node-key="label"
-    check-strictly ref="treeForm"  @check-change="handleNodeClick" :props="defaultProps"></el-tree>
+            <el-link style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;" @click="getAllRight">全部服务单>></el-link>
+            <el-tree :data="modulesTree" default-expand-all show-checkbox node-key="key1"
+            @check="checkGroupNode" @check-change="handleNodeClick"
+     ref="treeForm" highlight-current :props="defaultProps"></el-tree>
+      <!--  -->
           </el-card>
         </el-col>
         <el-col :span="20" class="fh">
@@ -234,6 +237,8 @@ export default {
       listLoading: true,
       showDescription: false,
       dialogFormView: false,
+      checkChildList:[],
+      ifParent:false,//是否选过父级
       listQuery: {
         // 查询条件
         page: 1,
@@ -249,7 +254,8 @@ export default {
         QryCreateTimeTo: "", //- 创建日期至查询条件
         QryRecepUser: "", //- 接单员
         QryTechName: "", // - 工单技术员
-        QryProblemType: "" // - 问题类型
+        QryProblemType: "" ,// - 问题类型
+        QryMaterialTypes:[],//物料类型
       },
 
             statusOptions: [
@@ -408,17 +414,50 @@ export default {
       }
     },
 
-handleNodeClick(data, checked) {
-    if(checked === true) {
-        this.checkedId = data.label;
-        this.$refs.treeForm.setCheckedKeys([data.label]);
-    } else {
-        if (this.checkedId == data.label) {
-            this.$refs.treeForm.setCheckedKeys([data.label]);
-        }
-    }
-},
+// handleNodeClick(data, checked) {
+//   console.log(data,checked)
+//   // if()
+//     // if(checked === true) {
+//     //     this.checkedId = data.label;
+//     //     this.$refs.treeForm.setCheckedKeys([data.label]);
+//     // } else {
+//     //     if (this.checkedId == data.label) {
+//     //         this.$refs.treeForm.setCheckedKeys([data.label]);
+//     //     }
+//     // }
+// },
 
+checkGroupNode: function (a, b) {   //点击复选框触发
+   if(a.children){  //如果点击父级
+   this.ifParent = true
+  if (b.checkedKeys.length > 0) {  
+      this.$refs.treeForm.setCheckedKeys([a.key1]);
+      this.listQuery.QryMaterialTypes=[]
+      this.listQuery.QryServiceOrderId=a.key1
+       this.getRightList()
+    }
+   }else{     //如果点击一个父级下的子级
+   if(this.ifParent){ //如果没有父级
+   this.checkChildList.push(a.key1)
+      this.$refs.treeForm.setCheckedKeys(this.checkChildList);
+      this.listQuery.QryMaterialTypes.push(a.id)
+      this.listQuery.QryServiceOrderId=a.key1.split('&')[0]
+      this.getRightList()
+   }else{
+     this.$refs.treeForm.setCheckedKeys([a.key1]);
+      this.listQuery.QryMaterialTypes.push(a.id)
+      this.listQuery.QryServiceOrderId=a.key1.split('&')[0]
+       this.getRightList()
+   }
+     
+   }
+  
+},
+handleNodeClick(a,b,c){
+  if(c===false){
+    this.ifParent =true
+  }
+},
     getLeftList() {
       this.listLoading = true;
        let arr =[]
@@ -426,17 +465,29 @@ handleNodeClick(data, checked) {
        let resul =  res.data.data
         for(let i=0;i<resul.length;i++){
           arr[i] =[]
-         arr[i].label=`服务ID${resul[i].serviceOrderId}`;
+         arr[i].label=`服务号:${resul[i].serviceOrderId}`;
+         arr[i].key1=`${resul[i].serviceOrderId}`
          arr[i].children=[]
             resul[i].materialTypes.map(item1 => {
-            arr[i].children.push({ label:  `物料类型ID${item1}`});
+            arr[i].children.push({ label:  `物料类型号:${item1}`,
+            key1:  `${resul[i].serviceOrderId}&${item1}`,
+            id:  item1
           });
-        // arr[i].push({a:1}) 
+        })
+        // console.log(arr)
         }
-      this.modulesTree=arr
-       
+         this.modulesTree=arr
         });
         this.listLoading = false;
+    },
+    getAllRight(){
+            this.listLoading = true;
+      callservepushm.getRightList().then(response => {
+        this.list = response.data.data;
+        // this.list = response.data;
+        this.total = response.data.count;
+        this.listLoading = false;
+      });
     },
     getRightList() {
       this.listLoading = true;
