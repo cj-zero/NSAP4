@@ -937,17 +937,35 @@ namespace OpenAuth.App
         /// 查询可以被派单的技术员列表
         /// </summary>
         /// <returns></returns>
-        public async Task<List<UploadFileResp>> GetAllowSendOrderUser()
+        public async Task<List<AllowSendOrderUserResp>> GetAllowSendOrderUser()
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var tUserIds = await UnitWork.Find<AppUserMap>(u => u.AppUserRole == 2).Select(u=>u.UserID).ToListAsync();
-            var users = await UnitWork.Find<User>(u => tUserIds.Contains(u.Id)).ToListAsync();
-            var orgIds = _revelanceApp.Get(Define.USERORG, true, users.Select(u => u.Id).ToArray());
-            return null;
+            var orgs = loginContext.Orgs.Select(o=>o.Id).ToArray();
+
+            var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole == 2).ToListAsync();
+            var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
+            var ids = userIds.Intersect(tUsers.Select(u=>u.UserID));
+            var users = await UnitWork.Find<User>(u => ids.Contains(u.Id)).ToListAsync();
+            var us = users.Select(u => new { u.Name, AppUserId = tUsers.FirstOrDefault(a => a.UserID.Equals(u.Id)).AppUserId, u.Id });
+            var appUserIds = tUsers.Where(u => userIds.Contains(u.UserID)).Select(u => u.AppUserId).ToList();
+
+            var userCount = await UnitWork.Find<ServiceWorkOrder>(s => appUserIds.Contains(s.CurrentUserId) && s.Status.Value < 7)
+                .Select(s => new { s.CurrentUserId, s.ServiceOrderId }).Distinct().GroupBy(s => s.CurrentUserId)
+                .Select(g => new { g.Key, Count = g.Count() }).ToListAsync();
+
+            var result = us.Select(u => new AllowSendOrderUserResp
+            {
+                Id = u.Id,
+                Name = u.Name,
+                Count = userCount.FirstOrDefault(s=>s.Key.Equals(u.AppUserId))?.Count ?? 0,
+                AppUserId = u.AppUserId
+            }).ToList();
+
+            return result;
         }
 
         /// <summary>
@@ -1001,7 +1019,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         private async Task<bool> CheckCanTakeOrder(int id)
         {
-            var count = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == id && s.Status.Value >= 7).Select(s => s.ServiceOrderId).Distinct().CountAsync();
+            var count = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == id && s.Status.Value < 7).Select(s => s.ServiceOrderId).Distinct().CountAsync();
 
             return count < 6;
         }
