@@ -763,35 +763,37 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var result = new TableData();
-            var query = UnitWork.Find<ServiceOrder>(s => s.Status == 2).Select(s => new
-            {
-                s.Id,
-                s.Latitude,
-                s.Longitude,
-                s.Status,
-                s.Services,
-                s.CreateTime,
-                s.AppUserId,
-                s.Province,
-                s.City,
-                s.Area,
-                s.Addr,
-                ServiceWorkOrders = s.ServiceWorkOrders.Where(o=>o.Status == 1).Select(o=> new {
-                    o.Id,
-                    o.AppUserId,
-                    o.FromTheme,
-                    ProblemType = o.ProblemType.Description,
-                    o.CreateTime,
-                    o.Status,
-                    o.MaterialCode,
-                    MaterialType = o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
-                    o.FeeType,
-                    o.InternalSerialNumber,
-                    o.ManufacturerSerialNumber,
-                    o.Priority,
-                    o.Remark,
-                })
-            });
+            var query = UnitWork.Find<ServiceOrder>(s => s.Status == 2)
+                .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => s.Id == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key)))
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Latitude,
+                    s.Longitude,
+                    s.Status,
+                    s.Services,
+                    s.CreateTime,
+                    s.AppUserId,
+                    s.Province,
+                    s.City,
+                    s.Area,
+                    s.Addr,
+                    ServiceWorkOrders = s.ServiceWorkOrders.Where(o=>o.Status == 1).Select(o=> new {
+                        o.Id,
+                        o.AppUserId,
+                        o.FromTheme,
+                        ProblemType = o.ProblemType.Description,
+                        o.CreateTime,
+                        o.Status,
+                        o.MaterialCode,
+                        MaterialType = o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
+                        o.FeeType,
+                        o.InternalSerialNumber,
+                        o.ManufacturerSerialNumber,
+                        o.Priority,
+                        o.Remark,
+                    })
+                });
 
             var list = (await query
             .Skip((req.page - 1) * req.limit)
@@ -934,8 +936,16 @@ namespace OpenAuth.App
         /// 查询可以被派单的技术员列表
         /// </summary>
         /// <returns></returns>
-        public Task<List<UploadFileResp>> GetAllowSendOrderUser()
+        public async Task<List<UploadFileResp>> GetAllowSendOrderUser()
         {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var tUserIds = await UnitWork.Find<AppUserMap>(u => u.AppUserRole == 2).Select(u=>u.UserID).ToListAsync();
+            var users = await UnitWork.Find<User>(u => tUserIds.Contains(u.Id)).ToListAsync();
+            var orgIds = _revelanceApp.Get(Define.USERORG, true, users.Select(u => u.Id).ToArray());
             return null;
         }
 
