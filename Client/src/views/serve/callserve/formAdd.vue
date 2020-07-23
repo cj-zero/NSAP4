@@ -54,26 +54,27 @@
         <el-row type="flex" class="row-bg" justify="space-around">
           <el-col :span="8">
             <el-form-item label="制造商序列号">
-              <!-- <el-autocomplete
-              popper-class="my-autocomplete"
-              v-model="item.manufacturerSerialNumber"
-              :fetch-suggestions="querySearch"
-              placeholder="请输入内容"
-              @select="handleSelect"
-            >
-              <template slot-scope="{ item1 }">
-                <div class="name">{{ item1.manufSN }}</div>
-                <span class="addr">{{ item1.custmrName }}</span>
-              </template>
-              </el-autocomplete>-->
-              <el-input
+                <el-autocomplete
+          popper-class="my-autocomplete"
+          v-model="inputSearch"
+          :fetch-suggestions="querySearch"
+          placeholder="内容制造商序列号"
+          @select="searchSelect"
+        >
+          <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
+          <template slot-scope="{ item }">
+            <div class="name">{{ item.manufSN }}</div>
+            <span class="addr">{{ item.custmrName }}</span>
+          </template>
+        </el-autocomplete>
+              <!-- <el-input
                 size="small"
                 maxlength="0"
                 v-model="item.manufacturerSerialNumber"
                 :disabled="isEditForm"
               >
                 <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
-              </el-input>
+              </el-input> -->
             </el-form-item>
           </el-col>
           <el-col :span="8">
@@ -328,7 +329,7 @@
       width="90%"
       :visible.sync="dialogfSN"
     >
-      <div style="width:200px;margin:10px 0;">
+      <div style="width:400px;margin:10px 0;">
         <el-autocomplete
           popper-class="my-autocomplete"
           v-model="inputSearch"
@@ -343,6 +344,12 @@
             <span class="addr">{{ item.custmrName }}</span>
           </template>
         </el-autocomplete>
+              <el-input @input="searchList" style="width:150px;margin:0 20px;display:inline-block;" v-model="inputItemCode"  placeholder="输入物料编码"> 
+
+                          <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
+
+              </el-input>
+
       </div>
       <fromfSN
         :SerialNumberList="filterSerialNumberList"
@@ -429,6 +436,7 @@ export default {
 
       dialogfSN: false,
       inputSearch: "",
+      inputItemCode:'',//物料编码
       activeNames: ["1"], //活跃名称
 
       options_sourse: [
@@ -661,7 +669,8 @@ export default {
         });
     },
     searchList() {
-      this.listQuery.manufacturerSerialNumber = this.inputSearch;
+      this.listQuery.ManufSN = this.inputSearch;
+      this.listQuery.ItemCode = this.inputItemCode;
       this.getSerialNumberList();
       // if (!res) {
       //   this.filterSerialNumberList = this.SerialNumberList;
@@ -760,6 +769,25 @@ export default {
   }
   ::v-deep .el-switch__label {
     font-size: 10px;
+  }
+}
+.my-autocomplete {
+  li {
+    line-height: normal;
+    padding:2px 7px;
+    height:20px;
+    .name {
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+    .addr {
+      font-size: 12px;
+      color: #b4b4b4;
+    }
+
+    .highlighted .addr {
+      color: #ddd;
+    }
   }
 }
 .soluClass {
