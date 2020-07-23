@@ -64,7 +64,7 @@
                   <span
                     v-if="fruit.name === 'status'"
                     :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-                  >{{stateValue[scope.row[fruit.name]]}}</span>
+                  >{{statusOptions[scope.row[fruit.name]].label}}</span>
                   <span v-if="fruit.name === 'fromType'">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
                   <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
                   <span
@@ -251,11 +251,15 @@ export default {
         QryTechName: "", // - 工单技术员
         QryProblemType: "" // - 问题类型
       },
-      stateValue: ["待确认", "已确认", "已取消"],
-      statusOptions: [
-        { key: 1, display_name: "待确认" },
-        { key: 2, display_name: "已确认" },
-        { key: 3, display_name: "已取消" }
+
+            statusOptions: [
+        { value: 1, label: "待处理" },
+        { value: 2, label: "已排配" },
+        { value: 3, label: "已外出" },
+        { value: 4, label: "已挂起" },
+        { value: 5, label: "已接收" },
+        { value: 6, label: "已解决" },
+        { value: 7, label: "已回访" }
       ],
       priorityOptions: ["低", "中", "高"],
       temp: {
@@ -403,20 +407,7 @@ export default {
           break;
       }
     },
-    // @check-change="handleClick"
-//  handleClick(data, checked){
-//                  if(checked == true){
-//                      this.checkedId = data.label;
-//                      this.$refs.treeForm.setCheckedNodes([data]);
-//                  }
-//             },
-            // nodeClick(data,data1){
-            //   if(data.children){
-            //     console.log(1)
-            //     this.$refs.treeForm.setCheckedKeys([]);
-            //     this.$refs.treeForm.setCheckedNodes([data])
-            //   }
-            // },
+
 handleNodeClick(data, checked) {
     if(checked === true) {
         this.checkedId = data.label;

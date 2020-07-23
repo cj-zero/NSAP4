@@ -9,12 +9,12 @@
     @row-dblclick="handleCurrentChange"
     style="width: 100%"
   >
-    <!-- <el-table-column>
-      <template slot-scope='scope'>
-              <el-radio v-model="radio" fixed :label="scope.row.cardCode" @click="checkOne(scope.row)"></el-radio>
-      </template>
-    </el-table-column> -->
-    <el-table-column prop="cardCode" fixed label="客户代码" width="80"></el-table-column>
+    <el-table-column width="50">
+            <template slot-scope="scope">
+              <el-radio v-model="radio" :label="scope.row.cardCode">{{&nbsp;}}</el-radio>
+            </template>
+    </el-table-column>
+    <el-table-column prop="cardCode"  label="客户代码" width="80"></el-table-column>
     <el-table-column prop="cardName" label="客户名称" align="center" min-width="120"></el-table-column>
         <el-table-column align="center" label="状态冻结" width="120">
       <template slot-scope="scope">
@@ -57,10 +57,10 @@ export default {
        currentRow: [] ,//选择项
        dialogPartner:'',
        dialogCallId:false,
+               radio:'',
          listQuery: {
         // 查询条件
         page: 1,
-        radio:'1',
         CallList:[],
         toCallList:[],
         limit: 10,
@@ -80,13 +80,12 @@ export default {
     }
   },
     mounted() {
-      // console.log(this.partnerList)
+       console.log(this.partnerList)
   },
-    watch: {
-    partnerList:function(a){
-         console.log(a);
-    }
-  },
+    // watch: {
+    // partnerList:function(){
+    // }
+  // },
   methods:{
           openDialog() {   //打开前赋值给近期服务单
 
@@ -95,9 +94,12 @@ export default {
     // checkOne(value){
     //   console.log(value)
     // },
-
-    getPartner(val){
-      this.$emit('getChildValue',val)
+ getPartner(val){
+      this.checkVal = val
+  this.$emit('getChildValue',val)
+       this.$refs.singleTable.clearSelection();
+      this.radio = val.cardCode;
+      this.$refs.singleTable.toggleRowSelection(val);
     },
    handleCurrentChange(val) {
         this.currentRow = val;
