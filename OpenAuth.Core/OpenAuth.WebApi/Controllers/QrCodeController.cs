@@ -44,7 +44,7 @@ namespace OpenAuth.WebApi.Controllers
             Qrcode qrcode = new Qrcode()
             {
                 scene = "NWLogin",
-                parameter = "source=Nsap&rm=" + rd
+                parameter = "source=Nsap&rd=" + rd
             };
             Response.ContentType = "image/jpeg";
 
