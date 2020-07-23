@@ -293,16 +293,18 @@ export default {
         case "btnAdd":
           this.handleCreate();
           break;
-        case "editTable":
-          this.dialogTable = true;
-          // if (this.multipleSelection.length !== 1) {
-          //   this.$message({
-          //     message: "只能选中一个进行编辑",
-          //     type: "error"
-          //   });
-          //   return;
-          // }
-          // this.handleUpdate(this.multipleSelection[0]);
+        case "btnEdit":
+          // this.dialogTable = true;
+          console.log(this.multipleSelection)
+          if (!this.multipleSelection.length) {
+            this.$message({
+              message: "请选择编辑的方案",
+              type: "warning"
+            });
+            return;
+          }
+          
+          this.handleUpdate(this.multipleSelection[0]);
           break;
         case "btnDel":
           if (this.multipleSelection.length < 1) {
@@ -393,6 +395,7 @@ export default {
     },
     handleUpdate(row) {
       // 弹出编辑框
+      console.log(row)
       this.temp = Object.assign({}, row); // copy obj
       this.dialogStatus = "update";
       this.dialogFormVisible = true;
@@ -426,7 +429,12 @@ export default {
     },
     handleDelete(rows) {
       // 多行删除
-      solutions.del(rows.map(u => u.id)).then(() => {
+              this.$confirm('此操作将永久删除该解决方案, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+                solutions.del(rows.map(u => u.id)).then(() => {
         this.$notify({
           title: "成功",
           message: "删除成功",
@@ -438,6 +446,14 @@ export default {
           this.list.splice(index, 1);
         });
       });
+
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });          
+        });
+
     }
   }
 };

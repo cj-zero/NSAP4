@@ -605,7 +605,7 @@ namespace OpenAuth.App
 
             var resultsql = query.Select(q => new
             {
-                ServiceOrderId=q.Id,
+                ServiceOrderId = q.Id,
                 q.CustomerId,
                 q.CustomerName,
                 q.TerminalCustomer,
@@ -614,17 +614,18 @@ namespace OpenAuth.App
                 q.ContactTel,
                 q.Supervisor,
                 q.SalesMan,
-                TechName="",
-                ServiceStatus=q.Status,
-                ServiceCreateTime=q.CreateTime,
-                q.ServiceWorkOrders
+                TechName = "",
+                ServiceStatus = q.Status,
+                ServiceCreateTime = q.CreateTime,
+                ServiceWorkOrders = q.ServiceWorkOrders.Where(a => (string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId) || a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
+                && (string.IsNullOrWhiteSpace(req.QryState) || a.Status.Equals(Convert.ToInt32(req.QryState)))
+                && (string.IsNullOrWhiteSpace(req.QryManufSN) || a.ManufacturerSerialNumber.Contains(req.QryManufSN))
+                && ((req.QryCreateTimeFrom == null || req.QryCreateTimeTo == null) || (a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
+                ).ToList()
             });
 
-
-            result.Data =
-            (await resultsql
-            .Skip((req.page - 1) * req.limit)
-            .Take(req.limit).ToListAsync());//.GroupBy(o => o.Id).ToList();
+            result.Data = await resultsql.Skip((req.page - 1) * req.limit)
+            .Take(req.limit).ToListAsync(); ;
             result.Count = query.Count();
             return result;
         }
