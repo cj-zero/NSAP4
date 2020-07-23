@@ -67,6 +67,7 @@
               highlight-current-row
               @row-click="rowClick"
             >
+            
               <el-table-column
                 show-overflow-tooltip
                 v-for="(fruit,index) in formTheadOptions"
@@ -75,6 +76,9 @@
                 :sortable="fruit=='chaungjianriqi'?true:false"
                 style="background-color:silver;"
                 :label="fruit.label"
+                :fixed="fruit.ifFixed"
+
+                :width="fruit.width"
               >
                 <template slot-scope="scope">
                   <el-link
@@ -86,7 +90,7 @@
                     v-if="fruit.name === 'status'"
                     :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
                   >{{stateValue[scope.row[fruit.name]]}}</span>
-                  <span v-if="fruit.name === 'fromType'">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
+                  <span v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
                   <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
                   <span
                     v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
@@ -233,14 +237,21 @@ export default {
         { name: "customerId", label: "客户代码" },
         { name: "status", label: "状态" },
         { name: "customerName", label: "客户名称" },
+         { name: "FromTheme", label: "呼叫主题" },
         { name: "createTime", label: "创建日期" },
+        { name: "RecepUserName", label: "接单员" },
+        { name: "TechName", label: "技术员" },
+         { name: "materialCode", label: "制造商序列号",width:'140px' },
+         { name: "materialDescription", label: "物料编码",width:'120px' },
         { name: "contacter", label: "联系人" },
-        // { name: "services", label: "服务内容" },
-        { name: "contactTel", label: "电话号码" },
+        
+        { name: "contactTel", label: "电话号码" ,width:'120px'},
         { name: "supervisor", label: "售后主管" },
-        { name: "salesMan", label: "销售员" }
-        // { name: "manufSN", label: "制造商序列号" },
-        // { name: "itemCode", label: "物料编码" }
+        { name: "salesMan", label: "销售员" },
+        { name: "bookingDate", label: "预约时间" },
+        { name: "visitTime", label: "上门时间" },
+        { name: "warrantyEndDate", label: "结束时间" },
+
       ],
       stateValue: ["待确认", "已确认", "已取消"],
       statusOptions: [
@@ -469,20 +480,38 @@ export default {
     getList() {
       this.listLoading = true;
       let arr = [];
+      // let arr1 = []
       callservesure.rightList(this.listQuery).then(response => {
             let resul = response.data.data;
         for (let i = 0; i < resul.length; i++) {
-          arr[i] = resul[i];
+          // arr[i] = resul[i];
+          arr[i]={}
+          arr[i].serviceWorkOrders =[]
+          arr[i].serviceOrderId =[]
+          // console.log()
           arr[i].label = `服务${resul[i].serviceOrderId}`;
+          arr[i].serviceOrderId = resul[i].serviceOrderId;
+          let {contactTel,contacter,customerId,customerName,recepUserName,salesMan,serviceCreateTime,serviceStatus,supervisor,techName,terminalCustomer}={...resul[i]}
+          let newobj=Object.assign({contactTel,contacter,customerId,customerName,recepUserName,salesMan,serviceCreateTime,serviceStatus,supervisor,techName,terminalCustomer})
           resul[i].serviceWorkOrders.map((item1,index) => {
+            // arr[i] = resul[i];
+            arr[i].serviceWorkOrders[index] =[]
+            let arrnewobj= resul[i].serviceWorkOrders[index]
+         Object.assign(arrnewobj,newobj)
+        arr[i].serviceWorkOrders[index]= arrnewobj
             arr[i].serviceWorkOrders[index].label= `工单${item1.id}` ;
           });
         }
-        // this.modulesTree = ;
-        this.total = response.data.count;
-        this.list =resul;
-        console.log(this.list)
+
+         this.total = arr.length;
+         console.log(arr)
+        this.list =arr;
+        // console.log(this.list)
         this.listLoading = false;
+
+
+       
+     
       });
     },
     getLeftList() {

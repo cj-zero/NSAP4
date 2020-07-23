@@ -963,12 +963,19 @@ namespace OpenAuth.App
                     s.InternalSerialNumber,
                     s.ManufacturerSerialNumber,
                     s.MaterialCode,
-                    s.Status
+                    s.Status,
+                    MaterialType = s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-"))
                 });
             var result = new TableData();
-            var list = await listQuery
+            var list = (await listQuery
             .Skip((req.page - 1) * req.limit)
-            .Take(req.limit).ToListAsync();
+            .Take(req.limit).ToListAsync())
+            .GroupBy(s=>s.MaterialType).Select(s=>new 
+            {
+                MaterialType = s.Key,
+                Count = s.Count(),
+                WorkOrders = s.ToList()
+            });
 
             var count = await listQuery.CountAsync();
             result.Data = list;

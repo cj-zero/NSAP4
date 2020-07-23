@@ -164,7 +164,7 @@
                 </el-form-item>
               </el-col>
               <el-col :span="16" style="height:40px;line-height:40px;margin-bottom:10px;">
-                <el-input size="mini" v-model="form.addr">
+                <el-input size="mini" v-model="form.addr" >
                   <el-button size="mini" slot="append" icon="el-icon-position" @click="openMap"></el-button>
                 </el-input>
               </el-col>
@@ -520,7 +520,7 @@ export default {
 
     postServe() {
       //创建整个工单
-     
+   
       if (this.form.serviceWorkOrders.length > 0) {
         let chec = this.form.serviceWorkOrders.every(
           item =>
@@ -528,6 +528,11 @@ export default {
             item.fromType !== "" &&
             item.problemTypeId !== ""
         );
+           this.form.serviceWorkOrders = this.form.serviceWorkOrders.map(item=>{
+          item.problemTypeId=item.problemType
+             item.solutionId=item.solution
+             return item
+        })
         if (chec) {
          if(this.$route.path==="/serve/callserve"){
      callservesure
