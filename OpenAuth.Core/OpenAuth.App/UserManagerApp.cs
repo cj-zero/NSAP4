@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
+using Infrastructure.Cache;
 using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
+using OpenAuth.App.SSO;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 
@@ -126,15 +128,15 @@ namespace OpenAuth.App
         public IEnumerable<OpenAuth.Repository.Domain.Org> LoadByUser(string userId)
         {
             var result = from userorg in UnitWork.Find<Relevance>(null)
-                join org in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on userorg.SecondId equals org.Id
-                where userorg.FirstId == userId && userorg.Key == Define.USERORG
-                select org;
+                         join org in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on userorg.SecondId equals org.Id
+                         where userorg.FirstId == userId && userorg.Key == Define.USERORG
+                         select org;
             return result;
         }
 
 
         public UserManagerApp(IUnitWork unitWork, IRepository<User> repository,
-            RevelanceManagerApp app,IAuth auth) : base(unitWork, repository, auth)
+            RevelanceManagerApp app, IAuth auth) : base(unitWork, repository, auth)
         {
             _revelanceApp = app;
         }
@@ -151,9 +153,9 @@ namespace OpenAuth.App
         {
             var users = from userRole in UnitWork.Find<Relevance>(u =>
                     u.SecondId == request.roleId && u.Key == Define.USERROLE)
-                join user in UnitWork.Find<User>(null) on userRole.FirstId equals user.Id into temp
-                from c in temp.DefaultIfEmpty()
-                select c;
+                        join user in UnitWork.Find<User>(null) on userRole.FirstId equals user.Id into temp
+                        from c in temp.DefaultIfEmpty()
+                        select c;
 
             return new TableData
             {
@@ -166,9 +168,9 @@ namespace OpenAuth.App
             var role = await UnitWork.Find<Role>(r => r.Name.Equals(roleName)).FirstOrDefaultAsync();
             var users = from userRole in UnitWork.Find<Relevance>(u =>
                     u.SecondId == role.Id && u.Key == Define.USERROLE)
-                join user in UnitWork.Find<User>(null) on userRole.FirstId equals user.Id into temp
-                from c in temp.DefaultIfEmpty()
-                select c;
+                        join user in UnitWork.Find<User>(null) on userRole.FirstId equals user.Id into temp
+                        from c in temp.DefaultIfEmpty()
+                        select c;
 
             return await users.ToListAsync();
         }
@@ -182,9 +184,9 @@ namespace OpenAuth.App
             var role = await UnitWork.Find<Role>(r => r.Name.Equals(request.RoleName)).FirstOrDefaultAsync();
             var users = from userRole in UnitWork.Find<Relevance>(u =>
                     u.SecondId == role.Id && u.Key == Define.USERROLE)
-                join user in UnitWork.Find<User>(null) on userRole.FirstId equals user.Id into temp
-                from c in temp.DefaultIfEmpty()
-                select new { c.Id, c.Name };
+                        join user in UnitWork.Find<User>(null) on userRole.FirstId equals user.Id into temp
+                        from c in temp.DefaultIfEmpty()
+                        select new { c.Id, c.Name };
             users = users.WhereIf(!string.IsNullOrWhiteSpace(request.UserName), u => u.Name.Contains(request.UserName));
             var count = await users.CountAsync();
             var data = await users.Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
@@ -217,12 +219,46 @@ namespace OpenAuth.App
             {
                 throw new Exception("不能修改超级管理员信息");
             }
-            
+
             Repository.Update(u => u.Account == request.Account, user => new User
-                        {
-                            Name = request.Name,
-                            Sex = request.Sex
-                        });
+            {
+                Name = request.Name,
+                Sex = request.Sex
+            });
+        }
+
+        /// <summary>
+        /// 根据app用户信息获取token
+        /// </summary>
+        /// <param name="appUserId"></param>
+        /// <returns></returns>
+        public string GetTokenByAppUserId(int appUserId)
+        {
+            string token = string.Empty;
+            var userMap = UnitWork.Find<AppUserMap>(a => a.AppUserId == appUserId).FirstOrDefault();
+            if (userMap == null)
+            {
+                return token;
+            }
+            var userId = userMap.UserID;
+            var userInfo = UnitWork.Find<User>(u => u.Id == userId).FirstOrDefault();
+            if (userInfo == null)
+            {
+                return token;
+            }
+            var currentSession = new UserAuthSession
+            {
+                Account = userInfo.Account,
+                Name = userInfo.Name,
+                Token = Guid.NewGuid().ToString().GetHashCode().ToString("x"),
+                AppKey = "openauth",
+                CreateTime = DateTime.Now
+            };
+
+            RedisCacheContext cacheContext = new RedisCacheContext();
+            //创建Session
+            cacheContext.Set(currentSession.Token, currentSession, DateTime.Now.AddDays(10));
+            return currentSession.Token;
         }
     }
 }
