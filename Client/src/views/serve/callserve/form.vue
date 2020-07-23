@@ -18,21 +18,25 @@
             <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="8">
                 <el-form-item label="客户代码" prop="customerId">
-               <el-input size="mini" v-model="form.customerId" ><i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i></el-input>
+                  <!-- <el-input size="mini" v-model="form.customerId" ><i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i></el-input> -->
 
-                  <!-- <el-autocomplete
+                  <el-autocomplete
                     popper-class="my-autocomplete"
                     v-model="form.customerId"
                     :fetch-suggestions="querySearch"
                     placeholder="请输入内容"
+                    class="myAuto"
                     @select="handleSelect"
                   >
                     <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
                     <template slot-scope="{ item }">
-                      <div class="name">{{ item.cardCode }}</div>
-                      <span class="addr">{{ item.cardName }}</span>
+                      <div class="name">
+                        <p style="height:20px;margin:2px;">{{ item.cardCode }}</p>
+                        <p style="font-size:12px;height:20px;margin:2px;color:silver;">{{ item.cardName }}</p>
+                      </div>
+                      <!-- <span class="addr">{{ item.cardName }}</span> -->
                     </template>
-                  </el-autocomplete> -->
+                  </el-autocomplete>
                 </el-form-item>
               </el-col>
               <el-col :span="8">
@@ -116,7 +120,7 @@
               <el-col :span="8">
                 <el-form-item label="创建时间" prop="createTime">
                   <el-date-picker
-                  size="mini"
+                    size="mini"
                     v-model="form.createTime"
                     style="width: 100%;"
                     type="datetime"
@@ -139,7 +143,7 @@
                 <el-form-item label="地址标识">
                   <!-- <el-input v-model="form.addressDesignator"></el-input> -->
                   <el-select
-                  size="mini"
+                    size="mini"
                     v-model="form.addressDesignator"
                     @change="changeAddr"
                     placeholder="请选择"
@@ -154,17 +158,21 @@
                 </el-form-item>
               </el-col>
               <el-col :span="16">
-                <el-input size="mini" style="height:40px;line-height:40px;margin-bottom:10px;" v-model="form.address"></el-input>
+                <el-input
+                  size="mini"
+                  style="height:40px;line-height:40px;margin-bottom:10px;"
+                  v-model="form.address"
+                ></el-input>
               </el-col>
             </el-row>
-            <el-row :gutter="10" >
+            <el-row :gutter="10">
               <el-col :span="8">
                 <el-form-item label="现地址">
                   <el-input size="mini" v-model="form.city"></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="16" style="height:40px;line-height:40px;margin-bottom:10px;">
-                <el-input size="mini" v-model="form.addr" >
+                <el-input size="mini" v-model="form.addr">
                   <el-button size="mini" slot="append" icon="el-icon-position" @click="openMap"></el-button>
                 </el-input>
               </el-col>
@@ -184,7 +192,7 @@
               <el-col :span="18">
                 <upLoadImage setImage="100px" @get-ImgList="getImgList"></upLoadImage>
               </el-col>
-                    <el-col :span="2" style="line-height:40px;">
+              <el-col :span="2" style="line-height:40px;">
                 <el-button
                   type="primary"
                   size="small"
@@ -226,7 +234,6 @@
               justify="space-around"
             >
               <el-col :span="20"></el-col>
-        
             </el-row>
             <!-- 选择制造商序列号 -->
             <formAdd
@@ -298,7 +305,7 @@
         />
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialogPartner = false">取 消</el-button>
-          <el-button type="primary" @click="dialogPartner = false">确 定</el-button>
+          <el-button type="primary" @click="sureVal">确 定</el-button>
         </span>
       </el-dialog>
       <Model
@@ -378,13 +385,14 @@ export default {
       callSourse: [
         { label: "电话", value: 1 },
         { label: "钉钉", value: 2 },
-            { label: "QQ", value: 3 },
+        { label: "QQ", value: 3 },
         { label: "微信", value: 4 },
-            { label: "邮件", value: 5 },
+        { label: "邮件", value: 5 },
         { label: "APP", value: 6 },
-  { label: "web", value: 7 },
+        { label: "web", value: 7 }
       ],
       serviceOrderId: "",
+      checkVal:{},
       form: {
         customerId: "", //客户代码,
         customerName: "", //客户名称,
@@ -419,7 +427,7 @@ export default {
       propForm: [],
       rules: {
         customerId: [
-          { required: true, message: "请输入客户代码", trigger: "blur" }
+          { required: true, message: "请输入客户代码", trigger: "change" }
         ],
         customerName: [
           { required: true, message: "请输入客户名称", trigger: "change" }
@@ -482,9 +490,10 @@ export default {
     //  Object.assign(this.form,this.refValue)
     // this.propForm = this.refValue.serviceWorkOrders
   },
-  provide:function(){
+  provide: function() {
     return {
-      form:this.form}
+      form: this.form
+    };
   },
   mounted() {
     this.getPartnerList();
@@ -520,7 +529,7 @@ export default {
 
     postServe() {
       //创建整个工单
-   
+
       if (this.form.serviceWorkOrders.length > 0) {
         let chec = this.form.serviceWorkOrders.every(
           item =>
@@ -528,46 +537,45 @@ export default {
             item.fromType !== "" &&
             item.problemTypeId !== ""
         );
-           this.form.serviceWorkOrders = this.form.serviceWorkOrders.map(item=>{
-          item.problemTypeId=item.problemType
-             item.solutionId=item.solution
-             return item
-        })
+        this.form.serviceWorkOrders = this.form.serviceWorkOrders.map(item => {
+          item.problemTypeId = item.problemType;
+          item.solutionId = item.solution;
+          return item;
+        });
         if (chec) {
-         if(this.$route.path==="/serve/callserve"){
-     callservesure
-            .CreateOrder(this.form)
-            .then(() => {
-              this.$message({
-                message: "创建服务单成功",
-                type: "success"
+          if (this.$route.path === "/serve/callserve") {
+            callservesure
+              .CreateOrder(this.form)
+              .then(() => {
+                this.$message({
+                  message: "创建服务单成功",
+                  type: "success"
+                });
+                this.$emit("close-Dia", "y");
+              })
+              .catch(res => {
+                this.$message({
+                  message: `${res}`,
+                  type: "error"
+                });
               });
-              this.$emit("close-Dia", "y");
-            })
-            .catch(res => {
-              this.$message({
-                message: `${res}`,
-                type: "error"
+          } else {
+            callservesure
+              .CreateWorkOrder(this.form)
+              .then(() => {
+                this.$message({
+                  message: "创建服务单成功",
+                  type: "success"
+                });
+                this.$emit("close-Dia", "y");
+              })
+              .catch(res => {
+                this.$message({
+                  message: `${res}`,
+                  type: "error"
+                });
               });
-            });
-         }else{
-        callservesure
-            .CreateWorkOrder(this.form)
-            .then(() => {
-              this.$message({
-                message: "创建服务单成功",
-                type: "success"
-              });
-              this.$emit("close-Dia", "y");
-            })
-            .catch(res => {
-              this.$message({
-                message: `${res}`,
-                type: "error"
-              });
-            });
-         }
-  
+          }
         } else {
           this.$message({
             message: `请将必填项填写完整`,
@@ -618,7 +626,7 @@ export default {
             message: "修改服务单成功",
             type: "success"
           });
-          this.$emit("close-Dia",1)
+          this.$emit("close-Dia", 1);
           // this.formUpdate = false
         })
         .catch(res => {
@@ -650,6 +658,8 @@ export default {
     },
     searchList() {
       this.listQuery.CardCodeOrCardName = this.inputSearch;
+      this.form.customerId = this.inputSearch;
+
       this.getPartnerList();
       // if (!res) {
       //   this.filterPartnerList = this.partnerList;
@@ -666,6 +676,10 @@ export default {
       this.getPartnerList();
     },
     querySearch(queryString, cb) {
+      this.listQuery.CardCodeOrCardName = queryString;
+      this.inputSearch = queryString;
+
+      this.getPartnerList();
       var partnerList = this.partnerList;
       var results = queryString
         ? partnerList.filter(this.createFilter(queryString))
@@ -695,6 +709,7 @@ export default {
         });
     },
     handleSelect(item) {
+      this.inputSearch = item.customerId;
       this.form.customerId = item.cardCode;
       this.form.customerName = item.cardName;
       this.form.contacter = item.cntctPrsn;
@@ -703,15 +718,20 @@ export default {
       this.form.address = item.address;
       this.form.salesMan = item.slpName;
     },
-    ChildValue(val) {
-      console.log(val);
-      this.form.customerId = val.cardCode;
+    sureVal(){
+      this.dialogPartner = false
+      console.log(this.checkVal)
+      let val = this.checkVal
+            this.form.customerId = val.cardCode;
       this.form.customerName = val.cardName;
       this.form.contacter = val.cntctPrsn;
       this.form.contactTel = val.cellular;
       // this.form.addressDesignator = val.address;
       this.form.address = val.address;
       this.form.salesMan = val.slpName;
+    },
+    ChildValue(val) {
+      this.checkVal =val
     },
     handleIconClick() {
       this.dialogPartner = true;
@@ -767,9 +787,17 @@ export default {
   //   background: lightslategrey;
   // }
 }
-.rowStyle{
-  ::v-deep .el-form-item{
-    margin-bottom:5px;
+.rowStyle {
+  ::v-deep .el-form-item {
+    margin-bottom: 5px;
+  }
+}
+.myAuto {
+  ::v-deep.el-autocomplete-suggestion {
+    li {
+      height: 20px;
+      line-height: 20px;
+    }
   }
 }
 .my-autocomplete {

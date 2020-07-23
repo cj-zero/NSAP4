@@ -25,37 +25,7 @@
     <div class="app-container">
       <div class="bg-white">
         <zxsearch @change-Search="changeSearch"></zxsearch>
-        <!-- <el-row class="fh">
-          <el-col :span="3" class="fh ls-border">
-            <el-card shadow="never" class="card-body-none fh bg-head">
-              <el-table
-                :data="modulesTree"
-                style="width: 100%;margin-bottom: 20px;"
-                max-height="500px"
-                row-key="label"
-                border
-                @row-click="checkServeId"
-                @header-click="checkServeId(true)"
-                default-expand-all
-                :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
-                <el-table-column
-                  prop="label"
-                  style="color:green;"
-                  label="全部服务单列表>>"
-                  min-width="180px"
-                >
-                  <template slot-scope="scope">
-                    <el-radio v-if="scope.row.children" v-model="radio" :label="scope.row.label"></el-radio>
-                    <span v-else>{{scope.row.label}}</span>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </el-card>
-          </el-col>
-          <el-col :span="21" class="fh"> -->
             <el-table
-            row-key="label"
-               :tree-props="{children: 'serviceWorkOrders', hasChildren: 'hasChildren'}"
               ref="mainTable"
               class="table_label"
               :key="key"
@@ -67,17 +37,54 @@
               highlight-current-row
               @row-click="rowClick"
             >
-            
+                <el-table-column type="expand">
+          <template slot-scope="scope">
+                      <el-table
+              ref="mainTable"
+              :key="key"
+              :data="scope.row.serviceWorkOrders"
+              v-loading="listLoading"
+              border
+              fit
+              style="width: 100%;"
+              highlight-current-row
+              @row-click="rowClick"
+            >
               <el-table-column
                 show-overflow-tooltip
-                v-for="(fruit,index) in formTheadOptions"
+                v-for="(fruit,index) in ChildheadOptions"
                 align="center"
                 :key="`ind${index}`"
                 :sortable="fruit=='chaungjianriqi'?true:false"
                 style="background-color:silver;"
                 :label="fruit.label"
                 :fixed="fruit.ifFixed"
+                :width="fruit.width" >
+                <template slot-scope="scope">
+                  <span
+                    v-if="fruit.name === 'status'"
+                    :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
+                  >{{statusOptions[scope.row[fruit.name]].label}}</span>
+                  <span v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
+                  <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
+                  <span
+                    v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
+                  >{{scope.row[fruit.name]}}</span>
+                </template>
+              </el-table-column>
+                          </el-table>
 
+               </template>
+        </el-table-column>
+              <el-table-column
+                show-overflow-tooltip
+                v-for="(fruit,index) in ParentHeadOptions"
+                align="center"
+                :key="`ind${index}`"
+                :sortable="fruit=='chaungjianriqi'?true:false"
+                style="background-color:silver;"
+                :label="fruit.label"
+                :fixed="fruit.ifFixed"
                 :width="fruit.width"
               >
                 <template slot-scope="scope">
@@ -89,7 +96,7 @@
                   <span
                     v-if="fruit.name === 'status'"
                     :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-                  >{{stateValue[scope.row[fruit.name]]}}</span>
+                  >{{statusOptions[scope.row[fruit.name]].label}}</span>
                   <span v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
                   <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
                   <span
@@ -97,9 +104,9 @@
                   >{{scope.row[fruit.name]}}</span>
                 </template>
               </el-table-column>
+             
             </el-table>
-          <!-- </el-col>
-        </el-row> -->
+
         <pagination
           v-show="total>0"
           :total="total"
@@ -228,38 +235,52 @@ export default {
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
       sure: 0,
-      formTheadOptions: [
-        // { name: "id", label: "服务单ID" },
-        { name: "serviceOrderId", label: "服务单号", ifFixed: true },
+      ParentHeadOptions: [
+        { name: "serviceOrderId", label: "服务单号", width: "120px"},
+        { name: "customerId", label: "客户代码" },
+        { name: "customerName", label: "客户名称" },
+        { name: "contacter", label: "联系人" },
+        { name: "contactTel", label: "电话号码" ,width:'150px'},
+        { name: "supervisor", label: "售后主管" },
+        { name: "salesMan", label: "销售员" },
+      ],
+            ChildheadOptions: [
+        // { name: "serviceOrderId", label: "服务单号", ifFixed: true },
         { name: "id", label: "工单号" },
         { name: "priority", label: "优先级" },
         { name: "fromType", label: "呼叫类型", width: "100px" },
-        { name: "customerId", label: "客户代码" },
+        // { name: "customerId", label: "客户代码" },
         { name: "status", label: "状态" },
-        { name: "customerName", label: "客户名称" },
+        // { name: "customerName", label: "客户名称" },
          { name: "FromTheme", label: "呼叫主题" },
-        { name: "createTime", label: "创建日期" },
+        { name: "createTime", label: "创建日期" ,width:'160px'},
         { name: "RecepUserName", label: "接单员" },
         { name: "TechName", label: "技术员" },
          { name: "materialCode", label: "制造商序列号",width:'140px' },
          { name: "materialDescription", label: "物料编码",width:'120px' },
-        { name: "contacter", label: "联系人" },
-        
-        { name: "contactTel", label: "电话号码" ,width:'120px'},
-        { name: "supervisor", label: "售后主管" },
-        { name: "salesMan", label: "销售员" },
+        // { name: "contacter", label: "联系人" },
+        // { name: "contactTel", label: "电话号码" ,width:'120px'},
+        // { name: "supervisor", label: "售后主管" },
+        // { name: "salesMan", label: "销售员" },
         { name: "bookingDate", label: "预约时间" },
         { name: "visitTime", label: "上门时间" },
         { name: "warrantyEndDate", label: "结束时间" },
-
       ],
-      stateValue: ["待确认", "已确认", "已取消"],
-      statusOptions: [
-        { key: 1, display_name: "待确认" },
-        { key: 2, display_name: "已确认" },
-        { key: 3, display_name: "已取消" }
+      // stateValue: ["待确认", "已确认", "已取消"],
+      // statusOptions: [
+      //   { key: 1, display_name: "待确认" },
+      //   { key: 2, display_name: "已确认" },
+      //   { key: 3, display_name: "已取消" }
+      // ],
+            statusOptions: [
+        { value: 1, label: "待处理" },
+        { value: 2, label: "已排配" },
+        { value: 3, label: "已外出" },
+        { value: 4, label: "已挂起" },
+        { value: 5, label: "已接收" },
+        { value: 6, label: "已解决" },
+        { value: 7, label: "已回访" }
       ],
-
       modulesTree: [],
       priorityOptions: ["低", "中", "高"],
       tableKey: 0,
@@ -479,56 +500,34 @@ export default {
     },
     getList() {
       this.listLoading = true;
-      let arr = [];
-      // let arr1 = []
+      // let arr = [];
       callservesure.rightList(this.listQuery).then(response => {
             let resul = response.data.data;
-        for (let i = 0; i < resul.length; i++) {
-          // arr[i] = resul[i];
-          arr[i]={}
-          arr[i].serviceWorkOrders =[]
-          arr[i].serviceOrderId =[]
-          // console.log()
-          arr[i].label = `服务${resul[i].serviceOrderId}`;
-          arr[i].serviceOrderId = resul[i].serviceOrderId;
-          let {contactTel,contacter,customerId,customerName,recepUserName,salesMan,serviceCreateTime,serviceStatus,supervisor,techName,terminalCustomer}={...resul[i]}
-          let newobj=Object.assign({contactTel,contacter,customerId,customerName,recepUserName,salesMan,serviceCreateTime,serviceStatus,supervisor,techName,terminalCustomer})
-          resul[i].serviceWorkOrders.map((item1,index) => {
-            // arr[i] = resul[i];
-            arr[i].serviceWorkOrders[index] =[]
-            let arrnewobj= resul[i].serviceWorkOrders[index]
-         Object.assign(arrnewobj,newobj)
-        arr[i].serviceWorkOrders[index]= arrnewobj
-            arr[i].serviceWorkOrders[index].label= `工单${item1.id}` ;
-          });
-        }
-
-         this.total = arr.length;
-         console.log(arr)
-        this.list =arr;
-        // console.log(this.list)
+        // for (let i = 0; i < resul.length; i++) {
+        //   // arr[i] = resul[i];
+        //   arr[i]={}
+        //   arr[i].serviceWorkOrders =[]
+        //   arr[i].serviceOrderId =[]
+        //   arr[i].label = `服务${resul[i].serviceOrderId}`;
+        //   arr[i].serviceOrderId = resul[i].serviceOrderId;
+        //   let {contactTel,contacter,customerId,customerName,recepUserName,salesMan,serviceCreateTime,serviceStatus,supervisor,techName,terminalCustomer}={...resul[i]}
+        //   let newobj=Object.assign({contactTel,contacter,customerId,customerName,recepUserName,salesMan,serviceCreateTime,serviceStatus,supervisor,techName,terminalCustomer})
+        //   resul[i].serviceWorkOrders.map((item1,index) => {
+        //     // arr[i] = resul[i];
+        //     arr[i].serviceWorkOrders[index] =[]
+        //     let arrnewobj= resul[i].serviceWorkOrders[index]
+        //  Object.assign(arrnewobj,newobj)
+        // arr[i].serviceWorkOrders[index]= arrnewobj
+        //     arr[i].serviceWorkOrders[index].label= `工单${item1.id}` ;
+        //   });
+        // }
+        console.log(resul)
+         this.total = resul.length;
+        this.list =resul;
         this.listLoading = false;
-
-
-       
-     
       });
     },
     getLeftList() {
-      // this.listLoading = true;  //获取左侧菜单
-      // let arr = [];
-      // callservesure.leftList().then(res => {
-      //   let resul = res.data.data;
-      //   for (let i = 0; i < resul.length; i++) {
-      //     arr[i] = [];
-      //     arr[i].label = `服务单号：${resul[i].serviceOrderId}`;
-      //     arr[i].children = [];
-      //     resul[i].workOrderId.map(item1 => {
-      //       arr[i].children.push({ label: `工单号：${item1}` });
-      //     });
-      //   }
-      //   this.modulesTree = arr;
-      // });
     },
     handleNodeClick(res) {
       console.log(res);
@@ -677,6 +676,9 @@ export default {
   }
   ::v-deep.el-radio__label {
     display: none;
+  }
+  ::v-deep.el-table__expanded-cell{
+    padding:10px 15px;
   }
 }
 .bg-head {

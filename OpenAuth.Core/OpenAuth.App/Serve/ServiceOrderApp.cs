@@ -605,7 +605,7 @@ namespace OpenAuth.App
 
             var resultsql = query.Select(q => new
             {
-                ServiceOrderId=q.Id,
+                ServiceOrderId = q.Id,
                 q.CustomerId,
                 q.CustomerName,
                 q.TerminalCustomer,
@@ -614,17 +614,18 @@ namespace OpenAuth.App
                 q.ContactTel,
                 q.Supervisor,
                 q.SalesMan,
-                TechName="",
-                ServiceStatus=q.Status,
-                ServiceCreateTime=q.CreateTime,
-                q.ServiceWorkOrders
+                TechName = "",
+                ServiceStatus = q.Status,
+                ServiceCreateTime = q.CreateTime,
+                ServiceWorkOrders = q.ServiceWorkOrders.Where(a => (string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId) || a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
+                && (string.IsNullOrWhiteSpace(req.QryState) || a.Status.Equals(Convert.ToInt32(req.QryState)))
+                && (string.IsNullOrWhiteSpace(req.QryManufSN) || a.ManufacturerSerialNumber.Contains(req.QryManufSN))
+                && ((req.QryCreateTimeFrom == null || req.QryCreateTimeTo == null) || (a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
+                ).ToList()
             });
 
-
-            result.Data =
-            (await resultsql
-            .Skip((req.page - 1) * req.limit)
-            .Take(req.limit).ToListAsync());//.GroupBy(o => o.Id).ToList();
+            result.Data = await resultsql.Skip((req.page - 1) * req.limit)
+            .Take(req.limit).ToListAsync(); ;
             result.Count = query.Count();
             return result;
         }
@@ -763,35 +764,37 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var result = new TableData();
-            var query = UnitWork.Find<ServiceOrder>(s => s.Status == 2).Select(s => new
-            {
-                s.Id,
-                s.Latitude,
-                s.Longitude,
-                s.Status,
-                s.Services,
-                s.CreateTime,
-                s.AppUserId,
-                s.Province,
-                s.City,
-                s.Area,
-                s.Addr,
-                ServiceWorkOrders = s.ServiceWorkOrders.Where(o=>o.Status == 1).Select(o=> new {
-                    o.Id,
-                    o.AppUserId,
-                    o.FromTheme,
-                    ProblemType = o.ProblemType.Description,
-                    o.CreateTime,
-                    o.Status,
-                    o.MaterialCode,
-                    MaterialType = o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
-                    o.FeeType,
-                    o.InternalSerialNumber,
-                    o.ManufacturerSerialNumber,
-                    o.Priority,
-                    o.Remark,
-                })
-            });
+            var query = UnitWork.Find<ServiceOrder>(s => s.Status == 2)
+                .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => s.Id == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key)))
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Latitude,
+                    s.Longitude,
+                    s.Status,
+                    s.Services,
+                    s.CreateTime,
+                    s.AppUserId,
+                    s.Province,
+                    s.City,
+                    s.Area,
+                    s.Addr,
+                    ServiceWorkOrders = s.ServiceWorkOrders.Where(o=>o.Status == 1).Select(o=> new {
+                        o.Id,
+                        o.AppUserId,
+                        o.FromTheme,
+                        ProblemType = o.ProblemType.Description,
+                        o.CreateTime,
+                        o.Status,
+                        o.MaterialCode,
+                        MaterialType = o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
+                        o.FeeType,
+                        o.InternalSerialNumber,
+                        o.ManufacturerSerialNumber,
+                        o.Priority,
+                        o.Remark,
+                    })
+                });
 
             var list = (await query
             .Skip((req.page - 1) * req.limit)
@@ -934,9 +937,35 @@ namespace OpenAuth.App
         /// 查询可以被派单的技术员列表
         /// </summary>
         /// <returns></returns>
-        public Task<List<UploadFileResp>> GetAllowSendOrderUser()
+        public async Task<List<AllowSendOrderUserResp>> GetAllowSendOrderUser()
         {
-            return null;
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var orgs = loginContext.Orgs.Select(o=>o.Id).ToArray();
+
+            var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole == 2).ToListAsync();
+            var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
+            var ids = userIds.Intersect(tUsers.Select(u=>u.UserID));
+            var users = await UnitWork.Find<User>(u => ids.Contains(u.Id)).ToListAsync();
+            var us = users.Select(u => new { u.Name, AppUserId = tUsers.FirstOrDefault(a => a.UserID.Equals(u.Id)).AppUserId, u.Id });
+            var appUserIds = tUsers.Where(u => userIds.Contains(u.UserID)).Select(u => u.AppUserId).ToList();
+
+            var userCount = await UnitWork.Find<ServiceWorkOrder>(s => appUserIds.Contains(s.CurrentUserId) && s.Status.Value < 7)
+                .Select(s => new { s.CurrentUserId, s.ServiceOrderId }).Distinct().GroupBy(s => s.CurrentUserId)
+                .Select(g => new { g.Key, Count = g.Count() }).ToListAsync();
+
+            var result = us.Select(u => new AllowSendOrderUserResp
+            {
+                Id = u.Id,
+                Name = u.Name,
+                Count = userCount.FirstOrDefault(s=>s.Key.Equals(u.AppUserId))?.Count ?? 0,
+                AppUserId = u.AppUserId
+            }).ToList();
+
+            return result;
         }
 
         /// <summary>
@@ -990,7 +1019,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         private async Task<bool> CheckCanTakeOrder(int id)
         {
-            var count = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == id && s.Status.Value >= 7).Select(s => s.ServiceOrderId).Distinct().CountAsync();
+            var count = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == id && s.Status.Value < 7).Select(s => s.ServiceOrderId).Distinct().CountAsync();
 
             return count < 6;
         }

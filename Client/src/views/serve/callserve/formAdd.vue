@@ -58,13 +58,17 @@
           popper-class="my-autocomplete"
           v-model="inputSearch"
           :fetch-suggestions="querySearch"
-          placeholder="内容制造商序列号"
+          placeholder="制造商序列号"
           @select="searchSelect"
         >
           <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
           <template slot-scope="{ item }">
-            <div class="name">{{ item.manufSN }}</div>
-            <span class="addr">{{ item.custmrName }}</span>
+             <div class="name" >
+                        <p style="height:20px;margin:2px;">{{ item.manufSN }}</p>
+                        <p style="font-size:12px;height:20px;margin:2px 0 5px 0 ;color:silver;">{{ item.custmrName }}</p>
+                        </div>
+            <!-- <div class="name">{{ item.manufSN }}</div>
+            <span class="addr">{{ item.custmrName }}</span> -->
           </template>
         </el-autocomplete>
               <!-- <el-input
@@ -330,20 +334,12 @@
       :visible.sync="dialogfSN"
     >
       <div style="width:400px;margin:10px 0;">
-        <el-autocomplete
-          popper-class="my-autocomplete"
-          v-model="inputSearch"
-          :fetch-suggestions="querySearch"
-          placeholder="内容制造商序列号"
-          @select="searchSelect"
-          @input="searchList"
-        >
-          <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
-          <template slot-scope="{ item }">
-            <div class="name">{{ item.manufSN }}</div>
-            <span class="addr">{{ item.custmrName }}</span>
-          </template>
-        </el-autocomplete>
+
+                <el-input @input="searchList" style="width:150px;margin:0 20px;display:inline-block;" v-model="inputSearch"  placeholder="制造商序列号"> 
+
+                          <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
+
+              </el-input>
               <el-input @input="searchList" style="width:150px;margin:0 20px;display:inline-block;" v-model="inputItemCode"  placeholder="输入物料编码"> 
 
                           <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
@@ -353,7 +349,7 @@
       </div>
       <fromfSN
         :SerialNumberList="filterSerialNumberList"
-        :loading="serLoading"
+        :serLoading="serLoad"
         @change-Form="changeForm"
       ></fromfSN>
       <pagination
@@ -399,7 +395,7 @@ export default {
       solutionCount: "",
       listLoading: true,
       proplemTree: false,
-      serLoading: true,
+      serLoad: false,
       addressList: [], //客户地址集合
       cntctPrsnList: [], //客户联系人集合
       SerialNumberList: [],
@@ -541,13 +537,13 @@ export default {
   methods: {
     getSerialNumberList() {
       this.listLoading = true;
-      this.serLoading = true;
+      this.serLoad = true;
       getSerialNumber(this.listQuery)
         .then(res => {
           this.SerialNumberList = res.data;
           this.filterSerialNumberList = this.SerialNumberList;
           this.SerialCount = res.count;
-          this.serLoading = false;
+          this.serLoad = false;
           this.listLoading = false;
         })
         .catch(error => {
@@ -681,12 +677,21 @@ export default {
       //   this.filterSerialNumberList = list;
       // }
     },
+        searchSelect(res) {
+      let newList = this.filterSerialNumberList.filter(
+        item => item.manufSN === res.manufSN
+      );
+      this.inputSearch = res.manufSN;
+      this.filterSerialNumberList = newList;
+    },
     querySearch(queryString, cb) {
+       this.listQuery.ManufSN = queryString
+      this.getSerialNumberList();
       var filterSerialNumberList = this.SerialNumberList;
       var results = queryString
         ? filterSerialNumberList.filter(this.createFilter(queryString))
         : filterSerialNumberList;
-      console.log(results);
+      // console.log(results);
       // 调用 callback 返回建议列表的数据
       cb(results);
     },
@@ -730,13 +735,7 @@ export default {
           });
         });
     },
-    searchSelect(res) {
-      let newList = this.filterSerialNumberList.filter(
-        item => item.manufSN === res.manufSN
-      );
-      this.inputSearch = res.manufSN;
-      this.filterSerialNumberList = newList;
-    }
+
   }
 };
 </script>

@@ -70,9 +70,8 @@ export default {
     }
   },
   watch:{
-        SerialNumberList: function(a){
-        console.log(a)
-    }
+    //     SerialNumberList: function(){
+    // }
   },
   
     mounted() {
