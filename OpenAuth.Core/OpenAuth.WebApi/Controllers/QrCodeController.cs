@@ -41,13 +41,10 @@ namespace OpenAuth.WebApi.Controllers
         [AllowAnonymous]
         public IActionResult Get(string rd)
         {
-            //获取当前服务地址及端口
-            string url = "http://localhost:" + Request.HttpContext.Connection.LocalPort;
-            url = HttpUtility.UrlEncode(url + "/l/r=" + rd);
             Qrcode qrcode = new Qrcode()
             {
                 scene = "NWLogin",
-                parameter = "callback=" + url
+                parameter = "source=Nsap&rm=" + rd
             };
             Response.ContentType = "image/jpeg";
 
