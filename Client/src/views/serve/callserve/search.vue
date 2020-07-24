@@ -108,11 +108,12 @@ export default {
       callStatus: [
         { value: 1, label: "待处理" },
         { value: 2, label: "已排配" },
-        { value: 3, label: "已外出" },
-        { value: 4, label: "已挂起" },
-        { value: 5, label: "已接收" },
-        { value: 6, label: "已解决" },
-        { value: 7, label: "已回访" }
+        { value: 3, label: "已预约" },
+        { value: 4, label: "已外出" },
+        { value: 5, label: "已挂起" },
+        { value: 6, label: "已接收" },
+        { value: 7, label: "已解决" },
+        { value: 8, label: "已回访" }
       ]
     };
   },

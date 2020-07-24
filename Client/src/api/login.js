@@ -77,9 +77,18 @@ export function logout() {
 }
 
 
-export function GetQrCode() {
+export function GetQrCode(data) {  //获取二维码
   return request({
     url: '/QrCode/Get',
-    method: 'get'
+    method: 'get',
+    params:data
+  })
+}
+
+export function ValidateLogin(data) {  //获取二维码
+  return request({
+    url: '/QrCode/ValidateLoginState',
+    method: 'get',
+    params:data
   })
 }

@@ -634,24 +634,24 @@ export default {
     display: none;
   }
 }
-// .mainPage {
-//   ::v-deep .el-dialog__wrapper {
-//     position: absolute;
-//        .el-dialog__header {
-//         .el-dialog__title {
-//           color: white;
-//         }
-//         .el-dialog__close {
-//           color: white;
-//         }
-//         background: lightslategrey;
-//       }
-//      .el-dialog__body {
-//     padding: 10px 20px;
-//   }
-//   }
+.mainPage {
+  ::v-deep .el-dialog__wrapper {
+    position: absolute;
+       .el-dialog__header {
+        .el-dialog__title {
+          color: white;
+        }
+        .el-dialog__close {
+          color: white;
+        }
+        background: lightslategrey;
+      }
+     .el-dialog__body {
+    padding: 10px 20px;
+  }
+  }
 
-// }
+}
 
 
 </style>

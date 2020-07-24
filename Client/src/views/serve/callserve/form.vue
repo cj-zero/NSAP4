@@ -193,7 +193,7 @@
               <el-col :span="18">
                 <upLoadImage setImage="100px" @get-ImgList="getImgList"></upLoadImage>
               </el-col>
-              <el-col :span="2" style="line-height:40px;">
+              <!-- <el-col :span="2" style="line-height:40px;">  暂时取消
                 <el-button
                   type="primary"
                   size="small"
@@ -201,7 +201,7 @@
                   icon="el-icon-share"
                   @click="postService"
                 >确定修改</el-button>
-              </el-col>
+              </el-col> -->
             </el-row>
             <el-row
               v-if="!isEdit&&form.serviceOrderPictures.length"

@@ -40,7 +40,7 @@
                 <el-table-column type="expand">
           <template slot-scope="scope">
                       <el-table
-              ref="mainTable"
+              ref="mainTablechuldren"
               :key="key"
               :data="scope.row.serviceWorkOrders"
               v-loading="listLoading"
@@ -48,7 +48,7 @@
               fit
               style="width: 100%;"
               highlight-current-row
-              @row-click="rowClick"
+              @row-click="rowClickChild"
             >
               <el-table-column
                 show-overflow-tooltip
@@ -280,11 +280,12 @@ export default {
             statusOptions: [
         { value: 1, label: "待处理" },
         { value: 2, label: "已排配" },
-        { value: 3, label: "已外出" },
-        { value: 4, label: "已挂起" },
-        { value: 5, label: "已接收" },
-        { value: 6, label: "已解决" },
-        { value: 7, label: "已回访" }
+        { value: 3, label: "已预约" },
+        { value: 4, label: "已外出" },
+        { value: 5, label: "已挂起" },
+        { value: 6, label: "已接收" },
+        { value: 7, label: "已解决" },
+        { value: 8, label: "已回访" }
       ],
       modulesTree: [],
       priorityOptions: ["低", "中", "高"],
@@ -452,6 +453,11 @@ export default {
       this.$refs.mainTable.clearSelection();
       this.multipleSelection = row;
       this.$refs.mainTable.toggleRowSelection(row);
+    },
+        rowClickChild(row) {
+      this.$refs.mainTablechuldren.clearSelection();
+      // this.multipleSelection = row;
+      this.$refs.mainTablechuldren.toggleRowSelection(row);
     },
     // handleSelectionChange(val) {
     // },
@@ -628,6 +634,7 @@ export default {
       // this.temp = Object.assign({}, row); // copy obj
       callservesure.getForm(row.serviceOrderId).then(response => {
         this.formValue = response.result;
+        console.log(this.formValuesss)
         this.dialogStatus = "update";
         this.FormUpdate = true;
       });
@@ -683,7 +690,7 @@ export default {
     display: none;
   }
   ::v-deep.el-table__expanded-cell{
-    padding:10px 15px;
+    padding:0 0 0 50px;
   }
 }
 .bg-head {

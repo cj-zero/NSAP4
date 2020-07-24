@@ -272,7 +272,7 @@
           <el-input type="textarea" size="small" v-model="formList[0].remark"></el-input>
         </el-form-item>
  
-        <el-form-item v-if="isEditForm">
+        <el-form-item>
           <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
             <el-col :span="6"></el-col>
         
@@ -287,7 +287,7 @@
             <el-col :span="4">
               <div class="showSort" style="height:40px;line-height:40px;">{{1}}/{{formList.length}}</div>
             </el-col>
-                <el-col :span="5">
+                <el-col :span="5"  v-if="isEditForm">
               <el-button
                 type="success"
                 size="small"
@@ -573,7 +573,7 @@
           <el-input type="textarea" size="small" v-model="item.remark"></el-input>
         </el-form-item>
  
-        <el-form-item v-if="isEditForm">
+        <el-form-item >
           <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
             <el-col :span="6"></el-col>
           
@@ -588,7 +588,7 @@
             <el-col :span="4">
               <div class="showSort" style="height:40px;line-height:40px;">{{index+2}}/{{formList.length}}</div>
             </el-col>
-              <el-col :span="5">
+              <el-col :span="5" v-if="isEditForm">
               <el-button
                 type="success"
                 size="small"

@@ -45,11 +45,13 @@ service.interceptors.response.use(
           })
         })
       } else {
-        Message({
-          message: res.message || res.msg,
-          type: 'error',
-          duration: 5 * 1000
-        })
+        if(!res.code===205){
+          Message({
+            message: res.message || res.msg,
+            type: 'error',
+            duration: 5 * 1000
+          })
+        }
       }
       return Promise.reject('error')
     } else {

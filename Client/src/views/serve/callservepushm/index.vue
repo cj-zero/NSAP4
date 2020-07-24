@@ -78,7 +78,7 @@
                   <span
                     v-if="fruit.name === 'status'"
                     :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-                  >{{statusOptions[scope.row[fruit.name]].label}}</span>
+                  >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
                   <span v-if="fruit.name === 'fromType'">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
                   <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
                   <span
@@ -299,13 +299,14 @@ export default {
       },
 
       statusOptions: [
-        { value: 1, label: "待处理" },
+   { value: 1, label: "待处理" },
         { value: 2, label: "已排配" },
-        { value: 3, label: "已外出" },
-        { value: 4, label: "已挂起" },
-        { value: 5, label: "已接收" },
-        { value: 6, label: "已解决" },
-        { value: 7, label: "已回访" }
+        { value: 3, label: "已预约" },
+        { value: 4, label: "已外出" },
+        { value: 5, label: "已挂起" },
+        { value: 6, label: "已接收" },
+        { value: 7, label: "已解决" },
+        { value: 8, label: "已回访" }
       ],
       priorityOptions: ["低", "中", "高"],
       temp: {
@@ -422,6 +423,10 @@ export default {
         callservepushm.SendOrders(this.params).then(res => {
           if (res.code == 200) {
             this.dataForm = res.result;
+             this.$message({
+          type: "success",
+          message: "派单成功"
+        });
              this.dialogOrder = false;
             this.listLoading = false;
           }
