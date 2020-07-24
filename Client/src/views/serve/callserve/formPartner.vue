@@ -1,5 +1,5 @@
 <template>
-<div>
+<div style="height:500px;overflow-y:scroll;">
     <el-table
     :data="partnerList"
     border
@@ -63,7 +63,7 @@ export default {
         page: 1,
         CallList:[],
         toCallList:[],
-        limit: 10,
+        limit: 40,
         key: undefined,
         appId: undefined
       },

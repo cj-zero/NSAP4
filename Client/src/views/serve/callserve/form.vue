@@ -445,7 +445,7 @@ export default {
       },
       listQuery: {
         page: 1,
-        limit: 10
+        limit: 40
       }
     };
   },
@@ -479,9 +479,9 @@ export default {
       handler(val) {
         if (val) {
           Object.assign(this.form, val);
-          this.propForm = this.refValue.serviceWorkOrders;
+          console.log(val)
+          this.propForm = val.serviceWorkOrders;
         }
-
         // this.propForm = this.refValue.serviceWorkOrders
       },
       immediate: true
@@ -538,11 +538,11 @@ export default {
             item.fromType !== "" &&
             item.problemTypeId !== ""
         );
-        this.form.serviceWorkOrders = this.form.serviceWorkOrders.map(item => {
-          item.problemTypeId = item.problemType;
-          item.solutionId = item.solution;
-          return item;
-        });
+        // this.form.serviceWorkOrders = this.form.serviceWorkOrders.map(item => {
+        //   item.problemTypeId = item.problemTypeName;
+        //   item.solutionId = item.solution;
+        //   return item;
+        // });
         if (chec) {
           if (this.$route.path === "/serve/callserve") {
             callservesure

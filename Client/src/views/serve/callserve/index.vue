@@ -121,7 +121,7 @@
         width="800px"
         class="dialog-mini"
         @close="closeCustoner"
-        destroy-on-close
+        :close-on-click-modal="false"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
@@ -145,6 +145,8 @@
         width="800px"
         class="dialog-mini"
         @close="closeCustoner"
+                :close-on-click-modal="false"
+
         destroy-on-close
         :title="textMap[dialogStatus]"
         :visible.sync="FormUpdate"
@@ -158,6 +160,7 @@
           :isEdit="true"
           :sure="sure"
           :customer="customer"
+          
           @close-Dia="closeDia"
         ></zxform>
         <div slot="footer">
@@ -167,9 +170,11 @@
       </el-dialog>
       <!-- 只能查看的表单 -->
       <el-dialog
-        width="900px"
+        width="800px"
         class="dialog-mini"
         title="服务单详情"
+                :close-on-click-modal="false"
+
         destroy-on-close
         @open="openDetail"
         :visible.sync="dialogFormView"
@@ -390,6 +395,8 @@ export default {
       handler() {
         if (this.formValue && this.formValue.customerId) {
           this.customer = this.formValue;
+          console.log(this.customer)
+          //编辑获得的数据
         } else {
           if (!this.dialogFormVisible) {
             this.$message({
@@ -460,7 +467,6 @@ export default {
           this.dialogTable = true;
           break;
         case "btnEdit":
-          console.log(this.multipleSelection);
           if (!this.multipleSelection.serviceOrderId) {
             this.$message({
               message: "请选择需要编辑的数据",
@@ -521,7 +527,6 @@ export default {
         //     arr[i].serviceWorkOrders[index].label= `工单${item1.id}` ;
         //   });
         // }
-        console.log(resul)
          this.total = resul.length;
         this.list =resul;
         this.listLoading = false;
