@@ -10,6 +10,7 @@ using Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Moq;
 using MySqlX.XDevAPI.Common;
 using Newtonsoft.Json;
@@ -27,9 +28,11 @@ namespace OpenAuth.WebApi.Controllers
     {
         private readonly UserManagerApp _app;
 
-        public QrCodeController(UserManagerApp app)
+        public IConfiguration Configuration { get; }
+        public QrCodeController(UserManagerApp app, IConfiguration configuration)
         {
             _app = app;
+            Configuration = configuration;
         }
 
         /// <summary>
@@ -41,13 +44,18 @@ namespace OpenAuth.WebApi.Controllers
         [AllowAnonymous]
         public IActionResult Get(string rd)
         {
+            string header = "http://";
+            if (int.Parse(Configuration.GetSection("IsHttps").Value) == 1)
+            {
+                header = "https://";
+            }
             //获取当前服务地址及端口
             string url = "http://localhost:" + Request.HttpContext.Connection.LocalPort;
             if (!CommonHelper.IsDebug)
             {
-                url = Request.HttpContext.Connection.LocalIpAddress.MapToIPv4().ToString() + ":" + Request.HttpContext.Connection.LocalPort;
+                url = header + Request.HttpContext.Connection.LocalIpAddress.MapToIPv4().ToString() + ":" + Request.HttpContext.Connection.LocalPort;
             }
-            url = HttpUtility.UrlEncode(url + "/api/QrCode/SaveLoginState/r=" + rd);
+            url = HttpUtility.UrlEncode(url + "/api/QrCode/SaveLoginState?rd=" + rd);
             Qrcode qrcode = new Qrcode()
             {
                 scene = "NSAPLogin",
