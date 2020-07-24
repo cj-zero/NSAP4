@@ -580,5 +580,49 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+
+        /// <summary>
+        /// 主管给技术员派单
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response<bool>> SendOrders(SendOrdersReq req)
+        {
+
+            var result = new Response<bool>();
+            try
+            {
+                await _serviceOrderApp.SendOrders(req);
+                result.Result = true;
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                result.Result = false;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 调出该客户代码近10个呼叫ID,及未关闭的近10个呼叫ID
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response<dynamic>> GetCustomerNewestOrders(string code)
+        {
+            var result = new Response<dynamic>();
+            try
+            {
+                result.Result = await _serviceOrderApp.GetCustomerNewestOrders(code);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }

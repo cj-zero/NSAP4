@@ -969,6 +969,26 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 主管给技术员派单
+        /// </summary>
+        /// <returns></returns>
+        public async Task SendOrders(SendOrdersReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => req.WorkOrderIds.Contains(s.Id), o => new ServiceWorkOrder 
+            { 
+                CurrentUserId = req.CurrentUserId,
+                Status = 2
+            });
+            await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{req.CurrentUserId}派单{string.Join(",", req.WorkOrderIds)}", ActionType = "主管派单工单" }, req.WorkOrderIds);
+
+        }
+
+        /// <summary>
         /// 获取技术员服务单工单列表
         /// </summary>
         /// <returns></returns>
@@ -1011,6 +1031,28 @@ namespace OpenAuth.App
             return result;
 
         }
+
+        /// <summary>
+        /// 调出该客户代码近10个呼叫ID,及未关闭的近10个呼叫ID
+        /// </summary>
+        /// <returns></returns>
+        public async Task<dynamic> GetCustomerNewestOrders(string code)
+        {
+            var newestOrder = await UnitWork.Find<ServiceOrder>(s=>s.CustomerId.Equals(code)).OrderByDescending(s=>s.CreateTime)
+                .Select(s=>new 
+                {
+                    s.Id,s.CustomerId,s.CustomerName,s.Services,s.Status,s.Contacter,s.ContactTel,s.NewestContacter,s.NewestContactTel
+                })
+                .Skip(0).Take(10).ToListAsync();
+            var newestNotCloseOrder = await UnitWork.Find<ServiceOrder>(s=>s.CustomerId.Equals(code) && s.Status == 1).OrderByDescending(s=>s.CreateTime)
+                .Select(s=>new 
+                {
+                    s.Id,s.CustomerId,s.CustomerName,s.Services,s.Status,s.Contacter,s.ContactTel,s.NewestContacter,s.NewestContactTel
+                })
+                .Skip(0).Take(10).ToListAsync();
+            return new { newestOrder, newestNotCloseOrder };
+        }
+
 
         /// <summary>
         /// 判断用户是否到达接单上限
