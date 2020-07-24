@@ -860,14 +860,14 @@ namespace OpenAuth.App
                 throw new CommonException("当前技术员接单已满6单服务单", 90004);
             }
 
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id.Equals(req.ServiceWorkOrderId), o => new ServiceWorkOrder
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => req.ServiceWorkOrderIds.Contains(s.Id), o => new ServiceWorkOrder
             {
                 Status = 2,
                 CurrentUserId = req.TechnicianId
             });
             await UnitWork.SaveAsync();
 
-            await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{req.TechnicianId}接单工单：{req.ServiceWorkOrderId}", ActionType = "技术员接单", ServiceOrderId = req.ServiceWorkOrderId });
+            await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{req.TechnicianId}接单工单：{req.ServiceWorkOrderIds}", ActionType = "技术员接单", ServiceOrderId = req.ServiceWorkOrderIds });
         }
 
         /// <summary>

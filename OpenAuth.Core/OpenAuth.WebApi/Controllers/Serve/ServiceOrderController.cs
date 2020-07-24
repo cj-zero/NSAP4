@@ -408,12 +408,12 @@ namespace OpenAuth.WebApi.Controllers
                 {
                     semaphoreSlim.Release();
                 }
-                await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+                await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
                 {
                     Title = "移转至技术员",
                     Details = "以为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
-                    ServiceWorkOrder = req.ServiceWorkOrderId
-                });
+                }, req.ServiceWorkOrderIds);
+                
             }
             catch (Exception ex)
             {
