@@ -50,7 +50,7 @@ namespace OpenAuth.WebApi.Controllers
             url = HttpUtility.UrlEncode(url + "/api/QrCode/SaveLoginState/r=" + rd);
             Qrcode qrcode = new Qrcode()
             {
-                scene = "NWLogin",
+                scene = "NSAPLogin",
                 parameter = "callback=" + url
             };
 
