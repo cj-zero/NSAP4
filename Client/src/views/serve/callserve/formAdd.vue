@@ -57,6 +57,8 @@
                 <el-autocomplete
           popper-class="my-autocomplete"
           v-model="inputSearch"
+                              size="small"
+
           :fetch-suggestions="querySearch"
           placeholder="制造商序列号"
           @select="searchSelect"

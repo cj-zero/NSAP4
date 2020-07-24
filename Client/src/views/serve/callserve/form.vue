@@ -23,6 +23,7 @@
                   <el-autocomplete
                     popper-class="my-autocomplete"
                     v-model="form.customerId"
+                    size="small"
                     :fetch-suggestions="querySearch"
                     placeholder="请输入内容"
                     class="myAuto"

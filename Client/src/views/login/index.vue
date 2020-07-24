@@ -31,9 +31,27 @@
             登 录
           </el-button>
         </el-form-item>
+        <p style='height:25px;line-height:25px;'>或</p>
+               <el-form-item >
+          <el-button v-waves type="success" style="width:100%;font-size: 24px;height: 50px;"  @click.native.prevent="openQCCode">
+            扫描二维码登录
+          </el-button>
+        </el-form-item>
       </el-form>
+  
     </div>
-      
+      <el-dialog
+  title="请用新威智能App扫描此二维码"
+  :visible.sync="dialogQ"
+  width="800px"
+>
+        <el-image  src="https://cube.elemecdn.com/6/94/4d3ea53c084bad6931a56d5158a48jpeg.jpeg"></el-image>
+  <span slot="footer" class="dialog-footer">
+    <el-button @click="dialogQ = false">取 消</el-button>
+    <el-button type="primary" @click="dialogQ = false">确 定</el-button>
+  </span>
+</el-dialog>
+
   </div>
 </template>
 
@@ -67,8 +85,9 @@
           // username: 'System',
           // password: '123456'
            username: '',
-          password: ''
-        },
+          password: '',
+      },
+        dialogQ:false,
         loginRules: {
           username: [{
             required: true,
@@ -97,6 +116,10 @@
         } else {
           this.pwdType = 'password'
         }
+      },
+      openQCCode(){
+        console.log(11)
+        this.dialogQ = true
       },
       handleLogin() {
         this.$refs.loginForm.validate(valid => {
