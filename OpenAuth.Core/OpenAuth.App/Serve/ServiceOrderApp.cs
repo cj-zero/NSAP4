@@ -17,19 +17,21 @@ using System.Linq.Expressions;
 using SharpDX.Direct3D11;
 using System.Runtime.CompilerServices;
 using OpenAuth.Repository.Domain.Sap;
+using OpenAuth.App.Sap.BusinessPartner;
 
 namespace OpenAuth.App
 {
     public class ServiceOrderApp : OnlyUnitWorkBaeApp
     {
-        private RevelanceManagerApp _revelanceApp;
-        private ServiceOrderLogApp _serviceOrderLogApp;
-
+        private readonly RevelanceManagerApp _revelanceApp;
+        private readonly ServiceOrderLogApp _serviceOrderLogApp;
+        private readonly BusinessPartnerApp _businessPartnerApp;
         public ServiceOrderApp(IUnitWork unitWork,
-            RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, IAuth auth) : base(unitWork, auth)
+            RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth) : base(unitWork, auth)
         {
             _revelanceApp = app;
             _serviceOrderLogApp = serviceOrderLogApp;
+            _businessPartnerApp = businessPartnerApp;
         }
         /// <summary>
         /// 加载列表
@@ -385,8 +387,13 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var d = await _businessPartnerApp.GetDetails(request.CustomerId);
             var obj = request.MapTo<ServiceOrder>();
             obj.Status = 2;
+            obj.SalesMan = d.SlpName;
+            obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
+            obj.Supervisor = d.TechName;
+            obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.TechName)))?.Id;
             await UnitWork.UpdateAsync<ServiceOrder>(o => o.Id.Equals(request.Id), s => new ServiceOrder { 
                     Status = 2,
                     Addr = obj.Addr,
@@ -568,8 +575,14 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var d = await _businessPartnerApp.GetDetails(req.CustomerId);
             var obj = req.MapTo<ServiceOrder>();
             obj.Status = 2;
+            obj.SalesMan = d.SlpName;
+            obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
+            obj.Supervisor = d.TechName;
+            obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.TechName)))?.Id;
+
             var e = await UnitWork.AddAsync<ServiceOrder,int>(obj);
             await UnitWork.SaveAsync();
             var pictures = req.Pictures.MapToList<ServiceOrderPicture>();

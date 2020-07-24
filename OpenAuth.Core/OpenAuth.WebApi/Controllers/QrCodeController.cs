@@ -89,7 +89,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <returns></returns>
         [HttpGet]
         [AllowAnonymous]
-        public Response ValidateLoginState(string rd)
+        public Response<string> ValidateLoginState(string rd)
         {
             var response = new Response<string>();
             int appUserId = int.Parse(RedisHelper.Get(rd));
