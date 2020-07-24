@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Logging;
 using Moq;
 using MySqlX.XDevAPI.Common;
 using Newtonsoft.Json;
@@ -81,6 +82,14 @@ namespace OpenAuth.WebApi.Controllers
             var response = new Response();
             try
             {
+                int appuserId = int.Parse(userid);
+                //判断是否存在关联
+                if (!_app.IsHaveNsapAccount(appuserId))
+                {
+                    response.Code = 204;
+                    response.Message = "您还未开通nSAP访问权限";
+                    return response;
+                }
                 //将信息存到redis中 5分钟有效期
                 RedisHelper.Set(rd, userid, new TimeSpan(0, 0, 5, 0));
             }

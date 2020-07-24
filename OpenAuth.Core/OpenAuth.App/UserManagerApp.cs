@@ -260,5 +260,20 @@ namespace OpenAuth.App
             cacheContext.Set(currentSession.Token, currentSession, DateTime.Now.AddDays(10));
             return currentSession.Token;
         }
+
+        /// <summary>
+        /// 判断是否关联了帐号
+        /// </summary>
+        /// <param name="appUserId"></param>
+        /// <returns></returns>
+        public bool IsHaveNsapAccount(int appUserId)
+        {
+            var userMap = UnitWork.Find<AppUserMap>(a => a.AppUserId == appUserId).FirstOrDefault();
+            if (userMap == null)
+            {
+                return false;
+            }
+            return true;
+        }
     }
 }
