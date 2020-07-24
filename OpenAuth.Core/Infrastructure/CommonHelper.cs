@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace Infrastructure
@@ -116,6 +118,33 @@ namespace Infrastructure
                 return "";
             str = str.Substring(0, str.Length - Length);
             return str;
+        }
+        #endregion
+
+        #region 判断环境
+        public DebuggableAttribute.DebuggingModes DebuggingFlags { get; }
+        private static bool? _isDebugMode;
+        /// <summary>
+        ///当前程序是否在调试中 
+        /// </summary>
+        public static bool IsDebug
+        {
+            get
+            {
+                if (_isDebugMode == null)
+                {
+                    var assembly = Assembly.GetEntryAssembly();
+                    if (assembly == null)
+                    {
+                        //由于调用GetFrames的StackTrace实例没有跳过任何帧，所以GetFrames()一定不为null
+                        assembly = new StackTrace().GetFrames().Last().GetMethod().Module.Assembly;
+                    }
+                    var debuggableAttribute = assembly.GetCustomAttribute<DebuggableAttribute>();
+                    _isDebugMode = debuggableAttribute.DebuggingFlags
+                        .HasFlag(DebuggableAttribute.DebuggingModes.EnableEditAndContinue);
+                }
+                return _isDebugMode.Value;
+            }
         }
         #endregion
     }
