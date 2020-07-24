@@ -171,7 +171,7 @@
       </el-dialog>
       <!-- 只能查看的表单 -->
       <el-dialog
-        width="1200px"
+        width="900px"
         class="dialog-mini"
         title="服务单详情"
         destroy-on-close

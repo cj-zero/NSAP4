@@ -75,8 +75,11 @@
           </el-col>
         </el-form-item>
       </el-col>
-      <el-col :span="4" style="margin-left:20px;">
-            <el-button type="primary" @click="onSubmit" size="small">搜索</el-button>
+
+      <el-col :span="4" style="margin-left:20px;" >
+                    <el-button type="primary" @click="onSubmit" size="small">搜索</el-button>
+
+            <el-button type="primary"  size="small" @click="sendOrder" icon="el-icon-thumb">派单</el-button>
       </el-col>
     </el-row>
   </el-form>
@@ -108,7 +111,11 @@ export default {
   methods: {
     onSubmit() {
         this.$emit("change-Search", 1);
-    }
+    },
+    sendOrder(){
+      console.log(11)
+      this.$emit("update:dialogOrder",true)
+    },
   },
   watch: {
     listQuery: {

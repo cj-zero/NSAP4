@@ -22,15 +22,26 @@
       </div>
     </sticky>
     <div class="app-container flex-item bg-white">
-      <zxsearch @change-Search="changeSearch"></zxsearch>
+      <zxsearch @change-Search="changeSearch" :dialogOrder.sync="dialogOrder"></zxsearch>
       <el-row class="fh">
         <el-col :span="4" class="fh ls-border">
           <el-card shadow="never" class="card-body-none fh" style="overflow-y: auto">
-            <el-link style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;" @click="getAllRight">全部服务单>></el-link>
-            <el-tree :data="modulesTree" default-expand-all show-checkbox node-key="key1"
-            @check="checkGroupNode" @check-change="handleNodeClick"
-     ref="treeForm" highlight-current :props="defaultProps"></el-tree>
-      <!--  -->
+            <el-link
+              style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;"
+              @click="getAllRight"
+            >全部服务单>></el-link>
+            <el-tree
+              :data="modulesTree"
+              default-expand-all
+              show-checkbox
+              node-key="key1"
+              @check="checkGroupNode"
+              @check-change="handleNodeClick"
+              ref="treeForm"
+              highlight-current
+              :props="defaultProps"
+            ></el-tree>
+            <!--  -->
           </el-card>
         </el-col>
         <el-col :span="20" class="fh">
@@ -91,6 +102,7 @@
       <el-dialog
         fullscreen
         class="dialog-mini"
+        :close-on-click-modal="false"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
@@ -115,10 +127,11 @@
       </el-dialog>
       <!-- 只能查看的表单 -->
       <el-dialog
-        width="1000px"
+        width="800px"
         class="dialog-mini"
         title="服务单详情"
         destroy-on-close
+        :close-on-click-modal="false"
         :visible.sync="dialogFormView"
       >
         <zxform
@@ -151,6 +164,28 @@
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialogTree = false">取 消</el-button>
           <el-button type="primary" @click="dialogTree = false">确 定</el-button>
+        </span>
+      </el-dialog>
+      <el-dialog
+        @open="openorder"
+        v-el-drag-dialog
+        :visible.sync="dialogOrder"
+        title="选择派单对象"
+        center
+        width="500px"
+      >
+        <el-table :data="tableData" border @row-click="setRadio" style="width: 100%">
+          <el-table-column align="center">
+            <template slot-scope="scope">
+              <el-radio :label="scope.row.appUserId"  v-model="orderRadio">{{&nbsp;}}</el-radio>
+            </template>
+          </el-table-column>
+          <el-table-column prop="name" label="接单员" align="center"></el-table-column>
+          <el-table-column prop="count" label="已接服务单数" align="center" width="180"></el-table-column>
+        </el-table>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="dialogOrder = false">取 消</el-button>
+          <el-button type="primary" @click="postOrder">确 定</el-button>
         </span>
       </el-dialog>
     </div>
@@ -190,6 +225,8 @@ export default {
   },
   data() {
     return {
+      tableData: [], //接单员列表
+      orderRadio: "", //接单员单选
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
       defaultFormThead: [
@@ -201,9 +238,12 @@ export default {
         "kehidaima",
         "kehumingcheng"
       ],
+      dialogOrder: false,
       modulesTree: [], // 左侧数据构成的树
+      workorderidList: [],
+      hasAlreadNum: "", //已经接的单
       formTheadOptions: [
-        { name: "serviceOrderId", label: "工单ID", ifFixed: true },
+        { name: "serviceWorkOrderId", label: "工单ID", ifFixed: true },
         { name: "priority", label: "优先级" },
         { name: "fromType", label: "呼叫类型", width: "100px" },
         { name: "status", label: "呼叫状态" },
@@ -237,8 +277,8 @@ export default {
       listLoading: true,
       showDescription: false,
       dialogFormView: false,
-      checkChildList:[],
-      ifParent:false,//是否选过父级
+      checkChildList: [],
+      ifParent: false, //是否选过父级
       listQuery: {
         // 查询条件
         page: 1,
@@ -254,11 +294,11 @@ export default {
         QryCreateTimeTo: "", //- 创建日期至查询条件
         QryRecepUser: "", //- 接单员
         QryTechName: "", // - 工单技术员
-        QryProblemType: "" ,// - 问题类型
-        QryMaterialTypes:[],//物料类型
+        QryProblemType: "", // - 问题类型
+        QryMaterialTypes: [] //物料类型
       },
 
-            statusOptions: [
+      statusOptions: [
         { value: 1, label: "待处理" },
         { value: 2, label: "已排配" },
         { value: 3, label: "已外出" },
@@ -289,6 +329,10 @@ export default {
       dataForm: {}, //获取的详情表单
       dialogPvVisible: false,
       pvData: [],
+      params:{
+        currentUserId:'',
+        workOrderIds:[]
+      },
       rules: {
         appId: [
           { required: true, message: "必须选择一个应用", trigger: "change" }
@@ -326,6 +370,15 @@ export default {
       );
       // }
       this.key = this.key + 1; // 为了保证table 每次都会重渲 In order to ensure the table will be re-rendered each time
+    },
+    list: {
+      handler(val) {
+        this.workorderidList = [];
+        val.map(item => {
+          this.workorderidList.push(item.serviceWorkOrderId);
+        });
+        console.log(this.workorderidList);
+      }
     }
   },
   created() {
@@ -338,6 +391,50 @@ export default {
     //   console.log(callserve)
   },
   methods: {
+    openorder() {
+      callservepushm.AllowSendOrderUser().then(res => {
+        this.tableData = res.result;
+      });
+    },
+    setRadio(res) {
+      this.orderRadio = res.appUserId;
+      this.hasAlreadNum = res.count;
+    },
+    postOrder() {
+      this.listLoading = true;
+        this.params.currentUserId=this.orderRadio;
+        this.params.workOrderIds=this.workorderidList;
+        if (!this.ifParent) {
+        this.$message({
+          type: "warning",
+          message: "请先选择需要指派的服务号"
+        });
+        return
+      }
+      if (this.hasAlreadNum > 2) {
+        this.$message({
+          type: "warning",
+          message: "单个技术员接单不能超过3个"
+        });
+      } else {
+        console.log(this.params)
+        this.params.workOrderIds
+        callservepushm.SendOrders(this.params).then(res => {
+          if (res.code == 200) {
+            this.dataForm = res.result;
+             this.dialogOrder = false;
+            this.listLoading = false;
+          }
+        }).catch(error=>{
+            this.$message({
+          type: "danger",
+          message: `${error}`
+        });
+         this.listLoading = false;
+
+        });
+      }
+    },
     changeSearch(val) {
       if (val === 1) {
         this.getRightList();
@@ -414,74 +511,74 @@ export default {
       }
     },
 
-// handleNodeClick(data, checked) {
-//   console.log(data,checked)
-//   // if()
-//     // if(checked === true) {
-//     //     this.checkedId = data.label;
-//     //     this.$refs.treeForm.setCheckedKeys([data.label]);
-//     // } else {
-//     //     if (this.checkedId == data.label) {
-//     //         this.$refs.treeForm.setCheckedKeys([data.label]);
-//     //     }
-//     // }
-// },
+    checkGroupNode(a, b) {
+      //点击复选框触发
+      if (a.children) {
+        //如果点击父级
 
-checkGroupNode: function (a, b) {   //点击复选框触发
-   if(a.children){  //如果点击父级
-   this.ifParent = true
-  if (b.checkedKeys.length > 0) {  
-      this.$refs.treeForm.setCheckedKeys([a.key1]);
-      this.listQuery.QryMaterialTypes=[]
-      this.listQuery.QryServiceOrderId=a.key1
-       this.getRightList()
-    }
-   }else{     //如果点击一个父级下的子级
-   if(this.ifParent){ //如果没有父级
-   this.checkChildList.push(a.key1)
-      this.$refs.treeForm.setCheckedKeys(this.checkChildList);
-      this.listQuery.QryMaterialTypes.push(a.id)
-      this.listQuery.QryServiceOrderId=a.key1.split('&')[0]
-      this.getRightList()
-   }else{
-     this.$refs.treeForm.setCheckedKeys([a.key1]);
-      this.listQuery.QryMaterialTypes.push(a.id)
-      this.listQuery.QryServiceOrderId=a.key1.split('&')[0]
-       this.getRightList()
-   }
-     
-   }
-  
-},
-handleNodeClick(a,b,c){
-  if(c===false){
-    this.ifParent =true
-  }
-},
+        if (this.ifParent) {
+          this.$refs.treeForm.setCheckedKeys([]);
+          if (b.checkedKeys.length > 0) {
+            this.$refs.treeForm.setCheckedKeys([a.key1]);
+            this.listQuery.QryMaterialTypes = [];
+            this.listQuery.QryServiceOrderId = a.key1;
+            this.getRightList();
+          }
+        } else {
+          this.ifParent = true;
+          this.$refs.treeForm.setCheckedKeys([a.key1]);
+          this.listQuery.QryMaterialTypes = [];
+          this.listQuery.QryServiceOrderId = a.key1;
+          this.getRightList();
+        }
+      } else {
+        //如果点击一个父级下的子级
+        if (this.ifParent) {
+          //如果没有父级
+          this.checkChildList.push(a.key1);
+          this.$refs.treeForm.setCheckedKeys(this.checkChildList);
+          this.listQuery.QryMaterialTypes.push(a.id);
+          this.listQuery.QryServiceOrderId = a.key1.split("&")[0];
+          this.getRightList();
+        } else {
+          this.$refs.treeForm.setCheckedKeys([a.key1]);
+          this.listQuery.QryMaterialTypes.push(a.id);
+          this.listQuery.QryServiceOrderId = a.key1.split("&")[0];
+          this.getRightList();
+        }
+      }
+    },
+    handleNodeClick(a, b, c) {
+      console.log(c);
+      if (c === false) {
+        this.ifParent = true;
+      }
+    },
     getLeftList() {
       this.listLoading = true;
-       let arr =[]
+      let arr = [];
       callservepushm.getLeftList().then(res => {
-       let resul =  res.data.data
-        for(let i=0;i<resul.length;i++){
-          arr[i] =[]
-         arr[i].label=`服务号:${resul[i].serviceOrderId}`;
-         arr[i].key1=`${resul[i].serviceOrderId}`
-         arr[i].children=[]
-            resul[i].materialTypes.map(item1 => {
-            arr[i].children.push({ label:  `物料类型号:${item1}`,
-            key1:  `${resul[i].serviceOrderId}&${item1}`,
-            id:  item1
+        let resul = res.data.data;
+        for (let i = 0; i < resul.length; i++) {
+          arr[i] = [];
+          arr[i].label = `服务号:${resul[i].serviceOrderId}`;
+          arr[i].key1 = `${resul[i].serviceOrderId}`;
+          arr[i].children = [];
+          resul[i].materialTypes.map(item1 => {
+            arr[i].children.push({
+              label: `物料类型号:${item1}`,
+              key1: `${resul[i].serviceOrderId}&${item1}`,
+              id: item1
+            });
           });
-        })
-        // console.log(arr)
+          // console.log(arr)
         }
-         this.modulesTree=arr
-        });
-        this.listLoading = false;
+        this.modulesTree = arr;
+      });
+      this.listLoading = false;
     },
-    getAllRight(){
-            this.listLoading = true;
+    getAllRight() {
+      this.listLoading = true;
       callservepushm.getRightList().then(response => {
         this.list = response.data.data;
         // this.list = response.data;

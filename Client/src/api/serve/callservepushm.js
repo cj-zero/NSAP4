@@ -25,10 +25,28 @@ export function getForm(data) {
       
     })
   }
+
+  export function AllowSendOrderUser() {    
+    return request({
+      url: '/serve/ServiceOrder/GetAllowSendOrderUser',
+      method: 'get'
+    })
+  }
+
+
+  export function SendOrders(data) {    
+    return request({
+      url: '/serve/ServiceOrder/SendOrders', //主管给技术员派单
+      method: 'post',
+      data
+    })
+  }
+
   export function getImgUrl(data) {     
     return request({
       url:`/Files/Download/${data}`,
       method: 'get',
+      params:data
     })
   }
 
