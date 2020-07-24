@@ -81,6 +81,7 @@ namespace Infrastructure.Wrod
             }
             catch (Exception ex)
             {
+                throw ex;
                 result = false;
             }
             finally

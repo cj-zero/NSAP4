@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
@@ -71,6 +72,22 @@ namespace OpenAuth.App
             obj.CreateUserId = user.Id;
             obj.CreateUserName = user.Name;
             await Repository.AddAsync(obj);
+        }
+        public async Task BatchAddAsync(AddOrUpdateServiceOrderLogReq req, List<int> ids)
+        {
+            var objs = new List<ServiceOrderLog>();
+            ids.ForEach(i =>
+            {
+                var obj = req.MapTo<ServiceOrderLog>();
+                //todo:补充或调整自己需要的字段
+                obj.CreateTime = DateTime.Now;
+                var user = _auth.GetCurrentUser().User;
+                obj.CreateUserId = user.Id;
+                obj.CreateUserName = user.Name;
+                obj.ServiceWorkOrderId = i;
+                objs.Add(obj);
+            });
+            await Repository.BatchAddAsync(objs.ToArray());
         }
 
          public void Update(AddOrUpdateServiceOrderLogReq obj)
