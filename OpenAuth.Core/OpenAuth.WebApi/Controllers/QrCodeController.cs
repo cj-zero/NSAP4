@@ -112,20 +112,20 @@ namespace OpenAuth.WebApi.Controllers
         public Response<string> ValidateLoginState(string rd)
         {
             var response = new Response<string>();
-            int appUserId = int.Parse(RedisHelper.Get(rd));
-            if (appUserId <= 0)
+            string appUserId = RedisHelper.Get(rd);
+            if (string.IsNullOrEmpty(appUserId))
             {
-                response.Code = 500;
+                response.Code = 205;
                 response.Message = "用户未登录";
                 return response;
             }
             try
             {
                 //查询用户信息
-                var token = _app.GetTokenByAppUserId(appUserId);
+                var token = _app.GetTokenByAppUserId(int.Parse(appUserId));
                 if (string.IsNullOrEmpty(token))
                 {
-                    response.Code = 500;
+                    response.Code = 205;
                     response.Message = "用户未登录";
                     return response;
                 }
