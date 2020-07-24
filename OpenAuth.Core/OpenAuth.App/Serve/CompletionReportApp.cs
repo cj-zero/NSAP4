@@ -145,8 +145,12 @@ namespace OpenAuth.App
                 q.a.ProcessDescription
             }).FirstOrDefaultAsync();
             var thisworkdetail = query.MapTo<CompletionReportDetailsResp>();
-            thisworkdetail.TheNsapUser = await _appUserMapApp.GetFirstNsapUser(thisworkdetail.CurrentUserId);
-            thisworkdetail.TechnicianName = thisworkdetail.TheNsapUser.Name;
+            if (thisworkdetail.CurrentUserId != null)
+            {
+                int theuserid = thisworkdetail.CurrentUserId == null ? 0 : (int) thisworkdetail.CurrentUserId;
+                thisworkdetail.TheNsapUser = await _appUserMapApp.GetFirstNsapUser(theuserid);
+                thisworkdetail.TechnicianName = thisworkdetail.TheNsapUser==null ? "":thisworkdetail.TheNsapUser.Name;
+            }
             thisworkdetail.Files = new List<UploadFileResp>();
             if (thisworkdetail != null && thisworkdetail.TheNsapUser != null)
             {

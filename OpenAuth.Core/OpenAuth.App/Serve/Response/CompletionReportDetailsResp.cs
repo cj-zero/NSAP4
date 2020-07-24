@@ -118,7 +118,7 @@ namespace OpenAuth.App.Response
         /// <summary>
         /// 工单对应的APP 技术员ID
         /// </summary>
-        public int CurrentUserId { get; set; }
+        public int? CurrentUserId { get; set; }
         /// <summary>
         /// 工单对应的 NSAP 技术员信息
         /// </summary>

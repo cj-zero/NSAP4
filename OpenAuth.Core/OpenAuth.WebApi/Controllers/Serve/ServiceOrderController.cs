@@ -409,12 +409,12 @@ namespace OpenAuth.WebApi.Controllers
                 {
                     semaphoreSlim.Release();
                 }
-                await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+                await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
                 {
                     Title = "移转至技术员",
                     Details = "以为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
-                    ServiceWorkOrder = req.ServiceWorkOrderId
-                });
+                }, req.ServiceWorkOrderIds);
+                
             }
             catch (Exception ex)
             {
@@ -573,6 +573,50 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 result.Result = await _serviceOrderApp.GetAllowSendOrderUser();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        /// 主管给技术员派单
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response<bool>> SendOrders(SendOrdersReq req)
+        {
+
+            var result = new Response<bool>();
+            try
+            {
+                await _serviceOrderApp.SendOrders(req);
+                result.Result = true;
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                result.Result = false;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 调出该客户代码近10个呼叫ID,及未关闭的近10个呼叫ID
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response<dynamic>> GetCustomerNewestOrders(string code)
+        {
+            var result = new Response<dynamic>();
+            try
+            {
+                result.Result = await _serviceOrderApp.GetCustomerNewestOrders(code);
             }
             catch (Exception ex)
             {

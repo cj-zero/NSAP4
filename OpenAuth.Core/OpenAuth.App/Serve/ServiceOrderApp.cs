@@ -872,14 +872,14 @@ namespace OpenAuth.App
                 throw new CommonException("当前技术员接单已满6单服务单", 90004);
             }
 
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id.Equals(req.ServiceWorkOrderId), o => new ServiceWorkOrder
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => req.ServiceWorkOrderIds.Contains(s.Id), o => new ServiceWorkOrder
             {
                 Status = 2,
                 CurrentUserId = req.TechnicianId
             });
             await UnitWork.SaveAsync();
 
-            await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{req.TechnicianId}接单工单：{req.ServiceWorkOrderId}", ActionType = "技术员接单", ServiceOrderId = req.ServiceWorkOrderId });
+            await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{req.TechnicianId}接单工单：{string.Join(",", req.ServiceWorkOrderIds)}", ActionType = "技术员接单" }, req.ServiceWorkOrderIds);
         }
 
         /// <summary>
@@ -903,28 +903,15 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task BookingWorkOrder(BookingWorkOrderReq req)
         {
-            var order = await UnitWork.FindSingleAsync<ServiceWorkOrder>(s => s.Id.Equals(req.WorkOrderId));
-            if (order != null)
+            var order = await UnitWork.Find<ServiceWorkOrder>(s => req.WorkOrderIds.Contains(s.Id) && s.CurrentUserId.Equals(req.CurrentUserId)).ToListAsync();
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => req.WorkOrderIds.Contains(s.Id), o => new ServiceWorkOrder
             {
-                if (order.CurrentUserId.Equals(req.CurrentUserId))
-                {
-                    await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id.Equals(req.WorkOrderId), o => new ServiceWorkOrder
-                    {
-                        BookingDate = req.BookingDate,
-                        Status = 3
-                    });
-                    await UnitWork.SaveAsync();
-                    await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{req.CurrentUserId}预约工单{req.WorkOrderId}", ActionType = "预约工单", ServiceWorkOrderId = req.WorkOrderId });
-                }
-                else
-                {
-                    throw new CommonException("当前技术员无法预约此工单。", 9001);
-                }
-            }
-            else
-            {
-                throw new CommonException("当前工单号不存在。", 9002);
-            }
+                BookingDate = req.BookingDate,
+                Status = 3
+            });
+            await UnitWork.SaveAsync();
+            await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{req.CurrentUserId}预约工单{string.Join(",", req.WorkOrderIds)}", ActionType = "预约工单" }, req.WorkOrderIds);
+         
         }
 
         /// <summary>
@@ -994,6 +981,26 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 主管给技术员派单
+        /// </summary>
+        /// <returns></returns>
+        public async Task SendOrders(SendOrdersReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => req.WorkOrderIds.Contains(s.Id), o => new ServiceWorkOrder 
+            { 
+                CurrentUserId = req.CurrentUserId,
+                Status = 2
+            });
+            await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{req.CurrentUserId}派单{string.Join(",", req.WorkOrderIds)}", ActionType = "主管派单工单" }, req.WorkOrderIds);
+
+        }
+
+        /// <summary>
         /// 获取技术员服务单工单列表
         /// </summary>
         /// <returns></returns>
@@ -1036,6 +1043,28 @@ namespace OpenAuth.App
             return result;
 
         }
+
+        /// <summary>
+        /// 调出该客户代码近10个呼叫ID,及未关闭的近10个呼叫ID
+        /// </summary>
+        /// <returns></returns>
+        public async Task<dynamic> GetCustomerNewestOrders(string code)
+        {
+            var newestOrder = await UnitWork.Find<ServiceOrder>(s=>s.CustomerId.Equals(code)).OrderByDescending(s=>s.CreateTime)
+                .Select(s=>new 
+                {
+                    s.Id,s.CustomerId,s.CustomerName,s.Services,s.Status,s.Contacter,s.ContactTel,s.NewestContacter,s.NewestContactTel
+                })
+                .Skip(0).Take(10).ToListAsync();
+            var newestNotCloseOrder = await UnitWork.Find<ServiceOrder>(s=>s.CustomerId.Equals(code) && s.Status == 1).OrderByDescending(s=>s.CreateTime)
+                .Select(s=>new 
+                {
+                    s.Id,s.CustomerId,s.CustomerName,s.Services,s.Status,s.Contacter,s.ContactTel,s.NewestContacter,s.NewestContactTel
+                })
+                .Skip(0).Take(10).ToListAsync();
+            return new { newestOrder, newestNotCloseOrder };
+        }
+
 
         /// <summary>
         /// 判断用户是否到达接单上限

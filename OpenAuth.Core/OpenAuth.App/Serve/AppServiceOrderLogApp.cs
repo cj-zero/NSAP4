@@ -88,6 +88,28 @@ namespace OpenAuth.App
             obj.CreateUserName = user.Name;
             await Repository.AddAsync(obj);
         }
+        /// <summary>
+        /// 插入记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task BatchAddAsync(AddOrUpdateAppServiceOrderLogReq req, List<int> ids)
+        {
+            var objs = new List<AppServiceOrderLog>();
+            ids.ForEach(i => 
+            {
+                var obj = req.MapTo<AppServiceOrderLog>();
+                //todo:补充或调整自己需要的字段
+                obj.ServiceWorkOrder = i;
+                obj.CreateTime = DateTime.Now;
+                var user = _auth.GetCurrentUser().User;
+                obj.CreateUserId = user.Id;
+                obj.CreateUserName = user.Name;
+                objs.Add(obj);
+            });
+            
+            await Repository.BatchAddAsync(objs.ToArray());
+        }
 
          public void Update(AddOrUpdateAppServiceOrderLogReq obj)
         {

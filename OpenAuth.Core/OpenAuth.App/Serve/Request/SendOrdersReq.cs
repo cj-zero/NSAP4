@@ -5,11 +5,8 @@ using System.Text;
 
 namespace OpenAuth.App.Request
 {
-    public class BookingWorkOrderReq
+    public class SendOrdersReq
     {
-        [Required]
-        public DateTime BookingDate { get; set; }
-
         [Required]
         public List<int> WorkOrderIds { get; set; }
 

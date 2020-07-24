@@ -11,7 +11,7 @@ namespace OpenAuth.App.Request
         /// 工单Id
         /// </summary>
         [Required]
-        public int ServiceWorkOrderId { get; set; }
+        public List<int> ServiceWorkOrderIds { get; set; }
 
         /// <summary>
         /// 技术员Id
