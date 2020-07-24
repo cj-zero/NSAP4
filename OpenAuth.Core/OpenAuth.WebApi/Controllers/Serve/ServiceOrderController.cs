@@ -57,7 +57,7 @@ namespace OpenAuth.WebApi.Controllers
                     ServiceOrderId = order.Id
                 });
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 result.Code = 500;
                 result.Message = ex.Message;
@@ -71,13 +71,14 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="query"></param>
         /// <returns></returns>
         [HttpGet]
-        public Task<TableData> Load([FromQuery]QueryServiceOrderListReq query)
+        public Task<TableData> Load([FromQuery] QueryServiceOrderListReq query)
         {
             var result = new TableData();
             try
             {
                 result.Data = _serviceOrderApp.Load(query);
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 result.Code = 500;
                 result.Message = ex.Message;
@@ -91,7 +92,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> AppLoad([FromQuery]AppQueryServiceOrderListReq request)
+        public async Task<TableData> AppLoad([FromQuery] AppQueryServiceOrderListReq request)
         {
             var result = new TableData();
             try
@@ -113,7 +114,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<Response<dynamic>> AppLoadServiceOrderDetails([FromQuery]AppQueryServiceOrderReq request) 
+        public async Task<Response<dynamic>> AppLoadServiceOrderDetails([FromQuery] AppQueryServiceOrderReq request)
         {
             var result = new Response<dynamic>();
             try
@@ -206,7 +207,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpDelete]
-        public async Task<Response> DeleteWorkOrder([FromQuery]int id) 
+        public async Task<Response> DeleteWorkOrder([FromQuery] int id)
         {
             var result = new Response();
             try
@@ -227,7 +228,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> AddWorkOrder(AddServiceWorkOrderReq request) 
+        public async Task<Response> AddWorkOrder(AddServiceWorkOrderReq request)
         {
             var result = new Response();
             try
@@ -337,7 +338,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 await _serviceOrderApp.CustomerServiceAgentCreateOrder(req);
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 result.Code = 500;
                 result.Message = ex.Message;
@@ -350,7 +351,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetTechnicianServiceOrder([FromQuery]TechnicianServiceWorkOrderReq req)
+        public async Task<TableData> GetTechnicianServiceOrder([FromQuery] TechnicianServiceWorkOrderReq req)
         {
 
             var result = new TableData();
@@ -371,7 +372,7 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetAppTechnicianServiceWorkOrder([FromQuery]GetAppTechnicianServiceWorkOrderReq req)
+        public async Task<TableData> GetAppTechnicianServiceWorkOrder([FromQuery] GetAppTechnicianServiceWorkOrderReq req)
         {
             var result = new TableData();
             try
@@ -455,7 +456,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<Response<ServiceOrder>> GetDetails(int id) 
+        public async Task<Response<ServiceOrder>> GetDetails(int id)
         {
 
             var result = new Response<ServiceOrder>();
@@ -478,7 +479,7 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetTechnicianServiceWorkOrderPool([FromQuery]TechnicianServiceWorkOrderPoolReq req) 
+        public async Task<TableData> GetTechnicianServiceWorkOrderPool([FromQuery] TechnicianServiceWorkOrderPoolReq req)
         {
             var result = new TableData();
 
@@ -566,12 +567,33 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<Response<List<AllowSendOrderUserResp>>> GetAllowSendOrderUser() 
+        public async Task<Response<List<AllowSendOrderUserResp>>> GetAllowSendOrderUser()
         {
             var result = new Response<List<AllowSendOrderUserResp>>();
             try
             {
                 result.Result = await _serviceOrderApp.GetAllowSendOrderUser();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取待分配工单服务详情
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetAppServiceOrderDetail([FromQuery] QueryServiceOrderDetailReq req)
+        {
+            var result = new TableData();
+
+            try
+            {
+                result = await _serviceOrderApp.GetAppServiceOrderDetail(req);
             }
             catch (Exception ex)
             {
