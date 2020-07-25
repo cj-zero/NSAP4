@@ -878,7 +878,6 @@ namespace OpenAuth.App
                 CurrentUserId = req.TechnicianId
             });
             await UnitWork.SaveAsync();
-
             await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{req.TechnicianId}接单工单：{string.Join(",", req.ServiceWorkOrderIds)}", ActionType = "技术员接单" }, req.ServiceWorkOrderIds);
         }
 
@@ -1126,7 +1125,9 @@ namespace OpenAuth.App
                     {
                         o.MaterialCode,
                         o.ManufacturerSerialNumber,
-                        MaterialType = o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-"))
+                        MaterialType = o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
+                        o.Status,
+                        o.Id
                     })
                 });
 
@@ -1149,7 +1150,8 @@ namespace OpenAuth.App
                 ServiceWorkOrders = s.MaterialInfo.GroupBy(o => o.MaterialType).Select(s => new
                 {
                     MaterialType = s.Key
-                })
+                }),
+                WorkOrderState = s.MaterialInfo.Distinct().FirstOrDefault().Status
             }).ToList();
             result.Data = list;
             return result;
