@@ -414,7 +414,7 @@ namespace OpenAuth.WebApi.Controllers
                     Title = "移转至技术员",
                     Details = "以为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
                 }, req.ServiceWorkOrderIds);
-                
+
             }
             catch (Exception ex)
             {
@@ -638,6 +638,27 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 result = await _serviceOrderApp.GetAppServiceOrderDetail(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 修改描述（故障/过程）
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> UpdateWorkOrderDescription(UpdateWorkOrderDescriptionReq request)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.UpdateWorkOrderDescription(request);
             }
             catch (Exception ex)
             {

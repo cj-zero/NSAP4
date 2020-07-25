@@ -911,7 +911,7 @@ namespace OpenAuth.App
             });
             await UnitWork.SaveAsync();
             await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{req.CurrentUserId}预约工单{string.Join(",", req.WorkOrderIds)}", ActionType = "预约工单" }, req.WorkOrderIds);
-         
+
         }
 
         /// <summary>
@@ -991,8 +991,8 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => req.WorkOrderIds.Contains(s.Id), o => new ServiceWorkOrder 
-            { 
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => req.WorkOrderIds.Contains(s.Id), o => new ServiceWorkOrder
+            {
                 CurrentUserId = req.CurrentUserId,
                 Status = 2
             });
@@ -1050,16 +1050,32 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<dynamic> GetCustomerNewestOrders(string code)
         {
-            var newestOrder = await UnitWork.Find<ServiceOrder>(s=>s.CustomerId.Equals(code)).OrderByDescending(s=>s.CreateTime)
-                .Select(s=>new 
+            var newestOrder = await UnitWork.Find<ServiceOrder>(s => s.CustomerId.Equals(code)).OrderByDescending(s => s.CreateTime)
+                .Select(s => new
                 {
-                    s.Id,s.CustomerId,s.CustomerName,s.Services,s.Status,s.Contacter,s.ContactTel,s.NewestContacter,s.NewestContactTel
+                    s.Id,
+                    s.CustomerId,
+                    s.CustomerName,
+                    s.Services,
+                    s.Status,
+                    s.Contacter,
+                    s.ContactTel,
+                    s.NewestContacter,
+                    s.NewestContactTel
                 })
                 .Skip(0).Take(10).ToListAsync();
-            var newestNotCloseOrder = await UnitWork.Find<ServiceOrder>(s=>s.CustomerId.Equals(code) && s.Status == 1).OrderByDescending(s=>s.CreateTime)
-                .Select(s=>new 
+            var newestNotCloseOrder = await UnitWork.Find<ServiceOrder>(s => s.CustomerId.Equals(code) && s.Status == 1).OrderByDescending(s => s.CreateTime)
+                .Select(s => new
                 {
-                    s.Id,s.CustomerId,s.CustomerName,s.Services,s.Status,s.Contacter,s.ContactTel,s.NewestContacter,s.NewestContactTel
+                    s.Id,
+                    s.CustomerId,
+                    s.CustomerName,
+                    s.Services,
+                    s.Status,
+                    s.Contacter,
+                    s.ContactTel,
+                    s.NewestContacter,
+                    s.NewestContactTel
                 })
                 .Skip(0).Take(10).ToListAsync();
             return new { newestOrder, newestNotCloseOrder };
@@ -1137,6 +1153,32 @@ namespace OpenAuth.App
             }).ToList();
             result.Data = list;
             return result;
+        }
+
+
+        /// <summary>
+        /// 修改描述（故障/过程）
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task UpdateWorkOrderDescription(UpdateWorkOrderDescriptionReq request)
+        {
+            switch (request.DescriptionType.ToLower())
+            {
+                case "trouble":
+                    await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id.Equals(request.Id), e => new ServiceWorkOrder
+                    {
+                        TroubleDescription = request.Description
+                    });
+                    break;
+                case "process":
+                    await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id.Equals(request.Id), e => new ServiceWorkOrder
+                    {
+                        ProcessDescription = request.Description
+                    });
+                    break;
+            }
+            await UnitWork.SaveAsync();
         }
     }
 }
