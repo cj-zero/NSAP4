@@ -1095,7 +1095,7 @@ namespace OpenAuth.App
 
 
         /// <summary>
-        /// 获取待分配工单服务详情
+        /// 获取工单服务详情
         /// </summary>
         /// <returns></returns>
         public async Task<TableData> GetAppServiceOrderDetail(QueryServiceOrderDetailReq req)
@@ -1121,7 +1121,12 @@ namespace OpenAuth.App
                     s.City,
                     s.Area,
                     s.Addr,
-                    MaterialInfo = s.ServiceWorkOrders.Where(o => o.Status == 1 && o.ServiceOrderId == req.ServiceOrderId).Select(o => new
+                    Contacter = string.IsNullOrEmpty(s.NewestContacter) ? s.Contacter : s.NewestContacter,
+                    ContacterTel = string.IsNullOrEmpty(s.NewestContactTel) ? s.ContactTel : s.NewestContactTel,
+                    s.CustomerName,
+                    s.Supervisor,
+                    s.SalesMan,
+                    MaterialInfo = s.ServiceWorkOrders.Where(o => o.ServiceOrderId == req.ServiceOrderId).Select(o => new
                     {
                         o.MaterialCode,
                         o.ManufacturerSerialNumber,
@@ -1145,13 +1150,20 @@ namespace OpenAuth.App
                 s.Addr,
                 s.Status,
                 s.CreateTime,
+                s.Contacter,
+                s.ContacterTel,
+                s.CustomerName,
+                s.Supervisor,
+                s.SalesMan,
                 Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
                 s.MaterialInfo,
-                ServiceWorkOrders = s.MaterialInfo.GroupBy(o => o.MaterialType).Select(s => new
+                ServiceWorkOrders = s.MaterialInfo.GroupBy(o => o.MaterialType).ToList()
+                .Select(s => new
                 {
-                    MaterialType = s.Key
+                    MaterialType = s.Key,
+                    WorkOrderIds = string.Join(",", s.Select(i => i.Id))
                 }),
-                WorkOrderState = s.MaterialInfo.Distinct().FirstOrDefault().Status
+                WorkOrderState = s.MaterialInfo.Distinct().FirstOrDefault()?.Status
             }).ToList();
             result.Data = list;
             return result;

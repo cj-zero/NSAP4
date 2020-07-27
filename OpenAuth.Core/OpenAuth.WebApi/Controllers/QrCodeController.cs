@@ -45,7 +45,12 @@ namespace OpenAuth.WebApi.Controllers
         [AllowAnonymous]
         public IActionResult Get(string rd)
         {
-            string url = HttpUtility.UrlEncode(Configuration.GetSection("QrcodeCallBack").Value + "/api/QrCode/SaveLoginState?rd=" + rd);
+            //获取当前服务地址及端口
+            string url = "http://localhost:" + Request.HttpContext.Connection.LocalPort;
+            if (!CommonHelper.IsDebug)
+            {
+                url = HttpUtility.UrlEncode(Configuration.GetSection("QrcodeCallBack").Value + "/api/QrCode/SaveLoginState?rd=" + rd);
+            }
             Qrcode qrcode = new Qrcode()
             {
                 scene = "NSAPLogin",
