@@ -60,7 +60,8 @@
               <el-table-column
                 show-overflow-tooltip
                 v-for="(fruit,index) in formTheadOptions"
-                align="center"
+                :align="fruit.align?fruit.align:'left'"
+                :header-align="fruit.align?fruit.align:'left'"
                 :key="`ind${index}`"
                 :sortable="fruit=='chaungjianriqi'?true:false"
                 style="background-color:silver;"
@@ -236,7 +237,7 @@ export default {
       workorderidList: [],
       hasAlreadNum: "", //已经接的单
       formTheadOptions: [
-        { name: "serviceWorkOrderId", label: "工单ID", ifFixed: true },
+        { name: "serviceWorkOrderId", label: "工单ID", ifFixed: true ,align:'right'},
         { name: "priority", label: "优先级" },
         { name: "fromType", label: "呼叫类型", width: "100px" },
         { name: "status", label: "呼叫状态" },

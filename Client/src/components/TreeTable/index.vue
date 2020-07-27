@@ -6,7 +6,7 @@
         {{scope.$index}}
       </template>
     </el-table-column>
-    <el-table-column v-else v-for="(column, index) in columns" :key="column.value" :label="column.text" align="center" :width="column.width">
+    <el-table-column v-else v-for="(column, index) in columns" :key="column.value" :label="column.text"  :align="column.align?column.align:'left'" :width="column.width">
       <template slot-scope="scope">
         <template>
            <span style="width:100px;display:inline-block;" v-if="index === 0 && scope.row.parentId" >

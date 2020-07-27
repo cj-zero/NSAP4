@@ -40,7 +40,7 @@
           :data="list"
           v-loading="listLoading"
           border
-          fit
+          
           highlight-current-row
           style="width: 100%;"
           @row-click="rowClick"
@@ -49,7 +49,7 @@
           <el-table-column
             show-overflow-tooltip
             v-for="fruit in defaultFormThead"
-            align="center"
+            :align="fruit.align"
             :key="fruit"
             :label="headLabel[fruit]"
           >

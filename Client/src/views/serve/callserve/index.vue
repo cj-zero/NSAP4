@@ -53,11 +53,12 @@
               <el-table-column
                 show-overflow-tooltip
                 v-for="(fruit,index) in ChildheadOptions"
-                align="center"
+                :align="fruit.align"
                 :key="`ind${index}`"
                 :sortable="fruit=='chaungjianriqi'?true:false"
                 style="background-color:silver;"
                 :label="fruit.label"
+                 header-align="left"
                 :fixed="fruit.ifFixed"
                 :width="fruit.width" >
                 <template slot-scope="scope">
@@ -79,11 +80,12 @@
               <el-table-column
                 show-overflow-tooltip
                 v-for="(fruit,index) in ParentHeadOptions"
-                align="center"
+                :align="fruit.align"
                 :key="`ind${index}`"
                 :sortable="fruit=='chaungjianriqi'?true:false"
                 style="background-color:silver;"
                 :label="fruit.label"
+                 header-align="left"
                 :fixed="fruit.ifFixed"
                 :width="fruit.width"
               >
@@ -240,35 +242,35 @@ export default {
       key: 1, // table key
       sure: 0,
       ParentHeadOptions: [
-        { name: "serviceOrderId", label: "服务单号", width: "120px"},
-        { name: "customerId", label: "客户代码" },
-        { name: "customerName", label: "客户名称" },
-        { name: "contacter", label: "联系人" },
-        { name: "contactTel", label: "电话号码" ,width:'150px'},
-        { name: "supervisor", label: "售后主管" },
-        { name: "salesMan", label: "销售员" },
+        { name: "serviceOrderId", label: "服务单号", width: "120px",align:'right'},
+        { name: "customerId", label: "客户代码",align:'left' },
+        { name: "customerName", label: "客户名称" ,align:'left' },
+        { name: "contacter", label: "联系人" ,align:'left' },
+        { name: "contactTel", label: "电话号码" ,width:'150px',align:'left' },
+        { name: "supervisor", label: "售后主管" ,align:'left' },
+        { name: "salesMan", label: "销售员" ,align:'left' },
       ],
             ChildheadOptions: [
         // { name: "serviceOrderId", label: "服务单号", ifFixed: true },
-        { name: "id", label: "工单号" },
-        { name: "priority", label: "优先级" },
-        { name: "fromType", label: "呼叫类型", width: "100px" },
+        { name: "id", label: "工单号",align:'right'  },
+        { name: "priority", label: "优先级" ,align:'left' },
+        { name: "fromType", label: "呼叫类型", width: "100px",align:'left'  },
         // { name: "customerId", label: "客户代码" },
-        { name: "status", label: "状态" },
+        { name: "status", label: "状态" ,align:'left' },
         // { name: "customerName", label: "客户名称" },
-         { name: "FromTheme", label: "呼叫主题" },
-        { name: "createTime", label: "创建日期" ,width:'160px'},
-        { name: "RecepUserName", label: "接单员" },
-        { name: "TechName", label: "技术员" },
-         { name: "materialCode", label: "制造商序列号",width:'140px' },
-         { name: "materialDescription", label: "物料编码",width:'120px' },
+         { name: "FromTheme", label: "呼叫主题",align:'left'  },
+        { name: "createTime", label: "创建日期" ,width:'160px',align:'left' },
+        { name: "RecepUserName", label: "接单员" ,align:'left' },
+        { name: "TechName", label: "技术员" ,align:'left' },
+         { name: "materialCode", label: "制造商序列号",width:'140px' ,align:'left' },
+         { name: "materialDescription", label: "物料编码",width:'120px' ,align:'left' },
         // { name: "contacter", label: "联系人" },
         // { name: "contactTel", label: "电话号码" ,width:'120px'},
         // { name: "supervisor", label: "售后主管" },
         // { name: "salesMan", label: "销售员" },
-        { name: "bookingDate", label: "预约时间" },
-        { name: "visitTime", label: "上门时间" },
-        { name: "warrantyEndDate", label: "结束时间" },
+        { name: "bookingDate", label: "预约时间" ,align:'left' },
+        { name: "visitTime", label: "上门时间" ,align:'left' },
+        { name: "warrantyEndDate", label: "结束时间",align:'left'  },
       ],
       // stateValue: ["待确认", "已确认", "已取消"],
       // statusOptions: [

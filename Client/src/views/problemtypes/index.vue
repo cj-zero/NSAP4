@@ -27,6 +27,7 @@
         @selection-change="handleSelectionChange"
         highlight-current-row
         :data="modulesTree"
+        
         :columns="columns"
         border
       ></tree-table>
@@ -104,11 +105,14 @@ export default {
    
         {
           text: "描述",
-          value: "description"
+          value: "description",
+          align:'left'
         },
         {
           text: "是否停用",
-          value: "inuseFlag"
+          value: "inuseFlag",
+                    align:'left'
+
         }
 
       ],

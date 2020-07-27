@@ -109,10 +109,11 @@
             <el-row :gutter="20">
               <el-col :span="8">
                 <el-form-item label="呼叫来源" prop="fromId">
-                  <el-select size="mini" v-model="form.fromId" placeholder="请选择">
+                  <el-select size="mini" style="width:150px;" v-model="form.fromId" placeholder="请选择">
                     <el-option
                       v-for="item in callSourse"
                       :key="item.value"
+                       
                       :label="item.label"
                       :value="item.value"
                     ></el-option>
@@ -124,8 +125,9 @@
                   <el-date-picker
                     size="mini"
                     v-model="form.createTime"
-                    style="width:155px;"
+                    style="width:150px;"
                     type="datetime"
+                    format="yyyy-MM-dd hh:mm"
                     value-format="yyyy-MM-dd hh-mm-ss"
                     placeholder="选择日期时间"
                   ></el-date-picker>

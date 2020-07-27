@@ -25,7 +25,7 @@
     <div class="app-container">
 
       <div class="bg-white">
-        <el-form ref="listQuery" :model="listQuery" label-width="80px">
+        <el-form ref="listQuery" :model="listQuery" label-width="80px" >
           <div style="padding:10px 0;"></div>
           <el-row :gutter="10">
             <el-col :span="4">
@@ -89,7 +89,7 @@
           @row-click="rowClick"
         >
 
-          <el-table-column width="50">
+          <el-table-column width="50" >
             <template slot-scope="scope">
               <el-radio v-model="radio" :label="scope.row.id"></el-radio>
             </template>
@@ -97,8 +97,9 @@
           <el-table-column
             show-overflow-tooltip
             v-for="(fruit,index) in formTheadOptions"
-            align="center"
+            :align="fruit.align"
             :key="`ind${index}`"
+            header-align="left"
             :sortable="fruit=='chaungjianriqi'?true:false"
             style="background-color:silver;"
             :label="fruit.label"
@@ -131,7 +132,7 @@
       <!--   v-el-drag-dialog
       width="1000px"  新建呼叫服务单-->
       <el-dialog
-        width="1400px"
+        width="1480px"
         class="dialog-mini"
         @open="openCustoner"
         @close="closeCustoner"
@@ -238,18 +239,18 @@ export default {
       key: 1, // table key
       sure: 0,
       formTheadOptions: [
-        { name: "id", label: "服务单ID" },
-        { name: "customerId", label: "客户代码" },
-        { name: "status", label: "状态" },
-        { name: "customerName", label: "客户名称" },
-        { name: "createTime", label: "创建日期" },
-        { name: "contacter", label: "联系人" },
-        { name: "services", label: "服务内容" },
-        { name: "contactTel", label: "电话号码" },
-        { name: "supervisor", label: "售后主管" },
-        { name: "salesMan", label: "销售员" },
-        { name: "manufSN", label: "制造商序列号" },
-        { name: "itemCode", label: "物料编码" }
+        { name: "id", label: "服务单ID" ,align:'right'},
+        { name: "customerId", label: "客户代码",align:'left' },
+        { name: "status", label: "状态" ,align:'left'},
+        { name: "customerName", label: "客户名称",align:'left' },
+        { name: "createTime", label: "创建日期" ,align:'left'},
+        { name: "contacter", label: "联系人" ,align:'left'},
+        { name: "services", label: "服务内容" ,align:'left'},
+        { name: "contactTel", label: "电话号码" ,align:'left'},
+        { name: "supervisor", label: "售后主管" ,align:'left'},
+        { name: "salesMan", label: "销售员" ,align:'left'},
+        { name: "manufSN", label: "制造商序列号",align:'left' },
+        { name: "itemCode", label: "物料编码" ,align:'left'}
       ],
 
       tableKey: 0,
