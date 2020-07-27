@@ -65,7 +65,7 @@
         </el-form-item>
       </el-form>
     </div>
-    <el-dialog title="请用新威智能App扫描此二维码" :visible.sync="dialogQ" width="800px"> 
+    <el-dialog title="请用新威智能App扫描此二维码" :visible.sync="dialogQ" width="400px"> 
        <el-image :src="url"></el-image>
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogQ = false">取 消</el-button>
@@ -107,8 +107,8 @@ export default {
         username: "",
         password: ""
       },
-      baseURL: process.env.VUE_APP_BASE_API,
-
+       baseURL: process.env.VUE_APP_BASE_UPIMG_URL,
+      
       dialogQ: false,
       randomNum: "",
       loginRules: {
@@ -152,8 +152,7 @@ export default {
     },
     checkStatus() {
       const timer = setInterval(() => {
-        login
-          .ValidateLogin({ rd: this.randomNum })
+        login.ValidateLogin({ rd: this.randomNum })
           .then(res => {
             if (res.code == 200) {
               let token = res.result;
@@ -181,7 +180,8 @@ export default {
     },
     goPage() {
       this.randomNum = Math.random() * 10;
-      this.url = `https://nsapgateway.neware.work/api/QrCode/Get?rd=${this.randomNum}`;
+      //console.log(process.env.VUE_APP_BASE_UPIMG_URL)
+       this.url = `${this.baseURL}/QrCode/Get?rd=${this.randomNum}`;
       this.dialogQ = true
       // let op = window.open(
       //   this.url,
