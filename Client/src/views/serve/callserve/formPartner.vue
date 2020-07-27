@@ -1,8 +1,9 @@
 <template>
-<div style="height:500px;overflow-y:scroll;">
+<div >
     <el-table
     :data="partnerList"
     border
+    height="500"
     ref="singleTable"
    highlight-current-row
     @current-change="getPartner"
@@ -47,6 +48,9 @@
 </template>
 
 <script>
+
+import * as callformPartner from "@/api/serve/callformPartner";
+
 import callId from "./callId";
 export default {
   props: ["partnerList" ,'count' ],
@@ -67,6 +71,7 @@ export default {
         key: undefined,
         appId: undefined
       },
+      newList:[],//传递给最近呼叫或者未关闭的数据列表
     };
   },
   compunted: {
@@ -80,7 +85,7 @@ export default {
     }
   },
     mounted() {
-       console.log(this.partnerList)
+   
   },
     // watch: {
     // partnerList:function(){
@@ -109,10 +114,15 @@ export default {
               type: 'error'
             })
         }else{
-             this.$message({
-              message: `抱歉，${val.cardName}没有呼叫ID数据`,
-              type: 'warning'
-            })
+             callformPartner.getTableList({code:val.cardCode}).then(res=>{
+               this.newList = res.result
+        // this.newestNotCloseOrder=res.reault.newestNotCloseOrder
+        // this.newestOrder=res.reault.newestNotCloseOrder
+      })
+            //  this.$message({
+            //   message: `抱歉，${val.cardName}没有呼叫ID数据`,
+            //   type: 'warning'
+            // })
 //  this.dialogCallId=true
         }
         

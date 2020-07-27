@@ -165,18 +165,11 @@
           <el-button type="primary" @click="dialogTree = false">确 定</el-button>
         </span>
       </el-dialog>
-      <el-dialog
-     
-        v-el-drag-dialog
-        :visible.sync="dialogOrder"
-        title="选择派单对象"
-        center
-        width="500px"
-      >
+      <el-dialog v-el-drag-dialog :visible.sync="dialogOrder" title="选择派单对象" center width="500px">
         <el-table :data="tableData" border @row-click="setRadio" style="width: 100%">
           <el-table-column align="center">
             <template slot-scope="scope">
-              <el-radio :label="scope.row.appUserId"  v-model="orderRadio">{{&nbsp;}}</el-radio>
+              <el-radio :label="scope.row.appUserId" v-model="orderRadio">{{&nbsp;}}</el-radio>
             </template>
           </el-table-column>
           <el-table-column prop="name" label="接单员" align="center"></el-table-column>
@@ -315,7 +308,7 @@ export default {
         QryMaterialTypes: [] //物料类型
       },
       statusOptions: [
-   { value: 1, label: "待处理" },
+        { value: 1, label: "待处理" },
         { value: 2, label: "已排配" },
         { value: 3, label: "已预约" },
         { value: 4, label: "已外出" },
@@ -346,9 +339,9 @@ export default {
       dataForm: {}, //获取的详情表单
       dialogPvVisible: false,
       pvData: [],
-      params:{
-        currentUserId:'',
-        workOrderIds:[]
+      params: {
+        currentUserId: "",
+        workOrderIds: []
       },
       rules: {
         appId: [
@@ -409,19 +402,17 @@ export default {
   },
   methods: {
     changeOrder() {
-      if(this.ifParent){
-        
+      if (this.ifParent) {
         this.dialogOrder = true;
-              callservepushm.AllowSendOrderUser().then(res => {
-        this.tableData = res.result;
-      });
-      }else{
-                this.$message({
+        callservepushm.AllowSendOrderUser().then(res => {
+          this.tableData = res.result;
+        });
+      } else {
+        this.$message({
           type: "warning",
           message: "请先选择需要指派的服务号"
         });
       }
-
     },
     setRadio(res) {
       this.orderRadio = res.appUserId;
@@ -429,8 +420,8 @@ export default {
     },
     postOrder() {
       this.listLoading = true;
-        this.params.currentUserId=this.orderRadio;
-        this.params.workOrderIds=this.workorderidList;
+      this.params.currentUserId = this.orderRadio;
+      this.params.workOrderIds = this.workorderidList;
       //   if (!this.ifParent) {
       //   this.$message({
       //     type: "warning",
@@ -444,25 +435,26 @@ export default {
           message: "单个技术员接单不能超过3个"
         });
       } else {
-     
-        callservepushm.SendOrders(this.params).then(res => {
-          if (res.code == 200) {
-            this.dataForm = res.result;
-             this.$message({
-          type: "success",
-          message: "派单成功"
-        });
-             this.dialogOrder = false;
-            this.listLoading = false;
-          }
-        }).catch(error=>{
+        callservepushm
+          .SendOrders(this.params)
+          .then(res => {
+            if (res.code == 200) {
+              this.dataForm = res.result;
+              this.$message({
+                type: "success",
+                message: "派单成功"
+              });
+              this.dialogOrder = false;
+              this.listLoading = false;
+            }
+          })
+          .catch(error => {
             this.$message({
-          type: "danger",
-          message: `${error}`
-        });
-         this.listLoading = false;
-
-        });
+              type: "danger",
+              message: `${error}`
+            });
+            this.listLoading = false;
+          });
       }
     },
     changeSearch(val) {
@@ -543,46 +535,42 @@ export default {
 
     checkGroupNode(a) {
       //点击复选框触发
-      console.log(a)
-            if(this.ifParent){
-          if(this.ifParent==a.key){
-            //同一级，不做限制，添加编码请求
-             if(!a.children){   
-                // this.workorderidList = a.key
-         this.listQuery.QryMaterialTypes.push(a.id)
-        }
-         this.getRightList()
-          }else{
-            // console.log('清除之前,添加后面的')
-            // this.orderRadio = a.key
-              this.$refs.treeForm.setCheckedKeys([]);
-               this.listQuery.QryMaterialTypes=[]
-                this.listQuery.QryServiceOrderId=a.key
-              this.ifParent=a.key
-               this.$refs.treeForm.setCheckedKeys([a.key1]);
-               
-                 if(!a.children){
-         this.listQuery.QryMaterialTypes.push(a.id)
-        }
-               this.getRightList()
+      if (this.ifParent) {
+        if (this.ifParent == a.key) {
+          //同一级，不做限制，添加编码请求
+          if (!a.children) {
+            if(this.listQuery.QryMaterialTypes.indexOf(a.id)==-1){  //找数组中是否存在类型号，有的话就说明是取消
+            this.listQuery.QryMaterialTypes.push(a.id);
+            }else{
+              this.listQuery.QryMaterialTypes=this.listQuery.QryMaterialTypes.filter(item=>item!=a.id)
+            }
           }
-      }else{
+           this.getRightList();
+        } else {
+          // console.log('清除之前,添加后面的')
+          this.$refs.treeForm.setCheckedKeys([]);
+          this.listQuery.QryMaterialTypes = [];
+          this.listQuery.QryServiceOrderId = a.key;
+          this.ifParent = a.key;
+          this.$refs.treeForm.setCheckedKeys([a.key1]);
+          if (!a.children) {
+            this.listQuery.QryMaterialTypes.push(a.id);
+          }
+          this.getRightList();
+        }
+      } else {
         //第一次点击
-        // this.orderRadio = a.key
-        this.listQuery.QryMaterialTypes=[]
-        console.log( this.listQuery.QryMaterialTypes)
-        if(!a.children){
-         this.listQuery.QryMaterialTypes.push(a.id)
+        this.listQuery.QryMaterialTypes = [];
+        if (!a.children) {
+          this.listQuery.QryMaterialTypes.push(a.id);
         }
         this.$refs.treeForm.setCheckedKeys([a.key1]);
-         this.ifParent=a.key
-         this.listQuery.QryServiceOrderId=a.key
-         this.getRightList()
+        this.ifParent = a.key;
+        this.listQuery.QryServiceOrderId = a.key;
+        this.getRightList();
       }
-    
+      console.log(this.listQuery.QryMaterialTypes,a)
     },
-    // this.listQuery.QryMaterialTypes=[]
-    
 
     getLeftList() {
       this.listLoading = true;
@@ -598,7 +586,7 @@ export default {
           resul[i].materialTypes.map(item1 => {
             arr[i].children.push({
               label: `物料类型号:${item1}`,
-              key : `${resul[i].serviceOrderId}`,
+              key: `${resul[i].serviceOrderId}`,
               key1: `${resul[i].serviceOrderId}&${item1}`,
               id: item1
             });
