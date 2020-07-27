@@ -22,7 +22,7 @@
       </div>
     </sticky>
     <div class="app-container flex-item bg-white">
-      <zxsearch @change-Search="changeSearch" :dialogOrder.sync="dialogOrder"></zxsearch>
+      <zxsearch @change-Search="changeSearch" @change-Order="changeOrder"></zxsearch>
       <el-row class="fh">
         <el-col :span="4" class="fh ls-border">
           <el-card shadow="never" class="card-body-none fh" style="overflow-y: auto">
@@ -36,7 +36,6 @@
               show-checkbox
               node-key="key1"
               @check="checkGroupNode"
-              @check-change="handleNodeClick"
               ref="treeForm"
               highlight-current
               :props="defaultProps"
@@ -167,7 +166,7 @@
         </span>
       </el-dialog>
       <el-dialog
-        @open="openorder"
+     
         v-el-drag-dialog
         :visible.sync="dialogOrder"
         title="选择派单对象"
@@ -278,7 +277,7 @@ export default {
       showDescription: false,
       dialogFormView: false,
       checkChildList: [],
-      ifParent: false, //是否选过父级
+      ifParent: "", //是否选过父级
       listQuery: {
         // 查询条件
         page: 1,
@@ -297,7 +296,24 @@ export default {
         QryProblemType: "", // - 问题类型
         QryMaterialTypes: [] //物料类型
       },
-
+      listQuery1: {
+        // 查询条件
+        page: 1,
+        limit: 20,
+        key: undefined,
+        appId: undefined,
+        Name: "", //	Description
+        QryServiceOrderId: "", //- 查询服务ID查询条件
+        QryState: "", //- 呼叫状态查询条件
+        QryCustomer: "", //- 客户查询条件
+        QryManufSN: "", // - 制造商序列号查询条件
+        QryCreateTimeFrom: "", //- 创建日期从查询条件
+        QryCreateTimeTo: "", //- 创建日期至查询条件
+        QryRecepUser: "", //- 接单员
+        QryTechName: "", // - 工单技术员
+        QryProblemType: "", // - 问题类型
+        QryMaterialTypes: [] //物料类型
+      },
       statusOptions: [
    { value: 1, label: "待处理" },
         { value: 2, label: "已排配" },
@@ -378,7 +394,7 @@ export default {
         val.map(item => {
           this.workorderidList.push(item.serviceWorkOrderId);
         });
-        console.log(this.workorderidList);
+        // console.log(this.workorderidList);
       }
     }
   },
@@ -392,10 +408,20 @@ export default {
     //   console.log(callserve)
   },
   methods: {
-    openorder() {
-      callservepushm.AllowSendOrderUser().then(res => {
+    changeOrder() {
+      if(this.ifParent){
+        
+        this.dialogOrder = true;
+              callservepushm.AllowSendOrderUser().then(res => {
         this.tableData = res.result;
       });
+      }else{
+                this.$message({
+          type: "warning",
+          message: "请先选择需要指派的服务号"
+        });
+      }
+
     },
     setRadio(res) {
       this.orderRadio = res.appUserId;
@@ -405,21 +431,20 @@ export default {
       this.listLoading = true;
         this.params.currentUserId=this.orderRadio;
         this.params.workOrderIds=this.workorderidList;
-        if (!this.ifParent) {
-        this.$message({
-          type: "warning",
-          message: "请先选择需要指派的服务号"
-        });
-        return
-      }
+      //   if (!this.ifParent) {
+      //   this.$message({
+      //     type: "warning",
+      //     message: "请先选择需要指派的服务号"
+      //   });
+      //   return
+      // }
       if (this.hasAlreadNum > 2) {
         this.$message({
           type: "warning",
           message: "单个技术员接单不能超过3个"
         });
       } else {
-        console.log(this.params)
-        this.params.workOrderIds
+     
         callservepushm.SendOrders(this.params).then(res => {
           if (res.code == 200) {
             this.dataForm = res.result;
@@ -445,7 +470,7 @@ export default {
         this.getRightList();
       } else {
         Object.assign(this.listQuery, val);
-        console.log(this.listQuery);
+        // console.log(this.listQuery);
       }
     },
     openTree(res) {
@@ -516,49 +541,49 @@ export default {
       }
     },
 
-    checkGroupNode(a, b) {
+    checkGroupNode(a) {
       //点击复选框触发
-      if (a.children) {
-        //如果点击父级
-
-        if (this.ifParent) {
-          this.$refs.treeForm.setCheckedKeys([]);
-          if (b.checkedKeys.length > 0) {
-            this.$refs.treeForm.setCheckedKeys([a.key1]);
-            this.listQuery.QryMaterialTypes = [];
-            this.listQuery.QryServiceOrderId = a.key1;
-            this.getRightList();
+      console.log(a)
+            if(this.ifParent){
+          if(this.ifParent==a.key){
+            //同一级，不做限制，添加编码请求
+             if(!a.children){   
+                // this.workorderidList = a.key
+         this.listQuery.QryMaterialTypes.push(a.id)
+        }
+         this.getRightList()
+          }else{
+            // console.log('清除之前,添加后面的')
+            // this.orderRadio = a.key
+              this.$refs.treeForm.setCheckedKeys([]);
+               this.listQuery.QryMaterialTypes=[]
+                this.listQuery.QryServiceOrderId=a.key
+              this.ifParent=a.key
+               this.$refs.treeForm.setCheckedKeys([a.key1]);
+               
+                 if(!a.children){
+         this.listQuery.QryMaterialTypes.push(a.id)
+        }
+               this.getRightList()
           }
-        } else {
-          this.ifParent = true;
-          this.$refs.treeForm.setCheckedKeys([a.key1]);
-          this.listQuery.QryMaterialTypes = [];
-          this.listQuery.QryServiceOrderId = a.key1;
-          this.getRightList();
+      }else{
+        //第一次点击
+        // this.orderRadio = a.key
+        this.listQuery.QryMaterialTypes=[]
+        console.log( this.listQuery.QryMaterialTypes)
+        if(!a.children){
+         this.listQuery.QryMaterialTypes.push(a.id)
         }
-      } else {
-        //如果点击一个父级下的子级
-        if (this.ifParent) {
-          //如果没有父级
-          this.checkChildList.push(a.key1);
-          this.$refs.treeForm.setCheckedKeys(this.checkChildList);
-          this.listQuery.QryMaterialTypes.push(a.id);
-          this.listQuery.QryServiceOrderId = a.key1.split("&")[0];
-          this.getRightList();
-        } else {
-          this.$refs.treeForm.setCheckedKeys([a.key1]);
-          this.listQuery.QryMaterialTypes.push(a.id);
-          this.listQuery.QryServiceOrderId = a.key1.split("&")[0];
-          this.getRightList();
-        }
+        this.$refs.treeForm.setCheckedKeys([a.key1]);
+         this.ifParent=a.key
+         this.listQuery.QryServiceOrderId=a.key
+         this.getRightList()
       }
+    
     },
-    handleNodeClick(a, b, c) {
-      console.log(c);
-      if (c === false) {
-        this.ifParent = true;
-      }
-    },
+    // this.listQuery.QryMaterialTypes=[]
+    
+
     getLeftList() {
       this.listLoading = true;
       let arr = [];
@@ -568,10 +593,12 @@ export default {
           arr[i] = [];
           arr[i].label = `服务号:${resul[i].serviceOrderId}`;
           arr[i].key1 = `${resul[i].serviceOrderId}`;
+          arr[i].key = `${resul[i].serviceOrderId}`;
           arr[i].children = [];
           resul[i].materialTypes.map(item1 => {
             arr[i].children.push({
               label: `物料类型号:${item1}`,
+              key : `${resul[i].serviceOrderId}`,
               key1: `${resul[i].serviceOrderId}&${item1}`,
               id: item1
             });
@@ -584,7 +611,7 @@ export default {
     },
     getAllRight() {
       this.listLoading = true;
-      callservepushm.getRightList().then(response => {
+      callservepushm.getRightList(this.listQuery1).then(response => {
         this.list = response.data.data;
         // this.list = response.data;
         this.total = response.data.count;

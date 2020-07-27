@@ -113,8 +113,8 @@ export default {
         this.$emit("change-Search", 1);
     },
     sendOrder(){
-      console.log(11)
-      this.$emit("update:dialogOrder",true)
+      // console.log(11)
+      this.$emit("change-Order",true)
     },
   },
   watch: {

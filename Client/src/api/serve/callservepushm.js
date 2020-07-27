@@ -1,6 +1,6 @@
 
 import request from '@/utils/request'
-
+ 
 export function getLeftList(params) {
     return request({
       url: '/serve/ServiceOrder/UnsignedWorkOrderTree',  //呼叫服务未派单页面左侧树数据源
@@ -10,10 +10,15 @@ export function getLeftList(params) {
   }
 
   export function getRightList(params) {
+   
+    //  let params =qs.stringify(a, { indices: false })
     return request({
       url: '/serve/ServiceOrder/UnsignedWorkOrderList',  //呼叫服务未派单页面右侧树数据源
       method: 'get',
       params
+      // paramsSerializer: params => {
+      //   return qs.stringify(params, { indices: false })
+      // }
     })
   }
 
