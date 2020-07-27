@@ -45,18 +45,7 @@ namespace OpenAuth.WebApi.Controllers
         [AllowAnonymous]
         public IActionResult Get(string rd)
         {
-            string header = "http://";
-            if (int.Parse(Configuration.GetSection("IsHttps").Value) == 1)
-            {
-                header = "https://";
-            }
-            //获取当前服务地址及端口
-            string url = "http://localhost:" + Request.HttpContext.Connection.LocalPort;
-            if (!CommonHelper.IsDebug)
-            {
-                url = header + Request.HttpContext.Connection.LocalIpAddress.MapToIPv4().ToString() + ":" + Request.HttpContext.Connection.LocalPort;
-            }
-            url = HttpUtility.UrlEncode(url + "/api/QrCode/SaveLoginState?rd=" + rd);
+            string url = HttpUtility.UrlEncode(Configuration.GetSection("QrcodeCallBack").Value + "/api/QrCode/SaveLoginState?rd=" + rd);
             Qrcode qrcode = new Qrcode()
             {
                 scene = "NSAPLogin",
