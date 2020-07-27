@@ -65,12 +65,13 @@
         </el-form-item>
       </el-form>
     </div>
-    <!-- <el-dialog title="请用新威智能App扫描此二维码" :visible.sync="dialogQ" width="800px"> 
+    <el-dialog title="请用新威智能App扫描此二维码" :visible.sync="dialogQ" width="800px"> 
+       <el-image :src="url"></el-image>
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogQ = false">取 消</el-button>
         <el-button type="primary" @click="dialogQ = false">确 定</el-button>
       </span>
-    </el-dialog>-->
+    </el-dialog>
   </div>
 </template>
 
@@ -149,27 +150,29 @@ export default {
         this.pwdType = "password";
       }
     },
-    checkStatus(op) {
+    checkStatus() {
       const timer = setInterval(() => {
         login
           .ValidateLogin({ rd: this.randomNum })
           .then(res => {
             if (res.code == 200) {
               let token = res.result;
-              op.close();
+              // op.close();
               this.$store.commit("SET_TOKEN", token);
               setToken(token);
               this.$message({
                 type: "success",
                 message: "登陆成功"
               });
+                    this.dialogQ = false
+
               this.$router.push({
                 path: "/"
               });
             }
           })
           .catch(error => console.log(error));
-      }, 3000);
+      }, 1500);
 
       this.$once("hook:beforeDestroy", () => {
         clearInterval(timer);
@@ -177,14 +180,15 @@ export default {
       timer();
     },
     goPage() {
-      this.randomNum = Math.random() * 10 + "&";
-      this.url = `${this.baseURL}/QrCode/Get?rd=${this.randomNum}&`;
-      let op = window.open(
-        this.url,
-        "newwindow",
-        "height=500, width=500, top=500,  left=500, toolbar=no, menubar=no, scrollbars=no, resizable=no,location=no, status=no"
-      );
-      this.checkStatus(op);
+      this.randomNum = Math.random() * 10;
+      this.url = `https://nsapgateway.neware.work/api/QrCode/Get?rd=${this.randomNum}`;
+      this.dialogQ = true
+      // let op = window.open(
+      //   this.url,
+      //   "newwindow",
+      //   "height=500, width=500, top=500,  left=500, toolbar=no, menubar=no, scrollbars=no, resizable=no,location=no, status=no"
+      // );
+      this.checkStatus();
     },
     openQCCode() {
       this.goPage();
