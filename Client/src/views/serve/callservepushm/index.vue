@@ -101,6 +101,7 @@
       <el-dialog
         fullscreen
         class="dialog-mini"
+        :destroy-on-close="true"
         :close-on-click-modal="false"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
@@ -129,7 +130,7 @@
         width="800px"
         class="dialog-mini"
         title="服务单详情"
-        destroy-on-close
+        :destroy-on-close="true"
         :close-on-click-modal="false"
         :visible.sync="dialogFormView"
       >
@@ -147,7 +148,7 @@
           <el-button size="mini" type="primary" @click="dialogFormView = false">确认</el-button>
         </div>
       </el-dialog>
-      <el-dialog v-el-drag-dialog :visible.sync="dialogTable" center width="800px">
+      <el-dialog v-el-drag-dialog :visible.sync="dialogTable" :destroy-on-close="true" center width="800px">
         <DynamicTable
           :formThead.sync="formTheadOptions"
           :defaultForm.sync="defaultFormThead"
@@ -158,14 +159,14 @@
           <el-button type="primary" @click="dialogTable = false">确 定</el-button>
         </span>
       </el-dialog>
-      <el-dialog v-el-drag-dialog :visible.sync="dialogTree" center width="300px">
+      <el-dialog v-el-drag-dialog :visible.sync="dialogTree" :destroy-on-close="true" center width="300px">
         <treeList @close="dialogTree=false"></treeList>
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialogTree = false">取 消</el-button>
           <el-button type="primary" @click="dialogTree = false">确 定</el-button>
         </span>
       </el-dialog>
-      <el-dialog v-el-drag-dialog :visible.sync="dialogOrder" title="选择派单对象" center width="500px">
+      <el-dialog v-el-drag-dialog :visible.sync="dialogOrder" :destroy-on-close="true" title="选择派单对象" center width="500px">
         <el-table :data="tableData" border @row-click="setRadio" style="width: 100%">
           <el-table-column align="center">
             <template slot-scope="scope">

@@ -3,15 +3,25 @@
     <div class="content">
       <img class="div" src="~@/assets/login/left.png" alt />
 
-        <div class="login-img" v-if="dialogQ">
-    <span class="demonstration">请用新威智能App扫描此二维码</span>
-       <el-image :src="url"></el-image>
-  </div>
-      <div class="login-form-div" style="width:50px;height:50px;background-color:silver;" @click="dialogQ=!dialogQ">
+      <div class="login-img" v-if="dialogQ">
+        <h3 class="title">nSAP-V4.0</h3>
+        <p class="tips">nSAP-V4.0 管理系统</p>
 
-        </div>
+        <p>请用新威智能App扫描此二维码</p>
+        <el-image :src="url"></el-image>
+      </div>
+      <div class="cover_div">{{dialogQ?"账号密码登录":"二维码登录"}}</div>
+
+      <div class="login-form-div">
+        <div v-if="dialogQ" class="div2" @click="openQCCode"></div>
+        <div
+          v-if="!dialogQ"
+          class="div1"
+          @click="openQCCode"
+        ></div>
+      </div>
       <el-form
-      v-if="!dialogQ"
+        v-if="!dialogQ"
         class="login-form"
         autocomplete="on"
         :model="loginForm"
@@ -19,7 +29,6 @@
         ref="loginForm"
         label-position="left"
       >
-    
         <h3 class="title">nSAP-V4.0</h3>
         <p class="tips">nSAP-V4.0 管理系统</p>
         <el-form-item prop="username">
@@ -64,7 +73,7 @@
             @click.native.prevent="handleLogin"
           >登 录</el-button>
         </el-form-item>
-        <p style="height:25px;line-height:25px;">或</p>
+        <!-- <p style="height:25px;line-height:25px;">或</p>
         <el-form-item>
           <el-button
             v-waves
@@ -72,12 +81,12 @@
             style="width:100%;font-size: 24px;height: 50px;"
             @click.native.prevent="openQCCode"
           >扫描二维码登录</el-button>
-        </el-form-item>
+        </el-form-item>-->
       </el-form>
     </div>
     <!-- <el-dialog title="请用新威智能App扫描此二维码" :visible.sync="dialogQ" width="400px"> 
        <el-image :src="url"></el-image>
-    </el-dialog> -->
+    </el-dialog>-->
   </div>
 </template>
 
@@ -113,8 +122,8 @@ export default {
         username: "",
         password: ""
       },
-       baseURL: process.env.VUE_APP_BASE_UPIMG_URL,
-      
+      baseURL: process.env.VUE_APP_BASE_UPIMG_URL,
+
       dialogQ: false,
       randomNum: "",
       loginRules: {
@@ -158,7 +167,8 @@ export default {
     },
     checkStatus() {
       const timer = setInterval(() => {
-        login.ValidateLogin({ rd: this.randomNum })
+        login
+          .ValidateLogin({ rd: this.randomNum })
           .then(res => {
             if (res.code == 200) {
               let token = res.result;
@@ -169,35 +179,26 @@ export default {
                 type: "success",
                 message: "登陆成功"
               });
-                    this.dialogQ = false
-
               this.$router.push({
                 path: "/"
               });
             }
           })
-          .catch(error => console.log(error));
+          .catch(() => console.log(""));
       }, 1500);
-
       this.$once("hook:beforeDestroy", () => {
         clearInterval(timer);
       });
       timer();
     },
-    goPage() {
-      this.randomNum = Math.random() * 10;
-      //console.log(process.env.VUE_APP_BASE_UPIMG_URL)
-       this.url = `${this.baseURL}/QrCode/Get?rd=${this.randomNum}`;
-      this.dialogQ = true
-      // let op = window.open(
-      //   this.url,
-      //   "newwindow",
-      //   "height=500, width=500, top=500,  left=500, toolbar=no, menubar=no, scrollbars=no, resizable=no,location=no, status=no"
-      // );
-      this.checkStatus();
-    },
     openQCCode() {
-      this.goPage();
+      this.dialogQ = !this.dialogQ;
+      if (this.dialogQ) {
+        this.randomNum = Math.random() * 10;
+        this.url = `${this.baseURL}/QrCode/Get?rd=${this.randomNum}`;
+        this.dialogQ = true;
+        this.checkStatus();
+      }
     },
     handleLogin() {
       this.$refs.loginForm.validate(valid => {
@@ -309,7 +310,8 @@ $dark_gray: #d1dfe8;
   .content {
     display: inline-block;
     vertical-align: middle;
-     position: relative;
+    position: relative;
+
     > img {
       width: 568px;
       margin-right: 150px;
@@ -320,17 +322,52 @@ $dark_gray: #d1dfe8;
       width: 400px;
       vertical-align: middle;
     }
-    .login-img{
+    .login-img {
       display: inline-block;
       width: 400px;
       vertical-align: middle;
     }
-       
-      .login-form-div{
-        position: absolute;
-        right:0;
-        top:0;
+    .cover_div {
+      position: absolute;
+      right: 60px;
+      height: 80px;
+      width: 100px;
+      line-height: 80px;
+      top: 50px;
+      color: #4452d5;
+      z-index: 20;
+      background: #ebebea;
+           animation: mymove 3s infinite;
+    }
+          @keyframes mymove {
+	55% {
+		right: 50px;
+	}
+}
+    .login-form-div {
+      position: absolute;
+      right: 0;
+      top: 50px;
+
+      .div1 {
+        width: 80px;
+        height: 80px;
+        background: url("~@/assets/login/qc.png") center;
+        background-size: cover;
+//         @keyframes mymove {
+// 	55% {
+// 		right: 10px;
+// 	}
+// }
       }
+            .div2 {
+        width: 80px;
+        height: 80px;
+        background: url("~@/assets/login/computer.png") center;
+        background-size: cover;
+  
+      }
+    }
   }
 
   .svg-container {

@@ -128,7 +128,7 @@
             }"
             >
             <!-- -->
-              <el-select v-model="formList[0].fromType" size="small" clearable>
+              <el-select v-model="formList[0].fromType" size="small" >
                 <el-option
                   v-for="item in options_type"
                   :key="item.label"
@@ -196,7 +196,7 @@
           <el-col :span="8">
             <el-form-item label="优先级">
               <!-- <el-input v-model="formList[0].priority"></el-input> -->
-              <el-select v-model="formList[0].priority" size="small" clearable placeholder="请选择">
+              <el-select v-model="formList[0].priority" size="small"  placeholder="请选择">
                 <el-option
                   v-for="ite in options_quick"
                   :key="ite.value"
@@ -429,7 +429,7 @@
               required: true, message: '呼叫类型不能为空', trigger: 'blur'
             }"
             >
-              <el-select v-model="item.fromType" size="small" clearable>
+              <el-select v-model="item.fromType" size="small" >
                 <el-option
                   v-for="item in options_type"
                   :key="item.label"
@@ -497,7 +497,7 @@
           <el-col :span="8">
             <el-form-item label="优先级">
               <!-- <el-input v-model="item.priority"></el-input> -->
-              <el-select v-model="item.priority" size="small" clearable placeholder="请选择">
+              <el-select v-model="item.priority" size="small"  placeholder="请选择">
                 <el-option
                   v-for="ite in options_quick"
                   :key="ite.value"
@@ -607,6 +607,7 @@
       class="addClass1"
       :title="`第${sortForm}工单`"
       center
+      :destroy-on-close="true"
       :visible.sync="proplemTree"
       width="250px"
     >
@@ -634,9 +635,10 @@
     </el-dialog>
     <el-dialog
       :append-to-body="true"
-      destroy-on-close
+      :destroy-on-close="true"
       class="addClass1"
       title="选择制造商序列号"
+      
       @open="openDialog"
       width="90%"
       :visible.sync="dialogfSN">
@@ -817,7 +819,6 @@ export default {
       deep: true,
       immediate: true,
       handler(val) {
-        console.log(val);
         if (val&&val.length) {
           this.formList = val;
         }
@@ -882,14 +883,12 @@ export default {
         console.log(val);
       },
     NodeClick(res) {
-      console.log(res)
       this.formList[this.sortForm - 1].problemTypeId = res.id;
       this.formList[this.sortForm - 1].problemTypeName = res.name;
       this.problemLabel = res.name;
       this.proplemTree = false;
     },
     solutionClick(res) {
-       console.log(res)
       this.formList[this.sortTable - 1].solutionsubject = res.subject;
       this.formList[this.sortTable - 1].solutionId = res.id;
       // this.problemLabel = res.name;
@@ -927,7 +926,6 @@ export default {
 
     pushForm() {
       this.dialogfSN = false;
-      console.log(this.formListStart);
       // let serviceOrder = localStorage.getItem('serviceOrderId')
       if (!this.ifFormPush) {
         this.formList[0].manufacturerSerialNumber = this.formListStart[0].manufSN;
@@ -936,7 +934,6 @@ export default {
         //  this.formList[0].serviceOrderId = serviceOrder
         this.formList[0].materialDescription = this.formListStart[0].itemName;
         const newList = this.formListStart.splice(1, this.formListStart.length);
-        console.log(newList);
         for (let i = 0; i < newList.length; i++) {
           this.formList.push({
             manufacturerSerialNumber: newList[i].manufSN,
@@ -965,7 +962,6 @@ export default {
       this.dialogfSN = true;
     },
     addWorkOrder(result) {
-      console.log(result); //新增工单
       callservesure
         .addWorkOrder(result)
         .then(() => {

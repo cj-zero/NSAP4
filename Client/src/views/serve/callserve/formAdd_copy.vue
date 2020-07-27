@@ -418,6 +418,7 @@
     <el-dialog
       class="addClass1"
       :title="`第${sortForm}工单`"
+      :destroy-on-close="true"
       center
       :visible.sync="proplemTree"
       width="250px"
@@ -427,6 +428,7 @@
     <el-dialog
       :title="`第${sortTable}个工单的解决方案`"
       center
+      :destroy-on-close="true"
       class="addClass1"
       loading
       :visible.sync="solutionOpen"
@@ -446,7 +448,7 @@
     </el-dialog>
     <el-dialog
       :append-to-body="true"
-      destroy-on-close
+      :destroy-on-close="true"
       class="addClass1"
       title="选择制造商序列号"
       @open="openDialog"

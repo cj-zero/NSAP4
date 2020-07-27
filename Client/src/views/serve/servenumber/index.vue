@@ -75,7 +75,7 @@
       width="1000px"  新建呼叫服务单-->
 
       <!-- 只能查看的表单 -->
-      <el-dialog width="1200px" class="dialog-mini" title="服务单详情" :visible.sync="dialogFormView">
+      <el-dialog width="1200px" :destroy-on-close="true" class="dialog-mini" title="服务单详情" :visible.sync="dialogFormView">
         <zxform
         formName="查看"
           :form="temp"
@@ -90,7 +90,7 @@
           <el-button size="mini" type="primary" @click="dialogFormView = false">确认</el-button>
         </div>
       </el-dialog>
-      <el-dialog v-el-drag-dialog :visible.sync="dialogTable" center width="800px">
+      <el-dialog v-el-drag-dialog :destroy-on-close="true" :visible.sync="dialogTable" center width="800px">
         <DynamicTable
           :formThead.sync="formTheadOptions"
           :defaultForm.sync="defaultFormThead"
@@ -101,7 +101,7 @@
           <el-button type="primary" @click="dialogTable = false">确 定</el-button>
         </span>
       </el-dialog>
-      <el-dialog v-el-drag-dialog :visible.sync="dialogTree" center width="300px">
+      <el-dialog v-el-drag-dialog :destroy-on-close="true" :visible.sync="dialogTree" center width="300px">
         <treeList @close="dialogTree=false"></treeList>
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialogTree = false">取 消</el-button>

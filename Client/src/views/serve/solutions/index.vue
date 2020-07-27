@@ -72,6 +72,7 @@
         v-el-drag-dialog
         class="dialog-mini"
         width="500px"
+        :destroy-on-close="true"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
@@ -124,7 +125,7 @@
           <el-button size="mini" v-else type="primary" @click="updateData">确认</el-button>
         </div>
       </el-dialog>
-      <el-dialog v-el-drag-dialog :visible.sync="dialogTable" center width="800px">
+      <el-dialog v-el-drag-dialog :destroy-on-close="true" :visible.sync="dialogTable" center width="800px">
         <DynamicTable
           :formThead.sync="formTheadOptions"
           :defaultForm.sync="defaultFormThead"

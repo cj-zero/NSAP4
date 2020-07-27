@@ -11,6 +11,7 @@
             class="rowStyle"
             :disabled="!isEdit"
             :label-width="labelwidth"
+            
           >
             <div
               style="font-size:22px;text-align:center;padding-bottom:10px ; margin-bottom:10px ;border-bottom:1px solid silver;"
@@ -65,7 +66,7 @@
               </el-col>
               <el-col :span="8">
                 <el-form-item label="联系人" prop="contacter">
-                  <el-select size="mini" v-model="form.contacter" placeholder="请选择">
+                  <el-select size="mini" @change="choosePeople" v-model="form.contacter" placeholder="请选择">
                     <el-option
                       v-for="(item,index) in cntctPrsnList"
                       :key="`inx${index}`"
@@ -118,12 +119,12 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="8">
-                <el-form-item label="创建时间" prop="createTime">
+              <el-col :span="8" >
+                <el-form-item  label="创建时间" label-width="95px" prop="createTime">
                   <el-date-picker
                     size="mini"
                     v-model="form.createTime"
-                    style="width: 100%;"
+                    style="width:155px;"
                     type="datetime"
                     value-format="yyyy-MM-dd hh-mm-ss"
                     placeholder="选择日期时间"
@@ -131,7 +132,7 @@
                 </el-form-item>
               </el-col>
               <el-col :span="8">
-                <el-form-item label>
+                <el-form-item label label-width="70px">
                   <el-radio-group v-model="form.name" disabled>
                     <el-radio style="color:red;">售后审核:{{form.supervisor}}</el-radio>
                     <el-radio style="color:red;">销售审核:{{form.salesMan}}</el-radio>
@@ -268,7 +269,7 @@
           </el-collapse>
         </el-col>-->
       </el-row>
-      <el-dialog title="选择地址" width="1000px" :visible.sync="drawerMap" direction="ttb">
+      <el-dialog title="选择地址" width="1000px" :destroy-on-close="true" :visible.sync="drawerMap" direction="ttb">
         <zmap @drag="dragmap"></zmap>
         <el-row :gutter="12" slot="footer" class="dialog-footer" style="height:30px;">
           <el-col :span="20">当前选择:{{allAddress.address?allAddress.address:'暂未选择地点'}}</el-col>
@@ -282,6 +283,7 @@
         class="addClass1"
         width="90%"
         @open="openDialog"
+        :destroy-on-close="true"
         :visible.sync="dialogPartner"
       >
         <el-form :inline="true" class="demo-form-inline">
@@ -407,7 +409,7 @@ export default {
         newestContactTel: "", //最新联系人电话号码,
         terminalCustomer: "", //终端客户,recepUserName
         contractId: "", //服务合同
-        recepUserName: "System", //接单员
+        recepUserName: "", //接单员
         addressDesignator: "", //地址标识
         recepUserId: "", //接单人用户ID
         address: "", //详细地址
@@ -614,6 +616,11 @@ export default {
       let res = this.addressList.filter(item => item.address == val);
       this.form.address = res[0].building;
     },
+    choosePeople(val){
+      
+         let res = this.cntctPrsnList.filter(item => item.name == val);
+     this.form.contactTel = res[0].tel1;
+    },
     changeForm(val) {
       this.form.serviceWorkOrders = val;
       console.log(this.form);
@@ -721,7 +728,6 @@ export default {
     },
     sureVal(){
       this.dialogPartner = false
-      console.log(this.checkVal)
       let val = this.checkVal
             this.form.customerId = val.cardCode;
       this.form.customerName = val.cardName;
@@ -767,8 +773,13 @@ export default {
   .lastWord {
     position: sticky;
     top: 0;
+   
     // width: 200px;
   }
+   ::v-deep .el-input__inner{
+      padding-right:5px;
+      // padding-left:25px;
+    }
 }
 .addClass1 {
   ::v-deep .el-dialog__header {

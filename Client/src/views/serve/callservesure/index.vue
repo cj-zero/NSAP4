@@ -1,5 +1,5 @@
 <template>
-  <div style="position:relative;" class="mainPage">
+  <div style="position:relative;" >
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <el-input
@@ -131,19 +131,19 @@
       <!--   v-el-drag-dialog
       width="1000px"  新建呼叫服务单-->
       <el-dialog
-        width="70%"
+        width="1400px"
         class="dialog-mini"
         @open="openCustoner"
         @close="closeCustoner"
-        destroy-on-close
+        :destroy-on-close="true"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
         <el-row :gutter="20" type="flex" class="row-bg" justify="space-around">
-          <el-col :span="12">
+          <el-col :span="11">
             <customerupload style="position:sticky;top:0;" :form="formValue"></customerupload>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="13">
             <zxform
               :form="temp"
               formName="确认"
@@ -171,10 +171,10 @@
       </el-dialog>
       <!-- 只能查看的表单 -->
       <el-dialog
-        width="900px"
+        width="800px"
         class="dialog-mini"
         title="服务单详情"
-        destroy-on-close
+        :destroy-on-close="true"
         @open="openDetail"
         :visible.sync="dialogFormView"
       >
@@ -193,7 +193,7 @@
         </div>
       </el-dialog>
 
-      <el-dialog v-el-drag-dialog :visible.sync="dialogTree" center width="300px">
+      <el-dialog v-el-drag-dialog :visible.sync="dialogTree" :destroy-on-close="true" center width="300px">
         <treeList @close="dialogTree=false"></treeList>
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialogTree = false">取 消</el-button>
@@ -634,24 +634,24 @@ export default {
     display: none;
   }
 }
-.mainPage {
-  ::v-deep .el-dialog__wrapper {
-    position: absolute;
-       .el-dialog__header {
-        .el-dialog__title {
-          color: white;
-        }
-        .el-dialog__close {
-          color: white;
-        }
-        background: lightslategrey;
-      }
-     .el-dialog__body {
-    padding: 10px 20px;
-  }
-  }
+// .mainPage {
+//   ::v-deep .el-dialog__wrapper {
+//     position: absolute;
+//        .el-dialog__header {
+//         .el-dialog__title {
+//           color: white;
+//         }
+//         .el-dialog__close {
+//           color: white;
+//         }
+//         background: lightslategrey;
+//       }
+//      .el-dialog__body {
+//     padding: 10px 20px;
+//   }
+//   }
 
-}
+// }
 
 
 </style>

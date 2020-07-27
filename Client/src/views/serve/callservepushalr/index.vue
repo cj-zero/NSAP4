@@ -76,6 +76,7 @@
       <el-dialog
         fullscreen
         class="dialog-mini"
+        :destroy-on-close="true"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
@@ -101,9 +102,10 @@
         </div>
       </el-dialog>
       <!-- 只能查看的表单 -->
-      <el-dialog width="1200px" class="dialog-mini" title="服务单详情" :visible.sync="dialogFormView">
+      <el-dialog width="1200px" class="dialog-mini" :destroy-on-close="true" title="服务单详情" :visible.sync="dialogFormView">
         <zxform
           :form="temp"
+          
           formName="查看"
           labelposition="right"
           labelwidth="100px"
@@ -116,7 +118,7 @@
           <el-button size="mini" type="primary" @click="dialogFormView = false">确认</el-button>
         </div>
       </el-dialog>
-      <el-dialog v-el-drag-dialog :visible.sync="dialogTable" center width="800px">
+      <el-dialog v-el-drag-dialog :visible.sync="dialogTable" :destroy-on-close="true" center width="800px">
         <DynamicTable
           :formThead.sync="formTheadOptions"
           :defaultForm.sync="defaultFormThead"
@@ -127,7 +129,7 @@
           <el-button type="primary" @click="dialogTable = false">确 定</el-button>
         </span>
       </el-dialog>
-      <el-dialog v-el-drag-dialog :visible.sync="dialogTree" center width="300px">
+      <el-dialog v-el-drag-dialog :visible.sync="dialogTree" :destroy-on-close="true" center width="300px">
         <treeList @close="dialogTree=false"></treeList>
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialogTree = false">取 消</el-button>

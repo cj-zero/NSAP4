@@ -1,5 +1,5 @@
 <template>
-  <div style="position:relative;">
+  <div >
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <el-input
@@ -122,6 +122,7 @@
         class="dialog-mini"
         @close="closeCustoner"
         :close-on-click-modal="false"
+        :destroy-on-close="true"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
@@ -145,9 +146,8 @@
         width="800px"
         class="dialog-mini"
         @close="closeCustoner"
-                :close-on-click-modal="false"
-
-        destroy-on-close
+        :close-on-click-modal="false"
+        :destroy-on-close="true"
         :title="textMap[dialogStatus]"
         :visible.sync="FormUpdate"
       >
@@ -212,7 +212,6 @@ import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
 import Pagination from "@/components/Pagination";
 // import treeTable from "@/components/TreeTable";
-
 import elDragDialog from "@/directive/el-dragDialog";
 // import zxsearch from "./search";
 // import customerupload from "../callservesure/customerupload";
@@ -388,6 +387,11 @@ export default {
         }
         this.total = response.data.count;
         this.list =resul;
+      }).catch(()=>{
+        this.$message({
+          type:'warning',
+          message:`请输入正确的搜索值`
+        })
       })
       }
     },

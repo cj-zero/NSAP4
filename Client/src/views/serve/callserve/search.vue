@@ -79,7 +79,7 @@
       </el-col>
       <el-col :span="4">
         <el-form-item>
-          <el-button size="small" type="primary" @click="onSubmit">搜索</el-button>
+          <el-button size="middle" type="primary" @click="onSubmit"> 搜 索 </el-button>
         </el-form-item>
       </el-col>
     </el-row>
@@ -121,7 +121,7 @@ export default {
     form: {
       deep: true,
       handler(val) {
-        console.log(val);
+        // console.log(val);
         this.$emit("change-Search", val);
       }
     }

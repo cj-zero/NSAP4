@@ -76,6 +76,7 @@
       <el-dialog
         fullscreen
         class="dialog-mini"
+        :destroy-on-close="true"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
