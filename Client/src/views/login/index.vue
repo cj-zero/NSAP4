@@ -1,8 +1,17 @@
 <template>
   <div class="login-container">
     <div class="content">
-      <img class="leftImg" src="~@/assets/login/left.png" alt />
+      <img class="div" src="~@/assets/login/left.png" alt />
+
+        <div class="login-img" v-if="dialogQ">
+    <span class="demonstration">请用新威智能App扫描此二维码</span>
+       <el-image :src="url"></el-image>
+  </div>
+      <div class="login-form-div" style="width:50px;height:50px;background-color:silver;" @click="dialogQ=!dialogQ">
+
+        </div>
       <el-form
+      v-if="!dialogQ"
         class="login-form"
         autocomplete="on"
         :model="loginForm"
@@ -10,6 +19,7 @@
         ref="loginForm"
         label-position="left"
       >
+    
         <h3 class="title">nSAP-V4.0</h3>
         <p class="tips">nSAP-V4.0 管理系统</p>
         <el-form-item prop="username">
@@ -65,13 +75,9 @@
         </el-form-item>
       </el-form>
     </div>
-    <el-dialog title="请用新威智能App扫描此二维码" :visible.sync="dialogQ" width="400px"> 
+    <!-- <el-dialog title="请用新威智能App扫描此二维码" :visible.sync="dialogQ" width="400px"> 
        <el-image :src="url"></el-image>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="dialogQ = false">取 消</el-button>
-        <el-button type="primary" @click="dialogQ = false">确 定</el-button>
-      </span>
-    </el-dialog>
+    </el-dialog> -->
   </div>
 </template>
 
@@ -303,6 +309,7 @@ $dark_gray: #d1dfe8;
   .content {
     display: inline-block;
     vertical-align: middle;
+     position: relative;
     > img {
       width: 568px;
       margin-right: 150px;
@@ -313,6 +320,17 @@ $dark_gray: #d1dfe8;
       width: 400px;
       vertical-align: middle;
     }
+    .login-img{
+      display: inline-block;
+      width: 400px;
+      vertical-align: middle;
+    }
+       
+      .login-form-div{
+        position: absolute;
+        right:0;
+        top:0;
+      }
   }
 
   .svg-container {
