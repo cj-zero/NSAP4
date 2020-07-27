@@ -177,8 +177,8 @@ export default {
       timer();
     },
     goPage() {
-      this.randomNum = Math.random() * 10 + "&";
-      this.url = `${this.baseURL}/QrCode/Get?rd=${this.randomNum}&`;
+      this.randomNum = Math.random() * 10;
+      this.url = `${this.baseURL}/QrCode/Get?rd=${this.randomNum}`;
       let op = window.open(
         this.url,
         "newwindow",
