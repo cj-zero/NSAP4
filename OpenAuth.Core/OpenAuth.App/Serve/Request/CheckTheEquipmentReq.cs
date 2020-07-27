@@ -7,6 +7,7 @@ namespace OpenAuth.App.Request
 {
     public class CheckTheEquipmentReq
     {
+        public int IsTrue { get; set; }
 
         [Required]
         public int WorkOrderId { get; set; }

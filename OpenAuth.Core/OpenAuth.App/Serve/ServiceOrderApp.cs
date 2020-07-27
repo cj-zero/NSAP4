@@ -310,7 +310,7 @@ namespace OpenAuth.App
             await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"修改服务工单单状态为:{statusStr}", ActionType = "修改服务工单状态", ServiceWorkOrderId = id });
         }
         /// <summary>
-        /// 查询超24小时为处理的订单
+        /// 查询超24小时未处理的订单
         /// </summary>
         /// <returns></returns>
         public async Task<List<ServiceOrder>> FindTimeoutOrder()
@@ -914,13 +914,17 @@ namespace OpenAuth.App
         }
 
         /// <summary>
-        /// 技术员核对设备
+        /// 技术员核对设备(正确/错误)
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
         public async Task CheckTheEquipment(CheckTheEquipmentReq req)
         {
-
+            int status = 4;
+            if (req.IsTrue == 0)
+            {
+                status = 3;
+            }
             var order = await UnitWork.FindSingleAsync<ServiceWorkOrder>(s => s.Id.Equals(req.WorkOrderId));
             if (order != null)
             {
@@ -928,10 +932,13 @@ namespace OpenAuth.App
                 {
                     await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id.Equals(req.WorkOrderId), o => new ServiceWorkOrder
                     {
-                        Status = 4
+                        Status = status
                     });
                     await UnitWork.SaveAsync();
-                    await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{req.CurrentUserId}核对工单{req.WorkOrderId}设备", ActionType = "核对设备", ServiceWorkOrderId = req.WorkOrderId });
+                    if (req.IsTrue == 1)
+                    {
+                        await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{req.CurrentUserId}核对工单{req.WorkOrderId}设备", ActionType = "核对设备", ServiceWorkOrderId = req.WorkOrderId });
+                    }
                 }
                 else
                 {
@@ -1192,6 +1199,32 @@ namespace OpenAuth.App
                     });
                     break;
             }
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
+        /// 预约上门时间
+        /// </summary>
+        /// <returns></returns>
+        public async Task OrderBookingDate(OrderVisitTimeReq request)
+        {
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id.Equals(request.ServerOrderId), e => new ServiceWorkOrder
+            {
+                BookingDate = request.BookingDate
+            });
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
+        /// 选择接单类型
+        /// </summary>
+        /// <returns></returns>
+        public async Task SaveOrderTakeType(SaveOrderTakeTypeReq request)
+        {
+            await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(request.Id), e => new ServiceOrder
+            {
+                OrderTakeType = request.Type
+            });
             await UnitWork.SaveAsync();
         }
     }

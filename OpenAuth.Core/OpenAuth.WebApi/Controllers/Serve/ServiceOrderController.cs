@@ -667,5 +667,47 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// 预约上门时间
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> OrderBookingDate(OrderVisitTimeReq request)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.OrderBookingDate(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 保存接单类型
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> SaveOrderTakeType(SaveOrderTakeTypeReq request)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.SaveOrderTakeType(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }
