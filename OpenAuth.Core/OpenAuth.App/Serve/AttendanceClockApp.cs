@@ -46,7 +46,12 @@ namespace OpenAuth.App
 
             var result = new TableData();
             var objs = UnitWork.Find<AttendanceClock>(null);
-            objs = objs.WhereIf(!string.IsNullOrEmpty(request.key), u => u.Id.Contains(request.key));
+            objs = objs.WhereIf(!string.IsNullOrEmpty(request.key), u => u.Id.Contains(request.key))
+                .WhereIf(!string.IsNullOrEmpty(request.Name), u => u.Name.Contains(request.Name))
+                .WhereIf(!string.IsNullOrEmpty(request.Org), u => u.OrgId.Equals(request.Org))
+                .WhereIf(!string.IsNullOrEmpty(request.VisitTo), u => u.VisitTo.Contains(request.VisitTo))
+                .WhereIf(request.DateFrom != null && request.DateTo != null, u => u.ClockDate >= request.DateFrom && u.ClockDate <= request.DateTo)
+                ;
 
 
             var propertyStr = string.Join(',', properties.Select(u => u.Key));
