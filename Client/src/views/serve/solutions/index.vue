@@ -40,23 +40,23 @@
           :data="list"
           v-loading="listLoading"
           border
-          
           highlight-current-row
           style="width: 100%;"
           @row-click="rowClick"
           @selection-change="handleSelectionChange"
         >
+   
           <el-table-column
             show-overflow-tooltip
-            v-for="fruit in defaultFormThead"
+            v-for="fruit in formTheadOptions"
+            :key="fruit.name"
+            :label="fruit.label"
             :align="fruit.align"
-            :key="fruit"
-            :label="headLabel[fruit]"
           >
             <template slot-scope="scope">
-              <span v-if="fruit === 'status'" :class="[scope.row[fruit]===1?'greenWord':(scope.row[fruit]===2?'orangeWord':'redWord')]">{{stateValue[scope.row[fruit]-1]}}</span>
-              <span v-if="fruit === 'subject'">{{scope.row[fruit]}}</span>
-              <span v-if="!(fruit ==='status'||fruit ==='subject')">{{scope.row[fruit]}}</span>
+              <span v-if="fruit.name === 'status'" :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]">{{stateValue[scope.row[fruit.name]-1]}}</span>
+              <span v-if="fruit.name === 'subject'">{{scope.row[fruit.name]}}</span>
+              <span v-if="!(fruit.name ==='status'||fruit.name ==='subject')">{{scope.row[fruit.name]}}</span>
             </template>
           </el-table-column>
         </el-table>
@@ -168,8 +168,8 @@ export default {
         "updateUserName"
       ],
       formTheadOptions: [
-        { name: "id" ,label:'ID'},
-        { name: "sltCode" ,label:'编号' },
+        // { name: "id" ,label:'ID',align:'right'},
+        { name: "sltCode" ,label:'编号',align:'right' },
         { name: "status" ,label:'状态' },
         { name: "cause"  ,label:'原因'},
         { name: "subject" ,label:'解决方案' },
@@ -178,8 +178,6 @@ export default {
         { name: "updateUserName"  ,label:'更新人名字'},
         { name: "createTime" ,label:'创建时间' }
       ],
-                  // this.dialogTable = true;
-
       headLabel: {
         id: "ID",
         sltCode: "编号",

@@ -20,45 +20,37 @@
         >搜索</el-button>
         <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
-    </sticky> -->
+    </sticky>-->
     <div class="app-container">
       <div class="bg-white">
         <el-form ref="listQuery" :model="listQuery" label-width="80px">
           <div style="padding:10px 0;"></div>
           <el-row :gutter="10">
-            <el-col :span="4">
-              <el-form-item label="服务ID" size="medium">
-                <el-select v-model="listQuery.QryServiceOrderId" placeholder="请选择">
-                  <el-option label="服务一" value="shanghai"></el-option>
-                  <el-option label="服务二" value="beijing"></el-option>
-                </el-select>
+            <el-col :span="3">
+              <el-form-item label="姓名" size="small" >
+                         <el-input v-model="listQuery.QryCustomer"></el-input>
+
               </el-form-item>
             </el-col>
 
-            <el-col :span="4">
-              <el-form-item label="呼叫状态" size="medium">
-                <el-select v-model="listQuery.QryState" placeholder="请选择呼叫状态">
+            <el-col :span="3">
+              <el-form-item label="部门" size="small" >
+                <el-select v-model="listQuery.QryState" placeholder="请选择部门">
                   <el-option label="全部" value></el-option>
-
-                  <el-option label="待确认" value="1"></el-option>
-                  <el-option label="已确认" value="2"></el-option>
-                  <el-option label="已取消" value="3"></el-option>
+                  <el-option label="部门1" value="1"></el-option>
+                  <el-option label="部门2" value="2"></el-option>
+                  <el-option label="部门3" value="3"></el-option>
                 </el-select>
               </el-form-item>
             </el-col>
 
-            <el-col :span="4">
-              <el-form-item label="客户" size="medium">
+            <el-col :span="3">
+              <el-form-item label="拜访对象" size="small" >
                 <el-input v-model="listQuery.QryCustomer"></el-input>
               </el-form-item>
             </el-col>
-            <el-col :span="4">
-              <el-form-item label="序列号" size="medium">
-                <el-input v-model="listQuery.QryManufSN"></el-input>
-              </el-form-item>
-            </el-col>
-            <el-col :span="8">
-              <el-form-item label="创建日期" size="medium">
+            <el-col :span="6">
+              <el-form-item label="打卡日期" size="small" >
                 <el-col :span="11">
                   <el-date-picker
                     type="date"
@@ -82,7 +74,7 @@
         </el-form>
         <el-table
           ref="mainTable"
-          :data="list"
+          :data="checkList"
           v-loading="listLoading"
           border
           fit
@@ -98,24 +90,28 @@
           <el-table-column
             show-overflow-tooltip
             v-for="(fruit,index) in formTheadOptions"
-            align="center"
+            :align="fruit.align?fruit.align:'left'"
             :key="`ind${index}`"
             :sortable="fruit=='chaungjianriqi'?true:false"
             style="background-color:silver;"
             :label="fruit.label"
           >
             <template slot-scope="scope">
-              <span
+              <!-- <span
                 v-if="fruit.name === 'status'"
                 :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-              >{{stateValue[scope.row[fruit.name]-1]}}</span>
-              <span v-if="fruit.name === 'subject'">{{scope.row[fruit.name]}}</span>
+              >{{stateValue[scope.row[fruit.name]-1]}}</span> -->
+              <span v-if="fruit.name === 'attendanceClockPictures'">
+                <showImg :PicturesList="scope.row[fruit.name]" 
+                ></showImg>
+                </span> 
               <span
-                v-if="!(fruit.name ==='status'||fruit.name ==='subject'||fruit.name ==='id')"
+                v-if="fruit.name !== 'attendanceClockPictures'"
               >{{scope.row[fruit.name]}}</span>
             </template>
           </el-table-column>
         </el-table>
+
         <pagination
           v-show="total>0"
           :total="total"
@@ -132,13 +128,14 @@
 import * as callservecheck from "@/api/serve/callservecheck";
 import waves from "@/directive/waves"; // 水波纹指令
 // import Sticky from "@/components/Sticky";
-// import permissionBtn from "@/components/PermissionBtn";
+ import showImg from "@/components/showImg";
 import Pagination from "@/components/Pagination";
 import elDragDialog from "@/directive/el-dragDialog";
 export default {
   name: "callservecheck",
   components: {
-    Pagination
+    Pagination,
+    showImg
   },
   directives: {
     waves,
@@ -148,20 +145,18 @@ export default {
     return {
       multipleSelection: [], // 列表checkbox选中的值
       formTheadOptions: [
-        { name: "Id", label: "Id" },
-        { name: "Name", label: "姓名" },
-         { name: "Org", label: "职位" },
-        { name: "Org", label: "部门" },
-        { name: "ClockTime", label: "打卡时间" },
-        { name: "Location", label: "地点" },
-        { name: "SpecificLocation", label: "详细地址" },
-        { name: "VisitTo", label: "拜访对象" },
-        { name: "Remark", label: "备注" },
-        { name: "AttendanceClockPictures", label: "图片" },
+        // { name: "id", label: "Id"},
+        { name: "name", label: "姓名" },
+        { name: "org", label: "职位" },
+        { name: "org", label: "部门" },
+        { name: "clockTime", label: "打卡时间" },
+        { name: "location", label: "地点" },
+        { name: "specificLocation", label: "详细地址" },
+        { name: "visitTo", label: "拜访对象" },
+        { name: "remark", label: "备注" },
+        { name: "attendanceClockPictures", label: "图片" }
       ],
-      tableKey: 0,
-      formValue: {},
-      list: null,
+      checkList:[],
       total: 0,
       listLoading: true,
       showDescription: false,
@@ -202,8 +197,6 @@ export default {
   },
 
   methods: {
-
-
     changeTable(result) {
       console.log(result);
     },
@@ -214,13 +207,14 @@ export default {
     handleSelectionChange(val) {
       this.multipleSelection = val;
     },
-  
+
     getList() {
       this.listLoading = true;
 
-      callservecheck.getList(this.listQuery).then(response => {
-          console.log(response)
-        // this.total = response.data.count;
+      callservecheck.getList(this.listQuery).then(res => {
+        this.checkList = res.data
+        console.log(res)
+          this.total = res.count;
         // this.list = response.data.data;
         this.listLoading = false;
       });
@@ -238,24 +232,21 @@ export default {
       this.listQuery.page = val.page;
       this.listQuery.limit = val.limit;
       this.getList();
-    },
-
-
+    }
   }
-
-}
+};
 </script>
 <style>
-    .dialog-mini .el-select {
-    width: 100%;
-    }
-    .greenWord {
-    color: green;
-    }
-    .orangeWord {
-    color: orange;
-    }
-    .redWord {
-    color: orangered;
-    }
+.dialog-mini .el-select {
+  width: 100%;
+}
+.greenWord {
+  color: green;
+}
+.orangeWord {
+  color: orange;
+}
+.redWord {
+  color: orangered;
+}
 </style>

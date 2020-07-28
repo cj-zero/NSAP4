@@ -51,6 +51,12 @@ namespace OpenAuth.Repository.Domain
         [Browsable(false)]
         public string UserId { get; set; }
         /// <summary>
+        /// 打卡人App用户Id
+        /// </summary>
+        [Description("打卡人App用户Id")]
+        [Browsable(false)]
+        public int AppUserId { get; set; }
+        /// <summary>
         /// 部门
         /// </summary>
         [Description("部门")]

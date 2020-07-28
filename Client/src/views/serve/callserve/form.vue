@@ -123,6 +123,7 @@
               <el-col :span="8" >
                 <el-form-item  label="创建时间" label-width="95px" prop="createTime">
                   <el-date-picker
+                  :clearable="false"
                     size="mini"
                     v-model="form.createTime"
                     style="width:150px;"
@@ -353,7 +354,7 @@ export default {
     "customer",
     "sure"
   ],
-  //  ##isEdit是否可以编辑  ##customer获取服务端的信息
+  //  ##isEdit是否可以编辑  ##customer获取服务端对比的信息
   data() {
     return {
       baseURL: process.env.VUE_APP_BASE_API,
@@ -483,8 +484,13 @@ export default {
       handler(val) {
         if (val) {
           Object.assign(this.form, val);
-          console.log(val)
-          this.propForm = val.serviceWorkOrders;
+         if(val.serviceWorkOrders.length>0){
+           val.serviceWorkOrders.map((item,index)=>{
+this.form.serviceWorkOrders[index].solutionsubject = item.solution&&item.solution.subject
+this.form.serviceWorkOrders[index].problemTypeName = item.problemType&&item.problemType.name
+           })
+         }
+          this.propForm = this.form.serviceWorkOrders;
         }
         // this.propForm = this.refValue.serviceWorkOrders
       },
@@ -625,7 +631,6 @@ export default {
     },
     changeForm(val) {
       this.form.serviceWorkOrders = val;
-      console.log(this.form);
     },
     postService() {
       //更新服务单

@@ -35,9 +35,13 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string Name { get; set; }
         /// <summary>
-        /// 
+        /// NSAP用户Id
         /// </summary>
         public string UserId { get; set; }
+        /// <summary>
+        /// 打卡人App用户Id
+        /// </summary>
+        public int AppUserId { get; set; }
         /// <summary>
         /// 
         /// </summary>

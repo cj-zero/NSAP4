@@ -166,7 +166,7 @@ export default {
       }
     },
     checkStatus() {
-      const timer = setInterval(() => {
+      let timer = setInterval(() => {
         login
           .ValidateLogin({ rd: this.randomNum })
           .then(res => {
@@ -189,7 +189,7 @@ export default {
       this.$once("hook:beforeDestroy", () => {
         clearInterval(timer);
       });
-      timer();
+      // timer();
     },
     openQCCode() {
       this.dialogQ = !this.dialogQ;
@@ -335,8 +335,8 @@ $dark_gray: #d1dfe8;
       line-height: 80px;
       top: 50px;
       color: #4452d5;
-      z-index: 20;
-      background: #ebebea;
+      // z-index: 20;
+      // background: #ebebea;
            animation: mymove 3s infinite;
     }
           @keyframes mymove {
@@ -350,8 +350,8 @@ $dark_gray: #d1dfe8;
       top: 50px;
 
       .div1 {
-        width: 80px;
-        height: 80px;
+        width: 60px;
+        height: 60px;
         background: url("~@/assets/login/qc.png") center;
         background-size: cover;
 //         @keyframes mymove {
@@ -361,8 +361,8 @@ $dark_gray: #d1dfe8;
 // }
       }
             .div2 {
-        width: 80px;
-        height: 80px;
+        width: 60px;
+        height: 60px;
         background: url("~@/assets/login/computer.png") center;
         background-size: cover;
   

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
 using Infrastructure.Extensions;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
@@ -94,7 +95,20 @@ namespace OpenAuth.App
         {
             var obj = req.MapTo<AttendanceClock>();
             //todo:补充或调整自己需要的字段
-            var user = _auth.GetCurrentUser().User;
+            var u = await UnitWork.FindSingleAsync<AppUserMap>(a => a.AppUserId == req.AppUserId);
+            if (u is null)
+            {
+                throw new CommonException("当前APP用户未绑定NSAP用户", 80001);
+            }
+            var user = await UnitWork.FindSingleAsync<User>(s => s.Id.Equals(u.UserID));
+            obj.UserId = user.Id;
+            obj.Name = user.Name;
+
+            var orgId = _revelanceApp.Get(Define.USERORG, true, obj.UserId).FirstOrDefault();
+            obj.OrgId = orgId;
+
+            var org = await UnitWork.FindSingleAsync<OpenAuth.Repository.Domain.Org>(o => o.Id.Equals(orgId));
+            obj.Org = org.Name;
             var o = await Repository.AddAsync(obj);
             var pistures = req.Pictures.MapToList<AttendanceClockPicture>();
             pistures.ForEach(p => p.AttendanceClockId = o.Id);
@@ -102,7 +116,7 @@ namespace OpenAuth.App
             await UnitWork.SaveAsync();
         }
 
-         public void Update(AddOrUpdateAttendanceClockReq obj)
+        public void Update(AddOrUpdateAttendanceClockReq obj)
         {
             var user = _auth.GetCurrentUser().User;
             UnitWork.Update<AttendanceClock>(u => u.Id == obj.Id, u => new AttendanceClock
@@ -125,6 +139,26 @@ namespace OpenAuth.App
             });
             UnitWork.Save();
         }
-            
+
+        /// <summary>
+        /// App技术员查询打卡记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> AppGetClockHistory(AppGetClockHistoryReq req)
+        {
+            var result = new TableData();
+            var query = UnitWork.Find<AttendanceClock>(c => c.AppUserId == req.AppUserId).Include(c => c.AttendanceClockPictures).OrderByDescending(c => c.ClockDate).ThenByDescending(c => c.ClockTime);
+
+
+            var count = await query.CountAsync();
+            var data = await query.Skip((req.page - 1) * req.limit).Take(req.limit)
+                .ToListAsync();
+
+            result.Count = count;
+            result.Data = data;
+            return result;
+        }
+
     }
 }

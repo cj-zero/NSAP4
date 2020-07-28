@@ -120,6 +120,7 @@ export default {
   watch: {
     listQuery: {
       deep: true,
+      immediate:true,
       handler(val) {
         this.$emit("change-Search", val);
       }

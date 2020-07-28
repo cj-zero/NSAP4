@@ -100,26 +100,21 @@
       <!--   v-el-drag-dialog
       width="1000px"  新建呼叫服务单-->
       <el-dialog
-        fullscreen
+        width="800px"
         class="dialog-mini"
         :destroy-on-close="true"
         :close-on-click-modal="false"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
-        <el-row :gutter="20" type="flex" class="row-bg" justify="space-around">
-          <el-col :span="12"></el-col>
-          <el-col :span="12">
             <zxform
               :form="temp"
-              formName="新建"
+              formName="编辑"
               labelposition="right"
               labelwidth="100px"
               :isEdit="true"
               refValue="dataForm"
             ></zxform>
-          </el-col>
-        </el-row>
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
           <el-button size="mini" v-if="dialogStatus=='create'" type="primary" @click="createData">确认</el-button>
@@ -241,7 +236,7 @@ export default {
         { name: "priority", label: "优先级" },
         { name: "fromType", label: "呼叫类型", width: "100px" },
         { name: "status", label: "呼叫状态" },
-        { name: "status", label: "费用审核" },
+        { name: "", label: "费用审核" },
         { name: "customerId", label: "客户代码" },
         { name: "terminalCustomer", label: "终端客户" },
         { name: "customerName", label: "客户名称" },
@@ -511,14 +506,18 @@ export default {
           this.dialogTable = true;
           break;
         case "btnEdit":
-          if (!this.multipleSelection) {
-            this.$message({
-              message: "请点击需要编辑的数据",
+             this.$message({
+              message: "抱歉，暂不提供编辑功能",
               type: "error"
             });
-            return;
-          }
-          this.handleUpdate(this.multipleSelection[0]);
+          // if (this.multipleSelection.length<1) {
+          //   this.$message({
+          //     message: "请点击需要编辑的数据",
+          //     type: "error"
+          //   });
+          //   return;
+          // }
+          // this.handleUpdate(this.multipleSelection.serviceOrderId);
           break;
         case "btnDel":
           if (!this.multipleSelection) {
