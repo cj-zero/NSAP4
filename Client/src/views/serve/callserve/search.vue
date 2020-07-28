@@ -79,7 +79,9 @@
       </el-col>
       <el-col :span="4">
         <el-form-item>
-          <el-button size="middle" type="primary" @click="onSubmit"> 搜 索 </el-button>
+          <!-- <el-button size="middle" type="primary" @click="onSubmit"> 搜 索 </el-button> -->
+                              <el-button type="primary" @click="onSubmit" size="small" icon="el-icon-search"> 搜 索 </el-button>
+
         </el-form-item>
       </el-col>
     </el-row>

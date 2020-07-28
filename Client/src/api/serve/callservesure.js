@@ -70,7 +70,13 @@ export function getForm(data) {
       data
     })
   }
-  
+  export function delWorkOrder(params) {    
+    return request({ //删除一个工单
+      url: '/serve/ServiceOrder/DeleteWorkOrder',
+      method: 'delete',
+      params
+    })
+  }
   export function forServe(data) {      
     return request({ //查看客户代码详细信息
       url: `/Sap/BusinessPartner/GetCardInfoForServe?cardCode=${data}`,

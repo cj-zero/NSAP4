@@ -3,6 +3,8 @@
     <el-table
     :data="SerialNumberList"
     border
+    max-height="500"
+
     :loading="serLoading"
     ref="singleTable"
    highlight-current-row

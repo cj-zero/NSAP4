@@ -1,7 +1,7 @@
 <template>
   <el-menu class="navbar" mode="horizontal">
 		<div class="logo">
-			<img class="user-avatar" :src="logo">nSAP-V4.0
+			<img class="user-avatar" :src="logo">
 		</div>
     <hamburger class="hamburger-container" :toggleClick="toggleSideBar" :isActive="sidebar.opened"></hamburger>
     <!-- <breadcrumb></breadcrumb> -->
@@ -108,8 +108,11 @@ export default {
         float: left;
         color: white;
         .user-avatar {
-            width: 30px;
+            width: 96%;
+            margin:0 2%;
             height: 30px;
+            border:1px solid white;
+            border-radius:3px;
             vertical-align: middle;
             margin-right: 5px;
         }

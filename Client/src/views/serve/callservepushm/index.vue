@@ -24,13 +24,14 @@
     <div class="app-container flex-item bg-white">
       <zxsearch @change-Search="changeSearch" @change-Order="changeOrder"></zxsearch>
       <el-row class="fh">
-        <el-col :span="4" class="fh ls-border">
-          <el-card shadow="never" class="card-body-none fh" style="overflow-y: auto">
+        <el-col :span="4" class="fh ls-border" >
+          <el-card shadow="never" class="card-body-none fh" style="" >
             <el-link
               style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;"
               @click="getAllRight"
             >全部服务单>></el-link>
             <el-tree
+              style="max-height:600px;overflow-y: auto;"
               :data="modulesTree"
               default-expand-all
               show-checkbox
@@ -52,6 +53,7 @@
               v-loading="listLoading"
               border
               fit
+              height="615px"
               tooltip-effect="dark"
               style="width: 100%;"
               highlight-current-row
@@ -244,7 +246,7 @@ export default {
         { name: "createTime", label: "创建日期" },
         { name: "recepUserName", label: "接单员" },
         { name: "techName", label: "技术员" },
-        { name: "manufacturerSerialNumber", label: "制造商序列号" },
+        { name: "manufacturerSerialNumber", label: "制造商序列号", width: "120px"  },
         { name: "materialCode", label: "物料编码" },
         { name: "materialDescription", label: "物料描述" },
         { name: "contacter", label: "联系人" },
@@ -294,7 +296,7 @@ export default {
         appId: undefined,
         Name: "", //	Description
         QryServiceOrderId: "", //- 查询服务ID查询条件
-        QryState: "", //- 呼叫状态查询条件
+        QryState: 1, //- 呼叫状态查询条件
         QryCustomer: "", //- 客户查询条件
         QryManufSN: "", // - 制造商序列号查询条件
         QryCreateTimeFrom: "", //- 创建日期从查询条件
@@ -389,13 +391,11 @@ export default {
     }
   },
   created() {
-    this.getLeftList();
-    this.getRightList();
+ 
   },
   mounted() {
-    //  this.list = callserve;
-    //   this.total = count;
-    //   console.log(callserve)
+    this.getLeftList();
+    this.getRightList();
   },
   methods: {
     changeOrder() {
@@ -441,6 +441,8 @@ export default {
                 type: "success",
                 message: "派单成功"
               });
+              this.getLeftList();
+              this.getRightList();
               this.dialogOrder = false;
               this.listLoading = false;
             }
@@ -576,7 +578,7 @@ export default {
     getLeftList() {
       this.listLoading = true;
       let arr = [];
-      callservepushm.getLeftList().then(res => {
+      callservepushm.getLeftList({QryState:this.listQuery.QryState}).then(res => {
         let resul = res.data.data;
         for (let i = 0; i < resul.length; i++) {
           arr[i] = [];

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <sticky :className="'sub-navbar'">
+    <!-- <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <el-input
           @keyup.enter.native="handleFilter"
@@ -19,47 +19,81 @@
           icon="el-icon-search"
           @click="handleFilter"
         >搜索</el-button>
-
-        <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
+         <permission-btn moduleName="servenumber" size="mini" v-on:btn-event="onBtnClicked"></permission-btn> 
       </div>
-    </sticky>
+    </sticky>-->
     <div class="app-container">
       <div class="bg-white">
-        <zxsearch></zxsearch>
-        <el-table
+        <el-form ref="form" :model="listQuery" label-width="80px">
+          <div style="padding:10px 0;"></div>
+          <el-row :gutter="10">
+            <el-col :span="4">
+              <el-form-item label="序列号" size="medium">
+                <el-input v-model="listQuery.ManufSN"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="4">
+              <el-form-item label="客户" size="medium">
+                <el-input v-model="listQuery.CardName"></el-input>
+              </el-form-item>
+            </el-col>
+            <!-- <el-col :span="4">
+              <el-form-item label="呼叫状态" size="medium">
+                <el-select v-model="listQuery.region" placeholder="请选择呼叫状态">
+                  <el-option label="待确认" value="1"></el-option>
+                  <el-option label="已确认" value="2"></el-option>
+                  <el-option label="已取消" value="3"></el-option>
+                </el-select>
+              </el-form-item>
+            </el-col>-->
+
+            <el-col :span="4">
+              <el-form-item label="物料编码" size="medium">
+                <el-input v-model="listQuery.ItemCode"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="4">
+              <el-button type="primary" size="medium" @click="getList">搜索</el-button>
+            </el-col>
+          </el-row>
+        </el-form>
+<el-table
           ref="mainTable"
+          class="table_label"
           :key="key"
           :data="list"
           v-loading="listLoading"
           border
+                      max-height="700px"
+
           fit
           style="width: 100%;"
           highlight-current-row
-    @current-change="handleSelectionChange"
-          @row-click="rowClick"
         >
-          <el-table-column fixed align="center" label="服务ID" width="100">
-            <template slot-scope="scope">
-              <el-link type="primary" @click="openTree">{{scope.row.serveid}}</el-link>
-            </template>
-          </el-table-column>
-
           <el-table-column
             show-overflow-tooltip
-            v-for="fruit in defaultFormThead"
-            align="center"
-            :key="fruit"
+            v-for="(fruit,index) in formTheadOptions"
+            :align="fruit.align"
+            :key="`ind${index}`"
+            header-align="left"
+            :width="fruit.width"
+            :fixed="fruit.fixed"
             :sortable="fruit=='chaungjianriqi'?true:false"
             style="background-color:silver;"
-            :label="headLabel[fruit]"
+            :label="fruit.label"
           >
             <template slot-scope="scope">
+              <!-- <el-link
+                v-if="fruit.name === 'id'"
+                type="primary"
+                @click="openTree(scope.row.id)"
+              >{{scope.row.id}}</el-link>
               <span
-                v-if="fruit === 'status'"
-                :class="[scope.row[fruit]===1?'greenWord':(scope.row[fruit]===2?'orangeWord':'redWord')]"
-              >{{stateValue[scope.row[fruit]-1]}}</span>
-              <span v-if="fruit === 'subject'">{{scope.row[fruit]}}</span>
-              <span v-if="!(fruit ==='status'||fruit ==='subject')">{{scope.row[fruit]}}</span>
+                v-if="fruit.name === 'status'"
+                :class="[scope.row[fruit.name]===1?'orangeWord':(scope.row[fruit.name]===2?'greenWord':'redWord')]"
+              >{{stateValue[scope.row[fruit.name]-1]}}</span> -->
+              <span
+              >{{scope.row[fruit.name]?scope.row[fruit.name]:'暂无数据'}}</span>
             </template>
           </el-table-column>
         </el-table>
@@ -71,119 +105,52 @@
           @pagination="handleCurrentChange"
         />
       </div>
-      <!--   v-el-drag-dialog
-      width="1000px"  新建呼叫服务单-->
-
-      <!-- 只能查看的表单 -->
-      <el-dialog width="1200px" :destroy-on-close="true" class="dialog-mini" title="服务单详情" :visible.sync="dialogFormView">
-        <zxform
-        formName="查看"
-          :form="temp"
-          labelposition="right"
-          labelwidth="100px"
-          :isEdit="false"
-          refValue="dataForm"
-        ></zxform>
-
-        <div slot="footer">
-          <el-button size="mini" @click="dialogFormView = false">取消</el-button>
-          <el-button size="mini" type="primary" @click="dialogFormView = false">确认</el-button>
-        </div>
-      </el-dialog>
-      <el-dialog v-el-drag-dialog :destroy-on-close="true" :visible.sync="dialogTable" center width="800px">
-        <DynamicTable
-          :formThead.sync="formTheadOptions"
-          :defaultForm.sync="defaultFormThead"
-          @close="dialogTable=false"
-        ></DynamicTable>
-        <span slot="footer" class="dialog-footer">
-          <el-button @click="dialogTable = false">取 消</el-button>
-          <el-button type="primary" @click="dialogTable = false">确 定</el-button>
-        </span>
-      </el-dialog>
-      <el-dialog v-el-drag-dialog :destroy-on-close="true" :visible.sync="dialogTree" center width="300px">
-        <treeList @close="dialogTree=false"></treeList>
-        <span slot="footer" class="dialog-footer">
-          <el-button @click="dialogTree = false">取 消</el-button>
-          <el-button type="primary" @click="dialogTree = false">确 定</el-button>
-        </span>
-      </el-dialog>
     </div>
   </div>
 </template>
 
 <script>
-import * as solutions from "@/api/solutions";
+import * as callservesure from "@/api/serve/callservesure.js";
+
 import waves from "@/directive/waves"; // 水波纹指令
-import Sticky from "@/components/Sticky";
-import permissionBtn from "@/components/PermissionBtn";
+// import Sticky from "@/components/Sticky";
+// import permissionBtn from "@/components/PermissionBtn";
 import Pagination from "@/components/Pagination";
-import DynamicTable from "@/components/DynamicTable";
-import elDragDialog from "@/directive/el-dragDialog";
-import zxsearch from "./search";
-import zxform from "../callserve/form";
-import treeList from "../callserve/treeList";
-import { callserve, count } from "@/mock/serve";
 export default {
-  name: "solutions",
+  name: "servenumber",
   components: {
-    Sticky,
-    permissionBtn,
-    Pagination,
-    DynamicTable,
-    zxsearch,
-    zxform,
-    treeList
+    Pagination
   },
   directives: {
-    waves,
-    elDragDialog
+    waves
   },
   data() {
     return {
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
-      defaultFormThead: [
-        "priority",
-        "calltype",
-        "chaungjianriqi",
-        "callstatus",
-        "moneyapproval",
-        "kehidaima",
-        "kehumingcheng"
-      ],
       formTheadOptions: [
-        // { name: "serveid", label: "ID" },
-        { name: "priority", label: "优先级" },
-        { name: "calltype", label: "呼叫类型" },
-        { name: "callstatus", label: "呼叫状态" },
-        { name: "kehidaima", label: "客户代码" },
-        { name: "jiedanyuan", label: "接单员" },
-        { name: "moneyapproval", label: "费用审核" },
-        { name: "kehumingcheng", label: "客户名称" },
-        { name: "zhuti", label: "主题" }
+         { name: "serveid", label: "编号" ,fixed:true},
+        { name: "customer", label: "客户代码" ,align:'left'},
+        { name: "custmrName", label: "客户名称" },
+        { name: "manufSN", label: "制造商序列号",width:'120px' },
+        { name: "internalSN", label: "内部序列号" },
+        { name: "itemCode", label: "物料编码" },
+        { name: "itemName", label: "物料描述" },
+        { name: "", label: "制造日期" },
+        { name: "", label: "交货单号" },
+        { name: "", label: "交货日期" },
+        { name: "", label: "合同号" },
+        { name: "", label: "服务费" },
+        { name: "", label: "销售员" },
+        { name: "", label: "合同开始时间",width:'110px' },
+        { name: "", label: "合同结束时间",width:'110px' },
+        { name: "", label: "创建时间" }
       ],
-      // this.dialogTable = true;
-
-      headLabel: {
-        // serveid: "ID",
-        priority: "优先级",
-        chaungjianriqi:'创建时间',
-        calltype: "呼叫类型",
-        callstatus: "呼叫状态",
-        kehidaima: "客户代码",
-        jiedanyuan: "接单员",
-        moneyapproval: "费用审核",
-        kehumingcheng: "客户名称",
-        zhuti: "主题"
-      },
 
       tableKey: 0,
       list: null,
       total: 0,
       listLoading: true,
-      showDescription: false,
-      dialogFormView: false,
       listQuery: {
         // 查询条件
         page: 1,
@@ -208,7 +175,6 @@ export default {
         extendInfo: "" // 其他信息,防止最后加逗号，可以删除
       },
       dialogFormVisible: false,
-      dialogTable: false,
       dialogTree: false,
       dialogStatus: "",
       textMap: {
@@ -248,44 +214,26 @@ export default {
     }
   },
   watch: {
-    // checkboxVal(valArr) {
-    // this.formThead = this.formTheadOptions.filter(
-    //   i => valArr.indexOf(i) >= 0
-    // );
     defaultFormThead(valArr) {
       this.formTheadOptions = this.formTheadOptions.filter(
         i => valArr.indexOf(i) >= 0
       );
-
-      // }
       this.key = this.key + 1; // 为了保证table 每次都会重渲 In order to ensure the table will be re-rendered each time
     }
   },
   created() {
     this.getList();
   },
-  mounted() {
-    //   console.log(callserve)
-  },
+
   methods: {
-    openTree() {
-      // this.dialogTree = true;  树形图
-      this.dialogFormView = true;
-    },
-    onSubmit() {
-      console.log("submit!");
-    },
-    changeTable(result) {
-      console.log(result);
-    },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.$refs.mainTable.toggleRowSelection(row);
     },
-    handleSelectionChange(val) {
-      this.multipleSelection = val;
-      console.log(val)
-    },
+    // handleSelectionChange(val) {  //多选方法
+    //   this.multipleSelection = val;
+    //   console.log(val);
+    // },
     onBtnClicked: function(domId) {
       switch (domId) {
         case "btnAdd":
@@ -321,21 +269,14 @@ export default {
           break;
       }
     },
-    
+
     getList() {
       this.listLoading = true;
-      //此处接入模拟数据 mock
-    //   let newList = callserve.filter(item=>{
-
-    //   })
-       this.list = callserve;
-      this.total = count;
-      this.listLoading = false;
-      //   solutions.getList(this.listQuery).then(response => {
-      //     this.list = response.data;
-      //     this.total = response.count;
-      //     this.listLoading = false;
-      //   });
+      callservesure.SerialList(this.listQuery).then(response => {
+        this.list = response.data;
+        this.total = response.count;
+        this.listLoading = false;
+      });
     },
     open() {
       this.$confirm("确认已完成回访?", "提示", {
@@ -406,68 +347,68 @@ export default {
     },
     createData() {
       // 保存提交
-      this.$refs["dataForm"].validate(valid => {
-        if (valid) {
-          solutions.add(this.temp).then(() => {
-            this.list.unshift(this.temp);
-            this.dialogFormVisible = false;
-            this.$notify({
-              title: "成功",
-              message: "创建成功",
-              type: "success",
-              duration: 2000
-            });
-          });
-        }
-      });
+      // this.$refs["dataForm"].validate(valid => {
+      //   if (valid) {
+      //     solutions.add(this.temp).then(() => {
+      //       this.list.unshift(this.temp);
+      //       this.dialogFormVisible = false;
+      //       this.$notify({
+      //         title: "成功",
+      //         message: "创建成功",
+      //         type: "success",
+      //         duration: 2000
+      //       });
+      //     });
+      //   }
+      // });
     },
-    handleUpdate(row) {
+    handleUpdate() {
       // 弹出编辑框
-      this.temp = Object.assign({}, row); // copy obj
-      this.dialogStatus = "update";
-      this.dialogFormVisible = true;
-      this.$nextTick(() => {
-        this.$refs["dataForm"].clearValidate();
-      });
+      // this.temp = Object.assign({}, row); // copy obj
+      // this.dialogStatus = "update";
+      // this.dialogFormVisible = true;
+      // this.$nextTick(() => {
+      //   this.$refs["dataForm"].clearValidate();
+      // });
     },
     updateData() {
       // 更新提交
-      this.$refs["dataForm"].validate(valid => {
-        if (valid) {
-          const tempData = Object.assign({}, this.temp);
-          solutions.update(tempData).then(() => {
-            for (const v of this.list) {
-              if (v.id === this.temp.id) {
-                const index = this.list.indexOf(v);
-                this.list.splice(index, 1, this.temp);
-                break;
-              }
-            }
-            this.dialogFormVisible = false;
-            this.$notify({
-              title: "成功",
-              message: "更新成功",
-              type: "success",
-              duration: 2000
-            });
-          });
-        }
-      });
+      // this.$refs["dataForm"].validate(valid => {
+      //   if (valid) {
+      //     const tempData = Object.assign({}, this.temp);
+      //     solutions.update(tempData).then(() => {
+      //       for (const v of this.list) {
+      //         if (v.id === this.temp.id) {
+      //           const index = this.list.indexOf(v);
+      //           this.list.splice(index, 1, this.temp);
+      //           break;
+      //         }
+      //       }
+      //       this.dialogFormVisible = false;
+      //       this.$notify({
+      //         title: "成功",
+      //         message: "更新成功",
+      //         type: "success",
+      //         duration: 2000
+      //       });
+      //     });
+      //   }
+      // });
     },
-    handleDelete(rows) {
+    handleDelete() {
       // 多行删除
-      solutions.del(rows.map(u => u.id)).then(() => {
-        this.$notify({
-          title: "成功",
-          message: "删除成功",
-          type: "success",
-          duration: 2000
-        });
-        rows.forEach(row => {
-          const index = this.list.indexOf(row);
-          this.list.splice(index, 1);
-        });
-      });
+      // solutions.del(rows.map(u => u.id)).then(() => {
+      //   this.$notify({
+      //     title: "成功",
+      //     message: "删除成功",
+      //     type: "success",
+      //     duration: 2000
+      //   });
+      //   rows.forEach(row => {
+      //     const index = this.list.indexOf(row);
+      //     this.list.splice(index, 1);
+      //   });
+      // });
     }
   }
 };

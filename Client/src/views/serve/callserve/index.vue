@@ -33,6 +33,7 @@
               v-loading="listLoading"
               border
               fit
+              max-height="580"
               style="width: 100%;"
               highlight-current-row
               @row-click="rowClick"
@@ -46,6 +47,7 @@
               v-loading="listLoading"
               border
               fit
+              
               style="width: 100%;"
               highlight-current-row
               @row-click="rowClickChild"
