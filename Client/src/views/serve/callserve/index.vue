@@ -135,7 +135,6 @@
           labelwidth="100px"
           :isEdit="true"
           :sure="sure"
-          :customer="customer"
           @close-Dia="closeDia"
         ></zxform>
         <div slot="footer">
@@ -482,7 +481,7 @@ export default {
           if (!this.multipleSelection.serviceOrderId) {
             this.$message({
               message: "请选择需要编辑的数据",
-              type: "error"
+              type: "warning"
             });
             return;
           }
@@ -640,7 +639,6 @@ export default {
       // this.temp = Object.assign({}, row); // copy obj
       callservesure.getForm(row.serviceOrderId).then(response => {
         this.formValue = response.result;
-        console.log(this.formValuesss)
         this.dialogStatus = "update";
         this.FormUpdate = true;
       });

@@ -123,6 +123,7 @@
               <el-col :span="8" >
                 <el-form-item  label="创建时间" label-width="95px" prop="createTime">
                   <el-date-picker
+                  :clearable="false"
                     size="mini"
                     v-model="form.createTime"
                     style="width:150px;"
