@@ -34,6 +34,10 @@ namespace OpenAuth.Repository.Domain
         [Description("NSAP的UserId")]
         public string UserID { get; set; }
         /// <summary>
+        /// NSAP的User
+        /// </summary>
+        public virtual User User { get; set; }
+        /// <summary>
         /// app的UserId
         /// </summary>
         [Description("App的UserId")]

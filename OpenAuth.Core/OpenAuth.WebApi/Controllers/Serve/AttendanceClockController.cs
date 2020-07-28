@@ -60,13 +60,35 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost]
         public async Task<Response> Clock(AddOrUpdateAttendanceClockReq req)
         {
             var result = new Response();
             try
             {
                  await _app.Add(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// App技术员查询打卡记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> AppGetClockHistory([FromQuery]AppGetClockHistoryReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.AppGetClockHistory(req);
             }
             catch (Exception ex)
             {
