@@ -7,10 +7,11 @@ namespace OpenAuth.App.Request
 {
     public class CheckTheEquipmentReq
     {
-        public int IsTrue { get; set; }
+        public int ServiceOrderId { get; set; }
 
-        [Required]
-        public int WorkOrderId { get; set; }
+        public string ErrorWorkOrderIds { get; set; }
+
+        public string CheckWorkOrderIds { get; set; }
 
         [Required]
         public int CurrentUserId { get; set; }

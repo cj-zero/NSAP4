@@ -627,7 +627,7 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        /// 获取待分配工单服务详情
+        /// 获取服务工单详情
         /// </summary>
         /// <returns></returns>
         [HttpGet]
@@ -669,27 +669,6 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        /// 预约上门时间
-        /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public async Task<Response> OrderBookingDate(OrderVisitTimeReq request)
-        {
-            var result = new Response();
-            try
-            {
-                await _serviceOrderApp.OrderBookingDate(request);
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.Message;
-            }
-            return result;
-        }
-
-        /// <summary>
         /// 保存接单类型
         /// </summary>
         /// <param name="request"></param>
@@ -701,6 +680,28 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 await _serviceOrderApp.SaveOrderTakeType(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        /// 获取描述
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetWorkOrderDescription([FromQuery] QueryWorkOrderDescriptionReq req)
+        {
+            var result = new TableData();
+
+            try
+            {
+                result = await _serviceOrderApp.GetWorkOrderDescription(req);
             }
             catch (Exception ex)
             {

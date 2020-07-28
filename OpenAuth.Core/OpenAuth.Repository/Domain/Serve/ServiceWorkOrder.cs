@@ -198,6 +198,7 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("过程描述")]
         public string ProcessDescription { get; set; }
+
         /// <summary>
         /// 技术员留言消息
         /// </summary>

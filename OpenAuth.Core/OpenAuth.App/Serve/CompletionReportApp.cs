@@ -63,7 +63,7 @@ namespace OpenAuth.App
         public async Task Add(AddOrUpdateCompletionReportReq req)
         {
             var obj = req.MapTo<CompletionReport>();
-            
+
             obj.CreateTime = DateTime.Now;
             var user = _auth.GetCurrentUser().User;
             obj.CreateUserId = user.Id;
@@ -75,7 +75,8 @@ namespace OpenAuth.App
             await UnitWork.BatchAddAsync(pictures.ToArray());
         }
 
-         public void Update(AddOrUpdateCompletionReportReq obj)
+
+        public void Update(AddOrUpdateCompletionReportReq obj)
         {
             var user = _auth.GetCurrentUser().User;
             UnitWork.Update<CompletionReport>(u => u.Id == obj.Id, u => new CompletionReport
@@ -118,16 +119,16 @@ namespace OpenAuth.App
         /// <summary>
         /// 填写完工报告单页面需要取到的服务工单信息。
         /// </summary>
-        /// <param name="serviceOrderWorkId">工单ID</param>
+        /// <param name="serviceOrderId">服务单ID</param>
         /// <returns></returns>
-        public async Task<CompletionReportDetailsResp> GetOrderWorkInfoForAdd(int serviceWorkOrderId)
+        public async Task<CompletionReportDetailsResp> GetOrderWorkInfoForAdd(int serviceOrderId)
         {
             var result = new TableData();
             var obj = from a in UnitWork.Find<ServiceWorkOrder>(null)
                       join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
                       from b in ab.DefaultIfEmpty()
                       select new { a, b };
-            obj = obj.Where(o => o.a.Id.Equals(serviceWorkOrderId));
+            obj = obj.Where(o => o.b.Id.Equals(serviceOrderId));
             var query = await obj.Select(q => new
             {
                 q.a.FromTheme,
@@ -135,41 +136,61 @@ namespace OpenAuth.App
                 q.b.CustomerId,
                 q.b.CustomerName,
                 q.b.TerminalCustomer,
-                ServiceWorkOrderId = q.a.Id,
-                ServiceOrderId = q.a.ServiceOrderId,
+                q.a.ServiceOrderId,
                 q.b.Contacter,
                 q.b.ContactTel,
                 q.a.ManufacturerSerialNumber,
                 q.a.MaterialCode,
-                q.a.TroubleDescription,
-                q.a.ProcessDescription
+                ProblemDescription = "故障描述：" + q.a.TroubleDescription + "；过程描述：" + q.a.ProcessDescription
             }).FirstOrDefaultAsync();
             var thisworkdetail = query.MapTo<CompletionReportDetailsResp>();
             if (thisworkdetail.CurrentUserId != null)
             {
-                int theuserid = thisworkdetail.CurrentUserId == null ? 0 : (int) thisworkdetail.CurrentUserId;
+                int theuserid = thisworkdetail.CurrentUserId == null ? 0 : (int)thisworkdetail.CurrentUserId;
                 thisworkdetail.TheNsapUser = await _appUserMapApp.GetFirstNsapUser(theuserid);
-                thisworkdetail.TechnicianName = thisworkdetail.TheNsapUser==null ? "":thisworkdetail.TheNsapUser.Name;
+                thisworkdetail.TechnicianName = thisworkdetail.TheNsapUser == null ? "" : thisworkdetail.TheNsapUser.Name;
             }
+            return thisworkdetail;
+        }
+
+        /// <summary>
+        /// 获取完工报告详情
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        public async Task<CompletionReportDetailsResp> GetCompletionReportDetails(string Id)
+        {
+            var result = new TableData();
+            var obj = from c in UnitWork.Find<CompletionReport>(null)
+                      join a in UnitWork.Find<ServiceWorkOrder>(null) on c.ServiceOrderId equals a.ServiceOrderId
+                      join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into abc
+                      from b in abc.DefaultIfEmpty()
+                      select new { a, b, c };
+            obj = obj.Where(o => o.c.Id.Equals(Id));
+            var query = await obj.Select(q => new
+            {
+                q.a.FromTheme,
+                q.a.CurrentUserId,
+                q.b.CustomerId,
+                q.b.CustomerName,
+                q.b.TerminalCustomer,
+                q.a.ServiceOrderId,
+                q.b.Contacter,
+                q.b.ContactTel,
+                q.a.ManufacturerSerialNumber,
+                q.a.MaterialCode,
+                ProblemDescription = "故障描述：" + q.a.TroubleDescription + "；过程描述：" + q.a.ProcessDescription
+            }).FirstOrDefaultAsync();
+            var thisworkdetail = query.MapTo<CompletionReportDetailsResp>();
             thisworkdetail.Files = new List<UploadFileResp>();
             if (thisworkdetail != null && thisworkdetail.TheNsapUser != null)
             {
-                var msgList = await UnitWork.Find<ServiceOrderMessage>(w => w.ServiceWorkOrderId.Equals(thisworkdetail.ServiceWorkOrderId) && w.FroTechnicianId.Equals(thisworkdetail.TheNsapUser.Id)).ToListAsync();
-                
-                thisworkdetail.ServieOrderMsgs = msgList.MapTo<List<ServiceOrderMessage>>();
-                thisworkdetail.ServieOrderMsgs.ForEach(async s =>
-                {
-                    var msgpics =UnitWork.Find<ServiceOrderMessagePicture>(m=>m.ServiceOrderMessageId.Equals(s.Id)).Select(c => c.PictureId).ToList();
-                    var picfiles = await UnitWork.Find<UploadFile>(f => msgpics.Contains(f.Id)).ToListAsync();
-                    thisworkdetail.Files.AddRange(picfiles.MapTo<List<UploadFileResp>>());
-                });
-
+                var pics = UnitWork.Find<CompletionReportPicture>(m => m.CompletionReportId.Equals(Id)).Select(c => c.PictureId).ToList();
+                var picfiles = await UnitWork.Find<UploadFile>(f => pics.Contains(f.Id)).ToListAsync();
+                thisworkdetail.Files.AddRange(picfiles.MapTo<List<UploadFileResp>>());
             }
-
             return thisworkdetail;
         }
-        
-            
 
     }
 }
