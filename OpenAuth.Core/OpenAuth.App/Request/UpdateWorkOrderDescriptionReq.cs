@@ -8,9 +8,9 @@ namespace OpenAuth.App.Request
     public class UpdateWorkOrderDescriptionReq
     {
         /// <summary>
-        /// 工单Id
+        /// 服务单Id
         /// </summary>
-        public int Id { get; set; }
+        public int ServiceOrderId { get; set; }
 
         /// <summary>
         /// 描述类型 Trouble故障 Process过程

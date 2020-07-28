@@ -11,7 +11,7 @@ namespace OpenAuth.App.Request
         public DateTime BookingDate { get; set; }
 
         [Required]
-        public List<int> WorkOrderIds { get; set; }
+        public int ServiceOrderId { get; set; }
 
         [Required]
         public int CurrentUserId { get; set; }
