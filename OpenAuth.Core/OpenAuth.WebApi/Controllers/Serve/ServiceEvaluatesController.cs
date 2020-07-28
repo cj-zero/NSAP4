@@ -55,6 +55,24 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        [HttpPost]
+        public async Task<Response> AppAdd(APPAddServiceEvaluateReq req)
+        {
+
+            var result = new Response();
+            try
+            {
+                await _app.AppAdd(req);
+
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
         //修改
        [HttpPost]
         public async Task<Response> Update(AddOrUpdateServiceEvaluateReq obj)

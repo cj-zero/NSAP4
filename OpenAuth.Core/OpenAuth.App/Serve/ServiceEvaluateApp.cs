@@ -88,6 +88,35 @@ namespace OpenAuth.App
             await UnitWork.AddAsync<ServiceEvaluate,long>(obj);
             await UnitWork.SaveAsync();
         }
+        public async Task AppAdd(APPAddServiceEvaluateReq req)
+        {
+            foreach (var technicianEvaluates in req.TechnicianEvaluates)
+            {
+                var obj = req.MapTo<ServiceEvaluate>();
+
+                if (technicianEvaluates.TechnicianAppId.HasValue)
+                {
+                    var appUser = await UnitWork.Find<AppUserMap>(null).Include(a => a.User).FirstOrDefaultAsync(a => a.AppUserId == technicianEvaluates.TechnicianAppId.Value);
+                    obj.Technician = appUser.User.Name;
+                    obj.TechnicianId = appUser.UserID;
+                    obj.TechnicianAppId = technicianEvaluates.TechnicianAppId;
+                }
+                obj.SchemeEffectiveness = technicianEvaluates.SchemeEffectiveness;
+                obj.ServiceAttitude = technicianEvaluates.ServiceAttitude;
+                obj.ResponseSpeed = technicianEvaluates.ResponseSpeed;
+                //todo:补充或调整自己需要的字段
+                obj.CommentDate = DateTime.Now;
+                obj.CreateTime = DateTime.Now;
+                var user = _auth.GetCurrentUser().User;
+                obj.VisitPeople = user.Name == "APP" ? "" : user.Name;
+                obj.VisitPeopleId = user.Id;
+                obj.CreateUserId = user.Id;
+                obj.CreateUserName = user.Name;
+                await UnitWork.AddAsync<ServiceEvaluate, long>(obj);
+            }
+            
+            await UnitWork.SaveAsync();
+        }
 
          public async Task Update(AddOrUpdateServiceEvaluateReq obj)
         {
