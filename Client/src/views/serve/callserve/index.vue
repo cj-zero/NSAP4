@@ -146,6 +146,7 @@
       <el-dialog
         width="800px"
         class="dialog-mini"
+         @open="openDetail"
         @close="closeCustoner"
         :close-on-click-modal="false"
         :destroy-on-close="true"
@@ -160,13 +161,13 @@
           isEditForm="true"
           :isEdit="true"
           :sure="sure"
-          :customer="customer"
+          :refValue="dataForm"
           
           @close-Dia="closeDia"
         ></zxform>
         <div slot="footer">
           <el-button size="mini" @click="FormUpdate = false">取消</el-button>
-          <el-button size="mini" type="primary" :loading="loadingBtn" @click="FormUpdate">确认</el-button>
+          <el-button size="mini" type="primary" @click="FormUpdate = false">确认</el-button>
         </div>
       </el-dialog>
       <!-- 只能查看的表单 -->
@@ -174,8 +175,7 @@
         width="800px"
         class="dialog-mini"
         title="服务单详情"
-                :close-on-click-modal="false"
-
+        :close-on-click-modal="false"
         destroy-on-close
         @open="openDetail"
         :visible.sync="dialogFormView"
@@ -636,12 +636,21 @@ export default {
     },
     handleUpdate(row) {
       // 弹出编辑框
-      // this.temp = Object.assign({}, row); // copy obj
-      callservesure.getForm(row.serviceOrderId).then(response => {
-        this.formValue = response.result;
-        this.dialogStatus = "update";
-        this.FormUpdate = true;
+        this.listLoading = true;
+      callservesure.GetDetails(row.serviceOrderId).then(res => {
+        if (res.code == 200) {
+           this.dataForm1 = res.result;
+          this.dialogStatus = "update";
+         this.FormUpdate = true;
+        }
+        this.listLoading = false;
       });
+
+      // callservesure.getForm(row.serviceOrderId).then(response => {
+      //   this.formValue = response.result;
+      //   this.dialogStatus = "update";
+      //   this.FormUpdate = true;
+      // });
     },
     closeDia(a) {
       if (a === 1) {

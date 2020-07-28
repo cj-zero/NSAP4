@@ -236,7 +236,7 @@ export default {
         { name: "priority", label: "优先级" },
         { name: "fromType", label: "呼叫类型", width: "100px" },
         { name: "status", label: "呼叫状态" },
-        { name: "status", label: "费用审核" },
+        { name: "", label: "费用审核" },
         { name: "customerId", label: "客户代码" },
         { name: "terminalCustomer", label: "终端客户" },
         { name: "customerName", label: "客户名称" },

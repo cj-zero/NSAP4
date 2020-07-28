@@ -16,7 +16,7 @@
               <el-input size="small" disabled v-model="formList[0].id"></el-input>
             </el-form-item>
           </el-col>
-          <el-col :span="7">
+          <el-col :span="isEditForm?8:7">
             <el-form-item label="服务类型">
               <el-radio-group size="small" v-model="formList[0].feeType">
                 <el-radio :label="1">免费</el-radio>
@@ -28,7 +28,8 @@
           <el-col :span="4" v-if="!isEditForm" style="height:40px;line-height:40px;font-size:13px;">
             <el-switch size="small" v-model="formList[0].edit" active-text="修改后续" :width="20"></el-switch>
           </el-col>
-          <el-col :span="2" style="height:40px;line-height:40px;">
+             <el-col :span="2" v-if="isEditForm"></el-col>
+          <el-col :span="isEditForm?3:2" style="height:40px;line-height:40px;">
             <el-button
               type="danger"
               v-if="formList.length>1"
@@ -38,7 +39,7 @@
               @click="deleteForm(formList[0])"
             >删除</el-button>
           </el-col>
-          <el-col :span="2" style="height:40px;line-height:40px;">
+          <el-col :span="isEditForm?3:2" style="height:40px;line-height:40px;">
             <el-button
               type="success"
               v-if="isEditForm"
@@ -318,7 +319,7 @@
               <el-input size="small" disabled v-model="item.id"></el-input>
             </el-form-item>
           </el-col>
-          <el-col :span="7">
+          <el-col :span="isEditForm?8:7">
             <el-form-item label="服务类型">
               <el-radio-group size="small" v-model="item.feeType">
                 <el-radio :label="1">免费</el-radio>
@@ -330,7 +331,9 @@
           <el-col :span="4" v-if="!isEditForm" style="height:40px;line-height:40px;font-size:13px;">
             <el-switch size="small" v-model="item.edit" active-text="修改后续" :width="20"></el-switch>
           </el-col>
-          <el-col :span="2" style="height:40px;line-height:40px;">
+                       <el-col :span="2" v-if="isEditForm"></el-col>
+
+          <el-col :span="isEditForm?3:2" style="height:40px;line-height:40px;">
             <el-button
               type="danger"
               v-if="formList.length>1"
@@ -340,7 +343,7 @@
               @click="deleteForm(item)"
             >删除</el-button>
           </el-col>
-          <el-col :span="2" style="height:40px;line-height:40px;">
+          <el-col :span="isEditForm?3:2" style="height:40px;line-height:40px;">
             <el-button
               type="success"
               v-if="isEditForm"
@@ -694,6 +697,7 @@ import solution from "./solution";
 export default {
   components: { fromfSN, problemtype, solution, Pagination },
   props: ["isEdit", "isEditForm", "serviceOrderId", "propForm"],
+  // ##propForm编辑或者查看详情传过来的数据
   data() {
     return {
       defaultProps: {
@@ -820,6 +824,7 @@ export default {
       immediate: true,
       handler(val) {
         if (val&&val.length) {
+          console.log(val)
           this.formList = val;
         }
       }
@@ -892,6 +897,7 @@ export default {
       this.formList[this.sortTable - 1].solutionsubject = res.subject;
       this.formList[this.sortTable - 1].solutionId = res.id;
       // this.problemLabel = res.name;
+      console.log(this.formList[this.sortTable - 1],res,this.sortTable - 1)
       this.solutionOpen = false;
     },
     switchType(val) {
