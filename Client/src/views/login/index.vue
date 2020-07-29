@@ -6,19 +6,19 @@
       <div class="login-img" v-if="dialogQ">
         <h3 class="title">nSAP-V4.0</h3>
         <p class="tips">nSAP-V4.0 管理系统</p>
-
         <p>请用新威智能App扫描此二维码</p>
-        <el-image :src="url"></el-image>
+        <el-image :src="url" placeholder="请稍等">
+             <div slot="error" class="image-slot">
+               <p style="width:100%;color:#4452d5;">当前网络不稳定，请稍等</p>
       </div>
-      <div class="cover_div">{{dialogQ?"账号密码登录":"二维码登录"}}</div>
-
+        </el-image>
+      </div>
+      <div class="cover_div">{{dialogQ?"账号密码登录":"二维码登录"}}
+<i class="el-icon-arrow-right el-icon-caret-right"></i>        
+      </div>
       <div class="login-form-div">
-        <div v-if="dialogQ" class="div2" @click="openQCCode"></div>
-        <div
-          v-if="!dialogQ"
-          class="div1"
-          @click="openQCCode"
-        ></div>
+        <div  :class="[dialogQ?'div2':'div1']" @click="openQCCode"></div>
+ 
       </div>
       <el-form
         v-if="!dialogQ"
@@ -123,7 +123,6 @@ export default {
         password: ""
       },
       baseURL: process.env.VUE_APP_BASE_UPIMG_URL,
-
       dialogQ: false,
       randomNum: "",
       loginRules: {
@@ -166,7 +165,7 @@ export default {
       }
     },
     checkStatus() {
-      let timer = setInterval(() => {
+      this.timer = setInterval(() => {
         login
           .ValidateLogin({ rd: this.randomNum })
           .then(res => {
@@ -185,11 +184,10 @@ export default {
             }
           })
           .catch(() => console.log(""));
-      }, 1500);
+      }, 1000);
       this.$once("hook:beforeDestroy", () => {
-        clearInterval(timer);
+        clearInterval(this.timer);
       });
-      // timer();
     },
     openQCCode() {
       this.dialogQ = !this.dialogQ;
@@ -198,6 +196,8 @@ export default {
         this.url = `${this.baseURL}/QrCode/Get?rd=${this.randomNum}`;
         this.dialogQ = true;
         this.checkStatus();
+      }else{
+      clearInterval(this.timer);
       }
     },
     handleLogin() {
@@ -330,14 +330,12 @@ $dark_gray: #d1dfe8;
     .cover_div {
       position: absolute;
       right: 60px;
-      height: 80px;
-      width: 100px;
-      line-height: 80px;
-      top: 50px;
+      height: 30px;
+      width: 125px;
+      line-height: 30px;
+      top: 70px;
       color: #4452d5;
-      // z-index: 20;
-      // background: #ebebea;
-           animation: mymove 3s infinite;
+      animation: mymove 3s infinite;
     }
           @keyframes mymove {
 	55% {
@@ -354,11 +352,7 @@ $dark_gray: #d1dfe8;
         height: 60px;
         background: url("~@/assets/login/qc.png") center;
         background-size: cover;
-//         @keyframes mymove {
-// 	55% {
-// 		right: 10px;
-// 	}
-// }
+
       }
             .div2 {
         width: 60px;

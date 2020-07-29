@@ -1,77 +1,75 @@
 <template>
-<div >
+  <div>
     <el-table
-    :data="partnerList"
-    border
-    height="500"
-    ref="singleTable"
-   highlight-current-row
-    @current-change="getPartner"
-    @row-dblclick="handleCurrentChange"
-    style="width: 100%"
-  >
-    <el-table-column width="50">
-            <template slot-scope="scope">
-              <el-radio v-model="radio" :label="scope.row.cardCode">{{&nbsp;}}</el-radio>
-            </template>
-    </el-table-column>
-    <el-table-column prop="cardCode"  label="客户代码" width="80"></el-table-column>
-    <el-table-column prop="cardName" label="客户名称" align="center" min-width="120"></el-table-column>
-        <el-table-column align="center" label="状态冻结" width="120">
-      <template slot-scope="scope">
-        <span :class="[scope.row.frozenFor=='N'?'greenColro':'redColor']">{{scope.row.frozenFor=="N"?"正常":'冻结'}}</span>
-      </template>
-    </el-table-column>
-    <el-table-column prop="cntctPrsn" label="联系人" align="center" width="100"></el-table-column>
-    <el-table-column prop="slpName" align="center" label="销售员" width="100"></el-table-column>
-    <el-table-column align="center" prop="currency" width="100" label="货币种类"></el-table-column>
-    <el-table-column align="center" label="科目余额" width="120">
-      <template slot-scope="scope">
-        <span :class="[scope.row.balance>=0?'redColor':'greenColro']">{{scope.row.balance}}0000</span>
-      </template>
-    </el-table-column>
-    <el-table-column prop="address" align="center" label="开票地址" min-width="180"></el-table-column>
-    <el-table-column prop="address2" label="收货地址" min-width="180"></el-table-column>
-    <el-table-column prop="u_FPLB" align="center" width="120px" label="发票类别"></el-table-column>
-  </el-table>
+      :data="partnerList"
+      border
+      height="500"
+      ref="singleTable"
+      highlight-current-row
+      @current-change="getPartner"
+      @row-dblclick="handleCurrentChange"
+      style="width: 100%"
+    >
+      <el-table-column width="50">
+        <template slot-scope="scope">
+          <el-radio v-model="radio" :label="scope.row.cardCode">{{&nbsp;}}</el-radio>
+        </template>
+      </el-table-column>
+      <el-table-column prop="cardCode" label="客户代码" width="80"></el-table-column>
+      <el-table-column prop="cardName" label="客户名称" align="center" min-width="120"></el-table-column>
+      <el-table-column align="center" label="状态冻结" width="120">
+        <template slot-scope="scope">
+          <span
+            :class="[scope.row.frozenFor=='N'?'greenColro':'redColor']"
+          >{{scope.row.frozenFor=="N"?"正常":'冻结'}}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="cntctPrsn" label="联系人" align="center" width="100"></el-table-column>
+      <el-table-column prop="slpName" align="center" label="销售员" width="100"></el-table-column>
+      <el-table-column align="center" prop="currency" width="100" label="货币种类"></el-table-column>
+      <el-table-column align="center" label="科目余额" width="120">
+        <template slot-scope="scope">
+          <span :class="[scope.row.balance>=0?'redColor':'greenColro']">{{scope.row.balance}}0000</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="address" align="center" label="开票地址" min-width="180"></el-table-column>
+      <el-table-column prop="address2" label="收货地址" min-width="180"></el-table-column>
+      <el-table-column prop="u_FPLB" align="center" width="120px" label="发票类别"></el-table-column>
+    </el-table>
 
-       <el-dialog title="最近呼叫ID" width="90%"  @open="openDialog" :visible.sync="dialogCallId">
-<callId ></callId>
-      <!-- <callId :toCallList="CallList"></callId> -->
+    <el-dialog title="最近服务单情况" width="90%" @open="openDialog" :visible.sync="dialogCallId">
+      <callId :toCallList="CallList"></callId>
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogCallId = false">取 消</el-button>
         <el-button type="primary" @click="dialogCallId = false">确 定</el-button>
       </span>
     </el-dialog>
-</div>
-
+  </div>
 </template>
 
 <script>
-
 import * as callformPartner from "@/api/serve/callformPartner";
 
 import callId from "./callId";
 export default {
-  props: ["partnerList" ,'count' ],
-    components: { callId},
+  props: ["partnerList", "count"],
+  components: { callId },
 
   data() {
     return {
-       currentRow: [] ,//选择项
-       dialogPartner:'',
-       dialogCallId:false,
-               radio:'',
-         listQuery: {
+      currentRow: [], //选择项
+      dialogPartner: "",
+      dialogCallId: false,
+      radio: "",
+      CallList: [],
+      listQuery: {
         // 查询条件
         page: 1,
-        CallList:[],
-        toCallList:[],
         limit: 40,
         key: undefined,
         appId: undefined
       },
-      newList:[],//传递给最近呼叫或者未关闭的数据列表
+      newList: [] //传递给最近呼叫或者未关闭的数据列表
     };
   },
   compunted: {
@@ -84,52 +82,43 @@ export default {
       }
     }
   },
-    mounted() {
-   
-  },
-    // watch: {
-    // partnerList:function(){
-    // }
+  mounted() {},
+  // watch: {
+  // partnerList:function(){
+  // }
   // },
-  methods:{
-          openDialog() {   //打开前赋值给近期服务单
-
-      // this.CallList = this.partnerList
+  methods: {
+    openDialog() {
+     console.log(this.CallList)
+      //打开前赋值给近期服务单
     },
-    // checkOne(value){
-    //   console.log(value)
-    // },
- getPartner(val){
-      this.checkVal = val
-  this.$emit('getChildValue',val)
-       this.$refs.singleTable.clearSelection();
+
+    getPartner(val) {
+      this.checkVal = val;
+      this.$emit("getChildValue", val);
+      this.$refs.singleTable.clearSelection();
       this.radio = val.cardCode;
       this.$refs.singleTable.toggleRowSelection(val);
     },
-   handleCurrentChange(val) {
-        this.currentRow = val;
-        if(val.frozenFor=='Y'){
-              this.$message({
-              message: `${val.cardName}账户被冻结，无法操作`,
-              type: 'error'
-            })
-        }else{
-             callformPartner.getTableList({code:val.cardCode}).then(res=>{
-               this.newList = res.result
-        // this.newestNotCloseOrder=res.reault.newestNotCloseOrder
-        // this.newestOrder=res.reault.newestNotCloseOrder
-      })
-            //  this.$message({
-            //   message: `抱歉，${val.cardName}没有呼叫ID数据`,
-            //   type: 'warning'
-            // })
-//  this.dialogCallId=true
-        }
-        
-      }
+    handleCurrentChange(val) {
+      this.currentRow = val;
+      if (val.frozenFor == "Y") {
+        this.$message({
+          message: `${val.cardName}账户被冻结，无法操作`,
+          type: "error"
+        });
+      } else {
+         callformPartner.getTableList({ code: val.cardCode }).then(res => {
+          this.CallList = res.result;
+            this.dialogCallId = true
+          // this.newestNotCloseOrder=res.reault.newestNotCloseOrder
+          // this.newestOrder=res.reault.newestNotCloseOrder
+        });
 
-}
-}
+      }
+    }
+  }
+};
 </script>
 
 <style lang="scss" scope>

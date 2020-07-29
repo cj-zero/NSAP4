@@ -104,9 +104,9 @@ export default {
     }
     .logo {
         width: 180px;
-        text-align: center;
+        // text-align: center;
         float: left;
-        color: white;
+        // color: white;
         .user-avatar {
             width: 96%;
             margin:0 2%;

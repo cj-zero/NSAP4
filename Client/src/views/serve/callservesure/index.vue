@@ -83,7 +83,7 @@
           :data="list"
           v-loading="listLoading"
           border
-          fit
+          
           style="width: 100%;"
           highlight-current-row
           @row-click="rowClick"
@@ -103,6 +103,7 @@
             :sortable="fruit=='chaungjianriqi'?true:false"
             style="background-color:silver;"
             :label="fruit.label"
+            :width="fruit.width"
           >
             <template slot-scope="scope">
               <el-link
@@ -239,14 +240,14 @@ export default {
       key: 1, // table key
       sure: 0,
       formTheadOptions: [
-        { name: "id", label: "服务单ID" ,align:'right'},
+        { name: "id", label: "服务单ID" ,align:'left',width:'100px'},
         { name: "customerId", label: "客户代码",align:'left' },
-        { name: "status", label: "状态" ,align:'left'},
+        { name: "status", label: "状态" ,align:'left',width:'80px'},
         { name: "customerName", label: "客户名称",align:'left' },
         { name: "createTime", label: "创建日期" ,align:'left'},
-        { name: "contacter", label: "联系人" ,align:'left'},
+        { name: "contacter", label: "联系人" ,align:'left',width:'100px'},
         { name: "services", label: "服务内容" ,align:'left'},
-        { name: "contactTel", label: "电话号码" ,align:'left'},
+        { name: "contactTel", label: "电话号码" ,align:'left',width:'120px'},
         { name: "supervisor", label: "售后主管" ,align:'left'},
         { name: "salesMan", label: "销售员" ,align:'left'},
         { name: "manufSN", label: "制造商序列号",align:'left' },

@@ -234,7 +234,7 @@ export default {
       workorderidList: [],
       hasAlreadNum: "", //已经接的单
       formTheadOptions: [
-        { name: "serviceWorkOrderId", label: "工单ID", ifFixed: true ,align:'right'},
+        { name: "serviceWorkOrderId", label: "工单ID", ifFixed: true ,align:'left'},
         { name: "priority", label: "优先级" },
         { name: "fromType", label: "呼叫类型", width: "100px" },
         { name: "status", label: "呼叫状态" },

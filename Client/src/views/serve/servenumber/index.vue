@@ -64,7 +64,7 @@
           :data="list"
           v-loading="listLoading"
           border
-                      max-height="700px"
+                      height="700px"
 
           fit
           style="width: 100%;"
