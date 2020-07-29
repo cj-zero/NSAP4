@@ -73,6 +73,7 @@ namespace OpenAuth.App
             var pictures = req.Pictures.MapToList<CompletionReportPicture>();
             pictures.ForEach(r => r.CompletionReportId = o.Id);
             await UnitWork.BatchAddAsync(pictures.ToArray());
+            await UnitWork.SaveAsync();
         }
 
 
@@ -120,15 +121,16 @@ namespace OpenAuth.App
         /// 填写完工报告单页面需要取到的服务工单信息。
         /// </summary>
         /// <param name="serviceOrderId">服务单ID</param>
+        /// <param name="currentUserId">当前技术员Id</param>
         /// <returns></returns>
-        public async Task<CompletionReportDetailsResp> GetOrderWorkInfoForAdd(int serviceOrderId)
+        public async Task<CompletionReportDetailsResp> GetOrderWorkInfoForAdd(int serviceOrderId, int currentUserId)
         {
             var result = new TableData();
             var obj = from a in UnitWork.Find<ServiceWorkOrder>(null)
                       join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
                       from b in ab.DefaultIfEmpty()
                       select new { a, b };
-            obj = obj.Where(o => o.b.Id.Equals(serviceOrderId));
+            obj = obj.Where(o => o.b.Id == serviceOrderId && o.a.CurrentUserId == currentUserId);
             var query = await obj.Select(q => new
             {
                 q.a.FromTheme,
@@ -156,9 +158,10 @@ namespace OpenAuth.App
         /// <summary>
         /// 获取完工报告详情
         /// </summary>
-        /// <param name="Id"></param>
+        /// <param name="serviceOrderId">服务单Id</param>
+        /// <param name="currentUserId">当前技术员Id</param>
         /// <returns></returns>
-        public async Task<CompletionReportDetailsResp> GetCompletionReportDetails(string Id)
+        public async Task<CompletionReportDetailsResp> GetCompletionReportDetails(int serviceOrderId, int currentUserId)
         {
             var result = new TableData();
             var obj = from c in UnitWork.Find<CompletionReport>(null)
@@ -166,7 +169,7 @@ namespace OpenAuth.App
                       join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into abc
                       from b in abc.DefaultIfEmpty()
                       select new { a, b, c };
-            obj = obj.Where(o => o.c.Id.Equals(Id));
+            obj = obj.Where(o => o.a.ServiceOrderId == serviceOrderId && o.a.CurrentUserId == currentUserId);
             var query = await obj.Select(q => new
             {
                 q.a.FromTheme,
@@ -179,13 +182,14 @@ namespace OpenAuth.App
                 q.b.ContactTel,
                 q.a.ManufacturerSerialNumber,
                 q.a.MaterialCode,
-                ProblemDescription = "故障描述：" + q.a.TroubleDescription + "；过程描述：" + q.a.ProcessDescription
+                ProblemDescription = "故障描述：" + q.a.TroubleDescription + "；过程描述：" + q.a.ProcessDescription,
+                q.c.Id
             }).FirstOrDefaultAsync();
             var thisworkdetail = query.MapTo<CompletionReportDetailsResp>();
             thisworkdetail.Files = new List<UploadFileResp>();
             if (thisworkdetail != null && thisworkdetail.TheNsapUser != null)
             {
-                var pics = UnitWork.Find<CompletionReportPicture>(m => m.CompletionReportId.Equals(Id)).Select(c => c.PictureId).ToList();
+                var pics = UnitWork.Find<CompletionReportPicture>(m => m.CompletionReportId.Equals(query.Id)).Select(c => c.PictureId).ToList();
                 var picfiles = await UnitWork.Find<UploadFile>(f => pics.Contains(f.Id)).ToListAsync();
                 thisworkdetail.Files.AddRange(picfiles.MapTo<List<UploadFileResp>>());
             }

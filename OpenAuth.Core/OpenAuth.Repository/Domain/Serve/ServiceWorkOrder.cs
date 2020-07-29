@@ -25,21 +25,21 @@ namespace OpenAuth.Repository.Domain
     {
         public ServiceWorkOrder()
         {
-          this.ServiceOrderId= 0;
-          this.SubmitDate= DateTime.Now;
-          this.SubmitUserId= string.Empty;
-          this.Remark= string.Empty;
-          this.FromTheme= string.Empty;
-          this.ProblemTypeId= string.Empty;
-          this.MaterialCode= string.Empty;
-          this.MaterialDescription= string.Empty;
-          this.ManufacturerSerialNumber= string.Empty;
-          this.InternalSerialNumber= string.Empty;
-          this.WarrantyEndDate= DateTime.Now;
-          this.CreateTime= DateTime.Now;
-          this.BookingDate= DateTime.Now;
-          this.VisitTime= DateTime.Now;
-          this.LiquidationDate= DateTime.Now;
+            this.ServiceOrderId = 0;
+            this.SubmitDate = DateTime.Now;
+            this.SubmitUserId = string.Empty;
+            this.Remark = string.Empty;
+            this.FromTheme = string.Empty;
+            this.ProblemTypeId = string.Empty;
+            this.MaterialCode = string.Empty;
+            this.MaterialDescription = string.Empty;
+            this.ManufacturerSerialNumber = string.Empty;
+            this.InternalSerialNumber = string.Empty;
+            this.WarrantyEndDate = DateTime.Now;
+            this.CreateTime = DateTime.Now;
+            this.BookingDate = DateTime.Now;
+            this.VisitTime = DateTime.Now;
+            this.LiquidationDate = DateTime.Now;
         }
         /// <summary>
         /// 工单ID
@@ -198,6 +198,18 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("过程描述")]
         public string ProcessDescription { get; set; }
+
+        /// <summary>
+        /// 接单类型 0未接单 1电话服务 2上门服务 3电话服务(已拨打)
+        /// </summary>
+        [Description("接单类型")]
+        public int OrderTakeType { get; set; }
+
+        /// <summary>
+        ///核对设备 0未核对 1正确 2失败
+        /// </summary>
+        [Description("接单类型")]
+        public int IsCheck { get; set; }
 
         /// <summary>
         /// 技术员留言消息

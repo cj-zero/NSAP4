@@ -106,14 +106,15 @@ namespace OpenAuth.WebApi.Controllers
         /// 填写完工报告单页面需要取到的服务工单信息。
         /// </summary>
         /// <param name="ServiceOrderId">服务单ID</param>
+        /// <param name="currentUserId">当前技术员Id</param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<Response<CompletionReportDetailsResp>> GetOrderWorkInfoForAdd(int ServiceOrderId)
+        public async Task<Response<CompletionReportDetailsResp>> GetOrderWorkInfoForAdd(int ServiceOrderId, int currentUserId)
         {
             var result = new Response<CompletionReportDetailsResp>();
             try
             {
-                result.Result = await _app.GetOrderWorkInfoForAdd(ServiceOrderId);
+                result.Result = await _app.GetOrderWorkInfoForAdd(ServiceOrderId, currentUserId);
             }
             catch (Exception ex)
             {
@@ -127,15 +128,16 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 获取完工报告详情
         /// </summary>
-        /// <param name="Id">完工报告Id</param>
+        /// <param name="serviceOrderId">服务单Id</param>
+        /// <param name="currentUserId">当前技术员Id</param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<Response<CompletionReportDetailsResp>> GetCompletionReportDetails(string Id)
+        public async Task<Response<CompletionReportDetailsResp>> GetCompletionReportDetails(int serviceOrderId, int currentUserId)
         {
             var result = new Response<CompletionReportDetailsResp>();
             try
             {
-                result.Result = await _app.GetCompletionReportDetails(Id);
+                result.Result = await _app.GetCompletionReportDetails(serviceOrderId, currentUserId);
             }
             catch (Exception ex)
             {

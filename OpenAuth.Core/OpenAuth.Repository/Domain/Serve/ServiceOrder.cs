@@ -211,12 +211,6 @@ namespace OpenAuth.Repository.Domain
         public int? FromId { get; set; }
 
         /// <summary>
-        /// 接单类型 0未接单 1电话服务 2上门服务 3电话服务(已拨打)
-        /// </summary>
-        [Description("接单类型")]
-        public int OrderTakeType { get; set; }
-
-        /// <summary>
         /// 服务单关联的工单
         /// </summary>
         public virtual List<ServiceWorkOrder> ServiceWorkOrders { get; set; }

@@ -674,7 +674,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> SaveOrderTakeType(SaveOrderTakeTypeReq request)
+        public async Task<Response> SaveOrderTakeType(SaveWorkOrderTakeTypeReq request)
         {
             var result = new Response();
             try
@@ -707,6 +707,27 @@ namespace OpenAuth.WebApi.Controllers
             {
                 result.Code = 500;
                 result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        ///获取当前技术员剩余可接单数
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetUserCanOrderCount(int id)
+        {
+            var result = new TableData();
+            try
+            {
+                result.Data = await _serviceOrderApp.GetUserCanOrderCount(id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
             }
             return result;
         }

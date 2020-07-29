@@ -19,6 +19,8 @@ using System.Runtime.CompilerServices;
 using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.App.Sap.BusinessPartner;
 using Minio.DataModel;
+using NPOI.SS.Formula.Functions;
+using log4net.Core;
 
 namespace OpenAuth.App
 {
@@ -909,10 +911,10 @@ namespace OpenAuth.App
             {
                 workOrderIds.Add(item.Id);
             }
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId, o => new ServiceWorkOrder
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId, o => new ServiceWorkOrder
             {
                 BookingDate = req.BookingDate,
-                Status = 3
+                OrderTakeType = 4
             });
             await UnitWork.SaveAsync();
             await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{req.CurrentUserId}预约工单{string.Join(",", workOrderIds)}", ActionType = "预约工单" }, workOrderIds);
@@ -949,6 +951,7 @@ namespace OpenAuth.App
                     {
                         await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id == int.Parse(itemcheck), o => new ServiceWorkOrder
                         {
+                            IsCheck = 1,
                             Status = 4
                         });
                         await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{req.CurrentUserId}核对工单{itemcheck}设备（成功）", ActionType = "核对设备", ServiceWorkOrderId = int.Parse(itemcheck) });
@@ -965,6 +968,7 @@ namespace OpenAuth.App
                     {
                         await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id == int.Parse(itemerr), o => new ServiceWorkOrder
                         {
+                            IsCheck = 2,
                             Status = 3
                         });
                         await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{req.CurrentUserId}核对工单{itemerr}设备(失败)", ActionType = "核对设备", ServiceWorkOrderId = int.Parse(itemerr) });
@@ -1156,14 +1160,15 @@ namespace OpenAuth.App
                     s.CustomerName,
                     s.Supervisor,
                     s.SalesMan,
-                    s.OrderTakeType,
-                    MaterialInfo = s.ServiceWorkOrders.Where(o => o.ServiceOrderId == req.ServiceOrderId).Select(o => new
+                    MaterialInfo = s.ServiceWorkOrders.Where(o => o.ServiceOrderId == req.ServiceOrderId && req.Type == 1 ? o.CurrentUserId == req.CurrentUserId : true).Select(o => new
                     {
                         o.MaterialCode,
                         o.ManufacturerSerialNumber,
                         MaterialType = o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
                         o.Status,
-                        o.Id
+                        o.Id,
+                        o.IsCheck,
+                        o.OrderTakeType
                     })
                 });
 
@@ -1186,7 +1191,6 @@ namespace OpenAuth.App
                 s.CustomerName,
                 s.Supervisor,
                 s.SalesMan,
-                s.OrderTakeType,
                 Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
                 s.MaterialInfo,
                 ServiceWorkOrders = s.MaterialInfo.GroupBy(o => o.MaterialType).ToList()
@@ -1195,7 +1199,8 @@ namespace OpenAuth.App
                     MaterialType = s.Key,
                     WorkOrderIds = string.Join(",", s.Select(i => i.Id))
                 }),
-                WorkOrderState = s.MaterialInfo.Distinct().OrderBy(o => o.Status).FirstOrDefault()?.Status
+                WorkOrderState = s.MaterialInfo.Distinct().OrderBy(o => o.Status).FirstOrDefault()?.Status,
+                OrderTakeType = s.MaterialInfo.Distinct().OrderBy(o => o.OrderTakeType).FirstOrDefault()?.OrderTakeType
             }).ToList();
             result.Data = list;
             return result;
@@ -1212,13 +1217,13 @@ namespace OpenAuth.App
             switch (request.DescriptionType.ToLower())
             {
                 case "trouble":
-                    await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId, e => new ServiceWorkOrder
+                    await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId && s.CurrentUserId == request.CurrentUserId, e => new ServiceWorkOrder
                     {
                         TroubleDescription = request.Description
                     });
                     break;
                 case "process":
-                    await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId, e => new ServiceWorkOrder
+                    await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId && s.CurrentUserId == request.CurrentUserId, e => new ServiceWorkOrder
                     {
                         ProcessDescription = request.Description
                     });
@@ -1231,11 +1236,12 @@ namespace OpenAuth.App
         /// 选择接单类型
         /// </summary>
         /// <returns></returns>
-        public async Task SaveOrderTakeType(SaveOrderTakeTypeReq request)
+        public async Task SaveOrderTakeType(SaveWorkOrderTakeTypeReq request)
         {
-            await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(request.Id), e => new ServiceOrder
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == request.Id && s.CurrentUserId == request.CurrentUserId, e => new ServiceWorkOrder
             {
-                OrderTakeType = request.Type
+                OrderTakeType = request.Type,
+                Status = 3
             });
             await UnitWork.SaveAsync();
         }
@@ -1253,13 +1259,26 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var result = new TableData();
-            var query = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId)
+            var query = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId)
                         .Select(a => new
                         {
                             a.TroubleDescription,
                             a.ProcessDescription
                         }).FirstOrDefaultAsync();
             result.Data = query;
+            return result;
+        }
+
+        /// <summary>
+        /// 获取当前技术员剩余可接单数
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetUserCanOrderCount(int id)
+        {
+            var result = new TableData();
+            var count = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == id && s.Status.Value < 7).Select(s => s.ServiceOrderId).Distinct().CountAsync();
+            result.Data = 5 - count;
             return result;
         }
     }
