@@ -4,7 +4,7 @@
     <el-row :gutter="10">
       <el-col :span="3">
         <el-form-item label="服务ID">
-          <el-input size="small" v-model="form.QryServiceOrderId"></el-input>
+          <el-input size="small"  v-model="form.QryServiceOrderId"></el-input>
         </el-form-item>
       </el-col>
       <el-col :span="3">

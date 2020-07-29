@@ -245,7 +245,7 @@ export default {
         { name: "status", label: "状态" ,align:'left',width:'80px'},
         { name: "customerName", label: "客户名称",align:'left' },
         { name: "createTime", label: "创建日期" ,align:'left'},
-        { name: "contacter", label: "联系人" ,align:'left',width:'100px'},
+        { name: "contacter", label: "联系人" ,align:'left'},
         { name: "services", label: "服务内容" ,align:'left'},
         { name: "contactTel", label: "电话号码" ,align:'left',width:'120px'},
         { name: "supervisor", label: "售后主管" ,align:'left'},

@@ -93,7 +93,7 @@
                 :class="[scope.row[fruit.name]===1?'orangeWord':(scope.row[fruit.name]===2?'greenWord':'redWord')]"
               >{{stateValue[scope.row[fruit.name]-1]}}</span> -->
               <span
-              >{{scope.row[fruit.name]?scope.row[fruit.name]:'暂无数据'}}</span>
+              >{{scope.row[fruit.name]}}</span>
             </template>
           </el-table-column>
         </el-table>

@@ -111,7 +111,7 @@ export default {
             width: 96%;
             margin:0 2%;
             height: 30px;
-            border:1px solid white;
+            // border:1px solid white;
             border-radius:3px;
             vertical-align: middle;
             margin-right: 5px;

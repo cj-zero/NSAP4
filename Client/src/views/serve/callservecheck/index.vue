@@ -28,7 +28,7 @@
           <el-row :gutter="10">
             <el-col :span="3">
               <el-form-item label="姓名" size="small" >
-                         <el-input v-model="listQuery.Name"></el-input>
+                         <el-input v-model="listQuery.Name" ></el-input>
 
               </el-form-item>
             </el-col>
@@ -108,6 +108,7 @@
             :sortable="fruit=='chaungjianriqi'?true:false"
             style="background-color:silver;"
             :label="fruit.label"
+            :width="fruit.width"
           >
             <template slot-scope="scope">
               <!-- <span
@@ -159,10 +160,11 @@ export default {
       multipleSelection: [], // 列表checkbox选中的值
       formTheadOptions: [
         // { name: "id", label: "Id"},
-        { name: "name", label: "姓名" },
-        { name: "org", label: "职位" },
-        { name: "org", label: "部门" },
-        { name: "clockTime", label: "打卡时间" },
+        { name: "name", label: "姓名" ,width:'80px'},
+        { name: "org", label: "职位",width:'100px' },
+        { name: "org", label: "部门" ,width:'100px'},
+        { name: "clockTime", label: "打卡时间" ,width:'100px'},
+         { name: "clockDate", label: "打卡日期" },
         { name: "location", label: "地点" },
         { name: "specificLocation", label: "详细地址" },
         { name: "visitTo", label: "拜访对象" },
