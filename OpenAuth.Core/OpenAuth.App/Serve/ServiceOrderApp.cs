@@ -21,6 +21,7 @@ using OpenAuth.App.Sap.BusinessPartner;
 using Minio.DataModel;
 using NPOI.SS.Formula.Functions;
 using log4net.Core;
+using OpenAuth.App.Serve.Request;
 
 namespace OpenAuth.App
 {
@@ -72,7 +73,9 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var query = UnitWork.Find<ServiceOrder>(s => s.AppUserId.Equals(request.AppUserId))
+            var query = UnitWork.Find<ServiceOrder>(s => s.AppUserId == request.AppUserId)
+                        .Include(s => s.ServiceWorkOrders).Where(s => request.Type == 1 ? s.ServiceWorkOrders.Any(a => a.Status > 6) : s.ServiceWorkOrders.Any(a => a.Status < 7 || s.ServiceWorkOrders == null))
+
                         .Select(a => new
                         {
                             a.Id,
@@ -84,7 +87,7 @@ namespace OpenAuth.App
                             a.City,
                             a.Area,
                             a.Addr,
-                            ServiceWorkOrders = a.ServiceWorkOrders.Select(o => new
+                            ServiceWorkOrders = a.ServiceWorkOrders.Where(s => request.Type == 1 ? s.Status > 6 : s.Status < 7).Select(o => new
                             {
                                 o.Id,
                                 o.Status,
@@ -792,6 +795,7 @@ namespace OpenAuth.App
             }
             var result = new TableData();
             var query = UnitWork.Find<ServiceOrder>(s => s.Status == 2)
+                .Include(s => s.ServiceWorkOrders).Where(q => q.ServiceWorkOrders.Any(a => a.Status == 1))
                 .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => s.Id == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key)))
                 .Select(s => new
                 {
@@ -882,6 +886,7 @@ namespace OpenAuth.App
             });
             await UnitWork.SaveAsync();
             await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{req.TechnicianId}接单工单：{string.Join(",", req.ServiceWorkOrderIds)}", ActionType = "技术员接单" }, req.ServiceWorkOrderIds);
+            await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = req.ServiceOrderId, Content = "技术员已接单成功，请尽快选择服务", AppUserId = 0 });
         }
 
         /// <summary>
@@ -918,6 +923,7 @@ namespace OpenAuth.App
             });
             await UnitWork.SaveAsync();
             await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{req.CurrentUserId}预约工单{string.Join(",", workOrderIds)}", ActionType = "预约工单" }, workOrderIds);
+            await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = req.ServiceOrderId, Content = "技术员已预约上门时间成功，请尽早安排行程", AppUserId = 0 });
 
         }
 
@@ -976,6 +982,7 @@ namespace OpenAuth.App
                 }
             }
             await UnitWork.SaveAsync();
+            await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = req.ServiceOrderId, Content = "技术员已核对设备，请完成维修任务", AppUserId = 0 });
         }
 
         /// <summary>
@@ -1279,6 +1286,129 @@ namespace OpenAuth.App
             var result = new TableData();
             var count = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == id && s.Status.Value < 7).Select(s => s.ServiceOrderId).Distinct().CountAsync();
             result.Data = 5 - count;
+            return result;
+        }
+
+
+        /// <summary>
+        /// 发送聊天室消息
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task SendServiceOrderMessage(SendServiceOrderMessageReq req)
+        {
+            string userId = string.Empty;
+            string name = string.Empty;
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            if (req.AppUserId == 0)
+            {
+                name = "系统";
+            }
+            else
+            {
+                //根据appUserId获取nSAP中的用户信息
+                var query = from a in UnitWork.Find<AppUserMap>(null)
+                            join b in UnitWork.Find<User>(null) on a.UserID equals b.Id into ab
+                            from b in ab.DefaultIfEmpty()
+                            select new { a, b };
+                query = query.Where(o => o.a.AppUserId == req.AppUserId);
+                var userInfo = await query.Select(q => new
+                {
+                    q.b.Id,
+                    q.b.Name
+                }).FirstOrDefaultAsync();
+                if (userInfo == null && req.AppUserId != 0)
+                {
+                    throw new CommonException("您还未开通nSAP访问权限", 204);
+                }
+                userId = userInfo.Id;
+            }
+            var obj = req.MapTo<ServiceOrderMessage>();
+            obj.CreateTime = DateTime.Now;
+            obj.FroTechnicianId = userId;
+            obj.FroTechnicianName = name;
+            await UnitWork.AddAsync<ServiceOrderMessage, int>(obj);
+            await UnitWork.SaveAsync();
+            //发给服务单客服
+            //var serviceInfo = await UnitWork.Find<ServiceOrder>(s => s.Id == req.ServiceOrderId).FirstOrDefaultAsync();
+            //string SupervisorId = serviceInfo.SupervisorId;
+        }
+
+        /// <summary>
+        /// 获取服务单消息内容详情
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetServiceOrderMessage(GetServiceOrderMessageReq req)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var query = UnitWork.Find<ServiceOrderMessage>(o => o.ServiceOrderId == req.ServiceOrderId);
+            var resultsql = query.OrderByDescending(r => r.CreateTime).Select(s => new
+            {
+                s.Content,
+                s.CreateTime,
+                s.FroTechnicianName,
+                s.AppUserId
+            });
+
+            result.Data =
+            (await resultsql
+            .Skip((req.page - 1) * req.limit)
+            .Take(req.limit).ToListAsync()).OrderBy(o => o.CreateTime);
+            result.Count = await query.CountAsync();
+            return result;
+        }
+
+        /// <summary>
+        /// 获取服务单消息内容列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetServiceOrderMessageList(GetServiceOrderMessageListReq req)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var query = UnitWork.Find<ServiceOrderMessage>(s => s.AppUserId == req.CurrentUserId);
+            var resultsql = query.OrderByDescending(r => r.CreateTime).Select(s => new
+            {
+                s.Content,
+                s.CreateTime,
+                s.FroTechnicianName,
+                s.AppUserId,
+                s.ServiceOrderId
+            });
+
+            result.Data =
+            (await resultsql
+            .ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(g => g.First());
+            return result;
+        }
+
+
+        /// <summary>
+        /// 获取未读消息个数
+        /// </summary>
+        /// <param name="currentuserid">当前登陆者appid</param>
+        /// <returns></returns>
+        public async Task<TableData> GetMessageCount(int currentuserid)
+        {
+            var result = new TableData();
+            result.Data = 5;
             return result;
         }
     }

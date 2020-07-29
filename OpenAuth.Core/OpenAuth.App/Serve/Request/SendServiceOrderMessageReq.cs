@@ -5,19 +5,23 @@ using System.Text;
 
 namespace OpenAuth.App.Request
 {
-    public class AppQueryServiceOrderListReq : PageReq
+    public class SendServiceOrderMessageReq
     {
         /// <summary>
-        /// APP用户Id
+        /// 服务单Id
         /// </summary>
         [Required]
+        public int ServiceOrderId { get; set; }
+
+        /// <summary>
+        /// 技术员appUserId
+        /// </summary>
         public int AppUserId { get; set; }
 
         /// <summary>
-        /// 类型 0默认 1评价列表
+        /// 内容
         /// </summary>
-        [Required]
-        public int Type { get; set; }
+        public string Content { get; set; }
 
     }
 }

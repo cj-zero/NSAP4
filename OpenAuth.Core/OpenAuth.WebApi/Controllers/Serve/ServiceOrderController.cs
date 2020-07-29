@@ -9,6 +9,7 @@ using NetOffice.Extensions.Invoker;
 using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
+using OpenAuth.App.Serve.Request;
 using OpenAuth.Repository.Domain;
 
 
@@ -723,6 +724,91 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 result.Data = await _serviceOrderApp.GetUserCanOrderCount(id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 发送聊天室消息
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> SendServiceOrderMessage(SendServiceOrderMessageReq request)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.SendServiceOrderMessage(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        ///获取服务单聊天记录
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetServiceOrderMessage([FromQuery] GetServiceOrderMessageReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetServiceOrderMessage(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        ///获取服务单聊天列表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetServiceOrderMessageList([FromQuery] GetServiceOrderMessageListReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetServiceOrderMessageList(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        ///获取未读消息个数
+        /// </summary>
+        /// <param name="CurrentUserId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetMessageCount(int CurrentUserId)
+        {
+            var result = new TableData();
+            try
+            {
+                result.Data = await _serviceOrderApp.GetMessageCount(CurrentUserId);
             }
             catch (Exception ex)
             {

@@ -25,12 +25,12 @@ namespace OpenAuth.Repository.Domain
     {
         public ServiceOrderMessage()
         {
-          this.FroTechnicianName= string.Empty;
-          this.FroTechnicianId= string.Empty;
-          this.Content= string.Empty;
-          this.Replier= string.Empty;
-          this.ReplierId= string.Empty;
-          this.CreateTime= DateTime.Now;
+            this.FroTechnicianName = string.Empty;
+            this.FroTechnicianId = string.Empty;
+            this.Content = string.Empty;
+            this.Replier = string.Empty;
+            this.ReplierId = string.Empty;
+            this.CreateTime = DateTime.Now;
         }
 
 
@@ -78,12 +78,23 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("创建时间")]
         public System.DateTime? CreateTime { get; set; }
+
+        /// <summary>
+        /// app用户Id
+        /// </summary>
+        public int AppUserId { get; set; }
+
+        /// <summary>
+        /// 是否已读 1已读
+        /// </summary>
+        public int IsRead { get; set; }
+
         /// <summary>
         /// 服务单消息流水记录表
         /// </summary>
         [Ignore]
         public virtual List<ServiceOrderMessagePicture> ServiceOrderMessagePictures { get; set; }
 
-       
+
     }
 }

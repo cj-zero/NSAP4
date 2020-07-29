@@ -172,24 +172,35 @@ namespace OpenAuth.App
             obj = obj.Where(o => o.a.ServiceOrderId == serviceOrderId && o.a.CurrentUserId == currentUserId);
             var query = await obj.Select(q => new
             {
-                q.a.FromTheme,
+                q.c.FromTheme,
                 q.a.CurrentUserId,
-                q.b.CustomerId,
-                q.b.CustomerName,
-                q.b.TerminalCustomer,
-                q.a.ServiceOrderId,
-                q.b.Contacter,
-                q.b.ContactTel,
+                q.c.CustomerId,
+                q.c.CustomerName,
+                q.c.TerminalCustomer,
+                q.c.ServiceOrderId,
+                q.c.Contacter,
+                q.c.ContactTel,
                 q.a.ManufacturerSerialNumber,
                 q.a.MaterialCode,
-                ProblemDescription = "故障描述：" + q.a.TroubleDescription + "；过程描述：" + q.a.ProcessDescription,
-                q.c.Id
+                q.c.ProblemDescription,
+                q.c.Id,
+                q.c.Becity,
+                q.c.BusinessTripDate,
+                q.c.BusinessTripDays,
+                q.c.Destination,
+                q.c.ReplacementMaterialDetails,
+                q.c.Legacy,
+                q.c.Remark,
+                q.c.EndDate,
+                q.c.CompleteAddress,
+                q.c.TechnicianId,
+                q.c.TechnicianName
             }).FirstOrDefaultAsync();
             var thisworkdetail = query.MapTo<CompletionReportDetailsResp>();
             thisworkdetail.Files = new List<UploadFileResp>();
-            if (thisworkdetail != null && thisworkdetail.TheNsapUser != null)
+            if (thisworkdetail != null)
             {
-                var pics = UnitWork.Find<CompletionReportPicture>(m => m.CompletionReportId.Equals(query.Id)).Select(c => c.PictureId).ToList();
+                var pics = UnitWork.Find<CompletionReportPicture>(m => m.CompletionReportId == query.Id).Select(c => c.PictureId).ToList();
                 var picfiles = await UnitWork.Find<UploadFile>(f => pics.Contains(f.Id)).ToListAsync();
                 thisworkdetail.Files.AddRange(picfiles.MapTo<List<UploadFileResp>>());
             }
