@@ -45,18 +45,6 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 var order = await _serviceOrderApp.Add(addServiceOrderReq);
-                await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
-                {
-                    Title = "提交成功",
-                    Details = "已收到您的反馈，正在为您分配客服中。",
-                    ServiceOrderId = order.Id
-                });
-                await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
-                {
-                    Title = "已分配专属客服",
-                    Details = "已为您分配专属客服进行处理，如有消息将第一时间通知您，请耐心等候。",
-                    ServiceOrderId = order.Id
-                });
             }
             catch (Exception ex)
             {
@@ -186,12 +174,6 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 await _serviceOrderApp.CreateWorkOrder(request);
-                await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
-                {
-                    Title = "客服确认售后信息",
-                    Details = "客服确认售后信息，将交至技术员。",
-                    ServiceOrderId = request.Id
-                });
             }
             catch (Exception ex)
             {
@@ -410,11 +392,6 @@ namespace OpenAuth.WebApi.Controllers
                 {
                     semaphoreSlim.Release();
                 }
-                await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
-                {
-                    Title = "移转至技术员",
-                    Details = "以为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
-                }, req.ServiceWorkOrderIds);
 
             }
             catch (Exception ex)
@@ -596,6 +573,7 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 await _serviceOrderApp.SendOrders(req);
+
                 result.Result = true;
             }
             catch (Exception ex)

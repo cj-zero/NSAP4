@@ -276,7 +276,12 @@
         <el-form-item label="备注" prop="remark">
           <el-input type="textarea" size="small" v-model="formList[0].remark"></el-input>
         </el-form-item>
-
+        <el-form-item label="故障描述" prop="remark" v-if="!isEdit">
+          <el-input type="textarea" size="small" v-model="formList[0].troubleDescription"></el-input>
+        </el-form-item>      
+        <el-form-item label="过程描述" prop="remark" v-if="!isEdit">
+          <el-input type="textarea" size="small" v-model="formList[0].processDescription"></el-input>
+        </el-form-item>
         <el-form-item>
           <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
             <el-col :span="6"></el-col>
@@ -594,7 +599,12 @@
             <el-form-item label="备注" prop="remark">
               <el-input type="textarea" size="small" v-model="item.remark"></el-input>
             </el-form-item>
-
+          <el-form-item label="故障描述"  v-if="!isEdit" prop="remark">
+          <el-input type="textarea" size="small" v-model="item.troubleDescription"></el-input>
+        </el-form-item>      
+        <el-form-item label="过程描述" v-if="!isEdit" prop="remark">
+          <el-input type="textarea" size="small" v-model="item.processDescription"></el-input>
+        </el-form-item>
             <el-form-item>
               <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
                 <el-col :span="6"></el-col>
@@ -845,7 +855,6 @@ export default {
       immediate: true,
       handler(val) {
         if (val && val.length) {
-          console.log(val);
           this.formList = val;
         }
       }

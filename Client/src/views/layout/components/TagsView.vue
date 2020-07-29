@@ -34,7 +34,7 @@ export default {
       visible: false,
       top: 0,
       left: 0,
-      Shiftid: "", //记录上一次时间戳
+      page: "", //记录上一次时间戳
       selectedTag: {}
     };
   },
@@ -69,7 +69,7 @@ export default {
       if (this.$route.name) {
         // return this.$route;
         let newRoute = {
-          fullPath: `${this.$route.path}?Shiftid=${times}`,
+          fullPath: `${this.$route.path}?page=${times}`,
           hash: this.$route.hash,
           matched: this.$route.matched,
           meta: this.$route.meta,
@@ -77,7 +77,7 @@ export default {
           params: this.$route.params,
           path: this.$route.path,
           query: {
-            Shiftid: times
+            page: times
           }
         };
         return newRoute;
@@ -94,18 +94,16 @@ export default {
         });
       });
     },
-
     isActive(route) {
-      // return route.path === this.$route.path;
-      return route.fullPath === this.$route.fullPath;
+       return route.path === this.$route.path;
+      // if(!route.query){return route.path === this.$route.path}else{
+      // return route.fullPath === this.$route.fullPath;
+
+        
     },
     addViewTags() {
       //获取store储存的tag，
       let route = this.generateRoute();
-      //  let times = new Date().getTime()
-
-      // this.Shiftid = new Date().getTime()
-
       if (!route) {
         return false;
       }
@@ -115,10 +113,9 @@ export default {
     async addViewTags_copy(page) {
       const route = await this.generateRoute();
       await this.$store.dispatch("copyVisitedViews", route);
-      //  let times = new Date().getTime()
       await this.$router.push({
         path: page.fullPath,
-        query: { Shiftid: route.query.Shiftid }
+        query: { page: route.query.page }
       });
 
       if (!route) {

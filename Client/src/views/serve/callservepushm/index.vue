@@ -234,7 +234,7 @@ export default {
       workorderidList: [],
       hasAlreadNum: "", //已经接的单
       formTheadOptions: [
-        { name: "serviceWorkOrderId", label: "工单ID", ifFixed: true ,align:'right'},
+        { name: "serviceWorkOrderId", label: "工单ID", ifFixed: true ,align:'left'},
         { name: "priority", label: "优先级" },
         { name: "fromType", label: "呼叫类型", width: "100px" },
         { name: "status", label: "呼叫状态" },
@@ -572,7 +572,6 @@ export default {
         this.listQuery.QryServiceOrderId = a.key;
         this.getRightList();
       }
-      console.log(this.listQuery.QryMaterialTypes,a)
     },
 
     getLeftList() {
@@ -603,19 +602,37 @@ export default {
     getAllRight() {
       this.listLoading = true;
       callservepushm.getRightList(this.listQuery1).then(response => {
-        this.list = response.data.data;
-        // this.list = response.data;
+        if(response.code===200){
+     this.list = response.data.data;
         this.total = response.data.count;
         this.listLoading = false;
-      });
+        }else{
+          this.$message({
+            type:'error',
+            message:`${response.message}`
+          })
+        }
+   
+      })
     },
     getRightList() {
       this.listLoading = true;
       callservepushm.getRightList(this.listQuery).then(response => {
-        this.list = response.data.data;
-        // this.list = response.data;
+             if(response.code===200){
+                      this.list = response.data.data;
         this.total = response.data.count;
         this.listLoading = false;
+        }else{
+          this.$message({
+            type:'error',
+            message:`${response.message}`
+          })
+        }
+      }).catch(()=>{
+       this.$message({
+            type:'error',
+            message:`请输入正确的搜索值`
+          })
       });
     },
     open() {

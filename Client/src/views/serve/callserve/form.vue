@@ -208,7 +208,7 @@
               </el-col> -->
             </el-row>
             <el-row
-              v-if="!isEdit&&form.serviceOrderPictures.length"
+              v-if="form.serviceOrderPictures&&form.serviceOrderPictures.length"
               :gutter="10"
               type="flex"
               style="margin:0 0 10px 0 ;"
@@ -216,9 +216,9 @@
             >
               <el-col :span="1" style="line-height:40px;"></el-col>
               <el-col :span="2" style="line-height:40px;">
-                <div style="font-size:12px;color:#606266;width:100px;">上传图片列表</div>
+                <div style="font-size:12px;color:#606266;width:120px;">已上传图片</div>
               </el-col>
-              <el-col :span="20" v-if="form.serviceOrderPictures.length">
+              <el-col :span="20" v-if="form.serviceOrderPictures&&form.serviceOrderPictures.length">
                 <div class="demo-image__lazy">
                   <el-image
                     style="width:60px;height:50px;display:inline-block;margin:0 10px;"
@@ -483,6 +483,7 @@ export default {
       deep: true,
       handler(val) {
         if (val) {
+          console.log(val)
           Object.assign(this.form, val);
          if(val.serviceWorkOrders.length>0){
            val.serviceWorkOrders.map((item,index)=>{

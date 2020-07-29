@@ -28,48 +28,61 @@
           <el-row :gutter="10">
             <el-col :span="3">
               <el-form-item label="姓名" size="small" >
-                         <el-input v-model="listQuery.QryCustomer"></el-input>
+                         <el-input v-model="listQuery.Name" ></el-input>
 
               </el-form-item>
             </el-col>
 
             <el-col :span="3">
               <el-form-item label="部门" size="small" >
-                <el-select v-model="listQuery.QryState" placeholder="请选择部门">
+                <el-input v-model="listQuery.Org"></el-input>
+
+                <!-- <el-select v-model="listQuery.Org" placeholder="请选择部门">
                   <el-option label="全部" value></el-option>
                   <el-option label="部门1" value="1"></el-option>
                   <el-option label="部门2" value="2"></el-option>
                   <el-option label="部门3" value="3"></el-option>
-                </el-select>
+                </el-select> -->
               </el-form-item>
             </el-col>
 
             <el-col :span="3">
               <el-form-item label="拜访对象" size="small" >
-                <el-input v-model="listQuery.QryCustomer"></el-input>
+                <el-input v-model="listQuery.VisitTo"></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="6">
               <el-form-item label="打卡日期" size="small" >
                 <el-col :span="11">
-                  <el-date-picker
-                    type="date"
+                  <el-time-select
                     placeholder="选择开始日期"
-                    v-model="listQuery.QryCreateTimeFrom"
+                    v-model="listQuery.DateFrom"
                     style="width: 100%;"
-                  ></el-date-picker>
+                      :picker-options="{
+                        start: '05:30',
+                        step: '00:15',
+                        end: '23:30'
+                      }"
+                  ></el-time-select>
                 </el-col>
                 <el-col class="line" :span="2">至</el-col>
                 <el-col :span="11">
-                  <el-date-picker
-                    type="date"
+                  <el-time-select
                     placeholder="选择结束时间"
-                    v-model="listQuery.QryCreateTimeTo"
+                    v-model="listQuery.DateTo"
                     style="width: 100%;"
-                  ></el-date-picker>
+                      :picker-options="{
+                        start: '05:30',
+                        step: '00:15',
+                        end: '23:30'
+                      }"
+                  ></el-time-select>
                 </el-col>
               </el-form-item>
             </el-col>
+              <el-col :span="3" style="margin-left:20px;" >
+                    <el-button type="primary" @click="onSubmit" size="small" icon="el-icon-search"> 搜 索 </el-button>
+      </el-col>
           </el-row>
         </el-form>
         <el-table
@@ -95,6 +108,7 @@
             :sortable="fruit=='chaungjianriqi'?true:false"
             style="background-color:silver;"
             :label="fruit.label"
+            :width="fruit.width"
           >
             <template slot-scope="scope">
               <!-- <span
@@ -146,10 +160,11 @@ export default {
       multipleSelection: [], // 列表checkbox选中的值
       formTheadOptions: [
         // { name: "id", label: "Id"},
-        { name: "name", label: "姓名" },
-        { name: "org", label: "职位" },
-        { name: "org", label: "部门" },
-        { name: "clockTime", label: "打卡时间" },
+        { name: "name", label: "姓名" ,width:'80px'},
+        { name: "org", label: "职位",width:'100px' },
+        { name: "org", label: "部门" ,width:'100px'},
+        { name: "clockTime", label: "打卡时间" ,width:'100px'},
+         { name: "clockDate", label: "打卡日期" },
         { name: "location", label: "地点" },
         { name: "specificLocation", label: "详细地址" },
         { name: "visitTo", label: "拜访对象" },
@@ -207,10 +222,11 @@ export default {
     handleSelectionChange(val) {
       this.multipleSelection = val;
     },
-
+    onSubmit(){
+      this.getList()
+    },
     getList() {
       this.listLoading = true;
-
       callservecheck.getList(this.listQuery).then(res => {
         this.checkList = res.data
         console.log(res)

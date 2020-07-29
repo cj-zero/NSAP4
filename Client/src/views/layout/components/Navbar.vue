@@ -104,14 +104,14 @@ export default {
     }
     .logo {
         width: 180px;
-        text-align: center;
+        // text-align: center;
         float: left;
-        color: white;
+        // color: white;
         .user-avatar {
             width: 96%;
             margin:0 2%;
             height: 30px;
-            border:1px solid white;
+            // border:1px solid white;
             border-radius:3px;
             vertical-align: middle;
             margin-right: 5px;

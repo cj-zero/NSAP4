@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
@@ -121,7 +122,29 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
+        /// <summary>
+        /// 获取技术员Id列表
+        /// </summary>
+        /// <param name="serviceOrderId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response<List<int>>> GetTechnicianAppIds(int serviceOrderId)
+        {
 
+            var result = new Response<List<int>>();
+            try
+            {
+                result.Result = await _app.GetTechnicianAppIds(serviceOrderId);
+
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
         public ServiceEvaluatesController(ServiceEvaluateApp app) 
         {
             _app = app;
