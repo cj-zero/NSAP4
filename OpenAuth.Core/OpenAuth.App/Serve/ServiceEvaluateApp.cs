@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
@@ -138,6 +139,11 @@ namespace OpenAuth.App
         public async Task Delete(long[] ids)
         {
             await UnitWork.DeleteAsync<ServiceEvaluate>(s => ids.Contains(s.Id));
+        }
+
+        public async Task<List<int>> GetTechnicianAppIds(int serviceOrderId)
+        {
+            return await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId).Select(s => s.CurrentUserId.Value).Distinct().ToListAsync();
         }
 
         public ServiceEvaluateApp(IUnitWork unitWork,

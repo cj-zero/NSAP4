@@ -29,12 +29,14 @@ namespace OpenAuth.App
         private readonly RevelanceManagerApp _revelanceApp;
         private readonly ServiceOrderLogApp _serviceOrderLogApp;
         private readonly BusinessPartnerApp _businessPartnerApp;
+        private readonly AppServiceOrderLogApp _appServiceOrderLogApp;
         public ServiceOrderApp(IUnitWork unitWork,
-            RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth) : base(unitWork, auth)
+            RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp) : base(unitWork, auth)
         {
             _revelanceApp = app;
             _serviceOrderLogApp = serviceOrderLogApp;
             _businessPartnerApp = businessPartnerApp;
+            _appServiceOrderLogApp = appServiceOrderLogApp;
         }
         /// <summary>
         /// 加载列表
@@ -236,6 +238,18 @@ namespace OpenAuth.App
             pictures.ForEach(p => { p.ServiceOrderId = o.Id; p.PictureType = 1; });
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
+            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+            {
+                Title = "提交成功",
+                Details = "已收到您的反馈，正在为您分配客服中。",
+                ServiceOrderId = o.Id
+            });
+            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+            {
+                Title = "已分配专属客服",
+                Details = "已为您分配专属客服进行处理，如有消息将第一时间通知您，请耐心等候。",
+                ServiceOrderId = o.Id
+            });
             return o;
         }
 
@@ -429,6 +443,12 @@ namespace OpenAuth.App
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
 
+            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+            {
+                Title = "客服确认售后信息",
+                Details = "客服确认售后信息，将交至技术员。",
+                ServiceOrderId = request.Id
+            });
             await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"客服:{loginContext.User.Name}创建工单", ActionType = "创建工单", ServiceOrderId = obj.Id });
         }
         /// <summary>
@@ -881,6 +901,12 @@ namespace OpenAuth.App
                 CurrentUserId = req.TechnicianId
             });
             await UnitWork.SaveAsync();
+
+            await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
+            {
+                Title = "移转至技术员",
+                Details = "以为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
+            }, req.ServiceWorkOrderIds);
             await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{req.TechnicianId}接单工单：{string.Join(",", req.ServiceWorkOrderIds)}", ActionType = "技术员接单" }, req.ServiceWorkOrderIds);
         }
 
@@ -905,11 +931,11 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task BookingWorkOrder(BookingWorkOrderReq req)
         {
-            var order = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId.Equals(req.CurrentUserId)).ToListAsync();
+            var orderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId.Equals(req.CurrentUserId)).Select(o => o.Id).ToListAsync();
             List<int> workOrderIds = new List<int>();
-            foreach (var item in order)
+            foreach (var id in orderIds)
             {
-                workOrderIds.Add(item.Id);
+                workOrderIds.Add(id);
             }
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId, o => new ServiceWorkOrder
             {
@@ -917,6 +943,11 @@ namespace OpenAuth.App
                 OrderTakeType = 4
             });
             await UnitWork.SaveAsync();
+            await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
+            {
+                Title = "技术员预约上门时间",
+                Details = $"技术员预约的{req.BookingDate} 上门服务，请耐心等候。",
+            }, workOrderIds);
             await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{req.CurrentUserId}预约工单{string.Join(",", workOrderIds)}", ActionType = "预约工单" }, workOrderIds);
 
         }
@@ -1029,6 +1060,11 @@ namespace OpenAuth.App
                 CurrentUserId = req.CurrentUserId,
                 Status = 2
             });
+            await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
+            {
+                Title = "移转至技术员",
+                Details = "以为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
+            }, req.WorkOrderIds);
             await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{req.CurrentUserId}派单{string.Join(",", req.WorkOrderIds)}", ActionType = "主管派单工单" }, req.WorkOrderIds);
 
         }
