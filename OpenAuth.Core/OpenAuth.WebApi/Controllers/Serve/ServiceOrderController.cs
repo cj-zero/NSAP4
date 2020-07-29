@@ -701,7 +701,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
-                result.Data = await _serviceOrderApp.GetUserCanOrderCount(id);
+                result = await _serviceOrderApp.GetUserCanOrderCount(id);
             }
             catch (Exception ex)
             {
@@ -786,7 +786,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
-                result.Data = await _serviceOrderApp.GetMessageCount(CurrentUserId);
+                result = await _serviceOrderApp.GetMessageCount(CurrentUserId);
             }
             catch (Exception ex)
             {
