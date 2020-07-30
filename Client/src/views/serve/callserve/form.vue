@@ -90,7 +90,7 @@
               </el-col>
               <el-col :span="8">
                 <el-form-item label="电话号码">
-                  <el-input size="mini" v-model.number="form.contactTel"></el-input>
+                  <el-input size="mini" v-model.number="form.contactTel" disabled></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="8">
@@ -101,8 +101,8 @@
                     { type: 'number', message: '电话号码格式有误'}
                   ]"
                 >-->
-                <el-form-item label="最新电话号码">
-                  <el-input size="mini" v-model.number="form.newestContactTel"></el-input>
+                <el-form-item label="最新电话号码" prop="newestContactTel">
+                  <el-input size="mini" v-model="form.newestContactTel" ></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -355,7 +355,18 @@ export default {
     "sure"
   ],
   //  ##isEdit是否可以编辑  ##customer获取服务端对比的信息
+
   data() {
+       var checkTelF   = (rule, value, callback) => {
+        setTimeout(() => {
+          let  reg = RegExp(/^[\d-]+$/)
+          if (reg.test(value)) {
+          callback();
+          } else {
+            callback(new Error('电话号码只能包括数字值或"-"'));
+          }
+        }, 500);
+      };
     return {
       baseURL: process.env.VUE_APP_BASE_API,
       tokenValue: this.$store.state.user.token,
@@ -446,6 +457,10 @@ export default {
         ],
         createTime: [
           { required: true, message: "请选择创建时间", trigger: "change" }
+        ],
+        newestContactTel:[
+          { validator: checkTelF, trigger: 'blur' }
+
         ]
       },
       listQuery: {

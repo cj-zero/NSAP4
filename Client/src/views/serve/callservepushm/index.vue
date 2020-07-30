@@ -24,8 +24,8 @@
     <div class="app-container flex-item bg-white">
       <zxsearch @change-Search="changeSearch" @change-Order="changeOrder"></zxsearch>
       <el-row class="fh">
-        <el-col :span="4" class="fh ls-border" >
-          <el-card shadow="never" class="card-body-none fh" style="" >
+        <el-col :span="4" class="fh ls-border">
+          <el-card shadow="never" class="card-body-none fh" style>
             <el-link
               style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;"
               @click="getAllRight"
@@ -109,14 +109,14 @@
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
-            <zxform
-              :form="temp"
-              formName="编辑"
-              labelposition="right"
-              labelwidth="100px"
-              :isEdit="true"
-              refValue="dataForm"
-            ></zxform>
+        <zxform
+          :form="temp"
+          formName="编辑"
+          labelposition="right"
+          labelwidth="100px"
+          :isEdit="true"
+          refValue="dataForm"
+        ></zxform>
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
           <el-button size="mini" v-if="dialogStatus=='create'" type="primary" @click="createData">确认</el-button>
@@ -146,7 +146,13 @@
           <el-button size="mini" type="primary" @click="dialogFormView = false">确认</el-button>
         </div>
       </el-dialog>
-      <el-dialog v-el-drag-dialog :visible.sync="dialogTable" :destroy-on-close="true" center width="800px">
+      <el-dialog
+        v-el-drag-dialog
+        :visible.sync="dialogTable"
+        :destroy-on-close="true"
+        center
+        width="800px"
+      >
         <DynamicTable
           :formThead.sync="formTheadOptions"
           :defaultForm.sync="defaultFormThead"
@@ -157,14 +163,27 @@
           <el-button type="primary" @click="dialogTable = false">确 定</el-button>
         </span>
       </el-dialog>
-      <el-dialog v-el-drag-dialog :visible.sync="dialogTree" :destroy-on-close="true" center width="300px">
+      <el-dialog
+        v-el-drag-dialog
+        :visible.sync="dialogTree"
+        :destroy-on-close="true"
+        center
+        width="300px"
+      >
         <treeList @close="dialogTree=false"></treeList>
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialogTree = false">取 消</el-button>
           <el-button type="primary" @click="dialogTree = false">确 定</el-button>
         </span>
       </el-dialog>
-      <el-dialog v-el-drag-dialog :visible.sync="dialogOrder" :destroy-on-close="true" title="选择派单对象" center width="500px">
+      <el-dialog
+        v-el-drag-dialog
+        :visible.sync="dialogOrder"
+        :destroy-on-close="true"
+        title="选择派单对象"
+        center
+        width="500px"
+      >
         <el-table :data="tableData" border @row-click="setRadio" style="width: 100%">
           <el-table-column align="center">
             <template slot-scope="scope">
@@ -234,7 +253,12 @@ export default {
       workorderidList: [],
       hasAlreadNum: "", //已经接的单
       formTheadOptions: [
-        { name: "serviceWorkOrderId", label: "工单ID", ifFixed: true ,align:'left'},
+        {
+          name: "serviceWorkOrderId",
+          label: "工单ID",
+          ifFixed: true,
+          align: "left"
+        },
         { name: "priority", label: "优先级" },
         { name: "fromType", label: "呼叫类型", width: "100px" },
         { name: "status", label: "呼叫状态" },
@@ -246,7 +270,11 @@ export default {
         { name: "createTime", label: "创建日期" },
         { name: "recepUserName", label: "接单员" },
         { name: "techName", label: "技术员" },
-        { name: "manufacturerSerialNumber", label: "制造商序列号", width: "120px"  },
+        {
+          name: "manufacturerSerialNumber",
+          label: "制造商序列号",
+          width: "120px"
+        },
         { name: "materialCode", label: "物料编码" },
         { name: "materialDescription", label: "物料描述" },
         { name: "contacter", label: "联系人" },
@@ -390,9 +418,7 @@ export default {
       }
     }
   },
-  created() {
- 
-  },
+  created() {},
   mounted() {
     this.getLeftList();
     this.getRightList();
@@ -508,10 +534,10 @@ export default {
           this.dialogTable = true;
           break;
         case "btnEdit":
-             this.$message({
-              message: "抱歉，暂不提供编辑功能",
-              type: "error"
-            });
+          this.$message({
+            message: "抱歉，暂不提供编辑功能",
+            type: "error"
+          });
           // if (this.multipleSelection.length<1) {
           //   this.$message({
           //     message: "请点击需要编辑的数据",
@@ -536,19 +562,33 @@ export default {
       }
     },
 
-    checkGroupNode(a) {
+     checkGroupNode(a) {
       //点击复选框触发
       if (this.ifParent) {
         if (this.ifParent == a.key) {
           //同一级，不做限制，添加编码请求
-          if (!a.children) {
-            if(this.listQuery.QryMaterialTypes.indexOf(a.id)==-1){  //找数组中是否存在类型号，有的话就说明是取消
-            this.listQuery.QryMaterialTypes.push(a.id);
+          if (!a.children) { //如果点击是子级
+            if (this.listQuery.QryMaterialTypes.indexOf(a.id) == -1) {
+              //找数组中是否存在类型号，有的话就说明是取消
+              if(!this.listQuery.QryServiceOrderId){this.listQuery.QryServiceOrderId =a.key}
+              this.listQuery.QryMaterialTypes.push(a.id);
+            } else {
+              this.listQuery.QryMaterialTypes = this.listQuery.QryMaterialTypes.filter(
+                item => item != a.id
+              );
+              if(this.listQuery.QryMaterialTypes.length==0){
+          this.listQuery.QryServiceOrderId = '';
+              }
+            }
+          }else{
+            if( !this.listQuery.QryServiceOrderId){
+               this.listQuery.QryServiceOrderId =a.key
             }else{
-              this.listQuery.QryMaterialTypes=this.listQuery.QryMaterialTypes.filter(item=>item!=a.id)
+              this.listQuery.QryServiceOrderId=''
+              this.listQuery.QryMaterialTypes=[]
             }
           }
-           this.getRightList();
+          this.getRightList();
         } else {
           // console.log('清除之前,添加后面的')
           this.$refs.treeForm.setCheckedKeys([]);
@@ -558,7 +598,11 @@ export default {
           this.$refs.treeForm.setCheckedKeys([a.key1]);
           if (!a.children) {
             this.listQuery.QryMaterialTypes.push(a.id);
-          }
+          }else{
+          a.children.map(item=>{
+            this.listQuery.QryMaterialTypes.push(item.id)
+          })
+        }
           this.getRightList();
         }
       } else {
@@ -566,6 +610,10 @@ export default {
         this.listQuery.QryMaterialTypes = [];
         if (!a.children) {
           this.listQuery.QryMaterialTypes.push(a.id);
+        }else{
+          a.children.map(item=>{
+            this.listQuery.QryMaterialTypes.push(item.id)
+          })
         }
         this.$refs.treeForm.setCheckedKeys([a.key1]);
         this.ifParent = a.key;
@@ -577,63 +625,74 @@ export default {
     getLeftList() {
       this.listLoading = true;
       let arr = [];
-      callservepushm.getLeftList({QryState:this.listQuery.QryState}).then(res => {
-        let resul = res.data.data;
-        for (let i = 0; i < resul.length; i++) {
-          arr[i] = [];
-          arr[i].label = `服务号:${resul[i].serviceOrderId}`;
-          arr[i].key1 = `${resul[i].serviceOrderId}`;
-          arr[i].key = `${resul[i].serviceOrderId}`;
-          arr[i].children = [];
-          resul[i].materialTypes.map(item1 => {
-            arr[i].children.push({
-              label: `物料类型号:${item1}`,
-              key: `${resul[i].serviceOrderId}`,
-              key1: `${resul[i].serviceOrderId}&${item1}`,
-              id: item1
+      callservepushm
+        .getLeftList({ QryState: this.listQuery.QryState })
+        .then(res => {
+          let resul = res.data.data;
+          for (let i = 0; i < resul.length; i++) {
+            arr[i] = [];
+            arr[i].label = `服务号:${resul[i].serviceOrderId}`;
+            arr[i].key1 = `${resul[i].serviceOrderId}`;
+            arr[i].key = `${resul[i].serviceOrderId}`;
+            arr[i].children = [];
+            resul[i].materialTypes.map(item1 => {
+              arr[i].children.push({
+                label: `物料类型号:${item1}`,
+                key: `${resul[i].serviceOrderId}`,
+                key1: `${resul[i].serviceOrderId}&${item1}`,
+                id: item1
+              });
             });
-          });
-          // console.log(arr)
-        }
-        this.modulesTree = arr;
-      });
+            // console.log(arr)
+          }
+          this.modulesTree = arr;
+        });
       this.listLoading = false;
     },
     getAllRight() {
       this.listLoading = true;
       callservepushm.getRightList(this.listQuery1).then(response => {
-        if(response.code===200){
-     this.list = response.data.data;
-        this.total = response.data.count;
-        this.listLoading = false;
-        }else{
+        if (response.code === 200) {
+          this.list = response.data.data;
+          this.total = response.data.count;
+          this.listLoading = false;
+        } else {
           this.$message({
-            type:'error',
-            message:`${response.message}`
-          })
+            type: "error",
+            message: `${response.message}`
+          });
         }
-   
-      })
+      });
     },
     getRightList() {
       this.listLoading = true;
-      callservepushm.getRightList(this.listQuery).then(response => {
-             if(response.code===200){
-                      this.list = response.data.data;
-        this.total = response.data.count;
-        this.listLoading = false;
-        }else{
-          this.$message({
-            type:'error',
-            message:`${response.message}`
-          })
-        }
-      }).catch(()=>{
-       this.$message({
-            type:'error',
-            message:`请输入正确的搜索值`
-          })
-      });
+      callservepushm
+        .getRightList(this.listQuery)
+        .then(response => {
+          if (response.code === 200) {
+            this.list = response.data.data;
+            this.total = response.data.count;
+            this.listLoading = false;
+          } else {
+            this.$message({
+              type: "error",
+              message: `${response.message}`
+            });
+          }
+        }).catch(() => {
+        this.listLoading = true;
+        let that = this
+          setTimeout(function(){
+                      that.$message({
+            type: "error",
+            message: `请输入正确的搜索值`
+          });
+            that.list = [];
+            that.total =0;
+            that.listLoading = false;
+          },700)
+
+        });
     },
     open() {
       this.$confirm("确认已完成回访?", "提示", {

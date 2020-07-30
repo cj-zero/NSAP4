@@ -25,7 +25,7 @@
           </el-col>
 
           <el-col :span="4" v-if="!isEditForm" style="height:40px;line-height:40px;font-size:13px;">
-            <el-switch size="small" v-model="formList[0].edit" active-text="修改后续" :width="20"></el-switch>
+            <el-switch size="small" v-model="formList[0].editTrue" active-text="修改后续" :width="20"></el-switch>
           </el-col>
           <el-col :span="2" v-if="isEditForm"></el-col>
           <el-col :span="isEditForm?3:2" style="height:40px;line-height:40px;">
@@ -355,7 +355,7 @@
                 v-if="!isEditForm"
                 style="height:40px;line-height:40px;font-size:13px;"
               >
-                <el-switch size="small" v-model="item.edit" active-text="修改后续" :width="20"></el-switch>
+                <el-switch size="small" v-model="item.editTrue" active-text="修改后续" :width="20"></el-switch>
               </el-col>
               <el-col :span="2" v-if="isEditForm"></el-col>
 
@@ -592,11 +592,7 @@
                 size="small"
                 v-model="item.solutionId"
               ></el-input>
-              <el-input
-                v-model="item.solutionsubject"
-                :disabled="item.fromType!==2"
-                readonly
-              >
+              <el-input v-model="item.solutionsubject" :disabled="item.fromType!==2" readonly>
                 <el-button
                   size="mini"
                   slot="append"
@@ -783,7 +779,8 @@ export default {
           contractId: "", //服务合同
           solutionId: "", //解决方案
           troubleDescription: "",
-          processDescription: ""
+          processDescription: "",
+          editTrue:true, //修改后续的状态
         }
       ], //表单依赖的表格数据
 
@@ -851,12 +848,37 @@ export default {
       this.listLoading = false;
     });
   },
+  computed: {
+    newValue() {
+      return JSON.stringify(this.formList)
+    }
+  },
   watch: {
-    formList: {
-      deep: true,
-      handler(val) {
-        this.$emit("change-form", val);
-      }
+    newValue: {
+      handler:function(Val, Val1){
+      let newVal = JSON.parse(Val)
+      let oldVal = JSON.parse(Val1)
+      // let chengeIndex= ''
+      this.$emit("change-form", newVal);
+      newVal.map((item,index)=>{
+        if(JSON.stringify(newVal[index])!==JSON.stringify(oldVal[index])){
+         let newValChild =newVal[index]
+         let oldValChild =oldVal[index]
+        //  console.log()
+        if(newVal.length==oldVal.length){
+                   for( let item1 in oldValChild ){
+              if(newValChild[item1]!==oldValChild[item1]){
+                console.log(item1,newValChild[item1],index)
+              }
+              
+         }
+        }
+
+        }
+      })
+      },
+    deep: true
+    // immediate:true
     },
     propForm: {
       deep: true,
@@ -926,7 +948,7 @@ export default {
       console.log(val);
     },
     NodeClick(res) {
-      console.log(this.formList,this.sortForm - 1)
+      console.log(this.formList, this.sortForm - 1);
       this.formList[this.sortForm - 1].problemTypeId = res.id;
       this.formList[this.sortForm - 1].problemTypeName = res.name;
       this.problemLabel = res.name;
@@ -982,7 +1004,7 @@ export default {
         for (let i = 0; i < newList.length; i++) {
           this.formList.push({
             manufacturerSerialNumber: newList[i].manufSN,
-            // serviceOrderId:serviceOrder,
+            // editTrue:true,
             internalSerialNumber: newList[i].internalSN,
             materialCode: newList[i].itemCode,
             materialDescription: newList[i].itemName
@@ -996,7 +1018,7 @@ export default {
           this.formList.push({
             manufacturerSerialNumber: this.formListStart[i].manufSN,
             internalSerialNumber: this.formListStart[i].internalSN,
-            // serviceOrderId:serviceOrder,
+            // editTrue:true,
             materialCode: this.formListStart[i].itemCode,
             materialDescription: this.formListStart[i].itemName
           });
