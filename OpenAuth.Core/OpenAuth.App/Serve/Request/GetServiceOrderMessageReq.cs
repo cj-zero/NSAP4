@@ -12,5 +12,11 @@ namespace OpenAuth.App.Request
         /// </summary>
         [Required]
         public int ServiceOrderId { get; set; }
+
+        /// <summary>
+        /// 当前appUserId
+        /// </summary>
+        [Required]
+        public int CurrentUserId { get; set; }
     }
 }

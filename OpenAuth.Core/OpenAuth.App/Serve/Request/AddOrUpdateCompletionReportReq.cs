@@ -136,6 +136,10 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string CreateUserId { get; set; }
 
+        /// <summary>
+        /// 技术员Id
+        /// </summary>
+        public int CurrentUserId { get; set; }
         //todo:添加自己的请求字段
         //todo:添加自己的请求字段
         public List<FileBind> Pictures { get; set; }

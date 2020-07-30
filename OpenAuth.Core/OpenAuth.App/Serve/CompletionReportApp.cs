@@ -9,7 +9,7 @@ using OpenAuth.Repository.Interface;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
-
+using System.Reactive;
 
 namespace OpenAuth.App
 {
@@ -74,6 +74,7 @@ namespace OpenAuth.App
             pictures.ForEach(r => r.CompletionReportId = o.Id);
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId, s => new ServiceWorkOrder { Status = 7 });
         }
 
 

@@ -22,6 +22,7 @@ using Minio.DataModel;
 using NPOI.SS.Formula.Functions;
 using log4net.Core;
 using OpenAuth.App.Serve.Request;
+using CSRedis;
 
 namespace OpenAuth.App
 {
@@ -934,7 +935,7 @@ namespace OpenAuth.App
         /// <summary>
         /// 获取服务单图片Id列表
         /// </summary>
-        /// <param name="id">报价单Id</param>
+        /// <param name="id">服务单Id</param>
         /// <param name="type">1-客户上传 2-客服上传</param>
         /// <returns></returns>
         public async Task<List<UploadFileResp>> GetServiceOrderPictures(int id, int type)
@@ -1200,7 +1201,7 @@ namespace OpenAuth.App
             }
             int Type = 0;
             //判断当前技术员是否已经接过单据 如果有则直接进入详情
-            var count = UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.CurrentUserId).ToList().Count;
+            var count = UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.CurrentUserId && s.ServiceOrderId == req.ServiceOrderId).ToList().Count;
             if (count > 0)
             {
                 Type = 1;
@@ -1385,6 +1386,7 @@ namespace OpenAuth.App
                     throw new CommonException("您还未开通nSAP访问权限", 204);
                 }
                 userId = userInfo.Id;
+                name = userInfo.Name;
             }
             var obj = req.MapTo<ServiceOrderMessage>();
             obj.CreateTime = DateTime.Now;
@@ -1392,14 +1394,73 @@ namespace OpenAuth.App
             obj.FroTechnicianName = name;
             await UnitWork.AddAsync<ServiceOrderMessage, int>(obj);
             await UnitWork.SaveAsync();
-            //发给服务单客服/主管
-            var serviceInfo = await UnitWork.Find<ServiceOrder>(s => s.Id == req.ServiceOrderId).FirstOrDefaultAsync();
-            //客服Id
-            string RecepUserId = serviceInfo.RecepUserId;
-            //主管Id
-            string SupervisorId = serviceInfo.SupervisorId;
+            string msgId = (await UnitWork.Find<ServiceOrderMessage>(s => s.AppUserId == req.AppUserId).OrderByDescending(o => o.CreateTime).FirstOrDefaultAsync()).Id;
+            await SendMessageToRelatedUsers(req.Content, req.ServiceOrderId, req.AppUserId, msgId);
         }
 
+        /// <summary>
+        /// 发送消息给服务单相关人员
+        /// </summary>
+        /// <param name="Content"></param>
+        /// <param name="ServiceOrderId"></param>
+        /// <param name="FromUserId"></param>
+        /// <param name="MessageId"></param>
+        /// <returns></returns>
+        private async Task SendMessageToRelatedUsers(string Content, int ServiceOrderId, int FromUserId, string MessageId)
+        {
+            //发给服务单客服/主管
+            var serviceInfo = await UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId).FirstOrDefaultAsync();
+            //客服Id
+            string RecepUserId = serviceInfo.RecepUserId;
+            if (!string.IsNullOrEmpty(RecepUserId))
+            {
+                var recepUserInfo = await UnitWork.Find<AppUserMap>(a => a.UserID == RecepUserId).FirstOrDefaultAsync();
+                if (recepUserInfo != null && recepUserInfo.AppUserId > 0)
+                {
+                    var msgObj = new ServiceOrderMessageUser
+                    {
+                        CreateTime = DateTime.Now,
+                        FromUserId = FromUserId.ToString(),
+                        FroUserId = RecepUserId,
+                        HasRead = false,
+                        MessageId = MessageId
+                    };
+                    await UnitWork.AddAsync<ServiceOrderMessageUser, int>(msgObj);
+                }
+            }
+            //主管Id
+            string SupervisorId = serviceInfo.SupervisorId;
+            if (!string.IsNullOrEmpty(SupervisorId))
+            {
+                var superUserInfo = await UnitWork.Find<AppUserMap>(a => a.UserID == SupervisorId).FirstOrDefaultAsync();
+                if (superUserInfo != null && superUserInfo.AppUserId > 0)
+                {
+                    var msgObj = new ServiceOrderMessageUser
+                    {
+                        CreateTime = DateTime.Now,
+                        FromUserId = FromUserId.ToString(),
+                        FroUserId = RecepUserId,
+                        HasRead = false,
+                        MessageId = MessageId
+                    };
+                    await UnitWork.AddAsync<ServiceOrderMessageUser, int>(msgObj);
+                }
+            }
+            //查询相关技术员Id
+            var userList = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == ServiceOrderId && s.CurrentUserId != FromUserId).ToListAsync()).GroupBy(g => g.CurrentUserId)
+                .Select(s => new { s.Key });
+            foreach (var item in userList)
+            {
+                var msgObj = new ServiceOrderMessageUser();
+                msgObj.CreateTime = DateTime.Now;
+                msgObj.FromUserId = FromUserId.ToString();
+                msgObj.FroUserId = item.Key.ToString();
+                msgObj.HasRead = false;
+                msgObj.MessageId = MessageId;
+                await UnitWork.AddAsync<ServiceOrderMessageUser, int>(msgObj);
+            }
+            await UnitWork.SaveAsync();
+        }
 
         /// <summary>
         /// 获取服务单消息内容详情
@@ -1429,7 +1490,27 @@ namespace OpenAuth.App
             .Skip((req.page - 1) * req.limit)
             .Take(req.limit).ToListAsync()).OrderBy(o => o.CreateTime);
             result.Count = await query.CountAsync();
+            await ReadMsg(req.CurrentUserId, req.ServiceOrderId);
             return result;
+        }
+
+        /// <summary>
+        /// 消息已读
+        /// </summary>
+        /// <param name="currentUserId"></param>
+        /// <param name="serviceOrderId"></param>
+        /// <returns></returns>
+        private async Task ReadMsg(int currentUserId, int serviceOrderId)
+        {
+            var msgList = (await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == serviceOrderId).ToListAsync()).GroupBy(g => g.Id).Select(s => new
+            {
+                msgIds = string.Join(",", s.Select(i => i.Id))
+            }).FirstOrDefault();
+            if (msgList != null)
+            {
+                UnitWork.Update<ServiceOrderMessageUser>(s => s.MessageId.Contains(msgList.msgIds) && s.FroUserId == currentUserId.ToString(), u => new ServiceOrderMessageUser { HasRead = true });
+            }
+            await UnitWork.SaveAsync();
         }
 
         /// <summary>
@@ -1471,7 +1552,8 @@ namespace OpenAuth.App
         public async Task<TableData> GetMessageCount(int currentuserid)
         {
             var result = new TableData();
-            result.Data = 5;
+            var msgCount = (await UnitWork.Find<ServiceOrderMessageUser>(s => s.FroUserId == currentuserid.ToString()).ToListAsync()).Count;
+            result.Data = msgCount;
             return result;
         }
     }
