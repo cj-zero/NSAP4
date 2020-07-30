@@ -1,5 +1,5 @@
 <template>
-  <div style="position:relative;" >
+  <div style="position:relative;">
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <el-input
@@ -23,40 +23,39 @@
       </div>
     </sticky>
     <div class="app-container">
-
       <div class="bg-white">
-        <el-form ref="listQuery" :model="listQuery" label-width="80px" >
+        <el-form ref="listQuery" :model="listQuery" label-width="80px" size="small">
           <div style="padding:10px 0;"></div>
           <el-row :gutter="10">
-            <el-col :span="4">
-              <el-form-item label="服务ID" size="medium">
-                <el-input v-model="listQuery.QryServiceOrderId"></el-input>
+            <el-col :span="3">
+              <el-form-item label="服务ID" >
+                <el-input v-model="listQuery.QryServiceOrderId" @keyup.enter.native='onSubmit'></el-input>
               </el-form-item>
             </el-col>
 
-            <el-col :span="4">
-              <el-form-item label="呼叫状态" size="medium">
+            <el-col :span="3">
+              <el-form-item label="呼叫状态" >
                 <el-select v-model="listQuery.QryState" placeholder="请选择呼叫状态">
                   <el-option label="全部" value></el-option>
-                  <el-option label="待确认" :value='1'></el-option>
-                  <el-option label="已确认" :value='2'></el-option>
-                  <el-option label="已取消" :value='3'></el-option>
+                  <el-option label="待确认" :value="1"></el-option>
+                  <el-option label="已确认" :value="2"></el-option>
+                  <el-option label="已取消" :value="3"></el-option>
                 </el-select>
               </el-form-item>
             </el-col>
 
-            <el-col :span="4">
-              <el-form-item label="客户" size="medium">
+            <el-col :span="3">
+              <el-form-item label="客户" >
                 <el-input v-model="listQuery.QryCustomer"></el-input>
               </el-form-item>
             </el-col>
-            <el-col :span="4">
-              <el-form-item label="序列号" size="medium">
+            <el-col :span="3">
+              <el-form-item label="序列号" >
                 <el-input v-model="listQuery.QryManufSN"></el-input>
               </el-form-item>
             </el-col>
-            <el-col :span="8">
-              <el-form-item label="创建日期" size="medium">
+            <el-col :span="6">
+              <el-form-item label="创建日期" >
                 <el-col :span="11">
                   <el-date-picker
                     placeholder="选择开始日期"
@@ -74,6 +73,9 @@
                 </el-col>
               </el-form-item>
             </el-col>
+                  <el-col :span="3" style="margin-left:20px;">
+              <el-button type="primary" @click="onSubmit" @keyup.enter.native='onSubmit' size="small" icon="el-icon-search">搜 索</el-button>
+            </el-col>
           </el-row>
         </el-form>
         <el-table
@@ -83,13 +85,11 @@
           :data="list"
           v-loading="listLoading"
           border
-          
           style="width: 100%;"
           highlight-current-row
           @row-click="rowClick"
         >
-
-          <el-table-column width="50" >
+          <el-table-column width="50">
             <template slot-scope="scope">
               <el-radio v-model="radio" :label="scope.row.id"></el-radio>
             </template>
@@ -137,6 +137,7 @@
         class="dialog-mini"
         @open="openCustoner"
         @close="closeCustoner"
+        :close-on-click-modal="false"
         :destroy-on-close="true"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
@@ -168,7 +169,6 @@
             @click="createData"
           >确认</el-button>-->
           <el-button size="mini" type="primary" :loading="loadingBtn" @click="updateData">确认</el-button>
-          <!-- <el-button size="mini"  >加载中</el-button> -->
         </div>
       </el-dialog>
       <!-- 只能查看的表单 -->
@@ -178,6 +178,7 @@
         title="服务单详情"
         :destroy-on-close="true"
         @open="openDetail"
+        :close-on-click-modal="false"
         :visible.sync="dialogFormView"
       >
         <zxform
@@ -188,14 +189,18 @@
           :isEdit="false"
           :refValue="dataForm"
         ></zxform>
-
         <div slot="footer">
           <el-button size="mini" @click="dialogFormView = false">取消</el-button>
           <el-button size="mini" type="primary" @click="dialogFormView = false">确认</el-button>
         </div>
       </el-dialog>
-
-      <el-dialog v-el-drag-dialog :visible.sync="dialogTree" :destroy-on-close="true" center width="300px">
+      <el-dialog
+        v-el-drag-dialog
+        :visible.sync="dialogTree"
+        :destroy-on-close="true"
+        center
+        width="300px"
+      >
         <treeList @close="dialogTree=false"></treeList>
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialogTree = false">取 消</el-button>
@@ -212,7 +217,6 @@ import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
 import Pagination from "@/components/Pagination";
-
 import elDragDialog from "@/directive/el-dragDialog";
 // import zxsearch from "./search";
 import customerupload from "./customerupload";
@@ -240,18 +244,23 @@ export default {
       key: 1, // table key
       sure: 0,
       formTheadOptions: [
-        { name: "id", label: "服务单ID" ,align:'left',width:'100px'},
-        { name: "customerId", label: "客户代码",align:'left' },
-        { name: "status", label: "状态" ,align:'left',width:'80px'},
-        { name: "customerName", label: "客户名称",align:'left' },
-        { name: "createTime", label: "创建日期" ,align:'left'},
-        { name: "contacter", label: "联系人" ,align:'left'},
-        { name: "services", label: "服务内容" ,align:'left'},
-        { name: "contactTel", label: "电话号码" ,align:'left',width:'120px'},
-        { name: "supervisor", label: "售后主管" ,align:'left'},
-        { name: "salesMan", label: "销售员" ,align:'left'},
-        { name: "manufSN", label: "制造商序列号",align:'left' },
-        { name: "itemCode", label: "物料编码" ,align:'left'}
+        { name: "id", label: "服务单ID", align: "left", width: "100px" },
+        { name: "customerId", label: "客户代码", align: "left" },
+        { name: "status", label: "状态", align: "left", width: "80px" },
+        { name: "customerName", label: "客户名称", align: "left" },
+        { name: "createTime", label: "创建日期", align: "left" },
+        { name: "contacter", label: "联系人", align: "left" },
+        { name: "services", label: "服务内容", align: "left" },
+        {
+          name: "contactTel",
+          label: "电话号码",
+          align: "left",
+          width: "120px"
+        },
+        { name: "supervisor", label: "售后主管", align: "left" },
+        { name: "salesMan", label: "销售员", align: "left" },
+        { name: "manufSN", label: "制造商序列号", align: "left" },
+        { name: "itemCode", label: "物料编码", align: "left" }
       ],
 
       tableKey: 0,
@@ -340,8 +349,18 @@ export default {
     }
   },
   watch: {
-    listQuery: {
-      deep: true,
+    'listQuery.page': {
+      // deep: true,
+      handler(val) {
+        callservesure.getTableList(val).then(response => {
+          this.total = response.data.count;
+          this.list = response.data.data;
+          this.listLoading = false;
+        });
+      }
+    },
+        'listQuery.limit': {
+      // deep: true,
       handler(val) {
         callservesure.getTableList(val).then(response => {
           this.total = response.data.count;
@@ -401,7 +420,7 @@ export default {
       });
     },
     onSubmit() {
-      console.log("submit!");
+      this.getList()
     },
     changeTable(result) {
       console.log(result);
@@ -460,11 +479,28 @@ export default {
 
     getList() {
       this.listLoading = true;
-      callservesure.getTableList(this.listQuery).then(response => {
-        this.total = response.data.count;
-        this.list = response.data.data;
-        this.listLoading = false;
-      });
+      callservesure
+        .getTableList(this.listQuery)
+        .then(response => {
+          if (response.code == 200) {
+            this.total = response.data.count;
+            this.list = response.data.data;
+            this.listLoading = false;
+          } else {
+            console.log(11);
+            this.$message({
+              type: "warning",
+              message: "请输入正确的搜索值"
+            });
+          }
+        })
+        .catch(() => {
+          console.log(22);
+          this.$message({
+            type: "warning",
+            message: "请输入正确的搜索值"
+          });
+        });
     },
     open() {
       this.$confirm("确认已完成回访?", "提示", {
@@ -654,8 +690,6 @@ export default {
 //   }
 
 // }
-
-
 </style>
 
 

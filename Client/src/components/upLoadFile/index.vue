@@ -8,6 +8,7 @@
       class="img"
       :headers="headers"
       list-type="picture-card"
+      accpet="image/png, image/jpeg,image/jpg,image/webp,image/gif"
       :auto-upload="true"
       :width="setImage"
       :on-success="successBack"
