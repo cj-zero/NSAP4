@@ -78,7 +78,7 @@ namespace OpenAuth.App
             var query = UnitWork.Find<ServiceOrder>(s => s.AppUserId == request.AppUserId)
                         .Include(s => s.ServiceWorkOrders)
                         .WhereIf(request.Type == 1, q => q.ServiceWorkOrders.Any(a => a.Status > 6))
-                        .WhereIf(request.Type == 0, q => q.ServiceWorkOrders.Any(a => a.Status < 7))
+                        .WhereIf(request.Type == 0, q => q.ServiceWorkOrders.Any(a => a.Status < 7) || q.Status == 1)
                         .Select(a => new
                         {
                             a.Id,
