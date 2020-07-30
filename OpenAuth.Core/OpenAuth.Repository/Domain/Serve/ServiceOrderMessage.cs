@@ -85,11 +85,6 @@ namespace OpenAuth.Repository.Domain
         public int AppUserId { get; set; }
 
         /// <summary>
-        /// 是否已读 1已读
-        /// </summary>
-        public int IsRead { get; set; }
-
-        /// <summary>
         /// 服务单消息流水记录表
         /// </summary>
         [Ignore]

@@ -1231,7 +1231,7 @@ namespace OpenAuth.App
                     {
                         o.MaterialCode,
                         o.ManufacturerSerialNumber,
-                        MaterialType = o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
+                        MaterialType = string.IsNullOrEmpty(o.MaterialCode) ? "无序列号设备" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
                         o.Status,
                         o.Id,
                         o.IsCheck,
@@ -1502,13 +1502,11 @@ namespace OpenAuth.App
         /// <returns></returns>
         private async Task ReadMsg(int currentUserId, int serviceOrderId)
         {
-            var msgList = (await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == serviceOrderId).ToListAsync()).GroupBy(g => g.Id).Select(s => new
-            {
-                msgIds = string.Join(",", s.Select(i => i.Id))
-            }).FirstOrDefault();
+            var msgList = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == serviceOrderId).ToListAsync();
             if (msgList != null)
             {
-                UnitWork.Update<ServiceOrderMessageUser>(s => s.MessageId.Contains(msgList.msgIds) && s.FroUserId == currentUserId.ToString(), u => new ServiceOrderMessageUser { HasRead = true });
+                string msgIds = string.Join(",", msgList.Select(s => s.Id).Distinct().ToArray());
+                UnitWork.Update<ServiceOrderMessageUser>(s => msgIds.Contains(s.MessageId) && s.FroUserId == currentUserId.ToString(), u => new ServiceOrderMessageUser { HasRead = true });
             }
             await UnitWork.SaveAsync();
         }
@@ -1526,7 +1524,6 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-
             var query = UnitWork.Find<ServiceOrderMessage>(s => s.AppUserId == req.CurrentUserId);
             var resultsql = query.OrderByDescending(r => r.CreateTime).Select(s => new
             {
@@ -1539,7 +1536,8 @@ namespace OpenAuth.App
 
             result.Data =
             (await resultsql
-            .ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(g => g.First());
+            .ToListAsync()).GroupBy(g => g.ServiceOrderId);
+            //.Select(g => g.First());
             return result;
         }
 
@@ -1552,7 +1550,7 @@ namespace OpenAuth.App
         public async Task<TableData> GetMessageCount(int currentuserid)
         {
             var result = new TableData();
-            var msgCount = (await UnitWork.Find<ServiceOrderMessageUser>(s => s.FroUserId == currentuserid.ToString()).ToListAsync()).Count;
+            var msgCount = (await UnitWork.Find<ServiceOrderMessageUser>(s => s.FroUserId == currentuserid.ToString() && s.HasRead == false).ToListAsync()).Count;
             result.Data = msgCount;
             return result;
         }
