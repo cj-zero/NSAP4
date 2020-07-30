@@ -17,12 +17,13 @@ namespace OpenAuth.App
     {
         private RevelanceManagerApp _revelanceApp;
         private readonly AppUserMapApp _appUserMapApp;
-
+        private readonly AppServiceOrderLogApp _appServiceOrderLogApp;
         public CompletionReportApp(IUnitWork unitWork, IRepository<CompletionReport> repository, AppUserMapApp appUserMapApp,
-            RevelanceManagerApp app, IAuth auth) : base(unitWork, repository, auth)
+            RevelanceManagerApp app, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp) : base(unitWork, repository, auth)
         {
             _revelanceApp = app;
             _appUserMapApp = appUserMapApp;
+            _appServiceOrderLogApp = appServiceOrderLogApp;
         }
         /// <summary>
         /// 加载列表
@@ -75,6 +76,17 @@ namespace OpenAuth.App
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId, s => new ServiceWorkOrder { Status = 7 });
+            var workOrderList = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId).ToList();
+            List<int> workorder = new List<int>();
+            foreach (var item in workOrderList)
+            {
+                workorder.Add(item.Id);
+            }
+            await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
+            {
+                Title = "技术员上门服务中",
+                Details = $"技术员于{DateTime.Now}结束上门服务",
+            }, workorder);
         }
 
 

@@ -865,7 +865,7 @@ namespace OpenAuth.App
                     })
                 });
 
-            var list = (await query
+            var list = (await query.OrderByDescending(o => o.Id)
             .Skip((req.page - 1) * req.limit)
             .Take(req.limit).ToListAsync()).Select(a => new
             {
@@ -983,18 +983,12 @@ namespace OpenAuth.App
         public async Task CheckTheEquipment(CheckTheEquipmentReq req)
         {
             //判断当前操作者是否有操作权限
-            var order = await UnitWork.FindSingleAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId);
-            if (order != null)
+            var order = await UnitWork.FindSingleAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId);
+            if (order == null)
             {
-                if (!order.CurrentUserId.Equals(req.CurrentUserId))
-                {
-                    throw new CommonException("当前技术员无法核对此工单设备。", 9001);
-                }
+                throw new CommonException("当前技术员无法核对此工单设备。", 9001);
             }
-            else
-            {
-                throw new CommonException("当前服务单号不存在。", 9002);
-            }
+            List<int> obj = new List<int>();
             //处理核对成功的设备信息
             if (!string.IsNullOrEmpty(req.CheckWorkOrderIds))
             {
@@ -1003,6 +997,7 @@ namespace OpenAuth.App
                 {
                     foreach (var itemcheck in checkArr)
                     {
+                        obj.Add(int.Parse(itemcheck));
                         await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id == int.Parse(itemcheck), o => new ServiceWorkOrder
                         {
                             IsCheck = 1,
@@ -1030,6 +1025,11 @@ namespace OpenAuth.App
                 }
             }
             await UnitWork.SaveAsync();
+            await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
+            {
+                Title = "技术员上门服务中",
+                Details = $"技术员于{DateTime.Now}开始上门服务",
+            }, obj);
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = req.ServiceOrderId, Content = "技术员已核对设备，请完成维修任务", AppUserId = 0 });
         }
 
@@ -1345,7 +1345,7 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var count = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == id && s.Status.Value < 7).Select(s => s.ServiceOrderId).Distinct().CountAsync();
-            result.Data = 5 - count;
+            result.Data = 6 - count;
             return result;
         }
 
@@ -1525,6 +1525,7 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var query = UnitWork.Find<ServiceOrderMessage>(s => s.AppUserId == req.CurrentUserId);
+
             var resultsql = query.OrderByDescending(r => r.CreateTime).Select(s => new
             {
                 s.Content,
@@ -1536,8 +1537,7 @@ namespace OpenAuth.App
 
             result.Data =
             (await resultsql
-            .ToListAsync()).GroupBy(g => g.ServiceOrderId);
-            //.Select(g => g.First());
+            .ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(g => g.First());
             return result;
         }
 

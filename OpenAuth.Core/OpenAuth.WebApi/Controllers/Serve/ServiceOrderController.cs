@@ -394,9 +394,9 @@ namespace OpenAuth.WebApi.Controllers
                 }
 
             }
-            catch (Exception ex)
+            catch (CommonException ex)
             {
-                result.Code = 500;
+                result.Code = ex.Code;
                 result.Message = ex.Message;
             }
             return result;
