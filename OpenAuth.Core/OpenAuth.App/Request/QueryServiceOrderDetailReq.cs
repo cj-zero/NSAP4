@@ -26,11 +26,5 @@ namespace OpenAuth.App.Request
         /// 当前技术员Id
         /// </summary>
         public int CurrentUserId { get; set; }
-
-        /// <summary>
-        /// 服务单类型 0未接单  1已接单
-        /// </summary>
-        [Required]
-        public int Type { get; set; }
     }
 }

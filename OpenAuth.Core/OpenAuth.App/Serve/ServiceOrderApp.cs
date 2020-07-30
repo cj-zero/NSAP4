@@ -76,8 +76,9 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var query = UnitWork.Find<ServiceOrder>(s => s.AppUserId == request.AppUserId)
-                        .Include(s => s.ServiceWorkOrders).Where(s => request.Type == 1 ? s.ServiceWorkOrders.Any(a => a.Status > 6) : s.ServiceWorkOrders.Any(a => a.Status < 7 || s.ServiceWorkOrders == null))
-
+                        .Include(s => s.ServiceWorkOrders)
+                        .WhereIf(request.Type == 1, q => q.ServiceWorkOrders.Any(a => a.Status > 6))
+                        .WhereIf(request.Type == 0, q => q.ServiceWorkOrders.Any(a => a.Status < 7))
                         .Select(a => new
                         {
                             a.Id,
@@ -89,6 +90,11 @@ namespace OpenAuth.App
                             a.City,
                             a.Area,
                             a.Addr,
+                            a.Contacter,
+                            a.ContactTel,
+                            a.NewestContacter,
+                            a.NewestContactTel,
+                            a.CustomerName,
                             ServiceWorkOrders = a.ServiceWorkOrders.Where(s => request.Type == 1 ? s.Status > 6 : s.Status < 7).Select(o => new
                             {
                                 o.Id,
@@ -119,6 +125,11 @@ namespace OpenAuth.App
                     a.City,
                     a.Area,
                     a.Addr,
+                    a.Contacter,
+                    a.ContactTel,
+                    a.NewestContacter,
+                    a.NewestContactTel,
+                    a.CustomerName,
                     ServiceWorkOrders = a.ServiceWorkOrders.GroupBy(o => o.MaterialType).Select(s => new
                     {
                         MaterialType = s.Key,
@@ -769,7 +780,11 @@ namespace OpenAuth.App
                     s.NewestContacter,
                     s.NewestContactTel,
                     s.Status,
-                    s.CreateTime
+                    s.CreateTime,
+                    MaterialInfo = s.ServiceWorkOrders.Where(o => o.ServiceOrderId == s.Id).Select(o => new
+                    {
+                        o.Status
+                    })
                 });
 
             var result = new TableData();
@@ -792,7 +807,8 @@ namespace OpenAuth.App
                 s.NewestContactTel,
                 s.Status,
                 s.CreateTime,
-                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
+                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
+                s.MaterialInfo
             }).ToList();
 
             var count = await query.CountAsync();
@@ -1182,6 +1198,13 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            int Type = 0;
+            //判断当前技术员是否已经接过单据 如果有则直接进入详情
+            var count = UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.CurrentUserId).ToList().Count;
+            if (count > 0)
+            {
+                Type = 1;
+            }
             var result = new TableData();
             var query = UnitWork.Find<ServiceOrder>(s => s.Status == 2 && s.Id == req.ServiceOrderId)
                 .Where(s => s.Id == req.ServiceOrderId && s.Status == 2)
@@ -1203,7 +1226,7 @@ namespace OpenAuth.App
                     s.CustomerName,
                     s.Supervisor,
                     s.SalesMan,
-                    MaterialInfo = s.ServiceWorkOrders.Where(o => o.ServiceOrderId == req.ServiceOrderId && req.Type == 1 ? o.CurrentUserId == req.CurrentUserId : true).Select(o => new
+                    MaterialInfo = s.ServiceWorkOrders.Where(o => o.ServiceOrderId == req.ServiceOrderId && Type == 1 ? o.CurrentUserId == req.CurrentUserId : o.Status == 1).Select(o => new
                     {
                         o.MaterialCode,
                         o.ManufacturerSerialNumber,
@@ -1369,10 +1392,14 @@ namespace OpenAuth.App
             obj.FroTechnicianName = name;
             await UnitWork.AddAsync<ServiceOrderMessage, int>(obj);
             await UnitWork.SaveAsync();
-            //发给服务单客服
-            //var serviceInfo = await UnitWork.Find<ServiceOrder>(s => s.Id == req.ServiceOrderId).FirstOrDefaultAsync();
-            //string SupervisorId = serviceInfo.SupervisorId;
+            //发给服务单客服/主管
+            var serviceInfo = await UnitWork.Find<ServiceOrder>(s => s.Id == req.ServiceOrderId).FirstOrDefaultAsync();
+            //客服Id
+            string RecepUserId = serviceInfo.RecepUserId;
+            //主管Id
+            string SupervisorId = serviceInfo.SupervisorId;
         }
+
 
         /// <summary>
         /// 获取服务单消息内容详情
