@@ -127,7 +127,6 @@
               required: true, message: '呼叫类型不能为空', trigger: 'blur'
             }"
             >
-              <!-- -->
               <el-select v-model="formList[0].fromType" size="small">
                 <el-option
                   v-for="item in options_type"
@@ -172,16 +171,18 @@
         </el-row>
         <el-row type="flex" class="row-bg" justify="space-around">
           <el-col :span="8">
-            <el-input size="small" style="display:none;" v-model="formList[0].problemTypeId"></el-input>
+            <el-form-item
+              label="问题类型"
+              prop="problemTypeId"
+              :rules="{
+              required: true, message: '问题类型不能为空', trigger: 'blur' }"
+            >
+              <el-input size="small" style="display:none;" v-model="formList[0].problemTypeId"></el-input>
 
-            <el-form-item label="问题类型" prop="problemTypeId">
               <el-input
                 v-model="formList[0].problemTypeName"
                 readonly
                 size="small"
-                prop="problemTypeId"
-                :rules="{
-              required: true, message: '问题类型不能为空', trigger: 'blur' }"
                 @focus="()=>{proplemTree=true,sortForm=1}"
               >
                 <el-button
@@ -252,7 +253,13 @@
           </el-col>
         </el-row>
 
-        <el-form-item label="解决方案">
+        <el-form-item
+          label="解决方案"
+          prop="solutionId"
+          :rules="{
+              required: true, message: '呼叫类型不能为空', trigger: 'blur'
+            }"
+        >
           <el-input
             type="textarea"
             style="display:none;"
@@ -261,7 +268,7 @@
           ></el-input>
           <el-input
             v-model="formList[0].solutionsubject"
-            @focus="()=>{solutionOpen=true,sortTable=1}"
+            @focus="()=>{solutionOpen=true,sortForm=1}"
             :disabled="formList[0].fromType!==2"
             readonly
           >
@@ -269,7 +276,7 @@
               size="mini"
               slot="append"
               icon="el-icon-search"
-              @click="()=>{solutionOpen=true,sortTable=1}"
+              @click="()=>{solutionOpen=true,sortForm=1}"
             ></el-button>
           </el-input>
         </el-form-item>
@@ -278,7 +285,7 @@
         </el-form-item>
         <el-form-item label="故障描述" prop="remark" v-if="!isEdit">
           <el-input type="textarea" size="small" v-model="formList[0].troubleDescription"></el-input>
-        </el-form-item>      
+        </el-form-item>
         <el-form-item label="过程描述" prop="remark" v-if="!isEdit">
           <el-input type="textarea" size="small" v-model="formList[0].processDescription"></el-input>
         </el-form-item>
@@ -495,23 +502,20 @@
             </el-row>
             <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="8">
-                <el-input size="small" style="display:none;" v-model="item.problemTypeId"></el-input>
-
-                <el-form-item label="问题类型" prop="problemTypeId">
-                  <el-input
-                    v-model="item.problemTypeName"
-                    readonly
-                    size="small"
-                    prop="problemTypeId"
-                    :rules="{
+                <el-form-item
+                  label="问题类型"
+                  prop="problemTypeId"
+                  :rules="{
               required: true, message: '问题类型不能为空', trigger: 'blur' }"
-                    @focus="()=>{proplemTree=true,sortForm=index+1}"
-                  >
+                >
+                  <el-input size="small" style="display:none;" v-model="item.problemTypeId"></el-input>
+
+                  <el-input v-model="item.problemTypeName" readonly size="small">
                     <el-button
                       size="mini"
                       slot="append"
                       icon="el-icon-search"
-                      @click="()=>{proplemTree=true,sortForm=index+1}"
+                      @click="()=>{proplemTree=true,sortForm=index+2}"
                     ></el-button>
                   </el-input>
                 </el-form-item>
@@ -575,7 +579,13 @@
               </el-col>
             </el-row>
 
-            <el-form-item label="解决方案">
+            <el-form-item
+              label="解决方案"
+              prop="solutionId"
+              :rules="{
+              required: true, message: '解决方案不能为空', trigger: 'blur'
+            }"
+            >
               <el-input
                 type="textarea"
                 style="display:none;"
@@ -584,7 +594,6 @@
               ></el-input>
               <el-input
                 v-model="item.solutionsubject"
-                @focus="()=>{solutionOpen=true,sortTable=index+1}"
                 :disabled="item.fromType!==2"
                 readonly
               >
@@ -592,19 +601,19 @@
                   size="mini"
                   slot="append"
                   icon="el-icon-search"
-                  @click="()=>{solutionOpen=true,sortTable=index+1}"
+                  @click="()=>{solutionOpen=true,sortForm=index+2}"
                 ></el-button>
               </el-input>
             </el-form-item>
             <el-form-item label="备注" prop="remark">
               <el-input type="textarea" size="small" v-model="item.remark"></el-input>
             </el-form-item>
-          <el-form-item label="故障描述"  v-if="!isEdit" prop="remark">
-          <el-input type="textarea" size="small" v-model="item.troubleDescription"></el-input>
-        </el-form-item>      
-        <el-form-item label="过程描述" v-if="!isEdit" prop="remark">
-          <el-input type="textarea" size="small" v-model="item.processDescription"></el-input>
-        </el-form-item>
+            <el-form-item label="故障描述" v-if="!isEdit" prop="remark">
+              <el-input type="textarea" size="small" v-model="item.troubleDescription"></el-input>
+            </el-form-item>
+            <el-form-item label="过程描述" v-if="!isEdit" prop="remark">
+              <el-input type="textarea" size="small" v-model="item.processDescription"></el-input>
+            </el-form-item>
             <el-form-item>
               <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
                 <el-col :span="6"></el-col>
@@ -649,7 +658,7 @@
       <problemtype @node-click="NodeClick" :dataTree="dataTree"></problemtype>
     </el-dialog>
     <el-dialog
-      :title="`第${sortTable}个工单的解决方案`"
+      :title="`第${sortForm}个工单的解决方案`"
       center
       class="addClass1"
       loading
@@ -735,8 +744,7 @@ export default {
         label: "name",
         children: "childTypes"
       }, //树形控件的显示状态
-      sortForm: "",
-      sortTable: "", //点击解决方案的排序
+      sortForm: "", //点击解决方案的排序
       solutionOpen: false, //显示解决方案
       problemLabel: "",
       dataTree: [], //问题类型的组合
@@ -918,16 +926,17 @@ export default {
       console.log(val);
     },
     NodeClick(res) {
+      console.log(this.formList,this.sortForm - 1)
       this.formList[this.sortForm - 1].problemTypeId = res.id;
       this.formList[this.sortForm - 1].problemTypeName = res.name;
       this.problemLabel = res.name;
       this.proplemTree = false;
     },
     solutionClick(res) {
-      this.formList[this.sortTable - 1].solutionsubject = res.subject;
-      this.formList[this.sortTable - 1].solutionId = res.id;
+      this.formList[this.sortForm - 1].solutionsubject = res.subject;
+      this.formList[this.sortForm - 1].solutionId = res.id;
       // this.problemLabel = res.name;
-      console.log(this.formList[this.sortTable - 1], res, this.sortTable - 1);
+      console.log(this.formList[this.sortForm - 1], res, this.sortForm - 1);
       this.solutionOpen = false;
     },
     switchType(val) {
@@ -1085,7 +1094,7 @@ export default {
     //       });
     //     });
     // }
-      deleteForm(res) {
+    deleteForm(res) {
       this.$confirm(
         `此操作将删除序列商序列号为${res.manufacturerSerialNumber}的表单, 是否继续?`,
         "提示",
@@ -1094,26 +1103,29 @@ export default {
           cancelButtonText: "取消",
           type: "warning"
         }
-      ).then(() => {
-           callservesure
-        .delWorkOrder({id:res.id})
+      )
         .then(() => {
-          this.$message({
-            message: "删除工单成功",
-            type: "success"
-          });
-           this.formList = this.formList.filter(item => {
-            return (
-              item.manufacturerSerialNumber != res.manufacturerSerialNumber
-            );
-          });
-        }).catch(() => {
-          this.$message({
-            type: "error",
-            message: "删除失败"
-          });
-        });
-        }).catch(() => {
+          callservesure
+            .delWorkOrder({ id: res.id })
+            .then(() => {
+              this.$message({
+                message: "删除工单成功",
+                type: "success"
+              });
+              this.formList = this.formList.filter(item => {
+                return (
+                  item.manufacturerSerialNumber != res.manufacturerSerialNumber
+                );
+              });
+            })
+            .catch(() => {
+              this.$message({
+                type: "error",
+                message: "删除失败"
+              });
+            });
+        })
+        .catch(() => {
           this.$message({
             type: "info",
             message: "已取消删除"

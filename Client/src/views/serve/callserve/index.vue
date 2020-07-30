@@ -305,7 +305,7 @@ export default {
         limit: 20,
         key: undefined,
         appId: undefined,
-        QryServiceOrderId: "" //查询服务单号查询条件
+        // QryServiceOrderId: "" //查询服务单号查询条件
         // QryState: "", //呼叫状态查询条件
         // QryCustomer: "", //客户查询条件
         // QryManufSN: "", // 制造商序列号查询条件

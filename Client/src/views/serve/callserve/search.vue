@@ -4,12 +4,12 @@
     <el-row :gutter="10">
       <el-col :span="3">
         <el-form-item label="服务ID">
-          <el-input size="small"  v-model="form.QryServiceOrderId"></el-input>
+          <el-input size="small"  v-model="form.QryServiceOrderId" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
       <el-col :span="3">
         <el-form-item label="工单ID">
-          <el-input size="small" v-model="form.QryServiceWorkOrderId"></el-input>
+          <el-input size="small" v-model="form.QryServiceWorkOrderId" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
       <el-col :span="3">
@@ -26,29 +26,29 @@
       </el-col>
       <el-col :span="3">
         <el-form-item label="客户">
-          <el-input size="small" v-model="form.QryCustomer"></el-input>
+          <el-input size="small" v-model="form.QryCustomer" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
       <el-col :span="3">
         <el-form-item label="序列号">
-          <el-input size="small" v-model="form.QryManufSN"></el-input>
+          <el-input size="small" v-model="form.QryManufSN" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
       <el-col :span="3">
         <el-form-item label="接单员">
-          <el-input size="small" v-model="form.QryRecepUser"></el-input>
+          <el-input size="small" v-model="form.QryRecepUser" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
     </el-row>
     <el-row :gutter="10">
       <el-col :span="3">
         <el-form-item label="技术员">
-          <el-input size="small" v-model="form.QryTechName"></el-input>
+          <el-input size="small" v-model="form.QryTechName" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
       <el-col :span="3">
         <el-form-item label="问题类型">
-          <el-input size="small" v-model="form.QryProblemType"></el-input>
+          <el-input size="small" v-model="form.QryProblemType" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
 

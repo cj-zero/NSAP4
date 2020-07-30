@@ -4,13 +4,13 @@
     <el-row :gutter="10">
       <el-col :span="3">
         <el-form-item label="服务ID" size="small">
-          <el-input v-model="listQuery.QryServiceOrderId"></el-input>
+          <el-input v-model="listQuery.QryServiceOrderId" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
 
       <el-col :span="3">
         <el-form-item label="工单ID" size="small">
-          <el-input v-model="listQuery.name"></el-input>
+          <el-input v-model="listQuery.name" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
       <el-col :span="3">
@@ -29,24 +29,24 @@
 
       <el-col :span="3">
         <el-form-item label="客户" size="small">
-          <el-input v-model="listQuery.QryCustomer"></el-input>
+          <el-input v-model="listQuery.QryCustomer" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
       <el-col :span="3">
         <el-form-item label="序列号" size="small">
-          <el-input v-model="listQuery.QryManufSN"></el-input>
+          <el-input v-model="listQuery.QryManufSN" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
       <el-col :span="3">
         <el-form-item label="接单员" size="small">
-          <el-input v-model="listQuery.QryRecepUser"></el-input>
+          <el-input v-model="listQuery.QryRecepUser" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
     </el-row>
     <el-row :gutter="10">
       <el-col :span="3">
         <el-form-item label="技术员" size="small">
-          <el-input v-model="listQuery.QryTechName"></el-input>
+          <el-input v-model="listQuery.QryTechName" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
       <el-col :span="3">
@@ -83,7 +83,7 @@
         </el-form-item>
       </el-col>
 
-      <el-col :span="8" style="margin-left:20px;" >
+      <el-col :span="2" style="margin-left:20px;" >
                     <el-button type="primary" @click="onSubmit" size="small" icon="el-icon-search"> 搜 索 </el-button>
       </el-col>
 
