@@ -4,7 +4,7 @@
     <el-row :gutter="10">
       <el-col :span="3">
         <el-form-item label="服务ID" size="small">
-          <el-input v-model="listQuery.QryServiceOrderId" @keyup.enter.native='onSubmit'></el-input>
+          <el-input v-model.number="listQuery.QryServiceOrderId" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
 

@@ -458,13 +458,6 @@ export default {
       this.listLoading = true;
       this.params.currentUserId = this.orderRadio;
       this.params.workOrderIds = this.workorderidList;
-      //   if (!this.ifParent) {
-      //   this.$message({
-      //     type: "warning",
-      //     message: "请先选择需要指派的服务号"
-      //   });
-      //   return
-      // }
       if (this.hasAlreadNum > 2) {
         this.$message({
           type: "warning",
@@ -582,13 +575,27 @@ export default {
         if (this.ifParent == a.key) {
           //同一级，不做限制，添加编码请求
           if (!a.children) {
+            //如果点击是子级
             if (this.listQuery.QryMaterialTypes.indexOf(a.id) == -1) {
               //找数组中是否存在类型号，有的话就说明是取消
+              if (!this.listQuery.QryServiceOrderId) {
+                this.listQuery.QryServiceOrderId = a.key;
+              }
               this.listQuery.QryMaterialTypes.push(a.id);
             } else {
               this.listQuery.QryMaterialTypes = this.listQuery.QryMaterialTypes.filter(
                 item => item != a.id
               );
+              if (this.listQuery.QryMaterialTypes.length == 0) {
+                this.listQuery.QryServiceOrderId = "";
+              }
+            }
+          } else {
+            if (!this.listQuery.QryServiceOrderId) {
+              this.listQuery.QryServiceOrderId = a.key;
+            } else {
+              this.listQuery.QryServiceOrderId = "";
+              this.listQuery.QryMaterialTypes = [];
             }
           }
           this.getRightList();
@@ -601,6 +608,10 @@ export default {
           this.$refs.treeForm.setCheckedKeys([a.key1]);
           if (!a.children) {
             this.listQuery.QryMaterialTypes.push(a.id);
+          } else {
+            a.children.map(item => {
+              this.listQuery.QryMaterialTypes.push(item.id);
+            });
           }
           this.getRightList();
         }
@@ -609,6 +620,10 @@ export default {
         this.listQuery.QryMaterialTypes = [];
         if (!a.children) {
           this.listQuery.QryMaterialTypes.push(a.id);
+        } else {
+          a.children.map(item => {
+            this.listQuery.QryMaterialTypes.push(item.id);
+          });
         }
         this.$refs.treeForm.setCheckedKeys([a.key1]);
         this.ifParent = a.key;
@@ -653,23 +668,34 @@ export default {
     },
     getRightList() {
       this.listLoading = true;
-      callservepushm.getRightList(this.listQuery).then(response => {
-        if(response.code===200){
-         this.list = response.data.data;
-        this.total = response.data.count;
-        this.listLoading = false;
-        }else{
-          this.$message({
-            type:'error',
-            message:`${response.message}`
-          })
-        }
-      }).catch(()=>{
-       this.$message({
-            type:'error',
-            message:`请输入正确的搜索值`
-          })
-      });
+      callservepushm
+        .getRightList(this.listQuery)
+        .then(response => {
+          if (response.code === 200) {
+            this.list = response.data.data;
+            this.total = response.data.count;
+            this.listLoading = false;
+          } else {
+            this.$message({
+              type: "error",
+              message: `${response.message}`
+            });
+          }
+        })
+        .catch(() => {
+        this.listLoading = true;
+        let that = this
+          setTimeout(function(){
+                      that.$message({
+            type: "error",
+            message: `请输入正确的搜索值`
+          });
+            that.list = [];
+            that.total =0;
+            that.listLoading = false;
+          },700)
+
+        });
     },
     open() {
       this.$confirm("确认已完成回访?", "提示", {
