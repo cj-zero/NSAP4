@@ -175,7 +175,7 @@
               label="问题类型"
               prop="problemTypeId"
               :rules="{
-              required: true, message: '问题类型不能为空', trigger: 'blur' }"
+              required: true, message: '问题类型不能为空', trigger: 'clear' }"
             >
               <el-input size="small" style="display:none;" v-model="formList[0].problemTypeId"></el-input>
 
@@ -183,7 +183,6 @@
                 v-model="formList[0].problemTypeName"
                 readonly
                 size="small"
-                @focus="()=>{proplemTree=true,sortForm=1}"
               >
                 <el-button
                   size="mini"
@@ -257,7 +256,7 @@
           label="解决方案"
           prop="solutionId"
           :rules="{
-              required: true, message: '呼叫类型不能为空', trigger: 'blur'
+              required: true, message: '解决方案不能为空', trigger: 'clear'
             }"
         >
           <el-input
@@ -506,7 +505,7 @@
                   label="问题类型"
                   prop="problemTypeId"
                   :rules="{
-              required: true, message: '问题类型不能为空', trigger: 'blur' }"
+              required: true, message: '问题类型不能为空', trigger: 'clear' }"
                 >
                   <el-input size="small" style="display:none;" v-model="item.problemTypeId"></el-input>
 
@@ -583,7 +582,7 @@
               label="解决方案"
               prop="solutionId"
               :rules="{
-              required: true, message: '解决方案不能为空', trigger: 'blur'
+              required: true, message: '解决方案不能为空', trigger: 'clear'
             }"
             >
               <el-input
