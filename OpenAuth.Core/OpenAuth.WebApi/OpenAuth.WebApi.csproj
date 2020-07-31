@@ -61,10 +61,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Templates\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="Templates\Calibration Certificate%28word%29.docx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

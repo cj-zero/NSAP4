@@ -73,6 +73,10 @@ namespace OpenAuth.App.Response
         /// 详细地址
         /// </summary>
         public string Addr { get; set; }
+        /// <summary>
+        /// 服务内容
+        /// </summary>
+        public string Services { get; set; }
 
         /// <summary>
         /// 服务单关联的工单
