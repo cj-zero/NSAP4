@@ -436,7 +436,7 @@ namespace OpenAuth.App
                 Addr = obj.Addr,
                 Address = obj.Address,
                 AddressDesignator = obj.AddressDesignator,
-                Services = obj.Services,
+                //Services = obj.Services,
                 Province = obj.Province,
                 City = obj.City,
                 Area = obj.Area,
