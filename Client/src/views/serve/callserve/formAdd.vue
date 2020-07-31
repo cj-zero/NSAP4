@@ -817,7 +817,7 @@ export default {
       ],
       listQuery: {
         page: 1,
-        limit: 10,
+        limit: 30,
         CardCode: ""
       },
       SerialCount: "",
@@ -940,7 +940,10 @@ export default {
           this.SerialNumberList = res.data;
           this.filterSerialNumberList = this.SerialNumberList;
           this.SerialCount = res.count;
-          this.serLoad = false;
+          let that = this
+          setTimeout(function(){
+          that.serLoad = false;
+          },2000)
           this.listLoading = false;
         })
         .catch(error => {
