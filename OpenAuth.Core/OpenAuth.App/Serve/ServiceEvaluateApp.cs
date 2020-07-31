@@ -121,9 +121,7 @@ namespace OpenAuth.App
                 obj.CreateUserName = user.Name;
                 await UnitWork.AddAsync<ServiceEvaluate, long>(obj);
             }
-
-            await UnitWork.SaveAsync();
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id == req.ServiceOrderId, o => new ServiceWorkOrder
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId, o => new ServiceWorkOrder
             {
                 Status = 8
             });
