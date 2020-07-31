@@ -24,17 +24,17 @@
               <!-- 如果需要单独处理的格式化显示，可以在这里单独处理 -->
               <el-table-column v-if="headerItem.key=='orderType'" :key="index"  :label="headerItem.description">
                 <template slot-scope="scope">
-                  <select-type :isEdit="false" typeId="SYS_INBOUNDTYPE" v-model="scope.row[headerItem.key]"></select-type>
+                  <select-type :isCreate="false" typeId="SYS_INBOUNDTYPE" v-model="scope.row[headerItem.key]"></select-type>
                 </template>
               </el-table-column>
               <el-table-column v-else-if="headerItem.key=='goodsType'" :key="index"  :label="headerItem.description">
                 <template slot-scope="scope">
-                  <select-type :isEdit="false" typeId="SYS_GOODSTYPE" v-model="scope.row[headerItem.key]"></select-type>
+                  <select-type :isCreate="false" typeId="SYS_GOODSTYPE" v-model="scope.row[headerItem.key]"></select-type>
                 </template>
               </el-table-column>
               <el-table-column v-else-if="headerItem.key=='transferType'" :key="index"  :label="headerItem.description">
                 <template slot-scope="scope">
-                  <select-type :isEdit="false" typeId="SYS_SHIPTYPE" v-model="scope.row[headerItem.key]"></select-type>
+                  <select-type :isCreate="false" typeId="SYS_SHIPTYPE" v-model="scope.row[headerItem.key]"></select-type>
                 </template>
               </el-table-column>
               <el-table-column v-else-if="headerItem.type=='String' ||headerItem.type=='DateTime'" :key="index"
@@ -88,12 +88,12 @@
                 </el-col>
                 <el-col :span="8">
                   <el-form-item size="mini" :label="'入库类型'" prop="orderType">
-                    <select-type :isEdit="true" :disabled="!editModel" typeId="SYS_INBOUNDTYPE" v-model="firstTemp.orderType"></select-type>
+                    <select-type :isCreate="true" :disabled="!editModel" typeId="SYS_INBOUNDTYPE" v-model="firstTemp.orderType"></select-type>
                   </el-form-item>
                 </el-col>
                 <el-col :span="8">
                   <el-form-item size="mini" :label="'商品类别'" prop="goodsType">
-                    <select-type :isEdit="true" :disabled="!editModel" typeId="SYS_GOODSTYPE" v-model="firstTemp.goodsType"></select-type>
+                    <select-type :isCreate="true" :disabled="!editModel" typeId="SYS_GOODSTYPE" v-model="firstTemp.goodsType"></select-type>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -135,7 +135,7 @@
                 </el-col>
                 <el-col :span="8">
                   <el-form-item size="mini" :label="'承运方式'" prop="transferType">
-                     <select-type :isEdit="true" :disabled="!editModel" typeId="SYS_SHIPTYPE" v-model="firstTemp.transferType"></select-type>
+                     <select-type :isCreate="true" :disabled="!editModel" typeId="SYS_SHIPTYPE" v-model="firstTemp.transferType"></select-type>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -203,7 +203,7 @@
                 <el-table-column v-if="headerItem.type=='String'||headerItem.type=='Decimal' ||headerItem.type=='DateTime'"
                   :key="index" :prop="headerItem.key" :label="headerItem.description" show-overflow-tooltip :min-width="(headerItem.key ==='prodDate' || headerItem.key ==='expireDate') ? '150px' : '100px'">
                   <template slot-scope="scope">
-                    <div v-if="editModel && isEdit(headerItem.key)">
+                    <div v-if="editModel && isCreate(headerItem.key)">
                       <el-date-picker
                         v-model="scope.row[headerItem.key]"
                         type="date"
@@ -381,7 +381,7 @@
       this.getList()
     },
     methods: {
-      isEdit(key) {
+      isCreate(key) {
         switch (key) {
           case 'updateUserName':
           case 'updateTime':

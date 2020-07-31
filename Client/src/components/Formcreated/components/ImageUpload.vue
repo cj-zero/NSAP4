@@ -23,7 +23,7 @@
 
         <div class="uplaod-action" :style="{height: miniWidth / 4 + 'px'}">
           <i :class="item.isImg ? 'el-icon-view' : 'el-icon-download'" :title="item.isImg ? '预览' : '下载'" @click="handlePreviewFile(item)" :style="{'font-size': miniWidth/8+'px'}"></i>
-          <i v-if="isEdit && !disabled" class="el-icon-refresh" :title="'替换'" @click="handleEdit(item.key)" :style="{'font-size': miniWidth/8+'px'}"></i>
+          <i v-if="isCreate && !disabled" class="el-icon-refresh" :title="'替换'" @click="handleEdit(item.key)" :style="{'font-size': miniWidth/8+'px'}"></i>
           <i v-if="isDelete && fileList.length > min && !disabled" class="el-icon-delete" :title="'删除'" @click="handleRemove(item.key)" :style="{'font-size': miniWidth/8+'px'}"></i>
         </div>
       </div>
@@ -114,7 +114,7 @@ export default {
       type: Boolean,
       default: false
     },
-    isEdit: {
+    isCreate: {
       type: Boolean,
       default: false
     },

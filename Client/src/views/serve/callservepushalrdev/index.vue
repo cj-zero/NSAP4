@@ -114,7 +114,7 @@
               formName="编辑"
               labelposition="right"
               labelwidth="100px"
-              :isEdit="true"
+              :isCreate="true"
               refValue="dataForm"
             ></zxform>
         <div slot="footer">
@@ -137,7 +137,7 @@
           formName="查看"
           labelposition="right"
           labelwidth="100px"
-          :isEdit="false"
+          :isCreate="false"
           :refValue="dataForm"
         ></zxform>
 

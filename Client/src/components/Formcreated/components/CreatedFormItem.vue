@@ -171,7 +171,7 @@
         :is-qiniu="formData.options.isQiniu"
         :is-delete="formData.options.isDelete"
         :min="formData.options.min"
-        :is-edit="formData.options.isEdit"
+        :is-edit="formData.options.isCreate"
         :action="formData.options.action"
       >
       </Upload>

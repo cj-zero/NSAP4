@@ -2,18 +2,18 @@
   <div>
     <div class="form" style="border:1px solid silver;">
       <el-row :gutter="20">
-        <!-- <el-col :span="isEdit?24:18">右边是派单的 -->
+        <!-- <el-col :span="isCreate?24:18"> -->
         <el-col :span="24">
           <el-form
             :model="form"
             :rules="rules"
             :ref="form"
             class="rowStyle"
-            :disabled="!isEdit"
+            :disabled="!isCreate"
             :label-width="labelwidth"
           >
             <div
-              style="font-size:22px;text-align:center;padding-bottom:10px ; margin-bottom:10px ;border-bottom:1px solid silver;"
+              style="font-size:22px;color:#67C23A;text-align:center;height:40px;line-height:40px;border-bottom:1px solid silver;"
             >{{formName}}呼叫服务单</div>
             <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="8">
@@ -193,7 +193,7 @@
             </el-row>
             <!-- //上传图片组件暂时放在这里 -->
             <el-row
-              v-if="isEdit"
+              v-if="isCreate"
               :gutter="10"
               type="flex"
               style="margin:0 0 10px 0 ;"
@@ -210,7 +210,7 @@
                 <el-button
                   type="primary"
                   size="small"
-                  v-if="isEditForm"
+                  v-if="ifEdit"
                   icon="el-icon-share"
                   @click="postService"
                 >确定修改</el-button>
@@ -231,10 +231,10 @@
                 <div class="demo-image__lazy">
                   <el-image
                     style="width:60px;height:50px;display:inline-block;margin:0 10px;"
-                    @click="handlePreviewFile(`${baseURL}/files/Download/${url.pictureId}?X-Token=${tokenValue}`)"
                     v-for="url in form.serviceOrderPictures"
+                     @click="handlePreviewFile(`${baseURL}/files/Download/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`)"
                     :key="url.id"
-                    :src="`${baseURL}/files/Download/${url.pictureId}?X-Token=${tokenValue}`"
+                    :src="`${baseURL}/files/Download/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`"
                     lazy
                   ></el-image>
                 </div>
@@ -251,8 +251,8 @@
             </el-row>
             <!-- 选择制造商序列号 -->
             <formAdd
-              :isEdit="isEditAdd"
-              :isEditForm="isEditForm"
+              :isCreate="isCreateAdd"
+              :ifEdit="ifEdit"
               @change-form="changeForm"
               :serviceOrderId="serviceOrderId"
               :propForm="propForm"
@@ -260,26 +260,6 @@
             <!-- <formAdd :SerialNumberList="SerialNumberList"></formAdd> -->
           </el-form>
         </el-col>
-        <!-- <el-col :span="6" class="lastWord" v-if="!isEdit" >   暂时不用派单
-          <el-collapse accordion>
-            <el-collapse-item
-              :title="`技术员：${item.people}`"
-              :key="`key_${index}`"
-              v-for="(item, index) in wordList"
-              :name="index"
-            >
-              <el-form label-position="top" label-width="80px" :model="item">
-                <el-form-item label="留言">
-                  <el-input v-model="item.word"></el-input>
-                </el-form-item>
-                <el-form-item label="活动形式">
-                  <el-input v-model="item.img"></el-input>
-                </el-form-item>
-                <el-button type="primary">立即创建</el-button>
-              </el-form>
-            </el-collapse-item>
-          </el-collapse>
-        </el-col>-->
       </el-row>
       <el-dialog
         title="选择地址"
@@ -363,13 +343,13 @@ export default {
     "refValue",
     "labelposition",
     "labelwidth",
-    "isEdit",
+    "isCreate",
     "formName",
-    "isEditForm",
+    "ifEdit",//是否是编辑页面
     "customer",
     "sure",
   ],
-  //  ##isEdit是否可以编辑  ##lool只能看   ##create新增页  ##customer获取服务端对比的信息
+  //  ##isCreate是否可以编辑  ##look只能看   ##create新增页  ##customer获取服务端对比的信息
   //customer确认订单时传递的信息
   data() {
     var checkTelF = (rule, value, callback) => {
@@ -406,14 +386,7 @@ export default {
       activeName: 1,
       // dataModel: this.models[this.formData.model],
       dataModel: null,
-      wordList: [
-        { people: "张工", word: "123", img: "" },
-        { people: "刘总", word: "123", img: "" },
-        { people: "实习生小王", word: "123", img: "" },
-        { people: "老刘", word: "123", img: "" },
-        { people: "门卫", word: "123", img: "" },
-        { people: "实习生小李", word: "123", img: "" },
-      ],
+
       callSourse: [
         { label: "电话", value: 1 },
         { label: "钉钉", value: 2 },
@@ -454,7 +427,7 @@ export default {
         pictures: [], //
         serviceWorkOrders: [],
       },
-      isEditAdd: true, //add页面的编辑状态
+      isCreateAdd: true, //add页面的编辑状态
       allAddress: {}, //选择地图的合集
       propForm: [],
       rules: {
@@ -482,14 +455,13 @@ export default {
     };
   },
   watch: {
-    isEditForm: {
+    ifEdit: {
       handler(val) {
         console.log(val);
       },
     },
     customer: {
       handler(val) {
-        console.log(val)
         this.setForm(val);
       },
     },
@@ -505,6 +477,7 @@ export default {
     "form.customerId": {
       handler(val) {
         this.getPartnerInfo(val);
+      
       },
     },
     refValue: {
@@ -539,7 +512,7 @@ export default {
   mounted() {
     this.getPartnerList();
     this.setForm(this.customer);
-    this.isEditAdd = this.isEdit;
+    this.isCreateAdd = this.isCreate;
   },
   methods: {
     handlePreviewFile(item) {
@@ -563,12 +536,25 @@ export default {
       this.latitude = this.allAddress.position.latss;
       this.drawerMap = false;
     },
-    setForm(val) {
-      Object.assign(this.form, val);
+    async setForm(val) {
+      if(val){
+      val.serviceOrderPictures = await this.getServeImg(val.id)
 
+      }
+      Object.assign(this.form, val);
       this.form.recepUserName = this.$store.state.user.name;
     },
-
+   async getServeImg(val){
+      let params={
+        id:val,
+        type:1
+      }
+      let imgList =[]
+     await callservesure.GetServiceOrderPictures(params).then(res=>{
+        imgList=res.result?res.result:[]
+      })
+      return imgList
+    },
     postServe() {
       //创建整个工单
 

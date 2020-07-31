@@ -23,7 +23,7 @@
       </div>
     </sticky>
     <div class="app-container">
-      <div class="bg-white">
+      <div class="bg-white " >
         <zxsearch @change-Search="changeSearch"></zxsearch>
         <el-table
           ref="mainTable"
@@ -137,7 +137,7 @@
           formName="新建"
           labelposition="right"
           labelwidth="100px"
-          :isEdit="true"
+          :isCreate="true"
           :sure="sure"
           @close-Dia="closeDia"
         ></zxform>
@@ -162,8 +162,8 @@
           formName="编辑"
           labelposition="right"
           labelwidth="100px"
-          isEditForm="true"
-          :isEdit="true"
+          ifEdit="true"
+          :isCreate="true"
           :sure="sure"
           :refValue="dataForm"
           @close-Dia="closeDia"
@@ -175,22 +175,29 @@
       </el-dialog>
       <!-- 只能查看的表单 -->
       <el-dialog
-        width="800px"
-        class="dialog-mini"
+        width="1200px"
         title="服务单详情"
         :close-on-click-modal="false"
         destroy-on-close
+        class="addClass1"
         @open="openDetail"
         :visible.sync="dialogFormView"
       >
+      <el-row :gutter="  20" class="position-view">
+        <el-col :span="18" style="max-width:900px;">
         <zxform
           :form="temp"
           formName="查看"
           labelposition="right"
           labelwidth="100px"
-          :isEdit="false"
+          :isCreate="false"
           :refValue="dataForm"
         ></zxform>
+        </el-col>
+            <el-col :span="6" class="lastWord">   
+                <zxchat ></zxchat>
+            </el-col>
+        </el-row>
 
         <div slot="footer">
           <el-button size="mini" @click="dialogFormView = false">取消</el-button>
@@ -221,6 +228,7 @@ import elDragDialog from "@/directive/el-dragDialog";
 // import customerupload from "../callservesure/customerupload";
 import zxform from "./form";
 import zxsearch from "./search";
+import zxchat from "./chatOnRight";
 import treeList from "./treeList";
 // import { callserve } from "@/mock/serve";
 export default {
@@ -231,7 +239,8 @@ export default {
     Pagination,
     zxform,
     treeList,
-    zxsearch
+    zxsearch,
+    zxchat
   },
   directives: {
     waves,
@@ -683,6 +692,13 @@ export default {
 .redWord {
   color: orangered;
 }
+.position-view {
+  .lastWord {
+    position: sticky;
+    top: 0;
+    // width: 200px;
+  }
+}
 .table_label {
   ::v-deep.el-radio {
     margin-left: 6px;
@@ -699,22 +715,21 @@ export default {
     color: green;
   }
 }
-// .mainPage {
-//   ::v-deep .el-dialog__wrapper {
-//     position: absolute;
-//        .el-dialog__header {
-//         .el-dialog__title {
-//           color: white;
-//         }
-//         .el-dialog__close {
-//           color: white;
-//         }
-//         background: lightslategrey;
-//       }
-//      .el-dialog__body {
-//     padding: 10px 20px;
-//   }
-//   }
+.addClass1 {
+  // ::v-deep .el-dialog__header {
+  //   .el-dialog__title {
+  //     color: white;
+  //   }
+  //   .el-dialog__close {
+  //     color: white;
+  //   }
+  //   background: lightslategrey;
+  // }
+  ::v-deep .el-dialog__body {
+    padding: 10px 20px;
+  }
+}
+
 
 // }
 </style>

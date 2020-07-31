@@ -33,7 +33,7 @@
             </form>
           </div>
           <div class="flow-form-content" style="height: 500px;">
-            <CreatedFlow ref="createdFlow" :form-template="currentForm" :isEdit="true" :isShowContent="isShowContent" :scheme-content="currentScheme.schemeContent"></CreatedFlow>
+            <CreatedFlow ref="createdFlow" :form-template="currentForm" :isCreate="true" :isShowContent="isShowContent" :scheme-content="currentScheme.schemeContent"></CreatedFlow>
           </div>
         </div>
 

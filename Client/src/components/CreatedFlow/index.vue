@@ -203,17 +203,17 @@ export default {
     // YLaneIcon: { template: yLaneSvg },
     // LanePoolIcon: { template: lanePoolSvg }
   },
-  props: ['schemeContent', 'isEdit', 'formTemplate', 'isShowContent'],
+  props: ['schemeContent', 'isCreate', 'formTemplate', 'isShowContent'],
   mounted() {
     const that = this
     that.dealCompatibility()
-    if (!this.isEdit) {
+    if (!this.isCreate) {
       this.$nextTick(() => {
         that.initJsPlumb()
         that.initFlow()
       })
     } else {
-      if (this.schemeContent && this.isEdit) {
+      if (this.schemeContent && this.isCreate) {
         this.flowData = this.groupSchemeContent()
         this.flowData.status = flowConfig.flowStatus.MODIFY
         this.initJsPlumb()
@@ -282,7 +282,7 @@ export default {
       }
     },
     schemeContent() {
-      if (this.schemeContent && this.isEdit) {
+      if (this.schemeContent && this.isCreate) {
         this.flowData = this.groupSchemeContent()
         this.flowData.status = flowConfig.flowStatus.MODIFY
         this.plumb && this.plumb.deleteEveryConnection()

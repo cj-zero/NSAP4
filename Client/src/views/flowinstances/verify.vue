@@ -34,7 +34,7 @@
     </el-card>
     <el-card class="box-card">
       <div style="height: 500px">
-        <CreatedFlow ref="createdFlow" :form-template="currentForm" :isEdit="true" :isShowContent="isShowContent"
+        <CreatedFlow ref="createdFlow" :form-template="currentForm" :isCreate="true" :isShowContent="isShowContent"
           :scheme-content="flowObj.schemeContent"></CreatedFlow>
       </div>
     </el-card>

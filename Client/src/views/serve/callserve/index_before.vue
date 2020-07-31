@@ -122,7 +122,7 @@
           formName="新建"
           labelposition="right"
           labelwidth="100px"
-          :isEdit="true"
+          :isCreate="true"
           :sure="sure"
           :customer="customer"
           @close-Dia="closeDia"
@@ -146,8 +146,8 @@
           formName="编辑"
           labelposition="right"
           labelwidth="100px"
-          isEditForm="true"
-          :isEdit="true"
+          ifEdit="true"
+          :isCreate="true"
           :sure="sure"
           :customer="customer"
           @close-Dia="closeDia"
@@ -171,7 +171,7 @@
           formName="查看"
           labelposition="right"
           labelwidth="100px"
-          :isEdit="false"
+          :isCreate="false"
           :refValue="dataForm"
         ></zxform>
 

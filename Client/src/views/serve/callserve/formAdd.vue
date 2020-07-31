@@ -4,7 +4,7 @@
     <div style="border:1px solid silver;padding:5px;margin-left:20px;">
       <el-form
         :model="formList[0]"
-        :disabled="!isEdit"
+        :disabled="!isCreate"
         label-width="90px"
         class="rowStyle"
         :ref="'itemForm'+ 0"
@@ -15,7 +15,7 @@
               <el-input size="small" disabled v-model="formList[0].id"></el-input>
             </el-form-item>
           </el-col>
-          <el-col :span="isEditForm?8:7">
+          <el-col :span="ifEdit?8:7">
             <el-form-item label="服务类型">
               <el-radio-group size="small" v-model="formList[0].feeType">
                 <el-radio :label="1">免费</el-radio>
@@ -24,11 +24,11 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="4" v-if="!isEditForm" style="height:40px;line-height:40px;font-size:13px;">
+          <el-col :span="4" v-if="!ifEdit" style="height:40px;line-height:40px;font-size:13px;">
             <el-switch size="small" v-model="formList[0].editTrue" active-text="修改后续" :width="20"></el-switch>
           </el-col>
-          <el-col :span="2" v-if="isEditForm"></el-col>
-          <el-col :span="isEditForm?3:2" style="height:40px;line-height:40px;">
+          <el-col :span="2" v-if="ifEdit"></el-col>
+          <el-col :span="ifEdit?3:2" style="height:40px;line-height:40px;">
             <el-button
               type="danger"
               v-if="formList.length>1"
@@ -38,10 +38,10 @@
               @click="deleteForm(formList[0])"
             >删除</el-button>
           </el-col>
-          <el-col :span="isEditForm?3:2" style="height:40px;line-height:40px;">
+          <el-col :span="ifEdit?3:2" style="height:40px;line-height:40px;">
             <el-button
               type="success"
-              v-if="isEditForm"
+              v-if="ifEdit"
               size="mini"
               icon="el-icon-share"
               @click="handleIconClick(formList[0])"
@@ -74,7 +74,7 @@
                 size="small"
                 maxlength="0"
                 v-model="formList[0].manufacturerSerialNumber"
-                :disabled="isEditForm"
+                :disabled="ifEdit"
               >
                 <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
               </el-input>-->
@@ -142,7 +142,7 @@
               <el-select
                 size="small"
                 v-model="formList[0].status"
-                :disabled="isEdit"
+                :disabled="isCreate"
                 clearable
                 placeholder="请选择"
               >
@@ -277,10 +277,10 @@
         <el-form-item label="备注" prop="remark">
           <el-input type="textarea" size="small" v-model="formList[0].remark"></el-input>
         </el-form-item>
-        <el-form-item label="故障描述" prop="remark" v-if="!isEdit">
+        <el-form-item label="故障描述" prop="remark" v-if="!isCreate">
           <el-input type="textarea" size="small" v-model="formList[0].troubleDescription"></el-input>
         </el-form-item>
-        <el-form-item label="过程描述" prop="remark" v-if="!isEdit">
+        <el-form-item label="过程描述" prop="remark" v-if="!isCreate">
           <el-input type="textarea" size="small" v-model="formList[0].processDescription"></el-input>
         </el-form-item>
         <el-form-item>
@@ -298,7 +298,7 @@
             <el-col :span="4">
               <div class="showSort" style="height:40px;line-height:40px;">{{1}}/{{formList.length}}</div>
             </el-col>
-            <el-col :span="5" v-if="isEditForm">
+            <el-col :span="5" v-if="ifEdit">
               <el-button
                 type="success"
                 size="small"
@@ -324,7 +324,7 @@
         >
           <el-form
             :model="item"
-            :disabled="!isEdit"
+            :disabled="!isCreate"
             label-width="90px"
             class="rowStyle"
             :ref="'itemForm'+ index"
@@ -335,7 +335,7 @@
                   <el-input size="small" disabled v-model="item.id"></el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="isEditForm?8:7">
+              <el-col :span="ifEdit?8:7">
                 <el-form-item label="服务类型">
                   <el-radio-group size="small" v-model="item.feeType">
                     <el-radio :label="1">免费</el-radio>
@@ -346,14 +346,14 @@
 
               <el-col
                 :span="4"
-                v-if="!isEditForm"
+                v-if="!ifEdit"
                 style="height:40px;line-height:40px;font-size:13px;"
               >
                 <el-switch size="small" v-model="item.editTrue" active-text="修改后续" :width="20"></el-switch>
               </el-col>
-              <el-col :span="2" v-if="isEditForm"></el-col>
+              <el-col :span="2" v-if="ifEdit"></el-col>
 
-              <el-col :span="isEditForm?3:2" style="height:40px;line-height:40px;">
+              <el-col :span="ifEdit?3:2" style="height:40px;line-height:40px;">
                 <el-button
                   type="danger"
                   v-if="formList.length>1"
@@ -363,10 +363,10 @@
                   @click="deleteForm(item)"
                 >删除</el-button>
               </el-col>
-              <el-col :span="isEditForm?3:2" style="height:40px;line-height:40px;">
+              <el-col :span="ifEdit?3:2" style="height:40px;line-height:40px;">
                 <el-button
                   type="success"
-                  v-if="isEditForm"
+                  v-if="ifEdit"
                   size="mini"
                   icon="el-icon-share"
                   @click="handleIconClick"
@@ -401,7 +401,7 @@
                 size="small"
                 maxlength="0"
                 v-model="item.manufacturerSerialNumber"
-                :disabled="isEditForm"
+                :disabled="ifEdit"
               >
                 <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
                   </el-input>-->
@@ -469,7 +469,7 @@
                   <el-select
                     size="small"
                     v-model="item.status"
-                    :disabled="isEdit"
+                    :disabled="isCreate"
                     clearable
                     placeholder="请选择"
                   >
@@ -599,10 +599,10 @@
             <el-form-item label="备注" prop="remark">
               <el-input type="textarea" size="small" v-model="item.remark"></el-input>
             </el-form-item>
-            <el-form-item label="故障描述" v-if="!isEdit" prop="remark">
+            <el-form-item label="故障描述" v-if="!isCreate" prop="remark">
               <el-input type="textarea" size="small" v-model="item.troubleDescription"></el-input>
             </el-form-item>
-            <el-form-item label="过程描述" v-if="!isEdit" prop="remark">
+            <el-form-item label="过程描述" v-if="!isCreate" prop="remark">
               <el-input type="textarea" size="small" v-model="item.processDescription"></el-input>
             </el-form-item>
             <el-form-item>
@@ -623,7 +623,7 @@
                     style="height:40px;line-height:40px;"
                   >{{index+2}}/{{formList.length}}</div>
                 </el-col>
-                <el-col :span="5" v-if="isEditForm">
+                <el-col :span="5" v-if="ifEdit">
                   <el-button
                     type="success"
                     size="small"
@@ -727,7 +727,7 @@ import problemtype from "./problemtype";
 import solution from "./solution";
 export default {
   components: { fromfSN, problemtype, solution, Pagination },
-  props: ["isEdit", "isEditForm", "serviceOrderId", "propForm"],
+  props: ["isCreate", "ifEdit", "serviceOrderId", "propForm"],
   // ##propForm编辑或者查看详情传过来的数据
   data() {
     return {

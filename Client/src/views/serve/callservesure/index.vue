@@ -152,7 +152,7 @@
               formName="确认"
               labelposition="right"
               labelwidth="100px"
-              :isEdit="true"
+              :isCreate="true"
               :sure="sure"
               :customer="customer"
               @close-Dia="closeDia"
@@ -186,7 +186,7 @@
           formName="查看"
           labelposition="right"
           labelwidth="100px"
-          :isEdit="false"
+          :isCreate="false"
           :refValue="dataForm"
         ></zxform>
         <div slot="footer">

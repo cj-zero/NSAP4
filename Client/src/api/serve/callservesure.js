@@ -100,6 +100,14 @@ export function getForm(data) {
     })
   }
 
+  export function GetServiceOrderPictures(params) {
+    return request({
+      url: '/serve/ServiceOrder/GetServiceOrderPictures',
+      method: 'get',
+      params
+    })}
+
+
   export function update(data) {
     return request({
       url: '/certinfos/delete',

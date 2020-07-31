@@ -1,6 +1,6 @@
 <template>
   <div>
-    <span v-if="!isEdit">{{labelName}}</span>
+    <span v-if="!isCreate">{{labelName}}</span>
     <el-select v-else :size="size" :disabled="disabled" :value="value" @change="handleChange">
       <el-option v-for="(item, index) in typeDatas" :key="index" :value="item[defaultProps.value]" :label="item[defaultProps.label]"></el-option>
     </el-select>
@@ -24,7 +24,7 @@
         type: Boolean,
         default: false
       },
-      isEdit: {
+      isCreate: {
         type: Boolean,
         default: true
       },

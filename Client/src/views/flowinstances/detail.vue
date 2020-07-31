@@ -36,7 +36,7 @@
         <el-collapse-item title="流程图" name="3">
           <span slot="title" style="font-size: 16px;font-weight: 600;">流程图</span>
           <div style="height: 500px;">
-            <CreatedFlow ref="createdFlow" :form-template="currentForm" :isEdit="true" :isShowContent="isShowContent" :scheme-content="postObj.schemeContent"></CreatedFlow>
+            <CreatedFlow ref="createdFlow" :form-template="currentForm" :isCreate="true" :isShowContent="isShowContent" :scheme-content="postObj.schemeContent"></CreatedFlow>
           </div>
         </el-collapse-item>
       </el-collapse>

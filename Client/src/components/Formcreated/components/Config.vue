@@ -309,7 +309,7 @@
           <el-checkbox size="small" v-model="data.options.clearable" v-if="Object.keys(data.options).indexOf('clearable')>=0">显示清除按钮</el-checkbox>
           <el-checkbox size="small" v-model="data.options.arrowControl" v-if="Object.keys(data.options).indexOf('arrowControl')>=0">使用箭头进行时间选择</el-checkbox>
           <el-checkbox size="small" v-model="data.options.isDelete" v-if="Object.keys(data.options).indexOf('isDelete')>=0">删除</el-checkbox>
-          <el-checkbox size="small" v-model="data.options.isEdit" v-if="Object.keys(data.options).indexOf('isEdit')>=0">编辑</el-checkbox>
+          <el-checkbox size="small" v-model="data.options.isCreate" v-if="Object.keys(data.options).indexOf('isCreate')>=0">编辑</el-checkbox>
           
         </el-form-item>
         <el-form-item :label="'校验'">

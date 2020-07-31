@@ -132,7 +132,7 @@
             formName="查看"
             labelposition="right"
             labelwidth="100px"
-            :isEdit="false"
+            :isCreate="false"
             :refValue="dataForm"
           ></zxform>
 

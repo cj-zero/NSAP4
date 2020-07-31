@@ -163,7 +163,7 @@
           :is-qiniu="options.isQiniu"
           :is-delete="options.isDelete"
           :min="options.min"
-          :is-edit="options.isEdit"
+          :is-edit="options.isCreate"
           :action="options.action"
         ></Upload>
         <div slot="footer">
@@ -224,7 +224,7 @@ export default {
         defaultValue: [],
         disabled: false,
         isDelete: false,
-        isEdit: false,
+        isCreate: false,
         isQiniu: false,
         length: 8,
         min: 0,

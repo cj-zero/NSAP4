@@ -75,7 +75,7 @@
       // Ueditor
     },
     props: {
-      isEdit: {
+      isCreate: {
         type: Boolean,
         default: false
       }

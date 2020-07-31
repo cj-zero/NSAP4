@@ -91,7 +91,7 @@
       FormContainer
     },
     props: {
-      isEdit: {
+      isCreate: {
         type: Boolean,
         default: false
       }
@@ -129,7 +129,7 @@
     mounted() {
       // console.log(this.$route.query,)
       this.postForm.frmType = this.$route.query['frmType'] !== undefined ? this.$route.query['frmType'] : 2
-      if (!this.isEdit) {
+      if (!this.isCreate) {
         console.log(defaultForm)
         this.postForm = Object.assign({}, defaultForm)
       } else {
@@ -145,7 +145,7 @@
 
     methods: {
       ueReady() { // ueditor准备好了，来数据吧
-        if (this.isEdit && !this.postForm.contentData) {
+        if (this.isCreate && !this.postForm.contentData) {
           const id = this.$route.params && this.$route.params.id
           this.fetchData({
             id: id
@@ -169,7 +169,7 @@
           if (valid) {
             this.loading = true
             this.postForm.OrgId = this.defaultorgid
-            if (this.isEdit) {
+            if (this.isCreate) {
               this.postForm.id = this.$route.params && this.$route.params.id
               forms.update(this.postForm).then(() => {
                 this.loading = false

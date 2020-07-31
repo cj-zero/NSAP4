@@ -102,7 +102,11 @@ props:['form'],
      
     };
   },
-
+  watch:{
+    handler(val){
+      console.log(val)
+    }
+  },
   mounted() {
   
   

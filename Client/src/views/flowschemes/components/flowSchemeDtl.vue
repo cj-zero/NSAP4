@@ -66,7 +66,7 @@
         </div>
         <!--流程设计-->
         <div class="editor-container" style="height: 100%;" v-if="active==2">
-          <CreatedFlow ref="createdFlow" :form-template="currentForm" :isEdit="isEdit" :scheme-content="postObj.schemeContent"></CreatedFlow>
+          <CreatedFlow ref="createdFlow" :form-template="currentForm" :isCreate="isCreate" :scheme-content="postObj.schemeContent"></CreatedFlow>
         </div>
       </div>
       <div class="edit-btns text-center">
@@ -109,7 +109,7 @@
       CreatedForm
     },
     props: {
-      isEdit: {
+      isCreate: {
         type: Boolean,
         default: false
       }
@@ -159,7 +159,7 @@
       forms.getList().then(response => {
         // 获取表单列表
         this.forms = response.data
-        if (this.isEdit) {
+        if (this.isCreate) {
           const id = this.$route.params && this.$route.params.id
           flowschemes.get({
             id: id
@@ -230,7 +230,7 @@
 
             this.postObj.OrgId = this.defaultorgid
 
-            if (this.isEdit) {
+            if (this.isCreate) {
               flowschemes.update(this.postObj).then(() => {
                 this.loading = false
                 this.$notify({

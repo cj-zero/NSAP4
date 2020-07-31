@@ -179,7 +179,7 @@ export const basicComponents = [
       isQiniu: false,
       isDelete: false,
       min: 0,
-      isEdit: false,
+      isCreate: false,
       action: `${baseUrl}/Files/Upload`
     }
   },
@@ -310,7 +310,7 @@ export const advanceComponents = [
   //     isQiniu: false,
   //     isDelete: false,
   //     min: 0,
-  //     isEdit: false,
+  //     isCreate: false,
   //     action: 'https://jsonplaceholder.typicode.com/photos/'
   //   }
   // },
