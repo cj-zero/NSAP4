@@ -57,6 +57,7 @@
                 size="small"
                 :fetch-suggestions="querySearch"
                 placeholder="制造商序列号"
+                @focus="thisPage=0"
                 @select="searchSelect"
               >
                 <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
@@ -67,8 +68,6 @@
                       style="font-size:12px;height:20px;margin:2px 0 5px 0 ;color:silver;"
                     >{{ item.custmrName }}</p>
                   </div>
-                  <!-- <div class="name">{{ formList[0].manufSN }}</div>
-                  <span class="addr">{{ formList[0].custmrName }}</span>-->
                 </template>
               </el-autocomplete>
               <!-- <el-input
@@ -179,11 +178,7 @@
             >
               <el-input size="small" style="display:none;" v-model="formList[0].problemTypeId"></el-input>
 
-              <el-input
-                v-model="formList[0].problemTypeName"
-                readonly
-                size="small"
-              >
+              <el-input v-model="formList[0].problemTypeName" readonly size="small">
                 <el-button
                   size="mini"
                   slot="append"
@@ -387,15 +382,16 @@
                     size="small"
                     :fetch-suggestions="querySearch"
                     placeholder="制造商序列号"
+                     @focus="thisPage=index+1"
                     @select="searchSelect"
                   >
                     <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
-                    <template slot-scope="{ item1 }">
+                    <template slot-scope="{ item }">
                       <div class="name">
-                        <p style="height:20px;margin:2px;">{{ item1.manufSN }}</p>
+                        <p style="height:20px;margin:2px;">{{ item.manufSN }}</p>
                         <p
                           style="font-size:12px;height:20px;margin:2px 0 5px 0 ;color:silver;"
-                        >{{ item1.custmrName }}</p>
+                        >{{ item.custmrName }}</p>
                       </div>
                       <!-- <div class="name">{{ item.manufSN }}</div>
                       <span class="addr">{{ item.custmrName }}</span>-->
@@ -750,6 +746,7 @@ export default {
       serLoad: false,
       addressList: [], //客户地址集合
       cntctPrsnList: [], //客户联系人集合
+      thisPage:0,//当前选择的工单页
       SerialNumberList: [],
       filterSerialNumberList: [],
       formListStart: [], //选择的表格数据
@@ -779,7 +776,7 @@ export default {
           solutionId: "", //解决方案
           troubleDescription: "",
           processDescription: "",
-          editTrue:true, //修改后续的状态
+          editTrue: true //修改后续的状态
         }
       ], //表单依赖的表格数据
 
@@ -849,35 +846,58 @@ export default {
   },
   computed: {
     newValue() {
-      return JSON.stringify(this.formList)
+      return JSON.stringify(this.formList);
     }
   },
   watch: {
     newValue: {
-      handler:function(Val, Val1){
-      let newVal = JSON.parse(Val)
-      let oldVal = JSON.parse(Val1)
-      // let chengeIndex= ''
-      this.$emit("change-form", newVal);
-      newVal.map((item,index)=>{
-        if(JSON.stringify(newVal[index])!==JSON.stringify(oldVal[index])){
-         let newValChild =newVal[index]
-         let oldValChild =oldVal[index]
-        //  console.log()
-        if(newVal.length==oldVal.length){
-                   for( let item1 in oldValChild ){
-              if(newValChild[item1]!==oldValChild[item1]){
-                console.log(item1,newValChild[item1],index)
-              }
+      handler: function(Val, Val1) {
+          let newVal = JSON.parse(Val);
+          let oldVal = JSON.parse(Val1);
+          // let chengeIndex= ''
+          this.$emit("change-form", newVal);
+          newVal.map((item, index) => {   //循环新数组的每一项对象
+            if (
+              JSON.stringify(newVal[index]) !== JSON.stringify(oldVal[index])
+            ) {
+              let newValChild = newVal[index];  //新值的每一项
+              let oldValChild = oldVal[index];
+              //  console.log()
+              if (newVal.length == oldVal.length) {
+                for (let item1 in oldValChild) {
+                  if (newValChild[item1] !== oldValChild[item1]) { //如果新值和旧值不一样
+                    if(this.formList[index].editTrue){   //如果可以修改
+                      //  console.log(thisForm[item1],newValChild[item1],item1)
+                      if(item1=='problemTypeId'){
+                         this.formList.map((itemF,ind)=>{
+                        if(ind!==0){
+                          itemF.problemTypeId = newValChild.problemTypeId
+                          itemF.problemTypeName = newValChild.problemTypeName
+                        }
+                      })
+                      }else if (item1=='solutionId'){
+                       this.formList.map((itemF,ind)=>{
+                        if(ind!==0){
+                           itemF.solutionId = newValChild.solutionId
+                          itemF.solutionsubject = newValChild.solutionsubject
+                        }
+                      })
+                      }else{
+                       this.formList.map((itemF,ind)=>{
+                        if(ind!==0){
+                          itemF[item1] = newValChild[item1]
+                        }
+                      })
+                      }
               
-         }
-        }
-
-        }
-      })
+                      // console.log(this.formList)
+                      }
+              }
+                }}}
+          });
       },
-    deep: true
-    // immediate:true
+      deep: true,
+      // immediate: true
     },
     propForm: {
       deep: true,
@@ -948,8 +968,9 @@ export default {
     },
     NodeClick(res) {
       console.log(this.formList, this.sortForm - 1);
-      this.formList[this.sortForm - 1].problemTypeId = res.id;
       this.formList[this.sortForm - 1].problemTypeName = res.name;
+      this.formList[this.sortForm - 1].problemTypeId = res.id;
+      
       this.problemLabel = res.name;
       this.proplemTree = false;
     },
@@ -1003,10 +1024,20 @@ export default {
         for (let i = 0; i < newList.length; i++) {
           this.formList.push({
             manufacturerSerialNumber: newList[i].manufSN,
-            // editTrue:true,
+             editTrue:false,
             internalSerialNumber: newList[i].internalSN,
             materialCode: newList[i].itemCode,
-            materialDescription: newList[i].itemName
+            materialDescription: newList[i].itemName,
+            feeType:1,
+            fromTheme:'',
+            fromType:2,
+              problemTypeName:'',
+            problemTypeId:'',
+            priority:'',
+            remark:'',
+            solutionId:'',
+          status:1,
+            solutionsubject:''
           });
         }
         // this.formList=this.formListStart
@@ -1017,9 +1048,19 @@ export default {
           this.formList.push({
             manufacturerSerialNumber: this.formListStart[i].manufSN,
             internalSerialNumber: this.formListStart[i].internalSN,
-            // editTrue:true,
+             editTrue:false,
             materialCode: this.formListStart[i].itemCode,
-            materialDescription: this.formListStart[i].itemName
+            materialDescription: this.formListStart[i].itemName,
+                feeType:1,
+            fromTheme:'',
+            fromType:2,
+            problemTypeName:'',
+            problemTypeId:'',
+            priority:'',
+            remark:'',
+            solutionId:'',
+              status:1,
+            solutionsubject:''
           });
         }
       }
@@ -1057,26 +1098,35 @@ export default {
       // }
     },
     searchSelect(res) {
-      let newList = this.filterSerialNumberList.filter(
+      if(this.filterSerialNumberList.length){
+                 this.filterSerialNumberList = this.filterSerialNumberList.filter(
         item => item.manufSN === res.manufSN
       );
-      this.inputSearch = res.manufSN;
-      this.filterSerialNumberList = newList;
+        // this.filterSerialNumberList = newList;
+      }
+      this.formList[this.thisPage].manufacturerSerialNumber = res.manufSN
+      this.formList[this.thisPage].internalSerialNumber = res.internalSN
+      this.formList[this.thisPage].contractId = res.contractID
+      this.formList[this.thisPage].materialCode = res.itemCode
+      this.formList[this.thisPage].materialDescription = res.itemName
+      // this.inputSearch = res.manufSN;
     },
-    querySearch(queryString, cb) {
+   async querySearch(queryString, cb) {
       this.listQuery.ManufSN = queryString;
-      this.getSerialNumberList();
+     await this.getSerialNumberList();
       var filterSerialNumberList = this.SerialNumberList;
+      console.log(filterSerialNumberList,this.listQuery.ManufSN)
       var results = queryString
         ? filterSerialNumberList.filter(this.createFilter(queryString))
         : filterSerialNumberList;
-      // console.log(results);
+       console.log(results);
       // 调用 callback 返回建议列表的数据
       cb(results);
     },
     createFilter(queryString) {
-      return filterSerialNumberList => {
-        return (
+      
+      return filterSerialNumberList => {//循环数组的每一项
+        return (  
           filterSerialNumberList.manufSN
             .toLowerCase()
             .indexOf(queryString.toLowerCase()) === 0
@@ -1086,35 +1136,6 @@ export default {
     handleSelect(item) {
       console.log(item);
     },
-    // deleteForm(res) {
-    //   this.$confirm(
-    //     `此操作将删除序列商序列号为${res.manufacturerSerialNumber}的表单, 是否继续?`,
-    //     "提示",
-    //     {
-    //       confirmButtonText: "确定",
-    //       cancelButtonText: "取消",
-    //       type: "warning"
-    //     }
-    //   )
-    //     .then(() => {
-
-    //       this.formList = this.formList.filter(item => {
-    //         return (
-    //           item.manufacturerSerialNumber != res.manufacturerSerialNumber
-    //         );
-    //       });
-    //       this.$message({
-    //         type: "success",
-    //         message: "删除成功!"
-    //       });
-    //     })
-    //     .catch(() => {
-    //       this.$message({
-    //         type: "info",
-    //         message: "已取消删除"
-    //       });
-    //     });
-    // }
     deleteForm(res) {
       this.$confirm(
         `此操作将删除序列商序列号为${res.manufacturerSerialNumber}的表单, 是否继续?`,
@@ -1126,25 +1147,16 @@ export default {
         }
       )
         .then(() => {
-          callservesure
-            .delWorkOrder({ id: res.id })
-            .then(() => {
-              this.$message({
-                message: "删除工单成功",
-                type: "success"
-              });
-              this.formList = this.formList.filter(item => {
-                return (
-                  item.manufacturerSerialNumber != res.manufacturerSerialNumber
-                );
-              });
-            })
-            .catch(() => {
-              this.$message({
-                type: "error",
-                message: "删除失败"
-              });
-            });
+
+          this.formList = this.formList.filter(item => {
+            return (
+              item.manufacturerSerialNumber != res.manufacturerSerialNumber
+            );
+          });
+          this.$message({
+            type: "success",
+            message: "删除成功!"
+          });
         })
         .catch(() => {
           this.$message({
@@ -1153,6 +1165,44 @@ export default {
           });
         });
     }
+    // deleteForm(res) {
+    //   this.$confirm(
+    //     `此操作将删除序列商序列号为${res.manufacturerSerialNumber}的表单, 是否继续?`,
+    //     "提示",
+    //     {
+    //       confirmButtonText: "确定",
+    //       cancelButtonText: "取消",
+    //       type: "warning"
+    //     }
+    //   )
+    //     .then(() => {
+    //       callservesure
+    //         .delWorkOrder({ id: res.id })
+    //         .then(() => {
+    //           this.$message({
+    //             message: "删除工单成功",
+    //             type: "success"
+    //           });
+    //           this.formList = this.formList.filter(item => {
+    //             return (
+    //               item.manufacturerSerialNumber != res.manufacturerSerialNumber
+    //             );
+    //           });
+    //         })
+    //         .catch(() => {
+    //           this.$message({
+    //             type: "error",
+    //             message: "删除失败"
+    //           });
+    //         });
+    //     })
+    //     .catch(() => {
+    //       this.$message({
+    //         type: "info",
+    //         message: "已取消删除"
+    //       });
+    //     });
+    // }
   }
 };
 </script>

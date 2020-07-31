@@ -20,7 +20,6 @@
               <el-col :span="8">
                 <el-form-item label="客户代码" prop="customerId">
                   <!-- <el-input size="mini" v-model="form.customerId" ><i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i></el-input> -->
-
                   <el-autocomplete
                     popper-class="my-autocomplete"
                     v-model="form.customerId"
@@ -290,8 +289,8 @@
         :visible.sync="dialogPartner"
       >
         <el-form :inline="true" class="demo-form-inline">
-          <el-form-item label="客户代码:">
-            <el-input @input="searchList" v-model="inputSearch" placeholder="客户代码"></el-input>
+          <el-form-item label="客户:">
+            <el-input @input="searchList" v-model="inputSearch" placeholder="客户"></el-input>
           </el-form-item>
           <el-form-item label="制造商序列号:">
             <el-input @input="searSerial" v-model="inputSerial" placeholder="制造商序列号"></el-input>
