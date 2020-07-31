@@ -529,6 +529,7 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 result.Data = await _serviceOrderApp.ServiceWorkOrderList(req);
+                result.Count = result.Data.Count;
             }
             catch (Exception ex)
             {
