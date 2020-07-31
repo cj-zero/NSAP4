@@ -911,6 +911,12 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            //判断当前单据是否已经被接单
+            var count = (await UnitWork.Find<ServiceWorkOrder>(s => req.ServiceWorkOrderIds.Contains(s.Id) && s.Status > 1).ToListAsync()).Count;
+            if (count > 0)
+            {
+                throw new CommonException("当前工单已被接单", 90005);
+            }
             var b = await CheckCanTakeOrder(req.TechnicianId);
 
             if (!b)
@@ -1343,12 +1349,10 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public async Task<TableData> GetUserCanOrderCount(int id)
+        public async Task<int> GetUserCanOrderCount(int id)
         {
-            var result = new TableData();
             var count = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == id && s.Status.Value < 7).Select(s => s.ServiceOrderId).Distinct().CountAsync();
-            result.Data = 6 - count;
-            return result;
+            return 6 - count;
         }
 
 
@@ -1526,7 +1530,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var query = UnitWork.Find<ServiceOrderMessage>(s => s.AppUserId == req.CurrentUserId);
+            var query = UnitWork.Find<ServiceOrderMessage>(s => s.AppUserId == req.CurrentUserId || s.AppUserId == 0);
 
             var resultsql = query.OrderByDescending(r => r.CreateTime).Select(s => new
             {

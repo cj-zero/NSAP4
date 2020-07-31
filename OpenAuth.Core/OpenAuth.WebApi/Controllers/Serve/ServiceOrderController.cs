@@ -376,9 +376,9 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> TechnicianTakeOrder(TechnicianTakeOrderReq req)
+        public async Task<TableData> TechnicianTakeOrder(TechnicianTakeOrderReq req)
         {
-            var result = new Response();
+            var result = new TableData();
 
             try
             {
@@ -387,6 +387,7 @@ namespace OpenAuth.WebApi.Controllers
                 try
                 {
                     await _serviceOrderApp.TechnicianTakeOrder(req);
+                    result.Data = await _serviceOrderApp.GetUserCanOrderCount(req.TechnicianId);
                 }
                 finally
                 {
@@ -702,7 +703,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
-                result = await _serviceOrderApp.GetUserCanOrderCount(id);
+                result.Data = await _serviceOrderApp.GetUserCanOrderCount(id);
             }
             catch (Exception ex)
             {
