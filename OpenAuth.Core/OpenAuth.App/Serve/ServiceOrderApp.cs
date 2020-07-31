@@ -80,7 +80,7 @@ namespace OpenAuth.App
             }
             var query = UnitWork.Find<ServiceOrder>(s => s.AppUserId == request.AppUserId)
                         .Include(s => s.ServiceWorkOrders)
-                        .WhereIf(request.Type == 1, q => q.ServiceWorkOrders.Any(a => a.Status > 6))
+                        .WhereIf(request.Type == 1, q => q.ServiceWorkOrders.All(a => a.Status > 6))
                         .WhereIf(request.Type == 0, q => q.ServiceWorkOrders.Any(a => a.Status < 7) || q.Status == 1)
                         .Select(a => new
                         {
@@ -1531,20 +1531,25 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var query = UnitWork.Find<ServiceOrderMessage>(s => s.AppUserId == req.CurrentUserId || s.AppUserId == 0);
-
-            var resultsql = query.OrderByDescending(r => r.CreateTime).Select(s => new
+            var serviceIdList = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.CurrentUserId && s.Status < 7).ToListAsync();
+            if (serviceIdList != null)
             {
-                s.Content,
-                s.CreateTime,
-                s.FroTechnicianName,
-                s.AppUserId,
-                s.ServiceOrderId
-            });
+                string serviceIds = string.Join(",", serviceIdList.Select(s => s.ServiceOrderId).Distinct().ToArray());
+                var query = UnitWork.Find<ServiceOrderMessage>(s => serviceIds.Contains(s.ServiceOrderId.ToString()));
 
-            result.Data =
-            (await resultsql
-            .ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(g => g.First());
+                var resultsql = query.OrderByDescending(o => o.CreateTime).Select(s => new
+                {
+                    s.Content,
+                    s.CreateTime,
+                    s.FroTechnicianName,
+                    s.AppUserId,
+                    s.ServiceOrderId
+                });
+
+                result.Data =
+                (await resultsql
+                .ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(g => g.First());
+            }
             return result;
         }
 
