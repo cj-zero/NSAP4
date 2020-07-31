@@ -74,7 +74,7 @@ namespace OpenAuth.App
 
             if (req.TechnicianAppId.HasValue)
             {
-                var appUser = await UnitWork.Find<AppUserMap>(null).Include(a=>a.User).FirstOrDefaultAsync(a => a.AppUserId == req.TechnicianAppId.Value);
+                var appUser = await UnitWork.Find<AppUserMap>(null).Include(a => a.User).FirstOrDefaultAsync(a => a.AppUserId == req.TechnicianAppId.Value);
                 obj.Technician = appUser.User.Name;
                 obj.TechnicianId = appUser.UserID;
             }
@@ -92,7 +92,7 @@ namespace OpenAuth.App
             obj.VisitPeopleId = user.Id;
             obj.CreateUserId = user.Id;
             obj.CreateUserName = user.Name;
-            await UnitWork.AddAsync<ServiceEvaluate,long>(obj);
+            await UnitWork.AddAsync<ServiceEvaluate, long>(obj);
             await UnitWork.SaveAsync();
         }
         public async Task AppAdd(APPAddServiceEvaluateReq req)
@@ -121,11 +121,16 @@ namespace OpenAuth.App
                 obj.CreateUserName = user.Name;
                 await UnitWork.AddAsync<ServiceEvaluate, long>(obj);
             }
-            
+
+            await UnitWork.SaveAsync();
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id == req.ServiceOrderId, o => new ServiceWorkOrder
+            {
+                Status = 8
+            });
             await UnitWork.SaveAsync();
         }
 
-         public async Task Update(AddOrUpdateServiceEvaluateReq obj)
+        public async Task Update(AddOrUpdateServiceEvaluateReq obj)
         {
             var user = _auth.GetCurrentUser().User;
             await UnitWork.UpdateAsync<ServiceEvaluate>(u => u.Id == obj.Id, u => new ServiceEvaluate
