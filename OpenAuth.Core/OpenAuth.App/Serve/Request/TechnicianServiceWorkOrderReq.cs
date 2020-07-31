@@ -14,7 +14,7 @@ namespace OpenAuth.App.Request
         public int TechnicianId { get; set; }
 
         /// <summary>
-        /// 状态类型 1-已完成 2-未完成
+        /// 状态类型 1-未完成 2-已完成
         /// </summary>
         [Required]
         public int Type { get; set; }
