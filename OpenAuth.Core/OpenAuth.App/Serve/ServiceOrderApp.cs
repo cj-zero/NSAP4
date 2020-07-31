@@ -139,7 +139,8 @@ namespace OpenAuth.App
                         Count = s.Count(),
                         Orders = s.ToList()
                     }
-                    ).ToList()
+                    ).ToList(),
+                    WorkOrderState = a.ServiceWorkOrders.Distinct().OrderBy(o => o.Status).FirstOrDefault()?.Status
                 });
 
             var result = new TableData();
