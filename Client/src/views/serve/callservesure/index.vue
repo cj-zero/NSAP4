@@ -372,9 +372,11 @@ export default {
     formValue: {
       deep: true,
       handler() {
+
         if (this.formValue && this.formValue.customerId) {
           this.customer = this.formValue;
         } else {
+          this.customer = this.formValue;
           if (!this.dialogFormVisible) {
             this.$message({
               message: "没有发现客户代码，请手动选择",

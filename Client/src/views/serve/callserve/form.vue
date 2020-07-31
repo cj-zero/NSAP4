@@ -11,7 +11,6 @@
             class="rowStyle"
             :disabled="!isEdit"
             :label-width="labelwidth"
-            
           >
             <div
               style="font-size:22px;text-align:center;padding-bottom:10px ; margin-bottom:10px ;border-bottom:1px solid silver;"
@@ -33,7 +32,9 @@
                     <template slot-scope="{ item }">
                       <div class="name">
                         <p style="height:20px;margin:2px;">{{ item.cardCode }}</p>
-                        <p style="font-size:12px;height:20px;margin:2px;color:silver;">{{ item.cardName }}</p>
+                        <p
+                          style="font-size:12px;height:20px;margin:2px;color:silver;"
+                        >{{ item.cardName }}</p>
                       </div>
                       <!-- <span class="addr">{{ item.cardName }}</span> -->
                     </template>
@@ -65,7 +66,12 @@
               </el-col>
               <el-col :span="8">
                 <el-form-item label="联系人" prop="contacter">
-                  <el-select size="mini" @change="choosePeople" v-model="form.contacter" placeholder="请选择">
+                  <el-select
+                    size="mini"
+                    @change="choosePeople"
+                    v-model="form.contacter"
+                    placeholder="请选择"
+                  >
                     <el-option
                       v-for="(item,index) in cntctPrsnList"
                       :key="`inx${index}`"
@@ -101,28 +107,32 @@
                   ]"
                 >-->
                 <el-form-item label="最新电话号码" prop="newestContactTel">
-                  <el-input size="mini" v-model="form.newestContactTel" ></el-input>
+                  <el-input size="mini" v-model="form.newestContactTel"></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="20">
               <el-col :span="8">
                 <el-form-item label="呼叫来源" prop="fromId">
-                  <el-select size="mini" style="width:150px;" v-model="form.fromId" placeholder="请选择">
+                  <el-select
+                    size="mini"
+                    style="width:150px;"
+                    v-model="form.fromId"
+                    placeholder="请选择"
+                  >
                     <el-option
                       v-for="item in callSourse"
                       :key="item.value"
-                       
                       :label="item.label"
                       :value="item.value"
                     ></el-option>
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="8" >
-                <el-form-item  label="创建时间" label-width="95px" prop="createTime">
+              <el-col :span="8">
+                <el-form-item label="创建时间" label-width="95px" prop="createTime">
                   <el-date-picker
-                  :clearable="false"
+                    :clearable="false"
                     size="mini"
                     v-model="form.createTime"
                     style="width:150px;"
@@ -204,7 +214,7 @@
                   icon="el-icon-share"
                   @click="postService"
                 >确定修改</el-button>
-              </el-col> -->
+              </el-col>-->
             </el-row>
             <el-row
               v-if="form.serviceOrderPictures&&form.serviceOrderPictures.length"
@@ -271,7 +281,13 @@
           </el-collapse>
         </el-col>-->
       </el-row>
-      <el-dialog title="选择地址" width="1000px" :destroy-on-close="true" :visible.sync="drawerMap" direction="ttb">
+      <el-dialog
+        title="选择地址"
+        width="1000px"
+        :destroy-on-close="true"
+        :visible.sync="drawerMap"
+        direction="ttb"
+      >
         <zmap @drag="dragmap"></zmap>
         <el-row :gutter="12" slot="footer" class="dialog-footer" style="height:30px;">
           <el-col :span="20">当前选择:{{allAddress.address?allAddress.address:'暂未选择地点'}}</el-col>
@@ -351,21 +367,21 @@ export default {
     "formName",
     "isEditForm",
     "customer",
-    "sure"
+    "sure",
   ],
   //  ##isEdit是否可以编辑  ##lool只能看   ##create新增页  ##customer获取服务端对比的信息
-
+  //customer确认订单时传递的信息
   data() {
-       var checkTelF   = (rule, value, callback) => {
-        setTimeout(() => {
-          let  reg = RegExp(/^[\d-]+$/)
-          if (reg.test(value)) {
+    var checkTelF = (rule, value, callback) => {
+      setTimeout(() => {
+        let reg = RegExp(/^[\d-]+$/);
+        if (reg.test(value)) {
           callback();
-          } else {
-            callback(new Error('电话号码只能包括数字值或"-"'));
-          }
-        }, 500);
-      };
+        } else {
+          callback(new Error('电话号码只能包括数字值或"-"'));
+        }
+      }, 500);
+    };
     return {
       baseURL: process.env.VUE_APP_BASE_API,
       tokenValue: this.$store.state.user.token,
@@ -375,7 +391,7 @@ export default {
       previewVisible: false, //图片预览的dia
       setImage: {
         width: "100px",
-        height: "100px"
+        height: "100px",
       },
       drawerMap: false, //地图控件
       filterPartnerList: [],
@@ -396,7 +412,7 @@ export default {
         { people: "实习生小王", word: "123", img: "" },
         { people: "老刘", word: "123", img: "" },
         { people: "门卫", word: "123", img: "" },
-        { people: "实习生小李", word: "123", img: "" }
+        { people: "实习生小李", word: "123", img: "" },
       ],
       callSourse: [
         { label: "电话", value: 1 },
@@ -405,10 +421,10 @@ export default {
         { label: "微信", value: 4 },
         { label: "邮件", value: 5 },
         { label: "APP", value: 6 },
-        { label: "web", value: 7 }
+        { label: "web", value: 7 },
       ],
       serviceOrderId: "",
-      checkVal:{},
+      checkVal: {},
       form: {
         customerId: "", //客户代码,
         customerName: "", //客户名称,
@@ -436,48 +452,46 @@ export default {
         latitude: "", //	number纬度
         fromId: 1, //integer($int32)呼叫来源 1-电话 2-APP
         pictures: [], //
-        serviceWorkOrders: []
+        serviceWorkOrders: [],
       },
       isEditAdd: true, //add页面的编辑状态
       allAddress: {}, //选择地图的合集
       propForm: [],
       rules: {
         customerId: [
-          { required: true, message: "请输入客户代码", trigger: "change" }
+          { required: true, message: "请输入客户代码", trigger: "change" },
         ],
         customerName: [
-          { required: true, message: "请输入客户名称", trigger: "change" }
+          { required: true, message: "请输入客户名称", trigger: "change" },
         ],
         fromId: [
-          { required: true, message: "请输入呼叫来源", trigger: "change" }
+          { required: true, message: "请输入呼叫来源", trigger: "change" },
         ],
         contacter: [
-          { required: true, message: "请选择联系人", trigger: "change" }
+          { required: true, message: "请选择联系人", trigger: "change" },
         ],
         createTime: [
-          { required: true, message: "请选择创建时间", trigger: "change" }
+          { required: true, message: "请选择创建时间", trigger: "change" },
         ],
-        newestContactTel:[
-          { validator: checkTelF, trigger: 'blur' }
-
-        ]
+        newestContactTel: [{ validator: checkTelF, trigger: "blur" }],
       },
       listQuery: {
         page: 1,
-        limit: 40
-      }
+        limit: 40,
+      },
     };
   },
   watch: {
     isEditForm: {
       handler(val) {
         console.log(val);
-      }
+      },
     },
     customer: {
       handler(val) {
+        console.log(val)
         this.setForm(val);
-      }
+      },
     },
     sure: {
       handler(val) {
@@ -485,40 +499,41 @@ export default {
           //接受确定通知，开始提交订单
           this.postServe("form");
         }
-      }
+      },
     },
 
     "form.customerId": {
       handler(val) {
         this.getPartnerInfo(val);
-      }
+      },
     },
     refValue: {
       deep: true,
       handler(val) {
         if (val) {
-          console.log(val)
           Object.assign(this.form, val);
-         if(val.serviceWorkOrders.length>0){
-           val.serviceWorkOrders.map((item,index)=>{
-this.form.serviceWorkOrders[index].solutionsubject = item.solution&&item.solution.subject
-this.form.serviceWorkOrders[index].problemTypeName = item.problemType&&item.problemType.name
-           })
-         }
+          if (val.serviceWorkOrders.length > 0) {
+            val.serviceWorkOrders.map((item, index) => {
+              this.form.serviceWorkOrders[index].solutionsubject =
+                item.solution && item.solution.subject;
+              this.form.serviceWorkOrders[index].problemTypeName =
+                item.problemType && item.problemType.name;
+            });
+          }
           this.propForm = this.form.serviceWorkOrders;
         }
         // this.propForm = this.refValue.serviceWorkOrders
       },
-      immediate: true
-    }
+      immediate: true,
+    },
   },
   created() {
     //  Object.assign(this.form,this.refValue)
     // this.propForm = this.refValue.serviceWorkOrders
   },
-  provide: function() {
+  provide: function () {
     return {
-      form: this.form
+      form: this.form,
     };
   },
   mounted() {
@@ -550,6 +565,7 @@ this.form.serviceWorkOrders[index].problemTypeName = item.problemType&&item.prob
     },
     setForm(val) {
       Object.assign(this.form, val);
+
       this.form.recepUserName = this.$store.state.user.name;
     },
 
@@ -558,7 +574,7 @@ this.form.serviceWorkOrders[index].problemTypeName = item.problemType&&item.prob
 
       if (this.form.serviceWorkOrders.length > 0) {
         let chec = this.form.serviceWorkOrders.every(
-          item =>
+          (item) =>
             item.fromTheme !== "" &&
             item.fromType !== "" &&
             item.problemTypeId !== ""
@@ -575,14 +591,14 @@ this.form.serviceWorkOrders[index].problemTypeName = item.problemType&&item.prob
               .then(() => {
                 this.$message({
                   message: "创建服务单成功",
-                  type: "success"
+                  type: "success",
                 });
                 this.$emit("close-Dia", "y");
               })
-              .catch(res => {
+              .catch((res) => {
                 this.$message({
                   message: `${res}`,
-                  type: "error"
+                  type: "error",
                 });
               });
           } else {
@@ -591,34 +607,34 @@ this.form.serviceWorkOrders[index].problemTypeName = item.problemType&&item.prob
               .then(() => {
                 this.$message({
                   message: "创建服务单成功",
-                  type: "success"
+                  type: "success",
                 });
                 this.$emit("close-Dia", "y");
               })
-              .catch(res => {
+              .catch((res) => {
                 this.$message({
                   message: `${res}`,
-                  type: "error"
+                  type: "error",
                 });
               });
           }
         } else {
           this.$message({
             message: `请将必填项填写完整`,
-            type: "error"
+            type: "error",
           });
         }
       } else {
         this.$message({
           message: `请将必填项填写完整`,
-          type: "error"
+          type: "error",
         });
       }
     },
     getPartnerInfo(num) {
       callservesure
         .forServe(num)
-        .then(res => {
+        .then((res) => {
           this.addressList = res.result.addressList;
           this.cntctPrsnList = res.result.cntctPrsnList;
           this.form.supervisor = res.result.techID;
@@ -636,13 +652,12 @@ this.form.serviceWorkOrders[index].problemTypeName = item.problemType&&item.prob
         });
     },
     changeAddr(val) {
-      let res = this.addressList.filter(item => item.address == val);
+      let res = this.addressList.filter((item) => item.address == val);
       this.form.address = res[0].building;
     },
-    choosePeople(val){
-      
-         let res = this.cntctPrsnList.filter(item => item.name == val);
-     this.form.contactTel = res[0].tel1;
+    choosePeople(val) {
+      let res = this.cntctPrsnList.filter((item) => item.name == val);
+      this.form.contactTel = res[0].tel1;
     },
     changeForm(val) {
       this.form.serviceWorkOrders = val;
@@ -654,15 +669,15 @@ this.form.serviceWorkOrders[index].problemTypeName = item.problemType&&item.prob
         .then(() => {
           this.$message({
             message: "修改服务单成功",
-            type: "success"
+            type: "success",
           });
           this.$emit("close-Dia", 1);
           // this.formUpdate = false
         })
-        .catch(res => {
+        .catch((res) => {
           this.$message({
             message: `${res}`,
-            type: "error"
+            type: "error",
           });
         });
     },
@@ -718,7 +733,7 @@ this.form.serviceWorkOrders[index].problemTypeName = item.problemType&&item.prob
       cb(results);
     },
     createFilter(queryString) {
-      return partnerList => {
+      return (partnerList) => {
         return (
           partnerList.cardCode
             .toLowerCase()
@@ -728,13 +743,13 @@ this.form.serviceWorkOrders[index].problemTypeName = item.problemType&&item.prob
     },
     getPartnerList() {
       getPartner(this.listQuery)
-        .then(res => {
+        .then((res) => {
           this.partnerList = res.data;
           this.filterPartnerList = this.partnerList;
           this.parentCount = res.count;
           // console.log(res.count)
         })
-        .catch(error => {
+        .catch((error) => {
           console.log(error);
         });
     },
@@ -748,10 +763,10 @@ this.form.serviceWorkOrders[index].problemTypeName = item.problemType&&item.prob
       this.form.address = item.address;
       this.form.salesMan = item.slpName;
     },
-    sureVal(){
-      this.dialogPartner = false
-      let val = this.checkVal
-            this.form.customerId = val.cardCode;
+    sureVal() {
+      this.dialogPartner = false;
+      let val = this.checkVal;
+      this.form.customerId = val.cardCode;
       this.form.customerName = val.cardName;
       this.form.contacter = val.cntctPrsn;
       this.form.contactTel = val.cellular;
@@ -760,7 +775,7 @@ this.form.serviceWorkOrders[index].problemTypeName = item.problemType&&item.prob
       this.form.salesMan = val.slpName;
     },
     ChildValue(val) {
-      this.checkVal =val
+      this.checkVal = val;
     },
     handleIconClick() {
       this.dialogPartner = true;
@@ -776,7 +791,7 @@ this.form.serviceWorkOrders[index].problemTypeName = item.problemType&&item.prob
       // this.$nextTick(() => {
       //   this.$refs["form"].clearValidate();
       // });
-    }
+    },
   },
   handleCreate() {
     // 弹出添加框
@@ -786,7 +801,7 @@ this.form.serviceWorkOrders[index].problemTypeName = item.problemType&&item.prob
     // this.$nextTick(() => {
     //   this.$refs["form"].clearValidate();
     // });
-  }
+  },
 };
 </script>
 
@@ -795,13 +810,13 @@ this.form.serviceWorkOrders[index].problemTypeName = item.problemType&&item.prob
   .lastWord {
     position: sticky;
     top: 0;
-   
+
     // width: 200px;
   }
-   ::v-deep .el-input__inner{
-      padding-right:5px;
-      // padding-left:25px;
-    }
+  ::v-deep .el-input__inner {
+    padding-right: 5px;
+    // padding-left:25px;
+  }
 }
 .addClass1 {
   ::v-deep .el-dialog__header {
