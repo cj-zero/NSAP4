@@ -715,16 +715,16 @@ export default {
     },
     handleFilter() {
       this.listQuery.page = 1;
-      // this.getList();
+      this.getRightList()
     },
     handleSizeChange(val) {
       this.listQuery.limit = val;
-      // this.getList();
+      this.getRightList()
     },
     handleCurrentChange(val) {
       this.listQuery.page = val.page;
       this.listQuery.limit = val.limit;
-      // this.getList();
+      this.getRightList()
     },
     handleModifyStatus(row, disable) {
       // 模拟修改状态

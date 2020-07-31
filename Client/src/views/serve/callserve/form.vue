@@ -353,7 +353,7 @@ export default {
     "customer",
     "sure"
   ],
-  //  ##isEdit是否可以编辑  ##customer获取服务端对比的信息
+  //  ##isEdit是否可以编辑  ##lool只能看   ##create新增页  ##customer获取服务端对比的信息
 
   data() {
        var checkTelF   = (rule, value, callback) => {
