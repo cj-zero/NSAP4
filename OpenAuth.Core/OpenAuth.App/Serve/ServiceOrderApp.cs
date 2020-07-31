@@ -23,6 +23,8 @@ using NPOI.SS.Formula.Functions;
 using log4net.Core;
 using OpenAuth.App.Serve.Request;
 using CSRedis;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace OpenAuth.App
 {
@@ -1552,6 +1554,27 @@ namespace OpenAuth.App
             var result = new TableData();
             var msgCount = (await UnitWork.Find<ServiceOrderMessageUser>(s => s.FroUserId == currentuserid.ToString() && s.HasRead == false).ToListAsync()).Count;
             result.Data = msgCount;
+            return result;
+        }
+
+
+        /// <summary>
+        /// 提交错误设备信息
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> ApplyErrorDevices(ApplyErrorDevicesReq request)
+        {
+            var result = new TableData();
+            string head = "技术员核对设备有误提交给呼叫中心的信息";
+            string Content = string.Empty;
+
+            foreach (Serve.Request.Device item in request.Devices)
+            {
+                Content += $"待编辑序列号: {item.manufacturerSerialNumber}<br>正确的序列号: {item.newNumber}<br>正确的物料编码: {item.newCode}<br>";
+
+            }
+            await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = request.ServiceOrderId, Content = head + Content, AppUserId = request.AppUserId });
             return result;
         }
     }

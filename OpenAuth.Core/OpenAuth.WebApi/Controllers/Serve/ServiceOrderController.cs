@@ -795,5 +795,26 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// 提交核对错误设备信息
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> ApplyErrorDevices(ApplyErrorDevicesReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.ApplyErrorDevices(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
     }
 }
