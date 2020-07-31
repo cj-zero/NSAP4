@@ -1,5 +1,5 @@
 <template>
-  <div >
+  <div>
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <el-input
@@ -25,91 +25,93 @@
     <div class="app-container">
       <div class="bg-white">
         <zxsearch @change-Search="changeSearch"></zxsearch>
-            <el-table
-              ref="mainTable"
-              class="table_label"
-              :key="key"
-              :data="list"
-              v-loading="listLoading"
-              border
-              fit
-              max-height="580"
-              style="width: 100%;"
-              highlight-current-row
-              @row-click="rowClick"
-            >
-                <el-table-column type="expand">
-          <template slot-scope="scope">
-                      <el-table
-              ref="mainTablechuldren"
-              :key="key"
-              :data="scope.row.serviceWorkOrders"
-              v-loading="listLoading"
-              border
-              fit
-              
-              style="width: 100%;"
-              highlight-current-row
-              @row-click="rowClickChild"
-            >
-              <el-table-column
-                show-overflow-tooltip
-                v-for="(fruit,index) in ChildheadOptions"
-                :align="fruit.align"
-                :key="`ind${index}`"
-                :sortable="fruit=='chaungjianriqi'?true:false"
-                style="background-color:silver;"
-                :label="fruit.label"
-                 header-align="left"
-                :fixed="fruit.ifFixed"
-                :width="fruit.width" >
-                <template slot-scope="scope">
-                  <span
-                    v-if="fruit.name === 'status'"
-                    :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-                  >{{statusOptions[scope.row[fruit.name]].label}}</span>
-                  <span v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
-                  <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
-                  <span
-                    v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
-                  >{{scope.row[fruit.name]}}</span>
-                </template>
-              </el-table-column>
-                          </el-table>
-
-               </template>
-        </el-table-column>
-              <el-table-column
-                show-overflow-tooltip
-                v-for="(fruit,index) in ParentHeadOptions"
-                :align="fruit.align"
-                :key="`ind${index}`"
-                :sortable="fruit=='chaungjianriqi'?true:false"
-                style="background-color:silver;"
-                :label="fruit.label"
-                 header-align="left"
-                :fixed="fruit.ifFixed"
-                :width="fruit.width"
+        <el-table
+          ref="mainTable"
+          class="table_label"
+          :key="key"
+          :data="list"
+          v-loading="listLoading"
+          border
+          fit
+          max-height="580"
+          style="width: 100%;"
+          highlight-current-row
+          @row-click="rowClick"
+        >
+          <el-table-column type="expand">
+            <template slot-scope="scope">
+              <el-table
+                ref="mainTablechuldren"
+                :key="key"
+                :data="scope.row.serviceWorkOrders"
+                v-loading="listLoading"
+                border
+                fit
+                style="width: 100%;"
+                highlight-current-row
+                @row-click="rowClickChild"
               >
-                <template slot-scope="scope">
-                  <el-link
-                    v-if="fruit.name === 'serviceOrderId'"
-                    type="primary"
-                    @click="openTree(scope.row.serviceOrderId)"
-                  >{{scope.row.serviceOrderId}}</el-link>
-                  <span
-                    v-if="fruit.name === 'status'"
-                    :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-                  >{{statusOptions[scope.row[fruit.name]].label}}</span>
-                  <span v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
-                  <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
-                  <span
-                    v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
-                  >{{scope.row[fruit.name]}}</span>
-                </template>
-              </el-table-column>
-             
-            </el-table>
+                <el-table-column
+                  show-overflow-tooltip
+                  v-for="(fruit,index) in ChildheadOptions"
+                  :align="fruit.align"
+                  :key="`ind${index}`"
+                  :sortable="fruit=='chaungjianriqi'?true:false"
+                  style="background-color:silver;"
+                  :label="fruit.label"
+                  header-align="left"
+                  :fixed="fruit.ifFixed"
+                  :width="fruit.width"
+                >
+                  <template slot-scope="scope">
+                    <span
+                      v-if="fruit.name === 'status'"
+                      :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
+                    >{{statusOptions[scope.row[fruit.name]].label}}</span>
+                    <span
+                      v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
+                    >{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
+                    <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
+                    <span
+                      v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
+                    >{{scope.row[fruit.name]}}</span>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </template>
+          </el-table-column>
+          <el-table-column
+            show-overflow-tooltip
+            v-for="(fruit,index) in ParentHeadOptions"
+            :align="fruit.align"
+            :key="`ind${index}`"
+            :sortable="fruit=='chaungjianriqi'?true:false"
+            style="background-color:silver;"
+            :label="fruit.label"
+            header-align="left"
+            :fixed="fruit.ifFixed"
+            :width="fruit.width"
+          >
+            <template slot-scope="scope">
+              <el-link
+                v-if="fruit.name === 'serviceOrderId'"
+                type="primary"
+                @click="openTree(scope.row.serviceOrderId)"
+              >{{scope.row.serviceOrderId}}</el-link>
+              <span
+                v-if="fruit.name === 'status'"
+                :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
+              >{{statusOptions[scope.row[fruit.name]].label}}</span>
+              <span
+                v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
+              >{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
+              <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
+              <span
+                v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
+              >{{scope.row[fruit.name]}}</span>
+            </template>
+          </el-table-column>
+        </el-table>
 
         <pagination
           v-show="total>0"
@@ -148,7 +150,7 @@
       <el-dialog
         width="800px"
         class="dialog-mini"
-         @open="openDetail"
+        @open="openDetail"
         @close="closeCustoner"
         :close-on-click-modal="false"
         :destroy-on-close="true"
@@ -164,7 +166,6 @@
           :isEdit="true"
           :sure="sure"
           :refValue="dataForm"
-          
           @close-Dia="closeDia"
         ></zxform>
         <div slot="footer">
@@ -376,7 +377,7 @@ export default {
   },
   watch: {
     listQuery: {
-      deep: true,
+      // deep: true,
       handler(val) {
            let arr = [];
       callservesure.rightList(val).then(response => {
@@ -389,7 +390,7 @@ export default {
           })
         }
         this.total = response.data.count;
-        this.list =resul;
+        this.list =arr ;
       }).catch(()=>{
         this.$message({
           type:'warning',
@@ -418,9 +419,7 @@ export default {
   },
   created() {},
   mounted() {
-    //   console.log(callserve)
     this.getList();
-    this.getLeftList();
   },
   methods: {
     checkServeId(res) {
@@ -449,12 +448,6 @@ export default {
         }
         this.listLoading = false;
       });
-    },
-    onSubmit() {
-      console.log("submit!");
-    },
-    changeTable(result) {
-      console.log(result);
     },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
@@ -519,34 +512,27 @@ export default {
     },
     getList() {
       this.listLoading = true;
-      // let arr = [];
       callservesure.rightList(this.listQuery).then(response => {
             let resul = response.data.data;
-        // for (let i = 0; i < resul.length; i++) {
-        //   // arr[i] = resul[i];
-        //   arr[i]={}
-        //   arr[i].serviceWorkOrders =[]
-        //   arr[i].serviceOrderId =[]
-        //   arr[i].label = `服务${resul[i].serviceOrderId}`;
-        //   arr[i].serviceOrderId = resul[i].serviceOrderId;
-        //   let {contactTel,contacter,customerId,customerName,recepUserName,salesMan,serviceCreateTime,serviceStatus,supervisor,techName,terminalCustomer}={...resul[i]}
-        //   let newobj=Object.assign({contactTel,contacter,customerId,customerName,recepUserName,salesMan,serviceCreateTime,serviceStatus,supervisor,techName,terminalCustomer})
-        //   resul[i].serviceWorkOrders.map((item1,index) => {
-        //     // arr[i] = resul[i];
-        //     arr[i].serviceWorkOrders[index] =[]
-        //     let arrnewobj= resul[i].serviceWorkOrders[index]
-        //  Object.assign(arrnewobj,newobj)
-        // arr[i].serviceWorkOrders[index]= arrnewobj
-        //     arr[i].serviceWorkOrders[index].label= `工单${item1.id}` ;
-        //   });
-        // }
-         this.total = resul.length;
+        this.total =response.count;
         this.list =resul;
         this.listLoading = false;
-      });
+      }).catch(() => {
+        this.listLoading = true;
+        let that = this
+          setTimeout(function(){
+                      that.$message({
+            type: "error",
+            message: `请输入正确的搜索值`
+          });
+            that.list = [];
+            that.total =0;
+            that.listLoading = false;
+          },700)
+
+        });
     },
-    getLeftList() {
-    },
+
     handleNodeClick(res) {
       console.log(res);
     },
@@ -704,8 +690,8 @@ export default {
   ::v-deep.el-radio__label {
     display: none;
   }
-  ::v-deep.el-table__expanded-cell{
-    padding:0 0 0 50px;
+  ::v-deep.el-table__expanded-cell {
+    padding: 0 0 0 50px;
   }
 }
 .bg-head {

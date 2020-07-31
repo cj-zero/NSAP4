@@ -103,9 +103,6 @@ export default {
         QryTechName: "", // - 工单技术员
         QryProblemType: "", //QryProblemType - 问题类型
         QryMaterialTypes: "", //物料类别（多选)
-        page: 1, //
-        limit: 20,
-        key: ""
       },
       callStatus: [
         { value: 1, label: "待处理" },
@@ -123,7 +120,6 @@ export default {
     form: {
       deep: true,
       handler(val) {
-        // console.log(val);
         this.$emit("change-Search", val);
       }
     }
