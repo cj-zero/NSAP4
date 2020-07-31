@@ -750,6 +750,7 @@ namespace OpenAuth.App
         }
 
 
+
         /// <summary>
         /// 技术员查看服务单列表
         /// </summary>
@@ -762,8 +763,8 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.TechnicianId)
-                .WhereIf(req.Type == 1, s => s.Status.Value < 7 && s.Status.Value > 1)
-                .WhereIf(req.Type == 2, s => s.Status.Value >= 7)
+                .WhereIf(req.Type == 2, s => s.Status.Value < 7 && s.Status.Value > 1)
+                .WhereIf(req.Type == 1, s => s.Status.Value >= 7)
                 .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
 
             var query = UnitWork.Find<ServiceOrder>(s => serviceOrderIds.Contains(s.Id))
@@ -784,7 +785,7 @@ namespace OpenAuth.App
                     s.NewestContactTel,
                     s.Status,
                     s.CreateTime,
-                    MaterialInfo = s.ServiceWorkOrders.Where(o => o.ServiceOrderId == s.Id).Select(o => new
+                    MaterialInfo = s.ServiceWorkOrders.Where(o => o.ServiceOrderId == s.Id && o.CurrentUserId == req.TechnicianId).Select(o => new
                     {
                         o.Status
                     })
@@ -811,7 +812,7 @@ namespace OpenAuth.App
                 s.Status,
                 s.CreateTime,
                 Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
-                s.MaterialInfo
+                WorkOrderStatus = s.MaterialInfo.Select(s => s.Status).Distinct().FirstOrDefault()
             }).ToList();
 
             var count = await query.CountAsync();
