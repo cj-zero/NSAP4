@@ -1,18 +1,20 @@
 <template>
   <div class="addClass1">
     <!-- form数组，不包括第一项 -->
-    <div style="border:1px solid silver;padding:5px;margin-left:20px;">
+    <div style="border:1px solid silver;padding:5px;">
       <el-form
+      v-loading="waitingAdd "
         :model="formList[0]"
         :disabled="!isCreate"
         label-width="90px"
         class="rowStyle"
         :ref="'itemForm'+ 0"
+        size="small"
       >
         <el-row type="flex" class="row-bg" justify="space-around">
           <el-col :span="8">
             <el-form-item label="工单ID">
-              <el-input size="small" disabled v-model="formList[0].id"></el-input>
+              <el-input  disabled v-model="formList[0].id"></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="ifEdit?8:7">
@@ -25,7 +27,7 @@
           </el-col>
 
           <el-col :span="4" v-if="!ifEdit" style="height:40px;line-height:40px;font-size:13px;">
-            <el-switch size="small" v-model="formList[0].editTrue" active-text="修改后续" :width="20"></el-switch>
+            <el-switch size="small" v-model="formList[0].editTrue" active-text="修改后续" :width="40"></el-switch>
           </el-col>
           <el-col :span="2" v-if="ifEdit"></el-col>
           <el-col :span="ifEdit?3:2" style="height:40px;line-height:40px;">
@@ -320,7 +322,7 @@
         <div
           v-for="(item,index) in formList.slice(1)"
           :key="`key_${index}`"
-          style="border:1px solid silver;padding:5px;margin-left:20px;"
+          style="border:1px solid silver;padding:5px;"
         >
           <el-form
             :model="item"
@@ -349,7 +351,7 @@
                 v-if="!ifEdit"
                 style="height:40px;line-height:40px;font-size:13px;"
               >
-                <el-switch size="small" v-model="item.editTrue" active-text="修改后续" :width="20"></el-switch>
+                <el-switch size="small" v-model="item.editTrue" active-text="修改后续" :width="40"></el-switch>
               </el-col>
               <el-col :span="2" v-if="ifEdit"></el-col>
 
@@ -431,7 +433,7 @@
               </el-col>
             </el-row>
 
-            <el-row type="flex" class="row-bg" justify="space-around">
+            <el-row type="flex" class="row-bg" justify="space-around" style="height:40px;line-height:40px;">
               <el-col :span="24">
                 <el-form-item
                   label="呼叫主题"
@@ -541,7 +543,7 @@
                 </el-form-item>
               </el-col>
             </el-row>
-            <el-row type="flex" class="row-bg" justify="space-around">
+            <el-row type="flex" class="row-bg" justify="space-around" style="height:40px;line-height:40px;">
               <el-col :span="8">
                 <el-form-item label="技术员">
                   <el-input size="small" disabled></el-input>
@@ -709,7 +711,8 @@
       />
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogfSN = false">取 消</el-button>
-        <el-button type="primary" @click="pushForm">确 定</el-button>
+        <el-button type="primary" @click="pushForm"        
+>确 定</el-button>
       </span>
     </el-dialog>
     <!--  -->
@@ -743,7 +746,7 @@ export default {
       solutionCount: "",
       listLoading: true,
       proplemTree: false,
-      serLoad: false,
+      serLoad: true,
       addressList: [], //客户地址集合
       cntctPrsnList: [], //客户联系人集合
       thisPage:0,//当前选择的工单页
@@ -820,6 +823,7 @@ export default {
         limit: 30,
         CardCode: ""
       },
+       waitingAdd:false, //等待添加的进程结束
       SerialCount: "",
       ifFormPush: false //表单是否被动态添加过
     };
@@ -852,6 +856,8 @@ export default {
   watch: {
     newValue: {
       handler: function(Val, Val1) {
+
+                  // this.serLoad = await true
           let newVal = JSON.parse(Val);
           let oldVal = JSON.parse(Val1);
           // let chengeIndex= ''
@@ -866,36 +872,40 @@ export default {
               if (newVal.length == oldVal.length) {
                 for (let item1 in oldValChild) {
                   if (newValChild[item1] !== oldValChild[item1]) { //如果新值和旧值不一样
+                      let sliceList = this.formList.slice(index)
                     if(this.formList[index].editTrue){   //如果可以修改
                       //  console.log(thisForm[item1],newValChild[item1],item1)
-                      if(item1=='problemTypeId'){
-                         this.formList.map((itemF,ind)=>{
+                      if(item1=='editTrue'){
+                          return
+                      }else if
+                      (item1=='problemTypeId'){
+                         sliceList.map((itemF,ind)=>{
                         if(ind!==0){
                           itemF.problemTypeId = newValChild.problemTypeId
                           itemF.problemTypeName = newValChild.problemTypeName
                         }
                       })
                       }else if (item1=='solutionId'){
-                       this.formList.map((itemF,ind)=>{
+                       sliceList.map((itemF,ind)=>{
                         if(ind!==0){
                            itemF.solutionId = newValChild.solutionId
                           itemF.solutionsubject = newValChild.solutionsubject
                         }
                       })
                       }else{
-                       this.formList.map((itemF,ind)=>{
+                       sliceList.map((itemF,ind)=>{
                         if(ind!==0){
                           itemF[item1] = newValChild[item1]
                         }
                       })
                       }
-              
                       // console.log(this.formList)
                       }
               }
                 }}}
           });
-      },
+            },
+
       deep: true,
       // immediate: true
     },
@@ -940,10 +950,7 @@ export default {
           this.SerialNumberList = res.data;
           this.filterSerialNumberList = this.SerialNumberList;
           this.SerialCount = res.count;
-          let that = this
-          setTimeout(function(){
-          that.serLoad = false;
-          },2000)
+          this.serLoad = false;
           this.listLoading = false;
         })
         .catch(error => {
@@ -1016,6 +1023,7 @@ export default {
 
     pushForm() {
       this.dialogfSN = false;
+      this.waitingAdd = true
       // let serviceOrder = localStorage.getItem('serviceOrderId')
       if (!this.ifFormPush) {
         this.formList[0].manufacturerSerialNumber = this.formListStart[0].manufSN;
@@ -1067,6 +1075,9 @@ export default {
           });
         }
       }
+     this.waitingAdd = false
+
+
     },
     handleIconClick() {
       this.dialogfSN = true;
@@ -1232,14 +1243,16 @@ export default {
   //   background: lightslategrey;
   // }
 }
-.rowStyle {
-  ::v-deep .el-form-item {
-    margin-bottom: 10px;
-  }
-  ::v-deep .el-switch__label {
-    font-size: 10px;
-  }
-}
+// .rowStyle {
+//   ::v-deep .el-form-item {
+//     margin:4px;
+//       line-height:34px;
+//     .el-switch__label {
+    
+//     font-size: 10px;
+//   }
+//    }
+// }
 .my-autocomplete {
   li {
     line-height: normal;
@@ -1268,16 +1281,12 @@ export default {
   border: 1px silver solid;
   border-radius: 5px;
   padding: 0 10px;
-  // overflow-x: hidden;
-  // height: 40px;
-  // ::-webkit-scrollbar {
-  //   width: 1px !important;
-  // }
+
 }
 .addClass {
   border: 1px silver solid;
   padding: 5px;
-  margin-left: 20px;
+  // margin-left: 20px;
 }
 .showSort {
   float: right;

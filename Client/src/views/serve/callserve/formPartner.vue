@@ -4,6 +4,7 @@
       :data="partnerList"
       border
       height="500"
+      v-loading="parLoading"
       ref="singleTable"
       highlight-current-row
       @current-change="getPartner"
@@ -52,7 +53,7 @@ import * as callformPartner from "@/api/serve/callformPartner";
 
 import callId from "./callId";
 export default {
-  props: ["partnerList", "count"],
+  props: ["partnerList", "count",'parLoading'],
   components: { callId },
 
   data() {

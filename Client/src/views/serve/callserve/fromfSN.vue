@@ -4,7 +4,7 @@
       :data="SerialNumberList"
       border
       max-height="500"
-      :loading="serLoading"
+       v-loading="serLoading"
       ref="singleTable"
       highlight-current-row
       empty-text="抱歉，找不到该客户代码所属的制造商序列号"
