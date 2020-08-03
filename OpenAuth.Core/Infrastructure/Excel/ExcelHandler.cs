@@ -151,10 +151,10 @@ namespace Infrastructure.Excel
             var pclCommentRow = sheet.GetRow(31);
             var pclNoRow = sheet.GetRow(32);
             var pclGuidRow = sheet.GetRow(33);
-            for (int i = 1; i < pclCommentRow.LastCellNum; i++)
+            for (int i = 1; i < pclNoRow.LastCellNum; i++)
             {
                 if (string.IsNullOrWhiteSpace(pclGuidRow.GetCell(i).StringCellValue))
-                    break;
+                    continue;
                 try
                 {
                     baseInfo.PCPLCs.Add(new PCPLC

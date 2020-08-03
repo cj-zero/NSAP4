@@ -101,6 +101,14 @@ namespace OpenAuth.WebApi.Controllers
         {
             return _app.Load(request);
         }
+        /// <summary>
+        /// 加载列表
+        /// </summary>
+        [HttpGet]
+        public async Task<TableData>AppLoad([FromQuery]QueryServiceEvaluateListReq request)
+        {
+            return  await _app.AppLoad(request);
+        }
 
         /// <summary>
         /// 批量删除

@@ -181,9 +181,10 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<TableData> LoadByRoleName(QueryUserListByRoleNameReq request)
         {
-            var role = await UnitWork.Find<Role>(r => r.Name.Equals(request.RoleName)).FirstOrDefaultAsync();
+            var roles = await UnitWork.Find<Role>(r => request.RoleNames.Contains(r.Name)).ToListAsync();
+            var roleIds = roles.Select(r => r.Id).ToList();
             var users = from userRole in UnitWork.Find<Relevance>(u =>
-                    u.SecondId == role.Id && u.Key == Define.USERROLE)
+                        roleIds.Contains(u.SecondId) && u.Key == Define.USERROLE)
                         join user in UnitWork.Find<User>(null) on userRole.FirstId equals user.Id into temp
                         from c in temp.DefaultIfEmpty()
                         select new { c.Id, c.Name };
