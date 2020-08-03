@@ -139,8 +139,8 @@
                     :default-time="newDate"
                     style="width:150px;"
                     type="datetime"
-                    format="yyyy-MM-dd hh:mm"
-                    value-format="yyyy-MM-dd hh-mm-ss"
+                    format="yyyy-MM-dd HH:mm"
+                    value-format="yyyy-MM-dd HH-mm-ss"
                     placeholder="选择日期时间"
                   ></el-date-picker>
                 </el-form-item>
@@ -384,7 +384,7 @@ export default {
       state: "",
       addressList: [], //用户地址列表
       cntctPrsnList: [], //联系人列表
-      parentCount: "",
+      parentCount: 0,
       dialogPartner: false,
       activeName: 1,
       // dataModel: this.models[this.formData.model],
@@ -540,8 +540,8 @@ export default {
     chooseAddre() {
       this.form.city = this.allAddress.regeocode.addressComponent.city;
       this.form.addr = this.allAddress.address;
-      this.longitude = this.allAddress.position.lng;
-      this.latitude = this.allAddress.position.latss;
+      this.form.longitude = this.allAddress.position.lng;
+      this.form.latitude = this.allAddress.position.lat;
       this.drawerMap = false;
     },
     async setForm(val) {
@@ -596,6 +596,7 @@ export default {
                 });
               });
           } else {
+            console.log(this.form)
             callservesure
               .CreateWorkOrder(this.form)
               .then(() => {
