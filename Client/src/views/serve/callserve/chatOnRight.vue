@@ -21,7 +21,7 @@
 </template>
 
 <script>
-import * as callserve from "@/api/serve/callserve";
+// import * as callserve from "@/api/serve/callserve";
 
 export default {
   data() {
@@ -43,9 +43,9 @@ export default {
   },
       mounted(){
         console.log(11)
-        callserve.GetServiceOrderMessages({serviceOrderId:153}).then(res=>{
-          console.log(res)
-        })
+        // callserve.GetServiceOrderMessages({serviceOrderId:153}).then(res=>{
+        //   console.log(res)
+        // })
     },
 };
 </script>
