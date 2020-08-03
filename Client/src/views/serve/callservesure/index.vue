@@ -181,14 +181,7 @@
         :close-on-click-modal="false"
         :visible.sync="dialogFormView"
       >
-        <zxform
-          :form="temp"
-          formName="查看"
-          labelposition="right"
-          labelwidth="100px"
-          :isCreate="false"
-          :refValue="dataForm"
-        ></zxform>
+      <customerupload style="position:sticky;top:0;" :form="formValue"></customerupload>
         <div slot="footer">
           <el-button size="mini" @click="dialogFormView = false">取消</el-button>
           <el-button size="mini" type="primary" @click="dialogFormView = false">确认</el-button>
@@ -314,6 +307,7 @@ export default {
         update: "确认呼叫服务单",
         create: "新建呼叫服务单"
       },
+  
       dialogPvVisible: false,
       pvData: [],
       rules: {
@@ -377,12 +371,12 @@ export default {
           this.customer = this.formValue;
         } else {
           this.customer = this.formValue;
-          if (!this.dialogFormVisible) {
-            this.$message({
-              message: "没有发现客户代码，请手动选择",
-              type: "warning"
-            });
-          }
+          // if (!this.dialogFormVisible) {
+          //   this.$message({
+          //     message: "没有发现客户代码，请手动选择",
+          //     type: "warning"
+          //   });
+          // }
         }
       }
     }
@@ -394,6 +388,7 @@ export default {
     //   console.log(callserve)
   },
   methods: {
+  
     openCustoner() {
       this.loadingBtn = false;
       if (this.formValue && this.formValue.customerId) {
@@ -413,12 +408,20 @@ export default {
     },
     openTree(res) {
       this.listLoading = true;
-      callservesure.GetDetails(res).then(res => {
-        if (res.code == 200) {
-          this.dataForm1 = res.result;
-          this.dialogFormView = true;
-        }
-        this.listLoading = false;
+      // callservesure.GetDetails(res).then(res => {
+      //   if (res.code == 200) {
+      //     this.dataForm1 = res.result;
+      //     this.dialogFormView = true;
+      //   }
+      //   this.listLoading = false;
+      // });
+            callservesure.getForm(res).then(response => {
+        this.formValue = response.result;
+      this.listLoading = false;
+        this.dialogFormView = true;
+        // this.$nextTick(() => {
+        //   this.$refs["dataForm"].clearValidate();
+        // });
       });
     },
     onSubmit() {
@@ -593,7 +596,7 @@ export default {
       this.temp = Object.assign({}, row); // copy obj
       callservesure.getForm(row.id).then(response => {
         this.formValue = response.result;
-        // console.log(this.formValue);
+      
         this.dialogStatus = "update";
         this.dialogFormVisible = true;
         // this.$nextTick(() => {
