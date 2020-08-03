@@ -98,7 +98,7 @@ namespace OpenAuth.App
                             a.NewestContacter,
                             a.NewestContactTel,
                             a.CustomerName,
-                            ServiceWorkOrders = a.ServiceWorkOrders.Where(s => request.Type == 1 ? s.Status > 6 : s.Status < 7).Select(o => new
+                            ServiceWorkOrders = a.ServiceWorkOrders.Select(o => new
                             {
                                 o.Id,
                                 o.Status,
@@ -836,7 +836,7 @@ namespace OpenAuth.App
             }
             var result = new TableData();
             var query = UnitWork.Find<ServiceOrder>(s => s.Status == 2)
-                .Include(s => s.ServiceWorkOrders).Where(q => q.ServiceWorkOrders.Any(a => a.Status == 1))
+                .Include(s => s.ServiceWorkOrders).Where(q => q.ServiceWorkOrders.Any(a => a.Status == 1) && !q.ServiceWorkOrders.Any(a => a.CurrentUserId == req.CurrentUserId))
                 .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => s.Id == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key)))
                 .Select(s => new
                 {
@@ -1429,7 +1429,7 @@ namespace OpenAuth.App
                     {
                         CreateTime = DateTime.Now,
                         FromUserId = FromUserId.ToString(),
-                        FroUserId = RecepUserId,
+                        FroUserId = recepUserInfo.AppUserId.ToString(),
                         HasRead = false,
                         MessageId = MessageId
                     };
@@ -1447,7 +1447,7 @@ namespace OpenAuth.App
                     {
                         CreateTime = DateTime.Now,
                         FromUserId = FromUserId.ToString(),
-                        FroUserId = RecepUserId,
+                        FroUserId = superUserInfo.AppUserId.ToString(),
                         HasRead = false,
                         MessageId = MessageId
                     };
@@ -1558,12 +1558,17 @@ namespace OpenAuth.App
         /// <summary>
         /// 获取未读消息个数
         /// </summary>
-        /// <param name="currentuserid">当前登陆者appid</param>
+        /// <param name="currentUserId">当前登陆者appid</param>
         /// <returns></returns>
-        public async Task<TableData> GetMessageCount(int currentuserid)
+        public async Task<TableData> GetMessageCount(int currentUserId)
         {
             var result = new TableData();
-            var msgCount = (await UnitWork.Find<ServiceOrderMessageUser>(s => s.FroUserId == currentuserid.ToString() && s.HasRead == false).ToListAsync()).Count;
+            var query = from a in UnitWork.Find<ServiceOrderMessage>(null)
+                        join b in UnitWork.Find<ServiceOrderMessageUser>(null) on a.Id equals b.MessageId
+                        select new { a, b };
+            query = query.Where(q => q.b.FroUserId == currentUserId.ToString() && q.b.HasRead == false)
+                .Where(q => UnitWork.Find<ServiceWorkOrder>(null).Any(a => a.ServiceOrderId == q.a.ServiceOrderId && a.Status < 7 && a.CurrentUserId == currentUserId));
+            var msgCount = (await query.ToListAsync()).Count;
             result.Data = msgCount;
             return result;
         }

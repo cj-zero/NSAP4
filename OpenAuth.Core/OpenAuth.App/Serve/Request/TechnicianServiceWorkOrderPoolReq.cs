@@ -15,5 +15,10 @@ namespace OpenAuth.App.Request
         /// </summary>
         public decimal Latitude { get; set; }
 
+        /// <summary>
+        /// 当前技术员Id
+        /// </summary>
+        public int CurrentUserId { get; set; }
+
     }
 }
