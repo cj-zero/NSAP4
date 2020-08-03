@@ -798,7 +798,7 @@ namespace OpenAuth.App
                 });
 
             var result = new TableData();
-            var list = (await query
+            var list = (await query.OrderByDescending(o => o.Id)
             .Skip((req.page - 1) * req.limit)
             .Take(req.limit).ToListAsync()).Select(s => new
             {
@@ -941,7 +941,7 @@ namespace OpenAuth.App
             await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
                 Title = "移转至技术员",
-                Details = "以为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
+                Details = "已为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
             }, req.ServiceWorkOrderIds);
             await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{req.TechnicianId}接单工单：{string.Join(",", req.ServiceWorkOrderIds)}", ActionType = "技术员接单" }, req.ServiceWorkOrderIds);
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = req.ServiceOrderId, Content = "技术员已接单成功，请尽快选择服务", AppUserId = 0 });
@@ -1120,7 +1120,7 @@ namespace OpenAuth.App
             await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
                 Title = "移转至技术员",
-                Details = "以为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
+                Details = "已为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
             }, req.WorkOrderIds);
             await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{req.CurrentUserId}派单{string.Join(",", req.WorkOrderIds)}", ActionType = "主管派单工单" }, req.WorkOrderIds);
             await PushMessageToApp(req.CurrentUserId, "测试派单标题", "测试消息内容");
