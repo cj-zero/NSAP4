@@ -8,7 +8,7 @@
 
         public AppSetting()
         {
-            SSOPassport = "http://localhost:52789";  
+            SSOPassport = "http://localhost:52789";
             Version = "";
             UploadPath = "";
             IdentityServerUrl = "";
@@ -38,5 +38,10 @@
 
         //是否是Identity授权方式
         public bool IsIdentityAuth => !string.IsNullOrEmpty(IdentityServerUrl);
+
+        /// <summary>
+        /// App API接口地址
+        /// </summary>
+        public string AppPushMsgUrl { get; set; }
     }
 }
