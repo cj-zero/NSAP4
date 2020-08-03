@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="form" style="border:1px solid silver;">
+    <div class="form" style="border:1px solid silver;padding:0 5px;">
       <el-row :gutter="20">
         <!-- <el-col :span="isCreate?24:18"> -->
         <el-col :span="24">
@@ -8,12 +8,12 @@
             :model="form"
             :rules="rules"
             :ref="form"
-            class="rowStyle"
+            class="rowStyle1"
             :disabled="!isCreate"
             :label-width="labelwidth"
           >
             <div
-              style="font-size:22px;color:#67C23A;text-align:center;height:40px;line-height:40px;border-bottom:1px solid silver;margin-bottom:10px;"
+              style="font-size:22px;color:#67C23A;text-align:center;height:40px;line-height:35px;border-bottom:1px solid silver;margin-bottom:10px;"
             >{{formName}}呼叫服务单</div>
             <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="8">
@@ -833,10 +833,10 @@ export default {
   //   background: lightslategrey;
   // }
 }
-.rowStyle {
+.rowStyle1 {
   ::v-deep .el-form{
     padding: 5px;
-    margin-bottom: 2px;
+    // margin-bottom: 2px;
   }
    ::v-deep .el-form-item__label{
        line-height:30px;
@@ -845,7 +845,7 @@ export default {
        line-height:30px;
      }
       ::v-deep .el-form-item {
-     margin: 2px 1px;
+     margin: 1px 1px;
   }
 }
 .myAuto {
@@ -859,8 +859,8 @@ export default {
 .my-autocomplete {
   li {
     line-height: normal;
-    padding: 7px;
-
+    padding: 2px 7px;
+    height: 20px;
     .name {
       text-overflow: ellipsis;
       overflow: hidden;

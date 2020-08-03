@@ -5,7 +5,15 @@
 		</div>
     <hamburger class="hamburger-container" :toggleClick="toggleSideBar" :isActive="sidebar.opened"></hamburger>
     <!-- <breadcrumb></breadcrumb> -->
+     
+     <div class="people_info">
+        <el-badge :value="2" style="display:inline-block;" type="warning" @click="showServe"> 
+      <i class="el-icon-message" ></i>
+      </el-badge>
+     </div>
+    
     <el-dropdown class="avatar-container" trigger="click">
+
       <div class="avatar-wrapper">
         <!-- <img class="user-avatar" :src="logo"> -->
 				欢迎您，{{name}}
@@ -48,7 +56,7 @@ export default {
     ...mapGetters(['sidebar', 'isIdentityAuth', 'name'])
   },
   methods: {
-    ...mapActions([
+    ...mapActions([   
       'signOutOidc'
     ]),
     toggleSideBar() {
@@ -62,7 +70,10 @@ export default {
           location.reload() // 为了重新实例化vue-router对象 避免bug
         })
       }
-    }
+    },
+    showServe(){
+      // this.
+    },
   }
 }
 </script>
@@ -78,11 +89,24 @@ export default {
         padding: 0 10px;
         color: white;
     }
-    .screenfull {
-        position: absolute;
-        right: 90px;
-        top: 16px;
-        color: red;
+    // .screenfull {
+    //     position: absolute;
+    //     right: 90px;
+    //     top: 16px;
+    //     color: red;
+    // }
+    .people_info{
+      // position: absolute;
+      float:right;
+      margin-right:170px;
+      ::v-deep .el-icon-message{
+        font-size:26px;
+        padding-top:3px;
+        color:white;
+      }
+       ::v-deep .el-badge__content.is-fixed{
+            top:15px;
+        } 
     }
     .avatar-container {
         height: 44px;
@@ -94,6 +118,7 @@ export default {
         .avatar-wrapper {
             cursor: pointer;
             position: relative;
+            float:right;
             .el-icon-caret-bottom {
                 position: absolute;
                 right: -22px;
@@ -101,6 +126,7 @@ export default {
                 font-size: 16px;
             }
         }
+       
     }
     .logo {
         width: 180px;
