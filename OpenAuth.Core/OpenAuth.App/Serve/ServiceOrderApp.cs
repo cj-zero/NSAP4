@@ -25,6 +25,7 @@ using OpenAuth.App.Serve.Request;
 using CSRedis;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+using Microsoft.Extensions.Options;
 
 namespace OpenAuth.App
 {
@@ -34,13 +35,17 @@ namespace OpenAuth.App
         private readonly ServiceOrderLogApp _serviceOrderLogApp;
         private readonly BusinessPartnerApp _businessPartnerApp;
         private readonly AppServiceOrderLogApp _appServiceOrderLogApp;
+        private IOptions<AppSetting> _appConfiguration;
+        private HttpHelper _helper;
         public ServiceOrderApp(IUnitWork unitWork,
-            RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp) : base(unitWork, auth)
+            RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration) : base(unitWork, auth)
         {
+            _appConfiguration = appConfiguration;
             _revelanceApp = app;
             _serviceOrderLogApp = serviceOrderLogApp;
             _businessPartnerApp = businessPartnerApp;
             _appServiceOrderLogApp = appServiceOrderLogApp;
+            _helper = new HttpHelper(_appConfiguration.Value.AppPushMsgUrl);
         }
         /// <summary>
         /// 加载列表
@@ -793,7 +798,7 @@ namespace OpenAuth.App
                 });
 
             var result = new TableData();
-            var list = (await query
+            var list = (await query.OrderByDescending(o => o.Id)
             .Skip((req.page - 1) * req.limit)
             .Take(req.limit).ToListAsync()).Select(s => new
             {
@@ -936,10 +941,28 @@ namespace OpenAuth.App
             await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
                 Title = "移转至技术员",
-                Details = "以为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
+                Details = "已为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
             }, req.ServiceWorkOrderIds);
             await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{req.TechnicianId}接单工单：{string.Join(",", req.ServiceWorkOrderIds)}", ActionType = "技术员接单" }, req.ServiceWorkOrderIds);
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = req.ServiceOrderId, Content = "技术员已接单成功，请尽快选择服务", AppUserId = 0 });
+            await PushMessageToApp(req.TechnicianId, "测试接单标题", "测试消息内容");
+        }
+
+        /// <summary>
+        /// 推送消息至新威智能app
+        /// </summary>
+        /// <param name="userId">app用户Id</param>
+        /// <param name="title">消息标题</param>
+        /// <param name="content">消息内容</param>
+        /// <returns></returns>
+        private async Task PushMessageToApp(int userId, string title, string content)
+        {
+            _helper.Post(new
+            {
+                UserId = userId,
+                Title = title,
+                Content = content
+            }, "BbsCommunity/AppPushMsg");
         }
 
         /// <summary>
@@ -1097,10 +1120,10 @@ namespace OpenAuth.App
             await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
                 Title = "移转至技术员",
-                Details = "以为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
+                Details = "已为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
             }, req.WorkOrderIds);
             await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{req.CurrentUserId}派单{string.Join(",", req.WorkOrderIds)}", ActionType = "主管派单工单" }, req.WorkOrderIds);
-
+            await PushMessageToApp(req.CurrentUserId, "测试派单标题", "测试消息内容");
         }
 
         /// <summary>
