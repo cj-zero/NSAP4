@@ -574,6 +574,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<TableData> UnsignedWorkOrderTree(QueryServiceOrderListReq req)
         {
+            var loginContext = _auth.GetCurrentUser();
             var result = new TableData();
             var query = from a in UnitWork.Find<ServiceWorkOrder>(null)
                         join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
@@ -586,7 +587,13 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.a.ManufacturerSerialNumber.Contains(req.QryManufSN))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.b.RecepUserName.Contains(req.QryRecepUser))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.a.ProblemTypeId.Equals(req.QryProblemType))
-                         .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime <= req.QryCreateTimeTo);
+                         .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime <= req.QryCreateTimeTo)
+                         .Where(q=>q.b.SupervisorId.Equals(loginContext.User.Id));
+
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME)
+            {
+                query = query.Where(q => q.b.SupervisorId.Equals(loginContext.User.Id));
+            }
             var workorderlist = await query.OrderBy(r => r.a.CreateTime).Select(q => new
             {
                 ServiceOrderId = q.b.Id,
@@ -694,8 +701,12 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceWorkOrders.Any(a => a.ManufacturerSerialNumber.Contains(req.QryManufSN)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.RecepUserName.Contains(req.QryRecepUser))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ServiceWorkOrders.Any(a => a.ProblemTypeId.Equals(req.QryProblemType)))
-                .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.ServiceWorkOrders.Any(a => a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo));
-
+                .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.ServiceWorkOrders.Any(a => a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
+                ;
+            if(loginContext.User.Account != Define.SYSTEM_USERNAME)
+            {
+                query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id));
+            }
             var resultsql = query.OrderByDescending(q => q.CreateTime).Select(q => new
             {
                 ServiceOrderId = q.Id,
