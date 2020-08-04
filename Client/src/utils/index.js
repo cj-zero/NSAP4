@@ -34,6 +34,26 @@ export function parseTime(time, cFormat) {
   return time_str
 }
 
+//将此刻的时间转化为我们需要的格式
+export function timeToFormat(format){
+  let result =''
+  const now =new Date() 
+  if(format==='ymd'){ 
+    //  /2020-01-02格式/
+    const year = now.getFullYear()
+    const mounth1 = now.getMonth()+1
+    const mounth = mounth1<10?'0'+mounth1:mounth1
+    const day1 = now.getDate()
+    const day = day1<10?'0'+day1:day1
+    // const hour = now.getHours()
+    // const minute = now.getMinutes()
+    // const second = now.getSeconds()
+    result = year+'-'+ mounth + '-' + day
+     
+  }
+return result
+}
+
 export function formatTime(format) {
   const now = new Date()
   var o = {
@@ -134,24 +154,4 @@ export const deepClone = (obj) => {
 }
 const isObject = (o) => {
   return (typeof o === 'object' || typeof o === 'function') && o !== null
-}
-
-//将此刻的时间转化为我们需要的格式
-export function timeToFormat(format){
-  let result =''
-  const now =new Date() 
-  if(format==='ymd'){ 
-    //  /2020-01-02格式/
-    const year = now.getFullYear()
-    const mounth1 = now.getMonth()+1
-    const mounth = mounth1<10?'0'+mounth1:mounth1
-    const day1 = now.getDate()
-    const day = day1<10?'0'+day1:day1
-    // const hour = now.getHours()
-    // const minute = now.getMinutes()
-    // const second = now.getSeconds()
-    result = year+'-'+ mounth + '-' + day
-     
-  }
-return result
 }
