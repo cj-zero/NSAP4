@@ -26,6 +26,7 @@ using CSRedis;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Options;
+using SAP.API;
 
 namespace OpenAuth.App
 {
@@ -35,6 +36,7 @@ namespace OpenAuth.App
         private readonly ServiceOrderLogApp _serviceOrderLogApp;
         private readonly BusinessPartnerApp _businessPartnerApp;
         private readonly AppServiceOrderLogApp _appServiceOrderLogApp;
+        private readonly ServiceWorkOrderAPI _workAPI;
         private IOptions<AppSetting> _appConfiguration;
         private HttpHelper _helper;
         public ServiceOrderApp(IUnitWork unitWork,
@@ -473,6 +475,27 @@ namespace OpenAuth.App
                 ServiceOrderId = request.Id
             });
             await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"客服:{loginContext.User.Name}创建工单", ActionType = "创建工单", ServiceOrderId = obj.Id });
+
+            #region 同步到SAP 并拿到服务单主键
+            if (obj.ServiceWorkOrders.Count > 0)
+            {
+                ServiceWorkOrder firstwork = obj.ServiceWorkOrders[0];
+                string sapEntry, errMsg;
+                if(_workAPI.AddServiceWorkOrder(firstwork,out sapEntry,out errMsg))
+                {
+                    await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(request.Id), e => new ServiceOrder
+                    {
+                        U_SAP_ID = System.Convert.ToInt32(sapEntry)
+                    }) ;
+                    await UnitWork.SaveAsync();
+                }
+                else
+                {
+                    throw new CommonException(errMsg, Define.INVALID_TOKEN);
+                }
+            }
+
+            #endregion
         }
         /// <summary>
         /// 删除一个工单

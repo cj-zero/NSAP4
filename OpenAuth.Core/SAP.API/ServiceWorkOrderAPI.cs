@@ -15,7 +15,7 @@ namespace SAP.API
             this.company = company;
         }
 
-        public bool AddServiceWorkOrder(Company bOneApi, ServiceWorkOrder thisWorkOrder , out string docNum,out string errorMsg)
+        public bool  AddServiceWorkOrder( ServiceWorkOrder thisWorkOrder , out string docNum,out string errorMsg)
         {
             #region 调用接口
 
@@ -25,12 +25,12 @@ namespace SAP.API
             string newSolutionID = ""; 
             int eCode = 0; string eMesg = string.Empty; int res = 0;
             
-            if (bOneApi != null)
+            if (company != null)
             {
                 try
                 {
-                    SAPbobsCOM.ServiceCalls sc = (SAPbobsCOM.ServiceCalls)bOneApi.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oServiceCalls);
-                    SAPbobsCOM.KnowledgeBaseSolutions kbs = (SAPbobsCOM.KnowledgeBaseSolutions)bOneApi.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oKnowledgeBaseSolutions);
+                    SAPbobsCOM.ServiceCalls sc = (SAPbobsCOM.ServiceCalls)company.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oServiceCalls);
+                    SAPbobsCOM.KnowledgeBaseSolutions kbs = (SAPbobsCOM.KnowledgeBaseSolutions)company.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oKnowledgeBaseSolutions);
 
 
                     #region 主数据 （添加）
@@ -113,7 +113,7 @@ namespace SAP.API
 
                             if (kbsRes == 0)
                             {
-                                bOneApi.GetNewObjectCode(out newSolutionID);
+                                company.GetNewObjectCode(out newSolutionID);
                                 sc.Solutions.SetCurrentLine(lineNum);
                                 sc.Solutions.SolutionID = Convert.ToInt32(newSolutionID);
                                 sc.Solutions.UserFields.Fields.Item("U_ZZSXLH").Value = thisWorkOrder.ManufacturerSerialNumber;
@@ -123,7 +123,7 @@ namespace SAP.API
                             }
                             else
                             {
-                                bOneApi.GetLastError(out eCode, out eMesg);
+                                company.GetLastError(out eCode, out eMesg);
                                 allerror.Append("添加解决方案到SAP时异常！错误代码：" + eCode + "错误信息：" + eMesg);
                             }
 
@@ -143,13 +143,13 @@ namespace SAP.API
                     res = sc.Add();
                     if (res != 0)
                     {
-                        bOneApi.GetLastError(out eCode, out eMesg);
+                        company.GetLastError(out eCode, out eMesg);
                         allerror.Append("添加服务呼叫到SAP时异常！错误代码：" + eCode + "错误信息：" + eMesg);
                         Result = false;
                     }
                     else
                     {
-                        bOneApi.GetNewObjectCode(out docNum);
+                        company.GetNewObjectCode(out docNum);
                         allerror.Append("调用接口服务呼叫操作成功");
                         Result = true;
                     }
