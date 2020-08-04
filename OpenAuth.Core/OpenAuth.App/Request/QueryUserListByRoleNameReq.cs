@@ -7,8 +7,11 @@ namespace OpenAuth.App.Request
 {
     public class QueryUserListByRoleNameReq : PageReq
     {
+        /// <summary>
+        /// 角色名称集合
+        /// </summary>
         [Required]
-        public string RoleName { get; set; }
+        public List<string> RoleNames { get; set; }
 
         public string UserName { get; set; }
     }

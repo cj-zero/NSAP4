@@ -175,21 +175,22 @@
       </el-dialog>
       <!-- 只能查看的表单 -->
       <el-dialog
-        width="1200px"
+        width="1080px"
         title="服务单详情"
         :close-on-click-modal="false"
         destroy-on-close
-        class="addClass1"
+        class="addClass1 dialog-mini"
         @open="openDetail"
         :visible.sync="dialogFormView"
       >
-      <el-row :gutter="  20" class="position-view">
-        <el-col :span="18" style="max-width:900px;">
+      <el-row :gutter="20" class="position-view">
+        <el-col :span="18" >
         <zxform
           :form="temp"
           formName="查看"
           labelposition="right"
           labelwidth="100px"
+          max-width="800px"
           :isCreate="false"
           :refValue="dataForm"
         ></zxform>
@@ -519,6 +520,9 @@ export default {
         Object.assign(this.listQuery, res);
       }
     },
+    // changeState(ind){
+    //   this.formList[ind].editTrue = !this.formList[ind].editTrue
+    // },
     getList() {
       this.listLoading = true;
       callservesure.rightList(this.listQuery).then(response => {

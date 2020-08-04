@@ -70,7 +70,7 @@
                     scope.row.status).display_name}}</span>
                 </template>
               </el-table-column>
-
+         
               <el-table-column align="center" :label="'操作'" width="150" class-name="small-padding fixed-width">
                 <template slot-scope="scope">
                   <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
@@ -93,6 +93,17 @@
         <el-form :rules="rules" ref="dataForm" :model="temp" label-position="right" label-width="100px">
           <el-form-item size="small" :label="'Id'" prop="id" v-show="dialogStatus=='update'">
             <span>{{temp.id}}</span>
+          </el-form-item>
+ 
+                     <el-form-item size="small" :label="'所属公司'" prop="corpId">
+                <el-select v-model="temp.corpId" clearable placeholder="请选择" style="width:100%;" @change="handleClick1">
+                <el-option
+                  v-for="item in CorpTree"
+                  :key="`cor_${item.id}`"
+                  :label="item.label"
+                  :value="item.id">
+                </el-option>
+              </el-select>
           </el-form-item>
           <el-form-item size="small" :label="'层级ID'" v-show="dialogStatus=='update'">
             <span>{{temp.cascadeId}}</span>
@@ -205,13 +216,31 @@
         Corp: [], // 用户可访问到的公司列表
         CorpTree: [], // 用户可访问到的所有公司组成的树
         temp: {
-          id: undefined,
+          // id: undefined,
+          // cascadeId: '',
+          // parentName: '',
+          // parentId: null,
+          // name: '',
+          // Corp:'',
+          // status: 0
+          hotKey: '',
+          isLeaf: true,
+          isAutoExpand: true,
+          iconName: '',
+          status: 0,
+          bizCode: '',
+          customCode: '',
+          createTime: '',
+          createId: 0,
+          sortNo: 0,
+          typeName: '',
+          typeId: '',
+          corpId: '',
           cascadeId: '',
-          parentName: '',
-          parentId: null,
           name: '',
-          Corp:'',
-          status: 0
+          parentId: '',
+          parentName: '',
+          id: ''
         },
         dialogFormVisible: false,
         chkRoot: false, // 根节点是否选中
@@ -226,7 +255,12 @@
             required: true,
             message: '名称不能为空',
             trigger: 'blur'
-          }]
+          }],
+          corpId: [{
+            required: true,
+            message: '公司不能为空',
+            trigger: 'blur'
+          }],
         },
         downloadLoading: false,
         selectOrgs: '',
@@ -326,6 +360,7 @@
       this.getCorpTree()
     },
     methods: {
+   
       loadRoleUsers() {
         var _this = this
         this.isLoading = true
@@ -357,6 +392,19 @@
          handleClick(data) {
          this.currentCorpId = data.id
         this.getOrgTree(data.id)
+      },
+                     handleClick1(data) {
+                 let dataId = ''
+                 if((typeof data) ==='string'){
+                   dataId=data
+                   this.currentCorpId = data
+                 }else{
+                   this.currentCorpId = data.id
+                   dataId=data.id
+                 }
+                //  if(Object.propotype.toString.call(data) ===String){}
+        //  this.currentCorpId = data
+         this.getOrgTree(dataId)
       },
       getAllOrgs() {
         this.currentOrgId = ''
@@ -489,7 +537,8 @@
           parentName: '根节点',
           parentId: '',
           name: '',
-          status: 0
+          status: 0,
+          corpId:''
         }
       },
       handleCreate() { // 弹出添加框
@@ -497,6 +546,7 @@
         this.dialogStatus = 'create'
         this.dialogFormVisible = true
         this.selectOrgs = ''
+          console.log(this.temp)
         this.$nextTick(() => {
           this.$refs['dataForm'].clearValidate()
         })
@@ -504,6 +554,7 @@
       createData() { // 保存提交
         this.$refs['dataForm'].validate((valid) => {
           if (valid) {
+            console.log(this.temp)
             orgs.add(this.temp).then((response) => {
               // 需要回填数据库生成的数据
               this.temp.id = response.result.id

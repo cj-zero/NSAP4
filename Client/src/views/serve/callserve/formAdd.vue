@@ -1,18 +1,20 @@
 <template>
   <div class="addClass1">
     <!-- form数组，不包括第一项 -->
-    <div style="border:1px solid silver;padding:5px;margin-left:20px;">
+    <div style="border:1px solid silver;padding:5px;">
       <el-form
+        v-loading="waitingAdd "
         :model="formList[0]"
         :disabled="!isCreate"
         label-width="90px"
         class="rowStyle"
         :ref="'itemForm'+ 0"
+        size="small"
       >
         <el-row type="flex" class="row-bg" justify="space-around">
           <el-col :span="8">
             <el-form-item label="工单ID">
-              <el-input size="small" disabled v-model="formList[0].id"></el-input>
+              <el-input disabled v-model="formList[0].id"></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="ifEdit?8:7">
@@ -24,11 +26,11 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="4" v-if="!ifEdit" style="height:40px;line-height:40px;font-size:13px;">
-            <el-switch size="small" v-model="formList[0].editTrue" active-text="修改后续" :width="20"></el-switch>
+          <el-col :span="4" v-if="!ifEdit" style="height:35px;line-height:35px;font-size:13px;">
+            <el-switch size="small" v-model="formList[0].editTrue" active-text="修改后续" :width="40"></el-switch>
           </el-col>
           <el-col :span="2" v-if="ifEdit"></el-col>
-          <el-col :span="ifEdit?3:2" style="height:40px;line-height:40px;">
+          <el-col :span="ifEdit?3:2" style="height:40px;line-height:30px;">
             <el-button
               type="danger"
               v-if="formList.length>1"
@@ -38,7 +40,7 @@
               @click="deleteForm(formList[0])"
             >删除</el-button>
           </el-col>
-          <el-col :span="ifEdit?3:2" style="height:40px;line-height:40px;">
+          <el-col :span="ifEdit?3:2" style="height:40px;line-height:30px;">
             <el-button
               type="success"
               v-if="ifEdit"
@@ -320,7 +322,7 @@
         <div
           v-for="(item,index) in formList.slice(1)"
           :key="`key_${index}`"
-          style="border:1px solid silver;padding:5px;margin-left:20px;"
+          style="border:1px solid silver;padding:5px;"
         >
           <el-form
             :model="item"
@@ -344,16 +346,12 @@
                 </el-form-item>
               </el-col>
 
-              <el-col
-                :span="4"
-                v-if="!ifEdit"
-                style="height:40px;line-height:40px;font-size:13px;"
-              >
-                <el-switch size="small" v-model="item.editTrue" active-text="修改后续" :width="20"></el-switch>
+              <el-col :span="4" v-if="!ifEdit" style="height:40px;line-height:30px;font-size:13px;">
+                <el-switch size="small" v-model="item.editTrue" active-text="修改后续" :width="40"></el-switch>
               </el-col>
               <el-col :span="2" v-if="ifEdit"></el-col>
 
-              <el-col :span="ifEdit?3:2" style="height:40px;line-height:40px;">
+              <el-col :span="ifEdit?3:2" style="height:40px;line-height:30px;">
                 <el-button
                   type="danger"
                   v-if="formList.length>1"
@@ -363,7 +361,7 @@
                   @click="deleteForm(item)"
                 >删除</el-button>
               </el-col>
-              <el-col :span="ifEdit?3:2" style="height:40px;line-height:40px;">
+              <el-col :span="ifEdit?3:2" style="height:40px;line-height:30px;">
                 <el-button
                   type="success"
                   v-if="ifEdit"
@@ -382,7 +380,7 @@
                     size="small"
                     :fetch-suggestions="querySearch"
                     placeholder="制造商序列号"
-                     @focus="thisPage=index+1"
+                    @focus="thisPage=index+1"
                     @select="searchSelect"
                   >
                     <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
@@ -431,7 +429,12 @@
               </el-col>
             </el-row>
 
-            <el-row type="flex" class="row-bg" justify="space-around">
+            <el-row
+              type="flex"
+              class="row-bg"
+              justify="space-around"
+              style="height:40px;line-height:40px;"
+            >
               <el-col :span="24">
                 <el-form-item
                   label="呼叫主题"
@@ -541,7 +544,12 @@
                 </el-form-item>
               </el-col>
             </el-row>
-            <el-row type="flex" class="row-bg" justify="space-around">
+            <el-row
+              type="flex"
+              class="row-bg"
+              justify="space-around"
+              style="height:40px;line-height:40px;"
+            >
               <el-col :span="8">
                 <el-form-item label="技术员">
                   <el-input size="small" disabled></el-input>
@@ -733,7 +741,7 @@ export default {
     return {
       defaultProps: {
         label: "name",
-        children: "childTypes"
+        children: "childTypes",
       }, //树形控件的显示状态
       sortForm: "", //点击解决方案的排序
       solutionOpen: false, //显示解决方案
@@ -743,10 +751,10 @@ export default {
       solutionCount: "",
       listLoading: true,
       proplemTree: false,
-      serLoad: false,
+      serLoad: true,
       addressList: [], //客户地址集合
       cntctPrsnList: [], //客户联系人集合
-      thisPage:0,//当前选择的工单页
+      thisPage: 0, //当前选择的工单页
       SerialNumberList: [],
       filterSerialNumberList: [],
       formListStart: [], //选择的表格数据
@@ -776,8 +784,8 @@ export default {
           solutionId: "", //解决方案
           troubleDescription: "",
           processDescription: "",
-          editTrue: true //修改后续的状态
-        }
+          editTrue: true, //修改后续的状态
+        },
       ], //表单依赖的表格数据
 
       dialogfSN: false,
@@ -792,7 +800,7 @@ export default {
         { value: "微信", label: "微信" },
         { value: "邮件", label: "邮件" },
         { value: "APP", label: "APP" },
-        { value: "Web", label: "Web" }
+        { value: "Web", label: "Web" },
       ],
       options_status: [
         { label: "已回访", value: 10 },
@@ -804,24 +812,25 @@ export default {
         { label: "待处理", value: 4 },
         { label: "已取消", value: 3 },
         { label: "已确认", value: 2 },
-        { label: "待确认", value: 1 }
+        { label: "待确认", value: 1 },
       ],
       options_type: [
         { value: 1, label: "提交呼叫" },
-        { value: 2, label: "在线解答" }
+        { value: 2, label: "在线解答" },
       ], //呼叫类型
       options_quick: [
         { label: "高", value: 3 },
         { label: "中", value: 2 },
-        { label: "低", value: 1 }
+        { label: "低", value: 1 },
       ],
       listQuery: {
         page: 1,
         limit: 30,
-        CardCode: ""
+        CardCode: "",
       },
+      waitingAdd: false, //等待添加的进程结束
       SerialCount: "",
-      ifFormPush: false //表单是否被动态添加过
+      ifFormPush: false, //表单是否被动态添加过
     };
   },
   created() {},
@@ -832,97 +841,111 @@ export default {
     //获取问题类型的数据
     problemtypes
       .getList()
-      .then(res => {
+      .then((res) => {
         this.dataTree = res.data;
       })
-      .catch(error => {
+      .catch((error) => {
         console.log(error);
       });
-    solutions.getList().then(response => {
+    solutions.getList().then((response) => {
       this.datasolution = response.data;
       this.solutionCount = response.count;
       this.listLoading = false;
     });
+
+        if (this.propForm && this.propForm.length) {
+          this.formList = this.propForm;
+          console.log(this.formList);
+        }
+  
   },
   computed: {
     newValue() {
       return JSON.stringify(this.formList);
-    }
+    },
   },
   watch: {
     newValue: {
-      handler: function(Val, Val1) {
-          let newVal = JSON.parse(Val);
-          let oldVal = JSON.parse(Val1);
-          // let chengeIndex= ''
-          this.$emit("change-form", newVal);
-          newVal.map((item, index) => {   //循环新数组的每一项对象
-            if (
-              JSON.stringify(newVal[index]) !== JSON.stringify(oldVal[index])
-            ) {
-              let newValChild = newVal[index];  //新值的每一项
-              let oldValChild = oldVal[index];
-              //  console.log()
-              if (newVal.length == oldVal.length) {
-                for (let item1 in oldValChild) {
-                  if (newValChild[item1] !== oldValChild[item1]) { //如果新值和旧值不一样
-                    if(this.formList[index].editTrue){   //如果可以修改
-                      //  console.log(thisForm[item1],newValChild[item1],item1)
-                      if(item1=='problemTypeId'){
-                         this.formList.map((itemF,ind)=>{
-                        if(ind!==0){
-                          itemF.problemTypeId = newValChild.problemTypeId
-                          itemF.problemTypeName = newValChild.problemTypeName
+      handler: function (Val, Val1) {
+        // this.serLoad = await true
+        let newVal = JSON.parse(Val);
+        let oldVal = JSON.parse(Val1);
+        // let chengeIndex= ''
+        newVal.map((item, index) => {
+          //循环新数组的每一项对象
+          if (JSON.stringify(newVal[index]) !== JSON.stringify(oldVal[index])) {
+            let newValChild = newVal[index]; //新值的每一项
+            let oldValChild = oldVal[index];
+            //  console.log()
+            if (newVal.length == oldVal.length) {
+              for (let item1 in oldValChild) {
+                if (newValChild[item1] !== oldValChild[item1]) {
+                  //如果新值和旧值不一样
+                  let sliceList = this.formList.slice(index);
+                  if (this.formList[index].editTrue) {
+                    //如果可以修改
+                    //  console.log(thisForm[item1],newValChild[item1],item1)
+                    if (item1 == "editTrue") {
+                      return;
+                    } else if (item1 == "problemTypeId") {
+                      sliceList.map((itemF, ind) => {
+                        if (ind !== 0) {
+                          itemF.problemTypeId = newValChild.problemTypeId;
+                          itemF.problemTypeName = newValChild.problemTypeName;
                         }
-                      })
-                      }else if (item1=='solutionId'){
-                       this.formList.map((itemF,ind)=>{
-                        if(ind!==0){
-                           itemF.solutionId = newValChild.solutionId
-                          itemF.solutionsubject = newValChild.solutionsubject
+                      });
+                    } else if (item1 == "solutionId") {
+                      sliceList.map((itemF, ind) => {
+                        if (ind !== 0) {
+                          itemF.solutionId = newValChild.solutionId;
+                          itemF.solutionsubject = newValChild.solutionsubject;
                         }
-                      })
-                      }else{
-                       this.formList.map((itemF,ind)=>{
-                        if(ind!==0){
-                          itemF[item1] = newValChild[item1]
+                      });
+                    } else {
+                      sliceList.map((itemF, ind) => {
+                        if (ind !== 0) {
+                          itemF[item1] = newValChild[item1];
                         }
-                      })
-                      }
-              
-                      // console.log(this.formList)
-                      }
+                      });
+                    }
+                  }
+                }
               }
-                }}}
-          });
+            }
+          }
+        });
+                this.$emit("change-form", newVal);
+
       },
+
       deep: true,
       // immediate: true
     },
-    propForm: {
-      deep: true,
-      immediate: true,
-      handler(val) {
-        if (val && val.length) {
-          this.formList = val;
-        }
-      }
-    },
+    // propForm: {
+    //   deep: true,
+    //   immediate: true,
+    //   handler(val) {
+    //     if (val && val.length) {
+    //       this.formList = val;
+    //       console.log(this.formList);
+    //     }
+    //   },
+    // },
     "form.customerId": {
       deep: true,
       handler(val) {
         this.listQuery.CardCode = val;
         getSerialNumber(this.listQuery)
-          .then(res => {
+          .then((res) => {
             this.SerialNumberList = res.data;
             this.filterSerialNumberList = this.SerialNumberList;
             this.SerialCount = res.count;
           })
-          .catch(error => {
+          .catch((error) => {
             console.log(error);
           });
-      }
-    }
+      },
+    },
   },
   // updated(){
 
@@ -936,17 +959,14 @@ export default {
       this.listLoading = true;
       this.serLoad = true;
       getSerialNumber(this.listQuery)
-        .then(res => {
+        .then((res) => {
           this.SerialNumberList = res.data;
           this.filterSerialNumberList = this.SerialNumberList;
           this.SerialCount = res.count;
-          let that = this
-          setTimeout(function(){
-          that.serLoad = false;
-          },2000)
+          this.serLoad = false;
           this.listLoading = false;
         })
-        .catch(error => {
+        .catch((error) => {
           console.log(error);
         });
     },
@@ -957,7 +977,7 @@ export default {
     },
     pageChange(res) {
       this.listLoading = true;
-      solutions.getList(res).then(response => {
+      solutions.getList(res).then((response) => {
         this.datasolution = response.data;
         this.solutionCount = response.count;
         this.listLoading = false;
@@ -973,11 +993,12 @@ export default {
       console.log(this.formList, this.sortForm - 1);
       this.formList[this.sortForm - 1].problemTypeName = res.name;
       this.formList[this.sortForm - 1].problemTypeId = res.id;
-      
       this.problemLabel = res.name;
       this.proplemTree = false;
     },
     solutionClick(res) {
+      console.log(this.formList);
+      this.formList[this.sortForm - 1].solutionsubject = "";
       this.formList[this.sortForm - 1].solutionsubject = res.subject;
       this.formList[this.sortForm - 1].solutionId = res.id;
       // this.problemLabel = res.name;
@@ -986,12 +1007,12 @@ export default {
     },
     switchType(val) {
       let vall = "";
-      this.dataTree.filter(item => {
+      this.dataTree.filter((item) => {
         if (item.id == val) {
           vall = item.name;
           return vall;
         }
-        item.childTypes.filter(item => {
+        item.childTypes.filter((item) => {
           if (item.id == val) {
             vall = item.name;
             return vall;
@@ -1002,7 +1023,7 @@ export default {
       return vall;
     },
     switchSo(val) {
-      let res = this.datasolution.filter(item => item.id == val);
+      let res = this.datasolution.filter((item) => item.id == val);
       return res.length ? res[0].subject : "请选择";
     },
     openDialog() {
@@ -1016,34 +1037,33 @@ export default {
 
     pushForm() {
       this.dialogfSN = false;
-      // let serviceOrder = localStorage.getItem('serviceOrderId')
-      if (!this.ifFormPush) {
+      this.waitingAdd = true;
+      if (!this.formList[0].id) {
+        //判断从哪里新增的依据是第一个工单是否有id
         this.formList[0].manufacturerSerialNumber = this.formListStart[0].manufSN;
         this.formList[0].internalSerialNumber = this.formListStart[0].internalSN;
         this.formList[0].materialCode = this.formListStart[0].itemCode;
-        //  this.formList[0].serviceOrderId = serviceOrder
         this.formList[0].materialDescription = this.formListStart[0].itemName;
         const newList = this.formListStart.splice(1, this.formListStart.length);
         for (let i = 0; i < newList.length; i++) {
           this.formList.push({
             manufacturerSerialNumber: newList[i].manufSN,
-             editTrue:false,
+            editTrue: false,
             internalSerialNumber: newList[i].internalSN,
             materialCode: newList[i].itemCode,
             materialDescription: newList[i].itemName,
-            feeType:1,
-            fromTheme:'',
-            fromType:2,
-              problemTypeName:'',
-            problemTypeId:'',
-            priority:'',
-            remark:'',
-            solutionId:'',
-          status:1,
-            solutionsubject:''
+            feeType: 1,
+            fromTheme: "",
+            fromType: 2,
+            problemTypeName: "",
+            problemTypeId: "",
+            priority: 1,
+            remark: "",
+            solutionId: "",
+            status: 1,
+            solutionsubject: "",
           });
         }
-        // this.formList=this.formListStart
         this.ifFormPush = true;
       } else {
         this.ifFormPush = true;
@@ -1051,22 +1071,23 @@ export default {
           this.formList.push({
             manufacturerSerialNumber: this.formListStart[i].manufSN,
             internalSerialNumber: this.formListStart[i].internalSN,
-             editTrue:false,
+            editTrue: false,
             materialCode: this.formListStart[i].itemCode,
             materialDescription: this.formListStart[i].itemName,
-                feeType:1,
-            fromTheme:'',
-            fromType:2,
-            problemTypeName:'',
-            problemTypeId:'',
-            priority:'',
-            remark:'',
-            solutionId:'',
-              status:1,
-            solutionsubject:''
+            feeType: 1,
+            fromTheme: "",
+            fromType: 2,
+            problemTypeName: "",
+            problemTypeId: "",
+            priority: 1,
+            remark: "",
+            solutionId: "",
+            status: 1,
+            solutionsubject: "",
           });
         }
       }
+      this.waitingAdd = false;
     },
     handleIconClick() {
       this.dialogfSN = true;
@@ -1077,13 +1098,13 @@ export default {
         .then(() => {
           this.$message({
             message: "新增工单成功",
-            type: "success"
+            type: "success",
           });
         })
-        .catch(res => {
+        .catch((res) => {
           this.$message({
             message: `${res}`,
-            type: "error"
+            type: "error",
           });
         });
     },
@@ -1101,35 +1122,35 @@ export default {
       // }
     },
     searchSelect(res) {
-      if(this.filterSerialNumberList.length){
-                 this.filterSerialNumberList = this.filterSerialNumberList.filter(
-        item => item.manufSN === res.manufSN
-      );
+      if (this.filterSerialNumberList.length) {
+        this.filterSerialNumberList = this.filterSerialNumberList.filter(
+          (item) => item.manufSN === res.manufSN
+        );
         // this.filterSerialNumberList = newList;
       }
-      this.formList[this.thisPage].manufacturerSerialNumber = res.manufSN
-      this.formList[this.thisPage].internalSerialNumber = res.internalSN
-      this.formList[this.thisPage].contractId = res.contractID
-      this.formList[this.thisPage].materialCode = res.itemCode
-      this.formList[this.thisPage].materialDescription = res.itemName
+      this.formList[this.thisPage].manufacturerSerialNumber = res.manufSN;
+      this.formList[this.thisPage].internalSerialNumber = res.internalSN;
+      this.formList[this.thisPage].contractId = res.contractID;
+      this.formList[this.thisPage].materialCode = res.itemCode;
+      this.formList[this.thisPage].materialDescription = res.itemName;
       // this.inputSearch = res.manufSN;
     },
-   async querySearch(queryString, cb) {
+    async querySearch(queryString, cb) {
       this.listQuery.ManufSN = queryString;
-     await this.getSerialNumberList();
+      await this.getSerialNumberList();
       var filterSerialNumberList = this.SerialNumberList;
-      console.log(filterSerialNumberList,this.listQuery.ManufSN)
+      console.log(filterSerialNumberList, this.listQuery.ManufSN);
       var results = queryString
         ? filterSerialNumberList.filter(this.createFilter(queryString))
         : filterSerialNumberList;
-       console.log(results);
+      console.log(results);
       // 调用 callback 返回建议列表的数据
       cb(results);
     },
     createFilter(queryString) {
-      
-      return filterSerialNumberList => {//循环数组的每一项
-        return (  
+      return (filterSerialNumberList) => {
+        //循环数组的每一项
+        return (
           filterSerialNumberList.manufSN
             .toLowerCase()
             .indexOf(queryString.toLowerCase()) === 0
@@ -1146,28 +1167,27 @@ export default {
         {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
-          type: "warning"
+          type: "warning",
         }
       )
         .then(() => {
-
-          this.formList = this.formList.filter(item => {
+          this.formList = this.formList.filter((item) => {
             return (
               item.manufacturerSerialNumber != res.manufacturerSerialNumber
             );
           });
           this.$message({
             type: "success",
-            message: "删除成功!"
+            message: "删除成功!",
           });
         })
         .catch(() => {
           this.$message({
             type: "info",
-            message: "已取消删除"
+            message: "已取消删除",
           });
         });
-    }
+    },
     // deleteForm(res) {
     //   this.$confirm(
     //     `此操作将删除序列商序列号为${res.manufacturerSerialNumber}的表单, 是否继续?`,
@@ -1206,7 +1226,7 @@ export default {
     //       });
     //     });
     // }
-  }
+  },
 };
 </script>
 
@@ -1232,33 +1252,13 @@ export default {
   //   background: lightslategrey;
   // }
 }
-.rowStyle {
-  ::v-deep .el-form-item {
-    margin-bottom: 10px;
-  }
-  ::v-deep .el-switch__label {
-    font-size: 10px;
-  }
-}
-.my-autocomplete {
-  li {
-    line-height: normal;
-    padding: 2px 7px;
-    height: 20px;
-    .name {
-      text-overflow: ellipsis;
-      overflow: hidden;
-    }
-    .addr {
-      font-size: 12px;
-      color: #b4b4b4;
-    }
 
-    .highlighted .addr {
-      color: #ddd;
-    }
+.rowStyle {
+      ::v-deep .el-form-item {
+     margin: 3px 1px !important;
   }
 }
+
 .openClass {
   ::v-deep.el-collapse-item__header {
     padding-left: 50px;
@@ -1268,16 +1268,11 @@ export default {
   border: 1px silver solid;
   border-radius: 5px;
   padding: 0 10px;
-  // overflow-x: hidden;
-  // height: 40px;
-  // ::-webkit-scrollbar {
-  //   width: 1px !important;
-  // }
 }
 .addClass {
   border: 1px silver solid;
   padding: 5px;
-  margin-left: 20px;
+  // margin-left: 20px;
 }
 .showSort {
   float: right;

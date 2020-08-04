@@ -108,6 +108,9 @@ namespace OpenAuth.WebApi.Controllers
                 };
             }catch(Exception ex)
             {
+                await _certinfoApp.DeleteAsync(s => s.CertNo.Equals(baseInfo.CertificateNumber));
+                await _certPlcApp.DeleteAsync(s => s.CertNo.Equals(baseInfo.CertificateNumber));
+                throw ex;
                 return new Response<bool>()
                 {
                     Code = 500,
@@ -573,11 +576,13 @@ namespace OpenAuth.WebApi.Controllers
             #endregion
 
             #region 签名
-            var signPath = @"C:\Users\neware.com.cn\Desktop\NWCali\签名.png";
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 1, ValueData = signPath });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 3, ValueData = signPath });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 1, ValueData = signPath });
-            var signetPath = @"C:\Users\neware.com.cn\Desktop\NWCali\印章.png";
+            var signPath1 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "yang.png");
+            var signPath2 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "zhou.png");
+            var signPath3 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "chen.png");
+            list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 1, ValueData = signPath1 });
+            list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 3, ValueData = signPath2 });
+            list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 1, ValueData = signPath3 });
+            var signetPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "印章.png");
             list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 3, ValueData = signetPath });
             #endregion
             return list;

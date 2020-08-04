@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="form" style="border:1px solid silver;">
+    <div class="form" style="border:1px solid silver;padding:0 5px;">
       <el-row :gutter="20">
         <!-- <el-col :span="isCreate?24:18"> -->
         <el-col :span="24">
@@ -8,12 +8,12 @@
             :model="form"
             :rules="rules"
             :ref="form"
-            class="rowStyle"
+            class="rowStyle1"
             :disabled="!isCreate"
             :label-width="labelwidth"
           >
             <div
-              style="font-size:22px;color:#67C23A;text-align:center;height:40px;line-height:40px;border-bottom:1px solid silver;"
+              style="font-size:22px;color:#67C23A;text-align:center;height:40px;line-height:35px;border-bottom:1px solid silver;margin-bottom:10px;"
             >{{formName}}呼叫服务单</div>
             <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="8">
@@ -132,13 +132,15 @@
               <el-col :span="8">
                 <el-form-item label="创建时间" label-width="95px" prop="createTime">
                   <el-date-picker
+                  @focus='setThisTime'
                     :clearable="false"
                     size="mini"
                     v-model="form.createTime"
+                    :default-time="newDate"
                     style="width:150px;"
                     type="datetime"
-                    format="yyyy-MM-dd hh:mm"
-                    value-format="yyyy-MM-dd hh-mm-ss"
+                    format="yyyy-MM-dd HH:mm"
+                    value-format="yyyy-MM-dd HH-mm-ss"
                     placeholder="选择日期时间"
                   ></el-date-picker>
                 </el-form-item>
@@ -174,7 +176,7 @@
               <el-col :span="16">
                 <el-input
                   size="mini"
-                  style="height:40px;line-height:40px;margin-bottom:10px;"
+                  style="height:30px;line-height:30px;padding:2px 0 0 0;"
                   v-model="form.address"
                 ></el-input>
               </el-col>
@@ -185,7 +187,7 @@
                   <el-input size="mini" v-model="form.city"></el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="16" style="height:40px;line-height:40px;margin-bottom:10px;">
+              <el-col :span="16" style="height:30px;line-height:30px;padding:2px 0 0 0;">
                 <el-input size="mini" v-model="form.addr">
                   <el-button size="mini" slot="append" icon="el-icon-position" @click="openMap"></el-button>
                 </el-input>
@@ -285,7 +287,7 @@
         :visible.sync="dialogPartner"
       >
         <el-form :inline="true" class="demo-form-inline">
-          <el-form-item label="客户:">
+          <el-form-item label="客户">
             <el-input @input="searchList" v-model="inputSearch" placeholder="客户"></el-input>
           </el-form-item>
           <el-form-item label="制造商序列号:">
@@ -295,6 +297,7 @@
         <formPartner
           :partnerList="filterPartnerList"
           :count="parentCount"
+          :parLoading="parentLoad"
           @getChildValue="ChildValue"
         ></formPartner>
         <pagination
@@ -381,12 +384,12 @@ export default {
       state: "",
       addressList: [], //用户地址列表
       cntctPrsnList: [], //联系人列表
-      parentCount: "",
+      parentCount: 0,
       dialogPartner: false,
       activeName: 1,
       // dataModel: this.models[this.formData.model],
       dataModel: null,
-
+      parentLoad:false,
       callSourse: [
         { label: "电话", value: 1 },
         { label: "钉钉", value: 2 },
@@ -427,6 +430,7 @@ export default {
         pictures: [], //
         serviceWorkOrders: [],
       },
+      newDate:[],
       isCreateAdd: true, //add页面的编辑状态
       allAddress: {}, //选择地图的合集
       propForm: [],
@@ -515,6 +519,10 @@ export default {
     this.isCreateAdd = this.isCreate;
   },
   methods: {
+        setThisTime(){
+          console.log(11)
+    
+    },
     handlePreviewFile(item) {
       //预览图片
       this.previewVisible = true;
@@ -532,8 +540,8 @@ export default {
     chooseAddre() {
       this.form.city = this.allAddress.regeocode.addressComponent.city;
       this.form.addr = this.allAddress.address;
-      this.longitude = this.allAddress.position.lng;
-      this.latitude = this.allAddress.position.latss;
+      this.form.longitude = this.allAddress.position.lng;
+      this.form.latitude = this.allAddress.position.lat;
       this.drawerMap = false;
     },
     async setForm(val) {
@@ -588,6 +596,7 @@ export default {
                 });
               });
           } else {
+            console.log(this.form)
             callservesure
               .CreateWorkOrder(this.form)
               .then(() => {
@@ -728,11 +737,14 @@ export default {
       };
     },
     getPartnerList() {
+      this.parentLoad=true
       getPartner(this.listQuery)
         .then((res) => {
           this.partnerList = res.data;
           this.filterPartnerList = this.partnerList;
           this.parentCount = res.count;
+                this.parentLoad=false
+
           // console.log(res.count)
         })
         .catch((error) => {
@@ -796,7 +808,6 @@ export default {
   .lastWord {
     position: sticky;
     top: 0;
-
     // width: 200px;
   }
   ::v-deep .el-input__inner {
@@ -822,9 +833,19 @@ export default {
   //   background: lightslategrey;
   // }
 }
-.rowStyle {
-  ::v-deep .el-form-item {
-    margin-bottom: 5px;
+.rowStyle1 {
+  ::v-deep .el-form{
+    padding: 5px;
+    // margin-bottom: 2px;
+  }
+   ::v-deep .el-form-item__label{
+       line-height:30px;
+     }
+     ::v-deep .el-form-item__content{
+       line-height:30px;
+     }
+      ::v-deep .el-form-item {
+     margin: 1px 1px;
   }
 }
 .myAuto {
@@ -838,8 +859,8 @@ export default {
 .my-autocomplete {
   li {
     line-height: normal;
-    padding: 7px;
-
+    padding: 2px 7px;
+    height: 20px;
     .name {
       text-overflow: ellipsis;
       overflow: hidden;

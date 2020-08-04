@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using Range = NetOffice.WordApi.Range;
 
 namespace Infrastructure.Wrod
@@ -63,6 +64,7 @@ namespace Infrastructure.Wrod
                             break;
                         case 1:
                             _headRange.Text = string.Empty;
+                            Thread.Sleep(100);
                             _headRange.InlineShapes.AddPicture(item.ValueData.ToString(), paramTrue, paramTrue, paramMissing);
                             break;
                     }
