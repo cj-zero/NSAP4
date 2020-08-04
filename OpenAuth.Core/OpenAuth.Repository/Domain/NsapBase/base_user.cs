@@ -14,7 +14,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using OpenAuth.Repository.Core;
 
-namespace OpenAuth.Repository.Domain.NsapBase
+namespace OpenAuth.Repository.Domain
 {
     /// <summary>
 	/// 

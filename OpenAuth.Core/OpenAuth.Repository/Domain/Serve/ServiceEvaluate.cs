@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain
 	/// 
 	/// </summary>
     [Table("serviceevaluate")]
-    public partial class ServiceEvaluate : Entity<long>
+    public partial class ServiceEvaluate : BaseEntity<long>
     {
         public ServiceEvaluate()
         {
@@ -142,5 +142,15 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("创建人名称")]
         public string CreateUserName { get; set; }
+
+        public override void GenerateDefaultKeyVal()
+        {
+            //throw new NotImplementedException();
+        }
+
+        public override bool KeyIsNull()
+        {
+            return Id == 0;
+        }
     }
 }

@@ -42,7 +42,7 @@ namespace OpenAuth.App
             IEntityType entity = null;
             foreach (var _context in _dbContexts)
             {
-                entity = _context.Model.GetEntityTypes().FirstOrDefault(u => u.Name.Contains(moduleName, StringComparison.OrdinalIgnoreCase));
+                entity = _context.Model.GetEntityTypes().FirstOrDefault(u => u.Name.Equals("OpenAuth.Repository.Domain." + moduleName, StringComparison.OrdinalIgnoreCase));
                 if (!(entity is null))
                     break;
             }

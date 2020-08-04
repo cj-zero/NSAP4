@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using OpenAuth.App.Request;
 
 namespace OpenAuth.WebApi.Controllers
 {
@@ -401,7 +402,6 @@ namespace OpenAuth.WebApi.Controllers
         [AllowAnonymous]
         public LoginResult Login([FromBody]PassportLoginRequest request)
         {
-            _logger.LogInformation("Login enter");
             var result = new LoginResult();
             try
             {

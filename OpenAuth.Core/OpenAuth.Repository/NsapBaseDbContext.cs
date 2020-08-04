@@ -1,6 +1,6 @@
 ﻿using Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using OpenAuth.Repository.Domain.NsapBase;
+using OpenAuth.Repository.Domain;
 using System;
 using System.Collections.Generic;
 using System.Text;

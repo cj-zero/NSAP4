@@ -8,7 +8,7 @@ using OpenAuth.Repository.Interface;
 
 namespace OpenAuth.App
 {
-    public class OrgManagerApp : BaseApp<OpenAuth.Repository.Domain.Org>
+    public class OrgManagerApp : BaseTreeApp<OpenAuth.Repository.Domain.Org>
     {
         private RevelanceManagerApp _revelanceApp;
         /// <summary>
@@ -24,7 +24,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            ChangeModuleCascade(org);
+            CaculateCascade(org);
 
             Repository.Add(org);
             
@@ -45,25 +45,8 @@ namespace OpenAuth.App
 
         public string Update(OpenAuth.Repository.Domain.Org org)
         {
-            ChangeModuleCascade(org);
 
-            //获取旧的的CascadeId
-            var cascadeId = Repository.FindSingle(o => o.Id == org.Id).CascadeId;
-            //根据CascadeId查询子部门
-            var orgs = Repository.Find(u => u.CascadeId.Contains(cascadeId) && u.Id != org.Id)
-            .OrderBy(u => u.CascadeId).ToList();
-
-            //更新操作
-            UnitWork.Update(org);
-
-            //更新子部门的CascadeId
-            foreach (var a in orgs)
-            {
-                ChangeModuleCascade(a);
-                UnitWork.Update(a);
-            }
-
-            UnitWork.Save();
+            UpdateTreeObj(org);
 
             return org.Id;
         }
@@ -71,7 +54,7 @@ namespace OpenAuth.App
         /// <summary>
         /// 删除指定ID的部门及其所有子部门
         /// </summary>
-        public void DelOrg(string[] ids)
+        public void DelOrgCascade(string[] ids)
         {
             var delOrg = Repository.Find(u => ids.Contains(u.Id)).ToList();
             foreach (var org in delOrg)

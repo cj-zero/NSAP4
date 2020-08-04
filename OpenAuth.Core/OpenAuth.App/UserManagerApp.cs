@@ -31,45 +31,78 @@ namespace OpenAuth.App
         public TableData Load(QueryUserListReq request)
         {
             var loginUser = _auth.GetCurrentUser();
-
-            string cascadeId = ".0.";
-            if (!string.IsNullOrEmpty(request.orgId))
-            {
-                var org = loginUser.Orgs.SingleOrDefault(u => u.Id == request.orgId);
-                cascadeId = org.CascadeId;
-            }
-
             IQueryable<User> query = UnitWork.Find<User>(null);
             if (!string.IsNullOrEmpty(request.key))
             {
                 query = UnitWork.Find<User>(u => u.Name.Contains(request.key) || u.Account.Contains(request.key));
             }
 
-            var ids = loginUser.Orgs.Where(u => u.CascadeId.Contains(cascadeId)).Select(u => u.Id).ToArray();
-            var userIds = _revelanceApp.Get(Define.USERORG, false, ids);
+            var userOrgs = from user in query
+                           join relevance in UnitWork.Find<Relevance>(u => u.Key == "UserOrg")
+                               on user.Id equals relevance.FirstId into temp
+                           from r in temp.DefaultIfEmpty()
+                           join org in UnitWork.Find<Repository.Domain.Org>(null)
+                               on r.SecondId equals org.Id into orgtmp
+                           from o in orgtmp.DefaultIfEmpty()
+                           select new
+                           {
+                               user.Account,
+                               user.Name,
+                               user.Id,
+                               user.Sex,
+                               user.Status,
+                               user.BizCode,
+                               user.CreateId,
+                               user.CreateTime,
+                               user.TypeId,
+                               user.TypeName,
+                               r.Key,
+                               r.SecondId,
+                               OrgId = o.Id,
+                               OrgName = o.Name
+                           };
 
-            var users = query.Where(u => userIds.Contains(u.Id))
-                .OrderBy(u => u.Name)
-                .Skip((request.page - 1) * request.limit)
-                .Take(request.limit);
-
-            var records = query.Count(u => userIds.Contains(u.Id));
-
-
-            var userviews = new List<UserView>();
-            foreach (var user in users.ToList())
+            //如果请求的orgId不为空
+            if (!string.IsNullOrEmpty(request.orgId))
             {
-                UserView uv = user;
-                var orgs = LoadByUser(user.Id);
-                uv.Organizations = string.Join(",", orgs.Select(u => u.Name).ToList());
-                uv.OrganizationIds = string.Join(",", orgs.Select(u => u.Id).ToList());
-                userviews.Add(uv);
+                var org = loginUser.Orgs.SingleOrDefault(u => u.Id == request.orgId);
+                var cascadeId = org.CascadeId;
+
+                var orgIds = loginUser.Orgs.Where(u => u.CascadeId.Contains(cascadeId)).Select(u => u.Id).ToArray();
+
+                //只获取机构里面的用户
+                userOrgs = userOrgs.Where(u => u.Key == Define.USERORG && orgIds.Contains(u.OrgId));
             }
+
+            else  //todo:如果请求的orgId为空，即为跟节点，这时可以额外获取到机构已经被删除的用户，从而进行机构分配。可以根据自己需求进行调整
+            {
+                var orgIds = loginUser.Orgs.Select(u => u.Id).ToArray();
+
+                //获取用户可以访问的机构的用户和没有任何机构关联的用户（机构被删除后，没有删除这里面的关联关系）
+                userOrgs = userOrgs.Where(u => (u.Key == Define.USERORG && orgIds.Contains(u.OrgId)) || (u.OrgId == null));
+            }
+
+            var userViews = userOrgs.ToList().GroupBy(b => b.Account).Select(u => new UserView
+            {
+                Id = u.First().Id,
+                Account = u.Key,
+                Name = u.First().Name,
+                Sex = u.First().Sex,
+                Status = u.First().Status,
+                CreateTime = u.First().CreateTime,
+                CreateUser = u.First().CreateId,
+                OrganizationIds = string.Join(",", u.Select(x => x.OrgId))
+                ,
+                Organizations = string.Join(",", u.Select(x => x.OrgName))
+
+            });
 
             return new TableData
             {
-                Count = records,
-                Data = userviews,
+                Count = userViews.Count(),
+                Data = userViews.OrderBy(u => u.Name)
+                    .Skip((request.page - 1) * request.limit)
+                    .Take(request.limit),
             };
         }
 
@@ -154,7 +187,7 @@ namespace OpenAuth.App
             var users = from userRole in UnitWork.Find<Relevance>(u =>
                     u.SecondId == request.roleId && u.Key == Define.USERROLE)
                         join user in UnitWork.Find<User>(null) on userRole.FirstId equals user.Id into temp
-                        from c in temp.DefaultIfEmpty()
+                        from c in temp.Where(u => u.Id != null)
                         select c;
 
             return new TableData
@@ -163,6 +196,22 @@ namespace OpenAuth.App
                 Data = users.Skip((request.page - 1) * request.limit).Take(request.limit)
             };
         }
+
+        public TableData LoadByOrg(QueryUserListByOrgReq request)
+        {
+            var users = from userRole in UnitWork.Find<Relevance>(u =>
+                    u.SecondId == request.orgId && u.Key == Define.USERORG)
+                        join user in UnitWork.Find<User>(null) on userRole.FirstId equals user.Id into temp
+                        from c in temp.Where(u => u.Id != null)
+                        select c;
+
+            return new TableData
+            {
+                Count = users.Count(),
+                Data = users.Skip((request.page - 1) * request.limit).Take(request.limit)
+            };
+        }
+
         public async Task<List<User>> LoadByRoleName(string roleName)
         {
             var role = await UnitWork.Find<Role>(r => r.Name.Equals(roleName)).FirstOrDefaultAsync();

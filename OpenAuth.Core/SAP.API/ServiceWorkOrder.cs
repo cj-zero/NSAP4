@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using OpenAuth.Repository.Domain;
-using OpenAuth.Repository.Domain.Serve;
 
 namespace SAP.API
 {
@@ -73,7 +72,7 @@ namespace SAP.API
                     }
                     if (thisWorkOrder.ProblemType != null)
                     {
-                        sc.ProblemType = thisWorkOrder.ProblemType.PrblmTypeID;
+                        sc.ProblemType = thisWorkOrder.ProblemType.PrblmTypID;
                     }
                     sc.Description = thisWorkOrder.Remark;
                     //sc.TechnicianCode = thisWorkOrder.ServiceOrder.SupervisorId;

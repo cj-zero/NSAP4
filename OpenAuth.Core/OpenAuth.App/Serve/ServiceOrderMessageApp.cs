@@ -41,10 +41,12 @@ namespace OpenAuth.App.Serve
             await UnitWork.AddAsync(obj);
             await UnitWork.SaveAsync();
 
-
-            req.ServiceOrderMessagePictures.ForEach(p => { p.ServiceOrderMessageId = obj.Id; });
-            await UnitWork.BatchAddAsync(req.ServiceOrderMessagePictures.ToArray());
-            await UnitWork.SaveAsync();
+            if (req.ServiceOrderMessagePictures != null && req.ServiceOrderMessagePictures?.Count > 0)
+            {
+                req.ServiceOrderMessagePictures?.ForEach(p => { p.ServiceOrderMessageId = obj.Id; });
+                await UnitWork.BatchAddAsync(req.ServiceOrderMessagePictures?.ToArray());
+                await UnitWork.SaveAsync();
+            }
             await PushMessageToApp(req.AppUserId, "服务单消息", $"{obj.Replier}给你发送消息：{obj.Content}");
         }
 

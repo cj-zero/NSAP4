@@ -132,7 +132,7 @@ namespace OpenAuth.App
         /// </summary>
         /// <typeparam name="U">U必须是一个继承TreeEntity的结构</typeparam>
         /// <param name="entity"></param>
-        public void ChangeModuleCascade<U>(U entity) where U : TreeEntity
+        public void CaculateCascade<U>(U entity) where U : TreeEntity
         {
             if (entity.ParentId == "") entity.ParentId = null;
             string cascadeId;
