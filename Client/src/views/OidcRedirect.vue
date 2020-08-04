@@ -5,16 +5,8 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
 export default {
   name: 'OidcRedirect',
-  data: function() {
-return {
-    ...mapGetters([
-      'oidcIsAuthenticated'
-    ])
-  };
-},
   created() {
     if (this.$store.getters.oidcUser) {
       this.$router.push('/')

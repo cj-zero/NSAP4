@@ -6,7 +6,8 @@ const app = {
       opened: !+Cookies.get('sidebarStatus'),
       withoutAnimation: false
     },
-    device: 'desktop'
+    device: 'desktop',
+    themeStatus: Cookies.get('themeStatus') === undefined ? 1 : Cookies.get('themeStatus')
   },
   mutations: {
     TOGGLE_SIDEBAR: state => {
@@ -25,6 +26,10 @@ const app = {
     },
     TOGGLE_DEVICE: (state, device) => {
       state.device = device
+    },
+    SAVE_THEME(state, data) {
+      state.themeStatus = data
+      Cookies.set('themeStatus', data)
     }
   },
   actions: {
@@ -36,7 +41,13 @@ const app = {
     },
     ToggleDevice({ commit }, device) {
       commit('TOGGLE_DEVICE', device)
+    },
+    saveTheme({commit}, data) {
+      commit('SAVE_THEME', data)
     }
+  },
+  getters: {
+    themeStatus: state => state.themeStatus
   }
 }
 

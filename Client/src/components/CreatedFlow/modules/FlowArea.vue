@@ -28,14 +28,6 @@
       @mousewheel="scaleContainer"
       @DOMMouseScroll="scaleContainer"
       @contextmenu="showContainerContextMenu">
-      <!-- <draggable id="toDraggable"
-        v-model="flowData.nodes"
-        tag="div"
-        v-bind="{group:'flow',animation: 200}"
-        @end="handleMoveEnd"
-        @add="handleAddFormItem"
-        style="width: 100%; height: 100%;position: relative;"
-      > -->
         <template v-for="node in flowData.nodes">
           <flow-node
             :key="node.id"
@@ -53,7 +45,6 @@
             @hideAlignLine="hideAlignLine">
           </flow-node>
         </template>
-      <!-- </draggable> -->
       <!-- <div class="rectangle-multiple" v-if="rectangleMultiple.flag && rectangleMultiple.multipling"
         :style="{ top: rectangleMultiple.position.top + 'px', left: rectangleMultiple.position.left + 'px', width: rectangleMultiple.width + 'px', height: rectangleMultiple.height + 'px' }">
       </div> -->
@@ -103,6 +94,7 @@ import draggable from 'vuedraggable'
 import { flowConfig } from '../config/args-config.js'
 import { ZFSN } from '../util/ZFSN.js'
 import FlowNode from './FlowNode'
+import {mapGetters, mapActions} from 'vuex'
 // import { connect } from 'tls';
 // import html2canvas from 'html2canvas'
 // import canvg from 'canvg'
@@ -116,7 +108,7 @@ export default {
   data() {
     return {
       ctx: null,
-      currentSelect: this.select,
+      // currentSelect: this.select,
       currentSelectGroup: this.selectGroup,
       states: [{
         type: '4',
@@ -190,8 +182,16 @@ export default {
       clipboard: []
     }
   },
+  computed: {
+    ...mapGetters({
+      currentSelect: 'currentSelect'
+    })
+  },
   mounted() {},
   methods: {
+    ...mapActions({
+      saveCurrentSelect: 'saveCurrentSelect'
+    }),
     handleMoveEnd({ newIndex, oldIndex }) {
       console.log(newIndex, oldIndex)
     },
@@ -418,26 +418,34 @@ export default {
         }
       })
     },
-    scaleContainer() {
-      // const that = this
+    scaleContainer(e) {
+      e.preventDefault()
+      const that = this
 
-      // const event = window.event || e
+      const event = window.event || e
+      // console.log(window.event.wheelDelta, that.container.scaleFlag, that.browserType, that.container.scale)
 
-      // if (that.container.scaleFlag) {
-      //   if (that.browserType === 2) {
-      //     if (event.detail < 0) {
-      //       that.enlargeContainer()
-      //     } else {
-      //       that.narrowContainer()
-      //     }
-      //   } else {
-      //     if (event.deltaY < 0) {
-      //       that.enlargeContainer()
-      //     } else if (that.container.scale) {
-      //       that.narrowContainer()
-      //     }
-      //   }
-      // }
+      if (that.container.scaleFlag) {
+        if (that.browserType === 2) {
+          if (event.detail < 0) {
+            that.enlargeContainer()
+          } else {
+            that.narrowContainer()
+          }
+        } else {
+          if (event.deltaY < 0) {
+            that.enlargeContainer()
+          } else if (that.container.scale) {
+            that.narrowContainer()
+          }
+        }
+      } else {
+        if (event.wheelDelta > 0) {
+            that.enlargeContainer()
+          } else {
+            that.narrowContainer()
+          }
+      }
     },
     enlargeContainer() {
       const that = this
@@ -732,7 +740,8 @@ export default {
       }
     },
     selectContainer() {
-      this.currentSelect = {}
+      const currentSelect = {}
+      this.saveCurrentSelect(currentSelect)
       this.$emit('getShortcut')
     },
     isMultiple(callback) {
@@ -796,8 +805,8 @@ export default {
     }
   },
   watch: {
-    select(val) {
-      this.currentSelect = val
+    currentSelect() {
+      // this.currentSelect = val
       if (this.tempLinkId !== '') {
         document.getElementById(this.tempLinkId) && document.getElementById(this.tempLinkId).classList && document.getElementById(this.tempLinkId).classList.remove('link-active')
         this.tempLinkId = ''
@@ -806,12 +815,6 @@ export default {
         this.tempLinkId = this.currentSelect.id
         document.getElementById(this.currentSelect.id).classList.add('link-active')
       }
-    },
-    currentSelect: {
-      handler(val) {
-        this.$emit('update:select', val)
-      },
-      deep: true
     },
     selectGroup(val) {
       this.currentSelectGroup = val

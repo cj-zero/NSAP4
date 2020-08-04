@@ -24,7 +24,7 @@
         </div>
         <el-table
           ref="multipleTable"
-          height="calc(100% - 65px - 10px)"
+          height="calc(100% - 52px - 36px)"
           v-if="loginKey === 'loginUser'"
           :data="tableData.datas"
           tooltip-effect="dark"
@@ -99,7 +99,7 @@
           :background="false"
           v-if="loginKey === 'loginUser'"
           layout="prev, pager, next"
-          :total="tableData.total" :page-size="tableData.listQuery.limit" @current-change="handlePageSearch" style="margin-top: 0;text-align: right;">
+          :total="tableData.total" :page-size="tableData.listQuery.limit" @current-change="handlePageSearch" style="margin-top: 3px;text-align: right;">
         </el-pagination>
       </div>
     </div>
@@ -289,16 +289,12 @@ export default {
 </script>
 <style lang="scss">
   .select-users-wrap{
-    .ellipsis{
-      width: 100%;
-      overflow:hidden;
-      white-space:nowrap;
-      text-overflow: ellipsis;
-      display:inline-block;
+    .part-box{
+      border: none;
     }
-    .ruleSpan{
-      cursor: pointer;
-      color: #409eff;
+    .table-box{
+      border: 1px solid #e4e4e4;
+      border-left: 0;
     }
     .custom-card{
       height: 100%;
@@ -306,31 +302,8 @@ export default {
         height:calc(100% - 34px);overflow: auto;
       }
     }
-    .flex-row{
-      width: 100%;
-      display: flex;
-      flex-direction: row;
-      box-sizing: border-box;
-    }
-    .flex-column{
-      display: flex;
-      flex-direction: column;
-      box-sizing: border-box;
-    }
     .flex-item{
       overflow: hidden;
-    }
-    .VMB{
-      &::before{
-        content: "";
-        display: inline-block;
-        height: 100%;
-        vertical-align: middle;
-      }
-      .VM{
-        display: inline-block;
-        vertical-align: middle;
-      }
     }
   }
 </style>

@@ -6,17 +6,15 @@ import qs from 'qs'
 // 创建axios实例
 const service = axios.create({
   baseURL: process.env.VUE_APP_BASE_API, // api的base_url
-  timeout: 50000 ,// 请求超时时间
+  timeout: 50000 // 请求超时时间
 })
 
 // request拦截器
 service.interceptors.request.use(config => {
   if (store.getters.token) {
     config.headers['X-Token'] = getToken() // 让每个请求携带自定义token 请根据实际情况自行修改
-    // config.headers['Access-Control-Allow-Origin']='*'
-      // config.headers['Content-Type']='application/json;charset=UTF-8'
-    //  config.defaults.headers.post['Content-Type'] = 'application/json;charset=UTF-8';
   }
+
   if (store.getters.isIdentityAuth) {
     config.headers['Authorization'] = 'Bearer ' + store.getters.oidcAccessToken
   }
@@ -32,6 +30,7 @@ service.interceptors.request.use(config => {
   console.log(error) // for debug
   Promise.reject(error)
 })
+
 // respone拦截器
 service.interceptors.response.use(
   response => {
@@ -52,13 +51,11 @@ service.interceptors.response.use(
           })
         })
       } else {
-        if(!res.code===205){
-          Message({
-            message: res.message || res.msg,
-            type: 'error',
-            duration: 5 * 1000
-          })
-        }
+        Message({
+          message: res.message || res.msg,
+          type: 'error',
+          duration: 5 * 1000
+        })
       }
       return Promise.reject(res.message)
     } else {
@@ -66,13 +63,13 @@ service.interceptors.response.use(
     }
   },
   error => {
-    // console.log('err' + error)// for debug
-    // Message({
-    //   message: '请先启动OpenAuth.WebApi，再刷新本页面，异常详情：' + error.message,
-    //   type: 'error',
-    //   duration: 10 * 1000
-    // })
-     return Promise.reject(error)
+    console.log('err' + error)// for debug
+    Message({
+      message: '请先启动OpenAuth.WebApi，再刷新本页面，异常详情：' + error.message,
+      type: 'error',
+      duration: 10 * 1000
+    })
+    return Promise.reject(error)
   }
 )
 

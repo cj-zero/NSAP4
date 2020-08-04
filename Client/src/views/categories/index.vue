@@ -3,8 +3,8 @@
   <div class="categories-box">
     <div class="categories-container flex-row">
       <div style="border-right: 1px solid #ccc;">
-        <div class="buttons-box">
-          <el-button :icon="changeIcon(btn.icon)" size="mini" v-for="btn of categoryBtns" v-bind:key="btn.Id" class="filter-item" @click="onBtnClicked(btn.domId)">{{btn.name}}</el-button>
+        <div class="buttons-box filter-container">
+          <el-button :icon="`iconfont icon-${btn.icon}`" :type="btn.class" size="mini" v-for="btn of categoryBtns" v-bind:key="btn.Id" class="filter-item" @click="onBtnClicked(btn.domId)">{{btn.name}}</el-button>
           <div @keyup.13="handleSearchCategoryTypes">
             <el-input
               placeholder="请输入内容"
@@ -15,7 +15,7 @@
             <el-button class="filter-item" size="mini" v-waves icon="el-icon-search" @click="handleSearchCategoryTypes">搜索</el-button>
           </div>
         </div>
-        <el-card style="height: calc(100% - 86px);overflow: auto;" shadow="never" class="body-small custom-card">
+        <el-card shadow="never" class="body-small categories-menu-card">
           <div slot="header" class="clearfix">
             <el-button type="text" style="padding: 0 11px" @click="getAllCategories">全部字典>></el-button>
           </div>
@@ -33,7 +33,7 @@
             </el-input>
             
             <el-button class="filter-item" size="mini"  v-waves icon="el-icon-search" @click="handleFilter">搜索</el-button>
-            <el-button :icon="changeIcon(btn.icon)" size="mini" v-for="btn of typesBtns" v-bind:key="btn.Id" class="filter-item" @click="onBtnClicked(btn.domId)">{{btn.name}}</el-button>
+            <el-button :icon="`iconfont icon-${btn.icon}`" :type="btn.class" size="mini" v-for="btn of typesBtns" v-bind:key="btn.Id" class="filter-item" @click="onBtnClicked(btn.domId)">{{btn.name}}</el-button>
           </div>
         </sticky>
         <el-table height="calc(100% - 52px - 44px)" ref="mainTable"  :key='tableKey' :data="list" v-loading="listLoading" border fit highlight-current-row
@@ -46,11 +46,6 @@
               </template>
             </el-table-column>
           </template>
-          <!-- <el-table-column v-if="isShowOperation" align="center" :label="'操作'" width="100" class-name="small-padding fixed-width">
-            <template slot-scope="scope">
-              <el-button  type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
-            </template>
-          </el-table-column> -->
         </el-table>
         <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="handleCurrentChange" />
       </el-main>
@@ -124,11 +119,10 @@ import { mapGetters } from 'vuex'
 import * as categorys from '@/api/categorys'
 import waves from '@/directive/waves' // 水波纹指令
 import Sticky from '@/components/Sticky'
-// import permissionBtn from '@/components/PermissionBtn'
 import Pagination from '@/components/Pagination'
 import elDragDialog from '@/directive/el-dragDialog'
 export default {
-  name: 'categories',
+  name: 'category',
   components: { Sticky, Pagination },
   directives: {
     waves,
@@ -215,7 +209,7 @@ export default {
     categoryBtns() {
       var route = this.$route
       var elements = route.meta.elements
-      elements = elements.filter(item => (item.domId === 'btnDelCategory' || item.domId === 'btnAddCategory')).sort((a, b) => {
+      elements = elements && elements.length > 0 && elements.filter(item => (item.domId === 'btnDelCategory' || item.domId === 'btnAddCategory')).sort((a, b) => {
         return a.sort - b.sort
       })
       return elements || []
@@ -223,7 +217,7 @@ export default {
     typesBtns() {
       var route = this.$route
       var elements = route.meta.elements
-      elements = elements.filter(item => (item.domId !== 'btnDelCategory' && item.domId !== 'btnAddCategory' && item.domId !== 'btnRefresh')).sort((a, b) => {
+      elements = elements && elements.length > 0 && elements.filter(item => (item.domId !== 'btnDelCategory' && item.domId !== 'btnAddCategory' && item.domId !== 'btnRefresh')).sort((a, b) => {
         return a.sort - b.sort
       })
       return elements || []
@@ -245,14 +239,6 @@ export default {
     this.loadCategoryTypes()
   },
   methods: {
-    changeIcon(icon) { // 要转换数据库里面的layui图标
-      if (icon === 'layui-icon-add-1') {
-        return 'el-icon-plus'
-      } else if (icon.indexOf('layui') >= 0) {
-        return icon.replace('layui', 'el')
-      }
-      return icon
-    },
     getAllCategories() {
       this.listQuery.TypeId = ''
       this.listQuery.page = 1
@@ -306,7 +292,6 @@ export default {
       categorys.getList(this.listQuery).then(response => {
         response.columnHeaders.forEach((item) => {
           item.key = item.key.substring(0, 1).toLowerCase() + item.key.substring(1)
-          // console.log(item.key)
         })
         this.headerList = response.columnHeaders.filter(u => u.browsable)
         this.list = response.data
@@ -473,12 +458,18 @@ export default {
     height: calc(100vh - 84px);
     box-sizing: border-box;
     padding: 10px;
+    .categories-menu-card{
+      height: calc(100% - 86px);
+      overflow: auto;
+      .el-card__body{
+        height: auto;
+      }
+    }
   }
   .categories-box{
     height: 100%;
     background: #fff;
     box-sizing: border-box;
-    // padding: 20px;
     .categories-container{
       width: 100%;
       height: 100%;
@@ -496,9 +487,6 @@ export default {
       background: #f5f5f5;
     }
     .categories-content{
-      // position: absolute;
-      // left: 230px;
-      // right: 0px;
       height: 100%;
       padding: 0;
       .buttons-box{
