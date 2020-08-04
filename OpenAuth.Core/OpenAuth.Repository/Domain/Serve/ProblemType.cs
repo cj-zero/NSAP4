@@ -27,7 +27,7 @@ namespace OpenAuth.Repository.Domain
             this.Name = string.Empty;
             this.Description = string.Empty;
             this.ParentId = string.Empty;
-            this.PrblmTypeID = 0;
+            this.PrblmTypID = 0;
         }
 
         
