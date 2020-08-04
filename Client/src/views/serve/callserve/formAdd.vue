@@ -314,7 +314,6 @@
     </div>
     <el-collapse
       v-model="activeNames"
-      @change="handleOpen"
       class="openClass"
       v-if="formList.length>1"
     >
@@ -852,11 +851,10 @@ export default {
       this.solutionCount = response.count;
       this.listLoading = false;
     });
-
-        if (this.propForm && this.propForm.length) {
-          this.formList = this.propForm;
-          console.log(this.formList);
-        }
+    if (this.propForm && this.propForm.length) {
+      console.log(22)
+      this.formList = this.propForm;
+    }
   
   },
   computed: {
@@ -867,16 +865,15 @@ export default {
   watch: {
     newValue: {
       handler: function (Val, Val1) {
-        // this.serLoad = await true
         let newVal = JSON.parse(Val);
         let oldVal = JSON.parse(Val1);
-        // let chengeIndex= ''
+        if(!this.ifEdit){
         newVal.map((item, index) => {
           //循环新数组的每一项对象
+          console.log(11)
           if (JSON.stringify(newVal[index]) !== JSON.stringify(oldVal[index])) {
             let newValChild = newVal[index]; //新值的每一项
             let oldValChild = oldVal[index];
-            //  console.log()
             if (newVal.length == oldVal.length) {
               for (let item1 in oldValChild) {
                 if (newValChild[item1] !== oldValChild[item1]) {
@@ -889,7 +886,7 @@ export default {
                       return;
                     } else if (item1 == "problemTypeId") {
                       sliceList.map((itemF, ind) => {
-                        if (ind !== 0) {
+                        if (ind !== 0) {                            
                           itemF.problemTypeId = newValChild.problemTypeId;
                           itemF.problemTypeName = newValChild.problemTypeName;
                         }
@@ -914,7 +911,8 @@ export default {
             }
           }
         });
-                this.$emit("change-form", newVal);
+        }
+      this.$emit("change-form", newVal);
 
       },
 
@@ -986,9 +984,6 @@ export default {
     solutionget(res) {
       this.datasolution = res;
     },
-    handleOpen(val) {
-      console.log(val);
-    },
     NodeClick(res) {
       console.log(this.formList, this.sortForm - 1);
       this.formList[this.sortForm - 1].problemTypeName = res.name;
@@ -997,8 +992,7 @@ export default {
       this.proplemTree = false;
     },
     solutionClick(res) {
-      console.log(this.formList);
-      this.formList[this.sortForm - 1].solutionsubject = "";
+       console.log(this.formList)
       this.formList[this.sortForm - 1].solutionsubject = res.subject;
       this.formList[this.sortForm - 1].solutionId = res.id;
       // this.problemLabel = res.name;
