@@ -80,7 +80,7 @@ namespace OpenAuth.App
         /// 按id批量删除
         /// </summary>
         /// <param name="ids"></param>
-        public void Delete(string[] ids)
+        public virtual void Delete(string[] ids)
         {
             Repository.Delete(u => ids.Contains(u.Id));
         }
@@ -88,7 +88,7 @@ namespace OpenAuth.App
         /// 按条件删除
         /// </summary>
         /// <param name="ids"></param>
-        public void Delete(Expression<Func<T, bool>> exp)
+        public virtual void Delete(Expression<Func<T, bool>> exp)
         {
             Repository.Delete(exp);
         }

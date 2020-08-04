@@ -19,6 +19,7 @@ namespace OpenAuth.App
     public class UserManagerApp : BaseApp<User>
     {
         private RevelanceManagerApp _revelanceApp;
+        private OrgManagerApp _orgManagerApp;
 
         public User GetByAccount(string account)
         {
@@ -169,11 +170,26 @@ namespace OpenAuth.App
 
 
         public UserManagerApp(IUnitWork unitWork, IRepository<User> repository,
-            RevelanceManagerApp app, IAuth auth) : base(unitWork, repository, auth)
+            RevelanceManagerApp app, IAuth auth, OrgManagerApp orgManagerApp) : base(unitWork, repository, auth)
         {
             _revelanceApp = app;
+            _orgManagerApp = orgManagerApp;
         }
-
+        /// <summary>
+        /// 删除用户,包含用户与组织关系、用户与角色关系
+        /// </summary>
+        /// <param name="ids"></param>
+        public override void Delete(string[] ids)
+        {
+            UnitWork.Delete<Relevance>(u => (u.Key == Define.USERROLE || u.Key == Define.USERORG)
+                               && ids.Contains(u.FirstId));
+            UnitWork.Delete<User>(u => ids.Contains(u.Id));
+            UnitWork.Save();
+        }
+        /// <summary>
+        /// 修改密码
+        /// </summary>
+        /// <param name="request"></param>
         public void ChangePassword(ChangePasswordReq request)
         {
             Repository.Update(u => u.Account == request.Account, user => new User
@@ -181,7 +197,11 @@ namespace OpenAuth.App
                 Password = Encryption.Encrypt(request.Password)
             });
         }
-
+        /// <summary>
+        /// 获取指定角色包含的用户列表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         public TableData LoadByRole(QueryUserListByRoleReq request)
         {
             var users = from userRole in UnitWork.Find<Relevance>(u =>
@@ -196,7 +216,11 @@ namespace OpenAuth.App
                 Data = users.Skip((request.page - 1) * request.limit).Take(request.limit)
             };
         }
-
+        /// <summary>
+        /// 获取指定机构包含的用户列表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         public TableData LoadByOrg(QueryUserListByOrgReq request)
         {
             var users = from userRole in UnitWork.Find<Relevance>(u =>
