@@ -24,18 +24,6 @@ import Layout from '../views/layout/Layout'
   }
 **/
 export const constantRouterMap = [
-  {
-    path: '/redirect',
-    component: Layout,
-    hidden: true,
-    meta: { sortNo: 0 }, 
-    children: [
-      {
-        path: '/redirect/:path(.*)',
-        component: () => import('@/views/redirect/index')
-      }
-    ]
-  },
   { path: '/login', component: () => import('@/views/login/index'), meta: { sortNo: 0 }, hidden: true },
   { path: '/404', component: () => import('@/views/errorPage/404'), meta: { sortNo: 0 }, hidden: true },
   { path: '/401', component: () => import('@/views/errorPage/401'), meta: { sortNo: 0 }, hidden: true },
@@ -52,7 +40,6 @@ export const constantRouterMap = [
   //     component: () => import('@/views/flowschemes/add')
   //   }]
   // },
-
   {
     path: '/oidc-callback', // Needs to match redirect_uri in you oidcSettings
     name: 'oidcCallback',
@@ -70,29 +57,43 @@ export const constantRouterMap = [
     component: oidcRedirect
   },
   {
-    path: '',
+    path: '/',
     component: Layout,
     redirect: 'dashboard',
+    name: 'layout',
     meta: { sortNo: 0 },
     children: [{
-      path: 'dashboard',
+      path: '/dashboard',
       name: 'dashboard',
-      meta: { title: '主页', icon: 'dashboard', sortNo: 0 },
+      meta: { title: '主页', icon: 'iconfont icon-zhuyeicon', sortNo: 0 },
       component: () => import('@/views/dashboard/index')
-    }]
-  },
-  {
-    path: '/profile',
-    hidden: true,
-    component: Layout,
-    meta: { sortNo: 0 },
-    children: [{
-      path: '',
+    },{
+      path: '/profile',
       name: 'profile',
+      hidden: true,
       meta: { title: '个人中心', icon: 'guide', sortNo: 0 },
       component: () => import('@/views/usermanager/profile')
+    },{
+      // path: '/iframePage/:url/:name',
+      path: '/iframePage/:code',
+      name: 'iframePage',
+      hidden: true,
+      meta: { title: '接口文档', icon: 'guide', sortNo: 0 },
+      component: () => import('@/views/iframePage/index')
     }]
   }
+  // {
+  //   path: '/',
+  //   hidden: true,
+  //   component: Layout,
+  //   meta: { sortNo: 0 },
+  //   children: [{
+  //     path: '/profile',
+  //     name: 'profile',
+  //     meta: { title: '个人中心', icon: 'guide', sortNo: 0 },
+  //     component: () => import('@/views/usermanager/profile')
+  //   }]
+  // }
   // {
   //   path: '/swagger',
   //   component: Layout,

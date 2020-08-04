@@ -1,5 +1,5 @@
 <template>
-  <div class="createPost-container" style="height: 100%;overflow:hidden;">
+  <div class="createPost-container">
     <el-container style="height: 100%;">
       <el-header style="padding: 0;height: 42px;">
         <sticky :className="'sub-navbar '">
@@ -31,8 +31,6 @@
                     <el-option label="可拖拽动态表单" :value=2></el-option>
                     <el-option label="动态表单" :value=0></el-option>
                     <el-option label="自定义开发页面" :value=1></el-option>
-                    <!-- 动态element-ui在1.5版本中发布 -->
-                    <!-- <el-option label="自定义element-ui" :value=2></el-option> -->
                   </el-select>
 
                   <el-select style="margin-top: 10px;width: 100%;" v-model="postForm.webId" v-if="postForm.frmType == 1" placeholder="请选择系统内置的页面">
@@ -66,7 +64,7 @@
   import Sticky from '@/components/Sticky' // 粘性header组件
   import FormContainer from '@/components/Formcreated/index'
   import * as forms from '@/api/forms'
-  import { mapGetters } from 'vuex'
+  import { mapGetters, mapActions } from 'vuex'
 
   const defaultForm = {
     id: undefined,
@@ -91,7 +89,7 @@
       FormContainer
     },
     props: {
-      isCreate: {
+      isEdit: {
         type: Boolean,
         default: false
       }
@@ -118,7 +116,7 @@
       }
     },
     computed: {
-      ...mapGetters(['defaultorgid']),
+      ...mapGetters(['defaultorgid', 'formDetails', 'addFormDetail']),
       contentShortLength() {
         return this.postForm && this.postForm.description ? this.postForm.description.length : 0
       },
@@ -126,26 +124,40 @@
         return this.postForm.contentData && JSON.parse(this.postForm.contentData) || {}
       }
     },
-    mounted() {
-      // console.log(this.$route.query,)
-      this.postForm.frmType = this.$route.query['frmType'] !== undefined ? this.$route.query['frmType'] : 2
-      if (!this.isCreate) {
-        console.log(defaultForm)
-        this.postForm = Object.assign({}, defaultForm)
-      } else {
-        // ueditor需要准备好了调用数据，frmtype为2时，不调用ueditor
-        if (Number(this.postForm.frmType) !== 0) {
-          const id = this.$route.params && this.$route.params.id
-          this.fetchData({
-            id: id
-          })
-        }
+    beforeDestroy() {
+      if (this.postForm.frmType === 0) { // 动态表单需要获取ue中的值
+        this.postForm = Object.assign(this.postForm, this.$refs.ue.getObj())
+      } else if (this.postForm.frmType === 2) {
+        this.postForm.contentData = JSON.stringify(this.$refs.contentDataForm.handleGenerateJson())
       }
+      if(!this.postForm.id){
+        this.saveAddFormDetails(this.postForm)
+        return
+      }
+      let data = {}
+      data[this.postForm.id] = this.postForm
+      this.saveFormDetails(data)
+    },
+    mounted() {
+      this.init()
     },
 
     methods: {
+      ...mapActions(['saveFormDetails', 'saveAddFormDetails', 'updateIsRender']),
+      init() {
+        this.postForm.frmType = this.$route.query['frmType'] !== undefined ? this.$route.query['frmType'] : 2
+        if (!this.isEdit) {
+          this.postForm = Object.assign({}, this.addFormDetail || defaultForm)
+        } else {
+          // ueditor需要准备好了调用数据，frmtype为2时，不调用ueditor
+          if (Number(this.postForm.frmType) !== 0) {
+            const id = this.$route.params && this.$route.params.id
+            this.postForm = this.formDetails[id]
+          }
+        }
+      },
       ueReady() { // ueditor准备好了，来数据吧
-        if (this.isCreate && !this.postForm.contentData) {
+        if (this.isEdit && !this.postForm.contentData) {
           const id = this.$route.params && this.$route.params.id
           this.fetchData({
             id: id
@@ -169,7 +181,8 @@
           if (valid) {
             this.loading = true
             this.postForm.OrgId = this.defaultorgid
-            if (this.isCreate) {
+            this.updateIsRender(true)
+            if (this.isEdit) {
               this.postForm.id = this.$route.params && this.$route.params.id
               forms.update(this.postForm).then(() => {
                 this.loading = false
@@ -207,6 +220,9 @@
 
   .createPost-container {
     position: relative;
+    height: 100%;
+    overflow:hidden;
+    margin: 0;
 
     .createPost-main-container {
       margin: 10px;

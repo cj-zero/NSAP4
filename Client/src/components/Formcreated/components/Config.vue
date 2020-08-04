@@ -66,25 +66,7 @@
         </el-switch>
       </el-form-item>
       <el-form-item :label="'选项'" v-if="Object.keys(data.options).indexOf('options')>=0">
-        <!-- <el-radio-group v-model="data.options.remote" size="mini" style="margin-bottom:10px;">
-          <el-radio-button :label="false">静态数据</el-radio-button>
-          <el-radio-button :label="true">远端数据</el-radio-button>
-        </el-radio-group> -->
-        <!-- <template v-if="data.options.remote">
-          <div>
-            <el-input size="mini" style="" v-model="data.options.remoteFunc">
-              <template slot="prepend">远端方法</template>
-            </el-input>
-            <el-input size="mini" style="" v-model="data.options.props.value">
-              <template slot="prepend">值</template>
-            </el-input>
-            <el-input size="mini" style="" v-model="data.options.props.label">
-              <template slot="prepend">标签</template>
-            </el-input>
-          </div>
-        </template> -->
         <template>
-        <!-- <template v-else> -->
           <template v-if="data.type=='radio' || (data.type=='select'&&!data.options.multiple)">
             <el-radio-group v-model="data.options.defaultValue" style="line-height: 40px;" size="small">
               <draggable tag="ul" :list="data.options.options" 
@@ -98,7 +80,6 @@
                   >
                     <el-input :style="{'width': data.options.showLabel? '80px': '180px' }" size="mini" v-model="item.value"></el-input>
                     <el-input style="width:80px;" size="mini" v-if="data.options.showLabel" v-model="item.label"></el-input>
-                    <!-- <input v-model="item.value"/> -->
                   </el-radio>
                   <i class="drag-item" style="font-size: 16px;margin: 0 5px;cursor: move;"><i class="el-icon-rank" title="拖动"></i></i>
                   <el-button @click="handleOptionsRemove(index)" circle plain type="danger" size="mini" title="删除" icon="el-icon-delete" style="padding: 4px;margin-left: 5px;"></el-button>
@@ -137,23 +118,6 @@
         </template>
         
       </el-form-item>
-
-      <!-- <el-form-item :label="'远端数据'" v-if="data.type=='cascader'">
-        <div>
-          <el-input size="mini" style="" v-model="data.options.remoteFunc">
-            <template slot="prepend">远端方法</template>
-          </el-input>
-          <el-input size="mini" style="" v-model="data.options.props.value">
-            <template slot="prepend">值</template>
-          </el-input>
-          <el-input size="mini" style="" v-model="data.options.props.label">
-            <template slot="prepend">标签</template>
-          </el-input>
-          <el-input size="mini" style="" v-model="data.options.props.children">
-            <template slot="prepend">子选项</template>
-          </el-input>
-        </div>
-      </el-form-item> -->
 
       <el-form-item :label="'默认值'" v-if="Object.keys(data.options).indexOf('defaultValue')>=0 && (data.type == 'textarea' || data.type == 'input' ||  data.type == 'text' || data.type=='rate' || data.type=='color' || data.type=='switch')">
         <el-input size="small" v-if="data.type=='textarea'" type="textarea" :rows="5" v-model="data.options.defaultValue"></el-input>
@@ -233,17 +197,6 @@
         <el-form-item :label="'最大上传数'">
           <el-input size="small" type="number" v-model.number="data.options.length"></el-input>
         </el-form-item>
-        <!-- <el-form-item :label="'使用七牛上传'">
-          <el-switch size="small" v-model="data.options.isQiniu"></el-switch>
-        </el-form-item> -->
-        <!-- <template v-if="data.options.isQiniu">
-          <el-form-item label="Domain" :required="true">
-          <el-input v-model="data.options.domain"></el-input>
-          </el-form-item>
-          <el-form-item :label="'获取七牛Token方法'" :required="true">
-            <el-input v-model="data.options.tokenFunc"></el-input>
-          </el-form-item>
-        </template> -->
         <template>
           <el-form-item :label="'图片上传地址'" :required="true">
             <el-input size="small" v-model="data.options.action"></el-input>
@@ -309,7 +262,7 @@
           <el-checkbox size="small" v-model="data.options.clearable" v-if="Object.keys(data.options).indexOf('clearable')>=0">显示清除按钮</el-checkbox>
           <el-checkbox size="small" v-model="data.options.arrowControl" v-if="Object.keys(data.options).indexOf('arrowControl')>=0">使用箭头进行时间选择</el-checkbox>
           <el-checkbox size="small" v-model="data.options.isDelete" v-if="Object.keys(data.options).indexOf('isDelete')>=0">删除</el-checkbox>
-          <el-checkbox size="small" v-model="data.options.isCreate" v-if="Object.keys(data.options).indexOf('isCreate')>=0">编辑</el-checkbox>
+          <el-checkbox size="small" v-model="data.options.isEdit" v-if="Object.keys(data.options).indexOf('isEdit')>=0">编辑</el-checkbox>
           
         </el-form-item>
         <el-form-item :label="'校验'">

@@ -5,9 +5,6 @@
         <i class="el-icon-close" @click="visible = false" style="cursor:pointer;"></i>
       </div>
       <cron v-model="cron_" :size="size" @change="change"/>
-      <!-- <el-input slot="reference" v-model="cron_" :placeholder="$t('common.inputPlaceholder')" :size="size">
-        <el-button slot="append" icon="el-icon-refresh" @click="reset"/>
-      </el-input> -->
       <el-input readonly @change="setCron" slot="reference" :value="value" @input="$emit('input', $event.target.value)" :placeholder="$t('common.inputPlaceholder')" :size="size">
         <el-button slot="append" icon="el-icon-refresh" @click="reset"/>
       </el-input>
@@ -52,10 +49,6 @@ export default {
   },
   methods: {
     setCron(newValue) {
-      // if (!newValue || newValue.trim().length < 11) {
-      //   this.$message.error(this.$t('common.wordNumError'))
-      //   return
-      // }
       this.cron_ = newValue
     },
     change(cron) {

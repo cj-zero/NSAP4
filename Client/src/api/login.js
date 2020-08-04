@@ -45,17 +45,9 @@ export function getModulesTree() {
   })
 }
 
-export function getOrgs(params) {
+export function getOrgs() {
   return request({
-    url: '/check/getorgs/',
-    method: 'get',
-     params
-  })
-}
-
-export function getCorp() {
-  return request({
-    url: '/Check/GetCorp',
+    url: '/check/getorgs',
     method: 'get',
     params: { token: getToken() }
   })
@@ -73,22 +65,5 @@ export function logout() {
   return request({
     url: '/check/logout',
     method: 'post'
-  })
-}
-
-
-export function GetQrCode(data) {  //获取二维码
-  return request({
-    url: '/QrCode/Get',
-    method: 'get',
-    params:data
-  })
-}
-
-export function ValidateLogin(data) {  //获取二维码
-  return request({
-    url: '/QrCode/ValidateLoginState',
-    method: 'get',
-    params:data
   })
 }

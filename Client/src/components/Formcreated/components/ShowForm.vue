@@ -77,7 +77,6 @@ export default {
     }
   },
   mounted() {
-    console.log('data>>>>>>>>>', this.data)
     document.body.ondrop = function(event) {
       const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1
       if (isFirefox) {

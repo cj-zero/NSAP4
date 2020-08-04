@@ -5,7 +5,6 @@
 			<el-input @keyup.enter.native="handleFilter" size="mini" prefix-icon="el-icon-search" style="width: 200px;margin-bottom: 0;" class="filter-item" :placeholder="'名称'"
 				v-model="listQuery.key">
 			</el-input>
-      <!-- <el-button class="filter-item" type="success" v-waves icon="el-icon-search" @click="handleFilter">搜索</el-button> -->
       <permission-btn moduleName='/flowinstances/index' size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
 
       <el-checkbox class="filter-item" style='margin-left:15px;' @change='tableKey=tableKey+1' v-model="showDescription">描述</el-checkbox>
@@ -51,27 +50,22 @@
 </el-table-column>
 </el-table>
 <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="handleCurrentChange" />
-
-
-<!-- <div class="pagination-container">
-      <el-pagination background @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="listQuery.page" :page-sizes="[10,20,30, 50]" :page-size="listQuery.limit" layout="total, sizes, prev, pager, next, jumper" :total="total">
-      </el-pagination>
-    </div> -->
 </div>
 </div>
 
 </template>
 
 <script>
-     import Layout from '@/views/layout/Layout'
+    import Layout from '@/views/layout/Layout'
     import * as flowinstances from '@/api/flowinstances'
     import waves from '@/directive/waves' // 水波纹指令
     import Sticky from '@/components/Sticky'
     import permissionBtn from '@/components/PermissionBtn'
     import Pagination from '@/components/Pagination'
+    import { mapActions, mapGetters } from 'vuex'
 
     export default {
-      name: 'flowinstances',
+      name: 'flowInstance',
       components: {
         Sticky,
         permissionBtn,
@@ -145,6 +139,16 @@
           return statusMap[isFinish]
         }
       },
+      computed: {
+        ...mapGetters(['isMineRender'])
+      },
+      beforeRouteEnter(to, from ,next) {
+        next(vm => {
+          if(vm.isMineRender){
+            vm.getList()
+          }
+        })
+      },
       created() {
         this.getList()
         var addRouter = [{
@@ -158,11 +162,10 @@
           },
           children: [
             {
-              path: '/flowinstances/detail/:id',
+              path: 'detail/:id',
               component: () =>
-              import('@/views/flowinstances/detail'),
+                            import('@/views/flowinstances/detail'),
               name: 'flowinstanceDtl',
-              isDetail: true,
               hidden: true,
               meta: {
                 notauth: true,
@@ -202,6 +205,7 @@
         this.$router.addRoutes(addRouter)
       },
       methods: {
+        ...mapActions(['updateInstancesIsRender']),
         rowClick(row) {
           this.$refs.mainTable.clearSelection()
           this.$refs.mainTable.toggleRowSelection(row)
@@ -245,6 +249,7 @@
             this.list = response.data
             this.total = response.count
             this.listLoading = false
+            this.updateInstancesIsRender({type: 'isMineRender', val: false})
           })
         },
         handleFilter() {
@@ -268,12 +273,11 @@
           row.isFinish = isFinish
         },
         handleUpdate(row) { // 弹出编辑框
-          // this.$router.push('/flowinstances/detail/' + row.id)
-          this.$router.push({name:'flowinstanceDtl',params:{id:row.id}})
-          
+          this.$router.push('/flowinstances/detail/' + row.id)
         },
         handleDelete(rows) { // 多行删除
           flowinstances.del(rows.map(u => u.id)).then(() => {
+            this.updateInstancesIsRender({type: '', val: true})
             this.$notify({
               title: '成功',
               message: '删除成功',

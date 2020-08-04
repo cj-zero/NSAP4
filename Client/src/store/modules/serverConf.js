@@ -17,7 +17,7 @@ const serverConf = {
           resolve(state.isIdentityAuth)
           return
         }
-//发送请求
+
         isIdentityAuth().then(response => {
           commit('SET_IDENTITYAUTH', response.result)
           resolve(response.result)
