@@ -1,21 +1,8 @@
 <template>
- <!-- <div class="app-wrapper" :class="classObj">
-    <div v-if="device==='mobile'&&sidebar.opened" class="drawer-bg" @click="handleClickOutside"></div>
-    <sidebar class="sidebar-container"></sidebar>
-    <div class="main-container">
-      <navbar></navbar>
-      <tags-view></tags-view>
-      <app-main></app-main>
-    </div>
-  </div> -->
 	<div class="app-wrapper" :class="classObj">
 		<el-container class="flex-column">
 			<el-container class="flex-row flex-item">
-				<!-- <sidebar class="sidebar-container"></sidebar>
-				<div class="main-container flex-item">
-					<tags-view class="custom-tags-view"></tags-view> -->
-					<app-main></app-main>
-				<!-- </div> -->
+        <app-main></app-main>
 			</el-container>
 		</el-container>
 	</div>
@@ -23,24 +10,16 @@
 
 <script>
 import AppMain from './components/AppMain'
-// import ResizeMixin from './mixin/ResizeHandler'
 
 export default {
   name: 'layout',
   components: {
-    // Navbar,
-    // Sidebar,
     AppMain
-    // TagsView
   },
-  // mixins: [ResizeMixin],
   computed: {
     sidebar() {
       return this.$store.state.app.sidebar
     },
-    // device() {
-    //   return this.$store.state.app.device
-    // },
     classObj() {
       return {
         hideSidebar: !this.sidebar.opened,
@@ -51,12 +30,8 @@ export default {
     }
   },
   mounted() {
-    console.log('route', this.$router)
   },
   methods: {
-    // handleClickOutside() {
-    //   this.$store.dispatch('CloseSideBar', { withoutAnimation: false })
-    // }
   }
 }
 </script>
@@ -89,16 +64,11 @@ export default {
     padding: 0;
     line-height: 44px;
     background-color: #333;
-    // position: fixed;// me
-    // top: 0;// me
     width: 100%;
     z-index: 100;
 }
 .el-container .sidebar-container {
-    // top: 44px !important;
     height: auto !important;
-
-    // position: relative !important;// me
 }
 
 

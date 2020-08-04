@@ -24,25 +24,30 @@
               <!-- 如果需要单独处理的格式化显示，可以在这里单独处理 -->
               <el-table-column v-if="headerItem.key=='orderType'" :key="index"  :label="headerItem.description">
                 <template slot-scope="scope">
-                  <select-type :isCreate="false" typeId="SYS_INBOUNDTYPE" v-model="scope.row[headerItem.key]"></select-type>
+                  <select-type :isEdit="false" typeId="SYS_INBOUNDTYPE" v-model="scope.row[headerItem.key]"></select-type>
                 </template>
               </el-table-column>
               <el-table-column v-else-if="headerItem.key=='goodsType'" :key="index"  :label="headerItem.description">
                 <template slot-scope="scope">
-                  <select-type :isCreate="false" typeId="SYS_GOODSTYPE" v-model="scope.row[headerItem.key]"></select-type>
+                  <select-type :isEdit="false" typeId="SYS_GOODSTYPE" v-model="scope.row[headerItem.key]"></select-type>
                 </template>
               </el-table-column>
               <el-table-column v-else-if="headerItem.key=='transferType'" :key="index"  :label="headerItem.description">
                 <template slot-scope="scope">
-                  <select-type :isCreate="false" typeId="SYS_SHIPTYPE" v-model="scope.row[headerItem.key]"></select-type>
+                  <select-type :isEdit="false" typeId="SYS_SHIPTYPE" v-model="scope.row[headerItem.key]"></select-type>
                 </template>
               </el-table-column>
               <el-table-column v-else-if="headerItem.type=='String' ||headerItem.type=='DateTime'" :key="index"
                 :prop="headerItem.key" :label="headerItem.description" show-overflow-tooltip>
               </el-table-column>
+              <el-table-column v-else-if="headerItem.key=='status' || headerItem.key === 'inBondedArea' || headerItem.key === 'enable'" :label="headerItem.description" min-width="100px" :key="index">
+                <template slot-scope="scope">
+                  <span>{{handleFilterStatus(scope.row[headerItem.key], headerItem.key)}}</span>
+                </template>
+              </el-table-column>
               <el-table-column v-else :label="headerItem.description" min-width="100px" :key="index">
                 <template slot-scope="scope">
-                  <span>{{scope.row[headerItem.key]|filterInt}}</span>
+                  <span>{{scope.row[headerItem.key]}}</span>
                 </template>
               </el-table-column>
             </template>
@@ -88,12 +93,12 @@
                 </el-col>
                 <el-col :span="8">
                   <el-form-item size="mini" :label="'入库类型'" prop="orderType">
-                    <select-type :isCreate="true" :disabled="!editModel" typeId="SYS_INBOUNDTYPE" v-model="firstTemp.orderType"></select-type>
+                    <select-type :isEdit="true" :disabled="!editModel" typeId="SYS_INBOUNDTYPE" v-model="firstTemp.orderType"></select-type>
                   </el-form-item>
                 </el-col>
                 <el-col :span="8">
                   <el-form-item size="mini" :label="'商品类别'" prop="goodsType">
-                    <select-type :isCreate="true" :disabled="!editModel" typeId="SYS_GOODSTYPE" v-model="firstTemp.goodsType"></select-type>
+                    <select-type :isEdit="true" :disabled="!editModel" typeId="SYS_GOODSTYPE" v-model="firstTemp.goodsType"></select-type>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -135,7 +140,7 @@
                 </el-col>
                 <el-col :span="8">
                   <el-form-item size="mini" :label="'承运方式'" prop="transferType">
-                     <select-type :isCreate="true" :disabled="!editModel" typeId="SYS_SHIPTYPE" v-model="firstTemp.transferType"></select-type>
+                     <select-type :isEdit="true" :disabled="!editModel" typeId="SYS_SHIPTYPE" v-model="firstTemp.transferType"></select-type>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -163,7 +168,6 @@
               <el-row>
                 <el-col :span="12">
                   <el-form-item size="mini" :label="'预定时间'" prop="scheduledInboundTime">
-                    <!-- <el-input v-model="firstTemp.scheduledInboundTime" :disabled="!editModel"></el-input> -->
                     <el-date-picker
                       v-model="firstTemp.scheduledInboundTime"
                       type="datetime"
@@ -187,7 +191,6 @@
         <el-col :span="!showTitleDialog ? 24 : 12" class="fh detail-card">
           <el-card shadow="nerver" class="demo-card fh" id="secondCard">
             <div slot="header">
-              <!-- <el-button class="filter-item show-title-button" size="mini" v-waves :icon="showTitleDialog ? 'el-icon-d-arrow-left' : 'el-icon-d-arrow-right'" @click="showTitleDialog=!showTitleDialog"></el-button> -->
               <i class="show-title-button" :class="showTitleDialog ? 'el-icon-d-arrow-left' : 'el-icon-d-arrow-right'" :title="showTitleDialog ? '展开' : '收缩'" @click="showTitleDialog=!showTitleDialog"></i>
               <span v-if="radio == ''">订单明细</span>
               <span v-else>{{radio}}订单明细</span>
@@ -203,7 +206,7 @@
                 <el-table-column v-if="headerItem.type=='String'||headerItem.type=='Decimal' ||headerItem.type=='DateTime'"
                   :key="index" :prop="headerItem.key" :label="headerItem.description" show-overflow-tooltip :min-width="(headerItem.key ==='prodDate' || headerItem.key ==='expireDate') ? '150px' : '100px'">
                   <template slot-scope="scope">
-                    <div v-if="editModel && isCreate(headerItem.key)">
+                    <div v-if="editModel && isEdit(headerItem.key)">
                       <el-date-picker
                         v-model="scope.row[headerItem.key]"
                         type="date"
@@ -218,7 +221,13 @@
                     <span v-else>{{scope.row[headerItem.key]}}</span>
                   </template>
                 </el-table-column>
-
+                
+                
+                <el-table-column v-else-if="headerItem.key=='inStockStatus' || headerItem.key === 'asnStatus'" :label="headerItem.description" min-width="100px" :key="index">
+                  <template slot-scope="scope">
+                    <span>{{handleFilterStatus(scope.row[headerItem.key], headerItem.key)}}</span>
+                  </template>
+                </el-table-column>
                 <el-table-column v-else :label="headerItem.description" align="center" min-width="120px" :key="index">
                   <template slot-scope="scope">
                     <div v-if="editModel">
@@ -264,7 +273,7 @@
   import SelectType from '@/components/SelectType'
   import { mapGetters } from 'vuex'
   export default {
-    name: 'wmsInboundOrderTbls',
+    name: 'wmsInboundOrderTbl',
     components: {
       Sticky,
       permissionBtn,
@@ -350,11 +359,38 @@
         textMap: {
           update: '编辑',
           create: '添加'
-        }
+        },
+        excelName: `订单${parseTime(new Date())}`
       }
     },
     computed: {
-      ...mapGetters(['defaultorgid'])
+      ...mapGetters(['defaultorgid', 'typeDataLists']),
+      json_fields(){
+        let obj = {}
+        this.firstHeaderList.length > 0 && this.firstHeaderList.forEach(item => {
+          if(!item.description) return
+          if(item.key === 'orderType' || item.key === 'goodsType' || item.key === 'transferType'){
+            obj[item.description] = {
+              field: item.key,
+              callback: value => {
+                return this.handleFilterState(value, item.key)
+              }
+            }
+            return
+          }
+          if(item.key === 'status' || item.key === 'inBondedArea' || item.key === 'enable'){
+            obj[item.description] = {
+              field: item.key,
+              callback: value => {
+                return this.handleFilterStatus(value, item.key)
+              }
+            }
+            return
+          }
+          obj[item.description] = item.key
+        })
+        return obj
+      }
     },
     filters: {
       filterInt(val) {
@@ -381,7 +417,29 @@
       this.getList()
     },
     methods: {
-      isCreate(key) {
+      handleFilterStatus(val, key) {
+        const status = [{
+          key: false,
+          display_name: '否'
+        },{
+          key: true,
+          display_name: '是'
+        }]
+        const arr = key === 'status' ? this.statusOptions : status
+        return key === 'asnStatus' ? val === 0 ? '否' : '是' : arr.find(item => item.key === val).display_name
+      },
+      handleFilterState(val, key) {
+        const typeIds = {
+          orderType: 'SYS_INBOUNDTYPE',
+          goodsType: 'SYS_GOODSTYPE',
+          transferType: 'SYS_SHIPTYPE'
+        }
+        const obj = this.typeDataLists.length > 0 && this.typeDataLists.find(item => item.typeId === typeIds[key])
+        const arr = obj && obj.typeDatas || []
+        const item = arr.length > 0 && arr.find(item => item.dtCode === val) && arr.find(item => item.dtCode === val).name || ''
+        return item || val || ''
+      },
+      isEdit(key) {
         switch (key) {
           case 'updateUserName':
           case 'updateTime':
@@ -393,7 +451,7 @@
         }
       },
       // ------------------------通用处理函数-------------------------------------
-      onBtnClicked: function(domId) {
+      onBtnClicked: function(domId, callback) {
         console.log('you click:' + domId)
         switch (domId) {
           case 'btnAdd': // 添加新记录
@@ -446,9 +504,19 @@
             }
             this.handleSecondDel(this.multipleSelection)
             break
+          case 'btnExport':
+            this.handleDownExcel(callback)
+            break
           default:
             break
         }
+      },
+      handleDownExcel(callback){
+        let obj = {}
+        obj.json_fields = this.json_fields
+        obj.data = this.mainList
+        obj.excelName = `订单${parseTime(new Date())}`
+        callback(obj)
       },
       // ------------------------主数据列表处理------------------------------------
       getList() {
@@ -522,8 +590,6 @@
         tempData.scheduledInboundTime = tempData.scheduledInboundTime && parseTime(tempData.scheduledInboundTime, '{y}-{m}-{d} {h}:{i}:{s}')
         tempData.returnBoxNum = tempData.returnBoxNum && parseInt(tempData.returnBoxNum) || 0
         this.secondList.length > 0 && this.secondList.forEach(item => {
-          // item.prodDate = item.prodDate && parseTime(item.prodDate, '{y}-{m}-{d}')
-          // item.expireDate = item.expireDate && parseTime(item.expireDate, '{y}-{m}-{d}')
           const obj = {
             id: item.id || '',
             orderId: item.orderId || '',
@@ -681,7 +747,7 @@
 
 <style scoped>
   .el-form-item {
-    margin-bottom: 15px;
+    margin-bottom: 15px !important;
   }
 
   .m-t-lg {

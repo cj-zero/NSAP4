@@ -34,11 +34,10 @@
     </el-card>
     <el-card class="box-card">
       <div style="height: 500px">
-        <CreatedFlow ref="createdFlow" :form-template="currentForm" :isCreate="true" :isShowContent="isShowContent"
+        <CreatedFlow ref="createdFlow" :form-template="currentForm" :isEdit="true" :isShowContent="isShowContent"
           :scheme-content="flowObj.schemeContent"></CreatedFlow>
       </div>
     </el-card>
-    <!-- <flow-detail ref="flowEditor" :instance="flowObj"></flow-detail> -->
   </div>
 </template>
 
@@ -48,6 +47,7 @@
   import * as apiFlowinstances from '@/api/flowinstances'
   import CreatedFlow from '@/components/CreatedFlow'
   import CreatedForm from '@/components/Formcreated/components/CreatedForm'
+  import { mapActions } from 'vuex'
 
   export default {
     name: 'verify-flowinstance',
@@ -116,10 +116,12 @@
       })
     },
     methods: {
+      ...mapActions(['updateInstancesIsRender']),
       submitForm() {
         this.loading = true
         apiFlowinstances.verify(this.postObj).then(() => {
           this.loading = false
+          this.updateInstancesIsRender({type: '', val: true})
           this.$notify({
             title: '成功',
             message: '创建成功',

@@ -40,13 +40,6 @@
           </template>
         </el-table-column>
       </el-table>
-
-      <!-- 	<div class="pagination-container">
-      <el-pagination background @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="listQuery.page"
-        :page-sizes="[10,20,30, 50]" :page-size="listQuery.limit" layout="total, sizes, prev, pager, next, jumper"
-        :total="total">
-      </el-pagination>
-    </div> -->
       <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="handleCurrentChange" />
     </div>
     <div class="el-dialog__footer">
@@ -113,7 +106,6 @@
           this.total = response.count
           // 加载角色已经分配的资源
           resources.loadForRole(_this.roleId).then(response => {
-            // _this.$refs.mainTable.toggleRowSelection(_this.list[1])
             response.result.forEach(row => {
               // 直接用这个竟然不行！！_this.$refs.mainTable.toggleRowSelection(row)
               const sel = _this.list.find(u => u.id === row.id)

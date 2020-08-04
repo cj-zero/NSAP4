@@ -14,26 +14,11 @@
         <el-table ref="mainTable" :key='tableKey' :data="list" v-loading="listLoading" border fit highlight-current-row
           style="width: 100%;" @row-click="rowClick" @selection-change="handleSelectionChange">
           <el-table-column type="selection" align="center" width="55"></el-table-column>
-          <!-- <el-table-column align="center" prop="id" label="Id" show-overflow-tooltip></el-table-column> -->
           <el-table-column align="center" prop="jobName" label="任务名称" show-overflow-tooltip></el-table-column>
           <el-table-column align="center" min-width="80px" prop="runCount"  label="执行次数">
           </el-table-column>
-          <!-- <el-table-column align="center" min-width="80px"  prop="errorCount" label="异常次数"> -->
-          <!-- </el-table-column> -->
-          <!-- <el-table-column align="center" prop="nextRunTime" label="下次执行时间" show-overflow-tooltip></el-table-column> -->
           <el-table-column align="center" prop="lastRunTime" label="最后一次执行" show-overflow-tooltip></el-table-column>
-          <!-- <el-table-column align="center" prop="lastErrorTime" label="最后一次失败" show-overflow-tooltip></el-table-column> -->
-          <!-- <el-table-column align="center" min-width="80px" label="执行方式">
-            <template slot-scope="scope">
-              <span>{{scope.row.jobType|filterJobType}}</span>
-            </template>
-          </el-table-column> -->
           <el-table-column align="center" prop="jobCall" label="任务地址" show-overflow-tooltip></el-table-column>
-          <!-- <el-table-column align="center" prop="jobCallParams" label="任务参数" show-overflow-tooltip>
-            <template slot-scope="scope">
-              <span>{{scope.row.jobCallParams === null ? scope.row.jobCallParams : ''}}</span>
-            </template>
-          </el-table-column> -->
           <el-table-column align="center" prop="cron" label="CRON表达式" show-overflow-tooltip></el-table-column>
           <el-table-column align="center" width="100" label="运行状态">
             <template slot-scope="scope">
@@ -82,12 +67,6 @@
           <el-form-item size="small" :label="'任务参数，JSON格式'" prop="jobCallParams">
             <el-input v-model="temp.jobCallParams"></el-input>
           </el-form-item>
-          <!-- <el-form-item size="small" :label="'任务运行状态'">
-            <el-select class="filter-item" v-model="temp.status" placeholder="Please select">
-              <el-option v-for="item in  statusOptions" :key="item.key" :label="item.display_name" :value="item.key">
-              </el-option>
-            </el-select>
-          </el-form-item> -->
           <el-form-item size="small" :label="'备注'" prop="remark">
             <el-input v-model="temp.remark"></el-input>
           </el-form-item>
@@ -112,7 +91,7 @@
   import elDragDialog from '@/directive/el-dragDialog'
   import CronInput from '@/components/cron/cron-input'
   export default {
-    name: 'openJobs',
+    name: 'openJob',
     components: {
       Sticky,
       permissionBtn,
@@ -329,7 +308,6 @@
           jobCall: '',
           jobCallParams: '',
           cron: '',
-          // status: 0,
           remark: ''
         }
       },

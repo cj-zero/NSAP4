@@ -33,6 +33,7 @@ export function parseTime(time, cFormat) {
   })
   return time_str
 }
+
 //将此刻的时间转化为我们需要的格式
 export function timeToFormat(format){
   let result =''
@@ -48,6 +49,7 @@ export function timeToFormat(format){
   }
 return result
 }
+
 export function formatTime(format) {
   const now = new Date()
   var o = {
@@ -130,4 +132,22 @@ export function changeIcon(icon) {
     default:
       return 'list'
   }
+}
+
+// 深拷贝
+export const deepClone = (obj) => {
+  if (!isObject(obj)) {
+    throw new Error('obj 不是一个对象！')
+  }
+
+  let isArray = Array.isArray(obj)
+  let cloneObj = isArray ? [] : {}
+  for (let key in obj) {
+      cloneObj[key] = isObject(obj[key]) ? deepClone(obj[key]) : obj[key]
+  }
+
+  return cloneObj
+}
+const isObject = (o) => {
+  return (typeof o === 'object' || typeof o === 'function') && o !== null
 }

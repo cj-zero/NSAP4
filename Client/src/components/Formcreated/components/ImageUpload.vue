@@ -23,7 +23,7 @@
 
         <div class="uplaod-action" :style="{height: miniWidth / 4 + 'px'}">
           <i :class="item.isImg ? 'el-icon-view' : 'el-icon-download'" :title="item.isImg ? '预览' : '下载'" @click="handlePreviewFile(item)" :style="{'font-size': miniWidth/8+'px'}"></i>
-          <i v-if="isCreate && !disabled" class="el-icon-refresh" :title="'替换'" @click="handleEdit(item.key)" :style="{'font-size': miniWidth/8+'px'}"></i>
+          <i v-if="isEdit && !disabled" class="el-icon-refresh" :title="'替换'" @click="handleEdit(item.key)" :style="{'font-size': miniWidth/8+'px'}"></i>
           <i v-if="isDelete && fileList.length > min && !disabled" class="el-icon-delete" :title="'删除'" @click="handleRemove(item.key)" :style="{'font-size': miniWidth/8+'px'}"></i>
         </div>
       </div>
@@ -60,8 +60,6 @@
 // import Viewer from 'viewerjs'
 import Draggable from 'vuedraggable'
 import Model from './Model'
-// import mapState  from 'vuex'
-// import * as dowmWey from 'flowinstances'
 // import * as qiniu from 'qiniu-js'
 // require('viewerjs/dist/viewer.css')
 export default {
@@ -114,7 +112,7 @@ export default {
       type: Boolean,
       default: false
     },
-    isCreate: {
+    isEdit: {
       type: Boolean,
       default: false
     },
@@ -131,18 +129,15 @@ export default {
     return {
       previewVisible: false,
       previewUrl: '',
-      //value不知道从哪传来的证书数据
       fileList: this.value.map(item => {
         return {
           key: item.key ? item.key : (new Date().getTime()) + '_' + Math.ceil(Math.random() * 99999),
-           url: this.changeUrl(item.url),
-          // url: item.url,
+          url: item.url,
           isImg: item.isImg,
           percent: item.percent ? item.percent : 100,
           status: item.status ? item.status : 'success'
         }
       }),
-      
       viewer: null,
       uploadId: 'upload_' + new Date().getTime(),
       editIndex: -1,
@@ -159,18 +154,9 @@ export default {
     }
   },
   mounted() {
-    console.log(this.fileList,'fileList')
-    // console.log(this.value,'value')
     this.$emit('input', this.fileList)
   },
   methods: {
-    changeUrl(url){
-      if(url.indexOf('http')!==-1){
-        return url
-      }else{
-        return `${process.env.VUE_APP_BASE_API}${url}`
-      }
-    },
     handleChange() {
       const files = this.$refs.uploadInput.files
       console.log('files>>>>>', files)
@@ -181,7 +167,6 @@ export default {
         reader.readAsDataURL(file)
         reader.onload = () => {
           if (this.editIndex >= 0) {
-            console.log(reader.result)
             this.$set(this.fileList, this.editIndex, {
               key,
               url: reader.result,
@@ -211,6 +196,7 @@ export default {
     uplaodAction(res, file, key) {
       // const changeIndex = this.fileList.findIndex(item => item.key === key)
       const xhr = new XMLHttpRequest()
+
       const url = this.action
       xhr.open('POST', url, true)
       // xhr.setRequestHeader('Content-Type', 'multipart/form-data')
@@ -220,18 +206,14 @@ export default {
       xhr.onreadystatechange = () => {
         if (xhr.readyState === 4) {
           const resData = JSON.parse(xhr.response)
-          // console.log('resData', resData)
-       
+          console.log('resData', resData)
           if (resData && resData.result && resData.result.length > 0) {
             this.$set(this.fileList, this.fileList.findIndex(item => item.key === key), {
               ...this.fileList[this.fileList.findIndex(item => item.key === key)],
-               url: `${process.env.VUE_APP_BASE_API}/files/Download/${resData.result[0].filePath}`,
-             
-             // url: `${resData.result[0].filePath}`,
+              url: `${process.env.BASE_IMG_URL}/${resData.result[0].filePath}`,
               isImg: ['.jpg', '.jpeg', '.png', '.svg', '.gif'].indexOf(resData.result[0].fileType) >= 0 || false,
               percent: 100
             })
-                console.log(this.fileList)
             setTimeout(() => {
               this.$set(this.fileList, this.fileList.findIndex(item => item.key === key), {
                 ...this.fileList[this.fileList.findIndex(item => item.key === key)],
@@ -312,7 +294,7 @@ export default {
     },
     handlePreviewFile(item) {
       if (!item.isImg) {
-       window.location.href = `${item.url}?X-Token=${this.$store.state.user.token}`
+        window.location.href = item.url
         return
       }
       this.previewVisible = true

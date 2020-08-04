@@ -1,20 +1,25 @@
 <template>
   <section class="app-main" ref="appMain">
     <transition name="fade-transform" mode="out-in">
-      <keep-alive :include="cachedViews">
+      <keep-alive :include="keepAliveDatas" v-if="keepAliveDatas.length > 0">
         <router-view :key="key"></router-view>
       </keep-alive>
-       <!-- <keep-alive >
-        <router-view :key="key"></router-view>
-      </keep-alive> -->
+      <router-view :key="key" v-else></router-view>
     </transition>
   </section>
 </template>
 
 <script>
+import {mapGetters} from 'vuex'
 export default {
   name: 'AppMain',
   computed: {
+    ...mapGetters({
+      keepAliveData: 'keepAliveData'
+    }),
+    keepAliveDatas() {
+      return this.keepAliveData || []
+    },
     cachedViews() {
       return this.$store.state.tagsView.cachedViews
     },
@@ -33,9 +38,7 @@ export default {
 <style scoped>
 .app-main {
     width: 100%;
-    /*84 = navbar + tags-view = 50 +34 */
-    /* min-height: calc(100vh - 84px); *//* me */
-    height: calc(100% - 35px);/* me */
+    height: calc(100% - 35px);
     position: relative;
     overflow: auto;
 		background-color: #efefef;

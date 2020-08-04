@@ -1,35 +1,23 @@
 <template>
   <el-menu class="navbar" mode="horizontal">
 		<div class="logo">
-			<img class="user-avatar" :src="logo">
+			<img class="user-avatar" :src="logo">OpenAuth.Pro
 		</div>
     <hamburger class="hamburger-container" :toggleClick="toggleSideBar" :isActive="sidebar.opened"></hamburger>
-    <!-- <breadcrumb></breadcrumb> -->
-     
-     <div class="people_info">
-        <el-badge :value="2" style="display:inline-block;" type="warning" @click="showServe"> 
-      <i class="el-icon-message" ></i>
-      </el-badge>
-     </div>
-    
-    <el-dropdown class="avatar-container" trigger="click">
-
+    <el-dropdown class="avatar-container" @command="handleCommand" trigger="click">
       <div class="avatar-wrapper">
-        <!-- <img class="user-avatar" :src="logo"> -->
 				欢迎您，{{name}}
         <i class="el-icon-caret-bottom"></i>
       </div>
       <el-dropdown-menu class="user-dropdown" slot="dropdown">
-        <!-- <router-link class="inlineBlock" to="/">
-          <el-dropdown-item>
-            首页
-          </el-dropdown-item>
-        </router-link> -->
-        <el-dropdown-item>
-					<a href="/#/profile">个人中心</a>
+        <el-dropdown-item command="handleGoProfile">
+					<span>个人中心</span>
 				</el-dropdown-item>
-        <el-dropdown-item divided>
-          <span @click="logout" style="display:block;">退出</span>
+        <el-dropdown-item>
+					<span>切换主题 <el-switch :active-value="1" :inactive-value="0" style="margin-left: 5px;" v-model="theme" /></span>
+				</el-dropdown-item>
+        <el-dropdown-item command="logout" divided>
+          <span>退出</span>
         </el-dropdown-item>
       </el-dropdown-menu>
     </el-dropdown>
@@ -38,27 +26,52 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex'
-// import Breadcrumb from '@/components/Breadcrumb'
 import Hamburger from '@/components/Hamburger'
 import logo from '@/assets/logo.png?imageView2/1/w/80/h/80'
 
 export default {
   data: function() {
     return {
-      logo: logo
+      logo: logo,
+      theme: 1
     }
   },
   components: {
-    // Breadcrumb,
     Hamburger
   },
   computed: {
-    ...mapGetters(['sidebar', 'isIdentityAuth', 'name'])
+    ...mapGetters(['sidebar', 'isIdentityAuth', 'name', 'themeStatus'])
+  },
+  watch: {
+    theme() {
+      this.toggleClass(document.body, 'custom-theme')
+    }
+  },
+  mounted() {
+    this.theme = Number(this.themeStatus)
+    this.toggleClass(document.body, 'custom-theme')
   },
   methods: {
-    ...mapActions([   
-      'signOutOidc'
+    ...mapActions([
+      'signOutOidc',
+      'saveTheme'
     ]),
+    toggleClass(element, className) {
+      if (!element || !className) {
+        return
+      }
+      let classString = element.className
+      const nameIndex = classString.indexOf(className)
+      if (nameIndex === -1) {
+        classString += '' + className
+      } else {
+        classString =
+          classString.substr(0, nameIndex) +
+          classString.substr(nameIndex + className.length)
+      }
+      element.className = this.theme === 1 ? classString : ''
+      this.saveTheme(this.theme)
+    },
     toggleSideBar() {
       this.$store.dispatch('ToggleSideBar')
     },
@@ -71,77 +84,17 @@ export default {
         })
       }
     },
-    showServe(){
-      // this.
+    handleGoProfile() {
+      this.$router.push('/profile')
     },
+    handleCommand(name) {
+      if(!name) return
+      this[name]()
+    }
   }
 }
 </script>
 
 <style rel="stylesheet/scss" lang="scss" scoped>
-.navbar {
-    border-bottom: 0 !important;
-    background-color: #333;
-    .hamburger-container {
-        line-height: 44px;
-        height: 44px;
-        float: left;
-        padding: 0 10px;
-        color: white;
-    }
-    // .screenfull {
-    //     position: absolute;
-    //     right: 90px;
-    //     top: 16px;
-    //     color: red;
-    // }
-    .people_info{
-      // position: absolute;
-      float:right;
-      margin-right:170px;
-      ::v-deep .el-icon-message{
-        font-size:26px;
-        padding-top:3px;
-        color:white;
-      }
-       ::v-deep .el-badge__content.is-fixed{
-            top:15px;
-        } 
-    }
-    .avatar-container {
-        height: 44px;
-        display: inline-block;
-        position: absolute;
-        line-height: 44px;
-        right: 35px;
-        color: white;
-        .avatar-wrapper {
-            cursor: pointer;
-            position: relative;
-            float:right;
-            .el-icon-caret-bottom {
-                position: absolute;
-                right: -22px;
-                top: 12px;
-                font-size: 16px;
-            }
-        }
-       
-    }
-    .logo {
-        width: 180px;
-        // text-align: center;
-        float: left;
-        // color: white;
-        .user-avatar {
-            width: 96%;
-            margin:0 2%;
-            height: 30px;
-            // border:1px solid white;
-            border-radius:3px;
-            vertical-align: middle;
-            margin-right: 5px;
-        }
-    }
-}
+
 </style>

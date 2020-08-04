@@ -43,7 +43,6 @@
                         <div class="p-l-m">           
                           <el-checkbox-group v-model="node.checks">   
                             <template v-for="propy in node.properties">                             
-                              <!-- <el-checkbox :key="propy.key"  :checked="propy.checked" :name="node.code" :label="propy.key">{{propy.description}}</el-checkbox> -->
 
                               <el-checkbox @change="onChangeProp(index)" :label="propy.key" :key="propy.key"
                                   size="small">{{propy.description}}</el-checkbox>
@@ -68,17 +67,13 @@
     import {
       listToTreeSelect
     } from '@/utils'
-    // import Treeselect from '@riophae/vue-treeselect'
-    // import '@riophae/vue-treeselect/dist/vue-treeselect.css'
     import * as login from '@/api/login'
     import * as apiModules from '@/api/modules'
     import * as accessObjs from '@/api/accessObjs'
 
     export default {
       name: 'access-modules',
-      components: {
-        // Treeselect
-      },
+      components: {},
       props: ['roleId'],
       data() {
         return {
@@ -151,7 +146,6 @@
         getRoleModuleIds() { // 获取角色已分配的模块
           var _this = this
           apiModules.loadForRole(_this.roleId).then(response => {
-            //  _this.roleModuleIds = response.result.map(item => item.id)
             _this.$refs.tree.setCheckedKeys(response.result.map(item => item.id))
           })
         },
@@ -168,8 +162,6 @@
           const item = this.noSystemNodes[index]
           item.checkAll = item.checks.length === item.properties.length
           item.isIndeterminate = !!(item.checks.length > 0 && item.checks.length < item.properties.length)
-          // this.isIndeterminate = !!(val.length > 0 && val.length < this.menus.length)
-          // this.roleMenuIdsAll = val.length === this.menus.length
           this.$set(this.noSystemNodes, index, item)
         },
         close() {
@@ -180,7 +172,6 @@
           return
         },
         acceRole() {
-          // this.step = this.step*1.0 + 1
           var step = this.step * 1.0
           switch (step) {
             case 1:
@@ -212,14 +203,6 @@
                       item.isIndeterminate = false
                       item.checkAll = item.checks.length === item.properties.length
                       item.isIndeterminate = !!(item.checks.length > 0 && item.checks.length < item.properties.length)
-                      // item.properties.forEach((prop) => {
-                      //   prop.checked = false
-                      //   item.loadPropertiesForRole.forEach((loadProp) => {
-                      //     if (loadProp === prop.key) {
-                      //       prop.checked = true
-                      //     }
-                      //   })
-                      // })
                       this.noSystemNodes.push(item)
                       this.step = 3
                     })
@@ -237,13 +220,6 @@
               break
             case 3:
               this.noSystemNodes.forEach((item, index) => {
-                // var obj = document.getElementsByName(item.code)
-                // var checks = []
-                // obj.forEach((one) => {
-                //   if (one.checked) {
-                //     checks.push(one.value)
-                //   }
-                // })
                 apiModules.unAssignDataProperty(item.code, this.roleId).then(() => {
                   apiModules.assignDataProperty(item.code, this.roleId, item.checks).then(() => {
                     if ((index + 1) === this.noSystemNodes.length) {

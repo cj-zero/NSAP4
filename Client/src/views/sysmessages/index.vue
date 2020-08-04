@@ -72,7 +72,7 @@ import permissionBtn from '@/components/PermissionBtn'
 import Pagination from '@/components/Pagination'
 import elDragDialog from '@/directive/el-dragDialog'
 export default {
-  name: 'sysMessages',
+  name: 'sysMessage',
   components: { Sticky, permissionBtn, Pagination },
   directives: {
     waves,
