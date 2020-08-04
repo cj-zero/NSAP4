@@ -818,5 +818,26 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// 主管关单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> CloseWorkOrder(CloseWorkOrderReq request)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.CloseWorkOrder(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }
