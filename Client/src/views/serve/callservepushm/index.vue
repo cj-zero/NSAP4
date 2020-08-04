@@ -420,10 +420,21 @@ export default {
   },
   created() {},
   mounted() {
-    this.getLeftList();
-    this.getRightList();
+    //左边无数据不查右边，有数据就查左边第一条
+   
+    this.afterLeft()
   },
   methods: {
+   async afterLeft(){
+     await this.getLeftList();
+     await this.getRightList();
+     console.log(this.modulesTree )
+    //  if(this.modulesTree.length>0 ){
+    //   this.modulesTree[0].
+    //  }else{
+    //    console.log(2)
+    //  }
+    },
     changeOrder() {
       if (this.ifParent) {
         this.dialogOrder = true;

@@ -755,6 +755,7 @@ export default {
       this.form.customerName = item.cardName;
       this.form.contacter = item.cntctPrsn;
       this.form.contactTel = item.cellular;
+      console.log( item)
       // this.form.addressDesignator = item.address;
       this.form.address = item.address;
       this.form.salesMan = item.slpName;
@@ -814,12 +815,16 @@ export default {
     top: 0;
     // width: 200px;
   }
+        ::v-deep .el-radio{
+    margin-left:0 !important;
+  }
   ::v-deep .el-input__inner {
     padding-right: 5px;
     // padding-left:25px;
   }
 }
 .addClass1 {
+
   ::v-deep .el-dialog__header {
     .el-dialog__title {
       color: white;

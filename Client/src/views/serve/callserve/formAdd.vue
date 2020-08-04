@@ -19,7 +19,7 @@
           </el-col>
           <el-col :span="ifEdit?8:7">
             <el-form-item label="服务类型">
-              <el-radio-group size="small" v-model="formList[0].feeType">
+              <el-radio-group size="small" :class="ifEdit?'editRodia':''" v-model="formList[0].feeType">
                 <el-radio :label="1">免费</el-radio>
                 <el-radio :label="2">收费</el-radio>
               </el-radio-group>
@@ -770,7 +770,7 @@ export default {
           fromTheme: "", //呼叫主题
           fromId: 1, //呼叫来源 1-电话 2-APP
           problemTypeId: "", //问题类型Id
-          fromType: 2, //呼叫类型1-提交呼叫 2-在线解答（已解决）
+          fromType: 1, //呼叫类型1-提交呼叫 2-在线解答（已解决）
           materialCode: "", //物料编码
           materialDescription: "", //物料描述
           manufacturerSerialNumber: "", //制造商序列号
@@ -1048,7 +1048,7 @@ export default {
             materialDescription: newList[i].itemName,
             feeType: 1,
             fromTheme: "",
-            fromType: 2,
+            fromType: 1,
             problemTypeName: "",
             problemTypeId: "",
             priority: 1,
@@ -1070,7 +1070,7 @@ export default {
             materialDescription: this.formListStart[i].itemName,
             feeType: 1,
             fromTheme: "",
-            fromType: 2,
+            fromType: 1,
             problemTypeName: "",
             problemTypeId: "",
             priority: 1,
@@ -1226,6 +1226,9 @@ export default {
 
 <style lang="scss" scoped>
 .addClass1 {
+      ::v-deep .el-radio{
+    margin-left:0 !important;
+  }
   ::v-deep .el-dialog__header {
     .el-dialog__title {
       color: white;
@@ -1233,7 +1236,7 @@ export default {
     .el-dialog__close {
       color: white;
     }
-
+   
     background: lightslategrey;
   }
   ::v-deep .el-dialog__body {
@@ -1242,11 +1245,14 @@ export default {
   ::v-deep .el-button--mini {
     padding: 7px 8px;
   }
+
   //   ::v-deep .el-dialog__footer{
   //   background: lightslategrey;
   // }
 }
-
+// .editRodia{
+ 
+// }
 .rowStyle {
       ::v-deep .el-form-item {
      margin: 3px 1px !important;
