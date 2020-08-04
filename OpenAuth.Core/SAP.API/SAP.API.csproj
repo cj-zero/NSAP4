@@ -5,22 +5,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <COMReference Include="SAPbobsCOM.dll">
-      <Guid>fc8030be-f5d2-4b8e-8f92-44228fe30090</Guid>
-      <VersionMajor>9</VersionMajor>
-      <VersionMinor>0</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>tlbimp</WrapperTool>
-      <Isolated>false</Isolated>
-    </COMReference>
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.6" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\OpenAuth.Repository\OpenAuth.Repository.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Interop.SAPbobsCOM">
+      <HintPath>..\package\Interop.SAPbobsCOM.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
