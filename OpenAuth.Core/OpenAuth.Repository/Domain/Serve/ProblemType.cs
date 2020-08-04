@@ -64,6 +64,6 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("问题类型SAP ID")]
         [Browsable(false)]
-        public int PrblmTypeID { get; set; }
+        public int PrblmTypID { get; set; }
     }
 }
