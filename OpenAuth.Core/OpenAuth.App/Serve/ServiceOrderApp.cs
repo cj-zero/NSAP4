@@ -461,7 +461,11 @@ namespace OpenAuth.App
                 Supervisor = obj.Supervisor,
                 SupervisorId = obj.SupervisorId,
             });
-            obj.ServiceWorkOrders.ForEach(s => { s.ServiceOrderId = obj.Id; s.SubmitDate = DateTime.Now; s.SubmitUserId = loginContext.User.Id; s.AppUserId = obj.AppUserId; s.Status = 1; });
+            obj.ServiceWorkOrders.ForEach(s => { 
+                s.ServiceOrderId = obj.Id; s.SubmitDate = DateTime.Now; s.SubmitUserId = loginContext.User.Id; s.AppUserId = obj.AppUserId; s.Status = 1;
+                if (s.FromType == 2)
+                    s.Status = 7;
+            });
             await UnitWork.BatchAddAsync<ServiceWorkOrder, int>(obj.ServiceWorkOrders.ToArray());
             var pictures = request.Pictures.MapToList<ServiceOrderPicture>();
             pictures.ForEach(p => { p.ServiceOrderId = request.Id; p.PictureType = 2; });
@@ -654,7 +658,11 @@ namespace OpenAuth.App
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
             obj.Supervisor = d.TechName;
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.TechName)))?.Id;
-
+            obj.ServiceWorkOrders.ForEach(s => 
+            {
+                if (s.FromType == 2)
+                    s.Status = 7;
+            });
             var e = await UnitWork.AddAsync<ServiceOrder, int>(obj);
             await UnitWork.SaveAsync();
             var pictures = req.Pictures.MapToList<ServiceOrderPicture>();
