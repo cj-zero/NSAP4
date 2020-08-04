@@ -38,9 +38,10 @@ namespace SAP.API
                     sc.Subject = thisWorkOrder.FromTheme;
                     sc.CustomerCode = thisWorkOrder.ServiceOrder.CustomerId;
                     sc.CustomerName = thisWorkOrder.ServiceOrder.CustomerName;
+                    //sc.ContactCode
                     if (thisWorkOrder.ContractId.Trim() != "" && thisWorkOrder.ContractId != null && thisWorkOrder.ContractId.Trim() != "-1")
                     {
-                        sc.ContactCode = Convert.ToInt32(thisWorkOrder.ContractId);
+                        sc.ContractID = Convert.ToInt32(thisWorkOrder.ContractId);
                     }
                     sc.ManufacturerSerialNum = thisWorkOrder.ManufacturerSerialNumber;
                     sc.InternalSerialNum = thisWorkOrder.InternalSerialNumber;
