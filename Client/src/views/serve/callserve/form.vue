@@ -309,7 +309,7 @@
         />
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialogPartner = false">取 消</el-button>
-          <el-button type="primary" @click="sureVal">确 定</el-button>
+          <el-button type="primary" @click="sureVal" :disabled="disableBtn">确 定</el-button>
         </span>
       </el-dialog>
       <Model
@@ -430,6 +430,7 @@ export default {
         pictures: [], //
         serviceWorkOrders: [],
       },
+      disableBtn:false,
       newDate:[],
       isCreateAdd: true, //add页面的编辑状态
       allAddress: {}, //选择地图的合集
@@ -773,7 +774,13 @@ export default {
       this.form.salesMan = val.slpName;
     },
     ChildValue(val) {
+      if(val==1){
+          this.disableBtn = true
+          console.log(11)
+      }else{
       this.checkVal = val;
+ this.disableBtn = false
+      }
     },
     handleIconClick() {
       this.dialogPartner = true;
