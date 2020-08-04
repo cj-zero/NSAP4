@@ -179,6 +179,7 @@
         title="服务单详情"
         :close-on-click-modal="false"
         destroy-on-close
+       
         class="addClass1 dialog-mini"
         @open="openDetail"
         :visible.sync="dialogFormView"
@@ -196,7 +197,7 @@
         ></zxform>
         </el-col>
             <el-col :span="6" class="lastWord">   
-                <zxchat ></zxchat>
+                <zxchat :serveId='serveid'></zxchat>
             </el-col>
         </el-row>
 
@@ -350,7 +351,7 @@ export default {
         create: "新建呼叫服务单",
         info: "查看呼叫服务单"
       },
-
+      serveid:'',
       dialogPvVisible: false,
       pvData: [],
       rules: {
@@ -451,9 +452,11 @@ export default {
     },
     openTree(res) {
       this.listLoading = true;
+       this.serveid = res
       callservesure.GetDetails(res).then(res => {
         if (res.code == 200) {
           this.dataForm1 = res.result;
+         
           this.dialogFormView = true;
         }
         this.listLoading = false;

@@ -63,3 +63,10 @@ export function getPartner(params) {
       data
     })
   }
+  
+  export function GetUserProfile(params) {
+    return request({
+      url: `/Check/GetUserProfile?X-Token=${params}`,  //获取个人信息
+      method: 'get',
+    })
+  }
