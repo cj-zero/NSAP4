@@ -4,8 +4,6 @@
     <div class="filter-container">
       <el-input @keyup.enter.native="handleFilter" size="mini" style="width: 200px;" class="filter-item" :placeholder="'名称'" v-model="listQuery.key">
       </el-input>
-
-      <!-- <el-button class="filter-item" type="success" v-waves icon="el-icon-search" @click="handleFilter">搜索</el-button> -->
       <permission-btn moduleName='forms' size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
 
       <el-checkbox size="small" style="margin-left:15px" @change='tableKey=tableKey+1' v-model="showDescription">描述</el-checkbox>
@@ -52,11 +50,6 @@
         </template>
 </el-table-column>
 </el-table>
-
-<!-- <div class="pagination-container">
-      <el-pagination background @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="listQuery.page" :page-sizes="[10,20,30, 50]" :page-size="listQuery.limit" layout="total, sizes, prev, pager, next, jumper" :total="total">
-      </el-pagination>
-    </div> -->
 </div>
 </div>
 </div>
@@ -69,14 +62,20 @@
     import waves from '@/directive/waves' // 水波纹指令
     import Sticky from '@/components/Sticky'
     import permissionBtn from '@/components/PermissionBtn'
-    // import Pagination from '@/components/Pagination'
+    import { mapActions, mapGetters } from 'vuex'
 
     export default {
       name: 'forms',
       components: {
         Sticky,
-        permissionBtn,
-        // Pagination
+        permissionBtn
+      },
+      beforeRouteEnter(to, from, next) {
+        next(vm => {
+          if (vm.isRender) {
+            vm.getList()
+          }
+        })
       },
       directives: {
         waves
@@ -131,6 +130,9 @@
           return statusMap[disabled]
         }
       },
+      computed: {
+        ...mapGetters(['isRender'])
+      },
       created() {
         this.getList()
         var addRouter = [{
@@ -170,6 +172,11 @@
         this.$router.addRoutes(addRouter)
       },
       methods: {
+        ...mapActions({
+          saveFormDetails: 'saveFormDetails',
+          saveAddFormDetails: 'saveAddFormDetails',
+          updateIsRender: 'updateIsRender'
+        }),
         rowClick(row) {
           this.$refs.mainTable.clearSelection()
           this.$refs.mainTable.toggleRowSelection(row)
@@ -181,6 +188,7 @@
           console.log('you click:' + domId)
           switch (domId) {
             case 'btnAdd':
+              this.saveAddFormDetails('')
               this.$router.push('/forms/add')
               break
             case 'btnEdit':
@@ -212,6 +220,7 @@
           forms.getList(this.listQuery).then(response => {
             this.list = response.data
             this.total = response.count
+            this.updateIsRender(false)
             this.listLoading = false
           })
         },
@@ -235,6 +244,9 @@
           row.disabled = disabled
         },
         handleUpdate(row) { // 弹出编辑框
+          const data = {}
+          data[row.id] = row
+          this.saveFormDetails(data)
           this.$router.push({ path: '/forms/edit/' + row.id, query: { frmType: row.frmType }})
         },
         handleDelete(rows) { // 多行删除

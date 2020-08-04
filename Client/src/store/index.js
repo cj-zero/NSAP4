@@ -7,6 +7,7 @@ import tagsView from './modules/tagsView'
 import permission from './modules/permission'
 import dataPrivilegerules from './modules/dataPrivilegerules'
 import storage from './modules/storage'
+import flow from './modules/flow'
 import getters from './getters'
 import { vuexOidcCreateStoreModule } from 'vuex-oidc'
 
@@ -21,7 +22,10 @@ const store = new Vuex.Store({
     dataPrivilegerules,
     storage,
     tagsView,
+    flow,
     oidcStore: vuexOidcCreateStoreModule(
+      // process.env.OIDC,
+      // process.env.VUE_APP_OIDC,
       {
         authority: process.env.VUE_APP_OIDC_AUTHORITY,
         clientId: process.env.VUE_APP_OIDC_CLIENTID,
