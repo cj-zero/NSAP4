@@ -477,23 +477,23 @@ namespace OpenAuth.App
             await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"客服:{loginContext.User.Name}创建工单", ActionType = "创建工单", ServiceOrderId = obj.Id });
 
             #region 同步到SAP 并拿到服务单主键
-            if (obj.ServiceWorkOrders.Count > 0)
-            {
-                ServiceWorkOrder firstwork = obj.ServiceWorkOrders[0];
-                string sapEntry, errMsg;
-                if(_workAPI.AddServiceWorkOrder(firstwork,out sapEntry,out errMsg))
-                {
-                    await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(request.Id), e => new ServiceOrder
-                    {
-                        U_SAP_ID = System.Convert.ToInt32(sapEntry)
-                    }) ;
-                    await UnitWork.SaveAsync();
-                }
-                else
-                {
-                    throw new CommonException(errMsg, Define.INVALID_TOKEN);
-                }
-            }
+            //if (obj.ServiceWorkOrders.Count > 0)
+            //{
+            //    ServiceWorkOrder firstwork = obj.ServiceWorkOrders[0];
+            //    string sapEntry, errMsg;
+            //    if(_workAPI.AddServiceWorkOrder(firstwork,out sapEntry,out errMsg))
+            //    {
+            //        await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(request.Id), e => new ServiceOrder
+            //        {
+            //            U_SAP_ID = System.Convert.ToInt32(sapEntry)
+            //        }) ;
+            //        await UnitWork.SaveAsync();
+            //    }
+            //    else
+            //    {
+            //        throw new CommonException(errMsg, Define.INVALID_TOKEN);
+            //    }
+            //}
 
             #endregion
         }
@@ -688,7 +688,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ServiceWorkOrders.Any(a => a.ProblemTypeId.Equals(req.QryProblemType)))
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.ServiceWorkOrders.Any(a => a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo));
 
-            var resultsql = query.Select(q => new
+            var resultsql = query.OrderByDescending(q => q.CreateTime).Select(q => new
             {
                 ServiceOrderId = q.Id,
                 q.CustomerId,
@@ -706,7 +706,7 @@ namespace OpenAuth.App
                 && (string.IsNullOrWhiteSpace(req.QryState) || a.Status.Equals(Convert.ToInt32(req.QryState)))
                 && (string.IsNullOrWhiteSpace(req.QryManufSN) || a.ManufacturerSerialNumber.Contains(req.QryManufSN))
                 && ((req.QryCreateTimeFrom == null || req.QryCreateTimeTo == null) || (a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
-                ).ToList()
+                  ).ToList()
             });
 
             result.Data = await resultsql.Skip((req.page - 1) * req.limit)
@@ -1446,6 +1446,8 @@ namespace OpenAuth.App
             obj.CreateTime = DateTime.Now;
             obj.FroTechnicianId = userId;
             obj.FroTechnicianName = name;
+            obj.Replier = name;
+            obj.ReplierId = userId;
             await UnitWork.AddAsync<ServiceOrderMessage, int>(obj);
             await UnitWork.SaveAsync();
             string msgId = (await UnitWork.Find<ServiceOrderMessage>(s => s.AppUserId == req.AppUserId).OrderByDescending(o => o.CreateTime).FirstOrDefaultAsync()).Id;
@@ -1536,7 +1538,8 @@ namespace OpenAuth.App
                 s.Content,
                 s.CreateTime,
                 s.FroTechnicianName,
-                s.AppUserId
+                s.AppUserId,
+                s.Replier
             });
 
             result.Data =

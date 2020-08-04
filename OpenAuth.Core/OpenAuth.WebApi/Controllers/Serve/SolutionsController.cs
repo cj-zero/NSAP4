@@ -5,7 +5,7 @@ using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
-using OpenAuth.Repository.Domain.Serve;
+using OpenAuth.Repository.Domain;
 
 namespace OpenAuth.WebApi.Controllers
 {

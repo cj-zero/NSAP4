@@ -13,7 +13,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using OpenAuth.Repository.Core;
-using OpenAuth.Repository.Domain.Serve;
+using OpenAuth.Repository.Domain;
 
 namespace OpenAuth.Repository.Domain
 {

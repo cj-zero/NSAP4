@@ -210,7 +210,6 @@ export default {
     }
   },
   mounted() {
-    console.log('element>>>>>>>>>>>.', this.element)
   },
   methods: {
     handleSelectForm(index) {

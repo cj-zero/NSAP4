@@ -34,6 +34,7 @@ namespace SAP.API
             {
                 //Console.WriteLine("OK"); ;//oCompany;
                 services.AddSingleton(oCompany);
+                services.AddTransient<ServiceWorkOrderAPI>();
             }
             return services;
         }

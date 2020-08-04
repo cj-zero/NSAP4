@@ -2,12 +2,9 @@
 <div class="flex-column">
   <sticky :className="'sub-navbar'">
     <div class="filter-container">
-      <!-- <el-input @keyup.enter.native="handleFilter" style="width: 200px;" class="filter-item" :placeholder="'名称'" v-model="listQuery.key">
-      </el-input> -->
 			<el-input @keyup.enter.native="handleFilter"  prefix-icon="el-icon-search" size="small" style="width: 200px; margin-bottom: 0;" class="filter-item" :placeholder="'名称'" v-model="listQuery.key">
 			</el-input>
 
-      <!-- <el-button class="filter-item" type="success" v-waves icon="el-icon-search" @click="handleFilter">搜索</el-button> -->
       <permission-btn :size="'mini'" moduleName='/flowinstances/disposed' v-on:btn-event="onBtnClicked"></permission-btn>
 
       <el-checkbox class="filter-item" style='margin-left:15px;' @change='tableKey=tableKey+1' v-model="showDescription">描述</el-checkbox>
@@ -52,11 +49,6 @@
 				</template>
 </el-table-column>
 </el-table>
-
-<!-- <div class="pagination-container">
-      <el-pagination background @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="listQuery.page" :page-sizes="[10,20,30, 50]" :page-size="listQuery.limit" layout="total, sizes, prev, pager, next, jumper" :total="total">
-      </el-pagination>
-    </div> -->
 <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="handleCurrentChange" />
 </div>
 </div>
@@ -70,8 +62,9 @@
     import Sticky from '@/components/Sticky'
     import permissionBtn from '@/components/PermissionBtn'
     import Pagination from '@/components/Pagination'
+    import { mapGetters, mapActions } from 'vuex'
     export default {
-      name: 'flowinstance-wait',
+      name: 'flowInstanceDisposed',
       components: {
         Sticky,
         permissionBtn,
@@ -79,6 +72,16 @@
       },
       directives: {
         waves
+      },
+      computed: {
+        ...mapGetters(['isDisposedRender'])
+      },
+      beforeRouteEnter(to, from ,next) {
+        next(vm => {
+          if(vm.isDisposedRender){
+            vm.getList()
+          }
+        })
       },
       data() {
         return {
@@ -202,6 +205,7 @@
         this.$router.addRoutes(addRouter)
       },
       methods: {
+        ...mapActions(['updateInstancesIsRender']),
         rowClick(row) {
           this.$refs.mainTable.clearSelection()
           this.$refs.mainTable.toggleRowSelection(row)
@@ -241,6 +245,7 @@
           flowinstances.getList(this.listQuery).then(response => {
             this.list = response.data
             this.total = response.count
+            this.updateInstancesIsRender({type: 'isDisposedRender', val: false})
             this.listLoading = false
           })
         },

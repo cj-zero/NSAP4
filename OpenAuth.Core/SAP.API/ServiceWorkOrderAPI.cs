@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using OpenAuth.Repository.Domain;
-using OpenAuth.Repository.Domain.Serve;
 
 namespace SAP.API
 {

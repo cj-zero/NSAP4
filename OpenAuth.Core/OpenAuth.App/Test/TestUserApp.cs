@@ -1,4 +1,5 @@
 ﻿using System;
+using Infrastructure;
 using Infrastructure.Cache;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,7 +17,7 @@ namespace OpenAuth.App.Test
             var services = new ServiceCollection();
 
             var cachemock = new Mock<ICacheContext>();
-            cachemock.Setup(x => x.Get<UserAuthSession>("tokentest")).Returns(new UserAuthSession { Account = "test" });
+            cachemock.Setup(x => x.Get<UserAuthSession>("tokentest")).Returns(new UserAuthSession { Account = "System" });
             services.AddScoped(x => cachemock.Object);
 
             var httpContextAccessorMock = new Mock<IHttpContextAccessor>();
@@ -38,7 +39,7 @@ namespace OpenAuth.App.Test
             {
                 Account = account,
                 Name = account,
-                OrganizationIds = "08f41bf6-4388-4b1e-bd3e-2ff538b44b1b,543a9fcf-4770-4fd9-865f-030e562be238",
+                OrganizationIds = "08f41bf6-4388-4b1e-bd3e-2ff538b44b1b",
             };
             app.AddOrUpdate(newuser);
 
@@ -50,6 +51,32 @@ namespace OpenAuth.App.Test
                 Name = "新名字",
                 OrganizationIds = "08f41bf6-4388-4b1e-bd3e-2ff538b44b1b",
             });
+        }
+        [Test]
+        public void TestLoad()
+        {
+            var app = _autofacServiceProvider.GetService<UserManagerApp>();
+            var result = app.Load(new QueryUserListReq()
+            {
+                page = 1,
+                limit = 10,
+                orgId = "08f41bf6-4388-4b1e-bd3e-2ff538b44b1b"
+            });
+
+            Console.WriteLine(JsonHelper.Instance.Serialize(result));
+        }
+        [Test]
+        public void TestLoadByOrg()
+        {
+            var app = _autofacServiceProvider.GetService<UserManagerApp>();
+            var result = app.LoadByOrg(new QueryUserListByOrgReq
+            {
+                page = 1,
+                limit = 10,
+                orgId = "08f41bf6-4388-4b1e-bd3e-2ff538b44b1b"
+            });
+
+            Console.WriteLine(JsonHelper.Instance.Serialize(result));
         }
     }
 }

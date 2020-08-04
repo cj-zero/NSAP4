@@ -62,20 +62,14 @@
 </template>
 
 <script>
-  // import MDinput from '@/components/MDinput'
-  // import Ueditor from '@/components/Ueditor'
-  // import Sticky from '@/components/Sticky' // 粘性header组件
   import * as forms from '@/api/forms'
 
   export default {
     name: 'frm-leave-req-add',
     components: {
-      // MDinput,
-      // Sticky,
-      // Ueditor
     },
     props: {
-      isCreate: {
+      isEdit: {
         type: Boolean,
         default: false
       }
@@ -93,8 +87,7 @@
         }
       }
       return {
-        // baseURL: process.env.BASE_API, // api的base_url
-          baseURL: process.env.VUE_APP_BASE_API, // api的base_url
+        baseURL: process.env.BASE_API, // api的base_url
         temp: {
           id: '', // ID
           userName: '', // 请假人姓名
@@ -164,14 +157,6 @@
       },
       getData() {
         return this.temp
-        // const _this = this
-        // this.$refs.dataForm.validate(valid => {
-        //   if (valid) {
-        //     return _this.temp
-        //   } else {
-        //     return null
-        //   }
-        // })
       }
     }
   }
@@ -180,47 +165,4 @@
 
 <style rel="stylesheet/scss" lang="scss" scoped>
   @import "src/styles/mixin.scss";
-
-  .createPost-container {
-    position: relative;
-
-    .createPost-main-container {
-      margin: 10px;
-      background-color: white;
-      padding: 10px;
-      padding-top: 0;
-
-      .postInfo-container {
-        position: relative;
-        @include clearfix;
-        margin-bottom: 10px;
-
-        .postInfo-container-item {
-          float: left;
-        }
-      }
-
-      .editor-container {
-        min-height: 500px;
-        margin: 0 0 30px;
-
-        .editor-upload-btn-container {
-          text-align: right;
-          margin-right: 10px;
-
-          .editor-upload-btn {
-            display: inline-block;
-          }
-        }
-      }
-    }
-
-    .word-counter {
-      width: 40px;
-      position: absolute;
-      right: -10px;
-      top: 0px;
-    }
-  }
-
 </style>

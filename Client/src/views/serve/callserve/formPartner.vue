@@ -95,11 +95,21 @@ export default {
     },
 
     getPartner(val) {
-      this.checkVal = val;
+        if (val.frozenFor&&val.frozenFor == "Y") {
+        this.$message({
+          message: `${val.cardName}账户被冻结，无法操作`,
+          type: "error"
+        });
+         this.radio = val.cardCode;
+        this.$emit("getChildValue", 1);
+      }else{
+     this.checkVal = val;
       this.$emit("getChildValue", val);
       this.$refs.singleTable.clearSelection();
       this.radio = val.cardCode;
       this.$refs.singleTable.toggleRowSelection(val);
+      }
+ 
     },
     handleCurrentChange(val) {
       this.currentRow = val;

@@ -72,6 +72,10 @@ export default {
     },
     successBack(res){
       this.pictures.push({pictureId:res.result[0].id}) 
+      this.$message({
+        type:'success',
+        message:'上传成功'
+      })
       this.$emit('get-ImgList',this.pictures)
     },
  

@@ -313,7 +313,6 @@ export default {
       return `${Math.random()}_${key}`
     },
     handleShowMore(key) {
-      // const keys = ['{loginUser}', '{loginRole}', 'CreateUserId', 'CreateUserName']
       const keys = ['{loginUser}', '{loginRole}']
       if (keys.indexOf(key) > -1) {
         return true
@@ -428,9 +427,6 @@ export default {
     },
     // 默认选中
     setSelectTable() {
-      // const item = this.ruleIndexInfo.item
-      // const index = this.ruleIndexInfo.index
-      // const selectIds = item.Filters[index].Value && item.Filters[index].Value.split(',') || []
       const selectIds = this.loginKey === '{loginUser}' ? this.userInfo.selectIdsC : this.comonInfo.selectIds
       this.$nextTick(() => {
         const rows = [...this.comonInfo.datas].filter(x => [...selectIds].some(y => y === x.id))

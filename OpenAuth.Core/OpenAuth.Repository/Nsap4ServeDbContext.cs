@@ -1,7 +1,6 @@
 ﻿using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.Repository.Domain;
-using OpenAuth.Repository.Domain.Serve;
 using System;
 using System.Collections.Generic;
 using System.Text;

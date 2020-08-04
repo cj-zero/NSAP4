@@ -1,5 +1,5 @@
 ﻿using Infrastructure.AutoMapper;
-using OpenAuth.Repository.Domain.Serve;
+using OpenAuth.Repository.Domain;
 using System;
 using System.Collections.Generic;
 using System.Text;

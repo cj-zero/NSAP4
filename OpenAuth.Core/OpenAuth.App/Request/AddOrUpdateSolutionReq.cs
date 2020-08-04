@@ -14,7 +14,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using Infrastructure.AutoMapper;
 using OpenAuth.Repository.Core;
-using OpenAuth.Repository.Domain.Serve;
+using OpenAuth.Repository.Domain;
 
 namespace OpenAuth.App.Request
 {

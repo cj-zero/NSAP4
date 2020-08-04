@@ -66,15 +66,26 @@
     import waves from '@/directive/waves' // 水波纹指令
     import Sticky from '@/components/Sticky'
     import permissionBtn from '@/components/PermissionBtn'
+    import { mapGetters, mapActions } from 'vuex'
 
     export default {
-      name: 'flowinstance-wait',
+      name: 'flowInstanceWait',
       components: {
         Sticky,
         permissionBtn
       },
       directives: {
         waves
+      },
+      computed: {
+        ...mapGetters(['isWaitRender'])
+      },
+      beforeRouteEnter(to, from ,next) {
+        next(vm => {
+          if(vm.isWaitRender){
+            vm.getList()
+          }
+        })
       },
       data() {
         return {
@@ -198,6 +209,7 @@
         this.$router.addRoutes(addRouter)
       },
       methods: {
+        ...mapActions(['updateInstancesIsRender']),
         rowClick(row) {
           this.$refs.mainTable.clearSelection()
           this.$refs.mainTable.toggleRowSelection(row)
@@ -237,6 +249,7 @@
           flowinstances.getList(this.listQuery).then(response => {
             this.list = response.data
             this.total = response.count
+            this.updateInstancesIsRender({type: 'isWaitRender', val: false})
             this.listLoading = false
           })
         },
