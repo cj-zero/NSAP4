@@ -77,6 +77,7 @@ export default {
     //   // this.getList();
     // },
     handleSelectionChange(val) {
+      console.log(val)
       this.$emit("change-Form", val);
     },
   },

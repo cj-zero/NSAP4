@@ -132,7 +132,7 @@
               <el-col :span="8">
                 <el-form-item label="创建时间" label-width="95px" prop="createTime">
                   <el-date-picker
-                  @focus='setThisTime'
+                    @focus="setThisTime"
                     :clearable="false"
                     size="mini"
                     v-model="form.createTime"
@@ -234,7 +234,7 @@
                   <el-image
                     style="width:60px;height:50px;display:inline-block;margin:0 10px;"
                     v-for="url in form.serviceOrderPictures"
-                     @click="handlePreviewFile(`${baseURL}/files/Download/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`)"
+                    @click="handlePreviewFile(`${baseURL}/files/Download/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`)"
                     :key="url.id"
                     :src="`${baseURL}/files/Download/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`"
                     lazy
@@ -348,7 +348,7 @@ export default {
     "labelwidth",
     "isCreate",
     "formName",
-    "ifEdit",//是否是编辑页面
+    "ifEdit", //是否是编辑页面
     "customer",
     "sure",
   ],
@@ -389,7 +389,7 @@ export default {
       activeName: 1,
       // dataModel: this.models[this.formData.model],
       dataModel: null,
-      parentLoad:false,
+      parentLoad: false,
       callSourse: [
         { label: "电话", value: 1 },
         { label: "钉钉", value: 2 },
@@ -430,8 +430,8 @@ export default {
         pictures: [], //
         serviceWorkOrders: [],
       },
-      disableBtn:false,
-      newDate:[],
+      disableBtn: false,
+      newDate: [],
       isCreateAdd: true, //add页面的编辑状态
       allAddress: {}, //选择地图的合集
       propForm: [],
@@ -482,7 +482,6 @@ export default {
     "form.customerId": {
       handler(val) {
         this.getPartnerInfo(val);
-      
       },
     },
     refValue: {
@@ -520,9 +519,8 @@ export default {
     this.isCreateAdd = this.isCreate;
   },
   methods: {
-        setThisTime(){
-          console.log(11)
-    
+    setThisTime() {
+      console.log(11);
     },
     handlePreviewFile(item) {
       //预览图片
@@ -546,23 +544,22 @@ export default {
       this.drawerMap = false;
     },
     async setForm(val) {
-      if(val){
-      val.serviceOrderPictures = await this.getServeImg(val.id)
-
+      if (val) {
+        val.serviceOrderPictures = await this.getServeImg(val.id);
       }
       Object.assign(this.form, val);
       this.form.recepUserName = this.$store.state.user.name;
     },
-   async getServeImg(val){
-      let params={
-        id:val,
-        type:1
-      }
-      let imgList =[]
-     await callservesure.GetServiceOrderPictures(params).then(res=>{
-        imgList=res.result?res.result:[]
-      })
-      return imgList
+    async getServeImg(val) {
+      let params = {
+        id: val,
+        type: 1,
+      };
+      let imgList = [];
+      await callservesure.GetServiceOrderPictures(params).then((res) => {
+        imgList = res.result ? res.result : [];
+      });
+      return imgList;
     },
     postServe() {
       //创建整个工单
@@ -597,7 +594,7 @@ export default {
                 });
               });
           } else {
-            console.log(this.form)
+            console.log(this.form);
             callservesure
               .CreateWorkOrder(this.form)
               .then(() => {
@@ -738,13 +735,13 @@ export default {
       };
     },
     getPartnerList() {
-      this.parentLoad=true
+      this.parentLoad = true;
       getPartner(this.listQuery)
         .then((res) => {
           this.partnerList = res.data;
           this.filterPartnerList = this.partnerList;
           this.parentCount = res.count;
-                this.parentLoad=false
+          this.parentLoad = false;
 
           // console.log(res.count)
         })
@@ -774,12 +771,12 @@ export default {
       this.form.salesMan = val.slpName;
     },
     ChildValue(val) {
-      if(val==1){
-          this.disableBtn = true
-          console.log(11)
-      }else{
-      this.checkVal = val;
- this.disableBtn = false
+      if (val == 1) {
+        this.disableBtn = true;
+        console.log(11);
+      } else {
+        this.checkVal = val;
+        this.disableBtn = false;
       }
     },
     handleIconClick() {
@@ -841,18 +838,18 @@ export default {
   // }
 }
 .rowStyle1 {
-  ::v-deep .el-form{
+  ::v-deep .el-form {
     padding: 5px;
     // margin-bottom: 2px;
   }
-   ::v-deep .el-form-item__label{
-       line-height:30px;
-     }
-     ::v-deep .el-form-item__content{
-       line-height:30px;
-     }
-      ::v-deep .el-form-item {
-     margin: 1px 1px;
+  ::v-deep .el-form-item__label {
+    line-height: 30px;
+  }
+  ::v-deep .el-form-item__content {
+    line-height: 30px;
+  }
+  ::v-deep .el-form-item {
+    margin: 1px 1px;
   }
 }
 .myAuto {

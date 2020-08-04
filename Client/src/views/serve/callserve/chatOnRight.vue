@@ -130,10 +130,11 @@ export default {
     },
     getImgList(val) {
       //获取图片列表
-      this.formValue.serviceOrderMessagePictures = val.map((item) => {
-        item.id = item.pictureId;
-        return item;
-      });
+      this.formValue.serviceOrderMessagePictures = val
+      // this.formValue.serviceOrderMessagePictures = val.map((item) => {
+      //   item.id = item.pictureId;
+      //   return item;
+      // });
     },
     submitForm(item) {
       this.formValue.froTechnicianName = item.data[0].froTechnicianName;

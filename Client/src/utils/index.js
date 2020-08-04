@@ -45,11 +45,7 @@ export function timeToFormat(format){
     const mounth = mounth1<10?'0'+mounth1:mounth1
     const day1 = now.getDate()
     const day = day1<10?'0'+day1:day1
-    // const hour = now.getHours()
-    // const minute = now.getMinutes()
-    // const second = now.getSeconds()
     result = year+'-'+ mounth + '-' + day
-     
   }
 return result
 }
