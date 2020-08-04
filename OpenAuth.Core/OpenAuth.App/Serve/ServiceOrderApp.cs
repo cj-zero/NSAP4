@@ -1593,7 +1593,8 @@ namespace OpenAuth.App
                     s.CreateTime,
                     s.FroTechnicianName,
                     s.AppUserId,
-                    s.ServiceOrderId
+                    s.ServiceOrderId,
+                    s.Replier
                 });
 
                 result.Data =
