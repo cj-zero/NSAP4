@@ -141,28 +141,38 @@ export default {
       this.formValue.serviceOrderId = item.data[0].serviceOrderId;
       this.formValue.content = item.content;
       this.formValue.appUserId = item.data[0].appUserId;
-      if(!this.formValue.content&&!this.formValue.serviceOrderMessagePictures){
-             this.$message({
-        type:'warning',
-        message:'你不能发送空消息'
-      })
-      }else{
-          callserve
-        .SendMessageToTechnician(this.formValue)
-        .then(() => {
-          this.getList();
-                this.$message({
-        type:'success',
-        message:'发送成功'
-      })
-        })
-        .catch(() => {
-           this.$message({
-        type:'warning',
-        message:'发送失败，请重试'
-      })        });
+      if (
+        !this.formValue.content &&
+        !this.formValue.serviceOrderMessagePictures
+      ) {
+        this.$message({
+          type: "warning",
+          message: "你不能发送空消息",
+        });
+      } else {
+        callserve
+          .SendMessageToTechnician(this.formValue)
+          .then((res) => {
+            if(res.code==200){
+     this.getList();
+            this.$message({
+              type: "success",
+              message: "发送成功",
+            });
+            }else{
+                  this.$message({
+              type: "warning",
+              message:  `${res}`,
+            });
+            }
+          })
+          .catch((res) => {
+            this.$message({
+              type: "error",
+              message: `${res}`,
+            });
+          });
       }
-  
     },
   },
 };
@@ -197,7 +207,7 @@ ul {
     p {
       margin: 0;
       line-height: 20px;
-      font-size:x-small;
+      font-size: x-small;
       span {
         font-size: 12px;
         margin: 0 5px;
@@ -205,10 +215,10 @@ ul {
       }
     }
     .otherWord {
-margin: 5px 0;
-    border: 2px solid white;
-    border-radius: 5px;
-    padding: 5px;
+      margin: 5px 0;
+      border: 2px solid white;
+      border-radius: 5px;
+      padding: 5px;
       p:nth-child(2) {
         border-radius: 5px;
         padding: 2px;
@@ -216,10 +226,10 @@ margin: 5px 0;
       }
     }
     .ownWord {
-margin: 5px 0;
-    border: 2px solid white;
-    border-radius: 5px;
-    padding: 5px;
+      margin: 5px 0;
+      border: 2px solid white;
+      border-radius: 5px;
+      padding: 5px;
 
       p:nth-child(2) {
         color: #67c23a;

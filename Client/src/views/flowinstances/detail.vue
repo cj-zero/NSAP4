@@ -36,7 +36,7 @@
         <el-collapse-item title="流程图" name="3">
           <span slot="title" style="font-size: 16px;font-weight: 600;">流程图</span>
           <div style="height: 500px;">
-            <CreatedFlow ref="createdFlow" :form-template="currentForm" :isCreate="true" :isShowContent="isShowContent" :scheme-content="postObj.schemeContent"></CreatedFlow>
+            <CreatedFlow ref="createdFlow" :form-template="currentForm" :isEdit="true" :isShowContent="isShowContent" :scheme-content="postObj.schemeContent"></CreatedFlow>
           </div>
         </el-collapse-item>
       </el-collapse>
@@ -100,24 +100,13 @@
         }]
       }
     },
-//           beforeRouteLeave (to, from, next) {
-//   const answer = window.confirm('Do you really want to leave? you have unsaved changes!')
-//   if (answer) {
-//     next()
-//   } else {
-//     next(false)
-//   }
-// },
     created() {
-      // if(this.$route.params && this.$route.params.id) {localStorage.setItem('paramsV', this.$route.params.id)}
-       const id = this.$route.params&&this.$route.params.id
-       // const id = this.$route.query && this.$route.query.id
+      const id = this.$route.params && this.$route.params.id
       apiFlowinstances.get({
         id: id
       }).then(response => {
         this.postObj = response.result
         this.createdFormData = this.setCreatedFormData(JSON.parse(response.result.frmContentData))
-        console.log(this.createdFormData)
         this.defaultValue = JSON.parse(response.result.frmData)
       }).catch(err => {
         console.log(err)

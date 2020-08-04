@@ -70,7 +70,7 @@
   import Pagination from '@/components/Pagination'
   import elDragDialog from '@/directive/el-dragDialog'
   export default {
-    name: 'sysLogs',
+    name: 'sysLog',
     components: {
       Sticky,
       permissionBtn,

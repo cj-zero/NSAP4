@@ -1,16 +1,7 @@
 <template>
- <!-- <div class="app-wrapper" :class="classObj">
-    <div v-if="device==='mobile'&&sidebar.opened" class="drawer-bg" @click="handleClickOutside"></div>
-    <sidebar class="sidebar-container"></sidebar>
-    <div class="main-container">
-      <navbar></navbar>
-      <tags-view></tags-view>
-      <app-main></app-main>
-    </div>
-  </div> -->
 	<div class="app-wrapper" :class="classObj">
 		<el-container class="flex-column">
-			<el-header height="44px">
+			<el-header height="45px">
 				<navbar></navbar>
 			</el-header>
 			<el-container class="flex-row flex-item">
@@ -86,16 +77,11 @@ export default {
     padding: 0;
     line-height: 44px;
     background-color: #333;
-    // position: fixed;// me
-    // top: 0;// me
     width: 100%;
     z-index: 100;
 }
 .el-container .sidebar-container {
-    // top: 44px !important;
     height: auto !important;
-
-    // position: relative !important;// me
 }
 
 

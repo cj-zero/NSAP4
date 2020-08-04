@@ -87,9 +87,9 @@
   .sidebar-container .nest-menu .el-submenu>.el-submenu__title,
   .sidebar-container .el-submenu .el-menu-item {
     min-width: 180px !important;
-    background-color: $subMenuBg !important;
+    // background-color: #018dae !important;
     &:hover {
-      background-color: $menuHover !important;
+      // background-color: #f1f5f8 !important;
     }
   }
   .el-menu--collapse .el-menu .el-submenu {

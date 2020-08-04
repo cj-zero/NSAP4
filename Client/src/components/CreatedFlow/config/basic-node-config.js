@@ -10,7 +10,7 @@ export const tools = [
     icon: 'el-icon-share',
     defaultIcon: 'el-icon-share',
     name: '连线'
-  }
+  },
   // {
   //   type: 'zoom-in',
   //   icon: 'el-icon-zoom-in',

@@ -1446,6 +1446,8 @@ namespace OpenAuth.App
             obj.CreateTime = DateTime.Now;
             obj.FroTechnicianId = userId;
             obj.FroTechnicianName = name;
+            obj.Replier = name;
+            obj.ReplierId = userId;
             await UnitWork.AddAsync<ServiceOrderMessage, int>(obj);
             await UnitWork.SaveAsync();
             string msgId = (await UnitWork.Find<ServiceOrderMessage>(s => s.AppUserId == req.AppUserId).OrderByDescending(o => o.CreateTime).FirstOrDefaultAsync()).Id;
@@ -1536,7 +1538,8 @@ namespace OpenAuth.App
                 s.Content,
                 s.CreateTime,
                 s.FroTechnicianName,
-                s.AppUserId
+                s.AppUserId,
+                s.Replier
             });
 
             result.Data =

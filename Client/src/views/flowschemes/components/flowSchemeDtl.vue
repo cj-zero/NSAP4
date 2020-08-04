@@ -66,7 +66,7 @@
         </div>
         <!--流程设计-->
         <div class="editor-container" style="height: 100%;" v-if="active==2">
-          <CreatedFlow ref="createdFlow" :form-template="currentForm" :isCreate="isCreate" :scheme-content="postObj.schemeContent"></CreatedFlow>
+          <CreatedFlow ref="createdFlow" :form-template="currentForm" :isEdit="isEdit" :scheme-content="postObj.schemeContent"></CreatedFlow>
         </div>
       </div>
       <div class="edit-btns text-center">
@@ -86,7 +86,7 @@
   import Sticky from '@/components/Sticky' // 粘性header组件
   import * as flowschemes from '@/api/flowschemes'
   import * as forms from '@/api/forms'
-  import { mapGetters } from 'vuex'
+  import { mapGetters, mapActions } from 'vuex'
 
   const defaultScheme = {
     id: undefined,
@@ -109,7 +109,7 @@
       CreatedForm
     },
     props: {
-      isCreate: {
+      isEdit: {
         type: Boolean,
         default: false
       }
@@ -150,7 +150,7 @@
       }
     },
     computed: {
-      ...mapGetters(['defaultorgid']),
+      ...mapGetters(['defaultorgid', 'flowDetails', 'addFlowDetail']),
       contentShortLength() {
         return this.postObj.description ? this.postObj.description.length : 0
       }
@@ -159,24 +159,34 @@
       forms.getList().then(response => {
         // 获取表单列表
         this.forms = response.data
-        if (this.isCreate) {
+        if (this.isEdit) {
           const id = this.$route.params && this.$route.params.id
-          flowschemes.get({
-            id: id
-          }).then(response => {
-            this.postObj = response.result
-            this.onFrmChange(this.postObj.frmId)
-          }).catch(err => {
-            console.log(err)
-          })
+          this.postObj = this.flowDetails[id].data
+          this.active = this.flowDetails[id].active
+          this.onFrmChange(this.postObj.frmId)
         } else {
-          this.postObj = Object.assign({}, defaultScheme)
+          this.postObj = Object.assign({}, this.addFlowDetail && this.addFlowDetail.data || defaultScheme)
+          this.active = this.addFlowDetail && this.addFlowDetail.active || 0
           this.postObj.frmId = this.forms[0].id
           this.onFrmChange(this.postObj.frmId)
         }
       })
     },
+    beforeDestroy() {
+      this.postObj.schemeContent = this.$refs.createdFlow && JSON.stringify(this.$refs.createdFlow.flowData) || this.postObj.schemeContent
+      if(!this.postObj.id){
+        this.saveAddFlowDetails({ data: this.postObj, active: this.active })
+        return
+      }
+      let data = {}
+      data[this.postObj.id] = {
+        data: this.postObj,
+        active: this.active
+      }
+      this.saveFlowDetails(data)
+    },
     methods: {
+      ...mapActions(['saveFlowDetails', 'saveAddFlowDetails', 'updateFlowIsRender']),
       next() {
         if (this.active++ > 1) this.active = 0
       },
@@ -230,9 +240,10 @@
 
             this.postObj.OrgId = this.defaultorgid
 
-            if (this.isCreate) {
+            if (this.isEdit) {
               flowschemes.update(this.postObj).then(() => {
                 this.loading = false
+                this.updateFlowIsRender(true)
                 this.$notify({
                   title: '成功',
                   message: '修改成功',
@@ -243,6 +254,7 @@
             } else {
               flowschemes.add(this.postObj).then(() => {
                 this.loading = false
+                this.updateFlowIsRender(true)
                 this.$notify({
                   title: '成功',
                   message: '创建成功',
@@ -315,9 +327,5 @@
     -webkit-box-shadow: 0 0px 0px 0 rgba(0, 0, 0, .12), 0 0 6px 0 rgba(0, 0, 0, .04);
     box-shadow: 0 0px 0px 0 rgba(0, 0, 0, .12), 0 0 6px 0 rgba(0, 0, 0, .04);
   }
-
-  // .el-dialog__wrapper {
-  //    z-index: 20000 !important;
-  // }
 
 </style>

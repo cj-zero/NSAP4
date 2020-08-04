@@ -7,7 +7,9 @@ import FormDetail from './components/formDetail'
 
 export default {
   name: 'editForm',
-  components: { FormDetail }
+  components: { FormDetail },
+  methods: {
+  }
 }
 </script>
 
