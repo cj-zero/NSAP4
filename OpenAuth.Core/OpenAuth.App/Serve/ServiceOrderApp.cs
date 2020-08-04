@@ -945,7 +945,7 @@ namespace OpenAuth.App
             }, req.ServiceWorkOrderIds);
             await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{req.TechnicianId}接单工单：{string.Join(",", req.ServiceWorkOrderIds)}", ActionType = "技术员接单" }, req.ServiceWorkOrderIds);
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = req.ServiceOrderId, Content = "技术员已接单成功，请尽快选择服务", AppUserId = 0 });
-            await PushMessageToApp(req.TechnicianId, "测试接单标题", "测试消息内容");
+            await PushMessageToApp(req.TechnicianId, "接单成功提醒", "您已成功接取一个新的售后服务，请尽快处理");
         }
 
         /// <summary>
@@ -1123,7 +1123,7 @@ namespace OpenAuth.App
                 Details = "已为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
             }, req.WorkOrderIds);
             await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{req.CurrentUserId}派单{string.Join(",", req.WorkOrderIds)}", ActionType = "主管派单工单" }, req.WorkOrderIds);
-            await PushMessageToApp(req.CurrentUserId, "测试派单标题", "测试消息内容");
+            await PushMessageToApp(req.CurrentUserId, "派单成功提醒", "您已被派有一个新的售后服务，请尽快处理");
         }
 
         /// <summary>
