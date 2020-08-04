@@ -1670,10 +1670,10 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task CloseWorkOrder(CloseWorkOrderReq request)
         {
-            var workOrderInfo = await UnitWork.Find<ServiceWorkOrder>(s => s.Id == request.Id).FirstOrDefaultAsync();
+            var workOrderInfo = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId).FirstOrDefaultAsync();
             string content = "关单通知<br>工单号：" + workOrderInfo.Id + "<br>序列号：" + (string.IsNullOrEmpty(workOrderInfo.ManufacturerSerialNumber) ? "无" : workOrderInfo.ManufacturerSerialNumber) + "<br>物料编码：" +
                (string.IsNullOrEmpty(workOrderInfo.MaterialCode) ? "无" : workOrderInfo.MaterialCode) + "<br>关单原因：" + request.Reason;
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id == request.Id, u => new ServiceWorkOrder
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId, u => new ServiceWorkOrder
             {
                 Status = 7,
                 ProcessDescription = workOrderInfo.ProcessDescription + content

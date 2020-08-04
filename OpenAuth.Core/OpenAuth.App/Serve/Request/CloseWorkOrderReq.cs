@@ -8,10 +8,10 @@ namespace OpenAuth.App.Serve.Request
     public class CloseWorkOrderReq
     {
         /// <summary>
-        /// 工单Id
+        /// 服务单Id
         /// </summary>
         [Required]
-        public int Id { get; set; }
+        public int ServiceOrderId { get; set; }
 
         /// <summary>
         /// 关单原因
