@@ -2,7 +2,7 @@ import axios from 'axios'
 import { Message, MessageBox } from 'element-ui'
 import store from '../store'
 import { getToken } from '@/utils/auth'
-import qs from 'qs'
+
 // 创建axios实例
 const service = axios.create({
   baseURL: process.env.VUE_APP_BASE_API, // api的base_url
@@ -18,11 +18,6 @@ service.interceptors.request.use(config => {
   if (store.getters.isIdentityAuth) {
     config.headers['Authorization'] = 'Bearer ' + store.getters.oidcAccessToken
   }
-  if(config.method === 'get'){
-    //如果是get请求，且params是数组类型如arr=[1,2]，则转换成arr=1&arr=2
-    config.paramsSerializer = function(params) {
-        return qs.stringify(params, {arrayFormat: 'repeat'})
-    }}
 
   return config
 }, error => {

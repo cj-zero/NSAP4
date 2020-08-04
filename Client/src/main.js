@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import layer from 'vue-layer'
 import VueAMap from 'vue-amap';
+
 import 'normalize.css/normalize.css'// A modern alternative to CSS resets
 
 import ElementUI from 'element-ui'
