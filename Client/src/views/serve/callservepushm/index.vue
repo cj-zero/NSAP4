@@ -458,13 +458,15 @@ this.listLoading=false
     // searchBtn(){
 
     // },
-    changeOrder() {
+   async changeOrder() {
       if (this.ifParent) {
         this.dialogOrder = true;
         callservepushm.AllowSendOrderUser().then(res => {
           this.tableData = res.data;
           this.total2 = res.count
         });
+           this.listQuery.limit=999
+     await this.getRightList();
       } else {
         this.$message({
           type: "warning",
@@ -487,7 +489,8 @@ this.listLoading=false
       //   });
       //   return
       // }
-      if (this.hasAlreadNum > 2) {
+   console.log(this.hasAlreadNum)
+      if (this.hasAlreadNum > 3) {
         this.$message({
           type: "warning",
           message: "单个技术员接单不能超过3个"
@@ -507,6 +510,8 @@ this.listLoading=false
             this.afterLeft()
               this.dialogOrder = false;
               this.listLoading = false;
+    //                 this.listQuery.limit=999
+    //  this.getRightList();
             }
           })
           .catch(error => {
@@ -523,7 +528,7 @@ this.listLoading=false
          this.getRightList();
       } else {
         Object.assign(this.listQuery, val);
-                  this.$refs.treeForm.setCheckedKeys([val.QryServiceOrderId]);
+        this.$refs.treeForm.setCheckedKeys([val.QryServiceOrderId]);
         this.getLeftList()
       }
     },

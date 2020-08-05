@@ -450,12 +450,13 @@ export default {
     async afterLeft() {
       await this.getLeftList();
       if (this.modulesTree.length > 0) {
-        this.$refs.treeForm.setCheckedKeys([this.modulesTree[0].key]);
+        console.log(this.modulesTree[0].key)
+        // this.$refs.treeForm.setCheckedKeys([this.modulesTree[0].key]);
         this.checkGroupNode(this.modulesTree[0]);
         this.getRightList();
       }
     },
-    changeOrder() {
+   async   changeOrder() {
       // console.log(this.ifParent,this.list)
 
       if (this.ifParent) {
@@ -470,6 +471,8 @@ export default {
           });
         } else {
           this.dialogOrder = true;
+                     this.listQuery.limit=999
+     await this.getRightList(); 
           callservepushm.AllowSendOrderUser().then((res) => {
             this.tableData = res.data;
             this.total2 = res.count;
@@ -663,6 +666,7 @@ export default {
             this.listQuery.QryMaterialTypes.push(item.id);
           });
         }
+     
         this.$refs.treeForm.setCheckedKeys([a.key1]);
         this.ifParent = a.key;
         this.listQuery.QryServiceOrderId = a.key;
