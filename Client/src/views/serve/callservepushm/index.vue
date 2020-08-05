@@ -24,16 +24,15 @@
     <div class="app-container flex-item bg-white">
       <zxsearch @change-Search="changeSearch" @change-Order="changeOrder"></zxsearch>
       <el-row class="fh">
-        <el-col :span="4" class="fh ls-border">
+        <el-col :span="3" class="fh ls-border" style="max-width:190px;">
           <el-card shadow="never" class="card-body-none fh" style>
             <el-link
               style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;"
-              @click="getAllRight"
+              @click="getAllRight"    
             >全部服务单>></el-link>
             <el-tree
               style="max-height:600px;overflow-y: auto;"
               :data="modulesTree"
-              default-expand-all
               show-checkbox
               node-key="key1"
               @check="checkGroupNode"
@@ -44,7 +43,7 @@
             <!--  -->
           </el-card>
         </el-col>
-        <el-col :span="20" class="fh">
+        <el-col :span="21" class="fh">
           <div class="bg-white">
             <el-table
               ref="mainTable"
@@ -182,6 +181,7 @@
         :destroy-on-close="true"
         title="选择派单对象"
         center
+        :modal-append-to-body="false"
         width="500px"
       >
         <el-table :data="tableData" border @row-click="setRadio" style="width: 100%">
@@ -194,7 +194,7 @@
           <el-table-column prop="count" label="已接服务单数" align="center" width="180"></el-table-column>
         </el-table>
         <span slot="footer" class="dialog-footer">
-          <el-button @click="dialogOrder = false">取 消</el-button>
+          <el-button @click="cancelPost">取 消</el-button>
           <el-button type="primary" @click="postOrder">确 定</el-button>
         </span>
       </el-dialog>
@@ -269,7 +269,7 @@ export default {
         { name: "fromTheme", label: "呼叫主题" },
         { name: "createTime", label: "创建日期" },
         { name: "recepUserName", label: "接单员" },
-        { name: "techName", label: "技术员" },
+        { name: "currentUser", label: "技术员" },
         {
           name: "manufacturerSerialNumber",
           label: "制造商序列号",
@@ -425,20 +425,30 @@ export default {
     this.afterLeft()
   },
   methods: {
-   async afterLeft(){
-     console.log(1)
-    await  this.getLeftList();
-      console.log(2)
+     cancelPost(){
+this.dialogOrder = false,
+this.listLoading=false
+        this.getRightList();
+
+// this.ifParent
+    },
+  async afterLeft(){
+      await this.getLeftList();
      if(this.modulesTree.length>0 ){
-      this.listQuery.QryServiceOrderId=this.modulesTree[0].key
+      //  this.$refs.treeForm.setCheckedKeys([])
+          this.$refs.treeForm.setCheckedKeys([this.modulesTree[0].key]);
+          this.checkGroupNode(this.modulesTree[0])
       this.getRightList();
      }
     },
+    // searchBtn(){
+
+    // },
     changeOrder() {
       if (this.ifParent) {
         this.dialogOrder = true;
         callservepushm.AllowSendOrderUser().then(res => {
-          this.tableData = res.result;
+          this.tableData = res.data;
         });
       } else {
         this.$message({
@@ -494,8 +504,8 @@ export default {
     },
     changeSearch(val) {
       if (val === 1) {
-        // this.getRightList();
-            this.afterLeft()
+         this.getRightList();
+           // this.afterLeft()
 
       } else {
         Object.assign(this.listQuery, val);
@@ -544,6 +554,9 @@ export default {
           break;
         case "editTable":
           this.dialogTable = true;
+          break;
+          case "btnPost":
+          this.changeOrder()
           break;
         case "btnEdit":
           this.$message({
@@ -596,6 +609,7 @@ export default {
             if( !this.listQuery.QryServiceOrderId){
                this.listQuery.QryServiceOrderId =a.key
             }else{
+              this.ifParent=''  //取消选择之后，清空父级选择
               this.listQuery.QryServiceOrderId=''
               this.listQuery.QryMaterialTypes=[]
             }
@@ -637,7 +651,7 @@ export default {
     getLeftList() {
       this.listLoading = true;
       let arr = [];
-      callservepushm
+    return callservepushm
         .getLeftList({ QryState: this.listQuery.QryState })
         .then(res => {
           let resul = res.data.data;
@@ -657,11 +671,10 @@ export default {
             });
             // console.log(arr)
           }
-            console.log(3)
           this.modulesTree = arr;
+           this.listLoading = false;
         });
-      this.listLoading = false;
-      return arr
+     
     },
     getAllRight() {
        this.afterLeft()
@@ -686,6 +699,7 @@ export default {
         .getRightList(this.listQuery)
         .then(response => {
           if (response.code === 200) {
+                    // this.ifParent=""
             this.list = response.data.data;
             this.total = response.data.count;
             this.listLoading = false;

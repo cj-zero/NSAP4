@@ -27,6 +27,7 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Options;
 using SAP.API;
+using Autofac.Core;
 
 namespace OpenAuth.App
 {
@@ -433,6 +434,8 @@ namespace OpenAuth.App
             }
             var d = await _businessPartnerApp.GetDetails(request.CustomerId);
             var obj = request.MapTo<ServiceOrder>();
+            obj.RecepUserName = loginContext.User.Name;
+            obj.RecepUserId = loginContext.User.Id;
             obj.Status = 2;
             obj.SalesMan = d.SlpName;
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
@@ -589,7 +592,7 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.b.RecepUserName.Contains(req.QryRecepUser))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.a.ProblemTypeId.Equals(req.QryProblemType))
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime <= req.QryCreateTimeTo)
-                         .Where(q => q.b.SupervisorId.Equals(loginContext.User.Id));
+                         ;
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
@@ -661,6 +664,8 @@ namespace OpenAuth.App
             }
             var d = await _businessPartnerApp.GetDetails(req.CustomerId);
             var obj = req.MapTo<ServiceOrder>();
+            obj.RecepUserName = loginContext.User.Name;
+            obj.RecepUserId = loginContext.User.Id;
             obj.Status = 2;
             obj.SalesMan = d.SlpName;
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
@@ -764,6 +769,11 @@ namespace OpenAuth.App
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime <= req.QryCreateTimeTo)
                          .WhereIf(req.QryMaterialTypes != null && req.QryMaterialTypes.Count > 0, q => req.QryMaterialTypes.Contains(q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))));
 
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME)
+            {
+                query = query.Where(q => q.b.SupervisorId.Equals(loginContext.User.Id));
+            }
+
             var resultsql = query.OrderBy(r => r.a.CreateTime).Select(q => new
             {
                 ServiceOrderId = q.b.Id,
@@ -787,6 +797,8 @@ namespace OpenAuth.App
                 ServiceWorkOrderId = q.a.Id,
                 ProblemTypeName = q.c.Name,
                 q.a.CurrentUserId,
+                q.a.CurrentUser,
+                q.a.CurrentUserNsapId
             });
 
 
@@ -974,8 +986,11 @@ namespace OpenAuth.App
                 throw new CommonException("当前技术员接单已满6单服务单", 90004);
             }
 
+            var u = await UnitWork.Find<AppUserMap>(s => s.AppUserId == req.TechnicianId).Include(s => s.User).FirstOrDefaultAsync();
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => req.ServiceWorkOrderIds.Contains(s.Id), o => new ServiceWorkOrder
             {
+                CurrentUser = u.User.Name,
+                CurrentUserNsapId = u.User.Id,
                 Status = 2,
                 CurrentUserId = req.TechnicianId
             });
@@ -986,7 +1001,7 @@ namespace OpenAuth.App
                 Title = "移转至技术员",
                 Details = "已为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
             }, req.ServiceWorkOrderIds);
-            await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{req.TechnicianId}接单工单：{string.Join(",", req.ServiceWorkOrderIds)}", ActionType = "技术员接单" }, req.ServiceWorkOrderIds);
+            await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{u.User.Name}接单工单：{string.Join(",", req.ServiceWorkOrderIds)}", ActionType = "技术员接单" }, req.ServiceWorkOrderIds);
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = req.ServiceOrderId, Content = "技术员已接单成功，请尽快选择服务", AppUserId = 0 });
             await PushMessageToApp(req.TechnicianId, "接单成功提醒", "您已成功接取一个新的售后服务，请尽快处理");
         }
@@ -1113,8 +1128,9 @@ namespace OpenAuth.App
         /// 查询可以被派单的技术员列表
         /// </summary>
         /// <returns></returns>
-        public async Task<List<AllowSendOrderUserResp>> GetAllowSendOrderUser()
+        public async Task<TableData> GetAllowSendOrderUser(GetAllowSendOrderUserReq req)
         {
+            var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
@@ -1123,9 +1139,10 @@ namespace OpenAuth.App
             var orgs = loginContext.Orgs.Select(o => o.Id).ToArray();
 
             var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole == 2).ToListAsync();
+            var locations = (await UnitWork.Find<RealTimeLocation>(null).OrderByDescending(o => o.CreateTime).ToListAsync()).GroupBy(g => g.AppUserId).Select(s => s.First());
             var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
             var ids = userIds.Intersect(tUsers.Select(u => u.UserID));
-            var users = await UnitWork.Find<User>(u => ids.Contains(u.Id)).ToListAsync();
+            var users = await UnitWork.Find<User>(u => ids.Contains(u.Id)).WhereIf(!string.IsNullOrEmpty(req.key), u => u.Name.Equals(req.key)).ToListAsync();
             var us = users.Select(u => new { u.Name, AppUserId = tUsers.FirstOrDefault(a => a.UserID.Equals(u.Id)).AppUserId, u.Id });
             var appUserIds = tUsers.Where(u => userIds.Contains(u.UserID)).Select(u => u.AppUserId).ToList();
 
@@ -1133,14 +1150,24 @@ namespace OpenAuth.App
                 .Select(s => new { s.CurrentUserId, s.ServiceOrderId }).Distinct().GroupBy(s => s.CurrentUserId)
                 .Select(g => new { g.Key, Count = g.Count() }).ToListAsync();
 
-            var result = us.Select(u => new AllowSendOrderUserResp
+            var userInfos = us.Select(u => new AllowSendOrderUserResp
             {
                 Id = u.Id,
                 Name = u.Name,
                 Count = userCount.FirstOrDefault(s => s.Key.Equals(u.AppUserId))?.Count ?? 0,
-                AppUserId = u.AppUserId
+                AppUserId = u.AppUserId,
+                Province = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Province,
+                City = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.City,
+                Area = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Area,
+                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude ?? 0), Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
             }).ToList();
 
+            userInfos = userInfos.OrderBy(o => o.Distance).ToList();
+            var list = userInfos.OrderBy(o => o.Distance)
+            .Skip((req.page - 1) * req.limit)
+            .Take(req.limit).ToList();
+            result.Data = list;
+            result.Count = userInfos.Count;
             return result;
         }
 
@@ -1155,17 +1182,26 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var canSendOrder = await CheckCanTakeOrder(req.CurrentUserId);
+            if (!canSendOrder)
+            {
+                throw new CommonException("技术员接单已经达到上限", 60001);
+            }
+            var u = await UnitWork.Find<AppUserMap>(s => s.AppUserId == req.CurrentUserId).Include(s => s.User).FirstOrDefaultAsync();
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => req.WorkOrderIds.Contains(s.Id), o => new ServiceWorkOrder
             {
+                CurrentUser = u.User.Name,
+                CurrentUserNsapId = u.User.Id,
                 CurrentUserId = req.CurrentUserId,
                 Status = 2
             });
+            await UnitWork.SaveAsync();
             await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
                 Title = "移转至技术员",
                 Details = "已为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
             }, req.WorkOrderIds);
-            await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{req.CurrentUserId}派单{string.Join(",", req.WorkOrderIds)}", ActionType = "主管派单工单" }, req.WorkOrderIds);
+            await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{string.Join(",", req.WorkOrderIds)}", ActionType = "主管派单工单" }, req.WorkOrderIds);
             await PushMessageToApp(req.CurrentUserId, "派单成功提醒", "您已被派有一个新的售后服务，请尽快处理");
         }
 
@@ -1681,6 +1717,29 @@ namespace OpenAuth.App
             });
             await UnitWork.SaveAsync();
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = workOrderInfo.ServiceOrderId, Content = content, AppUserId = request.CurrentUserId });
+        }
+
+        public async Task ServiceOrderCallback(int serviceOrderId)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var order = await UnitWork.Find<ServiceOrder>(s => s.Id == serviceOrderId).Include(s => s.ServiceWorkOrders).FirstOrDefaultAsync();
+            if (order is null)
+                throw new CommonException("服务单号不存在", 40004);
+            var allCanCallback = order.ServiceWorkOrders.All(s => s.Status == 7);
+            if (allCanCallback)
+            {
+                await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId, o => new ServiceWorkOrder { 
+                        Status = 8
+                    });
+            }
+            else
+            {
+                throw new CommonException("无法回访此服务单，原因：还有工单尚未解决", 40005);
+            }
         }
     }
 }

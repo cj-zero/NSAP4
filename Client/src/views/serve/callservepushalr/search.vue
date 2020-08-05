@@ -51,7 +51,7 @@
       </el-col>
       <el-col :span="3">
         <el-form-item label="问题类型" size="small">
-          <el-select v-model="listQuery.QryProblemType" size="small" placeholder="选择呼叫状态">
+          <el-select v-model="listQuery.QryProblemType" size="small" clearable placeholder="选择呼叫状态">
             <el-option label="待确认" value="1"></el-option>
             <el-option label="已确认" value="2"></el-option>
             <el-option label="已取消" value="3"></el-option>
@@ -63,7 +63,7 @@
           <el-col :span="11">
             <el-date-picker
             size="small"
-           format="yyyy 年 MM 月 dd 日"   
+           format="yyyy-MM-dd"   
               value-format="yyyy-MM-dd"
               placeholder="选择开始日期"
               v-model="listQuery.QryCreateTimeFrom"
@@ -73,7 +73,7 @@
           <el-col class="line" :span="2">至</el-col>
           <el-col :span="11">
             <el-date-picker
-               format="yyyy 年 MM 月 dd 日"   
+               format="yyyy-MM-dd"   
               value-format="yyyy-MM-dd"
               placeholder="选择结束时间"
               v-model="listQuery.QryCreateTimeTo"

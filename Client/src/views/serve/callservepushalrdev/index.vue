@@ -24,7 +24,7 @@
     <div class="app-container flex-item bg-white">
       <zxsearch @change-Search="changeSearch" @change-Order="changeOrder"></zxsearch>
       <el-row class="fh">
-        <el-col :span="4" class="fh ls-border" >
+        <el-col :span="3" class="fh ls-border" style="max-width:190px;">
           <el-card shadow="never" class="card-body-none fh"  >
             <el-link
               style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;"
@@ -33,7 +33,6 @@
             <el-tree
               style="max-height:600px;overflow-y: auto;"
               :data="modulesTree"
-              default-expand-all
               show-checkbox
               node-key="key1"
               @check="checkGroupNode"
@@ -44,7 +43,7 @@
             <!--  -->
           </el-card>
         </el-col>
-        <el-col :span="20" class="fh">
+        <el-col :span="21" class="fh">
           <div class="bg-white">
             <el-table
               ref="mainTable"
@@ -175,7 +174,7 @@
           <el-table-column prop="count" label="已接服务单数" align="center" width="180"></el-table-column>
         </el-table>
         <span slot="footer" class="dialog-footer">
-          <el-button @click="dialogOrder = false">取 消</el-button>
+          <el-button @click="dialogOrder = false,listLoading=false">取 消</el-button>
           <el-button type="primary" @click="postOrder">确 定</el-button>
         </span>
       </el-dialog>
@@ -245,7 +244,7 @@ export default {
         { name: "fromTheme", label: "呼叫主题" },
         { name: "createTime", label: "创建日期" },
         { name: "recepUserName", label: "接单员" },
-        { name: "techName", label: "技术员" },
+        { name: "currentUser", label: "技术员" },
         { name: "manufacturerSerialNumber", label: "制造商序列号", width: "120px"  },
         { name: "materialCode", label: "物料编码" },
         { name: "materialDescription", label: "物料描述" },
@@ -399,11 +398,12 @@ export default {
         this.afterLeft()
   },
   methods: {
-       async afterLeft(){
-     await this.getLeftList();
+    async afterLeft(){
+      await this.getLeftList();
      if(this.modulesTree.length>0 ){
-      this.listQuery.QryServiceOrderId=this.modulesTree[0].key
-      await this.getRightList();
+       this.ifParent = this.modulesTree[0].key
+          this.$refs.treeForm.setCheckedKeys([this.modulesTree[0].key]);
+      this.getRightList();
      }
     },
     changeOrder() {
@@ -608,7 +608,7 @@ export default {
     getLeftList() {
       this.listLoading = true;
       let arr = [];
-      callservepushm.getLeftList({QryState:this.listQuery.QryState}).then(res => {
+     return callservepushm.getLeftList({QryState:this.listQuery.QryState}).then(res => {
         let resul = res.data.data;
         for (let i = 0; i < resul.length; i++) {
           arr[i] = [];
@@ -627,8 +627,9 @@ export default {
           // console.log(arr)
         }
         this.modulesTree = arr;
+              this.listLoading = false;
+
       });
-      this.listLoading = false;
     },
     getAllRight() {
       this.afterLeft()

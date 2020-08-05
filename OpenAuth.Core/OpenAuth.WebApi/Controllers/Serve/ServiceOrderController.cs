@@ -547,12 +547,12 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<Response<List<AllowSendOrderUserResp>>> GetAllowSendOrderUser()
+        public async Task<TableData> GetAllowSendOrderUser([FromQuery] GetAllowSendOrderUserReq req)
         {
-            var result = new Response<List<AllowSendOrderUserResp>>();
+            var result = new TableData();
             try
             {
-                result.Result = await _serviceOrderApp.GetAllowSendOrderUser();
+                result = await _serviceOrderApp.GetAllowSendOrderUser(req);
             }
             catch (Exception ex)
             {
@@ -831,6 +831,26 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 await _serviceOrderApp.CloseWorkOrder(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 回访服务单
+        /// </summary>
+        /// <param name="serviceOrderId"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> ServiceOrderCallback(int serviceOrderId)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.ServiceOrderCallback(serviceOrderId);
             }
             catch (Exception ex)
             {
