@@ -103,6 +103,17 @@ namespace OpenAuth.Repository.Domain
         [Description("App当前流程处理用户Id")]
         //[Browsable(false)]
         public int? CurrentUserId { get; set; }
+
+        /// <summary>
+        /// 当前接单技术员名称
+        /// </summary>
+        [Description("当前接单技术员名称")]
+        public string CurrentUser { get; set; }
+        /// <summary>
+        /// 技术员NSAPId
+        /// </summary>
+        [Description("技术员NSAPId")]
+        public string CurrentUserNsapId { get; set; }
         /// <summary>
         /// 呼叫主题
         /// </summary>
