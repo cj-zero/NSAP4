@@ -56,7 +56,7 @@ namespace OpenAuth.App
 
             var propertyStr = string.Join(',', properties.Select(u => u.Key));
             result.columnHeaders = properties;
-            result.Data = objs.OrderBy(u => u.Id)
+            result.Data = objs.OrderByDescending(u => u.CreateTime)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).Select($"new ({propertyStr})");
             result.Count = objs.Count();
