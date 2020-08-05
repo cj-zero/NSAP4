@@ -505,8 +505,9 @@ export default {
                 type: "success",
                 message: "转派成功",
               });
-              this.getLeftList();
-              this.getRightList();
+                      this.listQuery.QryState=''
+              this.listQuery.QryServiceOrderId=''
+            this.afterLeft()
               this.dialogOrder = false;
               this.listLoading = false;
             }

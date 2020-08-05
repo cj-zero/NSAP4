@@ -449,6 +449,7 @@ this.listLoading=false
       await this.getLeftList();
      if(this.modulesTree.length ){
       //  this.$refs.treeForm.setCheckedKeys([])
+      console.log(this.modulesTree[0])
           this.$refs.treeForm.setCheckedKeys([this.modulesTree[0].key]);
           this.checkGroupNode(this.modulesTree[0])
       this.getRightList();
@@ -501,8 +502,9 @@ this.listLoading=false
                 type: "success",
                 message: "派单成功"
               });
-              this.getLeftList();
-              this.getRightList();
+              this.listQuery.QryState=''
+              this.listQuery.QryServiceOrderId=''
+            this.afterLeft()
               this.dialogOrder = false;
               this.listLoading = false;
             }
