@@ -394,10 +394,18 @@ export default {
  
   },
   mounted() {
-    this.getLeftList();
-    this.getRightList();
+    // this.getLeftList();
+    // this.getRightList();
+        this.afterLeft()
   },
   methods: {
+       async afterLeft(){
+     await this.getLeftList();
+     if(this.modulesTree.length>0 ){
+      this.listQuery.QryServiceOrderId=this.modulesTree[0].key
+      await this.getRightList();
+     }
+    },
     changeOrder() {
       if (this.ifParent) {
         this.dialogOrder = true;
@@ -458,7 +466,9 @@ export default {
     },
     changeSearch(val) {
       if (val === 1) {
-        this.getRightList();
+        // this.getRightList();
+                    this.afterLeft()
+
       } else {
         Object.assign(this.listQuery, val);
         // console.log(this.listQuery);
@@ -621,13 +631,15 @@ export default {
       this.listLoading = false;
     },
     getAllRight() {
-      this.listLoading = true;
-      callservepushm.getRightList(this.listQuery1).then(response => {
-        this.list = response.data.data;
-        // this.list = response.data;
-        this.total = response.data.count;
-        this.listLoading = false;
-      });
+      this.afterLeft()
+      //展开所有工单
+      // this.listLoading = true;
+      // callservepushm.getRightList(this.listQuery1).then(response => {
+      //   this.list = response.data.data;
+      //   // this.list = response.data;
+      //   this.total = response.data.count;
+      //   this.listLoading = false;
+      // });
     },
  getRightList() {
       this.listLoading = true;

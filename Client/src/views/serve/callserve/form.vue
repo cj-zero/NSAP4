@@ -569,7 +569,8 @@ export default {
           (item) =>
             item.fromTheme !== "" &&
             item.fromType !== "" &&
-            item.problemTypeId !== ""
+            item.problemTypeId !== ""&&
+              item.manufacturerSerialNumber !== ""
         );
         // this.form.serviceWorkOrders = this.form.serviceWorkOrders.map(item => {
         //   item.problemTypeId = item.problemTypeName;
