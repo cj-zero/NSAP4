@@ -461,7 +461,8 @@ namespace OpenAuth.App
                 Supervisor = obj.Supervisor,
                 SupervisorId = obj.SupervisorId,
             });
-            obj.ServiceWorkOrders.ForEach(s => { 
+            obj.ServiceWorkOrders.ForEach(s =>
+            {
                 s.ServiceOrderId = obj.Id; s.SubmitDate = DateTime.Now; s.SubmitUserId = loginContext.User.Id; s.AppUserId = obj.AppUserId; s.Status = 1;
                 if (s.FromType == 2)
                     s.Status = 7;
@@ -588,7 +589,7 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.b.RecepUserName.Contains(req.QryRecepUser))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.a.ProblemTypeId.Equals(req.QryProblemType))
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime <= req.QryCreateTimeTo)
-                         .Where(q=>q.b.SupervisorId.Equals(loginContext.User.Id));
+                         .Where(q => q.b.SupervisorId.Equals(loginContext.User.Id));
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
@@ -665,7 +666,7 @@ namespace OpenAuth.App
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
             obj.Supervisor = d.TechName;
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.TechName)))?.Id;
-            obj.ServiceWorkOrders.ForEach(s => 
+            obj.ServiceWorkOrders.ForEach(s =>
             {
                 if (s.FromType == 2)
                     s.Status = 7;
@@ -703,7 +704,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ServiceWorkOrders.Any(a => a.ProblemTypeId.Equals(req.QryProblemType)))
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.ServiceWorkOrders.Any(a => a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
                 ;
-            if(loginContext.User.Account != Define.SYSTEM_USERNAME)
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
                 query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id));
             }
@@ -1259,7 +1260,7 @@ namespace OpenAuth.App
         {
             var count = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == id && s.Status.Value < 7).Select(s => s.ServiceOrderId).Distinct().CountAsync();
 
-            return count < 6;
+            return count < ServiceWorkOrder.canOrderQty;
         }
 
 
@@ -1419,7 +1420,7 @@ namespace OpenAuth.App
         public async Task<int> GetUserCanOrderCount(int id)
         {
             var count = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == id && s.Status.Value < 7).Select(s => s.ServiceOrderId).Distinct().CountAsync();
-            return 6 - count;
+            return ServiceWorkOrder.canOrderQty - count;
         }
 
 
