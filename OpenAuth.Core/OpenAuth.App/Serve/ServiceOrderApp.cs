@@ -433,6 +433,8 @@ namespace OpenAuth.App
             }
             var d = await _businessPartnerApp.GetDetails(request.CustomerId);
             var obj = request.MapTo<ServiceOrder>();
+            obj.RecepUserName = loginContext.User.Name;
+            obj.RecepUserId = loginContext.User.Id;
             obj.Status = 2;
             obj.SalesMan = d.SlpName;
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
@@ -589,7 +591,7 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.b.RecepUserName.Contains(req.QryRecepUser))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.a.ProblemTypeId.Equals(req.QryProblemType))
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime <= req.QryCreateTimeTo)
-                         .Where(q => q.b.SupervisorId.Equals(loginContext.User.Id));
+                         ;
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
@@ -661,6 +663,8 @@ namespace OpenAuth.App
             }
             var d = await _businessPartnerApp.GetDetails(req.CustomerId);
             var obj = req.MapTo<ServiceOrder>();
+            obj.RecepUserName = loginContext.User.Name;
+            obj.RecepUserId = loginContext.User.Id;
             obj.Status = 2;
             obj.SalesMan = d.SlpName;
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
@@ -763,6 +767,11 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.c.Name.Contains(req.QryProblemType))
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime <= req.QryCreateTimeTo)
                          .WhereIf(req.QryMaterialTypes != null && req.QryMaterialTypes.Count > 0, q => req.QryMaterialTypes.Contains(q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))));
+
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME)
+            {
+                query = query.Where(q => q.b.SupervisorId.Equals(loginContext.User.Id));
+            }
 
             var resultsql = query.OrderBy(r => r.a.CreateTime).Select(q => new
             {

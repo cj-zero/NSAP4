@@ -67,7 +67,7 @@
                     <span
                       v-if="fruit.name === 'status'"
                       :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-                    >{{statusOptions[scope.row[fruit.name]].label}}</span>
+                    >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
                     <span
                       v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
                     >{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
