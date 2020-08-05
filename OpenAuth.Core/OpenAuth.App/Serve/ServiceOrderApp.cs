@@ -1128,7 +1128,7 @@ namespace OpenAuth.App
         /// 查询可以被派单的技术员列表
         /// </summary>
         /// <returns></returns>
-        public async Task<List<AllowSendOrderUserResp>> GetAllowSendOrderUser()
+        public async Task<List<AllowSendOrderUserResp>> GetAllowSendOrderUser(GetAllowSendOrderUserReq req)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -1138,6 +1138,7 @@ namespace OpenAuth.App
             var orgs = loginContext.Orgs.Select(o => o.Id).ToArray();
 
             var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole == 2).ToListAsync();
+            var locations = (await UnitWork.Find<RealTimeLocation>(null).OrderByDescending(o => o.CreateTime).ToListAsync()).GroupBy(g => g.AppUserId).Select(s => s.First());
             var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
             var ids = userIds.Intersect(tUsers.Select(u => u.UserID));
             var users = await UnitWork.Find<User>(u => ids.Contains(u.Id)).ToListAsync();
@@ -1153,10 +1154,14 @@ namespace OpenAuth.App
                 Id = u.Id,
                 Name = u.Name,
                 Count = userCount.FirstOrDefault(s => s.Key.Equals(u.AppUserId))?.Count ?? 0,
-                AppUserId = u.AppUserId
+                AppUserId = u.AppUserId,
+                Province = locations.FirstOrDefault(f=>f.AppUserId==u.AppUserId)?.Province,
+                City = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.City,
+                Area = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Area,
+                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude ?? 0), Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
             }).ToList();
 
-            return result;
+            return result.OrderBy(o=>o.Distance).ToList();
         }
 
         /// <summary>

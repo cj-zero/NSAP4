@@ -24,5 +24,25 @@ namespace OpenAuth.App.Response
         /// 用户名称
         /// </summary>
         public string Name { get; set; }
+
+        /// <summary>
+        /// 省
+        /// </summary>
+        public string Province { get; set; }
+
+        /// <summary>
+        /// 市
+        /// </summary>
+        public string City { get; set; }
+
+        /// <summary>
+        /// 区
+        /// </summary>
+        public string Area { get; set; }
+
+        /// <summary>
+        /// 距离
+        /// </summary>
+        public double Distance { get; set; }
     }
 }
