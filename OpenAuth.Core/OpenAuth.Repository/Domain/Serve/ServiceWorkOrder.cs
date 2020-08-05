@@ -213,6 +213,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("过程描述")]
         public string ProcessDescription { get; set; }
+        /// <summary>
+        /// 工单号
+        /// </summary>
+        [Description("工单号")]
+        public string WorkOrderNumber { get; set; }
 
         /// <summary>
         /// 接单类型 0未接单 1电话服务 2上门服务 3电话服务(已拨打)
