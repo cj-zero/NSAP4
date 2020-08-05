@@ -26,10 +26,11 @@
       <el-row class="fh">
         <el-col :span="3" class="fh ls-border" style="max-width:190px;">
           <el-card shadow="never" class="card-body-none fh" style>
-            <el-link
+            <!-- <el-link
               style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;"
               @click="getAllRight"    
-            >全部服务单>></el-link>
+            >全部服务单>></el-link> -->
+            <div  style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;">服务单列表</div>
             <el-tree
               style="max-height:600px;overflow-y: auto;"
               :data="modulesTree"
@@ -324,7 +325,7 @@ export default {
         QryMaterialTypes: [] //物料类型
       },
       total2:0,
-      listQuery:{
+      listQuery2:{
            page: 1,
         limit: 20,
       },
@@ -336,15 +337,15 @@ export default {
         appId: undefined,
         Name: "", //	Description
         QryServiceOrderId: "", //- 查询服务ID查询条件
-        QryState: 1, //- 呼叫状态查询条件
-        QryCustomer: "", //- 客户查询条件
-        QryManufSN: "", // - 制造商序列号查询条件
-        QryCreateTimeFrom: "", //- 创建日期从查询条件
-        QryCreateTimeTo: "", //- 创建日期至查询条件
-        QryRecepUser: "", //- 接单员
-        QryTechName: "", // - 工单技术员
-        QryProblemType: "", // - 问题类型
-        QryMaterialTypes: [] //物料类型
+        // QryState: 1, //- 呼叫状态查询条件
+        // QryCustomer: "", //- 客户查询条件
+        // QryManufSN: "", // - 制造商序列号查询条件
+        // QryCreateTimeFrom: "", //- 创建日期从查询条件
+        // QryCreateTimeTo: "", //- 创建日期至查询条件
+        // QryRecepUser: "", //- 接单员
+        // QryTechName: "", // - 工单技术员
+        // QryProblemType: "", // - 问题类型
+        // QryMaterialTypes: [] //物料类型
       },
       statusOptions: [
         { value: 1, label: "待处理" },
@@ -446,7 +447,7 @@ this.listLoading=false
     },
   async afterLeft(){
       await this.getLeftList();
-     if(this.modulesTree.length>0 ){
+     if(this.modulesTree.length ){
       //  this.$refs.treeForm.setCheckedKeys([])
           this.$refs.treeForm.setCheckedKeys([this.modulesTree[0].key]);
           this.checkGroupNode(this.modulesTree[0])
@@ -461,6 +462,7 @@ this.listLoading=false
         this.dialogOrder = true;
         callservepushm.AllowSendOrderUser().then(res => {
           this.tableData = res.data;
+          this.total2 = res.count
         });
       } else {
         this.$message({
@@ -517,11 +519,10 @@ this.listLoading=false
     changeSearch(val) {
       if (val === 1) {
          this.getRightList();
-           // this.afterLeft()
-
       } else {
         Object.assign(this.listQuery, val);
-        // console.log(this.listQuery);
+                  this.$refs.treeForm.setCheckedKeys([val.QryServiceOrderId]);
+        this.getLeftList()
       }
     },
     openTree(res) {
@@ -640,7 +641,7 @@ this.listLoading=false
           a.children.map(item=>{
             this.listQuery.QryMaterialTypes.push(item.id)
           })
-        }
+        } 
           this.getRightList();
         }
       } else {
@@ -664,7 +665,7 @@ this.listLoading=false
       this.listLoading = true;
       let arr = [];
     return callservepushm
-        .getLeftList({ QryState: this.listQuery.QryState })
+        .getLeftList({ QryState: this.listQuery.QryState,QryServiceOrderId:this.listQuery.QryServiceOrderId })
         .then(res => {
           let resul = res.data.data;
           for (let i = 0; i < resul.length; i++) {
@@ -766,6 +767,11 @@ this.listLoading=false
     handleCurrentChange(val) {
       this.listQuery.page = val.page;
       this.listQuery.limit = val.limit;
+      this.getRightList()
+    },
+    handleCurrentChange2(val){
+      this.listQuery2.page = val.page;
+      this.listQuery2.limit = val.limit;
       this.getRightList()
     },
     handleModifyStatus(row, disable) {

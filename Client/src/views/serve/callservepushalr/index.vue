@@ -26,10 +26,14 @@
       <el-row class="fh">
         <el-col :span="3" class="fh ls-border" style="max-width:190px;">
           <el-card shadow="never" class="card-body-none fh" style>
-            <el-link
+            <!-- <el-link
               style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;"
               @click="getAllRight"
-            >全部服务单>></el-link>
+            >全部服务单>></el-link>-->
+            <div
+              style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;"
+            >服务单列表</div>
+
             <el-tree
               style="max-height:600px;overflow-y: auto;"
               :data="modulesTree"
@@ -40,7 +44,6 @@
               highlight-current
               :props="defaultProps"
             ></el-tree>
-            <!--  -->
           </el-card>
         </el-col>
         <el-col :span="21" class="fh">
@@ -192,6 +195,13 @@
           <el-table-column prop="name" label="接单员" align="center"></el-table-column>
           <el-table-column prop="count" label="已接服务单数" align="center" width="180"></el-table-column>
         </el-table>
+        <pagination
+          v-show="total2>0"
+          :total="total2"
+          :page.sync="listQuery2.page"
+          :limit.sync="listQuery2.limit"
+          @pagination="handleCurrentChange2"
+        />
         <span slot="footer" class="dialog-footer">
           <el-button @click="cancelPost">取 消</el-button>
           <el-button type="primary" @click="postOrder">确 定</el-button>
@@ -284,7 +294,10 @@ export default {
         // "problemTypeName": "数值异常",
         // "currentUserId": 1
       ],
-
+      listQuery2: {
+        page: 1,
+        limit: 20,
+      },
       defaultProps: {
         children: "children",
         label: "label",
@@ -354,6 +367,8 @@ export default {
         status: "", // Status
         extendInfo: "", // 其他信息,防止最后加逗号，可以删除
       },
+      total2: 0,
+
       dialogFormVisible: false,
       dialogTable: false,
       dialogTree: false,
@@ -427,6 +442,11 @@ export default {
       // this.afterLeft()
       this.getRightList();
     },
+    handleCurrentChange2(val) {
+      this.listQuery2.page = val.page;
+      this.listQuery2.limit = val.limit;
+      this.getRightList();
+    },
     async afterLeft() {
       await this.getLeftList();
       if (this.modulesTree.length > 0) {
@@ -452,6 +472,7 @@ export default {
           this.dialogOrder = true;
           callservepushm.AllowSendOrderUser().then((res) => {
             this.tableData = res.data;
+            this.total2 = res.count;
           });
         }
       } else {
@@ -501,12 +522,11 @@ export default {
     },
     changeSearch(val) {
       if (val === 1) {
-        this.getRightList();
-        // this.getLeftList();
-        // this.afterLeft()
+         this.getRightList();
       } else {
         Object.assign(this.listQuery, val);
-        // console.log(this.listQuery);
+                  this.$refs.treeForm.setCheckedKeys([val.QryServiceOrderId]);
+        this.getLeftList()
       }
     },
     openTree(res) {
@@ -548,6 +568,9 @@ export default {
           break;
         case "btnDetail":
           this.open();
+          break;
+        case "btnPost":
+          this.changeOrder();
           break;
         case "editTable":
           this.dialogTable = true;
@@ -649,7 +672,7 @@ export default {
     getLeftList() {
       this.listLoading = true;
       let arr = [];
-      return callservepushm.getLeftList(this.listQuery).then((res) => {
+      return callservepushm.getLeftList({ QryState: this.listQuery.QryState,QryServiceOrderId:this.listQuery.QryServiceOrderId }).then((res) => {
         let resul = res.data.data;
         for (let i = 0; i < resul.length; i++) {
           arr[i] = [];

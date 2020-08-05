@@ -72,11 +72,6 @@
       <el-col :span="2" style="margin-left:0;" >
                <el-button type="primary" @click="onSubmit" size="mini"  icon="el-icon-search"> 搜 索 </el-button>
       </el-col>
-
-            <!-- <el-col :span="2" style="margin-left:20px;" >
-
-            <el-button type="success"   @click="sendOrder" icon="el-icon-thumb"> 派 单 </el-button> 
-      </el-col> -->
     </el-row>
   </el-form>
 </template>
