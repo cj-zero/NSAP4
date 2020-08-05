@@ -23,6 +23,10 @@ namespace OpenAuth.Repository.Domain
     [Table("serviceworkorder")]
     public partial class ServiceWorkOrder
     {
+        /// <summary>
+        /// 每个技术员可接单个数 
+        /// </summary>
+        public const int canOrderQty = 3;
         public ServiceWorkOrder()
         {
             this.ServiceOrderId = 0;
