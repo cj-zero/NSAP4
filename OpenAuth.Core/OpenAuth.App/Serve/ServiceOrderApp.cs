@@ -27,6 +27,7 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Options;
 using SAP.API;
+using Autofac.Core;
 
 namespace OpenAuth.App
 {
@@ -1690,6 +1691,29 @@ namespace OpenAuth.App
             });
             await UnitWork.SaveAsync();
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = workOrderInfo.ServiceOrderId, Content = content, AppUserId = request.CurrentUserId });
+        }
+
+        public async Task ServiceOrderCallback(int serviceOrderId)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var order = await UnitWork.Find<ServiceOrder>(s => s.Id == serviceOrderId).Include(s => s.ServiceWorkOrders).FirstOrDefaultAsync();
+            if (order is null)
+                throw new CommonException("服务单号不存在", 40004);
+            var allCanCallback = order.ServiceWorkOrders.All(s => s.Status == 7);
+            if (allCanCallback)
+            {
+                await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId, o => new ServiceWorkOrder { 
+                        Status = 8
+                    });
+            }
+            else
+            {
+                throw new CommonException("无法回访此服务单，原因：还有工单尚未解决", 40005);
+            }
         }
     }
 }
