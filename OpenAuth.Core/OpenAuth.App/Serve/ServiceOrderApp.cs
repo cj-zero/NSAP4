@@ -390,6 +390,10 @@ namespace OpenAuth.App
                 q.Status,
                 q.ServiceOrderSNs.FirstOrDefault(a => a.ManufSN.Contains(req.QryManufSN)).ManufSN,
                 q.ServiceOrderSNs.FirstOrDefault(a => a.ManufSN.Contains(req.QryManufSN)).ItemCode,
+                q.Province,
+                q.City,
+                q.Area,
+                q.Addr
             });
 
 
@@ -1732,9 +1736,10 @@ namespace OpenAuth.App
             var allCanCallback = order.ServiceWorkOrders.All(s => s.Status == 7);
             if (allCanCallback)
             {
-                await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId, o => new ServiceWorkOrder { 
-                        Status = 8
-                    });
+                await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId, o => new ServiceWorkOrder
+                {
+                    Status = 8
+                });
             }
             else
             {
