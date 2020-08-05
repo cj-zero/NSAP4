@@ -182,6 +182,7 @@
         :destroy-on-close="true"
         title="选择派单对象"
         center
+        :modal-append-to-body="false"
         width="500px"
       >
         <el-table :data="tableData" border @row-click="setRadio" style="width: 100%">
@@ -194,7 +195,7 @@
           <el-table-column prop="count" label="已接服务单数" align="center" width="180"></el-table-column>
         </el-table>
         <span slot="footer" class="dialog-footer">
-          <el-button @click="dialogOrder = false">取 消</el-button>
+          <el-button @click="cancelPost">取 消</el-button>
           <el-button type="primary" @click="postOrder">确 定</el-button>
         </span>
       </el-dialog>
@@ -425,15 +426,25 @@ export default {
     this.afterLeft()
   },
   methods: {
-   async afterLeft(){
-     console.log(1)
-    await  this.getLeftList();
-      console.log(2)
+     cancelPost(){
+this.dialogOrder = false,
+this.listLoading=false
+        this.getRightList();
+
+// this.ifParent
+    },
+  async afterLeft(){
+      await this.getLeftList();
      if(this.modulesTree.length>0 ){
-      this.listQuery.QryServiceOrderId=this.modulesTree[0].key
+      //  this.$refs.treeForm.setCheckedKeys([])
+          this.$refs.treeForm.setCheckedKeys([this.modulesTree[0].key]);
+          this.checkGroupNode(this.modulesTree[0])
       this.getRightList();
      }
     },
+    // searchBtn(){
+
+    // },
     changeOrder() {
       if (this.ifParent) {
         this.dialogOrder = true;
@@ -494,8 +505,8 @@ export default {
     },
     changeSearch(val) {
       if (val === 1) {
-        // this.getRightList();
-            this.afterLeft()
+         this.getRightList();
+           // this.afterLeft()
 
       } else {
         Object.assign(this.listQuery, val);
@@ -596,6 +607,7 @@ export default {
             if( !this.listQuery.QryServiceOrderId){
                this.listQuery.QryServiceOrderId =a.key
             }else{
+              this.ifParent=''  //取消选择之后，清空父级选择
               this.listQuery.QryServiceOrderId=''
               this.listQuery.QryMaterialTypes=[]
             }
@@ -637,7 +649,7 @@ export default {
     getLeftList() {
       this.listLoading = true;
       let arr = [];
-      callservepushm
+    return callservepushm
         .getLeftList({ QryState: this.listQuery.QryState })
         .then(res => {
           let resul = res.data.data;
@@ -657,11 +669,10 @@ export default {
             });
             // console.log(arr)
           }
-            console.log(3)
           this.modulesTree = arr;
+           this.listLoading = false;
         });
-      this.listLoading = false;
-      return arr
+     
     },
     getAllRight() {
        this.afterLeft()

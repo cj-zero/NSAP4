@@ -194,7 +194,7 @@
           <el-table-column prop="count" label="已接服务单数" align="center" width="180"></el-table-column>
         </el-table>
         <span slot="footer" class="dialog-footer">
-          <el-button @click="dialogOrder = false">取 消</el-button>
+          <el-button @click="cancelPost">取 消</el-button>
           <el-button type="primary" @click="postOrder">确 定</el-button>
         </span>
       </el-dialog>
@@ -423,11 +423,18 @@ export default {
    this.afterLeft()
   },
   methods: {
-       async afterLeft(){
-     await this.getLeftList();
+    cancelPost(){
+      this.dialogOrder = false,
+      this.listLoading=false
+      // this.afterLeft()
+this.getRightList();
+},
+      async afterLeft(){
+      await this.getLeftList();
      if(this.modulesTree.length>0 ){
-      this.listQuery.QryServiceOrderId=this.modulesTree[0].key
-      await this.getRightList();
+      this.$refs.treeForm.setCheckedKeys([this.modulesTree[0].key]);
+      this. checkGroupNode(this.modulesTree[0])
+      this.getRightList();
      }
     },
     changeOrder() {
@@ -496,9 +503,9 @@ export default {
     },
     changeSearch(val) {
       if (val === 1) {
-        // this.getRightList();
+        this.getRightList();
         // this.getLeftList();
-                    this.afterLeft()
+                    // this.afterLeft()
 
       } else {
         Object.assign(this.listQuery, val);
@@ -602,6 +609,8 @@ export default {
             if (!this.listQuery.QryServiceOrderId) {
               this.listQuery.QryServiceOrderId = a.key;
             } else {
+                            this.ifParent=''  //取消选择之后，清空父级选择
+
               this.listQuery.QryServiceOrderId = "";
               this.listQuery.QryMaterialTypes = [];
             }
@@ -643,7 +652,7 @@ export default {
     getLeftList() {
       this.listLoading = true;
       let arr = [];
-      callservepushm.getLeftList(this.listQuery).then(res => {
+     return callservepushm.getLeftList(this.listQuery).then(res => {
         let resul = res.data.data;
         for (let i = 0; i < resul.length; i++) {
           arr[i] = [];
@@ -662,8 +671,9 @@ export default {
           // console.log(arr)
         }
         this.modulesTree = arr;
+              this.listLoading = false;
+
       });
-      this.listLoading = false;
     },
     getAllRight() {
         //展开全部工单

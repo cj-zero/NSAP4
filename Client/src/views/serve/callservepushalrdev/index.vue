@@ -175,7 +175,7 @@
           <el-table-column prop="count" label="已接服务单数" align="center" width="180"></el-table-column>
         </el-table>
         <span slot="footer" class="dialog-footer">
-          <el-button @click="dialogOrder = false">取 消</el-button>
+          <el-button @click="dialogOrder = false,listLoading=false">取 消</el-button>
           <el-button type="primary" @click="postOrder">确 定</el-button>
         </span>
       </el-dialog>
@@ -399,11 +399,12 @@ export default {
         this.afterLeft()
   },
   methods: {
-       async afterLeft(){
-     await this.getLeftList();
+    async afterLeft(){
+      await this.getLeftList();
      if(this.modulesTree.length>0 ){
-      this.listQuery.QryServiceOrderId=this.modulesTree[0].key
-      await this.getRightList();
+       this.ifParent = this.modulesTree[0].key
+          this.$refs.treeForm.setCheckedKeys([this.modulesTree[0].key]);
+      this.getRightList();
      }
     },
     changeOrder() {
@@ -608,7 +609,7 @@ export default {
     getLeftList() {
       this.listLoading = true;
       let arr = [];
-      callservepushm.getLeftList({QryState:this.listQuery.QryState}).then(res => {
+     return callservepushm.getLeftList({QryState:this.listQuery.QryState}).then(res => {
         let resul = res.data.data;
         for (let i = 0; i < resul.length; i++) {
           arr[i] = [];
@@ -627,8 +628,9 @@ export default {
           // console.log(arr)
         }
         this.modulesTree = arr;
+              this.listLoading = false;
+
       });
-      this.listLoading = false;
     },
     getAllRight() {
       this.afterLeft()
