@@ -27,6 +27,7 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Options;
 using SAP.API;
+using Autofac.Core;
 
 namespace OpenAuth.App
 {
@@ -796,6 +797,8 @@ namespace OpenAuth.App
                 ServiceWorkOrderId = q.a.Id,
                 ProblemTypeName = q.c.Name,
                 q.a.CurrentUserId,
+                q.a.CurrentUser,
+                q.a.CurrentUserNsapId
             });
 
 
@@ -983,8 +986,11 @@ namespace OpenAuth.App
                 throw new CommonException("当前技术员接单已满6单服务单", 90004);
             }
 
+            var u = await UnitWork.Find<AppUserMap>(s => s.AppUserId == req.TechnicianId).Include(s => s.User).FirstOrDefaultAsync();
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => req.ServiceWorkOrderIds.Contains(s.Id), o => new ServiceWorkOrder
             {
+                CurrentUser = u.User.Name,
+                CurrentUserNsapId = u.User.Id,
                 Status = 2,
                 CurrentUserId = req.TechnicianId
             });
@@ -995,7 +1001,7 @@ namespace OpenAuth.App
                 Title = "移转至技术员",
                 Details = "已为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
             }, req.ServiceWorkOrderIds);
-            await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{req.TechnicianId}接单工单：{string.Join(",", req.ServiceWorkOrderIds)}", ActionType = "技术员接单" }, req.ServiceWorkOrderIds);
+            await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{u.User.Name}接单工单：{string.Join(",", req.ServiceWorkOrderIds)}", ActionType = "技术员接单" }, req.ServiceWorkOrderIds);
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = req.ServiceOrderId, Content = "技术员已接单成功，请尽快选择服务", AppUserId = 0 });
             await PushMessageToApp(req.TechnicianId, "接单成功提醒", "您已成功接取一个新的售后服务，请尽快处理");
         }
@@ -1176,17 +1182,26 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var canSendOrder = await CheckCanTakeOrder(req.CurrentUserId);
+            if (!canSendOrder)
+            {
+                throw new CommonException("技术员接单已经达到上限", 60001);
+            }
+            var u = await UnitWork.Find<AppUserMap>(s => s.AppUserId == req.CurrentUserId).Include(s => s.User).FirstOrDefaultAsync();
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => req.WorkOrderIds.Contains(s.Id), o => new ServiceWorkOrder
             {
+                CurrentUser = u.User.Name,
+                CurrentUserNsapId = u.User.Id,
                 CurrentUserId = req.CurrentUserId,
                 Status = 2
             });
+            await UnitWork.SaveAsync();
             await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
                 Title = "移转至技术员",
                 Details = "已为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
             }, req.WorkOrderIds);
-            await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{req.CurrentUserId}派单{string.Join(",", req.WorkOrderIds)}", ActionType = "主管派单工单" }, req.WorkOrderIds);
+            await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{string.Join(",", req.WorkOrderIds)}", ActionType = "主管派单工单" }, req.WorkOrderIds);
             await PushMessageToApp(req.CurrentUserId, "派单成功提醒", "您已被派有一个新的售后服务，请尽快处理");
         }
 
@@ -1702,6 +1717,29 @@ namespace OpenAuth.App
             });
             await UnitWork.SaveAsync();
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = workOrderInfo.ServiceOrderId, Content = content, AppUserId = request.CurrentUserId });
+        }
+
+        public async Task ServiceOrderCallback(int serviceOrderId)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var order = await UnitWork.Find<ServiceOrder>(s => s.Id == serviceOrderId).Include(s => s.ServiceWorkOrders).FirstOrDefaultAsync();
+            if (order is null)
+                throw new CommonException("服务单号不存在", 40004);
+            var allCanCallback = order.ServiceWorkOrders.All(s => s.Status == 7);
+            if (allCanCallback)
+            {
+                await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId, o => new ServiceWorkOrder { 
+                        Status = 8
+                    });
+            }
+            else
+            {
+                throw new CommonException("无法回访此服务单，原因：还有工单尚未解决", 40005);
+            }
         }
     }
 }

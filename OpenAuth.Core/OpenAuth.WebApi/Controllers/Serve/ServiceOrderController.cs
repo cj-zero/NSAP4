@@ -839,5 +839,25 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+        /// <summary>
+        /// 回访服务单
+        /// </summary>
+        /// <param name="serviceOrderId"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> ServiceOrderCallback(int serviceOrderId)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.ServiceOrderCallback(serviceOrderId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }
