@@ -8,7 +8,7 @@
         :disabled="!isCreate"
         label-width="90px"
         class="rowStyle"
-        :ref="'itemForm'+ 0"
+        ref="itemForm"
         size="small"
       >
         <el-row type="flex" class="row-bg" justify="space-around">
@@ -333,7 +333,7 @@
             :disabled="!isCreate"
             label-width="90px"
             class="rowStyle"
-            :ref="'itemForm'+ index"
+            ref="itemFormList"
           >
             <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="8">
@@ -644,7 +644,7 @@
                     type="success"
                     size="small"
                     icon="el-icon-share"
-                    @click="addWorkOrder(item)"
+                    @click="addWorkOrder(item, index)"
                   >确定新增</el-button>
                 </el-col>
               </el-row>
@@ -1103,21 +1103,27 @@ export default {
     handleIconClick() {
       this.dialogfSN = true;
     },
-    addWorkOrder(result) {
-      callservesure
-        .addWorkOrder(result)
-        .then(() => {
-          this.$message({
-            message: "新增工单成功",
-            type: "success",
+    addWorkOrder(result, index) {
+      const { itemForm, itemFormList } = this.$refs
+      const targetForm = index !== undefined ? itemFormList[index] : itemForm
+      targetForm.validate(valid => {
+        if (valid) {
+          callservesure
+          .addWorkOrder(result)
+          .then(() => {
+            this.$message({
+              message: "新增工单成功",
+              type: "success",
+            });
+          })
+          .catch((res) => {
+            this.$message({
+              message: `${res}`,
+              type: "error",
+            });
           });
-        })
-        .catch((res) => {
-          this.$message({
-            message: `${res}`,
-            type: "error",
-          });
-        });
+        }
+      })
     },
     searchList() {
       this.listQuery.ManufSN = this.inputSearch;

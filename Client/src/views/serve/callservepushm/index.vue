@@ -24,16 +24,15 @@
     <div class="app-container flex-item bg-white">
       <zxsearch @change-Search="changeSearch" @change-Order="changeOrder"></zxsearch>
       <el-row class="fh">
-        <el-col :span="4" class="fh ls-border">
+        <el-col :span="3" class="fh ls-border" style="max-width:190px;">
           <el-card shadow="never" class="card-body-none fh" style>
             <el-link
               style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;"
-              @click="getAllRight"
+              @click="getAllRight"    
             >全部服务单>></el-link>
             <el-tree
               style="max-height:600px;overflow-y: auto;"
               :data="modulesTree"
-              default-expand-all
               show-checkbox
               node-key="key1"
               @check="checkGroupNode"
@@ -44,7 +43,7 @@
             <!--  -->
           </el-card>
         </el-col>
-        <el-col :span="20" class="fh">
+        <el-col :span="21" class="fh">
           <div class="bg-white">
             <el-table
               ref="mainTable"
@@ -270,7 +269,7 @@ export default {
         { name: "fromTheme", label: "呼叫主题" },
         { name: "createTime", label: "创建日期" },
         { name: "recepUserName", label: "接单员" },
-        { name: "techName", label: "技术员" },
+        { name: "currentUser", label: "技术员" },
         {
           name: "manufacturerSerialNumber",
           label: "制造商序列号",
@@ -449,7 +448,7 @@ this.listLoading=false
       if (this.ifParent) {
         this.dialogOrder = true;
         callservepushm.AllowSendOrderUser().then(res => {
-          this.tableData = res.result;
+          this.tableData = res.data;
         });
       } else {
         this.$message({
@@ -555,6 +554,9 @@ this.listLoading=false
           break;
         case "editTable":
           this.dialogTable = true;
+          break;
+          case "btnPost":
+          this.changeOrder()
           break;
         case "btnEdit":
           this.$message({
@@ -697,6 +699,7 @@ this.listLoading=false
         .getRightList(this.listQuery)
         .then(response => {
           if (response.code === 200) {
+                    // this.ifParent=""
             this.list = response.data.data;
             this.total = response.data.count;
             this.listLoading = false;

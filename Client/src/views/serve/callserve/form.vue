@@ -7,7 +7,7 @@
           <el-form
             :model="form"
             :rules="rules"
-            :ref="form"
+            ref="form"
             class="rowStyle1"
             :disabled="!isCreate"
             :label-width="labelwidth"
@@ -418,7 +418,7 @@ export default {
         addressDesignator: "", //地址标识
         recepUserId: "", //接单人用户ID
         address: "", //详细地址
-        createTime: "",
+        createTime: new Date(),
         id: "", //服务单id
         province: "深圳", //省
         city: "", //市
@@ -570,14 +570,18 @@ export default {
             item.fromTheme !== "" &&
             item.fromType !== "" &&
             item.problemTypeId !== ""&&
-              item.manufacturerSerialNumber !== ""
+            item.manufacturerSerialNumber !== "" &&
+            item.solutionId !== ""
         );
         // this.form.serviceWorkOrders = this.form.serviceWorkOrders.map(item => {
         //   item.problemTypeId = item.problemTypeName;
         //   item.solutionId = item.solution;
         //   return item;
         // });
-        if (chec) {
+        this.$refs.form.validate(valid => {
+          this.isValid = valid
+        })
+        if (chec && this.isValid) {
           if (this.$route.path === "/serve/callserve") {
             callservesure
               .CreateOrder(this.form)
@@ -632,6 +636,11 @@ export default {
           this.addressList = res.result.addressList;
           this.cntctPrsnList = res.result.cntctPrsnList;
           this.form.supervisor = res.result.techID;
+          if (this.addressList.length) {
+            let { address, building } = this.addressList[0]
+            this.form.addressDesignator = address
+            this.form.address = building
+          }
           // this.$message({
           //   message: "修改服务单成功",
           //   type: "success"
@@ -759,6 +768,7 @@ export default {
       console.log( item)
       // this.form.addressDesignator = item.address;
       this.form.address = item.address;
+      
       this.form.salesMan = item.slpName;
     },
     sureVal() {
@@ -767,7 +777,7 @@ export default {
       this.form.customerId = val.cardCode;
       this.form.customerName = val.cardName;
       this.form.contacter = val.cntctPrsn;
-      this.form.contactTel = val.cellular;
+      this.form.contactTel = val.cellular
       // this.form.addressDesignator = val.address;
       this.form.address = val.address;
       this.form.salesMan = val.slpName;
