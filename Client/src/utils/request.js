@@ -1,4 +1,5 @@
 import axios from 'axios'
+import qs from 'qs'
 import { Message, MessageBox } from 'element-ui'
 import store from '../store'
 import { getToken } from '@/utils/auth'
@@ -18,7 +19,12 @@ service.interceptors.request.use(config => {
   if (store.getters.isIdentityAuth) {
     config.headers['Authorization'] = 'Bearer ' + store.getters.oidcAccessToken
   }
-
+  if (config.method === 'get') {
+    //如果是get请求，且params是数组类型
+    config.paramsSerializer = function (params) {
+      return qs.stringify(params, { arrayFormat: 'repeat' })
+    }
+  }
   return config
 }, error => {
   // Do something with request error
@@ -29,9 +35,9 @@ service.interceptors.request.use(config => {
 // respone拦截器
 service.interceptors.response.use(
   response => {
-  /**
-  * code为非200是抛错 可结合自己业务进行修改
-  */
+    /**
+    * code为非200是抛错 可结合自己业务进行修改
+    */
     const res = response.data
     if (res.code !== 200) {
       // 50008:非法的token; 50012:其他客户端登录了;  50014:Token 过期了;
