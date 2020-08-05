@@ -193,6 +193,13 @@
           <el-table-column prop="name" label="接单员" align="center"></el-table-column>
           <el-table-column prop="count" label="已接服务单数" align="center" width="180"></el-table-column>
         </el-table>
+              <pagination
+              v-show="total2>0"
+              :total="total2"
+              :page.sync="listQuery2.page"
+              :limit.sync="listQuery2.limit"
+              @pagination="handleCurrentChange2"
+            />
         <span slot="footer" class="dialog-footer">
           <el-button @click="cancelPost">取 消</el-button>
           <el-button type="primary" @click="postOrder">确 定</el-button>
@@ -315,6 +322,11 @@ export default {
         QryTechName: "", // - 工单技术员
         QryProblemType: "", // - 问题类型
         QryMaterialTypes: [] //物料类型
+      },
+      total2:0,
+      listQuery:{
+           page: 1,
+        limit: 20,
       },
       listQuery1: {
         // 查询条件
