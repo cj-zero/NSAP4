@@ -426,14 +426,14 @@ export default {
   },
   methods: {
    async afterLeft(){
+     console.log(1)
      await this.getLeftList();
-     await this.getRightList();
-     console.log(this.modulesTree )
-    //  if(this.modulesTree.length>0 ){
-    //   this.modulesTree[0].
-    //  }else{
-    //    console.log(2)
-    //  }
+      console.log(2)
+     console.log(this.modulesTree)
+     if(this.modulesTree.length>0 ){
+      this.listQuery.QryServiceOrderId=this.modulesTree[0].key
+      await this.getRightList();
+     }
     },
     changeOrder() {
       if (this.ifParent) {
@@ -656,24 +656,27 @@ export default {
             });
             // console.log(arr)
           }
+            console.log(3)
           this.modulesTree = arr;
         });
       this.listLoading = false;
     },
     getAllRight() {
-      this.listLoading = true;
-      callservepushm.getRightList(this.listQuery1).then(response => {
-        if (response.code === 200) {
-          this.list = response.data.data;
-          this.total = response.data.count;
-          this.listLoading = false;
-        } else {
-          this.$message({
-            type: "error",
-            message: `${response.message}`
-          });
-        }
-      });
+       this.afterLeft()
+       //展开全部工单
+      // this.listLoading = true;
+      // callservepushm.getRightList(this.listQuery1).then(response => {
+      //   if (response.code === 200) {
+      //     this.list = response.data.data;
+      //     this.total = response.data.count;
+      //     this.listLoading = false;
+      //   } else {
+      //     this.$message({
+      //       type: "error",
+      //       message: `${response.message}`
+      //     });
+      //   }
+      // });
     },
     getRightList() {
       this.listLoading = true;

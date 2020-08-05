@@ -52,11 +52,16 @@
         </el-row>
         <el-row type="flex" class="row-bg" justify="space-around">
           <el-col :span="8">
-            <el-form-item label="制造商序列号">
+            <el-form-item label="序列号"
+                prop="manufacturerSerialNumber"
+              :rules="{
+              required: true, message: '制造商序列号不能为空', trigger: 'blur'
+            }">
               <el-autocomplete
                 popper-class="my-autocomplete"
                 v-model="formList[0].manufacturerSerialNumber"
                 size="small"
+               
                 :fetch-suggestions="querySearch"
                 placeholder="制造商序列号"
                 @focus="thisPage=0"
@@ -372,11 +377,15 @@
             </el-row>
             <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="8">
-                <el-form-item label="制造商序列号">
+                <el-form-item label="序列号"
+                       size="small"
+                       :rules="{
+              required: true, message: '制造商序列号不能为空', trigger: 'blur'
+            }">
                   <el-autocomplete
                     popper-class="my-autocomplete"
                     v-model="item.manufacturerSerialNumber"
-                    size="small"
+             
                     :fetch-suggestions="querySearch"
                     placeholder="制造商序列号"
                     @focus="thisPage=index+1"
@@ -684,7 +693,7 @@
       width="90%"
       :visible.sync="dialogfSN"
     >
-      <div style="width:400px;margin:10px 0;">
+      <div style="width:600px;margin:10px 0;">
         <el-input
           @input="searchList"
           style="width:150px;margin:0 20px;display:inline-block;"
@@ -698,6 +707,14 @@
           style="width:150px;margin:0 20px;display:inline-block;"
           v-model="inputItemCode"
           placeholder="输入物料编码"
+        >
+          <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
+        </el-input>
+                <el-input
+          @input="searchList"
+          style="width:150px;margin:0 20px;display:inline-block;"
+          v-model="inputname"
+          placeholder="客户名称"
         >
           <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
         </el-input>
@@ -791,7 +808,7 @@ export default {
       inputSearch: "",
       inputItemCode: "", //物料编码
       activeNames: [], //活跃名称
-
+      inputname:'',//客户名称
       options_sourse: [
         { value: "电话", label: "电话" },
         { value: "钉钉", label: "钉钉" },
@@ -1105,6 +1122,7 @@ export default {
     searchList() {
       this.listQuery.ManufSN = this.inputSearch;
       this.listQuery.ItemCode = this.inputItemCode;
+       this.listQuery.CardName =this.inputname
       this.getSerialNumberList();
       // if (!res) {
       //   this.filterSerialNumberList = this.SerialNumberList;

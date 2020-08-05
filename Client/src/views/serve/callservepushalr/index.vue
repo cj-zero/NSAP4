@@ -420,10 +420,16 @@ export default {
   },
   created() {},
   mounted() {
-    this.getLeftList();
-    this.getRightList();
+   this.afterLeft()
   },
   methods: {
+       async afterLeft(){
+     await this.getLeftList();
+     if(this.modulesTree.length>0 ){
+      this.listQuery.QryServiceOrderId=this.modulesTree[0].key
+      await this.getRightList();
+     }
+    },
     changeOrder() {
       // console.log(this.ifParent,this.list)
 
@@ -658,13 +664,15 @@ export default {
       this.listLoading = false;
     },
     getAllRight() {
-      this.listLoading = true;
-      callservepushm.getRightList(this.listQuery1).then(response => {
-        this.list = response.data.data;
-        // this.list = response.data;
-        this.total = response.data.count;
-        this.listLoading = false;
-      });
+        //展开全部工单
+      // this.listLoading = true;
+      // callservepushm.getRightList(this.listQuery1).then(response => {
+      //   this.list = response.data.data;
+      //   // this.list = response.data;
+      //   this.total = response.data.count;
+      //   this.listLoading = false;
+      // });
+     this.afterLeft()
     },
     getRightList() {
       this.listLoading = true;
