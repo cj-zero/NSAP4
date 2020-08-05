@@ -1,57 +1,49 @@
 <template>
-  <el-form ref="form" :model="listQuery" label-width="80px">
+  <el-form ref="form" :model="listQuery" label-width="70px" size='mini '>
     <div style="padding:10px 0;"></div>
-    <el-row :gutter="10">
-      <el-col :span="3">
-        <el-form-item label="服务ID" size="small">
-          <el-input v-model.number="listQuery.QryServiceOrderId" @keyup.enter.native='onSubmit'></el-input>
-        </el-form-item>
-      </el-col>
-
-      <el-col :span="3">
-        <el-form-item label="工单ID" size="small">
-          <el-input v-model="listQuery.name" @keyup.enter.native='onSubmit'></el-input>
+    <el-row :gutter="4">
+      <el-col :span="2">
+        <el-form-item label="服务ID" >
+          <el-input v-model="listQuery.QryServiceOrderId" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
       <el-col :span="3">
-        <el-form-item label="呼叫状态" size="small">
-          <el-select v-model="listQuery.QryState" clearable placeholder="请选择呼叫状态">
+        <el-form-item label="呼叫状态" >
+              <el-select v-model="listQuery.QryState"  placeholder="请选择呼叫状态">
             <el-option
               v-for="(item,index) in callStatus"
               :key="index"
-               :disabled="item.disabled"
+              :disabled="item.disabled"
               :label="item.label"
               :value="item.value"
             ></el-option>
           </el-select>
         </el-form-item>
       </el-col>
-
-      <el-col :span="3">
-        <el-form-item label="客户" size="small">
+      <el-col :span="2">
+        <el-form-item label="客户" >
           <el-input v-model="listQuery.QryCustomer" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
-      <el-col :span="3">
-        <el-form-item label="序列号" size="small">
+      <el-col :span="2">
+        <el-form-item label="序列号" >
           <el-input v-model="listQuery.QryManufSN" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
-      <el-col :span="3">
-        <el-form-item label="接单员" size="small">
+      <el-col :span="2">
+        <el-form-item label="接单员" >
           <el-input v-model="listQuery.QryRecepUser" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
-    </el-row>
-    <el-row :gutter="10">
-      <el-col :span="3">
-        <el-form-item label="技术员" size="small">
+ 
+      <el-col :span="2">
+        <el-form-item label="技术员" >
           <el-input v-model="listQuery.QryTechName" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
       <el-col :span="3">
-        <el-form-item label="问题类型" size="small">
-          <el-select v-model="listQuery.QryProblemType" size="small" clearable placeholder="选择呼叫状态">
+        <el-form-item label="问题类型" >
+          <el-select v-model="listQuery.QryProblemType" clearable  placeholder="选择呼叫状态">
             <el-option label="待确认" value="1"></el-option>
             <el-option label="已确认" value="2"></el-option>
             <el-option label="已取消" value="3"></el-option>
@@ -59,10 +51,10 @@
         </el-form-item>
       </el-col>
       <el-col :span="6">
-        <el-form-item label="创建日期" size="small">
+        <el-form-item label="创建日期" >
           <el-col :span="11">
             <el-date-picker
-            size="small"
+            
            format="yyyy-MM-dd"   
               value-format="yyyy-MM-dd"
               placeholder="选择开始日期"
@@ -83,13 +75,8 @@
         </el-form-item>
       </el-col>
 
-      <el-col :span="2" style="margin-left:20px;" >
-                    <el-button type="primary" @click="onSubmit" size="small" icon="el-icon-search"> 搜 索 </el-button>
-      </el-col>
-
-            <el-col :span="2" style="margin-left:20px;" >
-
-            <el-button type="success"  size="small" @click="sendOrder" icon="el-icon-thumb"> 转 派 </el-button>
+      <el-col :span="2" style="margin-left:0;" >
+               <el-button type="primary" @click="onSubmit" size="mini"  icon="el-icon-search"> 搜 索 </el-button>
       </el-col>
     </el-row>
   </el-form>
@@ -125,14 +112,14 @@ export default {
 // 7.已解决-技术员点击了完成工单（不可选）
 // 8.已回访-app自动回访&呼叫中心电话回访（不可选）
                callStatus: [
-        { value: 1, label: "待处理" , disabled: true},
+        { value: 1, label: "待处理" },
         { value: 2, label: "已排配" },
         { value: 3, label: "已预约" },
         { value: 4, label: "已外出" },
         { value: 5, label: "已挂起" },
-        { value: 6, label: "已接收" , disabled: true},
-        { value: 7, label: "已解决" , disabled: true},
-        { value: 8, label: "已回访" , disabled: true}
+        { value: 6, label: "已接收" },
+        { value: 7, label: "已解决" },
+        { value: 8, label: "已回访" }
       ],
     };
   },
