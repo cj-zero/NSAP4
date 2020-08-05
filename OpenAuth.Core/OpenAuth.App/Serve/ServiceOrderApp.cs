@@ -433,6 +433,8 @@ namespace OpenAuth.App
             }
             var d = await _businessPartnerApp.GetDetails(request.CustomerId);
             var obj = request.MapTo<ServiceOrder>();
+            obj.RecepUserName = loginContext.User.Name;
+            obj.RecepUserId = loginContext.User.Id;
             obj.Status = 2;
             obj.SalesMan = d.SlpName;
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
@@ -661,6 +663,8 @@ namespace OpenAuth.App
             }
             var d = await _businessPartnerApp.GetDetails(req.CustomerId);
             var obj = req.MapTo<ServiceOrder>();
+            obj.RecepUserName = loginContext.User.Name;
+            obj.RecepUserId = loginContext.User.Id;
             obj.Status = 2;
             obj.SalesMan = d.SlpName;
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
