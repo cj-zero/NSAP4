@@ -427,12 +427,12 @@ export default {
   methods: {
    async afterLeft(){
      console.log(1)
-     await this.getLeftList();
+    await  this.getLeftList();
       console.log(2)
-     console.log(this.modulesTree)
+     console.log(arr)
      if(this.modulesTree.length>0 ){
       this.listQuery.QryServiceOrderId=this.modulesTree[0].key
-      await this.getRightList();
+      this.getRightList();
      }
     },
     changeOrder() {
@@ -490,12 +490,14 @@ export default {
               message: `${error}`
             });
             this.listLoading = false;
-          });
+          });                                   
       }
     },
     changeSearch(val) {
       if (val === 1) {
-        this.getRightList();
+        // this.getRightList();
+            this.afterLeft()
+
       } else {
         Object.assign(this.listQuery, val);
         // console.log(this.listQuery);
@@ -660,6 +662,7 @@ export default {
           this.modulesTree = arr;
         });
       this.listLoading = false;
+      return arr
     },
     getAllRight() {
        this.afterLeft()

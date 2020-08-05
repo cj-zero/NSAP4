@@ -466,7 +466,9 @@ export default {
     },
     changeSearch(val) {
       if (val === 1) {
-        this.getRightList();
+        // this.getRightList();
+                    this.afterLeft()
+
       } else {
         Object.assign(this.listQuery, val);
         // console.log(this.listQuery);
