@@ -429,7 +429,6 @@ export default {
      console.log(1)
     await  this.getLeftList();
       console.log(2)
-     console.log(arr)
      if(this.modulesTree.length>0 ){
       this.listQuery.QryServiceOrderId=this.modulesTree[0].key
       this.getRightList();
