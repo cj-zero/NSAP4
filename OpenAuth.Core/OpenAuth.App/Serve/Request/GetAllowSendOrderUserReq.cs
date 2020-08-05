@@ -1,10 +1,11 @@
-﻿using System;
+﻿using OpenAuth.App.Request;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace OpenAuth.App.Serve.Request
 {
-    public class GetAllowSendOrderUserReq
+    public class GetAllowSendOrderUserReq : PageReq
     {
         /// <summary>
         /// 经度

@@ -547,12 +547,12 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<Response<List<AllowSendOrderUserResp>>> GetAllowSendOrderUser([FromQuery] GetAllowSendOrderUserReq req)
+        public async Task<TableData> GetAllowSendOrderUser([FromQuery] GetAllowSendOrderUserReq req)
         {
-            var result = new Response<List<AllowSendOrderUserResp>>();
+            var result = new TableData();
             try
             {
-                result.Result = await _serviceOrderApp.GetAllowSendOrderUser(req);
+                result = await _serviceOrderApp.GetAllowSendOrderUser(req);
             }
             catch (Exception ex)
             {

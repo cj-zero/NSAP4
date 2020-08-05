@@ -1122,8 +1122,9 @@ namespace OpenAuth.App
         /// 查询可以被派单的技术员列表
         /// </summary>
         /// <returns></returns>
-        public async Task<List<AllowSendOrderUserResp>> GetAllowSendOrderUser(GetAllowSendOrderUserReq req)
+        public async Task<TableData> GetAllowSendOrderUser(GetAllowSendOrderUserReq req)
         {
+            var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
@@ -1135,7 +1136,7 @@ namespace OpenAuth.App
             var locations = (await UnitWork.Find<RealTimeLocation>(null).OrderByDescending(o => o.CreateTime).ToListAsync()).GroupBy(g => g.AppUserId).Select(s => s.First());
             var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
             var ids = userIds.Intersect(tUsers.Select(u => u.UserID));
-            var users = await UnitWork.Find<User>(u => ids.Contains(u.Id)).ToListAsync();
+            var users = await UnitWork.Find<User>(u => ids.Contains(u.Id)).WhereIf(!string.IsNullOrEmpty(req.key), u => u.Name.Equals(req.key)).ToListAsync();
             var us = users.Select(u => new { u.Name, AppUserId = tUsers.FirstOrDefault(a => a.UserID.Equals(u.Id)).AppUserId, u.Id });
             var appUserIds = tUsers.Where(u => userIds.Contains(u.UserID)).Select(u => u.AppUserId).ToList();
 
@@ -1143,19 +1144,25 @@ namespace OpenAuth.App
                 .Select(s => new { s.CurrentUserId, s.ServiceOrderId }).Distinct().GroupBy(s => s.CurrentUserId)
                 .Select(g => new { g.Key, Count = g.Count() }).ToListAsync();
 
-            var result = us.Select(u => new AllowSendOrderUserResp
+            var userInfos = us.Select(u => new AllowSendOrderUserResp
             {
                 Id = u.Id,
                 Name = u.Name,
                 Count = userCount.FirstOrDefault(s => s.Key.Equals(u.AppUserId))?.Count ?? 0,
                 AppUserId = u.AppUserId,
-                Province = locations.FirstOrDefault(f=>f.AppUserId==u.AppUserId)?.Province,
+                Province = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Province,
                 City = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.City,
                 Area = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Area,
                 Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude ?? 0), Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
             }).ToList();
 
-            return result.OrderBy(o=>o.Distance).ToList();
+            userInfos = userInfos.OrderBy(o => o.Distance).ToList();
+            var list = userInfos.OrderBy(o => o.Distance)
+            .Skip((req.page - 1) * req.limit)
+            .Take(req.limit).ToList();
+            result.Data = list;
+            result.Count = userInfos.Count;
+            return result;
         }
 
         /// <summary>
