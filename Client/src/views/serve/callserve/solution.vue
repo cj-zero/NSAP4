@@ -1,7 +1,11 @@
 <template>
   <div>
     <div class="app-container">
-      <div class="bg-white">
+      <el-row class="search-wrapper" type="flex" justify="end">
+        <el-input v-model="query" style="width: 150px;margin-right: 10px"></el-input>
+        <el-button type="primary" size="mini" icon="el-icon-search" @click="handleSearch" style="margin-right: 10px">搜索</el-button>
+      </el-row>
+      <div class="bg-white" style="margin-top: 20px;">
         <el-table
           ref="mainTable"
           :key="key"
@@ -80,7 +84,7 @@ export default {
         { name: "subject", label: "解决方案" }
       ],
       // this.dialogTable = true;
-
+      query: '', // 查询字符串
       headLabel: {
         id: "ID",
         sltCode: "编号",
@@ -171,6 +175,15 @@ export default {
         //    this.listLoading = false;
 
     // });
+    },
+    handleSearch () {
+      let { limit } = this.listQuery
+      let params = {
+        key: this.query,
+        page: 1,
+        limit
+      }
+      this.$emit('search', params)
     },
     handleFilter() {
       this.listQuery.page = 1;

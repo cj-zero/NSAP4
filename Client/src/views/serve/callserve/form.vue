@@ -335,7 +335,7 @@ import Pagination from "@/components/Pagination";
 import zmap from "@/components/amap";
 import upLoadImage from "@/components/upLoadFile";
 import Model from "@/components/Formcreated/components/Model";
-
+import { timeToFormat } from '@/utils'
 import formPartner from "./formPartner";
 import formAdd from "./formAdd";
 export default {
@@ -418,7 +418,7 @@ export default {
         addressDesignator: "", //地址标识
         recepUserId: "", //接单人用户ID
         address: "", //详细地址
-        createTime: new Date(),
+        createTime: timeToFormat('yyyy-MM-dd HH-mm-ss'),
         id: "", //服务单id
         province: "深圳", //省
         city: "", //市
@@ -507,6 +507,7 @@ export default {
   created() {
     //  Object.assign(this.form,this.refValue)
     // this.propForm = this.refValue.serviceWorkOrders
+    console.log(this.form.createTime, 'createTime')
   },
   provide: function () {
     return {
@@ -561,7 +562,7 @@ export default {
       });
       return imgList;
     },
-    postServe() {
+    async postServe() {
       //创建整个工单
 
       if (this.form.serviceWorkOrders.length > 0) {
@@ -578,9 +579,9 @@ export default {
         //   item.solutionId = item.solution;
         //   return item;
         // });
-        this.$refs.form.validate(valid => {
-          this.isValid = valid
-        })
+        this.isValid = await this.$refs.form.validate()
+
+        console.log(this.isValid, chec, '校验', this.form)
         if (chec && this.isValid) {
           if (this.$route.path === "/serve/callserve") {
             callservesure
@@ -622,11 +623,6 @@ export default {
             type: "error",
           });
         }
-      } else {
-        this.$message({
-          message: `请将必填项填写完整`,
-          type: "error",
-        });
       }
     },
     getPartnerInfo(num) {

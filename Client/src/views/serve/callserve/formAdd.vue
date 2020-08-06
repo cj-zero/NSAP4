@@ -678,6 +678,7 @@
         :total="solutionCount"
         :listLoading="listLoading"
         @page-Change="pageChange"
+        @search="onSearch"
       ></solution>
       <!-- <span slot="footer" class="dialog-footer">
         <el-button size="small" @click="solutionOpen = false">取 消</el-button>
@@ -1000,6 +1001,16 @@ export default {
     },
     solutionget(res) {
       this.datasolution = res;
+    },
+    onSearch (params) {
+      this.listLoading = false
+      solutions.getList(params).then((response) => {
+        this.datasolution = response.data;
+        this.solutionCount = response.count;
+        this.listLoading = false;
+      }).catch(() => {
+        this.listLoading = false
+      });
     },
     NodeClick(res) {
       console.log(this.formList, this.sortForm - 1);
