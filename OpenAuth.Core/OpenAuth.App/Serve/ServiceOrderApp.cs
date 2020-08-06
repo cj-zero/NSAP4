@@ -1729,6 +1729,11 @@ namespace OpenAuth.App
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = workOrderInfo.ServiceOrderId, Content = content, AppUserId = request.CurrentUserId });
         }
 
+        /// <summary>
+        /// 回访服务单
+        /// </summary>
+        /// <param name="serviceOrderId"></param>
+        /// <returns></returns>
         public async Task ServiceOrderCallback(int serviceOrderId)
         {
             var loginContext = _auth.GetCurrentUser();
@@ -1753,6 +1758,11 @@ namespace OpenAuth.App
             }
         }
 
+        /// <summary>
+        /// 获取可接单技术员列表（App）
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
         public async Task<TableData> GetAppAllowSendOrderUser(GetAllowSendOrderUserReq req)
         {
             Dictionary<string, object> userData = new Dictionary<string, object>();
