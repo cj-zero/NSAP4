@@ -21,7 +21,6 @@ namespace SAP.API
             oCompany.Password = "Aa678321&"; //dRow[3].ToString();Aa789123@
             oCompany.CompanyDB = "neware_202005"; //dRow[6].ToString();
             oCompany.language = BoSuppLangs.ln_Chinese;
-            oCompany.Connect();
             int connecti = oCompany.Connect();
             if (connecti != 0)
             {
