@@ -11,6 +11,8 @@
             class="rowStyle1"
             :disabled="!isCreate"
             :label-width="labelwidth"
+            :inline-message="true"
+            :show-message="false"
           >
             <div
               style="font-size:22px;color:#67C23A;text-align:center;height:40px;line-height:35px;border-bottom:1px solid silver;margin-bottom:10px;"
@@ -206,7 +208,7 @@
                 <div style="font-size:12px;color:#606266;width:100px;">上传图片</div>
               </el-col>
               <el-col :span="18">
-                <upLoadImage setImage="100px" @get-ImgList="getImgList"></upLoadImage>
+                <upLoadImage :setImage="setImage" @get-ImgList="getImgList"></upLoadImage>
               </el-col>
               <!-- <el-col :span="2" style="line-height:40px;">  暂时取消
                 <el-button
@@ -336,6 +338,7 @@ import zmap from "@/components/amap";
 import upLoadImage from "@/components/upLoadFile";
 import Model from "@/components/Formcreated/components/Model";
 import { timeToFormat } from '@/utils'
+import { isMobile, isPhone } from '@/utils/validate'
 import formPartner from "./formPartner";
 import formAdd from "./formAdd";
 export default {
@@ -357,14 +360,15 @@ export default {
   data() {
     var checkTelF = (rule, value, callback) => {
       if (!value) {
-        callback()
+        return callback()
       }
       setTimeout(() => {
-        let reg = RegExp(/^[\d-]+$/);
-        if (reg.test(value)) {
+        // let reg = RegExp(/^[\d-]+$/);
+        if (isMobile(value) || isPhone(value)) {
           callback();
         } else {
-          callback(new Error('电话号码只能包括数字值或"-"'));
+          // callback(new Error('请输入正确的格式'));
+          callback(this.$message.error('请输入正确的电话格式'))
         }
       }, 500);
     };
@@ -376,8 +380,8 @@ export default {
       partnerList: [],
       previewVisible: false, //图片预览的dia
       setImage: {
-        width: "100px",
-        height: "100px",
+        width: "50px",
+        height: "50px",
       },
       drawerMap: false, //地图控件
       filterPartnerList: [],
@@ -567,14 +571,20 @@ export default {
     },
     async postServe() {
       //创建整个工单
-      console.log(this.form)
-
+      if (!this.form.serviceWorkOrders.length) {
+          this.$message({
+            message: `请将必填项填写完整`,
+            type: "error",
+          });
+          return
+      }
+      
       if (this.form.serviceWorkOrders.length >= 0) {
         let chec = this.form.serviceWorkOrders.every(
-          (item) =>
+          (item) => 
             item.fromTheme !== "" &&
             item.fromType !== "" &&
-            item.problemTypeId !== ""&&
+            item.problemTypeId !== "" &&
             item.manufacturerSerialNumber !== "" &&
             (item.fromType === 2 ? item.solutionId !== "" : true)
         );

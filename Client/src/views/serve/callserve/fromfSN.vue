@@ -77,7 +77,7 @@ export default {
     //   // this.getList();
     // },
     handleSelectionChange(val) {
-      console.log(val)
+      console.log(val, 'column')
       this.$emit("change-Form", val);
     },
   },

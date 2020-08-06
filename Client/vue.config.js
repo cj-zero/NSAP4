@@ -6,7 +6,7 @@ function resolve (dir) {
 module.exports = {
   lintOnSave: process.env.NODE_ENV !== 'production',
   devServer: {
-    // port: 1803,     // 端口
+    port: 1803,     // 端口
     overlay: {
       warnings: true,
       errors: false

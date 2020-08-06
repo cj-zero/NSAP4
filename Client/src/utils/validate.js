@@ -26,3 +26,10 @@ export function validatAlphabets(str) {
   return reg.test(str)
 }
 
+export function isMobile (mobile) {
+  return /^1[3-9]\d{9}$/.test(mobile)
+}
+
+export function isPhone (phone) {
+  return /^(?:0[1-9][0-9]{1,2}-)?[2-8][0-9]{6,7}$/.test(phone)
+}

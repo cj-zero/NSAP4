@@ -43,7 +43,7 @@
           <div style="font-size:12px;color:#606266;width:100px;">上传图片</div>
         </el-col>
         <el-col :span="18">
-          <upLoadImage setImage="100px" @get-ImgList="getImgList"></upLoadImage>
+          <upLoadImage setImage="50px" @get-ImgList="getImgList"></upLoadImage>
         </el-col>
       </el-row>
       <span slot="footer" class="dialog-footer">

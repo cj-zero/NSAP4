@@ -696,7 +696,7 @@
       width="90%"
       :visible.sync="dialogfSN"
     >
-      <div style="width:600px;margin:10px 0;">
+      <div style="width:600px;margin:10px 0;" class="search-wrapper">
         <el-input
           @input="searchList"
           style="width:150px;margin:0 20px;display:inline-block;"
@@ -721,6 +721,7 @@
         >
           <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
         </el-input>
+        <!-- <el-checkbox v-model="checked" :disalbed="isDisabled">其它</el-checkbox>         -->
       </div>
       <fromfSN
         :SerialNumberList="filterSerialNumberList"
@@ -806,7 +807,7 @@ export default {
           editTrue: true, //修改后续的状态
         },
       ], //表单依赖的表格数据
-
+      // checked: '', // 序列号无数据时出现其它选项，有数据时候禁用
       dialogfSN: false,
       inputSearch: "",
       inputItemCode: "", //物料编码
@@ -954,10 +955,21 @@ export default {
         this.listQuery.CardCode = val;
         getSerialNumber(this.listQuery)
           .then((res) => {
+            // this.SerialNumberList = res.data;
+            // this.filterSerialNumberList = this.SerialNumberList;
+            // this.SerialCount = res.count;
             this.SerialNumberList = res.data;
-            this.filterSerialNumberList = this.SerialNumberList;
+            this.filterSerialNumberList = this.SerialNumberList.filter(
+              // (item) => item.manufSN === res.manufSN
+              item => {
+                return this.formList.length ?
+                  this.formList.every(formItem => formItem.manufacturerSerialNumber !== item.manufSN) :
+                  true
+              }
+            );
             this.SerialCount = res.count;
-          })
+            console.log(this.SerialCount, 'total count')
+            })
           .catch((error) => {
             console.log(error);
           });
@@ -978,7 +990,16 @@ export default {
       getSerialNumber(this.listQuery)
         .then((res) => {
           this.SerialNumberList = res.data;
-          this.filterSerialNumberList = this.SerialNumberList;
+          // this.filterSerialNumberList = this.SerialNumberList;
+          // this.SerialCount = res.count;
+          this.filterSerialNumberList = this.SerialNumberList.filter(
+            // (item) => item.manufSN === res.manufSN
+            item => {
+              return this.formList.length ?
+                this.formList.every(formItem => formItem.manufacturerSerialNumber !== item.manufSN) :
+                true
+            }
+          );
           this.SerialCount = res.count;
           this.serLoad = false;
           this.listLoading = false;
@@ -1050,7 +1071,15 @@ export default {
       return res.length ? res[0].subject : "请选择";
     },
     openDialog() {
-      this.filterSerialNumberList = this.SerialNumberList;
+      console.log(this.formList, 'formList', this.SerialNumberList)
+      this.filterSerialNumberList = this.SerialNumberList.filter(
+        // (item) => item.manufSN === res.manufSN
+        item => {
+          return this.formList.length ?
+            this.formList.every(formItem => formItem.manufacturerSerialNumber !== item.manufSN) :
+            true
+        }
+      );
     },
     changeForm(res) {
       this.formListStart = res;
@@ -1059,6 +1088,10 @@ export default {
     },
 
     pushForm() {
+      if (!this.formListStart.length) { // 没有对列表进行选择
+        this.dialogfSN = false;
+        return
+      } // 没有添加直接退出
       this.dialogfSN = false;
       this.waitingAdd = true;
       if (!this.formList[0].manufacturerSerialNumber) {
@@ -1152,7 +1185,7 @@ export default {
       // }
     },
     searchSelect(res) {
-      if (this.filterSerialNumberList.length) {
+      if (res.count) {
         this.filterSerialNumberList = this.filterSerialNumberList.filter(
           (item) => item.manufSN === res.manufSN
         );
@@ -1289,6 +1322,10 @@ export default {
 // .editRodia{
  
 // }
+.search-wrapper {
+  display: flex;
+  align-items: center;
+}
 .rowStyle {
       ::v-deep .el-form-item {
      margin: 3px 1px !important;
