@@ -42,7 +42,7 @@ namespace OpenAuth.App
         private IOptions<AppSetting> _appConfiguration;
         private HttpHelper _helper;
         public ServiceOrderApp(IUnitWork unitWork,
-            RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration) : base(unitWork, auth)
+            RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ServiceWorkOrderAPI workAPI) : base(unitWork, auth)
         {
             _appConfiguration = appConfiguration;
             _revelanceApp = app;
@@ -50,6 +50,7 @@ namespace OpenAuth.App
             _businessPartnerApp = businessPartnerApp;
             _appServiceOrderLogApp = appServiceOrderLogApp;
             _helper = new HttpHelper(_appConfiguration.Value.AppPushMsgUrl);
+            _workAPI = workAPI;
         }
         /// <summary>
         /// 加载列表
@@ -494,23 +495,23 @@ namespace OpenAuth.App
             await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"客服:{loginContext.User.Name}创建工单", ActionType = "创建工单", ServiceOrderId = obj.Id });
 
             #region 同步到SAP 并拿到服务单主键
-            if (obj.ServiceWorkOrders.Count > 0)
-            {
-                ServiceWorkOrder firstwork = obj.ServiceWorkOrders[0];
-                string sapEntry, errMsg;
-                if (_workAPI.AddServiceWorkOrder(firstwork, out sapEntry, out errMsg))
-                {
-                    await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(request.Id), e => new ServiceOrder
-                    {
-                        U_SAP_ID = System.Convert.ToInt32(sapEntry)
-                    });
-                    await UnitWork.SaveAsync();
-                }
-                else
-                {
-                    throw new CommonException(errMsg, Define.INVALID_TOKEN);
-                }
-            }
+            //if (obj.ServiceWorkOrders.Count > 0)
+            //{
+            //    ServiceWorkOrder firstwork = obj.ServiceWorkOrders[0];
+            //    string sapEntry, errMsg;
+            //    if (_workAPI.AddServiceWorkOrder(firstwork, out sapEntry, out errMsg))
+            //    {
+            //        await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(request.Id), e => new ServiceOrder
+            //        {
+            //            U_SAP_ID = System.Convert.ToInt32(sapEntry)
+            //        });
+            //        await UnitWork.SaveAsync();
+            //    }
+            //    else
+            //    {
+            //        throw new CommonException(errMsg, Define.INVALID_TOKEN);
+            //    }
+            //}
 
             #endregion
         }
@@ -693,6 +694,27 @@ namespace OpenAuth.App
             await UnitWork.SaveAsync();
 
             await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"客服:{loginContext.User.Name}创建服务单", ActionType = "创建工单", ServiceOrderId = e.Id });
+            #region 同步到SAP 并拿到服务单主键
+
+            //if (obj.ServiceWorkOrders.Count > 0)
+            //{
+            //    ServiceWorkOrder firstwork = obj.ServiceWorkOrders[0];
+            //    string sapEntry, errMsg;
+            //    if (_workAPI.AddServiceWorkOrder(firstwork, out sapEntry, out errMsg))
+            //    {
+            //        await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(e.Id), a => new ServiceOrder
+            //        {
+            //            U_SAP_ID = System.Convert.ToInt32(sapEntry)
+            //        });
+            //        await UnitWork.SaveAsync();
+            //    }
+            //    else
+            //    {
+            //        throw new CommonException(errMsg, Define.INVALID_TOKEN);
+            //    }
+            //}
+
+            #endregion
         }
         /// <summary>
         /// 派单工单列表
