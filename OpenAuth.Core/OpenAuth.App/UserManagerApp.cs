@@ -278,9 +278,21 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task BindAppUser(AddOrUpdateAppUserMapReq req)
         {
-            var obj = req.MapTo<AppUserMap>();
-            await UnitWork.AddAsync(obj);
-            await UnitWork.SaveAsync();
+            var o = await UnitWork.FindSingleAsync<AppUserMap>(a=>a.AppUserId == req.AppUserId);
+            if(o is null)
+            {
+                var obj = req.MapTo<AppUserMap>();
+                await UnitWork.AddAsync(obj);
+                await UnitWork.SaveAsync();
+            }
+            else
+            {
+                await UnitWork.UpdateAsync<AppUserMap>(a => a.Id.Equals(o.Id), s => new AppUserMap
+                {
+                    UserID = req.UserID
+                });
+                await UnitWork.SaveAsync();
+            }
         }
 
         /// <summary>
