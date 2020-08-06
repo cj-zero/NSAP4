@@ -184,7 +184,8 @@
             <el-row :gutter="10">
               <el-col :span="8">
                 <el-form-item label="现地址">
-                  <el-input size="mini" v-model="form.city"></el-input>
+                  <!-- <el-input size="mini" v-model="form.city"></el-input> -->
+                  <p style="border: 1px solid silver; border-radius:5px;height:30px;margin:0;padding-left:10px;font-size:12px;">{{allArea}}</p>
                 </el-form-item>
               </el-col>
               <el-col :span="16" style="height:30px;line-height:30px;padding:2px 0 0 0;">
@@ -330,12 +331,13 @@
 
 <script>
 import { getPartner } from "@/api/callserve";
+import http from "@/api/serve/whiteHttp";
 import * as callservesure from "@/api/serve/callservesure";
 import Pagination from "@/components/Pagination";
 import zmap from "@/components/amap";
 import upLoadImage from "@/components/upLoadFile";
 import Model from "@/components/Formcreated/components/Model";
-import { timeToFormat } from '@/utils'
+import { timeToFormat } from "@/utils";
 import formPartner from "./formPartner";
 import formAdd from "./formAdd";
 export default {
@@ -357,7 +359,7 @@ export default {
   data() {
     var checkTelF = (rule, value, callback) => {
       if (!value) {
-        callback()
+        callback();
       }
       setTimeout(() => {
         let reg = RegExp(/^[\d-]+$/);
@@ -421,11 +423,11 @@ export default {
         addressDesignator: "", //地址标识
         recepUserId: "", //接单人用户ID
         address: "", //详细地址
-        createTime: timeToFormat('yyyy-MM-dd HH-mm-ss'),
+        createTime: timeToFormat("yyyy-MM-dd HH-mm-ss"),
         id: "", //服务单id
-        province: "深圳", //省
+        province: "", //省
         city: "", //市
-        area: "",
+        area: "",//区
         addr: "", //地区
         longitude: "", //number经度
         latitude: "", //	number纬度
@@ -462,6 +464,11 @@ export default {
       },
     };
   },
+  computed:{
+    allArea(){
+      return this.form.province+this.form.city+this.form.area
+    }
+  },
   watch: {
     ifEdit: {
       handler(val) {
@@ -481,7 +488,37 @@ export default {
         }
       },
     },
-
+    "form.address": {
+      handler(val) {
+        if (val) {
+          let that = this;
+          let url = `https://restapi.amap.com/v3/geocode/geo?key=c97ee5ef9156461c04b552da5b78039d&address=${val}`;
+          http.get(url, function (err, result) {
+            if (result.geocodes.length) {
+              let res = result.geocodes[0];
+              that.form.province = res.province;
+              that.form.city = res.city;
+              that.form.area = res.district;
+              that.form.addr = res.formatted_address;
+              that.form.latitude = res.location.split(",")[1];
+              that.form.longitude= res.location.split(",")[0];
+            } else {
+              that.$message({
+                message: "未识别到地址，请手动选择",
+                type: "error",
+              });
+                    that.form.province ='';
+              that.form.city = "";
+              that.form.area ='';
+              that.form.addr = '';
+              that.form.latitude = '';
+              that.form.longitude= '';
+            }
+            // 这里对结果进行处理
+          });
+        }
+      },
+    },
     "form.customerId": {
       handler(val) {
         this.getPartnerInfo(val);
@@ -510,7 +547,6 @@ export default {
   created() {
     //  Object.assign(this.form,this.refValue)
     // this.propForm = this.refValue.serviceWorkOrders
-    console.log(this.form.createTime, 'createTime')
   },
   provide: function () {
     return {
@@ -542,10 +578,13 @@ export default {
     },
     chooseAddre() {
       this.form.city = this.allAddress.regeocode.addressComponent.city;
+          this.form.province = this.allAddress.regeocode.addressComponent.province;
+              this.form.area =this.allAddress.regeocode.addressComponent.district;
       this.form.addr = this.allAddress.address;
       this.form.longitude = this.allAddress.position.lng;
       this.form.latitude = this.allAddress.position.lat;
       this.drawerMap = false;
+      console.log(this.form)
     },
     async setForm(val) {
       if (val) {
@@ -567,14 +606,14 @@ export default {
     },
     async postServe() {
       //创建整个工单
-      console.log(this.form)
+      console.log(this.form);
 
       if (this.form.serviceWorkOrders.length >= 0) {
         let chec = this.form.serviceWorkOrders.every(
           (item) =>
             item.fromTheme !== "" &&
             item.fromType !== "" &&
-            item.problemTypeId !== ""&&
+            item.problemTypeId !== "" &&
             item.manufacturerSerialNumber !== "" &&
             (item.fromType === 2 ? item.solutionId !== "" : true)
         );
@@ -583,9 +622,8 @@ export default {
         //   item.solutionId = item.solution;
         //   return item;
         // });
-        this.isValid = await this.$refs.form.validate()
+        this.isValid = await this.$refs.form.validate();
 
-        console.log(this.isValid, chec, '校验', this.form)
         if (chec && this.isValid) {
           if (this.$route.path === "/serve/callserve") {
             callservesure
@@ -637,9 +675,9 @@ export default {
           this.cntctPrsnList = res.result.cntctPrsnList;
           this.form.supervisor = res.result.techID;
           if (this.addressList.length) {
-            let { address, building } = this.addressList[0]
-            this.form.addressDesignator = address
-            this.form.address = building
+            let { address, building } = this.addressList[0];
+            this.form.addressDesignator = address;
+            this.form.address = building;
           }
           // this.$message({
           //   message: "修改服务单成功",
@@ -765,10 +803,10 @@ export default {
       this.form.customerName = item.cardName;
       this.form.contacter = item.cntctPrsn;
       this.form.contactTel = item.cellular;
-      console.log( item)
+      console.log(item);
       // this.form.addressDesignator = item.address;
       this.form.address = item.address;
-      
+
       this.form.salesMan = item.slpName;
     },
     sureVal() {
@@ -777,7 +815,7 @@ export default {
       this.form.customerId = val.cardCode;
       this.form.customerName = val.cardName;
       this.form.contacter = val.cntctPrsn;
-      this.form.contactTel = val.cellular
+      this.form.contactTel = val.cellular;
       // this.form.addressDesignator = val.address;
       this.form.address = val.address;
       this.form.salesMan = val.slpName;
@@ -826,8 +864,8 @@ export default {
     top: 0;
     // width: 200px;
   }
-        ::v-deep .el-radio{
-    margin-left:0 !important;
+  ::v-deep .el-radio {
+    margin-left: 0 !important;
   }
   ::v-deep .el-input__inner {
     padding-right: 5px;
@@ -835,7 +873,6 @@ export default {
   }
 }
 .addClass1 {
-
   ::v-deep .el-dialog__header {
     .el-dialog__title {
       color: white;

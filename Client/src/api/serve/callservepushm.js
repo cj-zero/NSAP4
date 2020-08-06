@@ -30,10 +30,11 @@ export function getForm(data) {
     })
   }
 
-  export function AllowSendOrderUser() {    
+  export function AllowSendOrderUser(params) {    
     return request({
       url: '/serve/ServiceOrder/GetAllowSendOrderUser',
-      method: 'get'
+      method: 'get',
+      params
     })
   }
 

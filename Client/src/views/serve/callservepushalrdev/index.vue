@@ -445,7 +445,10 @@ export default {
     handleCurrentChange2(val) {
       this.listQuery2.page = val.page;
       this.listQuery2.limit = val.limit;
-      this.getRightList();
+         callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
+          this.tableData = res.data;
+          this.total2 = res.count;
+        });
     },
     async afterLeft() {
       await this.getLeftList();

@@ -329,7 +329,7 @@ export default {
       total2: 0,
       listQuery2: {
         page: 1,
-        limit: 20,
+        limit: 10,
       },
       listQuery1: {
         // 查询条件
@@ -462,7 +462,7 @@ export default {
     async changeOrder() {
       if (this.ifParent) {
         this.dialogOrder = true;
-        callservepushm.AllowSendOrderUser().then((res) => {
+        callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
           this.tableData = res.data;
           this.total2 = res.count;
         });
@@ -780,7 +780,10 @@ export default {
     handleCurrentChange2(val) {
       this.listQuery2.page = val.page;
       this.listQuery2.limit = val.limit;
-      this.getRightList();
+         callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
+          this.tableData = res.data;
+          this.total2 = res.count;
+        });
     },
     handleModifyStatus(row, disable) {
       // 模拟修改状态
