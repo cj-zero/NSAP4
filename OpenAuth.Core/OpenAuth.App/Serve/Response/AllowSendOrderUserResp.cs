@@ -41,6 +41,12 @@ namespace OpenAuth.App.Response
         public string Area { get; set; }
 
         /// <summary>
+        /// 详细地址
+        /// </summary>
+        public string Addr { get; set; }
+
+
+        /// <summary>
         /// 距离
         /// </summary>
         public double Distance { get; set; }

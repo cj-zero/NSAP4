@@ -66,6 +66,12 @@ namespace OpenAuth.Repository.Domain
         public string Area { get; set; }
 
         /// <summary>
+        /// 详细地址
+        /// </summary>
+        [Description("详细地址")]
+        public string Addr { get; set; }
+
+        /// <summary>
         /// 定位时间
         /// </summary>
         [Description("定位时间")]

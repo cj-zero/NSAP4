@@ -28,6 +28,7 @@ using Newtonsoft.Json;
 using Microsoft.Extensions.Options;
 using SAP.API;
 using Autofac.Core;
+using Npoi.Mapper;
 
 namespace OpenAuth.App
 {
@@ -106,6 +107,7 @@ namespace OpenAuth.App
                             a.NewestContacter,
                             a.NewestContactTel,
                             a.CustomerName,
+                            a.CustomerId,
                             ServiceWorkOrders = a.ServiceWorkOrders.Select(o => new
                             {
                                 o.Id,
@@ -141,6 +143,7 @@ namespace OpenAuth.App
                     a.NewestContacter,
                     a.NewestContactTel,
                     a.CustomerName,
+                    a.CustomerId,
                     ServiceWorkOrders = a.ServiceWorkOrders.GroupBy(o => o.MaterialType).Select(s => new
                     {
                         MaterialType = s.Key,
@@ -371,11 +374,13 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceOrderSNs)
+                .Include(s => s.ServiceWorkOrders)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.Id.Equals(Convert.ToInt32(req.QryServiceOrderId)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.Status.Equals(Convert.ToInt32(req.QryState)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.CustomerId.Contains(req.QryCustomer) || q.CustomerName.Contains(req.QryCustomer))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceOrderSNs.Any(a => a.ManufSN.Contains(req.QryManufSN)))
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime <= req.QryCreateTimeTo)
+                         .WhereIf(Convert.ToInt32(req.QryState) == 2, q => !q.ServiceWorkOrders.All(q => q.Status != 1))
             .OrderBy(r => r.CreateTime).Select(q => new
             {
                 q.Id,
@@ -1025,7 +1030,7 @@ namespace OpenAuth.App
                 UserId = userId,
                 Title = title,
                 Content = content
-            }, "v2.0/BbsCommunity/AppPushMsg");
+            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "BbsCommunity/AppPushMsg");
         }
 
         /// <summary>
@@ -1750,6 +1755,8 @@ namespace OpenAuth.App
 
         public async Task<TableData> GetAppAllowSendOrderUser(GetAllowSendOrderUserReq req)
         {
+            Dictionary<string, object> userData = new Dictionary<string, object>();
+            List<object> data = new List<object>();
             var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -1766,35 +1773,129 @@ namespace OpenAuth.App
                         join c in UnitWork.Find<Repository.Domain.Org>(null) on b.SecondId equals c.Id into bc
                         from c in bc.DefaultIfEmpty()
                         select new { userId = a.Id, orgId = c.Id, orgName = c.Name };
-            var userInfo = (await query.GroupBy(g => g.orgId).ToListAsync()).Select(s=>new { });
-
-            var ids = userIds.Intersect(tUsers.Select(u => u.UserID));
-            var users = await UnitWork.Find<User>(u => ids.Contains(u.Id)).WhereIf(!string.IsNullOrEmpty(req.key), u => u.Name.Equals(req.key)).ToListAsync();
-            var us = users.Select(u => new { u.Name, AppUserId = tUsers.FirstOrDefault(a => a.UserID.Equals(u.Id)).AppUserId, u.Id });
-            var appUserIds = tUsers.Where(u => userIds.Contains(u.UserID)).Select(u => u.AppUserId).ToList();
-
-            var userCount = await UnitWork.Find<ServiceWorkOrder>(s => appUserIds.Contains(s.CurrentUserId) && s.Status.Value < 7)
-                .Select(s => new { s.CurrentUserId, s.ServiceOrderId }).Distinct().GroupBy(s => s.CurrentUserId)
-                .Select(g => new { g.Key, Count = g.Count() }).ToListAsync();
-
-            var userInfos = us.Select(u => new AllowSendOrderUserResp
+            var userInfo = (await query.ToListAsync()).Where(s => s.orgId != null).GroupBy(g => g.orgId).Select(s => new { s.Key, userids = string.Join(",", s.Select(i => i.userId)), orgName = s.Select(i => i.orgName).Distinct().FirstOrDefault() }).ToList();
+            foreach (var item in userInfo)
             {
-                Id = u.Id,
-                Name = u.Name,
-                Count = userCount.FirstOrDefault(s => s.Key.Equals(u.AppUserId))?.Count ?? 0,
-                AppUserId = u.AppUserId,
-                Province = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Province,
-                City = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.City,
-                Area = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Area,
-                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude ?? 0), Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
-            }).ToList();
+                var orgName = item.orgName;
+                string uIds = item.userids;
+                List<string> userlist = new List<string>();
+                string[] userArr = uIds.Split(",");
+                userArr.ForEach(u =>
+                     userlist.Add(u)
+                );
+                var ids = userlist.Intersect(tUsers.Select(u => u.UserID));
+                var users = await UnitWork.Find<User>(u => ids.Contains(u.Id)).WhereIf(!string.IsNullOrEmpty(req.key), u => u.Name.Equals(req.key)).ToListAsync();
+                var us = users.Select(u => new { u.Name, AppUserId = tUsers.FirstOrDefault(a => a.UserID.Equals(u.Id)).AppUserId, u.Id });
+                var appUserIds = tUsers.Where(u => userIds.Contains(u.UserID)).Select(u => u.AppUserId).ToList();
 
-            userInfos = userInfos.OrderBy(o => o.Distance).ToList();
-            var list = userInfos.OrderBy(o => o.Distance)
-            .Skip((req.page - 1) * req.limit)
-            .Take(req.limit).ToList();
+                var userCount = await UnitWork.Find<ServiceWorkOrder>(s => appUserIds.Contains(s.CurrentUserId) && s.Status.Value < 7)
+                    .Select(s => new { s.CurrentUserId, s.ServiceOrderId }).Distinct().GroupBy(s => s.CurrentUserId)
+                    .Select(g => new { g.Key, Count = g.Count() }).ToListAsync();
+
+                var userInfos = us.Select(u => new AllowSendOrderUserResp
+                {
+                    Id = u.Id,
+                    Name = u.Name,
+                    Count = userCount.FirstOrDefault(s => s.Key.Equals(u.AppUserId))?.Count ?? 0,
+                    AppUserId = u.AppUserId,
+                    Province = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Province,
+                    City = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.City,
+                    Area = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Area,
+                    Addr = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Addr,
+                    Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude ?? 0), Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
+                }).ToList();
+                userInfos = userInfos.OrderBy(o => o.Distance).ToList();
+                userData.Add("orgId", item.Key);
+                userData.Add("orgName", orgName);
+                userData.Add("userData", userInfos);
+                data.Add(userData);
+            }
+
+
+            result.Data = data;
+            result.Count = userInfo.Count;
+            return result;
+        }
+
+        /// <summary>
+        /// 获取服务单详情（管理员）
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+
+        public async Task<TableData> GetAdminServiceOrderDetail(QueryServiceOrderDetailReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = new TableData();
+            var query = UnitWork.Find<ServiceOrder>(s => s.Id == req.ServiceOrderId)
+                .Include(s => s.ServiceOrderSNs)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Latitude,
+                    s.Longitude,
+                    s.Status,
+                    s.Services,
+                    s.CreateTime,
+                    s.AppUserId,
+                    s.Province,
+                    s.City,
+                    s.Area,
+                    s.Addr,
+                    Contacter = string.IsNullOrEmpty(s.NewestContacter) ? s.Contacter : s.NewestContacter,
+                    ContacterTel = string.IsNullOrEmpty(s.NewestContactTel) ? s.ContactTel : s.NewestContactTel,
+                    s.CustomerName,
+                    s.Supervisor,
+                    s.SalesMan,
+                    MaterialInfo = s.ServiceWorkOrders.Where(o => o.ServiceOrderId == req.ServiceOrderId && o.Status == 1).Select(o => new
+                    {
+                        o.MaterialCode,
+                        o.ManufacturerSerialNumber,
+                        MaterialType = string.IsNullOrEmpty(o.MaterialCode) ? "无序列号设备" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
+                        o.Status,
+                        o.Id,
+                        o.IsCheck,
+                        o.OrderTakeType
+                    }),
+                    s.ServiceOrderSNs
+                });
+
+            var list = (await query
+            .ToListAsync()).Select(s => new
+            {
+                s.Id,
+                s.AppUserId,
+                s.Services,
+                s.Latitude,
+                s.Longitude,
+                s.Province,
+                s.City,
+                s.Area,
+                s.Addr,
+                s.Status,
+                s.CreateTime,
+                s.Contacter,
+                s.ContacterTel,
+                s.CustomerName,
+                s.Supervisor,
+                s.SalesMan,
+                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
+                s.MaterialInfo,
+                ServiceWorkOrders = s.MaterialInfo.GroupBy(o => o.MaterialType).ToList()
+                .Select(s => new
+                {
+                    MaterialType = s.Key,
+                    WorkOrderIds = string.Join(",", s.Select(i => i.Id))
+                }),
+                WorkOrderState = s.MaterialInfo.Distinct().OrderBy(o => o.Status).FirstOrDefault()?.Status,
+                OrderTakeType = s.MaterialInfo.Distinct().OrderBy(o => o.OrderTakeType).FirstOrDefault()?.OrderTakeType,
+                s.ServiceOrderSNs
+            }).ToList();
             result.Data = list;
-            result.Count = userInfos.Count;
             return result;
         }
     }
