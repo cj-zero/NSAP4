@@ -512,10 +512,13 @@ export default {
               that.form.longitude = res.location.split(",")[0];
             } else {
               console.log(val);
+              if(that.isCreate||that.ifEdit){
               that.$message({
                 message: "未识别到地址，请手动选择",
                 type: "error",
               });
+              }
+
               that.form.province = "";
               that.form.city = "";
               that.form.area = "";
@@ -618,6 +621,13 @@ export default {
       if (!this.form.serviceWorkOrders.length) {
         this.$message({
           message: `请将必填项填写完整`,
+          type: "error",
+        });
+        return;
+      }
+      if(!this.form.longitude){
+          this.$message({
+          message: `请手动选择地址`,
           type: "error",
         });
         return;
@@ -804,9 +814,8 @@ export default {
           this.partnerList = res.data;
           this.filterPartnerList = this.partnerList;
           this.parentCount = res.count;
+          console.log(res.count)
           this.parentLoad = false;
-
-          // console.log(res.count)
         })
         .catch((error) => {
           console.log(error);
