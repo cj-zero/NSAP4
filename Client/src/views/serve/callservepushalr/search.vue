@@ -41,13 +41,11 @@
           <el-input v-model="listQuery.QryTechName" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
-      <el-col :span="3">
+     <el-col :span="3">
         <el-form-item label="问题类型" >
-          <el-select v-model="listQuery.QryProblemType" clearable  placeholder="选择呼叫状态">
-            <el-option label="待确认" value="1"></el-option>
-            <el-option label="已确认" value="2"></el-option>
-            <el-option label="已取消" value="3"></el-option>
-          </el-select>
+          <el-cascader :options="dataTree" class="malchack" v-model="listQuery.QryProblemType"   :props="{ value:'id',label:'name',children:'childTypes',expandTrigger: 'hover'  }"  clearable></el-cascader>
+         
+       
         </el-form-item>
       </el-col>
       <el-col :span="6">
@@ -83,6 +81,8 @@
 </template>
 
 <script>
+import * as problemtypes from "@/api/problemtypes";
+
 export default {
   data() {
     return {
@@ -103,14 +103,14 @@ export default {
         QryTechName: "", // - 工单技术员
         QryProblemType: "" // - 问题类型
       },
-// 1.待处理-呼叫中心处理（不可选）
-// 2.已排配-技术员接单
-// 3.已预约-技术员电话预约后
-// 4.已外出-技术员核对设备正确后
-// 5.已挂起-技术员转交给研发测试
-// 6.已接收-研发测试发反馈报告（不可选）
-// 7.已解决-技术员点击了完成工单（不可选）
-// 8.已回访-app自动回访&呼叫中心电话回访（不可选）
+      // 1.待处理-呼叫中心处理（不可选）
+      // 2.已排配-技术员接单
+      // 3.已预约-技术员电话预约后
+      // 4.已外出-技术员核对设备正确后
+      // 5.已挂起-技术员转交给研发测试
+      // 6.已接收-研发测试发反馈报告（不可选）
+      // 7.已解决-技术员点击了完成工单（不可选）
+      // 8.已回访-app自动回访&呼叫中心电话回访（不可选）
                callStatus: [
         { value: 1, label: "待处理" },
         { value: 2, label: "已排配" },
@@ -121,7 +121,19 @@ export default {
         { value: 7, label: "已解决" },
         { value: 8, label: "已回访" }
       ],
+                dataTree:[],
+
     };
+  },
+    created(){
+       problemtypes
+      .getList()
+      .then((res) => {
+        this.dataTree = res.data;
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   },
   methods: {
     onSubmit() {
