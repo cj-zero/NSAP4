@@ -968,7 +968,6 @@ export default {
               }
             );
             this.SerialCount = res.count;
-            console.log(this.SerialCount, 'total count')
             })
           .catch((error) => {
             console.log(error);
