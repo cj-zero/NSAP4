@@ -56,7 +56,6 @@
                   v-for="(fruit,index) in ChildheadOptions"
                   :align="fruit.align"
                   :key="`ind${index}`"
-                  :sortable="fruit=='chaungjianriqi'?true:false"
                   style="background-color:silver;"
                   :label="fruit.label"
                   header-align="left"
@@ -85,7 +84,6 @@
             v-for="(fruit,index) in ParentHeadOptions"
             :align="fruit.align"
             :key="`ind${index}`"
-            :sortable="fruit=='chaungjianriqi'?true:false"
             style="background-color:silver;"
             :label="fruit.label"
             header-align="left"
@@ -255,7 +253,7 @@ export default {
       key: 1, // table key
       sure: 0,
       ParentHeadOptions: [
-        { name: "serviceOrderId", label: "服务单号", width: "80px",align:'left'},
+        { name: "serviceOrderId", label: "服务单号", width: "80px",align:'left' ,  sortable:true},
         { name: "customerId", label: "客户代码",align:'left' },
         { name: "customerName", label: "客户名称" ,align:'left' },
         { name: "contacter", label: "联系人" ,align:'left' },
@@ -531,7 +529,10 @@ export default {
       callservesure.rightList(this.listQuery).then(response => {
             let resul = response.data.data;
         this.total =response.count;
-        this.list =resul;
+        this.list=[]
+         resul.map(item=>{
+this.list.push(item)
+        });
         this.listLoading = false;
       }).catch(() => {
         this.listLoading = true;

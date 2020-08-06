@@ -67,7 +67,12 @@
                 @focus="thisPage=0"
                 @select="searchSelect"
               >
-                <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
+                <el-button
+                  size="mini"
+                  slot="append"
+                  icon="el-icon-search"
+ @click="handleIconClick"                ></el-button>
+                <!-- <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i> -->
                 <template slot-scope="{ item }">
                   <div class="name">
                     <p style="height:20px;margin:2px;">{{ item.manufSN }}</p>
@@ -968,7 +973,6 @@ export default {
               }
             );
             this.SerialCount = res.count;
-            console.log(this.SerialCount, 'total count')
             })
           .catch((error) => {
             console.log(error);
