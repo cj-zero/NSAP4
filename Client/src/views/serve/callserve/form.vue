@@ -383,10 +383,7 @@ export default {
 
       partnerList: [],
       previewVisible: false, //图片预览的dia
-      setImage: {
-        width: "50px",
-        height: "50px",
-      },
+      setImage: '50px',
       drawerMap: false, //地图控件
       filterPartnerList: [],
       inputSearch: "",
