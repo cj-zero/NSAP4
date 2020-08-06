@@ -24,16 +24,19 @@
     <div class="app-container flex-item bg-white">
       <zxsearch @change-Search="changeSearch" @change-Order="changeOrder"></zxsearch>
       <el-row class="fh">
-        <el-col :span="4" class="fh ls-border">
+        <el-col :span="3" class="fh ls-border" style="max-width:190px;">
           <el-card shadow="never" class="card-body-none fh" style>
-            <el-link
+            <!-- <el-link
               style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;"
               @click="getAllRight"
-            >全部服务单>></el-link>
+            >全部服务单>></el-link>-->
+            <div
+              style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;"
+            >服务单列表</div>
+
             <el-tree
               style="max-height:600px;overflow-y: auto;"
               :data="modulesTree"
-              default-expand-all
               show-checkbox
               node-key="key1"
               @check="checkGroupNode"
@@ -41,10 +44,9 @@
               highlight-current
               :props="defaultProps"
             ></el-tree>
-            <!--  -->
           </el-card>
         </el-col>
-        <el-col :span="20" class="fh">
+        <el-col :span="21" class="fh">
           <div class="bg-white">
             <el-table
               ref="mainTable"
@@ -193,8 +195,15 @@
           <el-table-column prop="name" label="接单员" align="center"></el-table-column>
           <el-table-column prop="count" label="已接服务单数" align="center" width="180"></el-table-column>
         </el-table>
+        <pagination
+          v-show="total2>0"
+          :total="total2"
+          :page.sync="listQuery2.page"
+          :limit.sync="listQuery2.limit"
+          @pagination="handleCurrentChange2"
+        />
         <span slot="footer" class="dialog-footer">
-          <el-button @click="dialogOrder = false">取 消</el-button>
+          <el-button @click="cancelPost">取 消</el-button>
           <el-button type="primary" @click="postOrder">确 定</el-button>
         </span>
       </el-dialog>
@@ -227,11 +236,11 @@ export default {
     DynamicTable,
     zxsearch,
     zxform,
-    treeList
+    treeList,
   },
   directives: {
     waves,
-    elDragDialog
+    elDragDialog,
   },
   data() {
     return {
@@ -246,7 +255,7 @@ export default {
         "callstatus",
         "moneyapproval",
         "kehidaima",
-        "kehumingcheng"
+        "kehumingcheng",
       ],
       dialogOrder: false,
       modulesTree: [], // 左侧数据构成的树
@@ -257,7 +266,7 @@ export default {
           name: "serviceWorkOrderId",
           label: "工单ID",
           ifFixed: true,
-          align: "left"
+          align: "left",
         },
         { name: "priority", label: "优先级" },
         { name: "fromType", label: "呼叫类型", width: "100px" },
@@ -269,26 +278,29 @@ export default {
         { name: "fromTheme", label: "呼叫主题" },
         { name: "createTime", label: "创建日期" },
         { name: "recepUserName", label: "接单员" },
-        { name: "techName", label: "技术员" },
+        { name: "currentUser", label: "技术员" },
         {
           name: "manufacturerSerialNumber",
           label: "制造商序列号",
-          width: "120px"
+          width: "120px",
         },
         { name: "materialCode", label: "物料编码" },
         { name: "materialDescription", label: "物料描述" },
         { name: "contacter", label: "联系人" },
         { name: "contactTel", label: "电话号码" },
         { name: "supervisor", label: "售后主管" },
-        { name: "salesMan", label: "销售员" }
+        { name: "salesMan", label: "销售员" },
         // "serviceWorkOrderId": 1,
         // "problemTypeName": "数值异常",
         // "currentUserId": 1
       ],
-
+      listQuery2: {
+        page: 1,
+        limit: 20,
+      },
       defaultProps: {
         children: "children",
-        label: "label"
+        label: "label",
       },
       tableKey: 0,
       list: null,
@@ -314,7 +326,7 @@ export default {
         QryRecepUser: "", //- 接单员
         QryTechName: "", // - 工单技术员
         QryProblemType: "", // - 问题类型
-        QryMaterialTypes: [] //物料类型
+        QryMaterialTypes: [], //物料类型
       },
       listQuery1: {
         // 查询条件
@@ -332,7 +344,7 @@ export default {
         QryRecepUser: "", //- 接单员
         QryTechName: "", // - 工单技术员
         QryProblemType: "", // - 问题类型
-        QryMaterialTypes: [] //物料类型
+        QryMaterialTypes: [], //物料类型
       },
       statusOptions: [
         { value: 1, label: "待处理" },
@@ -342,7 +354,7 @@ export default {
         { value: 5, label: "已挂起" },
         { value: 6, label: "已接收" },
         { value: 7, label: "已解决" },
-        { value: 8, label: "已回访" }
+        { value: 8, label: "已回访" },
       ],
       priorityOptions: ["低", "中", "高"],
       temp: {
@@ -353,30 +365,32 @@ export default {
         symptom: "", // Symptom
         descriptio: "", // Descriptio
         status: "", // Status
-        extendInfo: "" // 其他信息,防止最后加逗号，可以删除
+        extendInfo: "", // 其他信息,防止最后加逗号，可以删除
       },
+      total2: 0,
+
       dialogFormVisible: false,
       dialogTable: false,
       dialogTree: false,
       dialogStatus: "",
       textMap: {
         update: "确认呼叫服务单",
-        create: "新建呼叫服务单"
+        create: "新建呼叫服务单",
       },
       dataForm: {}, //获取的详情表单
       dialogPvVisible: false,
       pvData: [],
       params: {
         currentUserId: "",
-        workOrderIds: []
+        workOrderIds: [],
       },
       rules: {
         appId: [
-          { required: true, message: "必须选择一个应用", trigger: "change" }
+          { required: true, message: "必须选择一个应用", trigger: "change" },
         ],
-        name: [{ required: true, message: "名称不能为空", trigger: "blur" }]
+        name: [{ required: true, message: "名称不能为空", trigger: "blur" }],
       },
-      downloadLoading: false
+      downloadLoading: false,
     };
   },
   filters: {
@@ -395,15 +409,15 @@ export default {
     statusFilter(disable) {
       const statusMap = {
         false: "color-success",
-        true: "color-danger"
+        true: "color-danger",
       };
       return statusMap[disable];
-    }
+    },
   },
   watch: {
     defaultFormThead(valArr) {
       this.formTheadOptions = this.formTheadOptions.filter(
-        i => valArr.indexOf(i) >= 0
+        (i) => valArr.indexOf(i) >= 0
       );
       // }
       this.key = this.key + 1; // 为了保证table 每次都会重渲 In order to ensure the table will be re-rendered each time
@@ -411,42 +425,61 @@ export default {
     list: {
       handler(val) {
         this.workorderidList = [];
-        val.map(item => {
+        val.map((item) => {
           this.workorderidList.push(item.serviceWorkOrderId);
         });
         // console.log(this.workorderidList);
-      }
-    }
+      },
+    },
   },
   created() {},
   mounted() {
-    this.getLeftList();
-    this.getRightList();
+    this.afterLeft();
   },
   methods: {
-    changeOrder() {
-      // console.log(this.ifParent,this.list)
-
+    cancelPost() {
+      (this.dialogOrder = false), (this.listLoading = false);
+      // this.afterLeft()
+      this.getRightList();
+    },
+    handleCurrentChange2(val) {
+      this.listQuery2.page = val.page;
+      this.listQuery2.limit = val.limit;
+      this.getRightList();
+    },
+    async afterLeft() {
+      await this.getLeftList();
+      if (this.modulesTree.length > 0) {
+        console.log(this.modulesTree[0].key)
+        // this.$refs.treeForm.setCheckedKeys([this.modulesTree[0].key]);
+        this.checkGroupNode(this.modulesTree[0]);
+        this.getRightList();
+      }
+    },
+   async   changeOrder() {
       if (this.ifParent) {
         let checkStatus = this.list.every(
-          item => item.status > 1 && item.status < 5
+          (item) => item.status > 1 && item.status < 5
         );
         if (!checkStatus) {
           this.$message({
             type: "warning",
             duration: 5000,
-            message: "仅支持状态为已排配，已预约，已外出，已挂起的工单进行转派"
+            message: "仅支持状态为已排配，已预约，已外出，已挂起的工单进行转派",
           });
         } else {
           this.dialogOrder = true;
-          callservepushm.AllowSendOrderUser().then(res => {
-            this.tableData = res.result;
+                     this.listQuery.limit=999
+     await this.getRightList(); 
+          callservepushm.AllowSendOrderUser().then((res) => {
+            this.tableData = res.data;
+            this.total2 = res.count;
           });
         }
       } else {
         this.$message({
           type: "warning",
-          message: "请先选择需要转派的服务号"
+          message: "请先选择需要转派的服务号",
         });
       }
     },
@@ -461,28 +494,29 @@ export default {
       if (this.hasAlreadNum > 2) {
         this.$message({
           type: "warning",
-          message: "单个技术员接单不能超过3个"
+          message: "单个技术员接单不能超过3个",
         });
       } else {
         callservepushm
           .SendOrders(this.params)
-          .then(res => {
+          .then((res) => {
             if (res.code == 200) {
               this.dataForm = res.result;
               this.$message({
                 type: "success",
-                message: "转派成功"
+                message: "转派成功",
               });
-              this.getLeftList();
-              this.getRightList();
+                      this.listQuery.QryState=''
+              this.listQuery.QryServiceOrderId=''
+            this.afterLeft()
               this.dialogOrder = false;
               this.listLoading = false;
             }
           })
-          .catch(error => {
+          .catch((error) => {
             this.$message({
               type: "danger",
-              message: `${error}`
+              message: `${error}`,
             });
             this.listLoading = false;
           });
@@ -490,16 +524,17 @@ export default {
     },
     changeSearch(val) {
       if (val === 1) {
-        this.getRightList();
-        this.getLeftList();
+         this.getRightList();
       } else {
         Object.assign(this.listQuery, val);
-        // console.log(this.listQuery);
+    if(val.QryServiceOrderId){
+        this.$refs.treeForm.setCheckedKeys([val.QryServiceOrderId]);
+        }        this.getLeftList()
       }
     },
     openTree(res) {
       this.listLoading = true;
-      callservesure.GetDetails(res).then(res => {
+      callservesure.GetDetails(res).then((res) => {
         if (res.code == 200) {
           this.dataForm = res.result;
           this.dialogFormView = true;
@@ -529,7 +564,7 @@ export default {
     //   this.multipleSelection = val;
     //   console.log(val);
     // },
-    onBtnClicked: function(domId) {
+    onBtnClicked: function (domId) {
       switch (domId) {
         case "btnAdd":
           this.handleCreate();
@@ -537,13 +572,16 @@ export default {
         case "btnDetail":
           this.open();
           break;
+        case "btnPost":
+          this.changeOrder();
+          break;
         case "editTable":
           this.dialogTable = true;
           break;
         case "btnEdit":
           this.$message({
             message: "抱歉，暂不提供编辑功能",
-            type: "error"
+            type: "error",
           });
           // if (this.multipleSelection.length<1) {
           //   this.$message({
@@ -558,7 +596,7 @@ export default {
           if (!this.multipleSelection) {
             this.$message({
               message: "至少删除一个",
-              type: "error"
+              type: "error",
             });
             return;
           }
@@ -584,7 +622,7 @@ export default {
               this.listQuery.QryMaterialTypes.push(a.id);
             } else {
               this.listQuery.QryMaterialTypes = this.listQuery.QryMaterialTypes.filter(
-                item => item != a.id
+                (item) => item != a.id
               );
               if (this.listQuery.QryMaterialTypes.length == 0) {
                 this.listQuery.QryServiceOrderId = "";
@@ -594,6 +632,8 @@ export default {
             if (!this.listQuery.QryServiceOrderId) {
               this.listQuery.QryServiceOrderId = a.key;
             } else {
+              this.ifParent = ""; //取消选择之后，清空父级选择
+
               this.listQuery.QryServiceOrderId = "";
               this.listQuery.QryMaterialTypes = [];
             }
@@ -609,7 +649,7 @@ export default {
           if (!a.children) {
             this.listQuery.QryMaterialTypes.push(a.id);
           } else {
-            a.children.map(item => {
+            a.children.map((item) => {
               this.listQuery.QryMaterialTypes.push(item.id);
             });
           }
@@ -621,10 +661,11 @@ export default {
         if (!a.children) {
           this.listQuery.QryMaterialTypes.push(a.id);
         } else {
-          a.children.map(item => {
+          a.children.map((item) => {
             this.listQuery.QryMaterialTypes.push(item.id);
           });
         }
+     
         this.$refs.treeForm.setCheckedKeys([a.key1]);
         this.ifParent = a.key;
         this.listQuery.QryServiceOrderId = a.key;
@@ -635,7 +676,7 @@ export default {
     getLeftList() {
       this.listLoading = true;
       let arr = [];
-      callservepushm.getLeftList(this.listQuery).then(res => {
+      return callservepushm.getLeftList({ QryState: this.listQuery.QryState,QryServiceOrderId:this.listQuery.QryServiceOrderId }).then((res) => {
         let resul = res.data.data;
         for (let i = 0; i < resul.length; i++) {
           arr[i] = [];
@@ -643,34 +684,36 @@ export default {
           arr[i].key1 = `${resul[i].serviceOrderId}`;
           arr[i].key = `${resul[i].serviceOrderId}`;
           arr[i].children = [];
-          resul[i].materialTypes.map(item1 => {
+          resul[i].materialTypes.map((item1) => {
             arr[i].children.push({
               label: `物料类型号:${item1}`,
               key: `${resul[i].serviceOrderId}`,
               key1: `${resul[i].serviceOrderId}&${item1}`,
-              id: item1
+              id: item1,
             });
           });
           // console.log(arr)
         }
         this.modulesTree = arr;
-      });
-      this.listLoading = false;
-    },
-    getAllRight() {
-      this.listLoading = true;
-      callservepushm.getRightList(this.listQuery1).then(response => {
-        this.list = response.data.data;
-        // this.list = response.data;
-        this.total = response.data.count;
         this.listLoading = false;
       });
+    },
+    getAllRight() {
+      //展开全部工单
+      // this.listLoading = true;
+      // callservepushm.getRightList(this.listQuery1).then(response => {
+      //   this.list = response.data.data;
+      //   // this.list = response.data;
+      //   this.total = response.data.count;
+      //   this.listLoading = false;
+      // });
+      this.afterLeft();
     },
     getRightList() {
       this.listLoading = true;
       callservepushm
         .getRightList(this.listQuery)
-        .then(response => {
+        .then((response) => {
           if (response.code === 200) {
             this.list = response.data.data;
             this.total = response.data.count;
@@ -678,62 +721,61 @@ export default {
           } else {
             this.$message({
               type: "error",
-              message: `${response.message}`
+              message: `${response.message}`,
             });
           }
         })
         .catch(() => {
-        this.listLoading = true;
-        let that = this
-          setTimeout(function(){
-                      that.$message({
-            type: "error",
-            message: `请输入正确的搜索值`
-          });
+          this.listLoading = true;
+          let that = this;
+          setTimeout(function () {
+            that.$message({
+              type: "error",
+              message: `请输入正确的搜索值`,
+            });
             that.list = [];
-            that.total =0;
+            that.total = 0;
             that.listLoading = false;
-          },700)
-
+          }, 700);
         });
     },
     open() {
       this.$confirm("确认已完成回访?", "提示", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
-        type: "warning"
+        type: "warning",
       })
         .then(() => {
           this.$message({
             type: "success",
-            message: "操作成功!"
+            message: "操作成功!",
           });
         })
         .catch(() => {
           this.$message({
             type: "info",
-            message: "已取消操作"
+            message: "已取消操作",
           });
         });
     },
     handleFilter() {
       this.listQuery.page = 1;
-      this.getRightList()
+      this.getRightList();
     },
     handleSizeChange(val) {
       this.listQuery.limit = val;
-      this.getRightList()
+      this.getRightList();
     },
     handleCurrentChange(val) {
       this.listQuery.page = val.page;
       this.listQuery.limit = val.limit;
-      this.getRightList()
+      this.getRightList();
     },
     handleModifyStatus(row, disable) {
       // 模拟修改状态
       this.$message({
         message: "操作成功",
-        type: "success"
+        type: "success",
       });
       row.disable = disable;
     },
@@ -752,7 +794,7 @@ export default {
         updateUserId: "",
         updateTime: "",
         updateUserName: "",
-        extendInfo: ""
+        extendInfo: "",
       };
     },
     handleCreate() {
@@ -766,7 +808,7 @@ export default {
     },
     createData() {
       // 保存提交
-      this.$refs["dataForm"].validate(valid => {
+      this.$refs["dataForm"].validate((valid) => {
         if (valid) {
           solutions.add(this.temp).then(() => {
             this.list.unshift(this.temp);
@@ -775,7 +817,7 @@ export default {
               title: "成功",
               message: "创建成功",
               type: "success",
-              duration: 2000
+              duration: 2000,
             });
           });
         }
@@ -792,7 +834,7 @@ export default {
     },
     updateData() {
       // 更新提交
-      this.$refs["dataForm"].validate(valid => {
+      this.$refs["dataForm"].validate((valid) => {
         if (valid) {
           const tempData = Object.assign({}, this.temp);
           solutions.update(tempData).then(() => {
@@ -808,7 +850,7 @@ export default {
               title: "成功",
               message: "更新成功",
               type: "success",
-              duration: 2000
+              duration: 2000,
             });
           });
         }
@@ -816,20 +858,20 @@ export default {
     },
     handleDelete(rows) {
       // 多行删除
-      solutions.del(rows.map(u => u.id)).then(() => {
+      solutions.del(rows.map((u) => u.id)).then(() => {
         this.$notify({
           title: "成功",
           message: "删除成功",
           type: "success",
-          duration: 2000
+          duration: 2000,
         });
-        rows.forEach(row => {
+        rows.forEach((row) => {
           const index = this.list.indexOf(row);
           this.list.splice(index, 1);
         });
       });
-    }
-  }
+    },
+  },
 };
 </script>
 <style>

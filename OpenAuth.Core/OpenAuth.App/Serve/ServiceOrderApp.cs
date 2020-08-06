@@ -27,6 +27,8 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Options;
 using SAP.API;
+using Autofac.Core;
+using Npoi.Mapper;
 
 namespace OpenAuth.App
 {
@@ -105,6 +107,7 @@ namespace OpenAuth.App
                             a.NewestContacter,
                             a.NewestContactTel,
                             a.CustomerName,
+                            a.CustomerId,
                             ServiceWorkOrders = a.ServiceWorkOrders.Select(o => new
                             {
                                 o.Id,
@@ -140,6 +143,7 @@ namespace OpenAuth.App
                     a.NewestContacter,
                     a.NewestContactTel,
                     a.CustomerName,
+                    a.CustomerId,
                     ServiceWorkOrders = a.ServiceWorkOrders.GroupBy(o => o.MaterialType).Select(s => new
                     {
                         MaterialType = s.Key,
@@ -370,11 +374,13 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceOrderSNs)
+                .Include(s => s.ServiceWorkOrders)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.Id.Equals(Convert.ToInt32(req.QryServiceOrderId)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.Status.Equals(Convert.ToInt32(req.QryState)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.CustomerId.Contains(req.QryCustomer) || q.CustomerName.Contains(req.QryCustomer))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceOrderSNs.Any(a => a.ManufSN.Contains(req.QryManufSN)))
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime <= req.QryCreateTimeTo)
+                         .WhereIf(Convert.ToInt32(req.QryState) == 2, q => !q.ServiceWorkOrders.All(q => q.Status != 1))
             .OrderBy(r => r.CreateTime).Select(q => new
             {
                 q.Id,
@@ -389,6 +395,10 @@ namespace OpenAuth.App
                 q.Status,
                 q.ServiceOrderSNs.FirstOrDefault(a => a.ManufSN.Contains(req.QryManufSN)).ManufSN,
                 q.ServiceOrderSNs.FirstOrDefault(a => a.ManufSN.Contains(req.QryManufSN)).ItemCode,
+                q.Province,
+                q.City,
+                q.Area,
+                q.Addr
             });
 
 
@@ -433,6 +443,8 @@ namespace OpenAuth.App
             }
             var d = await _businessPartnerApp.GetDetails(request.CustomerId);
             var obj = request.MapTo<ServiceOrder>();
+            obj.RecepUserName = loginContext.User.Name;
+            obj.RecepUserId = loginContext.User.Id;
             obj.Status = 2;
             obj.SalesMan = d.SlpName;
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
@@ -461,7 +473,12 @@ namespace OpenAuth.App
                 Supervisor = obj.Supervisor,
                 SupervisorId = obj.SupervisorId,
             });
-            obj.ServiceWorkOrders.ForEach(s => { s.ServiceOrderId = obj.Id; s.SubmitDate = DateTime.Now; s.SubmitUserId = loginContext.User.Id; s.AppUserId = obj.AppUserId; s.Status = 1; });
+            obj.ServiceWorkOrders.ForEach(s =>
+            {
+                s.ServiceOrderId = obj.Id; s.SubmitDate = DateTime.Now; s.SubmitUserId = loginContext.User.Id; s.AppUserId = obj.AppUserId; s.Status = 1;
+                if (s.FromType == 2)
+                    s.Status = 7;
+            });
             await UnitWork.BatchAddAsync<ServiceWorkOrder, int>(obj.ServiceWorkOrders.ToArray());
             var pictures = request.Pictures.MapToList<ServiceOrderPicture>();
             pictures.ForEach(p => { p.ServiceOrderId = request.Id; p.PictureType = 2; });
@@ -570,6 +587,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<TableData> UnsignedWorkOrderTree(QueryServiceOrderListReq req)
         {
+            var loginContext = _auth.GetCurrentUser();
             var result = new TableData();
             var query = from a in UnitWork.Find<ServiceWorkOrder>(null)
                         join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
@@ -582,7 +600,13 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.a.ManufacturerSerialNumber.Contains(req.QryManufSN))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.b.RecepUserName.Contains(req.QryRecepUser))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.a.ProblemTypeId.Equals(req.QryProblemType))
-                         .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime <= req.QryCreateTimeTo);
+                         .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime <= req.QryCreateTimeTo)
+                         ;
+
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME)
+            {
+                query = query.Where(q => q.b.SupervisorId.Equals(loginContext.User.Id));
+            }
             var workorderlist = await query.OrderBy(r => r.a.CreateTime).Select(q => new
             {
                 ServiceOrderId = q.b.Id,
@@ -649,12 +673,18 @@ namespace OpenAuth.App
             }
             var d = await _businessPartnerApp.GetDetails(req.CustomerId);
             var obj = req.MapTo<ServiceOrder>();
+            obj.RecepUserName = loginContext.User.Name;
+            obj.RecepUserId = loginContext.User.Id;
             obj.Status = 2;
             obj.SalesMan = d.SlpName;
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
             obj.Supervisor = d.TechName;
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.TechName)))?.Id;
-
+            obj.ServiceWorkOrders.ForEach(s =>
+            {
+                if (s.FromType == 2)
+                    s.Status = 7;
+            });
             var e = await UnitWork.AddAsync<ServiceOrder, int>(obj);
             await UnitWork.SaveAsync();
             var pictures = req.Pictures.MapToList<ServiceOrderPicture>();
@@ -686,8 +716,13 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceWorkOrders.Any(a => a.ManufacturerSerialNumber.Contains(req.QryManufSN)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.RecepUserName.Contains(req.QryRecepUser))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ServiceWorkOrders.Any(a => a.ProblemTypeId.Equals(req.QryProblemType)))
-                .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.ServiceWorkOrders.Any(a => a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo));
-
+                .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.ServiceWorkOrders.Any(a => a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
+                .Where(q => q.Status == 2)
+                ;
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r=>r.Name.Equals("呼叫中心")))
+            {
+                query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id));
+            }
             var resultsql = query.OrderByDescending(q => q.CreateTime).Select(q => new
             {
                 ServiceOrderId = q.Id,
@@ -744,6 +779,11 @@ namespace OpenAuth.App
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime <= req.QryCreateTimeTo)
                          .WhereIf(req.QryMaterialTypes != null && req.QryMaterialTypes.Count > 0, q => req.QryMaterialTypes.Contains(q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))));
 
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME)
+            {
+                query = query.Where(q => q.b.SupervisorId.Equals(loginContext.User.Id));
+            }
+
             var resultsql = query.OrderBy(r => r.a.CreateTime).Select(q => new
             {
                 ServiceOrderId = q.b.Id,
@@ -767,6 +807,8 @@ namespace OpenAuth.App
                 ServiceWorkOrderId = q.a.Id,
                 ProblemTypeName = q.c.Name,
                 q.a.CurrentUserId,
+                q.a.CurrentUser,
+                q.a.CurrentUserNsapId
             });
 
 
@@ -954,8 +996,11 @@ namespace OpenAuth.App
                 throw new CommonException("当前技术员接单已满6单服务单", 90004);
             }
 
+            var u = await UnitWork.Find<AppUserMap>(s => s.AppUserId == req.TechnicianId).Include(s => s.User).FirstOrDefaultAsync();
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => req.ServiceWorkOrderIds.Contains(s.Id), o => new ServiceWorkOrder
             {
+                CurrentUser = u.User.Name,
+                CurrentUserNsapId = u.User.Id,
                 Status = 2,
                 CurrentUserId = req.TechnicianId
             });
@@ -966,7 +1011,7 @@ namespace OpenAuth.App
                 Title = "移转至技术员",
                 Details = "已为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
             }, req.ServiceWorkOrderIds);
-            await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{req.TechnicianId}接单工单：{string.Join(",", req.ServiceWorkOrderIds)}", ActionType = "技术员接单" }, req.ServiceWorkOrderIds);
+            await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{u.User.Name}接单工单：{string.Join(",", req.ServiceWorkOrderIds)}", ActionType = "技术员接单" }, req.ServiceWorkOrderIds);
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = req.ServiceOrderId, Content = "技术员已接单成功，请尽快选择服务", AppUserId = 0 });
             await PushMessageToApp(req.TechnicianId, "接单成功提醒", "您已成功接取一个新的售后服务，请尽快处理");
         }
@@ -985,7 +1030,7 @@ namespace OpenAuth.App
                 UserId = userId,
                 Title = title,
                 Content = content
-            }, "BbsCommunity/AppPushMsg");
+            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "BbsCommunity/AppPushMsg");
         }
 
         /// <summary>
@@ -1093,8 +1138,9 @@ namespace OpenAuth.App
         /// 查询可以被派单的技术员列表
         /// </summary>
         /// <returns></returns>
-        public async Task<List<AllowSendOrderUserResp>> GetAllowSendOrderUser()
+        public async Task<TableData> GetAllowSendOrderUser(GetAllowSendOrderUserReq req)
         {
+            var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
@@ -1103,9 +1149,10 @@ namespace OpenAuth.App
             var orgs = loginContext.Orgs.Select(o => o.Id).ToArray();
 
             var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole == 2).ToListAsync();
+            var locations = (await UnitWork.Find<RealTimeLocation>(null).OrderByDescending(o => o.CreateTime).ToListAsync()).GroupBy(g => g.AppUserId).Select(s => s.First());
             var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
             var ids = userIds.Intersect(tUsers.Select(u => u.UserID));
-            var users = await UnitWork.Find<User>(u => ids.Contains(u.Id)).ToListAsync();
+            var users = await UnitWork.Find<User>(u => ids.Contains(u.Id)).WhereIf(!string.IsNullOrEmpty(req.key), u => u.Name.Equals(req.key)).ToListAsync();
             var us = users.Select(u => new { u.Name, AppUserId = tUsers.FirstOrDefault(a => a.UserID.Equals(u.Id)).AppUserId, u.Id });
             var appUserIds = tUsers.Where(u => userIds.Contains(u.UserID)).Select(u => u.AppUserId).ToList();
 
@@ -1113,14 +1160,24 @@ namespace OpenAuth.App
                 .Select(s => new { s.CurrentUserId, s.ServiceOrderId }).Distinct().GroupBy(s => s.CurrentUserId)
                 .Select(g => new { g.Key, Count = g.Count() }).ToListAsync();
 
-            var result = us.Select(u => new AllowSendOrderUserResp
+            var userInfos = us.Select(u => new AllowSendOrderUserResp
             {
                 Id = u.Id,
                 Name = u.Name,
                 Count = userCount.FirstOrDefault(s => s.Key.Equals(u.AppUserId))?.Count ?? 0,
-                AppUserId = u.AppUserId
+                AppUserId = u.AppUserId,
+                Province = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Province,
+                City = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.City,
+                Area = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Area,
+                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude ?? 0), Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
             }).ToList();
 
+            userInfos = userInfos.OrderBy(o => o.Distance).ToList();
+            var list = userInfos.OrderBy(o => o.Distance)
+            .Skip((req.page - 1) * req.limit)
+            .Take(req.limit).ToList();
+            result.Data = list;
+            result.Count = userInfos.Count;
             return result;
         }
 
@@ -1135,17 +1192,26 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var canSendOrder = await CheckCanTakeOrder(req.CurrentUserId);
+            if (!canSendOrder)
+            {
+                throw new CommonException("技术员接单已经达到上限", 60001);
+            }
+            var u = await UnitWork.Find<AppUserMap>(s => s.AppUserId == req.CurrentUserId).Include(s => s.User).FirstOrDefaultAsync();
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => req.WorkOrderIds.Contains(s.Id), o => new ServiceWorkOrder
             {
+                CurrentUser = u.User.Name,
+                CurrentUserNsapId = u.User.Id,
                 CurrentUserId = req.CurrentUserId,
                 Status = 2
             });
+            await UnitWork.SaveAsync();
             await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
                 Title = "移转至技术员",
                 Details = "已为您分配技术员进行处理，如有消息将第一时间通知您，请耐心等候",
             }, req.WorkOrderIds);
-            await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{req.CurrentUserId}派单{string.Join(",", req.WorkOrderIds)}", ActionType = "主管派单工单" }, req.WorkOrderIds);
+            await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{string.Join(",", req.WorkOrderIds)}", ActionType = "主管派单工单" }, req.WorkOrderIds);
             await PushMessageToApp(req.CurrentUserId, "派单成功提醒", "您已被派有一个新的售后服务，请尽快处理");
         }
 
@@ -1240,7 +1306,7 @@ namespace OpenAuth.App
         {
             var count = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == id && s.Status.Value < 7).Select(s => s.ServiceOrderId).Distinct().CountAsync();
 
-            return count < 6;
+            return count < ServiceWorkOrder.canOrderQty;
         }
 
 
@@ -1400,7 +1466,7 @@ namespace OpenAuth.App
         public async Task<int> GetUserCanOrderCount(int id)
         {
             var count = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == id && s.Status.Value < 7).Select(s => s.ServiceOrderId).Distinct().CountAsync();
-            return 6 - count;
+            return ServiceWorkOrder.canOrderQty - count;
         }
 
 
@@ -1593,7 +1659,8 @@ namespace OpenAuth.App
                     s.CreateTime,
                     s.FroTechnicianName,
                     s.AppUserId,
-                    s.ServiceOrderId
+                    s.ServiceOrderId,
+                    s.Replier
                 });
 
                 result.Data =
@@ -1650,16 +1717,196 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task CloseWorkOrder(CloseWorkOrderReq request)
         {
-            var workOrderInfo = await UnitWork.Find<ServiceWorkOrder>(s => s.Id == request.Id).FirstOrDefaultAsync();
+            var workOrderInfo = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId).FirstOrDefaultAsync();
             string content = "关单通知<br>工单号：" + workOrderInfo.Id + "<br>序列号：" + (string.IsNullOrEmpty(workOrderInfo.ManufacturerSerialNumber) ? "无" : workOrderInfo.ManufacturerSerialNumber) + "<br>物料编码：" +
                (string.IsNullOrEmpty(workOrderInfo.MaterialCode) ? "无" : workOrderInfo.MaterialCode) + "<br>关单原因：" + request.Reason;
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id == request.Id, u => new ServiceWorkOrder
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId, u => new ServiceWorkOrder
             {
                 Status = 7,
                 ProcessDescription = workOrderInfo.ProcessDescription + content
             });
             await UnitWork.SaveAsync();
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = workOrderInfo.ServiceOrderId, Content = content, AppUserId = request.CurrentUserId });
+        }
+
+        /// <summary>
+        /// 回访服务单
+        /// </summary>
+        /// <param name="serviceOrderId"></param>
+        /// <returns></returns>
+        public async Task ServiceOrderCallback(int serviceOrderId)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var order = await UnitWork.Find<ServiceOrder>(s => s.Id == serviceOrderId).Include(s => s.ServiceWorkOrders).FirstOrDefaultAsync();
+            if (order is null)
+                throw new CommonException("服务单号不存在", 40004);
+            var allCanCallback = order.ServiceWorkOrders.All(s => s.Status == 7);
+            if (allCanCallback)
+            {
+                await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId, o => new ServiceWorkOrder
+                {
+                    Status = 8
+                });
+            }
+            else
+            {
+                throw new CommonException("无法回访此服务单，原因：还有工单尚未解决", 40005);
+            }
+        }
+
+        /// <summary>
+        /// 获取可接单技术员列表（App）
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetAppAllowSendOrderUser(GetAllowSendOrderUserReq req)
+        {
+            Dictionary<string, object> userData = new Dictionary<string, object>();
+            List<object> data = new List<object>();
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var orgs = loginContext.Orgs.Select(o => o.Id).ToArray();
+            var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole == 2).ToListAsync();
+            var locations = (await UnitWork.Find<RealTimeLocation>(null).OrderByDescending(o => o.CreateTime).ToListAsync()).GroupBy(g => g.AppUserId).Select(s => s.First());
+            var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
+            var query = from a in UnitWork.Find<User>(u => userIds.Contains(u.Id))
+                        join b in UnitWork.Find<Relevance>(null) on a.Id equals b.FirstId into ab
+                        from b in ab.DefaultIfEmpty()
+                        join c in UnitWork.Find<Repository.Domain.Org>(null) on b.SecondId equals c.Id into bc
+                        from c in bc.DefaultIfEmpty()
+                        select new { userId = a.Id, orgId = c.Id, orgName = c.Name };
+            var userInfo = (await query.ToListAsync()).Where(s => s.orgId != null).GroupBy(g => g.orgId).Select(s => new { s.Key, userids = string.Join(",", s.Select(i => i.userId)), orgName = s.Select(i => i.orgName).Distinct().FirstOrDefault() }).ToList();
+            foreach (var item in userInfo)
+            {
+                var orgName = item.orgName;
+                string uIds = item.userids;
+                List<string> userlist = new List<string>();
+                string[] userArr = uIds.Split(",");
+                userArr.ForEach(u =>
+                     userlist.Add(u)
+                );
+                var ids = userlist.Intersect(tUsers.Select(u => u.UserID));
+                var users = await UnitWork.Find<User>(u => ids.Contains(u.Id)).WhereIf(!string.IsNullOrEmpty(req.key), u => u.Name.Equals(req.key)).ToListAsync();
+                var us = users.Select(u => new { u.Name, AppUserId = tUsers.FirstOrDefault(a => a.UserID.Equals(u.Id)).AppUserId, u.Id });
+                var appUserIds = tUsers.Where(u => userIds.Contains(u.UserID)).Select(u => u.AppUserId).ToList();
+
+                var userCount = await UnitWork.Find<ServiceWorkOrder>(s => appUserIds.Contains(s.CurrentUserId) && s.Status.Value < 7)
+                    .Select(s => new { s.CurrentUserId, s.ServiceOrderId }).Distinct().GroupBy(s => s.CurrentUserId)
+                    .Select(g => new { g.Key, Count = g.Count() }).ToListAsync();
+
+                var userInfos = us.Select(u => new AllowSendOrderUserResp
+                {
+                    Id = u.Id,
+                    Name = u.Name,
+                    Count = userCount.FirstOrDefault(s => s.Key.Equals(u.AppUserId))?.Count ?? 0,
+                    AppUserId = u.AppUserId,
+                    Province = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Province,
+                    City = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.City,
+                    Area = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Area,
+                    Addr = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Addr,
+                    Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude ?? 0), Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
+                }).ToList();
+                userInfos = userInfos.OrderBy(o => o.Distance).ToList();
+                userData.Add("orgId", item.Key);
+                userData.Add("orgName", orgName);
+                userData.Add("userData", userInfos);
+                data.Add(userData);
+            }
+
+
+            result.Data = data;
+            result.Count = userInfo.Count;
+            return result;
+        }
+
+        /// <summary>
+        /// 获取服务单详情（管理员）
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+
+        public async Task<TableData> GetAdminServiceOrderDetail(QueryServiceOrderDetailReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = new TableData();
+            var query = UnitWork.Find<ServiceOrder>(s => s.Id == req.ServiceOrderId)
+                .Include(s => s.ServiceOrderSNs)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Latitude,
+                    s.Longitude,
+                    s.Status,
+                    s.Services,
+                    s.CreateTime,
+                    s.AppUserId,
+                    s.Province,
+                    s.City,
+                    s.Area,
+                    s.Addr,
+                    Contacter = string.IsNullOrEmpty(s.NewestContacter) ? s.Contacter : s.NewestContacter,
+                    ContacterTel = string.IsNullOrEmpty(s.NewestContactTel) ? s.ContactTel : s.NewestContactTel,
+                    s.CustomerName,
+                    s.Supervisor,
+                    s.SalesMan,
+                    MaterialInfo = s.ServiceWorkOrders.Where(o => o.ServiceOrderId == req.ServiceOrderId && o.Status == 1).Select(o => new
+                    {
+                        o.MaterialCode,
+                        o.ManufacturerSerialNumber,
+                        MaterialType = string.IsNullOrEmpty(o.MaterialCode) ? "无序列号设备" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
+                        o.Status,
+                        o.Id,
+                        o.IsCheck,
+                        o.OrderTakeType
+                    }),
+                    s.ServiceOrderSNs
+                });
+
+            var list = (await query
+            .ToListAsync()).Select(s => new
+            {
+                s.Id,
+                s.AppUserId,
+                s.Services,
+                s.Latitude,
+                s.Longitude,
+                s.Province,
+                s.City,
+                s.Area,
+                s.Addr,
+                s.Status,
+                s.CreateTime,
+                s.Contacter,
+                s.ContacterTel,
+                s.CustomerName,
+                s.Supervisor,
+                s.SalesMan,
+                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
+                s.MaterialInfo,
+                ServiceWorkOrders = s.MaterialInfo.GroupBy(o => o.MaterialType).ToList()
+                .Select(s => new
+                {
+                    MaterialType = s.Key,
+                    WorkOrderIds = string.Join(",", s.Select(i => i.Id))
+                }),
+                WorkOrderState = s.MaterialInfo.Distinct().OrderBy(o => o.Status).FirstOrDefault()?.Status,
+                OrderTakeType = s.MaterialInfo.Distinct().OrderBy(o => o.OrderTakeType).FirstOrDefault()?.OrderTakeType,
+                s.ServiceOrderSNs
+            }).ToList();
+            result.Data = list;
+            return result;
         }
     }
 }

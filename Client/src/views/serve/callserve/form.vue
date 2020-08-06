@@ -7,7 +7,7 @@
           <el-form
             :model="form"
             :rules="rules"
-            :ref="form"
+            ref="form"
             class="rowStyle1"
             :disabled="!isCreate"
             :label-width="labelwidth"
@@ -132,7 +132,7 @@
               <el-col :span="8">
                 <el-form-item label="创建时间" label-width="95px" prop="createTime">
                   <el-date-picker
-                  @focus='setThisTime'
+                    @focus="setThisTime"
                     :clearable="false"
                     size="mini"
                     v-model="form.createTime"
@@ -234,7 +234,7 @@
                   <el-image
                     style="width:60px;height:50px;display:inline-block;margin:0 10px;"
                     v-for="url in form.serviceOrderPictures"
-                     @click="handlePreviewFile(`${baseURL}/files/Download/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`)"
+                    @click="handlePreviewFile(`${baseURL}/files/Download/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`)"
                     :key="url.id"
                     :src="`${baseURL}/files/Download/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`"
                     lazy
@@ -335,7 +335,7 @@ import Pagination from "@/components/Pagination";
 import zmap from "@/components/amap";
 import upLoadImage from "@/components/upLoadFile";
 import Model from "@/components/Formcreated/components/Model";
-
+import { timeToFormat } from '@/utils'
 import formPartner from "./formPartner";
 import formAdd from "./formAdd";
 export default {
@@ -348,7 +348,7 @@ export default {
     "labelwidth",
     "isCreate",
     "formName",
-    "ifEdit",//是否是编辑页面
+    "ifEdit", //是否是编辑页面
     "customer",
     "sure",
   ],
@@ -356,6 +356,9 @@ export default {
   //customer确认订单时传递的信息
   data() {
     var checkTelF = (rule, value, callback) => {
+      if (!value) {
+        callback()
+      }
       setTimeout(() => {
         let reg = RegExp(/^[\d-]+$/);
         if (reg.test(value)) {
@@ -389,7 +392,7 @@ export default {
       activeName: 1,
       // dataModel: this.models[this.formData.model],
       dataModel: null,
-      parentLoad:false,
+      parentLoad: false,
       callSourse: [
         { label: "电话", value: 1 },
         { label: "钉钉", value: 2 },
@@ -418,7 +421,7 @@ export default {
         addressDesignator: "", //地址标识
         recepUserId: "", //接单人用户ID
         address: "", //详细地址
-        createTime: "",
+        createTime: timeToFormat('yyyy-MM-dd HH-mm-ss'),
         id: "", //服务单id
         province: "深圳", //省
         city: "", //市
@@ -430,8 +433,8 @@ export default {
         pictures: [], //
         serviceWorkOrders: [],
       },
-      disableBtn:false,
-      newDate:[],
+      disableBtn: false,
+      newDate: [],
       isCreateAdd: true, //add页面的编辑状态
       allAddress: {}, //选择地图的合集
       propForm: [],
@@ -482,7 +485,6 @@ export default {
     "form.customerId": {
       handler(val) {
         this.getPartnerInfo(val);
-      
       },
     },
     refValue: {
@@ -508,6 +510,7 @@ export default {
   created() {
     //  Object.assign(this.form,this.refValue)
     // this.propForm = this.refValue.serviceWorkOrders
+    console.log(this.form.createTime, 'createTime')
   },
   provide: function () {
     return {
@@ -520,9 +523,8 @@ export default {
     this.isCreateAdd = this.isCreate;
   },
   methods: {
-        setThisTime(){
-          console.log(11)
-    
+    setThisTime() {
+      console.log(11);
     },
     handlePreviewFile(item) {
       //预览图片
@@ -546,40 +548,45 @@ export default {
       this.drawerMap = false;
     },
     async setForm(val) {
-      if(val){
-      val.serviceOrderPictures = await this.getServeImg(val.id)
-
+      if (val) {
+        val.serviceOrderPictures = await this.getServeImg(val.id);
       }
       Object.assign(this.form, val);
       this.form.recepUserName = this.$store.state.user.name;
     },
-   async getServeImg(val){
-      let params={
-        id:val,
-        type:1
-      }
-      let imgList =[]
-     await callservesure.GetServiceOrderPictures(params).then(res=>{
-        imgList=res.result?res.result:[]
-      })
-      return imgList
+    async getServeImg(val) {
+      let params = {
+        id: val,
+        type: 1,
+      };
+      let imgList = [];
+      await callservesure.GetServiceOrderPictures(params).then((res) => {
+        imgList = res.result ? res.result : [];
+      });
+      return imgList;
     },
-    postServe() {
+    async postServe() {
       //创建整个工单
+      console.log(this.form)
 
-      if (this.form.serviceWorkOrders.length > 0) {
+      if (this.form.serviceWorkOrders.length >= 0) {
         let chec = this.form.serviceWorkOrders.every(
           (item) =>
             item.fromTheme !== "" &&
             item.fromType !== "" &&
-            item.problemTypeId !== ""
+            item.problemTypeId !== ""&&
+            item.manufacturerSerialNumber !== "" &&
+            (item.fromType === 2 ? item.solutionId !== "" : true)
         );
         // this.form.serviceWorkOrders = this.form.serviceWorkOrders.map(item => {
         //   item.problemTypeId = item.problemTypeName;
         //   item.solutionId = item.solution;
         //   return item;
         // });
-        if (chec) {
+        this.isValid = await this.$refs.form.validate()
+
+        console.log(this.isValid, chec, '校验', this.form)
+        if (chec && this.isValid) {
           if (this.$route.path === "/serve/callserve") {
             callservesure
               .CreateOrder(this.form)
@@ -597,7 +604,7 @@ export default {
                 });
               });
           } else {
-            console.log(this.form)
+            console.log(this.form);
             callservesure
               .CreateWorkOrder(this.form)
               .then(() => {
@@ -620,11 +627,6 @@ export default {
             type: "error",
           });
         }
-      } else {
-        this.$message({
-          message: `请将必填项填写完整`,
-          type: "error",
-        });
       }
     },
     getPartnerInfo(num) {
@@ -634,6 +636,11 @@ export default {
           this.addressList = res.result.addressList;
           this.cntctPrsnList = res.result.cntctPrsnList;
           this.form.supervisor = res.result.techID;
+          if (this.addressList.length) {
+            let { address, building } = this.addressList[0]
+            this.form.addressDesignator = address
+            this.form.address = building
+          }
           // this.$message({
           //   message: "修改服务单成功",
           //   type: "success"
@@ -738,13 +745,13 @@ export default {
       };
     },
     getPartnerList() {
-      this.parentLoad=true
+      this.parentLoad = true;
       getPartner(this.listQuery)
         .then((res) => {
           this.partnerList = res.data;
           this.filterPartnerList = this.partnerList;
           this.parentCount = res.count;
-                this.parentLoad=false
+          this.parentLoad = false;
 
           // console.log(res.count)
         })
@@ -758,8 +765,10 @@ export default {
       this.form.customerName = item.cardName;
       this.form.contacter = item.cntctPrsn;
       this.form.contactTel = item.cellular;
+      console.log( item)
       // this.form.addressDesignator = item.address;
       this.form.address = item.address;
+      
       this.form.salesMan = item.slpName;
     },
     sureVal() {
@@ -768,18 +777,18 @@ export default {
       this.form.customerId = val.cardCode;
       this.form.customerName = val.cardName;
       this.form.contacter = val.cntctPrsn;
-      this.form.contactTel = val.cellular;
+      this.form.contactTel = val.cellular
       // this.form.addressDesignator = val.address;
       this.form.address = val.address;
       this.form.salesMan = val.slpName;
     },
     ChildValue(val) {
-      if(val==1){
-          this.disableBtn = true
-          console.log(11)
-      }else{
-      this.checkVal = val;
- this.disableBtn = false
+      if (val == 1) {
+        this.disableBtn = true;
+        console.log(11);
+      } else {
+        this.checkVal = val;
+        this.disableBtn = false;
       }
     },
     handleIconClick() {
@@ -817,12 +826,16 @@ export default {
     top: 0;
     // width: 200px;
   }
+        ::v-deep .el-radio{
+    margin-left:0 !important;
+  }
   ::v-deep .el-input__inner {
     padding-right: 5px;
     // padding-left:25px;
   }
 }
 .addClass1 {
+
   ::v-deep .el-dialog__header {
     .el-dialog__title {
       color: white;
@@ -841,18 +854,18 @@ export default {
   // }
 }
 .rowStyle1 {
-  ::v-deep .el-form{
+  ::v-deep .el-form {
     padding: 5px;
     // margin-bottom: 2px;
   }
-   ::v-deep .el-form-item__label{
-       line-height:30px;
-     }
-     ::v-deep .el-form-item__content{
-       line-height:30px;
-     }
-      ::v-deep .el-form-item {
-     margin: 1px 1px;
+  ::v-deep .el-form-item__label {
+    line-height: 30px;
+  }
+  ::v-deep .el-form-item__content {
+    line-height: 30px;
+  }
+  ::v-deep .el-form-item {
+    margin: 1px 1px;
   }
 }
 .myAuto {
