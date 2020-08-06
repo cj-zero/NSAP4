@@ -719,7 +719,7 @@ namespace OpenAuth.App
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.ServiceWorkOrders.Any(a => a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
                 .Where(q => q.Status == 2)
                 ;
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME)
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r=>r.Name.Equals("呼叫中心")))
             {
                 query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id));
             }
