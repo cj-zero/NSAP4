@@ -18,8 +18,8 @@ namespace SAP.API
             oCompany.DbPassword = "SAPB1Admin"; //dRow[5].ToString();
             oCompany.LicenseServer = "192.168.1.207:30000";//dell-t30:40000 //dRow[1].ToString();
             oCompany.UserName = "manager"; //dRow[2].ToString();
-            oCompany.Password = "XinWei123&"; //dRow[3].ToString();Aa789123@
-            oCompany.CompanyDB = "newareDemo3"; //dRow[6].ToString();
+            oCompany.Password = "Aa678321&"; //dRow[3].ToString();Aa789123@
+            oCompany.CompanyDB = "neware_202005"; //dRow[6].ToString();
             oCompany.language = BoSuppLangs.ln_Chinese;
             oCompany.Connect();
             int connecti = oCompany.Connect();
