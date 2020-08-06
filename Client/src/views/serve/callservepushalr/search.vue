@@ -9,7 +9,7 @@
       </el-col>
       <el-col :span="3">
         <el-form-item label="呼叫状态" >
-              <el-select v-model="listQuery.QryState"  placeholder="请选择呼叫状态">
+              <el-select v-model="listQuery.QryState" clearable  placeholder="请选择呼叫状态">
             <el-option
               v-for="(item,index) in callStatus"
               :key="index"
