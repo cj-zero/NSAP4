@@ -258,7 +258,7 @@
           label="解决方案"
           prop="solutionId"
           :rules="{
-              required: true, message: '解决方案不能为空', trigger: 'clear'
+              required: formList[0].fromType === 2, message: '解决方案不能为空', trigger: 'clear'
             }"
         >
           <el-input
@@ -274,6 +274,7 @@
             readonly
           >
             <el-button
+              :disabled="formList[0].fromType!==2"
               size="mini"
               slot="append"
               icon="el-icon-search"
@@ -594,7 +595,7 @@
               label="解决方案"
               prop="solutionId"
               :rules="{
-              required: true, message: '解决方案不能为空', trigger: 'clear'
+              required: item.fromType === 2, message: '解决方案不能为空', trigger: 'clear'
             }"
             >
               <el-input
@@ -605,6 +606,7 @@
               ></el-input>
               <el-input v-model="item.solutionsubject" :disabled="item.fromType!==2" readonly>
                 <el-button
+                  :disabled="item.fromType !== 2"
                   size="mini"
                   slot="append"
                   icon="el-icon-search"
@@ -931,7 +933,6 @@ export default {
         });
         }
       this.$emit("change-form", newVal);
-
       },
 
       deep: true,
@@ -1060,7 +1061,7 @@ export default {
     pushForm() {
       this.dialogfSN = false;
       this.waitingAdd = true;
-      if (!this.formList[0].id) {
+      if (!this.formList[0].manufacturerSerialNumber) {
         //判断从哪里新增的依据是第一个工单是否有id
         this.formList[0].manufacturerSerialNumber = this.formListStart[0].manufSN;
         this.formList[0].internalSerialNumber = this.formListStart[0].internalSN;

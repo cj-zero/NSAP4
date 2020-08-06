@@ -356,6 +356,9 @@ export default {
   //customer确认订单时传递的信息
   data() {
     var checkTelF = (rule, value, callback) => {
+      if (!value) {
+        callback()
+      }
       setTimeout(() => {
         let reg = RegExp(/^[\d-]+$/);
         if (reg.test(value)) {
@@ -564,15 +567,16 @@ export default {
     },
     async postServe() {
       //创建整个工单
+      console.log(this.form)
 
-      if (this.form.serviceWorkOrders.length > 0) {
+      if (this.form.serviceWorkOrders.length >= 0) {
         let chec = this.form.serviceWorkOrders.every(
           (item) =>
             item.fromTheme !== "" &&
             item.fromType !== "" &&
             item.problemTypeId !== ""&&
             item.manufacturerSerialNumber !== "" &&
-            item.solutionId !== ""
+            (item.fromType === 2 ? item.solutionId !== "" : true)
         );
         // this.form.serviceWorkOrders = this.form.serviceWorkOrders.map(item => {
         //   item.problemTypeId = item.problemTypeName;
