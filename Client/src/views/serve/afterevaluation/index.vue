@@ -109,12 +109,12 @@
           >
             <template slot-scope="scope">
               <el-link
-                v-if="fruit.name === 'id'"
+                v-if="fruit.name === 'serviceOrderId'"
                 type="primary"
-                @click="openTree(scope.row.id)"
-              >{{scope.row.id}}</el-link>
+                @click="openTree(scope.row.serviceOrderId)"
+              >{{scope.row.serviceOrderId}}</el-link>
               <span :class="colorClass[scope.row[fruit.name]]" v-if="fruit.name==='responseSpeed'||fruit.name==='schemeEffectiveness'||fruit.name==='serviceAttitude'||fruit.name==='productQuality'||fruit.name==='servicePrice'">{{backStatus(scope.row[fruit.name])}}</span>
-              <span v-if="fruit.name!=='id'&&fruit.name!=='responseSpeed'&&fruit.name!=='schemeEffectiveness'&&fruit.name!=='serviceAttitude'&&fruit.name!=='productQuality'&&fruit.name!=='servicePrice'">{{scope.row[fruit.name]}}</span>
+              <span v-if="fruit.name!=='serviceOrderId'&&fruit.name!=='responseSpeed'&&fruit.name!=='schemeEffectiveness'&&fruit.name!=='serviceAttitude'&&fruit.name!=='productQuality'&&fruit.name!=='servicePrice'">{{scope.row[fruit.name]}}</span>
             </template>
           </el-table-column>
         </el-table>
@@ -180,7 +180,7 @@ export default {
       colorClass:['','redWord','redWord','orangeWord','blueWord','greenWord'],
       formTheadOptions: [
         // { name: "id", label: "Id"},
-        { name: "id", label: "服务号", width: "80px" },
+        { name: "serviceOrderId", label: "服务号", width: "80px" },
         { name: "customerId", label: "客户代码", width: "100px" },
         { name: "cutomer", label: "客户名称", width: "100px" },
         { name: "contact", label: "联系人", width: "100px" },

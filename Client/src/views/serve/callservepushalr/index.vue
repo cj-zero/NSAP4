@@ -457,8 +457,6 @@ export default {
       }
     },
    async   changeOrder() {
-      // console.log(this.ifParent,this.list)
-
       if (this.ifParent) {
         let checkStatus = this.list.every(
           (item) => item.status > 1 && item.status < 5
@@ -529,8 +527,9 @@ export default {
          this.getRightList();
       } else {
         Object.assign(this.listQuery, val);
-                  this.$refs.treeForm.setCheckedKeys([val.QryServiceOrderId]);
-        this.getLeftList()
+    if(val.QryServiceOrderId){
+        this.$refs.treeForm.setCheckedKeys([val.QryServiceOrderId]);
+        }        this.getLeftList()
       }
     },
     openTree(res) {
