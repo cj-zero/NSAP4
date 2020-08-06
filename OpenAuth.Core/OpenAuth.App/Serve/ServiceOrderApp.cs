@@ -477,23 +477,23 @@ namespace OpenAuth.App
             await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"客服:{loginContext.User.Name}创建工单", ActionType = "创建工单", ServiceOrderId = obj.Id });
 
             #region 同步到SAP 并拿到服务单主键
-            //if (obj.ServiceWorkOrders.Count > 0)
-            //{
-            //    ServiceWorkOrder firstwork = obj.ServiceWorkOrders[0];
-            //    string sapEntry, errMsg;
-            //    if(_workAPI.AddServiceWorkOrder(firstwork,out sapEntry,out errMsg))
-            //    {
-            //        await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(request.Id), e => new ServiceOrder
-            //        {
-            //            U_SAP_ID = System.Convert.ToInt32(sapEntry)
-            //        }) ;
-            //        await UnitWork.SaveAsync();
-            //    }
-            //    else
-            //    {
-            //        throw new CommonException(errMsg, Define.INVALID_TOKEN);
-            //    }
-            //}
+            if (obj.ServiceWorkOrders.Count > 0)
+            {
+                ServiceWorkOrder firstwork = obj.ServiceWorkOrders[0];
+                string sapEntry, errMsg;
+                if (_workAPI.AddServiceWorkOrder(firstwork, out sapEntry, out errMsg))
+                {
+                    await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(request.Id), e => new ServiceOrder
+                    {
+                        U_SAP_ID = System.Convert.ToInt32(sapEntry)
+                    });
+                    await UnitWork.SaveAsync();
+                }
+                else
+                {
+                    throw new CommonException(errMsg, Define.INVALID_TOKEN);
+                }
+            }
 
             #endregion
         }
