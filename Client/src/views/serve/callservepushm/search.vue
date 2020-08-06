@@ -37,11 +37,9 @@
       </el-col>
       <el-col :span="3">
         <el-form-item label="问题类型" >
-          <el-select v-model="listQuery.QryProblemType" clearable  placeholder="选择呼叫状态">
-            <el-option label="待确认" value="1"></el-option>
-            <el-option label="已确认" value="2"></el-option>
-            <el-option label="已取消" value="3"></el-option>
-          </el-select>
+          <el-cascader :options="dataTree" class="malchack" v-model="listQuery.QryProblemType"   :props="{ value:'id',label:'name',children:'childTypes',expandTrigger: 'hover'  }"  clearable></el-cascader>
+         
+       
         </el-form-item>
       </el-col>
       <el-col :span="6">
@@ -72,19 +70,19 @@
       <el-col :span="2" style="margin-left:0;" >
                <el-button type="primary" @click="onSubmit" size="mini"  icon="el-icon-search"> 搜 索 </el-button>
       </el-col>
-
-            <!-- <el-col :span="2" style="margin-left:20px;" >
-
-            <el-button type="success"   @click="sendOrder" icon="el-icon-thumb"> 派 单 </el-button> 
-      </el-col> -->
     </el-row>
   </el-form>
 </template>
 
 <script>
+import * as problemtypes from "@/api/problemtypes";
 export default {
   data() {
     return {
+                  defaultProps:{
+        label:'name',
+        children:'childTypes'
+      },//树形控件的显示状态
       listQuery: {
         // 查询条件
         page: 1,
@@ -101,8 +99,21 @@ export default {
         QryRecepUser: "", //- 接单员
         QryTechName: "", // - 工单技术员
         QryProblemType: "" // - 问题类型
-      }
+      },
+          dataTree:[],
     };
+
+  },
+  created(){
+       problemtypes
+      .getList()
+      .then((res) => {
+        this.dataTree = res.data;
+        console.log(this.dataTree)
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   },
   methods: {
     onSubmit() {
@@ -125,5 +136,12 @@ export default {
 };
 </script>
 
-<style>
+<style lang="scss" scoped>
+
+
+// .{
+//   ::v-deep  .el-cascader-menu{
+//     overflow:hidden;
+//   }
+// }
 </style>

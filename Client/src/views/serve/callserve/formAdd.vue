@@ -258,7 +258,7 @@
           label="解决方案"
           prop="solutionId"
           :rules="{
-              required: true, message: '解决方案不能为空', trigger: 'clear'
+              required: formList[0].fromType === 2, message: '解决方案不能为空', trigger: 'clear'
             }"
         >
           <el-input
@@ -274,6 +274,7 @@
             readonly
           >
             <el-button
+              :disabled="formList[0].fromType!==2"
               size="mini"
               slot="append"
               icon="el-icon-search"
@@ -594,7 +595,7 @@
               label="解决方案"
               prop="solutionId"
               :rules="{
-              required: true, message: '解决方案不能为空', trigger: 'clear'
+              required: item.fromType === 2, message: '解决方案不能为空', trigger: 'clear'
             }"
             >
               <el-input
@@ -605,6 +606,7 @@
               ></el-input>
               <el-input v-model="item.solutionsubject" :disabled="item.fromType!==2" readonly>
                 <el-button
+                  :disabled="item.fromType !== 2"
                   size="mini"
                   slot="append"
                   icon="el-icon-search"
@@ -678,6 +680,7 @@
         :total="solutionCount"
         :listLoading="listLoading"
         @page-Change="pageChange"
+        @search="onSearch"
       ></solution>
       <!-- <span slot="footer" class="dialog-footer">
         <el-button size="small" @click="solutionOpen = false">取 消</el-button>
@@ -930,7 +933,6 @@ export default {
         });
         }
       this.$emit("change-form", newVal);
-
       },
 
       deep: true,
@@ -1001,6 +1003,16 @@ export default {
     solutionget(res) {
       this.datasolution = res;
     },
+    onSearch (params) {
+      this.listLoading = false
+      solutions.getList(params).then((response) => {
+        this.datasolution = response.data;
+        this.solutionCount = response.count;
+        this.listLoading = false;
+      }).catch(() => {
+        this.listLoading = false
+      });
+    },
     NodeClick(res) {
       console.log(this.formList, this.sortForm - 1);
       this.formList[this.sortForm - 1].problemTypeName = res.name;
@@ -1049,7 +1061,7 @@ export default {
     pushForm() {
       this.dialogfSN = false;
       this.waitingAdd = true;
-      if (!this.formList[0].id) {
+      if (!this.formList[0].manufacturerSerialNumber) {
         //判断从哪里新增的依据是第一个工单是否有id
         this.formList[0].manufacturerSerialNumber = this.formListStart[0].manufSN;
         this.formList[0].internalSerialNumber = this.formListStart[0].internalSN;

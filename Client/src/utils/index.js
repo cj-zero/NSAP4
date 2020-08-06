@@ -37,19 +37,24 @@ export function parseTime(time, cFormat) {
 //将此刻的时间转化为我们需要的格式
 export function timeToFormat(format){
   let result =''
-  const now =new Date() 
+  const now =new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() + 1
+  const day = now.getDate()
+  const hours = now.getHours()
+  const minute = now.getMinutes()
+  const seconds = now.getSeconds()
   if(format==='ymd'){ 
     //  /2020-01-02格式/
-    const year = now.getFullYear()
-    const mounth1 = now.getMonth()+1
-    const mounth = mounth1<10?'0'+mounth1:mounth1
-    const day1 = now.getDate()
-    const day = day1<10?'0'+day1:day1
-    result = year+'-'+ mounth + '-' + day
+    result = year +'-'+ isZero(month) + '-' + isZero(day)
+  } else if (format === 'yyyy-MM-dd HH-mm-ss') {
+    return `${year}-${isZero(month)}-${isZero(day)} ${isZero(hours)}-${isZero(minute)}-${isZero(seconds)}`
   }
 return result
 }
-
+function isZero (num) {
+  return Number(num) < 10 ? '0' + num : num 
+}
 export function formatTime(format) {
   const now = new Date()
   var o = {

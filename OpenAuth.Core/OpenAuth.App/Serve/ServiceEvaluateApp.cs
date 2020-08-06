@@ -138,6 +138,9 @@ namespace OpenAuth.App
         }
         public async Task AppAdd(APPAddServiceEvaluateReq req)
         {
+            var order = await UnitWork.FindSingleAsync<ServiceOrder>(s => s.Id == req.ServiceOrderId);
+            req.CustomerId = order.CustomerId;
+            req.Cutomer = order.CustomerName;
             foreach (var technicianEvaluates in req.TechnicianEvaluates)
             {
                 var obj = req.MapTo<ServiceEvaluate>();

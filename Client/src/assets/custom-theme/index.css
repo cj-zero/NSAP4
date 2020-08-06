@@ -21063,7 +21063,7 @@
     display: inline-block;
     vertical-align: top;
     height: 204px;
-    overflow: auto;
+    /* overflow: auto; 下拉框滚动设置*/  
     border-right: solid 1px #dfe4ed;
     background-color: #fff;
     -webkit-box-sizing: border-box;
