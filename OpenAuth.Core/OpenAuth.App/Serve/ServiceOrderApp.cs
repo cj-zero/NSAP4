@@ -494,23 +494,23 @@ namespace OpenAuth.App
             await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"客服:{loginContext.User.Name}创建工单", ActionType = "创建工单", ServiceOrderId = obj.Id });
 
             #region 同步到SAP 并拿到服务单主键
-            //if (obj.ServiceWorkOrders.Count > 0)
-            //{
-            //    ServiceWorkOrder firstwork = obj.ServiceWorkOrders[0];
-            //    string sapEntry, errMsg;
-            //    if(_workAPI.AddServiceWorkOrder(firstwork,out sapEntry,out errMsg))
-            //    {
-            //        await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(request.Id), e => new ServiceOrder
-            //        {
-            //            U_SAP_ID = System.Convert.ToInt32(sapEntry)
-            //        }) ;
-            //        await UnitWork.SaveAsync();
-            //    }
-            //    else
-            //    {
-            //        throw new CommonException(errMsg, Define.INVALID_TOKEN);
-            //    }
-            //}
+            if (obj.ServiceWorkOrders.Count > 0)
+            {
+                ServiceWorkOrder firstwork = obj.ServiceWorkOrders[0];
+                string sapEntry, errMsg;
+                if (_workAPI.AddServiceWorkOrder(firstwork, out sapEntry, out errMsg))
+                {
+                    await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(request.Id), e => new ServiceOrder
+                    {
+                        U_SAP_ID = System.Convert.ToInt32(sapEntry)
+                    });
+                    await UnitWork.SaveAsync();
+                }
+                else
+                {
+                    throw new CommonException(errMsg, Define.INVALID_TOKEN);
+                }
+            }
 
             #endregion
         }
@@ -719,7 +719,7 @@ namespace OpenAuth.App
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.ServiceWorkOrders.Any(a => a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
                 .Where(q => q.Status == 2)
                 ;
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME)
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r=>r.Name.Equals("呼叫中心")))
             {
                 query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id));
             }
@@ -1729,6 +1729,11 @@ namespace OpenAuth.App
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = workOrderInfo.ServiceOrderId, Content = content, AppUserId = request.CurrentUserId });
         }
 
+        /// <summary>
+        /// 回访服务单
+        /// </summary>
+        /// <param name="serviceOrderId"></param>
+        /// <returns></returns>
         public async Task ServiceOrderCallback(int serviceOrderId)
         {
             var loginContext = _auth.GetCurrentUser();
@@ -1753,6 +1758,11 @@ namespace OpenAuth.App
             }
         }
 
+        /// <summary>
+        /// 获取可接单技术员列表（App）
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
         public async Task<TableData> GetAppAllowSendOrderUser(GetAllowSendOrderUserReq req)
         {
             Dictionary<string, object> userData = new Dictionary<string, object>();

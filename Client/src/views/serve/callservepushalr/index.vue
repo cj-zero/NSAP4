@@ -445,7 +445,10 @@ export default {
     handleCurrentChange2(val) {
       this.listQuery2.page = val.page;
       this.listQuery2.limit = val.limit;
-      this.getRightList();
+         callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
+          this.tableData = res.data;
+          this.total2 = res.count;
+        });
     },
     async afterLeft() {
       await this.getLeftList();
@@ -457,8 +460,6 @@ export default {
       }
     },
    async   changeOrder() {
-      // console.log(this.ifParent,this.list)
-
       if (this.ifParent) {
         let checkStatus = this.list.every(
           (item) => item.status > 1 && item.status < 5
@@ -529,8 +530,9 @@ export default {
          this.getRightList();
       } else {
         Object.assign(this.listQuery, val);
-                  this.$refs.treeForm.setCheckedKeys([val.QryServiceOrderId]);
-        this.getLeftList()
+    if(val.QryServiceOrderId){
+        this.$refs.treeForm.setCheckedKeys([val.QryServiceOrderId]);
+        }        this.getLeftList()
       }
     },
     openTree(res) {

@@ -29,8 +29,10 @@
             <!-- <el-link
               style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;"
               @click="getAllRight"    
-            >全部服务单>></el-link> -->
-            <div  style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;">服务单列表</div>
+            >全部服务单>></el-link>-->
+            <div
+              style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;"
+            >服务单列表</div>
             <el-tree
               style="max-height:600px;overflow-y: auto;"
               :data="modulesTree"
@@ -194,13 +196,13 @@
           <el-table-column prop="name" label="接单员" align="center"></el-table-column>
           <el-table-column prop="count" label="已接服务单数" align="center" width="180"></el-table-column>
         </el-table>
-              <pagination
-              v-show="total2>0"
-              :total="total2"
-              :page.sync="listQuery2.page"
-              :limit.sync="listQuery2.limit"
-              @pagination="handleCurrentChange2"
-            />
+        <pagination
+          v-show="total2>0"
+          :total="total2"
+          :page.sync="listQuery2.page"
+          :limit.sync="listQuery2.limit"
+          @pagination="handleCurrentChange2"
+        />
         <span slot="footer" class="dialog-footer">
           <el-button @click="cancelPost">取 消</el-button>
           <el-button type="primary" @click="postOrder">确 定</el-button>
@@ -235,11 +237,11 @@ export default {
     DynamicTable,
     zxsearch,
     zxform,
-    treeList
+    treeList,
   },
   directives: {
     waves,
-    elDragDialog
+    elDragDialog,
   },
   data() {
     return {
@@ -254,7 +256,7 @@ export default {
         "callstatus",
         "moneyapproval",
         "kehidaima",
-        "kehumingcheng"
+        "kehumingcheng",
       ],
       dialogOrder: false,
       modulesTree: [], // 左侧数据构成的树
@@ -265,7 +267,7 @@ export default {
           name: "serviceWorkOrderId",
           label: "工单ID",
           ifFixed: true,
-          align: "left"
+          align: "left",
         },
         { name: "priority", label: "优先级" },
         { name: "fromType", label: "呼叫类型", width: "100px" },
@@ -281,14 +283,14 @@ export default {
         {
           name: "manufacturerSerialNumber",
           label: "制造商序列号",
-          width: "120px"
+          width: "120px",
         },
         { name: "materialCode", label: "物料编码" },
         { name: "materialDescription", label: "物料描述" },
         { name: "contacter", label: "联系人" },
         { name: "contactTel", label: "电话号码" },
         { name: "supervisor", label: "售后主管" },
-        { name: "salesMan", label: "销售员" }
+        { name: "salesMan", label: "销售员" },
         // "serviceWorkOrderId": 1,
         // "problemTypeName": "数值异常",
         // "currentUserId": 1
@@ -296,7 +298,7 @@ export default {
 
       defaultProps: {
         children: "children",
-        label: "label"
+        label: "label",
       },
       tableKey: 0,
       list: null,
@@ -322,12 +324,12 @@ export default {
         QryRecepUser: "", //- 接单员
         QryTechName: "", // - 工单技术员
         QryProblemType: "", // - 问题类型
-        QryMaterialTypes: [] //物料类型
+        QryMaterialTypes: [], //物料类型
       },
-      total2:0,
-      listQuery2:{
-           page: 1,
-        limit: 20,
+      total2: 0,
+      listQuery2: {
+        page: 1,
+        limit: 10,
       },
       listQuery1: {
         // 查询条件
@@ -355,7 +357,7 @@ export default {
         { value: 5, label: "已挂起" },
         { value: 6, label: "已接收" },
         { value: 7, label: "已解决" },
-        { value: 8, label: "已回访" }
+        { value: 8, label: "已回访" },
       ],
       priorityOptions: ["低", "中", "高"],
       temp: {
@@ -366,7 +368,7 @@ export default {
         symptom: "", // Symptom
         descriptio: "", // Descriptio
         status: "", // Status
-        extendInfo: "" // 其他信息,防止最后加逗号，可以删除
+        extendInfo: "", // 其他信息,防止最后加逗号，可以删除
       },
       dialogFormVisible: false,
       dialogTable: false,
@@ -374,22 +376,22 @@ export default {
       dialogStatus: "",
       textMap: {
         update: "确认呼叫服务单",
-        create: "新建呼叫服务单"
+        create: "新建呼叫服务单",
       },
       dataForm: {}, //获取的详情表单
       dialogPvVisible: false,
       pvData: [],
       params: {
         currentUserId: "",
-        workOrderIds: []
+        workOrderIds: [],
       },
       rules: {
         appId: [
-          { required: true, message: "必须选择一个应用", trigger: "change" }
+          { required: true, message: "必须选择一个应用", trigger: "change" },
         ],
-        name: [{ required: true, message: "名称不能为空", trigger: "blur" }]
+        name: [{ required: true, message: "名称不能为空", trigger: "blur" }],
       },
-      downloadLoading: false
+      downloadLoading: false,
     };
   },
   filters: {
@@ -408,15 +410,15 @@ export default {
     statusFilter(disable) {
       const statusMap = {
         false: "color-success",
-        true: "color-danger"
+        true: "color-danger",
       };
       return statusMap[disable];
-    }
+    },
   },
   watch: {
     defaultFormThead(valArr) {
       this.formTheadOptions = this.formTheadOptions.filter(
-        i => valArr.indexOf(i) >= 0
+        (i) => valArr.indexOf(i) >= 0
       );
       // }
       this.key = this.key + 1; // 为了保证table 每次都会重渲 In order to ensure the table will be re-rendered each time
@@ -424,53 +426,52 @@ export default {
     list: {
       handler(val) {
         this.workorderidList = [];
-        val.map(item => {
+        val.map((item) => {
           this.workorderidList.push(item.serviceWorkOrderId);
         });
         // console.log(this.workorderidList);
-      }
-    }
+      },
+    },
   },
   created() {},
   mounted() {
     //左边无数据不查右边，有数据就查左边第一条
-   
-    this.afterLeft()
+
+    this.afterLeft();
   },
   methods: {
-     cancelPost(){
-this.dialogOrder = false,
-this.listLoading=false
-        this.getRightList();
-
-// this.ifParent
-    },
-  async afterLeft(){
-      await this.getLeftList();
-     if(this.modulesTree.length ){
-      //  this.$refs.treeForm.setCheckedKeys([])
-      console.log(this.modulesTree[0])
-          this.$refs.treeForm.setCheckedKeys([this.modulesTree[0].key]);
-          this.checkGroupNode(this.modulesTree[0])
+    cancelPost() {
+      this.dialogOrder = false, 
+       this.listQuery.limit=20
+      this.listLoading = false;
       this.getRightList();
-     }
+
+      // this.ifParent
+    },
+    async afterLeft() {
+      await this.getLeftList();
+      if (this.modulesTree.length) {
+        this.$refs.treeForm.setCheckedKeys([this.modulesTree[0].key]);
+        this.checkGroupNode(this.modulesTree[0]);
+        this.getRightList();
+      }
     },
     // searchBtn(){
 
     // },
-   async changeOrder() {
+    async changeOrder() {
       if (this.ifParent) {
         this.dialogOrder = true;
-        callservepushm.AllowSendOrderUser().then(res => {
+        callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
           this.tableData = res.data;
-          this.total2 = res.count
+          this.total2 = res.count;
         });
-           this.listQuery.limit=999
-     await this.getRightList();
+        this.listQuery.limit = 999;
+        await this.getRightList();
       } else {
         this.$message({
           type: "warning",
-          message: "请先选择需要指派的服务号"
+          message: "请先选择需要指派的服务号",
         });
       }
     },
@@ -482,59 +483,54 @@ this.listLoading=false
       this.listLoading = true;
       this.params.currentUserId = this.orderRadio;
       this.params.workOrderIds = this.workorderidList;
-      //   if (!this.ifParent) {
-      //   this.$message({
-      //     type: "warning",
-      //     message: "请先选择需要指派的服务号"
-      //   });
-      //   return
-      // }
-   console.log(this.hasAlreadNum)
-      if (this.hasAlreadNum > 3) {
+      if (this.hasAlreadNum > 2) {
         this.$message({
           type: "warning",
-          message: "单个技术员接单不能超过3个"
+          message: "单个技术员接单不能超过3个",
         });
       } else {
         callservepushm
           .SendOrders(this.params)
-          .then(res => {
+          .then((res) => {
             if (res.code == 200) {
               this.dataForm = res.result;
               this.$message({
                 type: "success",
-                message: "派单成功"
+                message: "派单成功",
               });
-              this.listQuery.QryState=''
-              this.listQuery.QryServiceOrderId=''
-            this.afterLeft()
+              this.listQuery.QryState = 1;
+              this.listQuery.QryServiceOrderId = "";
+                this.listQuery.limit=20
+              this.afterLeft();
               this.dialogOrder = false;
               this.listLoading = false;
-    //                 this.listQuery.limit=999
-    //  this.getRightList();
+                     
+              //  this.getRightList();
             }
           })
-          .catch(error => {
+          .catch((error) => {
             this.$message({
               type: "danger",
-              message: `${error}`
+              message: `${error}`,
             });
             this.listLoading = false;
-          });                                   
+          });
       }
     },
     changeSearch(val) {
       if (val === 1) {
-         this.getRightList();
+        this.getRightList();
       } else {
         Object.assign(this.listQuery, val);
+        if(val.QryServiceOrderId){
         this.$refs.treeForm.setCheckedKeys([val.QryServiceOrderId]);
-        this.getLeftList()
+        }
+        this.getLeftList();
       }
     },
     openTree(res) {
       this.listLoading = true;
-      callservesure.GetDetails(res).then(res => {
+      callservesure.GetDetails(res).then((res) => {
         if (res.code == 200) {
           this.dataForm = res.result;
           this.dialogFormView = true;
@@ -564,7 +560,7 @@ this.listLoading=false
     //   this.multipleSelection = val;
     //   console.log(val);
     // },
-    onBtnClicked: function(domId) {
+    onBtnClicked: function (domId) {
       switch (domId) {
         case "btnAdd":
           this.handleCreate();
@@ -575,13 +571,13 @@ this.listLoading=false
         case "editTable":
           this.dialogTable = true;
           break;
-          case "btnPost":
-          this.changeOrder()
+        case "btnPost":
+          this.changeOrder();
           break;
         case "btnEdit":
           this.$message({
             message: "抱歉，暂不提供编辑功能",
-            type: "error"
+            type: "error",
           });
           // if (this.multipleSelection.length<1) {
           //   this.$message({
@@ -596,7 +592,7 @@ this.listLoading=false
           if (!this.multipleSelection) {
             this.$message({
               message: "至少删除一个",
-              type: "error"
+              type: "error",
             });
             return;
           }
@@ -607,31 +603,34 @@ this.listLoading=false
       }
     },
 
-     checkGroupNode(a) {
+    checkGroupNode(a) {
       //点击复选框触发
       if (this.ifParent) {
         if (this.ifParent == a.key) {
           //同一级，不做限制，添加编码请求
-          if (!a.children) { //如果点击是子级
+          if (!a.children) {
+            //如果点击是子级
             if (this.listQuery.QryMaterialTypes.indexOf(a.id) == -1) {
               //找数组中是否存在类型号，有的话就说明是取消
-              if(!this.listQuery.QryServiceOrderId){this.listQuery.QryServiceOrderId =a.key}
+              if (!this.listQuery.QryServiceOrderId) {
+                this.listQuery.QryServiceOrderId = a.key;
+              }
               this.listQuery.QryMaterialTypes.push(a.id);
             } else {
               this.listQuery.QryMaterialTypes = this.listQuery.QryMaterialTypes.filter(
-                item => item != a.id
+                (item) => item != a.id
               );
-              if(this.listQuery.QryMaterialTypes.length==0){
-          this.listQuery.QryServiceOrderId = '';
+              if (this.listQuery.QryMaterialTypes.length == 0) {
+                this.listQuery.QryServiceOrderId = "";
               }
             }
-          }else{
-            if( !this.listQuery.QryServiceOrderId){
-               this.listQuery.QryServiceOrderId =a.key
-            }else{
-              this.ifParent=''  //取消选择之后，清空父级选择
-              this.listQuery.QryServiceOrderId=''
-              this.listQuery.QryMaterialTypes=[]
+          } else {
+            if (!this.listQuery.QryServiceOrderId) {
+              this.listQuery.QryServiceOrderId = a.key;
+            } else {
+              this.ifParent = ""; //取消选择之后，清空父级选择
+              this.listQuery.QryServiceOrderId = "";
+              this.listQuery.QryMaterialTypes = [];
             }
           }
           this.getRightList();
@@ -644,11 +643,11 @@ this.listLoading=false
           this.$refs.treeForm.setCheckedKeys([a.key1]);
           if (!a.children) {
             this.listQuery.QryMaterialTypes.push(a.id);
-          }else{
-          a.children.map(item=>{
-            this.listQuery.QryMaterialTypes.push(item.id)
-          })
-        } 
+          } else {
+            a.children.map((item) => {
+              this.listQuery.QryMaterialTypes.push(item.id);
+            });
+          }
           this.getRightList();
         }
       } else {
@@ -656,10 +655,10 @@ this.listLoading=false
         this.listQuery.QryMaterialTypes = [];
         if (!a.children) {
           this.listQuery.QryMaterialTypes.push(a.id);
-        }else{
-          a.children.map(item=>{
-            this.listQuery.QryMaterialTypes.push(item.id)
-          })
+        } else {
+          a.children.map((item) => {
+            this.listQuery.QryMaterialTypes.push(item.id);
+          });
         }
         this.$refs.treeForm.setCheckedKeys([a.key1]);
         this.ifParent = a.key;
@@ -671,9 +670,12 @@ this.listLoading=false
     getLeftList() {
       this.listLoading = true;
       let arr = [];
-    return callservepushm
-        .getLeftList({ QryState: this.listQuery.QryState,QryServiceOrderId:this.listQuery.QryServiceOrderId })
-        .then(res => {
+      return callservepushm
+        .getLeftList({
+          QryState: this.listQuery.QryState,
+          QryServiceOrderId: this.listQuery.QryServiceOrderId,
+        })
+        .then((res) => {
           let resul = res.data.data;
           for (let i = 0; i < resul.length; i++) {
             arr[i] = [];
@@ -681,24 +683,23 @@ this.listLoading=false
             arr[i].key1 = `${resul[i].serviceOrderId}`;
             arr[i].key = `${resul[i].serviceOrderId}`;
             arr[i].children = [];
-            resul[i].materialTypes.map(item1 => {
+            resul[i].materialTypes.map((item1) => {
               arr[i].children.push({
                 label: `物料类型号:${item1}`,
                 key: `${resul[i].serviceOrderId}`,
                 key1: `${resul[i].serviceOrderId}&${item1}`,
-                id: item1
+                id: item1,
               });
             });
             // console.log(arr)
           }
           this.modulesTree = arr;
-           this.listLoading = false;
+          this.listLoading = false;
         });
-     
     },
     getAllRight() {
-       this.afterLeft()
-       //展开全部工单
+      this.afterLeft();
+      //展开全部工单
       // this.listLoading = true;
       // callservepushm.getRightList(this.listQuery1).then(response => {
       //   if (response.code === 200) {
@@ -717,75 +718,78 @@ this.listLoading=false
       this.listLoading = true;
       callservepushm
         .getRightList(this.listQuery)
-        .then(response => {
+        .then((response) => {
           if (response.code === 200) {
-                    // this.ifParent=""
+            // this.ifParent=""
             this.list = response.data.data;
             this.total = response.data.count;
             this.listLoading = false;
           } else {
             this.$message({
               type: "error",
-              message: `${response.message}`
+              message: `${response.message}`,
             });
           }
-        }).catch(() => {
-        this.listLoading = true;
-        let that = this
-          setTimeout(function(){
-                      that.$message({
-            type: "error",
-            message: `请输入正确的搜索值`
-          });
+        })
+        .catch(() => {
+          this.listLoading = true;
+          let that = this;
+          setTimeout(function () {
+            that.$message({
+              type: "error",
+              message: `请输入正确的搜索值`,
+            });
             that.list = [];
-            that.total =0;
+            that.total = 0;
             that.listLoading = false;
-          },700)
-
+          }, 700);
         });
     },
     open() {
       this.$confirm("确认已完成回访?", "提示", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
-        type: "warning"
+        type: "warning",
       })
         .then(() => {
           this.$message({
             type: "success",
-            message: "操作成功!"
+            message: "操作成功!",
           });
         })
         .catch(() => {
           this.$message({
             type: "info",
-            message: "已取消操作"
+            message: "已取消操作",
           });
         });
     },
     handleFilter() {
       this.listQuery.page = 1;
-      this.getRightList()
+      this.getRightList();
     },
     handleSizeChange(val) {
       this.listQuery.limit = val;
-      this.getRightList()
+      this.getRightList();
     },
     handleCurrentChange(val) {
       this.listQuery.page = val.page;
       this.listQuery.limit = val.limit;
-      this.getRightList()
+      this.getRightList();
     },
-    handleCurrentChange2(val){
+    handleCurrentChange2(val) {
       this.listQuery2.page = val.page;
       this.listQuery2.limit = val.limit;
-      this.getRightList()
+         callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
+          this.tableData = res.data;
+          this.total2 = res.count;
+        });
     },
     handleModifyStatus(row, disable) {
       // 模拟修改状态
       this.$message({
         message: "操作成功",
-        type: "success"
+        type: "success",
       });
       row.disable = disable;
     },
@@ -804,7 +808,7 @@ this.listLoading=false
         updateUserId: "",
         updateTime: "",
         updateUserName: "",
-        extendInfo: ""
+        extendInfo: "",
       };
     },
     handleCreate() {
@@ -818,7 +822,7 @@ this.listLoading=false
     },
     createData() {
       // 保存提交
-      this.$refs["dataForm"].validate(valid => {
+      this.$refs["dataForm"].validate((valid) => {
         if (valid) {
           solutions.add(this.temp).then(() => {
             this.list.unshift(this.temp);
@@ -827,7 +831,7 @@ this.listLoading=false
               title: "成功",
               message: "创建成功",
               type: "success",
-              duration: 2000
+              duration: 2000,
             });
           });
         }
@@ -844,7 +848,7 @@ this.listLoading=false
     },
     updateData() {
       // 更新提交
-      this.$refs["dataForm"].validate(valid => {
+      this.$refs["dataForm"].validate((valid) => {
         if (valid) {
           const tempData = Object.assign({}, this.temp);
           solutions.update(tempData).then(() => {
@@ -860,7 +864,7 @@ this.listLoading=false
               title: "成功",
               message: "更新成功",
               type: "success",
-              duration: 2000
+              duration: 2000,
             });
           });
         }
@@ -868,20 +872,20 @@ this.listLoading=false
     },
     handleDelete(rows) {
       // 多行删除
-      solutions.del(rows.map(u => u.id)).then(() => {
+      solutions.del(rows.map((u) => u.id)).then(() => {
         this.$notify({
           title: "成功",
           message: "删除成功",
           type: "success",
-          duration: 2000
+          duration: 2000,
         });
-        rows.forEach(row => {
+        rows.forEach((row) => {
           const index = this.list.indexOf(row);
           this.list.splice(index, 1);
         });
       });
-    }
-  }
+    },
+  },
 };
 </script>
 <style>
