@@ -717,7 +717,10 @@
         <el-button type="primary" @click="pushForm">确 定</el-button>
       </span>
     </el-dialog>
-    <el-dialog title="你可以批量更改下列信息" :visible.sync="dia_copyForm" width="800px">
+    <el-dialog title="你可以批量更改下列信息" 
+
+
+    :visible.sync="dia_copyForm" width="800px">
       <el-form
         :model="copyForm"
         :rules="ruleCopy"
@@ -818,7 +821,7 @@
 
         <el-form-item>
           <el-button type="primary" @click="submitForm('copyForm')">立即更改</el-button>
-          <!-- <el-button @click="resetForm('copyForm')">取消</el-button> -->
+          <el-button @click="resetForm('copyForm')">取消</el-button>
         </el-form-item>
       </el-form>
     </el-dialog>
@@ -1200,19 +1203,22 @@ export default {
     changeForm(res) {
       this.formListStart = res;
     },
-      //  resetForm(formName) {
-      //   this.$refs[formName].resetFields();
-      //         this.dia_copyForm = false 
-      //       this.waitingAdd = false;
-      //       this.submitForm(1)
-      // },
-    async submitForm(formName) {
-      //  const validq = await this.$refs[formName].validate().then(res=>res)
-      // console.log(vaildq)
-      //  console.log( this.$refs[formName].validate(),this.$refs[formName].validate((value)=> value))
-            this.$refs[formName].validate((valid) => {
-          if (valid) {
-       let copyFo = this.copyForm;
+       resetForm(formName) {
+        this.$refs[formName].resetFields();
+              this.dia_copyForm = false 
+            this.waitingAdd = false;
+            this.submitForm(formName,1)
+      },
+    async submitForm(formName,b) {
+       let validq = false
+        if(!b){
+        validq = await this.$refs[formName].validate()
+        }else{
+validq = true
+        }
+        console.log(validq,b)
+          if(validq){
+                 let copyFo = this.copyForm;
        this.dia_copyForm = false 
        this.copyForm.problemTypeName ="" 
       let flag = this.copyForm.fromTheme;
@@ -1321,15 +1327,17 @@ export default {
       }
       this.waitingAdd = false;
       this.$refs[formName].resetFields();
-          } else {
-           this.$message({
+      
+          }else{
+       this.$message({
                 message: "请将必填项填写完整",
                 type: "error",
               });       
                return false;
           }
-        });
+  
 
+        
     },
     pushForm() {
       this.dia_copyForm = true;

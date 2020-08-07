@@ -88,9 +88,7 @@ export default {
     //   this.listQuery.limit = val.limit;
     //   // this.getList();
     // },
-    handleSelectionChange(val) {
-      console.log(val)
-      
+    handleSelectionChange(val) {      
         // this.$refs.singleTable.toggleRowSelection(val)
       this.$emit("change-Form", val);
     },
