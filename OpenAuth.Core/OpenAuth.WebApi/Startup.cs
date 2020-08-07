@@ -21,6 +21,7 @@ using OpenAuth.App.HostedService;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Extensions;
 using OpenAuth.WebApi.Model;
+using SAP.API;
 using Swashbuckle.AspNetCore.SwaggerUI;
 
 namespace OpenAuth.WebApi
@@ -163,7 +164,10 @@ namespace OpenAuth.WebApi
             
             //设置定时启动的任务
             services.AddHostedService<QuartzService>();
-            
+
+            //SAP
+            //services.AddSap();
+
         }
         
         public void ConfigureContainer(ContainerBuilder builder)

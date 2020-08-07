@@ -33,7 +33,7 @@
             </form>
           </div>
           <div class="flow-form-content" style="height: 500px;">
-            <CreatedFlow ref="createdFlow" :form-template="currentForm" :isCreate="true" :isShowContent="isShowContent" :scheme-content="currentScheme.schemeContent"></CreatedFlow>
+            <CreatedFlow ref="createdFlow" :form-template="currentForm" :isEdit="true" :isShowContent="isShowContent" :scheme-content="currentScheme.schemeContent"></CreatedFlow>
           </div>
         </div>
 
@@ -91,7 +91,7 @@
   import * as apiForms from '@/api/forms'
   import CreatedForm from '@/components/Formcreated/components/CreatedForm'
   import CreatedFlow from '@/components/CreatedFlow'
-  import { mapGetters } from 'vuex'
+  import { mapGetters, mapActions } from 'vuex'
 
   export default {
     name: 'flowinstance-add',
@@ -151,7 +151,6 @@
     },
     watch: {
       currentSchemeId(id) {
-        // this.isShowContent = false
         this.currentScheme.schemeContent = ''
         this.onSchemeChange(id)
       }
@@ -168,10 +167,10 @@
         this.flowschemes = response.data
         // 初始化值
         this.currentSchemeId = this.flowschemes[0].id
-        // this.onSchemeChange(this.flowschemes[0].id)
       })
     },
     methods: {
+      ...mapActions(['updateInstancesIsRender']),
       next() {
         if (this.active++ > 1) this.active = 0
       },
@@ -196,7 +195,6 @@
               _this.postObj.frmType = 2
               _this.postObj.dbName = ''
               response.result.html = response.result.content // 暂无用content替代一下html
-              //  _this.frmPreview = response.result.content
               _this.createdFormData = JSON.parse(response.result.contentData)
               _this.frmPreview = response.result.html // 表单预览的数据
               _this.fields = response.result.fields // 表单属性的个数
@@ -215,6 +213,7 @@
 
         apiFlowinstances.add(_this.postObj).then(() => {
           _this.loading = false
+          _this.updateInstancesIsRender({type: '', val: true})
           _this.$notify({
             title: '成功',
             message: '创建成功',
@@ -237,11 +236,8 @@
               _this.loading = false
               return
             }
-            // console.log(_this.postObj.frmType)
             if (_this.postObj.frmType === 1) { // 使用的是自定义的页面提交
-            
               _this.postObj.frmData = JSON.stringify(_this.$refs.frmData.getData())
-              
             } else if (_this.postObj.frmType === 0) { // 解析表单中提交的数据
               const frmdata = {}
               for (let i = 0; i < _this.$refs.frmData.elements.length; i++) {
@@ -251,7 +247,6 @@
             } else {
               _this.$refs.createdForm.getData().then(res => {
                 _this.postObj.frmData = JSON.stringify(res)
-                   console.log(_this.postObj.frmData )
                 _this.handleAdd()
               }).catch(() => {
                 _this.loading = false

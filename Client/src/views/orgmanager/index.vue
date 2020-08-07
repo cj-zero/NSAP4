@@ -6,7 +6,6 @@
           class="filter-item" :placeholder="'关键字'" v-model="listQuery.key">
         </el-input>
 
-        <!-- <el-button class="filter-item" type="success" size="small" v-waves icon="el-icon-search" @click="handleFilter">搜索</el-button> -->
         <permission-btn moduleName='orgmanager' size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
         <el-checkbox size="mini" style='margin-left:15px;' @change='tableKey=tableKey+1' v-model="showDescription">Id/描述</el-checkbox>
       </div>
@@ -16,16 +15,6 @@
         <el-col :span="4" style="height: 100%;border: 1px solid #EBEEF5;">
           <el-card shadow="never" class="body-small" style="height: 100%;overflow:auto;">
             <div slot="header" class="clearfix">
-              <el-button type="text" style="padding: 0 11px" @click="getCorpTree">所有公司>></el-button>
-            </div>
-
-            <el-tree :data="CorpTree" :expand-on-click-node="false" default-expand-all :props="defaultProps"
-              @node-click="handleClick"></el-tree>
-          </el-card>
-        </el-col>
-          <el-col :span="4" style="height: 100%;border: 1px solid #EBEEF5;">
-          <el-card shadow="never" class="body-small" style="height: 100%;overflow:auto;">
-            <div slot="header" class="clearfix">
               <el-button type="text" style="padding: 0 11px" @click="getAllOrgs">所有机构>></el-button>
             </div>
 
@@ -33,7 +22,7 @@
               @node-click="handleNodeClick"></el-tree>
           </el-card>
         </el-col>
-        <el-col :span="16" style="height: 100%;">
+        <el-col :span="20" style="height: 100%;">
           <div class="bg-white" style="height: 100%;">
             <el-table ref="mainTable" :key='tableKey' :data="list" v-loading="listLoading" border fit
               highlight-current-row style="width: 100%;" height="calc(100% - 52px)" @row-click="rowClick" @selection-change="handleSelectionChange">
@@ -70,7 +59,7 @@
                     scope.row.status).display_name}}</span>
                 </template>
               </el-table-column>
-         
+
               <el-table-column align="center" :label="'操作'" width="150" class-name="small-padding fixed-width">
                 <template slot-scope="scope">
                   <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
@@ -78,9 +67,6 @@
                 </template>
               </el-table-column>
             </el-table>
-            <!-- <el-pagination background @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="listQuery.page"
-              :page-sizes="[10,20,30, 50]" :page-size="listQuery.limit" layout="total, sizes, prev, pager, next, jumper" :total="total">
-            </el-pagination> -->
             <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit"
               @pagination="handleCurrentChange" />
           </div>
@@ -93,17 +79,6 @@
         <el-form :rules="rules" ref="dataForm" :model="temp" label-position="right" label-width="100px">
           <el-form-item size="small" :label="'Id'" prop="id" v-show="dialogStatus=='update'">
             <span>{{temp.id}}</span>
-          </el-form-item>
- 
-                     <el-form-item size="small" :label="'所属公司'" prop="corpId">
-                <el-select v-model="temp.corpId" clearable placeholder="请选择" style="width:100%;" @change="handleClick1">
-                <el-option
-                  v-for="item in CorpTree"
-                  :key="`cor_${item.id}`"
-                  :label="item.label"
-                  :value="item.id">
-                </el-option>
-              </el-select>
           </el-form-item>
           <el-form-item size="small" :label="'层级ID'" v-show="dialogStatus=='update'">
             <span>{{temp.cascadeId}}</span>
@@ -120,9 +95,6 @@
           <el-form-item size="small" :label="'上级机构'">
             <treeselect ref="orgsTree" :options="mechOrgsTree" :default-expand-level="3" :multiple="false"
               :open-on-click="true" :open-on-focus="true" :clear-on-select="true" v-model="selectOrgs"></treeselect>
-            <!-- <treeselect ref="orgsTree" :disabled="treeDisabled" :options="mechOrgsTree" :default-expand-level="3" :multiple="false"
-              :open-on-click="true" :open-on-focus="true" :clear-on-select="true" v-model="selectOrgs"></treeselect>
-            <el-checkbox v-model="isRoot">根节点</el-checkbox> -->
           </el-form-item>
         </el-form>
         <div slot="footer">
@@ -168,7 +140,7 @@
   import selectUsersCom from '@/components/SelectUsersCom'
 
   export default {
-    name: 'orgmanager',
+    name: 'org',
     components: {
       Sticky,
       permissionBtn,
@@ -192,7 +164,6 @@
         subLists: [],
         total: 0,
         currentOrgId: '',
-        currentCorpId: '',
         listLoading: true,
         listQuery: { // 查询条件
           page: 1,
@@ -213,34 +184,13 @@
         showDescription: false,
         orgs: [], // 用户可访问到的组织列表
         orgsTree: [], // 用户可访问到的所有机构组成的树
-        Corp: [], // 用户可访问到的公司列表
-        CorpTree: [], // 用户可访问到的所有公司组成的树
         temp: {
-          // id: undefined,
-          // cascadeId: '',
-          // parentName: '',
-          // parentId: null,
-          // name: '',
-          // Corp:'',
-          // status: 0
-          hotKey: '',
-          isLeaf: true,
-          isAutoExpand: true,
-          iconName: '',
-          status: 0,
-          bizCode: '',
-          customCode: '',
-          createTime: '',
-          createId: 0,
-          sortNo: 0,
-          typeName: '',
-          typeId: '',
-          corpId: '',
+          id: undefined,
           cascadeId: '',
-          name: '',
-          parentId: '',
           parentName: '',
-          id: ''
+          parentId: null,
+          name: '',
+          status: 0
         },
         dialogFormVisible: false,
         chkRoot: false, // 根节点是否选中
@@ -255,19 +205,13 @@
             required: true,
             message: '名称不能为空',
             trigger: 'blur'
-          }],
-          corpId: [{
-            required: true,
-            message: '公司不能为空',
-            trigger: 'blur'
-          }],
+          }]
         },
         downloadLoading: false,
         selectOrgs: '',
         roleUsers: {
           dialogUserResource: false,
           Texts: '',
-          // users: [],
           rowIndex: -1,
           selectUsers: [],
           list: []
@@ -297,7 +241,6 @@
           label: '根节点',
           parentId: null
         }]
-        // const arr = [...arr1, ...this.orgsTree]
         return arr.concat(this.orgsTree)
       },
       isRoot: {
@@ -313,31 +256,6 @@
           this.treeDisabled = v
         }
       }
-      // selectOrgs: {
-      //   get: function() {
-      //     if (this.dialogStatus === 'update') {
-      //       return this.temp.parentId
-      //     } else {
-      //       return ''
-      //     }
-      //   },
-      //   set: function(v) {
-      //     console.log('set org:' + v)
-      //     if (v === undefined || v === null || v === '') { // 如果是根节点
-      //       this.temp.parentName = '根节点'
-      //       this.temp.parentId = ''
-      //       this.isRoot = true
-      //       return v
-      //     }
-      //     this.isRoot = false
-      //     this.temp.parentId = v
-      //     var parentname = this.orgs.find((val) => {
-      //       return v === val.id
-      //     }).label
-      //     this.temp.parentName = parentname
-      //     return v
-      //   }
-      // }
     },
     filters: {
       statusFilter(status) {
@@ -357,10 +275,8 @@
     },
     mounted() {
       this.getOrgTree()
-      this.getCorpTree()
     },
     methods: {
-   
       loadRoleUsers() {
         var _this = this
         this.isLoading = true
@@ -388,23 +304,6 @@
       handleNodeClick(data) {
         this.currentOrgId = data.id
         this.getList()
-      },
-         handleClick(data) {
-         this.currentCorpId = data.id
-        this.getOrgTree(data.id)
-      },
-                     handleClick1(data) {
-                 let dataId = ''
-                 if((typeof data) ==='string'){
-                   dataId=data
-                   this.currentCorpId = data
-                 }else{
-                   this.currentCorpId = data.id
-                   dataId=data.id
-                 }
-                //  if(Object.propotype.toString.call(data) ===String){}
-        //  this.currentCorpId = data
-         this.getOrgTree(dataId)
       },
       getAllOrgs() {
         this.currentOrgId = ''
@@ -467,9 +366,9 @@
         this.list = this.subLists.slice((this.listQuery.page - 1) * this.listQuery.limit, this.listQuery.page * (this.listQuery.limit))
         this.roleUsers.selectUsers = this.list.map(() => { return { users: [], Texts: '' } })
       },
-      getOrgTree(id) {
+      getOrgTree() {
         var _this = this // 记录vuecomponent
-        login.getOrgs({corpId:id?id:null}).then(response => {
+        login.getOrgs().then(response => {
           _this.orgs = response.result.map(function(item) {
             return {
               id: item.id,
@@ -481,34 +380,6 @@
           _this.orgsTree = listToTreeSelect(orgstmp)
         })
       },
-      // getOrgList(){
-      //          var _this = this // 记录vuecomponent
-      //   login.getOrgs().then(response => {
-      //     _this.orgs = response.result.map(function(item) {
-      //       return {
-      //         id: item.id,
-      //         label: item.name,
-      //         parentId: item.parentId || null
-      //       }
-      //     })
-      //     var orgstmp = JSON.parse(JSON.stringify(_this.orgs))
-      //     _this.orgsTree = listToTreeSelect(orgstmp)
-      //   })
-      // },
-            getCorpTree() {
-        var _this = this // 记录vuecomponent
-        login.getCorp().then(response => {
-          _this.Corp = response.result.map(function(item) {
-            return {
-              id: item.id,
-              label: item.corpName
-            }
-          })
-          _this.CorpTree = _this.Corp
-
-        })
-      },
-      
       handleFilter() {
         this.listQuery.page = 1
         this.getList()
@@ -520,7 +391,6 @@
       handleCurrentChange(val) {
         this.listQuery.page = val.page
         this.listQuery.limit = val.limit
-        // this.getList()
         this.pageSubOrgs()
       },
       handleModifyStatus(row, status) { // 模拟修改状态
@@ -537,8 +407,7 @@
           parentName: '根节点',
           parentId: '',
           name: '',
-          status: 0,
-          corpId:''
+          status: 0
         }
       },
       handleCreate() { // 弹出添加框
@@ -546,7 +415,6 @@
         this.dialogStatus = 'create'
         this.dialogFormVisible = true
         this.selectOrgs = ''
-          console.log(this.temp)
         this.$nextTick(() => {
           this.$refs['dataForm'].clearValidate()
         })
@@ -554,7 +422,6 @@
       createData() { // 保存提交
         this.$refs['dataForm'].validate((valid) => {
           if (valid) {
-            console.log(this.temp)
             orgs.add(this.temp).then((response) => {
               // 需要回填数据库生成的数据
               this.temp.id = response.result.id

@@ -44,7 +44,7 @@ namespace OpenAuth.App
         /// <summary>
         ///  获取当前登录用户的数据访问权限
         /// </summary>
-        /// <param name=""parameterName>linq表达式参数的名称，如u=>u.name中的"u"</param>
+        /// <param name="parameterName">linq表达式参数的名称，如u=>u.name中的"u"</param>
         /// <returns></returns>
         protected IQueryable<T> GetDataPrivilege(string parametername)
         {
@@ -80,7 +80,7 @@ namespace OpenAuth.App
         /// 按id批量删除
         /// </summary>
         /// <param name="ids"></param>
-        public void Delete(string[] ids)
+        public virtual void Delete(string[] ids)
         {
             Repository.Delete(u => ids.Contains(u.Id));
         }
@@ -88,7 +88,7 @@ namespace OpenAuth.App
         /// 按条件删除
         /// </summary>
         /// <param name="ids"></param>
-        public void Delete(Expression<Func<T, bool>> exp)
+        public virtual void Delete(Expression<Func<T, bool>> exp)
         {
             Repository.Delete(exp);
         }

@@ -164,9 +164,10 @@
 // import jsplumb from 'jsplumb'
 import SelectUsers from '@/components/SelectUsers'
 import SelectRoles from '@/components/SelectRoles'
+import {mapGetters, mapActions} from 'vuex'
 
 export default {
-  props: ['plumb', 'flowData', 'select', 'formTemplate'],
+  props: ['plumb', 'flowData', 'formTemplate'],
   components: {
     // jsplumb,
     SelectUsers,
@@ -174,8 +175,9 @@ export default {
   },
   data() {
     return {
-      currentSelect: this.select,
-      Compares: this.select.Compares,
+      currentSelect: '',
+			Compares: '',
+			flag: false,
       formItemLayout: {
         labelCol: { span: 6 },
         wrapperCol: { span: 16 }
@@ -201,8 +203,20 @@ export default {
       },
       activeKey: 'flow-attr'
     }
-  },
+	},
+	computed: {
+		...mapGetters({
+			currentSelectData: 'currentSelect'
+		})
+	},
+	mounted() {
+		this.currentSelect = Object.assign({}, this.currentSelectData)
+		this.Compares = this.currentSelect.Compares
+	},
   methods: {
+		...mapActions({
+			saveCurrentSelect: 'saveCurrentSelect'
+		}),
     nodeNameChange(e) {
       this.currentSelect.name = e.target.value
     },
@@ -235,15 +249,13 @@ export default {
         if (labelOverlay) conn.removeOverlay(labelOverlay.id)
       }
     },
-    usersChange(users, names) {
-      // 可执行用户
-      this.currentSelect.setInfo.NodeDesignateData.users = users
-      this.currentSelect.setInfo.NodeDesignateData.Texts = names
-    },
-    rolesChange(roles, names) {
-      // 可执行用户
-      this.currentSelect.setInfo.NodeDesignateData.roles = roles
-      this.currentSelect.setInfo.NodeDesignateData.Texts = names
+		usersChange(name, val) {
+			// 可执行用户
+			this.currentSelect.setInfo.NodeDesignateData[name] = val
+		},
+    rolesChange(name, val) {
+			// 可执行角色
+      this.currentSelect.setInfo.NodeDesignateData[name] = val
     },
     handleChangeRoles() {
       this.currentSelect.setInfo.NodeDesignateData.Texts = ''
@@ -252,24 +264,28 @@ export default {
     }
   },
   watch: {
-    select: {
+    currentSelectData: {
       deep: true,
       handler(val) {
-        this.currentSelect = val
-        if (this.currentSelect.type === 'sl') {
+				if(this.flag) {
+					this.flag = false
+					return
+				}
+				this.currentSelect = Object.assign({}, {...val})
+        if (this.currentSelectData.type === 'sl') {
           this.activeKey = 'link-attr'
-        } else if (!this.currentSelect.type) {
+        } else if (!this.currentSelectData.type) {
           this.activeKey = 'flow-attr'
         } else {
           this.activeKey = 'node-attr'
         }
       }
-    },
+		},
     currentSelect: {
       handler(val) {
-        console.log('currentSelect', this.currentSelect)
         this.Compares = val.Compares
-        this.$emit('update:select', val)
+				this.saveCurrentSelect(val)
+				this.flag = true
       },
       deep: true
     }

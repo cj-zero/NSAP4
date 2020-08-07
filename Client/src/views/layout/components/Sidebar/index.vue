@@ -1,13 +1,14 @@
 <template>
-  <el-scrollbar wrapClass="scrollbar-wrapper">
+  <el-scrollbar wrapClass="scrollbar-wrapper" style="border-right: 1px solid #f5f5f5;">
     <el-menu
       mode="vertical"
       :show-timeout="200"
       :default-active="$route.path"
       :collapse="isCollapse"
-      background-color="#304156"
-      text-color="#bfcbd9"
-      active-text-color="#409EFF"
+      router
+      :background-color="themeStatus ?'#333':'#304156' "
+      :text-color="themeStatus ? 'white' : '#bfcbd9'"
+      :active-text-color="themeStatus ? '#409EFF' : '#409eff'"
     >
       <sidebar-item v-for="route in routes" :key="route.name" :item="route" :base-path="route.path"></sidebar-item>
     </el-menu>
@@ -26,21 +27,17 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['sidebar', 'permission_routers']),
-    // routes() {
-    //   return this.permission_routers.sort((a, b) => a.meta.sortNo - b.meta.sortNo)
-    // },
+    ...mapGetters(['sidebar', 'permission_routers', 'themeStatus']),
     isCollapse() {
       return !this.sidebar.opened
     }
   },
-  watch: {
-    item() {
-      this.routes = this.permission_routers.length > 0 && this.permission_routers.sort((a, b) => a.meta.sortNo - b.meta.sortNo)
-    }
-  },
   created() {
-    this.routes = this.permission_routers.length > 0 && this.permission_routers.sort((a, b) => a.meta.sortNo - b.meta.sortNo)
+    this.permission_routers.length > 0 && this.permission_routers.forEach(item => {
+      if(item.name === 'layout'){
+        this.routes = item.children.sort((a, b) => a.meta.sortNo - b.meta.sortNo)
+      }
+    })
   },
 }
 </script>

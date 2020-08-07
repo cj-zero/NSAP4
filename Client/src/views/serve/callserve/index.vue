@@ -56,7 +56,6 @@
                   v-for="(fruit,index) in ChildheadOptions"
                   :align="fruit.align"
                   :key="`ind${index}`"
-                  :sortable="fruit=='chaungjianriqi'?true:false"
                   style="background-color:silver;"
                   :label="fruit.label"
                   header-align="left"
@@ -67,7 +66,7 @@
                     <span
                       v-if="fruit.name === 'status'"
                       :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-                    >{{statusOptions[scope.row[fruit.name]].label}}</span>
+                    >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
                     <span
                       v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
                     >{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
@@ -85,7 +84,6 @@
             v-for="(fruit,index) in ParentHeadOptions"
             :align="fruit.align"
             :key="`ind${index}`"
-            :sortable="fruit=='chaungjianriqi'?true:false"
             style="background-color:silver;"
             :label="fruit.label"
             header-align="left"
@@ -255,7 +253,7 @@ export default {
       key: 1, // table key
       sure: 0,
       ParentHeadOptions: [
-        { name: "serviceOrderId", label: "服务单号", width: "80px",align:'left'},
+        { name: "serviceOrderId", label: "服务单号", width: "80px",align:'left' ,  sortable:true},
         { name: "customerId", label: "客户代码",align:'left' },
         { name: "customerName", label: "客户名称" ,align:'left' },
         { name: "contacter", label: "联系人" ,align:'left' },
@@ -531,7 +529,10 @@ export default {
       callservesure.rightList(this.listQuery).then(response => {
             let resul = response.data.data;
         this.total =response.count;
-        this.list =resul;
+        this.list=[]
+         resul.map(item=>{
+this.list.push(item)
+        });
         this.listLoading = false;
       }).catch(() => {
         this.listLoading = true;

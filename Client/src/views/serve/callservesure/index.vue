@@ -32,7 +32,6 @@
                 <el-input v-model="listQuery.QryServiceOrderId" @keyup.enter.native='onSubmit'></el-input>
               </el-form-item>
             </el-col>
-
             <el-col :span="3">
               <el-form-item label="呼叫状态" >
                 <el-select v-model="listQuery.QryState" placeholder="请选择呼叫状态">
@@ -61,6 +60,7 @@
                     placeholder="选择开始日期"
                     v-model="listQuery.QryCreateTimeFrom"
                     style="width: 100%;"
+                    value-format="yyyy-MM-dd"
                   ></el-date-picker>
                 </el-col>
                 <el-col class="line" :span="2">至</el-col>
@@ -69,11 +69,12 @@
                     placeholder="选择结束时间"
                     v-model="listQuery.QryCreateTimeTo"
                     style="width: 100%;"
+                    value-format="yyyy-MM-dd"
                   ></el-date-picker>
                 </el-col>
               </el-form-item>
             </el-col>
-                  <el-col :span="3" style="margin-left:20px;">
+            <el-col :span="3" style="margin-left:20px;">
               <el-button type="primary" @click="onSubmit" @keyup.enter.native='onSubmit' size="small" icon="el-icon-search">搜 索</el-button>
             </el-col>
           </el-row>

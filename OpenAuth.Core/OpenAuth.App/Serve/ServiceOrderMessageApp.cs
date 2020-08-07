@@ -34,17 +34,18 @@ namespace OpenAuth.App.Serve
         {
             var loginContext = _auth.GetCurrentUser();
             var obj = req.MapTo<ServiceOrderMessage>();
+            obj.AppUserId = 0;
             obj.Replier = loginContext.User.Name;
             obj.ReplierId = loginContext.User.Id;
             obj.CreateTime = DateTime.Now;
-
+            var pictures = req.ServiceOrderMessagePictures;
+            obj.ServiceOrderMessagePictures = null;
             await UnitWork.AddAsync(obj);
             await UnitWork.SaveAsync();
-
-            if (req.ServiceOrderMessagePictures != null && req.ServiceOrderMessagePictures?.Count > 0)
+            if (pictures != null && pictures?.Count > 0)
             {
-                req.ServiceOrderMessagePictures?.ForEach(p => { p.ServiceOrderMessageId = obj.Id; });
-                await UnitWork.BatchAddAsync(req.ServiceOrderMessagePictures?.ToArray());
+                pictures?.ForEach(p => { p.ServiceOrderMessageId = obj.Id; p.Id = Guid.NewGuid().ToString(); });
+                await UnitWork.BatchAddAsync(pictures?.ToArray());
                 await UnitWork.SaveAsync();
             }
             await PushMessageToApp(req.AppUserId, "服务单消息", $"{obj.Replier}给你发送消息：{obj.Content}");

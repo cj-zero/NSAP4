@@ -57,11 +57,15 @@ namespace OpenAuth.App
         /// </summary>
         public void DelOrgCascade(string[] ids)
         {
-            var delOrg = Repository.Find(u => ids.Contains(u.Id)).ToList();
-            foreach (var org in delOrg)
+            var delOrgCascadeIds = UnitWork.Find<Repository.Domain.Org>(u => ids.Contains(u.Id)).Select(u => u.CascadeId).ToArray();
+            var delOrgIds = new List<string>();
+            foreach (var cascadeId in delOrgCascadeIds)
             {
-                Repository.Delete(u => u.CascadeId.Contains(org.CascadeId));
+                delOrgIds.AddRange(UnitWork.Find<Repository.Domain.Org>(u => u.CascadeId.Contains(cascadeId)).Select(u => u.Id).ToArray());
             }
+            UnitWork.Delete<Relevance>(u => u.Key == Define.USERORG && delOrgIds.Contains(u.SecondId));
+            UnitWork.Delete<Repository.Domain.Org>(u => delOrgIds.Contains(u.Id));
+            UnitWork.Save();
         }
 
 

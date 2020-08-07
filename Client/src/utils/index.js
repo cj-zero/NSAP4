@@ -33,24 +33,27 @@ export function parseTime(time, cFormat) {
   })
   return time_str
 }
+
 //将此刻的时间转化为我们需要的格式
 export function timeToFormat(format){
   let result =''
-  const now =new Date() 
+  const now =new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() + 1
+  const day = now.getDate()
+  const hours = now.getHours()
+  const minute = now.getMinutes()
+  const seconds = now.getSeconds()
   if(format==='ymd'){ 
     //  /2020-01-02格式/
-    const year = now.getFullYear()
-    const mounth1 = now.getMonth()+1
-    const mounth = mounth1<10?'0'+mounth1:mounth1
-    const day1 = now.getDate()
-    const day = day1<10?'0'+day1:day1
-    // const hour = now.getHours()
-    // const minute = now.getMinutes()
-    // const second = now.getSeconds()
-    result = year+'-'+ mounth + '-' + day
-     
+    result = year +'-'+ isZero(month) + '-' + isZero(day)
+  } else if (format === 'yyyy-MM-dd HH-mm-ss') {
+    return `${year}-${isZero(month)}-${isZero(day)} ${isZero(hours)}-${isZero(minute)}-${isZero(seconds)}`
   }
 return result
+}
+function isZero (num) {
+  return Number(num) < 10 ? '0' + num : num 
 }
 export function formatTime(format) {
   const now = new Date()
@@ -134,4 +137,22 @@ export function changeIcon(icon) {
     default:
       return 'list'
   }
+}
+
+// 深拷贝
+export const deepClone = (obj) => {
+  if (!isObject(obj)) {
+    throw new Error('obj 不是一个对象！')
+  }
+
+  let isArray = Array.isArray(obj)
+  let cloneObj = isArray ? [] : {}
+  for (let key in obj) {
+      cloneObj[key] = isObject(obj[key]) ? deepClone(obj[key]) : obj[key]
+  }
+
+  return cloneObj
+}
+const isObject = (o) => {
+  return (typeof o === 'object' || typeof o === 'function') && o !== null
 }

@@ -1,63 +1,52 @@
 <template>
-  <el-form ref="form" :model="listQuery" label-width="80px">
+  <el-form ref="form" :model="listQuery" label-width="70px" size='mini '>
     <div style="padding:10px 0;"></div>
-    <el-row :gutter="10">
-      <el-col :span="3">
-        <el-form-item label="服务ID" size="small">
+    <el-row :gutter="4">
+      <el-col :span="2">
+        <el-form-item label="服务ID" >
           <el-input v-model="listQuery.QryServiceOrderId" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
-
       <el-col :span="3">
-        <el-form-item label="工单ID" size="small">
-          <el-input v-model="listQuery.name" @keyup.enter.native='onSubmit'></el-input>
-        </el-form-item>
-      </el-col>
-      <el-col :span="3">
-        <el-form-item label="呼叫状态" size="small">
+        <el-form-item label="呼叫状态" >
           <el-select v-model="listQuery.QryState" disabled placeholder="请选择呼叫状态">
         <el-option label="待处理" :value="1"></el-option>
           </el-select>
         </el-form-item>
       </el-col>
-
-      <el-col :span="3">
-        <el-form-item label="客户" size="small">
+      <el-col :span="2">
+        <el-form-item label="客户" >
           <el-input v-model="listQuery.QryCustomer" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
-      <el-col :span="3">
-        <el-form-item label="序列号" size="small">
+      <el-col :span="2">
+        <el-form-item label="序列号" >
           <el-input v-model="listQuery.QryManufSN" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
-      <el-col :span="3">
-        <el-form-item label="接单员" size="small">
+      <el-col :span="2">
+        <el-form-item label="接单员" >
           <el-input v-model="listQuery.QryRecepUser" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
-    </el-row>
-    <el-row :gutter="10">
-      <el-col :span="3">
-        <el-form-item label="技术员" size="small">
+ 
+      <el-col :span="2">
+        <el-form-item label="技术员" >
           <el-input v-model="listQuery.QryTechName" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
       <el-col :span="3">
-        <el-form-item label="问题类型" size="small">
-          <el-select v-model="listQuery.QryProblemType" size="small" placeholder="选择呼叫状态">
-            <el-option label="待确认" value="1"></el-option>
-            <el-option label="已确认" value="2"></el-option>
-            <el-option label="已取消" value="3"></el-option>
-          </el-select>
+        <el-form-item label="问题类型" >
+          <el-cascader :options="dataTree" class="malchack" v-model="listQuery.QryProblemType"   :props="{ value:'id',label:'name',children:'childTypes',expandTrigger: 'hover'  }"  clearable></el-cascader>
+         
+       
         </el-form-item>
       </el-col>
       <el-col :span="6">
-        <el-form-item label="创建日期" size="small">
+        <el-form-item label="创建日期" >
           <el-col :span="11">
             <el-date-picker
-            size="small"
-           format="yyyy 年 MM 月 dd 日"   
+              format="yyyy-MM-dd"   
               value-format="yyyy-MM-dd"
               placeholder="选择开始日期"
               v-model="listQuery.QryCreateTimeFrom"
@@ -67,7 +56,7 @@
           <el-col class="line" :span="2">至</el-col>
           <el-col :span="11">
             <el-date-picker
-               format="yyyy 年 MM 月 dd 日"   
+              format="yyyy-MM-dd"   
               value-format="yyyy-MM-dd"
               placeholder="选择结束时间"
               v-model="listQuery.QryCreateTimeTo"
@@ -77,22 +66,22 @@
         </el-form-item>
       </el-col>
 
-      <el-col :span="2" style="margin-left:20px;" >
-                    <el-button type="primary" @click="onSubmit" size="small" icon="el-icon-search"> 搜 索 </el-button>
-      </el-col>
-
-            <el-col :span="2" style="margin-left:20px;" >
-
-            <el-button type="success"  size="small" @click="sendOrder" icon="el-icon-thumb"> 派 单 </el-button>
+      <el-col :span="2" style="margin-left:0;" >
+               <el-button type="primary" @click="onSubmit" size="mini"  icon="el-icon-search"> 搜 索 </el-button>
       </el-col>
     </el-row>
   </el-form>
 </template>
 
 <script>
+import * as problemtypes from "@/api/problemtypes";
 export default {
   data() {
     return {
+                  defaultProps:{
+        label:'name',
+        children:'childTypes'
+      },//树形控件的显示状态
       listQuery: {
         // 查询条件
         page: 1,
@@ -109,8 +98,21 @@ export default {
         QryRecepUser: "", //- 接单员
         QryTechName: "", // - 工单技术员
         QryProblemType: "" // - 问题类型
-      }
+      },
+          dataTree:[],
     };
+
+  },
+  created(){
+       problemtypes
+      .getList()
+      .then((res) => {
+        this.dataTree = res.data;
+        console.log(this.dataTree)
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   },
   methods: {
     onSubmit() {
@@ -133,5 +135,12 @@ export default {
 };
 </script>
 
-<style>
+<style lang="scss" scoped>
+
+
+// .{
+//   ::v-deep  .el-cascader-menu{
+//     overflow:hidden;
+//   }
+// }
 </style>
