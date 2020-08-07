@@ -325,5 +325,30 @@ namespace OpenAuth.App
             }
             return true;
         }
+
+        /// <summary>
+        /// 按名称模糊查询人员 by zlg 2020.7.31
+        /// </summary>
+        public TableData GetListUser(string name, string Orgid)
+        {
+            var loginUser = _auth.GetCurrentUser();
+
+            string cascadeId = ".0.";
+            if (!string.IsNullOrEmpty(Orgid))
+            {
+                var org = loginUser.Orgs.SingleOrDefault(u => u.Id == Orgid);
+                cascadeId = org.CascadeId;
+            }
+
+            var ids = loginUser.Orgs.Where(u => u.CascadeId.Contains(cascadeId)).Select(u => u.Id).ToArray();
+
+            var userIds = _revelanceApp.Get(Define.USERORG, false, ids);
+
+            var result = new TableData();
+            var objs = UnitWork.Find<User>(null);
+            objs = objs.Where(u => u.Name.Contains(name) && userIds.Contains(u.Id));
+            result.Data = objs.Select(u => new { u.Name, u.Id }).ToList();
+            return result;
+        }
     }
 }

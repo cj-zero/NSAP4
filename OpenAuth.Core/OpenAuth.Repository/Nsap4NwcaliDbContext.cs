@@ -14,9 +14,14 @@ namespace OpenAuth.Repository
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             //当主键为联合主键时，需要把这里的内容拷贝到对应的位置
+            modelBuilder.Entity<Asset>().HasKey(c => new { c.Id });
         }
 
         public virtual DbSet<Certinfo> Certinfos { get; set; }
         public virtual DbSet<Certplc> Certplcs { get; set; }
+        public virtual DbSet<Asset> Assets { get; set; }
+        public virtual DbSet<AssetCategory> Assetcategories { get; set; }
+        public virtual DbSet<AssetInspect> Assetinspects { get; set; }
+        public virtual DbSet<AssetOperation> Assetoperations { get; set; }
     }
 }

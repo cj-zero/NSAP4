@@ -3,6 +3,7 @@ using System.Linq;
 using Infrastructure;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
+using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 
@@ -77,6 +78,20 @@ namespace OpenAuth.App
 
             if (!ids.Any()) return new List<OpenAuth.Repository.Domain.Org>();
             return UnitWork.Find<OpenAuth.Repository.Domain.Org>(u => ids.Contains(u.Id)).ToList();
+        }
+
+        /// <summary>
+        /// 按名称模糊查询部门 by zlg 2020.7.31
+        /// </summary>
+        /// <param name="name">部门名称</param>
+        /// <returns></returns>
+        public TableData GetListOrg(string name)
+        {
+            var result = new TableData();
+            var objs = UnitWork.Find<OpenAuth.Repository.Domain.Org>(null);
+            objs = objs.Where(u => u.Name.Contains(name));
+            result.Data = objs.Select(u => new { u.Name, u.Id }).ToList();
+            return result;
         }
 
         public OrgManagerApp(IUnitWork unitWork, IRepository<OpenAuth.Repository.Domain.Org> repository,IAuth auth, 
