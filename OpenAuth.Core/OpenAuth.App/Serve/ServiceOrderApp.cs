@@ -904,7 +904,7 @@ namespace OpenAuth.App
                 s.NewestContactTel,
                 s.Status,
                 s.CreateTime,
-                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
+                Distance = (req.Latitude == 0 || s.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
                 WorkOrderStatus = s.MaterialInfo.Select(s => s.Status).Distinct().FirstOrDefault()
             }).ToList();
 
@@ -976,7 +976,7 @@ namespace OpenAuth.App
                 a.City,
                 a.Area,
                 a.Addr,
-                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(a.Latitude ?? 0), Convert.ToDouble(a.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
+                Distance = (req.Latitude == 0 || a.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(a.Latitude ?? 0), Convert.ToDouble(a.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
                 ServiceWorkOrders = a.ServiceWorkOrders.GroupBy(o => o.MaterialType).Select(s => new
                 {
                     MaterialType = s.Key,
@@ -1915,7 +1915,7 @@ namespace OpenAuth.App
                 s.CustomerName,
                 s.Supervisor,
                 s.SalesMan,
-                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
+                Distance = (req.Latitude == 0 || s.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
                 s.MaterialInfo,
                 ServiceWorkOrders = s.MaterialInfo.GroupBy(o => o.MaterialType).ToList()
                 .Select(s => new
