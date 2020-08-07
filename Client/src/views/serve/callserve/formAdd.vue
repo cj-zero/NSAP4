@@ -732,6 +732,7 @@
         :SerialNumberList="filterSerialNumberList"
         :serLoading="serLoad"
         @change-Form="changeForm"
+        :ifEdit="ifEdit"
       ></fromfSN>
       <pagination
         v-show="SerialCount>0"
@@ -1087,8 +1088,6 @@ export default {
     },
     changeForm(res) {
       this.formListStart = res;
-
-      // console.log(res,this.formListStart);
     },
 
     pushForm() {
