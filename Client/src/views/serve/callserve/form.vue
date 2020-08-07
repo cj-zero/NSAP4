@@ -493,37 +493,17 @@ export default {
         }
       },
     },
+    "form.addr":{
+      handler(val){
+ if (val) {
+this.getPosition(val)
+        }
+      },
+    },
     "form.address": {
       handler(val) {
-        if (val) {
-          let that = this;
-          let url = `https://restapi.amap.com/v3/geocode/geo?key=c97ee5ef9156461c04b552da5b78039d&address=${val}`;
-          http.get(url, function (err, result) {
-            if (result.geocodes.length) {
-              let res = result.geocodes[0];
-              that.form.province = res.province;
-              that.form.city = res.city;
-              that.form.area = res.district;
-              that.form.addr = res.formatted_address;
-              that.form.latitude = res.location.split(",")[1];
-              that.form.longitude = res.location.split(",")[0];
-            } else {
-              if(that.isCreate||that.ifEdit){
-              that.$message({
-                message: "未识别到地址，请手动选择",
-                type: "error",
-              });
-              }
-
-              that.form.province = "";
-              that.form.city = "";
-              that.form.area = "";
-              that.form.addr = "";
-              that.form.latitude = "";
-              that.form.longitude = "";
-            }
-            // 这里对结果进行处理
-          });
+        if (!this.form.addr) {
+this.getPosition(val)
         }
       },
     },
@@ -574,6 +554,36 @@ export default {
       //预览图片
       this.previewVisible = true;
       this.previewUrl = item;
+    },
+    getPosition(val){
+          let that = this;
+          let url = `https://restapi.amap.com/v3/geocode/geo?key=c97ee5ef9156461c04b552da5b78039d&address=${val}`;
+          http.get(url, function (err, result) {
+            if (result.geocodes.length) {
+              let res = result.geocodes[0];
+              that.form.province = res.province;
+              that.form.city = res.city;
+              that.form.area = res.district;
+              that.form.addr = res.formatted_address;
+              that.form.latitude = res.location.split(",")[1];
+              that.form.longitude = res.location.split(",")[0];
+            } else {
+              if(that.isCreate||that.ifEdit){
+              that.$message({
+                message: "未识别到地址，请手动选择",
+                type: "error",
+              });
+              }
+
+              that.form.province = "";
+              that.form.city = "";
+              that.form.area = "";
+              that.form.addr = "";
+              that.form.latitude = "";
+              that.form.longitude = "";
+            }
+            // 这里对结果进行处理
+          });
     },
     getImgList(val) {
       //获取图片列表
