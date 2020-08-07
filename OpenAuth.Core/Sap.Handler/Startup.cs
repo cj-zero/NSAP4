@@ -37,7 +37,7 @@ namespace Sap.Handler
 
             services.AddNewareCAP(Configuration);
 
-            services.AddSingleton<ServiceOrderSapHandler>();
+            services.AddScoped<ServiceOrderSapHandler>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
