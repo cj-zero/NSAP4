@@ -477,6 +477,8 @@ namespace OpenAuth.App
             obj.ServiceWorkOrders.ForEach(s =>
             {
                 s.ServiceOrderId = obj.Id; s.SubmitDate = DateTime.Now; s.SubmitUserId = loginContext.User.Id; s.AppUserId = obj.AppUserId; s.Status = 1;
+                s.SubmitDate = DateTime.Now;
+                s.SubmitUserId = loginContext.User.Id;
                 if (s.FromType == 2)
                     s.Status = 7;
             });
@@ -693,8 +695,8 @@ namespace OpenAuth.App
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
 
-            await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"客服:{loginContext.User.Name}创建服务单", ActionType = "创建工单", ServiceOrderId = e.Id });
-            #region 同步到SAP 并拿到服务单主键
+            //await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"客服:{loginContext.User.Name}创建服务单", ActionType = "创建工单", ServiceOrderId = e.Id });
+            //#region 同步到SAP 并拿到服务单主键
 
             //if (obj.ServiceWorkOrders.Count > 0)
             //{
