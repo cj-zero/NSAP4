@@ -810,7 +810,6 @@ export default {
           this.partnerList = res.data;
           this.filterPartnerList = this.partnerList;
           this.parentCount = res.count;
-          console.log(res.count)
           this.parentLoad = false;
         })
         .catch((error) => {

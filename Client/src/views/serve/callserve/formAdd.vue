@@ -879,7 +879,6 @@ export default {
       this.listLoading = false;
     });
     if (this.propForm && this.propForm.length) {
-      console.log(22)
       this.formList = this.propForm;
     }
   
@@ -897,7 +896,6 @@ export default {
         if(!this.ifEdit){
         newVal.map((item, index) => {
           //循环新数组的每一项对象
-          console.log(11)
           if (JSON.stringify(newVal[index]) !== JSON.stringify(oldVal[index])) {
             let newValChild = newVal[index]; //新值的每一项
             let oldValChild = oldVal[index];
