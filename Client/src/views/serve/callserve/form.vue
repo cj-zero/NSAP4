@@ -188,7 +188,9 @@
               <el-col :span="8">
                 <el-form-item label="现地址">
                   <!-- <el-input size="mini" v-model="form.city"></el-input> -->
-                  <p style="border: 1px solid silver; border-radius:5px;height:30px;margin:0;padding-left:10px;font-size:12px;">{{allArea}}</p>
+                  <p
+                    style="border: 1px solid silver; border-radius:5px;height:30px;margin:0;padding-left:10px;font-size:12px;"
+                  >{{allArea}}</p>
                 </el-form-item>
               </el-col>
               <el-col :span="16" style="height:30px;line-height:30px;padding:2px 0 0 0;">
@@ -340,8 +342,8 @@ import Pagination from "@/components/Pagination";
 import zmap from "@/components/amap";
 import upLoadImage from "@/components/upLoadFile";
 import Model from "@/components/Formcreated/components/Model";
-import { timeToFormat } from '@/utils'
-import { isMobile, isPhone } from '@/utils/validate'
+import { timeToFormat } from "@/utils";
+import { isMobile, isPhone } from "@/utils/validate";
 
 import formPartner from "./formPartner";
 import formAdd from "./formAdd";
@@ -364,7 +366,7 @@ export default {
   data() {
     var checkTelF = (rule, value, callback) => {
       if (!value) {
-        return callback()
+        return callback();
       }
       setTimeout(() => {
         // let reg = RegExp(/^[\d-]+$/);
@@ -372,7 +374,7 @@ export default {
           callback();
         } else {
           // callback(new Error('请输入正确的格式'));
-          callback(this.$message.error('请输入正确的电话格式'))
+          callback(this.$message.error("请输入正确的电话格式"));
         }
       }, 500);
     };
@@ -383,10 +385,7 @@ export default {
 
       partnerList: [],
       previewVisible: false, //图片预览的dia
-      setImage: {
-        width: "50px",
-        height: "50px",
-      },
+      setImage: '50px',
       drawerMap: false, //地图控件
       filterPartnerList: [],
       inputSearch: "",
@@ -433,7 +432,7 @@ export default {
         id: "", //服务单id
         province: "", //省
         city: "", //市
-        area: "",//区
+        area: "", //区
         addr: "", //地区
         longitude: "", //number经度
         latitude: "", //	number纬度
@@ -470,10 +469,10 @@ export default {
       },
     };
   },
-  computed:{
-    allArea(){
-      return this.form.province+this.form.city+this.form.area
-    }
+  computed: {
+    allArea() {
+      return this.form.province + this.form.city + this.form.area;
+    },
   },
   watch: {
     ifEdit: {
@@ -507,19 +506,21 @@ export default {
               that.form.area = res.district;
               that.form.addr = res.formatted_address;
               that.form.latitude = res.location.split(",")[1];
-              that.form.longitude= res.location.split(",")[0];
+              that.form.longitude = res.location.split(",")[0];
             } else {
-              console.log(val)
+              if(that.isCreate||that.ifEdit){
               that.$message({
                 message: "未识别到地址，请手动选择",
                 type: "error",
               });
-                    that.form.province ='';
+              }
+
+              that.form.province = "";
               that.form.city = "";
-              that.form.area ='';
-              that.form.addr = '';
-              that.form.latitude = '';
-              that.form.longitude= '';
+              that.form.area = "";
+              that.form.addr = "";
+              that.form.latitude = "";
+              that.form.longitude = "";
             }
             // 这里对结果进行处理
           });
@@ -585,13 +586,13 @@ export default {
     },
     chooseAddre() {
       this.form.city = this.allAddress.regeocode.addressComponent.city;
-          this.form.province = this.allAddress.regeocode.addressComponent.province;
-              this.form.area =this.allAddress.regeocode.addressComponent.district;
+      this.form.province = this.allAddress.regeocode.addressComponent.province;
+      this.form.area = this.allAddress.regeocode.addressComponent.district;
       this.form.addr = this.allAddress.address;
       this.form.longitude = this.allAddress.position.lng;
       this.form.latitude = this.allAddress.position.lat;
       this.drawerMap = false;
-      console.log(this.form)
+      console.log(this.form);
     },
     async setForm(val) {
       if (val) {
@@ -614,15 +615,22 @@ export default {
     async postServe() {
       //创建整个工单
       if (!this.form.serviceWorkOrders.length) {
+        this.$message({
+          message: `请将必填项填写完整`,
+          type: "error",
+        });
+        return;
+      }
+      if(!this.form.longitude){
           this.$message({
-            message: `请将必填项填写完整`,
-            type: "error",
-          });
-          return
+          message: `请手动选择地址`,
+          type: "error",
+        });
+        return;
       }
       if (this.form.serviceWorkOrders.length >= 0) {
         let chec = this.form.serviceWorkOrders.every(
-          (item) => 
+          (item) =>
             item.fromTheme !== "" &&
             item.fromType !== "" &&
             item.problemTypeId !== "" &&
@@ -802,9 +810,8 @@ export default {
           this.partnerList = res.data;
           this.filterPartnerList = this.partnerList;
           this.parentCount = res.count;
+          console.log(res.count)
           this.parentLoad = false;
-
-          // console.log(res.count)
         })
         .catch((error) => {
           console.log(error);
@@ -816,9 +823,8 @@ export default {
       this.form.customerName = item.cardName;
       this.form.contacter = item.cntctPrsn;
       this.form.contactTel = item.cellular;
-      console.log(item);
       // this.form.addressDesignator = item.address;
-      this.form.address = item.address;
+      // this.form.address = item.address;
 
       this.form.salesMan = item.slpName;
     },
