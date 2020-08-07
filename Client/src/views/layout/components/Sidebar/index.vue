@@ -6,8 +6,8 @@
       :default-active="$route.path"
       :collapse="isCollapse"
       router
-      :background-color="themeStatus ? '#304156' : ''"
-      :text-color="themeStatus ? '#bfcbd9' : ''"
+      :background-color="themeStatus ?'#333':'#304156' "
+      :text-color="themeStatus ? 'white' : '#bfcbd9'"
       :active-text-color="themeStatus ? '#409EFF' : '#409eff'"
     >
       <sidebar-item v-for="route in routes" :key="route.name" :item="route" :base-path="route.path"></sidebar-item>
