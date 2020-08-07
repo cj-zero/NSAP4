@@ -38,11 +38,10 @@ namespace OpenAuth.App
         private readonly ServiceOrderLogApp _serviceOrderLogApp;
         private readonly BusinessPartnerApp _businessPartnerApp;
         private readonly AppServiceOrderLogApp _appServiceOrderLogApp;
-        private readonly ServiceWorkOrderAPI _workAPI;
         private IOptions<AppSetting> _appConfiguration;
         private HttpHelper _helper;
         public ServiceOrderApp(IUnitWork unitWork,
-            RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ServiceWorkOrderAPI workAPI) : base(unitWork, auth)
+            RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration) : base(unitWork, auth)
         {
             _appConfiguration = appConfiguration;
             _revelanceApp = app;
@@ -50,7 +49,6 @@ namespace OpenAuth.App
             _businessPartnerApp = businessPartnerApp;
             _appServiceOrderLogApp = appServiceOrderLogApp;
             _helper = new HttpHelper(_appConfiguration.Value.AppPushMsgUrl);
-            _workAPI = workAPI;
         }
         /// <summary>
         /// 加载列表
@@ -696,7 +694,7 @@ namespace OpenAuth.App
             await UnitWork.SaveAsync();
 
             //await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"客服:{loginContext.User.Name}创建服务单", ActionType = "创建工单", ServiceOrderId = e.Id });
-            //#region 同步到SAP 并拿到服务单主键
+            #region 同步到SAP 并拿到服务单主键
 
             //if (obj.ServiceWorkOrders.Count > 0)
             //{
@@ -1193,7 +1191,7 @@ namespace OpenAuth.App
                 Province = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Province,
                 City = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.City,
                 Area = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Area,
-                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude ?? 0), Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
+                Distance = (req.Latitude == 0|| locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude ?? 0), Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
             }).ToList();
 
             userInfos = userInfos.OrderBy(o => o.Distance).ToList();
@@ -1404,7 +1402,7 @@ namespace OpenAuth.App
                 s.CustomerName,
                 s.Supervisor,
                 s.SalesMan,
-                Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
+                Distance = (req.Latitude == 0 || s.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
                 s.MaterialInfo,
                 ServiceWorkOrders = s.MaterialInfo.GroupBy(o => o.MaterialType).ToList()
                 .Select(s => new
@@ -1836,7 +1834,7 @@ namespace OpenAuth.App
                     City = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.City,
                     Area = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Area,
                     Addr = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Addr,
-                    Distance = req.Latitude == 0 ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude ?? 0), Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
+                    Distance = (req.Latitude == 0 || locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude ?? 0), Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
                 }).ToList();
                 userInfos = userInfos.OrderBy(o => o.Distance).ToList();
                 userData.Add("orgId", item.Key);
