@@ -19,7 +19,11 @@
           </el-col>
           <el-col :span="ifEdit?8:7">
             <el-form-item label="服务类型">
-              <el-radio-group size="small" :class="ifEdit?'editRodia':''" v-model="formList[0].feeType">
+              <el-radio-group
+                size="small"
+                :class="ifEdit?'editRodia':''"
+                v-model="formList[0].feeType"
+              >
                 <el-radio :label="1">免费</el-radio>
                 <el-radio :label="2">收费</el-radio>
               </el-radio-group>
@@ -52,16 +56,26 @@
         </el-row>
         <el-row type="flex" class="row-bg" justify="space-around">
           <el-col :span="8">
-            <el-form-item label="序列号"
-                prop="manufacturerSerialNumber"
+            <el-form-item
+              label="序列号"
+              prop="manufacturerSerialNumber"
               :rules="{
               required: true, message: '制造商序列号不能为空', trigger: 'blur'
-            }">
-              <el-autocomplete
+            }"
+            >
+              <el-input
+                @focus="handleIconClick"
+                v-model="formList[0].manufacturerSerialNumber"
+                readonly
+                size="small"
+              >
+                <el-button size="mini" slot="append" icon="el-icon-search" @click="handleIconClick"></el-button>
+              </el-input>
+              <!-- <el-autocomplete
                 popper-class="my-autocomplete"
                 v-model="formList[0].manufacturerSerialNumber"
                 size="small"
-               
+                readonly
                 :fetch-suggestions="querySearch"
                 placeholder="制造商序列号"
                 @focus="thisPage=0"
@@ -71,8 +85,7 @@
                   size="mini"
                   slot="append"
                   icon="el-icon-search"
- @click="handleIconClick"                ></el-button>
-                <!-- <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i> -->
+              ></el-button>
                 <template slot-scope="{ item }">
                   <div class="name">
                     <p style="height:20px;margin:2px;">{{ item.manufSN }}</p>
@@ -81,15 +94,7 @@
                     >{{ item.custmrName }}</p>
                   </div>
                 </template>
-              </el-autocomplete>
-              <!-- <el-input
-                size="small"
-                maxlength="0"
-                v-model="formList[0].manufacturerSerialNumber"
-                :disabled="ifEdit"
-              >
-                <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
-              </el-input>-->
+              </el-autocomplete>-->
             </el-form-item>
           </el-col>
           <el-col :span="8">
@@ -323,11 +328,7 @@
         </el-form-item>
       </el-form>
     </div>
-    <el-collapse
-      v-model="activeNames"
-      class="openClass"
-      v-if="formList.length>1"
-    >
+    <el-collapse v-model="activeNames" class="openClass" v-if="formList.length>1">
       <el-collapse-item title="展开更多订单" name="1">
         <div
           v-for="(item,index) in formList.slice(1)"
@@ -383,40 +384,26 @@
             </el-row>
             <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="8">
-                <el-form-item label="序列号"
-                       size="small"
-                       :rules="{
+                <el-form-item
+                  label="序列号"
+                  size="small"
+                  :rules="{
               required: true, message: '制造商序列号不能为空', trigger: 'blur'
-            }">
-                  <el-autocomplete
-                    popper-class="my-autocomplete"
+            }"
+                >
+                  <el-input
+                    @focus="handleIconClick"
                     v-model="item.manufacturerSerialNumber"
-             
-                    :fetch-suggestions="querySearch"
-                    placeholder="制造商序列号"
-                    @focus="thisPage=index+1"
-                    @select="searchSelect"
+                    readonly
+                    size="small"
                   >
-                    <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
-                    <template slot-scope="{ item }">
-                      <div class="name">
-                        <p style="height:20px;margin:2px;">{{ item.manufSN }}</p>
-                        <p
-                          style="font-size:12px;height:20px;margin:2px 0 5px 0 ;color:silver;"
-                        >{{ item.custmrName }}</p>
-                      </div>
-                      <!-- <div class="name">{{ item.manufSN }}</div>
-                      <span class="addr">{{ item.custmrName }}</span>-->
-                    </template>
-                  </el-autocomplete>
-                  <!-- <el-input
-                size="small"
-                maxlength="0"
-                v-model="item.manufacturerSerialNumber"
-                :disabled="ifEdit"
-              >
-                <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
-                  </el-input>-->
+                    <el-button
+                      size="mini"
+                      slot="append"
+                      icon="el-icon-search"
+                      @click="handleIconClick"
+                    ></el-button>
+                  </el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="8">
@@ -631,15 +618,6 @@
             <el-form-item>
               <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
                 <el-col :span="6"></el-col>
-
-                <!-- <el-col :span="5">
-              <el-button
-                size="small"
-                type="primary"
-                icon="el-icon-share"
-                @click="postWorkOrder(item)"
-              >确定修改</el-button>
-                </el-col>-->
                 <el-col :span="4">
                   <div
                     class="showSort"
@@ -719,10 +697,7 @@
           <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
         </el-input>
 
-        <el-switch
-  v-model="inputname"
-  active-text="其他">
-</el-switch>
+        <el-switch v-model="inputname" active-text="其他"></el-switch>
       </div>
       <fromfSN
         :SerialNumberList="filterSerialNumberList"
@@ -742,7 +717,111 @@
         <el-button type="primary" @click="pushForm">确 定</el-button>
       </span>
     </el-dialog>
-    <!--  -->
+    <el-dialog title="你可以批量更改下列信息" :visible.sync="dia_copyForm" width="800px">
+      <el-form
+        :model="copyForm"
+        :rules="ruleCopy"
+        ref="copyForm"
+        label-width="100px"
+        id="demo-ruleForm"
+      >
+        <el-row type="flex" class="row-bg" justify="space-around">
+          <el-col :span="24">
+            <el-form-item
+              label="呼叫主题"
+              prop="fromTheme"
+            >
+              <el-input size="small" v-model="copyForm.fromTheme"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row type="flex" class="row-bg" justify="space-around">
+          <el-col :span="8">
+            <el-form-item
+              label="呼叫类型"
+              prop="fromType"
+            >
+              <el-select v-model="copyForm.fromType" size="small">
+                <el-option
+                  v-for="item in options_type"
+                  :key="item.label"
+                  :label="item.label"
+                  :value="item.value"
+                ></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item
+              label="问题类型"
+              prop="problemTypeId"
+   
+            >
+              <el-input size="small" style="display:none;" v-model="copyForm.problemTypeId"></el-input>
+
+              <el-input v-model="copyForm.problemTypeName" readonly size="small">
+                <el-button
+                  size="mini"
+                  slot="append"
+                  icon="el-icon-search"
+                  @click="()=>{proplemTree=true,sortForm=1}"
+                ></el-button>
+              </el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="优先级">
+              <!-- <el-input v-model="copyForm.priority"></el-input> -->
+              <el-select v-model="copyForm.priority" size="small" placeholder="请选择">
+                <el-option
+                  v-for="ite in options_quick"
+                  :key="ite.value"
+                  :label="ite.label"
+                  :value="ite.value"
+                ></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-form-item
+          label="解决方案"
+          prop="solutionId"
+          :rules="{
+              required: copyForm.fromType === 2, message: '解决方案不能为空', trigger: 'clear'
+            }"
+        >
+          <el-input
+            type="textarea"
+            style="display:none;"
+            size="small"
+            v-model="copyForm.solutionId"
+          ></el-input>
+          <el-input
+            v-model="copyForm.solutionsubject"
+            @focus="()=>{solutionOpen=true,sortForm=1}"
+            :disabled="copyForm.fromType!==2"
+            readonly
+          >
+            <el-button
+              :disabled="copyForm.fromType!==2"
+              size="mini"
+              slot="append"
+              icon="el-icon-search"
+              @click="()=>{solutionOpen=true,sortForm=1}"
+            ></el-button>
+          </el-input>
+        </el-form-item>
+        <el-form-item label="备注" prop="remark">
+          <el-input type="textarea" size="small" v-model="copyForm.remark"></el-input>
+        </el-form-item>
+
+        <el-form-item>
+          <el-button type="primary" @click="submitForm('copyForm')">立即更改</el-button>
+          <!-- <el-button @click="resetForm('copyForm')">取消</el-button> -->
+        </el-form-item>
+      </el-form>
+    </el-dialog>
   </div>
 </template>
 
@@ -768,6 +847,19 @@ export default {
       sortForm: "", //点击解决方案的排序
       solutionOpen: false, //显示解决方案
       problemLabel: "",
+      dia_copyForm: false, //批量修改表单的弹窗
+      copyForm: {
+        //批量修改所绑定的值
+        fromTheme: "", //呼叫主题
+        fromType: 1, //呼叫类型1-提交呼叫 2-在线解答（已解决）
+        status: 1, //呼叫状态 1-待确认 2-已确认 3-已取消 4-待处理 5-已排配 6-已外出 7-已挂起 8-已接收 9-已解决 10-已回访
+        problemTypeId: "", //问题类型Id
+        problemTypeName: "",
+        solutionsubject: "",
+        priority: 1, //优先级 4-紧急 3-高 2-中 1-低
+        solutionId: "", //解决方案
+        remark: "", //备注
+      },
       dataTree: [], //问题类型的组合
       datasolution: [], //解决方案集合
       solutionCount: "",
@@ -814,7 +906,7 @@ export default {
       inputSearch: "",
       inputItemCode: "", //物料编码
       activeNames: [], //活跃名称
-      inputname:false,//是否为其他
+      inputname: false, //是否为其他
       options_sourse: [
         { value: "电话", label: "电话" },
         { value: "钉钉", label: "钉钉" },
@@ -853,6 +945,17 @@ export default {
       waitingAdd: false, //等待添加的进程结束
       SerialCount: "",
       ifFormPush: false, //表单是否被动态添加过
+      ruleCopy:{
+           fromTheme: [
+            { required: true, message: '请选择活动区域', trigger: 'change' }
+          ],
+             fromType: [
+            { required: true, message: '请选择活动区域', trigger: 'change' }
+          ],
+             problemTypeId: [
+            { required: true, message: '请选择活动区域', trigger: 'change' }
+          ],
+      }
     };
   },
   created() {},
@@ -877,7 +980,6 @@ export default {
     if (this.propForm && this.propForm.length) {
       this.formList = this.propForm;
     }
-  
   },
   computed: {
     newValue() {
@@ -889,51 +991,53 @@ export default {
       handler: function (Val, Val1) {
         let newVal = JSON.parse(Val);
         let oldVal = JSON.parse(Val1);
-        if(!this.ifEdit){
-        newVal.map((item, index) => {
-          //循环新数组的每一项对象
-          if (JSON.stringify(newVal[index]) !== JSON.stringify(oldVal[index])) {
-            let newValChild = newVal[index]; //新值的每一项
-            let oldValChild = oldVal[index];
-            if (newVal.length == oldVal.length) {
-              for (let item1 in oldValChild) {
-                if (newValChild[item1] !== oldValChild[item1]) {
-                  //如果新值和旧值不一样
-                  let sliceList = this.formList.slice(index);
-                  if (this.formList[index].editTrue) {
-                    //如果可以修改
-                    //  console.log(thisForm[item1],newValChild[item1],item1)
-                    if (item1 == "editTrue") {
-                      return;
-                    } else if (item1 == "problemTypeId") {
-                      sliceList.map((itemF, ind) => {
-                        if (ind !== 0) {                            
-                          itemF.problemTypeId = newValChild.problemTypeId;
-                          itemF.problemTypeName = newValChild.problemTypeName;
-                        }
-                      });
-                    } else if (item1 == "solutionId") {
-                      sliceList.map((itemF, ind) => {
-                        if (ind !== 0) {
-                          itemF.solutionId = newValChild.solutionId;
-                          itemF.solutionsubject = newValChild.solutionsubject;
-                        }
-                      });
-                    } else {
-                      sliceList.map((itemF, ind) => {
-                        if (ind !== 0) {
-                          itemF[item1] = newValChild[item1];
-                        }
-                      });
+        if (!this.ifEdit) {
+          newVal.map((item, index) => {
+            //循环新数组的每一项对象
+            if (
+              JSON.stringify(newVal[index]) !== JSON.stringify(oldVal[index])
+            ) {
+              let newValChild = newVal[index]; //新值的每一项
+              let oldValChild = oldVal[index];
+              if (newVal.length == oldVal.length) {
+                for (let item1 in oldValChild) {
+                  if (newValChild[item1] !== oldValChild[item1]) {
+                    //如果新值和旧值不一样
+                    let sliceList = this.formList.slice(index);
+                    if (this.formList[index].editTrue) {
+                      //如果可以修改
+                      //  console.log(thisForm[item1],newValChild[item1],item1)
+                      if (item1 == "editTrue") {
+                        return;
+                      } else if (item1 == "problemTypeId") {
+                        sliceList.map((itemF, ind) => {
+                          if (ind !== 0) {
+                            itemF.problemTypeId = newValChild.problemTypeId;
+                            itemF.problemTypeName = newValChild.problemTypeName;
+                          }
+                        });
+                      } else if (item1 == "solutionId") {
+                        sliceList.map((itemF, ind) => {
+                          if (ind !== 0) {
+                            itemF.solutionId = newValChild.solutionId;
+                            itemF.solutionsubject = newValChild.solutionsubject;
+                          }
+                        });
+                      } else {
+                        sliceList.map((itemF, ind) => {
+                          if (ind !== 0) {
+                            itemF[item1] = newValChild[item1];
+                          }
+                        });
+                      }
                     }
                   }
                 }
               }
             }
-          }
-        });
+          });
         }
-      this.$emit("change-form", newVal);
+        this.$emit("change-form", newVal);
       },
 
       deep: true,
@@ -961,14 +1065,17 @@ export default {
             this.SerialNumberList = res.data;
             this.filterSerialNumberList = this.SerialNumberList.filter(
               // (item) => item.manufSN === res.manufSN
-              item => {
-                return this.formList.length ?
-                  this.formList.every(formItem => formItem.manufacturerSerialNumber !== item.manufSN) :
-                  true
+              (item) => {
+                return this.formList.length
+                  ? this.formList.every(
+                      (formItem) =>
+                        formItem.manufacturerSerialNumber !== item.manufSN
+                    )
+                  : true;
               }
             );
             this.SerialCount = res.count;
-            })
+          })
           .catch((error) => {
             console.log(error);
           });
@@ -993,10 +1100,13 @@ export default {
           // this.SerialCount = res.count;
           this.filterSerialNumberList = this.SerialNumberList.filter(
             // (item) => item.manufSN === res.manufSN
-            item => {
-              return this.formList.length ?
-                this.formList.every(formItem => formItem.manufacturerSerialNumber !== item.manufSN) :
-                true
+            (item) => {
+              return this.formList.length
+                ? this.formList.every(
+                    (formItem) =>
+                      formItem.manufacturerSerialNumber !== item.manufSN
+                  )
+                : true;
             }
           );
           this.SerialCount = res.count;
@@ -1023,25 +1133,30 @@ export default {
     solutionget(res) {
       this.datasolution = res;
     },
-    onSearch (params) {
-      this.listLoading = false
-      solutions.getList(params).then((response) => {
-        this.datasolution = response.data;
-        this.solutionCount = response.count;
-        this.listLoading = false;
-      }).catch(() => {
-        this.listLoading = false
-      });
+    onSearch(params) {
+      this.listLoading = false;
+      solutions
+        .getList(params)
+        .then((response) => {
+          this.datasolution = response.data;
+          this.solutionCount = response.count;
+          this.listLoading = false;
+        })
+        .catch(() => {
+          this.listLoading = false;
+        });
     },
     NodeClick(res) {
-      console.log(this.formList, this.sortForm - 1);
+      this.copyForm.problemTypeName = res.name;
+      this.copyForm.problemTypeId = res.id;
       this.formList[this.sortForm - 1].problemTypeName = res.name;
       this.formList[this.sortForm - 1].problemTypeId = res.id;
       this.problemLabel = res.name;
       this.proplemTree = false;
     },
     solutionClick(res) {
-       console.log(this.formList)
+      this.copyForm.solutionsubject = res.subject;
+      this.copyForm.solutionId = res.id;
       this.formList[this.sortForm - 1].solutionsubject = res.subject;
       this.formList[this.sortForm - 1].solutionId = res.id;
       // this.problemLabel = res.name;
@@ -1070,86 +1185,75 @@ export default {
       return res.length ? res[0].subject : "请选择";
     },
     openDialog() {
-      console.log(this.formList, 'formList', this.SerialNumberList)
+      console.log(this.formList, "formList", this.SerialNumberList);
       this.filterSerialNumberList = this.SerialNumberList.filter(
         // (item) => item.manufSN === res.manufSN
-        item => {
-          return this.formList.length ?
-            this.formList.every(formItem => formItem.manufacturerSerialNumber !== item.manufSN) :
-            true
+        (item) => {
+          return this.formList.length
+            ? this.formList.every(
+                (formItem) => formItem.manufacturerSerialNumber !== item.manufSN
+              )
+            : true;
         }
       );
     },
     changeForm(res) {
-
       this.formListStart = res;
     },
-
-    pushForm() {
-
-      if (!this.formListStart.length) { // 没有对列表进行选择
-        this.dialogfSN = false;
-        return
-      } // 没有添加直接退出
-      this.dialogfSN = false;
-      this.waitingAdd = true;
-      if(this.inputname){
-    if (!this.formList[0].manufacturerSerialNumber) {
+      //  resetForm(formName) {
+      //   this.$refs[formName].resetFields();
+      //         this.dia_copyForm = false 
+      //       this.waitingAdd = false;
+      //       this.submitForm(1)
+      // },
+    async submitForm(formName) {
+      // let valid = await this.$refs[formName].validate()
+    
+      //  console.log( this.$refs[formName].validate(),this.$refs[formName].validate((value)=> value))
+            this.$refs[formName].validate((valid) => {
+          if (valid) {
+       let copyFo = this.copyForm;
+       this.dia_copyForm = false 
+      let flag = this.copyForm.fromTheme;
+      if (!this.formList[0].manufacturerSerialNumber) {
         //判断从哪里新增的依据是第一个工单是否有id
-        this.formList[0].manufacturerSerialNumber = "其他";
-        this.formList[0].internalSerialNumber = '';
-        this.formList[0].materialCode = '';
-        this.formList[0].materialDescription ='';
-        const newList = this.formListStart.splice(1, this.formListStart.length);
-        for (let i = 0; i < newList.length; i++) {
-          this.formList.push({
-            manufacturerSerialNumber:"其他" ,
+        if (this.inputname) {
+          //是否有新增其他选项
+          this.formListStart.push({
+            manufSN: "其他",
             editTrue: false,
-            internalSerialNumber: '',
-            materialCode:'',
-            materialDescription: '',
+            internalSerialNumber: "",
+            materialCode: "",
+            materialDescription: "",
             feeType: 1,
-            fromTheme: "",
-            fromType: 1,
-            problemTypeName: "",
-            problemTypeId: "",
-            priority: 1,
-            remark: "",
-            solutionId: "",
-            status: 1,
-            solutionsubject: "",
+            fromTheme: flag ? copyFo.fromTheme : "",
+            fromType: flag ? copyFo.fromType : 1,
+            problemTypeName: flag ? copyFo.problemTypeName : "",
+            problemTypeId: flag ? copyFo.problemTypeId : "",
+            priority: flag ? copyFo.priority : 1,
+            remark: flag ? copyFo.remark : "",
+            solutionId: flag ? copyFo.solutionId : "",
+            status: flag ? copyFo.status : 1,
+            solutionsubject: flag ? copyFo.solutionsubject : "",
           });
         }
-        this.ifFormPush = true;
-      } else {
-        this.ifFormPush = true;
-        for (let i = 0; i < this.formListStart.length; i++) {
-          this.formList.push({
-          manufacturerSerialNumber:"其他" ,
+        this.formList[0] = {
+                  manufacturerSerialNumber:this.formListStart[0].manufSN,
             editTrue: false,
-            internalSerialNumber: '',
-            materialCode:'',
-            materialDescription: '',
+            internalSerialNumber:  this.formListStart[0].internalSN,
+            materialCode:  this.formListStart[0].itemCode,
+            materialDescription:  this.formListStart[0].itemName,
             feeType: 1,
-            fromTheme: "",
-            fromType: 1,
-            problemTypeName: "",
-            problemTypeId: "",
-            priority: 1,
-            remark: "",
-            solutionId: "",
-            status: 1,
-            solutionsubject: "",
-          });
+            fromTheme: flag ? copyFo.fromTheme : "",
+            fromType: flag ? copyFo.fromType : 1,
+            problemTypeName: flag ? copyFo.problemTypeName : "",
+            problemTypeId: flag ? copyFo.problemTypeId : "",
+            priority: flag ? copyFo.priority : 1,
+            remark: flag ? copyFo.remark : "",
+            solutionId: flag ? copyFo.solutionId : "",
+            status: flag ? copyFo.status : 1,
+            solutionsubject: flag ? copyFo.solutionsubject : "",
         }
-      }
-      }else{
-    if (!this.formList[0].manufacturerSerialNumber) {
-        //判断从哪里新增的依据是第一个工单是否有id
-        this.formList[0].manufacturerSerialNumber = this.formListStart[0].manufSN;
-        this.formList[0].internalSerialNumber = this.formListStart[0].internalSN;
-        this.formList[0].materialCode = this.formListStart[0].itemCode;
-        this.formList[0].materialDescription = this.formListStart[0].itemName;
         const newList = this.formListStart.splice(1, this.formListStart.length);
         for (let i = 0; i < newList.length; i++) {
           this.formList.push({
@@ -1159,73 +1263,109 @@ export default {
             materialCode: newList[i].itemCode,
             materialDescription: newList[i].itemName,
             feeType: 1,
-            fromTheme: "",
-            fromType: 1,
-            problemTypeName: "",
-            problemTypeId: "",
-            priority: 1,
-            remark: "",
-            solutionId: "",
-            status: 1,
-            solutionsubject: "",
+            fromTheme: flag ? copyFo.fromTheme : "",
+            fromType: flag ? copyFo.fromType : 1,
+            problemTypeName: flag ? copyFo.problemTypeName : "",
+            problemTypeId: flag ? copyFo.problemTypeId : "",
+            priority: flag ? copyFo.priority : 1,
+            remark: flag ? copyFo.remark : "",
+            solutionId: flag ? copyFo.solutionId : "",
+            status: flag ? copyFo.status : 1,
+            solutionsubject: flag ? copyFo.solutionsubject : "",
           });
         }
+
         this.ifFormPush = true;
       } else {
         this.ifFormPush = true;
+        if (this.inputname) {
+          this.formListStart.push({
+            manufSN: "其他",
+            editTrue: false,
+            internalSerialNumber: "",
+            materialCode: "",
+            materialDescription: "",
+            feeType: 1,
+            fromTheme: flag ? copyFo.fromTheme : "",
+            fromType: flag ? copyFo.fromType : 1,
+            problemTypeName: flag ? copyFo.problemTypeName : "",
+            problemTypeId: flag ? copyFo.problemTypeId : "",
+            priority: flag ? copyFo.priority : 1,
+            remark: flag ? copyFo.remark : "",
+            solutionId: flag ? copyFo.solutionId : "",
+            status: flag ? copyFo.status : 1,
+            solutionsubject: flag ? copyFo.solutionsubject : "",
+          });
+        }
         for (let i = 0; i < this.formListStart.length; i++) {
           this.formList.push({
             manufacturerSerialNumber: this.formListStart[i].manufSN,
-            internalSerialNumber: this.formListStart[i].internalSN,
             editTrue: false,
+            internalSerialNumber: this.formListStart[i].internalSN,
             materialCode: this.formListStart[i].itemCode,
             materialDescription: this.formListStart[i].itemName,
             feeType: 1,
-            fromTheme: "",
-            fromType: 1,
-            problemTypeName: "",
-            problemTypeId: "",
-            priority: 1,
-            remark: "",
-            solutionId: "",
-            status: 1,
-            solutionsubject: "",
+            fromTheme: flag ? copyFo.fromTheme : "",
+            fromType: flag ? copyFo.fromType : 1,
+            problemTypeName: flag ? copyFo.problemTypeName : "",
+            problemTypeId: flag ? copyFo.problemTypeId : "",
+            priority: flag ? copyFo.priority : 1,
+            remark: flag ? copyFo.remark : "",
+            solutionId: flag ? copyFo.solutionId : "",
+            status: flag ? copyFo.status : 1,
+            solutionsubject: flag ? copyFo.solutionsubject : "",
           });
         }
       }
-      }
-  
       this.waitingAdd = false;
+          } else {
+           this.$message({
+                message: "请将必填项填写完整",
+                type: "error",
+              });       
+               return false;
+          }
+        });
+
+    },
+    pushForm() {
+      this.dia_copyForm = true;
+      //   if (!this.formListStart.length) { // 没有进行选择
+      //     this.dialogfSN = false;
+      //     return
+      //   } // 没有添加直接退出
+      this.dialogfSN = false;
+      this.waitingAdd = true;
     },
     handleIconClick() {
       this.dialogfSN = true;
     },
     addWorkOrder(result, index) {
-      const { itemForm, itemFormList } = this.$refs
-      const targetForm = index !== undefined ? itemFormList[index] : itemForm
-      targetForm.validate(valid => {
+      const { itemForm, itemFormList } = this.$refs;
+      const targetForm = index !== undefined ? itemFormList[index] : itemForm;
+      targetForm.validate((valid) => {
         if (valid) {
           callservesure
-          .addWorkOrder(result)
-          .then(() => {
-            this.$message({
-              message: "新增工单成功",
-              type: "success",
+            .addWorkOrder(result)
+            .then(() => {
+              this.$message({
+                message: "新增工单成功",
+                type: "success",
+              });
+            })
+            .catch((res) => {
+              this.$message({
+                message: `${res}`,
+                type: "error",
+              });
             });
-          })
-          .catch((res) => {
-            this.$message({
-              message: `${res}`,
-              type: "error",
-            });
-          });
         }
-      })
+      });
     },
     searchList() {
       this.listQuery.ManufSN = this.inputSearch;
       this.listQuery.ItemCode = this.inputItemCode;
-       this.listQuery.CardName =this.inputname
+      this.listQuery.CardName = this.inputname;
       this.getSerialNumberList();
       // if (!res) {
       //   this.filterSerialNumberList = this.SerialNumberList;
@@ -1347,8 +1487,8 @@ export default {
 
 <style lang="scss" scoped>
 .addClass1 {
-      ::v-deep .el-radio{
-    margin-left:0 !important;
+  ::v-deep .el-radio {
+    margin-left: 0 !important;
   }
   ::v-deep .el-dialog__header {
     .el-dialog__title {
@@ -1357,7 +1497,7 @@ export default {
     .el-dialog__close {
       color: white;
     }
-   
+
     background: lightslategrey;
   }
   ::v-deep .el-dialog__body {
@@ -1366,21 +1506,33 @@ export default {
   ::v-deep .el-button--mini {
     padding: 7px 8px;
   }
+  ::v-deep .el-input-group__append {
+    padding: 0 10px 0 20px;
+  }
 
-  //   ::v-deep .el-dialog__footer{
-  //   background: lightslategrey;
-  // }
 }
-// .editRodia{
- 
-// }
+  #demo-ruleForm{
+      ::v-deep .el-form {
+    padding:  5px;
+    // margin-bottom: 2px;
+  }
+  ::v-deep .el-form-item__label {
+    line-height: 30px;
+  }
+  ::v-deep .el-form-item__content {
+    line-height: 30px;
+  }
+  ::v-deep .el-form-item {
+    margin: 10px 0;
+  }
+  }
 .search-wrapper {
   display: flex;
   align-items: center;
 }
 .rowStyle {
-      ::v-deep .el-form-item {
-     margin: 3px 1px !important;
+  ::v-deep .el-form-item {
+    margin: 3px 1px !important;
   }
 }
 
