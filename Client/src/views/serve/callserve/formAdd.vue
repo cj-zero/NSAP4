@@ -718,15 +718,11 @@
         >
           <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
         </el-input>
-                <el-input
-          @input="searchList"
-          style="width:150px;margin:0 20px;display:inline-block;"
-          v-model="inputname"
-          placeholder="客户名称"
-        >
-          <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
-        </el-input>
-        <!-- <el-checkbox v-model="checked" :disalbed="isDisabled">其它</el-checkbox>         -->
+
+        <el-switch
+  v-model="inputname"
+  active-text="其他">
+</el-switch>
       </div>
       <fromfSN
         :SerialNumberList="filterSerialNumberList"
@@ -817,7 +813,7 @@ export default {
       inputSearch: "",
       inputItemCode: "", //物料编码
       activeNames: [], //活跃名称
-      inputname:'',//客户名称
+      inputname:false,//是否为其他
       options_sourse: [
         { value: "电话", label: "电话" },
         { value: "钉钉", label: "钉钉" },
@@ -1084,19 +1080,73 @@ export default {
       );
     },
     changeForm(res) {
+
       this.formListStart = res;
+      
 
       // console.log(res,this.formListStart);
     },
 
     pushForm() {
+
       if (!this.formListStart.length) { // 没有对列表进行选择
         this.dialogfSN = false;
         return
       } // 没有添加直接退出
       this.dialogfSN = false;
       this.waitingAdd = true;
-      if (!this.formList[0].manufacturerSerialNumber) {
+      if(this.inputname){
+    if (!this.formList[0].manufacturerSerialNumber) {
+        //判断从哪里新增的依据是第一个工单是否有id
+        this.formList[0].manufacturerSerialNumber = "其他";
+        this.formList[0].internalSerialNumber = '';
+        this.formList[0].materialCode = '';
+        this.formList[0].materialDescription ='';
+        const newList = this.formListStart.splice(1, this.formListStart.length);
+        for (let i = 0; i < newList.length; i++) {
+          this.formList.push({
+            manufacturerSerialNumber:"其他" ,
+            editTrue: false,
+            internalSerialNumber: '',
+            materialCode:'',
+            materialDescription: '',
+            feeType: 1,
+            fromTheme: "",
+            fromType: 1,
+            problemTypeName: "",
+            problemTypeId: "",
+            priority: 1,
+            remark: "",
+            solutionId: "",
+            status: 1,
+            solutionsubject: "",
+          });
+        }
+        this.ifFormPush = true;
+      } else {
+        this.ifFormPush = true;
+        for (let i = 0; i < this.formListStart.length; i++) {
+          this.formList.push({
+          manufacturerSerialNumber:"其他" ,
+            editTrue: false,
+            internalSerialNumber: '',
+            materialCode:'',
+            materialDescription: '',
+            feeType: 1,
+            fromTheme: "",
+            fromType: 1,
+            problemTypeName: "",
+            problemTypeId: "",
+            priority: 1,
+            remark: "",
+            solutionId: "",
+            status: 1,
+            solutionsubject: "",
+          });
+        }
+      }
+      }else{
+    if (!this.formList[0].manufacturerSerialNumber) {
         //判断从哪里新增的依据是第一个工单是否有id
         this.formList[0].manufacturerSerialNumber = this.formListStart[0].manufSN;
         this.formList[0].internalSerialNumber = this.formListStart[0].internalSN;
@@ -1145,6 +1195,8 @@ export default {
           });
         }
       }
+      }
+  
       this.waitingAdd = false;
     },
     handleIconClick() {
