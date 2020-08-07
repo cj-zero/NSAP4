@@ -41,6 +41,11 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string Area { get; set; }
 
+        /// <summary>
+        /// 详细地址
+        /// </summary>
+        public string Addr { get; set; }
+
         //todo:添加自己的请求字段
     }
 }
