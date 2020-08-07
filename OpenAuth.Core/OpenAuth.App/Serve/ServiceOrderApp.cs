@@ -477,6 +477,8 @@ namespace OpenAuth.App
             obj.ServiceWorkOrders.ForEach(s =>
             {
                 s.ServiceOrderId = obj.Id; s.SubmitDate = DateTime.Now; s.SubmitUserId = loginContext.User.Id; s.AppUserId = obj.AppUserId; s.Status = 1;
+                s.SubmitDate = DateTime.Now;
+                s.SubmitUserId = loginContext.User.Id;
                 if (s.FromType == 2)
                     s.Status = 7;
             });
