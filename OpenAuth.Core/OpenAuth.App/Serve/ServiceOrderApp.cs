@@ -380,6 +380,7 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceOrderSNs.Any(a => a.ManufSN.Contains(req.QryManufSN)))
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime <= req.QryCreateTimeTo)
                          .WhereIf(Convert.ToInt32(req.QryState) == 2, q => !q.ServiceWorkOrders.All(q => q.Status != 1))
+                         .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => s.Id == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key)))
             .OrderBy(r => r.CreateTime).Select(q => new
             {
                 q.Id,
@@ -741,7 +742,7 @@ namespace OpenAuth.App
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.ServiceWorkOrders.Any(a => a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
                 .Where(q => q.Status == 2)
                 ;
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r=>r.Name.Equals("呼叫中心")))
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
             {
                 query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id));
             }
@@ -1191,7 +1192,7 @@ namespace OpenAuth.App
                 Province = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Province,
                 City = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.City,
                 Area = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Area,
-                Distance = (req.Latitude == 0|| locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude ?? 0), Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
+                Distance = (req.Latitude == 0 || locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude ?? 0), Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
             }).ToList();
 
             userInfos = userInfos.OrderBy(o => o.Distance).ToList();

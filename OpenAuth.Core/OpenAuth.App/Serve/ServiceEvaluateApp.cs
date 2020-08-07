@@ -199,6 +199,7 @@ namespace OpenAuth.App
             return await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId).Select(s => s.CurrentUserId.Value).Distinct().ToListAsync();
         }
 
+
         public ServiceEvaluateApp(IUnitWork unitWork,
             RevelanceManagerApp app, IAuth auth) : base(unitWork, auth)
         {
