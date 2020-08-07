@@ -19,8 +19,8 @@ namespace OpenAuth.App
         public const string TOKEN_NAME = "X-Token";
 
 
-        public const string SYSTEM_USERNAME = "System";
-        public const string SYSTEM_USERPWD = "123456";
+        public const string SYSTEM_USERNAME = "NsapSystem";
+        public const string SYSTEM_USERPWD = "newareadmin";
 
         public const string DATAPRIVILEGE_LOGINUSER = "{loginUser}";  //数据权限配置中，当前登录用户的key
         public const string DATAPRIVILEGE_LOGINROLE = "{loginRole}";  //数据权限配置中，当前登录用户角色的key
