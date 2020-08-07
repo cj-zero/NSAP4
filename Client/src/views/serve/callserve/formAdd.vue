@@ -1185,7 +1185,7 @@ export default {
       return res.length ? res[0].subject : "请选择";
     },
     openDialog() {
-      console.log(this.formList, "formList", this.SerialNumberList);
+
       this.filterSerialNumberList = this.SerialNumberList.filter(
         // (item) => item.manufSN === res.manufSN
         (item) => {
@@ -1207,13 +1207,14 @@ export default {
       //       this.submitForm(1)
       // },
     async submitForm(formName) {
-      // let valid = await this.$refs[formName].validate()
-    
+      //  const validq = await this.$refs[formName].validate().then(res=>res)
+      // console.log(vaildq)
       //  console.log( this.$refs[formName].validate(),this.$refs[formName].validate((value)=> value))
             this.$refs[formName].validate((valid) => {
           if (valid) {
        let copyFo = this.copyForm;
        this.dia_copyForm = false 
+       this.copyForm.problemTypeName ="" 
       let flag = this.copyForm.fromTheme;
       if (!this.formList[0].manufacturerSerialNumber) {
         //判断从哪里新增的依据是第一个工单是否有id
@@ -1237,23 +1238,23 @@ export default {
             solutionsubject: flag ? copyFo.solutionsubject : "",
           });
         }
-        this.formList[0] = {
-                  manufacturerSerialNumber:this.formListStart[0].manufSN,
-            editTrue: false,
-            internalSerialNumber:  this.formListStart[0].internalSN,
-            materialCode:  this.formListStart[0].itemCode,
-            materialDescription:  this.formListStart[0].itemName,
-            feeType: 1,
-            fromTheme: flag ? copyFo.fromTheme : "",
-            fromType: flag ? copyFo.fromType : 1,
-            problemTypeName: flag ? copyFo.problemTypeName : "",
-            problemTypeId: flag ? copyFo.problemTypeId : "",
-            priority: flag ? copyFo.priority : 1,
-            remark: flag ? copyFo.remark : "",
-            solutionId: flag ? copyFo.solutionId : "",
-            status: flag ? copyFo.status : 1,
-            solutionsubject: flag ? copyFo.solutionsubject : "",
-        }
+            this.formList[0].manufacturerSerialNumber=this.formListStart[0].manufSN,
+            this.formList[0].internalSerialNumber= this.formListStart[0].internalSN,
+            this.formList[0].materialCode=  this.formListStart[0].itemCode,
+            this.formList[0].materialDescription=  this.formListStart[0].itemName,
+            this.formList[0].feeType= 1,
+                        this.formList[0].editTrue= true,
+
+            this.formList[0].fromTheme= flag ? copyFo.fromTheme : "",
+            this.formList[0].fromType= flag ? copyFo.fromType : 1,
+            this.formList[0].problemTypeName= flag ? copyFo.problemTypeName : "",
+            this.formList[0].problemTypeId= flag ? copyFo.problemTypeId : "",
+            this.formList[0].priority= flag ? copyFo.priority : 1,
+            this.formList[0].remark= flag ? copyFo.remark : "",
+            this.formList[0].solutionId=flag ? copyFo.solutionId : "",
+            this.formList[0].status= flag ? copyFo.status : 1,
+            this.formList[0].solutionsubject= flag ? copyFo.solutionsubject : ""
+        
         const newList = this.formListStart.splice(1, this.formListStart.length);
         for (let i = 0; i < newList.length; i++) {
           this.formList.push({
@@ -1277,6 +1278,7 @@ export default {
 
         this.ifFormPush = true;
       } else {
+        console.log(this.formList,this.formListname)
         this.ifFormPush = true;
         if (this.inputname) {
           this.formListStart.push({
@@ -1318,6 +1320,7 @@ export default {
         }
       }
       this.waitingAdd = false;
+      this.$refs[formName].resetFields();
           } else {
            this.$message({
                 message: "请将必填项填写完整",
