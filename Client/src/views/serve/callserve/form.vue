@@ -466,7 +466,7 @@ export default {
       listQuery: {
         page: 1,
         limit: 40,
-      },
+      }
     };
   },
   computed: {

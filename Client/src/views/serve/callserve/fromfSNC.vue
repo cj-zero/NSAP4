@@ -15,11 +15,10 @@
       style="width: 100%"
       row-key="manufSN"
     >
-      <el-table-column
-        type="selection" 
-        fixed width="55" 
-        :selectable="checkSelectable" 
-        :reserve-selection="true">
+      <el-table-column  width="50" fixed>
+        <template slot-scope="scope">
+          <el-radio v-model="radio" :label="scope.row.manufSN">{{&nbsp;}}</el-radio>
+        </template>
       </el-table-column>
       <el-table-column prop="manufSN" fixed align="center" label="制造商序列号" width="120"></el-table-column>
       <el-table-column prop="internalSN" label="内部序列号" align="center" width="120">
@@ -41,6 +40,7 @@
         </template>
       </el-table-column>
     </el-table>
+    <!-- {{ dialogChange }} -->
   </div>
 </template>
 
@@ -94,11 +94,12 @@ export default {
   },
   watch: {
     visible () {
-      console.log(this.ifEdit, 'ifEdit')
+      // if (val)
       let { manufacturerSerialNumber } = this.currentTarget
       manufacturerSerialNumber ? 
         (this.radio = manufacturerSerialNumber) : 
         (this.radio = '')
+      console.log(this.ifEdit, 'ifEdit', this.radio, this.currentTarget)
     }
   },
   computed: {
@@ -117,14 +118,14 @@ export default {
         this.formList.every(formItem => formItem.manufacturerSerialNumber !== row.manufSN) :
         true
     },
-    checkDisabled (row) {
-      let isSelectAble = this.checkIsSelectAble(row)
-      let isSingleClick = isSelectAble ? false : 
-            this.currentTarget.manufacturerSerialNumber === row.manufSN ? 
-            false : true
-      row.isSingleClick = !isSingleClick
-      return isSingleClick
-    },
+    // checkDisabled (row) {
+    //   let isSelectAble = this.checkIsSelectAble(row)
+    //   let isSingleClick = isSelectAble ? false : 
+    //         this.currentTarget.manufacturerSerialNumber === row.manufSN ? 
+    //         false : true
+    //   row.isSingleClick = !isSingleClick
+    //   return isSingleClick
+    // },
     checkSelectable (row) {
       let isSelectAble = this.checkIsSelectAble(row)
       row.isSelectAble = isSelectAble
@@ -142,13 +143,16 @@ export default {
       }
     },
     getCurrent (val) {
-      console.log(val, 'single')
-      if (this.ifEdit && val.isSingleClick) {
-        this.$refs.singleTable.clearSelection();
+      if (this.ifEdit) {
         this.radio = val.manufSN;
-        // this.$refs.singleTable.toggleRowSelection(val);
-        // console.log(val, 'val')
-        this.$emit('singleSelect', val)
+        if (!this.checkIsSelectAble(val)) {
+          if (val.manufSN !== this.currentTarget.manufacturerSerialNumber) {
+            this.$message.error('重复项不可选,请重新选择')
+            return
+          }
+        } else {
+          this.$emit('singleSelect', val)
+        } 
       }
     },
     tableRowClassName ({ row, rowIndex }) {
