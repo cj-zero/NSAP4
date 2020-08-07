@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
@@ -26,12 +27,12 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public Response Add(AddOrUpdaterealtimelocationReq req)
+        public async Task<Response> Add(AddOrUpdaterealtimelocationReq req)
         {
             var result = new Response();
             try
             {
-                _realTimeLocationApp.Add(req);
+                await _realTimeLocationApp.Add(req);
 
             }
             catch (Exception ex)

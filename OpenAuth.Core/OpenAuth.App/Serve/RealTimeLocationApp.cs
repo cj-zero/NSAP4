@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -13,6 +15,11 @@ namespace OpenAuth.App
     public class RealTimeLocationApp : BaseApp<RealTimeLocation>
     {
         private RevelanceManagerApp _revelanceApp;
+        public RealTimeLocationApp(IUnitWork unitWork, IRepository<RealTimeLocation> repository,
+    RevelanceManagerApp app, IAuth auth) : base(unitWork, repository, auth)
+        {
+            _revelanceApp = app;
+        }
 
         /// <summary>
         /// 加载列表
@@ -54,18 +61,22 @@ namespace OpenAuth.App
         /// 添加定位信息
         /// </summary>
         /// <param name="req"></param>
-        public void Add(AddOrUpdaterealtimelocationReq req)
+        public async Task Add(AddOrUpdaterealtimelocationReq req)
         {
             var obj = req.MapTo<RealTimeLocation>();
             obj.CreateTime = DateTime.Now;
             //todo:补充或调整自己需要的字段
-            Repository.Add(obj);
-        }
-
-        public RealTimeLocationApp(IUnitWork unitWork, IRepository<RealTimeLocation> repository,
-            RevelanceManagerApp app, IAuth auth) : base(unitWork, repository, auth)
-        {
-            _revelanceApp = app;
+            //判断是否已存在记录 若存在则做更新操作
+            var locations = await UnitWork.Find<RealTimeLocation>(r => r.AppUserId == req.AppUserId).FirstOrDefaultAsync();
+            if (locations != null)
+            {
+                obj.Id = locations.Id;
+                Repository.Update(obj);
+            }
+            else
+            {
+                Repository.Add(obj);
+            }
         }
     }
 }
