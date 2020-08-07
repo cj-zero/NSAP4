@@ -495,9 +495,10 @@ export default {
     },
     "form.addr":{
       handler(val){
- if (val) {
-this.getPosition(val)
-        }
+      if (val) {
+        console.log(this.form.addr)
+      this.getPosition(val)
+              }
       },
     },
     "form.address": {
@@ -557,7 +558,7 @@ this.getPosition(val)
     },
     getPosition(val){
           let that = this;
-          let url = `https://restapi.amap.com/v3/geocode/geo?key=c97ee5ef9156461c04b552da5b78039d&address=${val}`;
+          let url = `https://restapi.amap.com/v3/geocode/geo?key=c97ee5ef9156461c04b552da5b78039d&address=${encodeURIComponent(val)}`;
           http.get(url, function (err, result) {
             if (result.geocodes.length) {
               let res = result.geocodes[0];
