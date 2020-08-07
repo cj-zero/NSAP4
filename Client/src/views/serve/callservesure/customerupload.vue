@@ -115,6 +115,7 @@ props:['form'],
   },
     computed: {
     allArea() {
+
       return this.form.province + this.form.city + this.form.area;
     },
   },

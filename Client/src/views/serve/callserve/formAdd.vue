@@ -719,7 +719,6 @@
     </el-dialog>
     <el-dialog title="你可以批量更改下列信息" 
 
-
     :visible.sync="dia_copyForm" width="800px">
       <el-form
         :model="copyForm"
@@ -1209,6 +1208,12 @@ export default {
             this.waitingAdd = false;
             this.submitForm(formName,1)
       },
+      // resetForm1(){
+      //      this.$refs[formName].resetFields();
+      //         this.dia_copyForm = false 
+      //       this.waitingAdd = false;
+      //        this.submitForm(formName,1)
+      // },
     async submitForm(formName,b) {
        let validq = false
         if(!b){

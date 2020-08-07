@@ -496,9 +496,9 @@ export default {
     "form.addr":{
       handler(val){
       if (val) {
-  
-             let addre = this.form.province + this.form.city + this.form.area +this.form.addr    
-this.getPosition(addre)
+         let addre = this.form.province + this.form.city + this.form.area +this.form.addr 
+         console.log(this.form.province , this.form.city,this.form.area ,this.form.addr)   
+         this.getPosition(addre)
         }
               }
     },
@@ -506,7 +506,6 @@ this.getPosition(addre)
       handler(val) {
         if (!this.form.addr) {
            this.getPosition(val)
-
         }
       },
     },
@@ -564,10 +563,11 @@ this.getPosition(addre)
           http.get(url, function (err, result) {
             if (result.geocodes.length) {
               let res = result.geocodes[0];
+              
               that.form.province = res.province;
               that.form.city = res.city;
               that.form.area = res.district;
-              that.form.addr = res.formatted_address;
+              // that.form.addr = res.formatted_address;
               that.form.latitude = res.location.split(",")[1];
               that.form.longitude = res.location.split(",")[0];
             } else {
@@ -598,14 +598,16 @@ this.getPosition(addre)
       this.allAddress = res;
     },
     chooseAddre() {
-      this.form.city = this.allAddress.regeocode.addressComponent.city;
-      this.form.province = this.allAddress.regeocode.addressComponent.province;
-      this.form.area = this.allAddress.regeocode.addressComponent.district;
-      this.form.addr = this.allAddress.address;
+      let getArr  = this.allAddress.regeocode.addressComponent
+      let str = getArr.province +getArr.city+getArr.district
+      this.form.city = getArr.city;
+      this.form.province = getArr.province;
+      this.form.area = getArr.district;
+      this.form.addr = this.allAddress.address.replace(getArr.province,"").replace(getArr.city,"").replace(getArr.district,"");
+      console.log(str,this.form.addr)
       this.form.longitude = this.allAddress.position.lng;
       this.form.latitude = this.allAddress.position.lat;
       this.drawerMap = false;
-      console.log(this.form);
     },
     async setForm(val) {
       if (val) {
