@@ -496,15 +496,17 @@ export default {
     "form.addr":{
       handler(val){
       if (val) {
-        console.log(this.form.addr)
-      this.getPosition(val)
+  
+             let addre = this.form.province + this.form.city + this.form.area +this.form.addr    
+this.getPosition(addre)
+        }
               }
-      },
     },
     "form.address": {
       handler(val) {
         if (!this.form.addr) {
-this.getPosition(val)
+           this.getPosition(val)
+
         }
       },
     },
