@@ -46,8 +46,7 @@
         <el-form-item label="创建日期" >
           <el-col :span="11">
             <el-date-picker
-            
-           format="yyyy-MM-dd"   
+              format="yyyy-MM-dd"   
               value-format="yyyy-MM-dd"
               placeholder="选择开始日期"
               v-model="listQuery.QryCreateTimeFrom"
@@ -57,7 +56,7 @@
           <el-col class="line" :span="2">至</el-col>
           <el-col :span="11">
             <el-date-picker
-               format="yyyy-MM-dd"   
+              format="yyyy-MM-dd"   
               value-format="yyyy-MM-dd"
               placeholder="选择结束时间"
               v-model="listQuery.QryCreateTimeTo"
