@@ -511,7 +511,6 @@ export default {
               that.form.latitude = res.location.split(",")[1];
               that.form.longitude = res.location.split(",")[0];
             } else {
-              console.log(val);
               if(that.isCreate||that.ifEdit){
               that.$message({
                 message: "未识别到地址，请手动选择",
