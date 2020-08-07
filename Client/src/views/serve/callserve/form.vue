@@ -272,6 +272,8 @@
       <el-dialog
         title="选择地址"
         width="1000px"
+        :modal-append-to-body='false'
+:append-to-body="true"
         :destroy-on-close="true"
         :visible.sync="drawerMap"
         direction="ttb"
@@ -289,6 +291,8 @@
         class="addClass1"
         width="90%"
         @open="openDialog"
+        :modal-append-to-body='false'
+:append-to-body="true"
         :destroy-on-close="true"
         :visible.sync="dialogPartner"
       >
@@ -557,16 +561,32 @@ export default {
       this.previewVisible = true;
       this.previewUrl = item;
     },
-    getPosition(val){
+        chooseAddre() {  //地图选择赋值地址
+      let getArr  = this.allAddress.regeocode.addressComponent
+      let str = getArr.province +getArr.city+getArr.district
+      this.form.city = getArr.city;
+      this.form.province = getArr.province;
+      this.form.area = getArr.district;
+
+      this.form.addr = this.allAddress.address.replace(getArr.province,"").replace(getArr.city,"").replace(getArr.district,"");
+      console.log(str,this.form.addr)
+      this.form.longitude = this.allAddress.position.lng;
+      this.form.latitude = this.allAddress.position.lat;
+      this.drawerMap = false;
+    },
+    getPosition(val){  //从接口获取地址
           let that = this;
           let url = `https://restapi.amap.com/v3/geocode/geo?key=c97ee5ef9156461c04b552da5b78039d&address=${encodeURIComponent(val)}`;
           http.get(url, function (err, result) {
             if (result.geocodes.length) {
               let res = result.geocodes[0];
-              
+      
               that.form.province = res.province;
               that.form.city = res.city;
               that.form.area = res.district;
+                      if(res.formatted_address){
+                 that.form.addr = res.formatted_address.replace(res.province,"").replace(res.city,"").replace(res.district,"");
+              }
               // that.form.addr = res.formatted_address;
               that.form.latitude = res.location.split(",")[1];
               that.form.longitude = res.location.split(",")[0];
@@ -597,18 +617,7 @@ export default {
     dragmap(res) {
       this.allAddress = res;
     },
-    chooseAddre() {
-      let getArr  = this.allAddress.regeocode.addressComponent
-      let str = getArr.province +getArr.city+getArr.district
-      this.form.city = getArr.city;
-      this.form.province = getArr.province;
-      this.form.area = getArr.district;
-      this.form.addr = this.allAddress.address.replace(getArr.province,"").replace(getArr.city,"").replace(getArr.district,"");
-      console.log(str,this.form.addr)
-      this.form.longitude = this.allAddress.position.lng;
-      this.form.latitude = this.allAddress.position.lat;
-      this.drawerMap = false;
-    },
+
     async setForm(val) {
       if (val) {
         val.serviceOrderPictures = await this.getServeImg(val.id);
