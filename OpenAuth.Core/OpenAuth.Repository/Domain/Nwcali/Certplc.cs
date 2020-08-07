@@ -45,5 +45,14 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("创建时间")]
         public System.DateTime CreateTime { get; set; }
+
+        /// <summary>
+        /// 校准日期
+        /// </summary>
+        public DateTime? CalibrationDate { get; set; }
+        /// <summary>
+        /// 过期日期
+        /// </summary>
+        public DateTime? ExpirationDate { get; set; }
     }
 }
