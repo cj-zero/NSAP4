@@ -38,7 +38,6 @@
 <script>
 export default {
   props: ["SerialNumberList", "serLoading"],
-
   data() {
     return {
       currentRow: [], //选择项
@@ -77,7 +76,9 @@ export default {
     //   // this.getList();
     // },
     handleSelectionChange(val) {
-      console.log(val, 'column')
+      console.log(val)
+      
+        // this.$refs.singleTable.toggleRowSelection(val)
       this.$emit("change-Form", val);
     },
   },

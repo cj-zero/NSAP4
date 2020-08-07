@@ -4,7 +4,8 @@
       <keep-alive :include="keepAliveDatas" v-if="keepAliveDatas.length > 0">
         <router-view :key="key"></router-view>
       </keep-alive>
-      <router-view :key="key" v-else></router-view>
+  
+        
     </transition>
   </section>
 </template>
