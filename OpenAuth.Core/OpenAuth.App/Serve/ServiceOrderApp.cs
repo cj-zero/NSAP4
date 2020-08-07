@@ -29,6 +29,7 @@ using Microsoft.Extensions.Options;
 using SAP.API;
 using Autofac.Core;
 using Npoi.Mapper;
+using DotNetCore.CAP;
 
 namespace OpenAuth.App
 {
@@ -39,9 +40,10 @@ namespace OpenAuth.App
         private readonly BusinessPartnerApp _businessPartnerApp;
         private readonly AppServiceOrderLogApp _appServiceOrderLogApp;
         private IOptions<AppSetting> _appConfiguration;
+        private ICapPublisher _capBus;
         private HttpHelper _helper;
         public ServiceOrderApp(IUnitWork unitWork,
-            RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration) : base(unitWork, auth)
+            RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus) : base(unitWork, auth)
         {
             _appConfiguration = appConfiguration;
             _revelanceApp = app;
@@ -49,6 +51,7 @@ namespace OpenAuth.App
             _businessPartnerApp = businessPartnerApp;
             _appServiceOrderLogApp = appServiceOrderLogApp;
             _helper = new HttpHelper(_appConfiguration.Value.AppPushMsgUrl);
+            _capBus = capBus;
         }
         /// <summary>
         /// 加载列表

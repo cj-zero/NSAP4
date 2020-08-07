@@ -15,6 +15,7 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using Neware.Cap.DependencyInjection;
 using Newtonsoft.Json;
 using OpenAuth.App;
 using OpenAuth.App.HostedService;
@@ -167,6 +168,9 @@ namespace OpenAuth.WebApi
 
             //SAP
             //services.AddSap();
+
+            ///CAP
+            services.AddNewareCAP(Configuration);
 
         }
         
