@@ -1072,9 +1072,6 @@ export default {
         this.listQuery.CardCode = val;
         getSerialNumber(this.listQuery)
           .then((res) => {
-            // this.SerialNumberList = res.data;
-            // this.filterSerialNumberList = this.SerialNumberList;
-            // this.SerialCount = res.count;
             this.SerialNumberList = res.data;
             this.filterSerialNumberList = this.SerialNumberList.filter(
               // (item) => item.manufSN === res.manufSN

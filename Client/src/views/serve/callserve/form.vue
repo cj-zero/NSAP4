@@ -497,7 +497,7 @@ export default {
         }
       },
     },
-    "form.addr":{
+    "form.addr":{   //现地址详细地址
       handler(val){
       if (val) {
          let addre = this.form.province + this.form.city + this.form.area +this.form.addr 
@@ -506,7 +506,7 @@ export default {
         }
               }
     },
-    "form.address": {
+    "form.address": {   //地图标识地址
       handler(val) {
         if (!this.form.addr) {
            this.getPosition(val)
@@ -584,10 +584,7 @@ export default {
               that.form.province = res.province;
               that.form.city = res.city;
               that.form.area = res.district;
-                      if(res.formatted_address){
-                 that.form.addr = res.formatted_address.replace(res.province,"").replace(res.city,"").replace(res.district,"");
-              }
-              // that.form.addr = res.formatted_address;
+                 that.form.addr = val.replace(res.province,"").replace(res.city,"").replace(res.district,"");
               that.form.latitude = res.location.split(",")[1];
               that.form.longitude = res.location.split(",")[0];
             } else {
