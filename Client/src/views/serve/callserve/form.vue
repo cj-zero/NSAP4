@@ -189,7 +189,7 @@
                 <el-form-item label="现地址">
                   <!-- <el-input size="mini" v-model="form.city"></el-input> -->
                   <p
-                    style="border: 1px solid silver; border-radius:5px;height:30px;margin:0;padding-left:10px;font-size:12px;"
+                    style="overflow-x:hidden;border: 1px solid silver; border-radius:5px;height:30px;margin:0;padding-left:10px;font-size:12px;"
                   >{{allArea}}</p>
                 </el-form-item>
               </el-col>
@@ -362,8 +362,9 @@ export default {
     "isCreate",
     "formName",
     "ifEdit", //是否是编辑页面
-    "customer",
+    "customer",//待确认页面app传入的数据
     "sure",
+    "ifFirstLook" //是否是待确认页面
   ],
   //  ##isCreate是否可以编辑  ##look只能看   ##create新增页  ##customer获取服务端对比的信息
   //customer确认订单时传递的信息
@@ -501,11 +502,17 @@ export default {
     "form.addr":{   //现地址详细地址
       handler(val){
       if (val) {
-        if(this.customer.addr != 'val'){
+          if(!this.ifFirstLook){
+                  this.needPos = true;
+
+          }else{
+               if(this.customer.addr != val){
           this.needPos = true;
         }else{
           this.needPos = false;
         }
+          }
+
          let addre = this.form.province + this.form.city + this.form.area +this.form.addr 
          if(this.needPos)
           this.getPosition(addre)
@@ -513,16 +520,22 @@ export default {
               }
     },
     "form.address": {   //地图标识地址
+   
       handler(val,oldVal) {
-          if(oldVal){
+          if (val) {
+        if(this.ifFirstLook){
+                    if(oldVal){
             this.needPos = true;
           }else{
             this.needPos = false;
           }
-
+        }else{
+           this.needPos = true;
+        }
           if(this.needPos)
             this.getPosition(val)
-      },
+      }
+     },
       immediate:true
     },
     "form.customerId": {
@@ -586,7 +599,6 @@ destroyed() {
       this.form.city = getArr.city;
       this.form.province = getArr.province;
       this.form.area = getArr.district;
-
       this.form.addr = this.allAddress.address.replace(getArr.province,"").replace(getArr.city,"").replace(getArr.district,"");
       this.form.longitude = this.allAddress.position.lng;
       this.form.latitude = this.allAddress.position.lat;
