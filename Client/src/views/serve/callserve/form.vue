@@ -501,16 +501,15 @@ export default {
       handler(val){
       if (val) {
          let addre = this.form.province + this.form.city + this.form.area +this.form.addr 
-         console.log(this.form.province , this.form.city,this.form.area ,this.form.addr)   
          this.getPosition(addre)
         }
               }
     },
     "form.address": {   //地图标识地址
       handler(val) {
-        if (!this.form.addr) {
+        // if (!this.form.addr) {
            this.getPosition(val)
-        }
+        // }
       },
     },
     "form.customerId": {
@@ -549,7 +548,10 @@ export default {
   },
   mounted() {
     this.getPartnerList();
+  if(this.customer){
     this.setForm(this.customer);
+
+  }
     this.isCreateAdd = this.isCreate;
   },
   methods: {
@@ -609,7 +611,6 @@ export default {
       //获取图片列表
 
       this.form.pictures = val;
-      console.log(this.form);
     },
     dragmap(res) {
       this.allAddress = res;
@@ -620,6 +621,11 @@ export default {
         val.serviceOrderPictures = await this.getServeImg(val.id);
       }
       Object.assign(this.form, val);
+      let that =  this
+       let addre = val.province + val.city + val.area +val.addr 
+      setTimeout(function(){
+       that.getPosition(addre)
+      },800)
       this.form.recepUserName = this.$store.state.user.name;
     },
     async getServeImg(val) {

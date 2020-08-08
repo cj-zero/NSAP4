@@ -155,6 +155,7 @@
               labelwidth="100px"
               :isCreate="true"
               :sure="sure"
+              :ifFirstLook="true"
               :customer="customer"
               @close-Dia="closeDia"
             ></zxform>
