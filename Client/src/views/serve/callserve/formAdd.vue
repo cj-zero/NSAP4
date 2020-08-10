@@ -379,7 +379,7 @@
             }"
                 >
                   <el-input
-                    @focus="handleIconClick(item.manufacturerSerialNumber, index + 1)"
+                    @focus="handleIconClick(item, index + 1)"
                     v-model="item.manufacturerSerialNumber"
                     readonly
                     size="small"
@@ -388,7 +388,7 @@
                       size="mini"
                       slot="append"
                       icon="el-icon-search"
-                      @click="handleIconClick(item.manufacturerSerialNumber, index + 1)"
+                      @click="handleIconClick(item, index + 1)"
                     ></el-button>
                   </el-input>
 
@@ -1110,6 +1110,7 @@ export default {
   inject: ["form"],
   methods: {
     toggleDisabledClick (val) {
+      console.log(val, 'disabled')
       this.isDisalbed = val
     },
     getSerialNumberList() {

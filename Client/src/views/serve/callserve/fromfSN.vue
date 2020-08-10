@@ -128,15 +128,15 @@ export default {
         this.$refs.singleTable.toggleRowSelection(this.SerialNumberList[index])
       }
     },
-    getCurrent (val) {
-      console.log(val, 'single')
-      if (this.ifEdit && val.isSingleClick) {
-        this.$refs.singleTable.clearSelection();
-        this.radio = val.manufSN;
-        // this.$refs.singleTable.toggleRowSelection(val);
-        // console.log(val, 'val')
-        this.$emit('singleSelect', val)
-      }
+    getCurrent () {
+      // console.log(val, 'single')
+      // if (this.ifEdit && val.isSingleClick) {
+      //   this.$refs.singleTable.clearSelection();
+      //   this.radio = val.manufSN;
+      //   // this.$refs.singleTable.toggleRowSelection(val);
+      //   // console.log(val, 'val')
+      //   this.$emit('singleSelect', val)
+      // }
     },
     tableRowClassName ({ row, rowIndex }) {
       // 把每一行的index加到row中
