@@ -615,15 +615,23 @@ export default {
         // });
       });
     },
-    closeDia() {
+    closeDia(a) {
+            if (a === 1) {
+        this.getList();
+      }
+      if(a=='N'){
+         this.loadingBtn = false
+         return 
+      }
       this.loadingBtn = false;
       this.dialogFormVisible = false;
+
     },
     updateData() {
       // 更新提交
       // this.loadingBtn = true;
       // setTimeout(function() {
-      //   this.loadingBtn = false;
+         this.loadingBtn = false;
       // }, 5000);
       this.sure = this.sure + 1; //向form表单发送提交通知
       // this.dialogFormVisible =false
