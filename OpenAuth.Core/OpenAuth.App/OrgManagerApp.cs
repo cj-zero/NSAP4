@@ -3,12 +3,13 @@ using System.Linq;
 using Infrastructure;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
+using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 
 namespace OpenAuth.App
 {
-    public class OrgManagerApp : BaseApp<OpenAuth.Repository.Domain.Org>
+    public class OrgManagerApp : BaseTreeApp<OpenAuth.Repository.Domain.Org>
     {
         private RevelanceManagerApp _revelanceApp;
         /// <summary>
@@ -24,7 +25,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            ChangeModuleCascade(org);
+            CaculateCascade(org);
 
             Repository.Add(org);
             
@@ -45,25 +46,8 @@ namespace OpenAuth.App
 
         public string Update(OpenAuth.Repository.Domain.Org org)
         {
-            ChangeModuleCascade(org);
 
-            //获取旧的的CascadeId
-            var cascadeId = Repository.FindSingle(o => o.Id == org.Id).CascadeId;
-            //根据CascadeId查询子部门
-            var orgs = Repository.Find(u => u.CascadeId.Contains(cascadeId) && u.Id != org.Id)
-            .OrderBy(u => u.CascadeId).ToList();
-
-            //更新操作
-            UnitWork.Update(org);
-
-            //更新子部门的CascadeId
-            foreach (var a in orgs)
-            {
-                ChangeModuleCascade(a);
-                UnitWork.Update(a);
-            }
-
-            UnitWork.Save();
+            UpdateTreeObj(org);
 
             return org.Id;
         }
@@ -71,13 +55,17 @@ namespace OpenAuth.App
         /// <summary>
         /// 删除指定ID的部门及其所有子部门
         /// </summary>
-        public void DelOrg(string[] ids)
+        public void DelOrgCascade(string[] ids)
         {
-            var delOrg = Repository.Find(u => ids.Contains(u.Id)).ToList();
-            foreach (var org in delOrg)
+            var delOrgCascadeIds = UnitWork.Find<Repository.Domain.Org>(u => ids.Contains(u.Id)).Select(u => u.CascadeId).ToArray();
+            var delOrgIds = new List<string>();
+            foreach (var cascadeId in delOrgCascadeIds)
             {
-                Repository.Delete(u => u.CascadeId.Contains(org.CascadeId));
+                delOrgIds.AddRange(UnitWork.Find<Repository.Domain.Org>(u => u.CascadeId.Contains(cascadeId)).Select(u => u.Id).ToArray());
             }
+            UnitWork.Delete<Relevance>(u => u.Key == Define.USERORG && delOrgIds.Contains(u.SecondId));
+            UnitWork.Delete<Repository.Domain.Org>(u => delOrgIds.Contains(u.Id));
+            UnitWork.Save();
         }
 
 
@@ -94,6 +82,20 @@ namespace OpenAuth.App
 
             if (!ids.Any()) return new List<OpenAuth.Repository.Domain.Org>();
             return UnitWork.Find<OpenAuth.Repository.Domain.Org>(u => ids.Contains(u.Id)).ToList();
+        }
+
+        /// <summary>
+        /// 按名称模糊查询部门 by zlg 2020.7.31
+        /// </summary>
+        /// <param name="name">部门名称</param>
+        /// <returns></returns>
+        public TableData GetListOrg(string name)
+        {
+            var result = new TableData();
+            var objs = UnitWork.Find<OpenAuth.Repository.Domain.Org>(null);
+            objs = objs.Where(u => u.Name.Contains(name));
+            result.Data = objs.Select(u => new { u.Name, u.Id }).ToList();
+            return result;
         }
 
         public OrgManagerApp(IUnitWork unitWork, IRepository<OpenAuth.Repository.Domain.Org> repository,IAuth auth, 

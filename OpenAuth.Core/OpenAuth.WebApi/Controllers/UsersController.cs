@@ -156,6 +156,15 @@ namespace OpenAuth.WebApi.Controllers
             await _app.BindAppUser(request);
             return new Response();
         }
+        /// <summary>
+        /// 加载指定部门的用户
+        /// 不包含下级部门的用户
+        /// </summary>
+        [HttpGet]
+        public TableData LoadByOrg([FromQuery] QueryUserListByOrgReq request)
+        {
+            return _app.LoadByOrg(request);
+        }
 
         public UsersController(UserManagerApp app) 
         {

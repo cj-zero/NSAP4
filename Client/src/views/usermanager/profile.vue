@@ -84,12 +84,8 @@
   } from '@/utils'
   import * as login from '@/api/login'
   import * as users from '@/api/users'
-  // import Treeselect from '@riophae/vue-treeselect'
   import '@riophae/vue-treeselect/dist/vue-treeselect.css'
   import waves from '@/directive/waves' // 水波纹指令
-  // import Sticky from '@/components/Sticky'
-  // import permissionBtn from '@/components/PermissionBtn'
-  // import Pagination from '@/components/Pagination'
   import {
     mapGetters
   } from 'vuex'
@@ -97,12 +93,7 @@
 
   export default {
     name: 'profile',
-    components: {
-      // Sticky,
-      // permissionBtn,
-      // Treeselect,
-      // Pagination
-    },
+    components: {},
     directives: {
       waves
     },
@@ -194,7 +185,6 @@
         login.getOrgs().then(response => {
           _this.orgs = response.result.map(function(item) {
             var name = item.name
-            // var id = _this.$store.getters.defaultorgid
             if (_this.defaultorgid === item.id) {
               name = name + '✅'
             }
@@ -214,14 +204,6 @@
 </script>
 
 <style scoped>
-  .text {
-    font-size: 14px;
-  }
-
-  .item {
-    margin-bottom: 18px;
-  }
-
   .clearfix:before,
   .clearfix:after {
     display: table;

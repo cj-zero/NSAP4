@@ -43,5 +43,10 @@
         /// App API接口地址
         /// </summary>
         public string AppPushMsgUrl { get; set; }
+
+        /// <summary>
+        /// App版本号
+        /// </summary>
+        public string AppVersion { get; set; }
     }
 }

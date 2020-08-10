@@ -7,10 +7,12 @@
           <el-form
             :model="form"
             :rules="rules"
-            :ref="form"
+            ref="form"
             class="rowStyle1"
             :disabled="!isCreate"
             :label-width="labelwidth"
+            :inline-message="true"
+            :show-message="false"
           >
             <div
               style="font-size:22px;color:#67C23A;text-align:center;height:40px;line-height:35px;border-bottom:1px solid silver;margin-bottom:10px;"
@@ -132,7 +134,7 @@
               <el-col :span="8">
                 <el-form-item label="创建时间" label-width="95px" prop="createTime">
                   <el-date-picker
-                  @focus='setThisTime'
+                    @focus="setThisTime"
                     :clearable="false"
                     size="mini"
                     v-model="form.createTime"
@@ -176,6 +178,7 @@
               <el-col :span="16">
                 <el-input
                   size="mini"
+                  disabled
                   style="height:30px;line-height:30px;padding:2px 0 0 0;"
                   v-model="form.address"
                 ></el-input>
@@ -184,7 +187,10 @@
             <el-row :gutter="10">
               <el-col :span="8">
                 <el-form-item label="现地址">
-                  <el-input size="mini" v-model="form.city"></el-input>
+                  <!-- <el-input size="mini" v-model="form.city"></el-input> -->
+                  <p
+                    style="overflow-x:hidden;border: 1px solid silver; border-radius:5px;height:30px;margin:0;padding-left:10px;font-size:12px;"
+                  >{{allArea}}</p>
                 </el-form-item>
               </el-col>
               <el-col :span="16" style="height:30px;line-height:30px;padding:2px 0 0 0;">
@@ -206,7 +212,7 @@
                 <div style="font-size:12px;color:#606266;width:100px;">上传图片</div>
               </el-col>
               <el-col :span="18">
-                <upLoadImage setImage="100px" @get-ImgList="getImgList"></upLoadImage>
+                <upLoadImage :setImage="setImage" @get-ImgList="getImgList"></upLoadImage>
               </el-col>
               <!-- <el-col :span="2" style="line-height:40px;">  暂时取消
                 <el-button
@@ -234,7 +240,7 @@
                   <el-image
                     style="width:60px;height:50px;display:inline-block;margin:0 10px;"
                     v-for="url in form.serviceOrderPictures"
-                     @click="handlePreviewFile(`${baseURL}/files/Download/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`)"
+                    @click="handlePreviewFile(`${baseURL}/files/Download/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`)"
                     :key="url.id"
                     :src="`${baseURL}/files/Download/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`"
                     lazy
@@ -266,6 +272,8 @@
       <el-dialog
         title="选择地址"
         width="1000px"
+        :modal-append-to-body='false'
+:append-to-body="true"
         :destroy-on-close="true"
         :visible.sync="drawerMap"
         direction="ttb"
@@ -283,6 +291,8 @@
         class="addClass1"
         width="90%"
         @open="openDialog"
+        :modal-append-to-body='false'
+:append-to-body="true"
         :destroy-on-close="true"
         :visible.sync="dialogPartner"
       >
@@ -309,7 +319,7 @@
         />
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialogPartner = false">取 消</el-button>
-          <el-button type="primary" @click="sureVal">确 定</el-button>
+          <el-button type="primary" @click="sureVal" :disabled="disableBtn">确 定</el-button>
         </span>
       </el-dialog>
       <Model
@@ -330,11 +340,14 @@
 
 <script>
 import { getPartner } from "@/api/callserve";
+import http from "@/api/serve/whiteHttp";
 import * as callservesure from "@/api/serve/callservesure";
 import Pagination from "@/components/Pagination";
 import zmap from "@/components/amap";
 import upLoadImage from "@/components/upLoadFile";
 import Model from "@/components/Formcreated/components/Model";
+import { timeToFormat } from "@/utils";
+import { isMobile, isPhone } from "@/utils/validate";
 
 import formPartner from "./formPartner";
 import formAdd from "./formAdd";
@@ -348,20 +361,25 @@ export default {
     "labelwidth",
     "isCreate",
     "formName",
-    "ifEdit",//是否是编辑页面
-    "customer",
+    "ifEdit", //是否是编辑页面
+    "customer",//待确认页面app传入的数据
     "sure",
+    "ifFirstLook" //是否是待确认页面
   ],
   //  ##isCreate是否可以编辑  ##look只能看   ##create新增页  ##customer获取服务端对比的信息
   //customer确认订单时传递的信息
   data() {
     var checkTelF = (rule, value, callback) => {
+      if (!value) {
+        return callback();
+      }
       setTimeout(() => {
-        let reg = RegExp(/^[\d-]+$/);
-        if (reg.test(value)) {
+        // let reg = RegExp(/^[\d-]+$/);
+        if (isMobile(value) || isPhone(value)) {
           callback();
         } else {
-          callback(new Error('电话号码只能包括数字值或"-"'));
+          // callback(new Error('请输入正确的格式'));
+          callback(this.$message.error("请输入正确的电话格式"));
         }
       }, 500);
     };
@@ -372,10 +390,7 @@ export default {
 
       partnerList: [],
       previewVisible: false, //图片预览的dia
-      setImage: {
-        width: "100px",
-        height: "100px",
-      },
+      setImage: '50px',
       drawerMap: false, //地图控件
       filterPartnerList: [],
       inputSearch: "",
@@ -389,7 +404,7 @@ export default {
       activeName: 1,
       // dataModel: this.models[this.formData.model],
       dataModel: null,
-      parentLoad:false,
+      parentLoad: false,
       callSourse: [
         { label: "电话", value: 1 },
         { label: "钉钉", value: 2 },
@@ -418,11 +433,11 @@ export default {
         addressDesignator: "", //地址标识
         recepUserId: "", //接单人用户ID
         address: "", //详细地址
-        createTime: "",
+        createTime: timeToFormat("yyyy-MM-dd HH-mm-ss"),
         id: "", //服务单id
-        province: "深圳", //省
+        province: "", //省
         city: "", //市
-        area: "",
+        area: "", //区
         addr: "", //地区
         longitude: "", //number经度
         latitude: "", //	number纬度
@@ -430,7 +445,8 @@ export default {
         pictures: [], //
         serviceWorkOrders: [],
       },
-      newDate:[],
+      disableBtn: false,
+      newDate: [],
       isCreateAdd: true, //add页面的编辑状态
       allAddress: {}, //选择地图的合集
       propForm: [],
@@ -454,9 +470,15 @@ export default {
       },
       listQuery: {
         page: 1,
-        limit: 40,
+        limit: 40
       },
+      needPos:false
     };
+  },
+  computed: {
+    allArea() {
+      return this.form.province + this.form.city + this.form.area;
+    },
   },
   watch: {
     ifEdit: {
@@ -477,11 +499,48 @@ export default {
         }
       },
     },
+    "form.addr":{   //现地址详细地址
+      handler(val){
+      if (val) {
+          if(!this.ifFirstLook){
+                  this.needPos = true;
 
+          }else{
+               if(this.customer.addr != val){
+          this.needPos = true;
+        }else{
+          this.needPos = false;
+        }
+          }
+
+         let addre = this.form.province + this.form.city + this.form.area +this.form.addr 
+         if(this.needPos)
+          this.getPosition(addre)
+        }
+              }
+    },
+    "form.address": {   //地图标识地址
+   
+      handler(val,oldVal) {
+          if (val) {
+        if(this.ifFirstLook){
+                    if(oldVal){
+            this.needPos = true;
+          }else{
+            this.needPos = false;
+          }
+        }else{
+           this.needPos = true;
+        }
+          if(this.needPos)
+            this.getPosition(val)
+      }
+     },
+      immediate:true
+    },
     "form.customerId": {
       handler(val) {
-        this.getPartnerInfo(val);
-      
+          this.getPartnerInfo(val);
       },
     },
     refValue: {
@@ -515,70 +574,139 @@ export default {
   },
   mounted() {
     this.getPartnerList();
+  if(this.customer){
     this.setForm(this.customer);
+
+  }
     this.isCreateAdd = this.isCreate;
   },
+  
+destroyed() {
+  window.removeEventListener('resize', this.resizeWin)
+},
   methods: {
-        setThisTime(){
-          console.log(11)
-    
+    setThisTime() {
+      console.log(11);
     },
     handlePreviewFile(item) {
       //预览图片
       this.previewVisible = true;
       this.previewUrl = item;
     },
-    getImgList(val) {
-      //获取图片列表
-
-      this.form.pictures = val;
-      console.log(this.form);
-    },
-    dragmap(res) {
-      this.allAddress = res;
-    },
-    chooseAddre() {
-      this.form.city = this.allAddress.regeocode.addressComponent.city;
-      this.form.addr = this.allAddress.address;
+        chooseAddre() {  //地图选择赋值地址
+      let getArr  = this.allAddress.regeocode.addressComponent
+      // let str = getArr.province +getArr.city+getArr.district
+      this.form.city = getArr.city;
+      this.form.province = getArr.province;
+      this.form.area = getArr.district;
+      this.form.addr = this.allAddress.address.replace(getArr.province,"").replace(getArr.city,"").replace(getArr.district,"");
       this.form.longitude = this.allAddress.position.lng;
       this.form.latitude = this.allAddress.position.lat;
       this.drawerMap = false;
     },
-    async setForm(val) {
-      if(val){
-      val.serviceOrderPictures = await this.getServeImg(val.id)
+    getPosition(val){  //从接口获取地址
 
+          let that = this;
+          let url = `https://restapi.amap.com/v3/geocode/geo?key=c97ee5ef9156461c04b552da5b78039d&address=${encodeURIComponent(val)}`;
+          http.get(url, function (err, result) {
+            if (result.geocodes.length) {
+              let res = result.geocodes[0];
+              that.form.province = res.province;
+              that.form.city = res.city;
+              that.form.area = res.district;
+                 that.form.addr = val.replace(res.province,"").replace(res.city,"").replace(res.district,"");
+              that.form.latitude = res.location.split(",")[1];
+              that.form.longitude = res.location.split(",")[0];
+            } else {
+              if(that.isCreate||that.ifEdit){
+              that.$message({
+                message: "未识别到地址，请手动选择",
+                type: "error",
+              });
+              }
+
+              that.form.province = "";
+              that.form.city = "";
+              that.form.area = "";
+              that.form.addr = "";
+              that.form.latitude = "";
+              that.form.longitude = "";
+            }
+            // 这里对结果进行处理
+          });
+    },
+    getImgList(val) {
+      //获取图片列表
+
+      this.form.pictures = val;
+    },
+    dragmap(res) {
+      this.allAddress = res;
+    },
+
+    async setForm(val) {
+      if (val) {
+        val.serviceOrderPictures = await this.getServeImg(val.id);
+      }
+      if(val.province && val.city &&  val.area && val.addr ){
+        this.needPos=  false;
+      }else{
+        this.needPos=  true;
       }
       Object.assign(this.form, val);
+      // let that =  this
+      //  let addre = val.province + val.city + val.area +val.addr   
+      // setTimeout(function(){
+      //  that.getPosition(addre)
+      // },800)
       this.form.recepUserName = this.$store.state.user.name;
     },
-   async getServeImg(val){
-      let params={
-        id:val,
-        type:1
-      }
-      let imgList =[]
-     await callservesure.GetServiceOrderPictures(params).then(res=>{
-        imgList=res.result?res.result:[]
-      })
-      return imgList
+    async getServeImg(val) {
+      let params = {
+        id: val,
+        type: 1,
+      };
+      let imgList = [];
+      await callservesure.GetServiceOrderPictures(params).then((res) => {
+        imgList = res.result ? res.result : [];
+      });
+      return imgList;
     },
-    postServe() {
+    async postServe() {
       //创建整个工单
-
-      if (this.form.serviceWorkOrders.length > 0) {
+      if (!this.form.serviceWorkOrders.length) {
+        this.$message({
+          message: `请将必填项填写完整`,
+          type: "error",
+        });
+        this.$emit("close-Dia", "N");
+        return;
+      }
+      if(!this.form.longitude){
+          this.$message({
+          message: `请手动选择地址`,
+          type: "error",
+        });
+        this.$emit("close-Dia", "N");
+        return;
+      }
+      if (this.form.serviceWorkOrders.length >= 0) {
         let chec = this.form.serviceWorkOrders.every(
           (item) =>
             item.fromTheme !== "" &&
             item.fromType !== "" &&
-            item.problemTypeId !== ""
+            item.problemTypeId !== "" &&
+            item.manufacturerSerialNumber !== "" &&
+            (item.fromType === 2 ? item.solutionId !== "" : true)
         );
         // this.form.serviceWorkOrders = this.form.serviceWorkOrders.map(item => {
         //   item.problemTypeId = item.problemTypeName;
         //   item.solutionId = item.solution;
         //   return item;
         // });
-        if (chec) {
+        this.isValid = await this.$refs.form.validate();
+        console.log(chec, this.isValid, 'isValid')
+        if (chec && this.isValid) {
           if (this.$route.path === "/serve/callserve") {
             callservesure
               .CreateOrder(this.form)
@@ -594,9 +722,10 @@ export default {
                   message: `${res}`,
                   type: "error",
                 });
+                      this.$emit("close-Dia", "N");
               });
           } else {
-            console.log(this.form)
+            console.log(this.form);
             callservesure
               .CreateWorkOrder(this.form)
               .then(() => {
@@ -607,6 +736,7 @@ export default {
                 this.$emit("close-Dia", "y");
               })
               .catch((res) => {
+                 this.$emit("close-Dia", "N");
                 this.$message({
                   message: `${res}`,
                   type: "error",
@@ -618,12 +748,8 @@ export default {
             message: `请将必填项填写完整`,
             type: "error",
           });
+          this.$emit("close-Dia", "N");
         }
-      } else {
-        this.$message({
-          message: `请将必填项填写完整`,
-          type: "error",
-        });
       }
     },
     getPartnerInfo(num) {
@@ -633,6 +759,12 @@ export default {
           this.addressList = res.result.addressList;
           this.cntctPrsnList = res.result.cntctPrsnList;
           this.form.supervisor = res.result.techID;
+          if (this.addressList.length) {
+            let { address, building } = this.addressList[0];
+            this.form.addressDesignator = address;
+            this.form.address = building;
+            // this.form.address = building;
+          }
           // this.$message({
           //   message: "修改服务单成功",
           //   type: "success"
@@ -670,6 +802,7 @@ export default {
           // this.formUpdate = false
         })
         .catch((res) => {
+                 this.$emit("close-Dia", "N");
           this.$message({
             message: `${res}`,
             type: "error",
@@ -737,15 +870,13 @@ export default {
       };
     },
     getPartnerList() {
-      this.parentLoad=true
+      this.parentLoad = true;
       getPartner(this.listQuery)
         .then((res) => {
           this.partnerList = res.data;
           this.filterPartnerList = this.partnerList;
           this.parentCount = res.count;
-                this.parentLoad=false
-
-          // console.log(res.count)
+          this.parentLoad = false;
         })
         .catch((error) => {
           console.log(error);
@@ -758,7 +889,8 @@ export default {
       this.form.contacter = item.cntctPrsn;
       this.form.contactTel = item.cellular;
       // this.form.addressDesignator = item.address;
-      this.form.address = item.address;
+      // this.form.address = item.address;
+
       this.form.salesMan = item.slpName;
     },
     sureVal() {
@@ -769,11 +901,17 @@ export default {
       this.form.contacter = val.cntctPrsn;
       this.form.contactTel = val.cellular;
       // this.form.addressDesignator = val.address;
-      this.form.address = val.address;
+      // this.form.address = val.address;
       this.form.salesMan = val.slpName;
     },
     ChildValue(val) {
-      this.checkVal = val;
+      if (val == 1) {
+        this.disableBtn = true;
+        console.log(11);
+      } else {
+        this.checkVal = val;
+        this.disableBtn = false;
+      }
     },
     handleIconClick() {
       this.dialogPartner = true;
@@ -810,6 +948,9 @@ export default {
     top: 0;
     // width: 200px;
   }
+  ::v-deep .el-radio {
+    margin-left: 0 !important;
+  }
   ::v-deep .el-input__inner {
     padding-right: 5px;
     // padding-left:25px;
@@ -834,18 +975,18 @@ export default {
   // }
 }
 .rowStyle1 {
-  ::v-deep .el-form{
+  ::v-deep .el-form {
     padding: 5px;
     // margin-bottom: 2px;
   }
-   ::v-deep .el-form-item__label{
-       line-height:30px;
-     }
-     ::v-deep .el-form-item__content{
-       line-height:30px;
-     }
-      ::v-deep .el-form-item {
-     margin: 1px 1px;
+  ::v-deep .el-form-item__label {
+    line-height: 30px;
+  }
+  ::v-deep .el-form-item__content {
+    line-height: 30px;
+  }
+  ::v-deep .el-form-item {
+    margin: 1px 1px;
   }
 }
 .myAuto {

@@ -56,7 +56,6 @@
                   v-for="(fruit,index) in ChildheadOptions"
                   :align="fruit.align"
                   :key="`ind${index}`"
-                  :sortable="fruit=='chaungjianriqi'?true:false"
                   style="background-color:silver;"
                   :label="fruit.label"
                   header-align="left"
@@ -67,7 +66,7 @@
                     <span
                       v-if="fruit.name === 'status'"
                       :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-                    >{{statusOptions[scope.row[fruit.name]].label}}</span>
+                    >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
                     <span
                       v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
                     >{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
@@ -85,7 +84,6 @@
             v-for="(fruit,index) in ParentHeadOptions"
             :align="fruit.align"
             :key="`ind${index}`"
-            :sortable="fruit=='chaungjianriqi'?true:false"
             style="background-color:silver;"
             :label="fruit.label"
             header-align="left"
@@ -179,6 +177,7 @@
         title="服务单详情"
         :close-on-click-modal="false"
         destroy-on-close
+       
         class="addClass1 dialog-mini"
         @open="openDetail"
         :visible.sync="dialogFormView"
@@ -196,7 +195,7 @@
         ></zxform>
         </el-col>
             <el-col :span="6" class="lastWord">   
-                <zxchat ></zxchat>
+                <zxchat :serveId='serveid'></zxchat>
             </el-col>
         </el-row>
 
@@ -254,7 +253,7 @@ export default {
       key: 1, // table key
       sure: 0,
       ParentHeadOptions: [
-        { name: "serviceOrderId", label: "服务单号", width: "80px",align:'left'},
+        { name: "serviceOrderId", label: "服务单号", width: "80px",align:'left' ,  sortable:true},
         { name: "customerId", label: "客户代码",align:'left' },
         { name: "customerName", label: "客户名称" ,align:'left' },
         { name: "contacter", label: "联系人" ,align:'left' },
@@ -350,7 +349,7 @@ export default {
         create: "新建呼叫服务单",
         info: "查看呼叫服务单"
       },
-
+      serveid:'',
       dialogPvVisible: false,
       pvData: [],
       rules: {
@@ -451,9 +450,11 @@ export default {
     },
     openTree(res) {
       this.listLoading = true;
+       this.serveid = res
       callservesure.GetDetails(res).then(res => {
         if (res.code == 200) {
           this.dataForm1 = res.result;
+         
           this.dialogFormView = true;
         }
         this.listLoading = false;
@@ -528,7 +529,10 @@ export default {
       callservesure.rightList(this.listQuery).then(response => {
             let resul = response.data.data;
         this.total =response.count;
-        this.list =resul;
+        this.list=[]
+         resul.map(item=>{
+this.list.push(item)
+        });
         this.listLoading = false;
       }).catch(() => {
         this.listLoading = true;
@@ -617,8 +621,9 @@ export default {
       // });
     },
     createData() {
-      this.sure = this.sure + 1; //向form表单发送提交通知
+             this.loadingBtn  =true
 
+       this.sure = this.sure + 1; //向form表单发送提交通知
       // 保存提交
       // this.$refs["dataForm"].validate(valid => {
       //   if (valid) {
@@ -655,10 +660,12 @@ export default {
     },
     closeDia(a) {
       if (a === 1) {
-        // this.FormUpdate = false
         this.getList();
       }
-
+      if(a=='N'){
+         this.loadingBtn = false
+         return 
+      }
       this.loadingBtn = false;
       this.dialogFormVisible = false;
     },

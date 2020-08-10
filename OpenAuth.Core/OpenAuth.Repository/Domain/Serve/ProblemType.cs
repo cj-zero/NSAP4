@@ -24,9 +24,10 @@ namespace OpenAuth.Repository.Domain
     {
         public ProblemType()
         {
-          this.Name= string.Empty;
-          this.Description= string.Empty;
-          this.ParentId= string.Empty;
+            this.Name = string.Empty;
+            this.Description = string.Empty;
+            this.ParentId = string.Empty;
+            this.PrblmTypID = 0;
         }
 
         
@@ -57,5 +58,12 @@ namespace OpenAuth.Repository.Domain
         [Description("显示顺序")]
         [Browsable(false)]
         public int OrderIdx { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("问题类型SAP ID")]
+        [Browsable(false)]
+        public int PrblmTypID { get; set; }
     }
 }

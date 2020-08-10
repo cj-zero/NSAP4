@@ -547,12 +547,12 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<Response<List<AllowSendOrderUserResp>>> GetAllowSendOrderUser()
+        public async Task<TableData> GetAllowSendOrderUser([FromQuery] GetAllowSendOrderUserReq req)
         {
-            var result = new Response<List<AllowSendOrderUserResp>>();
+            var result = new TableData();
             try
             {
-                result.Result = await _serviceOrderApp.GetAllowSendOrderUser();
+                result = await _serviceOrderApp.GetAllowSendOrderUser(req);
             }
             catch (Exception ex)
             {
@@ -815,6 +815,88 @@ namespace OpenAuth.WebApi.Controllers
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 主管关单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> CloseWorkOrder(CloseWorkOrderReq request)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.CloseWorkOrder(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 回访服务单
+        /// </summary>
+        /// <param name="serviceOrderId"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> ServiceOrderCallback(int serviceOrderId)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.ServiceOrderCallback(serviceOrderId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 查询可以被派单的技术员列表(App)
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetAppAllowSendOrderUser([FromQuery] GetAllowSendOrderUserReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetAppAllowSendOrderUser(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取服务工单详情(管理员)
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetAdminServiceOrderDetail([FromQuery] QueryServiceOrderDetailReq req)
+        {
+            var result = new TableData();
+
+            try
+            {
+                result = await _serviceOrderApp.GetAdminServiceOrderDetail(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
             }
             return result;
         }

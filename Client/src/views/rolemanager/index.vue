@@ -6,15 +6,14 @@
           class="filter-item" :placeholder="'关键字'" v-model="listQuery.key">
         </el-input>
 
-        <!-- <el-button class="filter-item" type="success"  v-waves icon="el-icon-search" @click="handleFilter">搜索</el-button> -->
         <permission-btn moduleName='rolemanager' size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
 
         <el-checkbox size="small" style='margin-left:15px;' @change='tableKey=tableKey+1' v-model="showDescription">Id/描述</el-checkbox>
       </div>
     </sticky>
-    <div class="app-container flex-item" style="height:100%;">
-          <div class="bg-white fh" style="height:100%;">
-            <el-table ref="mainTable" :key='tableKey' max-height="800px"  :data="list" v-loading="listLoading" border fit
+    <div class="app-container flex-item">
+          <div class="bg-white fh">
+            <el-table ref="mainTable" :key='tableKey' :data="list" v-loading="listLoading" border fit
               highlight-current-row style="width: 100%;" height="calc(100% - 52px)" @row-click="rowClick" @selection-change="handleSelectionChange">
               <el-table-column align="center" type="selection" width="55">
               </el-table-column>
@@ -53,13 +52,6 @@
             </el-table>
             <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit"
               @pagination="handleCurrentChange" />
-
-            <!-- <div class="pagination-container">
-            <el-pagination background @size-change="handleSizeChange" @current-change="handleCurrentChange"
-              :current-page="listQuery.page" :page-sizes="[10,20,30, 50]" :page-size="listQuery.limit" layout="total, sizes, prev, pager, next, jumper"
-              :total="total">
-            </el-pagination>
-          </div> -->
           </div>
 
 
@@ -115,8 +107,6 @@
 
 <script>
   import * as roles from '@/api/roles'
-  // import Treeselect from '@riophae/vue-treeselect'
-  // import '@riophae/vue-treeselect/dist/vue-treeselect.css'
   import waves from '@/directive/waves' // 水波纹指令
   import Sticky from '@/components/Sticky'
   import RoleUsers from '@/components/RoleUsers'
@@ -128,12 +118,11 @@
   import selectUsersCom from '@/components/SelectUsersCom'
 
   export default {
-    name: 'rolemanager',
+    name: 'role',
     components: {
       RoleUsers,
       Sticky,
       permissionBtn,
-      // Treeselect,
       accessModules,
       accessResource,
       Pagination,
@@ -157,7 +146,7 @@
         listLoading: true,
         listQuery: { // 查询条件
           page: 1,
-          limit: 10,
+          limit: 20,
           key: undefined
         },
         apps: [],
@@ -199,7 +188,6 @@
         roleUsers: {
           dialogUserResource: false,
           Texts: '',
-          // users: [],
           rowIndex: -1,
           selectUsers: [],
           list: []
@@ -225,7 +213,6 @@
     },
     methods: {
       changeTitle(val) { // 自动调整对话框标题
-        // this.$refs.accessModulesDlg.title = val
         this.accessTitle = val
       },
       rowClick(row) {
@@ -310,18 +297,16 @@
         }
         roles.AssignRoleUsers(postData).then(() => {
           this.$message.success('添加成功')
-          // this.$refs.roleUser.changeNames(this.roleUsers.selectUsers[this.roleUsers.rowIndex].Texts)
-          // this.getList()
           this.roleUsers.dialogUserResource = false
         })
       },
       getList() {
         this.listLoading = true
+        this.list = []
         roles.getList(this.listQuery).then(response => {
           this.roleList = response.result
           this.total = response.result.length
           this.listLoading = false
-          this.list = []
           this.pageFn()
         })
       },
@@ -341,7 +326,6 @@
       handleCurrentChange(val) {
         this.listQuery.page = val.page
         this.listQuery.limit = val.limit
-        // this.getList()
         this.list = []
         setTimeout(() => {
           this.pageFn()

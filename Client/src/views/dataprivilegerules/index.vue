@@ -113,7 +113,7 @@
   import addRule from './addRule'
   import { mapGetters, mapActions } from 'vuex'
   export default {
-    name: 'dataPrivilegeRules',
+    name: 'dataPrivilegeRule',
     components: {
       Sticky,
       permissionBtn,
@@ -403,13 +403,6 @@
     width: 100%;
   }
   .data-rule-wrap{
-    .ellipsis{
-      width: 100%;
-      overflow:hidden;
-      white-space:nowrap;
-      text-overflow: ellipsis;
-      display:inline-block;
-    }
     .ruleSpan{
       cursor: pointer;
       color: #409eff;
@@ -428,31 +421,8 @@
         height:calc(100% - 34px);overflow: auto;
       }
     }
-    .flex-row{
-      width: 100%;
-      display: flex;
-      flex-direction: row;
-      box-sizing: border-box;
-    }
-    .flex-column{
-      display: flex;
-      flex-direction: column;
-      box-sizing: border-box;
-    }
     .flex-item{
       overflow: hidden;
-    }
-    .VMB{
-      &::before{
-        content: "";
-        display: inline-block;
-        height: 100%;
-        vertical-align: middle;
-      }
-      .VM{
-        display: inline-block;
-        vertical-align: middle;
-      }
     }
   }
   .part-box{

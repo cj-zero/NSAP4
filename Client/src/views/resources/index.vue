@@ -14,7 +14,7 @@
       <el-button class="filter-item" size="mini"  v-waves icon="el-icon-search" @click="handleFilter">搜索</el-button>
       <permission-btn moduleName='resources' size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
 
-      <el-checkbox size="mini" @change='tableKey=tableKey+1' v-model="showDescription">描述</el-checkbox>
+      <el-checkbox class="m-l-15" size="mini" @change='tableKey=tableKey+1' v-model="showDescription">描述</el-checkbox>
     </div>
      </sticky>
      <div class="app-container flex-item">
@@ -89,7 +89,7 @@ import permissionBtn from '@/components/PermissionBtn'
 import Pagination from '@/components/Pagination'
 import elDragDialog from '@/directive/el-dragDialog'
 export default {
-  name: 'resources',
+  name: 'resource',
   components: { Sticky, permissionBtn, Pagination },
   directives: {
     waves,
@@ -202,7 +202,6 @@ export default {
         this.list = response.data
         response.columnHeaders.forEach((item) => {
           item.key = item.key.substring(0, 1).toLowerCase() + item.key.substring(1)
-          console.log(item.key)
         })
         this.headerList = response.columnHeaders.filter(u => u.browsable)
         this.total = response.count
@@ -307,12 +306,6 @@ export default {
           this.list.splice(index, 1)
         })
       })
-    },
-    handleFetchPv() { // 显示/隐藏列
-    //   fetchPv(pv).then(response => {
-    //     this.pvData = response.data.pvData
-    //     this.dialogPvVisible = true
-    //   })
     }
   }
 }

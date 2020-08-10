@@ -1,5 +1,3 @@
-
-console.log('url', process.env.BASE_API)
 const baseUrl = process.env.BASE_API
 export const basicComponents = [
   {
@@ -179,7 +177,7 @@ export const basicComponents = [
       isQiniu: false,
       isDelete: false,
       min: 0,
-      isCreate: false,
+      isEdit: false,
       action: `${baseUrl}/Files/Upload`
     }
   },
@@ -310,7 +308,7 @@ export const advanceComponents = [
   //     isQiniu: false,
   //     isDelete: false,
   //     min: 0,
-  //     isCreate: false,
+  //     isEdit: false,
   //     action: 'https://jsonplaceholder.typicode.com/photos/'
   //   }
   // },

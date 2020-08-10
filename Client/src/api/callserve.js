@@ -25,13 +25,13 @@ export function getPartner(params) {
   //   })
   // }
 
-  // export function GetServiceOrderMessage(params) {
-  //   return request({
-  //     url: '/serve/ServiceOrder/GetServiceOrderMessage',  //获取服务单聊天记录
-  //     method: 'get',
-  //     params
-  //   })
-  // }
+  export function FACProductList(params) {
+    return request({
+      url: `'https://restapi.amap.com/v3/geocode/geo?key=c97ee5ef9156461c04b552da5b78039d'&address=${params}`,  //获取服务单聊天记录
+      method: 'get',
+      
+    })
+  }
   
   // export function GetServiceOrderMessageList(params) {
   //   return request({
@@ -61,5 +61,12 @@ export function getPartner(params) {
       url: '/serve/ServiceOrderMessage/SendMessageToTechnician',  //发送聊天信息
       method: 'post',
       data
+    })
+  }
+  
+  export function GetUserProfile(params) {
+    return request({
+      url: `/Check/GetUserProfile?X-Token=${params}`,  //获取个人信息
+      method: 'get',
     })
   }

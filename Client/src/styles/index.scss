@@ -180,6 +180,17 @@ code {
         vertical-align: middle;
         margin-bottom: 0px;
     }
+    .filter-items {
+        display: inline-block;
+        margin-left: 20px;
+    }
+    .iconfont{
+        margin-right: 3px;
+        font-size: 11px;
+    }
+    .export-excel-wrapper{
+      display: inline-block;
+    }
 }
 
 //refine vue-multiselect plugin
@@ -193,14 +204,14 @@ code {
 
 //table 头部居中
 table thead th {
-    // text-align: center !important;
+    text-align: center !important;
 }
 // table td 上下间距减小
 .el-table td {
-    padding: 3px 0;
+    padding: 3px 0 !important;
 }
 .el-table th {
-    padding: 5px 0;
+    padding: 5px 0 !important;
 }
 .body-small .el-card__body {
     padding: 10px 5px;
@@ -229,9 +240,9 @@ table thead th {
 }
 
 .card-body-none .el-card__body {
-    padding: 0;
-    margin: -1px;
-    padding-bottom: 10px;
+    padding: 0 !important;
+    margin: -1px !important;
+    padding-bottom: 10px !important;
 }
 
 .app-container {
@@ -261,7 +272,7 @@ table thead th {
         border-bottom: 1px solid #eee;
         overflow: hidden;
         background-color: #f8f8f8;
-        padding: 0 20px;
+        padding: 0 20px !important;
         .el-dialog__title {
             line-height: 34px;
             font-size: 14px;
@@ -277,22 +288,21 @@ table thead th {
         height: 50px;
         width: 100%;
         text-align: right;
-        padding: 0px 10px;
+        padding: 0px 10px !important;
         border-top: 1px solid #eee;
         border-radius: 0 0 4px 4px;
         background-color: #f8f8f8;
         line-height: 50px;
     }
     .el-dialog__body {
-        padding: 10px;
+        padding: 10px !important;
         .el-form {
-            // padding-right: 20px;
-            // padding-top: 10px;
-            padding:5px;
+            padding-right: 20px;
+            padding-top: 10px;
         }
     }
     .el-form-item__label {
-        font-size: 12px;
+        font-size: 12px !important;
         font-weight: normal !important;
     }
     .el-form-item.el-form-item--small {
@@ -322,7 +332,7 @@ table thead th {
 
 
 .v-modal{
-    z-index: 2000 !important;
+    // z-index: 2000 !important;
 }
 
 // flex布局
@@ -340,7 +350,8 @@ table thead th {
     display: flex;
 }
 .flex-item{
-    flex: 1;
+    flex: 1 !important;;
+    flex-basis:0% !important;
     overflow: auto;
 }
 .fh{
@@ -348,4 +359,102 @@ table thead th {
 }
 .ls-border{
     border: 1px solid #EBEEF5;
+}
+// 垂直居中
+.VMB{
+    &::before{
+        content: "";
+        display: inline-block;
+        height: 100%;
+        vertical-align: middle;
+    }
+    .VM{
+        display: inline-block;
+        vertical-align: middle;
+    }
+}
+  
+.ellipsis{
+    width: 100%;
+    overflow:hidden;
+    white-space:nowrap;
+    text-overflow: ellipsis;
+    display:inline-block;
+}
+.navbar{
+    // background: #409eff;
+    background: rgb(48, 65, 86);
+
+    .hamburger-container {
+        line-height: 44px;
+        height: 44px;
+        float: left;
+        padding: 0 10px;
+    }
+    .avatar-container {
+        height: 44px;
+        display: inline-block;
+        position: absolute;
+        line-height: 44px;
+        right: 35px;
+        .avatar-wrapper {
+            cursor: pointer;
+            position: relative;
+            .el-icon-caret-bottom {
+                position: absolute;
+                right: -22px;
+                top: 12px;
+                font-size: 16px;
+            }
+        }
+    }
+    .logo {
+        width: 180px;
+        text-align: center;
+        float: left;
+        .user-avatar {
+            width: 90%;
+            height: 30px;
+            vertical-align: middle;
+            margin:0 5%;
+        }
+    }
+    .hamburger-container {
+        color: white;
+    }
+    .avatar-container {
+        color: white;
+    }
+    .logo {
+        color: white;
+    }
+}
+.custom-theme {
+    #app{
+        .sidebar-container .nest-menu .el-submenu>.el-submenu__title,
+        .sidebar-container .el-submenu .el-menu-item {
+            background-color: $subMenuBg !important;
+            &:hover {
+                background-color: $menuHover !important;
+            }
+        }
+    }
+    .navbar {
+        border-bottom: 0 !important;
+        background-color: #333;
+        .hamburger-container {
+            color: white;
+        }
+        .avatar-container {
+            color: white;
+        }
+        .logo {
+            color: white;
+        }
+    }
+}
+
+// margin
+.m-l-15{
+    margin-left: 15px;
 }

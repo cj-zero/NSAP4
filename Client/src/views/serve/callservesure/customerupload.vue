@@ -40,9 +40,15 @@
     </el-row>
     <el-row type="flex" class="row-bg" justify="space-around">
       <el-col :span="8">
-        <el-form-item label="地址">
+        <!-- <el-form-item label="地址">
           <el-input size="small" v-model="form.city"></el-input>
-        </el-form-item>
+        </el-form-item> -->
+              <el-form-item label="现地址">
+                  <!-- <el-input size="mini" v-model="form.city"></el-input> -->
+                  <p
+                    style="border: 1px solid silver;color:silver; border-radius:5px;line-height:30px;overflow:hidden;height:30px;background-color:#F5F7FA;margin:0;padding-left:10px;font-size:12px;"
+                  >{{allArea}}</p>
+                </el-form-item>
       </el-col>
       <el-col :span="16">
         <el-form-item label>
@@ -106,6 +112,12 @@ props:['form'],
     handler(val){
       console.log(val)
     }
+  },
+    computed: {
+    allArea() {
+
+      return this.form.province + this.form.city + this.form.area;
+    },
   },
   mounted() {
   

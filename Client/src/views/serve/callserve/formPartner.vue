@@ -38,7 +38,8 @@
       <el-table-column prop="u_FPLB" align="center" width="120px" label="发票类别"></el-table-column>
     </el-table>
 
-    <el-dialog title="最近服务单情况" width="90%" @open="openDialog" :visible.sync="dialogCallId">
+    <el-dialog :modal-append-to-body='false'
+          :append-to-body="true" title="最近服务单情况" width="90%" @open="openDialog" :visible.sync="dialogCallId">
       <callId :toCallList="CallList"></callId>
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogCallId = false">取 消</el-button>
@@ -95,11 +96,21 @@ export default {
     },
 
     getPartner(val) {
-      this.checkVal = val;
+        if (val.frozenFor&&val.frozenFor == "Y") {
+        this.$message({
+          message: `${val.cardName}账户被冻结，无法操作`,
+          type: "error"
+        });
+         this.radio = val.cardCode;
+        this.$emit("getChildValue", 1);
+      }else{
+     this.checkVal = val;
       this.$emit("getChildValue", val);
       this.$refs.singleTable.clearSelection();
       this.radio = val.cardCode;
       this.$refs.singleTable.toggleRowSelection(val);
+      }
+ 
     },
     handleCurrentChange(val) {
       this.currentRow = val;

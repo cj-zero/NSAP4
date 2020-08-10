@@ -33,15 +33,10 @@
     },
     watch: {
       selectUsers(val) {
-        this.$nextTick(function(){
-                    this.users = val.length > 0 && val.map(item =>{if(!item) return
-          return item.name || item.account}) || []
-        
+        this.users = val.length > 0 && val.map(item => item.name || item.account) || []
         if (this.users.length >= this.count || this.users.length === 0) {
           this.buttonVisible = false
         }
-
-        })
       }
     },
     methods: {

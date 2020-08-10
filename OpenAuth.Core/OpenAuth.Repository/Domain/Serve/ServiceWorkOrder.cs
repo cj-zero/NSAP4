@@ -13,7 +13,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using OpenAuth.Repository.Core;
-using OpenAuth.Repository.Domain.Serve;
+using OpenAuth.Repository.Domain;
 
 namespace OpenAuth.Repository.Domain
 {
@@ -23,6 +23,10 @@ namespace OpenAuth.Repository.Domain
     [Table("serviceworkorder")]
     public partial class ServiceWorkOrder
     {
+        /// <summary>
+        /// 每个技术员可接单个数 
+        /// </summary>
+        public const int canOrderQty = 3;
         public ServiceWorkOrder()
         {
             this.ServiceOrderId = 0;
@@ -99,6 +103,17 @@ namespace OpenAuth.Repository.Domain
         [Description("App当前流程处理用户Id")]
         //[Browsable(false)]
         public int? CurrentUserId { get; set; }
+
+        /// <summary>
+        /// 当前接单技术员名称
+        /// </summary>
+        [Description("当前接单技术员名称")]
+        public string CurrentUser { get; set; }
+        /// <summary>
+        /// 技术员NSAPId
+        /// </summary>
+        [Description("技术员NSAPId")]
+        public string CurrentUserNsapId { get; set; }
         /// <summary>
         /// 呼叫主题
         /// </summary>
@@ -198,6 +213,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("过程描述")]
         public string ProcessDescription { get; set; }
+        /// <summary>
+        /// 工单号
+        /// </summary>
+        [Description("工单号")]
+        public string WorkOrderNumber { get; set; }
 
         /// <summary>
         /// 接单类型 0未接单 1电话服务 2上门服务 3电话服务(已拨打)

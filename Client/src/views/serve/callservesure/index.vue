@@ -32,7 +32,6 @@
                 <el-input v-model="listQuery.QryServiceOrderId" @keyup.enter.native='onSubmit'></el-input>
               </el-form-item>
             </el-col>
-
             <el-col :span="3">
               <el-form-item label="呼叫状态" >
                 <el-select v-model="listQuery.QryState" placeholder="请选择呼叫状态">
@@ -61,6 +60,7 @@
                     placeholder="选择开始日期"
                     v-model="listQuery.QryCreateTimeFrom"
                     style="width: 100%;"
+                    value-format="yyyy-MM-dd"
                   ></el-date-picker>
                 </el-col>
                 <el-col class="line" :span="2">至</el-col>
@@ -69,11 +69,12 @@
                     placeholder="选择结束时间"
                     v-model="listQuery.QryCreateTimeTo"
                     style="width: 100%;"
+                    value-format="yyyy-MM-dd"
                   ></el-date-picker>
                 </el-col>
               </el-form-item>
             </el-col>
-                  <el-col :span="3" style="margin-left:20px;">
+            <el-col :span="3" style="margin-left:20px;">
               <el-button type="primary" @click="onSubmit" @keyup.enter.native='onSubmit' size="small" icon="el-icon-search">搜 索</el-button>
             </el-col>
           </el-row>
@@ -85,7 +86,7 @@
           :data="list"
           v-loading="listLoading"
           border
-          style="width: 100%;"
+          style="width: 100%;height:650px;"
           highlight-current-row
           @row-click="rowClick"
         >
@@ -154,6 +155,7 @@
               labelwidth="100px"
               :isCreate="true"
               :sure="sure"
+              :ifFirstLook="true"
               :customer="customer"
               @close-Dia="closeDia"
             ></zxform>
@@ -346,7 +348,8 @@ export default {
     'listQuery.page': {
       // deep: true,
       handler(val) {
-        callservesure.getTableList(val).then(response => {
+        this.listQuery.page = val
+        callservesure.getTableList(this.listQuery).then(response => {
           this.total = response.data.count;
           this.list = response.data.data;
           this.listLoading = false;
@@ -356,7 +359,8 @@ export default {
         'listQuery.limit': {
       // deep: true,
       handler(val) {
-        callservesure.getTableList(val).then(response => {
+        this.listQuery.limit = val
+        callservesure.getTableList(this.listQuery).then(response => {
           this.total = response.data.count;
           this.list = response.data.data;
           this.listLoading = false;
@@ -489,10 +493,17 @@ export default {
         .then(response => {
           if (response.code == 200) {
             this.total = response.data.count;
-            this.list = response.data.data;
+             let  resul= response.data.data;
+                this.list=[]
+            
+         resul.map(item=>{
+        
+           this.list.unshift(item)
+        });
+          
             this.listLoading = false;
           } else {
-            console.log(11);
+        
             this.$message({
               type: "warning",
               message: "请输入正确的搜索值"
@@ -500,7 +511,7 @@ export default {
           }
         })
         .catch(() => {
-          console.log(22);
+         
           this.$message({
             type: "warning",
             message: "请输入正确的搜索值"
@@ -604,15 +615,23 @@ export default {
         // });
       });
     },
-    closeDia() {
+    closeDia(a) {
+            if (a === 1) {
+        this.getList();
+      }
+      if(a=='N'){
+         this.loadingBtn = false
+         return 
+      }
       this.loadingBtn = false;
       this.dialogFormVisible = false;
+
     },
     updateData() {
       // 更新提交
       // this.loadingBtn = true;
       // setTimeout(function() {
-      //   this.loadingBtn = false;
+         this.loadingBtn = false;
       // }, 5000);
       this.sure = this.sure + 1; //向form表单发送提交通知
       // this.dialogFormVisible =false

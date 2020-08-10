@@ -211,6 +211,11 @@ namespace OpenAuth.Repository.Domain
         public int? FromId { get; set; }
 
         /// <summary>
+        /// 呼叫来源  1-电话 2-APP 
+        /// </summary>
+        [Description("SAP 服务单ID ")]
+        public int? U_SAP_ID { get; set; }
+        /// <summary>
         /// 服务单关联的工单
         /// </summary>
         public virtual List<ServiceWorkOrder> ServiceWorkOrders { get; set; }

@@ -15,12 +15,14 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using Neware.Cap.DependencyInjection;
 using Newtonsoft.Json;
 using OpenAuth.App;
 using OpenAuth.App.HostedService;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Extensions;
 using OpenAuth.WebApi.Model;
+using SAP.API;
 using Swashbuckle.AspNetCore.SwaggerUI;
 
 namespace OpenAuth.WebApi
@@ -163,7 +165,13 @@ namespace OpenAuth.WebApi
             
             //设置定时启动的任务
             services.AddHostedService<QuartzService>();
-            
+
+            //SAP
+            //services.AddSap();
+
+            ///CAP
+            services.AddNewareCAP(Configuration);
+
         }
         
         public void ConfigureContainer(ContainerBuilder builder)
