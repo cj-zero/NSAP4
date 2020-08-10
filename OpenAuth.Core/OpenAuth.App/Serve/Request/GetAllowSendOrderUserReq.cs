@@ -1,6 +1,7 @@
 ﻿using OpenAuth.App.Request;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace OpenAuth.App.Serve.Request
@@ -16,5 +17,10 @@ namespace OpenAuth.App.Serve.Request
         /// 纬度
         /// </summary>
         public decimal Latitude { get; set; }
+
+        /// <summary>
+        /// 当前登陆者App用户Id
+        /// </summary>
+        public int CurrentUserId { get; set; }
     }
 }

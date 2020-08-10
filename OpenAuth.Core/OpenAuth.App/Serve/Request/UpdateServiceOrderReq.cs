@@ -82,6 +82,10 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string City { get; set; }
         /// <summary>
+        /// 区
+        /// </summary>
+        public string Area { get; set; }
+        /// <summary>
         /// 地区
         /// </summary>
         public string Addr { get; set; }
