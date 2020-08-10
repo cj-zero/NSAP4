@@ -679,6 +679,7 @@ destroyed() {
           message: `请将必填项填写完整`,
           type: "error",
         });
+        this.$emit("close-Dia", "N");
         return;
       }
       if(!this.form.longitude){
@@ -686,6 +687,7 @@ destroyed() {
           message: `请手动选择地址`,
           type: "error",
         });
+        this.$emit("close-Dia", "N");
         return;
       }
       if (this.form.serviceWorkOrders.length >= 0) {
@@ -720,6 +722,7 @@ destroyed() {
                   message: `${res}`,
                   type: "error",
                 });
+                      this.$emit("close-Dia", "N");
               });
           } else {
             console.log(this.form);
@@ -733,6 +736,7 @@ destroyed() {
                 this.$emit("close-Dia", "y");
               })
               .catch((res) => {
+                 this.$emit("close-Dia", "N");
                 this.$message({
                   message: `${res}`,
                   type: "error",
@@ -744,6 +748,7 @@ destroyed() {
             message: `请将必填项填写完整`,
             type: "error",
           });
+          this.$emit("close-Dia", "N");
         }
       }
     },
@@ -797,6 +802,7 @@ destroyed() {
           // this.formUpdate = false
         })
         .catch((res) => {
+                 this.$emit("close-Dia", "N");
           this.$message({
             message: `${res}`,
             type: "error",
