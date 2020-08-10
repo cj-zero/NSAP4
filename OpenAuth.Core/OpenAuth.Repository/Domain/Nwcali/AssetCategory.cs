@@ -19,40 +19,45 @@ namespace OpenAuth.Repository.Domain
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("Certplc")]
-    public partial class Certplc : Entity
+    [Table("assetcategory")]
+    public partial class AssetCategory : Entity
     {
-        public Certplc()
+        public AssetCategory()
         {
-          this.CertNo= string.Empty;
-          this.PlcGuid= string.Empty;
-          this.CreateTime= DateTime.Now;
+          this.AssetId= string.Empty;
+          this.CategoryNumber= string.Empty;
         }
 
 
         /// <summary>
-        /// 证书编号
+        /// 资产ID
         /// </summary>
-        [Description("证书编号")]
-        public string CertNo { get; set; }
+        [Description("资产ID")]
+        public string AssetId { get; set; }
         /// <summary>
-        /// 下位机GUID
+        /// 序号
         /// </summary>
-        [Description("下位机GUID")]
-        public string PlcGuid { get; set; }
+        [Description("序号")]
+        public string CategoryNumber { get; set; }
         /// <summary>
-        /// 创建时间
+        /// 阻值
         /// </summary>
-        [Description("创建时间")]
-        public System.DateTime CreateTime { get; set; }
-
+        [Description("阻值")]
+        public decimal? CategoryOhms { get; set; }
         /// <summary>
-        /// 校准日期
+        /// 不确定度
         /// </summary>
-        public DateTime? CalibrationDate { get; set; }
+        [Description("不确定度")]
+        public decimal? CategoryNondeterminacy { get; set; }
         /// <summary>
-        /// 过期日期
+        /// 类型
         /// </summary>
-        public DateTime? ExpirationDate { get; set; }
+        [Description("类型")]
+        public string CategoryType { get; set; }
+        /// <summary>
+        /// 包含因子k
+        /// </summary>
+        [Description("包含因子k")]
+        public decimal? CategoryBHYZ { get; set; }
     }
 }

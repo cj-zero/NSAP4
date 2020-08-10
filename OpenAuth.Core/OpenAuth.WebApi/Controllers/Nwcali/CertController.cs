@@ -164,7 +164,7 @@ namespace OpenAuth.WebApi.Controllers
         [HttpGet("{plcGuid}")]
         public async Task<IActionResult> GetCertNoList(string plcGuid)
         {
-            var certNos = (await _certPlcApp.GetAllAsync(p => p.PlcGuid.Equals(plcGuid))).OrderByDescending(c => c.CertNo).Select(cp => cp.CertNo);
+            var certNos = (await _certPlcApp.GetAllAsync(p => p.PlcGuid.Equals(plcGuid))).OrderByDescending(c => c.CertNo).Select(cp => new { cp.CertNo, cp.CalibrationDate, cp.ExpirationDate });
             return Ok(certNos);
         }
         /// <summary>

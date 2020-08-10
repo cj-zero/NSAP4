@@ -29,6 +29,7 @@ using Microsoft.Extensions.Options;
 using SAP.API;
 using Autofac.Core;
 using Npoi.Mapper;
+using DotNetCore.CAP;
 
 namespace OpenAuth.App
 {
@@ -39,6 +40,7 @@ namespace OpenAuth.App
         private readonly BusinessPartnerApp _businessPartnerApp;
         private readonly AppServiceOrderLogApp _appServiceOrderLogApp;
         private IOptions<AppSetting> _appConfiguration;
+        //private ICapPublisher _capBus;
         private HttpHelper _helper;
         public ServiceOrderApp(IUnitWork unitWork,
             RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration) : base(unitWork, auth)
@@ -49,6 +51,7 @@ namespace OpenAuth.App
             _businessPartnerApp = businessPartnerApp;
             _appServiceOrderLogApp = appServiceOrderLogApp;
             _helper = new HttpHelper(_appConfiguration.Value.AppPushMsgUrl);
+            //_capBus = capBus;
         }
         /// <summary>
         /// 加载列表
@@ -375,11 +378,13 @@ namespace OpenAuth.App
             var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceOrderSNs)
                 .Include(s => s.ServiceWorkOrders)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.Id.Equals(Convert.ToInt32(req.QryServiceOrderId)))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.Status.Equals(Convert.ToInt32(req.QryState)))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryState) & Convert.ToInt32(req.QryState) > 0, q => q.Status.Equals(Convert.ToInt32(req.QryState)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.CustomerId.Contains(req.QryCustomer) || q.CustomerName.Contains(req.QryCustomer))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceOrderSNs.Any(a => a.ManufSN.Contains(req.QryManufSN)))
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime <= req.QryCreateTimeTo)
                          .WhereIf(Convert.ToInt32(req.QryState) == 2, q => !q.ServiceWorkOrders.All(q => q.Status != 1))
+                         .WhereIf(Convert.ToInt32(req.QryState) == 0, q => q.Status == 1 || (q.Status == 2 && !q.ServiceWorkOrders.All(q => q.Status != 1)))
+                         .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => (s.Id == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key))))
             .OrderBy(r => r.CreateTime).Select(q => new
             {
                 q.Id,
@@ -696,24 +701,7 @@ namespace OpenAuth.App
             //await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"客服:{loginContext.User.Name}创建服务单", ActionType = "创建工单", ServiceOrderId = e.Id });
             #region 同步到SAP 并拿到服务单主键
 
-            //if (obj.ServiceWorkOrders.Count > 0)
-            //{
-            //    ServiceWorkOrder firstwork = obj.ServiceWorkOrders[0];
-            //    string sapEntry, errMsg;
-            //    if (_workAPI.AddServiceWorkOrder(firstwork, out sapEntry, out errMsg))
-            //    {
-            //        await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(e.Id), a => new ServiceOrder
-            //        {
-            //            U_SAP_ID = System.Convert.ToInt32(sapEntry)
-            //        });
-            //        await UnitWork.SaveAsync();
-            //    }
-            //    else
-            //    {
-            //        throw new CommonException(errMsg, Define.INVALID_TOKEN);
-            //    }
-            //}
-
+            _capBus.Publish("Serve.ServcieOrder.Create", obj.Id);
             #endregion
         }
         /// <summary>
@@ -741,7 +729,7 @@ namespace OpenAuth.App
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.ServiceWorkOrders.Any(a => a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
                 .Where(q => q.Status == 2)
                 ;
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r=>r.Name.Equals("呼叫中心")))
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
             {
                 query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id));
             }
@@ -1191,7 +1179,7 @@ namespace OpenAuth.App
                 Province = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Province,
                 City = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.City,
                 Area = locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Area,
-                Distance = (req.Latitude == 0|| locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude ?? 0), Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
+                Distance = (req.Latitude == 0 || locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude ?? 0), Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
             }).ToList();
 
             userInfos = userInfos.OrderBy(o => o.Distance).ToList();

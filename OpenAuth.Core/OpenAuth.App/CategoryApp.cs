@@ -79,6 +79,18 @@ namespace OpenAuth.App
 
         }
 
+        /// <summary>
+        /// 按字典ID查询字典类型 by zlg 2020.7.31
+        /// </summary>
+        public TableData GetListCategoryName(string ids)
+        {
+            var result = new TableData();
+            var objs = UnitWork.Find<Category>(null);
+            objs = objs.Where(u => ids.Contains(u.TypeId)).OrderBy(u => u.CreateTime);
+            result.Data = objs.Select(u => new { u.Name, u.TypeId }).ToList();
+            return result;
+        }
+
         public List<CategoryType> AllTypes()
         {
             return UnitWork.Find<CategoryType>(null).ToList();

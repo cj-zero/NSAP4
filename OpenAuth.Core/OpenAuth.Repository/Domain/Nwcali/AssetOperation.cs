@@ -19,40 +19,42 @@ namespace OpenAuth.Repository.Domain
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("Certplc")]
-    public partial class Certplc : Entity
+    [Table("assetoperation")]
+    public partial class AssetOperation : Entity
     {
-        public Certplc()
+        public AssetOperation()
         {
-          this.CertNo= string.Empty;
-          this.PlcGuid= string.Empty;
-          this.CreateTime= DateTime.Now;
+          this.InspectId= string.Empty;
+          this.OperationCZContent= string.Empty;
+          this.OperationCZDate= DateTime.Now;
+          this.OperationCZName= string.Empty;
         }
 
 
         /// <summary>
-        /// 证书编号
+        /// 资产ID
         /// </summary>
-        [Description("证书编号")]
-        public string CertNo { get; set; }
+        [Description("资产ID")]
+        public string AssetId { get; set; }
         /// <summary>
-        /// 下位机GUID
+        /// 送检ID
         /// </summary>
-        [Description("下位机GUID")]
-        public string PlcGuid { get; set; }
+        [Description("送检ID")]
+        public string InspectId { get; set; }
         /// <summary>
-        /// 创建时间
+        /// 操作内容
         /// </summary>
-        [Description("创建时间")]
-        public System.DateTime CreateTime { get; set; }
-
+        [Description("操作内容")]
+        public string OperationCZContent { get; set; }
         /// <summary>
-        /// 校准日期
+        /// 操作时间
         /// </summary>
-        public DateTime? CalibrationDate { get; set; }
+        [Description("操作时间")]
+        public System.DateTime? OperationCZDate { get; set; }
         /// <summary>
-        /// 过期日期
+        /// 操作人
         /// </summary>
-        public DateTime? ExpirationDate { get; set; }
+        [Description("操作人")]
+        public string OperationCZName { get; set; }
     }
 }

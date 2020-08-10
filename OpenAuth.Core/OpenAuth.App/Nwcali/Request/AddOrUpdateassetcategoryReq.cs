@@ -14,45 +14,44 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using OpenAuth.Repository.Core;
 
-namespace OpenAuth.Repository.Domain
+namespace OpenAuth.App.Request
 {
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("Certplc")]
-    public partial class Certplc : Entity
+    [Table("assetcategory")]
+    public partial class AddOrUpdateassetcategoryReq 
     {
-        public Certplc()
-        {
-          this.CertNo= string.Empty;
-          this.PlcGuid= string.Empty;
-          this.CreateTime= DateTime.Now;
-        }
-
 
         /// <summary>
-        /// 证书编号
+        /// 类别ID
         /// </summary>
-        [Description("证书编号")]
-        public string CertNo { get; set; }
+        public string Id { get; set; }
         /// <summary>
-        /// 下位机GUID
+        /// 资产ID
         /// </summary>
-        [Description("下位机GUID")]
-        public string PlcGuid { get; set; }
+        public string AssetId { get; set; }
         /// <summary>
-        /// 创建时间
+        /// 序号
         /// </summary>
-        [Description("创建时间")]
-        public System.DateTime CreateTime { get; set; }
-
+        public string CategoryNumber { get; set; }
         /// <summary>
-        /// 校准日期
+        /// 阻值
         /// </summary>
-        public DateTime? CalibrationDate { get; set; }
+        public decimal? CategoryOhms { get; set; }
         /// <summary>
-        /// 过期日期
+        /// 不确定度
         /// </summary>
-        public DateTime? ExpirationDate { get; set; }
+        public decimal? CategoryNondeterminacy { get; set; }
+        /// <summary>
+        /// 类型
+        /// </summary>
+        public string CategoryType { get; set; }
+        /// <summary>
+        /// 包含因子k
+        /// </summary>
+        public decimal? CategoryBHYZ { get; set; }
+        
+         //todo:添加自己的请求字段
     }
 }

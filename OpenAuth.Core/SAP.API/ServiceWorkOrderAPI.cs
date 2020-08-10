@@ -37,24 +37,21 @@ namespace SAP.API
                     sc.Subject = thisWorkOrder.FromTheme;
                     sc.CustomerCode = thisWorkOrder.ServiceOrder.CustomerId;
                     sc.CustomerName = thisWorkOrder.ServiceOrder.CustomerName;
-                    //sc.ContactCode
+                    //sc.ContactCode = 15;
                     if (thisWorkOrder.ContractId.Trim() != "" && thisWorkOrder.ContractId != null && thisWorkOrder.ContractId.Trim() != "-1")
                     {
                         sc.ContractID = Convert.ToInt32(thisWorkOrder.ContractId);
                     }
-                    sc.ManufacturerSerialNum = thisWorkOrder.ManufacturerSerialNumber;
-                    sc.InternalSerialNum = thisWorkOrder.InternalSerialNumber;
+                    //sc.ManufacturerSerialNum = thisWorkOrder.ManufacturerSerialNumber;
+                    //sc.InternalSerialNum = thisWorkOrder.InternalSerialNumber;
 
-                    if (thisWorkOrder.ServiceOrder.FromId != null && thisWorkOrder.ServiceOrder.FromId != -1)
-                    {
-                        sc.Origin = (int)thisWorkOrder.ServiceOrder.FromId;
-                    }
+                    //if (thisWorkOrder.ServiceOrder.FromId != null && thisWorkOrder.ServiceOrder.FromId != -1)
+                    //{
+                    //    sc.Origin = (int)thisWorkOrder.ServiceOrder.FromId;
+                    //}
                     sc.ItemCode = thisWorkOrder.MaterialCode;
                     sc.ItemDescription = thisWorkOrder.MaterialDescription;
-                    if (thisWorkOrder.Status != null)
-                    {
-                        sc.Status = (int)thisWorkOrder.Status;
-                    }
+                    sc.Status = -3;// 待处理 
                     if (thisWorkOrder.Priority != null && thisWorkOrder.Priority == 3)
                     {
                         sc.Priority = BoSvcCallPriorities.scp_High;
@@ -67,79 +64,23 @@ namespace SAP.API
                     {
                         sc.Priority = BoSvcCallPriorities.scp_Low;
                     }
-                    if (thisWorkOrder.FromType != null)
-                    {
-                        sc.CallType = (int)thisWorkOrder.FromType;
-                    }
+                    //if (thisWorkOrder.FromType != null)
+                    //{
+                    //    sc.CallType = (int)thisWorkOrder.FromType;
+                    //}
                     if (thisWorkOrder.ProblemType != null)
                     {
                         sc.ProblemType = thisWorkOrder.ProblemType.PrblmTypID;
                     }
                     sc.Description = thisWorkOrder.Remark;
                     //sc.TechnicianCode = thisWorkOrder.ServiceOrder.SupervisorId;
-                    sc.City = thisWorkOrder.ServiceOrder.City;
-                    sc.Room = thisWorkOrder.ServiceOrder.Addr;
-                    sc.State = thisWorkOrder.ServiceOrder.Province;
+                    //sc.City = thisWorkOrder.ServiceOrder.City;
+                    //sc.Room = thisWorkOrder.ServiceOrder.Addr;
+                    //sc.State = thisWorkOrder.ServiceOrder.Province;
                     //sc.Country = thisWorkOrder.ServiceOrder.
 
                     #endregion
 
-                    #region 解决方案
-                    int kbsRes = 0;
-                    int lineNum = 0;
-
-                    for (int i = 0; i < sc.Solutions.Count; i++)
-                    {
-                        sc.Solutions.SetCurrentLine(i);
-                        sc.Solutions.Delete();
-                    }
-
-                    //添加行明细
-                    if (thisWorkOrder.Solution != null)
-                    {
-                        Solution solution = thisWorkOrder.Solution;
-                        if (solution.SltCode == 0)
-                        {
-                            //先添加解决方案
-                            kbs.ItemCode = thisWorkOrder.MaterialCode;
-                            if (solution.Status != null)
-                            {
-                                kbs.Status = (int)solution.Status;
-                            }
-                            kbs.Solution = solution.Subject;
-                            kbs.Symptom = solution.Symptom;
-                            kbs.Cause = solution.Cause;
-                            kbs.Description = solution.Descriptio;
-                            kbsRes = kbs.Add();
-
-                            if (kbsRes == 0)
-                            {
-                                company.GetNewObjectCode(out newSolutionID);
-                                sc.Solutions.SetCurrentLine(lineNum);
-                                sc.Solutions.SolutionID = Convert.ToInt32(newSolutionID);
-                                sc.Solutions.UserFields.Fields.Item("U_ZZSXLH").Value = thisWorkOrder.ManufacturerSerialNumber;
-                                //sc.Solutions.UserFields.Fields.Item("U_PCBBH").Value = solution.U_PCBBH;
-                                //sc.Solutions.UserFields.Fields.Item("U_WZWL").Value = solution.U_WZWL;
-                                sc.Solutions.Add();
-                            }
-                            else
-                            {
-                                company.GetLastError(out eCode, out eMesg);
-                                allerror.Append("添加解决方案到SAP时异常！错误代码：" + eCode + "错误信息：" + eMesg);
-                            }
-
-                        }
-                        else
-                        {
-                            sc.Solutions.SetCurrentLine(lineNum);
-                            sc.Solutions.SolutionID = Convert.ToInt32(solution.SltCode);
-                            sc.Solutions.UserFields.Fields.Item("U_ZZSXLH").Value = thisWorkOrder.ManufacturerSerialNumber;
-                            //sc.Solutions.UserFields.Fields.Item("U_PCBBH").Value = solution.U_PCBBH;
-                            //sc.Solutions.UserFields.Fields.Item("U_WZWL").Value = solution.U_WZWL;
-                            sc.Solutions.Add();
-                        }
-                    }
-                    #endregion
 
                     res = sc.Add();
                     if (res != 0)

@@ -14,45 +14,40 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using OpenAuth.Repository.Core;
 
-namespace OpenAuth.Repository.Domain
+namespace OpenAuth.App.Request
 {
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("Certplc")]
-    public partial class Certplc : Entity
+    [Table("assetoperation")]
+    public partial class AddOrUpdateassetoperationReq 
     {
-        public Certplc()
-        {
-          this.CertNo= string.Empty;
-          this.PlcGuid= string.Empty;
-          this.CreateTime= DateTime.Now;
-        }
-
 
         /// <summary>
-        /// 证书编号
+        /// 操作ID
         /// </summary>
-        [Description("证书编号")]
-        public string CertNo { get; set; }
+        public string Id { get; set; }
         /// <summary>
-        /// 下位机GUID
+        /// 资产ID
         /// </summary>
-        [Description("下位机GUID")]
-        public string PlcGuid { get; set; }
+        public string AssetId { get; set; }
         /// <summary>
-        /// 创建时间
+        /// 送检ID
         /// </summary>
-        [Description("创建时间")]
-        public System.DateTime CreateTime { get; set; }
-
+        public string InspectId { get; set; }
         /// <summary>
-        /// 校准日期
+        /// 操作内容
         /// </summary>
-        public DateTime? CalibrationDate { get; set; }
+        public string OperationCZContent { get; set; }
         /// <summary>
-        /// 过期日期
+        /// 操作时间
         /// </summary>
-        public DateTime? ExpirationDate { get; set; }
+        public System.DateTime? OperationCZDate { get; set; }
+        /// <summary>
+        /// 操作人
+        /// </summary>
+        public string OperationCZName { get; set; }
+        
+         //todo:添加自己的请求字段
     }
 }

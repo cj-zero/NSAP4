@@ -86,7 +86,7 @@
           :data="list"
           v-loading="listLoading"
           border
-          style="width: 100%;"
+          style="width: 100%;height:650px;"
           highlight-current-row
           @row-click="rowClick"
         >
@@ -347,7 +347,8 @@ export default {
     'listQuery.page': {
       // deep: true,
       handler(val) {
-        callservesure.getTableList(val).then(response => {
+        this.listQuery.page = val
+        callservesure.getTableList(this.listQuery).then(response => {
           this.total = response.data.count;
           this.list = response.data.data;
           this.listLoading = false;
@@ -357,7 +358,8 @@ export default {
         'listQuery.limit': {
       // deep: true,
       handler(val) {
-        callservesure.getTableList(val).then(response => {
+        this.listQuery.limit = val
+        callservesure.getTableList(this.listQuery).then(response => {
           this.total = response.data.count;
           this.list = response.data.data;
           this.listLoading = false;
