@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Autofac;
 using Infrastructure.AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Neware.Cap.DependencyInjection;
 using OpenAuth.Repository.Extensions;
+using Sap.Handler.Autofac;
 using Sap.Handler.DependencyInjection;
 using Sap.Handler.Service;
 
@@ -33,13 +35,18 @@ namespace Sap.Handler
 
             services.AddDbContexts();
 
-            services.AddSap(Configuration);
+            //services.AddSap(Configuration);
 
             services.AddNewareCAP(Configuration);
 
-            services.AddScoped<ServiceOrderSapHandler>();
+            services.AddSingleton<ServiceOrderSapHandler>();
         }
 
+
+        public void ConfigureContainer(ContainerBuilder builder)
+        {
+            AutofacExtension.InitAutofac(builder, Configuration);
+        }
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {

@@ -16,13 +16,12 @@ namespace Sap.Handler.Service
 {
     public class ServiceOrderSapHandler : ICapSubscribe
     {
-        private readonly IUnitWork UnitWrok;
+        private readonly IUnitWork UnitWork;
         private readonly Company company;
-        protected IUnitWork UnitWork;
 
-        public ServiceOrderSapHandler(IUnitWork unitWrok, Company company)
+        public ServiceOrderSapHandler(IUnitWork unitWork, Company company)
         {
-            UnitWrok = unitWrok;
+            UnitWork = unitWork;
             this.company = company;
         }
 
