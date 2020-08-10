@@ -900,5 +900,26 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// 待确认/已确认服务呼叫列表（App）
+        /// </summary>
+        /// <param name="req">查询条件对象</param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> AppUnConfirmedServiceOrderList([FromQuery] QueryAppServiceOrderListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result.Data = await _serviceOrderApp.AppUnConfirmedServiceOrderList(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
     }
 }

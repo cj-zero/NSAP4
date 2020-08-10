@@ -1925,5 +1925,47 @@ namespace OpenAuth.App
             result.Data = list;
             return result;
         }
+
+        /// <summary>
+        /// 获取待确认/已确认服务单列表（App）
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> AppUnConfirmedServiceOrderList(QueryAppServiceOrderListReq req)
+        {
+            var result = new TableData();
+            var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceOrderSNs)
+                .Include(s => s.ServiceWorkOrders)
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryState) && Convert.ToInt32(req.QryState) > 0, q => q.Status.Equals(Convert.ToInt32(req.QryState)))
+                         .WhereIf(Convert.ToInt32(req.QryState) == 2, q => !q.ServiceWorkOrders.All(q => q.Status != 1))
+                         .WhereIf(Convert.ToInt32(req.QryState) == 0, q => q.Status == 1 || (q.Status == 2 && !q.ServiceWorkOrders.All(q => q.Status != 1)))
+                         .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => (s.Id == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key))))
+            .OrderBy(r => r.CreateTime).Select(q => new
+            {
+                q.Id,
+                q.CustomerId,
+                q.CustomerName,
+                q.Services,
+                q.CreateTime,
+                q.Contacter,
+                q.ContactTel,
+                q.Supervisor,
+                q.SalesMan,
+                q.Status,
+                q.ServiceOrderSNs.FirstOrDefault().ManufSN,
+                q.ServiceOrderSNs.FirstOrDefault().ItemCode,
+                q.Province,
+                q.City,
+                q.Area,
+                q.Addr
+            });
+
+            result.Data =
+            (await query//.OrderBy(u => u.Id)
+            .Skip((req.page - 1) * req.limit)
+            .Take(req.limit).ToListAsync());
+            result.Count = query.Count();
+            return result;
+        }
     }
 }
