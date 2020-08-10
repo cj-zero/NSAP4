@@ -621,8 +621,9 @@ this.list.push(item)
       // });
     },
     createData() {
-      this.sure = this.sure + 1; //向form表单发送提交通知
+             this.loadingBtn  =true
 
+       this.sure = this.sure + 1; //向form表单发送提交通知
       // 保存提交
       // this.$refs["dataForm"].validate(valid => {
       //   if (valid) {
@@ -659,10 +660,12 @@ this.list.push(item)
     },
     closeDia(a) {
       if (a === 1) {
-        // this.FormUpdate = false
         this.getList();
       }
-
+      if(a=='N'){
+         this.loadingBtn = false
+         return 
+      }
       this.loadingBtn = false;
       this.dialogFormVisible = false;
     },
