@@ -2,16 +2,31 @@
   <div>
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
-        <el-input
+        <!-- <el-input
           @keyup.enter.native="handleFilter"
           size="mini"
           style="width: 200px;"
           class="filter-item"
           :placeholder="'名称'"
           v-model="listQuery.CardCodeOrCardName"
+        ></el-input> -->
+  <el-input
+          @keyup.enter.native="handleFilter"
+          size="mini"
+          style="width: 200px;margin:0 10px;"
+          class="filter-item"
+          :placeholder="'客户'"
+          v-model="listQuery.CardCodeOrCardName"
+        ></el-input> 
+         <el-input
+          @keyup.enter.native="handleFilter"
+          size="mini"
+          style="width: 200px;"
+          class="filter-item"
+          :placeholder="'制造商序列号'"
+          v-model="listQuery.ManufSN"
         ></el-input>
-
-        <el-button
+         <el-button
           class="filter-item"
           size="mini"
           v-waves
@@ -46,7 +61,7 @@
           ></el-table-column>
           <el-table-column prop="cardCode" label="客户代码" align="left" show-overflow-tooltip></el-table-column>
           <el-table-column prop="address" label="客户地址" align="left" show-overflow-tooltip></el-table-column>
-     <el-table-column align="center" label="状态冻结" width="120">
+     <el-table-column align="left" label="状态冻结" width="120">
         <template slot-scope="scope">
           <span
             :class="[scope.row.frozenFor=='N'?'greenColro':'redColor']"
@@ -57,7 +72,7 @@
           <el-table-column prop="groupName" label="客户联系人" align="left" show-overflow-tooltip></el-table-column>
           <el-table-column prop="cntctPrsn" label="业务员" align="left" show-overflow-tooltip></el-table-column>
           <el-table-column prop="slpName" label="销售员" align="left" show-overflow-tooltip></el-table-column>
-       <el-table-column align="center" label="科目余额" width="120">
+       <el-table-column align="right" label="科目余额" width="120">
         <template slot-scope="scope">
           <span :class="[scope.row.balance>=0?'redColor':'greenColro']">{{scope.row.balance}}0000</span>
         </template>
@@ -149,7 +164,8 @@ export default {
       listQuery: {
         // 查询条件
         page: 1,
-        limit: 20,
+        limit: 50,
+        ManufSN:'',
         key: undefined,
         appId: undefined,
         CardCodeOrCardName:''

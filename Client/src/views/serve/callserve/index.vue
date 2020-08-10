@@ -104,7 +104,7 @@
               >{{statusOptions[scope.row[fruit.name]].label}}</span>
               <span
                 v-if="fruit.name === 'serviceStatus'">
-                {{ statusOptions[scope.row[fruit.name]].label }}
+                {{ serviceStatusOptions[scope.row[fruit.name]].display_name }}
               </span>
               <span
                 v-if="fruit.name === 'workOrderNumber'">
@@ -279,7 +279,7 @@ export default {
         { name: "salesMan", label: "销售员" ,align:'left' },
         { name: "recepUserName", label: "接单员" ,align:'left' },
         { name: 'serviceCreateTime', label: '创建时间', align: 'left' },
-        { name: 'serviceStatus', label: '呼叫状态', align: 'left' },
+        { name: 'serviceStatus', label: '服务单状态', align: 'left' },
         { name: 'workOrderNumber', label: '工单数', align: 'left' } 
       ],
             ChildheadOptions: [
@@ -305,11 +305,11 @@ export default {
         { name: "warrantyEndDate", label: "结束时间",align:'left'  },
       ],
       // stateValue: ["待确认", "已确认", "已取消"],
-      // statusOptions: [
-      //   { key: 1, display_name: "待确认" },
-      //   { key: 2, display_name: "已确认" },
-      //   { key: 3, display_name: "已取消" }
-      // ],
+      serviceStatusOptions: [
+        { key: 1, display_name: "待确认" },
+        { key: 2, display_name: "已确认" },
+        { key: 3, display_name: "已取消" }
+      ],
             statusOptions: [
         { value: 1, label: "待处理" },
         { value: 2, label: "已排配" },
