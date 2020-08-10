@@ -1,17 +1,17 @@
 <template>
-  <el-form ref="form" :model="form" label-width="80px" size="mini">
+  <el-form ref="form" :model="form" label-width="70px" size="mini">
     <div style="padding:10px 0;"></div>
     <el-row :gutter="3">
-      <el-col :span="2">
+      <el-col :span="2" style="min-width: 160px;">
         <el-form-item label="服务ID">
           <el-input   v-model="form.QryServiceOrderId" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
-      <el-col :span="2">
+      <!-- <el-col :span="2">
         <el-form-item label="工单ID">
           <el-input  v-model="form.QryServiceWorkOrderId" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
-      </el-col>
+      </el-col> -->
       <el-col :span="3">
         <el-form-item label="呼叫状态">
           <el-select  clearable v-model="form.QryState" placeholder="请选择呼叫状态">
@@ -24,23 +24,23 @@
           </el-select>
         </el-form-item>
       </el-col>
-      <el-col :span="2">
+      <el-col :span="3">
         <el-form-item label="客户">
           <el-input  v-model="form.QryCustomer" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
-      <el-col :span="2">
+      <el-col :span="3">
         <el-form-item label="序列号">
           <el-input  v-model="form.QryManufSN" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
-      <el-col :span="2">
+      <el-col :span="3">
         <el-form-item label="接单员">
           <el-input  v-model="form.QryRecepUser" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
-    </el-row>
-    <el-row :gutter="10">
+    <!-- </el-row> -->
+    <!-- <el-row :gutter="10"> -->
       <el-col :span="3">
         <el-form-item label="技术员">
           <el-input  v-model="form.QryTechName" @keyup.enter.native='onSubmit'></el-input>
@@ -52,32 +52,34 @@
         </el-form-item>
       </el-col>
 
-      <el-col :span="6">
+      <el-col :span="6" style="margin-left: 10px">
         <el-row :gutter="3">
           <el-form-item label="创建日期">
             <el-col :span="11">
               <el-date-picker
-                
+                :clearable="false"
                 type="date"
                 placeholder="选择开始日期"
                 v-model="form.startTime"
-                style="width: 100%;"
+                style="width: 100%;padding: 0 10px;"
+                class="date-wrapper"
               ></el-date-picker>
             </el-col>
             <el-col class="line" :span="2">至</el-col>
             <el-col :span="11">
               <el-date-picker
-                
+                class="date-wrapper"
+                :clearable="false"
                 type="date"
                 placeholder="选择结束时间"
                 v-model="form.endTime"
-                style="width: 100%;"
+                style="width: 100%;padding: 0 10px;"
               ></el-date-picker>
             </el-col>
           </el-form-item>
         </el-row>
       </el-col>
-      <el-col :span="4">
+      <el-col :span="2">
         <el-form-item>
           <!-- <el-button size="middle" type="primary" @click="onSubmit"> 搜 索 </el-button> -->
                               <el-button type="primary" @click="onSubmit" size="mini" icon="el-icon-search"> 搜 索 </el-button>
@@ -132,5 +134,14 @@ export default {
 };
 </script>
 
-<style>
+<style lang="scss" scoped>
+.date-class {
+  padding: 0 10px;
+}
+.date-wrapper {
+  ::v-deep .el-input__inner {
+    padding-left: 14px;
+    padding-right: 10px;
+  }
+}
 </style>

@@ -1,7 +1,6 @@
 <template>
   <div>
-    详情
-    <el-form :model="formData" position="left" label-width="110px">
+    <el-form :model="formData" position="left" label-width="110px" size="mini">
       <el-row type="flex" justify="space-around">
         <el-col :span="11">
           <el-form-item label="资产ID" required>
@@ -101,13 +100,23 @@
         <el-col :span="11">
           <el-form-item label="校准证书">
             <el-upload
+              ref="assetJZCertificate"
               class="avatar-uploader"
-              action="https://jsonplaceholder.typicode.com/posts/"
+              :action="action"
+              :headers="headers"
               :show-file-list="false"
-              :on-success="handleAvatarSuccess"
+              :on-success="handleSuccessJZ"
               :before-upload="beforeAvatarUpload">
-              <img v-if="formData.assetImg" :src="formData.assetImg" class="upload-img">
-              <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+              <div v-if="formData.assetJZCertificate" class="upload-img" @click.stop>
+                <img v-if="formData.assetJZCertificate" :src="formData.assetJZCertificate" class="upload-img">
+                <div class="mask-wrapper">
+                  <i class="el-icon-zoom-in item" @click="previewImg('assetJZCertificate')"></i>
+                  <i class="el-icon-delete item" @click="removeImg('assetJZCertificate')"></i>
+                </div>
+              </div>
+              <div v-else class="add-wrapper">
+                <el-button type="primary" size="mini">添加文件</el-button>
+              </div>
             </el-upload>
           </el-form-item>
         </el-col>
@@ -128,66 +137,93 @@
             <el-row type="flex" justify="space-around">
               <el-col :span="10">
                 <el-upload
+                  ref="assetJZData1"
                   class="avatar-uploader"
-                  action="https://jsonplaceholder.typicode.com/posts/"
+                  :action="action"
+                  :headers="headers"
                   :show-file-list="false"
-                  :on-success="handleAvatarSuccess"
+                  :on-success="handleSuccessData1"
                   :before-upload="beforeAvatarUpload">
-                  <img v-if="formData.assetImg" :src="formData.assetImg" class="upload-img">
-                  <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                  <div v-if="formData.assetJZData1" class="upload-img" @click.stop>
+                    <img v-if="formData.assetJZData1" :src="formData.assetJZData1" class="upload-img">
+                    <div class="mask-wrapper">
+                      <i class="el-icon-zoom-in item" @click="previewImg('assetJZData1')"></i>
+                      <i class="el-icon-delete item" @click="removeImg('assetJZData1')"></i>
+                    </div>
+                  </div>
+                  <div v-else class="add-wrapper">
+                    <el-button type="primary" size="mini">添加文件</el-button>
+                  </div>
                 </el-upload>
               </el-col>
               <el-col :span="10">
                 <el-upload
+                  ref="assetJZData2"
                   class="avatar-uploader"
-                  action="https://jsonplaceholder.typicode.com/posts/"
+                  :action="action"
+                  :headers="headers"
                   :show-file-list="false"
-                  :on-success="handleAvatarSuccess"
+                  :on-success="handleSuccessData2"
                   :before-upload="beforeAvatarUpload">
-                  <img v-if="formData.assetImg" :src="formData.assetImg" class="upload-img">
-                  <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                  <div v-if="formData.assetJZData2" class="upload-img" @click.stop>
+                    <img v-if="formData.assetJZData2" :src="formData.assetJZData2" class="upload-img">
+                    <div class="mask-wrapper">
+                      <i class="el-icon-zoom-in item" @click="previewImg('assetJZData2')"></i>
+                      <i class="el-icon-delete item" @click="removeImg('assetJZData2')"></i>
+                    </div>
+                  </div>
+                  <div v-else class="add-wrapper">
+                    <el-button type="primary" size="mini">添加文件</el-button>
+                  </div>
                 </el-upload>
               </el-col>
             </el-row>
-            
           </el-form-item>
         </el-col>
       </el-row>
       <el-row>
         <el-form-item label="技术文件" required>
           <el-upload
+            ref="assetJSFile"
             class="avatar-uploader"
-            action="https://jsonplaceholder.typicode.com/posts/"
+            :action="action"
+            :headers="headers"
             :show-file-list="false"
-            :on-success="handleAvatarSuccess"
-            :on-remove="handleRemove"
+            :on-success="handleSuccessJS"
             :before-upload="beforeAvatarUpload">
-            <img v-if="formData.assetImg" :src="formData.assetImg" class="upload-img">
-            <div v-else>
-              <el-button size="mini" type="primary">点击上传</el-button>
-              <i class="el-icon-plus avatar-uploader-icon"></i>
+            <div v-if="formData.assetJSFile" class="upload-img">
+              <img v-if="formData.assetJSFile" :src="formData.assetJSFile" class="upload-img">
+              <div class="mask-wrapper">
+                <i class="el-icon-zoom-in item" @click="previewImg('assetJSFile')"></i>
+                <i class="el-icon-delete item" @click="removeImg('assetJSFile')"></i>
+              </div>
             </div>
-            
+            <div v-else class="add-wrapper">
+              <el-button type="primary" size="mini">添加文件</el-button>
+            </div>
           </el-upload>
+          <!-- <upLoadImage :limit="1" @get-ImgList="getImgList"></upLoadImage> -->
         </el-form-item>
       </el-row>
       <el-row>
         <el-form-item label="描述">
-          <el-input type="textarea" v-model="formData.assetDescribe" autosize></el-input>
+          <el-input type="textarea" v-model="formData.assetDescribe" autosize :rows="3"></el-input>
         </el-form-item>
       </el-row>
       <el-row>
         <el-form-item label="备注">
-          <el-input type="textarea" v-model="formData.assetRemarks" autosize></el-input>
+          <el-input type="textarea" v-model="formData.assetRemarks" autosize :rows="3"></el-input>
         </el-form-item>
       </el-row>
       <el-row>
-        <el-form-item label="描述">
+        <el-form-item label="图片">
           <el-upload
+            ref="assetImg"
             class="avatar-uploader"
-            action="https://jsonplaceholder.typicode.com/posts/"
+            :action="action"
+            :headers="headers"
             :show-file-list="false"
-            :on-success="handleAvatarSuccess"
+            :on-success="handleSuccessImg"
             :before-upload="beforeAvatarUpload">
             <img v-if="formData.assetImg" :src="formData.assetImg" class="upload-img">
             <i v-else class="el-icon-plus avatar-uploader-icon"></i>
@@ -195,6 +231,13 @@
         </el-form-item>
       </el-row>
     </el-form>
+    <!-- 预览图 -->
+    <el-dialog
+      :visible.sync="visible"
+      top="10vh"
+    >
+      <img :src="currentImg" width="100%">
+    </el-dialog>
   </div>
 </template>
 
@@ -204,7 +247,8 @@
 // const SYS_AssetSJType = 'SYS_AssetSJType' // 送检类型
 // const SYS_CategoryNondeterminacy = 'SYS_CategoryNondeterminacy' // 阻值类型
 export default {
-  components: {},
+  components: {
+  },
   props: {
     type: {
       type: String,
@@ -219,6 +263,12 @@ export default {
   },
   data () {
     return {
+      action: `${process.env.VUE_APP_BASE_API}/Files/Upload`, // 文件上传地址
+      headers:{ // 上传标识
+        "X-Token": this.$store.state.user.token
+      },
+      visible: false, // 预览图弹窗
+      currentImg: '', // 当前preview的图片
       formData: {
         id: '', // 资产ID
         assetStatus: [], // 状态
@@ -245,35 +295,79 @@ export default {
       tableData: [],
     }
   },
+  watch: {
+    'formData.assetJZCertificate' (val) {
+      this.toggleInputDisabled('assetJZCertificate', val)
+    },
+    'formData.assetJZData1' (val) {
+      this.toggleInputDisabled('assetJZData1', val)
+    },
+    'formData.assetJZData2' (val) {
+      this.toggleInputDisabled('assetJZData2', val)
+    },
+    'formData.assetJSFile' (val) {
+      this.toggleInputDisabled('assetJSFile', val)
+    },
+    'formData.assetImg' (val) {
+      this.toggleInputDisabled('assetImg', val)
+    }
+  },
   methods: {
     handleSelect () {},
     querySearchAsync () {},
-    handleRemove(file, fileList) {
-      console.log(file, fileList);
-    },
-    handlePreview(file) {
-      console.log(file);
-    },
-    handleExceed(files, fileList) {
-      this.$message.warning(`当前限制选择 3 个文件，本次选择了 ${files.length} 个文件，共选择了 ${files.length + fileList.length} 个文件`);
+    toggleInputDisabled (type, val) {
+      let input = this.$refs[type].$el.childNodes[0].childNodes[1] // 取到input元素
+      console.log(val, 'val')
+      if (val) { // 图片有值时
+        input.setAttribute('disabled', 'disabled')
+        console.log(input, 'input')
+      } else {
+        setTimeout(() => {
+          input.removeAttribute('disabled')
+        }, 0)
+      }
     },
     beforeRemove(file) {
       return this.$confirm(`确定移除 ${ file.name }？`);
     },
+    handleSuccessJZ (res, file) { // 校准证书图片
+      this.setImg('assetJZCertificate', file)
+    },
+    handleSuccessData1 (res, file) { // 数据1
+      this.setImg('assetJZData1', file)
+    },
+    handleSuccessData2 (res, file) { // 数据2
+      this.setImg('assetJZData2', file)
+    },
+    handleSuccessJS (res, file) { // 技术文件
+      this.setImg('assetJSFile', file)
+    },
+    handleSuccessImg (res, file) { // 图片
+      this.setImg('assetImg', file)
+    },
+    removeImg (type) {
+      this.formData[type] = ''
+    },
+    previewImg (type) {
+      this.visible = true
+      this.currentImg = this.formData[type]
+    },
     handleAvatarSuccess(res, file) {
+      // {
+      //   pictureId:res.result[0].id
+      // }
       this.formData.assetImg = URL.createObjectURL(file.raw);
     },
+    setImg (type, file) {
+      console.log('222')
+      this.formData[type] = URL.createObjectURL(file.raw);
+    },
     beforeAvatarUpload(file) {
-      const isJPG = file.type === 'image/jpeg';
-      const isLt2M = file.size / 1024 / 1024 < 2;
-
-      if (!isJPG) {
-        this.$message.error('上传头像图片只能是 JPG 格式!');
+      let testmsg = /^image\/(jpeg|png|jpg)$/.test(file.type)
+      if (!testmsg) {
+        this.$message.error('上传图片格式不对!')
       }
-      if (!isLt2M) {
-        this.$message.error('上传头像图片大小不能超过 2MB!');
-      }
-      return isJPG && isLt2M;
+      return testmsg
     }
   },
   created () {
@@ -286,8 +380,8 @@ export default {
 <style lang='scss' scoped>
 .avatar-uploader {
   position: relative;
-  width: 50px;
-  height: 50px;
+  width: 80px;
+  height: 40px;
   ::v-deep .el-upload {
     position: relative;
     width: 100%;
@@ -303,9 +397,37 @@ export default {
     height: 15px;
     margin: auto;
   }
+  .add-wrapper {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+  }
   .upload-img {
-    width: 50px;
-    height: 50px;
+    position: relative;
+    width: 80px;
+    height: 40px;
+    &:hover .mask-wrapper {
+      opacity: 1;
+    }
+    .mask-wrapper {
+      position: absolute;
+      display: flex;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      top: 0;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(0, 0, 0, .5);
+      opacity: 0;
+      transition: opacity .3s;
+      .item {
+        margin: 0 5px;
+        color: white;
+      }
+    }
   }
 }
 </style>

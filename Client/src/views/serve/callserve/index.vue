@@ -74,6 +74,7 @@
                     <span
                       v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
                     >{{scope.row[fruit.name]}}</span>
+                    <!-- <span v-if="fruit.name === 'recepUserName'">{{ scope.row.</span> -->
                   </template>
                 </el-table-column>
               </el-table>
@@ -101,12 +102,26 @@
                 :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
               >{{statusOptions[scope.row[fruit.name]].label}}</span>
               <span
+                v-if="fruit.name === 'serviceStatus'">
+                {{ statusOptions[scope.row[fruit.name]].label }}
+              </span>
+              <span
+                v-if="fruit.name === 'workOrderNumber'">
+                {{ scope.row.serviceWorkOrders.length }}
+              </span>
+              <span
                 v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
               >{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
               <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
               <span
-                v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
+                v-if="fruit.name!='priority'&&
+                fruit.name!='fromType'&&
+                fruit.name!='status'&&
+                fruit.name!='serviceOrderId'&&
+                fruit.name !== 'serviceStatus'&&
+                fruit.name !== 'workOrderNumber'"
               >{{scope.row[fruit.name]}}</span>
+              
             </template>
           </el-table-column>
         </el-table>
@@ -230,6 +245,7 @@ import zxform from "./form";
 import zxsearch from "./search";
 import zxchat from "./chatOnRight";
 import treeList from "./treeList";
+// import serveTableVue from '../serveTable.vue';
 // import { callserve } from "@/mock/serve";
 export default {
   name: "callservesure",
@@ -253,13 +269,17 @@ export default {
       key: 1, // table key
       sure: 0,
       ParentHeadOptions: [
-        { name: "serviceOrderId", label: "服务单号", width: "80px",align:'left' ,  sortable:true},
+        { name: "serviceOrderId", label: "服务单号", width: "80px", align:'left' ,  sortable:true},
         { name: "customerId", label: "客户代码",align:'left' },
         { name: "customerName", label: "客户名称" ,align:'left' },
         { name: "contacter", label: "联系人" ,align:'left' },
         { name: "contactTel", label: "电话号码" ,width:'150px',align:'left' },
         { name: "supervisor", label: "售后主管" ,align:'left' },
         { name: "salesMan", label: "销售员" ,align:'left' },
+        { name: "recepUserName", label: "接单员" ,align:'left' },
+        { name: 'serviceCreateTime', label: '创建时间', align: 'left' },
+        { name: 'serviceStatus', label: '呼叫状态', align: 'left' },
+        { name: 'workOrderNumber', label: '工单数', align: 'left' } 
       ],
             ChildheadOptions: [
         // { name: "serviceOrderId", label: "服务单号", ifFixed: true },
@@ -269,10 +289,10 @@ export default {
         // { name: "customerId", label: "客户代码" },
         { name: "status", label: "状态" ,align:'left' },
         // { name: "customerName", label: "客户名称" },
-         { name: "FromTheme", label: "呼叫主题",align:'left'  },
+         { name: "fromTheme", label: "呼叫主题",align:'left'  },
         { name: "createTime", label: "创建日期" ,width:'160px',align:'left' },
-        { name: "RecepUserName", label: "接单员" ,align:'left' },
-        { name: "TechName", label: "技术员" ,align:'left' },
+        { name: "recepUserName", label: "接单员" ,align:'left' },
+        { name: "currentUser", label: "技术员" ,align:'left' },
          { name: "materialCode", label: "制造商序列号",width:'140px' ,align:'left' },
          { name: "materialDescription", label: "物料编码",width:'120px' ,align:'left' },
         // { name: "contacter", label: "联系人" },
@@ -396,6 +416,7 @@ export default {
           arr[i].label = `服务${resul[i].serviceOrderId}`;
           resul[i].serviceWorkOrders.map((item1,index) => {
             arr[i].serviceWorkOrders[index].label= `工单${item1.id}` ;
+            arr[i].serviceWorkOrders[index].recepUserName = arr[i].recepUserName
           })
         }
         this.total = response.data.count;
@@ -524,15 +545,26 @@ export default {
     // changeState(ind){
     //   this.formList[ind].editTrue = !this.formList[ind].editTrue
     // },
+    _normalize (data) {
+      let resultArr = data.map(item => {
+        let { recepUserName, serviceWorkOrders } = item
+        serviceWorkOrders.forEach(workItem => {
+          workItem.recepUserName = recepUserName
+        })
+        return item
+      })
+      this.list = resultArr
+    },
     getList() {
       this.listLoading = true;
       callservesure.rightList(this.listQuery).then(response => {
             let resul = response.data.data;
         this.total =response.count;
-        this.list=[]
-         resul.map(item=>{
-this.list.push(item)
-        });
+        this._normalize(resul)
+//         this.list=[]
+//          resul.map(item=>{
+// this.list.push(item)
+//         });
         this.listLoading = false;
       }).catch(() => {
         this.listLoading = true;
