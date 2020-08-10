@@ -1809,7 +1809,7 @@ namespace OpenAuth.App
                      userlist.Add(u)
                 );
                 var ids = userlist.Intersect(tUsers.Select(u => u.UserID));
-                var users = await UnitWork.Find<User>(u => ids.Contains(u.Id)).WhereIf(!string.IsNullOrEmpty(req.key), u => u.Name.Equals(req.key)).ToListAsync();
+                var users = await UnitWork.Find<User>(u => ids.Contains(u.Id)).WhereIf(!string.IsNullOrEmpty(req.key), u => u.Name.Contains(req.key)).ToListAsync();
                 var us = users.Select(u => new { u.Name, AppUserId = tUsers.FirstOrDefault(a => a.UserID.Equals(u.Id)).AppUserId, u.Id });
                 var appUserIds = tUsers.Where(u => userIds.Contains(u.UserID)).Select(u => u.AppUserId).ToList();
 
