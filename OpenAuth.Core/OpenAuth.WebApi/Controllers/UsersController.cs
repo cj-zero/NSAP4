@@ -166,6 +166,13 @@ namespace OpenAuth.WebApi.Controllers
             return _app.LoadByOrg(request);
         }
 
+        [HttpPost]
+        public async Task BlockUp(BlockUpUserReq req)
+        {
+            await _app.BlockUp(req);
+        }
+
+
         public UsersController(UserManagerApp app) 
         {
             _app = app;
