@@ -52,33 +52,29 @@
               </el-form-item>
             </el-col>
             <el-col :span="6">
-              <el-form-item label="打卡日期" size="small" >
-                <el-col :span="11">
-                  <el-time-select
-                    placeholder="选择开始日期"
-                    v-model="listQuery.DateFrom"
-                    style="width: 100%;"
-                      :picker-options="{
-                        start: '05:30',
-                        step: '00:15',
-                        end: '23:30'
-                      }"
-                  ></el-time-select>
-                </el-col>
-                <el-col class="line" :span="2">至</el-col>
-                <el-col :span="11">
-                  <el-time-select
-                    placeholder="选择结束时间"
-                    v-model="listQuery.DateTo"
-                    style="width: 100%;"
-                      :picker-options="{
-                        start: '05:30',
-                        step: '00:15',
-                        end: '23:30'
-                      }"
-                  ></el-time-select>
-                </el-col>
-              </el-form-item>
+                          <el-form-item label="创建日期" >
+          <el-col :span="11">
+            <el-date-picker
+            
+           format="yyyy-MM-dd"   
+              value-format="yyyy-MM-dd"
+              placeholder="选择开始日期"
+              v-model="listQuery.DateFrom"
+              style="width: 100%;"
+            ></el-date-picker>
+          </el-col>
+          <el-col class="line" :span="2">至</el-col>
+          <el-col :span="11">
+            <el-date-picker
+               format="yyyy-MM-dd"   
+              value-format="yyyy-MM-dd"
+              placeholder="选择结束时间"
+              v-model="listQuery.DateTo"
+              style="width: 100%;"
+            ></el-date-picker>
+          </el-col>
+        </el-form-item>
+               
             </el-col>
               <el-col :span="3" style="margin-left:20px;" >
                     <el-button type="primary" @click="onSubmit" size="small" icon="el-icon-search"> 搜 索 </el-button>

@@ -107,23 +107,10 @@ export default {
     //   console.log(this.SerialNumberList)
   },
   methods: {
-    //  handleChange(val) {
-    //   this.listQuery.page = val.page;
-    //   this.listQuery.limit = val.limit;
-    //   // this.getList();
-    // },
     checkIsSelectAble (row) {
       return this.formList.length ? 
         this.formList.every(formItem => formItem.manufacturerSerialNumber !== row.manufSN) :
         true
-    },
-    checkDisabled (row) {
-      let isSelectAble = this.checkIsSelectAble(row)
-      let isSingleClick = isSelectAble ? false : 
-            this.currentTarget.manufacturerSerialNumber === row.manufSN ? 
-            false : true
-      row.isSingleClick = !isSingleClick
-      return isSingleClick
     },
     checkSelectable (row) {
       let isSelectAble = this.checkIsSelectAble(row)

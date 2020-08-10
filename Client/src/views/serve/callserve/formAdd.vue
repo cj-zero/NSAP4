@@ -57,6 +57,7 @@
           <el-col :span="8">
             <el-form-item
               label="序列号"
+              
               prop="manufacturerSerialNumber"
               :rules="{
               required: true, message: '制造商序列号不能为空', trigger: 'blur'
@@ -66,9 +67,11 @@
                 @focus="handleIconClick(formList[0], 0)"
                 v-model="formList[0].manufacturerSerialNumber"
                 readonly
+                :disabled="!form.customerId"
                 size="small"
               >
-                <el-button size="mini" slot="append" icon="el-icon-search" @click="handleIconClick(formList[0], 0)"></el-button>
+                <!-- <el-button size="mini" slot="append" icon="el-icon-search" @click="handleIconClick(formList[0], 0)"></el-button> -->
+                <el-button size="mini" :disabled="!form.customerId"  slot="append" icon="el-icon-search" @click="handleIconClick(formList[0], 0)"></el-button>
               </el-input>
             </el-form-item>
           </el-col>
@@ -629,10 +632,13 @@
     </el-collapse>
     <!-- </div> -->
     <el-dialog
+    :modal-append-to-body='false'
+    :append-to-body="true"
       class="addClass1"
       :title="`第${sortForm}工单`"
       center
       :destroy-on-close="true"
+      
       :visible.sync="proplemTree"
       width="250px"
     >
@@ -641,6 +647,8 @@
     <el-dialog
       :title="`第${sortForm}个工单的解决方案`"
       center
+      :modal-append-to-body='false'
+          :append-to-body="true"
       class="addClass1"
       loading
       :visible.sync="solutionOpen"
@@ -662,6 +670,7 @@
     <el-dialog
       :append-to-body="true"
       :destroy-on-close="true"
+      :modal-append-to-body='false'
       class="addClass1"
       title="选择制造商序列号"
       @open="openDialog"
@@ -707,6 +716,7 @@
         :formList="formList"
         :visible="dialogChange"
         :currentTarget="currentTarget"
+        @toggleDisabledClick="toggleDisabledClick"
       />
       <pagination
         v-show="SerialCount>0"
@@ -717,20 +727,22 @@
       />
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogfSN = false">取 消</el-button>
-        <el-button type="primary" @click="pushForm">确 定</el-button>
+        <el-button type="primary" @click="pushForm" :disabled="isDisalbed">确 定</el-button>
       </span>
     </el-dialog>
-    <el-dialog title="你可以批量更改下列信息" 
-
-
+    <el-dialog title="填写以下信息" 
+:show-close="false"
+:modal-append-to-body='false'
+:append-to-body="true"
+:destroy-on-close="true"
+:close="clearForm"
     :visible.sync="dia_copyForm" width="800px">
       <el-form
         :model="copyForm"
         :rules="ruleCopy"
         ref="copyForm"
         label-width="100px"
-        id="demo-ruleForm"
-      >
+        id="demo-ruleForm" >
         <el-row type="flex" class="row-bg" justify="space-around">
           <el-col :span="24">
             <el-form-item
@@ -794,7 +806,7 @@
           label="解决方案"
           prop="solutionId"
           :rules="{
-              required: copyForm.fromType === 2, message: '解决方案不能为空', trigger: 'clear'
+              required: copyForm.fromType === 2, message: '解决方案不能为空', trigger: 'change'
             }"
         >
           <el-input
@@ -971,7 +983,8 @@ export default {
              problemTypeId: [
             { required: true, message: '请选择活动区域', trigger: 'change' }
           ],
-      }
+      },
+      isDisalbed: false
     };
   },
   created() {},
@@ -1096,6 +1109,9 @@ export default {
   // },
   inject: ["form"],
   methods: {
+    toggleDisabledClick (val) {
+      this.isDisalbed = val
+    },
     getSerialNumberList() {
       this.listLoading = true;
       this.serLoad = true;
@@ -1152,6 +1168,7 @@ export default {
     NodeClick(res) {
       this.copyForm.problemTypeName = res.name;
       this.copyForm.problemTypeId = res.id;
+
       this.formList[this.sortForm - 1].problemTypeName = res.name;
       this.formList[this.sortForm - 1].problemTypeId = res.id;
       this.problemLabel = res.name;
@@ -1194,25 +1211,35 @@ export default {
     changeForm(res) {
       this.formListStart = res;
     },
+clearForm(){
+  console.log(this.copyForm)
+
+ console.log(this.copyForm)
+},
        resetForm(formName) {
         this.$refs[formName].resetFields();
               this.dia_copyForm = false 
             this.waitingAdd = false;
             this.submitForm(formName,1)
       },
-    async submitForm(formName,b) {
+
+     async submitForm(formName,b) {
        let validq = false
         if(!b){
-        validq = await this.$refs[formName].validate()
+            try{
+        await  this.$refs[formName].validate()
+            validq =true
+            }catch(err){
+              validq =false
+            }
         }else{
-validq = true
-
+          validq =true
         }
-       
           if(validq){
-                 let copyFo = this.copyForm;
-       this.dia_copyForm = false 
-       this.copyForm.problemTypeName ="" 
+         let copyFo = this.copyForm;
+        this.dia_copyForm = false 
+
+       console.log(copyFo,validq)
       let flag = this.copyForm.fromTheme;
       if (!this.formList[0].manufacturerSerialNumber) {
         //判断从哪里新增的依据是第一个工单是否有id
@@ -1236,13 +1263,13 @@ validq = true
             solutionsubject: flag ? copyFo.solutionsubject : "",
           });
         }
+      
             this.formList[0].manufacturerSerialNumber=this.formListStart[0].manufSN,
             this.formList[0].internalSerialNumber= this.formListStart[0].internalSN,
             this.formList[0].materialCode=  this.formListStart[0].itemCode,
             this.formList[0].materialDescription=  this.formListStart[0].itemName,
             this.formList[0].feeType= 1,
-                        this.formList[0].editTrue= true,
-
+            this.formList[0].editTrue= true,
             this.formList[0].fromTheme= flag ? copyFo.fromTheme : "",
             this.formList[0].fromType= flag ? copyFo.fromType : 1,
             this.formList[0].problemTypeName= flag ? copyFo.problemTypeName : "",
@@ -1275,8 +1302,12 @@ validq = true
         }
 
         this.ifFormPush = true;
+        
+
+         this.$refs[formName].resetFields();
+       this.copyForm.problemTypeName = ''
       } else {
-        console.log(this.formList,this.formListname)
+
         this.ifFormPush = true;
         if (this.inputname) {
           this.formListStart.push({
@@ -1316,9 +1347,13 @@ validq = true
             solutionsubject: flag ? copyFo.solutionsubject : "",
           });
         }
+         
+        this.$refs[formName].resetFields();
+       this.copyForm.problemTypeName = ''
+      
       }
       this.waitingAdd = false;
-      this.$refs[formName].resetFields();
+      // this.$refs[formName].resetFields();
       
           }else{
        this.$message({

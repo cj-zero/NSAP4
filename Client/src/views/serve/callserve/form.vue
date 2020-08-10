@@ -189,7 +189,7 @@
                 <el-form-item label="现地址">
                   <!-- <el-input size="mini" v-model="form.city"></el-input> -->
                   <p
-                    style="border: 1px solid silver; border-radius:5px;height:30px;margin:0;padding-left:10px;font-size:12px;"
+                    style="overflow-x:hidden;border: 1px solid silver; border-radius:5px;height:30px;margin:0;padding-left:10px;font-size:12px;"
                   >{{allArea}}</p>
                 </el-form-item>
               </el-col>
@@ -272,6 +272,8 @@
       <el-dialog
         title="选择地址"
         width="1000px"
+        :modal-append-to-body='false'
+:append-to-body="true"
         :destroy-on-close="true"
         :visible.sync="drawerMap"
         direction="ttb"
@@ -289,6 +291,8 @@
         class="addClass1"
         width="90%"
         @open="openDialog"
+        :modal-append-to-body='false'
+:append-to-body="true"
         :destroy-on-close="true"
         :visible.sync="dialogPartner"
       >
@@ -358,8 +362,9 @@ export default {
     "isCreate",
     "formName",
     "ifEdit", //是否是编辑页面
-    "customer",
+    "customer",//待确认页面app传入的数据
     "sure",
+    "ifFirstLook" //是否是待确认页面
   ],
   //  ##isCreate是否可以编辑  ##look只能看   ##create新增页  ##customer获取服务端对比的信息
   //customer确认订单时传递的信息
@@ -465,8 +470,9 @@ export default {
       },
       listQuery: {
         page: 1,
-        limit: 40,
-      }
+        limit: 40
+      },
+      needPos:false
     };
   },
   computed: {
@@ -493,26 +499,48 @@ export default {
         }
       },
     },
-    "form.addr":{
+    "form.addr":{   //现地址详细地址
       handler(val){
       if (val) {
-  
-             let addre = this.form.province + this.form.city + this.form.area +this.form.addr    
-this.getPosition(addre)
+          if(!this.ifFirstLook){
+                  this.needPos = true;
+
+          }else{
+               if(this.customer.addr != val){
+          this.needPos = true;
+        }else{
+          this.needPos = false;
+        }
+          }
+
+         let addre = this.form.province + this.form.city + this.form.area +this.form.addr 
+         if(this.needPos)
+          this.getPosition(addre)
         }
               }
     },
-    "form.address": {
-      handler(val) {
-        if (!this.form.addr) {
-           this.getPosition(val)
-
+    "form.address": {   //地图标识地址
+   
+      handler(val,oldVal) {
+          if (val) {
+        if(this.ifFirstLook){
+                    if(oldVal){
+            this.needPos = true;
+          }else{
+            this.needPos = false;
+          }
+        }else{
+           this.needPos = true;
         }
-      },
+          if(this.needPos)
+            this.getPosition(val)
+      }
+     },
+      immediate:true
     },
     "form.customerId": {
       handler(val) {
-        this.getPartnerInfo(val);
+          this.getPartnerInfo(val);
       },
     },
     refValue: {
@@ -546,9 +574,16 @@ this.getPosition(addre)
   },
   mounted() {
     this.getPartnerList();
+  if(this.customer){
     this.setForm(this.customer);
+
+  }
     this.isCreateAdd = this.isCreate;
   },
+  
+destroyed() {
+  window.removeEventListener('resize', this.resizeWin)
+},
   methods: {
     setThisTime() {
       console.log(11);
@@ -558,7 +593,19 @@ this.getPosition(addre)
       this.previewVisible = true;
       this.previewUrl = item;
     },
-    getPosition(val){
+        chooseAddre() {  //地图选择赋值地址
+      let getArr  = this.allAddress.regeocode.addressComponent
+      // let str = getArr.province +getArr.city+getArr.district
+      this.form.city = getArr.city;
+      this.form.province = getArr.province;
+      this.form.area = getArr.district;
+      this.form.addr = this.allAddress.address.replace(getArr.province,"").replace(getArr.city,"").replace(getArr.district,"");
+      this.form.longitude = this.allAddress.position.lng;
+      this.form.latitude = this.allAddress.position.lat;
+      this.drawerMap = false;
+    },
+    getPosition(val){  //从接口获取地址
+
           let that = this;
           let url = `https://restapi.amap.com/v3/geocode/geo?key=c97ee5ef9156461c04b552da5b78039d&address=${encodeURIComponent(val)}`;
           http.get(url, function (err, result) {
@@ -567,7 +614,7 @@ this.getPosition(addre)
               that.form.province = res.province;
               that.form.city = res.city;
               that.form.area = res.district;
-              that.form.addr = res.formatted_address;
+                 that.form.addr = val.replace(res.province,"").replace(res.city,"").replace(res.district,"");
               that.form.latitude = res.location.split(",")[1];
               that.form.longitude = res.location.split(",")[0];
             } else {
@@ -592,26 +639,26 @@ this.getPosition(addre)
       //获取图片列表
 
       this.form.pictures = val;
-      console.log(this.form);
     },
     dragmap(res) {
       this.allAddress = res;
     },
-    chooseAddre() {
-      this.form.city = this.allAddress.regeocode.addressComponent.city;
-      this.form.province = this.allAddress.regeocode.addressComponent.province;
-      this.form.area = this.allAddress.regeocode.addressComponent.district;
-      this.form.addr = this.allAddress.address;
-      this.form.longitude = this.allAddress.position.lng;
-      this.form.latitude = this.allAddress.position.lat;
-      this.drawerMap = false;
-      console.log(this.form);
-    },
+
     async setForm(val) {
       if (val) {
         val.serviceOrderPictures = await this.getServeImg(val.id);
       }
+      if(val.province && val.city &&  val.area && val.addr ){
+        this.needPos=  false;
+      }else{
+        this.needPos=  true;
+      }
       Object.assign(this.form, val);
+      // let that =  this
+      //  let addre = val.province + val.city + val.area +val.addr   
+      // setTimeout(function(){
+      //  that.getPosition(addre)
+      // },800)
       this.form.recepUserName = this.$store.state.user.name;
     },
     async getServeImg(val) {

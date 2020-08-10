@@ -91,18 +91,29 @@ export default {
       })
     }
   },
-  async created () {
+  created () {
     // 已载入高德地图API，则直接初始化地图
+    let that =this
+   this.$nextTick(
+     function(){
     if (window.AMap && window.AMapUI) {
       //  await remoteLoad(`http://webapi.amap.com/maps?v=1.3&key=${this.MapKey}`)
       // await remoteLoad('http://webapi.amap.com/ui/1.0/main.js')
       this.initMap()
     // 未载入高德地图API，则先载入API再初始化
     } else {
-      await remoteLoad(`http://webapi.amap.com/maps?v=1.3&key=${this.MapKey}`)
-      await remoteLoad('http://webapi.amap.com/ui/1.0/main.js')
-      this.initMap()
+      remoteLoad(`http://webapi.amap.com/maps?v=1.3&key=${this.MapKey}`)
+      setTimeout(function(){
+          remoteLoad('http://webapi.amap.com/ui/1.0/main.js')
+      },200)
+        setTimeout(function(){
+           that.initMap()
+      },300)
+    
     }
+  
+   }
+ )
   }
 }
 </script>

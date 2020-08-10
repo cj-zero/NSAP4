@@ -108,24 +108,11 @@ export default {
     //   console.log(this.SerialNumberList)
   },
   methods: {
-    //  handleChange(val) {
-    //   this.listQuery.page = val.page;
-    //   this.listQuery.limit = val.limit;
-    //   // this.getList();
-    // },
     checkIsSelectAble (row) {
       return this.formList.length ? 
         this.formList.every(formItem => formItem.manufacturerSerialNumber !== row.manufSN) :
         true
     },
-    // checkDisabled (row) {
-    //   let isSelectAble = this.checkIsSelectAble(row)
-    //   let isSingleClick = isSelectAble ? false : 
-    //         this.currentTarget.manufacturerSerialNumber === row.manufSN ? 
-    //         false : true
-    //   row.isSingleClick = !isSingleClick
-    //   return isSingleClick
-    // },
     checkSelectable (row) {
       let isSelectAble = this.checkIsSelectAble(row)
       row.isSelectAble = isSelectAble
@@ -148,10 +135,12 @@ export default {
         if (!this.checkIsSelectAble(val)) {
           if (val.manufSN !== this.currentTarget.manufacturerSerialNumber) {
             this.$message.error('重复项不可选,请重新选择')
+            this.$emit('toggleDisabledClick', true)
             return
           }
         } else {
           this.$emit('singleSelect', val)
+          this.$emit('toggleDisabledClick', false)
         } 
       }
     },

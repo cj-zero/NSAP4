@@ -155,6 +155,7 @@
               labelwidth="100px"
               :isCreate="true"
               :sure="sure"
+              :ifFirstLook="true"
               :customer="customer"
               @close-Dia="closeDia"
             ></zxform>
@@ -492,10 +493,17 @@ export default {
         .then(response => {
           if (response.code == 200) {
             this.total = response.data.count;
-            this.list = response.data.data;
+             let  resul= response.data.data;
+                this.list=[]
+            
+         resul.map(item=>{
+        
+           this.list.unshift(item)
+        });
+          
             this.listLoading = false;
           } else {
-            console.log(11);
+        
             this.$message({
               type: "warning",
               message: "请输入正确的搜索值"
@@ -503,7 +511,7 @@ export default {
           }
         })
         .catch(() => {
-          console.log(22);
+         
           this.$message({
             type: "warning",
             message: "请输入正确的搜索值"
