@@ -378,12 +378,12 @@ namespace OpenAuth.App
             var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceOrderSNs)
                 .Include(s => s.ServiceWorkOrders)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.Id.Equals(Convert.ToInt32(req.QryServiceOrderId)))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryState) & Convert.ToInt32(req.QryState) > 0, q => q.Status.Equals(Convert.ToInt32(req.QryState)))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryState) && Convert.ToInt32(req.QryState) > 0, q => q.Status.Equals(Convert.ToInt32(req.QryState)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.CustomerId.Contains(req.QryCustomer) || q.CustomerName.Contains(req.QryCustomer))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceOrderSNs.Any(a => a.ManufSN.Contains(req.QryManufSN)))
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime <= req.QryCreateTimeTo)
-                         .WhereIf(Convert.ToInt32(req.QryState) == 2, q => !q.ServiceWorkOrders.All(q => q.Status != 1))
-                         .WhereIf(Convert.ToInt32(req.QryState) == 0, q => q.Status == 1 || (q.Status == 2 && !q.ServiceWorkOrders.All(q => q.Status != 1)))
+                         //.WhereIf(Convert.ToInt32(req.QryState) == 2, q => !q.ServiceWorkOrders.All(q => q.Status != 1))
+                         //.WhereIf(Convert.ToInt32(req.QryState) == 0, q => q.Status == 1 || (q.Status == 2 && !q.ServiceWorkOrders.All(q => q.Status != 1)))
                          .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => (s.Id == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key))))
             .OrderBy(r => r.CreateTime).Select(q => new
             {
@@ -454,16 +454,20 @@ namespace OpenAuth.App
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
             obj.Supervisor = d.TechName;
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.TechName)))?.Id;
+            var province = string.IsNullOrWhiteSpace(request.Province) ? obj.Province : request.Province;
+            var city = string.IsNullOrWhiteSpace(request.City) ? obj.City : request.City;
+            var area = string.IsNullOrWhiteSpace(request.Area) ? obj.Area : request.Area;
+            var addr = string.IsNullOrWhiteSpace(request.Addr) ? obj.Addr : request.Addr;
             await UnitWork.UpdateAsync<ServiceOrder>(o => o.Id.Equals(request.Id), s => new ServiceOrder
             {
                 Status = 2,
-                Addr = obj.Addr,
+                Addr = addr,
                 Address = obj.Address,
                 AddressDesignator = obj.AddressDesignator,
                 //Services = obj.Services,
-                Province = obj.Province,
-                City = obj.City,
-                Area = obj.Area,
+                Province = province,
+                City = city,
+                Area = area,
                 CustomerId = obj.CustomerId,
                 CustomerName = obj.CustomerName,
                 Contacter = obj.Contacter,
@@ -701,7 +705,7 @@ namespace OpenAuth.App
             //await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"客服:{loginContext.User.Name}创建服务单", ActionType = "创建工单", ServiceOrderId = e.Id });
             #region 同步到SAP 并拿到服务单主键
 
-            _capBus.Publish("Serve.ServcieOrder.Create", obj.Id);
+            //_capBus.Publish("Serve.ServcieOrder.Create", obj.Id);
             #endregion
         }
         /// <summary>
