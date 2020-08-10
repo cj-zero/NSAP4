@@ -470,7 +470,7 @@ export default {
       },
       listQuery: {
         page: 1,
-        limit: 40,
+        limit: 40
       },
       needPos:false
     };
@@ -705,7 +705,7 @@ destroyed() {
         //   return item;
         // });
         this.isValid = await this.$refs.form.validate();
-
+        console.log(chec, this.isValid, 'isValid')
         if (chec && this.isValid) {
           if (this.$route.path === "/serve/callserve") {
             callservesure

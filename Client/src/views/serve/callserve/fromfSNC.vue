@@ -15,11 +15,10 @@
       style="width: 100%"
       row-key="manufSN"
     >
-      <el-table-column
-        type="selection" 
-        fixed width="55" 
-        :selectable="checkSelectable" 
-        :reserve-selection="true">
+      <el-table-column  width="50" fixed>
+        <template slot-scope="scope">
+          <el-radio v-model="radio" :label="scope.row.manufSN">{{&nbsp;}}</el-radio>
+        </template>
       </el-table-column>
       <el-table-column prop="manufSN" fixed align="center" label="制造商序列号" width="120"></el-table-column>
       <el-table-column prop="internalSN" label="内部序列号" align="center" width="120">
@@ -41,6 +40,7 @@
         </template>
       </el-table-column>
     </el-table>
+    <!-- {{ dialogChange }} -->
   </div>
 </template>
 
@@ -94,11 +94,12 @@ export default {
   },
   watch: {
     visible () {
-      console.log(this.ifEdit, 'ifEdit')
+      // if (val)
       let { manufacturerSerialNumber } = this.currentTarget
       manufacturerSerialNumber ? 
         (this.radio = manufacturerSerialNumber) : 
         (this.radio = '')
+      console.log(this.ifEdit, 'ifEdit', this.radio, this.currentTarget)
     }
   },
   computed: {
@@ -128,15 +129,23 @@ export default {
         this.$refs.singleTable.toggleRowSelection(this.SerialNumberList[index])
       }
     },
-    getCurrent () {
-      // console.log(val, 'single')
-      // if (this.ifEdit && val.isSingleClick) {
-      //   this.$refs.singleTable.clearSelection();
-      //   this.radio = val.manufSN;
-      //   // this.$refs.singleTable.toggleRowSelection(val);
-      //   // console.log(val, 'val')
-      //   this.$emit('singleSelect', val)
-      // }
+    getCurrent (val) {
+      if (this.ifEdit) {
+        this.radio = val.manufSN;
+        console.log('row-click', this.checkIsSelectAble(val), this.formList)
+        if (!this.checkIsSelectAble(val) && val.manufSN !== this.currentTarget.manufacturerSerialNumber) {
+          console.log('true')
+          // if (val.manufSN !== this.currentTarget.manufacturerSerialNumber) {
+            this.$message.error('重复项不可选,请重新选择')
+            this.$emit('toggleDisabledClick', true)
+            return
+          // }
+        } else {
+          console.log('false')
+          this.$emit('singleSelect', val)
+          this.$emit('toggleDisabledClick', false)
+        } 
+      }
     },
     tableRowClassName ({ row, rowIndex }) {
       // 把每一行的index加到row中
