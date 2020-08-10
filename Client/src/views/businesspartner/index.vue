@@ -8,7 +8,7 @@
           style="width: 200px;"
           class="filter-item"
           :placeholder="'名称'"
-          v-model="listQuery.key"
+          v-model="listQuery.CardCodeOrCardName"
         ></el-input>
 
         <el-button
@@ -31,29 +31,38 @@
           border
           fit
           highlight-current-row
+          align="left"
           style="width: 100%;"
           @row-click="rowClick"
           @selection-change="handleSelectionChange"
         >
           <!-- <el-table-column type="selection" align="center" width="55"></el-table-column> -->
-
           <el-table-column
             prop="cardName"
             label="客户名称"
             min-width="120"
-            align="center"
+            align="left"
             show-overflow-tooltip
           ></el-table-column>
-          <el-table-column prop="cardCode" label="客户代码" align="center" show-overflow-tooltip></el-table-column>
-          <el-table-column prop="address" label="客户地址" align="center" show-overflow-tooltip></el-table-column>
-          <el-table-column prop="cellular" label="客户电话" align="center" show-overflow-tooltip></el-table-column>
-          <el-table-column prop="groupName" label="groupName" align="center" show-overflow-tooltip></el-table-column>
-          <el-table-column prop="cntctPrsn" label="cntctPrsn" align="center" show-overflow-tooltip></el-table-column>
-          <el-table-column prop="slpName" label="slpName" align="center" show-overflow-tooltip></el-table-column>
-
-
-         <el-table-column prop="updateDate" label="更新时间"  show-overflow-tooltip></el-table-column>
-
+          <el-table-column prop="cardCode" label="客户代码" align="left" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="address" label="客户地址" align="left" show-overflow-tooltip></el-table-column>
+     <el-table-column align="center" label="状态冻结" width="120">
+        <template slot-scope="scope">
+          <span
+            :class="[scope.row.frozenFor=='N'?'greenColro':'redColor']"
+          >{{scope.row.frozenFor=="N"?"正常":'冻结'}}</span>
+        </template>
+      </el-table-column>
+          <el-table-column prop="cellular" label="客户电话" align="left" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="groupName" label="客户联系人" align="left" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="cntctPrsn" label="业务员" align="left" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="slpName" label="销售员" align="left" show-overflow-tooltip></el-table-column>
+       <el-table-column align="center" label="科目余额" width="120">
+        <template slot-scope="scope">
+          <span :class="[scope.row.balance>=0?'redColor':'greenColro']">{{scope.row.balance}}0000</span>
+        </template>
+      </el-table-column>
+          <el-table-column prop="updateDate" label="更新时间" show-overflow-tooltip></el-table-column>
         </el-table>
         <pagination
           v-show="total>0"
@@ -76,10 +85,10 @@
           label-position="right"
           label-width="100px"
         >
-     <el-form-item size="small" :label="'客户名称'" >
+          <el-form-item size="small" :label="'客户名称'">
             <el-input v-model="temp.cardName"></el-input>
           </el-form-item>
-          <el-form-item size="small" :label="'客户代码'" >
+          <el-form-item size="small" :label="'客户代码'">
             <el-input v-model="temp.cardCode"></el-input>
           </el-form-item>
 
@@ -92,17 +101,15 @@
           <el-form-item size="small" :label="'groupName'">
             <el-input v-model="temp.groupName"></el-input>
           </el-form-item>
-         <el-form-item size="small" :label="'cntctPrsn'">
+          <el-form-item size="small" :label="'cntctPrsn'">
             <el-input v-model="temp.cntctPrsn"></el-input>
-          </el-form-item>    
-           <el-form-item size="small" :label="'slpName'">
+          </el-form-item>
+          <el-form-item size="small" :label="'slpName'">
             <el-input v-model="temp.slpName"></el-input>
-          </el-form-item>   
-            <el-form-item size="small" :label="'更新时间'">
+          </el-form-item>
+          <el-form-item size="small" :label="'更新时间'">
             <el-input v-model="temp.updateDate"></el-input>
           </el-form-item>
-         
-        
         </el-form>
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
@@ -126,7 +133,7 @@ export default {
   components: { Sticky, permissionBtn, Pagination },
   directives: {
     waves,
-    elDragDialog
+    elDragDialog,
   },
   data() {
     return {
@@ -144,39 +151,40 @@ export default {
         page: 1,
         limit: 20,
         key: undefined,
-        appId: undefined
+        appId: undefined,
+        CardCodeOrCardName:''
       },
       statusOptions: [
         { key: 1, display_name: "停用" },
-        { key: 0, display_name: "正常" }
+        { key: 0, display_name: "正常" },
       ],
- 
-       temp : {
+
+      temp: {
         cardName: "",
-        cardCode: "", 
-        address: "", 
-        cellular: "" ,
-        groupName:"",
-        cntctPrsn:"",
-        slpName:"",
-        updateDate:"",
+        cardCode: "",
+        address: "",
+        cellular: "",
+        groupName: "",
+        cntctPrsn: "",
+        slpName: "",
+        updateDate: "",
       },
       dialogFormVisible: false,
       dialogStatus: "",
       textMap: {
         update: "编辑",
-        create: "添加"
+        create: "添加",
       },
-       restaurants:[],
+      restaurants: [],
       dialogPvVisible: false,
       pvData: [],
       rules: {
         appId: [
-          { required: true, message: "必须选择一个应用", trigger: "change" }
+          { required: true, message: "必须选择一个应用", trigger: "change" },
         ],
-        name: [{ required: true, message: "名称不能为空", trigger: "blur" }]
+        name: [{ required: true, message: "名称不能为空", trigger: "blur" }],
       },
-      downloadLoading: false
+      downloadLoading: false,
     };
   },
   filters: {
@@ -195,23 +203,20 @@ export default {
     statusFilter(disable) {
       const statusMap = {
         false: "color-success",
-        true: "color-danger"
+        true: "color-danger",
       };
       return statusMap[disable];
-    }
+    },
   },
-    mounted() {
-
-  },
+  mounted() {},
   created() {
     this.getList();
   },
   methods: {
-        getUrl(result){
-          console.log(result)
+    getUrl(result) {
+      console.log(result);
+    },
 
-        },
-        
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.$refs.mainTable.toggleRowSelection(row);
@@ -219,35 +224,35 @@ export default {
     handleSelectionChange(val) {
       this.multipleSelection = val;
     },
-    onBtnClicked: function(domId) {
+    onBtnClicked: function (domId) {
       console.log("you click:" + domId);
       switch (domId) {
         case "btnAdd":
-               this.$message({
-              message: "暂无数据",
-              type: "warning"
-            });
-        //   this.handleCreate();
+          this.$message({
+            message: "暂无数据",
+            type: "warning",
+          });
+          //   this.handleCreate();
           break;
         case "btnEdit":
-                this.$message({
-              message: "暂无数据",
-              type: "warning"
-            });
-        //   if (this.multipleSelection.length !== 1) {
-        //     this.$message({
-        //       message: "请点击需要编辑的数据",
-        //       type: "error"
-        //     });
-        //     return;
-        //   }
-        //   this.handleUpdate(this.multipleSelection[0]);
+          this.$message({
+            message: "暂无数据",
+            type: "warning",
+          });
+          //   if (this.multipleSelection.length !== 1) {
+          //     this.$message({
+          //       message: "请点击需要编辑的数据",
+          //       type: "error"
+          //     });
+          //     return;
+          //   }
+          //   this.handleUpdate(this.multipleSelection[0]);
           break;
         case "btnDel":
           if (this.multipleSelection.length < 1) {
             this.$message({
               message: "至少删除一个",
-              type: "error"
+              type: "error",
             });
             return;
           }
@@ -259,7 +264,7 @@ export default {
     },
     getList() {
       this.listLoading = true;
-      businesspartner.getList(this.listQuery).then(response => {
+      businesspartner.getList(this.listQuery).then((response) => {
         this.list = response.data;
         this.total = response.count;
         this.listLoading = false;
@@ -283,20 +288,20 @@ export default {
       // 模拟修改状态
       this.$message({
         message: "操作成功",
-        type: "success"
+        type: "success",
       });
       row.disable = disable;
     },
     resetTemp() {
       this.temp = {
-             cardName: "",
-        cardCode: "", 
-        address: "", 
-        cellular: "" ,
-        groupName:"",
-        cntctPrsn:"",
-        slpName:"",
-        updateDate:"",
+        cardName: "",
+        cardCode: "",
+        address: "",
+        cellular: "",
+        groupName: "",
+        cntctPrsn: "",
+        slpName: "",
+        updateDate: "",
       };
     },
     handleCreate() {
@@ -310,7 +315,7 @@ export default {
     },
     createData() {
       // 保存提交
-      this.$refs["dataForm"].validate(valid => {
+      this.$refs["dataForm"].validate((valid) => {
         if (valid) {
           businesspartner.add(this.temp).then(() => {
             this.list.unshift(this.temp);
@@ -319,7 +324,7 @@ export default {
               title: "成功",
               message: "创建成功",
               type: "success",
-              duration: 2000
+              duration: 2000,
             });
           });
         }
@@ -336,7 +341,7 @@ export default {
     },
     updateData() {
       // 更新提交
-      this.$refs["dataForm"].validate(valid => {
+      this.$refs["dataForm"].validate((valid) => {
         if (valid) {
           const tempData = Object.assign({}, this.temp);
           businesspartner.update(tempData).then(() => {
@@ -352,7 +357,7 @@ export default {
               title: "成功",
               message: "更新成功",
               type: "success",
-              duration: 2000
+              duration: 2000,
             });
           });
         }
@@ -360,20 +365,20 @@ export default {
     },
     handleDelete(rows) {
       // 多行删除
-      businesspartner.del(rows.map(u => u.id)).then(() => {
+      businesspartner.del(rows.map((u) => u.id)).then(() => {
         this.$notify({
           title: "成功",
           message: "删除成功",
           type: "success",
-          duration: 2000
+          duration: 2000,
         });
-        rows.forEach(row => {
+        rows.forEach((row) => {
           const index = this.list.indexOf(row);
           this.list.splice(index, 1);
         });
       });
-    }
-  }
+    },
+  },
 };
 </script>
 <style>

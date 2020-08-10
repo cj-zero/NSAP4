@@ -47,6 +47,7 @@
                 v-loading="listLoading"
                 border
                 fit
+
                 style="width: 100%;"
                 highlight-current-row
                 @row-click="rowClickChild"
@@ -312,7 +313,7 @@ export default {
       listQuery: {
         // 查询条件
         page: 1,
-        limit: 20,
+        limit: 50,
         key: undefined,
         appId: undefined,
         // QryServiceOrderId: "" //查询服务单号查询条件

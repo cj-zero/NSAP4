@@ -359,11 +359,11 @@ export default {
     "refValue",
     "labelposition",
     "labelwidth",
-    "isCreate",
-    "formName",
+    "isCreate", //是否是可编辑页面
+    "formName",  //
     "ifEdit", //是否是编辑页面
     "customer",//待确认页面app传入的数据
-    "sure",
+    "sure",  //用于待确认，新建页面确定之后的响应
     "ifFirstLook" //是否是待确认页面
   ],
   //  ##isCreate是否可以编辑  ##look只能看   ##create新增页  ##customer获取服务端对比的信息
@@ -624,7 +624,6 @@ destroyed() {
                 type: "error",
               });
               }
-
               that.form.province = "";
               that.form.city = "";
               that.form.area = "";
