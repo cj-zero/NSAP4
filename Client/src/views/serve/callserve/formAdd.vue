@@ -1411,7 +1411,7 @@ clearForm(){
     searchList() {
       this.listQuery.ManufSN = this.inputSearch;
       this.listQuery.ItemCode = this.inputItemCode;
-      this.listQuery.CardName = this.inputname;
+      // this.listQuery.CardName = this.inputname;
       this.getSerialNumberList();
       // if (!res) {
       //   this.filterSerialNumberList = this.SerialNumberList;
