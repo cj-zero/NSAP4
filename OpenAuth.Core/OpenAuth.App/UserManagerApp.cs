@@ -156,6 +156,15 @@ namespace OpenAuth.App
             _revelanceApp.Assign(Define.USERORG, orgIds.ToLookup(u => requser.Id));
         }
 
+        public async Task BlockUp(BlockUpUserReq req)
+        {
+            await UnitWork.UpdateAsync<User>(u => u.Id.Equals(req.UserId), o => new User
+            {
+                Status = 1
+            });
+            await UnitWork.SaveAsync();
+        }
+
         /// <summary>
         /// 加载用户的所有机构
         /// </summary>

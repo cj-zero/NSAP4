@@ -674,7 +674,7 @@
       class="addClass1"
       title="选择制造商序列号"
       @open="openDialog"
-      width="90%"
+      width="70%"
       :visible.sync="dialogfSN"
     >
       <div style="width:600px;margin:10px 0;" class="search-wrapper">

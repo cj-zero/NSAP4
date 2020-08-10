@@ -65,6 +65,11 @@ namespace OpenAuth.App.SSO
                     throw new Exception("密码错误");
                 }
 
+                if(userInfo.Status == 1)
+                {
+                    throw new Exception("该用户已停用");
+                }
+
                 var currentSession = new UserAuthSession
                 {
                     Account = model.Account,

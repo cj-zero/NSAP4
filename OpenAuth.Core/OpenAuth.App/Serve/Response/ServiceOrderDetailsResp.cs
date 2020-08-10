@@ -70,6 +70,10 @@ namespace OpenAuth.App.Response
         /// </summary>
         public string City { get; set; }
         /// <summary>
+        /// 区
+        /// </summary>
+        public string Area { get; set; }
+        /// <summary>
         /// 详细地址
         /// </summary>
         public string Addr { get; set; }
@@ -78,6 +82,14 @@ namespace OpenAuth.App.Response
         /// </summary>
         public string Services { get; set; }
 
+        /// <summary>
+        /// 经度
+        /// </summary>
+        public decimal? Longitude { get; set; }
+        /// <summary>
+        /// 纬度
+        /// </summary>
+        public decimal? Latitude { get; set; }
         /// <summary>
         /// 服务单关联的工单
         /// </summary>
