@@ -10,7 +10,7 @@
         <el-col :span="11">
           <el-form-item label="状态" required>
             <el-select v-model="formData.assetStatus" placeholder="请选择状态">
-              <el-option v-for="item in formData.assetStatus" :value="item" :key="item"></el-option>
+              <el-option v-for="item in item in assetStatus" :value="item" :key="item"></el-option>
             </el-select>
           </el-form-item>
         </el-col>
@@ -18,8 +18,8 @@
       <el-row type="flex" justify="space-around">
         <el-col :span="11">
           <el-form-item label="类别" required>
-            <el-select v-model="formData.assetStatus" placeholder="请选择状态">
-              <el-option v-for="item in formData.assetStatus" :value="item" :key="item"></el-option>
+            <el-select v-model="assetCategoryRes" placeholder="请选择" @change="onTypeChange">
+              <el-option v-for="item in assetCategory" :value="item" :key="item.name"></el-option>
             </el-select>
           </el-form-item>
         </el-col>
@@ -61,7 +61,7 @@
       <el-row type="flex" justify="space-around">
         <el-col :span="11">
           <el-form-item label="资产编号" required>
-            <el-input style="width: 200px" placeholder="请输入内容" v-model="formData.assetZCNumber"></el-input>
+            <el-input style="width: 200px" placeholder="请输入内容" v-model="formData.assetZCNumber" disabled></el-input>
           </el-form-item>
         </el-col>
          <el-col :span="11">
@@ -73,15 +73,15 @@
       <el-row type="flex" justify="space-around">
         <el-col :span="11">
           <el-form-item label="送检类型" required>
-            <el-select v-model="formData.assetSJType">
-              <!-- <el-option v-for="" -->
+            <el-select v-model="formData.assetSJType" placeholder="请选择">
+              <el-option v-for="item in assetSJType" :key="item"></el-option>
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="11">
-          <el-form-item label="送检方式" required>
-            <el-select v-model="formData.assetSJType">
-              <!-- <el-option v-for="" -->
+          <el-form-item label="送检方式" required  placeholder="请选择">
+            <el-select v-model="formData.assetSJWay">
+              <el-option v-for="item in assetSJWay" :key="item"></el-option>
             </el-select>
           </el-form-item>
         </el-col>
@@ -242,23 +242,13 @@
 </template>
 
 <script>
-// const SYS_AssetCategory = 'SYS_AssetCategory' //类别
-// const SYS_AssetStatus = 'SYS_AssetStatus' // 状态
-// const SYS_AssetSJType = 'SYS_AssetSJType' // 送检类型
-// const SYS_CategoryNondeterminacy = 'SYS_CategoryNondeterminacy' // 阻值类型
+import assetMixin from './mixin/mixin'
 export default {
-  components: {
-  },
+  mixins: [assetMixin],
   props: {
     type: {
       type: String,
       default: ''
-    },
-    options: {
-      type: Object,
-      default () {
-        return {}
-      }
     }
   },
   data () {
@@ -273,7 +263,7 @@ export default {
         id: '', // 资产ID
         assetStatus: [], // 状态
         assetCategory: [], // 类别
-        orgId: '', // 部门
+        orgName: '', // 部门
         assetType: '', // 型号
         assetHolder: '', // 持有者
         assetCCNumber: '', // 出场编号S/N
@@ -292,6 +282,7 @@ export default {
         assetRemarks: '',  // 备注
         assetImg: '' // 上传图片
       },
+      assetCategoryRes: '', // 类别对象
       tableData: [],
     }
   },
@@ -326,9 +317,6 @@ export default {
           input.removeAttribute('disabled')
         }, 0)
       }
-    },
-    beforeRemove(file) {
-      return this.$confirm(`确定移除 ${ file.name }？`);
     },
     handleSuccessJZ (res, file) { // 校准证书图片
       this.setImg('assetJZCertificate', file)
@@ -368,13 +356,12 @@ export default {
         this.$message.error('上传图片格式不对!')
       }
       return testmsg
+    },
+    onTypeChange (val) {
+      let { number, name } = val
+      console.log(number, name)
     }
-  },
-  created () {
-  },
-  mounted () {
-
-  },
+  }
 }
 </script>
 <style lang='scss' scoped>

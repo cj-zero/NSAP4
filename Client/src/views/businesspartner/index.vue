@@ -15,7 +15,7 @@
           size="mini"
           style="width: 200px;margin:0 10px;"
           class="filter-item"
-          :placeholder="'客户'"
+          placeholder="按客户代码/客户名称"
           v-model="listQuery.CardCodeOrCardName"
         ></el-input> 
          <el-input
@@ -23,7 +23,7 @@
           size="mini"
           style="width: 200px;"
           class="filter-item"
-          :placeholder="'制造商序列号'"
+          placeholder="按序列号查询"
           v-model="listQuery.ManufSN"
         ></el-input>
          <el-button

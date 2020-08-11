@@ -43,9 +43,8 @@
       </el-col>
      <el-col :span="3">
         <el-form-item label="问题类型" >
-          <el-cascader :options="dataTree" class="malchack" v-model="listQuery.QryProblemType"   :props="{ value:'id',label:'name',children:'childTypes',expandTrigger: 'hover'  }"  clearable></el-cascader>
-         
-       
+          <el-cascader :options="dataTree" class="malchack" v-model="listQuery.QryProblemType" 
+          :props="{ value:'id',label:'name',children:'childTypes',expandTrigger: 'hover', emitPath: false }"  clearable></el-cascader>
         </el-form-item>
       </el-col>
       <el-col :span="6">
@@ -82,6 +81,7 @@
 
 <script>
 import * as problemtypes from "@/api/problemtypes";
+// import { delete } from 'vuedraggable';
 
 export default {
   data() {
@@ -129,7 +129,8 @@ export default {
        problemtypes
       .getList()
       .then((res) => {
-        this.dataTree = res.data;
+        // this.dataTree = res.data;
+        this.dataTree = this._normalizeProblemTypes(res.data)
       })
       .catch((error) => {
         console.log(error);
@@ -143,6 +144,20 @@ export default {
       // console.log(11)
       this.$emit("change-Order",true)
     },
+    _normalizeProblemTypes (data) {
+      // 处理问题类型数据
+      const typeList = []
+      data.forEach(item => {
+        let { childTypes } = item
+        if (childTypes && childTypes.length) {
+          item.childTypes = this._normalizeProblemTypes(childTypes)
+        } else {
+          delete item.childTypes
+        }
+        typeList.push(item)
+      })
+      return typeList
+    }
   },
   watch: {
     listQuery: {

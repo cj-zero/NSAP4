@@ -13,7 +13,7 @@
         <el-table-column
           fixed
           label="序号"
-          width="150">
+          width="120">
           <template slot-scope="scope">
             {{ scope.$index }}
           </template>
@@ -39,9 +39,19 @@
           width="120">
         </el-table-column>
         <el-table-column
-          prop="orgId"
+          prop="orgName"
           label="部门"
           width="120">
+        </el-table-column>
+        <el-table-column 
+          label="计量特性"
+          width="370"
+        >
+          <template slot-scope="scope">
+            <el-row v-for="(item, index) in scope.row.metrologicalList" :key="index">
+              {{ item }}
+            </el-row>
+          </template>
         </el-table-column>
         <el-table-column
           prop="assetJZDate"
@@ -98,8 +108,8 @@
           label="校准数据"
           width="120">
           <template slot-scope="scope">
-            <template v-for="item in scope.row.assetJZDataList">
-              <el-row type="flex" justify="space-around" :key="item">
+            <template v-for="(item, index) in scope.row.assetJZDataList">
+              <el-row type="flex" justify="space-around" :key="index">
                 <el-col :span="15">
                   <a :href="item" target="_blank" class="view">查看文件</a>
                 </el-col>
@@ -183,13 +193,19 @@ export default {
     /** 格式化tabelData */
     _normalizeData (data) {
       let newList = data.map(item => {
-        let { assetJZData1, assetJZData2 } = item
-        let dataList = []
+        let { assetJZData1, assetJZData2, metrological } = item
+        let dataList = [], metrologicalList = []
         assetJZData1 && dataList.push(assetJZData1)
         assetJZData2 && dataList.push(assetJZData2)
         item.assetJZDataList = dataList
+        if (metrological) {
+          metrologicalList = metrological.split('\\r\\n')
+          console.log('metrologicalList', metrological, metrologicalList)
+        }
+        item.metrologicalList = metrologicalList
         return item
       })
+      console.log(newList, 'newList')
       return newList
     },
     _getListCategoryName () {
@@ -198,17 +214,21 @@ export default {
         console.log(this.options, 'options')
       })
     },
+    onSearch () {
+
+    },
     _initOptions (data) {
       const target = {}
-      data.forEach(item => {
+      data.forEach((item, index) => {
         let { typeId, name } = item
-        if (!target[typeId]) {
-          target[typeId] = []
-          target[typeId].push()
-        }
-        target[typeId] ?
-          target[typeId].push(name) :
-          target[typeId] = []
+        // if (!target[typeId]) {
+        //   target[typeId] = []
+        //   target[typeId].push(name)
+        // } else {
+        //   target[typeId].push(name)
+        // }
+        let value = typeId === 'SYS_AssetCategory' ? { name, number: index + 1 } : name
+        target[typeId] || (target[typeId] = []).push(value)
       })
       return target
     },
@@ -238,7 +258,7 @@ export default {
         limit: 20 // 每一页的个数
       },
       activeName: 'first',
-      dialogFormVisible: true,
+      dialogFormVisible: false,
       form: {
         name: '',
         region: '',
@@ -251,7 +271,7 @@ export default {
       },
       formLabelWidth: '120px',
       tableData: [],
-      options: []
+      options: {}
     }
   }
 }

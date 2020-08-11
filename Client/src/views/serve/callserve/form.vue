@@ -755,9 +755,10 @@ destroyed() {
       callservesure
         .forServe(num)
         .then((res) => {
+          console.log(res, '售后主管')
           this.addressList = res.result.addressList;
           this.cntctPrsnList = res.result.cntctPrsnList;
-          this.form.supervisor = res.result.techID;
+          this.form.supervisor = res.result.techName;
           if (this.addressList.length) {
             let { address, building } = this.addressList[0];
             this.form.addressDesignator = address;

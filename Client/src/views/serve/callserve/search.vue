@@ -53,26 +53,30 @@
       </el-col>
       <el-col :span="2">
         <el-form-item label-width="0px" style="margin-left: 20px;">
-            <el-button type="info" @click="toggleMoreSearch" size="mini" circle icon="el-icon-search">高级搜索</el-button>
+            <el-button type="info" @click="toggleMoreSearch" size="mini" icon="el-icon-search">高级搜索</el-button>
         </el-form-item>
       </el-col>
     </el-row>
     <transition
       name="expand"
-      v-on:before-enter="beforeEnter"
-      v-on:enter="enter"
-      v-on:after-enter="afterEnter"
-      v-on:enter-cancelled="enterCancelled"
-    
-      v-on:before-leave="beforeLeave"
-      v-on:leave="leave"
-      v-on:after-leave="afterLeave"
-      v-on:leave-cancelled="leaveCancelled"
+      @before-enter="beforeEnter"
+      @enter="enter"
+      @after-enter="afterEnter"
+      @enter-cancelled="enterCancelled"
+      @before-leave="beforeLeave"
+      @leave="leave"
+      @after-leave="afterLeave"
       :css="false">
       <el-row v-show="isVisible">
         <el-col :span="4" style="margin-left: 10px;">
           <el-form-item label="问题类型">
-            <el-input  v-model="form.QryProblemType" @keyup.enter.native='onSubmit'></el-input>
+            <el-cascader
+              :props="{ value:'id',label:'name',children:'childTypes',expandTrigger: 'hover', emitPath: false }"  
+              clearable
+              v-model="form.QryProblemType"
+              :options="options"
+              @change="handleChange"></el-cascader>
+            <!-- <el-input  v-model="form.QryProblemType" @keyup.enter.native='onSubmit'></el-input> -->
           </el-form-item>
         </el-col>
         <el-col :span="8" style="margin-left: 10px">
@@ -80,23 +84,17 @@
             <el-form-item label="创建日期">
               <el-col :span="11">
                 <el-date-picker
-                  :clearable="false"
                   type="date"
                   placeholder="选择开始日期"
                   v-model="form.startTime"
-                  style="width: 100%;padding: 0 10px;"
-                  class="date-wrapper"
                 ></el-date-picker>
               </el-col>
-              <el-col class="line" :span="2">至</el-col>
+              <el-col class="line" :span="1">至</el-col>
               <el-col :span="11">
                 <el-date-picker
-                  class="date-wrapper"
-                  :clearable="false"
                   type="date"
                   placeholder="选择结束时间"
                   v-model="form.endTime"
-                  style="width: 100%;padding: 0 10px;"
                 ></el-date-picker>
               </el-col>
             </el-form-item>
@@ -135,6 +133,14 @@ export default {
         { value: 8, label: "已回访" }
       ]
     };
+  },
+  props: {
+    options: {
+      type: Array,
+      default () {
+        return []
+      }
+    }
   },
   watch: {
     form: {
@@ -179,21 +185,21 @@ export default {
         el.className=el.className.replace("my-transition",'');
         el.style.height = '';
     },
-    leaveCancelled(){
-          
+    handleChange (val) {
+      console.log(val, 'change', this.form.QryProblemType)
     }
   }
 };
 </script>
 
 <style lang="scss" scoped>
-.date-class {
-  padding: 0 10px;
-}
 .date-wrapper {
-  ::v-deep .el-input__inner {
-    padding-left: 20px;
-    padding-right: 10px;
-  }
+  // ::v-deep .el-input__inner {
+  //   padding-left: 20px;
+  //   padding-right: 10px;
+  // }
+  // ::v-deep .el-icon-date, el-input__icon {
+  //   margin-left: 6px;
+  // }
 }
 .my-transition{transition: .3s height ease-in-out/* , 10.5s padding-top ease-in-out, 10.5s padding-bottom ease-in-out */}

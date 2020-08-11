@@ -24,7 +24,7 @@
     </sticky>
     <div class="app-container">
       <div class="bg-white " >
-        <zxsearch @change-Search="changeSearch"></zxsearch>
+        <zxsearch @change-Search="changeSearch" :options="problemOptions"></zxsearch>
         <el-table
           ref="mainTable"
           class="table_label"
@@ -103,10 +103,6 @@
                 :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
               >{{statusOptions[scope.row[fruit.name]].label}}</span>
               <span
-                v-if="fruit.name === 'serviceStatus'">
-                {{ serviceStatusOptions[scope.row[fruit.name]].display_name }}
-              </span>
-              <span
                 v-if="fruit.name === 'workOrderNumber'">
                 {{ scope.row.serviceWorkOrders.length }}
               </span>
@@ -119,7 +115,6 @@
                 fruit.name!='fromType'&&
                 fruit.name!='status'&&
                 fruit.name!='serviceOrderId'&&
-                fruit.name !== 'serviceStatus'&&
                 fruit.name !== 'workOrderNumber'"
               >{{scope.row[fruit.name]}}</span>
               
@@ -234,6 +229,7 @@
 
 <script>
 import * as callservesure from "@/api/serve/callservesure";
+import * as problemtypes from "@/api/problemtypes";
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
@@ -279,10 +275,9 @@ export default {
         { name: "salesMan", label: "销售员" ,align:'left' },
         { name: "recepUserName", label: "接单员" ,align:'left' },
         { name: 'serviceCreateTime', label: '创建时间', align: 'left' },
-        { name: 'serviceStatus', label: '服务单状态', align: 'left' },
         { name: 'workOrderNumber', label: '工单数', align: 'left' } 
       ],
-            ChildheadOptions: [
+      ChildheadOptions: [
         // { name: "serviceOrderId", label: "服务单号", ifFixed: true },
         { name: "id", label: "工单号",align:'right'  },
         { name: "priority", label: "优先级" ,align:'left' },
@@ -310,7 +305,7 @@ export default {
         { key: 2, display_name: "已确认" },
         { key: 3, display_name: "已取消" }
       ],
-            statusOptions: [
+      statusOptions: [
         { value: 1, label: "待处理" },
         { value: 2, label: "已排配" },
         { value: 3, label: "已预约" },
@@ -381,7 +376,8 @@ export default {
       },
       dataForm: {}, //传递的表单props
       dataForm1: {}, //获取的详情表单
-      downloadLoading: false
+      downloadLoading: false,
+      problemOptions: [] // 问题类型
     };
   },
   filters: {
@@ -451,6 +447,7 @@ export default {
   created() {},
   mounted() {
     this.getList();
+    this.getProblemTypeList()
   },
   methods: {
     checkServeId(res) {
@@ -562,10 +559,6 @@ export default {
             let resul = response.data.data;
         this.total =response.count;
         this._normalize(resul)
-//         this.list=[]
-//          resul.map(item=>{
-// this.list.push(item)
-//         });
         this.listLoading = false;
       }).catch(() => {
         this.listLoading = true;
@@ -582,7 +575,31 @@ export default {
 
         });
     },
-
+    getProblemTypeList () {
+      problemtypes
+      .getList()
+      .then((res) => {
+        this.problemOptions = this._normalizeProblemType(res.data);
+        console.log(this.problemOptions, 'options')
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+    },
+    _normalizeProblemType (data) {
+      // 处理问题类型数据
+      const typeList = []
+      data.forEach(item => {
+        let { childTypes } = item
+        if (childTypes && childTypes.length) {
+          item.childTypes = this._normalizeProblemType(childTypes)
+        } else {
+          delete item.childTypes
+        }
+        typeList.push(item)
+      })
+      return typeList
+    },
     handleNodeClick(res) {
       console.log(res);
     },

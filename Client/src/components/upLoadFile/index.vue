@@ -97,7 +97,7 @@ export default {
     },
     handleDownload() {
       let a = document.createElement('a')
-      a.download = this.dialogImageUrlR
+      a.download = this.dialogImageUrl
       a.href = this.dialogImageUrl
       a.target = 'self'
       a.click()
