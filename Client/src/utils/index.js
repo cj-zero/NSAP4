@@ -35,9 +35,9 @@ export function parseTime(time, cFormat) {
 }
 
 //将此刻的时间转化为我们需要的格式
-export function timeToFormat(format){
+export function timeToFormat(format, date){
   let result =''
-  const now =new Date()
+  const now = date || new Date()
   const year = now.getFullYear()
   const month = now.getMonth() + 1
   const day = now.getDate()

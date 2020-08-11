@@ -50,9 +50,9 @@
       </span>
     </el-upload>
     <el-dialog :visible.sync="dialogVisible">
-      <el-row style="margin-bottom: 20px">
-        <el-button type="primary" @click="handleDownload" style="margin-left: 20px">下载</el-button>
-      </el-row>
+      <!-- <el-row style="margin-bottom: 20px">
+        <el-button type="primary" @click="handleDownload" style="margin-left: 20px" size="mini">下载</el-button>
+      </el-row> -->
       <img width="100%" :src="dialogImageUrl" alt />
     </el-dialog>
   </div>

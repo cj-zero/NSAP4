@@ -123,6 +123,7 @@ export default {
         QryMaterialTypes: "", //物料类别（多选)
       },
       callStatus: [
+        { value: '', label: '全部' },
         { value: 1, label: "待处理" },
         { value: 2, label: "已排配" },
         { value: 3, label: "已预约" },

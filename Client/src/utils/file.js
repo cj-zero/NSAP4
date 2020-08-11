@@ -4,6 +4,7 @@ export function download (src) {
   a.href = src
   a.target = 'self'
   console.log(a,' a')
+  document.body.appendChild(a)
   a.click()
 }
 

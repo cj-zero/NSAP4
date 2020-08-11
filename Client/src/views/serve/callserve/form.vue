@@ -132,18 +132,17 @@
                 </el-form-item>
               </el-col>
               <el-col :span="8">
-                <el-form-item label="创建时间" label-width="95px" prop="createTime">
+                <el-form-item label="创建时间" label-width="95px" prop="createTimeNow">
                   <el-date-picker
                     @focus="setThisTime"
                     :clearable="false"
                     size="mini"
-                    v-model="form.createTime"
-                    :default-time="newDate"
+                    v-model="form.createTimeNow"
                     style="width:150px;"
                     type="datetime"
                     format="yyyy-MM-dd HH:mm"
-                    value-format="yyyy-MM-dd HH-mm-ss"
                     placeholder="选择日期时间"
+                    @change="onDateChange"
                   ></el-date-picker>
                 </el-form-item>
               </el-col>
@@ -237,14 +236,20 @@
               </el-col>
               <el-col :span="20" v-if="form.serviceOrderPictures&&form.serviceOrderPictures.length">
                 <div class="demo-image__lazy">
-                  <el-image
-                    style="width:60px;height:50px;display:inline-block;margin:0 10px;"
+                  <div class="img-list"
                     v-for="url in form.serviceOrderPictures"
-                    @click="handlePreviewFile(`${baseURL}/files/Download/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`)"
-                    :key="url.id"
-                    :src="`${baseURL}/files/Download/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`"
-                    lazy
-                  ></el-image>
+                    :key="url.id">
+                    <el-image
+                      style="width:60px;height:50px;display:inline-block;"  
+                      :src="`${baseURL}/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`"
+                      lazy
+                      >
+                    </el-image>
+                    <div class="operation-wrapper">
+                      <i class="el-icon-zoom-in" @click="handlePreviewFile(`${baseURL}/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`)"></i>
+                      <i class="el-icon-download" @click="downloadFile(`${baseURL}/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`)"></i>
+                    </div>
+                  </div>
                 </div>
               </el-col>
             </el-row>
@@ -348,7 +353,7 @@ import upLoadImage from "@/components/upLoadFile";
 import Model from "@/components/Formcreated/components/Model";
 import { timeToFormat } from "@/utils";
 import { isMobile, isPhone } from "@/utils/validate";
-
+import { download } from '@/utils/file'
 import formPartner from "./formPartner";
 import formAdd from "./formAdd";
 export default {
@@ -384,7 +389,7 @@ export default {
       }, 500);
     };
     return {
-      baseURL: process.env.VUE_APP_BASE_API,
+      baseURL: process.env.VUE_APP_BASE_API + '/files/Download',
       tokenValue: this.$store.state.user.token,
       previewUrl: "", //预览图片的定义
 
@@ -433,7 +438,9 @@ export default {
         addressDesignator: "", //地址标识
         recepUserId: "", //接单人用户ID
         address: "", //详细地址
-        createTime: timeToFormat("yyyy-MM-dd HH-mm-ss"),
+        // createTime: timeToFormat("yyyy-MM-dd HH-mm-ss"),
+        createTimeNow: new Date(),
+        createTime: timeToFormat("yyyy-MM-dd HH-mm-ss", this.createTimeNow),
         id: "", //服务单id
         province: "", //省
         city: "", //市
@@ -463,7 +470,7 @@ export default {
         contacter: [
           { required: true, message: "请选择联系人", trigger: "change" },
         ],
-        createTime: [
+        createTimeNow: [
           { required: true, message: "请选择创建时间", trigger: "change" },
         ],
         newestContactTel: [{ validator: checkTelF, trigger: "blur" }],
@@ -585,11 +592,21 @@ destroyed() {
   window.removeEventListener('resize', this.resizeWin)
 },
   methods: {
+    onDateChange (val) {
+      console.log(typeof val)
+      this.form.createTime = timeToFormat('yyyy-MM-dd HH-mm-ss', val)
+      console.log('date', this.form.createTime)
+    },
+    downloadFile (url) {
+      console.log(url, 'download')
+      download(url)
+    },
     setThisTime() {
       console.log(11);
     },
     handlePreviewFile(item) {
       //预览图片
+      console.log(item, 'preview')
       this.previewVisible = true;
       this.previewUrl = item;
     },
@@ -1013,6 +1030,37 @@ destroyed() {
 
     .highlighted .addr {
       color: #ddd;
+    }
+  }
+}
+/* 图片样式 */
+.demo-image__lazy {
+  .img-list {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 50px;
+    margin:0 10px;
+    .operation-wrapper {
+      position: absolute;
+      display: flex;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      justify-content: space-around;
+      align-items: center;
+      transition: opacity .5s;
+      background-color: rgba(0, 0, 0, 5);
+      .el-icon-download, .el-icon-zoom-in {
+        color: white;
+      }
+    }
+    &:hover {
+      .operation-wrapper {
+        opacity: 1;
+      }
     }
   }
 }

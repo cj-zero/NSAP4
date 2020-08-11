@@ -1,5 +1,5 @@
 <template>
-  <div class="addClass1">
+  <div class="form-add-wrapper">
     <!-- form数组，不包括第一项 -->
     <div style="border:1px solid silver;padding:5px;">
       <el-form
@@ -1167,7 +1167,27 @@ export default {
           this.ifFormPush = true;
         } else {
           this.ifFormPush = true;
+             
           if(this.isEditOperation){
+                            if (this.inputname) {
+            this.formListStart={
+              manufSN: "其他",
+              editTrue: false,
+              internalSerialNumber: "",
+              materialCode: "",
+              materialDescription: "",
+              feeType: 1,
+              fromTheme:  "",
+              fromType:  1,
+              problemTypeName:  "",
+              problemTypeId:  "",
+              priority:  1,
+              remark:  "",
+              solutionId:  "",
+              status:  1,
+              solutionsubject:  "",
+            }
+          }
             (this.formList[this.thisPage].manufacturerSerialNumber = this.formListStart.manufSN),
             (this.formList[this.thisPage].internalSerialNumber = this.formListStart.internalSN),
             (this.formList[this.thisPage].materialCode = this.formListStart.itemCode),
@@ -1183,7 +1203,27 @@ export default {
             (this.formList[this.thisPage].solutionId =  ""),
             (this.formList[this.thisPage].status = 1),
             (this.formList[this.thisPage].solutionsubject =  "");
+        
           }else{
+                      if (this.inputname) {
+            this.formListStart.push({
+              manufSN: "其他",
+              editTrue: false,
+              internalSerialNumber: "",
+              materialCode: "",
+              materialDescription: "",
+              feeType: 1,
+              fromTheme:  "",
+              fromType:  1,
+              problemTypeName:  "",
+              problemTypeId:  "",
+              priority:  1,
+              remark:  "",
+              solutionId:  "",
+              status:  1,
+              solutionsubject:  "",
+            });
+          }
               for (let i = 0; i < this.formListStart.length; i++) {
             this.formList.push({
               manufacturerSerialNumber: this.formListStart[i].manufSN,
@@ -1203,25 +1243,7 @@ export default {
               solutionsubject:  "",
             });
           }
-          if (this.inputname) {
-            this.formListStart.push({
-              manufSN: "其他",
-              editTrue: false,
-              internalSerialNumber: "",
-              materialCode: "",
-              materialDescription: "",
-              feeType: 1,
-              fromTheme:  "",
-              fromType:  1,
-              problemTypeName:  "",
-              problemTypeId:  "",
-              priority:  1,
-              remark:  "",
-              solutionId:  "",
-              status:  1,
-              solutionsubject:  "",
-            });
-          }
+
           }
  
         // this.$refs[formName].resetFields();
@@ -1396,7 +1418,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.addClass1 {
+.form-add-wrapper {
+  max-height: 500px;
+  overflow-y: scroll;
   ::v-deep .el-radio {
     margin-left: 0 !important;
   }
