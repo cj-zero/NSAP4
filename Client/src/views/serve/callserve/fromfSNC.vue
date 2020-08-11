@@ -99,7 +99,6 @@ export default {
       manufacturerSerialNumber ? 
         (this.radio = manufacturerSerialNumber) : 
         (this.radio = '')
-      console.log(this.ifEdit, 'ifEdit', this.radio, this.currentTarget)
     }
   },
   computed: {
@@ -132,16 +131,14 @@ export default {
     getCurrent (val) {
       if (this.ifEdit) {
         this.radio = val.manufSN;
-        console.log('row-click', this.checkIsSelectAble(val), this.formList)
         if (!this.checkIsSelectAble(val) && val.manufSN !== this.currentTarget.manufacturerSerialNumber) {
-          console.log('true')
           // if (val.manufSN !== this.currentTarget.manufacturerSerialNumber) {
             this.$message.error('重复项不可选,请重新选择')
             this.$emit('toggleDisabledClick', true)
             return
           // }
         } else {
-          console.log('false')
+          // console.log('false')
           this.$emit('singleSelect', val)
           this.$emit('toggleDisabledClick', false)
         } 
