@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.Extensions.Localization.Internal;
 using Microsoft.AspNetCore.Components.RenderTree;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace OpenAuth.App.nwcali
 {
@@ -66,6 +67,7 @@ namespace OpenAuth.App.nwcali
                 WhereIf(!string.IsNullOrEmpty(request.OrgName), u => u.OrgName.Contains(request.OrgName)).
                 WhereIf(request.AssetJZDate != null && request.AssetSXDate != null, u => u.AssetJZDate >= request.AssetJZDate && u.AssetSXDate <= request.AssetSXDate);
 
+            result.columnHeaders = properties;
             result.Data = objs.OrderByDescending(u => u.AssetCreateTime)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).Select(L => new
@@ -92,7 +94,7 @@ namespace OpenAuth.App.nwcali
                     AssetRemarks = L.AssetRemarks,
                     AssetImage = L.AssetImage,
                     AssetCreateTime = L.AssetCreateTime,
-                    Metrological = CalculateMetrological(L.AssetCategorys)
+                    AssetCategorys = CalculateMetrological(L.AssetCategorys)
         });
 
             result.Count = objs.Count();
@@ -174,19 +176,19 @@ namespace OpenAuth.App.nwcali
             string InspectId = null;
             bool inspect = false;
             //判断修改的数据，放到字符串中
-            if (model.AssetAdmin != obj.AssetAdmin) ModifyModel.Append(" 管理员修改为：" + obj.AssetAdmin+ @"\r\n"); 
-            if (model.AssetDescribe != obj.AssetDescribe) ModifyModel.Append(" 描述修改为：" + obj.AssetDescribe + @"\r\n"); 
-            if (model.AssetHolder != obj.AssetHolder) ModifyModel.Append(" 持有者修改为：" + obj.AssetHolder + @"\r\n"); 
-            if (model.AssetRemarks != obj.AssetRemarks) ModifyModel.Append(" 备注修改为：" + obj.AssetRemarks + @"\r\n"); 
-            if (model.AssetSJType != obj.AssetSJType) ModifyModel.Append(" 送检类型修改为：" + obj.AssetSJType + @"\r\n"); 
-            if (model.AssetStatus != obj.AssetStatus) ModifyModel.Append(" 状态修改为：" + obj.AssetStatus + @"\r\n"); 
-            if (model.OrgName != obj.OrgName) ModifyModel.Append(" 部门修改为：" + obj.OrgName + @"\r\n");
-            if (model.AssetJZData2 != obj.AssetJZData2) ModifyModel.Append(" 校准数据修改为：" + obj.AssetJZData2 + @"\r\n");
-            if (model.AssetSXDate != obj.AssetSXDate) ModifyModel.Append(" 失效日期修改为：" + obj.AssetSXDate + @"\r\n");
-            if (model.AssetJZDate != obj.AssetJZDate) ModifyModel.Append(" 校准日期修改为：" + obj.AssetJZDate + @"\r\n");
+            if (model.AssetAdmin != obj.AssetAdmin) ModifyModel.Append("管理员修改为：" + obj.AssetAdmin+ @"\r\n"); 
+            if (model.AssetDescribe != obj.AssetDescribe) ModifyModel.Append("描述修改为：" + obj.AssetDescribe + @"\r\n"); 
+            if (model.AssetHolder != obj.AssetHolder) ModifyModel.Append("持有者修改为：" + obj.AssetHolder + @"\r\n"); 
+            if (model.AssetRemarks != obj.AssetRemarks) ModifyModel.Append("备注修改为：" + obj.AssetRemarks + @"\r\n"); 
+            if (model.AssetSJType != obj.AssetSJType) ModifyModel.Append("送检类型修改为：" + obj.AssetSJType + @"\r\n"); 
+            if (model.AssetStatus != obj.AssetStatus) ModifyModel.Append("状态修改为：" + obj.AssetStatus + @"\r\n"); 
+            if (model.OrgName != obj.OrgName) ModifyModel.Append("部门修改为：" + obj.OrgName + @"\r\n");
+            if (model.AssetJZData2 != obj.AssetJZData2) ModifyModel.Append("校准数据修改为：" + obj.AssetJZData2 + @"\r\n");
+            if (model.AssetSXDate != obj.AssetSXDate) ModifyModel.Append("失效日期修改为：" + obj.AssetSXDate + @"\r\n");
+            if (model.AssetJZDate != obj.AssetJZDate) ModifyModel.Append("校准日期修改为：" + obj.AssetJZDate + @"\r\n");
             if (model.AssetJZCertificate != obj.AssetJZCertificate)
             {
-                ModifyModel.Append(" 校准证书修改为：" + obj.AssetJZCertificate + @"\r\n");
+                ModifyModel.Append("校准证书修改为：" + obj.AssetJZCertificate + @"\r\n");
                 inspect = true;
             }
             UnitWork.UpdateAsync<Asset>(u => u.Id == obj.Id, u => new Asset
@@ -300,39 +302,44 @@ namespace OpenAuth.App.nwcali
                 Metrological += item.CategoryNumber;
                 if (item.CategoryType.Contains("绝对不确定度"))
                 {
-                    decimal CategoryNondeterminacy = Convert.ToDecimal(item.CategoryNondeterminacy);
+                    string CategoryNondeterminacy = Convert.ToDecimal(item.CategoryNondeterminacy).ToString("G0");
                     int r = 0;
-                    for (int i = 0; i < CategoryNondeterminacy.ToString().Length; i++)
+                    for (int i = 0; i < CategoryNondeterminacy.Length; i++)
                     {
-                        if (CategoryNondeterminacy.ToString().Substring(i, 1) != ".")
+                        if (CategoryNondeterminacy.Substring(i, 1) != "." && Convert.ToInt32(CategoryNondeterminacy.Substring(i, 1)) > 0)
                         {
-                            if (Convert.ToInt32(CategoryNondeterminacy.ToString().Substring(i, 1)) > 0)
+                            if (CategoryNondeterminacy.Contains("."))
                             {
-                                if (i > 0)
-                                {
-                                    r = i + 1;
-                                    break;
-                                }
-
-
+                                int s = Convert.ToInt32(CategoryNondeterminacy.Substring(0, CategoryNondeterminacy.IndexOf(".")));
+                                if (s > 0) i = i + 1;
                             }
+                            r = i + 1;
+                            break;
                         }
                     }
-                    Metrological+="("+item.CategoryOhms.ToString()+ "±" + CategoryNondeterminacy.ToString("E" + (item.CategoryNondeterminacy.ToString().Length - r))+ ")Ω (k="+item.CategoryBHYZ.ToString()+ @")\r\n";
+                    Metrological+="(" + Convert.ToDecimal(item.CategoryOhms).ToString("G0") + "±" + Convert.ToDecimal(CategoryNondeterminacy).ToString("E" + (CategoryNondeterminacy.ToString().Length - r)) + ")Ω (k="+ Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n";
                 }
                 else if (item.CategoryType.Contains("相对不确定度"))
                 {
-                    Metrological += item.CategoryOhms.ToString() + "m Ω , "+item.CategoryNondeterminacy.ToString() + "ppm (k=" + item.CategoryBHYZ.ToString() + @")\r\n";
+                    Metrological += Convert.ToDecimal(item.CategoryOhms).ToString("G0") + "m Ω,"+ Convert.ToDecimal(item.CategoryNondeterminacy).ToString("G0") + "ppm (k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n";
                 }
             }
 
             return Metrological;
         }
 
+        /// <summary>
+        /// 根据出厂编号或资产编号查询数据(备用)
+        /// </summary>
+        /// <param name="AssetCCNumber"></param>
+        /// <param name="AssetZCNumber"></param>
+        /// <returns></returns>
 
-        public Table GetAsset(string AssetCCNumber,string AssetZCNumber) 
+        public AddOrUpdateAppReq GetAsset(string AssetCCNumber,string AssetZCNumber) 
         {
-            return null;
+            var obj = UnitWork.Find<Asset>(u=>u.AssetCCNumber==AssetCCNumber).FirstOrDefault();
+            if (obj == null) obj=UnitWork.Find<Asset>(u => u.AssetZCNumber == AssetZCNumber).FirstOrDefault();
+            return obj.MapTo<AddOrUpdateAppReq>();
         }
 
     }
