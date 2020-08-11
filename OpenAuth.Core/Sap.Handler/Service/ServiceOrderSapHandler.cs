@@ -5,6 +5,7 @@ using OpenAuth.Repository;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 using SAPbobsCOM;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,7 +36,9 @@ namespace Sap.Handler.Service
             if (thisSorder.ServiceWorkOrders.Count > 0) {
                 //同步到SAP
                 var thisSwork = thisSorder.ServiceWorkOrders[0];
-                int eCode;string eMesg; StringBuilder allerror = new StringBuilder();
+                int eCode;
+                string eMesg; 
+                StringBuilder allerror = new StringBuilder();
                 string docNum = string.Empty;
                 try
                 {
@@ -116,6 +119,10 @@ namespace Sap.Handler.Service
                 else
                 {
                     
+                }
+                if (!string.IsNullOrWhiteSpace(allerror.ToString()))
+                {
+                    Log.Logger.Error(allerror.ToString(), typeof(ServiceOrderSapHandler));
                 }
             }
         }
