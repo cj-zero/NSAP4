@@ -70,3 +70,11 @@ export function LoadByOrg(params) {
     params
   })
 }
+
+export function blockUp (data) { // 停用
+  return request({
+    url: 'Users/BlockUp',
+    method: 'post',
+    data
+  })
+}

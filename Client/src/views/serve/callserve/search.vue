@@ -1,17 +1,17 @@
 <template>
-  <el-form ref="form" :model="form" label-width="80px" size="mini">
+  <el-form ref="form" :model="form" label-width="70px" size="mini">
     <div style="padding:10px 0;"></div>
     <el-row :gutter="3">
-      <el-col :span="2">
+      <el-col :span="2" style="min-width: 160px;">
         <el-form-item label="服务ID">
           <el-input   v-model="form.QryServiceOrderId" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
-      <el-col :span="2">
+      <!-- <el-col :span="2">
         <el-form-item label="工单ID">
           <el-input  v-model="form.QryServiceWorkOrderId" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
-      </el-col>
+      </el-col> -->
       <el-col :span="3">
         <el-form-item label="呼叫状态">
           <el-select  clearable v-model="form.QryState" placeholder="请选择呼叫状态">
@@ -24,67 +24,86 @@
           </el-select>
         </el-form-item>
       </el-col>
-      <el-col :span="2">
+      <el-col :span="3">
         <el-form-item label="客户">
           <el-input  v-model="form.QryCustomer" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
-      <el-col :span="2">
+      <el-col :span="3">
         <el-form-item label="序列号">
           <el-input  v-model="form.QryManufSN" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
-      <el-col :span="2">
+      <el-col :span="3">
         <el-form-item label="接单员">
           <el-input  v-model="form.QryRecepUser" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
-    </el-row>
-    <el-row :gutter="10">
+    <!-- </el-row> -->
+    <!-- <el-row :gutter="10"> -->
       <el-col :span="3">
         <el-form-item label="技术员">
           <el-input  v-model="form.QryTechName" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
-      <el-col :span="3">
-        <el-form-item label="问题类型">
-          <el-input  v-model="form.QryProblemType" @keyup.enter.native='onSubmit'></el-input>
+      <el-col :span="2">
+        <el-form-item label-width="0px" style="margin-left: 10px;">
+            <el-button type="primary" @click="onSubmit" size="mini" icon="el-icon-search"> 搜 索 </el-button>
         </el-form-item>
       </el-col>
-
-      <el-col :span="6">
-        <el-row :gutter="3">
-          <el-form-item label="创建日期">
-            <el-col :span="11">
-              <el-date-picker
-                
-                type="date"
-                placeholder="选择开始日期"
-                v-model="form.startTime"
-                style="width: 100%;"
-              ></el-date-picker>
-            </el-col>
-            <el-col class="line" :span="2">至</el-col>
-            <el-col :span="11">
-              <el-date-picker
-                
-                type="date"
-                placeholder="选择结束时间"
-                v-model="form.endTime"
-                style="width: 100%;"
-              ></el-date-picker>
-            </el-col>
-          </el-form-item>
-        </el-row>
-      </el-col>
-      <el-col :span="4">
-        <el-form-item>
-          <!-- <el-button size="middle" type="primary" @click="onSubmit"> 搜 索 </el-button> -->
-                              <el-button type="primary" @click="onSubmit" size="mini" icon="el-icon-search"> 搜 索 </el-button>
-
+      <el-col :span="2">
+        <el-form-item label-width="0px" style="margin-left: 20px;">
+            <el-button type="info" @click="toggleMoreSearch" size="mini" circle icon="el-icon-search">高级搜索</el-button>
         </el-form-item>
       </el-col>
     </el-row>
+    <transition
+      name="expand"
+      v-on:before-enter="beforeEnter"
+      v-on:enter="enter"
+      v-on:after-enter="afterEnter"
+      v-on:enter-cancelled="enterCancelled"
+    
+      v-on:before-leave="beforeLeave"
+      v-on:leave="leave"
+      v-on:after-leave="afterLeave"
+      v-on:leave-cancelled="leaveCancelled"
+      :css="false">
+      <el-row v-show="isVisible">
+        <el-col :span="4" style="margin-left: 10px;">
+          <el-form-item label="问题类型">
+            <el-input  v-model="form.QryProblemType" @keyup.enter.native='onSubmit'></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8" style="margin-left: 10px">
+          <el-row :gutter="3">
+            <el-form-item label="创建日期">
+              <el-col :span="11">
+                <el-date-picker
+                  :clearable="false"
+                  type="date"
+                  placeholder="选择开始日期"
+                  v-model="form.startTime"
+                  style="width: 100%;padding: 0 10px;"
+                  class="date-wrapper"
+                ></el-date-picker>
+              </el-col>
+              <el-col class="line" :span="2">至</el-col>
+              <el-col :span="11">
+                <el-date-picker
+                  class="date-wrapper"
+                  :clearable="false"
+                  type="date"
+                  placeholder="选择结束时间"
+                  v-model="form.endTime"
+                  style="width: 100%;padding: 0 10px;"
+                ></el-date-picker>
+              </el-col>
+            </el-form-item>
+          </el-row>
+        </el-col>
+      </el-row>
+    </transition>
   </el-form>
 </template>
 
@@ -92,6 +111,7 @@
 export default {
   data() {
     return {
+      isVisible: false,
       form: {
         QryServiceOrderId: "", // 查询服务ID查询条件
         QryState: "", // 呼叫状态查询条件
@@ -127,10 +147,53 @@ export default {
   methods: {
     onSubmit() {
       this.$emit("change-Search", 1);
+    },
+    toggleMoreSearch () {
+      console.log(this.isVisible, 'isVisible')
+      this.isVisible = !this.isVisible
+    },
+    beforeEnter(el){
+        el.className= el.className+' my-transition';
+        el.style.height = '0';
+    },
+    enter(el, done){
+        el.style.height = el.scrollHeight + 'px';
+        done()
+    },
+    afterEnter(el){
+        el.className= el.className.replace("my-transition",'');
+        el.style.height = '';
+    },
+    enterCancelled(){
+      //
+    },
+    beforeLeave(el){
+        el.style.height = el.scrollHeight + 'px';
+    },
+    leave(el, done){
+        el.className= el.className+' my-transition';
+        el.style.height = 0;
+        done()
+    },
+    afterLeave(el){
+        el.className=el.className.replace("my-transition",'');
+        el.style.height = '';
+    },
+    leaveCancelled(){
+          
     }
   }
 };
 </script>
 
-<style>
-</style>
+<style lang="scss" scoped>
+.date-class {
+  padding: 0 10px;
+}
+.date-wrapper {
+  ::v-deep .el-input__inner {
+    padding-left: 20px;
+    padding-right: 10px;
+  }
+}
+.my-transition{transition: .3s height ease-in-out/* , 10.5s padding-top ease-in-out, 10.5s padding-bottom ease-in-out */}

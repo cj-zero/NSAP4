@@ -359,11 +359,22 @@
         this.getList()
       },
       handleModifyStatus(row, status) { // 模拟修改状态
-        this.$message({
-          message: '操作成功',
-          type: 'success'
+        console.log(row, 'row', typeof row.id)
+        users.blockUp({
+          userId: row.id
+        }).then(() => {
+          this.$message({
+            message: '操作成功',
+            type: 'success'
+          })
+          row.status = status
+        }).catch((err) => {
+          console.log(err, 'err')
+          this.$message({
+            message: '操作失败',
+            type: 'fail'
+          })
         })
-        row.status = status
       },
       resetTemp() {
         this.temp = {

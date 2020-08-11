@@ -379,12 +379,12 @@ namespace OpenAuth.App
             var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceOrderSNs)
                 .Include(s => s.ServiceWorkOrders)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.Id.Equals(Convert.ToInt32(req.QryServiceOrderId)))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryState) & Convert.ToInt32(req.QryState) > 0, q => q.Status.Equals(Convert.ToInt32(req.QryState)))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryState) && Convert.ToInt32(req.QryState) > 0, q => q.Status.Equals(Convert.ToInt32(req.QryState)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.CustomerId.Contains(req.QryCustomer) || q.CustomerName.Contains(req.QryCustomer))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceOrderSNs.Any(a => a.ManufSN.Contains(req.QryManufSN)))
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime <= req.QryCreateTimeTo)
-                         .WhereIf(Convert.ToInt32(req.QryState) == 2, q => !q.ServiceWorkOrders.All(q => q.Status != 1))
-                         .WhereIf(Convert.ToInt32(req.QryState) == 0, q => q.Status == 1 || (q.Status == 2 && !q.ServiceWorkOrders.All(q => q.Status != 1)))
+                         //.WhereIf(Convert.ToInt32(req.QryState) == 2, q => !q.ServiceWorkOrders.All(q => q.Status != 1))
+                         //.WhereIf(Convert.ToInt32(req.QryState) == 0, q => q.Status == 1 || (q.Status == 2 && !q.ServiceWorkOrders.All(q => q.Status != 1)))
                          .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => (s.Id == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key))))
             .OrderBy(r => r.CreateTime).Select(q => new
             {
@@ -455,16 +455,20 @@ namespace OpenAuth.App
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
             obj.Supervisor = d.TechName;
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.TechName)))?.Id;
+            var province = string.IsNullOrWhiteSpace(request.Province) ? obj.Province : request.Province;
+            var city = string.IsNullOrWhiteSpace(request.City) ? obj.City : request.City;
+            var area = string.IsNullOrWhiteSpace(request.Area) ? obj.Area : request.Area;
+            var addr = string.IsNullOrWhiteSpace(request.Addr) ? obj.Addr : request.Addr;
             await UnitWork.UpdateAsync<ServiceOrder>(o => o.Id.Equals(request.Id), s => new ServiceOrder
             {
                 Status = 2,
-                Addr = obj.Addr,
+                Addr = addr,
                 Address = obj.Address,
                 AddressDesignator = obj.AddressDesignator,
                 //Services = obj.Services,
-                Province = obj.Province,
-                City = obj.City,
-                Area = obj.Area,
+                Province = province,
+                City = city,
+                Area = area,
                 CustomerId = obj.CustomerId,
                 CustomerName = obj.CustomerName,
                 Contacter = obj.Contacter,
@@ -686,7 +690,7 @@ namespace OpenAuth.App
             //await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"客服:{loginContext.User.Name}创建服务单", ActionType = "创建工单", ServiceOrderId = e.Id });
             #region 同步到SAP 并拿到服务单主键
 
-            _capBus.Publish("Serve.ServcieOrder.Create", obj.Id);
+            //_capBus.Publish("Serve.ServcieOrder.Create", obj.Id);
             #endregion
         }
         /// <summary>
@@ -1763,33 +1767,38 @@ namespace OpenAuth.App
             Dictionary<string, object> userData = new Dictionary<string, object>();
             List<object> data = new List<object>();
             var result = new TableData();
-            var loginContext = _auth.GetCurrentUser();
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-            var orgs = loginContext.Orgs.Select(o => o.Id).ToArray();
+            //1.根据app用户Id查询出nSap中的用户Id
+            var userId = (await UnitWork.FindSingleAsync<AppUserMap>(a => a.AppUserId == req.CurrentUserId)).UserID;
+            //2.取出nSAP中该用户对应的部门信息
+            var orgs = _revelanceApp.Get(Define.USERORG, true, userId).ToArray();
+            //3.取出nSAP用户与APP用户关联的用户信息（角色为技术员）
             var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole == 2).ToListAsync();
+            //4.获取定位信息（登录APP时保存的位置信息）
             var locations = (await UnitWork.Find<RealTimeLocation>(null).OrderByDescending(o => o.CreateTime).ToListAsync()).GroupBy(g => g.AppUserId).Select(s => s.First());
+            //5.根据组织信息获取组织下的所有用户Id集合
             var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
+            //6.取得相关用户信息
             var query = from a in UnitWork.Find<User>(u => userIds.Contains(u.Id))
                         join b in UnitWork.Find<Relevance>(null) on a.Id equals b.FirstId into ab
                         from b in ab.DefaultIfEmpty()
                         join c in UnitWork.Find<Repository.Domain.Org>(null) on b.SecondId equals c.Id into bc
                         from c in bc.DefaultIfEmpty()
-                        select new { userId = a.Id, orgId = c.Id, orgName = c.Name };
-            var userInfo = (await query.ToListAsync()).Where(s => s.orgId != null).GroupBy(g => g.orgId).Select(s => new { s.Key, userids = string.Join(",", s.Select(i => i.userId)), orgName = s.Select(i => i.orgName).Distinct().FirstOrDefault() }).ToList();
+                        select new { userId = a.Id, orgId = c.Id, orgName = c.Name, orgParentName = c.ParentName };
+            var userInfo = (await query.ToListAsync()).Where(s => !string.IsNullOrEmpty(s.orgId) && orgs.Contains(s.orgId)).GroupBy(g => g.orgId).Select(s => new { s.Key, userids = string.Join(",", s.Select(i => i.userId)), orgName = s.Select(i => i.orgName).Distinct().FirstOrDefault() }).ToList();
+            //7.循环遍历部门--用户获取用户信息 返回最后需要的信息结构
             foreach (var item in userInfo)
             {
+                userData = new Dictionary<string, object>();
                 var orgName = item.orgName;
                 string uIds = item.userids;
+                string orgId = item.Key;
                 List<string> userlist = new List<string>();
                 string[] userArr = uIds.Split(",");
                 userArr.ForEach(u =>
                      userlist.Add(u)
                 );
                 var ids = userlist.Intersect(tUsers.Select(u => u.UserID));
-                var users = await UnitWork.Find<User>(u => ids.Contains(u.Id)).WhereIf(!string.IsNullOrEmpty(req.key), u => u.Name.Equals(req.key)).ToListAsync();
+                var users = await UnitWork.Find<User>(u => ids.Contains(u.Id)).WhereIf(!string.IsNullOrEmpty(req.key), u => u.Name.Contains(req.key)).ToListAsync();
                 var us = users.Select(u => new { u.Name, AppUserId = tUsers.FirstOrDefault(a => a.UserID.Equals(u.Id)).AppUserId, u.Id });
                 var appUserIds = tUsers.Where(u => userIds.Contains(u.UserID)).Select(u => u.AppUserId).ToList();
 
@@ -1810,13 +1819,11 @@ namespace OpenAuth.App
                     Distance = (req.Latitude == 0 || locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Latitude ?? 0), Convert.ToDouble(locations.FirstOrDefault(f => f.AppUserId == u.AppUserId)?.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude))
                 }).ToList();
                 userInfos = userInfos.OrderBy(o => o.Distance).ToList();
-                userData.Add("orgId", item.Key);
+                userData.Add("orgId", orgId);
                 userData.Add("orgName", orgName);
                 userData.Add("userData", userInfos);
                 data.Add(userData);
             }
-
-
             result.Data = data;
             result.Count = userInfo.Count;
             return result;
@@ -1901,6 +1908,48 @@ namespace OpenAuth.App
                 s.ServiceOrderSNs
             }).ToList();
             result.Data = list;
+            return result;
+        }
+
+        /// <summary>
+        /// 获取待确认/已确认服务单列表（App）
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> AppUnConfirmedServiceOrderList(QueryAppServiceOrderListReq req)
+        {
+            var result = new TableData();
+            var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceOrderSNs)
+                .Include(s => s.ServiceWorkOrders)
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryState) && Convert.ToInt32(req.QryState) > 0, q => q.Status.Equals(Convert.ToInt32(req.QryState)))
+                         .WhereIf(Convert.ToInt32(req.QryState) == 2, q => !q.ServiceWorkOrders.All(q => q.Status != 1))
+                         .WhereIf(Convert.ToInt32(req.QryState) == 0, q => q.Status == 1 || (q.Status == 2 && !q.ServiceWorkOrders.All(q => q.Status != 1)))
+                         .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => (s.Id == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key))))
+            .OrderBy(r => r.CreateTime).Select(q => new
+            {
+                q.Id,
+                q.CustomerId,
+                q.CustomerName,
+                q.Services,
+                q.CreateTime,
+                q.Contacter,
+                q.ContactTel,
+                q.Supervisor,
+                q.SalesMan,
+                q.Status,
+                q.ServiceOrderSNs.FirstOrDefault().ManufSN,
+                q.ServiceOrderSNs.FirstOrDefault().ItemCode,
+                q.Province,
+                q.City,
+                q.Area,
+                q.Addr
+            });
+
+            result.Data =
+            (await query//.OrderBy(u => u.Id)
+            .Skip((req.page - 1) * req.limit)
+            .Take(req.limit).ToListAsync());
+            result.Count = query.Count();
             return result;
         }
     }
