@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
+using AutoMapper.Configuration.Annotations;
 using OpenAuth.Repository.Core;
 
 namespace OpenAuth.Repository.Domain
@@ -152,5 +153,13 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("创建时间")]
         public System.DateTime? AssetCreateTime { get; set; }
+
+        /// <summary>
+        /// 计量特性
+        /// </summary>
+        [Ignore]
+        [Description("计量特性")]
+        public List<AssetCategory> AssetCategorys { get; set; }
+
     }
 }

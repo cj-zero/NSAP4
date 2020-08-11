@@ -53,9 +53,10 @@ namespace OpenAuth.Repository.Interface
         void Update<T>(T entity) where T:class;
         Task UpdateAsync<T>(T entity, CancellationToken cancellationToken = default) where T:class;
 
+        void BatchUpdate<T>(T[] entity) where T : class;
+
         void Delete<T>(T entity) where T:class;
         Task DeleteAsync<T>(T entity, CancellationToken cancellationToken = default) where T:class;
-
 
         /// <summary>
         /// 实现按需要只更新部分更新

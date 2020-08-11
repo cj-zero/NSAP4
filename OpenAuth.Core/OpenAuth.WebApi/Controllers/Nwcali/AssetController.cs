@@ -32,8 +32,8 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 加载资产列表
         /// </summary>
-        [HttpPost]
-        public TableData Load(QueryassetListReq request)
+        [HttpGet]
+        public TableData Load([FromQuery]QueryassetListReq request)
         {
             return _app.Load(request);
         }

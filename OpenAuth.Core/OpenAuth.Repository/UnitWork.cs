@@ -146,6 +146,7 @@ namespace OpenAuth.Repository
             }
 
         }
+       
 
         public void Delete<T>(T entity) where T : class
         {
@@ -290,5 +291,25 @@ namespace OpenAuth.Repository
         {
             await GetDbContext<T>().Set<T>().AddRangeAsync(entities, cancellationToken);
         }
+        /// <summary>
+        /// 批量修改
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        public void BatchUpdate<T>(T[] entity) where T : class
+        {
+            foreach (var item in entity)
+            {
+                var entry = GetDbContext<T>().Entry(item);
+                entry.State = EntityState.Modified;
+
+                //如果数据没有发生变化
+                if (!GetDbContext<T>().ChangeTracker.HasChanges())
+                {
+                    entry.State = EntityState.Unchanged;
+                }
+            }
+        }
+
     }
 }

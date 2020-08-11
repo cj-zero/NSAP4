@@ -20,7 +20,7 @@ namespace OpenAuth.App
         /// <summary>
         /// 加载送检记录列表
         /// </summary>
-        public TableData Load(QueryassetinspectListReq request)
+        public TableData Load(string AssetId)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -38,12 +38,10 @@ namespace OpenAuth.App
 
             var result = new TableData();
             var objs = UnitWork.Find<AssetInspect>(null);
-            objs = objs.Where(u => u.AssetId == request.AssetId);
+            objs = objs.Where(u => u.AssetId ==AssetId);
             var propertyStr = string.Join(',', properties.Select(u => u.Key));
             result.columnHeaders = properties;
-            result.Data = objs.OrderBy(u => u.Id)
-                .Skip((request.page - 1) * request.limit)
-                .Take(request.limit).Select($"new ({propertyStr})");
+            result.Data = objs.OrderBy(u => u.Id).Select($"new ({propertyStr})");
             result.Count = objs.Count();
             return result;
         }
