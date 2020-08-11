@@ -80,10 +80,10 @@ namespace Sap.Handler.Service
                     //{
                     //    sc.CallType = (int)thisSwork.FromType;
                     //}
-                    if (thisSwork.ProblemType != null)
-                    {
-                        sc.ProblemType = thisSwork.ProblemType.PrblmTypID;
-                    }
+                    //if (thisSwork.ProblemType != null)
+                    //{
+                    //    sc.ProblemType = thisSwork.ProblemType.PrblmTypID;
+                    //}
                     sc.Description = thisSwork.Remark;
                     //sc.TechnicianCode = thisWorkOrder.ServiceOrder.SupervisorId;
                     //sc.City = thisWorkOrder.ServiceOrder.City;
