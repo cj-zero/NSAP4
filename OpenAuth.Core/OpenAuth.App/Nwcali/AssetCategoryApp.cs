@@ -22,14 +22,10 @@ namespace OpenAuth.App.nwcali
         /// <returns></returns>
         public void Add(List<AddOrUpdateassetcategoryReq> req,string assetid)
         {
-            foreach (var item in req)
-            {
-                var obj = item.MapTo<AssetCategory>();
-                obj.AssetId = assetid;
-                UnitWork.AddAsync<AssetCategory>(obj);
-            }
-            UnitWork.SaveAsync();
-            
+            var CategoryModel = req.MapToList<AssetCategory>();
+            CategoryModel.ForEach(u => u.AssetId = assetid);
+            UnitWork.BatchAdd<AssetCategory>(CategoryModel.ToArray());
+
         }
         /// <summary>
         /// 修改

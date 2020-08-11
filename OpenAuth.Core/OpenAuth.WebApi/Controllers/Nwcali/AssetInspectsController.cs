@@ -37,10 +37,10 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 加载列表
         /// </summary>
-        [HttpPost]
-        public TableData Load(QueryassetinspectListReq request)
+        [HttpGet]
+        public TableData Load(string AssetId)
         {
-            return _app.Load(request);
+            return _app.Load(AssetId);
         }
 
         public AssetInspectsController(AssetinspectApp app) 
