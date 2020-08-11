@@ -35,7 +35,7 @@ namespace Sap.Handler
 
             services.AddDbContexts();
 
-            //services.AddSap(Configuration);
+            services.AddSap(Configuration);
 
             services.AddNewareCAP(Configuration);
 
