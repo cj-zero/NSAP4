@@ -71,6 +71,7 @@ namespace OpenAuth.App
             //obj.CreateUserName = user.Name;
             //todo:补充或调整自己需要的字段
             var o = await Repository.AddAsync(obj);
+            var completionReportId = o.Id;
             var pictures = req.Pictures.MapToList<CompletionReportPicture>();
             pictures.ForEach(r => r.CompletionReportId = o.Id);
             await UnitWork.BatchAddAsync(pictures.ToArray());
@@ -87,6 +88,9 @@ namespace OpenAuth.App
                 Title = "技术员上门服务中",
                 Details = $"技术员于{DateTime.Now}结束上门服务",
             }, workorder);
+            //反写完工报告Id至工单
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId,
+                o => new ServiceWorkOrder { CompletionReportId = completionReportId });
         }
 
 

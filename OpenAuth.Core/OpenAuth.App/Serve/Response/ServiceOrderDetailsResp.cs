@@ -91,6 +91,10 @@ namespace OpenAuth.App.Response
         /// </summary>
         public decimal? Latitude { get; set; }
         /// <summary>
+        /// 服务单号
+        /// </summary>
+        public int? U_SAP_ID { get; set; }
+        /// <summary>
         /// 服务单关联的工单
         /// </summary>
         public virtual List<ServiceWorkOrderDetailsResp> ServiceWorkOrders { get; set; }

@@ -52,7 +52,6 @@ namespace OpenAuth.App
             _appServiceOrderLogApp = appServiceOrderLogApp;
             _helper = new HttpHelper(_appConfiguration.Value.AppPushMsgUrl);
             _capBus = capBus;
-            _capBus = capBus;
         }
         /// <summary>
         /// 加载列表
@@ -111,6 +110,7 @@ namespace OpenAuth.App
                             a.NewestContactTel,
                             a.CustomerName,
                             a.CustomerId,
+                            a.U_SAP_ID,
                             ServiceWorkOrders = a.ServiceWorkOrders.Select(o => new
                             {
                                 o.Id,
@@ -183,6 +183,7 @@ namespace OpenAuth.App
                             a.Services,
                             a.CreateTime,
                             a.Status,
+                            a.U_SAP_ID,
                             ServiceWorkOrders = a.ServiceWorkOrders.Select(o => new
                             {
                                 o.Id,
@@ -196,21 +197,21 @@ namespace OpenAuth.App
                             }).ToList()
                         });
 
-            var data = await query.Select(a => new
+            var data = (await query.ToListAsync()).Select(a => new
             {
                 a.Id,
                 a.AppUserId,
                 a.Services,
                 a.CreateTime,
                 a.Status,
+                a.U_SAP_ID,
                 ServiceWorkOrders = a.ServiceWorkOrders.GroupBy(o => o.MaterialType).Select(s => new
                 {
                     MaterialType = s.Key,
                     Count = s.Count(),
                     Orders = s.ToList()
-                }
-                    ).ToList()
-            }).FirstOrDefaultAsync();
+                })
+            }).ToList();
 
 
             var result = new Response<dynamic>();
@@ -687,10 +688,10 @@ namespace OpenAuth.App
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
 
-            //await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"客服:{loginContext.User.Name}创建服务单", ActionType = "创建工单", ServiceOrderId = e.Id });
+            await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"客服:{loginContext.User.Name}创建服务单", ActionType = "创建工单", ServiceOrderId = e.Id });
             #region 同步到SAP 并拿到服务单主键
 
-            //_capBus.Publish("Serve.ServcieOrder.Create", obj.Id);
+            _capBus.Publish("Serve.ServcieOrder.Create", obj.Id);
             #endregion
         }
         /// <summary>
@@ -1275,10 +1276,12 @@ namespace OpenAuth.App
                     s.Contacter,
                     s.ContactTel,
                     s.NewestContacter,
-                    s.NewestContactTel
+                    s.NewestContactTel,
+                    s.U_SAP_ID,
+                    s.CreateTime
                 })
                 .Skip(0).Take(10).ToListAsync();
-            var newestNotCloseOrder = await UnitWork.Find<ServiceOrder>(s => s.CustomerId.Equals(code) && s.Status == 1).OrderByDescending(s => s.CreateTime)
+            var newestNotCloseOrder = await UnitWork.Find<ServiceOrder>(s => s.CustomerId.Equals(code) && s.Status == 2 && s.ServiceWorkOrders.Any(o => o.Status < 7)).OrderByDescending(s => s.CreateTime)
                 .Select(s => new
                 {
                     s.Id,
@@ -1289,7 +1292,9 @@ namespace OpenAuth.App
                     s.Contacter,
                     s.ContactTel,
                     s.NewestContacter,
-                    s.NewestContactTel
+                    s.NewestContactTel,
+                    s.U_SAP_ID,
+                    s.CreateTime
                 })
                 .Skip(0).Take(10).ToListAsync();
             return new { newestOrder, newestNotCloseOrder };
