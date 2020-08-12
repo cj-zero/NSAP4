@@ -94,10 +94,10 @@
           >
             <template slot-scope="scope">
               <el-link
-                v-if="fruit.name === 'serviceOrderId'"
+                v-if="fruit.name === 'u_SAP_ID'"
                 type="primary"
                 @click="openTree(scope.row.serviceOrderId)"
-              >{{scope.row.serviceOrderId}}</el-link>
+              >{{scope.row.u_SAP_ID}}</el-link>
               <span
                 v-if="fruit.name === 'status'"
                 :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
@@ -114,7 +114,7 @@
                 v-if="fruit.name!='priority'&&
                 fruit.name!='fromType'&&
                 fruit.name!='status'&&
-                fruit.name!='serviceOrderId'&&
+                fruit.name!='u_SAP_ID'&&
                 fruit.name !== 'workOrderNumber'"
               >{{scope.row[fruit.name]}}</span>
               
@@ -280,7 +280,7 @@ export default {
       key: 1, // table key
       sure: 0,
       ParentHeadOptions: [
-        { name: "serviceOrderId", label: "服务单号", width: "80px", align:'left' ,  sortable:true},
+        { name: "u_SAP_ID", label: "服务单号", width: "80px", align:'left' ,  sortable:true},
         { name: "customerId", label: "客户代码",align:'left' },
         { name: "customerName", label: "客户名称" ,align:'left' },
         { name: "contacter", label: "联系人" ,align:'left' },

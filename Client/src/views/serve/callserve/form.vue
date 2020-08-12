@@ -45,7 +45,7 @@
               </el-col>
               <el-col :span="8">
                 <el-form-item label="服务ID">
-                  <el-select size="mini" v-model="form.id" disabled placeholder="请选择">
+                  <el-select size="mini" v-model="form.u_SAP_ID" disabled placeholder="请选择">
                     <el-option label="服务一" value="shanghai"></el-option>
                     <el-option label="服务二" value="beijing"></el-option>
                   </el-select>
@@ -555,6 +555,7 @@ export default {
       deep: true,
       handler(val) {
         if (val) {
+          this.form.serviceWorkOrders = [] // 清空数组
           this.form = Object.assign({}, this.form, val);
           console.log(this.form, val, 'refValue')
           if (val.serviceWorkOrders.length > 0) {
