@@ -167,9 +167,18 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         [HttpPost]
-        public async Task BlockUp(BlockUpUserReq req)
+        public async Task<Response> BlockUp(BlockUpUserReq req)
         {
-            await _app.BlockUp(req);
+            var result = new Response();
+            try
+            {
+                await _app.BlockUp(req);
+            }catch(Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
         }
 
 
