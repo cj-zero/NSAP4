@@ -8,6 +8,7 @@ import permission from './modules/permission'
 import dataPrivilegerules from './modules/dataPrivilegerules'
 import storage from './modules/storage'
 import flow from './modules/flow'
+import form from './modules/form'
 import getters from './getters'
 import { vuexOidcCreateStoreModule } from 'vuex-oidc'
 
@@ -23,6 +24,7 @@ const store = new Vuex.Store({
     storage,
     tagsView,
     flow,
+    form,
     oidcStore: vuexOidcCreateStoreModule(
       // process.env.OIDC,
       // process.env.VUE_APP_OIDC,

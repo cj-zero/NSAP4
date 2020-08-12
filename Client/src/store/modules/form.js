@@ -1,9 +1,11 @@
 import { deepClone } from '@/utils'
 const form = {
+  namespaced: true,
   state: {
     formDetails: {},
     addFormDetail: '',
-    isRender: false
+    isRender: false,
+    formList: []
   },
   mutations: {
     SAVE_FORM_DETAILS: (state, val) => {
@@ -14,6 +16,9 @@ const form = {
     },
     UPDATE_IS_RENDER(state, val) {
       state.isRender = val
+    },
+    SET_FORM_LIST (state, val) {
+      state.formList = val
     }
   },
   actions: {
@@ -30,7 +35,8 @@ const form = {
   getters: {
     formDetails: state => state.formDetails,
     addFormDetail: state => state.addFormDetail,
-    isRender: state => state.isRender
+    isRender: state => state.isRender,
+    formList: state => state.formList
   }
 }
 

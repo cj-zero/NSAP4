@@ -151,6 +151,7 @@
           @close-Dia="closeDia"
         ></zxform>
         <div slot="footer">
+          <span class="order-num">工单数量: {{ formList.length }}</span>
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
           <el-button size="mini" type="primary" :loading="loadingBtn" @click="createData">确认</el-button>
         </div>
@@ -172,14 +173,16 @@
           labelposition="right"
           labelwidth="100px"
           ifEdit="true"
-          :isCreate="true"
+          :isCreate="false"
           :sure="sure"
           :refValue="dataForm"
           @close-Dia="closeDia"
+          :serviceOrderId="serviceOrderId"
         ></zxform>
         <div slot="footer">
+          <span class="order-num">工单数量: {{ formList.length }}</span>
           <el-button size="mini" @click="FormUpdate = false">取消</el-button>
-          <el-button size="mini" type="primary" @click="FormUpdate = false">确认</el-button>
+          <el-button size="mini" type="primary" :loading="loadingBtn" @click="createData">确认</el-button>
         </div>
       </el-dialog>
       <!-- 只能查看的表单 -->
@@ -228,6 +231,7 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
 import * as callservesure from "@/api/serve/callservesure";
 import * as problemtypes from "@/api/problemtypes";
 import waves from "@/directive/waves"; // 水波纹指令
@@ -245,7 +249,17 @@ import treeList from "./treeList";
 // import serveTableVue from '../serveTable.vue';
 // import { callserve } from "@/mock/serve";
 export default {
+  provide () {
+    return {
+      instance: this
+    }
+  },
   name: "callservesure",
+  computed: {
+    ...mapState('form', [
+      'formList'
+    ])
+  },
   components: {
     Sticky,
     permissionBtn,
@@ -289,8 +303,9 @@ export default {
         { name: "createTime", label: "创建日期" ,width:'160px',align:'left' },
         { name: "recepUserName", label: "接单员" ,align:'left' },
         { name: "currentUser", label: "技术员" ,align:'left' },
-         { name: "materialCode", label: "制造商序列号",width:'140px' ,align:'left' },
-         { name: "materialDescription", label: "物料编码",width:'120px' ,align:'left' },
+        { name: "manufacturerSerialNumber", label: "制造商序列号",width:'140px' ,align:'left' },
+        { name: "materialCode", label: "物料编码",width:'120px' ,align:'left' },
+        { name: "materialDescription", label: "物料描述",width:'120px' ,align:'left' },
         // { name: "contacter", label: "联系人" },
         // { name: "contactTel", label: "电话号码" ,width:'120px'},
         // { name: "supervisor", label: "售后主管" },
@@ -342,7 +357,6 @@ export default {
         // QryProblemType:"",//问题类型
         // QryMaterialTypes:""//物料类别（多选)
       },
-
       temp: {
         id: "", // Id
         sltCode: "", // SltCode
@@ -377,7 +391,8 @@ export default {
       dataForm: {}, //传递的表单props
       dataForm1: {}, //获取的详情表单
       downloadLoading: false,
-      problemOptions: [] // 问题类型
+      problemOptions: [], // 问题类型
+      serviceOrderId: '' // 服务单ID 用于后续工单的创建和修改
     };
   },
   filters: {
@@ -671,9 +686,8 @@ export default {
       // });
     },
     createData() {
-             this.loadingBtn  =true
-
-       this.sure = this.sure + 1; //向form表单发送提交通知
+      this.loadingBtn = true
+      this.sure = this.sure + 1; //向form表单发送提交通知
       // 保存提交
       // this.$refs["dataForm"].validate(valid => {
       //   if (valid) {
@@ -695,9 +709,11 @@ export default {
         this.listLoading = true;
       callservesure.GetDetails(row.serviceOrderId).then(res => {
         if (res.code == 200) {
-           this.dataForm1 = res.result;
+          this.dataForm1 = res.result;
+          this.serviceOrderId = row.serviceOrderId // 服务单ID
+          console.log(this.dataForm1, 'dateForm1')
           this.dialogStatus = "update";
-         this.FormUpdate = true;
+          this.FormUpdate = true;
         }
         this.listLoading = false;
       });
@@ -718,6 +734,7 @@ export default {
       }
       this.loadingBtn = false;
       this.dialogFormVisible = false;
+      this.FormUpdate = false
     },
     updateData() {
       // this.sure = this.sure + 1; //向form表单发送提交通知
@@ -790,7 +807,9 @@ export default {
     padding: 10px 20px;
   }
 }
-
+.order-num {
+  margin-right: 10px;
+}
 
 // }
 </style>

@@ -263,15 +263,16 @@
               <el-col :span="20"></el-col>
             </el-row>
             <!-- 选择制造商序列号 -->
+            <!-- <formAdd :SerialNumberList="SerialNumberList"></formAdd> -->
+          </el-form>
             <formAdd
               :isCreate="isCreateAdd"
               :ifEdit="ifEdit"
               @change-form="changeForm"
               :serviceOrderId="serviceOrderId"
               :propForm="propForm"
+              ref="formAdd"
             ></formAdd>
-            <!-- <formAdd :SerialNumberList="SerialNumberList"></formAdd> -->
-          </el-form>
         </el-col>
       </el-row>
       <el-dialog
@@ -294,10 +295,10 @@
       <el-dialog
         title="选择业务伙伴"
         class="addClass1"
-        width="90%"
+        width="70%"
         @open="openDialog"
         :modal-append-to-body='false'
-:append-to-body="true"
+        :append-to-body="true"
         :destroy-on-close="true"
         :visible.sync="dialogPartner"
       >
@@ -369,7 +370,8 @@ export default {
     "ifEdit", //是否是编辑页面
     "customer",//待确认页面app传入的数据
     "sure",  //用于待确认，新建页面确定之后的响应
-    "ifFirstLook" //是否是待确认页面
+    "ifFirstLook", //是否是待确认页面
+    "serviceOrderId" // 服务单ID
   ],
   //  ##isCreate是否可以编辑  ##look只能看   ##create新增页  ##customer获取服务端对比的信息
   //customer确认订单时传递的信息
@@ -419,7 +421,6 @@ export default {
         { label: "APP", value: 6 },
         { label: "web", value: 7 },
       ],
-      serviceOrderId: "",
       checkVal: {},
       form: {
         customerId: "", //客户代码,
@@ -555,6 +556,7 @@ export default {
       handler(val) {
         if (val) {
           Object.assign(this.form, val);
+          console.log(this.form, val, 'refValue')
           if (val.serviceWorkOrders.length > 0) {
             val.serviceWorkOrders.map((item, index) => {
               this.form.serviceWorkOrders[index].solutionsubject =
@@ -564,6 +566,7 @@ export default {
             });
           }
           this.propForm = this.form.serviceWorkOrders;
+          // console.log(this.propForm, 'propForm')
         }
         // this.propForm = this.refValue.serviceWorkOrders
       },
@@ -586,6 +589,7 @@ export default {
 
   }
     this.isCreateAdd = this.isCreate;
+    console.log(this.isCreateAdd, 'isCreatedAdd')
   },
   
 destroyed() {
@@ -663,6 +667,7 @@ destroyed() {
     async setForm(val) {
       if (val) {
         val.serviceOrderPictures = await this.getServeImg(val.id);
+        this.$emit('imgChange', val.serviceOrderPictures) // 告诉父组件
       }
       if(val.province && val.city &&  val.area && val.addr ){
         this.needPos=  false;
@@ -721,25 +726,59 @@ destroyed() {
         //   return item;
         // });
         this.isValid = await this.$refs.form.validate();
-        console.log(chec, this.isValid, 'isValid')
+        console.log(chec, this.isValid, 'isValid', this.$router.path)
         if (chec && this.isValid) {
           if (this.$route.path === "/serve/callserve") {
-            callservesure
-              .CreateOrder(this.form)
-              .then(() => {
-                this.$message({
-                  message: "创建服务单成功",
-                  type: "success",
+            if (this.isCreate) { // 新建服务单
+              console.log('build', this.form, 'form')
+              callservesure
+                .CreateOrder(this.form)
+                .then(() => {
+                  this.$message({
+                    message: "创建服务单成功",
+                    type: "success",
+                  });
+                  this.$emit("close-Dia", "y");
+                })
+                .catch((res) => {
+                  this.$message({
+                    message: `${res}`,
+                    type: "error",
+                  });
+                  this.$emit("close-Dia", "N");
                 });
-                this.$emit("close-Dia", "y");
+            } else {
+              console.log('edit')
+              let formInitailList = this.$refs.formAdd.formInitailList
+              console.log(formInitailList)
+              let targetList = this.form.serviceWorkOrders.filter(item => {
+                return !(formInitailList.some(serviceItem => {
+                  return serviceItem.manufacturerSerialNumber === item.manufacturerSerialNumber
+                }))
               })
-              .catch((res) => {
+              let promiseList = []
+              for (let i = 0; i < targetList.length; i++) {
+                let item = targetList[i]
+                let promise = callservesure.addWorkOrder({
+                  serviceOrderId: this.serviceOrderId,
+                  ...item
+                })
+                promiseList.push(promise)
+              }
+              Promise.all([...promiseList]).then(() => {
                 this.$message({
-                  message: `${res}`,
+                  message: "新增工单成功",
+                  type: "success",
+                })
+                this.$emit("close-Dia", "y");
+              }).catch(() => {
+                this.$message({
+                  message: '新增工单失败',
                   type: "error",
                 });
-                      this.$emit("close-Dia", "N");
-              });
+                this.$emit("close-Dia", "N");
+              })
+            }
           } else {
             console.log(this.form);
             callservesure
@@ -805,6 +844,7 @@ destroyed() {
     },
     changeForm(val) {
       this.form.serviceWorkOrders = val;
+      console.log(this.form.serviceWorkOrders, 'serviceWorkOrders')
     },
     postService() {
       //更新服务单
@@ -870,22 +910,21 @@ destroyed() {
       this.inputSearch = queryString;
 
       this.getPartnerList();
-      var partnerList = this.partnerList;
-      var results = queryString
-        ? partnerList.filter(this.createFilter(queryString))
-        : partnerList;
+      // var results = queryString
+      //   ? partnerList.filter(this.createFilter(queryString))
+      //   : partnerList;
       // 调用 callback 返回建议列表的数据
-      cb(results);
+      cb(this.partnerList);
     },
-    createFilter(queryString) {
-      return (partnerList) => {
-        return (
-          partnerList.cardCode
-            .toLowerCase()
-            .indexOf(queryString.toLowerCase()) === 0
-        );
-      };
-    },
+    // createFilter(queryString) {
+    //   return (partnerList) => {
+    //     return (
+    //       partnerList.cardCode
+    //         .toLowerCase()
+    //         .indexOf(queryString.toLowerCase()) === 0
+    //     );
+    //   };
+    // },
     getPartnerList() {
       this.parentLoad = true;
       getPartner(this.listQuery)

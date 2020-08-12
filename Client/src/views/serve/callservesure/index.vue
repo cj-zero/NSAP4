@@ -145,7 +145,7 @@
       >
         <el-row :gutter="20" type="flex" class="row-bg" justify="space-around">
           <el-col :span="11">
-            <customerupload style="position:sticky;top:0;" :form="formValue"></customerupload>
+            <customerupload style="position:sticky;top:0;" :form="formValue" :serviceOrderPictures="serviceOrderPictures"></customerupload>
           </el-col>
           <el-col :span="13">
             <zxform
@@ -157,6 +157,7 @@
               :sure="sure"
               :ifFirstLook="true"
               :customer="customer"
+              @imgChange="onImgChange"
               @close-Dia="closeDia"
             ></zxform>
           </el-col>
@@ -320,7 +321,8 @@ export default {
       },
       dataForm: {}, //传递的表单props
       dataForm1: {}, //获取的详情表单
-      downloadLoading: false
+      downloadLoading: false,
+      serviceOrderPictures: [] // 用户上传的图片(获取图片的逻辑写在了/callserver/form上)
     };
   },
   filters: {
@@ -392,7 +394,11 @@ export default {
     //   console.log(callserve)
   },
   methods: {
-  
+    onImgChange (pictureList) {
+      // 用户上传的图片列表
+      this.serviceOrderPictures = pictureList
+      console.log(this.serviceOrderPictures, 'serviceOrder')
+    },
     openCustoner() {
       this.loadingBtn = false;
       if (this.formValue && this.formValue.customerId) {
@@ -421,6 +427,7 @@ export default {
       // });
             callservesure.getForm(res).then(response => {
         this.formValue = response.result;
+        console.log(this.formValue, 'formVal')
       this.listLoading = false;
         this.dialogFormView = true;
         // this.$nextTick(() => {
@@ -607,7 +614,7 @@ export default {
       this.temp = Object.assign({}, row); // copy obj
       callservesure.getForm(row.id).then(response => {
         this.formValue = response.result;
-      
+        console.log('淡出编辑', this.formValue)
         this.dialogStatus = "update";
         this.dialogFormVisible = true;
         // this.$nextTick(() => {
