@@ -196,7 +196,7 @@ namespace OpenAuth.App
                             }).ToList()
                         });
 
-            var data = await query.Select(a => new
+            var data = (await query.ToListAsync()).Select(a => new
             {
                 a.Id,
                 a.AppUserId,
@@ -208,9 +208,8 @@ namespace OpenAuth.App
                     MaterialType = s.Key,
                     Count = s.Count(),
                     Orders = s.ToList()
-                }
-                    ).ToList()
-            }).FirstOrDefaultAsync();
+                })
+            }).ToList();
 
 
             var result = new Response<dynamic>();
