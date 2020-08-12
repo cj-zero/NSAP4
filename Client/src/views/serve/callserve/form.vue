@@ -555,7 +555,7 @@ export default {
       deep: true,
       handler(val) {
         if (val) {
-          Object.assign(this.form, val);
+          this.form = Object.assign({}, this.form, val);
           console.log(this.form, val, 'refValue')
           if (val.serviceWorkOrders.length > 0) {
             val.serviceWorkOrders.map((item, index) => {
@@ -566,7 +566,7 @@ export default {
             });
           }
           this.propForm = this.form.serviceWorkOrders;
-          // console.log(this.propForm, 'propForm')
+          console.log(this.propForm, 'propForm')
         }
         // this.propForm = this.refValue.serviceWorkOrders
       },
@@ -619,7 +619,8 @@ destroyed() {
       // let str = getArr.province +getArr.city+getArr.district
       this.form.city = getArr.city;
       this.form.province = getArr.province;
-      this.form.area = getArr.district;
+      console.log(getArr.district, 'getArr.district')
+      this.form.area = Array.isArray(getArr.district) ? '' : getArr.district;
       this.form.addr = this.allAddress.address.replace(getArr.province,"").replace(getArr.city,"").replace(getArr.district,"");
       this.form.longitude = this.allAddress.position.lng;
       this.form.latitude = this.allAddress.position.lat;
@@ -731,6 +732,10 @@ destroyed() {
           if (this.$route.path === "/serve/callserve") {
             if (this.isCreate) { // 新建服务单
               console.log('build', this.form, 'form')
+              if (Array.isArray(this.form.area)) {
+                this.form.area = ''
+              }
+              console.log(this.form, 'request')
               callservesure
                 .CreateOrder(this.form)
                 .then(() => {
