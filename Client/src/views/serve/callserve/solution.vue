@@ -20,7 +20,7 @@
           <el-table-column
             show-overflow-tooltip
             v-for="fruit in defaultFormThead"
-            align="center"
+            align="left"
             :width="headWidth[fruit]"
             :key="fruit"
             :label="headLabel[fruit]"
@@ -80,7 +80,7 @@ export default {
       formTheadOptions: [
         { name: "id", label: "ID" },
         { name: "sltCode", label: "编号" },
-        { name: "status", label: "状态" },
+        { name: "status", label: "症状" },
         { name: "subject", label: "解决方案" }
       ],
       // this.dialogTable = true;
@@ -88,7 +88,7 @@ export default {
       headLabel: {
         id: "ID",
         sltCode: "编号",
-        status: "状态",
+        status: "症状",
         subject: "解决方案"
       },
       headWidth: {

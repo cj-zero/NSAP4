@@ -46,13 +46,16 @@ export default {
       let AMapUI = this.AMapUI = window.AMapUI
       let AMap = this.AMap = window.AMap
       AMapUI.loadUI(['misc/PositionPicker'], PositionPicker => {
+        console.log(mapConfig, 'before mapConfig')
         let mapConfig = {
           zoom: 16,
           cityName: this.MapCityName
         }
+        console.log(this.lat, this.lng, mapConfig, 'mapConfig')
         if (this.lat && this.lng) {
           mapConfig.center = [this.lng, this.lat]
         }
+        console.log(mapConfig, 'mapConfig')
         let map = new AMap.Map('js-container', mapConfig)
         // 加载地图搜索插件
         AMap.service('AMap.PlaceSearch', () => {

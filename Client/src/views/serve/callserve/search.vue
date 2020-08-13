@@ -90,17 +90,19 @@
             <el-form-item label="创建日期">
               <el-col :span="11">
                 <el-date-picker
+                  value-format="yyyy-MM-dd"
                   type="date"
                   placeholder="选择开始日期"
-                  v-model="form.startTime"
+                  v-model="form.QryCreateTimeFrom"
                 ></el-date-picker>
               </el-col>
               <el-col class="line" :span="1">至</el-col>
               <el-col :span="11">
                 <el-date-picker
                   type="date"
+                  value-format="yyyy-MM-dd"
                   placeholder="选择结束时间"
-                  v-model="form.endTime"
+                  v-model="form.QryCreateTimeTo"
                 ></el-date-picker>
               </el-col>
             </el-form-item>

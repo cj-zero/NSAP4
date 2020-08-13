@@ -298,6 +298,7 @@
         direction="ttb"
       >
         <zmap @drag="dragmap"></zmap>
+        <!-- <bmap></bmap> -->
         <el-row :gutter="12" slot="footer" class="dialog-footer" style="height:30px;">
           <el-col :span="20">当前选择:{{allAddress.address?allAddress.address:'暂未选择地点'}}</el-col>
           <el-col :span="4" style="height:30px;line-height:30px;">
@@ -363,6 +364,7 @@ import http from "@/api/serve/whiteHttp";
 import * as callservesure from "@/api/serve/callservesure";
 import Pagination from "@/components/Pagination";
 import zmap from "@/components/amap";
+// import bmap from '@/components/bmap'
 import upLoadImage from "@/components/upLoadFile";
 import Model from "@/components/Formcreated/components/Model";
 import { timeToFormat } from "@/utils";
@@ -373,7 +375,15 @@ import formAdd from "./formAdd";
 // import { delete } from 'vuedraggable';
 export default {
   name: "formTable",
-  components: { formPartner, formAdd, zmap, Pagination, upLoadImage, Model },
+  components: { 
+    formPartner, 
+    formAdd, 
+    zmap, 
+    Pagination, 
+    upLoadImage, 
+    Model, 
+    // bmap 
+  },
   props: [
     "modelValue",
     "refValue",
@@ -657,8 +667,8 @@ export default {
             .replace(res.province, "")
             .replace(res.city, "")
             .replace(res.district, "");
-          that.form.latitude = res.location.split(",")[1];
-          that.form.longitude = res.location.split(",")[0];
+          that.form.latitude = res.location.split(",")[1]; // 维度
+          that.form.longitude = res.location.split(",")[0]; // 精度
         } else {
           if (that.isCreate || that.ifEdit) {
             that.$message({
@@ -683,7 +693,7 @@ export default {
     },
     dragmap(res) {
       this.allAddress = res;
-    },
+    }, 
 
     async setForm(val) {
       val = JSON.parse(JSON.stringify(val));
@@ -726,6 +736,7 @@ export default {
     },
     async postServe() {
       //创建整个工单
+      console.log(this.form.serviceWorkOrders.length, 'lengrth')
       if (!this.form.serviceWorkOrders.length) {
         this.$message({
           message: `请将必填项填写完整`,

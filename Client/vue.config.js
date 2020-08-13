@@ -12,6 +12,11 @@ module.exports = {
       errors: false
     }
   },
+  configureWebpack: {
+    externals: {
+      "BMap": "BMap"
+    }
+  },
   // svg配置
   chainWebpack(config) {
     config.module

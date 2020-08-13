@@ -71,7 +71,7 @@
                     <span
                       v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
                     >{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
-                    <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
+                    <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority - 1]}}</span>
                     <span
                       v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
                     >{{scope.row[fruit.name]}}</span>
@@ -109,7 +109,7 @@
               <span
                 v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
               >{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
-              <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
+              <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority - 1]}}</span>
               <span
                 v-if="fruit.name!='priority'&&
                 fruit.name!='fromType'&&

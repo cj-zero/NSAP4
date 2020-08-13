@@ -169,11 +169,11 @@ export default {
       ],
       formTheadOptions: [
         // { name: "id" ,label:'ID',align:'right'},
-        { name: "sltCode" ,label:'编号',align:'right' },
+        { name: "sltCode" ,label:'编号',align:'left' },
         { name: "status" ,label:'状态' },
-        { name: "cause"  ,label:'原因'},
-        { name: "subject" ,label:'解决方案' },
         { name: "symptom" ,label:'症状' },
+        { name: "subject" ,label:'解决方案' },
+        { name: "cause"  ,label:'原因'},
         { name: "descriptio"  ,label:'备注'},
         { name: "updateUserName"  ,label:'更新人名字'},
         { name: "createTime" ,label:'创建时间' }
@@ -182,9 +182,9 @@ export default {
         id: "ID",
         sltCode: "编号",
         status: "状态",
-        cause: "原因",
-        subject: "解决方案",
         symptom: "症状",
+        subject: "解决方案",
+        cause: "原因",
         descriptio: "备注",
         updateUserName: "更新人名字",
         createTime: "创建时间"

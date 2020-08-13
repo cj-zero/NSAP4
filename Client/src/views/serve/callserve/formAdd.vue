@@ -983,64 +983,64 @@ export default {
     },
   },
   watch: {
-    // newValue: {
-    //   handler: function (Val, Val1) {
-    //     let newVal = JSON.parse(Val);
-    //     let oldVal = JSON.parse(Val1);
-    //     if (!this.ifEdit) {
-    //       newVal.map((item, index) => {
-    //         //循环新数组的每一项对象
-    //         if (
-    //           JSON.stringify(newVal[index]) !== JSON.stringify(oldVal[index])
-    //         ) {
-    //           let newValChild = newVal[index]; //新值的每一项
-    //           let oldValChild = oldVal[index];
-    //           if (newVal.length == oldVal.length) {
-    //             for (let item1 in oldValChild) {
-    //               if (newValChild[item1] !== oldValChild[item1]) {
-    //                 //如果新值和旧值不一样
-    //                 let sliceList = this.formList.slice(index);
-    //                 if (this.formList[index].editTrue) {
-    //                   //如果可以修改
-    //                   //  console.log(thisForm[item1],newValChild[item1],item1)
-    //                   if (
-    //                     item1 == "editTrue" ||
-    //                     item1 == "manufacturerSerialNumber"
-    //                   ) {
-    //                     return;
-    //                   } else if (item1 == "problemTypeId") {
-    //                     sliceList.map((itemF, ind) => {
-    //                       if (ind !== 0) {
-    //                         itemF.problemTypeId = newValChild.problemTypeId;
-    //                         itemF.problemTypeName = newValChild.problemTypeName;
-    //                       }
-    //                     });
-    //                   } else if (item1 == "solutionId") {
-    //                     sliceList.map((itemF, ind) => {
-    //                       if (ind !== 0) {
-    //                         itemF.solutionId = newValChild.solutionId;
-    //                         itemF.solutionsubject = newValChild.solutionsubject;
-    //                       }
-    //                     });
-    //                   } else {
-    //                     sliceList.map((itemF, ind) => {
-    //                       if (ind !== 0) {
-    //                         itemF[item1] = newValChild[item1];
-    //                       }
-    //                     });
-    //                   }
-    //                 }
-    //               }
-    //             }
-    //           }
-    //         }
-    //       });
-    //     }
-    //     this.$emit("change-form", newVal);
-    //   },
-    //   deep: true,
-    //   // immediate: true
-    // },
+    newValue: {
+      handler: function (Val, Val1) {
+        let newVal = JSON.parse(Val);
+        let oldVal = JSON.parse(Val1);
+        if (!this.ifEdit) {
+          newVal.map((item, index) => {
+            //循环新数组的每一项对象
+            if (
+              JSON.stringify(newVal[index]) !== JSON.stringify(oldVal[index])
+            ) {
+              let newValChild = newVal[index]; //新值的每一项
+              let oldValChild = oldVal[index];
+              if (newVal.length == oldVal.length) {
+                for (let item1 in oldValChild) {
+                  if (newValChild[item1] !== oldValChild[item1]) {
+                    //如果新值和旧值不一样
+                    let sliceList = this.formList.slice(index);
+                    if (this.formList[index].editTrue) {
+                      //如果可以修改
+                      //  console.log(thisForm[item1],newValChild[item1],item1)
+                      if (
+                        item1 == "editTrue" ||
+                        item1 == "manufacturerSerialNumber"
+                      ) {
+                        return;
+                      } else if (item1 == "problemTypeId") {
+                        sliceList.map((itemF, ind) => {
+                          if (ind !== 0) {
+                            itemF.problemTypeId = newValChild.problemTypeId;
+                            itemF.problemTypeName = newValChild.problemTypeName;
+                          }
+                        });
+                      } else if (item1 == "solutionId") {
+                        sliceList.map((itemF, ind) => {
+                          if (ind !== 0) {
+                            itemF.solutionId = newValChild.solutionId;
+                            itemF.solutionsubject = newValChild.solutionsubject;
+                          }
+                        });
+                      } else {
+                        sliceList.map((itemF, ind) => {
+                          if (ind !== 0) {
+                            itemF[item1] = newValChild[item1];
+                          }
+                        });
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          });
+        }
+        this.$emit("change-form", newVal);
+      },
+      deep: true,
+      // immediate: true
+    },
     // propForm: {
     //   deep: true,
     //   immediate: true,
@@ -1190,6 +1190,7 @@ export default {
     },
     changeForm(res) {
       this.formListStart = res;
+      this.$emit('change-Form', res)
       // console.log(res, this.formListStart, 'changeForm')
     },
 
