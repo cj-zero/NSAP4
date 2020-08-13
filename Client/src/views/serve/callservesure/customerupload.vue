@@ -205,4 +205,36 @@ export default {
     margin-bottom:5px;
   }
 }
+/* 图片样式 */
+.demo-image__lazy {
+  .img-list {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 50px;
+    margin: 0 10px;
+    .operation-wrapper {
+      position: absolute;
+      display: flex;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      justify-content: space-around;
+      align-items: center;
+      transition: opacity 0.5s;
+      background-color: rgba(0, 0, 0, 5);
+      .el-icon-download,
+      .el-icon-zoom-in {
+        color: white;
+      }
+    }
+    &:hover {
+      .operation-wrapper {
+        opacity: 1;
+      }
+    }
+  }
+}
 </style>

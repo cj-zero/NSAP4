@@ -1041,16 +1041,17 @@ export default {
       deep: true,
       // immediate: true
     },
-    // propForm: {
-    //   deep: true,
-    //   immediate: true,
-    //   handler(val) {
-    //     if (val && val.length) {
-    //       this.formList = val;
-    //       console.log(this.formList);
-    //     }
-    //   },
-    // },
+    propForm: {
+      deep: true,
+      immediate: true,
+      handler(val) {
+        if (val && val.length) {
+          this.formList = val;
+          this.formInitailList = val.slice()
+          console.log(this.formList);
+        }
+      },
+    },
     "form.customerId": {
       deep: true,
       handler(val) {

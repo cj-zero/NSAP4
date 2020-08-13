@@ -279,16 +279,18 @@ export default {
       key: 1, // table key
       sure: 0,
       ParentHeadOptions: [
-        { name: "u_SAP_ID", label: "服务单号", width: "80px", align:'left' ,  sortable:true},
-        { name: "customerId", label: "客户代码",align:'left' },
-        { name: "customerName", label: "客户名称" ,align:'left' },
-        { name: "contacter", label: "联系人" ,align:'left' },
-        { name: "contactTel", label: "电话号码" ,width:'150px',align:'left' },
-        { name: "supervisor", label: "售后主管" ,align:'left' },
-        { name: "salesMan", label: "销售员" ,align:'left' },
-        { name: "recepUserName", label: "接单员" ,align:'left' },
-        { name: 'serviceCreateTime', label: '创建时间', align: 'left' },
-        { name: 'workOrderNumber', label: '工单数', align: 'left' } 
+        { name: "u_SAP_ID", label: "服务单号", align:'left', sortable:true, width: '100'},
+        { name: "customerId", label: "客户代码",align:'left', width: '100' },
+        { name: "customerName", label: "客户名称" ,align:'left', width: '100' },
+        { name: "contacter", label: "联系人" ,align:'left', width: '100' },
+        { name: "contactTel", label: "电话号码" ,align:'left', width: '100' },
+        { name: "newestcontacter", label: "最近联系人" ,align:'left', width: '100' },
+        { name: "newestcontactTel", label: "最新电话号码" ,align:'left', width: '120' },
+        { name: "supervisor", label: "售后主管" ,align:'left', width: '100' },
+        { name: "salesMan", label: "销售员" ,align:'left', width: '100' },
+        { name: "recepUserName", label: "接单员" ,align:'left', width: '100' },
+        { name: 'serviceCreateTime', label: '创建时间', align: 'left', width: '140' },
+        { name: 'workOrderNumber', label: '工单数', align: 'left', width: '' } 
       ],
       ChildheadOptions: [
         // { name: "serviceOrderId", label: "服务单号", ifFixed: true },
@@ -487,7 +489,7 @@ export default {
       callservesure.GetDetails(res).then(res => {
         if (res.code == 200) {
           this.dataForm1 = res.result;
-         
+          console.log(this.dataForm1, 'dateForm1')
           this.dialogFormView = true;
         }
         this.listLoading = false;
@@ -516,6 +518,16 @@ export default {
         case "editTable":
           this.dialogTable = true;
           break;
+        case "btnRecall":
+          if (!this.multipleSelection.serviceOrderId) {
+            this.$message({
+              message: "请选择需要撤回的数据",
+              type: "warning"
+            });
+            return;
+          }
+          this.handleRecall(this.multipleSelection)
+          break
         case "btnEdit":
           if (!this.multipleSelection.serviceOrderId) {
             this.$message({
