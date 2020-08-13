@@ -22,7 +22,6 @@ using OpenAuth.App.HostedService;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Extensions;
 using OpenAuth.WebApi.Model;
-using SAP.API;
 using Swashbuckle.AspNetCore.SwaggerUI;
 
 namespace OpenAuth.WebApi

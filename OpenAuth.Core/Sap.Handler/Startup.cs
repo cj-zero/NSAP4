@@ -40,6 +40,7 @@ namespace Sap.Handler
             services.AddNewareCAP(Configuration);
 
             services.AddSingleton<ServiceOrderSapHandler>();
+            services.AddControllersWithViews();
         }
 
 
@@ -58,6 +59,10 @@ namespace Sap.Handler
             AutoMapperHelper.UseStateAutoMapper(app);
 
             app.UseRouting();
+            app.UseEndpoints(config => 
+            {
+                config.MapDefaultControllerRoute();
+            });
         }
     }
 }
