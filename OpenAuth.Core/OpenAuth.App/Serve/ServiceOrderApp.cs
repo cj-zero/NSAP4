@@ -11,23 +11,11 @@ using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 using Infrastructure.Extensions;
 using System.Reactive;
-using Org.BouncyCastle.Ocsp;
-using MySqlX.XDevAPI.Relational;
-using System.Linq.Expressions;
-using SharpDX.Direct3D11;
-using System.Runtime.CompilerServices;
 using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.App.Sap.BusinessPartner;
 using Minio.DataModel;
-using NPOI.SS.Formula.Functions;
-using log4net.Core;
 using OpenAuth.App.Serve.Request;
-using CSRedis;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
 using Microsoft.Extensions.Options;
-using SAP.API;
-using Autofac.Core;
 using Npoi.Mapper;
 using DotNetCore.CAP;
 
@@ -379,7 +367,7 @@ namespace OpenAuth.App
             var result = new TableData();
             var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceOrderSNs)
                 .Include(s => s.ServiceWorkOrders)
-                .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.Id.Equals(Convert.ToInt32(req.QryServiceOrderId)))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.QryServiceOrderId)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryState) && Convert.ToInt32(req.QryState) > 0, q => q.Status.Equals(Convert.ToInt32(req.QryState)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.CustomerId.Contains(req.QryCustomer) || q.CustomerName.Contains(req.QryCustomer))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceOrderSNs.Any(a => a.ManufSN.Contains(req.QryManufSN)))
@@ -591,7 +579,7 @@ namespace OpenAuth.App
                         from b in ab.DefaultIfEmpty()
                         select new { a, b };
 
-            query = query.WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.b.Id.Equals(Convert.ToInt32(req.QryServiceOrderId)))
+            query = query.WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.b.U_SAP_ID.Equals(Convert.ToInt32(req.QryServiceOrderId)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.a.Status.Equals(Convert.ToInt32(req.QryState)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.b.CustomerId.Contains(req.QryCustomer) || q.b.CustomerName.Contains(req.QryCustomer))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.a.ManufacturerSerialNumber.Contains(req.QryManufSN))
@@ -710,7 +698,7 @@ namespace OpenAuth.App
             var result = new TableData();
 
             var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceWorkOrders)
-                .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.Id.Equals(Convert.ToInt32(req.QryServiceOrderId)))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.QryServiceOrderId)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId), q => q.ServiceWorkOrders.Any(a => a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId))))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.ServiceWorkOrders.Any(a => a.Status.Equals(Convert.ToInt32(req.QryState))))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.CustomerId.Contains(req.QryCustomer) || q.CustomerName.Contains(req.QryCustomer))
@@ -772,7 +760,7 @@ namespace OpenAuth.App
                         from c in ac.DefaultIfEmpty()
                         select new { a, b, c };
 
-            query = query.WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.b.Id.Equals(Convert.ToInt32(req.QryServiceOrderId)))
+            query = query.WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.b.U_SAP_ID.Equals(Convert.ToInt32(req.QryServiceOrderId)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.a.Status.Equals(Convert.ToInt32(req.QryState)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.b.CustomerId.Contains(req.QryCustomer) || q.b.CustomerName.Contains(req.QryCustomer))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.a.ManufacturerSerialNumber.Contains(req.QryManufSN))
@@ -910,7 +898,7 @@ namespace OpenAuth.App
             var result = new TableData();
             var query = UnitWork.Find<ServiceOrder>(s => s.Status == 2)
                 .Include(s => s.ServiceWorkOrders).Where(q => q.ServiceWorkOrders.Any(a => a.Status == 1) && !q.ServiceWorkOrders.Any(a => a.CurrentUserId == req.CurrentUserId))
-                .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => s.Id == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key)))
+                .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => s.U_SAP_ID == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key)))
                 .Select(s => new
                 {
                     s.Id,
@@ -1875,6 +1863,7 @@ namespace OpenAuth.App
                     s.CustomerName,
                     s.Supervisor,
                     s.SalesMan,
+                    s.U_SAP_ID,
                     MaterialInfo = s.ServiceWorkOrders.Where(o => o.ServiceOrderId == req.ServiceOrderId && o.Status == 1).Select(o => new
                     {
                         o.MaterialCode,
@@ -1907,6 +1896,7 @@ namespace OpenAuth.App
                 s.CustomerName,
                 s.Supervisor,
                 s.SalesMan,
+                s.U_SAP_ID,
                 Distance = (req.Latitude == 0 || s.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
                 s.MaterialInfo,
                 ServiceWorkOrders = s.MaterialInfo.GroupBy(o => o.MaterialType).ToList()
@@ -1954,7 +1944,8 @@ namespace OpenAuth.App
                 q.Province,
                 q.City,
                 q.Area,
-                q.Addr
+                q.Addr,
+                q.U_SAP_ID
             });
 
             result.Data =

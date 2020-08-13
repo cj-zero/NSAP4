@@ -4,3 +4,5 @@
 /OpenAuth.Core/ApiGateway/logs
 /OpenAuth.Core/OpenAuth.WebApi/.config/dotnet-tools.json
 /OpenAuth.Core/OpenAuth.App/Nwcali/Request/SelectAssetAndCategorReq.cs
+/OpenAuth.Core/Sap.Handler/logs
+/OpenAuth.Core/Sap.Handler/.config
