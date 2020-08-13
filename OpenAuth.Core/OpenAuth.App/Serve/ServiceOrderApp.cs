@@ -27,11 +27,12 @@ namespace OpenAuth.App
         private readonly ServiceOrderLogApp _serviceOrderLogApp;
         private readonly BusinessPartnerApp _businessPartnerApp;
         private readonly AppServiceOrderLogApp _appServiceOrderLogApp;
+        private readonly ServiceOrderLogApp _ServiceOrderLogApp;
         private IOptions<AppSetting> _appConfiguration;
         private ICapPublisher _capBus;
         private HttpHelper _helper;
         public ServiceOrderApp(IUnitWork unitWork,
-            RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus) : base(unitWork, auth)
+            RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp) : base(unitWork, auth)
         {
             _appConfiguration = appConfiguration;
             _revelanceApp = app;
@@ -40,6 +41,7 @@ namespace OpenAuth.App
             _appServiceOrderLogApp = appServiceOrderLogApp;
             _helper = new HttpHelper(_appConfiguration.Value.AppPushMsgUrl);
             _capBus = capBus;
+            _ServiceOrderLogApp = ServiceOrderLogApp;
         }
         /// <summary>
         /// 加载列表
@@ -706,6 +708,8 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.RecepUserName.Contains(req.QryRecepUser))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ServiceWorkOrders.Any(a => a.ProblemTypeId.Equals(req.QryProblemType)))
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.ServiceWorkOrders.Any(a => a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel),q=>q.ContactTel.Contains(req.ContactTel) || q.NewestContactTel.Contains(req.ContactTel))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryTechName),q=>q.ServiceWorkOrders.Any(a=>a.CurrentUser.Contains(req.QryTechName)))
                 .Where(q => q.Status == 2)
                 ;
             if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
@@ -721,6 +725,8 @@ namespace OpenAuth.App
                 q.RecepUserName,
                 q.Contacter,
                 q.ContactTel,
+                q.NewestContacter,
+                q.NewestContactTel,
                 q.Supervisor,
                 q.SalesMan,
                 TechName = "",
@@ -1955,5 +1961,74 @@ namespace OpenAuth.App
             result.Count = query.Count();
             return result;
         }
+        
+        /// <summary>
+        /// 根据服务单id获取行为报告单数据 by zlg 2020.08.12
+        /// </summary>
+        /// <param name="ServiceOrderId"></param>
+        /// <returns></returns>
+        public TableData GetServiceOrder(string ServiceOrderId)
+        {
+            var result = new TableData();
+            var user = _auth.GetCurrentUser().User;
+            var userid = user.Id;
+            var ServiceWorkOrderModel =  UnitWork.Find<ServiceWorkOrder>(u => u.ServiceOrderId == Convert.ToInt32(ServiceOrderId) && u.Status >= 2 && u.Status <= 5 && u.CurrentUserNsapId == userid).OrderBy(u => u.Id).ToList();
+            if (ServiceWorkOrderModel != null && ServiceWorkOrderModel.Count > 0)
+            {
+                var FirstServiceWorkOrder = ServiceWorkOrderModel.First();
+                var ServiceOrderModel = UnitWork.Find<ServiceOrder>(u => u.Id == Convert.ToInt32(ServiceOrderId)).Select(u => new {
+                    CurrentUser = FirstServiceWorkOrder.CurrentUser,
+                    CustomerId = u.CustomerId,
+                    id = u.Id,
+                    ServiceWorkOrderId = ServiceWorkOrderModel.Select(u => new { u.WorkOrderNumber }).ToList(),
+                    CustomerName = u.CustomerName,
+                    NewestContacter = u.NewestContacter,
+                    Contacter = u.Contacter,
+                    TerminalCustomer = u.TerminalCustomer,
+                    NewestContactTel = u.NewestContactTel,
+                    ContactTel = u.ContactTel,
+                    ManufacturerSerialNumber = ServiceWorkOrderModel.Select(u => new { u.ManufacturerSerialNumber }).ToList(),
+                    MaterialCode = ServiceWorkOrderModel.Select(u => new { u.MaterialCode }).ToList(),
+                    Description = FirstServiceWorkOrder.TroubleDescription + FirstServiceWorkOrder.ProcessDescription
+                });
+                result.Data = ServiceOrderModel;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 根据服务单id判断是否撤销服务单 by zlg 2020.08.13
+        /// </summary>
+        /// <param name="ServiceOrderId"></param>
+        /// <returns></returns>
+        public async Task<TableData> UpDateServiceOrderStatus(int ServiceOrderId)
+        {
+            var user = _auth.GetCurrentUser().User;
+            var obj = UnitWork.Find<ServiceOrder>(u => u.Id == ServiceOrderId).FirstOrDefault();
+            TimeSpan timeSpan = DateTime.Now-Convert.ToDateTime(obj.CreateTime);
+            var result = new TableData();
+            if (timeSpan.TotalMinutes > 5)
+            {
+                result.Code = 500;
+                result.Message = "服务单已超出撤销时间，不可撤销！";
+            }
+            else 
+            {
+                await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id == ServiceOrderId, u => new ServiceOrder { Status = 3 });
+                var workOrderList = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == ServiceOrderId).ToList();
+                List<int> workorder = new List<int>();
+                foreach (var item in workOrderList)
+                {
+                    workorder.Add(item.Id);
+                }
+                //保存日志
+                await _ServiceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq
+                {
+                    Action = $"{user.Name}执行撤销操作，撤销ID为{ServiceOrderId}的服务单",
+                    ActionType = "撤销操作",
+                }, workorder);
+            }
+            return result;
+        }
+
     }
 }

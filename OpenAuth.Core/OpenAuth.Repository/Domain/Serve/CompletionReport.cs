@@ -48,6 +48,7 @@ namespace OpenAuth.Repository.Domain
           this.Remark= string.Empty;
           this.CreateTime= DateTime.Now;
           this.CreateUserId= string.Empty;
+          this.TerminalCustomerId = string.Empty;
         }
 
 
@@ -89,6 +90,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("联系人电话")]
         public string ContactTel { get; set; }
+
+        /// <summary>
+        /// 终端客户代码
+        /// </summary>
+        [Description("终端客户代码")]
+        public string TerminalCustomerId { get; set; }
         /// <summary>
         /// 终端客户
         /// </summary>

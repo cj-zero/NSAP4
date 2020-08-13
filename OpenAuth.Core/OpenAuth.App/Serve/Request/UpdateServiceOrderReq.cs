@@ -52,6 +52,11 @@ namespace OpenAuth.App.Request
         /// 最新联系人电话号码
         /// </summary>
         public string NewestContactTel { get; set; }
+
+        /// <summary>
+        /// 终端客户代码
+        /// </summary>
+        public string TerminalCustomerId { get; set; }
         /// <summary>
         /// 终端客户
         /// </summary>

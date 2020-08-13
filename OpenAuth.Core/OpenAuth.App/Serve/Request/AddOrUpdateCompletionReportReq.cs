@@ -55,6 +55,12 @@ namespace OpenAuth.App.Request
         /// 
         /// </summary>
         public string ContactTel { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string TerminalCustomerId { get; set; }
+
         /// <summary>
         /// 
         /// </summary>

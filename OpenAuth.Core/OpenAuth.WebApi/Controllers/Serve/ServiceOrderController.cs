@@ -921,5 +921,46 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// 根据服务单id获取行为报告单数据
+        /// </summary>
+        /// <param name="ServiceOrderId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public TableData GetServiceOrder(string ServiceOrderId)
+        {
+            var result = new TableData();
+            try
+            {
+                result =  _serviceOrderApp.GetServiceOrder(ServiceOrderId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 根据服务单id判断是否撤销服务单
+        /// </summary>
+        /// <param name="ServiceOrderId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> UpDateServiceOrderStatus(int ServiceOrderId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.UpDateServiceOrderStatus(ServiceOrderId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
     }
 }

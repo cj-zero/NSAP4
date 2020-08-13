@@ -44,6 +44,7 @@ namespace OpenAuth.Repository.Domain
             this.Area = string.Empty;
             this.Address = string.Empty;
             this.AddressDesignator = string.Empty;
+            this.TerminalCustomerId= string.Empty;
         }
 
         /// <summary>
@@ -103,6 +104,13 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("最新联系人电话号码")]
         public string NewestContactTel { get; set; }
+
+        /// <summary>
+        /// 终端客户代码
+        /// </summary>
+        [Description("终端客户代码")]
+        public string TerminalCustomerId { get; set; }
+
         /// <summary>
         /// 终端客户
         /// </summary>
