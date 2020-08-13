@@ -148,6 +148,49 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 获取完工报告详情Web
+        /// </summary>
+        /// <param name="CompletionReportId"></param>
+        /// <param name="ServiceWorkOrderId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response<TableData>> GetCompletionReportDetailsWeb(string CompletionReportId, int ServiceWorkOrderId)
+        {
+            var result = new Response<TableData>();
+            try
+            {
+                result.Result = await _app.GetCompletionReportDetailsWeb(CompletionReportId, ServiceWorkOrderId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+        /// <summary>
+        /// 添加完工报告Web
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> AddWeb(AddOrUpdateCompletionReportReq obj)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.AddWeb(obj);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
         public CompletionReportsController(CompletionReportApp app)
         {
             _app = app;

@@ -49,6 +49,10 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string QryProblemType { get; set; }
         /// <summary>
+        /// 手机号查询条件
+        /// </summary>
+        public string? ContactTel { get; set; }
+        /// <summary>
         /// 物料类别（多选)
         /// </summary>
         public List<string> QryMaterialTypes { get; set; }

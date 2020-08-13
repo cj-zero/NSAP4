@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Infrastructure.Extensions;
+using OpenAuth.Repository.Domain;
 
 namespace OpenAuth.App.Sap.Service
 {
@@ -35,8 +36,7 @@ namespace OpenAuth.App.Sap.Service
                         };
             query = query
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), q => q.a.manufSN.Contains(req.ManufSN))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), q => q.a.customer.Contains(req.CardCode))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), q => q.a.custmrName.Contains(req.CardName))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), q => q.a.customer.Contains(req.CardName) || q.a.custmrName.Contains(req.CardName))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), q => q.a.itemCode.Contains(req.ItemCode))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ItemName), q => q.a.itemCode.Contains(req.ItemName))
                 ;
@@ -54,7 +54,32 @@ namespace OpenAuth.App.Sap.Service
             result.Data = await query2//.OrderBy(u => u.Id)
                 .Skip((req.page - 1) * req.limit)
                 .Take(req.limit).ToListAsync(); ///Select($"new ({propertyStr})");
-            result.Count = query2.Count();
+            result.Count = await query2.CountAsync();
+
+            if(result.Count == 0)
+            {
+                var qqq = UnitWork.Find<ServiceOins>(null)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), q => q.manufSN.Contains(req.ManufSN))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), q => q.customer.Contains(req.CardCode))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), q => q.custmrName.Contains(req.CardName))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), q => q.itemCode.Contains(req.ItemCode))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.ItemName), q => q.itemCode.Contains(req.ItemName)).Select(q => new
+                {
+                    q.manufSN,
+                    q.internalSN,
+                    q.customer,
+                    q.custmrName,
+                    ContractID = q.contract,
+                    dlvryDate = q.dlvryDate.Value.AddYears(1),
+                    q.itemCode,
+                    q.itemName
+                });
+                result.Data = await qqq//.OrderBy(u => u.Id)
+                    .Skip((req.page - 1) * req.limit)
+                    .Take(req.limit).ToListAsync(); ///Select($"new ({propertyStr})");
+                result.Count = await qqq.CountAsync();
+            }
+
             return result;
         }
     }
