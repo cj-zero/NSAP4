@@ -52,6 +52,7 @@
           @selection-change="handleSelectionChange"
         >
           <!-- <el-table-column type="selection" align="center" width="55"></el-table-column> -->
+          <el-table-column prop="cardCode" label="客户代码" align="left" show-overflow-tooltip></el-table-column>
           <el-table-column
             prop="cardName"
             label="客户名称"
@@ -59,7 +60,6 @@
             align="left"
             show-overflow-tooltip
           ></el-table-column>
-          <el-table-column prop="cardCode" label="客户代码" align="left" show-overflow-tooltip></el-table-column>
           <el-table-column prop="address" label="客户地址" align="left" show-overflow-tooltip></el-table-column>
      <el-table-column align="left" label="状态冻结" width="120">
         <template slot-scope="scope">
@@ -68,10 +68,11 @@
           >{{scope.row.frozenFor=="N"?"正常":'冻结'}}</span>
         </template>
       </el-table-column>
-          <el-table-column prop="cellular" label="客户电话" align="left" show-overflow-tooltip></el-table-column>
-          <el-table-column prop="groupName" label="客户联系人" align="left" show-overflow-tooltip></el-table-column>
-          <el-table-column prop="cntctPrsn" label="业务员" align="left" show-overflow-tooltip></el-table-column>
-          <el-table-column prop="slpName" label="销售员" align="left" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="cellular" label="客户电话" align="left" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="cntctPrsn" label="客户联系人" align="left" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="slpName" label="业务员" align="left" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="slpName" label="销售员" align="left" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="technician" label="售后技术员" align="left" show-overflow-tooltip></el-table-column>
        <el-table-column align="right" label="科目余额" width="120">
         <template slot-scope="scope">
           <span :class="[scope.row.balance>=0?'redColor':'greenColro']">{{scope.row.balance}}0000</span>

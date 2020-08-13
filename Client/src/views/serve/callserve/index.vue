@@ -2,7 +2,7 @@
   <div>
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
-        <el-input
+        <!-- <el-input
           @keyup.enter.native="handleFilter"
           size="mini"
           style="width: 200px;"
@@ -18,7 +18,7 @@
           v-waves
           icon="el-icon-search"
           @click="handleFilter"
-        >搜索</el-button>
+        >搜索</el-button> -->
         <permission-btn moduleName="callserve" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
     </sticky>
@@ -191,7 +191,6 @@
         title="服务单详情"
         :close-on-click-modal="false"
         destroy-on-close
-       
         class="addClass1 dialog-mini"
         @open="openDetail"
         :visible.sync="dialogFormView"

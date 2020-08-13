@@ -48,12 +48,12 @@
       </el-col>
       <el-col :span="2">
         <el-form-item label-width="0px" style="margin-left: 10px;">
-            <el-button type="primary" @click="onSubmit" size="mini" icon="el-icon-search"> 搜 索 </el-button>
+            <el-button type="primary" @click="onSubmit" size="mini" icon="el-icon-search">查询</el-button>
         </el-form-item>
       </el-col>
       <el-col :span="2">
         <el-form-item label-width="0px" style="margin-left: 20px;">
-            <el-button type="info" @click="toggleMoreSearch" size="mini" icon="el-icon-search">高级搜索</el-button>
+            <el-button type="info" @click="toggleMoreSearch" size="mini" icon="el-icon-search">高级查询</el-button>
         </el-form-item>
       </el-col>
     </el-row>
@@ -76,6 +76,12 @@
               v-model="form.QryProblemType"
               :options="options"
               @change="handleChange"></el-cascader>
+            <!-- <el-input  v-model="form.QryProblemType" @keyup.enter.native='onSubmit'></el-input> -->
+          </el-form-item>
+        </el-col>
+        <el-col :span="4" style="margin-left: 10px;">
+          <el-form-item label="联系电话">
+            <el-input  v-model="form.QryTechName" @keyup.enter.native='onSubmit'></el-input>
             <!-- <el-input  v-model="form.QryProblemType" @keyup.enter.native='onSubmit'></el-input> -->
           </el-form-item>
         </el-col>

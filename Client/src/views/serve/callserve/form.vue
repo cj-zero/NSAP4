@@ -132,8 +132,8 @@
                 </el-form-item>
               </el-col>
               <el-col :span="8">
-                <el-form-item label="创建时间" label-width="95px" prop="createTimeNow">
-                  <el-date-picker
+                <el-form-item label="创建时间" label-width="95px">
+                  <el-date-picker v-if="isCreate"
                     @focus="setThisTime"
                     :clearable="false"
                     size="mini"
@@ -143,6 +143,16 @@
                     format="yyyy-MM-dd HH:mm"
                     placeholder="选择日期时间"
                     @change="onDateChange"
+                  ></el-date-picker>
+                  <el-date-picker v-else
+                    @focus="setThisTime"
+                    :clearable="false"
+                    size="mini"
+                    v-model="form.createTime"
+                    style="width:150px;"
+                    type="datetime"
+                    format="yyyy-MM-dd HH:mm"
+                    placeholder="选择日期时间"
                   ></el-date-picker>
                 </el-form-item>
               </el-col>
@@ -236,18 +246,21 @@
               </el-col>
               <el-col :span="20" v-if="form.serviceOrderPictures&&form.serviceOrderPictures.length">
                 <div class="demo-image__lazy">
-                  <div class="img-list"
-                    v-for="url in form.serviceOrderPictures"
-                    :key="url.id">
+                  <div class="img-list" v-for="url in form.serviceOrderPictures" :key="url.id">
                     <el-image
-                      style="width:60px;height:50px;display:inline-block;"  
+                      style="width:60px;height:50px;display:inline-block;"
                       :src="`${baseURL}/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`"
                       lazy
-                      >
-                    </el-image>
+                    ></el-image>
                     <div class="operation-wrapper">
-                      <i class="el-icon-zoom-in" @click="handlePreviewFile(`${baseURL}/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`)"></i>
-                      <i class="el-icon-download" @click="downloadFile(`${baseURL}/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`)"></i>
+                      <i
+                        class="el-icon-zoom-in"
+                        @click="handlePreviewFile(`${baseURL}/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`)"
+                      ></i>
+                      <i
+                        class="el-icon-download"
+                        @click="downloadFile(`${baseURL}/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`)"
+                      ></i>
                     </div>
                   </div>
                 </div>
@@ -265,21 +278,21 @@
             <!-- 选择制造商序列号 -->
             <!-- <formAdd :SerialNumberList="SerialNumberList"></formAdd> -->
           </el-form>
-            <formAdd
-              :isCreate="isCreateAdd"
-              :ifEdit="ifEdit"
-              @change-form="changeForm"
-              :serviceOrderId="serviceOrderId"
-              :propForm="propForm"
-              ref="formAdd"
-            ></formAdd>
+          <formAdd
+            :isCreate="isCreateAdd"
+            :ifEdit="ifEdit"
+            @change-form="changeForm"
+            :serviceOrderId="serviceOrderId"
+            :propForm="propForm"
+            ref="formAdd"
+          ></formAdd>
         </el-col>
       </el-row>
       <el-dialog
         title="选择地址"
         width="1000px"
-        :modal-append-to-body='false'
-:append-to-body="true"
+        :modal-append-to-body="false"
+        :append-to-body="true"
         :destroy-on-close="true"
         :visible.sync="drawerMap"
         direction="ttb"
@@ -297,7 +310,7 @@
         class="addClass1"
         width="70%"
         @open="openDialog"
-        :modal-append-to-body='false'
+        :modal-append-to-body="false"
         :append-to-body="true"
         :destroy-on-close="true"
         :visible.sync="dialogPartner"
@@ -354,9 +367,10 @@ import upLoadImage from "@/components/upLoadFile";
 import Model from "@/components/Formcreated/components/Model";
 import { timeToFormat } from "@/utils";
 import { isMobile, isPhone } from "@/utils/validate";
-import { download } from '@/utils/file'
+import { download } from "@/utils/file";
 import formPartner from "./formPartner";
 import formAdd from "./formAdd";
+// import { delete } from 'vuedraggable';
 export default {
   name: "formTable",
   components: { formPartner, formAdd, zmap, Pagination, upLoadImage, Model },
@@ -366,12 +380,12 @@ export default {
     "labelposition",
     "labelwidth",
     "isCreate", //是否是可编辑页面
-    "formName",  //
+    "formName", //
     "ifEdit", //是否是编辑页面
-    "customer",//待确认页面app传入的数据
-    "sure",  //用于待确认，新建页面确定之后的响应
+    "customer", //待确认页面app传入的数据
+    "sure", //用于待确认，新建页面确定之后的响应
     "ifFirstLook", //是否是待确认页面
-    "serviceOrderId" // 服务单ID
+    "serviceOrderId", // 服务单ID
   ],
   //  ##isCreate是否可以编辑  ##look只能看   ##create新增页  ##customer获取服务端对比的信息
   //customer确认订单时传递的信息
@@ -391,13 +405,13 @@ export default {
       }, 500);
     };
     return {
-      baseURL: process.env.VUE_APP_BASE_API + '/files/Download',
+      baseURL: process.env.VUE_APP_BASE_API + "/files/Download",
       tokenValue: this.$store.state.user.token,
       previewUrl: "", //预览图片的定义
 
       partnerList: [],
       previewVisible: false, //图片预览的dia
-      setImage: '50px',
+      setImage: "50px",
       drawerMap: false, //地图控件
       filterPartnerList: [],
       inputSearch: "",
@@ -478,9 +492,9 @@ export default {
       },
       listQuery: {
         page: 1,
-        limit: 40
+        limit: 40,
       },
-      needPos:false
+      needPos: false,
     };
   },
   computed: {
@@ -507,57 +521,59 @@ export default {
         }
       },
     },
-    "form.addr":{   //现地址详细地址
-      handler(val){
-      if (val) {
-          if(!this.ifFirstLook){
-                  this.needPos = true;
-
-          }else{
-               if(this.customer.addr != val){
-          this.needPos = true;
-        }else{
-          this.needPos = false;
-        }
-          }
-
-         let addre = this.form.province + this.form.city + this.form.area +this.form.addr 
-         if(this.needPos)
-          this.getPosition(addre)
-        }
-              }
-    },
-    "form.address": {   //地图标识地址
-   
-      handler(val,oldVal) {
-          if (val) {
-        if(this.ifFirstLook){
-                    if(oldVal){
+    "form.addr": {
+      //现地址详细地址
+      handler(val) {
+        if (val) {
+          if (!this.ifFirstLook) {
             this.needPos = true;
-          }else{
-            this.needPos = false;
+          } else {
+            if (this.customer.addr != val) {
+              this.needPos = true;
+            } else {
+              this.needPos = false;
+            }
           }
-        }else{
-           this.needPos = true;
+          let addre =
+            this.form.province +
+            this.form.city +
+            this.form.area +
+            this.form.addr;
+          if (this.needPos) this.getPosition(addre);
         }
-          if(this.needPos)
-            this.getPosition(val)
-      }
-     },
-      immediate:true
+      },
+    },
+    "form.address": {
+      //地图标识地址
+
+      handler(val, oldVal) {
+        if (val) {
+          if (this.ifFirstLook) {
+            if (oldVal) {
+              this.needPos = true;
+            } else {
+              this.needPos = false;
+            }
+          } else {
+            this.needPos = true;
+          }
+          if (this.needPos) this.getPosition(val);
+        }
+      },
+      immediate: true,
     },
     "form.customerId": {
       handler(val) {
-          this.getPartnerInfo(val);
+        this.getPartnerInfo(val);
       },
     },
     refValue: {
       deep: true,
       handler(val) {
         if (val) {
-          this.form.serviceWorkOrders = [] // 清空数组
+          this.form.serviceWorkOrders = []; // 清空数组
           this.form = Object.assign({}, this.form, val);
-          console.log(this.form, val, 'refValue')
+          console.log(this.form, val, "refValue");
           if (val.serviceWorkOrders.length > 0) {
             val.serviceWorkOrders.map((item, index) => {
               this.form.serviceWorkOrders[index].solutionsubject =
@@ -567,7 +583,7 @@ export default {
             });
           }
           this.propForm = this.form.serviceWorkOrders;
-          console.log(this.propForm, 'propForm')
+          console.log(this.propForm, "propForm");
         }
         // this.propForm = this.refValue.serviceWorkOrders
       },
@@ -585,77 +601,80 @@ export default {
   },
   mounted() {
     this.getPartnerList();
-  if(this.customer){
-    this.setForm(this.customer);
-
-  }
+    if (this.customer) {
+      this.setForm(this.customer);
+    }
     this.isCreateAdd = this.isCreate;
-    console.log(this.isCreateAdd, 'isCreatedAdd')
+    console.log(this.isCreateAdd, "isCreatedAdd");
   },
-  
-destroyed() {
-  window.removeEventListener('resize', this.resizeWin)
-},
+
+  destroyed() {
+    window.removeEventListener("resize", this.resizeWin);
+  },
   methods: {
-    onDateChange (val) {
-      console.log(typeof val)
-      this.form.createTime = timeToFormat('yyyy-MM-dd HH-mm-ss', val)
-      console.log('date', this.form.createTime)
+    onDateChange(val) {
+      console.log(typeof val);
+      this.form.createTime = timeToFormat("yyyy-MM-dd HH-mm-ss", val);
+      console.log("date", this.form.createTime);
     },
-    downloadFile (url) {
-      console.log(url, 'download')
-      download(url)
+    downloadFile(url) {
+      download(url);
     },
-    setThisTime() {
-      console.log(11);
-    },
+    setThisTime() {},
     handlePreviewFile(item) {
       //预览图片
-      console.log(item, 'preview')
       this.previewVisible = true;
       this.previewUrl = item;
     },
-        chooseAddre() {  //地图选择赋值地址
-      let getArr  = this.allAddress.regeocode.addressComponent
+    chooseAddre() {
+      //地图选择赋值地址
+      let getArr = this.allAddress.regeocode.addressComponent;
       // let str = getArr.province +getArr.city+getArr.district
       this.form.city = getArr.city;
       this.form.province = getArr.province;
-      console.log(getArr.district, 'getArr.district')
-      this.form.area = Array.isArray(getArr.district) ? '' : getArr.district;
-      this.form.addr = this.allAddress.address.replace(getArr.province,"").replace(getArr.city,"").replace(getArr.district,"");
+      this.form.area = Array.isArray(getArr.district) ? "" : getArr.district;
+      this.form.addr = this.allAddress.address
+        .replace(getArr.province, "")
+        .replace(getArr.city, "")
+        .replace(getArr.district, "");
       this.form.longitude = this.allAddress.position.lng;
       this.form.latitude = this.allAddress.position.lat;
       this.drawerMap = false;
     },
-    getPosition(val){  //从接口获取地址
-
-          let that = this;
-          let url = `https://restapi.amap.com/v3/geocode/geo?key=c97ee5ef9156461c04b552da5b78039d&address=${encodeURIComponent(val)}`;
-          http.get(url, function (err, result) {
-            if (result.geocodes.length) {
-              let res = result.geocodes[0];
-              that.form.province = res.province;
-              that.form.city = res.city;
-              that.form.area = res.district;
-                 that.form.addr = val.replace(res.province,"").replace(res.city,"").replace(res.district,"");
-              that.form.latitude = res.location.split(",")[1];
-              that.form.longitude = res.location.split(",")[0];
-            } else {
-              if(that.isCreate||that.ifEdit){
-              that.$message({
-                message: "未识别到地址，请手动选择",
-                type: "error",
-              });
-              }
-              that.form.province = "";
-              that.form.city = "";
-              that.form.area = "";
-              that.form.addr = "";
-              that.form.latitude = "";
-              that.form.longitude = "";
-            }
-            // 这里对结果进行处理
-          });
+    getPosition(val) {
+      //从接口获取地址
+      let that = this;
+      let url = `https://restapi.amap.com/v3/geocode/geo?key=c97ee5ef9156461c04b552da5b78039d&address=${encodeURIComponent(
+        val
+      )}`;
+      http.get(url, function (err, result) {
+        if (result.geocodes.length) {
+          let res = result.geocodes[0];
+          that.form.province = res.province;
+          that.form.city = res.city;
+          that.form.area = res.district;
+          that.form.addr = val
+            .replace(res.province, "")
+            .replace(res.city, "")
+            .replace(res.district, "");
+          that.form.latitude = res.location.split(",")[1];
+          that.form.longitude = res.location.split(",")[0];
+        } else {
+          if (that.isCreate || that.ifEdit) {
+            that.$message({
+              message: "未识别到地址，请手动选择",
+              type: "error",
+            });
+          }
+          that.form.province = "";
+          that.form.city = "";
+          that.form.area = "";
+          that.form.addr = "";
+          that.form.latitude = "";
+          that.form.longitude = "";
+        }
+        // 这里对结果进行处理
+      });
     },
     getImgList(val) {
       //获取图片列表
@@ -667,18 +686,28 @@ destroyed() {
     },
 
     async setForm(val) {
+      val = JSON.parse(JSON.stringify(val));
       if (val) {
         val.serviceOrderPictures = await this.getServeImg(val.id);
-        this.$emit('imgChange', val.serviceOrderPictures) // 告诉父组件
+        this.$emit("imgChange", val.serviceOrderPictures); // 告诉父组件
       }
-      if(val.province && val.city &&  val.area && val.addr ){
-        this.needPos=  false;
-      }else{
-        this.needPos=  true;
+      if (val.province && val.city && val.area && val.addr) {
+        this.needPos = false;
+      } else {
+        this.needPos = true;
       }
-      Object.assign(this.form, val);
+      let { contactTel, contacter } = val;
+      let newVal = Object.create(null);
+      for (let key in val) {
+        if (key == "contactTel" || key !== "contacter") {
+          newVal[key] = val[key];
+        }
+      }
+      Object.assign(this.form, newVal);
+      this.form.newestContacter = contacter; //最新联系人,
+      this.form.newestContactTel = contactTel;
       // let that =  this
-      //  let addre = val.province + val.city + val.area +val.addr   
+      //  let addre = val.province + val.city + val.area +val.addr
       // setTimeout(function(){
       //  that.getPosition(addre)
       // },800)
@@ -705,8 +734,8 @@ destroyed() {
         this.$emit("close-Dia", "N");
         return;
       }
-      if(!this.form.longitude){
-          this.$message({
+      if (!this.form.longitude) {
+        this.$message({
           message: `请手动选择地址`,
           type: "error",
         });
@@ -728,15 +757,16 @@ destroyed() {
         //   return item;
         // });
         this.isValid = await this.$refs.form.validate();
-        console.log(chec, this.isValid, 'isValid', this.$router.path)
+        console.log(chec, this.isValid, "isValid", this.$router.path);
         if (chec && this.isValid) {
           if (this.$route.path === "/serve/callserve") {
-            if (this.isCreate) { // 新建服务单
-              console.log('build', this.form, 'form')
+            if (this.isCreate) {
+              // 新建服务单
+              console.log("build", this.form, "form");
               if (Array.isArray(this.form.area)) {
-                this.form.area = ''
+                this.form.area = "";
               }
-              console.log(this.form, 'request')
+              console.log(this.form, "request");
               callservesure
                 .CreateOrder(this.form)
                 .then(() => {
@@ -754,36 +784,41 @@ destroyed() {
                   this.$emit("close-Dia", "N");
                 });
             } else {
-              console.log('edit')
-              let formInitailList = this.$refs.formAdd.formInitailList
-              console.log(formInitailList)
-              let targetList = this.form.serviceWorkOrders.filter(item => {
-                return !(formInitailList.some(serviceItem => {
-                  return serviceItem.manufacturerSerialNumber === item.manufacturerSerialNumber
-                }))
-              })
-              let promiseList = []
+              console.log("edit");
+              let formInitailList = this.$refs.formAdd.formInitailList;
+              console.log(formInitailList);
+              let targetList = this.form.serviceWorkOrders.filter((item) => {
+                return !formInitailList.some((serviceItem) => {
+                  return (
+                    serviceItem.manufacturerSerialNumber ===
+                    item.manufacturerSerialNumber
+                  );
+                });
+              });
+              let promiseList = [];
               for (let i = 0; i < targetList.length; i++) {
-                let item = targetList[i]
+                let item = targetList[i];
                 let promise = callservesure.addWorkOrder({
                   serviceOrderId: this.serviceOrderId,
-                  ...item
-                })
-                promiseList.push(promise)
-              }
-              Promise.all([...promiseList]).then(() => {
-                this.$message({
-                  message: "新增工单成功",
-                  type: "success",
-                })
-                this.$emit("close-Dia", "y");
-              }).catch(() => {
-                this.$message({
-                  message: '新增工单失败',
-                  type: "error",
+                  ...item,
                 });
-                this.$emit("close-Dia", "N");
-              })
+                promiseList.push(promise);
+              }
+              Promise.all([...promiseList])
+                .then(() => {
+                  this.$message({
+                    message: "新增工单成功",
+                    type: "success",
+                  });
+                  this.$emit("close-Dia", "y");
+                })
+                .catch(() => {
+                  this.$message({
+                    message: "新增工单失败",
+                    type: "error",
+                  });
+                  this.$emit("close-Dia", "N");
+                });
             }
           } else {
             console.log(this.form);
@@ -797,7 +832,7 @@ destroyed() {
                 this.$emit("close-Dia", "y");
               })
               .catch((res) => {
-                 this.$emit("close-Dia", "N");
+                this.$emit("close-Dia", "N");
                 this.$message({
                   message: `${res}`,
                   type: "error",
@@ -817,7 +852,7 @@ destroyed() {
       callservesure
         .forServe(num)
         .then((res) => {
-          console.log(res, '售后主管')
+          console.log(res, "售后主管");
           this.addressList = res.result.addressList;
           this.cntctPrsnList = res.result.cntctPrsnList;
           this.form.supervisor = res.result.techName;
@@ -850,7 +885,7 @@ destroyed() {
     },
     changeForm(val) {
       this.form.serviceWorkOrders = val;
-      console.log(this.form.serviceWorkOrders, 'serviceWorkOrders')
+      console.log(this.form.serviceWorkOrders, "serviceWorkOrders");
     },
     postService() {
       //更新服务单
@@ -865,7 +900,7 @@ destroyed() {
           // this.formUpdate = false
         })
         .catch((res) => {
-                 this.$emit("close-Dia", "N");
+          this.$emit("close-Dia", "N");
           this.$message({
             message: `${res}`,
             type: "error",
@@ -911,11 +946,12 @@ destroyed() {
       this.listQuery.ManufSN = this.inputSerial;
       this.getPartnerList();
     },
-    querySearch(queryString, cb) {
+    async querySearch(queryString, cb) {
       this.listQuery.CardCodeOrCardName = queryString;
       this.inputSearch = queryString;
 
-      this.getPartnerList();
+      await this.getPartnerList();
+      console.log(this.partnerList, 'partnerList')
       // var results = queryString
       //   ? partnerList.filter(this.createFilter(queryString))
       //   : partnerList;
@@ -933,9 +969,10 @@ destroyed() {
     // },
     getPartnerList() {
       this.parentLoad = true;
-      getPartner(this.listQuery)
+      return getPartner(this.listQuery)
         .then((res) => {
           this.partnerList = res.data;
+          console.log(res.data, '返回')
           this.filterPartnerList = this.partnerList;
           this.parentCount = res.count;
           this.parentLoad = false;
@@ -1085,7 +1122,7 @@ destroyed() {
     display: inline-block;
     width: 60px;
     height: 50px;
-    margin:0 10px;
+    margin: 0 10px;
     .operation-wrapper {
       position: absolute;
       display: flex;
@@ -1096,9 +1133,10 @@ destroyed() {
       opacity: 0;
       justify-content: space-around;
       align-items: center;
-      transition: opacity .5s;
+      transition: opacity 0.5s;
       background-color: rgba(0, 0, 0, 5);
-      .el-icon-download, .el-icon-zoom-in {
+      .el-icon-download,
+      .el-icon-zoom-in {
         color: white;
       }
     }
