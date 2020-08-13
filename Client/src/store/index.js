@@ -1,6 +1,8 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import app from './modules/app'
+import flowschemes from './modules/flowschemes'
+import flowinstances from './modules/flowinstances'
 import serverConf from './modules/serverConf'
 import user from './modules/user'
 import tagsView from './modules/tagsView'
@@ -13,10 +15,12 @@ import getters from './getters'
 import { vuexOidcCreateStoreModule } from 'vuex-oidc'
 
 Vue.use(Vuex)
-// console.log(JSON.parse(process.env.VUE_APP_OIDC), process)
 const store = new Vuex.Store({
   modules: {
     app,
+    form,
+    flowschemes,
+    flowinstances,
     user,
     serverConf,
     permission,
@@ -24,7 +28,6 @@ const store = new Vuex.Store({
     storage,
     tagsView,
     flow,
-    form,
     oidcStore: vuexOidcCreateStoreModule(
       // process.env.OIDC,
       // process.env.VUE_APP_OIDC,
