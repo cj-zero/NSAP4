@@ -18,12 +18,14 @@ namespace OpenAuth.App
         private RevelanceManagerApp _revelanceApp;
         private readonly AppUserMapApp _appUserMapApp;
         private readonly AppServiceOrderLogApp _appServiceOrderLogApp;
+        private readonly ServiceOrderLogApp _ServiceOrderLogApp;
         public CompletionReportApp(IUnitWork unitWork, IRepository<CompletionReport> repository, AppUserMapApp appUserMapApp,
-            RevelanceManagerApp app, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp) : base(unitWork, repository, auth)
+            RevelanceManagerApp app, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp,ServiceOrderLogApp ServiceOrderLogApp) : base(unitWork, repository, auth)
         {
             _revelanceApp = app;
             _appUserMapApp = appUserMapApp;
             _appServiceOrderLogApp = appServiceOrderLogApp;
+            _ServiceOrderLogApp = ServiceOrderLogApp;
         }
         /// <summary>
         /// 加载列表
@@ -223,6 +225,83 @@ namespace OpenAuth.App
             }
             return thisworkdetail;
         }
-
+        /// <summary>
+        /// 获取完工报告详情Web by zlg 2020.08.12
+        /// </summary>
+        /// <param name="CompletionReportId"></param>
+        /// <param name="ServiceWorkOrderId"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetCompletionReportDetailsWeb(string CompletionReportId,int ServiceWorkOrderId)
+        {
+            var result = new TableData();
+            var ServiceWorkOrderModel = UnitWork.Find<ServiceWorkOrder>(u => u.Id == ServiceWorkOrderId).FirstOrDefault();
+            var Files = new List<UploadFileResp>();
+            var pics = UnitWork.Find<CompletionReportPicture>(m => m.CompletionReportId == CompletionReportId).Select(c => c.PictureId).ToList();
+            var picfiles = await UnitWork.Find<UploadFile>(f => pics.Contains(f.Id)).ToListAsync();
+            Files.AddRange(picfiles.MapTo<List<UploadFileResp>>());
+            var CompletionReportModel = UnitWork.Find<CompletionReport>(u=>u.Id== CompletionReportId).Select(L=>new { 
+                id=L.Id,
+                ServiceOrderId=L.ServiceOrderId,
+                CustomerId=L.CustomerId,
+                CustomerName=L.CustomerName,
+                TechnicianName=L.TechnicianName,
+                TerminalCustomerId=L.TerminalCustomerId,
+                TerminalCustomer = L.TerminalCustomer,
+                Contacter=L.Contacter,
+                ContactTel=L.ContactTel,
+                Becity=L.Becity,
+                Destination=L.Destination,
+                BusinessTripDate=L.BusinessTripDate,
+                EndDate=L.EndDate,
+                CompleteAddress=L.CompleteAddress,
+                BusinessTripDays=L.BusinessTripDays,
+                WorkOrderNumber= ServiceWorkOrderModel.WorkOrderNumber,
+                ManufacturerSerialNumber= ServiceWorkOrderModel.ManufacturerSerialNumber,
+                MaterialCode = ServiceWorkOrderModel.MaterialCode,
+                Files = Files,
+                ProblemDescription =L.ProblemDescription,
+                ReplacementMaterialDetails=L.ReplacementMaterialDetails,
+                Legacy=L.Legacy,
+                Remark=L.Remark
+            }).FirstOrDefault();
+            result.Data = CompletionReportModel;
+            return result;
+        }
+        /// <summary>
+        /// 添加完工报告Web  by zlg 2020.08.12
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task AddWeb(AddOrUpdateCompletionReportReq req)
+        {
+            var obj = req.MapTo<CompletionReport>();
+            obj.CreateTime = DateTime.Now;
+            var user = _auth.GetCurrentUser().User;
+            obj.CreateUserId = user.Id;
+            // = user.Id;
+            //obj.CreateUserName = user.Name;
+            //todo:补充或调整自己需要的字段
+            //保存完工报告
+            var o = await Repository.AddAsync(obj);
+            //保存图片
+            var pictures = req.Pictures.MapToList<CompletionReportPicture>();
+            pictures.ForEach(r => r.CompletionReportId = o.Id);
+            await UnitWork.BatchAddAsync(pictures.ToArray());
+            await UnitWork.SaveAsync();
+            //修改工单状态及反写工单号
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId, s => new ServiceWorkOrder { Status = 7,CompletionReportId = o.Id });
+            var workOrderList = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId).ToList();
+            List<int> workorder = new List<int>();
+            foreach (var item in workOrderList)
+            {
+                workorder.Add(item.Id);
+            }
+            //保存日志
+            await _ServiceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq
+            {
+                Action = $"技术员于{DateTime.Now}结束上门服务",
+                ActionType = "服务技术员上门服务中",
+            }, workorder);
+        }
     }
 }
