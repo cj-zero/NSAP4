@@ -88,8 +88,9 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerId), s => s.CustomerId.Contains(request.CustomerId))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.TechnicianId), s => s.TechnicianId.Equals(request.TechnicianId))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.VisitPeopleId), s => s.VisitPeopleId.Equals(request.VisitPeopleId))
-                .WhereIf(request.DateFrom != null && request.DateTo != null, s => s.CommentDate >= request.DateFrom && s.CommentDate <= request.DateTo)
+                .WhereIf(request.DateFrom != null && request.DateTo != null, s => s.CommentDate >= request.DateFrom && s.CommentDate < Convert.ToDateTime(request.DateTo).AddMinutes(1440))
                 ;
+            
             //if (!string.IsNullOrEmpty(request.key))
             //{
             //    objs = objs.Where(u => u.Id.Contains(request.key));

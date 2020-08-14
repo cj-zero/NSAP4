@@ -18,6 +18,7 @@ using OpenAuth.App.Serve.Request;
 using Microsoft.Extensions.Options;
 using Npoi.Mapper;
 using DotNetCore.CAP;
+using System.Threading;
 
 namespace OpenAuth.App
 {
@@ -31,6 +32,7 @@ namespace OpenAuth.App
         private IOptions<AppSetting> _appConfiguration;
         private ICapPublisher _capBus;
         private HttpHelper _helper;
+        static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
         public ServiceOrderApp(IUnitWork unitWork,
             RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp) : base(unitWork, auth)
         {
@@ -373,7 +375,7 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryState) && Convert.ToInt32(req.QryState) > 0, q => q.Status.Equals(Convert.ToInt32(req.QryState)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.CustomerId.Contains(req.QryCustomer) || q.CustomerName.Contains(req.QryCustomer))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceOrderSNs.Any(a => a.ManufSN.Contains(req.QryManufSN)))
-                         .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime <= req.QryCreateTimeTo)
+                         .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >=req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                          //.WhereIf(Convert.ToInt32(req.QryState) == 2, q => !q.ServiceWorkOrders.All(q => q.Status != 1))
                          //.WhereIf(Convert.ToInt32(req.QryState) == 0, q => q.Status == 1 || (q.Status == 2 && !q.ServiceWorkOrders.All(q => q.Status != 1)))
                          .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => (s.Id == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key))))
@@ -520,9 +522,24 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task AddWorkOrder(AddServiceWorkOrderReq request)
         {
-            var obj = request.MapTo<ServiceWorkOrder>();
-            await UnitWork.AddAsync<ServiceWorkOrder, int>(obj);
-            await UnitWork.SaveAsync();
+            //用信号量代替锁
+            await semaphoreSlim.WaitAsync();
+            try
+            {
+                var obj = request.MapTo<ServiceWorkOrder>();
+                var ServiceWorkOrders = UnitWork.Find<ServiceWorkOrder>(u => u.ServiceOrderId.Equals(request.ServiceOrderId)).OrderByDescending(u => u.Id).ToList();
+                var WorkOrderNumber = ServiceWorkOrders.First().WorkOrderNumber;
+                int num = Convert.ToInt32(WorkOrderNumber.Substring(WorkOrderNumber.IndexOf("-") + 1));
+                obj.WorkOrderNumber = WorkOrderNumber.Substring(0, WorkOrderNumber.IndexOf("-") + 1) + (num + 1);
+                await UnitWork.AddAsync<ServiceWorkOrder, int>(obj);
+                await UnitWork.SaveAsync();
+                //baseInfo.CertificateNumber = await CertificateNoGenerate("O");
+                //await _certinfoApp.AddAsync(new AddOrUpdateCertinfoReq() { CertNo = baseInfo.CertificateNumber });
+            }
+            finally
+            {
+                semaphoreSlim.Release();
+            }
         }
 
         /// <summary>
@@ -587,7 +604,7 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.a.ManufacturerSerialNumber.Contains(req.QryManufSN))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.b.RecepUserName.Contains(req.QryRecepUser))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.a.ProblemTypeId.Equals(req.QryProblemType))
-                         .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime <= req.QryCreateTimeTo)
+                         .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                          ;
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME)
@@ -597,13 +614,15 @@ namespace OpenAuth.App
             var workorderlist = await query.OrderBy(r => r.a.CreateTime).Select(q => new
             {
                 ServiceOrderId = q.b.Id,
-                MaterialType = q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))
+                q.b.U_SAP_ID,
+                MaterialType = q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))==null? "": q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))
             }).Distinct().ToListAsync();
 
             var grouplistsql = from c in workorderlist
                                group c by c.ServiceOrderId into g
+                               let U_SAP_ID = g.Select(a => a.U_SAP_ID).First()
                                let MTypes = g.Select(o => o.MaterialType.ToString()).ToArray()
-                               select new { ServiceOrderId = g.Key, MaterialTypes = MTypes };
+                               select new { ServiceOrderId = g.Key, U_SAP_ID, MaterialTypes = MTypes };
             var grouplist = grouplistsql.ToList();
 
             result.Data = grouplist;
@@ -707,7 +726,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceWorkOrders.Any(a => a.ManufacturerSerialNumber.Contains(req.QryManufSN)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.RecepUserName.Contains(req.QryRecepUser))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ServiceWorkOrders.Any(a => a.ProblemTypeId.Equals(req.QryProblemType)))
-                .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.ServiceWorkOrders.Any(a => a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
+                .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.ServiceWorkOrders.Any(a => a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel),q=>q.ContactTel.Contains(req.ContactTel) || q.NewestContactTel.Contains(req.ContactTel))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryTechName),q=>q.ServiceWorkOrders.Any(a=>a.CurrentUser.Contains(req.QryTechName)))
                 .Where(q => q.Status == 2)
@@ -772,7 +791,7 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.a.ManufacturerSerialNumber.Contains(req.QryManufSN))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.b.RecepUserName.Contains(req.QryRecepUser))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.c.Name.Contains(req.QryProblemType))
-                         .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime <= req.QryCreateTimeTo)
+                         .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                          .WhereIf(req.QryMaterialTypes != null && req.QryMaterialTypes.Count > 0, q => req.QryMaterialTypes.Contains(q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))));
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME)
@@ -806,6 +825,7 @@ namespace OpenAuth.App
                 q.a.CurrentUser,
                 q.a.CurrentUserNsapId,
                 q.b.U_SAP_ID,
+                q.a.WorkOrderNumber
             });
 
 
@@ -853,6 +873,7 @@ namespace OpenAuth.App
                     s.NewestContactTel,
                     s.Status,
                     s.CreateTime,
+                    s.U_SAP_ID,
                     MaterialInfo = s.ServiceWorkOrders.Where(o => o.ServiceOrderId == s.Id && o.CurrentUserId == req.TechnicianId).Select(o => new
                     {
                         o.Status
@@ -879,6 +900,7 @@ namespace OpenAuth.App
                 s.NewestContactTel,
                 s.Status,
                 s.CreateTime,
+                s.U_SAP_ID,
                 Distance = (req.Latitude == 0 || s.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
                 WorkOrderStatus = s.MaterialInfo.Select(s => s.Status).Distinct().FirstOrDefault()
             }).ToList();
@@ -1238,6 +1260,7 @@ namespace OpenAuth.App
                     s.ManufacturerSerialNumber,
                     s.MaterialCode,
                     s.Status,
+                    s.WorkOrderNumber,
                     MaterialType = s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-"))
                 });
             var result = new TableData();
@@ -1987,6 +2010,7 @@ namespace OpenAuth.App
                     TerminalCustomer = u.TerminalCustomer,
                     NewestContactTel = u.NewestContactTel,
                     ContactTel = u.ContactTel,
+                    u.U_SAP_ID,
                     ManufacturerSerialNumber = ServiceWorkOrderModel.Select(u => new { u.ManufacturerSerialNumber }).ToList(),
                     MaterialCode = ServiceWorkOrderModel.Select(u => new { u.MaterialCode }).ToList(),
                     Description = FirstServiceWorkOrder.TroubleDescription + FirstServiceWorkOrder.ProcessDescription

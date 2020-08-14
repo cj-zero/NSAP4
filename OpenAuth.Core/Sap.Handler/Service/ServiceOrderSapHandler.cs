@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using OpenAuth.Repository.Domain.Sap;
 
 
 namespace Sap.Handler.Service
@@ -50,7 +51,7 @@ namespace Sap.Handler.Service
                     sc.CustomerName = thisSorder.CustomerName;
                     sc.Subject = thisSwork.FromTheme;
                     //sc.ContactCode = 15;
-                   if (thisSwork.ContractId.Trim() != "" && thisSwork.ContractId != null && thisSwork.ContractId.Trim() != "-1")
+                   if (!string.IsNullOrWhiteSpace(thisSwork.ContractId) && thisSwork.ContractId.Trim() != "-1")
                     {
                         sc.ContractID = Convert.ToInt32(thisSwork.ContractId);
                     }
@@ -61,8 +62,11 @@ namespace Sap.Handler.Service
                     //{
                     //    sc.Origin = (int)thisSorder.FromId;
                     //}
-                    sc.ItemCode = thisSwork.MaterialCode;
-                    sc.ItemDescription = thisSwork.MaterialDescription;
+                    if (!string.IsNullOrEmpty(thisSwork.MaterialCode) && IsValidItemCode(thisSwork.MaterialCode))
+                    {
+                        sc.ItemCode = thisSwork.MaterialCode;
+                        sc.ItemDescription = thisSwork.MaterialDescription;
+                    }
                     sc.Status = -3;// 待处理 
                     if (thisSwork.Priority != null && thisSwork.Priority == 3)
                     {
@@ -114,6 +118,10 @@ namespace Sap.Handler.Service
                     {
                         U_SAP_ID = System.Convert.ToInt32(docNum)
                     });
+                    var ServiceWorkOrders = UnitWork.Find<ServiceWorkOrder>(u => u.ServiceOrderId.Equals(theServiceOrderId)).ToList();
+                    int num = 0;
+                    ServiceWorkOrders.ForEach(u => u.WorkOrderNumber = docNum + "-" + ++num);
+                    UnitWork.BatchUpdate<ServiceWorkOrder>(ServiceWorkOrders.ToArray());
                     await UnitWork.SaveAsync();
                 }
                 else
@@ -125,6 +133,21 @@ namespace Sap.Handler.Service
                     Log.Logger.Error(allerror.ToString(), typeof(ServiceOrderSapHandler));
                 }
             }
+        }
+
+        /// <summary>
+        /// 判断物料编码在客户端是否存在
+        /// </summary>
+        /// <param name="materialCode">物料编码</param>
+        /// <returns></returns>
+        public bool IsValidItemCode(string materialCode)
+        {
+            var query = UnitWork.Find<OITM>(o => o.ItemCode.Equals(materialCode)).Select(q => new { q.ItemCode });
+            if (query.Count() > 0)
+            {
+                return true;
+            }
+            return false;
         }
     }
 }

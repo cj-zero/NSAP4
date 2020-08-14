@@ -43,14 +43,13 @@ namespace OpenAuth.App
                 throw new Exception("当前登录用户没有访问该模块字段的权限，请联系管理员配置");
             }
 
-
             var result = new TableData();
             var objs = UnitWork.Find<AttendanceClock>(null);
             objs = objs.WhereIf(!string.IsNullOrEmpty(request.key), u => u.Id.Contains(request.key))
                 .WhereIf(!string.IsNullOrEmpty(request.Name), u => u.Name.Contains(request.Name))
                 .WhereIf(!string.IsNullOrEmpty(request.Org), u => u.OrgId.Equals(request.Org))
                 .WhereIf(!string.IsNullOrEmpty(request.VisitTo), u => u.VisitTo.Contains(request.VisitTo))
-                .WhereIf(request.DateFrom != null && request.DateTo != null, u => u.ClockDate >= request.DateFrom && u.ClockDate <= request.DateTo)
+                .WhereIf(request.DateFrom != null && request.DateTo != null, u => u.ClockDate >= request.DateFrom && u.ClockDate < Convert.ToDateTime(request.DateTo).AddMinutes(1440))
                 ;
 
 

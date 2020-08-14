@@ -12,45 +12,52 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
-using Infrastructure.AutoMapper;
 using OpenAuth.Repository.Core;
-using OpenAuth.Repository.Domain;
 
-namespace OpenAuth.App.Request
+namespace OpenAuth.Repository.Domain
 {
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("certplc")]
-    [AutoMapTo(typeof(Certplc))]
-    public partial class AddOrUpdateCertPlcReq 
+    [Table("certoperationhistory")]
+    public partial class CertOperationHistory : Entity
     {
+        public CertOperationHistory()
+        {
+          this.CertInfoId= string.Empty;
+          this.CreateUserId= string.Empty;
+          this.CreateUser= string.Empty;
+          this.CreateTime= DateTime.Now;
+          this.Action= string.Empty;
+        }
 
+        
         /// <summary>
         /// 
         /// </summary>
-        public string Id { get; set; }
+        [Description("")]
+        [Browsable(false)]
+        public string CertInfoId { get; set; }
         /// <summary>
         /// 
         /// </summary>
-        public string CertNo { get; set; }
+        [Description("")]
+        [Browsable(false)]
+        public string CreateUserId { get; set; }
         /// <summary>
         /// 
         /// </summary>
-        public string PlcGuid { get; set; }
+        [Description("")]
+        public string CreateUser { get; set; }
         /// <summary>
         /// 
         /// </summary>
-        public System.DateTime CreateTime { get; set; }
+        [Description("")]
+        public System.DateTime? CreateTime { get; set; }
         /// <summary>
-        /// 校准日期
+        /// 
         /// </summary>
-        public DateTime? CalibrationDate { get; set; }
-        /// <summary>
-        /// 过期日期
-        /// </summary>
-        public DateTime? ExpirationDate { get; set; }
-
-        //todo:添加自己的请求字段
+        [Description("")]
+        public string Action { get; set; }
     }
 }

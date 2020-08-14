@@ -12,18 +12,15 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
-using Infrastructure.AutoMapper;
 using OpenAuth.Repository.Core;
-using OpenAuth.Repository.Domain;
 
 namespace OpenAuth.App.Request
 {
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("certplc")]
-    [AutoMapTo(typeof(Certplc))]
-    public partial class AddOrUpdateCertPlcReq 
+    [Table("certoperationhistory")]
+    public partial class AddOrUpdateCertOperationHistoryReq 
     {
 
         /// <summary>
@@ -33,24 +30,24 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 
         /// </summary>
-        public string CertNo { get; set; }
+        public string CertInfoId { get; set; }
         /// <summary>
         /// 
         /// </summary>
-        public string PlcGuid { get; set; }
+        public string CreateUserId { get; set; }
         /// <summary>
         /// 
         /// </summary>
-        public System.DateTime CreateTime { get; set; }
+        public string CreateUser { get; set; }
         /// <summary>
-        /// 校准日期
+        /// 
         /// </summary>
-        public DateTime? CalibrationDate { get; set; }
+        public System.DateTime? CreateTime { get; set; }
         /// <summary>
-        /// 过期日期
+        /// 
         /// </summary>
-        public DateTime? ExpirationDate { get; set; }
-
-        //todo:添加自己的请求字段
+        public string Action { get; set; }
+        
+         //todo:添加自己的请求字段
     }
 }

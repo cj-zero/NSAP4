@@ -14,33 +14,30 @@ namespace Infrastructure.Excel
         public string VoltsorAmps { get; set; }
 
         [Column(2)]
-        public int MeasurementTimes { get; set; }
-
-        [Column(3)]
         public int Channel { get; set; }
 
-        [Column(4)]
+        [Column(3)]
         public string Mode { get; set; }
 
-        [Column(5)]
+        [Column(4)]
         public int Range { get; set; }
 
-        [Column(6)]
+        [Column(5)]
         public int Point { get; set; }
 
-        [Column(7)]
+        [Column(6)]
         public double Commanded_Value { get; set; }
 
-        [Column(8)]
+        [Column(7)]
         public double Measured_Value { get; set; }
 
-        [Column(9)]
+        [Column(8)]
         public int Scale { get; set; }
 
-        [Column(10)]
+        [Column(9)]
         public double Standard_Value { get; set; }
 
-        [Column(11)]
+        [Column(10)]
         public double Standard_total_U { get; set; }
     }
 }

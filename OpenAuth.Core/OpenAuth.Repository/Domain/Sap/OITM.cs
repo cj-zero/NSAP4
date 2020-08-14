@@ -226,9 +226,14 @@ namespace OpenAuth.Repository.Domain.Sap
           this.U_job_id= string.Empty;
           this.U_ItemCode= string.Empty;
           this.U_FDY= string.Empty;
+            this.ItemCode = string.Empty;
         }
 
-        
+        /// <summary>
+        /// 物料编码
+        /// </summary>
+        [Description("物料编码")]
+        public string ItemCode { get; set; }
         /// <summary>
         /// 
         /// </summary>

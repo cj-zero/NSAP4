@@ -55,16 +55,15 @@ namespace Infrastructure.Excel
             var data = mapper
                 .Map<NwcaliPLCRepetitiveMeasurementData>(0, o => o.Verify_Type)
                 .Map<NwcaliPLCRepetitiveMeasurementData>(1, o => o.VoltsorAmps)
-                .Map<NwcaliPLCRepetitiveMeasurementData>(2, o => o.MeasurementTimes)
-                .Map<NwcaliPLCRepetitiveMeasurementData>(3, o => o.Channel)
-                .Map<NwcaliPLCRepetitiveMeasurementData>(4, o => o.Mode)
-                .Map<NwcaliPLCRepetitiveMeasurementData>(5, o => o.Range)
-                .Map<NwcaliPLCRepetitiveMeasurementData>(6, o => o.Point)
-                .Map<NwcaliPLCRepetitiveMeasurementData>(7, o => o.Commanded_Value)
-                .Map<NwcaliPLCRepetitiveMeasurementData>(8, o => o.Measured_Value)
-                .Map<NwcaliPLCRepetitiveMeasurementData>(9, o => o.Scale)
-                .Map<NwcaliPLCRepetitiveMeasurementData>(10, o => o.Standard_Value)
-                .Map<NwcaliPLCRepetitiveMeasurementData>(11, o => o.Standard_total_U)
+                .Map<NwcaliPLCRepetitiveMeasurementData>(2, o => o.Channel)
+                .Map<NwcaliPLCRepetitiveMeasurementData>(3, o => o.Mode)
+                .Map<NwcaliPLCRepetitiveMeasurementData>(4, o => o.Range)
+                .Map<NwcaliPLCRepetitiveMeasurementData>(5, o => o.Point)
+                .Map<NwcaliPLCRepetitiveMeasurementData>(6, o => o.Commanded_Value)
+                .Map<NwcaliPLCRepetitiveMeasurementData>(7, o => o.Measured_Value)
+                .Map<NwcaliPLCRepetitiveMeasurementData>(8, o => o.Scale)
+                .Map<NwcaliPLCRepetitiveMeasurementData>(9, o => o.Standard_Value)
+                .Map<NwcaliPLCRepetitiveMeasurementData>(10, o => o.Standard_total_U)
                 .Take<NwcaliPLCRepetitiveMeasurementData>(sheetName);
             return data.Select(d => d.Value).SkipWhile(v => v is null).ToList();
         }
@@ -90,11 +89,11 @@ namespace Infrastructure.Excel
             var temperatureRow = sheet.GetRow(9);
             baseInfo.Temperature = temperatureRow.GetCell(1).StringCellValue;
             var relativeHumidityRow = sheet.GetRow(10);
-            baseInfo.RelativeHumidity = relativeHumidityRow.GetCell(1).NumericCellValue.ToString("P").Remove(2, 3);
+            baseInfo.RelativeHumidity = relativeHumidityRow.GetCell(1).StringCellValue;
             var ratedAccuracyCRow = sheet.GetRow(11);
-            baseInfo.RatedAccuracyC = Convert.ToInt32(ratedAccuracyCRow.GetCell(1).NumericCellValue);
+            baseInfo.RatedAccuracyC = ratedAccuracyCRow.GetCell(1).NumericCellValue / 1000;
             var ratedAccuracyVRow = sheet.GetRow(12);
-            baseInfo.RatedAccuracyV = Convert.ToInt32(ratedAccuracyVRow.GetCell(1).NumericCellValue);
+            baseInfo.RatedAccuracyV = ratedAccuracyVRow.GetCell(1).NumericCellValue / 1000;
             var ammeterBitsRow = sheet.GetRow(13);
             baseInfo.AmmeterBits = Convert.ToInt32(ammeterBitsRow.GetCell(1).NumericCellValue);
             var VoltmeterBitsRow = sheet.GetRow(14);
@@ -140,7 +139,7 @@ namespace Infrastructure.Excel
             var repetitiveMeasurementsCountRow = sheet.GetRow(26);
             baseInfo.RepetitiveMeasurementsCount = Convert.ToInt32(repetitiveMeasurementsCountRow.GetCell(1).NumericCellValue);
             var turRow = sheet.GetRow(27);
-            baseInfo.TUR = Convert.ToInt32(turRow.GetCell(1).NumericCellValue);
+            baseInfo.TUR = turRow.GetCell(1).StringCellValue;
             var acceptedToleranceRow = sheet.GetRow(28);
             baseInfo.AcceptedTolerance = acceptedToleranceRow.GetCell(1).StringCellValue;
             var kRow = sheet.GetRow(29);
@@ -153,7 +152,7 @@ namespace Infrastructure.Excel
             var pclGuidRow = sheet.GetRow(33);
             for (int i = 1; i < pclNoRow.LastCellNum; i++)
             {
-                if (string.IsNullOrWhiteSpace(pclGuidRow.GetCell(i).StringCellValue))
+                if (string.IsNullOrWhiteSpace(pclGuidRow.GetCell(i)?.StringCellValue))
                     continue;
                 try
                 {
@@ -171,6 +170,24 @@ namespace Infrastructure.Excel
             }
             #endregion
             return baseInfo;
+        }
+
+        public List<NwcaliTur> GetNwcaliTur(string sheetName)
+        {
+            var data = mapper
+                .Map<NwcaliTur>(0, o => o.Range)
+                .Map<NwcaliTur>(1, o => o.TestPoint)
+                .Map<NwcaliTur>(2, o => o.Tur)
+                .Map<NwcaliTur>(3, o => o.UncertaintyContributors)
+                .Map<NwcaliTur>(4, o => o.SensitivityCoefficient)
+                .Map<NwcaliTur>(5, o => o.Value)
+                .Map<NwcaliTur>(6, o => o.Unit)
+                .Map<NwcaliTur>(7, o => o.Type)
+                .Map<NwcaliTur>(8, o => o.Distribution)
+                .Map<NwcaliTur>(9, o => o.Divisor)
+                .Map<NwcaliTur>(10, o => o.StdUncertainty)
+                .Take<NwcaliTur>(sheetName);
+            return data.Select(d => d.Value).SkipWhile(v => v is null).Where(v => v.Tur != 0).ToList();
         }
 
         public void SetValue(string value, int row, int col)

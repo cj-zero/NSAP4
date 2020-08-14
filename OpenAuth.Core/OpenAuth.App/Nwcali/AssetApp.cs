@@ -57,16 +57,16 @@ namespace OpenAuth.App.nwcali
 
             var result = new TableData();
             var objs = UnitWork.Find<Asset>(null);
-            objs = objs.WhereIf(!string.IsNullOrEmpty(request.Id), u => u.Id.Contains(request.Id)).
-                WhereIf(!string.IsNullOrEmpty(request.AssetCategory), u => u.AssetCategory.Contains(request.AssetCategory)).
-                WhereIf(!string.IsNullOrEmpty(request.AssetCCNumber), u => u.AssetCCNumber.Contains(request.AssetCCNumber)).
-                WhereIf(!string.IsNullOrEmpty(request.AssetSJType), u => u.AssetSJType.Contains(request.AssetSJType)).
-                WhereIf(!string.IsNullOrEmpty(request.AssetStatus), u => u.AssetStatus.Contains(request.AssetStatus)).
-                WhereIf(!string.IsNullOrEmpty(request.AssetType), u => u.AssetType.Contains(request.AssetType)).
-                WhereIf(!string.IsNullOrEmpty(request.AssetZCNumber), u => u.AssetZCNumber.Contains(request.AssetZCNumber)).
-                WhereIf(!string.IsNullOrEmpty(request.OrgName), u => u.OrgName.Contains(request.OrgName)).
-                WhereIf(request.AssetJZDate != null && request.AssetSXDate != null, u => u.AssetJZDate >= request.AssetJZDate && u.AssetSXDate <= request.AssetSXDate);
-
+            objs = objs.WhereIf(!string.IsNullOrWhiteSpace(request.Id), u => u.Id.Contains(request.Id)).
+                WhereIf(!string.IsNullOrWhiteSpace(request.AssetCategory), u => u.AssetCategory.Contains(request.AssetCategory)).
+                WhereIf(!string.IsNullOrWhiteSpace(request.AssetCCNumber), u => u.AssetCCNumber.Contains(request.AssetCCNumber)).
+                WhereIf(!string.IsNullOrWhiteSpace(request.AssetSJType), u => u.AssetSJType.Contains(request.AssetSJType)).
+                WhereIf(!string.IsNullOrWhiteSpace(request.AssetStatus), u => u.AssetStatus.Contains(request.AssetStatus)).
+                WhereIf(!string.IsNullOrWhiteSpace(request.AssetType), u => u.AssetType.Contains(request.AssetType)).
+                WhereIf(!string.IsNullOrWhiteSpace(request.AssetZCNumber), u => u.AssetZCNumber.Contains(request.AssetZCNumber)).
+                WhereIf(!string.IsNullOrWhiteSpace(request.OrgName), u => u.OrgName.Contains(request.OrgName)).
+                WhereIf(request.AssetJZDate != null && request.AssetSXDate != null, u => u.AssetJZDate >= request.AssetJZDate && u.AssetSXDate < Convert.ToDateTime(request.AssetSXDate).AddMinutes(1440));
+          
             result.columnHeaders = properties;
             result.Data = objs.OrderByDescending(u => u.AssetCreateTime)
                 .Skip((request.page - 1) * request.limit)
@@ -321,7 +321,7 @@ namespace OpenAuth.App.nwcali
                 }
                 else if (item.CategoryType.Contains("相对不确定度"))
                 {
-                    Metrological += Convert.ToDecimal(item.CategoryOhms).ToString("G0") + "m Ω,"+ Convert.ToDecimal(item.CategoryNondeterminacy).ToString("G0") + "ppm (k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n";
+                    Metrological += Convert.ToDecimal(item.CategoryOhms).ToString("G0") + "Ω,"+ Convert.ToDecimal(item.CategoryNondeterminacy).ToString("G0") + "ppm (k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n";
                 }
             }
 
