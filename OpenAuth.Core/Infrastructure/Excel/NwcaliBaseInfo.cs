@@ -49,11 +49,11 @@ namespace Infrastructure.Excel
         /// <summary>
         /// 电流精度
         /// </summary>
-        public int RatedAccuracyC { get; set; }
+        public double RatedAccuracyC { get; set; }
         /// <summary>
         /// 电压精度
         /// </summary>
-        public int RatedAccuracyV { get; set; }
+        public double RatedAccuracyV { get; set; }
 
         public int AmmeterBits { get; set; }
 
@@ -87,7 +87,7 @@ namespace Infrastructure.Excel
         /// <summary>
         /// TUR
         /// </summary>
-        public double TUR { get; set; }
+        public string TUR { get; set; }
         /// <summary>
         /// 接受限
         /// </summary>

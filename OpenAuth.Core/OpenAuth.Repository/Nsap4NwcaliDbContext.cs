@@ -23,5 +23,6 @@ namespace OpenAuth.Repository
         public virtual DbSet<AssetCategory> Assetcategories { get; set; }
         public virtual DbSet<AssetInspect> Assetinspects { get; set; }
         public virtual DbSet<AssetOperation> Assetoperations { get; set; }
+        public virtual DbSet<CertOperationHistory> Certoperationhistories { get; set; }
     }
 }

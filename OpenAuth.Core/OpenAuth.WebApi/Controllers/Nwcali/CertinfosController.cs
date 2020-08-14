@@ -27,6 +27,37 @@ namespace OpenAuth.WebApi.Controllers
             return await _app.LoadAsync(request);
         }
 
+        /// <summary>
+        /// 证书待审批流程查询列表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> LoadApprover(QueryCertApproverListReq req)
+        {
+            return await _app.LoadApprover(req);
+        }
+
+        /// <summary>
+        /// 证书审批操作
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> CertVerification(CertVerificationReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.CertVerification(req);
+            }
+            catch(Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
 
         public CertinfosController(CertinfoApp app) 
         {
