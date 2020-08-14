@@ -51,7 +51,7 @@ namespace Sap.Handler.Service
                     sc.CustomerName = thisSorder.CustomerName;
                     sc.Subject = thisSwork.FromTheme;
                     //sc.ContactCode = 15;
-                   if (thisSwork.ContractId.Trim() != "" && thisSwork.ContractId != null && thisSwork.ContractId.Trim() != "-1")
+                   if (!string.IsNullOrWhiteSpace(thisSwork.ContractId) && thisSwork.ContractId.Trim() != "-1")
                     {
                         sc.ContractID = Convert.ToInt32(thisSwork.ContractId);
                     }
