@@ -8,7 +8,6 @@
       ref="singleTable"
       highlight-current-row
       @current-change="getPartner"
-      @row-dblclick="handleCurrentChange"
       style="width: 100%"
     >
       <el-table-column width="50">
@@ -38,24 +37,24 @@
       <el-table-column prop="u_FPLB" align="center" width="120px" label="发票类别"></el-table-column>
     </el-table>
 
-    <el-dialog :modal-append-to-body='false'
+    <!-- <el-dialog :modal-append-to-body='false'
           :append-to-body="true" title="最近服务单情况" width="90%" @open="openDialog" :visible.sync="dialogCallId">
       <callId :toCallList="CallList"></callId>
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogCallId = false">取 消</el-button>
         <el-button type="primary" @click="dialogCallId = false">确 定</el-button>
       </span>
-    </el-dialog>
+    </el-dialog> -->
   </div>
 </template>
 
 <script>
-import * as callformPartner from "@/api/serve/callformPartner";
+// import * as callformPartner from "@/api/serve/callformPartner";
 
-import callId from "./callId";
+// import callId from "./callId";
 export default {
   props: ["partnerList", "count",'parLoading'],
-  components: { callId },
+  // components: { callId },
 
   data() {
     return {
@@ -96,38 +95,37 @@ export default {
     },
 
     getPartner(val) {
-        if (val.frozenFor&&val.frozenFor == "Y") {
-        this.$message({
-          message: `${val.cardName}账户被冻结，无法操作`,
-          type: "error"
-        });
-         this.radio = val.cardCode;
+      if (val.frozenFor&&val.frozenFor == "Y") {
+      this.$message({
+        message: `${val.cardName}账户被冻结，无法操作`,
+        type: "error"
+      });
+        this.radio = val.cardCode;
         this.$emit("getChildValue", 1);
-      }else{
-     this.checkVal = val;
-      this.$emit("getChildValue", val);
-      this.$refs.singleTable.clearSelection();
-      this.radio = val.cardCode;
-      this.$refs.singleTable.toggleRowSelection(val);
+      } else  {
+        this.checkVal = val;
+        this.$emit("getChildValue", val);
+        this.$refs.singleTable.clearSelection();
+        this.radio = val.cardCode;
+        this.$refs.singleTable.toggleRowSelection(val);
       }
- 
     },
     handleCurrentChange(val) {
       this.currentRow = val;
-      if (val.frozenFor == "Y") {
-        this.$message({
-          message: `${val.cardName}账户被冻结，无法操作`,
-          type: "error"
-        });
-      } else {
-         callformPartner.getTableList({ code: val.cardCode }).then(res => {
-          this.CallList = res.result;
-            this.dialogCallId = true
-          // this.newestNotCloseOrder=res.reault.newestNotCloseOrder
-          // this.newestOrder=res.reault.newestNotCloseOrder
-        });
-
-      }
+      // this.$emit('currentChange', val)
+      // if (val.frozenFor == "Y") {
+      //   this.$message({
+      //     message: `${val.cardName}账户被冻结，无法操作`,
+      //     type: "error"
+      //   });
+      // } else {
+      //    callformPartner.getTableList({ code: val.cardCode }).then(res => {
+      //     this.CallList = res.result;
+      //       this.dialogCallId = true
+      //     // this.newestNotCloseOrder=res.reault.newestNotCloseOrder
+      //     // this.newestOrder=res.reault.newestNotCloseOrder
+      //   });
+      // }
     }
   }
 };

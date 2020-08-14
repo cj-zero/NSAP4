@@ -45,10 +45,8 @@
               </el-col>
               <el-col :span="8">
                 <el-form-item label="服务ID">
-                  <el-select size="mini" v-model="form.u_SAP_ID" disabled placeholder="请选择">
-                    <el-option label="服务一" value="shanghai"></el-option>
-                    <el-option label="服务二" value="beijing"></el-option>
-                  </el-select>
+                  <el-input size="mini" v-model="form.u_SAP_ID" disabled placeholder="请选择">
+                  </el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="8">
@@ -196,10 +194,10 @@
             <el-row :gutter="10">
               <el-col :span="8">
                 <el-form-item label="现地址">
-                  <!-- <el-input size="mini" v-model="form.city"></el-input> -->
-                  <p
+                  <el-input size="mini" v-model="allArea" disabled></el-input>
+                  <!-- <p
                     style="overflow-x:hidden;border: 1px solid silver; border-radius:5px;height:30px;margin:0;padding-left:10px;font-size:12px;"
-                  >{{allArea}}</p>
+                  >{{allArea}}</p> -->
                 </el-form-item>
               </el-col>
               <el-col :span="16" style="height:30px;line-height:30px;padding:2px 0 0 0;">
@@ -285,6 +283,7 @@
             :serviceOrderId="serviceOrderId"
             :propForm="propForm"
             ref="formAdd"
+            :formName="formName"
           ></formAdd>
         </el-col>
       </el-row>
@@ -298,7 +297,7 @@
         direction="ttb"
       >
         <zmap @drag="dragmap"></zmap>
-        <!-- <bmap></bmap> -->
+        <!-- <bmap @mapInitail="onMapInitail"></bmap> -->
         <el-row :gutter="12" slot="footer" class="dialog-footer" style="height:30px;">
           <el-col :span="20">当前选择:{{allAddress.address?allAddress.address:'暂未选择地点'}}</el-col>
           <el-col :span="4" style="height:30px;line-height:30px;">
@@ -329,6 +328,7 @@
           :count="parentCount"
           :parLoading="parentLoad"
           @getChildValue="ChildValue"
+          ref="formPartner"
         ></formPartner>
         <pagination
           v-show="parentCount>0"
@@ -340,6 +340,21 @@
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialogPartner = false">取 消</el-button>
           <el-button type="primary" @click="sureVal" :disabled="disableBtn">确 定</el-button>
+        </span>
+      </el-dialog>
+      <el-dialog 
+        :modal-append-to-body='false'
+        :append-to-body="true" 
+        title="最近服务单情况" 
+        width="60%" 
+        @open="openDialog" 
+        :visible.sync="dialogCallId"
+        :center="true"
+      >
+        <callId :toCallList="CallList"></callId>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="dialogCallId = false">关闭</el-button>
+          <!-- <el-button type="primary" @click="dialogCallId = false">确 定</el-button> -->
         </span>
       </el-dialog>
       <Model
@@ -360,6 +375,9 @@
 
 <script>
 import { getPartner } from "@/api/callserve";
+import * as callformPartner from "@/api/serve/callformPartner";
+import callId from "./callId";
+// import BMap from 'BMap'
 import http from "@/api/serve/whiteHttp";
 import * as callservesure from "@/api/serve/callservesure";
 import Pagination from "@/components/Pagination";
@@ -382,7 +400,8 @@ export default {
     Pagination, 
     upLoadImage, 
     Model, 
-    // bmap 
+    // bmap,
+    callId 
   },
   props: [
     "modelValue",
@@ -482,7 +501,7 @@ export default {
       isCreateAdd: true, //add页面的编辑状态
       allAddress: {}, //选择地图的合集
       propForm: [],
-      rules: {
+      rules: { // 表单规则
         customerId: [
           { required: true, message: "请输入客户代码", trigger: "change" },
         ],
@@ -505,6 +524,8 @@ export default {
         limit: 40,
       },
       needPos: false,
+      dialogCallId: false, // 最近十个服务单弹窗
+      CallList: []
     };
   },
   computed: {
@@ -574,6 +595,9 @@ export default {
     },
     "form.customerId": {
       handler(val) {
+        // if (val && this.isCreate) {
+          
+        // }
         this.getPartnerInfo(val);
       },
     },
@@ -583,7 +607,6 @@ export default {
         if (val) {
           this.form.serviceWorkOrders = []; // 清空数组
           this.form = Object.assign({}, this.form, val);
-          console.log(this.form, val, "refValue");
           if (val.serviceWorkOrders.length > 0) {
             val.serviceWorkOrders.map((item, index) => {
               this.form.serviceWorkOrders[index].solutionsubject =
@@ -593,7 +616,6 @@ export default {
             });
           }
           this.propForm = this.form.serviceWorkOrders;
-          console.log(this.propForm, "propForm");
         }
         // this.propForm = this.refValue.serviceWorkOrders
       },
@@ -622,6 +644,9 @@ export default {
     window.removeEventListener("resize", this.resizeWin);
   },
   methods: {
+    onMapInitail (map) {
+      console.log(map, 'mapBAIDU')
+    },
     onDateChange(val) {
       console.log(typeof val);
       this.form.createTime = timeToFormat("yyyy-MM-dd HH-mm-ss", val);
@@ -736,7 +761,6 @@ export default {
     },
     async postServe() {
       //创建整个工单
-      console.log(this.form.serviceWorkOrders.length, 'lengrth')
       if (!this.form.serviceWorkOrders.length) {
         this.$message({
           message: `请将必填项填写完整`,
@@ -773,11 +797,9 @@ export default {
           if (this.$route.path === "/serve/callserve") {
             if (this.isCreate) {
               // 新建服务单
-              console.log("build", this.form, "form");
               if (Array.isArray(this.form.area)) {
                 this.form.area = "";
               }
-              console.log(this.form, "request");
               callservesure
                 .CreateOrder(this.form)
                 .then(() => {
@@ -795,9 +817,7 @@ export default {
                   this.$emit("close-Dia", "N");
                 });
             } else {
-              console.log("edit");
               let formInitailList = this.$refs.formAdd.formInitailList;
-              console.log(formInitailList);
               let targetList = this.form.serviceWorkOrders.filter((item) => {
                 return !formInitailList.some((serviceItem) => {
                   return (
@@ -866,7 +886,17 @@ export default {
           console.log(res, "售后主管");
           this.addressList = res.result.addressList;
           this.cntctPrsnList = res.result.cntctPrsnList;
+          console.log(this.cntctPrsnList, 'this.cntctPrsnList')
           this.form.supervisor = res.result.techName;
+          if (this.cntctPrsnList && this.cntctPrsnList.length && this.formName === '确认') {
+            let firstValue = res.result.cntctPrsnList[0]
+            let { tel1, tel2, cellolar, name } = firstValue
+            console.log(name, 'name')
+            this.form.contacter = name
+            this.form.contactTel = tel1 || tel2 || cellolar
+          }
+          // this.form.contacter = item.cntctPrsn;
+          // this.form.contactTel
           if (this.addressList.length) {
             let { address, building } = this.addressList[0];
             this.form.addressDesignator = address;
@@ -892,7 +922,7 @@ export default {
     },
     choosePeople(val) {
       let res = this.cntctPrsnList.filter((item) => item.name == val);
-      this.form.contactTel = res[0].tel1;
+      this.form.contactTel = res[0].tel1 || res[0].tel2 || res[0].cellolar;
     },
     changeForm(val) {
       this.form.serviceWorkOrders = val;
@@ -1000,8 +1030,10 @@ export default {
       this.form.contactTel = item.cellular;
       // this.form.addressDesignator = item.address;
       // this.form.address = item.address;
-
       this.form.salesMan = item.slpName;
+      // console.log(this.$refs, 'refs')
+      // this.$refs.formPartner.handleCurrentChange(item)
+      this.handleCurrentChange(item)
     },
     sureVal() {
       this.dialogPartner = false;
@@ -1013,6 +1045,24 @@ export default {
       // this.form.addressDesignator = val.address;
       // this.form.address = val.address;
       this.form.salesMan = val.slpName;
+      console.log('sureVal', 'val')
+      this.handleCurrentChange(val)
+      // this.$refs.formPartner.handleCurrentChange(val)
+    },
+    handleCurrentChange (val) {
+      if (val.frozenFor == "Y") {
+        this.$message({
+          message: `${val.cardName}账户被冻结，无法操作`,
+          type: "error"
+        });
+      } else {
+         callformPartner.getTableList({ code: val.cardCode }).then(res => {
+          this.CallList = res.result;
+            this.dialogCallId = true
+          // this.newestNotCloseOrder=res.reault.newestNotCloseOrder
+          // this.newestOrder=res.reault.newestNotCloseOrder
+        });
+      }
     },
     ChildValue(val) {
       if (val == 1) {
@@ -1024,6 +1074,9 @@ export default {
       }
     },
     handleIconClick() {
+      if (!this.isCreate) {
+        return
+      }
       this.dialogPartner = true;
     },
     onSubmit() {

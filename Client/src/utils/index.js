@@ -52,9 +52,11 @@ export function timeToFormat(format, date){
   }
 return result
 }
+
 function isZero (num) {
   return Number(num) < 10 ? '0' + num : num 
 }
+
 export function formatTime(format) {
   const now = new Date()
   var o = {
@@ -138,21 +140,19 @@ export function changeIcon(icon) {
       return 'list'
   }
 }
-
 // 深拷贝
 export const deepClone = (obj) => {
-  if (!isObject(obj)) {
-    throw new Error('obj 不是一个对象！')
+  var objArray = Array.isArray(obj) ? [] : {};
+  if(obj && typeof obj === "object") {
+    for(let key in obj) {
+      if(Object.prototype.hasOwnProperty.call(obj, key)){
+        if(obj[key] && typeof obj[key] === "object"){
+          objArray[key] = deepClone(obj[key]);
+        } else {
+          objArray[key] = obj[key];
+        }
+      }
+    }
   }
-
-  let isArray = Array.isArray(obj)
-  let cloneObj = isArray ? [] : {}
-  for (let key in obj) {
-      cloneObj[key] = isObject(obj[key]) ? deepClone(obj[key]) : obj[key]
-  }
-
-  return cloneObj
-}
-const isObject = (o) => {
-  return (typeof o === 'object' || typeof o === 'function') && o !== null
+  return objArray;
 }

@@ -320,7 +320,7 @@
         </el-form-item>
       </el-form>
       <!-- 新增删除按钮 -->
-      <div class="operation-btn-wrapper">
+      <div class="operation-btn-wrapper" v-if="formName !== '查看'">
         <div class="item" style="height:40px;line-height:30px;">
           <el-button
             type="danger"
@@ -662,7 +662,7 @@
               </el-row>
             </el-form-item>
           </el-form>
-          <div class="operation-btn-wrapper">
+          <div class="operation-btn-wrapper" v-if="formName !== '查看'">
             <div class="item" style="height:40px;line-height:30px;">
               <el-button
                 type="danger"
@@ -740,7 +740,7 @@
       :visible.sync="dialogfSN">
       <div style="width:600px;margin:10px 0;" class="search-wrapper">
         <el-input
-          @input="searchList"
+          @keyup.enter.native="searchList"
           style="width:150px;margin:0 20px;display:inline-block;"
           v-model="inputSearch"
           placeholder="制造商序列号"
@@ -748,7 +748,7 @@
           <i class="el-icon-search el-input__icon" slot="suffix"></i>
         </el-input>
         <el-input
-          @input="searchList"
+          @keyup.enter.native="searchList"
           style="width:150px;margin:0 20px;display:inline-block;"
           v-model="inputItemCode"
           placeholder="输入物料编码"
@@ -816,7 +816,7 @@ export default {
       vm: that,
     };
   },
-  props: ["isCreate", "ifEdit", "serviceOrderId", "propForm"],
+  props: ["isCreate", "ifEdit", "serviceOrderId", "propForm", "formName"],
   // ##propForm编辑或者查看详情传过来的数据
   data() {
     return {
@@ -1041,16 +1041,17 @@ export default {
       deep: true,
       // immediate: true
     },
-    // propForm: {
-    //   deep: true,
-    //   immediate: true,
-    //   handler(val) {
-    //     if (val && val.length) {
-    //       this.formList = val;
-    //       console.log(this.formList);
-    //     }
-    //   },
-    // },
+    propForm: {
+      deep: true,
+      immediate: true,
+      handler(val) {
+        if (val && val.length) {
+          this.formList = val;
+          this.formInitailList = val.slice()
+          console.log(this.formList);
+        }
+      },
+    },
     "form.customerId": {
       deep: true,
       handler(val) {
@@ -1108,6 +1109,7 @@ export default {
           this.SerialCount = res.count;
           this.serLoad = false;
           this.listLoading = false;
+          // 
         })
         .catch((error) => {
           console.log(error);
@@ -1195,6 +1197,10 @@ export default {
     },
 
     pushForm() {
+        if (!this.formList.length) {
+          this.dialogfSN = false;
+          return
+        }
         if (!this.formList[0].manufacturerSerialNumber) {
           //判断从哪里新增的依据是第一个工单是否有id
           if (this.inputname) {

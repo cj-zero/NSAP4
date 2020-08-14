@@ -11,7 +11,7 @@
 </template>
 
 <script>
-import remoteLoad from '@/utils/remoteLoad.js'
+import { remoteLoad } from '@/utils/remoteLoad.js'
 // import { MapKey, MapCityName } from '@/config/config'
 export default {
   props: ['lat', 'lng'],

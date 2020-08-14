@@ -9,7 +9,7 @@
         :data="toCallList.newestOrder"
         v-loading="listLoading"
         border
-        max-height="350px"
+        max-height="400px"
         fit
         style="width: 100%;"
         highlight-current-row>
@@ -53,7 +53,7 @@
           :data="toCallList.newestNotCloseOrder"
           v-loading="listLoading"
           border
-          max-height="300px"
+          max-height="400px"
           fit
           style="width: 100%;"
           highlight-current-row>

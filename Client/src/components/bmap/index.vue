@@ -11,11 +11,9 @@
 </template>
 
 <script>
-import remoteLoad from '@/utils/remoteLoad.js'
-import BMap from 'BMap'
+import { loadBMap } from '@/utils/remoteLoad.js'
 // import { MapKey, MapCityName } from '@/config/config'
 export default {
-  props: ['lat', 'lng'],
   data () {
     return {
       searchKey: '',
@@ -90,23 +88,27 @@ export default {
       //   // 启动拖放
       //   positionPicker.start()
       // })
-      let map = new BMap.Map("js-container");
+      let BMap = window.BMap
+      this.map = new BMap.Map("js-container");
+      console.log(window.BMap, 'map', this.map)
       let point = new BMap.Point(116.404, 39.915);
-      map.centerAndZoom(point, 15); 
-      map.enableScrollWheelZoom() // 滚轮缩放
-      let geoc = new BMap.Geocoder();    
-      map.addEventListener("click", function(e){   /* 点击获取地址坐标*/     
-          var pt = e.point;
-          geoc.getLocation(pt, function(rs){
-              var addComp = rs.addressComponents;
-              alert(addComp.province + ", " + addComp.city + ", " + addComp.district + ", " + addComp.street + ", " + addComp.streetNumber);
-          })        
-      })
+      this.map.centerAndZoom(point, 15); 
+      this.map.enableScrollWheelZoom() // 滚轮缩放
+      // let geoc = new BMap.Geocoder();    
+      // this.map.addEventListener("click", function(e){   /* 点击获取地址坐标*/     
+      //     var pt = e.point;
+      //     geoc.getLocation(pt, function(rs){
+      //         var addComp = rs.addressComponents;
+      //         alert(addComp.province + ", " + addComp.city + ", " + addComp.district + ", " + addComp.street + ", " + addComp.streetNumber);
+      //     })        
+      // })
+      // this.$emit('mapInitail', this.map)
     }
   },
   async mounted () {
     try {
       // await remoteLoad(`https://api.map.baidu.com/api?v=1.0&type=webgl&ak=${this.MapKey}`)
+      await loadBMap(this.MapKey) //加载引入BMap
       this.initMap()
     } catch (err) {
       console.log(err)
@@ -114,26 +116,26 @@ export default {
   },
   created () {
     // 已载入高德地图API，则直接初始化地图
-    let that =this
-   this.$nextTick(
-     function(){
-    if (window.AMap && window.AMapUI) {
-      //  await remoteLoad(`http://webapi.amap.com/maps?v=1.3&key=${this.MapKey}`)
-      // await remoteLoad('http://webapi.amap.com/ui/1.0/main.js')
-      this.initMap()
-    // 未载入高德地图API，则先载入API再初始化
-    } else {
-      remoteLoad(`http://webapi.amap.com/maps?v=1.3&key=${this.MapKey}`)
-      setTimeout(function(){
-          remoteLoad('http://webapi.amap.com/ui/1.0/main.js')
-      },200)
-        setTimeout(function(){
-           that.initMap()
-      },300)
-    }
+  //   let that =this
+  //  this.$nextTick(
+  //    function(){
+  //   if (window.AMap && window.AMapUI) {
+  //     //  await remoteLoad(`http://webapi.amap.com/maps?v=1.3&key=${this.MapKey}`)
+  //     // await remoteLoad('http://webapi.amap.com/ui/1.0/main.js')
+  //     this.initMap()
+  //   // 未载入高德地图API，则先载入API再初始化
+  //   } else {
+  //     remoteLoad(`http://webapi.amap.com/maps?v=1.3&key=${this.MapKey}`)
+  //     setTimeout(function(){
+  //         remoteLoad('http://webapi.amap.com/ui/1.0/main.js')
+  //     },200)
+  //       setTimeout(function(){
+  //          that.initMap()
+  //     },300)
+  //   }
   
-   }
- )
+//    }
+//  )
   }
 }
 </script>

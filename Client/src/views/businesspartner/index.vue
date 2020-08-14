@@ -68,9 +68,9 @@
           >{{scope.row.frozenFor=="N"?"正常":'冻结'}}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="cellular" label="客户电话" align="left" show-overflow-tooltip></el-table-column>
       <el-table-column prop="cntctPrsn" label="客户联系人" align="left" show-overflow-tooltip></el-table-column>
-      <el-table-column prop="slpName" label="业务员" align="left" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="cellular" label="客户电话" align="left" show-overflow-tooltip></el-table-column>
+      <!-- <el-table-column prop="slpName" label="业务员" align="left" show-overflow-tooltip></el-table-column> -->
       <el-table-column prop="slpName" label="销售员" align="left" show-overflow-tooltip></el-table-column>
       <el-table-column prop="technician" label="售后技术员" align="left" show-overflow-tooltip></el-table-column>
        <el-table-column align="right" label="科目余额" width="120">

@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using OpenAuth.Repository.Domain.Sap;
 
 
 namespace Sap.Handler.Service
@@ -61,8 +62,11 @@ namespace Sap.Handler.Service
                     //{
                     //    sc.Origin = (int)thisSorder.FromId;
                     //}
-                    sc.ItemCode = thisSwork.MaterialCode;
-                    sc.ItemDescription = thisSwork.MaterialDescription;
+                    if (!string.IsNullOrEmpty(thisSwork.MaterialCode) && IsValidItemCode(thisSwork.MaterialCode))
+                    {
+                        sc.ItemCode = thisSwork.MaterialCode;
+                        sc.ItemDescription = thisSwork.MaterialDescription;
+                    }
                     sc.Status = -3;// 待处理 
                     if (thisSwork.Priority != null && thisSwork.Priority == 3)
                     {
@@ -129,6 +133,21 @@ namespace Sap.Handler.Service
                     Log.Logger.Error(allerror.ToString(), typeof(ServiceOrderSapHandler));
                 }
             }
+        }
+
+        /// <summary>
+        /// 判断物料编码在客户端是否存在
+        /// </summary>
+        /// <param name="materialCode">物料编码</param>
+        /// <returns></returns>
+        public bool IsValidItemCode(string materialCode)
+        {
+            var query = UnitWork.Find<OITM>(o => o.ItemCode.Equals(materialCode)).Select(q => new { q.ItemCode });
+            if (query.Count() > 0)
+            {
+                return true;
+            }
+            return false;
         }
     }
 }

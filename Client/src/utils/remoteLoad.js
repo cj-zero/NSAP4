@@ -1,4 +1,4 @@
-export default function remoteLoad (url, hasCallback) {
+export function remoteLoad (url, hasCallback) {
     return createScript(url)
     /**
      * 创建script
@@ -37,12 +37,35 @@ export default function remoteLoad (url, hasCallback) {
   
       return promise
     }
-  
-    /**
-     * 移除script标签
-     * @param scriptElement script dom
-     */
-    function removeScript (scriptElement) {
-      document.body.removeChild(scriptElement)
-    }
   }
+
+  /**
+ * 动态加载百度地图api函数
+ * @param {String} ak  百度地图AK，必传
+ */
+export function loadBMap(ak) {
+  return new Promise(function(resolve, reject) {
+    if (typeof window.BMap !== 'undefined') {
+      resolve(window.BMap)
+      return true
+    }
+    window.onBMapCallback = function() {
+      removeScript(script)
+      resolve(window.BMap)
+    }
+    let script = document.createElement('script')
+    script.type = 'text/javascript'
+    script.src =
+      'http://api.map.baidu.com/api?v=3.0&ak=' + ak + '&callback=onBMapCallback'
+    script.onerror = reject
+    document.head.appendChild(script)
+  })
+}
+
+/**
+ * 移除script标签
+ * @param scriptElement script dom
+ */
+function removeScript (scriptElement) {
+  document.head.removeChild(scriptElement)
+}
