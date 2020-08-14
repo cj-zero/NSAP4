@@ -320,7 +320,7 @@
         </el-form-item>
       </el-form>
       <!-- 新增删除按钮 -->
-      <div class="operation-btn-wrapper">
+      <div class="operation-btn-wrapper" v-if="formName !== '查看'">
         <div class="item" style="height:40px;line-height:30px;">
           <el-button
             type="danger"
@@ -662,7 +662,7 @@
               </el-row>
             </el-form-item>
           </el-form>
-          <div class="operation-btn-wrapper">
+          <div class="operation-btn-wrapper" v-if="formName !== '查看'">
             <div class="item" style="height:40px;line-height:30px;">
               <el-button
                 type="danger"
@@ -816,7 +816,7 @@ export default {
       vm: that,
     };
   },
-  props: ["isCreate", "ifEdit", "serviceOrderId", "propForm"],
+  props: ["isCreate", "ifEdit", "serviceOrderId", "propForm", "formName"],
   // ##propForm编辑或者查看详情传过来的数据
   data() {
     return {
