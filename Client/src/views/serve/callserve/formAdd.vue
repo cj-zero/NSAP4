@@ -887,7 +887,7 @@ export default {
       inputSearch: "",
       inputItemCode: "", //物料编码
       activeNames: [], //活跃名称
-      inputname: false, //是否为其他
+      inputname: false, //是否为其他设备
       options_sourse: [
         { value: "电话", label: "电话" },
         { value: "钉钉", label: "钉钉" },
@@ -965,7 +965,7 @@ export default {
       this.listLoading = false;
     });
     if (this.propForm && this.propForm.length) {
-      this.formList = this.propForm;
+      this.formList = this.propForm.slice();
       this.formInitailList = this.propForm.slice() // 保存已经新建的表单项，用于后续判断后续是否能够编辑
       console.log(this.formList, this.formInitailList, 'formInitailList')
       this.setFormList(this.formList)
@@ -976,9 +976,9 @@ export default {
       return JSON.stringify(this.formList);
     },
     hasCreateOtherOrder () {
-      // 是否已经创建了其他工单，用来判断其他按钮是否可选
+      // 是否已经创建了其他设备工单，用来判断其他设备按钮是否可选
       return this.formList.some(item => {
-        return item.manufacturerSerialNumber === '其他'
+        return item.manufacturerSerialNumber === '其他设备'
       })
     },
   },
@@ -1046,9 +1046,9 @@ export default {
       immediate: true,
       handler(val) {
         if (val && val.length) {
-          this.formList = val;
+          this.formList = val.slice();
           this.formInitailList = val.slice()
-          console.log(this.formList);
+          console.log(this.formList, 'formInitailList');
         }
       },
     },
@@ -1093,8 +1093,8 @@ export default {
       return (this.formInitailList || []).some(item => item.manufacturerSerialNumber === val.manufacturerSerialNumber)
     },
     isOther (val) {
-      // 工单是否为其他
-      return val === '其他'
+      // 工单是否为其他设备
+      return val === '其他设备'
     },
     toggleDisabledClick(val) {
       this.isDisalbed = val;
@@ -1204,10 +1204,10 @@ export default {
         if (!this.formList[0].manufacturerSerialNumber) {
           //判断从哪里新增的依据是第一个工单是否有id
           if (this.inputname) {
-            //是否有新增其他选项
+            //是否有新增其他设备选项
             this.inputname = false
             this.formListStart.push({
-              manufSN: "其他",
+              manufSN: "其他设备",
               editTrue: false,
               internalSerialNumber: "",
               materialCode: "",
@@ -1268,7 +1268,7 @@ export default {
             if (this.inputname) {
               this.inputname = false
               this.formListStart={
-                manufSN: "其他",
+                manufSN: "其他设备",
                 editTrue: false,
                 internalSerialNumber: "",
                 materialCode: "",
@@ -1304,7 +1304,7 @@ export default {
             if (this.inputname) {
               this.inputname = false
               this.formListStart.push({
-                manufSN: "其他",
+                manufSN: "其他设备",
                 editTrue: false,
                 internalSerialNumber: "",
                 materialCode: "",

@@ -374,7 +374,8 @@
 </template>
 
 <script>
-import { getPartner } from "@/api/callserve";
+import { getPartner, getSerialNumber } from "@/api/callserve";
+// 
 import * as callformPartner from "@/api/serve/callformPartner";
 import callId from "./callId";
 // import BMap from 'BMap'
@@ -618,6 +619,7 @@ export default {
                 item.problemType && item.problemType.name;
             });
           }
+          console.log(val, 'refValueChange')
           this.propForm = this.form.serviceWorkOrders;
         }
         // this.propForm = this.refValue.serviceWorkOrders
@@ -750,6 +752,79 @@ export default {
       //  that.getPosition(addre)
       // },800)
       this.form.recepUserName = this.$store.state.user.name;
+      let listQuery = {
+        page: 1,
+        limit: 1
+      }
+      console.log(val, 'val')
+      let CardCode = val.customerId
+      let manufSNList = val.serviceOrderSNs.map(item => {
+        return item.manufSN
+      })
+      let promiseList = [], otherIndex = 0, hasOther = false
+      for (let i = 0; i < manufSNList.length; i++) {
+        let manufSN = manufSNList[i]
+        console.log(manufSN, 'man')
+        if (manufSN !== '其他设备') {
+          console.log(CardCode, manufSN)
+          promiseList.push(getSerialNumber({
+            ...listQuery,
+            CardCode,
+            ManufSN: manufSN
+          }))
+        } else {
+          hasOther = true
+          otherIndex = i
+        }
+      }
+      console.log(promiseList, '11')
+      Promise.all(promiseList).then(res => {
+        console.log('res', 'setFormRes', res)
+        let targetList = []
+        for (let i = 0; i < res.length; i++) {
+          targetList.push({
+            manufacturerSerialNumber: res[i].data[0].manufSN,
+            editTrue: false,
+            internalSerialNumber: res[i].data[0].internalSN,
+            materialCode: res[i].data[0].itemCode,
+            materialDescription: res[i].data[0].itemName,
+            feeType: 1,
+            fromTheme:  "",
+            fromType:  1,
+            problemTypeName:  "",
+            problemTypeId:  "",
+            priority:  1,
+            remark:  "",
+            solutionId:  "",
+            status:  1,
+            solutionsubject:  "",
+          })
+        }
+        if (hasOther) {
+          targetList.splice(otherIndex, 0, {
+            manufacturerSerialNumber: "其他设备",
+            editTrue: false,
+            internalSerialNumber: "",
+            materialCode: "",
+            materialDescription: "",
+            feeType: 1,
+            fromTheme:  "",
+            fromType:  1,
+            problemTypeName:  "",
+            problemTypeId:  "",
+            priority:  1,
+            remark:  "",
+            solutionId:  "",
+            status:  1,
+            solutionsubject:  "",
+          })
+        }
+        this.propForm = targetList
+        console.log(this.propForm, 'setFormProp')
+      }).catch((err) => {
+        console.log(promiseList, 'promiseList')
+        this.$message.error(JSON.stringify(err))
+      })
     },
     async getServeImg(val) {
       let params = {

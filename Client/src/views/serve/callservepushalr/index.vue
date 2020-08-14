@@ -78,7 +78,7 @@
                     v-if="fruit.name === 'serviceOrderId'"
                     type="primary"
                     @click="openTree(scope.row.serviceOrderId)"
-                  >{{scope.row.serviceOrderId}}</el-link>
+                  >{{scope.row.u_SAP_ID}}</el-link>
                   <span
                     v-if="fruit.name === 'status'"
                     :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
@@ -263,7 +263,7 @@ export default {
       hasAlreadNum: "", //已经接的单
       formTheadOptions: [
         {
-          name: "serviceWorkOrderId",
+          name: "workOrderNumber",
           label: "工单ID",
           ifFixed: true,
           align: "left",
@@ -317,7 +317,8 @@ export default {
         key: undefined,
         appId: undefined,
         Name: "", //	Description
-        QryServiceOrderId: "", //- 查询服务ID查询条件
+        // u_SAP_ID: "", //- 查询服务ID查询条件
+        u_SAP_ID: "",
         QryState: "", //- 呼叫状态查询条件
         QryCustomer: "", //- 客户查询条件
         QryManufSN: "", // - 制造商序列号查询条件
@@ -335,7 +336,7 @@ export default {
         key: undefined,
         appId: undefined,
         Name: "", //	Description
-        QryServiceOrderId: "", //- 查询服务ID查询条件
+        u_SAP_ID: "", //- 查询服务ID查询条件
         QryState: "", //- 呼叫状态查询条件
         QryCustomer: "", //- 客户查询条件
         QryManufSN: "", // - 制造商序列号查询条件
@@ -510,7 +511,7 @@ export default {
                 message: "转派成功",
               });
                       this.listQuery.QryState=''
-              this.listQuery.QryServiceOrderId=''
+              this.listQuery.u_SAP_ID=''
             this.afterLeft()
               this.dialogOrder = false;
               this.listLoading = false;
@@ -530,8 +531,8 @@ export default {
          this.getRightList();
       } else {
         Object.assign(this.listQuery, val);
-    if(val.QryServiceOrderId){
-        this.$refs.treeForm.setCheckedKeys([val.QryServiceOrderId]);
+    if(val.u_SAP_ID){
+        this.$refs.treeForm.setCheckedKeys([val.u_SAP_ID]);
         }        this.getLeftList()
       }
     },
@@ -619,8 +620,8 @@ export default {
             //如果点击是子级
             if (this.listQuery.QryMaterialTypes.indexOf(a.id) == -1) {
               //找数组中是否存在类型号，有的话就说明是取消
-              if (!this.listQuery.QryServiceOrderId) {
-                this.listQuery.QryServiceOrderId = a.key;
+              if (!this.listQuery.u_SAP_ID) {
+                this.listQuery.u_SAP_ID = a.key;
               }
               this.listQuery.QryMaterialTypes.push(a.id);
             } else {
@@ -628,16 +629,16 @@ export default {
                 (item) => item != a.id
               );
               if (this.listQuery.QryMaterialTypes.length == 0) {
-                this.listQuery.QryServiceOrderId = "";
+                this.listQuery.u_SAP_ID = "";
               }
             }
           } else {
-            if (!this.listQuery.QryServiceOrderId) {
-              this.listQuery.QryServiceOrderId = a.key;
+            if (!this.listQuery.u_SAP_ID) {
+              this.listQuery.u_SAP_ID = a.key;
             } else {
               this.ifParent = ""; //取消选择之后，清空父级选择
 
-              this.listQuery.QryServiceOrderId = "";
+              this.listQuery.u_SAP_ID = "";
               this.listQuery.QryMaterialTypes = [];
             }
           }
@@ -646,7 +647,7 @@ export default {
           // console.log('清除之前,添加后面的')
           this.$refs.treeForm.setCheckedKeys([]);
           this.listQuery.QryMaterialTypes = [];
-          this.listQuery.QryServiceOrderId = a.key;
+          this.listQuery.u_SAP_ID = a.key;
           this.ifParent = a.key;
           this.$refs.treeForm.setCheckedKeys([a.key1]);
           if (!a.children) {
@@ -671,7 +672,7 @@ export default {
      
         this.$refs.treeForm.setCheckedKeys([a.key1]);
         this.ifParent = a.key;
-        this.listQuery.QryServiceOrderId = a.key;
+        this.listQuery.u_SAP_ID = a.key;
         this.getRightList();
       }
     },
@@ -679,19 +680,19 @@ export default {
     getLeftList() {
       this.listLoading = true;
       let arr = [];
-      return callservepushm.getLeftList({ QryState: this.listQuery.QryState,QryServiceOrderId:this.listQuery.QryServiceOrderId }).then((res) => {
+      return callservepushm.getLeftList({ QryState: this.listQuery.QryState,u_SAP_ID:this.listQuery.u_SAP_ID }).then((res) => {
         let resul = res.data.data;
         for (let i = 0; i < resul.length; i++) {
           arr[i] = [];
-          arr[i].label = `服务号:${resul[i].serviceOrderId}`;
-          arr[i].key1 = `${resul[i].serviceOrderId}`;
-          arr[i].key = `${resul[i].serviceOrderId}`;
+          arr[i].label = `服务号:${resul[i].u_SAP_ID}`;
+          arr[i].key1 = `${resul[i].u_SAP_ID}`;
+          arr[i].key = `${resul[i].u_SAP_ID}`;
           arr[i].children = [];
           resul[i].materialTypes.map((item1) => {
             arr[i].children.push({
               label: `物料类型号:${item1}`,
-              key: `${resul[i].serviceOrderId}`,
-              key1: `${resul[i].serviceOrderId}&${item1}`,
+              key: `${resul[i].u_SAP_ID}`,
+              key1: `${resul[i].u_SAP_ID}&${item1}`,
               id: item1,
             });
           });

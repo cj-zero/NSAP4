@@ -240,7 +240,7 @@ export default {
       key: 1, // table key
       sure: 0,
       formTheadOptions: [
-        { name: "id", label: "服务单ID", align: "left", width: "100px" },
+        // { name: "id", label: "服务单ID", align: "left", width: "100px" },
         { name: "customerId", label: "客户代码", align: "left", width: '100' },
         { name: "status", label: "状态", align: "left", width: "80px" },
         { name: "customerName", label: "客户名称", align: "left", width: '220' },
@@ -454,6 +454,16 @@ export default {
         case "btnAdd":
           this.handleCreate();
           break;
+        case "btnView":
+          if (!this.multipleSelection.id) {
+            this.$message({
+              message: "请选择需要查看的数据",
+              type: "warning"
+            });
+            return;
+          }
+          this.handleView(this.multipleSelection)
+          break
         case "btnDetail":
           this.open();
           break;
@@ -621,6 +631,9 @@ export default {
         //   this.$refs["dataForm"].clearValidate();
         // });
       });
+    },
+    handleView (row) {
+      this.openTree(row.id)
     },
     closeDia(a) {
             if (a === 1) {

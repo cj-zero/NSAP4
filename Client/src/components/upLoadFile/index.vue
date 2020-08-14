@@ -131,18 +131,22 @@ export default {
 <style lang="scss" scoped>
 .img{
   ::v-deep .el-upload--picture-card {
-  width: 70px !important;
-  height: 70px !important;
-  line-height: 70px !important;
-}
-::v-deep .el-upload-list__item {
-  width: 70px;
-  height: 70px;
-  line-height: 70px;
-  // ::-webkit-scrollbar {
-  //   width: 1px !important;
-  // }
-}
+    width: 70px !important;
+    height: 70px !important;
+    line-height: 70px !important;
+  }
+  ::v-deep .el-upload-list__item {
+    width: 70px;
+    height: 70px;
+    line-height: 70px;
+    // ::-webkit-scrollbar {
+    //   width: 1px !important;
+    // }
+  }
+  ::v-deep .el-icon-check {
+    position: absolute;
+    right: 14px;
+  }
 }
 
 

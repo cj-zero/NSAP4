@@ -4,7 +4,7 @@
     <el-row :gutter="4">
       <el-col :span="2">
         <el-form-item label="服务ID" >
-          <el-input v-model="listQuery.QryServiceOrderId" @keyup.enter.native='onSubmit'></el-input>
+          <el-input v-model="listQuery.u_SAP_ID" @keyup.enter.native='onSubmit'></el-input>
         </el-form-item>
       </el-col>
       <el-col :span="3">
@@ -89,7 +89,7 @@ export default {
         key: undefined,
         appId: undefined,
         Name: "", //	Description
-        QryServiceOrderId: "", //- 查询服务ID查询条件
+        u_SAP_ID: "", //- 查询服务ID查询条件
         QryState: 1, //- 呼叫状态查询条件
         QryCustomer: "", //- 客户查询条件
         QryManufSN: "", // - 制造商序列号查询条件

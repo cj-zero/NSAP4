@@ -294,7 +294,7 @@ export default {
       ],
       ChildheadOptions: [
         // { name: "serviceOrderId", label: "服务单号", ifFixed: true },
-        { name: "id", label: "工单号",align:'right'  },
+        { name: "workOrderNumber", label: "工单号",align:'right'  },
         { name: "priority", label: "优先级" ,align:'left' },
         { name: "fromType", label: "呼叫类型", width: "100px",align:'left'  },
         // { name: "customerId", label: "客户代码" },

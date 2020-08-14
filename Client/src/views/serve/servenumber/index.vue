@@ -274,7 +274,7 @@ export default {
       this.listLoading = true;
       callservesure.SerialList(this.listQuery).then(response => {
         this.list = response.data;
-        this.total = response.count;
+        this.total = response.count;      
         this.listLoading = false;
       });
     },

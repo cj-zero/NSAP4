@@ -12,7 +12,7 @@
         </el-col>
         <el-col :span="8">
           <el-form-item label="服务ID">
-            <el-input size="small" v-model="form.id"></el-input>
+            <el-input size="small" v-model="form.u_SAP_ID"></el-input>
 
           </el-form-item>
         </el-col>
