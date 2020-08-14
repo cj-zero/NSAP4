@@ -527,7 +527,7 @@ namespace OpenAuth.App
             try
             {
                 var obj = request.MapTo<ServiceWorkOrder>();
-                var ServiceWorkOrders = UnitWork.Find<ServiceWorkOrder>(u => u.ServiceOrderId.Equals(request.ServiceOrderId)).OrderByDescending(u => u.CreateTime).ToList();
+                var ServiceWorkOrders = UnitWork.Find<ServiceWorkOrder>(u => u.ServiceOrderId.Equals(request.ServiceOrderId)).OrderByDescending(u => u.Id).ToList();
                 var WorkOrderNumber = ServiceWorkOrders.First().WorkOrderNumber;
                 int num = Convert.ToInt32(WorkOrderNumber.Substring(WorkOrderNumber.IndexOf("-") + 1));
                 obj.WorkOrderNumber = WorkOrderNumber.Substring(0, WorkOrderNumber.IndexOf("-") + 1) + (num + 1);
