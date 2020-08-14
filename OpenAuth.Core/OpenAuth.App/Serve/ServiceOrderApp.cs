@@ -597,7 +597,7 @@ namespace OpenAuth.App
             var workorderlist = await query.OrderBy(r => r.a.CreateTime).Select(q => new
             {
                 ServiceOrderId = q.b.Id,
-                MaterialType = q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))
+                MaterialType = q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))==null? "": q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))
             }).Distinct().ToListAsync();
 
             var grouplistsql = from c in workorderlist
