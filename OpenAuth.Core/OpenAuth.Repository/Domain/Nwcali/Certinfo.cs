@@ -53,10 +53,46 @@ namespace OpenAuth.Repository.Domain
         [Description("证书基础信息路径")]
         public string BaseInfoPath { get; set; }
         /// <summary>
+        /// 设备型号
+        /// </summary>
+        [Description("设备型号")]
+        public string Model { get; set; }
+        /// <summary>
+        /// 设备出厂编号
+        /// </summary>
+        [Description("设备出厂编号")]
+        public string Sn { get; set; }
+        /// <summary>
+        /// 资产编号
+        /// </summary>
+        [Description("资产编号")]
+        public string AssetNo { get; set; }
+        /// <summary>
+        /// 校准人
+        /// </summary>
+        [Description("校准人")]
+        public string Operator { get; set; }
+        /// <summary>
+        /// 校准人Id
+        /// </summary>
+        [Description("校准人Id")]
+        public string OperatorId { get; set; }
+        /// <summary>
         /// 创建时间
         /// </summary>
         [Description("创建时间")]
         public System.DateTime CreateTime { get; set; }
+
+        /// <summary>
+        /// 校准日期
+        /// </summary>
+        [Description("校准日期")]
+        public DateTime? CalibrationDate { get; set; }
+        /// <summary>
+        /// 复校时间
+        /// </summary>
+        [Description("复校时间")]
+        public DateTime? ExpirationDate { get; set; }
 
         /// <summary>
         /// 工作流程绑定Id
