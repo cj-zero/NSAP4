@@ -12,6 +12,6 @@ namespace OpenAuth.App.Serve.Request
         /// 呼叫状态查询条件 0:全部 1待确认 2已确认
         /// </summary>
         [Required]
-        public string? QryState { get; set; }
+        public string QryState { get; set; }
     }
 }

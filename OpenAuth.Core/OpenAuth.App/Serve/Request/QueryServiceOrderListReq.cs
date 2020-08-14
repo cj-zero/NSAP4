@@ -51,7 +51,7 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 手机号查询条件
         /// </summary>
-        public string? ContactTel { get; set; }
+        public string ContactTel { get; set; }
         /// <summary>
         /// 物料类别（多选)
         /// </summary>
