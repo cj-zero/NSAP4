@@ -81,7 +81,7 @@
         </el-col>
         <el-col :span="4" style="margin-left: 10px;">
           <el-form-item label="联系电话">
-            <el-input  v-model="form.QryTechName" @keyup.enter.native='onSubmit'></el-input>
+            <el-input  v-model="form.ContactTel" @keyup.enter.native='onSubmit'></el-input>
             <!-- <el-input  v-model="form.QryProblemType" @keyup.enter.native='onSubmit'></el-input> -->
           </el-form-item>
         </el-col>
@@ -129,6 +129,7 @@ export default {
         QryTechName: "", // - 工单技术员
         QryProblemType: "", //QryProblemType - 问题类型
         QryMaterialTypes: "", //物料类别（多选)
+        ContactTel: "" // 手机号码
       },
       callStatus: [
         { value: '', label: '全部' },

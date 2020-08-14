@@ -283,6 +283,7 @@
             :serviceOrderId="serviceOrderId"
             :propForm="propForm"
             ref="formAdd"
+            :formName="formName"
           ></formAdd>
         </el-col>
       </el-row>
