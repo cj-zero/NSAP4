@@ -614,13 +614,15 @@ namespace OpenAuth.App
             var workorderlist = await query.OrderBy(r => r.a.CreateTime).Select(q => new
             {
                 ServiceOrderId = q.b.Id,
+                q.b.U_SAP_ID,
                 MaterialType = q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))==null? "": q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))
             }).Distinct().ToListAsync();
 
             var grouplistsql = from c in workorderlist
-                               group c by c.ServiceOrderId into g
+                               group c by c.U_SAP_ID into g
+                               let ServiceOrderId = g.Select(a => a.ServiceOrderId).First()
                                let MTypes = g.Select(o => o.MaterialType.ToString()).ToArray()
-                               select new { ServiceOrderId = g.Key, MaterialTypes = MTypes };
+                               select new { U_SAP_ID = g.Key, ServiceOrderId = ServiceOrderId, MaterialTypes = MTypes };
             var grouplist = grouplistsql.ToList();
 
             result.Data = grouplist;
