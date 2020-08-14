@@ -619,10 +619,10 @@ namespace OpenAuth.App
             }).Distinct().ToListAsync();
 
             var grouplistsql = from c in workorderlist
-                               group c by c.U_SAP_ID into g
-                               let ServiceOrderId = g.Select(a => a.ServiceOrderId).First()
+                               group c by c.ServiceOrderId into g
+                               let U_SAP_ID = g.Select(a => a.U_SAP_ID).First()
                                let MTypes = g.Select(o => o.MaterialType.ToString()).ToArray()
-                               select new { U_SAP_ID = g.Key, ServiceOrderId = ServiceOrderId, MaterialTypes = MTypes };
+                               select new { ServiceOrderId = g.Key, U_SAP_ID, MaterialTypes = MTypes };
             var grouplist = grouplistsql.ToList();
 
             result.Data = grouplist;
@@ -825,6 +825,7 @@ namespace OpenAuth.App
                 q.a.CurrentUser,
                 q.a.CurrentUserNsapId,
                 q.b.U_SAP_ID,
+                q.a.WorkOrderNumber
             });
 
 
@@ -872,6 +873,7 @@ namespace OpenAuth.App
                     s.NewestContactTel,
                     s.Status,
                     s.CreateTime,
+                    s.U_SAP_ID,
                     MaterialInfo = s.ServiceWorkOrders.Where(o => o.ServiceOrderId == s.Id && o.CurrentUserId == req.TechnicianId).Select(o => new
                     {
                         o.Status
@@ -898,6 +900,7 @@ namespace OpenAuth.App
                 s.NewestContactTel,
                 s.Status,
                 s.CreateTime,
+                s.U_SAP_ID,
                 Distance = (req.Latitude == 0 || s.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
                 WorkOrderStatus = s.MaterialInfo.Select(s => s.Status).Distinct().FirstOrDefault()
             }).ToList();
@@ -1257,6 +1260,7 @@ namespace OpenAuth.App
                     s.ManufacturerSerialNumber,
                     s.MaterialCode,
                     s.Status,
+                    s.WorkOrderNumber,
                     MaterialType = s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-"))
                 });
             var result = new TableData();
@@ -2006,6 +2010,7 @@ namespace OpenAuth.App
                     TerminalCustomer = u.TerminalCustomer,
                     NewestContactTel = u.NewestContactTel,
                     ContactTel = u.ContactTel,
+                    u.U_SAP_ID,
                     ManufacturerSerialNumber = ServiceWorkOrderModel.Select(u => new { u.ManufacturerSerialNumber }).ToList(),
                     MaterialCode = ServiceWorkOrderModel.Select(u => new { u.MaterialCode }).ToList(),
                     Description = FirstServiceWorkOrder.TroubleDescription + FirstServiceWorkOrder.ProcessDescription
