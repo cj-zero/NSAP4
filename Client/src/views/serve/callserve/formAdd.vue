@@ -66,13 +66,13 @@
                 @focus="handleIconClick(formList[0], 0)"
                 v-model="formList[0].manufacturerSerialNumber"
                 readonly
-                :disabled="!form.customerId || isOther(formList[0].manufacturerSerialNumber)"
+                :disabled="form.selectSerNumberDisabled || isOther(formList[0].manufacturerSerialNumber)"
                 size="small"
               >
                 <!-- <el-button size="mini" slot="append" icon="el-icon-search" @click="handleIconClick(formList[0], 0)"></el-button> -->
                 <el-button
                   size="mini"
-                  :disabled="!form.customerId || isOther(formList[0].manufacturerSerialNumber)"
+                  :disabled="form.selectSerNumberDisabled || isOther(formList[0].manufacturerSerialNumber)"
                   slot="append"
                   icon="el-icon-search"
                   @click="handleIconClick(formList[0], 0)"

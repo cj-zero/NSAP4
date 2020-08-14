@@ -525,7 +525,8 @@ export default {
       },
       needPos: false,
       dialogCallId: false, // 最近十个服务单弹窗
-      CallList: []
+      CallList: [], // 最近十个服务单列表
+      selectSerNumberDisabled: true // 用于选择客户代码后，工单序列号是否可以操作
     };
   },
   computed: {
@@ -596,7 +597,9 @@ export default {
     "form.customerId": {
       handler(val) {
         // if (val && this.isCreate) {
-          
+        if (!val) {
+          this.selectSerNumberDisabled = true
+        }
         // }
         this.getPartnerInfo(val);
       },
@@ -1056,9 +1059,10 @@ export default {
           type: "error"
         });
       } else {
-         callformPartner.getTableList({ code: val.cardCode }).then(res => {
+        this.selectSerNumberDisabled = false
+        callformPartner.getTableList({ code: val.cardCode }).then(res => {
           this.CallList = res.result;
-            this.dialogCallId = true
+          this.dialogCallId = true
           // this.newestNotCloseOrder=res.reault.newestNotCloseOrder
           // this.newestOrder=res.reault.newestNotCloseOrder
         });

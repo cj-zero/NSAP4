@@ -178,6 +178,7 @@ export default {
     },
     rowClick(row) {
       this.multipleSelection = row;
+      console.log(this.multipleSelection, 'row')
       // this.$refs.mainTable.clearSelection();
       // this.$refs.mainTable.toggleRowSelection(row);
     },
@@ -191,7 +192,7 @@ export default {
       console.log("you click:" + domId);
       switch (domId) {
         case "btnAdd":
-          this.handleCreate();
+          this.handleCreate(this.multipleSelection);
           break;
         case "btnEdit":
           if (!this.multipleSelection) {
@@ -287,6 +288,7 @@ export default {
       this.$refs["dataForm"].validate(valid => {
         if (valid) {
           this.changeSwitch();
+          this.multipleSelection && (this.temp.parentId = this.multipleSelection.id)
           problemtypes.add(this.temp).then(() => {
             this.getList();
             this.dialogFormVisible = false;
@@ -316,6 +318,7 @@ export default {
         if (valid) {
           this.changeSwitch();
           const tempData = Object.assign({}, this.temp);
+          // let { parentId, id } = this.multipleSelection
           problemtypes.update(tempData).then(() => {
             this.getList();
 

@@ -76,11 +76,11 @@ export default {
     return {
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
-      defaultFormThead: ["sltCode", "status", "subject"],
+      defaultFormThead: ["sltCode", "symptom", "subject"],
       formTheadOptions: [
         { name: "id", label: "ID" },
         { name: "sltCode", label: "编号" },
-        { name: "status", label: "症状" },
+        { name: "symptom", label: "症状" },
         { name: "subject", label: "解决方案" }
       ],
       // this.dialogTable = true;
@@ -88,7 +88,7 @@ export default {
       headLabel: {
         id: "ID",
         sltCode: "编号",
-        status: "症状",
+        symptom: "症状",
         subject: "解决方案"
       },
       headWidth: {
