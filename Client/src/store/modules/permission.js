@@ -1,4 +1,5 @@
 import { constantRouterMap } from '@/router'
+import { deepClone } from '@/utils/index'
 import Layout from '@/views/layout/Layout'
 const groupRoutes = (data, dispatch) => {
   const parentPath = data.item.url.indexOf('?') > -1 ? data.item.url.split('?')[0] : data.item.url
@@ -39,7 +40,8 @@ const groupRouterLists = (data) => {
   let children = []
   data.length > 0 && data.forEach(item => {
     if(item.component && item.component.name && item.component.name === 'layout'){
-      let obj = {        
+      let obj = {
+        component: () => import('@/views' + item.path.toLowerCase()),
         path: item.children && item.children.length > 0 ? `${item.path}/${item.meta.id}` : item.path,
         name: item.name,
         children: item.children,
@@ -50,8 +52,9 @@ const groupRouterLists = (data) => {
     }
     arr.push(item)
   })
-  arr = arr.concat(constantRouterMap)
-  arr.length > 0 && constantRouterMap.forEach(item => {
+  
+  arr = arr.concat(deepClone(constantRouterMap))
+  arr.length > 0 && arr.forEach(item => {
     if(item.name === 'layout'){
       item.children = item.children.concat(children)
     }
@@ -96,8 +99,16 @@ const permission = {
           await data.modules.forEach((value) => {
             newPaths.push(groupRoutes(value, dispatch))
           })
-
-          commit('SET_ROUTERS', { addRouters: newPaths, routers: groupRouterLists(newPaths, dispatch) })
+          console.log(newPaths, 'NEWPaths')
+          const routers = groupRouterLists(newPaths, dispatch)
+          const addrouters = routers.find(item => item.name === 'layout').children.filter(itemF=>!constantRouterMap.find(item => item.name === 'layout').children.some(ele=>ele.path===itemF.path))
+          newPaths.length > 0 && newPaths.forEach(item => {
+            if(item.path.indexOf('/iframePage') <= -1 && item.children.length <= 0){
+              addrouters.filter(router => router.path === item.path)
+              item.children = addrouters.filter(router => router.path === item.path)
+            }
+          })
+          commit('SET_ROUTERS', { addRouters: newPaths, routers: routers })
           commit('SAVE_KEEP_ALIVE_DATA', newPaths)
           resolve(newPaths)
         })()
