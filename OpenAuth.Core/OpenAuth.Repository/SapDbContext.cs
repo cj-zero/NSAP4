@@ -32,6 +32,9 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<OINS>().HasKey(o => o.insID);
             modelBuilder.Entity<CTR1>().HasKey(o => new { o.ContractID, o.Line });
             #endregion
+            #region 物料编码
+            modelBuilder.Entity<OITM>().HasKey(o => o.ItemCode);
+            #endregion
 
         }
         //public virtual DbSet<AAC1> Aac1s { get; set; }
@@ -1349,7 +1352,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<OITB> Oitbs { get; set; }
         //public virtual DbSet<OITG> Oitgs { get; set; }
         //public virtual DbSet<OITL> Oitls { get; set; }
-        //public virtual DbSet<OITM> Oitms { get; set; }
+        public virtual DbSet<OITM> Oitms { get; set; }
         //public virtual DbSet<OITR> Oitrs { get; set; }
         //public virtual DbSet<OITT> Oitts { get; set; }
         //public virtual DbSet<OITW> Oitws { get; set; }
