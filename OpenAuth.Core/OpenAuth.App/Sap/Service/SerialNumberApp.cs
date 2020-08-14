@@ -61,7 +61,7 @@ namespace OpenAuth.App.Sap.Service
                 var qqq = UnitWork.Find<ServiceOins>(null)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), q => q.manufSN.Contains(req.ManufSN))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), q => q.customer.Contains(req.CardCode))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), q => q.custmrName.Contains(req.CardName))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), q => q.customer.Contains(req.CardName) || q.custmrName.Contains(req.CardName))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), q => q.itemCode.Contains(req.ItemCode))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ItemName), q => q.itemCode.Contains(req.ItemName)).Select(q => new
                 {

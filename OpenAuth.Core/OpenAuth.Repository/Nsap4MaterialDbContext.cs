@@ -15,5 +15,6 @@ namespace OpenAuth.Repository
             //当主键为联合主键时，需要把这里的内容拷贝到对应的位置
         }
         public virtual DbSet<MaterialType> Materialtypes { get; set; }
+        public virtual DbSet<ServiceOins> ServiceOins { get; set; }
     }
 }
