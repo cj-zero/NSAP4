@@ -107,6 +107,7 @@
             :width="fruit.width"
           >
             <template slot-scope="scope">
+              <span v-if="fruit.name === 'order'">{{ scope.$index + 1 }}</span>
               <el-link
                 v-if="fruit.name === 'id'"
                 type="primary"
@@ -241,24 +242,19 @@ export default {
       sure: 0,
       formTheadOptions: [
         // { name: "id", label: "服务单ID", align: "left", width: "100px" },
+        { name: 'order', label: '序号', align: 'left', width: '100' },
         { name: "customerId", label: "客户代码", align: "left", width: '100' },
         { name: "status", label: "状态", align: "left", width: "80px" },
         { name: "customerName", label: "客户名称", align: "left", width: '220' },
         { name: "createTime", label: "创建日期", align: "left", width: '100' },
         { name: "contacter", label: "联系人", align: "left", width: '100' },
+        { name: "contactTel",label: "电话号码",align: "left",width: "120px" },
         { name: "services", label: "服务内容", align: "left", width: '120' },
-        {
-          name: "contactTel",
-          label: "电话号码",
-          align: "left",
-          width: "120px"
-        },
         { name: "supervisor", label: "售后主管", align: "left", width: '100' },
         { name: "salesMan", label: "销售员", align: "left", width: '100' },
         { name: "manufSN", label: "制造商序列号", align: "left" },
         { name: "itemCode", label: "物料编码", align: "left" }
       ],
-
       tableKey: 0,
       formValue: {},
       list: null,
