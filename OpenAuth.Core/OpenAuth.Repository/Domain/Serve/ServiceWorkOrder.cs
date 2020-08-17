@@ -236,9 +236,5 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("技术员留言消息")]
         public virtual List<ServiceOrderMessage> ServiceOrderMessages { get; set; }
-
-
-
-
     }
 }
