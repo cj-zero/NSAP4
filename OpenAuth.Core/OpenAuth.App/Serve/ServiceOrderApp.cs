@@ -624,7 +624,7 @@ namespace OpenAuth.App
                                let MTypes = g.Select(o => o.MaterialType.ToString()).ToArray()
                                select new { ServiceOrderId = g.Key, U_SAP_ID, MaterialTypes = MTypes };
             var grouplist = grouplistsql.ToList();
-
+            grouplist = grouplist.OrderBy(s => s.U_SAP_ID).ToList();
             result.Data = grouplist;
             return result;
         }
