@@ -29,7 +29,7 @@
           <el-row :gutter="10">
             <el-col :span="3">
               <el-form-item label="服务ID" >
-                <el-input v-model="listQuery.QryServiceOrderId" @keyup.enter.native='onSubmit'></el-input>
+                <el-input v-model="listQuery.QryU_SAP_ID" @keyup.enter.native='onSubmit'></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="3">
@@ -270,6 +270,7 @@ export default {
         key: undefined,
         appId: undefined,
         QryServiceOrderId: "", //查询服务ID查询条件
+        QryU_SAP_ID: "",
         QryState: 1, //呼叫状态查询条件
         QryCustomer: "", //客户查询条件
         QryManufSN: "", // 制造商序列号查询条件
