@@ -94,7 +94,7 @@ namespace OpenAuth.App.nwcali
                     AssetRemarks = L.AssetRemarks,
                     AssetImage = L.AssetImage,
                     AssetCreateTime = L.AssetCreateTime,
-                    AssetCategorys = CalculateMetrological(L.AssetCategorys,L.AssetCategory)
+                    AssetCategorys = CalculateMetrological(L.AssetCategorys)
         });
 
             result.Count = objs.Count();
@@ -293,42 +293,35 @@ namespace OpenAuth.App.nwcali
         /// 计算计量特性
         /// </summary>
         /// <param name="obj"></param>
-        /// <param name="AssetCategory"></param>
         /// <returns></returns>
-        public static string CalculateMetrological(List<AssetCategory> obj,string AssetCategory)
+        public static string CalculateMetrological(List<AssetCategory> obj)
         {
             string Metrological = "";
             foreach (var item in obj.OrderBy(u=>u.CategoryNumber))
             {
-                string CategoryNondeterminacy = Convert.ToDecimal(item.CategoryNondeterminacy).ToString("G0");
-                int r = 0;
-                for (int i = 0; i < CategoryNondeterminacy.Length; i++)
-                {
-                    if (CategoryNondeterminacy.Substring(i, 1) != "." && Convert.ToInt32(CategoryNondeterminacy.Substring(i, 1)) > 0)
-                    {
-                        if (CategoryNondeterminacy.Contains("."))
-                        {
-                            int s = Convert.ToInt32(CategoryNondeterminacy.Substring(0, CategoryNondeterminacy.IndexOf(".")));
-                            if (s > 0) i = i + 1;
-                        }
-                        r = i + 1;
-                        break;
-                    }
-                }
-                //if (AssetCategory == "万用表")
-                //{
-
-                //}
-                //else 
-                //{ }
                 Metrological += item.CategoryNumber;
                 if (item.CategoryType.Contains("绝对不确定度"))
                 {
-                    Metrological+="(" + Convert.ToDecimal(item.CategoryOhms).ToString("G0") + "±" + Convert.ToDecimal(CategoryNondeterminacy).ToString("E" + (CategoryNondeterminacy.ToString().Length - r)) + ")Ω,(k="+ Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n";
+                    string CategoryNondeterminacy = Convert.ToDecimal(item.CategoryNondeterminacy).ToString("G0");
+                    int r = 0;
+                    for (int i = 0; i < CategoryNondeterminacy.Length; i++)
+                    {
+                        if (CategoryNondeterminacy.Substring(i, 1) != "." && Convert.ToInt32(CategoryNondeterminacy.Substring(i, 1)) > 0)
+                        {
+                            if (CategoryNondeterminacy.Contains("."))
+                            {
+                                int s = Convert.ToInt32(CategoryNondeterminacy.Substring(0, CategoryNondeterminacy.IndexOf(".")));
+                                if (s > 0) i = i + 1;
+                            }
+                            r = i + 1;
+                            break;
+                        }
+                    }
+                    Metrological+="(" + Convert.ToDecimal(item.CategoryOhms).ToString("G0") + "±" + Convert.ToDecimal(CategoryNondeterminacy).ToString("E" + (CategoryNondeterminacy.ToString().Length - r)) + ")Ω (k="+ Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n";
                 }
                 else if (item.CategoryType.Contains("相对不确定度"))
                 {
-                    Metrological += Convert.ToDecimal(item.CategoryOhms).ToString("G0") + "Ω,Urel="+ Convert.ToDecimal(item.CategoryNondeterminacy).ToString("G0") + "ppm,(k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n";
+                    Metrological += Convert.ToDecimal(item.CategoryOhms).ToString("G0") + "Ω,"+ Convert.ToDecimal(item.CategoryNondeterminacy).ToString("G0") + "ppm (k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n";
                 }
             }
 
