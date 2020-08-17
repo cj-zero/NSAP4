@@ -371,7 +371,7 @@ namespace OpenAuth.App
             var result = new TableData();
             var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceOrderSNs)
                 .Include(s => s.ServiceWorkOrders)
-                .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.QryServiceOrderId)))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryU_SAP_ID), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.QryU_SAP_ID)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryState) && Convert.ToInt32(req.QryState) > 0, q => q.Status.Equals(Convert.ToInt32(req.QryState)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.CustomerId.Contains(req.QryCustomer) || q.CustomerName.Contains(req.QryCustomer))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceOrderSNs.Any(a => a.ManufSN.Contains(req.QryManufSN)))
@@ -598,7 +598,7 @@ namespace OpenAuth.App
                         from b in ab.DefaultIfEmpty()
                         select new { a, b };
 
-            query = query.WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.b.U_SAP_ID.Equals(Convert.ToInt32(req.QryServiceOrderId)))
+            query = query.WhereIf(!string.IsNullOrWhiteSpace(req.QryU_SAP_ID), q => q.b.U_SAP_ID.Equals(Convert.ToInt32(req.QryU_SAP_ID)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.a.Status.Equals(Convert.ToInt32(req.QryState)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.b.CustomerId.Contains(req.QryCustomer) || q.b.CustomerName.Contains(req.QryCustomer))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.a.ManufacturerSerialNumber.Contains(req.QryManufSN))
@@ -719,7 +719,7 @@ namespace OpenAuth.App
             var result = new TableData();
 
             var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceWorkOrders)
-                .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.QryServiceOrderId)))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryU_SAP_ID), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.QryU_SAP_ID)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId), q => q.ServiceWorkOrders.Any(a => a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId))))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.ServiceWorkOrders.Any(a => a.Status.Equals(Convert.ToInt32(req.QryState))))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.CustomerId.Contains(req.QryCustomer) || q.CustomerName.Contains(req.QryCustomer))

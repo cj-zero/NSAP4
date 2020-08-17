@@ -57,5 +57,10 @@ namespace OpenAuth.App.Request
         /// </summary>
         public List<string> QryMaterialTypes { get; set; }
 
+        /// <summary>
+        /// U_SAP_ID
+        /// </summary>
+        public string QryU_SAP_ID { get; set; }
+
     }
 }
