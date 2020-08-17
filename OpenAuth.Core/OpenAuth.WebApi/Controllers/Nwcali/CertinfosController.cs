@@ -33,7 +33,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> LoadApprover(QueryCertApproverListReq req)
+        public async Task<TableData> LoadApprover([FromQuery]QueryCertApproverListReq req)
         {
             return await _app.LoadApprover(req);
         }

@@ -10,12 +10,13 @@ using Infrastructure.Extensions;
 using Infrastructure.Wrod;
 using Microsoft.AspNetCore.Server.IIS.Core;
 using Microsoft.EntityFrameworkCore;
+using NPOI.SS.Formula.Atp;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
-
+using Org.BouncyCastle.Ocsp;
 
 namespace OpenAuth.App
 {
@@ -49,10 +50,12 @@ namespace OpenAuth.App
             {
                 objs = objs.Where(u => u.Id.Contains(request.key));
             }
-            if (!string.IsNullOrEmpty(request.CertNo))
-            {
-                objs = objs.Where(u => u.CertNo.Contains(request.CertNo));
-            }
+            objs = objs.WhereIf(!string.IsNullOrEmpty(request.CertNo), u => u.CertNo.Contains(request.CertNo))
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.AssetNo), u => u.AssetNo.Contains(request.AssetNo))
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.Model), u => u.Model.Contains(request.Model))
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.Sn), u => u.Sn.Contains(request.Sn))
+                       .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.CalibrationDate >= request.CalibrationDateFrom && u.CalibrationDate <= request.CalibrationDateTo)
+                ;
             var list = await objs.OrderByDescending(u => u.CreateTime)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
@@ -100,7 +103,12 @@ namespace OpenAuth.App
             var user = _auth.GetCurrentUser();
             var objs = UnitWork.Find<Certinfo>(null).Include(c => c.FlowInstance).AsQueryable();
             objs = objs
-                .Where( o => o.FlowInstance.MakerList == "1" || o.FlowInstance.MakerList.Contains(user.User.Id)) //待办事项
+                .Where(o => o.FlowInstance.MakerList == "1" || o.FlowInstance.MakerList.Contains(user.User.Id)) //待办事项
+                .WhereIf(!string.IsNullOrEmpty(request.CertNo), u => u.CertNo.Contains(request.CertNo))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.AssetNo), u => u.AssetNo.Contains(request.AssetNo))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.Model), u => u.Model.Contains(request.Model))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.Sn), u => u.Sn.Contains(request.Sn))
+                       .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.CalibrationDate >= request.CalibrationDateFrom && u.CalibrationDate <= request.CalibrationDateTo)
                 ;
             result.Count = await objs.CountAsync();
 
