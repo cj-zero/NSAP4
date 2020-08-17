@@ -1,56 +1,12 @@
 <template>
-<div>
-  <el-row type="flex" justify="space-around">
-    <el-col :span="10">
-      <p>此用户最近10个服务单</p>
-      <el-table
-        ref="mainTable"
-        class="table_label"
-        :data="toCallList.newestOrder"
-        v-loading="listLoading"
-        border
-        max-height="400px"
-        fit
-        style="width: 100%;"
-        highlight-current-row>
-        <el-table-column
-          show-overflow-tooltip
-          v-for="(fruit,index) in orderList"
-          :align="fruit.align"
-          :key="`ind${index}`"
-          header-align="left"
-          :width="fruit.width"
-          :fixed="fruit.fixed"
-          style="background-color:silver;"
-          :label="fruit.label">
-          <template slot-scope="scope">
-            <el-link
-              v-if="fruit.name === 'id'"
-              type="primary"
-              @click="openTree(scope.row.id)"
-            >{{ scope.row.id }}</el-link>
-            <span v-if="fruit.name === 'createTime'">
-              {{ scope.row.createTime }}
-            </span>
-            <!-- <span
-              v-if="fruit.name === 'status'"
-              :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-            >{{statusOptions[scope.row[fruit.name]].label}}</span>
-            <span v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
-            <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
-            <span
-              v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
-            >{{scope.row[fruit.name]}}</span> -->
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-col>
-    <el-col :span="10">
-      <p>此客户未解决的10个服务单</p>
+  <div>
+    <el-row type="flex" justify="center">
+      <el-col :span="10">
+        <p>此用户最近10个服务单</p>
         <el-table
           ref="mainTable"
           class="table_label"
-          :data="toCallList.newestNotCloseOrder"
+          :data="toCallList.newestOrder"
           v-loading="listLoading"
           border
           max-height="400px"
@@ -76,36 +32,21 @@
               <span v-if="fruit.name === 'createTime'">
                 {{ scope.row.createTime }}
               </span>
-                  <!-- <span
-                    v-if="fruit.name === 'status'"
-                    :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-                  >{{statusOptions[scope.row[fruit.name]].label}}</span>
-                  <span v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
-                  <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
-                  <span
-                    v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
-                  >{{scope.row[fruit.name]}}</span> -->
+              <!-- <span
+                v-if="fruit.name === 'status'"
+                :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
+              >{{statusOptions[scope.row[fruit.name]].label}}</span>
+              <span v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
+              <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
+              <span
+                v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
+              >{{scope.row[fruit.name]}}</span> -->
             </template>
           </el-table-column>
-      </el-table>
-    </el-col>
-  </el-row>
-        <!-- <pagination
-          v-show="toCallList.newestNotCloseOrder.length>0"
-          :total="toCallList.newestNotCloseOrder.length"
-          :page.sync="listQuery.page"
-          :limit.sync="listQuery.limit"
-          @pagination="handleChange"
-        /> -->
-    <!-- <pagination
-          v-show="toCallList.newestOrder.length>0"
-          :total="toCallList.newestOrder.length"
-          :page.sync="listQuery1.page"
-          :limit.sync="listQuery1.limit"
-          @pagination="handleChange1"
-        /> -->
-</div>
-
+        </el-table>
+      </el-col>
+    </el-row>
+  </div>
 </template>
 
 <script>
@@ -126,7 +67,7 @@ export default {
         key: undefined,
         appId: undefined
       },
-               listQuery1: {
+      listQuery1: {
         // 查询条件
         page: 1,
         limit: 10,

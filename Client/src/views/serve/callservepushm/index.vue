@@ -185,7 +185,7 @@
         title="选择派单对象"
         center
         :modal-append-to-body="false"
-        width="500px"
+        width="550px"
       >
         <el-table :data="tableData" border @row-click="setRadio" style="width: 100%">
           <el-table-column align="center">
@@ -202,6 +202,7 @@
           :page.sync="listQuery2.page"
           :limit.sync="listQuery2.limit"
           @pagination="handleCurrentChange2"
+          layout="total, prev, pager, next"
         />
         <span slot="footer" class="dialog-footer">
           <el-button @click="cancelPost">取 消</el-button>

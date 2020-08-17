@@ -14,9 +14,9 @@
             :inline-message="true"
             :show-message="false"
           >
-            <div
+            <!-- <div
               style="font-size:22px;color:#67C23A;text-align:center;height:40px;line-height:35px;border-bottom:1px solid silver;margin-bottom:10px;"
-            >{{formName}}呼叫服务单</div>
+            >{{formName}}呼叫服务单</div> -->
             <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="8">
                 <el-form-item label="客户代码" prop="customerId">
@@ -821,9 +821,9 @@ export default {
         }
         this.propForm = targetList
         console.log(this.propForm, 'setFormProp')
-      }).catch((err) => {
+      }).catch(() => {
         console.log(promiseList, 'promiseList')
-        this.$message.error(JSON.stringify(err))
+        this.$message.error('查询序列号失败')
       })
     },
     async getServeImg(val) {
@@ -966,7 +966,7 @@ export default {
           this.cntctPrsnList = res.result.cntctPrsnList;
           console.log(this.cntctPrsnList, 'this.cntctPrsnList')
           this.form.supervisor = res.result.techName;
-          if (this.cntctPrsnList && this.cntctPrsnList.length && this.formName === '确认') {
+          if (this.cntctPrsnList && this.cntctPrsnList.length) {
             let firstValue = res.result.cntctPrsnList[0]
             let { tel1, tel2, cellolar, name } = firstValue
             console.log(name, 'name')
