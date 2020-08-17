@@ -19,6 +19,8 @@ using Microsoft.Extensions.Options;
 using Npoi.Mapper;
 using DotNetCore.CAP;
 using System.Threading;
+using Magicodes.ExporterAndImporter.Excel;
+using Magicodes.ExporterAndImporter.Core;
 
 namespace OpenAuth.App
 {
@@ -785,7 +787,7 @@ namespace OpenAuth.App
                         from c in ac.DefaultIfEmpty()
                         select new { a, b, c };
 
-            query = query.WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceOrderId), q => q.b.U_SAP_ID.Equals(Convert.ToInt32(req.QryServiceOrderId)))
+            query = query.WhereIf(!string.IsNullOrWhiteSpace(req.QryU_SAP_ID), q => q.b.U_SAP_ID.Equals(Convert.ToInt32(req.QryU_SAP_ID)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.a.Status.Equals(Convert.ToInt32(req.QryState)))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.b.CustomerId.Contains(req.QryCustomer) || q.b.CustomerName.Contains(req.QryCustomer))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.a.ManufacturerSerialNumber.Contains(req.QryManufSN))
@@ -2054,5 +2056,131 @@ namespace OpenAuth.App
             return result;
         }
 
+
+        /// <summary>
+        /// 导出excel
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<byte[]> ExportExcel(QueryServiceOrderListReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var query = UnitWork.Find<ServiceOrder>(null)
+                .Include(s => s.ServiceWorkOrders).ThenInclude(c=>c.ProblemType)
+                .Include(a=>a.ServiceWorkOrders).ThenInclude(b=>b.Solution)
+                   .WhereIf(!string.IsNullOrWhiteSpace(req.QryU_SAP_ID), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.QryU_SAP_ID)))
+                   .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId), q => q.ServiceWorkOrders.Any(a => a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId))))
+                   .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.ServiceWorkOrders.Any(a => a.Status.Equals(Convert.ToInt32(req.QryState))))
+                   .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.CustomerId.Contains(req.QryCustomer) || q.CustomerName.Contains(req.QryCustomer))
+                   .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceWorkOrders.Any(a => a.ManufacturerSerialNumber.Contains(req.QryManufSN)))
+                   .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.RecepUserName.Contains(req.QryRecepUser))
+                   .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ServiceWorkOrders.Any(a => a.ProblemTypeId.Equals(req.QryProblemType)))
+                   .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.ServiceWorkOrders.Any(a => a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440)))
+                   .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.ContactTel.Contains(req.ContactTel) || q.NewestContactTel.Contains(req.ContactTel))
+                   .WhereIf(!string.IsNullOrWhiteSpace(req.QryTechName), q => q.ServiceWorkOrders.Any(a => a.CurrentUser.Contains(req.QryTechName)))
+                   .Where(q => q.Status == 2)
+                   ;
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
+            {
+                query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id));
+            }
+            var resultsql = query.OrderByDescending(q => q.CreateTime).Select(q => new
+            {
+                ServiceOrderId = q.Id,
+                q.CustomerId,
+                q.CustomerName,
+                q.TerminalCustomer,
+                q.TerminalCustomerId,
+                q.RecepUserName,
+                q.Contacter,
+                q.ContactTel,
+                q.NewestContacter,
+                q.NewestContactTel,
+                q.Supervisor,
+                q.SalesMan,
+                TechName = "",
+                q.U_SAP_ID,
+                q.Services,
+                q.FromId,
+                q.AddressDesignator,
+                q.Address,
+                ServiceStatus = q.Status,
+                ServiceCreateTime = q.CreateTime,
+                ServiceWorkOrders = q.ServiceWorkOrders.Where(a => (string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId) || a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
+                && (string.IsNullOrWhiteSpace(req.QryState) || a.Status.Equals(Convert.ToInt32(req.QryState)))
+                && (string.IsNullOrWhiteSpace(req.QryManufSN) || a.ManufacturerSerialNumber.Contains(req.QryManufSN))
+                && ((req.QryCreateTimeFrom == null || req.QryCreateTimeTo == null) || (a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
+                  ).ToList()
+            });
+            
+            var dataList = await resultsql.ToListAsync(); ;
+            var statusDic = new Dictionary<int, string>()
+            {
+                //1-待处理 2-已排配 3-已外出 4-已挂起 5-已接收 6-已解决 7-已回访
+                { 1, "待处理"},
+                { 2, "已排配"},
+                { 3, "已预约"},
+                { 4, "已外出"},
+                { 5, "已挂起"},
+                { 6, "已接收"},
+                { 7, "已解决"},
+                { 8, "已回访"},
+            };
+            var list = new List<ServiceOrderExcelDto>();
+            foreach (var serviceOrder in dataList)
+            {
+                foreach (var workOrder in serviceOrder.ServiceWorkOrders)
+                {
+                    list.Add(new ServiceOrderExcelDto
+                    {
+                        U_SAP_ID = serviceOrder.U_SAP_ID,
+                        CustomerId = serviceOrder.CustomerId,
+                        CustomerName = serviceOrder.CustomerName,
+                        TerminalCustomer = serviceOrder.TerminalCustomer,
+                        TerminalCustomerId = serviceOrder.TerminalCustomerId,
+                        Contacter = serviceOrder.Contacter,
+                        ContactTel = serviceOrder.ContactTel,
+                        NewestContacter = serviceOrder.NewestContacter,
+                        NewestContactTel = serviceOrder.NewestContactTel,
+                        Supervisor = serviceOrder.Supervisor,
+                        SalesMan = serviceOrder.SalesMan,
+                        RecepUserName = serviceOrder.RecepUserName,
+                        Service = serviceOrder.Services,
+                        FromId = serviceOrder.FromId.Value == 1 ? "电话" : "App",
+                        Status = serviceOrder.ServiceStatus == 1 ? "待确认" : serviceOrder.ServiceStatus == 2 ? "已确认" : "已取消",
+                        AddressDesignator = serviceOrder.AddressDesignator,
+                        Address = serviceOrder.Address,
+                        WorkOrderNumber = workOrder.WorkOrderNumber,
+                        FromTheme = workOrder.FromTheme,
+                        MaterialCode = workOrder.MaterialCode,
+                        MaterialDescription = workOrder.MaterialDescription,
+                        ManufacturerSerialNumber = workOrder.ManufacturerSerialNumber,
+                        InternalSerialNumber = workOrder.InternalSerialNumber,
+                        Remark = workOrder.Remark,
+                        FromType = workOrder.FromType.Value == 1 ? "提交呼叫" : "在线解答",
+                        WarrantyEndDate = workOrder.WarrantyEndDate,
+                        ProblemType = workOrder.ProblemType?.Description,
+                        Priority = workOrder.Priority == 3 ? "高" : workOrder.Priority == 2 ? "中" : "低",
+                        WorkOrderStatus = statusDic.GetValueOrDefault(workOrder.Status.Value),
+                        CurrentUser = workOrder.CurrentUser,
+                        SubmitDate = workOrder.SubmitDate,
+                        BookingDate = workOrder.BookingDate,
+                        VisitTime = workOrder.VisitTime,
+                        LiquidationDate = workOrder.LiquidationDate,
+                        Solution = workOrder.Solution?.Subject,
+                        TroubleDescription = workOrder.TroubleDescription,
+                        ProcessDescription = workOrder.ProcessDescription
+                    });
+                }
+            }
+            IExporter exporter = new ExcelExporter();
+            var bytes = await exporter.ExportAsByteArray(list);
+            return bytes;
+        }
     }
 }

@@ -962,5 +962,18 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+        /// <summary>
+        /// 导出Excel
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> ExportExcel([FromQuery]QueryServiceOrderListReq req)
+        {
+            var data = await _serviceOrderApp.ExportExcel(req);
+
+
+            return File(data, "application/vnd.ms-excel");
+        }
     }
 }

@@ -15,6 +15,7 @@
     <PackageReference Include="CSRedisCore" Version="3.6.5" />
     <PackageReference Include="EnyimMemcachedCore" Version="2.1.5" />
     <PackageReference Include="log4net" Version="2.0.8" />
+    <PackageReference Include="Magicodes.IE.Excel" Version="2.2.7" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.2" />
     <PackageReference Include="Minio" Version="3.1.13" />
     <PackageReference Include="NetOfficeFw.Word" Version="1.7.4.11" />
