@@ -50,5 +50,6 @@ namespace OpenAuth.App.Response
         /// 工作流程绑定Id
         /// </summary>
         public string FlowInstanceId { get; set; }
+        public int? IsFinish { get; set; }
     }
 }

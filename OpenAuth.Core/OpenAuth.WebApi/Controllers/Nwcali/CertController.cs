@@ -700,14 +700,14 @@ namespace OpenAuth.WebApi.Controllers
             #endregion
 
             #region 签名
-            var signPath1 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "yang.png");
-            var signPath2 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "zhou.png");
-            var signPath3 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "chen.png");
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 1, ValueData = signPath1 });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 3, ValueData = signPath2 });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 1, ValueData = signPath3 });
-            var signetPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "印章.png");
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 3, ValueData = signetPath });
+            //var signPath1 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "yang.png");
+            //var signPath2 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "zhou.png");
+            //var signPath3 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "chen.png");
+            //list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 1, ValueData = signPath1 });
+            //list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 3, ValueData = signPath2 });
+            //list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 1, ValueData = signPath3 });
+            //var signetPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "印章.png");
+            //list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 3, ValueData = signetPath });
             #endregion
             return list;
         }
