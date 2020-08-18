@@ -31,8 +31,10 @@ namespace OpenAuth.App.Sap.Service
             var query = from a in UnitWork.Find<OINS>(null)
                         join b in UnitWork.Find<CTR1>(null) on a.insID equals b.InsID into ab
                         from b in ab.DefaultIfEmpty()
-                        select new {
-                            a,b
+                        select new
+                        {
+                            a,
+                            b
                         };
             query = query
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), q => q.a.manufSN.Contains(req.ManufSN))
@@ -40,6 +42,7 @@ namespace OpenAuth.App.Sap.Service
                 .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), q => q.a.customer.Contains(req.CardCode))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), q => q.a.itemCode.Contains(req.ItemCode))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ItemName), q => q.a.itemCode.Contains(req.ItemName))
+                .WhereIf(!string.IsNullOrEmpty(req.ManufSNOrItemCode), q => q.a.itemCode.Contains(req.ManufSNOrItemCode) || q.a.manufSN.Contains(req.ManufSNOrItemCode))
                 ;
             var query2 = query.Select(q => new
             {
@@ -57,7 +60,7 @@ namespace OpenAuth.App.Sap.Service
                 .Take(req.limit).ToListAsync(); ///Select($"new ({propertyStr})");
             result.Count = await query2.CountAsync();
 
-            if(result.Count == 0)
+            if (result.Count == 0)
             {
                 var qqq = UnitWork.Find<ServiceOins>(null)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), q => q.manufSN.Contains(req.ManufSN))
