@@ -101,20 +101,30 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var user = _auth.GetCurrentUser();
-            var objs = UnitWork.Find<Certinfo>(null).Include(c => c.FlowInstance).AsQueryable();
+
+            var fs = await UnitWork.Find<FlowInstance>(null)
+                .Where(o => o.MakerList == "1" || o.MakerList.Contains(user.User.Id)) //待办事项
+                .ToListAsync();
+            var fsid = fs.Select(f => f.Id).ToList();
+            var objs = UnitWork.Find<Certinfo>(null);
             objs = objs
-                .Where(o => o.FlowInstance.MakerList == "1" || o.FlowInstance.MakerList.Contains(user.User.Id)) //待办事项
+                .Where(o => fsid.Contains(o.FlowInstanceId))
                 .WhereIf(!string.IsNullOrEmpty(request.CertNo), u => u.CertNo.Contains(request.CertNo))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.AssetNo), u => u.AssetNo.Contains(request.AssetNo))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.Model), u => u.Model.Contains(request.Model))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.Sn), u => u.Sn.Contains(request.Sn))
-                       .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.CalibrationDate >= request.CalibrationDateFrom && u.CalibrationDate <= request.CalibrationDateTo)
+                .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.CalibrationDate >= request.CalibrationDateFrom && u.CalibrationDate <= request.CalibrationDateTo)
                 ;
             result.Count = await objs.CountAsync();
 
             var list = await objs.OrderByDescending(u => u.CreateTime)
                     .Skip((request.page - 1) * request.limit)
                     .Take(request.limit).ToListAsync();
+            var fId = list.Select(l => l.FlowInstanceId);
+            list.ForEach(c =>
+            {
+                c.FlowInstance = fs.Find(f => f.Id.Equals(c.FlowInstanceId));
+            });
             result.Data = list.Select(c =>
             {
                 return new CertinfoView
