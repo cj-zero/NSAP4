@@ -410,13 +410,14 @@ namespace OpenAuth.WebApi.Controllers
                 int j = 0;
                 foreach (var item in plcData)
                 {
+                    int l = 1;
                     var data = item.Value.Where(p => p.VoltsorAmps.Equals("Volts") && p.Mode.Equals(mode) && p.Verify_Type.Equals("Post-Calibration")).GroupBy(d => d.Channel);
                     foreach (var item2 in data)
                     {
                         var cvDataList = item2.OrderBy(dd => dd.Commanded_Value).ToList();
                         foreach (var cvData in cvDataList)
                         {
-                            var cvCHH = $"{item.Key.Substring(item.Key.Length - 1, 1)}-{cvData.Channel}";
+                            var cvCHH = $"{l}-{cvData.Channel}";
                             var cvRange = cvData.Scale;
                             var cvIndication = cvData.Measured_Value;
                             var cvMeasuredValue = cvData.Standard_Value;
@@ -541,6 +542,7 @@ namespace OpenAuth.WebApi.Controllers
                             j++;
                         }
                     }
+                    l++;
                 }
             }
             void CalculateCurrent(string mode, int tableIndex)

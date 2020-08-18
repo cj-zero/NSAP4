@@ -82,7 +82,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            return await UnitWork.Find<CertOperationHistory>(c=>c.CertInfoId == id).ToListAsync();
+            return await UnitWork.Find<CertOperationHistory>(c => c.CertInfoId == id).OrderBy(c => c.CreateTime).ToListAsync();
         }
 
         public void Update(AddOrUpdateCertOperationHistoryReq obj)
