@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
+using OpenAuth.App.Serve.Request;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 using Org.BouncyCastle.Ocsp;
@@ -65,7 +66,7 @@ namespace OpenAuth.App
             var objs = UnitWork.Find<AppServiceOrderLog>(null);
             var orderLogs = await objs.Where(a => a.ServiceOrderId.Equals(request.ServiceOrderId)).Select(a => new OrderLogListResp { Title = a.Title, Details = a.Details, CreateTime = a.CreateTime }).ToListAsync();
             list.AddRange(orderLogs);
-            if(!(request.ServiceWorkOrderId is null))
+            if (!(request.ServiceWorkOrderId is null))
             {
                 var workOrderLogs = await objs.Where(a => a.ServiceWorkOrder.Equals(request.ServiceWorkOrderId.Value)).Select(a => new OrderLogListResp { Title = a.Title, Details = a.Details, CreateTime = a.CreateTime }).ToListAsync();
                 list.AddRange(workOrderLogs);
@@ -96,7 +97,7 @@ namespace OpenAuth.App
         public async Task BatchAddAsync(AddOrUpdateAppServiceOrderLogReq req, List<int> ids)
         {
             var objs = new List<AppServiceOrderLog>();
-            ids.ForEach(i => 
+            ids.ForEach(i =>
             {
                 var obj = req.MapTo<AppServiceOrderLog>();
                 //todo:补充或调整自己需要的字段
@@ -107,11 +108,11 @@ namespace OpenAuth.App
                 obj.CreateUserName = user.Name;
                 objs.Add(obj);
             });
-            
+
             await Repository.BatchAddAsync(objs.ToArray());
         }
 
-         public void Update(AddOrUpdateAppServiceOrderLogReq obj)
+        public void Update(AddOrUpdateAppServiceOrderLogReq obj)
         {
             var user = _auth.GetCurrentUser().User;
             UnitWork.Update<AppServiceOrderLog>(u => u.Id == obj.Id, u => new AppServiceOrderLog
@@ -127,10 +128,30 @@ namespace OpenAuth.App
             });
 
         }
-            
+
+        /// <summary>
+        /// 查询服务单和工单的执行记录(App)
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<List<OrderLogListResp>> GetAppOrderLogList(GetAppOrderLogListReq request)
+        {
+            var query = from a in UnitWork.Find<AppServiceOrderLog>(null)
+                        join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
+                        from b in ab.DefaultIfEmpty()
+                        join c in UnitWork.Find<ServiceWorkOrder>(null) on a.ServiceOrderId equals c.ServiceOrderId into abc
+                        from c in abc.DefaultIfEmpty()
+                        select new { a, b, c };
+            query = query.Where(q => q.b.U_SAP_ID == request.SapOrderId && (string.IsNullOrEmpty(q.c.MaterialCode) ? "无序列号设备" : q.c.MaterialCode.Substring(0, q.c.MaterialCode.IndexOf("-"))) == request.MaterialType);
+            var list = new List<OrderLogListResp>();
+            var orderLogs = await query.Select(q => new OrderLogListResp { Title = q.a.Title, Details = q.a.Details, CreateTime = q.a.CreateTime }).ToListAsync();
+            list.AddRange(orderLogs);
+            return list.OrderByDescending(l => l.CreateTime).ToList();
+        }
+
 
         public AppServiceOrderLogApp(IUnitWork unitWork, IRepository<AppServiceOrderLog> repository,
-            RevelanceManagerApp app, IAuth auth) : base(unitWork, repository,auth)
+            RevelanceManagerApp app, IAuth auth) : base(unitWork, repository, auth)
         {
             _revelanceApp = app;
         }
