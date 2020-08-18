@@ -28,7 +28,15 @@
         <!-- 操作按钮 -->
         <template v-else-if="item.name === 'operation'">
           <template v-if="type === 'submit'">
-            <el-button type="primary" size="mini" @click="submit(scope.row, 0)">送审</el-button>
+            <el-button 
+              type="primary" 
+              size="mini"
+              @click="submit(scope.row, 0)"
+              v-loading.fullscreen.lock="isSend"
+              :element-loading-text="`正在送审中`"
+              element-loading-spinner="el-icon-loading"
+              element-loading-background="rgba(0, 0, 0, 0.5)"
+            >送审</el-button>
           </template>
           <template v-else-if="type === 'query'">
             <el-button type="primary" size="mini" @click="download(scope.row)">下载</el-button>

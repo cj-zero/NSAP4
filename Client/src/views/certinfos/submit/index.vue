@@ -31,7 +31,6 @@
         <el-button @click="visible = false" size="mini">取 消</el-button>
       </span>
     </el-dialog>
-    <PDF></PDF>
   </div>
 </template>
 
@@ -40,7 +39,6 @@ import CommonTable from '../commonComponent/table'
 import Search from '../commonComponent/search'
 import Pagination from '@/components/Pagination'
 import Certifiate from '../commonComponent/certifiate'
-import PDF from '../commonComponent/certifiate'
 import { commonMixin } from '../mixin/mixin'
 import { loadApprover } from '@/api/cerfiticate'
 export default {
@@ -49,8 +47,7 @@ export default {
     CommonTable,
     Pagination,
     Search,
-    Certifiate,
-    PDF
+    Certifiate
   },
   data () {
     return {

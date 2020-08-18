@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-row type="flex" justify="center">
-      <el-col :span="10">
+      <el-col>
         <p>此用户最近10个服务单</p>
         <el-table
           ref="mainTable"

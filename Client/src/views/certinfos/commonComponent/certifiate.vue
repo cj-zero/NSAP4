@@ -1,8 +1,26 @@
 <template>
   <div class="certifiate-wrapper">
     <el-row class="btn-wrapper">
-      <el-button type="primary" size="small" class="left-btn" @click="operate(0, leftBtnText)">{{ leftBtnText }}</el-button>
-      <el-button type="primary" size="small" @click="operate(1, rightBtnText)" v-if="type !== 'query' && type !== 'submit'">{{ rightBtnText }}</el-button>
+      <el-button 
+        type="primary" 
+        size="small" 
+        class="left-btn" 
+        @click="operate(0, leftBtnText)" 
+        v-loading.fullscreen.lock="isSend"
+        :element-loading-text="`正在${leftBtnText}中`"
+        element-loading-spinner="el-icon-loading"
+        element-loading-background="rgba(0, 0, 0, 0.5)"
+      >{{ leftBtnText }}</el-button>
+      <el-button 
+        type="primary" 
+        size="small" 
+        @click="operate(1, rightBtnText)" 
+        v-if="type !== 'query' && type !== 'submit'" 
+        v-loading.fullscreen.lock="isSend"
+        :element-loading-text="`正在${rightBtnText}中`"
+        element-loading-spinner="el-icon-loading"
+        element-loading-background="rgba(0, 0, 0, 0.5)"
+      >{{ rightBtnText }}</el-button>
     </el-row>
     <el-row v-if="type !== 'submit'">
       <el-input type="textarea" v-model="advice" :placeholder="placeholder"></el-input>

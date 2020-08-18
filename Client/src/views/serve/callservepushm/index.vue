@@ -483,7 +483,6 @@ export default {
       this.hasAlreadNum = res.count;
     },
     postOrder() {
-      this.listLoading = true;
       this.params.currentUserId = this.orderRadio;
       this.params.workOrderIds = this.workorderidList;
       if (this.hasAlreadNum > 2) {
@@ -492,6 +491,7 @@ export default {
           message: "单个技术员接单不能超过3个",
         });
       } else {
+        this.listLoading = true;
         callservepushm
           .SendOrders(this.params)
           .then((res) => {

@@ -7,6 +7,7 @@ export let certVerMixin = { // 审核操作mixin
   },
   methods: {
     _certVerificate (data, type, message, verificationOpinion) { // type 0: 表示通过、送审等正常操作 2: 表示不通过、撤回等失败操作 3: 退回
+      // this.isSend = true
       if (this.isSend) return
       this.isSend = true
       let { id, flowInstanceId } = data

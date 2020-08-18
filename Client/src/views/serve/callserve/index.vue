@@ -500,7 +500,7 @@ export default {
       this.multipleSelection = row;
       this.$refs.mainTable.toggleRowSelection(row);
     },
-        rowClickChild(row) {
+    rowClickChild(row) {
       this.$refs.mainTablechuldren.clearSelection();
       // this.multipleSelection = row;
       this.$refs.mainTablechuldren.toggleRowSelection(row);
@@ -734,6 +734,26 @@ export default {
       //   this.dialogStatus = "update";
       //   this.FormUpdate = true;
       // });
+    },
+    handleRecall (row) {
+      let { serviceOrderId } = row
+      this.$confirm("确认撤销?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      })
+      .then(() => {
+        callservesure.deleteServiceOrder({
+          serviceOrderId
+        }).then(() => {
+          this.$message({
+            type: "success",
+            message: "撤销成功!"
+          })
+        }).catch(err => {
+          this.$message.error(err.message)
+        })
+      })
     },
     closeDia(a) {
       if (a === 1) {

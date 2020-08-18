@@ -462,3 +462,9 @@ table thead th {
 .w949 {
     min-width: 949px;
 }
+
+.el-loading-spinner  {
+    .el-loading-text, .el-icon-loading{
+        color: #fff;
+    }
+}
