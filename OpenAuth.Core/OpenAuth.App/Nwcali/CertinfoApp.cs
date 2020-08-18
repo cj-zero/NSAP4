@@ -25,6 +25,7 @@ namespace OpenAuth.App
         private readonly RevelanceManagerApp _revelanceApp;
         private readonly FlowInstanceApp _flowInstanceApp;
         private readonly CertOperationHistoryApp _certOperationHistoryApp;
+        private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
         /// <summary>
         /// 加载列表
         /// </summary>
@@ -43,14 +44,16 @@ namespace OpenAuth.App
                 throw new Exception("当前登录用户没有访问该模块字段的权限，请联系管理员配置");
             }
 
-
+            var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("校准证书"));
+            var fs = await UnitWork.Find<FlowInstance>(null)
+                .Where(o => o.IsFinish == 1 && o.SchemeId == mf.FlowSchemeId)//校准证书已结束流程
+                .ToListAsync();
+            var fsid = fs.Select(f => f.Id).ToList();
             var result = new TableData();
             var objs = UnitWork.Find<Certinfo>(null);
-            if (!string.IsNullOrEmpty(request.key))
-            {
-                objs = objs.Where(u => u.Id.Contains(request.key));
-            }
-            objs = objs.WhereIf(!string.IsNullOrEmpty(request.CertNo), u => u.CertNo.Contains(request.CertNo))
+            objs = objs
+                       .Where(o => fsid.Contains(o.FlowInstanceId))
+                       .WhereIf(!string.IsNullOrEmpty(request.CertNo), u => u.CertNo.Contains(request.CertNo))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.AssetNo), u => u.AssetNo.Contains(request.AssetNo))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Model), u => u.Model.Contains(request.Model))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Sn), u => u.Sn.Contains(request.Sn))
@@ -60,8 +63,6 @@ namespace OpenAuth.App
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
 
-            var fId = list.Select(l => l.FlowInstanceId);
-            var fs = await UnitWork.Find<FlowInstance>(f => fId.Contains(f.Id)).ToListAsync();
             list.ForEach(c =>
             {
                 c.FlowInstance = fs.Find(f => f.Id.Equals(c.FlowInstanceId));
@@ -73,6 +74,7 @@ namespace OpenAuth.App
                     Id = c.Id,
                     CertNo = c.CertNo,
                     ActivityName = c.FlowInstance?.ActivityName,
+                    IsFinish = c.FlowInstance?.IsFinish,
                     CreateTime = c.CreateTime,
                     AssetNo = c.AssetNo,
                     CalibrationDate = c.CalibrationDate,
@@ -103,7 +105,9 @@ namespace OpenAuth.App
             var user = _auth.GetCurrentUser();
 
             var fs = await UnitWork.Find<FlowInstance>(null)
-                .Where(o => o.MakerList == "1" || o.MakerList.Contains(user.User.Id)) //待办事项
+                .Where(o => o.MakerList == "1" || o.MakerList.Contains(user.User.Id))//待办事项
+                .WhereIf(request.FlowStatus == 1, o => o.ActivityName == "待送审")
+                .WhereIf(request.FlowStatus == 2, o => o.ActivityName == "待审核" || o.ActivityName == "待批准")
                 .ToListAsync();
             var fsid = fs.Select(f => f.Id).ToList();
             var objs = UnitWork.Find<Certinfo>(null);
@@ -120,7 +124,6 @@ namespace OpenAuth.App
             var list = await objs.OrderByDescending(u => u.CreateTime)
                     .Skip((request.page - 1) * request.limit)
                     .Take(request.limit).ToListAsync();
-            var fId = list.Select(l => l.FlowInstanceId);
             list.ForEach(c =>
             {
                 c.FlowInstance = fs.Find(f => f.Id.Equals(c.FlowInstanceId));
@@ -132,6 +135,7 @@ namespace OpenAuth.App
                     Id = c.Id,
                     CertNo = c.CertNo,
                     ActivityName = c.FlowInstance?.ActivityName,
+                    IsFinish = c.FlowInstance?.IsFinish,
                     CreateTime = c.CreateTime,
                     AssetNo = c.AssetNo,
                     CalibrationDate = c.CalibrationDate,
@@ -157,51 +161,69 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var certInfo = await Repository.Find(c => c.Id.Equals(req.CertInfoId)).Include(c => c.FlowInstance).FirstOrDefaultAsync();
+            var certInfo = await Repository.Find(c => c.Id.Equals(req.CertInfoId)).FirstOrDefaultAsync();
 
             if (certInfo is null)
                 throw new CommonException("证书不存在", 80001);
 
+            var b = await CheckCanOperation(certInfo.Id, loginContext.User.Name);
+            if (!b)
+            {
+                throw new CommonException("您无法操作此步骤。", 80011);
+            }
+
+            var flowInstance = await UnitWork.FindSingleAsync<FlowInstance>(c => c.Id.Equals(certInfo.FlowInstanceId));
             var list = new List<WordModel>();
+            var nameDic = new Dictionary<string, string>()
+            {
+                { "肖淑惠","xiao.png" },
+                { "覃金英","tan.png" },
+                { "周定坤","zhou.png" },
+                { "杨浩杰","yang.png" },
+                { "陈大为","chen.png" },
+            };
             switch (req.Verification.VerificationFinally)
             {
                 case "1":
                     #region 签名
-                    if (certInfo.FlowInstance.ActivityName.Equals("待送审"))
+                    if (flowInstance.ActivityName.Equals("待送审"))
                     {
                         _flowInstanceApp.Verification(req.Verification);
                         await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
                         {
+                            CertInfoId = certInfo.Id,
                             Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}送审证书。"
                         });
-                        var signPath1 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "yang.png");
+                        var signPath1 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", nameDic.GetValueOrDefault(loginContext.User.Name));
                         list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 1, ValueData = signPath1 });
                     }
-                    else if (certInfo.FlowInstance.ActivityName.Equals("待审核"))
+                    else if (flowInstance.ActivityName.Equals("待审核"))
                     {
                         _flowInstanceApp.Verification(req.Verification);
                         await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
                         {
+                            CertInfoId = certInfo.Id,
                             Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}审批通过。"
                         });
-                        var signPath2 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "zhou.png");
+                        var signPath2 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", nameDic.GetValueOrDefault(loginContext.User.Name));
                         list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 3, ValueData = signPath2 });
                     }
-                    else if (certInfo.FlowInstance.ActivityName.Equals("待批准"))
+                    else if (flowInstance.ActivityName.Equals("待批准"))
                     {
                         _flowInstanceApp.Verification(req.Verification);
                         await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
                         {
+                            CertInfoId = certInfo.Id,
                             Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}批准证书。"
                         });
-                        var signPath3 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "chen.png");
+                        var signPath3 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", nameDic.GetValueOrDefault(loginContext.User.Name));
                         list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 1, ValueData = signPath3 });
                         var signetPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "印章.png");
                         list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 3, ValueData = signetPath });
                     }
                     #endregion
                     var templatePath = certInfo.CertPath;
-                    var tagetPath = certInfo.CertPath; ;
+                    var tagetPath = certInfo.CertPath;
                     var result = WordHandler.DOCTemplateConvert(templatePath, tagetPath, list);
 
                     var pdfPath = WordHandler.DocConvertToPdf(certInfo.CertPath);
@@ -215,6 +237,7 @@ namespace OpenAuth.App
                     _flowInstanceApp.Verification(req.Verification);
                     await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
                     {
+                        CertInfoId = certInfo.Id,
                         Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}不同意证书。"
                     });
                     break;
@@ -222,6 +245,7 @@ namespace OpenAuth.App
                     _flowInstanceApp.Verification(req.Verification);
                     await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
                     {
+                        CertInfoId = certInfo.Id,
                         Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}驳回证书。"
                     });
                     break;
@@ -288,13 +312,24 @@ namespace OpenAuth.App
             await UnitWork.SaveAsync();
         }
 
-
+        /// <summary>
+        /// 判断当前用户是否操作过
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        private async Task<bool> CheckCanOperation(string id, string name)
+        {
+            var h = await UnitWork.FindSingleAsync<CertOperationHistory>(c => c.CertInfoId.Equals(id) && c.Action.Contains(name));
+            return h is null;
+        }
         public CertinfoApp(IUnitWork unitWork, IRepository<Certinfo> repository,
-            RevelanceManagerApp app, IAuth auth, FlowInstanceApp flowInstanceApp, CertOperationHistoryApp certOperationHistoryApp) : base(unitWork, repository, auth)
+            RevelanceManagerApp app, IAuth auth, FlowInstanceApp flowInstanceApp, CertOperationHistoryApp certOperationHistoryApp, ModuleFlowSchemeApp moduleFlowSchemeApp) : base(unitWork, repository, auth)
         {
             _revelanceApp = app;
             _flowInstanceApp = flowInstanceApp;
             _certOperationHistoryApp = certOperationHistoryApp;
+            _moduleFlowSchemeApp = moduleFlowSchemeApp;
         }
     }
 }
