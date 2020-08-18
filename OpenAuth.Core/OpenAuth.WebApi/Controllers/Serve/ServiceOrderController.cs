@@ -975,5 +975,46 @@ namespace OpenAuth.WebApi.Controllers
 
             return File(data, "application/vnd.ms-excel");
         }
+
+        /// <summary>
+        /// 获取技术员位置信息
+        /// </summary>
+        /// <param name="TechnicianId">技术员Id</param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetTechnicianLocation(int TechnicianId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetTechnicianLocation(TechnicianId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取客户提交的服务单详情
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetAppCustServiceOrderDetails(int ServiceOrderId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetAppCustServiceOrderDetails(ServiceOrderId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }

@@ -223,6 +223,18 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("SAP 服务单ID ")]
         public int? U_SAP_ID { get; set; }
+
+        /// <summary>
+        /// 问题类型Id
+        /// </summary>
+        [Description("问题类型Id")]
+        public string ProblemTypeId { get; set; }
+
+        /// <summary>
+        /// 问题类型名称
+        /// </summary>
+        [Description("问题类型名称")]
+        public string ProblemTypeName { get; set; }
         /// <summary>
         /// 服务单关联的工单
         /// </summary>

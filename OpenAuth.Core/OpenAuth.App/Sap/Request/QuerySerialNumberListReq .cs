@@ -28,5 +28,10 @@ namespace OpenAuth.App.Sap.Request
         /// </summary>
         public string ItemName { get; set; }
 
+        /// <summary>
+        /// 制造商序列号或物料编码
+        /// </summary>
+        public string ManufSNOrItemCode { get; set; }
+
     }
 }
