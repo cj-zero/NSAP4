@@ -26,7 +26,7 @@ import '@/assets/public/css/comIconfont/iconfont/iconfont.js'
 // 请假条表单和详情
 import FrmLeaveReqAdd from '@/views/forms/userDefine/frmLeaveReq/add'
 import FrmLeaveReqDetail from '@/views/forms/userDefine/frmLeaveReq/detail'
-
+// 引入PDFJS
 Vue.use(ElementUI, { locale })
 Vue.use(VueContextMenu)
 Vue.use(VueAMap);

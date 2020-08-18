@@ -183,7 +183,9 @@ export default {
               });
             }
           })
-          .catch(() => console.log(""));
+          .catch((err) => {
+            this.$message.error(err.message)
+          });
       }, 1000);
       this.$once("hook:beforeDestroy", () => {
         clearInterval(this.timer);

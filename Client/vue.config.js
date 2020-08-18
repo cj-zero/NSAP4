@@ -15,6 +15,11 @@ module.exports = {
   configureWebpack: {
     externals: {
       "BMap": "BMap"
+    },
+    module: {
+      unknownContextCritical : false,
+      //解决the request of a dependency is an expression
+      exprContextCritical: false,
     }
   },
   // svg配置
