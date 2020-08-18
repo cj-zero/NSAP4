@@ -83,7 +83,7 @@ namespace Infrastructure.Excel
             var testerSnRow = sheet.GetRow(6);
             baseInfo.TesterSn = testerSnRow.GetCell(1).StringCellValue;
             var assetNoRow = sheet.GetRow(7);
-            baseInfo.AssetNo = Convert.ToInt64(assetNoRow.GetCell(1).NumericCellValue).ToString();
+            baseInfo.AssetNo = assetNoRow.GetCell(1).StringCellValue;
             var siteCodeRow = sheet.GetRow(8);
             baseInfo.SiteCode = "Electrical Lab";//siteCodeRow.GetCell(1).StringCellValue;
             var temperatureRow = sheet.GetRow(9);

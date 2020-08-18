@@ -8,6 +8,10 @@
     <DocumentationFile>bin\Debug\netcoreapp2.1\OpenAuth.App.xml</DocumentationFile>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>bin\Release\OpenAuth.App.xml</DocumentationFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Remove="Model\**" />
     <EmbeddedResource Remove="Model\**" />

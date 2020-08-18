@@ -287,10 +287,10 @@
         <el-form-item label="备注" prop="remark">
           <el-input type="textarea" size="small" v-model="formList[0].remark"></el-input>
         </el-form-item>
-        <el-form-item label="故障描述" prop="remark" v-if="!isCreate">
+        <el-form-item label="故障描述" prop="remark" v-if="formName === '查看'">
           <el-input type="textarea" size="small" v-model="formList[0].troubleDescription"></el-input>
         </el-form-item>
-        <el-form-item label="过程描述" prop="remark" v-if="!isCreate">
+        <el-form-item label="过程描述" prop="remark" v-if="formName === '查看'">
           <el-input type="textarea" size="small" v-model="formList[0].processDescription"></el-input>
         </el-form-item>
         <el-form-item>

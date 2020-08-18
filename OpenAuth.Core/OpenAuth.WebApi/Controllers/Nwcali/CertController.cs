@@ -163,8 +163,9 @@ namespace OpenAuth.WebApi.Controllers
             var cert = await _certinfoApp.GetAsync(c => c.CertNo.Equals(certNo));
             if (cert is null)
                 return new NotFoundResult();
-            if (!string.IsNullOrWhiteSpace(cert.PdfPath))
+            if (!string.IsNullOrWhiteSpace(cert.PdfPath) && System.IO.File.Exists(cert.PdfPath))
             {
+                
                 var fileStream = new FileStream(cert.PdfPath, FileMode.Open);
                 return File(fileStream, "application/pdf");
             }

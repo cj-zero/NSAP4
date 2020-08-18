@@ -219,7 +219,7 @@ namespace OpenAuth.Repository.Domain
         public int? FromId { get; set; }
 
         /// <summary>
-        /// 呼叫来源  1-电话 2-APP 
+        /// SAP 服务单ID
         /// </summary>
         [Description("SAP 服务单ID ")]
         public int? U_SAP_ID { get; set; }
