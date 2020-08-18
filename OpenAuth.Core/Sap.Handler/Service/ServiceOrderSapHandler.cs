@@ -118,7 +118,7 @@ namespace Sap.Handler.Service
                     {
                         U_SAP_ID = System.Convert.ToInt32(docNum)
                     });
-                    var ServiceWorkOrders = UnitWork.Find<ServiceWorkOrder>(u => u.ServiceOrderId.Equals(theServiceOrderId)).ToList();
+                    var ServiceWorkOrders = await UnitWork.Find<ServiceWorkOrder>(u => u.ServiceOrderId.Equals(theServiceOrderId)).AsNoTracking().ToListAsync();
                     int num = 0;
                     ServiceWorkOrders.ForEach(u => u.WorkOrderNumber = docNum + "-" + ++num);
                     UnitWork.BatchUpdate<ServiceWorkOrder>(ServiceWorkOrders.ToArray());
