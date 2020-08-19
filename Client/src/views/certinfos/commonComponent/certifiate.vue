@@ -177,9 +177,7 @@ export default {
     },
     onProgress (e) {
       this.loadedRatio = e
-      console.log(this.loadedRatio, 'laodingPeo')
       this.loading = this.loadedRatio < 1
-      console.log(this.loading, 'loading')
     },
     onScroll (e) {
       let target = e.target
@@ -187,7 +185,6 @@ export default {
       if (scrollTop + clientHeight + 10 >= scrollHeight) {
         this.realPageNum = Math.min(this.numPages, ++this.realPageNum)
       }
-      console.log(scrollTop, scrollHeight, clientHeight)
     },
     _download () {
       // axios

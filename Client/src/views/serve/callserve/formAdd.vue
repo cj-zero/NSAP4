@@ -308,14 +308,14 @@
             <el-col :span="4">
               <div class="showSort" style="height:40px;line-height:40px;">{{1}}/{{formList.length}}</div>
             </el-col>
-            <el-col :span="5" v-if="ifEdit">
+            <!-- <el-col :span="5" v-if="ifEdit">
               <el-button
                 type="success"
                 size="small"
                 icon="el-icon-share"
                 @click="addWorkOrder(formList[0])"
-              >确定新增</el-button>
-            </el-col>
+              >确定新增</el-button> -->
+            <!-- </el-col> -->
           </el-row>
         </el-form-item>
       </el-form>
@@ -651,14 +651,14 @@
                     style="height:40px;line-height:40px;"
                   >{{index+2}}/{{formList.length}}</div>
                 </el-col>
-                <el-col :span="5" v-if="ifEdit">
+                <!-- <el-col :span="5" v-if="ifEdit">
                   <el-button
                     type="success"
                     size="small"
                     icon="el-icon-share"
                     @click="addWorkOrder(item, index)"
                   >确定新增</el-button>
-                </el-col>
+                </el-col> -->
               </el-row>
             </el-form-item>
           </el-form>
