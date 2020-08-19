@@ -131,7 +131,7 @@ namespace OpenAuth.App
                     a.Id,
                     a.AppUserId,
                     a.Services,
-                    a.CreateTime,
+                    CreateTime = a.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
                     a.Status,
                     a.Province,
                     a.City,
@@ -202,7 +202,7 @@ namespace OpenAuth.App
                 a.Id,
                 a.AppUserId,
                 a.Services,
-                a.CreateTime,
+                CreateTime = a.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
                 a.Status,
                 a.U_SAP_ID,
                 ServiceWorkOrders = a.ServiceWorkOrders.GroupBy(o => o.MaterialType).Select(s => new
@@ -408,11 +408,29 @@ namespace OpenAuth.App
                 q.U_SAP_ID,
             });
 
-
-            result.Data =
-            (await query//.OrderBy(u => u.Id)
+            var list = (await query
             .Skip((req.page - 1) * req.limit)
-            .Take(req.limit).ToListAsync());//.GroupBy(o => o.Id).ToList();
+            .Take(req.limit).ToListAsync()).Select(s => new
+            {
+                s.Id,
+                s.CustomerId,
+                s.CustomerName,
+                s.Services,
+                CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
+                s.Contacter,
+                s.ContactTel,
+                s.Supervisor,
+                s.SalesMan,
+                s.Status,
+                s.ManufSN,
+                s.ItemCode,
+                s.Province,
+                s.City,
+                s.Area,
+                s.Addr,
+                s.U_SAP_ID
+            });
+            result.Data = list;
             result.Count = query.Count();
             return result;
         }
@@ -882,10 +900,7 @@ namespace OpenAuth.App
                     s.Status,
                     s.CreateTime,
                     s.U_SAP_ID,
-                    MaterialInfo = s.ServiceWorkOrders.Where(o => o.ServiceOrderId == s.Id && o.CurrentUserId == req.TechnicianId).Select(o => new
-                    {
-                        o.Status
-                    })
+                    Count = s.ServiceWorkOrders.Where(w => w.ServiceOrderId == s.Id && w.CurrentUserId == req.TechnicianId).Count()
                 });
 
             var result = new TableData();
@@ -907,10 +922,10 @@ namespace OpenAuth.App
                 s.NewestContacter,
                 s.NewestContactTel,
                 s.Status,
-                s.CreateTime,
+                CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
                 s.U_SAP_ID,
                 Distance = (req.Latitude == 0 || s.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
-                WorkOrderStatus = s.MaterialInfo.Select(s => s.Status).Distinct().FirstOrDefault()
+                s.Count
             }).ToList();
 
             var count = await query.CountAsync();
@@ -976,7 +991,7 @@ namespace OpenAuth.App
                 a.Longitude,
                 a.Status,
                 a.Services,
-                a.CreateTime,
+                CreateTime = a.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
                 a.AppUserId,
                 a.Province,
                 a.City,
@@ -1409,7 +1424,7 @@ namespace OpenAuth.App
                 s.Area,
                 s.Addr,
                 s.Status,
-                s.CreateTime,
+                CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
                 s.Contacter,
                 s.ContacterTel,
                 s.CustomerName,
@@ -1647,7 +1662,14 @@ namespace OpenAuth.App
             result.Data =
             (await resultsql
             .Skip((req.page - 1) * req.limit)
-            .Take(req.limit).ToListAsync()).OrderBy(o => o.CreateTime);
+            .Take(req.limit).ToListAsync()).OrderBy(o => o.CreateTime).Select(s => new
+            {
+                s.Content,
+                CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
+                s.FroTechnicianName,
+                s.AppUserId,
+                s.Replier
+            });
             result.Count = await query.CountAsync();
             await ReadMsg(req.CurrentUserId, req.ServiceOrderId);
             return result;
@@ -1700,8 +1722,8 @@ namespace OpenAuth.App
                 });
 
                 result.Data =
-                (await resultsql
-                .ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(g => g.First());
+                ((await resultsql
+                .ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(g => g.First())).Select(s => new { s.Content, CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"), s.FroTechnicianName, s.AppUserId, s.ServiceOrderId, s.Replier });
             }
             return result;
         }
@@ -1927,7 +1949,7 @@ namespace OpenAuth.App
                 s.Area,
                 s.Addr,
                 s.Status,
-                s.CreateTime,
+                CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
                 s.Contacter,
                 s.ContacterTel,
                 s.CustomerName,
@@ -1988,7 +2010,26 @@ namespace OpenAuth.App
             result.Data =
             (await query//.OrderBy(u => u.Id)
             .Skip((req.page - 1) * req.limit)
-            .Take(req.limit).ToListAsync());
+            .Take(req.limit).ToListAsync()).Select(s => new
+            {
+                s.Id,
+                s.CustomerId,
+                s.CustomerName,
+                s.Services,
+                CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
+                s.Contacter,
+                s.ContactTel,
+                s.Supervisor,
+                s.SalesMan,
+                s.Status,
+                s.ManufSN,
+                s.ItemCode,
+                s.Province,
+                s.City,
+                s.Area,
+                s.Addr,
+                s.U_SAP_ID
+            });
             result.Count = query.Count();
             return result;
         }
@@ -2078,8 +2119,8 @@ namespace OpenAuth.App
             }
 
             var query = UnitWork.Find<ServiceOrder>(null)
-                .Include(s => s.ServiceWorkOrders).ThenInclude(c=>c.ProblemType)
-                .Include(a=>a.ServiceWorkOrders).ThenInclude(b=>b.Solution)
+                .Include(s => s.ServiceWorkOrders).ThenInclude(c => c.ProblemType)
+                .Include(a => a.ServiceWorkOrders).ThenInclude(b => b.Solution)
                    .WhereIf(!string.IsNullOrWhiteSpace(req.QryU_SAP_ID), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.QryU_SAP_ID)))
                    .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId), q => q.ServiceWorkOrders.Any(a => a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId))))
                    .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.ServiceWorkOrders.Any(a => a.Status.Equals(Convert.ToInt32(req.QryState))))
@@ -2124,7 +2165,7 @@ namespace OpenAuth.App
                 && ((req.QryCreateTimeFrom == null || req.QryCreateTimeTo == null) || (a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
                   ).ToList()
             });
-            
+
             var dataList = await resultsql.ToListAsync(); ;
             var statusDic = new Dictionary<int, string>()
             {
@@ -2190,16 +2231,40 @@ namespace OpenAuth.App
             return bytes;
         }
 
- /// <summary>
+        /// <summary>
         /// 获取技术员位置信息
         /// </summary>
-        /// <param name="TechnicianId">技术员Id</param>
+        /// <param name="req"></param>
         /// <returns></returns>
-        public async Task<TableData> GetTechnicianLocation(int TechnicianId)
+        public async Task<TableData> GetTechnicianLocation(GetTechnicianLocationReq req)
         {
+            Dictionary<string, object> data = new Dictionary<string, object>();
+            int? currentTechnicianId = 0;
             var result = new TableData();
-            var locations = await UnitWork.Find<RealTimeLocation>(r => r.AppUserId == TechnicianId).OrderByDescending(o => o.CreateTime).FirstOrDefaultAsync();
-            result.Data = locations;
+            if (req.TechnicianId > 0)
+            {
+                currentTechnicianId = req.TechnicianId;
+            }
+            else
+            {
+                currentTechnicianId = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && (string.IsNullOrEmpty(s.MaterialCode) ? "无序列号设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-"))) == req.MaterialType).Distinct().FirstOrDefaultAsync()).CurrentUserId;
+            }
+            data.Add("TechnicianId", currentTechnicianId);
+            var locations = await UnitWork.Find<RealTimeLocation>(r => r.AppUserId == currentTechnicianId).OrderByDescending(o => o.CreateTime).Select(s => new
+            {
+                s.AppUserId,
+                s.Addr,
+                s.Area,
+                s.City,
+                CreateTime = s.CreateTime.ToString("yyyy.MM.dd HH:mm:ss"),
+                s.Latitude,
+                s.Longitude,
+                s.Province,
+                s.Id,
+                TechnicianId = currentTechnicianId
+            }).FirstOrDefaultAsync();
+            data.Add("locations", locations);
+            result.Data = data;
             return result;
         }
 
@@ -2216,7 +2281,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var query = UnitWork.Find<ServiceOrder>(s => s.Id.Equals(ServiceOrderId))
+            var query = UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId)
                 .Include(s => s.ServiceOrderSNs);
             var list = (await query
             .ToListAsync()).Select(s => new
@@ -2231,7 +2296,7 @@ namespace OpenAuth.App
                 s.Area,
                 s.Addr,
                 s.Status,
-                s.CreateTime,
+                CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
                 s.Contacter,
                 s.CustomerName,
                 s.Supervisor,
@@ -2239,14 +2304,71 @@ namespace OpenAuth.App
                 s.U_SAP_ID,
                 s.ProblemTypeName,
                 s.ProblemTypeId,
+                s.ContactTel,
                 ServiceOrderSNs = s.ServiceOrderSNs.GroupBy(o => string.IsNullOrEmpty(o.ItemCode) ? "无序列号设备" : o.ItemCode.Substring(0, o.ItemCode.IndexOf("-"))).ToList()
                 .Select(s => new
                 {
                     MaterialType = s.Key,
+                    UnitName = "台",
                     Count = s.Count(),
                     orders = s.ToList()
                 })
             }).ToList();
+            result.Data = list;
+            return result;
+        }
+
+
+        /// <summary>
+        /// 获取技术员设备类型列表
+        /// </summary>
+        /// <param name="SapOrderId"></param>
+        /// <returns></returns>
+        public async Task<TableData> AppTechnicianLoad(int SapOrderId)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var query = UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == SapOrderId)
+                        .Include(s => s.ServiceWorkOrders)
+                        .Select(a => new
+                        {
+                            AppCustId = a.AppUserId,
+                            ServiceWorkOrders = a.ServiceWorkOrders.Select(o => new
+                            {
+                                o.Id,
+                                o.Status,
+                                o.FromTheme,
+                                ProblemType = o.ProblemType.Description,
+                                o.ManufacturerSerialNumber,
+                                o.MaterialCode,
+                                o.CurrentUserId,
+                                MaterialType = o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-"))
+                            }).ToList()
+                        });
+
+
+            var count = await query.CountAsync();
+            var list = (await query
+                .ToListAsync())
+                .Select(a => new
+                {
+                    a.AppCustId,
+                    ServiceWorkOrders = a.ServiceWorkOrders.GroupBy(o => o.MaterialType).Select(s => new
+                    {
+                        MaterialType = string.IsNullOrEmpty(s.Key) ? "无序列号设备" : s.Key,
+                        TechnicianId = s.ToList().Select(s => s.CurrentUserId).Distinct().FirstOrDefault(),
+                        Status = s.ToList().Select(s => s.Status).Distinct().FirstOrDefault(),
+                        Count = s.Count(),
+                        Orders = s.ToList(),
+                        UnitName = "台"
+                    }
+                    ).ToList()
+                });
+            result.Count = count;
             result.Data = list;
             return result;
         }

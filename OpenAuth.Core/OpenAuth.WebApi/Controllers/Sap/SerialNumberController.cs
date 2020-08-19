@@ -31,12 +31,32 @@ namespace OpenAuth.WebApi.Controllers.Sap
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> Get([FromQuery]QuerySerialNumberListReq req)
+        public async Task<TableData> Get([FromQuery] QuerySerialNumberListReq req)
         {
             var result = new TableData();
             try
             {
                 result = await _serialNumberApp.Find(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// 序列号查询（App 已生成服务单）
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> AppGet([FromQuery] QueryAppSerialNumberListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serialNumberApp.AppFind(req);
             }
             catch (Exception ex)
             {

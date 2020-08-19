@@ -933,7 +933,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
-                result =  _serviceOrderApp.GetServiceOrder(ServiceOrderId);
+                result = _serviceOrderApp.GetServiceOrder(ServiceOrderId);
             }
             catch (Exception ex)
             {
@@ -968,7 +968,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> ExportExcel([FromQuery]QueryServiceOrderListReq req)
+        public async Task<IActionResult> ExportExcel([FromQuery] QueryServiceOrderListReq req)
         {
             var data = await _serviceOrderApp.ExportExcel(req);
 
@@ -982,12 +982,12 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="TechnicianId">技术员Id</param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetTechnicianLocation(int TechnicianId)
+        public async Task<TableData> GetTechnicianLocation([FromQuery] GetTechnicianLocationReq req)
         {
             var result = new TableData();
             try
             {
-                result = await _serviceOrderApp.GetTechnicianLocation(TechnicianId);
+                result = await _serviceOrderApp.GetTechnicianLocation(req);
             }
             catch (Exception ex)
             {
