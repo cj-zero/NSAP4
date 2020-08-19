@@ -24,11 +24,11 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 联系人
         /// </summary>
-        public string Contacter { get; set; }
+        public string NewestContacter { get; set; }
         /// <summary>
         /// 联系人电话
         /// </summary>
-        public string ContactTel { get; set; }
+        public string NewestContactTel { get; set; }
         /// <summary>
         /// App用户Id
         /// </summary>
@@ -74,7 +74,14 @@ namespace OpenAuth.App.Request
         /// </summary>
         //[Browsable(false)]
         public int? FromId { get; set; }
-
+        /// <summary>
+        /// 问题类型Id
+        /// </summary>
+        public string ProblemTypeId { get; set; }
+        /// <summary>
+        /// 问题类型名称
+        /// </summary>
+        public string ProblemTypeName { get; set; }
         ///// <summary>
         ///// 服务单关联的工单
         ///// </summary>

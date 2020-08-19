@@ -134,8 +134,9 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public async Task<List<OrderLogListResp>> GetAppOrderLogList(GetAppOrderLogListReq request)
+        public async Task<Dictionary<string, object>> GetAppOrderLogList(GetAppOrderLogListReq request)
         {
+            var result = new Dictionary<string, object>();
             var query = from a in UnitWork.Find<AppServiceOrderLog>(null)
                         join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
                         from b in ab.DefaultIfEmpty()
@@ -143,10 +144,13 @@ namespace OpenAuth.App
                         from c in abc.DefaultIfEmpty()
                         select new { a, b, c };
             query = query.Where(q => q.b.U_SAP_ID == request.SapOrderId && (string.IsNullOrEmpty(q.c.MaterialCode) ? "无序列号设备" : q.c.MaterialCode.Substring(0, q.c.MaterialCode.IndexOf("-"))) == request.MaterialType);
+            var status = await query.Select(s => s.c.Status).Distinct().FirstOrDefaultAsync();
+            result.Add("status", status);
             var list = new List<OrderLogListResp>();
-            var orderLogs = await query.Select(q => new OrderLogListResp { Title = q.a.Title, Details = q.a.Details, CreateTime = q.a.CreateTime }).ToListAsync();
+            var orderLogs = (await query.Select(q => new OrderLogListResp { Title = q.a.Title, Details = q.a.Details, CreateTime = q.a.CreateTime }).ToListAsync()).GroupBy(g => g.Title).Select(s => s.First());
             list.AddRange(orderLogs);
-            return list.OrderByDescending(l => l.CreateTime).ToList();
+            result.Add("orderLogs", list.OrderByDescending(l => l.CreateTime).ToList());
+            return result;
         }
 
 

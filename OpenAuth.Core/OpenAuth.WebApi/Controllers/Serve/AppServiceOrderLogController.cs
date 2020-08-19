@@ -132,9 +132,9 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<Response<List<OrderLogListResp>>> GetAppOrderLogList([FromQuery] GetAppOrderLogListReq request)
+        public async Task<Response<Dictionary<string, object>>> GetAppOrderLogList([FromQuery] GetAppOrderLogListReq request)
         {
-            var result = new Response<List<OrderLogListResp>>();
+            var result = new Response<Dictionary<string, object>>();
             try
             {
                 result.Result = await _app.GetAppOrderLogList(request);
