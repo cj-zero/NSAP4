@@ -21,7 +21,7 @@
         /// <summary>
         /// 送检类型
         /// </summary>
-        public string AssetSJType { get; set; }
+        public string AssetInspectType { get; set; }
         /// <summary>
         /// 型号
         /// </summary>
@@ -29,19 +29,19 @@
         /// <summary>
         /// 出厂编号S/N
         /// </summary>
-        public string AssetCCNumber { get; set; }
+        public string AssetStockNumber { get; set; }
         /// <summary>
         /// 资产编号
         /// </summary>
-        public string AssetZCNumber { get; set; }
+        public string AssetNumber { get; set; }
         /// <summary>
         /// 校准日期
         /// </summary>
-        public System.DateTime? AssetJZDate { get; set; }
+        public System.DateTime? AssetStartDate { get; set; }
         /// <summary>
         /// 失效日期
         /// </summary>
-        public System.DateTime? AssetSXDate { get; set; }
+        public System.DateTime? AssetEndDate { get; set; }
         //todo:添加自己的请求字段
     }
 }

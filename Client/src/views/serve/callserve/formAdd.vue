@@ -993,6 +993,8 @@ export default {
   watch: {
     newValue: {
       handler: function (Val, Val1) {
+        console.log('newVal')
+        // let _this = this
         let newVal = JSON.parse(Val);
         let oldVal = JSON.parse(Val1);
         if (!this.ifEdit) {
@@ -1044,11 +1046,23 @@ export default {
             }
           });
         }
-        
+        newVal.forEach((item, index) => {
+          if (oldVal[index] !== undefined) {
+            let oldItem = oldVal[index]
+            if (item.fromType !== oldItem.fromType) {
+              this.formList[index].status = this.getStatus(item.fromType)
+            }
+          }
+        })
         this.$emit("change-form", newVal);
       },
       deep: true,
       // immediate: true
+    },
+    'formList.0' (newVal, oldVal) {
+      if (newVal.fromType !== oldVal.fromType) {
+        newVal.status = this.getStatus(newVal.fromType)
+      }
     },
     propForm: {
       deep: true,
@@ -1111,6 +1125,9 @@ export default {
     toggleDisabledClick(val) {
       this.isDisalbed = val;
     },
+    getStatus (formType) { // 根据呼叫类型 来改变状态
+      return formType === 1 ? 1 : 9
+    },  
     getSerialNumberList(code) {
       this.listLoading = true;
       this.serLoad = true;

@@ -35,31 +35,31 @@ namespace OpenAuth.WebApi.Controllers
         [HttpGet]
         public TableData Load([FromQuery]QueryassetListReq request)
         {
-            return _app.Load(request);
+            return  _app.Load(request);
         }
 
-        #region 获取单个自资产详情(不启用)
+        #region 获取单个自资产详情
         /// <summary>
         /// 获取单个自资产详情
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        //[HttpGet]
-        //public Response<Asset> Get(string id)
-        //{
-        //    var result = new Response<Asset>();
-        //    try
-        //    {
-        //        result.Result = _app.Get(id);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        result.Code = 500;
-        //        result.Message = ex.InnerException?.Message ?? ex.Message;
-        //    }
+        [HttpGet]
+        public async Task<Response<Asset>> GetAsset(string id)
+        {
+            var result = new Response<Asset>();
+            try
+            {
+                result.Result = await _app.GetAsset(id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
 
-        //    return result;
-        //}
+            return result;
+        }
         #endregion
         /// <summary>
         /// 添加资产
@@ -138,6 +138,25 @@ namespace OpenAuth.WebApi.Controllers
         {
             return _app.GetListUser(name, Orgid);
         }
-        
+
+
+        /// <summary>
+        /// 加载送检列表
+        /// </summary>
+        [HttpGet]
+        public TableData AssetInspectsLoad(string AssetId)
+        {
+            return  _app.AssetInspectsLoad(AssetId);
+        }
+
+        /// <summary>
+        /// 加载操作列表
+        /// </summary>
+        [HttpGet]
+        public async Task<TableData> AssetOperationsLoad(string AssetId)
+        { 
+            return await _app.AssetOperationsLoad(AssetId);
+        }
+
     }
 }

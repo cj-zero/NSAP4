@@ -32,14 +32,16 @@ namespace OpenAuth.App.Request
         /// 状态
         /// </summary>
         public string AssetStatus { get; set; }
+
+        /// <summary>
+        /// 状态序号
+        /// </summary>
+        public string AssetSerial { get; set; }
+        
         /// <summary>
         /// 类别
         /// </summary>
         public string AssetCategory { get; set; }
-        /// <summary>
-        /// 类别序号
-        /// </summary>
-        public string AssetSerial { get; set; }
         /// <summary>
         /// 部门
         /// </summary>
@@ -55,7 +57,7 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 出厂编号S/N
         /// </summary>
-        public string AssetCCNumber { get; set; }
+        public string AssetStockNumber { get; set; }
         /// <summary>
         /// 管理员
         /// </summary>
@@ -63,7 +65,7 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 资产编号
         /// </summary>
-        public string AssetZCNumber { get; set; }
+        public string AssetNumber { get; set; }
         /// <summary>
         /// 制造厂
         /// </summary>
@@ -71,35 +73,35 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 送检类型
         /// </summary>
-        public string AssetSJType { get; set; }
+        public string AssetInspectType { get; set; }
         /// <summary>
         /// 送检方式
         /// </summary>
-        public string AssetSJWay { get; set; }
+        public string AssetInspectWay { get; set; }
         /// <summary>
         /// 校准日期
         /// </summary>
-        public System.DateTime? AssetJZDate { get; set; }
+        public System.DateTime? AssetStartDate { get; set; }
         /// <summary>
         /// 校准证书
         /// </summary>
-        public string AssetJZCertificate { get; set; }
+        public string AssetCalibrationCertificate { get; set; }
         /// <summary>
         /// 失效日期
         /// </summary>
-        public System.DateTime? AssetSXDate { get; set; }
+        public System.DateTime? AssetEndDate { get; set; }
         /// <summary>
         /// 校准数据1
         /// </summary>
-        public string AssetJZData1 { get; set; }
+        public string AssetInspectDataOne { get; set; }
         /// <summary>
         /// 校准数据2
         /// </summary>
-        public string AssetJZData2 { get; set; }
+        public string AssetInspectDataTwo { get; set; }
         /// <summary>
         /// 技术文件
         /// </summary>
-        public string AssetJSFile { get; set; }
+        public string AssetTCF { get; set; }
         /// <summary>
         /// 描述
         /// </summary>
@@ -116,6 +118,10 @@ namespace OpenAuth.App.Request
         /// 创建时间
         /// </summary>
         public System.DateTime? AssetCreateTime { get; set; }
+        /// <summary>
+        /// 创建人
+        /// </summary>
+        public string AssetCreateUser { get; set; }
 
         //todo:添加自己的请求字段
         /// <summary>

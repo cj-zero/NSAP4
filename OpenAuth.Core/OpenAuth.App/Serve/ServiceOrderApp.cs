@@ -398,6 +398,8 @@ namespace OpenAuth.App
                 q.CreateTime,
                 q.Contacter,
                 q.ContactTel,
+                q.NewestContacter,
+                q.NewestContactTel,
                 q.Supervisor,
                 q.SalesMan,
                 q.Status,
@@ -421,6 +423,8 @@ namespace OpenAuth.App
                 CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
                 s.Contacter,
                 s.ContactTel,
+                s.NewestContacter,
+                s.NewestContactTel,
                 s.Supervisor,
                 s.SalesMan,
                 s.Status,
@@ -541,7 +545,7 @@ namespace OpenAuth.App
             await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"客服:{loginContext.User.Name}创建工单", ActionType = "创建工单", ServiceOrderId = obj.Id });
 
             #region 同步到SAP 并拿到服务单主键
-            _capBus.Publish("Serve.ServcieOrder.Create", obj.Id);
+            _capBus.Publish("Serve.ServcieOrder.CreateWorkNumber", obj.Id);
 
             #endregion
         }
@@ -834,14 +838,15 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.b.RecepUserName.Contains(req.QryRecepUser))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.c.Name.Contains(req.QryProblemType))
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
-                         .WhereIf(req.QryMaterialTypes != null && req.QryMaterialTypes.Count > 0, q => req.QryMaterialTypes.Contains(q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))));
+                         .WhereIf(req.QryMaterialTypes != null && req.QryMaterialTypes.Count > 0, q => req.QryMaterialTypes.Contains(q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))))
+                         .Where(q=>q.a.FromType!=2);
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
                 query = query.Where(q => q.b.SupervisorId.Equals(loginContext.User.Id));
             }
 
-            var resultsql = query.OrderBy(r => r.a.CreateTime).Select(q => new
+            var resultsql = query.OrderBy(r => r.a.Id).ThenBy(r=> r.a.WorkOrderNumber).Select(q => new
             {
                 ServiceOrderId = q.b.Id,
                 q.a.Priority,
@@ -2138,18 +2143,15 @@ namespace OpenAuth.App
             else
             {
                 await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id == ServiceOrderId, u => new ServiceOrder { Status = 3 });
-                var workOrderList = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == ServiceOrderId).ToList();
-                List<int> workorder = new List<int>();
-                foreach (var item in workOrderList)
-                {
-                    workorder.Add(item.Id);
-                }
+                await UnitWork.DeleteAsync<ServiceWorkOrder>(s => s.ServiceOrderId.Equals(ServiceOrderId));
+                await UnitWork.SaveAsync();
                 //保存日志
-                await _ServiceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq
+                await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq
                 {
+                    ServiceOrderId = ServiceOrderId,
                     Action = $"{user.Name}执行撤销操作，撤销ID为{ServiceOrderId}的服务单",
                     ActionType = "撤销操作",
-                }, workorder);
+                });
             }
             return result;
         }

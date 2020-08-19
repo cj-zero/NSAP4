@@ -18,36 +18,38 @@ using OpenAuth.Repository.Core;
 namespace OpenAuth.Repository.Domain
 {
     /// <summary>
-	/// 
+	/// 资产表
 	/// </summary>
-    [Table("asset")]
+    [Table("Asset")]
     public partial class Asset : Entity
     {
         public Asset()
         {
           this.AssetStatus= string.Empty;
           this.AssetCategory= string.Empty;
-          this.OrgName = string.Empty;
+          this.OrgName= string.Empty;
           this.AssetType= string.Empty;
           this.AssetHolder= string.Empty;
-          this.AssetCCNumber= string.Empty;
+          this.AssetStockNumber= string.Empty;
           this.AssetAdmin= string.Empty;
-          this.AssetZCNumber= string.Empty;
+          this.AssetNumber= string.Empty;
           this.AssetFactory= string.Empty;
-          this.AssetSJType= string.Empty;
-          this.AssetSJWay= string.Empty;
-          this.AssetJZDate= DateTime.Now;
-          this.AssetJZCertificate= string.Empty;
-          this.AssetSXDate= DateTime.Now;
-          this.AssetJZData1= string.Empty;
-          this.AssetJZData2= string.Empty;
-          this.AssetJSFile= string.Empty;
+          this.AssetInspectType= string.Empty;
+          this.AssetInspectWay= string.Empty;
+          this.AssetStartDate= DateTime.Now;
+          this.AssetCalibrationCertificate= string.Empty;
+          this.AssetEndDate= DateTime.Now;
+          this.AssetInspectDataOne= string.Empty;
+          this.AssetInspectDataTwo= string.Empty;
+          this.AssetTCF= string.Empty;
           this.AssetDescribe= string.Empty;
           this.AssetRemarks= string.Empty;
           this.AssetImage= string.Empty;
+          this.AssetCreateTime= DateTime.Now;
+          this.AssetCreateUser= string.Empty;
         }
 
-
+        
         /// <summary>
         /// 状态
         /// </summary>
@@ -77,9 +79,9 @@ namespace OpenAuth.Repository.Domain
         /// 出厂编号S/N
         /// </summary>
         [Description("出厂编号S/N")]
-        public string AssetCCNumber { get; set; }
+        public string AssetStockNumber { get; set; }
         /// <summary>
-        ///管理员
+        /// 管理员
         /// </summary>
         [Description("管理员")]
         public string AssetAdmin { get; set; }
@@ -87,7 +89,7 @@ namespace OpenAuth.Repository.Domain
         /// 资产编号
         /// </summary>
         [Description("资产编号")]
-        public string AssetZCNumber { get; set; }
+        public string AssetNumber { get; set; }
         /// <summary>
         /// 制造厂
         /// </summary>
@@ -97,42 +99,42 @@ namespace OpenAuth.Repository.Domain
         /// 送检类型
         /// </summary>
         [Description("送检类型")]
-        public string AssetSJType { get; set; }
+        public string AssetInspectType { get; set; }
         /// <summary>
         /// 送检方式
         /// </summary>
         [Description("送检方式")]
-        public string AssetSJWay { get; set; }
+        public string AssetInspectWay { get; set; }
         /// <summary>
         /// 校准日期
         /// </summary>
         [Description("校准日期")]
-        public System.DateTime? AssetJZDate { get; set; }
+        public System.DateTime? AssetStartDate { get; set; }
         /// <summary>
         /// 校准证书
         /// </summary>
         [Description("校准证书")]
-        public string AssetJZCertificate { get; set; }
+        public string AssetCalibrationCertificate { get; set; }
         /// <summary>
         /// 失效日期
         /// </summary>
         [Description("失效日期")]
-        public System.DateTime? AssetSXDate { get; set; }
+        public System.DateTime? AssetEndDate { get; set; }
         /// <summary>
         /// 校准数据1
         /// </summary>
         [Description("校准数据1")]
-        public string AssetJZData1 { get; set; }
+        public string AssetInspectDataOne { get; set; }
         /// <summary>
         /// 校准数据2
         /// </summary>
         [Description("校准数据2")]
-        public string AssetJZData2 { get; set; }
+        public string AssetInspectDataTwo { get; set; }
         /// <summary>
         /// 技术文件
         /// </summary>
         [Description("技术文件")]
-        public string AssetJSFile { get; set; }
+        public string AssetTCF { get; set; }
         /// <summary>
         /// 描述
         /// </summary>
@@ -153,13 +155,19 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("创建时间")]
         public System.DateTime? AssetCreateTime { get; set; }
+        /// <summary>
+        /// 创建人
+        /// </summary>
+        [Description("创建人")]
+        public string AssetCreateUser { get; set; }
 
         /// <summary>
-        /// 计量特性
+        /// 类型详情表
         /// </summary>
+        [Description("类型详情表")]
         [Ignore]
-        [Description("计量特性")]
         public List<AssetCategory> AssetCategorys { get; set; }
 
+        
     }
 }
