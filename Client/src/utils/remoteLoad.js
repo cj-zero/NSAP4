@@ -7,7 +7,7 @@ export function remoteLoad (url, hasCallback) {
      */
     function createScript (url) {
       let scriptElement = document.createElement('script')
-      document.body.appendChild(scriptElement)
+      document.head.appendChild(scriptElement)
       let promise = new Promise((resolve, reject) => {
         scriptElement.addEventListener('load', e => {
           removeScript(scriptElement)

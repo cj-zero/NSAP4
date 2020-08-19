@@ -45,6 +45,7 @@ export default {
       // 加载PositionPicker，loadUI的路径参数为模块名中 'ui/' 之后的部分
       let AMapUI = this.AMapUI = window.AMapUI
       let AMap = this.AMap = window.AMap
+      console.log(AMapUI, AMap, 'amp')
       AMapUI.loadUI(['misc/PositionPicker'], PositionPicker => {
         console.log(mapConfig, 'before mapConfig')
         let mapConfig = {
@@ -98,18 +99,16 @@ export default {
     // 已载入高德地图API，则直接初始化地图
     let that =this
     this.$nextTick(
-      function(){
+      async function(){
         if (window.AMap && window.AMapUI) {
           //  await remoteLoad(`http://webapi.amap.com/maps?v=1.3&key=${this.MapKey}`)
           // await remoteLoad('http://webapi.amap.com/ui/1.0/main.js')
           this.initMap()
         // 未载入高德地图API，则先载入API再初始化
         } else {
-          remoteLoad(`http://webapi.amap.com/maps?v=1.3&key=${this.MapKey}`)
+          await remoteLoad(`http://webapi.amap.com/maps?v=1.3&key=${this.MapKey}`)
+          await remoteLoad('http://webapi.amap.com/ui/1.0/main.js')
           setTimeout(function(){
-              remoteLoad('http://webapi.amap.com/ui/1.0/main.js')
-          },200)
-            setTimeout(function(){
               that.initMap()
           },300)
         }
