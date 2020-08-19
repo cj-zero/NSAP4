@@ -9,10 +9,10 @@ namespace OpenAuth.App.Request
     public class SaveWorkOrderTakeTypeReq
     {
         /// <summary>
-        /// 服务单Id
+        /// SapId
         /// </summary>
         [Required]
-        public int Id { get; set; }
+        public int ServiceOrderId { get; set; }
 
         /// <summary>
         /// 接单类型 0 未接单 1电话服务 2上门服务 3电话服务(已拨打)
@@ -25,5 +25,11 @@ namespace OpenAuth.App.Request
         /// </summary>
         [Required]
         public int CurrentUserId { get; set; }
+
+        /// <summary>
+        /// 设备类型
+        /// </summary>
+        [Required]
+        public string MaterialType { get; set; }
     }
 }

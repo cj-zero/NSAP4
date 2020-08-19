@@ -799,17 +799,17 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        /// 提交核对错误设备信息
+        /// 提交核对错误(新)设备信息
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<TableData> ApplyErrorDevices(ApplyErrorDevicesReq request)
+        public async Task<Response> ApplyErrorDevices(ApplyErrorDevicesReq request)
         {
-            var result = new TableData();
+            var result = new Response();
             try
             {
-                result = await _serviceOrderApp.ApplyErrorDevices(request);
+                await _serviceOrderApp.ApplyErrorDevices(request);
             }
             catch (Exception ex)
             {
@@ -979,7 +979,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 获取技术员位置信息
         /// </summary>
-        /// <param name="TechnicianId">技术员Id</param>
+        /// <param name="req"></param>
         /// <returns></returns>
         [HttpGet]
         public async Task<TableData> GetTechnicianLocation([FromQuery] GetTechnicianLocationReq req)
@@ -1008,6 +1008,49 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 result = await _serviceOrderApp.GetAppCustServiceOrderDetails(ServiceOrderId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取技术员设备类型列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> AppTechnicianLoad(int SapOrderId, int CurrentUserId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.AppTechnicianLoad(SapOrderId, CurrentUserId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取技术员服务单详情
+        /// </summary>
+        /// <param name="SapOrderId">SapId</param>
+        /// <param name="CurrentUserId">当前技术员App用户Id</param>
+        /// <param name="MaterialType">设备类型</param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetAppTechnicianServiceOrderDetails(int SapOrderId, int CurrentUserId, string MaterialType)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetAppTechnicianServiceOrderDetails(SapOrderId, CurrentUserId, MaterialType);
             }
             catch (Exception ex)
             {
