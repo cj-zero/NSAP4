@@ -618,6 +618,9 @@ export default {
     },
     handleUpdate(row) {
       // 弹出编辑框
+      if (row.status === 3) {
+        return this.$message.error('无法处理已取消服务单')
+      }
       this.temp = Object.assign({}, row); // copy obj
       callservesure.getForm(row.id).then(response => {
         this.formValue = response.result;

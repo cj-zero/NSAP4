@@ -183,7 +183,9 @@ export default {
               });
             }
           })
-          .catch(() => console.log(""));
+          .catch((err) => {
+            console.log(err)
+          });
       }, 1000);
       this.$once("hook:beforeDestroy", () => {
         clearInterval(this.timer);
@@ -212,8 +214,10 @@ export default {
                 path: "/"
               });
             })
-            .catch(() => {
+            .catch((err) => {
               this.loading = false;
+              console.log(this.$message, 'error', err)
+              this.$message.error(err.message)
             });
         } else {
           console.log("error submit!!");

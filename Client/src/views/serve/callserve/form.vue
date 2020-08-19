@@ -346,7 +346,7 @@
         :modal-append-to-body='false'
         :append-to-body="true" 
         title="最近服务单情况" 
-        width="60%" 
+        width="450px" 
         @open="openDialog" 
         :visible.sync="dialogCallId"
         :center="true"
@@ -557,7 +557,7 @@ export default {
     "form.addr": {
       //现地址详细地址
       handler(val) {
-        if (val) {
+        if (val && this.formName === '新建') {
           if (!this.ifFirstLook) {
             this.needPos = true;
           } else {
@@ -580,7 +580,7 @@ export default {
       //地图标识地址
 
       handler(val, oldVal) {
-        if (val) {
+        if (val && this.formName === '新建') {
           if (this.ifFirstLook) {
             if (oldVal) {
               this.needPos = true;
@@ -736,16 +736,16 @@ export default {
       } else {
         this.needPos = true;
       }
-      let { contactTel, contacter } = val;
-      let newVal = Object.create(null);
-      for (let key in val) {
-        if (key == "contactTel" || key !== "contacter") {
-          newVal[key] = val[key];
-        }
-      }
-      Object.assign(this.form, newVal);
-      this.form.newestContacter = contacter; //最新联系人,
-      this.form.newestContactTel = contactTel;
+      let { newestContactTel, newestContacter } = val;
+      // let newVal = Object.create(null);
+      // for (let key in val) {
+      //   if (key == "contactTel" || key !== "contacter") {
+      //     newVal[key] = val[key];
+      //   }
+      // }
+      Object.assign(this.form, val);
+      this.form.newestContacter = newestContacter; //最新联系人,
+      this.form.newestContactTel = newestContactTel;
       // let that =  this
       //  let addre = val.province + val.city + val.area +val.addr
       // setTimeout(function(){
@@ -766,7 +766,6 @@ export default {
         let manufSN = manufSNList[i]
         console.log(manufSN, 'man')
         if (manufSN !== '其他设备') {
-          console.log(CardCode, manufSN)
           promiseList.push(getSerialNumber({
             ...listQuery,
             CardCode,
@@ -777,9 +776,7 @@ export default {
           otherIndex = i
         }
       }
-      console.log(promiseList, '11')
       Promise.all(promiseList).then(res => {
-        console.log('res', 'setFormRes', res)
         let targetList = []
         for (let i = 0; i < res.length; i++) {
           targetList.push({
@@ -820,9 +817,8 @@ export default {
           })
         }
         this.propForm = targetList
-        console.log(this.propForm, 'setFormProp')
-      }).catch(() => {
-        console.log(promiseList, 'promiseList')
+      }).catch((err) => {
+        console.log(err, 'err')
         this.$message.error('查询序列号失败')
       })
     },

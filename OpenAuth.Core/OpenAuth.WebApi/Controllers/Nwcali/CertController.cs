@@ -410,13 +410,14 @@ namespace OpenAuth.WebApi.Controllers
                 int j = 0;
                 foreach (var item in plcData)
                 {
+                    int l = 1;
                     var data = item.Value.Where(p => p.VoltsorAmps.Equals("Volts") && p.Mode.Equals(mode) && p.Verify_Type.Equals("Post-Calibration")).GroupBy(d => d.Channel);
                     foreach (var item2 in data)
                     {
                         var cvDataList = item2.OrderBy(dd => dd.Commanded_Value).ToList();
                         foreach (var cvData in cvDataList)
                         {
-                            var cvCHH = $"{item.Key.Substring(item.Key.Length - 1, 1)}-{cvData.Channel}";
+                            var cvCHH = $"{l}-{cvData.Channel}";
                             var cvRange = cvData.Scale;
                             var cvIndication = cvData.Measured_Value;
                             var cvMeasuredValue = cvData.Standard_Value;
@@ -541,6 +542,7 @@ namespace OpenAuth.WebApi.Controllers
                             j++;
                         }
                     }
+                    l++;
                 }
             }
             void CalculateCurrent(string mode, int tableIndex)
@@ -700,14 +702,14 @@ namespace OpenAuth.WebApi.Controllers
             #endregion
 
             #region 签名
-            var signPath1 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "yang.png");
-            var signPath2 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "zhou.png");
-            var signPath3 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "chen.png");
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 1, ValueData = signPath1 });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 3, ValueData = signPath2 });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 1, ValueData = signPath3 });
-            var signetPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "印章.png");
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 3, ValueData = signetPath });
+            //var signPath1 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "yang.png");
+            //var signPath2 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "zhou.png");
+            //var signPath3 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "chen.png");
+            //list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 1, ValueData = signPath1 });
+            //list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 3, ValueData = signPath2 });
+            //list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 1, ValueData = signPath3 });
+            //var signetPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "印章.png");
+            //list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 3, ValueData = signetPath });
             #endregion
             return list;
         }

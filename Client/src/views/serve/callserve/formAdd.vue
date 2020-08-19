@@ -14,7 +14,7 @@
         <el-row class="row-bg">
           <el-col :span="8">
             <el-form-item label="工单ID">
-              <el-input disabled v-model="formList[0].id"></el-input>
+              <el-input disabled v-model="formList[0].workOrderNumber"></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="ifEdit?8:7">
@@ -141,7 +141,7 @@
               <el-select
                 size="small"
                 v-model="formList[0].status"
-                :disabled="isCreate"
+                disabled
                 clearable
                 placeholder="请选择"
               >
@@ -367,7 +367,7 @@
             <el-row class="row-bg">
               <el-col :span="8">
                 <el-form-item label="工单ID">
-                  <el-input size="small" disabled v-model="item.id"></el-input>
+                  <el-input size="small" disabled v-model="item.workOrderNumber"></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="ifEdit?8:7">
@@ -497,9 +497,9 @@
                   <el-select
                     size="small"
                     v-model="item.status"
-                    :disabled="isCreate"
                     clearable
                     placeholder="请选择"
+                    disabled
                   >
                     <el-option
                       v-for="ite in options_status"
@@ -636,10 +636,10 @@
             <el-form-item label="备注" prop="remark">
               <el-input type="textarea" size="small" v-model="item.remark"></el-input>
             </el-form-item>
-            <el-form-item label="故障描述" v-if="!isCreate" prop="remark">
+            <el-form-item label="故障描述" v-if="formName === '查看'" prop="remark">
               <el-input type="textarea" size="small" v-model="item.troubleDescription"></el-input>
             </el-form-item>
-            <el-form-item label="过程描述" v-if="!isCreate" prop="remark">
+            <el-form-item label="过程描述" v-if="formName === '查看'" prop="remark">
               <el-input type="textarea" size="small" v-model="item.processDescription"></el-input>
             </el-form-item>
             <el-form-item>
@@ -949,7 +949,10 @@ export default {
 
   mounted() {
     this.listLoading = true;
-    this.getSerialNumberList();
+    if (this.formName === '编辑' || this.formName === '确认') {
+      this.getSerialNumberList(this.form.customerId);
+    }
+    // this.getSerialNumberList();
     //获取问题类型的数据
     problemtypes
       .getList()
@@ -1055,6 +1058,7 @@ export default {
     "form.customerId": {
       deep: true,
       handler(val) {
+        console.log(val, 'customerId change')
         this.listQuery.CardCode = val;
         getSerialNumber(this.listQuery)
           .then((res) => {
@@ -1083,7 +1087,7 @@ export default {
   //     this.listQuery.customerId=this.form.customerId
   //   // }
   //   // console.log(this.form.customerId)
-  // },
+  // },f
   inject: ["form"],
   methods: {
     ...mapMutations('form', {
@@ -1099,9 +1103,10 @@ export default {
     toggleDisabledClick(val) {
       this.isDisalbed = val;
     },
-    getSerialNumberList() {
+    getSerialNumberList(code) {
       this.listLoading = true;
       this.serLoad = true;
+      this.listQuery.CardCode = code || ''
       getSerialNumber(this.listQuery)
         .then((res) => {
           this.SerialNumberList = res.data;

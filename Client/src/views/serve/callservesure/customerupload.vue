@@ -30,12 +30,12 @@
         </el-col>
         <el-col :span="8">
           <el-form-item label="联系人">
-            <el-input size="small" v-model="form.contacter"></el-input>
+            <el-input size="small" v-model="form.newestContacter"></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="8">
           <el-form-item label="电话号码">
-            <el-input size="small" v-model="form.contactTel"></el-input>
+            <el-input size="small" v-model="form.newestContactTel"></el-input>
           </el-form-item>
         </el-col>
       </el-row>

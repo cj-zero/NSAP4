@@ -26,6 +26,11 @@ namespace OpenAuth.App.Request
         /// 校准人
         /// </summary>
         public string Operator { get; set; }
+
+        /// <summary>
+        /// 校准审批状态 1-待送审 2-待审批/批准
+        /// </summary>
+        public int FlowStatus { get; set; }
         /// <summary>
         /// 校准日期开始
         /// </summary>
