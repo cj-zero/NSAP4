@@ -3,8 +3,7 @@
     <el-timeline v-if="resultList.length">
       <el-timeline-item
         v-for="(activity, index) in resultList"
-        :key="index"
-        :timestamp="activity.createTime">
+        :key="index">
         {{ activity.action }}
       </el-timeline-item>
     </el-timeline>
@@ -59,6 +58,9 @@ export default {
     top: 0;
     bottom: 0;
     margin: auto;
+  }
+  ::v-deep .el-timeline-item__content {
+    line-height: 24px;
   }
 }
 </style>

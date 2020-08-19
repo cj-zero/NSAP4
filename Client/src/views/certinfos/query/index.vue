@@ -1,43 +1,46 @@
 <template>
   <div class="app-container">
-    <search @search="onSearch"></search>
-    <common-table
-      :tableData="tableData"
-      :headOptions="headOptions"
-      :type="type"
-      @openDetail="onOpenDetail"
-    >
-    </common-table>
-    <pagination
-      v-show="totalCount > 0"
-      :total="totalCount"
-      :page.sync="pageConfig.page"
-      :limit.sync="pageConfig.limit"
-      @pagination="handleChange"
-    />
-    <el-dialog 
-      :visible.sync="visible"
-      width="50%"
-      @closed="onClosed">
-      <el-tabs v-model="activeName" type="card" @tab-click="handleClick">
-        <el-tab-pane label="校准证书" name="first">
-          <certifiate
-            :type="type"
-            placeholder="退回意见"
-            :certNo="currentCertNo"
-            :currentData="currentData"
-            @handleSubmit="onHandleSubmit"
-            @close="closeDialog"
-          ></certifiate>
-        </el-tab-pane>
-        <el-tab-pane label="操作记录" name="second">
-          <operation-record :id="currentId"></operation-record>
-        </el-tab-pane>
-      </el-tabs>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="closeDialog" size="mini">取 消</el-button>
-      </span>
-    </el-dialog>
+    <div class="bg-white">
+      <search @search="onSearch"></search>
+      <common-table
+        :tableData="tableData"
+        :headOptions="headOptions"
+        :type="type"
+        @openDetail="onOpenDetail"
+      >
+      </common-table>
+      <pagination
+        v-show="totalCount > 0"
+        :total="totalCount"
+        :page.sync="pageConfig.page"
+        :limit.sync="pageConfig.limit"
+        @pagination="handleChange"
+      />
+      <el-dialog 
+        class="certifiate-dialog"
+        :visible.sync="visible"
+        width="800px"
+        @closed="onClosed">
+        <el-tabs v-model="activeName" type="card" @tab-click="handleClick">
+          <el-tab-pane label="校准证书" name="first">
+            <certifiate
+              :type="type"
+              placeholder="退回意见"
+              :certNo="currentCertNo"
+              :currentData="currentData"
+              @handleSubmit="onHandleSubmit"
+              @close="closeDialog"
+            ></certifiate>
+          </el-tab-pane>
+          <el-tab-pane label="操作记录" name="second">
+            <operation-record :id="currentId"></operation-record>
+          </el-tab-pane>
+        </el-tabs>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="closeDialog" size="mini">取 消</el-button>
+        </span>
+      </el-dialog>
+    </div>
   </div>
 </template>
 
@@ -96,4 +99,12 @@ export default {
 }
 </script>
 <style lang='scss' scoped>
+.certifiate-dialog {
+  ::v-deep .custom-theme .el-dialog__body {
+    padding: 0 20px;
+  }
+  ::v-deep .el-dialog__body {
+    padding: 0 20px;
+  }
+}
 </style>
