@@ -474,8 +474,8 @@ export default {
           });
         } else {
           this.dialogOrder = true;
-                     this.listQuery.limit=999
-     await this.getRightList(); 
+              //  this.listQuery.limit=999
+        await this.getRightList(); 
           callservepushm.AllowSendOrderUser().then((res) => {
             this.tableData = res.data;
             this.total2 = res.count;

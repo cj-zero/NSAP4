@@ -22,12 +22,12 @@
         element-loading-background="rgba(0, 0, 0, 0.5)"
       >{{ rightBtnText }}</el-button>
     </el-row>
-    <el-row v-if="type !== 'submit'">
+    <el-row v-if="type == 'review'">
       <el-input type="textarea" v-model="advice" :placeholder="placeholder"></el-input>
     </el-row>
-    <el-row style="margin-top: 10px;">
+    <div style="margin-top: 10px;" class="scroll-wrapper" @scroll="onScroll" ref="container">
       <template v-if="certNo">
-        <pdf
+        <!-- <pdf
           class="scroll-wrapper"
           v-loading="loading" 
           ref="pdf"
@@ -38,16 +38,17 @@
           @page-loaded="pageLoaded($event)" 
           @num-pages="pageTotalNum = $event" 
           @error="pdfError($event)">
-        </pdf>
+        </pdf> -->
+        <pdf v-for="i in realPageNum" :key="i" :src="url" :page="i"></pdf>
       </template>
-    </el-row>
-    <el-row class="tools-wrapper" type="flex" justify="center">
+    </div>
+    <!-- <el-row class="tools-wrapper" type="flex" justify="center">
       <el-button type="primary" @click.stop="prePage" class="item" size="mini"> 上一页</el-button>
 			<el-button type="primary" @click.stop="nextPage" class="item" size="mini"> 下一页</el-button>
 			<div class="page">{{ pageNum }} / {{ pageTotalNum }} </div>
 			<el-button type="primary" @click.stop="clock" class="item" size="mini"> 顺时针</el-button>
 			<el-button type="primary" @click.stop="counterClock" class="item" size="mini"> 逆时针</el-button>
-    </el-row>
+    </el-row> -->
   </div>
 </template>
 
@@ -91,6 +92,7 @@ export default {
   data () {
     return {
       advice: '',
+      url: '',
       baseURL: `${process.env.VUE_APP_BASE_API}/Cert/DownloadCertPdf`,
       // url: 'http://192.168.1.207:52789/api/Cert/DownloadCertPdf/NWO080091?X-Token=1723b9dc',
       numPages: 1,
@@ -99,7 +101,8 @@ export default {
       pageRotate: 0, // 旋转角度
       loadedRatio: 0, // 加载进度
       curPageNum: 0,
-      loading: false // 是否出现loading
+      loading: false, // 是否出现loading
+      realPageNum: 0 // 当前的页数
     }
   },
   computed: {
@@ -125,13 +128,23 @@ export default {
     },
     getNumPages (url) {
       console.log(url, 'url')
-      let loadingTask = pdf.createLoadingTask(url)
-      // console.log(loadingTask, typeof loadingTask, 'loadingTask')
-      loadingTask.promise.then(pdf => {
-        this.pageTotalNum = pdf.numPages
-      }).catch(() => {
-        this.$message.error('pdf加载出错')
-      })
+      try {
+        let loadingTask = pdf.createLoadingTask(url)
+        console.log(loadingTask, typeof loadingTask, 'loadingTask')
+        loadingTask.promise.then(pdf => {
+          this.url = loadingTask
+          this.numPages = pdf.numPages
+          if (this.numPages) {
+            this.realPageNum = 1
+          }
+          console.log(this.numPages, 'numPage')
+        }).catch(() => {
+          this.$message.error('pdf加载出错')
+        })
+      } catch (err) {
+        console.log(err, 'err')
+      }
+      
     },
     // 上一页函数，
     prePage() {
@@ -164,11 +177,15 @@ export default {
     },
     onProgress (e) {
       this.loadedRatio = e
-      console.log(this.loadedRatio, 'laodingPeo')
       this.loading = this.loadedRatio < 1
-      console.log(this.loading, 'loading')
     },
-    
+    onScroll (e) {
+      let target = e.target
+      let { scrollTop, scrollHeight, clientHeight } = target
+      if (scrollTop + clientHeight + 10 >= scrollHeight) {
+        this.realPageNum = Math.min(this.numPages, ++this.realPageNum)
+      }
+    },
     _download () {
       // axios
       //   .get('http://192.168.1.207:52789/api/Cert/DownloadCertPdf/NWO080091?X-Token=1723b9dc')
@@ -191,15 +208,21 @@ export default {
       this.loadedRatio = 0
       this.curPageNum = 0
       this.loading = false
-      this.$refs.pdf.$el.scrollTop = 0
+      this.url = ''
+      if (this.$refs.container) {
+       this.$refs.container.scrollTop = 0
+      }
     }
   },
   watch: {
-    certNo (val, oldVal) {
-      // 证书编号发生变化就重新加载PDF
-      console.log(val, oldVal, 'val')
-      this.reset()
-      this.getNumPages(this.pdfURL)
+    certNo: {
+      handler (val, oldVal) {
+        // 证书编号发生变化就重新加载PDF
+        console.log(val, oldVal, 'val')
+        this.reset()
+        this.getNumPages(this.pdfURL)
+      },
+      immediate: true
     }
   },
   created () {
@@ -213,7 +236,7 @@ export default {
 <style lang='scss' scoped>
 .certifiate-wrapper {
   .scroll-wrapper {
-    height: 400px;
+    height: 585.7px;
     overflow-y: scroll;
     &::-webkit-scrollbar {
       width: 7px;
@@ -225,6 +248,11 @@ export default {
     }
     &::-webkit-scrollbar-track {
       border-radius: 10px;
+    }
+    & > span {
+      width: 100%;
+      height: 0 !important;
+      padding-bottom: 130%;
     }
   }
   .btn-wrapper {

@@ -20,20 +20,50 @@ namespace OpenAuth.App.Serve.Request
         public int AppUserId { get; set; }
 
         /// <summary>
-        /// 设备集合
+        /// 更正后的设备集合
         /// </summary>
-        [Required]
         public virtual List<Device> Devices { get; set; }
+
+        /// <summary>
+        /// 新设备信息
+        /// </summary>
+        public virtual List<NewDevice> NewDevices { get; set; }
     }
     /// <summary>
     /// 设备信息
     /// </summary>
     public class Device
     {
+        /// <summary>
+        /// 旧序列号
+        /// </summary>
         public string manufacturerSerialNumber { get; set; }
 
+        /// <summary>
+        /// 新序列号
+        /// </summary>
         public string newNumber { get; set; }
 
+        /// <summary>
+        /// 新型号
+        /// </summary>
         public string newCode { get; set; }
+    }
+
+    /// <summary>
+    /// 新添加设备信息
+    /// </summary>
+    public class NewDevice
+    {
+        /// <summary>
+        /// 序列号
+        /// </summary>
+
+        public string manufacturerSerialNumber { get; set; }
+
+        /// <summary>
+        /// 型号
+        /// </summary>
+        public string ItemCode { get; set; }
     }
 }

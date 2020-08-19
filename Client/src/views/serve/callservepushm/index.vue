@@ -469,7 +469,7 @@ export default {
           this.tableData = res.data;
           this.total2 = res.count;
         });
-        this.listQuery.limit = 999;
+        // this.listQuery.limit = 999;
         await this.getRightList();
       } else {
         this.$message({
