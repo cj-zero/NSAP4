@@ -107,12 +107,12 @@
             :width="fruit.width"
           >
             <template slot-scope="scope">
-              <span v-if="fruit.name === 'order'">{{ scope.$index + 1 }}</span>
+              <!-- <span v-if="fruit.name === 'order'">{{ scope.$index + 1 }}</span> -->
               <el-link
-                v-if="fruit.name === 'id'"
+                v-if="fruit.name === 'order'"
                 type="primary"
                 @click="openTree(scope.row.id)"
-              >{{scope.row.id}}</el-link>
+              >{{ scope.$index + 1 }}</el-link>
               <span
                 v-if="fruit.name === 'status'"
                 :class="[scope.row[fruit.name]===1?'orangeWord':(scope.row[fruit.name]===2?'greenWord':'redWord')]"

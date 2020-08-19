@@ -750,6 +750,7 @@ export default {
             type: "success",
             message: "撤销成功!"
           })
+          this.getList();
         }).catch(err => {
           this.$message.error(err.message)
         })
