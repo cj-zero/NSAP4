@@ -20,7 +20,7 @@ namespace OpenAuth.App
         private readonly AppServiceOrderLogApp _appServiceOrderLogApp;
         private readonly ServiceOrderLogApp _ServiceOrderLogApp;
         public CompletionReportApp(IUnitWork unitWork, IRepository<CompletionReport> repository, AppUserMapApp appUserMapApp,
-            RevelanceManagerApp app, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp,ServiceOrderLogApp ServiceOrderLogApp) : base(unitWork, repository, auth)
+            RevelanceManagerApp app, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, ServiceOrderLogApp ServiceOrderLogApp) : base(unitWork, repository, auth)
         {
             _revelanceApp = app;
             _appUserMapApp = appUserMapApp;
@@ -87,8 +87,15 @@ namespace OpenAuth.App
             }
             await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
-                Title = "技术员上门服务中",
-                Details = $"技术员于{DateTime.Now}结束上门服务",
+                Title = "技术员完成服务",
+                Details = $"感谢您对新威的支持。您的服务已完成，如有疑问请及时拨打客服电话：8008308866，新威客服会全力帮您继续跟进",
+                LogType = 1
+            }, workorder);
+            await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
+            {
+                Title = "技术员完成售后维修",
+                Details = $"提交了《行为服务报告单》，完成了本次任务",
+                LogType = 2
             }, workorder);
             //反写完工报告Id至工单
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId,
@@ -231,7 +238,7 @@ namespace OpenAuth.App
         /// <param name="CompletionReportId"></param>
         /// <param name="ServiceWorkOrderId"></param>
         /// <returns></returns>
-        public async Task<TableData> GetCompletionReportDetailsWeb(string CompletionReportId,int ServiceWorkOrderId)
+        public async Task<TableData> GetCompletionReportDetailsWeb(string CompletionReportId, int ServiceWorkOrderId)
         {
             var result = new TableData();
             var ServiceWorkOrderModel = UnitWork.Find<ServiceWorkOrder>(u => u.Id == ServiceWorkOrderId).FirstOrDefault();
@@ -239,30 +246,31 @@ namespace OpenAuth.App
             var pics = UnitWork.Find<CompletionReportPicture>(m => m.CompletionReportId == CompletionReportId).Select(c => c.PictureId).ToList();
             var picfiles = await UnitWork.Find<UploadFile>(f => pics.Contains(f.Id)).ToListAsync();
             Files.AddRange(picfiles.MapTo<List<UploadFileResp>>());
-            var CompletionReportModel = UnitWork.Find<CompletionReport>(u=>u.Id== CompletionReportId).Select(L=>new { 
-                id=L.Id,
-                ServiceOrderId=L.ServiceOrderId,
-                CustomerId=L.CustomerId,
-                CustomerName=L.CustomerName,
-                TechnicianName=L.TechnicianName,
-                TerminalCustomerId=L.TerminalCustomerId,
+            var CompletionReportModel = UnitWork.Find<CompletionReport>(u => u.Id == CompletionReportId).Select(L => new
+            {
+                id = L.Id,
+                ServiceOrderId = L.ServiceOrderId,
+                CustomerId = L.CustomerId,
+                CustomerName = L.CustomerName,
+                TechnicianName = L.TechnicianName,
+                TerminalCustomerId = L.TerminalCustomerId,
                 TerminalCustomer = L.TerminalCustomer,
-                Contacter=L.Contacter,
-                ContactTel=L.ContactTel,
-                Becity=L.Becity,
-                Destination=L.Destination,
-                BusinessTripDate=L.BusinessTripDate,
-                EndDate=L.EndDate,
-                CompleteAddress=L.CompleteAddress,
-                BusinessTripDays=L.BusinessTripDays,
-                WorkOrderNumber= ServiceWorkOrderModel.WorkOrderNumber,
-                ManufacturerSerialNumber= ServiceWorkOrderModel.ManufacturerSerialNumber,
+                Contacter = L.Contacter,
+                ContactTel = L.ContactTel,
+                Becity = L.Becity,
+                Destination = L.Destination,
+                BusinessTripDate = L.BusinessTripDate,
+                EndDate = L.EndDate,
+                CompleteAddress = L.CompleteAddress,
+                BusinessTripDays = L.BusinessTripDays,
+                WorkOrderNumber = ServiceWorkOrderModel.WorkOrderNumber,
+                ManufacturerSerialNumber = ServiceWorkOrderModel.ManufacturerSerialNumber,
                 MaterialCode = ServiceWorkOrderModel.MaterialCode,
                 Files = Files,
-                ProblemDescription =L.ProblemDescription,
-                ReplacementMaterialDetails=L.ReplacementMaterialDetails,
-                Legacy=L.Legacy,
-                Remark=L.Remark
+                ProblemDescription = L.ProblemDescription,
+                ReplacementMaterialDetails = L.ReplacementMaterialDetails,
+                Legacy = L.Legacy,
+                Remark = L.Remark
             }).FirstOrDefault();
             result.Data = CompletionReportModel;
             return result;
@@ -289,7 +297,7 @@ namespace OpenAuth.App
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
             //修改工单状态及反写工单号
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId, s => new ServiceWorkOrder { Status = 7,CompletionReportId = o.Id });
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId, s => new ServiceWorkOrder { Status = 7, CompletionReportId = o.Id });
             var workOrderList = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId).ToList();
             List<int> workorder = new List<int>();
             foreach (var item in workOrderList)

@@ -20,7 +20,7 @@ namespace OpenAuth.App.Request
 	/// 
 	/// </summary>
     [Table("appserviceorderlog")]
-    public partial class AddOrUpdateAppServiceOrderLogReq 
+    public partial class AddOrUpdateAppServiceOrderLogReq
     {
 
         /// <summary>
@@ -55,7 +55,12 @@ namespace OpenAuth.App.Request
         /// 
         /// </summary>
         public int? ServiceWorkOrder { get; set; }
-        
-         //todo:添加自己的请求字段
+
+        /// <summary>
+        /// 日志类型 1客户 2技术员
+        /// </summary>
+        public int LogType { get; set; }
+
+        //todo:添加自己的请求字段
     }
 }

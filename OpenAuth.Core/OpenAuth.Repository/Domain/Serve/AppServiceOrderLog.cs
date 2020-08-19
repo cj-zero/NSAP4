@@ -69,5 +69,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("工单Id")]
         public int? ServiceWorkOrder { get; set; }
+
+        /// <summary>
+        /// 日志类型
+        /// </summary>
+        [Description("日志类型")]
+        public int? LogType { get; set; }
     }
 }
