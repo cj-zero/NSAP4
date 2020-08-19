@@ -623,7 +623,12 @@
                 size="small"
                 v-model="item.solutionId"
               ></el-input>
-              <el-input v-model="item.solutionsubject" :disabled="item.fromType!==2" readonly>
+              <el-input 
+                v-model="item.solutionsubject" 
+                :disabled="item.fromType!==2" 
+                readonly
+                @focus="()=>{solutionOpen=true,sortForm=index+2}"
+                >
                 <el-button
                   :disabled="item.fromType !== 2"
                   size="mini"
@@ -1039,6 +1044,7 @@ export default {
             }
           });
         }
+        
         this.$emit("change-form", newVal);
       },
       deep: true,
@@ -1065,6 +1071,8 @@ export default {
             this.SerialNumberList = res.data;
             this.filterSerialNumberList = this.SerialNumberList;
             this.SerialCount = res.count;
+            this.serLoad = false;
+            this.listLoading = false;
           })
           .catch((error) => {
             console.log(error);
@@ -1106,7 +1114,8 @@ export default {
     getSerialNumberList(code) {
       this.listLoading = true;
       this.serLoad = true;
-      this.listQuery.CardCode = code || ''
+      code && (this.listQuery.CardCode = code)
+      // this.listQuery.CardCode = code || ''
       getSerialNumber(this.listQuery)
         .then((res) => {
           this.SerialNumberList = res.data;
@@ -1114,6 +1123,7 @@ export default {
           this.SerialCount = res.count;
           this.serLoad = false;
           this.listLoading = false;
+          console.log(1111,'succes')
           // 
         })
         .catch((error) => {
