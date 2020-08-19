@@ -1,5 +1,4 @@
 ﻿using Infrastructure;
-using NetOffice.WordApi;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -11,13 +10,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Infrastructure.Extensions;
-using Org.BouncyCastle.Ocsp;
-using NPOI.SS.Formula.Functions;
-using Microsoft.AspNetCore.Cryptography.KeyDerivation;
-using Microsoft.Extensions.Localization.Internal;
-using Microsoft.AspNetCore.Components.RenderTree;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.Threading.Tasks;
 
 namespace OpenAuth.App.nwcali
 {
@@ -59,16 +53,16 @@ namespace OpenAuth.App.nwcali
             var objs = UnitWork.Find<Asset>(null);
             objs = objs.WhereIf(!string.IsNullOrWhiteSpace(request.Id), u => u.Id.Contains(request.Id)).
                 WhereIf(!string.IsNullOrWhiteSpace(request.AssetCategory), u => u.AssetCategory.Contains(request.AssetCategory)).
-                WhereIf(!string.IsNullOrWhiteSpace(request.AssetCCNumber), u => u.AssetCCNumber.Contains(request.AssetCCNumber)).
-                WhereIf(!string.IsNullOrWhiteSpace(request.AssetSJType), u => u.AssetSJType.Contains(request.AssetSJType)).
+                WhereIf(!string.IsNullOrWhiteSpace(request.AssetStockNumber), u => u.AssetStockNumber.Contains(request.AssetStockNumber)).
+                WhereIf(!string.IsNullOrWhiteSpace(request.AssetInspectType), u => u.AssetInspectType.Contains(request.AssetInspectType)).
                 WhereIf(!string.IsNullOrWhiteSpace(request.AssetStatus), u => u.AssetStatus.Contains(request.AssetStatus)).
                 WhereIf(!string.IsNullOrWhiteSpace(request.AssetType), u => u.AssetType.Contains(request.AssetType)).
-                WhereIf(!string.IsNullOrWhiteSpace(request.AssetZCNumber), u => u.AssetZCNumber.Contains(request.AssetZCNumber)).
+                WhereIf(!string.IsNullOrWhiteSpace(request.AssetNumber), u => u.AssetNumber.Contains(request.AssetNumber)).
                 WhereIf(!string.IsNullOrWhiteSpace(request.OrgName), u => u.OrgName.Contains(request.OrgName)).
-                WhereIf(request.AssetJZDate != null && request.AssetSXDate != null, u => u.AssetJZDate >= request.AssetJZDate && u.AssetSXDate < Convert.ToDateTime(request.AssetSXDate).AddMinutes(1440));
+                WhereIf(request.AssetStartDate != null && request.AssetEndDate != null, u => u.AssetStartDate >= request.AssetStartDate && u.AssetEndDate < Convert.ToDateTime(request.AssetEndDate).AddMinutes(1440));
           
             result.columnHeaders = properties;
-            result.Data = objs.OrderByDescending(u => u.AssetCreateTime)
+            result.Data =  objs.OrderByDescending(u => u.AssetCreateTime)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).Select(L => new
                 {
@@ -78,30 +72,40 @@ namespace OpenAuth.App.nwcali
                     OrgName = L.OrgName,
                     AssetType = L.AssetType,
                     AssetHolder = L.AssetHolder,
-                    AssetCCNumber = L.AssetCCNumber,
-                    AssetAdmin = L.AssetAdmin,
-                    AssetZCNumber = L.AssetZCNumber,
-                    AssetFactory = L.AssetFactory,
-                    AssetSJType = L.AssetSJType,
-                    AssetSJWay = L.AssetSJWay,
-                    AssetJZDate = L.AssetJZDate,
-                    AssetJZCertificate = L.AssetJZCertificate,
-                    AssetSXDate = L.AssetSXDate,
-                    AssetJZData1 = L.AssetJZData1,
-                    AssetJZData2 = L.AssetJZData2,
-                    AssetJSFile = L.AssetJSFile,
-                    AssetDescribe = L.AssetDescribe,
-                    AssetRemarks = L.AssetRemarks,
+                    AssetStockNumber = L.AssetStockNumber,
+                    AssetAdmin =L.AssetAdmin,
+                    AssetNumber = L.AssetNumber,
+                    AssetFactory=L.AssetFactory,
+                    AssetInspectType=L.AssetInspectType,
+                    AssetInspectWay=L.AssetInspectWay,
+                    AssetStartDate=L.AssetStartDate,
+                    AssetCalibrationCertificate =L.AssetCalibrationCertificate,
+                    AssetEndDate = L.AssetEndDate,
+                    AssetInspectDataOne=L.AssetInspectDataOne,
+                    AssetInspectDataTwo = L.AssetInspectDataTwo,
+                    AssetTCF =L.AssetTCF,
+                    AssetDescribe=L.AssetDescribe,
+                    AssetRemarks=L.AssetRemarks,
                     AssetImage = L.AssetImage,
                     AssetCreateTime = L.AssetCreateTime,
-                    AssetCategorys = CalculateMetrological(L.AssetCategorys)
+                    AssetCategorys = CalculateMetrological(L.AssetCategorys, L.AssetCategory)
         });
 
             result.Count = objs.Count();
             return result;
         }
 
-        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<Asset> GetAsset(string assetid)
+        {
+           var AssetModel=UnitWork.Find<Asset>(u => u.Id == assetid).FirstOrDefault();
+           AssetModel.AssetCategorys =await UnitWork.Find<AssetCategory>(u => u.AssetId == assetid).OrderBy(c=>c.CategoryAort).ToListAsync();
+           return AssetModel;
+        }
         /// <summary>
         /// 添加资产
         /// </summary>
@@ -110,49 +114,56 @@ namespace OpenAuth.App.nwcali
         public void Add(AddOrUpdateassetReq req) 
         {
             var obj = req.MapTo<Asset>();
+            var user = _auth.GetCurrentUser().User;
             string ZCNumber="";
             ZCNumber = "JZ" + Convert.ToInt32(req.AssetSerial).ToString("00")+ DateTime.Today.ToString("yy")+DateTime.Today.ToString("MM");
-            var Listasset = UnitWork.Find<Asset>(u => u.AssetZCNumber.Contains(ZCNumber)).OrderByDescending(u => u.AssetCreateTime).FirstOrDefault();
+            var Listasset = UnitWork.Find<Asset>(u => u.AssetNumber.Contains(ZCNumber)).OrderByDescending(u => u.AssetCreateTime).FirstOrDefault();
             if (Listasset == null)
             {
                 ZCNumber += "0001";
             }
             else 
             {
-                var Number = Convert.ToInt32(Listasset.AssetZCNumber.Substring(Listasset.AssetZCNumber.Length - 4, 4)) + 1;
+                var Number = Convert.ToInt32(Listasset.AssetNumber.Substring(Listasset.AssetNumber.Length - 4, 4)) + 1;
                 ZCNumber += Number.ToString("0000");
             }
-            obj.AssetZCNumber = ZCNumber;
+            obj.AssetNumber = ZCNumber;
             obj.AssetCreateTime = DateTime.Now;
+            obj.AssetCreateUser = user.Name;
             UnitWork.Add<Asset>(obj);
 
             if (req.Listcategory != null && req.Listcategory.Count > 0) 
             {
                 var CategoryModel = req.Listcategory.MapToList<AssetCategory>();
-                CategoryModel.ForEach(u => u.AssetId = obj.Id);
+                int num = 0;
+                foreach (var item in CategoryModel)
+                {
+                    item.AssetId = obj.Id;
+                    item.CategoryAort = ++num;
+                }
                 UnitWork.BatchAdd<AssetCategory>(CategoryModel.ToArray());
             }
 
             //保存第一次校准记录
             var eassetinspectReq = new AddOrUpdateassetinspectReq();
             eassetinspectReq.AssetId = obj.Id;
-            eassetinspectReq.AssetJZDate = obj.AssetJZDate;
-            eassetinspectReq.AssetSXDate = obj.AssetSXDate;
-            eassetinspectReq.AssetJZData1 = obj.AssetJZData1;
-            eassetinspectReq.AssetJZData2 = obj.AssetJZData2;
-            eassetinspectReq.AssetJZCertificate = obj.AssetJZCertificate;
+            eassetinspectReq.InspectStartDate = obj.AssetStartDate;
+            eassetinspectReq.InspectEndDate = obj.AssetEndDate;
+            eassetinspectReq.InspectDataOne = obj.AssetInspectDataOne;
+            eassetinspectReq.InspectDataTwo = obj.AssetInspectDataTwo;
+            eassetinspectReq.InspectCertificate = obj.AssetCalibrationCertificate;
             var InspectModel = eassetinspectReq.MapTo<AssetInspect>();
+            InspectModel.InspectCreatTime = DateTime.Now;
             UnitWork.Add<AssetInspect>(InspectModel);
 
             //保存第一次操作记录
             var eassetoperationReq = new AddOrUpdateassetoperationReq();
             eassetoperationReq.AssetId = obj.Id;
             eassetoperationReq.InspectId = InspectModel.Id;
-            eassetoperationReq.OperationCZContent = "创建资产成功";          
+            eassetoperationReq.OperationContent = "创建资产成功";          
             var OperationModel = eassetoperationReq.MapTo<AssetOperation>();
-            OperationModel.OperationCZDate = DateTime.Now;
-            var user = _auth.GetCurrentUser().User;
-            OperationModel.OperationCZName = user.Name;
+            OperationModel.OperationCreateTime = DateTime.Now;
+            OperationModel.OperationUser = user.Name;
             UnitWork.Add<AssetOperation>(OperationModel);
             try
             {
@@ -180,30 +191,32 @@ namespace OpenAuth.App.nwcali
             if (model.AssetDescribe != obj.AssetDescribe) ModifyModel.Append("描述修改为：" + obj.AssetDescribe + @"\r\n"); 
             if (model.AssetHolder != obj.AssetHolder) ModifyModel.Append("持有者修改为：" + obj.AssetHolder + @"\r\n"); 
             if (model.AssetRemarks != obj.AssetRemarks) ModifyModel.Append("备注修改为：" + obj.AssetRemarks + @"\r\n"); 
-            if (model.AssetSJType != obj.AssetSJType) ModifyModel.Append("送检类型修改为：" + obj.AssetSJType + @"\r\n"); 
+            if (model.AssetInspectType != obj.AssetInspectType) ModifyModel.Append("送检类型修改为：" + obj.AssetInspectType + @"\r\n"); 
             if (model.AssetStatus != obj.AssetStatus) ModifyModel.Append("状态修改为：" + obj.AssetStatus + @"\r\n"); 
             if (model.OrgName != obj.OrgName) ModifyModel.Append("部门修改为：" + obj.OrgName + @"\r\n");
-            if (model.AssetJZData2 != obj.AssetJZData2) ModifyModel.Append("校准数据修改为：" + obj.AssetJZData2 + @"\r\n");
-            if (model.AssetSXDate != obj.AssetSXDate) ModifyModel.Append("失效日期修改为：" + obj.AssetSXDate + @"\r\n");
-            if (model.AssetJZDate != obj.AssetJZDate) ModifyModel.Append("校准日期修改为：" + obj.AssetJZDate + @"\r\n");
-            if (model.AssetJZCertificate != obj.AssetJZCertificate)
+            if (model.AssetInspectDataTwo != obj.AssetInspectDataTwo) ModifyModel.Append("校准数据修改为：" + obj.AssetInspectDataTwo + @"\r\n");
+            if (model.AssetStartDate != obj.AssetStartDate) ModifyModel.Append("校准日期修改为：" + obj.AssetStartDate + @"\r\n");
+            if (model.AssetEndDate != obj.AssetEndDate) ModifyModel.Append("失效日期修改为：" + obj.AssetEndDate + @"\r\n");
+            if (model.AssetInspectWay!=obj.AssetInspectWay) ModifyModel.Append("送检方式修改为：" + obj.AssetInspectWay + @"\r\n");
+            if (model.AssetCalibrationCertificate != obj.AssetCalibrationCertificate)
             {
-                ModifyModel.Append("校准证书修改为：" + obj.AssetJZCertificate + @"\r\n");
+                ModifyModel.Append("校准证书修改为：" + obj.AssetCalibrationCertificate + @"\r\n");
                 inspect = true;
             }
             UnitWork.UpdateAsync<Asset>(u => u.Id == obj.Id, u => new Asset
             {
                 AssetAdmin = obj.AssetAdmin,
-                AssetSXDate = obj.AssetSXDate,
-                AssetJZDate = obj.AssetJZDate,
+                AssetEndDate = obj.AssetEndDate,
+                AssetStartDate = obj.AssetStartDate,
                 AssetDescribe = obj.AssetDescribe,
                 AssetHolder = obj.AssetHolder,
-                AssetJZCertificate = obj.AssetJZCertificate,
-                AssetJZData2 = obj.AssetJZData2,
+                AssetCalibrationCertificate = obj.AssetCalibrationCertificate,
+                AssetInspectDataTwo = obj.AssetInspectDataTwo,
                 AssetRemarks = obj.AssetRemarks,
-                AssetSJType = obj.AssetSJType,
+                AssetInspectType = obj.AssetInspectType,
                 AssetStatus = obj.AssetStatus,
-                OrgName = obj.OrgName
+                OrgName = obj.OrgName,
+                AssetInspectWay = obj.AssetInspectWay
             });
             if (obj.Listcategory != null && obj.Listcategory.Count > 0)
             {
@@ -214,12 +227,13 @@ namespace OpenAuth.App.nwcali
             {
                 var eassetinspectReq = new AddOrUpdateassetinspectReq();
                 eassetinspectReq.AssetId = obj.Id;
-                eassetinspectReq.AssetJZDate = obj.AssetJZDate;
-                eassetinspectReq.AssetSXDate = obj.AssetSXDate;
-                eassetinspectReq.AssetJZData1 = obj.AssetJZData1;
-                eassetinspectReq.AssetJZData2 = obj.AssetJZData2;
-                eassetinspectReq.AssetJZCertificate = obj.AssetJZCertificate;
+                eassetinspectReq.InspectStartDate = obj.AssetStartDate;
+                eassetinspectReq.InspectEndDate = obj.AssetEndDate;
+                eassetinspectReq.InspectDataOne = obj.AssetInspectDataOne;
+                eassetinspectReq.InspectDataTwo = obj.AssetInspectDataTwo;
+                eassetinspectReq.InspectCertificate = obj.AssetCalibrationCertificate;
                 var InspectModel = eassetinspectReq.MapTo<AssetInspect>();
+                InspectModel.InspectCreatTime = DateTime.Now;
                 UnitWork.Add<AssetInspect>(InspectModel);
                 InspectId = InspectModel.Id;
             }
@@ -229,11 +243,11 @@ namespace OpenAuth.App.nwcali
                 var eassetoperationReq = new AddOrUpdateassetoperationReq();
                 eassetoperationReq.AssetId = obj.Id;
                 eassetoperationReq.InspectId = InspectId;
-                eassetoperationReq.OperationCZContent = ModifyModel.ToString();
+                eassetoperationReq.OperationContent = ModifyModel.ToString();
                 var OperationModel = eassetoperationReq.MapTo<AssetOperation>();
-                OperationModel.OperationCZDate = DateTime.Now;
+                OperationModel.OperationCreateTime = DateTime.Now;
                 var user = _auth.GetCurrentUser().User;
-                OperationModel.OperationCZName = user.Name;
+                OperationModel.OperationUser = user.Name;
                 UnitWork.Add<AssetOperation>(OperationModel);
             }
             try
@@ -293,54 +307,134 @@ namespace OpenAuth.App.nwcali
         /// 计算计量特性
         /// </summary>
         /// <param name="obj"></param>
+        /// <param name="Category"></param>
         /// <returns></returns>
-        public static string CalculateMetrological(List<AssetCategory> obj)
+        public static string CalculateMetrological(List<AssetCategory> obj,string Category)
         {
-            string Metrological = "";
-            foreach (var item in obj.OrderBy(u=>u.CategoryNumber))
+            StringBuilder Metrological = new StringBuilder();
+            foreach (var item in obj.OrderBy(u=>u.CategoryAort))
             {
-                Metrological += item.CategoryNumber;
-                if (item.CategoryType.Contains("绝对不确定度"))
+                string CategoryNondeterminacy = Convert.ToDecimal(item.CategoryNondeterminacy).ToString("0.##########");
+                int r = 0;
+                for (int i = 0; i < CategoryNondeterminacy.Length; i++)
                 {
-                    string CategoryNondeterminacy = Convert.ToDecimal(item.CategoryNondeterminacy).ToString("G0");
-                    int r = 0;
-                    for (int i = 0; i < CategoryNondeterminacy.Length; i++)
+                    if (CategoryNondeterminacy.Substring(i, 1) != "." && Convert.ToInt32(CategoryNondeterminacy.Substring(i, 1)) > 0)
                     {
-                        if (CategoryNondeterminacy.Substring(i, 1) != "." && Convert.ToInt32(CategoryNondeterminacy.Substring(i, 1)) > 0)
+                        if (CategoryNondeterminacy.Contains("."))
                         {
-                            if (CategoryNondeterminacy.Contains("."))
-                            {
-                                int s = Convert.ToInt32(CategoryNondeterminacy.Substring(0, CategoryNondeterminacy.IndexOf(".")));
-                                if (s > 0) i = i + 1;
-                            }
-                            r = i + 1;
-                            break;
+                            int s = Convert.ToInt32(CategoryNondeterminacy.Substring(0, CategoryNondeterminacy.IndexOf(".")));
+                            if (s > 0) i = i + 1;
+                        }
+                        r = i + 1;
+                        break;
+                    }
+                }
+                Metrological.Append(item.CategoryNumber + "：");
+                if (Category.Contains("万用表"))
+                {
+                    string symbol = "";
+                    if (item.CategoryNumber.Contains("DCV")||item.CategoryNumber.Contains("ACV"))
+                    {
+                        symbol = "V";
+                    }
+                    else if (item.CategoryNumber.Contains("DCI") || item.CategoryNumber.Contains("ACI"))
+                    {
+                        symbol = "A";
+                    }
+                    else if (item.CategoryNumber.Contains("OHM"))
+                    {
+                        symbol = "Ω";
+                    }
+                    if (item.CategoryType.Contains("绝对不确定度"))
+                    {
+                        if (!string.IsNullOrWhiteSpace(item.CategoryOhms.ToString())&& item.CategoryOhms!=0)
+                        {
+                            Metrological.Append("(" + Convert.ToDecimal(item.CategoryOhms).ToString("G0") + "±" + Convert.ToDecimal(CategoryNondeterminacy).ToString("E" + (CategoryNondeterminacy.ToString().Length - r)) + ")" + symbol + " (k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n");
+                        }
+                        else
+                        {
+                            Metrological.Append("±" + Convert.ToDecimal(CategoryNondeterminacy).ToString("E" + (CategoryNondeterminacy.ToString().Length - r)) + "" + symbol + " (k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n");
                         }
                     }
-                    Metrological+="(" + Convert.ToDecimal(item.CategoryOhms).ToString("G0") + "±" + Convert.ToDecimal(CategoryNondeterminacy).ToString("E" + (CategoryNondeterminacy.ToString().Length - r)) + ")Ω (k="+ Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n";
+                    else if (item.CategoryType.Contains("相对不确定度"))
+                    {
+                        if (!string.IsNullOrWhiteSpace(item.CategoryOhms.ToString()) && item.CategoryOhms != 0)
+                        {
+                            Metrological.Append(Convert.ToDecimal(item.CategoryOhms).ToString("G0")+ symbol + "，Urel=" + Convert.ToDecimal(item.CategoryNondeterminacy).ToString("G0") + "% (k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n");
+                        }
+                        else
+                        {
+                            Metrological.Append("Urel=" + Convert.ToDecimal(item.CategoryNondeterminacy).ToString("G0") + "% (k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n");
+                        }
+                    }
                 }
-                else if (item.CategoryType.Contains("相对不确定度"))
+                else if(Category.Contains("分流器")|| Category.Contains("工装"))
                 {
-                    Metrological += Convert.ToDecimal(item.CategoryOhms).ToString("G0") + "Ω,"+ Convert.ToDecimal(item.CategoryNondeterminacy).ToString("G0") + "ppm (k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n";
+                    if (item.CategoryType.Contains("绝对不确定度"))
+                    {
+                        Metrological.Append("(" + Convert.ToDecimal(item.CategoryOhms).ToString("G0") + "±" + Convert.ToDecimal(CategoryNondeterminacy).ToString("E" + (CategoryNondeterminacy.ToString().Length - r)) + ")Ω (k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n");
+                    }
+                    else if (item.CategoryType.Contains("相对不确定度"))
+                    {
+                        Metrological.Append(Convert.ToDecimal(item.CategoryOhms).ToString("G0") + "Ω，Urel=" + Convert.ToDecimal(item.CategoryNondeterminacy).ToString("G0") + "ppm (k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n");
+                    }
                 }
+                
             }
 
-            return Metrological;
+            return Metrological.ToString();
+        }
+
+        /// <summary>
+        /// 加载送检记录
+        /// </summary>
+        /// <param name="AssetId"></param>
+        /// <returns></returns>
+        public TableData AssetInspectsLoad(string AssetId)
+        {
+            var result = new TableData();
+            var objs = UnitWork.Find<AssetInspect>(null);
+            objs = objs.Where(u => u.AssetId == AssetId);
+            var loginContext = _auth.GetCurrentUser();
+            var properties = loginContext.GetProperties("AssetInspect");
+            var propertyStr = string.Join(',', properties.Select(u => u.Key));
+            result.columnHeaders = properties;
+            result.Data = objs.OrderBy(u => u.Id).Select($"new ({propertyStr})");
+            result.Count = objs.Count();
+            return result;
+        }
+
+        /// <summary>
+        /// 加载操作记录
+        /// </summary>
+        /// <param name="AssetId"></param>
+        /// <returns></returns>
+        public async Task<TableData> AssetOperationsLoad(string AssetId)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            var properties = loginContext.GetProperties("assetoperation");
+            var result = new TableData();
+            var objs = UnitWork.Find<AssetOperation>(null);
+            objs = objs.Where(u => u.AssetId.Contains(AssetId));
+            result.Data = await objs.OrderBy(u => u.Id).ToListAsync();
+            result.Count = objs.Count();
+            return result;
         }
 
         /// <summary>
         /// 根据出厂编号或资产编号查询数据(备用)
         /// </summary>
-        /// <param name="AssetCCNumber"></param>
-        /// <param name="AssetZCNumber"></param>
+        /// <param name="AssetStockNumber"></param>
+        /// <param name="AssetNumber"></param>
         /// <returns></returns>
 
-        public AddOrUpdateAppReq GetAsset(string AssetCCNumber,string AssetZCNumber) 
+        public AddOrUpdateAppReq GetAsset(string AssetStockNumber, string AssetNumber) 
         {
-            var obj = UnitWork.Find<Asset>(u=>u.AssetCCNumber==AssetCCNumber).FirstOrDefault();
-            if (obj == null) obj=UnitWork.Find<Asset>(u => u.AssetZCNumber == AssetZCNumber).FirstOrDefault();
+            var obj = UnitWork.Find<Asset>(u=>u.AssetStockNumber== AssetStockNumber).FirstOrDefault();
+            if (obj == null) obj=UnitWork.Find<Asset>(u => u.AssetNumber == AssetNumber).FirstOrDefault();
             return obj.MapTo<AddOrUpdateAppReq>();
         }
+
 
     }
 }

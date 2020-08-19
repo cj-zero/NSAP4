@@ -17,20 +17,21 @@ using OpenAuth.Repository.Core;
 namespace OpenAuth.Repository.Domain
 {
     /// <summary>
-	/// 
+	/// 资产操作表
 	/// </summary>
-    [Table("assetoperation")]
+    [Table("AssetOperation")]
     public partial class AssetOperation : Entity
     {
         public AssetOperation()
         {
+          this.AssetId= string.Empty;
           this.InspectId= string.Empty;
-          this.OperationCZContent= string.Empty;
-          this.OperationCZDate= DateTime.Now;
-          this.OperationCZName= string.Empty;
+          this.OperationContent= string.Empty;
+          this.OperationCreateTime= DateTime.Now;
+          this.OperationUser= string.Empty;
         }
 
-
+        
         /// <summary>
         /// 资产ID
         /// </summary>
@@ -45,16 +46,16 @@ namespace OpenAuth.Repository.Domain
         /// 操作内容
         /// </summary>
         [Description("操作内容")]
-        public string OperationCZContent { get; set; }
+        public string OperationContent { get; set; }
         /// <summary>
         /// 操作时间
         /// </summary>
         [Description("操作时间")]
-        public System.DateTime? OperationCZDate { get; set; }
+        public System.DateTime? OperationCreateTime { get; set; }
         /// <summary>
         /// 操作人
         /// </summary>
         [Description("操作人")]
-        public string OperationCZName { get; set; }
+        public string OperationUser { get; set; }
     }
 }

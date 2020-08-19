@@ -44,14 +44,19 @@ namespace OpenAuth.App.Request
         /// </summary>
         public decimal? CategoryNondeterminacy { get; set; }
         /// <summary>
-        /// 类型
+        /// 不确定类型
         /// </summary>
         public string CategoryType { get; set; }
         /// <summary>
-        /// 包含因子k
+        /// 包含因子K
         /// </summary>
         public decimal? CategoryBHYZ { get; set; }
-        
-         //todo:添加自己的请求字段
+
+        /// <summary>
+        /// 排序
+        /// </summary>
+        public int? CategoryAort { get; set; }
+
+        //todo:添加自己的请求字段
     }
 }
