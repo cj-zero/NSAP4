@@ -38,16 +38,16 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 操作内容
         /// </summary>
-        public string OperationCZContent { get; set; }
+        public string OperationContent { get; set; }
         /// <summary>
         /// 操作时间
         /// </summary>
-        public System.DateTime? OperationCZDate { get; set; }
+        public System.DateTime? OperationCreateTime { get; set; }
         /// <summary>
         /// 操作人
         /// </summary>
-        public string OperationCZName { get; set; }
-        
-         //todo:添加自己的请求字段
+        public string OperationUser { get; set; }
+
+        //todo:添加自己的请求字段
     }
 }

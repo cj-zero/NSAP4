@@ -34,24 +34,28 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 校准日期
         /// </summary>
-        public System.DateTime? AssetJZDate { get; set; }
+        public System.DateTime? InspectStartDate { get; set; }
         /// <summary>
         /// 失效日期
         /// </summary>
-        public System.DateTime? AssetSXDate { get; set; }
+        public System.DateTime? InspectEndDate { get; set; }
         /// <summary>
         /// 校准证书
         /// </summary>
-        public string AssetJZCertificate { get; set; }
+        public string InspectCertificate { get; set; }
         /// <summary>
         /// 校准数据1
         /// </summary>
-        public string AssetJZData1 { get; set; }
+        public string InspectDataOne { get; set; }
         /// <summary>
         /// 校准数据2
         /// </summary>
-        public string AssetJZData2 { get; set; }
-        
-         //todo:添加自己的请求字段
+        public string InspectDataTwo { get; set; }
+        /// <summary>
+        /// 操作时间
+        /// </summary>
+        public System.DateTime? InspectCreatTime { get; set; }
+
+        //todo:添加自己的请求字段
     }
 }

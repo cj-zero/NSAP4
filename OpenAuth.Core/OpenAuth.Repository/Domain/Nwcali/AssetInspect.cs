@@ -17,22 +17,23 @@ using OpenAuth.Repository.Core;
 namespace OpenAuth.Repository.Domain
 {
     /// <summary>
-	/// 
+	/// 资产送检表
 	/// </summary>
-    [Table("assetinspect")]
+    [Table("AssetInspect")]
     public partial class AssetInspect : Entity
     {
         public AssetInspect()
         {
           this.AssetId= string.Empty;
-          this.AssetJZDate= DateTime.Now;
-          this.AssetSXDate= DateTime.Now;
-          this.AssetJZCertificate= string.Empty;
-          this.AssetJZData1= string.Empty;
-          this.AssetJZData2= string.Empty;
+          this.InspectStartDate= DateTime.Now;
+          this.InspectEndDate= DateTime.Now;
+          this.InspectCertificate= string.Empty;
+          this.InspectDataOne= string.Empty;
+          this.InspectDataTwo= string.Empty;
+          this.InspectCreatTime= DateTime.Now;
         }
 
-
+        
         /// <summary>
         /// 资产ID
         /// </summary>
@@ -42,26 +43,31 @@ namespace OpenAuth.Repository.Domain
         /// 校准日期
         /// </summary>
         [Description("校准日期")]
-        public System.DateTime? AssetJZDate { get; set; }
+        public System.DateTime? InspectStartDate { get; set; }
         /// <summary>
         /// 失效日期
         /// </summary>
         [Description("失效日期")]
-        public System.DateTime? AssetSXDate { get; set; }
+        public System.DateTime? InspectEndDate { get; set; }
         /// <summary>
         /// 校准证书
         /// </summary>
         [Description("校准证书")]
-        public string AssetJZCertificate { get; set; }
+        public string InspectCertificate { get; set; }
         /// <summary>
         /// 校准数据1
         /// </summary>
         [Description("校准数据1")]
-        public string AssetJZData1 { get; set; }
+        public string InspectDataOne { get; set; }
         /// <summary>
         /// 校准数据2
         /// </summary>
         [Description("校准数据2")]
-        public string AssetJZData2 { get; set; }
+        public string InspectDataTwo { get; set; }
+        /// <summary>
+        /// 操作时间
+        /// </summary>
+        [Description("操作时间")]
+        public System.DateTime? InspectCreatTime { get; set; }
     }
 }

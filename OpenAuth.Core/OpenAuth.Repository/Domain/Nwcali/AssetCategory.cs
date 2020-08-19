@@ -17,18 +17,19 @@ using OpenAuth.Repository.Core;
 namespace OpenAuth.Repository.Domain
 {
     /// <summary>
-	/// 
+	/// 资产类别详细数据表
 	/// </summary>
-    [Table("assetcategory")]
+    [Table("AssetCategory")]
     public partial class AssetCategory : Entity
     {
         public AssetCategory()
         {
           this.AssetId= string.Empty;
           this.CategoryNumber= string.Empty;
+          this.CategoryType= string.Empty;
         }
 
-
+        
         /// <summary>
         /// 资产ID
         /// </summary>
@@ -50,14 +51,19 @@ namespace OpenAuth.Repository.Domain
         [Description("不确定度")]
         public decimal? CategoryNondeterminacy { get; set; }
         /// <summary>
-        /// 类型
+        /// 不确定类型
         /// </summary>
-        [Description("类型")]
+        [Description("不确定类型")]
         public string CategoryType { get; set; }
         /// <summary>
-        /// 包含因子k
+        /// 包含因子K
         /// </summary>
-        [Description("包含因子k")]
+        [Description("包含因子K")]
         public decimal? CategoryBHYZ { get; set; }
+        /// <summary>
+        /// 排序
+        /// </summary>
+        [Description("排序")]
+        public int? CategoryAort { get; set; }
     }
 }
