@@ -21,9 +21,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SAP.API", "SAP.API\SAP.API.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MQ", "MQ", "{E935E87A-4448-4E2C-B33D-405AE9F44F11}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neware.Cap", "MQ\Neware.Cap\Neware.Cap.csproj", "{26F03565-2043-4FBE-8CDD-5E6C9B3FAF35}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neware.Cap", "MQ\Neware.Cap\Neware.Cap.csproj", "{26F03565-2043-4FBE-8CDD-5E6C9B3FAF35}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sap.Handler", "Sap.Handler\Sap.Handler.csproj", "{E261A52B-CDE2-45FA-8ECB-FF16EED46FB8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sap.Handler", "Sap.Handler\Sap.Handler.csproj", "{E261A52B-CDE2-45FA-8ECB-FF16EED46FB8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

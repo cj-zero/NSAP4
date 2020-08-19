@@ -17,6 +17,6 @@ namespace OpenAuth.App.Response
         /// <summary>
         /// 时间
         /// </summary>
-        public System.DateTime CreateTime { get; set; }
+        public string CreateTime { get; set; }
     }
 }

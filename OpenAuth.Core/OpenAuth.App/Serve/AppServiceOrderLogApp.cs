@@ -64,11 +64,11 @@ namespace OpenAuth.App
         {
             var list = new List<OrderLogListResp>();
             var objs = UnitWork.Find<AppServiceOrderLog>(null);
-            var orderLogs = await objs.Where(a => a.ServiceOrderId.Equals(request.ServiceOrderId)).Select(a => new OrderLogListResp { Title = a.Title, Details = a.Details, CreateTime = a.CreateTime }).ToListAsync();
+            var orderLogs = await objs.Where(a => a.ServiceOrderId.Equals(request.ServiceOrderId)).Select(a => new OrderLogListResp { Title = a.Title, Details = a.Details, CreateTime = a.CreateTime.ToString("yyyy.MM.dd HH:mm:ss") }).ToListAsync();
             list.AddRange(orderLogs);
             if (!(request.ServiceWorkOrderId is null))
             {
-                var workOrderLogs = await objs.Where(a => a.ServiceWorkOrder.Equals(request.ServiceWorkOrderId.Value)).Select(a => new OrderLogListResp { Title = a.Title, Details = a.Details, CreateTime = a.CreateTime }).ToListAsync();
+                var workOrderLogs = await objs.Where(a => a.ServiceWorkOrder.Equals(request.ServiceWorkOrderId.Value)).Select(a => new OrderLogListResp { Title = a.Title, Details = a.Details, CreateTime = a.CreateTime.ToString("yyyy.MM.dd HH:mm:ss") }).ToListAsync();
                 list.AddRange(workOrderLogs);
             }
             return list.OrderByDescending(l => l.CreateTime).ToList();
@@ -143,11 +143,11 @@ namespace OpenAuth.App
                         join c in UnitWork.Find<ServiceWorkOrder>(null) on a.ServiceOrderId equals c.ServiceOrderId into abc
                         from c in abc.DefaultIfEmpty()
                         select new { a, b, c };
-            query = query.Where(q => q.b.U_SAP_ID == request.SapOrderId && (string.IsNullOrEmpty(q.c.MaterialCode) ? "无序列号设备" : q.c.MaterialCode.Substring(0, q.c.MaterialCode.IndexOf("-"))) == request.MaterialType);
+            query = query.Where(q => q.b.U_SAP_ID == request.SapOrderId && (string.IsNullOrEmpty(q.c.MaterialCode) ? "无序列号设备" : q.c.MaterialCode.Substring(0, q.c.MaterialCode.IndexOf("-"))) == request.MaterialType && q.a.LogType == request.LogType);
             var status = await query.Select(s => s.c.Status).Distinct().FirstOrDefaultAsync();
             result.Add("status", status);
             var list = new List<OrderLogListResp>();
-            var orderLogs = (await query.Select(q => new OrderLogListResp { Title = q.a.Title, Details = q.a.Details, CreateTime = q.a.CreateTime }).ToListAsync()).GroupBy(g => g.Title).Select(s => s.First());
+            var orderLogs = (await query.Select(q => new OrderLogListResp { Title = q.a.Title, Details = q.a.Details, CreateTime = q.a.CreateTime.ToString("yyyy.MM.dd HH:mm:ss") }).ToListAsync()).GroupBy(g => g.Title).Select(s => s.First());
             list.AddRange(orderLogs);
             result.Add("orderLogs", list.OrderByDescending(l => l.CreateTime).ToList());
             return result;

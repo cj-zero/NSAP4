@@ -15,5 +15,10 @@ namespace OpenAuth.App.Serve.Request
         /// 设备类型
         /// </summary>
         public string MaterialType { get; set; }
+
+        /// <summary>
+        /// 日志类型 1客户 2技术员
+        /// </summary>
+        public int LogType { get; set; }
     }
 }
