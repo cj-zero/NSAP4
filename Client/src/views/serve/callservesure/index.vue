@@ -28,12 +28,12 @@
           <div style="padding:10px 0;"></div>
           <el-row :gutter="10">
             <el-col :span="3">
-              <el-form-item label="服务ID" >
-                <el-input v-model="listQuery.QryU_SAP_ID" @keyup.enter.native='onSubmit'></el-input>
+              <el-form-item label="服务ID">
+                <el-input v-model="listQuery.QryU_SAP_ID" @keyup.enter.native="onSubmit"></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="3">
-              <el-form-item label="呼叫状态" >
+              <el-form-item label="呼叫状态">
                 <el-select v-model="listQuery.QryState" placeholder="请选择呼叫状态">
                   <el-option label="全部" value></el-option>
                   <el-option label="待确认" :value="1"></el-option>
@@ -44,17 +44,17 @@
             </el-col>
 
             <el-col :span="3">
-              <el-form-item label="客户" >
+              <el-form-item label="客户">
                 <el-input v-model="listQuery.QryCustomer"></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="3">
-              <el-form-item label="序列号" >
+              <el-form-item label="序列号">
                 <el-input v-model="listQuery.QryManufSN"></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="6">
-              <el-form-item label="创建日期" >
+              <el-form-item label="创建日期">
                 <el-col :span="11">
                   <el-date-picker
                     placeholder="选择开始日期"
@@ -75,7 +75,13 @@
               </el-form-item>
             </el-col>
             <el-col :span="3" style="margin-left:20px;">
-              <el-button type="primary" @click="onSubmit" @keyup.enter.native='onSubmit' size="small" icon="el-icon-search">搜 索</el-button>
+              <el-button
+                type="primary"
+                @click="onSubmit"
+                @keyup.enter.native="onSubmit"
+                size="small"
+                icon="el-icon-search"
+              >搜 索</el-button>
             </el-col>
           </el-row>
         </el-form>
@@ -146,7 +152,11 @@
       >
         <el-row :gutter="20" type="flex" class="row-bg" justify="space-around">
           <el-col :span="11">
-            <customerupload style="position:sticky;top:0;" :form="formValue" :serviceOrderPictures="serviceOrderPictures"></customerupload>
+            <customerupload
+              style="position:sticky;top:0;"
+              :form="formValue"
+              :serviceOrderPictures="serviceOrderPictures"
+            ></customerupload>
           </el-col>
           <el-col :span="13">
             <zxform
@@ -185,7 +195,7 @@
         :close-on-click-modal="false"
         :visible.sync="dialogFormView"
       >
-      <customerupload style="position:sticky;top:0;" :form="formValue"></customerupload>
+        <customerupload style="position:sticky;top:0;" :form="formValue"></customerupload>
         <div slot="footer">
           <el-button size="mini" @click="dialogFormView = false">取消</el-button>
           <el-button size="mini" type="primary" @click="dialogFormView = false">确认</el-button>
@@ -228,11 +238,11 @@ export default {
     Pagination,
     zxform,
     treeList,
-    customerupload
+    customerupload,
   },
   directives: {
     waves,
-    elDragDialog
+    elDragDialog,
   },
   data() {
     return {
@@ -242,18 +252,33 @@ export default {
       sure: 0,
       formTheadOptions: [
         // { name: "id", label: "服务单ID", align: "left", width: "100px" },
-        { name: 'order', label: '序号', align: 'left', width: '100' },
-        { name: "customerId", label: "客户代码", align: "left", width: '100' },
+        { name: "order", label: "序号", align: "left", width: "100" },
+        { name: "customerId", label: "客户代码", align: "left", width: "100" },
         { name: "status", label: "状态", align: "left", width: "80px" },
-        { name: "customerName", label: "客户名称", align: "left", width: '220' },
-        { name: "createTime", label: "创建日期", align: "left", width: '100' },
-        { name: "newestContacter", label: "联系人", align: "left", width: '100' },
-        { name: "newestContactTel",label: "电话号码",align: "left",width: "120px" },
-        { name: "services", label: "服务内容", align: "left", width: '120' },
-        { name: "supervisor", label: "售后主管", align: "left", width: '100' },
-        { name: "salesMan", label: "销售员", align: "left", width: '100' },
+        {
+          name: "customerName",
+          label: "客户名称",
+          align: "left",
+          width: "220",
+        },
+        { name: "createTime", label: "创建日期", align: "left", width: "100" },
+        {
+          name: "newestContacter",
+          label: "联系人",
+          align: "left",
+          width: "100",
+        },
+        {
+          name: "newestContactTel",
+          label: "电话号码",
+          align: "left",
+          width: "120px",
+        },
+        { name: "services", label: "服务内容", align: "left", width: "120" },
+        { name: "supervisor", label: "售后主管", align: "left", width: "100" },
+        { name: "salesMan", label: "销售员", align: "left", width: "100" },
         { name: "manufSN", label: "制造商序列号", align: "left" },
-        { name: "itemCode", label: "物料编码", align: "left" }
+        { name: "itemCode", label: "物料编码", align: "left" },
       ],
       tableKey: 0,
       formValue: {},
@@ -275,7 +300,7 @@ export default {
         QryCustomer: "", //客户查询条件
         QryManufSN: "", // 制造商序列号查询条件
         QryCreateTimeFrom: "", //创建日期从查询条件
-        QryCreateTimeTo: "" //创建日期至查询条件
+        QryCreateTimeTo: "", //创建日期至查询条件
         // QryRecepUser:"",//接单员
         // QryTechName:"",//工单技术员
         // QryProblemType:"",//问题类型
@@ -285,7 +310,7 @@ export default {
       statusOptions: [
         { key: 1, display_name: "待确认" },
         { key: 2, display_name: "已确认" },
-        { key: 3, display_name: "已取消" }
+        { key: 3, display_name: "已取消" },
       ],
       temp: {
         id: "", // Id
@@ -295,7 +320,7 @@ export default {
         symptom: "", // Symptom
         descriptio: "", // Descriptio
         status: "", // Status
-        extendInfo: "" // 其他信息,防止最后加逗号，可以删除
+        extendInfo: "", // 其他信息,防止最后加逗号，可以删除
       },
       customer: {},
       checkd: "",
@@ -305,21 +330,21 @@ export default {
       dialogStatus: "",
       textMap: {
         update: "确认呼叫服务单",
-        create: "新建呼叫服务单"
+        create: "新建呼叫服务单",
       },
-  
+
       dialogPvVisible: false,
       pvData: [],
       rules: {
         appId: [
-          { required: true, message: "必须选择一个应用", trigger: "change" }
+          { required: true, message: "必须选择一个应用", trigger: "change" },
         ],
-        name: [{ required: true, message: "名称不能为空", trigger: "blur" }]
+        name: [{ required: true, message: "名称不能为空", trigger: "blur" }],
       },
       dataForm: {}, //传递的表单props
       dataForm1: {}, //获取的详情表单
       downloadLoading: false,
-      serviceOrderPictures: [] // 用户上传的图片(获取图片的逻辑写在了/callserver/form上)
+      serviceOrderPictures: [], // 用户上传的图片(获取图片的逻辑写在了/callserver/form上)
     };
   },
   filters: {
@@ -338,38 +363,37 @@ export default {
     statusFilter(disable) {
       const statusMap = {
         false: "color-success",
-        true: "color-danger"
+        true: "color-danger",
       };
       return statusMap[disable];
-    }
+    },
   },
   watch: {
-    'listQuery.page': {
+    "listQuery.page": {
       // deep: true,
       handler(val) {
-        this.listQuery.page = val
-        callservesure.getTableList(this.listQuery).then(response => {
+        this.listQuery.page = val;
+        callservesure.getTableList(this.listQuery).then((response) => {
           this.total = response.data.count;
           this.list = response.data.data;
           this.listLoading = false;
         });
-      }
+      },
     },
-        'listQuery.limit': {
+    "listQuery.limit": {
       // deep: true,
       handler(val) {
-        this.listQuery.limit = val
-        callservesure.getTableList(this.listQuery).then(response => {
+        this.listQuery.limit = val;
+        callservesure.getTableList(this.listQuery).then((response) => {
           this.total = response.data.count;
           this.list = response.data.data;
           this.listLoading = false;
         });
-      }
+      },
     },
     formValue: {
       deep: true,
       handler() {
-
         if (this.formValue && this.formValue.customerId) {
           this.customer = this.formValue;
         } else {
@@ -381,8 +405,8 @@ export default {
           //   });
           // }
         }
-      }
-    }
+      },
+    },
   },
   created() {
     this.getList();
@@ -391,10 +415,10 @@ export default {
     //   console.log(callserve)
   },
   methods: {
-    onImgChange (pictureList) {
+    onImgChange(pictureList) {
       // 用户上传的图片列表
-      this.serviceOrderPictures = pictureList
-      console.log(this.serviceOrderPictures, 'serviceOrder')
+      this.serviceOrderPictures = pictureList;
+      console.log(this.serviceOrderPictures, "serviceOrder");
     },
     openCustoner() {
       this.loadingBtn = false;
@@ -403,7 +427,7 @@ export default {
       } else {
         this.$message({
           message: "没有发现客户代码，请手动选择",
-          type: "warning"
+          type: "warning",
         });
       }
     },
@@ -422,10 +446,10 @@ export default {
       //   }
       //   this.listLoading = false;
       // });
-            callservesure.getForm(res).then(response => {
+      callservesure.getForm(res).then((response) => {
         this.formValue = response.result;
-        console.log(this.formValue, 'formVal')
-      this.listLoading = false;
+        console.log(this.formValue, "formVal");
+        this.listLoading = false;
         this.dialogFormView = true;
         // this.$nextTick(() => {
         //   this.$refs["dataForm"].clearValidate();
@@ -433,7 +457,7 @@ export default {
       });
     },
     onSubmit() {
-      this.getList()
+      this.getList();
     },
     changeTable(result) {
       console.log(result);
@@ -446,7 +470,7 @@ export default {
     },
     // handleSelectionChange(val) {
     // },
-    onBtnClicked: function(domId) {
+    onBtnClicked: function (domId) {
       switch (domId) {
         case "btnAdd":
           this.handleCreate();
@@ -455,12 +479,12 @@ export default {
           if (!this.multipleSelection.id) {
             this.$message({
               message: "请选择需要查看的数据",
-              type: "warning"
+              type: "warning",
             });
             return;
           }
-          this.handleView(this.multipleSelection)
-          break
+          this.handleView(this.multipleSelection);
+          break;
         case "btnDetail":
           this.open();
           break;
@@ -472,14 +496,14 @@ export default {
           if (!this.multipleSelection.id) {
             this.$message({
               message: "请选择需要编辑的数据",
-              type: "error"
+              type: "error",
             });
             return;
           }
           if (this.multipleSelection.status === 2) {
             this.$message({
               message: "该服务单已经被确认过",
-              type: "warning"
+              type: "warning",
             });
             return;
           }
@@ -489,7 +513,7 @@ export default {
           if (!this.multipleSelection) {
             this.$message({
               message: "至少删除一个",
-              type: "error"
+              type: "error",
             });
             return;
           }
@@ -504,31 +528,28 @@ export default {
       this.listLoading = true;
       callservesure
         .getTableList(this.listQuery)
-        .then(response => {
+        .then((response) => {
           if (response.code == 200) {
             this.total = response.data.count;
-             let  resul= response.data.data;
-                this.list=[]
-            
-         resul.map(item=>{
-        
-           this.list.unshift(item)
-        });
-          
+            let resul = response.data.data;
+            this.list = [];
+            resul.map((item) => {
+              this.list.unshift(item);
+            });
             this.listLoading = false;
           } else {
-        
             this.$message({
               type: "warning",
-              message: "请输入正确的搜索值"
+              message: "请输入正确的搜索值",
             });
           }
         })
         .catch(() => {
-         
+          console.log("sdsad");
+          this.listLoading = false
           this.$message({
             type: "warning",
-            message: "请输入正确的搜索值"
+            message: "请输入正确的搜索值",
           });
         });
     },
@@ -536,18 +557,18 @@ export default {
       this.$confirm("确认已完成回访?", "提示", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
-        type: "warning"
+        type: "warning",
       })
         .then(() => {
           this.$message({
             type: "success",
-            message: "操作成功!"
+            message: "操作成功!",
           });
         })
         .catch(() => {
           this.$message({
             type: "info",
-            message: "已取消操作"
+            message: "已取消操作",
           });
         });
     },
@@ -568,7 +589,7 @@ export default {
       // 模拟修改状态
       this.$message({
         message: "操作成功",
-        type: "success"
+        type: "success",
       });
       row.disable = disable;
     },
@@ -587,7 +608,7 @@ export default {
         updateUserId: "",
         updateTime: "",
         updateUserName: "",
-        extendInfo: ""
+        extendInfo: "",
       };
     },
     handleCreate() {
@@ -601,7 +622,7 @@ export default {
     },
     createData() {
       // 保存提交
-      this.$refs["dataForm"].validate(valid => {
+      this.$refs["dataForm"].validate((valid) => {
         if (valid) {
           callservesure.add(this.temp).then(() => {
             this.list.unshift(this.temp);
@@ -610,7 +631,7 @@ export default {
               title: "成功",
               message: "创建成功",
               type: "success",
-              duration: 2000
+              duration: 2000,
             });
           });
         }
@@ -619,12 +640,12 @@ export default {
     handleUpdate(row) {
       // 弹出编辑框
       if (row.status === 3) {
-        return this.$message.error('无法处理已取消服务单')
+        return this.$message.error("无法处理已取消服务单");
       }
       this.temp = Object.assign({}, row); // copy obj
-      callservesure.getForm(row.id).then(response => {
+      callservesure.getForm(row.id).then((response) => {
         this.formValue = response.result;
-        console.log('淡出编辑', this.formValue)
+        console.log("淡出编辑", this.formValue);
         this.dialogStatus = "update";
         this.dialogFormVisible = true;
         // this.$nextTick(() => {
@@ -632,26 +653,25 @@ export default {
         // });
       });
     },
-    handleView (row) {
-      this.openTree(row.id)
+    handleView(row) {
+      this.openTree(row.id);
     },
     closeDia(a) {
       if (a === 1) {
         this.getList();
       }
-      if(a=='N'){
-         this.loadingBtn = false
-         return 
+      if (a == "N") {
+        this.loadingBtn = false;
+        return;
       }
       this.loadingBtn = false;
       this.dialogFormVisible = false;
-
     },
     updateData() {
       // 更新提交
       // this.loadingBtn = true;
       // setTimeout(function() {
-         this.loadingBtn = false;
+      this.loadingBtn = false;
       // }, 5000);
       this.sure = this.sure + 1; //向form表单发送提交通知
       // this.dialogFormVisible =false
@@ -679,20 +699,20 @@ export default {
     },
     handleDelete(rows) {
       // 多行删除
-      callservesure.del(rows.map(u => u.id)).then(() => {
+      callservesure.del(rows.map((u) => u.id)).then(() => {
         this.$notify({
           title: "成功",
           message: "删除成功",
           type: "success",
-          duration: 2000
+          duration: 2000,
         });
-        rows.forEach(row => {
+        rows.forEach((row) => {
           const index = this.list.indexOf(row);
           this.list.splice(index, 1);
         });
       });
-    }
-  }
+    },
+  },
 };
 </script>
 <style lang="scss" scoped>

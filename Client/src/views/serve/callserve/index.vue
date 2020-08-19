@@ -582,24 +582,27 @@ export default {
     getList() {
       this.listLoading = true;
       callservesure.rightList(this.listQuery).then(response => {
-            let resul = response.data.data;
+        let resul = response.data.data;
         this.total =response.count;
         this._normalize(resul)
         this.listLoading = false;
       }).catch(() => {
-        this.listLoading = true;
-        let that = this
-          setTimeout(function(){
-                      that.$message({
-            type: "error",
-            message: `请输入正确的搜索值`
-          });
-            that.list = [];
-            that.total =0;
-            that.listLoading = false;
-          },700)
-
+        this.listLoading = false;
+        this.$message({
+          type: "error",
+          message: `请输入正确的搜索值`
         });
+        // let that = this
+        // setTimeout(function(){
+        //             that.$message({
+        //   type: "error",
+        //   message: `请输入正确的搜索值`
+        // });
+        //   that.list = [];
+        //   that.total =0;
+        //   that.listLoading = false;
+        // },700)
+      });
     },
     getProblemTypeList () {
       problemtypes

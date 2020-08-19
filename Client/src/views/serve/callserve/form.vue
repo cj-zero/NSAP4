@@ -387,7 +387,7 @@ import zmap from "@/components/amap";
 import upLoadImage from "@/components/upLoadFile";
 import Model from "@/components/Formcreated/components/Model";
 import { timeToFormat } from "@/utils";
-import { isMobile, isPhone } from "@/utils/validate";
+// import { isMobile, isPhone } from "@/utils/validate";
 import { download } from "@/utils/file";
 import formPartner from "./formPartner";
 import formAdd from "./formAdd";
@@ -420,20 +420,20 @@ export default {
   //  ##isCreate是否可以编辑  ##look只能看   ##create新增页  ##customer获取服务端对比的信息
   //customer确认订单时传递的信息
   data() {
-    var checkTelF = (rule, value, callback) => {
-      if (!value) {
-        return callback();
-      }
-      setTimeout(() => {
-        // let reg = RegExp(/^[\d-]+$/);
-        if (isMobile(value) || isPhone(value)) {
-          callback();
-        } else {
-          // callback(new Error('请输入正确的格式'));
-          callback(this.$message.error("请输入正确的电话格式"));
-        }
-      }, 500);
-    };
+    // var checkTelF = (rule, value, callback) => {
+    //   if (!value) {
+    //     return callback();
+    //   }
+    //   setTimeout(() => {
+    //     // let reg = RegExp(/^[\d-]+$/);
+    //     if (isMobile(value) || isPhone(value)) {
+    //       callback();
+    //     } else {
+    //       // callback(new Error('请输入正确的格式'));
+    //       callback(this.$message.error("请输入正确的电话格式"));
+    //     }
+    //   }, 500);
+    // };
     return {
       baseURL: process.env.VUE_APP_BASE_API + "/files/Download",
       tokenValue: this.$store.state.user.token,
@@ -517,8 +517,8 @@ export default {
         ],
         createTimeNow: [
           { required: true, message: "请选择创建时间", trigger: "change" },
-        ],
-        newestContactTel: [{ validator: checkTelF, trigger: "blur" }],
+        ]
+        // newestContactTel: [{ validator: checkTelF, trigger: "blur" }],
       },
       listQuery: {
         page: 1,

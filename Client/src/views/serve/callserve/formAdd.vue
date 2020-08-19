@@ -702,6 +702,7 @@
     <el-dialog
       :modal-append-to-body="false"
       :append-to-body="true"
+      :close-on-click-modal="false"
       class="addClass1"
       :title="`第${sortForm}工单`"
       center
@@ -720,6 +721,7 @@
       loading
       :visible.sync="solutionOpen"
       width="1000px"
+      :close-on-click-modal="false"
     >
       <solution
         @solution-click="solutionClick"
@@ -742,6 +744,7 @@
       title="选择制造商序列号"
       @open="openDialog"
       width="70%"
+      :close-on-click-modal="false"
       :visible.sync="dialogfSN">
       <div style="width:600px;margin:10px 0;" class="search-wrapper">
         <el-input
@@ -838,7 +841,7 @@ export default {
         //批量修改所绑定的值
         fromTheme: "", //呼叫主题
         fromType: 1, //呼叫类型1-提交呼叫 2-在线解答（已解决）
-        status: 1, //呼叫状态 1-待确认 2-已确认 3-已取消 4-待处理 5-已排配 6-已外出 7-已挂起 8-已接收 9-已解决 10-已回访
+        status: 1, //呼叫状态  工单状态 1-待处理 2-已排配 3-已预约 4-已外出 5-已挂起 6-已接收 7-已解决 8-已回访  服务单 1-待确认 2-已确认 3-已取消
         problemTypeId: "", //问题类型Id
         problemTypeName: "",
         solutionsubject: "",
@@ -903,16 +906,14 @@ export default {
         { value: "Web", label: "Web" },
       ],
       options_status: [
-        { label: "已回访", value: 10 },
-        { label: "已解决", value: 9 },
-        { label: "已接收", value: 8 },
-        { label: "已挂起", value: 7 },
-        { label: "已外出", value: 6 },
-        { label: "已排配", value: 5 },
-        { label: "待处理", value: 4 },
-        { label: "已取消", value: 3 },
-        { label: "已确认", value: 2 },
-        { label: "待确认", value: 1 },
+        { label: "已回访", value: 8 },
+        { label: "已解决", value: 7 },
+        { label: "已接收", value: 6 },
+        { label: "已挂起", value: 5 },
+        { label: "已外出", value: 4 },
+        { label: "已预约", value: 3 },
+        { label: "已排配", value: 2 },
+        { label: "待处理", value: 1 },
       ],
       options_type: [
         { value: 1, label: "提交呼叫" },
@@ -1126,7 +1127,7 @@ export default {
       this.isDisalbed = val;
     },
     getStatus (formType) { // 根据呼叫类型 来改变状态
-      return formType === 1 ? 1 : 9
+      return formType === 1 ? 1 : 7
     },  
     getSerialNumberList(code) {
       this.listLoading = true;
