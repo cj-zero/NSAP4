@@ -1,35 +1,37 @@
 <template>
   <div class="app-container">
-    <search @search="onSearch" :type="type"></search>
-    <common-table
-      :tableData="tableData"
-      :headOptions="headOptions"
-      :type="type"
-      @openDetail="onOpenDetail"
-      :isLoading="isLoading"
-    >
-    </common-table>
-    <pagination
-      v-show="totalCount > 0"
-      :total="totalCount"
-      :page.sync="pageConfig.page"
-      :limit.sync="pageConfig.limit"
-      @pagination="handleChange"
-    />
-    <el-dialog
-      :visible.sync="visible">
-      <certifiate
+    <div class="bg-white">
+      <search @search="onSearch" :type="type"></search>
+      <common-table
+        :tableData="tableData"
+        :headOptions="headOptions"
         :type="type"
-        placeholder="审批意见"
-        :certNo="currentCertNo"
-        :currentData="currentData"
-        @handleSubmit="onHandleSubmit"
-        @close="closeDialog"
-      ></certifiate>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="visible = false" size="mini">取 消</el-button>
-      </span>
-    </el-dialog>
+        @openDetail="onOpenDetail"
+        :isLoading="isLoading"
+      >
+      </common-table>
+      <pagination
+        v-show="totalCount > 0"
+        :total="totalCount"
+        :page.sync="pageConfig.page"
+        :limit.sync="pageConfig.limit"
+        @pagination="handleChange"
+      />
+      <el-dialog
+        :visible.sync="visible">
+        <certifiate
+          :type="type"
+          placeholder="审批意见"
+          :certNo="currentCertNo"
+          :currentData="currentData"
+          @handleSubmit="onHandleSubmit"
+          @close="closeDialog"
+        ></certifiate>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="visible = false" size="mini">取 消</el-button>
+        </span>
+      </el-dialog>
+    </div>
   </div>
 </template>
 

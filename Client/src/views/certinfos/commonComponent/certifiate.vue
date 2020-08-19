@@ -22,7 +22,7 @@
         element-loading-background="rgba(0, 0, 0, 0.5)"
       >{{ rightBtnText }}</el-button>
     </el-row>
-    <el-row v-if="type !== 'submit'">
+    <el-row v-if="type == 'review'">
       <el-input type="textarea" v-model="advice" :placeholder="placeholder"></el-input>
     </el-row>
     <el-row style="margin-top: 10px;">
@@ -212,21 +212,21 @@ export default {
 </script>
 <style lang='scss' scoped>
 .certifiate-wrapper {
-  .scroll-wrapper {
-    height: 400px;
-    overflow-y: scroll;
-    &::-webkit-scrollbar {
-      width: 7px;
-      height: 400px;
-    }
-    &::-webkit-scrollbar-thumb {
-      background-color: #eee;
-      border-radius: 10px;
-    }
-    &::-webkit-scrollbar-track {
-      border-radius: 10px;
-    }
-  }
+  // .scroll-wrapper {
+  //   height: 400px;
+  //   overflow-y: scroll;
+  //   &::-webkit-scrollbar {
+  //     width: 7px;
+  //     height: 400px;
+  //   }
+  //   &::-webkit-scrollbar-thumb {
+  //     background-color: #eee;
+  //     border-radius: 10px;
+  //   }
+  //   &::-webkit-scrollbar-track {
+  //     border-radius: 10px;
+  //   }
+  // }
   .btn-wrapper {
     margin-bottom: 10px;
   }

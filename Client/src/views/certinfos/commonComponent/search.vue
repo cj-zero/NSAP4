@@ -18,7 +18,7 @@
       </el-form-item>
       <el-form-item label="校准日期">
         <el-date-picker
-          style="width: 350px;"
+          style="width: 370px;"
           v-model="form.date"
           type="daterange"
           value-format="yyyy-MM-dd"
@@ -90,6 +90,6 @@ export default {
 </script>
 <style lang='scss' scoped>
 .search-wrapper {
-  margin-bottom: 20px;
+  margin-top: 10px;
 }
 </style>
