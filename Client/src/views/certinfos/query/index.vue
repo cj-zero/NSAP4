@@ -17,8 +17,9 @@
         @pagination="handleChange"
       />
       <el-dialog 
+        class="certifiate-dialog"
         :visible.sync="visible"
-        width="50%"
+        width="800px"
         @closed="onClosed">
         <el-tabs v-model="activeName" type="card" @tab-click="handleClick">
           <el-tab-pane label="校准证书" name="first">
@@ -98,4 +99,12 @@ export default {
 }
 </script>
 <style lang='scss' scoped>
+.certifiate-dialog {
+  ::v-deep .custom-theme .el-dialog__body {
+    padding: 0 20px;
+  }
+  ::v-deep .el-dialog__body {
+    padding: 0 20px;
+  }
+}
 </style>
