@@ -20,6 +20,7 @@
         class="certifiate-dialog"
         :visible.sync="visible"
         width="800px"
+        :show-close="false"
         @closed="onClosed">
         <el-tabs v-model="activeName" type="card" @tab-click="handleClick">
           <el-tab-pane label="校准证书" name="first">

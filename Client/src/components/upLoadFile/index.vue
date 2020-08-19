@@ -36,6 +36,7 @@
       list-type="picture-card"
       multiple
       name="files"
+      :before-upload="beforeUpload"
       :width="setImage"
       :on-success="successBack"
       :on-preview="handlePictureCardPreview"
@@ -103,6 +104,7 @@ export default {
       a.click()
     },
     beforeUpload (file) {
+      console.log(file, 'file')
       let testmsg = /^image\/(jpeg|png|jpg)$/.test(file.type)
       if (!testmsg) {
         this.$message.error('上传图片格式不对!')

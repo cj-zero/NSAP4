@@ -19,7 +19,10 @@
         @pagination="handleChange"
       />
       <el-dialog
+        class="certifiate-dialog"
         :visible.sync="visible"
+        width="800px"
+        :show-close="false"
       >
         <certifiate
           :type="type"
@@ -91,4 +94,12 @@ export default {
 }
 </script>
 <style lang='scss' scoped>
+.certifiate-dialog {
+  ::v-deep .custom-theme .el-dialog__body {
+    padding: 0 20px;
+  }
+  ::v-deep .el-dialog__body {
+    padding: 0 20px;
+  }
+}
 </style>

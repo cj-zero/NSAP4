@@ -140,7 +140,7 @@
         @open="openCustoner"
         @close="closeCustoner"
         :close-on-click-modal="false"
-        :destroy-on-close="true"
+        :destroy-on-close="false"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
@@ -247,8 +247,8 @@ export default {
         { name: "status", label: "状态", align: "left", width: "80px" },
         { name: "customerName", label: "客户名称", align: "left", width: '220' },
         { name: "createTime", label: "创建日期", align: "left", width: '100' },
-        { name: "contacter", label: "联系人", align: "left", width: '100' },
-        { name: "contactTel",label: "电话号码",align: "left",width: "120px" },
+        { name: "newestContacter", label: "联系人", align: "left", width: '100' },
+        { name: "newestContactTel",label: "电话号码",align: "left",width: "120px" },
         { name: "services", label: "服务内容", align: "left", width: '120' },
         { name: "supervisor", label: "售后主管", align: "left", width: '100' },
         { name: "salesMan", label: "销售员", align: "left", width: '100' },
@@ -411,7 +411,7 @@ export default {
       this.dataForm = this.dataForm1;
     },
     closeCustoner() {
-      this.getList();
+      // this.getList();
     },
     openTree(res) {
       this.listLoading = true;
@@ -636,7 +636,7 @@ export default {
       this.openTree(row.id)
     },
     closeDia(a) {
-            if (a === 1) {
+      if (a === 1) {
         this.getList();
       }
       if(a=='N'){

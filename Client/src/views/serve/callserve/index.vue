@@ -481,7 +481,7 @@ export default {
       this.dataForm = this.dataForm1;
     },
     closeCustoner() {
-      this.getList();
+      // this.getList();
     },
     openTree(res) {
       this.listLoading = true;
