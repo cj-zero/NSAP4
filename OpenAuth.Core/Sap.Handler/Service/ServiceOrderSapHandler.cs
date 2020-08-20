@@ -145,7 +145,7 @@ namespace Sap.Handler.Service
 
                 sc.CustomerCode = thisSorder.CustomerId;
                 sc.CustomerName = thisSorder.CustomerName;
-                sc.Subject = thisSorder.Services.Substring(0, 250);
+                sc.Subject = thisSorder.Services.Length>250? thisSorder.Services.Substring(0, 250):thisSorder.Services ;
                 //if (thisSorder.FromId != null && thisSorder.FromId != -1)
                 //{
                 //    sc.Origin = (int)thisSorder.FromId;
@@ -156,7 +156,7 @@ namespace Sap.Handler.Service
                     if (!string.IsNullOrEmpty(thisSN.ItemCode) && IsValidItemCode(thisSN.ItemCode))
                     {
                         sc.ItemCode = thisSN.ItemCode;
-                        sc.ManufacturerSerialNum = thisSN.ManufSN;
+                        //sc.ManufacturerSerialNum = thisSN.ManufSN;
                     }
                 }
                 sc.Status = -3;// 待处理 
@@ -165,10 +165,11 @@ namespace Sap.Handler.Service
                 //{
                 //    sc.CallType = (int)thisSwork.FromType;
                 //}
-                if (thisSorder.ProblemTypeId != null)
-                {
-                    sc.ProblemType = int.Parse(thisSorder.ProblemTypeId);
-                }
+                //if (thisSorder.ProblemTypeId != null)
+                //{
+                    
+                //    sc.ProblemType = thisSorder.PRO;
+                //}
                 sc.Description = thisSorder.Services;
 
                 #endregion
