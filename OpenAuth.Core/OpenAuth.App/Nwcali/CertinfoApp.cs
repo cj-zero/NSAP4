@@ -104,9 +104,14 @@ namespace OpenAuth.App
             var result = new TableData();
             var user = _auth.GetCurrentUser();
 
+            var instances = new List<string>();
+            if( request.FlowStatus == 1   )
+                instances = await UnitWork.Find<FlowInstanceTransitionHistory>(u => u.CreateUserId == user.User.Id)
+                    .Select(u => u.InstanceId).Distinct().ToListAsync();
+
             var fs = await UnitWork.Find<FlowInstance>(null)
                 .Where(o => o.MakerList == "1" || o.MakerList.Contains(user.User.Id))//待办事项
-                .WhereIf(request.FlowStatus == 1, o => o.ActivityName == "待送审")
+                .WhereIf(request.FlowStatus == 1, o => o.ActivityName == "待送审" || instances.Contains(o.Id))
                 .WhereIf(request.FlowStatus == 2, o => o.ActivityName == "待审核" || o.ActivityName == "待批准")
                 .ToListAsync();
             var fsid = fs.Select(f => f.Id).ToList();
@@ -194,6 +199,8 @@ namespace OpenAuth.App
                             CertInfoId = certInfo.Id,
                             Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}送审证书。"
                         });
+                        await UnitWork.UpdateAsync<Certinfo>(c => c.Id.Equals(req.CertInfoId), o => new Certinfo { Operator = loginContext.User.Name, OperatorId = loginContext.User.Id });
+                        await UnitWork.SaveAsync();
                         var signPath1 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", nameDic.GetValueOrDefault(loginContext.User.Name));
                         list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 1, ValueData = signPath1 });
                     }
@@ -218,8 +225,8 @@ namespace OpenAuth.App
                         });
                         var signPath3 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", nameDic.GetValueOrDefault(loginContext.User.Name));
                         list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 1, ValueData = signPath3 });
-                        var signetPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "印章.png");
-                        list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 3, ValueData = signetPath });
+                        //var signetPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "印章.png");
+                        //list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 3, ValueData = signetPath });
                     }
                     #endregion
                     var templatePath = certInfo.CertPath;
