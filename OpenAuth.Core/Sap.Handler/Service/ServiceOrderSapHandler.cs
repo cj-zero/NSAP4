@@ -118,6 +118,11 @@ namespace Sap.Handler.Service
                     {
                         U_SAP_ID = System.Convert.ToInt32(docNum)
                     });
+                    var ServiceWorkOrders = await UnitWork.Find<ServiceWorkOrder>(u => u.ServiceOrderId.Equals(theServiceOrderId)).AsNoTracking().ToListAsync();
+                    int num = 0;
+                    ServiceWorkOrders.ForEach(u => u.WorkOrderNumber = docNum + "-" + ++num);
+                    UnitWork.BatchUpdate<ServiceWorkOrder>(ServiceWorkOrders.ToArray());
+                    await UnitWork.SaveAsync();
                 }
                 if (!string.IsNullOrWhiteSpace(allerror.ToString()))
                 {
@@ -205,7 +210,7 @@ namespace Sap.Handler.Service
 
 
         [CapSubscribe("Serve.ServcieOrder.CreateWorkNumber")]
-        public async Task CreateWorkNumber(int ServiceOrderId)
+        public async Task HandleCreateWorkNumber(int ServiceOrderId)
         {
             var ServiceOrder = UnitWork.Find<ServiceOrder>(s => s.Id.Equals(ServiceOrderId)).FirstOrDefault();
             var ServiceWorkOrders = await UnitWork.Find<ServiceWorkOrder>(u => u.ServiceOrderId.Equals(ServiceOrderId)).AsNoTracking().ToListAsync();
