@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
@@ -34,15 +35,40 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
-
-        //添加
-       [HttpPost]
-        public Response Add(AddOrUpdateSolutionReq obj)
+        /// <summary> 
+        /// 添加客服解决方案
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> Add(AddOrUpdateSolutionReq obj)
         {
             var result = new Response();
             try
             {
-                _app.Add(obj);
+                await _app.Add(obj);
+
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+        /// <summary>
+        /// 添加技术员解决方案
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> TechnicianAdd(AddOrUpdateSolutionReq obj)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.TechnicianAdd(obj);
 
             }
             catch (Exception ex)
@@ -77,9 +103,17 @@ namespace OpenAuth.WebApi.Controllers
         /// 加载列表
         /// </summary>
         [HttpGet]
-        public TableData Load([FromQuery]QuerySolutionListReq request)
+        public async Task<TableData> Load([FromQuery]QuerySolutionListReq request)
         {
-            return _app.Load(request);
+            return await _app.Load(request);
+        }
+        /// <summary>
+        /// 加载技术员解决方案列表
+        /// </summary>
+        [HttpGet]
+        public async Task<TableData> TechnicianLoad([FromQuery]QuerySolutionListReq request)
+        {
+            return await _app.TechnicianLoad(request);
         }
 
         /// <summary>

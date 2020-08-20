@@ -64,12 +64,6 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 呼叫类型
         /// </summary>
-        public int? FromType { get; set; }
-
-        /// <summary>
-        /// 呼叫类型
-        /// </summary>
         public string QryFromType { get; set; }
-
     }
 }
