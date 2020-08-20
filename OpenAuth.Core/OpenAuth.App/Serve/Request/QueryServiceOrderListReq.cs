@@ -62,5 +62,10 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string QryU_SAP_ID { get; set; }
 
+        /// <summary>
+        /// 呼叫类型
+        /// </summary>
+        public string QryFromType { get; set; }
+
     }
 }
