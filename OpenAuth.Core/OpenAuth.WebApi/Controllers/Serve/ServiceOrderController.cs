@@ -1022,12 +1022,12 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> AppTechnicianLoad(int SapOrderId, int CurrentUserId)
+        public async Task<TableData> AppTechnicianLoad(int SapOrderId, int CurrentUserId,string MaterialType)
         {
             var result = new TableData();
             try
             {
-                result = await _serviceOrderApp.AppTechnicianLoad(SapOrderId, CurrentUserId);
+                result = await _serviceOrderApp.AppTechnicianLoad(SapOrderId, CurrentUserId, MaterialType);
             }
             catch (Exception ex)
             {
@@ -1059,5 +1059,21 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        //[HttpPost]
+        //public async Task<TableData> BindPhoneProtect(string PhoneNoA, string PhoneNoB)
+        //{
+        //    var result = new TableData();
+        //    try
+        //    {
+        //        result = await _serviceOrderApp.BindPhoneProtect(PhoneNoA, PhoneNoB);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        result.Code = 500;
+        //        result.Message = ex.Message;
+        //    }
+        //    return result;
+        //}
     }
 }

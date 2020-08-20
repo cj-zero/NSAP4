@@ -54,6 +54,15 @@ namespace OpenAuth.WebApi.Controllers
             var file = Request.Form.Files[0];
             var handler = new ExcelHandler(file.OpenReadStream());
             var baseInfo = handler.GetBaseInfo();
+            if (string.IsNullOrWhiteSpace(baseInfo.Operator))
+            {
+                return new Response<bool>()
+                {
+                    Code = 400,
+                    Message = "Operator can not be null.",
+                    Result = false
+                };
+            }
             var turV = handler.GetNwcaliTur("电压");
             var turA = handler.GetNwcaliTur("电流");
             try
@@ -71,7 +80,7 @@ namespace OpenAuth.WebApi.Controllers
                         Model = baseInfo.TesterModel,
                         CalibrationDate = DateTime.Parse(baseInfo.Time),
                         ExpirationDate = DateTime.Parse(ConvertTestInterval(baseInfo.Time, baseInfo.TestInterval)),
-                        Operator = baseInfo.Operator
+                        //Operator = baseInfo.Operator
                     });
                 }
                 finally
@@ -191,6 +200,8 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="baseInfo">基础信息</param>
         /// <param name="plcData">下位机数据</param>
         /// <param name="plcRepetitiveMeasurementData">下位机重复性测量数据</param>
+        /// <param name="turV">Tur电压数据</param>
+        /// <param name="turA">Tur电流数据</param>
         /// <returns></returns>
         private static List<WordModel> BuildWordModels(NwcaliBaseInfo baseInfo, Dictionary<string, List<NwcaliPLCData>> plcData, Dictionary<string, List<NwcaliPLCRepetitiveMeasurementData>> plcRepetitiveMeasurementData, List<NwcaliTur> turV, List<NwcaliTur> turA)
         {
@@ -550,13 +561,14 @@ namespace OpenAuth.WebApi.Controllers
                 int j = 0;
                 foreach (var item in plcData)
                 {
+                    int l = 1;
                     var data = item.Value.Where(p => p.VoltsorAmps.Equals("Amps") && p.Mode.Equals(mode) && p.Verify_Type.Equals("Post-Calibration")).GroupBy(d => d.Channel);
                     foreach (var item2 in data)
                     {
                         var cvDataList = item2.OrderBy(dd => dd.Scale).ThenBy(dd => dd.Commanded_Value).ToList();
                         foreach (var cvData in cvDataList)
                         {
-                            var CHH = $"{item.Key.Substring(item.Key.Length - 1, 1)}-{cvData.Channel}";
+                            var CHH = $"{l}-{cvData.Channel}";
                             var Range = cvData.Scale;
                             var Indication = cvData.Measured_Value;
                             var MeasuredValue = cvData.Standard_Value;
@@ -681,6 +693,7 @@ namespace OpenAuth.WebApi.Controllers
                             j++;
                         }
                     }
+                    l++;
                 }
             }
             #region Charging Voltage
@@ -809,7 +822,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <returns></returns>
         private static (string, string, string, string, string) ReduceVoltage(double indication, double measuredValue, double error, double acceptance, double uncertainty)
         {
-            var istr = indication.ToString().Split('.')[1];
+            var istr = indication.ToString("f6").Split('.')[1];
             var mstr = measuredValue.ToString().Split('.')[1];
             var sp = uncertainty.ToString("G2").Split('.');
             if (sp[0] == "1" || sp[0] == "2")
@@ -852,7 +865,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <returns></returns>
         private static (string, string, string, string, string) ReduceCurrent(double indication, double measuredValue, double error, double acceptance, double uncertainty)
         {
-            var istr = indication.ToString().Split('.')[1];
+            var istr = indication.ToString("f3").Split('.')[1];
             istr = (indication / 1000).ToString($"f{istr.Length + 3}").Split('.')[1];
             var mstr = measuredValue.ToString().Split('.')[1];
             mstr = measuredValue.ToString($"f{mstr.Length + 3}").Split('.')[1];
@@ -887,6 +900,11 @@ namespace OpenAuth.WebApi.Controllers
             return (indicationStr, measuredValueStr, errorStr, acceptanceStr, uncertaintyStr);
         }
 
+        /// <summary>
+        /// 创建流程
+        /// </summary>
+        /// <param name="certNo">证书编号</param>
+        /// <returns></returns>
         private async Task<string> CreateFlow(string certNo)
         {
             try

@@ -14,10 +14,10 @@ namespace OpenAuth.App.Request
         public int ServiceOrderId { get; set; }
 
         /// <summary>
-        /// 描述类型 Trouble故障 Process过程
+        /// 设备类型
         /// </summary>
         [Required]
-        public string DescriptionType { get; set; }
+        public string MaterialType { get; set; }
 
         /// <summary>
         /// 描述内容
