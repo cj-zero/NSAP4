@@ -123,6 +123,7 @@ namespace Sap.Handler.Service
                     ServiceWorkOrders.ForEach(u => u.WorkOrderNumber = docNum + "-" + ++num);
                     UnitWork.BatchUpdate<ServiceWorkOrder>(ServiceWorkOrders.ToArray());
                     await UnitWork.SaveAsync();
+                    Log.Logger.Warning($"同步成功，SAP_ID：{docNum}", typeof(ServiceOrderSapHandler));
                 }
                 if (!string.IsNullOrWhiteSpace(allerror.ToString()))
                 {
@@ -210,6 +211,8 @@ namespace Sap.Handler.Service
                 {
                     U_SAP_ID = System.Convert.ToInt32(docNum)
                 });
+                await UnitWork.SaveAsync();
+                Log.Logger.Warning($"同步成功，SAP_ID：{docNum}", typeof(ServiceOrderSapHandler));
             }
             if (!string.IsNullOrWhiteSpace(allerror.ToString()))
             {
