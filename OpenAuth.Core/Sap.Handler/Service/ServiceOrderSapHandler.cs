@@ -12,7 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using OpenAuth.Repository.Domain.Sap;
-
+using System.Reactive;
 
 namespace Sap.Handler.Service
 {
@@ -84,10 +84,10 @@ namespace Sap.Handler.Service
                     //{
                     //    sc.CallType = (int)thisSwork.FromType;
                     //}
-                    //if (thisSwork.ProblemType != null)
-                    //{
-                    //    sc.ProblemType = thisSwork.ProblemType.PrblmTypID;
-                    //}
+                    if (thisSwork.ProblemType != null)
+                    {
+                        sc.ProblemType = thisSwork.ProblemType.PrblmTypID;
+                    }
                     sc.Description = thisSwork.Remark;
                     //sc.TechnicianCode = thisWorkOrder.ServiceOrder.SupervisorId;
                     //sc.City = thisWorkOrder.ServiceOrder.City;
@@ -161,7 +161,7 @@ namespace Sap.Handler.Service
                     if (!string.IsNullOrEmpty(thisSN.ItemCode) && IsValidItemCode(thisSN.ItemCode))
                     {
                         sc.ItemCode = thisSN.ItemCode;
-                        //sc.ManufacturerSerialNum = thisSN.ManufSN;
+                        sc.ManufacturerSerialNum = thisSN.ManufSN;
                     }
                 }
                 sc.Status = -3;// 待处理 
@@ -172,9 +172,18 @@ namespace Sap.Handler.Service
                 //}
                 //if (thisSorder.ProblemTypeId != null)
                 //{
-                    
+
                 //    sc.ProblemType = thisSorder.PRO;
                 //}
+                if (!string.IsNullOrEmpty(thisSorder.ProblemTypeId))
+                {
+                    var queryp = UnitWork.Find<ProblemType>(s => s.Id.Equals(thisSorder.ProblemTypeId)).FirstOrDefault();
+                    var pbltype = queryp.MapTo<ProblemType>();
+                    if (pbltype!=null)
+                    {
+                        sc.ProblemType = pbltype.PrblmTypID;
+                    }
+                }
                 sc.Description = thisSorder.Services;
 
                 #endregion
