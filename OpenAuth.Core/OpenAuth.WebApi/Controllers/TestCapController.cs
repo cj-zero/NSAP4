@@ -22,7 +22,7 @@ namespace OpenAuth.WebApi.Controllers
         [HttpGet]
         public async Task Test(int id)
         {
-            await _capBus.PublishAsync("Serve.ServcieOrder.Create", id);
+            await _capBus.PublishAsync("Serve.ServcieOrder.CreateFromAPP", id);
         }
     }
 }

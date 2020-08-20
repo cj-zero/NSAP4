@@ -12,6 +12,7 @@ using System.Text;
 using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
+using Npoi.Mapper;
 
 namespace OpenAuth.App.nwcali
 {
@@ -314,26 +315,12 @@ namespace OpenAuth.App.nwcali
             StringBuilder Metrological = new StringBuilder();
             foreach (var item in obj.OrderBy(u=>u.CategoryAort))
             {
-                string CategoryNondeterminacy = Convert.ToDecimal(item.CategoryNondeterminacy).ToString("0.##########");
-                int r = 0;
-                for (int i = 0; i < CategoryNondeterminacy.Length; i++)
-                {
-                    if (CategoryNondeterminacy.Substring(i, 1) != "." && Convert.ToInt32(CategoryNondeterminacy.Substring(i, 1)) > 0)
-                    {
-                        if (CategoryNondeterminacy.Contains("."))
-                        {
-                            int s = Convert.ToInt32(CategoryNondeterminacy.Substring(0, CategoryNondeterminacy.IndexOf(".")));
-                            if (s > 0) i = i + 1;
-                        }
-                        r = i + 1;
-                        break;
-                    }
-                }
                 Metrological.Append(item.CategoryNumber + "：");
+                string symbol = "";
                 if (Category.Contains("万用表"))
                 {
-                    string symbol = "";
-                    if (item.CategoryNumber.Contains("DCV")||item.CategoryNumber.Contains("ACV"))
+
+                    if (item.CategoryNumber.Contains("DCV") || item.CategoryNumber.Contains("ACV"))
                     {
                         symbol = "V";
                     }
@@ -347,20 +334,20 @@ namespace OpenAuth.App.nwcali
                     }
                     if (item.CategoryType.Contains("绝对不确定度"))
                     {
-                        if (!string.IsNullOrWhiteSpace(item.CategoryOhms.ToString())&& item.CategoryOhms!=0)
+                        if (!string.IsNullOrWhiteSpace(item.CategoryOhms.ToString()) && item.CategoryOhms != 0)
                         {
-                            Metrological.Append("(" + Convert.ToDecimal(item.CategoryOhms).ToString("G0") + "±" + Convert.ToDecimal(CategoryNondeterminacy).ToString("E" + (CategoryNondeterminacy.ToString().Length - r)) + ")" + symbol + " (k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n");
+                            Metrological.Append("(" + Convert.ToDecimal(item.CategoryOhms).ToString("G0") + "±" + String.Format("{0:#.##########E+0}", item.CategoryNondeterminacy) + ")" + symbol + " (k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n");
                         }
                         else
                         {
-                            Metrological.Append("±" + Convert.ToDecimal(CategoryNondeterminacy).ToString("E" + (CategoryNondeterminacy.ToString().Length - r)) + "" + symbol + " (k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n");
+                            Metrological.Append("±" + String.Format("{0:#.##########E+0}", item.CategoryNondeterminacy) + "" + symbol + " (k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n");
                         }
                     }
                     else if (item.CategoryType.Contains("相对不确定度"))
                     {
                         if (!string.IsNullOrWhiteSpace(item.CategoryOhms.ToString()) && item.CategoryOhms != 0)
                         {
-                            Metrological.Append(Convert.ToDecimal(item.CategoryOhms).ToString("G0")+ symbol + "，Urel=" + Convert.ToDecimal(item.CategoryNondeterminacy).ToString("G0") + "% (k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n");
+                            Metrological.Append(Convert.ToDecimal(item.CategoryOhms).ToString("G0") + symbol + "，Urel=" + Convert.ToDecimal(item.CategoryNondeterminacy).ToString("G0") + "% (k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n");
                         }
                         else
                         {
@@ -368,18 +355,18 @@ namespace OpenAuth.App.nwcali
                         }
                     }
                 }
-                else if(Category.Contains("分流器")|| Category.Contains("工装"))
+                else if (Category.Contains("分流器") || Category.Contains("工装"))
                 {
                     if (item.CategoryType.Contains("绝对不确定度"))
                     {
-                        Metrological.Append("(" + Convert.ToDecimal(item.CategoryOhms).ToString("G0") + "±" + Convert.ToDecimal(CategoryNondeterminacy).ToString("E" + (CategoryNondeterminacy.ToString().Length - r)) + ")Ω (k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n");
+                        Metrological.Append("(" + Convert.ToDecimal(item.CategoryOhms).ToString("G0") + "±" + String.Format("{0:#.##########E+0}", item.CategoryNondeterminacy) + ")Ω (k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n");
                     }
                     else if (item.CategoryType.Contains("相对不确定度"))
                     {
                         Metrological.Append(Convert.ToDecimal(item.CategoryOhms).ToString("G0") + "Ω，Urel=" + Convert.ToDecimal(item.CategoryNondeterminacy).ToString("G0") + "ppm (k=" + Convert.ToDecimal(item.CategoryBHYZ).ToString("G0") + @")\r\n");
                     }
                 }
-                
+
             }
 
             return Metrological.ToString();

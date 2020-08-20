@@ -71,17 +71,17 @@
         v-for=" (item,index) in form.serviceOrderSNs"
         :key="`inx${index}`"
       >
-        <el-col :span="16">
+        <el-col>
           <el-row type="flex" class="row-bg" justify="space-around">
-            <el-col :span="12">
+            <el-col>
               <el-form-item label="制造商序列号">
-                <el-input size="small" v-model="item.manufSN"></el-input>
+                <el-input size="small" v-model="item.manufSN" style="width: 130px;"></el-input>
                 <!-- <div style="border:1px solid #E4E7ED;background-color:#F5F7FA;border-radius:5px;padding-left:5px;">{{item.manufSN?item.manufSN:'暂无数据'}}</div> -->
               </el-form-item>
             </el-col>
-            <el-col :span="12">
+            <el-col>
               <el-form-item label="物料编码">
-                <el-input size="small" v-model="item.itemCode"></el-input>
+                <el-input size="small" v-model="item.itemCode" style="width: 150px;"></el-input>
               </el-form-item>
             </el-col>
       

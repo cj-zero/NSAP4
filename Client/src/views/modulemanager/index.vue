@@ -592,15 +592,30 @@ export default {
     },
     handleDelete(rows) {
       // 多行删除
-      modules.del([rows.id]).then(() => {
-        this.$notify({
-          title: '成功',
-          message: '删除成功',
-          type: 'success',
-          duration: 2000
+      this.$confirm('是否删除模块？', '确认信息', {
+          distinguishCancelAndClose: true,
+          confirmButtonText: '继续',
+          cancelButtonText: '放弃'
         })
-        this.getModulesTree()
-      })
+        .then(() => {
+          modules.del([rows.id]).then(() => {
+            this.$notify({
+              title: '成功',
+              message: '删除成功',
+              type: 'success',
+              duration: 2000
+            })
+            this.getModulesTree()
+          })
+        })
+        .catch(() => {
+          this.$notify({
+            title: '成功',
+            message: '取消操作',
+            type: 'success',
+            duration: 2000
+          })
+        });
     },
     // #end region
 
@@ -669,18 +684,33 @@ export default {
     },
     handleDelMenus(rows) {
       // 多行删除
-      modules.delMenu(rows.map(u => u.id)).then(() => {
-        this.$notify({
-          title: '成功',
-          message: '删除成功',
-          type: 'success',
-          duration: 2000
+      this.$confirm('是否删除菜单？', '确认信息', {
+          distinguishCancelAndClose: true,
+          confirmButtonText: '继续',
+          cancelButtonText: '放弃'
         })
-        rows.forEach(row => {
-          const index = this.list.indexOf(row)
-          this.list.splice(index, 1)
+        .then(() => {
+          modules.delMenu(rows.map(u => u.id)).then(() => {
+            this.$notify({
+              title: '成功',
+              message: '删除成功',
+              type: 'success',
+              duration: 2000
+            })
+            rows.forEach(row => {
+              const index = this.list.indexOf(row)
+              this.list.splice(index, 1)
+            })
+          })
         })
-      })
+        .catch(() => {
+          this.$notify({
+            title: '成功',
+            message: '取消操作',
+            type: 'success',
+            duration: 2000
+          })
+        });
     }
     // #end region
   }

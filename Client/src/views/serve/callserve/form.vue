@@ -387,7 +387,7 @@ import zmap from "@/components/amap";
 import upLoadImage from "@/components/upLoadFile";
 import Model from "@/components/Formcreated/components/Model";
 import { timeToFormat } from "@/utils";
-import { isMobile, isPhone } from "@/utils/validate";
+// import { isMobile, isPhone } from "@/utils/validate";
 import { download } from "@/utils/file";
 import formPartner from "./formPartner";
 import formAdd from "./formAdd";
@@ -420,20 +420,20 @@ export default {
   //  ##isCreate是否可以编辑  ##look只能看   ##create新增页  ##customer获取服务端对比的信息
   //customer确认订单时传递的信息
   data() {
-    var checkTelF = (rule, value, callback) => {
-      if (!value) {
-        return callback();
-      }
-      setTimeout(() => {
-        // let reg = RegExp(/^[\d-]+$/);
-        if (isMobile(value) || isPhone(value)) {
-          callback();
-        } else {
-          // callback(new Error('请输入正确的格式'));
-          callback(this.$message.error("请输入正确的电话格式"));
-        }
-      }, 500);
-    };
+    // var checkTelF = (rule, value, callback) => {
+    //   if (!value) {
+    //     return callback();
+    //   }
+    //   setTimeout(() => {
+    //     // let reg = RegExp(/^[\d-]+$/);
+    //     if (isMobile(value) || isPhone(value)) {
+    //       callback();
+    //     } else {
+    //       // callback(new Error('请输入正确的格式'));
+    //       callback(this.$message.error("请输入正确的电话格式"));
+    //     }
+    //   }, 500);
+    // };
     return {
       baseURL: process.env.VUE_APP_BASE_API + "/files/Download",
       tokenValue: this.$store.state.user.token,
@@ -517,8 +517,8 @@ export default {
         ],
         createTimeNow: [
           { required: true, message: "请选择创建时间", trigger: "change" },
-        ],
-        newestContactTel: [{ validator: checkTelF, trigger: "blur" }],
+        ]
+        // newestContactTel: [{ validator: checkTelF, trigger: "blur" }],
       },
       listQuery: {
         page: 1,
@@ -543,6 +543,7 @@ export default {
     },
     customer: {
       handler(val) {
+        this.getPartnerInfo(val.customerId)
         this.setForm(val);
       },
     },
@@ -642,9 +643,20 @@ export default {
       this.setForm(this.customer);
     }
     this.isCreateAdd = this.isCreate;
+    // if (this.formName === '确认') {
+    //   // 确认页面的话，直接调用
+    //   console.log('look')
+    //   this.getPartnerInfo(this.customer.customerId)
+    // }
     console.log(this.isCreateAdd, "isCreatedAdd");
   },
-
+  updated () {
+    // if (this.formName === '确认') {
+    //   // 确认页面的话，直接调用
+    //   console.log('look')
+    //   this.getPartnerInfo(this.customer.customerId)
+    // }
+  },
   destroyed() {
     window.removeEventListener("resize", this.resizeWin);
   },
@@ -754,7 +766,7 @@ export default {
       this.form.recepUserName = this.$store.state.user.name;
       let listQuery = {
         page: 1,
-        limit: 1
+        limit: 10
       }
       console.log(val, 'val')
       let CardCode = val.customerId
@@ -962,25 +974,23 @@ export default {
           this.cntctPrsnList = res.result.cntctPrsnList;
           console.log(this.cntctPrsnList, 'this.cntctPrsnList')
           this.form.supervisor = res.result.techName;
-          if (this.cntctPrsnList && this.cntctPrsnList.length) {
+          if (this.formName !== '查看' && this.formName !== '编辑') {
+            if (this.cntctPrsnList && this.cntctPrsnList.length) {
             let firstValue = res.result.cntctPrsnList[0]
-            let { tel1, tel2, cellolar, name } = firstValue
-            console.log(name, 'name')
-            this.form.contacter = name
-            this.form.contactTel = tel1 || tel2 || cellolar
+              let { tel1, tel2, cellolar, name } = firstValue
+              console.log(name, 'name')
+              this.form.contacter = name
+              this.form.contactTel = tel1 || tel2 || cellolar
+            }
+            // this.form.contacter = item.cntctPrsn;
+            // this.form.contactTel
+            if (this.addressList.length) {
+              let { address, building } = this.addressList[0];
+              this.form.addressDesignator = address;
+              this.form.address = building;
+              // this.form.address = building;
+            }
           }
-          // this.form.contacter = item.cntctPrsn;
-          // this.form.contactTel
-          if (this.addressList.length) {
-            let { address, building } = this.addressList[0];
-            this.form.addressDesignator = address;
-            this.form.address = building;
-            // this.form.address = building;
-          }
-          // this.$message({
-          //   message: "修改服务单成功",
-          //   type: "success"
-          // });
         })
         .catch(() => {
           // this.$message({
@@ -1105,8 +1115,6 @@ export default {
       // this.form.addressDesignator = item.address;
       // this.form.address = item.address;
       this.form.salesMan = item.slpName;
-      // console.log(this.$refs, 'refs')
-      // this.$refs.formPartner.handleCurrentChange(item)
       this.handleCurrentChange(item)
     },
     sureVal() {
@@ -1131,6 +1139,7 @@ export default {
         });
       } else {
         this.selectSerNumberDisabled = false
+        this.getPartnerInfo(val.cardCode)
         callformPartner.getTableList({ code: val.cardCode }).then(res => {
           this.CallList = res.result;
           this.dialogCallId = true

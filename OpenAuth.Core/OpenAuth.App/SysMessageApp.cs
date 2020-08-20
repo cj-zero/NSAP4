@@ -53,6 +53,7 @@ namespace OpenAuth.App
         {
             UnitWork.Update<SysMessage>(u => u.Id == obj.Id, u => new SysMessage
             {
+                ToStatus = obj.ToStatus
                //todo:要修改的字段赋值
             });
 

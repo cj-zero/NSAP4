@@ -69,6 +69,12 @@ namespace OpenAuth.Repository.Domain
         [Description("状态")]
         public int? Status { get; set; }
         /// <summary>
+        /// 使用方 1-客服 2-技术员
+        /// </summary>
+        [Description("使用方")]
+        public int UseBy { get; set; }
+
+        /// <summary>
         /// 
         /// </summary>
         [Description("")]

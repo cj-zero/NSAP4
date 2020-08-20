@@ -374,7 +374,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Response<string>();
             try
             {
-                result.Result = _authStrategyContext.User.Account;
+                result.Result = _authStrategyContext.User.Name;
             }
             catch (CommonException ex)
             {
