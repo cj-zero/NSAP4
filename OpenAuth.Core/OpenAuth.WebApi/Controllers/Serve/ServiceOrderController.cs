@@ -1060,20 +1060,20 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
-        [HttpPost]
-        public async Task<TableData> BindPhoneProtect(string PhoneNoA, string PhoneNoB)
-        {
-            var result = new TableData();
-            try
-            {
-                result = await _serviceOrderApp.BindPhoneProtect(PhoneNoA, PhoneNoB);
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.Message;
-            }
-            return result;
-        }
+        //[HttpPost]
+        //public async Task<TableData> BindPhoneProtect(string PhoneNoA, string PhoneNoB)
+        //{
+        //    var result = new TableData();
+        //    try
+        //    {
+        //        result = await _serviceOrderApp.BindPhoneProtect(PhoneNoA, PhoneNoB);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        result.Code = 500;
+        //        result.Message = ex.Message;
+        //    }
+        //    return result;
+        //}
     }
 }
