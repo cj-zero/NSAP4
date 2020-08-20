@@ -92,7 +92,7 @@ namespace OpenAuth.App.Sap.Service
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        public async Task<TableData> AppFind(QueryAppSerialNumberListReq req)
+        public async Task<TableData> AppGet(QueryAppSerialNumberListReq req)
         {
             var result = new TableData();
             //查询当前服务单已选择的制造商序列号
@@ -110,6 +110,46 @@ namespace OpenAuth.App.Sap.Service
                 .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), q => q.a.customer.Contains(req.CardCode))
                 .WhereIf(!string.IsNullOrEmpty(req.key), q => q.a.itemCode.Contains(req.key) || q.a.manufSN.Contains(req.key))
                 .WhereIf(!string.IsNullOrEmpty(manufSNs), q => !manufSNs.Contains(q.a.manufSN))
+                .WhereIf(req.ManufSNs.Count > 0 && req.ManufSNs != null, q => !req.ManufSNs.Contains(q.a.manufSN))
+                ;
+            var query2 = query.Select(q => new
+            {
+                q.a.manufSN,
+                q.a.internalSN,
+                q.a.customer,
+                q.a.custmrName,
+                q.b.ContractID,
+                dlvryDate = q.a.dlvryDate.Value.AddYears(1),
+                q.a.itemCode,
+                q.a.itemName
+            });
+            result.Data = await query2
+                .Skip((req.page - 1) * req.limit)
+                .Take(req.limit).ToListAsync();
+            result.Count = await query2.CountAsync();
+            return result;
+        }
+
+        /// <summary>
+        /// 查询制造商序列号
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> AppFind(QueryAppSerialNumberListReq req)
+        {
+            var result = new TableData();
+            var query = from a in UnitWork.Find<OINS>(null)
+                        join b in UnitWork.Find<CTR1>(null) on a.insID equals b.InsID into ab
+                        from b in ab.DefaultIfEmpty()
+                        select new
+                        {
+                            a,
+                            b
+                        };
+            query = query
+                .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), q => q.a.customer.Contains(req.CardCode))
+                .WhereIf(!string.IsNullOrEmpty(req.key), q => q.a.itemCode.Contains(req.key) || q.a.manufSN.Contains(req.key))
+                .WhereIf(req.ManufSNs.Count > 0 && req.ManufSNs != null, q => !req.ManufSNs.Contains(q.a.manufSN))
                 ;
             var query2 = query.Select(q => new
             {

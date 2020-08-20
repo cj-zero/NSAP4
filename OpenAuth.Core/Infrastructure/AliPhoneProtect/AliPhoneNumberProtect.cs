@@ -1,13 +1,23 @@
 ﻿using Aliyun.Acs.Core;
 using Aliyun.Acs.Core.Exceptions;
+using Aliyun.Acs.Core.Http;
 using Aliyun.Acs.Core.Profile;
 using Aliyun.Acs.Dyplsapi.Model.V20170525;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
-
 namespace Infrastructure
 {
-    class AliPhoneNumberProtect
+    /// <summary>
+    ///阿里云隐私号码Api接口对接
+    /// </summary>
+    public class AliPhoneNumberProtect
     {
+        private ILogger<AliPhoneNumberProtect> _logger;
+        //public AliPhoneNumberProtect(ILogger<AliPhoneNumberProtect> logger)
+        //{
+        //    _logger = logger;
+        //}
         //产品名称:云通信隐私保护产品,开发者无需替换
         const String product = "Dyplsapi";
         //产品域名,开发者无需替换
@@ -15,43 +25,84 @@ namespace Infrastructure
 
         // TODO 此处需要替换成开发者自己的AK(在阿里云访问控制台寻找)
         const String accessKeyId = "LTAIVJksYtIgE0Oc";
-        const String accessKeySecret = "LTAIVJksYtIgE0Oc";
+        const String accessKeySecret = "e5CoXXQ1uZGIlKrKk0JeOXdee7eSKW";
+
+        // 号码池Key
+        const String PoolKey = "FC100000103720732";
+
+        public class PhoneInfo
+        {
+            /// <summary>
+            /// 隐私号码
+            /// </summary>
+            public string SecretNo { get; set; }
+            /// <summary>
+            /// 绑定关系Id
+            /// </summary>
+            public string SubsId { get; set; }
+        }
 
         /// <summary>
         /// 添加AXB号码的绑定关系
         /// </summary>
         /// <returns></returns>
-        //public static BindAxbResponse bindAxb()
-        //{
-        //    IClientProfile profile = DefaultProfile.GetProfile("cn-hangzhou", accessKeyId, accessKeySecret);
-        //    DefaultProfile.AddEndpoint("cn-hangzhou", "cn-hangzhou", product, domain);
-        //    IAcsClient client = new DefaultAcsClient(profile);
-        //    //必填:号池Key
-        //    BindAxbRequest request = new BindAxbRequest();
-        //    //request.setPoolKey("FC123456");
-        //    request.PhoneNoA = "15010101010";
-        //    request.PhoneNoB = "15020202020";
-        //    request.Expiration = "2017-09-18 17:00:00";
-        //    //可选:是否需要录制音频-默认是false
-        //    request.IsRecordingEnabled = false;
-        //    //外部业务自定义ID属性
-        //    request.OutId = "yourOutId";
-        //    //hint 此处可能会抛出异常，注意catch
-        //    BindAxbResponse response = null;
-        //    try
-        //    {
-        //        response = client.GetAcsResponse(request);
-        //    }
-        //    catch (ServerException e)
-        //    {
-
-        //    }
-        //    catch (ClientException e)
-        //    {
-
-        //    }
-        //    return response;
-        //}
+        public static string bindAxb(string PhoneNoA, string PhoneNoB)
+        {
+            string SecretNo = string.Empty;
+            //先从redis判断是否存在
+            string key = PhoneNoA + "_" + PhoneNoB;
+            PhoneInfo value = RedisHelper.Get<PhoneInfo>(key);
+            if (value == null)
+            {
+                IClientProfile profile = DefaultProfile.GetProfile("cn-hangzhou", accessKeyId, accessKeySecret);
+                DefaultAcsClient client = new DefaultAcsClient(profile);
+                CommonRequest request = new CommonRequest();
+                request.Method = MethodType.POST;
+                request.Domain = "dyplsapi.aliyuncs.com";
+                request.Version = "2017-05-25";
+                request.Action = "BindAxn";
+                // request.Protocol = ProtocolType.HTTP;
+                request.AddQueryParameters("PhoneNoA", PhoneNoA);
+                request.AddQueryParameters("Expiration", DateTime.Now.AddDays(7).ToString("yyyy-MM-dd HH:mm:ss"));
+                request.AddQueryParameters("PoolKey", PoolKey);
+                request.AddQueryParameters("PhoneNoB", PhoneNoB);
+                ////可选:是否需要录制音频-默认是false
+                //request.AddQueryParameters("IsRecordingEnabled", false);
+                try
+                {
+                    CommonResponse response = client.GetCommonResponse(request);
+                    BindAxbResponse AxbData = JsonConvert.DeserializeObject<BindAxbResponse>(response.Data);
+                    if ("OK".Equals(AxbData.Code))
+                    {
+                        SecretNo = AxbData.SecretBindDTO.SecretNo;
+                        PhoneInfo phoneInfo = new PhoneInfo
+                        {
+                            SecretNo = AxbData.SecretBindDTO.SecretNo,
+                            SubsId = AxbData.SecretBindDTO.SubsId
+                        };
+                        //设置7天缓存
+                        RedisHelper.Set(key, phoneInfo, new TimeSpan(7, 0, 0, 0));
+                    }
+                    else
+                    {
+                        //_logger.LogError(response.ToString());
+                    }
+                }
+                catch (ServerException e)
+                {
+                    //_logger.LogError(e, e.ToString());
+                }
+                catch (ClientException e)
+                {
+                    //_logger.LogError(e, e.ToString());
+                }
+            }
+            else
+            {
+                SecretNo = value.SecretNo;
+            }
+            return SecretNo;
+        }
 
         //public static BindAxnResponse bindAxn()
         //{
@@ -83,27 +134,55 @@ namespace Infrastructure
         //    return response;
         //}
 
-        //public static UnbindSubscriptionResponse unbind(String subId, String secretNo)
-        //{
-        //    IClientProfile profile = DefaultProfile.GetProfile("cn-hangzhou", accessKeyId, accessKeySecret);
-        //    DefaultProfile.AddEndpoint("cn-hangzhou", "cn-hangzhou", product, domain);
-        //    IAcsClient client = new DefaultAcsClient(profile);
-        //    UnbindSubscriptionRequest request = new UnbindSubscriptionRequest();
-        //    request.SubsId = subId;
-        //    request.SecretNo = secretNo;
-        //    UnbindSubscriptionResponse response = null;
-        //    try
-        //    {
-        //        response = client.GetAcsResponse(request);
-        //    }
-        //    catch (ServerException e)
-        //    {
-        //    }
-        //    catch (ClientException e)
-        //    {
-        //    }
-        //    return response;
-        //}
+        /// <summary>
+        /// 解除绑定
+        /// </summary>
+        /// <param name="PhoneNoA"></param>
+        /// <param name="PhoneNoB"></param>
+        /// <returns></returns>
+        public bool Unbind(String PhoneNoA, String PhoneNoB)
+        {
+            //先从redis判断是否存在
+            string key = PhoneNoA + "_" + PhoneNoB;
+            PhoneInfo phoneInfo = RedisHelper.Get<PhoneInfo>(key);
+            if (phoneInfo != null)
+            {
+                IClientProfile profile = DefaultProfile.GetProfile("cn-hangzhou", "<accessKeyId>", "<accessSecret>");
+                DefaultAcsClient client = new DefaultAcsClient(profile);
+                CommonRequest request = new CommonRequest();
+                request.Method = MethodType.POST;
+                request.Domain = "dyplsapi.aliyuncs.com";
+                request.Version = "2017-05-25";
+                request.Action = "UnbindSubscription";
+                // request.Protocol = ProtocolType.HTTP;
+                request.AddQueryParameters("SubsId", phoneInfo.SubsId);
+                request.AddQueryParameters("SecretNo", phoneInfo.SecretNo);
+                request.AddQueryParameters("PoolKey", PoolKey);
+                try
+                {
+                    CommonResponse response = client.GetCommonResponse(request);
+                    BindAxbResponse AxbData = JsonConvert.DeserializeObject<BindAxbResponse>(response.Data);
+                    if (!"OK".Equals(AxbData.Code))
+                    {
+                        _logger.LogError(response.ToString());
+                        return false;
+                    }
+                    //删除redis缓存
+                    RedisHelper.Del(key);
+                    Console.WriteLine(System.Text.Encoding.Default.GetString(response.HttpResponse.Content));
+                }
+                catch (ServerException e)
+                {
+                    _logger.LogError(e, e.ToString());
+                }
+                catch (ClientException e)
+                {
+                    _logger.LogError(e, e.ToString());
+                }
+            }
+            return true;
+        }
+
         //public static UpdateSubscriptionResponse updateSubscription()
         //{
         //    IClientProfile profile = DefaultProfile.GetProfile("cn-hangzhou", accessKeyId, accessKeySecret);
