@@ -321,7 +321,7 @@ export default {
     },
     getList() {
       this.listLoading = true;
-      solutions.getList(this.listQuery).then(response => {
+      solutions.loadTechList(this.listQuery).then(response => {
         this.list = response.data;
         this.total = response.count;
         this.listLoading = false;
@@ -379,7 +379,7 @@ export default {
       // 保存提交
       this.$refs["dataForm"].validate(valid => {
         if (valid) {
-          solutions.add(this.temp).then(() => {
+          solutions.addTch(this.temp).then(() => {
             this.list.unshift(this.temp);
             this.dialogFormVisible = false;
             this.$notify({
@@ -435,20 +435,19 @@ export default {
           cancelButtonText: '取消',
           type: 'warning'
         }).then(() => {
-                solutions.del(rows.map(u => u.id)).then(() => {
-        this.$notify({
-          title: "成功",
-          message: "删除成功",
-          type: "success",
-          duration: 2000
-        });
-        rows.forEach(row => {
-          const index = this.list.indexOf(row);
-          this.list.splice(index, 1);
-        });
-        this.getList()
-      });
-
+          solutions.del(rows.map(u => u.id)).then(() => {
+            this.$notify({
+              title: "成功",
+              message: "删除成功",
+              type: "success",
+              duration: 2000
+            });
+            rows.forEach(row => {
+              const index = this.list.indexOf(row);
+              this.list.splice(index, 1);
+            });
+            this.getList()
+          });
         }).catch(() => {
           this.$message({
             type: 'info',

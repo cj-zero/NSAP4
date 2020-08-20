@@ -106,6 +106,9 @@
                 v-if="fruit.name === 'workOrderNumber'">
                 {{ scope.row.serviceWorkOrders.length }}
               </span>
+              <span v-if="fruit.name === 'fromTheme'">
+                {{ scope.row.serviceWorkOrders[0].fromTheme }}
+              </span>
               <span
                 v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
               >{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
@@ -115,9 +118,9 @@
                 fruit.name!='fromType'&&
                 fruit.name!='status'&&
                 fruit.name!='u_SAP_ID'&&
+                fruit.name !== 'workOrderNumber' &&
                 fruit.name !== 'workOrderNumber'"
               >{{scope.row[fruit.name]}}</span>
-              
             </template>
           </el-table-column>
         </el-table>
@@ -281,11 +284,12 @@ export default {
       ParentHeadOptions: [
         { name: "u_SAP_ID", label: "服务单号", align:'left', sortable:true, width: '100'},
         { name: "customerId", label: "客户代码",align:'left', width: '100' },
-        { name: "customerName", label: "客户名称" ,align:'left', width: '100' },
+        { name: "customerName", label: "客户名称" ,align:'left', width: '240' },
+        { name: "fromTheme", label: "呼叫主题", align: 'left', width: '150' },
         { name: "contacter", label: "联系人" ,align:'left', width: '100' },
-        { name: "contactTel", label: "电话号码" ,align:'left', width: '100' },
+        { name: "contactTel", label: "电话号码" ,align:'left', width: '163' },
         { name: "newestContacter", label: "最近联系人" ,align:'left', width: '100' },
-        { name: "newestContactTel", label: "最新电话号码" ,align:'left', width: '120' },
+        { name: "newestContactTel", label: "最新电话号码" ,align:'left', width: '163' },
         { name: "supervisor", label: "售后主管" ,align:'left', width: '100' },
         { name: "salesMan", label: "销售员" ,align:'left', width: '100' },
         { name: "recepUserName", label: "接单员" ,align:'left', width: '100' },
