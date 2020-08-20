@@ -119,16 +119,89 @@ namespace Sap.Handler.Service
                         U_SAP_ID = System.Convert.ToInt32(docNum)
                     });
                 }
-                else
-                {
-                    
-                }
                 if (!string.IsNullOrWhiteSpace(allerror.ToString()))
                 {
                     Log.Logger.Error(allerror.ToString(), typeof(ServiceOrderSapHandler));
                 }
             }
         }
+
+        [CapSubscribe("Serve.ServcieOrder.CreateFromAPP")]
+        public async Task HandleServiceOrderAPP(int theServiceOrderId)
+        {
+            var query = UnitWork.Find<ServiceOrder>(s => s.Id.Equals(theServiceOrderId)).Include(s=>s.ServiceOrderSNs).FirstOrDefault();
+
+            var thisSorder = query.MapTo<ServiceOrder>();
+            //同步到SAP
+            int eCode;
+            string eMesg;
+            StringBuilder allerror = new StringBuilder();
+            string docNum = string.Empty;
+            try
+            {
+                SAPbobsCOM.ServiceCalls sc = (SAPbobsCOM.ServiceCalls)company.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oServiceCalls);
+                SAPbobsCOM.KnowledgeBaseSolutions kbs = (SAPbobsCOM.KnowledgeBaseSolutions)company.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oKnowledgeBaseSolutions);
+                #region 赋值
+
+                sc.CustomerCode = thisSorder.CustomerId;
+                sc.CustomerName = thisSorder.CustomerName;
+                sc.Subject = thisSorder.Services.Substring(0, 250);
+                //if (thisSorder.FromId != null && thisSorder.FromId != -1)
+                //{
+                //    sc.Origin = (int)thisSorder.FromId;
+                //}
+                if (thisSorder.ServiceOrderSNs!=null && thisSorder.ServiceOrderSNs.Count > 0)
+                {
+                    var thisSN = thisSorder.ServiceOrderSNs[0];
+                    if (!string.IsNullOrEmpty(thisSN.ItemCode) && IsValidItemCode(thisSN.ItemCode))
+                    {
+                        sc.ItemCode = thisSN.ItemCode;
+                        sc.ManufacturerSerialNum = thisSN.ManufSN;
+                    }
+                }
+                sc.Status = -3;// 待处理 
+                sc.Priority = BoSvcCallPriorities.scp_Low;
+                //if (thisSwork.FromType != null)
+                //{
+                //    sc.CallType = (int)thisSwork.FromType;
+                //}
+                if (thisSorder.ProblemTypeId != null)
+                {
+                    sc.ProblemType = int.Parse(thisSorder.ProblemTypeId);
+                }
+                sc.Description = thisSorder.Services;
+
+                #endregion
+                int res = sc.Add();
+                if (res != 0)
+                {
+                    company.GetLastError(out eCode, out eMesg);
+                    allerror.Append("添加服务呼叫到SAP时异常！错误代码：" + eCode + "错误信息：" + eMesg);
+                }
+                else
+                {
+                    company.GetNewObjectCode(out docNum);
+                }
+            }
+            catch (Exception e)
+            {
+                allerror.Append("调用SBO接口添加服务呼叫时异常：" + e.ToString() + "");
+            }
+
+            if (!string.IsNullOrEmpty(docNum))
+            {
+                //如果同步成功则修改serviceOrder
+                await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(theServiceOrderId), e => new ServiceOrder
+                {
+                    U_SAP_ID = System.Convert.ToInt32(docNum)
+                });
+            }
+            if (!string.IsNullOrWhiteSpace(allerror.ToString()))
+            {
+                Log.Logger.Error(allerror.ToString(), typeof(ServiceOrderSapHandler));
+            }
+        }
+
 
         [CapSubscribe("Serve.ServcieOrder.CreateWorkNumber")]
         public async Task CreateWorkNumber(int ServiceOrderId)
