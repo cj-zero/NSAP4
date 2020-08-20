@@ -68,14 +68,15 @@
           >{{scope.row.frozenFor=="N"?"正常":'冻结'}}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="cntctPrsn" label="客户联系人" align="left" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="cntctPrsn" label="客户联系人" align="left" show-overflow-tooltip width="100"></el-table-column>
       <el-table-column prop="cellular" label="客户电话" align="left" show-overflow-tooltip></el-table-column>
       <!-- <el-table-column prop="slpName" label="业务员" align="left" show-overflow-tooltip></el-table-column> -->
       <el-table-column prop="slpName" label="销售员" align="left" show-overflow-tooltip></el-table-column>
-      <el-table-column prop="technician" label="售后技术员" align="left" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="technician" label="售后技术员" align="left" show-overflow-tooltip width="100"></el-table-column>
        <el-table-column align="right" label="科目余额" width="120">
         <template slot-scope="scope">
-          <span :class="[scope.row.balance>=0?'redColor':'greenColro']">{{scope.row.balance}}0000</span>
+          <!-- <span :class="[scope.row.balance>=0?'redColor':'greenColro']">{{scope.row.balance}}0000</span> -->
+          <span :class="[ scope.row.balance >= 0 ? '' : 'redColor' ]">{{scope.row.balance}}</span> 
         </template>
       </el-table-column>
           <el-table-column prop="updateDate" label="更新时间" show-overflow-tooltip></el-table-column>

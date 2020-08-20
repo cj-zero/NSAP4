@@ -2,7 +2,7 @@
   <div style="position:relative;">
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
-        <el-input
+        <!-- <el-input
           @keyup.enter.native="handleFilter"
           size="mini"
           style="width: 200px;"
@@ -18,7 +18,7 @@
           v-waves
           icon="el-icon-search"
           @click="handleFilter"
-        >搜索</el-button>
+        >搜索</el-button> -->
         <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
     </sticky>
@@ -114,18 +114,21 @@
           >
             <template slot-scope="scope">
               <!-- <span v-if="fruit.name === 'order'">{{ scope.$index + 1 }}</span> -->
-              <el-link
-                v-if="fruit.name === 'order'"
-                type="primary"
-                @click="openTree(scope.row.id)"
-              >{{ scope.$index + 1 }}</el-link>
+              <div class="flex_middle pointer" 
+                v-if="fruit.name === 'u_SAP_ID'"
+                @click="openTree(scope.row.id)">
+                <img :src="rightImg" />
+                <el-link
+                  type="primary"
+                >{{ scope.row.u_SAP_ID }}</el-link>
+              </div>
               <span
                 v-if="fruit.name === 'status'"
                 :class="[scope.row[fruit.name]===1?'orangeWord':(scope.row[fruit.name]===2?'greenWord':'redWord')]"
               >{{stateValue[scope.row[fruit.name]-1]}}</span>
               <span v-if="fruit.name === 'subject'">{{scope.row[fruit.name]}}</span>
               <span
-                v-if="!(fruit.name ==='status'||fruit.name ==='subject'||fruit.name ==='id')"
+                v-if="!(fruit.name ==='status'||fruit.name ==='subject'||fruit.name ==='id' || fruit.name === 'u_SAP_ID')"
               >{{scope.row[fruit.name]}}</span>
             </template>
           </el-table-column>
@@ -229,6 +232,7 @@ import elDragDialog from "@/directive/el-dragDialog";
 import customerupload from "./customerupload";
 import zxform from "../callserve/form";
 import treeList from "../callserve/treeList";
+import rightImg from '@/assets/table/right.png'
 // import { callserve } from "@/mock/serve";
 export default {
   name: "callservesure",
@@ -250,9 +254,10 @@ export default {
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
       sure: 0,
+      rightImg,
       formTheadOptions: [
         // { name: "id", label: "服务单ID", align: "left", width: "100px" },
-        { name: "order", label: "序号", align: "left", width: "100" },
+        { name: "u_SAP_ID", label: '服务单号', align: "left", width: "100" },
         { name: "customerId", label: "客户代码", align: "left", width: "100" },
         { name: "status", label: "状态", align: "left", width: "80px" },
         {
@@ -261,7 +266,7 @@ export default {
           align: "left",
           width: "220",
         },
-        { name: "createTime", label: "创建日期", align: "left", width: "100" },
+        { name: "createTime", label: "创建日期", align: "left", width: "158" },
         {
           name: "newestContacter",
           label: "联系人",
@@ -532,10 +537,10 @@ export default {
           if (response.code == 200) {
             this.total = response.data.count;
             let resul = response.data.data;
-            this.list = [];
-            resul.map((item) => {
-              this.list.unshift(item);
-            });
+            this.list = resul;
+            // resul.map((item) => {
+            //   this.list.unshift(item);
+            // });
             this.listLoading = false;
           } else {
             this.$message({

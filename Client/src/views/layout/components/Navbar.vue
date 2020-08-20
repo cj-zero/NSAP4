@@ -13,9 +13,9 @@
         <el-dropdown-item command="handleGoProfile">
 					<span>个人中心</span>
 				</el-dropdown-item>
-        <el-dropdown-item>
+        <!-- <el-dropdown-item>
 					<span>切换主题 <el-switch :active-value="1" :inactive-value="0" style="margin-left: 5px;" v-model="theme" /></span>
-				</el-dropdown-item>
+				</el-dropdown-item> -->
         <el-dropdown-item command="logout" divided>
           <span>退出</span>
         </el-dropdown-item>
@@ -48,8 +48,8 @@ export default {
     }
   },
   mounted() {
-    this.theme = Number(this.themeStatus)
-    this.toggleClass(document.body, 'custom-theme')
+    // this.theme = Number(this.themeStatus)
+    // this.toggleClass(document.body, 'custom-theme')
   },
   methods: {
     ...mapActions([

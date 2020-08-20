@@ -28,6 +28,15 @@
       overflow-x: hidden!important;
       .el-scrollbar__view {
         height: 100%;
+        .el-menu--collapse, .el-menu {
+          background-color: rgb(48, 65, 86) !important;
+          .el-menu-item, .submenu-title-noDropdown, .el-submenu {
+            background-color: rgb(48, 65, 86) !important;
+            .el-submenu__title {
+              background-color: rgb(48, 65, 86) !important;
+            }
+          }
+        }
       }
     }
     .is-horizontal {
@@ -117,6 +126,16 @@
     .main-container,
     .sidebar-container {
       transition: none;
+    }
+  }
+}
+
+.el-menu--vertical {
+  background-color: rgb(48, 65, 86) !important;
+  .el-menu, .el-menu--popup {
+    background-color: rgb(48, 65, 86) !important;
+    .menuitem, .el-menu-item {
+      background-color: rgb(48, 65, 86) !important;
     }
   }
 }
