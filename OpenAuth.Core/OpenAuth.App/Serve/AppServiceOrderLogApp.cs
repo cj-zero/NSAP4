@@ -137,13 +137,13 @@ namespace OpenAuth.App
         public async Task<Dictionary<string, object>> GetAppOrderLogList(GetAppOrderLogListReq request)
         {
             var result = new Dictionary<string, object>();
-            var query = from a in UnitWork.Find<AppServiceOrderLog>(null)
+            var query = from a in UnitWork.Find<AppServiceOrderLog>(a => a.LogType == request.LogType)
                         join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
                         from b in ab.DefaultIfEmpty()
                         join c in UnitWork.Find<ServiceWorkOrder>(null) on a.ServiceOrderId equals c.ServiceOrderId into abc
                         from c in abc.DefaultIfEmpty()
                         select new { a, b, c };
-            query = query.Where(q => q.b.U_SAP_ID == request.SapOrderId && (string.IsNullOrEmpty(q.c.MaterialCode) ? "其他设备" : q.c.MaterialCode.Substring(0, q.c.MaterialCode.IndexOf("-"))) == request.MaterialType && q.a.LogType == request.LogType);
+            query = query.Where(q => q.b.U_SAP_ID == request.SapOrderId && string.IsNullOrEmpty(q.c.MaterialCode) ? "其他设备" == q.c.ManufacturerSerialNumber : q.c.MaterialCode.Substring(0, q.c.MaterialCode.IndexOf("-")) == request.MaterialType);
             var status = await query.Select(s => s.c.Status).Distinct().FirstOrDefaultAsync();
             result.Add("status", status);
             var list = new List<OrderLogListResp>();

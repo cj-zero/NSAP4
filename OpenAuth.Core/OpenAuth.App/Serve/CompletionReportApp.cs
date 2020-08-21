@@ -78,8 +78,8 @@ namespace OpenAuth.App
             pictures.ForEach(r => r.CompletionReportId = o.Id);
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId, s => new ServiceWorkOrder { Status = 7 });
-            var workOrderList = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId).ToList();
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && string.IsNullOrEmpty(req.MaterialType) ? true : string.IsNullOrEmpty(s.MaterialCode) ? "其他设备" == s.ManufacturerSerialNumber : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType, s => new ServiceWorkOrder { Status = 7 });
+            var workOrderList = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && string.IsNullOrEmpty(req.MaterialType) ? true : string.IsNullOrEmpty(s.MaterialCode) ? "其他设备" == s.ManufacturerSerialNumber : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType).ToList();
             List<int> workorder = new List<int>();
             foreach (var item in workOrderList)
             {
@@ -89,17 +89,21 @@ namespace OpenAuth.App
             {
                 Title = "技术员完成服务",
                 Details = $"感谢您对新威的支持。您的服务已完成，如有疑问请及时拨打客服电话：8008308866，新威客服会全力帮您继续跟进",
-                LogType = 1
+                LogType = 1,
+                ServiceOrderId = req.ServiceOrderId
             }, workorder);
             await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
                 Title = "技术员完成售后维修",
                 Details = $"提交了《行为服务报告单》，完成了本次任务",
-                LogType = 2
+                LogType = 2,
+                ServiceOrderId = req.ServiceOrderId
             }, workorder);
             //反写完工报告Id至工单
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId,
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && string.IsNullOrEmpty(req.MaterialType) ? true : string.IsNullOrEmpty(s.MaterialCode) ? "其他设备" == s.ManufacturerSerialNumber : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType,
                 o => new ServiceWorkOrder { CompletionReportId = completionReportId });
+            //解除隐私号码绑定
+            await UnbindProtectPhone(req.ServiceOrderId, req.MaterialType);
         }
 
 
@@ -148,17 +152,19 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="serviceOrderId">服务单ID</param>
         /// <param name="currentUserId">当前技术员Id</param>
+        /// <param name="MaterialType">当前技术员Id</param>
         /// <returns></returns>
-        public async Task<CompletionReportDetailsResp> GetOrderWorkInfoForAdd(int serviceOrderId, int currentUserId)
+        public async Task<CompletionReportDetailsResp> GetOrderWorkInfoForAdd(int serviceOrderId, int currentUserId, string MaterialType)
         {
             var result = new TableData();
             var obj = from a in UnitWork.Find<ServiceWorkOrder>(null)
                       join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
                       from b in ab.DefaultIfEmpty()
                       select new { a, b };
-            obj = obj.Where(o => o.b.Id == serviceOrderId && o.a.CurrentUserId == currentUserId);
+            obj = obj.Where(o => o.b.Id == serviceOrderId && o.a.CurrentUserId == currentUserId && string.IsNullOrEmpty(MaterialType) ? true : (string.IsNullOrEmpty(o.a.MaterialCode) ? "其他设备" : o.a.MaterialCode.Substring(0, o.a.MaterialCode.IndexOf("-"))) == MaterialType);
             var query = await obj.Select(q => new
             {
+                q.b.U_SAP_ID,
                 q.a.FromTheme,
                 q.a.CurrentUserId,
                 q.b.CustomerId,
@@ -169,7 +175,7 @@ namespace OpenAuth.App
                 q.b.ContactTel,
                 q.a.ManufacturerSerialNumber,
                 q.a.MaterialCode,
-                ProblemDescription = "故障描述：" + q.a.TroubleDescription + "；过程描述：" + q.a.ProcessDescription
+                ProblemDescription = "故障描述：" + q.a.TroubleDescription + "；解决方案：" + q.a.Solution.Subject
             }).FirstOrDefaultAsync();
             var thisworkdetail = query.MapTo<CompletionReportDetailsResp>();
             if (thisworkdetail.CurrentUserId != null)
@@ -187,7 +193,7 @@ namespace OpenAuth.App
         /// <param name="serviceOrderId">服务单Id</param>
         /// <param name="currentUserId">当前技术员Id</param>
         /// <returns></returns>
-        public async Task<CompletionReportDetailsResp> GetCompletionReportDetails(int serviceOrderId, int currentUserId)
+        public async Task<CompletionReportDetailsResp> GetCompletionReportDetails(int serviceOrderId, int currentUserId, string MaterialType)
         {
             var result = new TableData();
             var obj = from c in UnitWork.Find<CompletionReport>(null)
@@ -195,9 +201,10 @@ namespace OpenAuth.App
                       join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into abc
                       from b in abc.DefaultIfEmpty()
                       select new { a, b, c };
-            obj = obj.Where(o => o.a.ServiceOrderId == serviceOrderId && o.a.CurrentUserId == currentUserId);
+            obj = obj.Where(o => o.a.ServiceOrderId == serviceOrderId && o.a.CurrentUserId == currentUserId && string.IsNullOrEmpty(MaterialType) ? true : (string.IsNullOrEmpty(o.a.MaterialCode) ? "其他设备" : o.a.MaterialCode.Substring(0, o.a.MaterialCode.IndexOf("-"))) == MaterialType);
             var query = await obj.Select(q => new
             {
+                q.b.U_SAP_ID,
                 q.c.FromTheme,
                 q.a.CurrentUserId,
                 q.c.CustomerId,
@@ -310,6 +317,33 @@ namespace OpenAuth.App
                 Action = $"技术员于{DateTime.Now}结束上门服务",
                 ActionType = "服务技术员上门服务中",
             }, workorder);
+        }
+
+        /// <summary>
+        /// 解除绑定隐私号码
+        /// </summary>
+        /// <param name="ServiceOrderId"></param>
+        /// <param name="MaterialType"></param>
+        /// <returns></returns>
+        public async Task<bool> UnbindProtectPhone(int? ServiceOrderId, string MaterialType)
+        {
+            var result = new TableData();
+            //获取技术员Id
+            int? TechnicianId = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == ServiceOrderId && string.IsNullOrEmpty(s.MaterialCode) ? "其他设备" == s.ManufacturerSerialNumber : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == MaterialType).Distinct().FirstOrDefaultAsync())?.CurrentUserId;
+            var query = from a in UnitWork.Find<AppUserMap>(null)
+                        join b in UnitWork.Find<User>(null) on a.UserID equals b.Id into ab
+                        from b in ab.DefaultIfEmpty()
+                        select new { a, b };
+            //获取技术员联系方式
+            string TechnicianTel = await query.Where(w => w.a.AppUserId == TechnicianId).Select(s => s.b.Mobile).FirstOrDefaultAsync();
+            //获取客户联系方式
+            string custMobile = (await UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId).FirstOrDefaultAsync()).NewestContactTel;
+            //判断当前操作角色 0客户 1技术员
+            if (!AliPhoneNumberProtect.Unbind(custMobile, TechnicianTel))
+            {
+                return false;
+            }
+            return true;
         }
     }
 }

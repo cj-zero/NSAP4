@@ -799,27 +799,6 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        /// 提交核对错误(新)设备信息
-        /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public async Task<Response> ApplyErrorDevices(ApplyErrorDevicesReq request)
-        {
-            var result = new Response();
-            try
-            {
-                await _serviceOrderApp.ApplyErrorDevices(request);
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
-            }
-            return result;
-        }
-
-        /// <summary>
         /// 主管关单
         /// </summary>
         /// <param name="request"></param>
@@ -1022,7 +1001,7 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> AppTechnicianLoad(int SapOrderId, int CurrentUserId,string MaterialType)
+        public async Task<TableData> AppTechnicianLoad(int SapOrderId, int CurrentUserId, string MaterialType)
         {
             var result = new TableData();
             try
@@ -1060,20 +1039,27 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
-        //[HttpPost]
-        //public async Task<TableData> BindPhoneProtect(string PhoneNoA, string PhoneNoB)
-        //{
-        //    var result = new TableData();
-        //    try
-        //    {
-        //        result = await _serviceOrderApp.BindPhoneProtect(PhoneNoA, PhoneNoB);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        result.Code = 500;
-        //        result.Message = ex.Message;
-        //    }
-        //    return result;
-        //}
+        /// <summary>
+        /// 获取隐私号码
+        /// </summary>
+        /// <param name="ServiceOrderId"></param>
+        /// <param name="MaterialType"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetProtectPhone(int ServiceOrderId, string MaterialType, int type)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetProtectPhone(ServiceOrderId, MaterialType, type);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }

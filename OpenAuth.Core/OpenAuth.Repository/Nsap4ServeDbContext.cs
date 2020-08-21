@@ -36,5 +36,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<AppServiceOrderLog> Appserviceorderlogs { get; set; }
         public virtual DbSet<ServiceEvaluate> Serviceevaluates { get; set; }
         public virtual DbSet<RealTimeLocation> Realtimelocations { get; set; }
+
+        public virtual DbSet<SeviceTechnicianApplyOrder> Sevicetechnicianapplyorders { get; set; }
     }
 }

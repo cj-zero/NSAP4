@@ -20,7 +20,7 @@ namespace OpenAuth.App.Request
 	/// 
 	/// </summary>
     [Table("completionreport")]
-    public partial class AddOrUpdateCompletionReportReq 
+    public partial class AddOrUpdateCompletionReportReq
     {
 
         /// <summary>
@@ -149,5 +149,10 @@ namespace OpenAuth.App.Request
         //todo:添加自己的请求字段
         //todo:添加自己的请求字段
         public List<FileBind> Pictures { get; set; }
+
+        /// <summary>
+        /// 设备类型
+        /// </summary>
+        public string MaterialType { get; set; }
     }
 }

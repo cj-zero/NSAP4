@@ -118,7 +118,7 @@ namespace OpenAuth.App.SSO
             var user = _cacheContext.Get<UserAuthSession>(GetToken());
             if (user != null)
             {
-                return user.Account;
+                return user.Name;
             }
 
             return "";

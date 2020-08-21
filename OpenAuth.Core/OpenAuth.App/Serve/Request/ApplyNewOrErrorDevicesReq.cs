@@ -5,7 +5,7 @@ using System.Text;
 
 namespace OpenAuth.App.Serve.Request
 {
-    public class ApplyErrorDevicesReq
+    public class ApplyNewOrErrorDevicesReq
     {
         /// <summary>
         /// 服务单Id
@@ -18,6 +18,12 @@ namespace OpenAuth.App.Serve.Request
         /// </summary>
         [Required]
         public int AppUserId { get; set; }
+
+        /// <summary>
+        /// 设备类型
+        /// </summary>
+        [Required]
+        public string MaterialType { get; set; }
 
         /// <summary>
         /// 更正后的设备集合

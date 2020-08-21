@@ -19,6 +19,7 @@ using Neware.Cap.DependencyInjection;
 using Newtonsoft.Json;
 using OpenAuth.App;
 using OpenAuth.App.HostedService;
+using OpenAuth.App.SignalR;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Extensions;
 using OpenAuth.WebApi.Model;
@@ -165,6 +166,9 @@ namespace OpenAuth.WebApi
             //设置定时启动的任务
             services.AddHostedService<QuartzService>();
 
+            //SignalR
+            services.AddNsapSignalR();
+
             //SAP
             //services.AddSap();
 
@@ -201,6 +205,7 @@ namespace OpenAuth.WebApi
             
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapMessageHub();
                 endpoints.MapControllers();
             });
 
