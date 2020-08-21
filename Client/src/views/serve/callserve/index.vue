@@ -412,9 +412,9 @@ export default {
       dialogInfoVisible: false, // 客户信息弹窗
       FormUpdate: false, //编辑表单的dialog
       textMap: {
-        update: "编辑呼叫服务单",
-        create: "新建呼叫服务单",
-        info: "查看呼叫服务单"
+        update: "编辑服务呼叫单",
+        create: "新建服务呼叫单",
+        info: "查看服务呼叫单"
       },
       serveid:'',
       dialogPvVisible: false,
@@ -816,7 +816,7 @@ export default {
       })
     },
     closeDia(a) {
-      if (a === 1) {
+      if (a === 'y') {
         this.getList();
       }
       if(a=='N'){

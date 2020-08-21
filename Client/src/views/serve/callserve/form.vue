@@ -284,6 +284,7 @@
             :propForm="propForm"
             ref="formAdd"
             :formName="formName"
+            :form="form"
           ></formAdd>
         </el-col>
       </el-row>
@@ -387,6 +388,7 @@ import zmap from "@/components/amap";
 import upLoadImage from "@/components/upLoadFile";
 import Model from "@/components/Formcreated/components/Model";
 import { timeToFormat } from "@/utils";
+import { debounce } from '@/utils/process'
 // import { isMobile, isPhone } from "@/utils/validate";
 import { download } from "@/utils/file";
 import formPartner from "./formPartner";
@@ -620,7 +622,7 @@ export default {
                 item.problemType && item.problemType.name;
             });
           }
-          console.log(val, 'refValueChange')
+          console.log(val, 'refValueChange', this.form)
           this.propForm = this.form.serviceWorkOrders;
         }
         // this.propForm = this.refValue.serviceWorkOrders
@@ -814,7 +816,7 @@ export default {
             manufacturerSerialNumber: "其他设备",
             editTrue: false,
             internalSerialNumber: "",
-            materialCode: "",
+            materialCode: "其他设备",
             materialDescription: "",
             feeType: 1,
             fromTheme:  "",
@@ -974,7 +976,7 @@ export default {
           this.cntctPrsnList = res.result.cntctPrsnList;
           console.log(this.cntctPrsnList, 'this.cntctPrsnList')
           this.form.supervisor = res.result.techName;
-          if (this.formName !== '查看' && this.formName !== '编辑') {
+          if (this.formName !== '编辑' && this.formName !== '查看') {
             if (this.cntctPrsnList && this.cntctPrsnList.length) {
             let firstValue = res.result.cntctPrsnList[0]
               let { tel1, tel2, cellolar, name } = firstValue
@@ -1021,7 +1023,7 @@ export default {
             message: "修改服务单成功",
             type: "success",
           });
-          this.$emit("close-Dia", 1);
+          this.$emit("close-Dia", 'y');
           // this.formUpdate = false
         })
         .catch((res) => {
@@ -1052,10 +1054,11 @@ export default {
       //打开前赋值
       this.filterPartnerList = this.partnerList;
     },
-    searchList() {
+    searchList: debounce(function() {
+      console.log(this, 'this')
       this.listQuery.CardCodeOrCardName = this.inputSearch;
       this.form.customerId = this.inputSearch;
-
+      console.log('searchList')
       this.getPartnerList();
       // if (!res) {
       //   this.filterPartnerList = this.partnerList;
@@ -1065,12 +1068,12 @@ export default {
       //   });
       //   this.filterPartnerList = list;
       // }
-    },
-    searSerial() {
+    }, 400),
+    searSerial: debounce(function() {
       // SerialList
       this.listQuery.ManufSN = this.inputSerial;
       this.getPartnerList();
-    },
+    }, 400),
     async querySearch(queryString, cb) {
       this.listQuery.CardCodeOrCardName = queryString;
       this.inputSearch = queryString;
@@ -1104,17 +1107,19 @@ export default {
         })
         .catch((error) => {
           console.log(error);
+          this.parentLoad = false
         });
     },
     handleSelect(item) {
       this.inputSearch = item.customerId;
       this.form.customerId = item.cardCode;
       this.form.customerName = item.cardName;
-      this.form.contacter = item.cntctPrsn;
+      // this.form.contacter = item.cntctPrsn;
       this.form.contactTel = item.cellular;
       // this.form.addressDesignator = item.address;
       // this.form.address = item.address;
       this.form.salesMan = item.slpName;
+      console.log(item, 'item handleSelect')
       this.handleCurrentChange(item)
     },
     sureVal() {

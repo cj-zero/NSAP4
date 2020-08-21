@@ -334,8 +334,8 @@ export default {
       dialogTree: false,
       dialogStatus: "",
       textMap: {
-        update: "确认呼叫服务单",
-        create: "新建呼叫服务单",
+        update: "确认服务呼叫单",
+        create: "新建服务呼叫单",
       },
 
       dialogPvVisible: false,

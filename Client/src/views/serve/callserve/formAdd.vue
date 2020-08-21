@@ -801,7 +801,6 @@
         <el-button type="primary" @click="pushForm" :disabled="isDisalbed">确 定</el-button>
       </span>
     </el-dialog>
-
   </div>
 </template>
 
@@ -824,7 +823,7 @@ export default {
       vm: that,
     };
   },
-  props: ["isCreate", "ifEdit", "serviceOrderId", "propForm", "formName"],
+  props: ["isCreate", "ifEdit", "serviceOrderId", "propForm", "formName", "form"],
   // ##propForm编辑或者查看详情传过来的数据
   data() {
     return {
@@ -1076,11 +1075,14 @@ export default {
         }
       },
     },
-    "form.customerId": {
+    form: {
       deep: true,
       handler(val) {
-        console.log(val, 'customerId change')
-        this.listQuery.CardCode = val;
+        console.log(this.form, val, 'customerId change')
+        // this.$nextTick(() => {
+
+        // })
+        // this.listQuery.CardCode = val.customerId;
         getSerialNumber(this.listQuery)
           .then((res) => {
             this.SerialNumberList = res.data;
@@ -1111,7 +1113,7 @@ export default {
   //   // }
   //   // console.log(this.form.customerId)
   // },f
-  inject: ["form"],
+  // inject: ["form"],
   methods: {
     ...mapMutations('form', {
       setFormList: 'SET_FORM_LIST'
@@ -1242,9 +1244,9 @@ export default {
             this.formListStart.push({
               manufSN: "其他设备",
               editTrue: false,
-              internalSerialNumber: "",
-              materialCode: "",
-              materialDescription: "",
+              internalSN: "",
+              itemCode: "其他设备",
+              itemName: "",
               feeType: 1,
               fromTheme: "",
               fromType:1,
@@ -1257,7 +1259,7 @@ export default {
               solutionsubject:  "",
             });
           }
-          (this.formList[0].manufacturerSerialNumber = this.formListStart[0].manufSN),
+            (this.formList[0].manufacturerSerialNumber = this.formListStart[0].manufSN),
             (this.formList[0].internalSerialNumber = this.formListStart[0].internalSN),
             (this.formList[0].materialCode = this.formListStart[0].itemCode),
             (this.formList[0].materialDescription = this.formListStart[0].itemName),
@@ -1303,9 +1305,9 @@ export default {
               this.formListStart={
                 manufSN: "其他设备",
                 editTrue: false,
-                internalSerialNumber: "",
-                materialCode: "",
-                materialDescription: "",
+                internalSN: "",
+                itemCode: "其他设备",
+                itemName: "",
                 feeType: 1,
                 fromTheme:  "",
                 fromType:  1,
@@ -1339,8 +1341,8 @@ export default {
               this.formListStart.push({
                 manufSN: "其他设备",
                 editTrue: false,
-                internalSerialNumber: "",
-                materialCode: "",
+                internalSN: "",
+                itemCode: "其他设备",
                 materialDescription: "",
                 feeType: 1,
                 fromTheme:  "",
