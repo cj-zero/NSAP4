@@ -100,6 +100,8 @@ namespace OpenAuth.App
             //反写完工报告Id至工单
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId,
                 o => new ServiceWorkOrder { CompletionReportId = completionReportId });
+            //解除隐私号码绑定
+            //await UnbindProtectPhone(req.ServiceOrderId, MaterialType);
         }
 
 

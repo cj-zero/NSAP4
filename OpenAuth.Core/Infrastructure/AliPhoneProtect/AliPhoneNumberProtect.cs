@@ -51,7 +51,8 @@ namespace Infrastructure
             string SecretNo = string.Empty;
             //先从redis判断是否存在
             string key = PhoneNoA + "_" + PhoneNoB;
-            PhoneInfo value = RedisHelper.Get<PhoneInfo>(key);
+            string keyback = PhoneNoB + "_" + PhoneNoA;
+            PhoneInfo value = RedisHelper.Get<PhoneInfo>(key) != null ? RedisHelper.Get<PhoneInfo>(key) : RedisHelper.Get<PhoneInfo>(keyback);
             if (value == null)
             {
                 IClientProfile profile = DefaultProfile.GetProfile("cn-hangzhou", accessKeyId, accessKeySecret);
@@ -63,7 +64,8 @@ namespace Infrastructure
                 request.Action = "BindAxn";
                 // request.Protocol = ProtocolType.HTTP;
                 request.AddQueryParameters("PhoneNoA", PhoneNoA);
-                request.AddQueryParameters("Expiration", DateTime.Now.AddDays(7).ToString("yyyy-MM-dd HH:mm:ss"));
+                request.AddQueryParameters("Expiration", DateTime.Now.AddMinutes(10).ToString("yyyy-MM-dd HH:mm:ss"));
+                //request.AddQueryParameters("Expiration", DateTime.Now.AddDays(7).ToString("yyyy-MM-dd HH:mm:ss"));
                 request.AddQueryParameters("PoolKey", PoolKey);
                 request.AddQueryParameters("PhoneNoB", PhoneNoB);
                 ////可选:是否需要录制音频-默认是false
@@ -81,7 +83,7 @@ namespace Infrastructure
                             SubsId = AxbData.SecretBindDTO.SubsId
                         };
                         //设置7天缓存
-                        RedisHelper.Set(key, phoneInfo, new TimeSpan(7, 0, 0, 0));
+                        RedisHelper.Set(key, phoneInfo, new TimeSpan(0, 0, 10, 0));
                     }
                     else
                     {
@@ -140,14 +142,15 @@ namespace Infrastructure
         /// <param name="PhoneNoA"></param>
         /// <param name="PhoneNoB"></param>
         /// <returns></returns>
-        public bool Unbind(String PhoneNoA, String PhoneNoB)
+        public static bool Unbind(String PhoneNoA, String PhoneNoB)
         {
             //先从redis判断是否存在
             string key = PhoneNoA + "_" + PhoneNoB;
-            PhoneInfo phoneInfo = RedisHelper.Get<PhoneInfo>(key);
+            string keyback = PhoneNoB + "_" + PhoneNoA;
+            PhoneInfo phoneInfo = RedisHelper.Get<PhoneInfo>(key) != null ? RedisHelper.Get<PhoneInfo>(key) : RedisHelper.Get<PhoneInfo>(keyback);
             if (phoneInfo != null)
             {
-                IClientProfile profile = DefaultProfile.GetProfile("cn-hangzhou", "<accessKeyId>", "<accessSecret>");
+                IClientProfile profile = DefaultProfile.GetProfile("cn-hangzhou", accessKeyId, accessKeySecret);
                 DefaultAcsClient client = new DefaultAcsClient(profile);
                 CommonRequest request = new CommonRequest();
                 request.Method = MethodType.POST;
@@ -164,20 +167,23 @@ namespace Infrastructure
                     BindAxbResponse AxbData = JsonConvert.DeserializeObject<BindAxbResponse>(response.Data);
                     if (!"OK".Equals(AxbData.Code))
                     {
-                        _logger.LogError(response.ToString());
+                        //_logger.LogError(response.ToString());
                         return false;
                     }
                     //删除redis缓存
                     RedisHelper.Del(key);
+                    RedisHelper.Del(keyback);
                     Console.WriteLine(System.Text.Encoding.Default.GetString(response.HttpResponse.Content));
                 }
                 catch (ServerException e)
                 {
-                    _logger.LogError(e, e.ToString());
+                    //_logger.LogError(e, e.ToString());
+                    return false;
                 }
                 catch (ClientException e)
                 {
-                    _logger.LogError(e, e.ToString());
+                    //_logger.LogError(e, e.ToString());
+                    return false;
                 }
             }
             return true;

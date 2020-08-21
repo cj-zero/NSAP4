@@ -1022,7 +1022,7 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> AppTechnicianLoad(int SapOrderId, int CurrentUserId,string MaterialType)
+        public async Task<TableData> AppTechnicianLoad(int SapOrderId, int CurrentUserId, string MaterialType)
         {
             var result = new TableData();
             try
@@ -1060,20 +1060,49 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
-        //[HttpPost]
-        //public async Task<TableData> BindPhoneProtect(string PhoneNoA, string PhoneNoB)
-        //{
-        //    var result = new TableData();
-        //    try
-        //    {
-        //        result = await _serviceOrderApp.BindPhoneProtect(PhoneNoA, PhoneNoB);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        result.Code = 500;
-        //        result.Message = ex.Message;
-        //    }
-        //    return result;
-        //}
+        /// <summary>
+        /// 获取隐私号码
+        /// </summary>
+        /// <param name="ServiceOrderId"></param>
+        /// <param name="MaterialType"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetProtectPhone(int ServiceOrderId, string MaterialType, int type)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetProtectPhone(ServiceOrderId, MaterialType, type);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 解除绑定
+        /// </summary>
+        /// <param name="ServiceOrderId"></param>
+        /// <param name="MaterialType"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<bool> UnbindProtectPhone(int ServiceOrderId, string MaterialType)
+        {
+            bool IsSuccess;
+            try
+            {
+                IsSuccess = await _serviceOrderApp.UnbindProtectPhone(ServiceOrderId, MaterialType);
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+            return IsSuccess;
+        }
     }
 }

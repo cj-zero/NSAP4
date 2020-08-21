@@ -85,5 +85,11 @@ namespace OpenAuth.Repository.Domain
          [Description("分类ID")]
         public string TypeId { get; set; }
 
+        /// <summary>
+        /// 手机
+        /// </summary>
+        [Description("手机")]
+        public string Mobile { get; set; }
+
     }
 }
