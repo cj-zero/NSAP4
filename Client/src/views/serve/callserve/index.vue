@@ -23,7 +23,7 @@
       </div>
     </sticky>
     <div class="app-container">
-      <div class="bg-white " >
+      <div class="bg-white serve-table-wrapper" >
         <zxsearch @change-Search="changeSearch" :options="problemOptions"></zxsearch>
         <el-table
           ref="mainTable"
@@ -38,49 +38,52 @@
           highlight-current-row
           @row-click="rowClick"
         >
-          <el-table-column type="expand">
-            <template slot-scope="scope">
-              <el-table
-                ref="mainTablechuldren"
-                :key="key"
-                :data="scope.row.serviceWorkOrders"
-                v-loading="listLoading"
-                border
-                fit
+          <div class="mr48">
+            <el-table-column type="expand">
+              <template slot-scope="scope">
+                <el-table
+                  ref="mainTablechuldren"
+                  :key="key"
+                  :data="scope.row.serviceWorkOrders"
+                  v-loading="listLoading"
+                  border
+                  fit
 
-                style="width: 100%;"
-                highlight-current-row
-                @row-click="rowClickChild"
-              >
-                <el-table-column
-                  show-overflow-tooltip
-                  v-for="(fruit,index) in ChildheadOptions"
-                  :align="fruit.align"
-                  :key="`ind${index}`"
-                  style="background-color:silver;"
-                  :label="fruit.label"
-                  header-align="left"
-                  :fixed="fruit.ifFixed"
-                  :width="fruit.width"
+                  style="width: 100%;"
+                  highlight-current-row
+                  @row-click="rowClickChild"
+                  :row-style="rowStyle"
                 >
-                  <template slot-scope="scope">
-                    <span
-                      v-if="fruit.name === 'status'"
-                      :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-                    >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
-                    <span
-                      v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
-                    >{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
-                    <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority - 1]}}</span>
-                    <span
-                      v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
-                    >{{scope.row[fruit.name]}}</span>
-                    <!-- <span v-if="fruit.name === 'recepUserName'">{{ scope.row.</span> -->
-                  </template>
-                </el-table-column>
-              </el-table>
-            </template>
-          </el-table-column>
+                  <el-table-column
+                    show-overflow-tooltip
+                    v-for="(fruit,index) in ChildheadOptions"
+                    :align="fruit.align"
+                    :key="`ind${index}`"
+                    style="background-color:silver;"
+                    :label="fruit.label"
+                    header-align="left"
+                    :fixed="fruit.ifFixed"
+                    :width="fruit.width"
+                  >
+                    <template slot-scope="scope">
+                      <span
+                        v-if="fruit.name === 'status'"
+                        :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
+                      >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
+                      <span
+                        v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
+                      >{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
+                      <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority - 1]}}</span>
+                      <span
+                        v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
+                      >{{scope.row[fruit.name]}}</span>
+                      <!-- <span v-if="fruit.name === 'recepUserName'">{{ scope.row.</span> -->
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </template>
+            </el-table-column>
+          </div>
           <el-table-column
             show-overflow-tooltip
             v-for="(fruit,index) in ParentHeadOptions"
@@ -93,11 +96,18 @@
             :width="fruit.width"
           >
             <template slot-scope="scope">
-              <el-link
-                v-if="fruit.name === 'u_SAP_ID'"
-                type="primary"
-                @click="openTree(scope.row.serviceOrderId)"
-              >{{scope.row.u_SAP_ID}}</el-link>
+              <div v-if="fruit.name === 'u_SAP_ID'" class="flex_middle pointer" @click="openTree(scope.row.serviceOrderId)">
+                <img :src="rightImg" />
+                <el-link
+                  type="primary"
+                >{{ scope.row.u_SAP_ID }}</el-link>
+              </div>
+              <div v-if="fruit.name === 'customerId'" class="flex_middle pointer" @click="getCustomerInfo(scope.row.customerId)">
+                <img :src="rightImg" />
+                <el-link
+                  type="primary"
+                >{{ scope.row.customerId }}</el-link>
+              </div>
               <span
                 v-if="fruit.name === 'status'"
                 :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
@@ -105,6 +115,9 @@
               <span
                 v-if="fruit.name === 'workOrderNumber'">
                 {{ scope.row.serviceWorkOrders.length }}
+              </span>
+              <span v-if="fruit.name === 'fromTheme'">
+                {{ scope.row.serviceWorkOrders[0].fromTheme }}
               </span>
               <span
                 v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
@@ -115,9 +128,10 @@
                 fruit.name!='fromType'&&
                 fruit.name!='status'&&
                 fruit.name!='u_SAP_ID'&&
-                fruit.name !== 'workOrderNumber'"
+                fruit.name !== 'workOrderNumber' &&
+                fruit.name !== 'workOrderNumber' && 
+                fruit.name !== 'customerId'"
               >{{scope.row[fruit.name]}}</span>
-              
             </template>
           </el-table-column>
         </el-table>
@@ -130,7 +144,15 @@
           @pagination="handleCurrentChange"
         />
       </div>
-
+      <!-- 客户信息 -->
+      <el-dialog
+        width="800px"
+        :close-on-click-modal="false"
+        :visible.sync="dialogInfoVisible"
+        title="客户信息"
+      >
+        <CustomerInfo :formData="customerInfo" />
+      </el-dialog>
       <!-- 客服新建服务单 -->
       <el-dialog
         width="800px"
@@ -208,7 +230,7 @@
         ></zxform>
         </el-col>
             <el-col :span="6" class="lastWord">   
-                <zxchat :serveId='serveid'></zxchat>
+              <zxchat :serveId='serveid'></zxchat>
             </el-col>
         </el-row>
 
@@ -232,6 +254,7 @@
 <script>
 import { mapState } from 'vuex'
 import * as callservesure from "@/api/serve/callservesure";
+import * as businesspartner from "@/api/businesspartner";
 import * as problemtypes from "@/api/problemtypes";
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
@@ -245,6 +268,8 @@ import zxform from "./form";
 import zxsearch from "./search";
 import zxchat from "./chatOnRight";
 import treeList from "./treeList";
+import CustomerInfo from './customerInfo'
+import rightImg from '@/assets/table/right.png'
 // import serveTableVue from '../serveTable.vue';
 // import { callserve } from "@/mock/serve";
 export default {
@@ -266,7 +291,8 @@ export default {
     zxform,
     treeList,
     zxsearch,
-    zxchat
+    zxchat,
+    CustomerInfo
   },
   directives: {
     waves,
@@ -278,14 +304,16 @@ export default {
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
       sure: 0,
+      rightImg,
       ParentHeadOptions: [
         { name: "u_SAP_ID", label: "服务单号", align:'left', sortable:true, width: '100'},
         { name: "customerId", label: "客户代码",align:'left', width: '100' },
-        { name: "customerName", label: "客户名称" ,align:'left', width: '100' },
+        { name: "customerName", label: "客户名称" ,align:'left', width: '180' },
+        { name: "fromTheme", label: "呼叫主题", align: 'left', width: '275' },
         { name: "contacter", label: "联系人" ,align:'left', width: '100' },
-        { name: "contactTel", label: "电话号码" ,align:'left', width: '100' },
+        { name: "contactTel", label: "电话号码" ,align:'left', width: '125' },
         { name: "newestContacter", label: "最近联系人" ,align:'left', width: '100' },
-        { name: "newestContactTel", label: "最新电话号码" ,align:'left', width: '120' },
+        { name: "newestContactTel", label: "最新电话号码" ,align:'left', width: '125' },
         { name: "supervisor", label: "售后主管" ,align:'left', width: '100' },
         { name: "salesMan", label: "销售员" ,align:'left', width: '100' },
         { name: "recepUserName", label: "接单员" ,align:'left', width: '100' },
@@ -294,13 +322,13 @@ export default {
       ],
       ChildheadOptions: [
         // { name: "serviceOrderId", label: "服务单号", ifFixed: true },
-        { name: "workOrderNumber", label: "工单号",align:'right'  },
-        { name: "priority", label: "优先级" ,align:'left' },
+        { name: "workOrderNumber", label: "工单号",align:'left', width: '90'  },
+        { name: "priority", label: "优先级" ,align:'left', width: '60' },
         { name: "fromType", label: "呼叫类型", width: "100px",align:'left'  },
         // { name: "customerId", label: "客户代码" },
-        { name: "status", label: "状态" ,align:'left' },
+        { name: "status", label: "状态" ,align:'left', width: '80' },
         // { name: "customerName", label: "客户名称" },
-         { name: "fromTheme", label: "呼叫主题",align:'left'  },
+         { name: "fromTheme", label: "呼叫主题",align:'left', width: '270'  },
         { name: "createTime", label: "创建日期" ,width:'160px',align:'left' },
         { name: "recepUserName", label: "接单员" ,align:'left' },
         { name: "currentUser", label: "技术员" ,align:'left' },
@@ -358,6 +386,12 @@ export default {
         // QryProblemType:"",//问题类型
         // QryMaterialTypes:""//物料类别（多选)
       },
+      queryCustomer: { // 查询用户信息
+        // 查询条件
+        page: 1,
+        limit: 50,
+        CardCodeOrCardName:''
+      },
       temp: {
         id: "", // Id
         sltCode: "", // SltCode
@@ -369,11 +403,13 @@ export default {
         extendInfo: "" // 其他信息,防止最后加逗号，可以删除
       },
       customer: {},
+      customerInfo: {}, // 查询得到的客户信息
       checkd: "",
       dialogFormVisible: false,
       dialogTable: false,
       dialogTree: false,
       dialogStatus: "",
+      dialogInfoVisible: false, // 客户信息弹窗
       FormUpdate: false, //编辑表单的dialog
       textMap: {
         update: "编辑呼叫服务单",
@@ -477,6 +513,11 @@ export default {
         this.listQuery.QryServiceOrderId = "";
       }
     },
+    rowStyle () { // 工单表格的行样式
+      return {
+        'background-color': '#F2F6FC'
+      }
+    },
     openDetail() {
       this.dataForm = this.dataForm1;
     },
@@ -494,6 +535,21 @@ export default {
         }
         this.listLoading = false;
       });
+    },
+    getCustomerInfo (customerId) { // 打开用户信息弹窗
+      console.log('客户信息')
+      if (!customerId) {
+        return this.$message.error('客户代码不能为空!')
+      }
+      this.listQuery.CardCodeOrCardName = customerId
+      businesspartner.getList(this.listQuery)
+        .then((response) => {
+          this.customerInfo = response.data[0];
+          this.dialogInfoVisible = true
+        })
+        .catch(() => {
+          this.$message.error('查询客户信息失败')
+        })
     },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
@@ -793,6 +849,11 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
+.serve-table-wrapper {
+  ::v-deep .el-table__expanded-cell > div {
+    margin-left: 48px;
+  }
+}
 .dialog-mini .el-select {
   width: 100%;
 }
@@ -845,7 +906,9 @@ export default {
 .order-num {
   margin-right: 10px;
 }
-
+.mr48 {
+  margin-left: 48px;
+}
 // }
 </style>
 

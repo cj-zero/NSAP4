@@ -2,6 +2,7 @@
   <div class="certifiate-wrapper">
     <el-row class="btn-wrapper">
       <el-button 
+        v-if="!(currentData.activityName !== '待送审' && type === 'submit')"
         type="primary" 
         size="small" 
         class="left-btn" 

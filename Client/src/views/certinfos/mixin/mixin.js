@@ -28,10 +28,11 @@ export let certVerMixin = { // 审核操作mixin
         })
         this.isSend = false
         this.$emit('handleSubmit')
-      }).catch(() => {
+      }).catch((err) => {
         this.isSend = false
         this.$emit('close')
-        this.$message.error(`${message}失败`)
+        // this.$message.error(`${message}失败`)
+        this.$message.error(`${err.message}`)
       })
     }
   }

@@ -53,7 +53,7 @@
       </el-col>
       <el-col :span="2">
         <el-form-item label-width="0px" style="margin-left: 20px;">
-            <el-button type="info" @click="toggleMoreSearch" size="mini" icon="el-icon-search">高级查询</el-button>
+            <el-button type="primary" @click="toggleMoreSearch" size="mini" icon="el-icon-search">高级查询</el-button>
         </el-form-item>
       </el-col>
     </el-row>
@@ -77,6 +77,18 @@
               :options="options"
               @change="handleChange"></el-cascader>
             <!-- <el-input  v-model="form.QryProblemType" @keyup.enter.native='onSubmit'></el-input> -->
+          </el-form-item>
+        </el-col>
+        <el-col :span="3">
+          <el-form-item label="呼叫类型">
+            <el-select  clearable v-model="form.QryFromType" placeholder="请选择呼叫类型">
+              <el-option
+                v-for="(item,index) in options_type"
+                :key="index"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="4" style="margin-left: 10px;">
@@ -122,6 +134,7 @@ export default {
         // QryServiceOrderId: "", // 查询服务ID查询条件
         QryU_SAP_ID: "", // 查询服务ID
         QryState: "", // 呼叫状态查询条件
+        QryFromType: "", // 呼叫类型
         QryCustomer: "", // 客户查询条件
         QryManufSN: "", //  制造商序列号查询条件
         QryCreateTimeFrom: "", // 创建日期从查询条件
@@ -142,7 +155,12 @@ export default {
         { value: 6, label: "已接收" },
         { value: 7, label: "已解决" },
         { value: 8, label: "已回访" }
-      ]
+      ],
+      options_type: [
+        { value: '', label: '全部' },
+        { value: 1, label: "提交呼叫" },
+        { value: 2, label: "在线解答" },
+      ], //呼叫类型
     };
   },
   props: {
