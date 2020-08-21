@@ -5,6 +5,7 @@
     @row-click="onRowClick"
     class="form-wrapper"
     v-loading="isLoading"
+    :row-style="rowStyle"
   >
     <el-table-column   
       v-for="item in headOptions"
@@ -29,6 +30,7 @@
         <template v-else-if="item.name === 'operation'">
           <template v-if="type === 'submit'">
             <el-button 
+              v-if="!(scope.row.activityName !== '待送审' && type === 'submit')"
               type="primary" 
               size="mini"
               @click="submit(scope.row, 0)"
@@ -98,6 +100,11 @@ export default {
   }
   },
   methods: {
+    rowStyle ({ rowIndex }) {
+      return rowIndex % 2 === 0 ? {
+        'background-color' : '#eee'
+      } : {}
+    },
     getColor (text) {
       console.log(text, 'mapText', colorList[text])
       return {

@@ -50,8 +50,29 @@ namespace OpenAuth.WebApi.Controllers.Sap
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost]
         public async Task<TableData> AppGet([FromQuery] QueryAppSerialNumberListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serialNumberApp.AppGet(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 序列号查询
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> AppFind(QueryAppSerialNumberListReq req)
         {
             var result = new TableData();
             try

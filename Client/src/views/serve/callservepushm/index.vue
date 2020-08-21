@@ -2,7 +2,7 @@
   <div>
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
-        <el-input
+        <!-- <el-input
           @keyup.enter.native="handleFilter"
           size="mini"
           style="width: 200px;"
@@ -17,7 +17,7 @@
           v-waves
           icon="el-icon-search"
           @click="handleFilter"
-        >搜索</el-button>
+        >搜索</el-button> -->
         <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
     </sticky>

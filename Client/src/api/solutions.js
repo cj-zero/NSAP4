@@ -40,3 +40,18 @@ export function del(data) {
   })
 }
 
+export function loadTechList (params) { // 加载技术人员解决方案来列表
+  return request({
+    url: '/Solutions/TechnicianLoad',
+    method: 'get',
+    params
+  })
+}
+
+export function addTch (data) {
+  return request({
+    url: '/Solutions/TechnicianAdd',
+    method: 'post',
+    data
+  })
+}
