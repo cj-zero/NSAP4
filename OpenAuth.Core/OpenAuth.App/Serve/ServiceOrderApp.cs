@@ -1301,8 +1301,16 @@ namespace OpenAuth.App
             await UnitWork.SaveAsync();
             await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
+                Title = "技术员接单",
+                Details = "已为您分配专属技术员进行处理，感谢您的耐心等待",
+                LogType = 1
+            }, req.WorkOrderIds);
+
+            await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
+            {
                 Title = "技术员接单成功",
                 Details = "已接单成功，请选择服务方式：远程服务或上门服务",
+                LogType = 2
             }, req.WorkOrderIds);
             await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{string.Join(",", req.WorkOrderIds)}", ActionType = "主管派单工单" }, req.WorkOrderIds);
             await PushMessageToApp(req.CurrentUserId, "派单成功提醒", "您已被派有一个新的售后服务，请尽快处理");
@@ -1768,7 +1776,7 @@ namespace OpenAuth.App
 
                 result.Data =
                 ((await resultsql
-                .ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(g => g.First())).Select(s => new { s.Content, CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"), s.FroTechnicianName, s.AppUserId, s.ServiceOrderId, s.Replier,s.U_SAP_ID });
+                .ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(g => g.First())).Select(s => new { s.Content, CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"), s.FroTechnicianName, s.AppUserId, s.ServiceOrderId, s.Replier, s.U_SAP_ID });
             }
             return result;
         }
@@ -1792,35 +1800,6 @@ namespace OpenAuth.App
             return result;
         }
 
-
-        /// <summary>
-        /// 提交错误(新)设备信息
-        /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
-        public async Task ApplyErrorDevices(ApplyErrorDevicesReq request)
-        {
-            string head = "技术员核对设备有误提交给呼叫中心的信息";
-            string Content = string.Empty;
-            if (request.Devices != null && request.Devices.Count > 0)
-            {
-                foreach (Serve.Request.Device item in request.Devices)
-                {
-                    Content += $"<br>待编辑序列号: {item.manufacturerSerialNumber}<br>正确的序列号: {item.newNumber}<br>正确的物料编码: {item.newCode}<br>";
-                }
-                await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = request.ServiceOrderId, Content = head + Content, AppUserId = request.AppUserId });
-            }
-            //技术员新添加设备集合 发送消息
-            if (request.NewDevices != null && request.NewDevices.Count > 0)
-            {
-                head = "请呼叫中心核对客户新设备信息";
-                foreach (Serve.Request.NewDevice item in request.NewDevices)
-                {
-                    Content += $"<br>序列号: {item.manufacturerSerialNumber}<br>物料编码: {item.ItemCode}<br>";
-                }
-                await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = request.ServiceOrderId, Content = head + Content, AppUserId = request.AppUserId });
-            }
-        }
 
         /// <summary>
         /// 管理员关单
@@ -2438,7 +2417,8 @@ namespace OpenAuth.App
                         Status = s.ToList().Select(s => s.Status).Distinct().FirstOrDefault(),
                         Count = s.Count(),
                         Orders = s.ToList(),
-                        UnitName = "台"
+                        UnitName = "台",
+                        MaterialTypeName = string.Empty
                     }
                     ).ToList()
                 });
@@ -2446,7 +2426,6 @@ namespace OpenAuth.App
             result.Data = list;
             return result;
         }
-
 
         /// <summary>
         /// 获取技术员服务单详情
@@ -2547,33 +2526,6 @@ namespace OpenAuth.App
             }
             result.Data = ProtectPhone;
             return result;
-        }
-
-        /// <summary>
-        /// 解除绑定隐私号码
-        /// </summary>
-        /// <param name="ServiceOrderId"></param>
-        /// <param name="MaterialType"></param>
-        /// <returns></returns>
-        public async Task<bool> UnbindProtectPhone(int ServiceOrderId, string MaterialType)
-        {
-            var result = new TableData();
-            //获取技术员Id
-            int? TechnicianId = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == ServiceOrderId && (string.IsNullOrEmpty(s.MaterialCode) ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-"))) == MaterialType).Distinct().FirstOrDefaultAsync())?.CurrentUserId;
-            var query = from a in UnitWork.Find<AppUserMap>(null)
-                        join b in UnitWork.Find<User>(null) on a.UserID equals b.Id into ab
-                        from b in ab.DefaultIfEmpty()
-                        select new { a, b };
-            //获取技术员联系方式
-            string TechnicianTel = await query.Where(w => w.a.AppUserId == TechnicianId).Select(s => s.b.Mobile).FirstOrDefaultAsync();
-            //获取客户联系方式
-            string custMobile = (await UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId).FirstOrDefaultAsync()).NewestContactTel;
-            //判断当前操作角色 0客户 1技术员
-            if (!AliPhoneNumberProtect.Unbind(custMobile, TechnicianTel))
-            {
-                return false;
-            }
-            return true;
         }
     }
 }
