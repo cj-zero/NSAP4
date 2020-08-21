@@ -143,7 +143,7 @@ namespace OpenAuth.App
                         join c in UnitWork.Find<ServiceWorkOrder>(null) on a.ServiceOrderId equals c.ServiceOrderId into abc
                         from c in abc.DefaultIfEmpty()
                         select new { a, b, c };
-            query = query.Where(q => q.b.U_SAP_ID == request.SapOrderId && string.IsNullOrEmpty(q.c.MaterialCode) ? "其他设备" == q.c.ManufacturerSerialNumber : q.c.MaterialCode.Substring(0, q.c.MaterialCode.IndexOf("-")) == request.MaterialType);
+            query = query.Where(q => q.b.U_SAP_ID == request.SapOrderId && "其他设备".Equals(request.MaterialType) ? q.c.MaterialCode == "其他设备" : q.c.MaterialCode.Substring(0, q.c.MaterialCode.IndexOf("-")) == request.MaterialType);
             var status = await query.Select(s => s.c.Status).Distinct().FirstOrDefaultAsync();
             result.Add("status", status);
             var list = new List<OrderLogListResp>();
