@@ -273,6 +273,9 @@ namespace OpenAuth.App
             pictures.ForEach(p => { p.ServiceOrderId = o.Id; p.PictureType = 1; });
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
+            #region 同步到SAP 并拿到服务单主键
+            _capBus.Publish("Serve.ServcieOrder.CreateFromAPP", obj.Id);
+            #endregion
             await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
                 Title = "提交信息成功",
