@@ -799,27 +799,6 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        /// 提交核对错误(新)设备信息
-        /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public async Task<Response> ApplyErrorDevices(ApplyErrorDevicesReq request)
-        {
-            var result = new Response();
-            try
-            {
-                await _serviceOrderApp.ApplyErrorDevices(request);
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
-            }
-            return result;
-        }
-
-        /// <summary>
         /// 主管关单
         /// </summary>
         /// <param name="request"></param>
@@ -1081,28 +1060,6 @@ namespace OpenAuth.WebApi.Controllers
                 result.Message = ex.Message;
             }
             return result;
-        }
-
-        /// <summary>
-        /// 解除绑定
-        /// </summary>
-        /// <param name="ServiceOrderId"></param>
-        /// <param name="MaterialType"></param>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        [HttpGet]
-        public async Task<bool> UnbindProtectPhone(int ServiceOrderId, string MaterialType)
-        {
-            bool IsSuccess;
-            try
-            {
-                IsSuccess = await _serviceOrderApp.UnbindProtectPhone(ServiceOrderId, MaterialType);
-            }
-            catch (Exception ex)
-            {
-                return false;
-            }
-            return IsSuccess;
         }
     }
 }

@@ -107,14 +107,15 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="ServiceOrderId">服务单ID</param>
         /// <param name="currentUserId">当前技术员Id</param>
+        /// <param name="MaterialType">设备类型</param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<Response<CompletionReportDetailsResp>> GetOrderWorkInfoForAdd(int ServiceOrderId, int currentUserId)
+        public async Task<Response<CompletionReportDetailsResp>> GetOrderWorkInfoForAdd(int ServiceOrderId, int currentUserId, string MaterialType)
         {
             var result = new Response<CompletionReportDetailsResp>();
             try
             {
-                result.Result = await _app.GetOrderWorkInfoForAdd(ServiceOrderId, currentUserId);
+                result.Result = await _app.GetOrderWorkInfoForAdd(ServiceOrderId, currentUserId, MaterialType);
             }
             catch (Exception ex)
             {
@@ -130,14 +131,15 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="serviceOrderId">服务单Id</param>
         /// <param name="currentUserId">当前技术员Id</param>
+        /// <param name="MaterialType">设备类型</param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<Response<CompletionReportDetailsResp>> GetCompletionReportDetails(int serviceOrderId, int currentUserId)
+        public async Task<Response<CompletionReportDetailsResp>> GetCompletionReportDetails(int serviceOrderId, int currentUserId, string MaterialType)
         {
             var result = new Response<CompletionReportDetailsResp>();
             try
             {
-                result.Result = await _app.GetCompletionReportDetails(serviceOrderId, currentUserId);
+                result.Result = await _app.GetCompletionReportDetails(serviceOrderId, currentUserId, MaterialType);
             }
             catch (Exception ex)
             {
@@ -190,6 +192,27 @@ namespace OpenAuth.WebApi.Controllers
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// 解除绑定
+        /// </summary>
+        /// <param name="ServiceOrderId"></param>
+        /// <param name="MaterialType"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<bool> UnbindProtectPhone(int ServiceOrderId, string MaterialType)
+        {
+            bool IsSuccess;
+            try
+            {
+                IsSuccess = await _app.UnbindProtectPhone(ServiceOrderId, MaterialType);
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+            return IsSuccess;
         }
         public CompletionReportsController(CompletionReportApp app)
         {
