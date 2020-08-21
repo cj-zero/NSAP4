@@ -22,6 +22,7 @@ using System.Threading;
 using Magicodes.ExporterAndImporter.Excel;
 using Magicodes.ExporterAndImporter.Core;
 using Aliyun.Acs.Core;
+using OpenAuth.Repository;
 
 namespace OpenAuth.App
 {
@@ -667,14 +668,15 @@ namespace OpenAuth.App
             {
                 ServiceOrderId = q.b.Id,
                 q.b.U_SAP_ID,
-                MaterialType = q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-")) == null ? "其他" : (q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-")) == "" ? "其他" : q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-")))
+                MaterialType = q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-")) == null ? "其他设备" : (q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-")) == "" ? "其他设备" : q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-")))
             }).Distinct().ToListAsync();
 
             var grouplistsql = from c in workorderlist
                                group c by c.ServiceOrderId into g
                                let U_SAP_ID = g.Select(a => a.U_SAP_ID).First()
-                               let MTypes = g.Select(o => o.MaterialType == "其他" ? "其他" : MaterialTypeModel.Where(u => u.TypeAlias == o.MaterialType).FirstOrDefault().TypeName).ToArray()
-                               select new { ServiceOrderId = g.Key, U_SAP_ID, MaterialTypes = MTypes };
+                               let MTypes = g.Select(o => o.MaterialType == "其他设备" ? "其他设备" : MaterialTypeModel.Where(u => u.TypeAlias == o.MaterialType).FirstOrDefault().TypeName).ToArray()
+                               let WorkMTypes=g.Select(o => o.MaterialType == "其他设备" ? "其他设备": o.MaterialType)
+                               select new { ServiceOrderId = g.Key, U_SAP_ID, MaterialTypes = WorkMTypes, WorkMaterialTypes= MTypes };
             var grouplist = grouplistsql.ToList();
 
             grouplist = grouplist.OrderBy(s => s.U_SAP_ID).ToList();
@@ -845,7 +847,7 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.b.RecepUserName.Contains(req.QryRecepUser))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.c.Name.Contains(req.QryProblemType))
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
-                         .WhereIf(req.QryMaterialTypes != null && req.QryMaterialTypes.Count > 0, q => req.QryMaterialTypes.Contains(q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))))
+                         .WhereIf(req.QryMaterialTypes != null && req.QryMaterialTypes.Count > 0, q => req.QryMaterialTypes.Contains(q.a.MaterialCode== "其他设备" ? "其他设备": q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))))
                          .Where(q => q.a.FromType != 2);
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME)
@@ -2479,7 +2481,22 @@ namespace OpenAuth.App
             result.Data = list;
             return result;
         }
-
+        /// <summary>
+        /// 获取待处理服务单总数
+        /// </summary>
+        /// <returns></returns>
+        public async Task<int> GetServiceOrderCount() 
+        {
+            return UnitWork.Find<ServiceOrder>(u => u.Status == 1).Count();
+        }
+        /// <summary>
+        /// 获取为派单工单总数
+        /// </summary>
+        /// <returns></returns>
+        public async Task<int> GetServiceWorkOrderCount()
+        {
+            return UnitWork.Find<ServiceWorkOrder>(u => u.Status == 1).Count();
+        }
         /// <summary>
         /// 获取隐私号码
         /// </summary>
@@ -2532,5 +2549,6 @@ namespace OpenAuth.App
             result.Data = ProtectPhone;
             return result;
         }
+
     }
 }
