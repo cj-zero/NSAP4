@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using NetOffice.WordApi;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -28,7 +30,7 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public async Task ApplyNewOrErrorDevices(ApplyNewOrErrorDevicesReq request)
+        public async System.Threading.Tasks.Task ApplyNewOrErrorDevices(ApplyNewOrErrorDevicesReq request)
         {
             //获取当前设备类型服务信息
             var currentMaterialTypeInfo = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == request.AppUserId && s.ServiceOrderId == request.ServiceOrderId && (string.IsNullOrEmpty(s.MaterialCode) ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-"))) == request.MaterialType).FirstOrDefaultAsync();
@@ -40,14 +42,15 @@ namespace OpenAuth.App
                 foreach (Device item in request.Devices)
                 {
                     SeviceTechnicianApplyOrder obj = new SeviceTechnicianApplyOrder();
-                    obj.MaterialType = item.newNumber.Substring(0, item.newNumber.IndexOf("-"));
+                    obj.MaterialType = request.MaterialType;
                     obj.ManufSN = item.newNumber;
                     obj.ItemCode = item.newCode;
                     obj.ServiceOrderId = request.ServiceOrderId;
                     obj.OrginalManufSN = item.manufacturerSerialNumber;
                     obj.TechnicianId = request.AppUserId;
                     obj.CreateTime = DateTime.Now;
-                    if (request.MaterialType.Equals(obj.MaterialType, StringComparison.OrdinalIgnoreCase))
+                    obj.IsSolved = 0;
+                    if (request.MaterialType.Equals((string.IsNullOrEmpty(item.newCode) ? "其他设备" : item.newCode.Substring(0, item.newCode.IndexOf("-"))), StringComparison.OrdinalIgnoreCase))
                     {
                         obj.Status = currentMaterialTypeInfo.Status;
                         obj.OrderTakeType = currentMaterialTypeInfo.OrderTakeType;
@@ -60,7 +63,7 @@ namespace OpenAuth.App
                         obj.Status = 0;
                         obj.OrderTakeType = 0;
                     }
-                    var o = await UnitWork.AddAsync<SeviceTechnicianApplyOrder, int>(obj);
+                    await UnitWork.AddAsync(obj);
                     await UnitWork.SaveAsync();
                     Content += $"<br>待编辑序列号: {item.manufacturerSerialNumber}<br>正确的序列号: {item.newNumber}<br>正确的物料编码: {item.newCode}<br>";
                 }
@@ -73,13 +76,14 @@ namespace OpenAuth.App
                 foreach (NewDevice item in request.NewDevices)
                 {
                     SeviceTechnicianApplyOrder obj = new SeviceTechnicianApplyOrder();
-                    obj.MaterialType = item.manufacturerSerialNumber.Substring(0, item.manufacturerSerialNumber.IndexOf("-"));
+                    obj.MaterialType = request.MaterialType;
                     obj.ManufSN = item.manufacturerSerialNumber;
                     obj.ItemCode = item.ItemCode;
                     obj.ServiceOrderId = request.ServiceOrderId;
                     obj.TechnicianId = request.AppUserId;
                     obj.CreateTime = DateTime.Now;
-                    if (request.MaterialType.Equals(obj.MaterialType, StringComparison.OrdinalIgnoreCase))
+                    obj.IsSolved = 0;
+                    if (request.MaterialType.Equals((string.IsNullOrEmpty(item.ItemCode) ? "其他设备" : item.ItemCode.Substring(0, item.ItemCode.IndexOf("-"))), StringComparison.OrdinalIgnoreCase))
                     {
                         obj.Status = currentMaterialTypeInfo.Status;
                         obj.OrderTakeType = currentMaterialTypeInfo.OrderTakeType;
@@ -98,8 +102,43 @@ namespace OpenAuth.App
                 }
                 await _serviceOrderApp.SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = request.ServiceOrderId, Content = head + Content, AppUserId = request.AppUserId });
             }
+        }
 
-
+        /// <summary>
+        /// 获取技术员提交/修改的设备信息
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetApplyDevices(GetApplyDevicesReq req)
+        {
+            Dictionary<string, object> data = new Dictionary<string, object>();
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var queryOrder = UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.TechnicianId && s.ServiceOrderId == req.ServiceOrderId && string.IsNullOrEmpty(s.MaterialCode) ? "其他设备" == s.ManufacturerSerialNumber : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType).Select(o => new
+            {
+                o.MaterialCode,
+                o.ManufacturerSerialNumber,
+                MaterialType = string.IsNullOrEmpty(o.MaterialCode) ? "其他设备" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
+                o.Status,
+                o.Id,
+                o.IsCheck,
+                o.OrderTakeType
+            });
+            var checkData = await queryOrder.OrderByDescending(o => o.Id).ToListAsync();
+            data.Add("checkData", checkData);
+            var query = UnitWork.Find<SeviceTechnicianApplyOrder>(s => s.TechnicianId == req.TechnicianId && s.ServiceOrderId == req.ServiceOrderId && s.MaterialType == req.MaterialType && s.IsSolved == 0);
+            var newData = await query.OrderByDescending(o => o.CreateTime).Select(s => new
+            {
+                s.ManufSN,
+                s.ItemCode
+            }).ToListAsync();
+            data.Add("newData", newData);
+            result.Data = data;
+            return result;
         }
     }
 }
