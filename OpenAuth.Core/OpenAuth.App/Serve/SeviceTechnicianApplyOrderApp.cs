@@ -33,7 +33,7 @@ namespace OpenAuth.App
         public async System.Threading.Tasks.Task ApplyNewOrErrorDevices(ApplyNewOrErrorDevicesReq request)
         {
             //获取当前设备类型服务信息
-            var currentMaterialTypeInfo = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == request.AppUserId && s.ServiceOrderId == request.ServiceOrderId && (string.IsNullOrEmpty(s.MaterialCode) ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-"))) == request.MaterialType).FirstOrDefaultAsync();
+            var currentMaterialTypeInfo = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == request.AppUserId && s.ServiceOrderId == request.ServiceOrderId && "其他设备".Equals(request.MaterialType) ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == request.MaterialType).FirstOrDefaultAsync();
             //发送消息至聊天室
             string head = "技术员核对设备有误提交给呼叫中心的信息";
             string Content = string.Empty;
@@ -118,17 +118,17 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var queryOrder = UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.TechnicianId && s.ServiceOrderId == req.ServiceOrderId && string.IsNullOrEmpty(s.MaterialCode) ? "其他设备" == s.ManufacturerSerialNumber : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType).Select(o => new
+            var queryOrder = UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.TechnicianId && s.ServiceOrderId == req.ServiceOrderId).Select(o => new
             {
                 o.MaterialCode,
                 o.ManufacturerSerialNumber,
-                MaterialType = string.IsNullOrEmpty(o.MaterialCode) ? "其他设备" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
+                MaterialType = "其他设备".Equals(req.MaterialType) ? "其他设备" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
                 o.Status,
                 o.Id,
                 o.IsCheck,
                 o.OrderTakeType
             });
-            var checkData = await queryOrder.OrderByDescending(o => o.Id).ToListAsync();
+            var checkData = await queryOrder.Where(s => req.MaterialType == "其他设备" ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType).OrderByDescending(o => o.Id).ToListAsync();
             data.Add("checkData", checkData);
             var query = UnitWork.Find<SeviceTechnicianApplyOrder>(s => s.TechnicianId == req.TechnicianId && s.ServiceOrderId == req.ServiceOrderId && s.MaterialType == req.MaterialType && s.IsSolved == 0);
             var newData = await query.OrderByDescending(o => o.CreateTime).Select(s => new

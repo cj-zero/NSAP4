@@ -78,8 +78,8 @@ namespace OpenAuth.App
             pictures.ForEach(r => r.CompletionReportId = o.Id);
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && string.IsNullOrEmpty(req.MaterialType) ? true : string.IsNullOrEmpty(s.MaterialCode) ? "其他设备" == s.ManufacturerSerialNumber : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType, s => new ServiceWorkOrder { Status = 7 });
-            var workOrderList = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && string.IsNullOrEmpty(req.MaterialType) ? true : string.IsNullOrEmpty(s.MaterialCode) ? "其他设备" == s.ManufacturerSerialNumber : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType).ToList();
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && string.IsNullOrEmpty(req.MaterialType) ? true : "其他设备".Equals(req.MaterialType) ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType, s => new ServiceWorkOrder { Status = 7 });
+            var workOrderList = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && string.IsNullOrEmpty(req.MaterialType) ? true : "其他设备".Equals(req.MaterialType) ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType).ToList();
             List<int> workorder = new List<int>();
             foreach (var item in workOrderList)
             {
@@ -161,7 +161,7 @@ namespace OpenAuth.App
                       join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
                       from b in ab.DefaultIfEmpty()
                       select new { a, b };
-            obj = obj.Where(o => o.b.Id == serviceOrderId && o.a.CurrentUserId == currentUserId && string.IsNullOrEmpty(MaterialType) ? true : (string.IsNullOrEmpty(o.a.MaterialCode) ? "其他设备" : o.a.MaterialCode.Substring(0, o.a.MaterialCode.IndexOf("-"))) == MaterialType);
+            obj = obj.Where(o => o.b.Id == serviceOrderId && o.a.CurrentUserId == currentUserId && string.IsNullOrEmpty(MaterialType) ? true : "其他设备".Equals(MaterialType) ? o.a.MaterialCode == "其他设备" : o.a.MaterialCode.Substring(0, o.a.MaterialCode.IndexOf("-")) == MaterialType);
             var query = await obj.Select(q => new
             {
                 q.b.U_SAP_ID,
@@ -329,7 +329,7 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             //获取技术员Id
-            int? TechnicianId = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == ServiceOrderId && string.IsNullOrEmpty(s.MaterialCode) ? "其他设备" == s.ManufacturerSerialNumber : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == MaterialType).Distinct().FirstOrDefaultAsync())?.CurrentUserId;
+            int? TechnicianId = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == ServiceOrderId && "其他设备".Equals(MaterialType) ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == MaterialType).Distinct().FirstOrDefaultAsync())?.CurrentUserId;
             var query = from a in UnitWork.Find<AppUserMap>(null)
                         join b in UnitWork.Find<User>(null) on a.UserID equals b.Id into ab
                         from b in ab.DefaultIfEmpty()
