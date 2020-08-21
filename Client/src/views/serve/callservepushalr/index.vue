@@ -23,8 +23,8 @@
     </sticky>
     <div class="app-container flex-item bg-white">
       <zxsearch @change-Search="changeSearch" @change-Order="changeOrder"></zxsearch>
-      <el-row class="fh">
-        <el-col :span="3" class="fh ls-border" style="max-width:190px;">
+      <el-row class="fh" type="flex">
+        <div class="fh ls-border" style="min-width:200px;" @scroll="onScroll">
           <el-card shadow="never" class="card-body-none fh" style>
             <!-- <el-link
               style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;"
@@ -45,7 +45,7 @@
               :props="defaultProps"
             ></el-tree>
           </el-card>
-        </el-col>
+        </div>
         <el-col :span="21" class="fh">
           <div class="bg-white">
             <el-table
@@ -224,6 +224,7 @@ import elDragDialog from "@/directive/el-dragDialog";
 import zxsearch from "./search";
 import zxform from "../callserve/form";
 import treeList from "../callserve/treeList";
+import { debounce } from '@/utils/process'
 // import treeTable from "@/components/TreeTableMlt";
 
 // import { callserve, count } from "@/mock/serve";
@@ -370,7 +371,7 @@ export default {
         extendInfo: "", // 其他信息,防止最后加逗号，可以删除
       },
       total2: 0,
-
+      totalCount: 0, // 左侧树形数据的数量
       dialogFormVisible: false,
       dialogTable: false,
       dialogTree: false,
@@ -393,6 +394,12 @@ export default {
         name: [{ required: true, message: "名称不能为空", trigger: "blur" }],
       },
       downloadLoading: false,
+      listQueryServer: {
+        QryState: '', // 客户状态
+        QryU_SAP_ID: '', // 查询服务ID
+        limit: 30, // 条数
+        page: 1 // 页数
+      }
     };
   },
   filters: {
@@ -436,9 +443,20 @@ export default {
   },
   created() {},
   mounted() {
+    let el = document.getElementsByClassName('el-tree')[0]
+    el.addEventListener('scroll', debounce(this.onScroll, 400))
+    console.log(el, 'tree')
     this.afterLeft();
   },
   methods: {
+    onScroll (e) {
+      console.log(e, 'onSCROLL')
+      let { scrollHeight, scrollTop, clientHeight } = e.target
+      if (scrollHeight <= (scrollTop + clientHeight + 10)) {
+        this.listQueryServer.page++
+        this.getLeftList()
+      }
+    },
     cancelPost() {
       (this.dialogOrder = false), (this.listLoading = false);
       // this.afterLeft()
@@ -534,7 +552,8 @@ export default {
         Object.assign(this.listQuery, val);
       if(val.QryU_SAP_ID){
         this.$refs.treeForm.setCheckedKeys([val.QryU_SAP_ID]);
-        }        this.getLeftList()
+      }
+        // }        this.getLeftList()
       }
     },
     openTree(res) {
@@ -680,31 +699,50 @@ export default {
 
     getLeftList() {
       this.listLoading = true;
-      let arr = [];
       return callservepushm.getLeftList({ 
-        QryState: this.listQuery.QryState,
-        QryU_SAP_ID: this.listQuery.QryU_SAP_ID 
+        QryState: this.listQueryServer.QryState,
+        QryU_SAP_ID: this.listQueryServer.QryU_SAP_ID,
+        page: this.listQueryServer.page,
+        limit: this.listQueryServer.limit
       }).then((res) => {
-        let resul = res.data.data;
-        for (let i = 0; i < resul.length; i++) {
-          arr[i] = [];
-          arr[i].label = `服务号:${resul[i].u_SAP_ID}`;
-          arr[i].key1 = `${resul[i].u_SAP_ID}`;
-          arr[i].key = `${resul[i].u_SAP_ID}`;
-          arr[i].children = [];
-          resul[i].materialTypes.map((item1) => {
-            arr[i].children.push({
-              label: `物料类型号:${item1}`,
-              key: `${resul[i].u_SAP_ID}`,
-              key1: `${resul[i].u_SAP_ID}&${item1}`,
-              id: item1,
-            });
-          });
-          // console.log(arr)
+        let { data, count } = res.data
+        let arr = this._normalizeTree(data)
+        if (!this.modulesTree.length) {
+          this.modulesTree = arr
+        } else {
+          this.modulesTree = this.modulesTree.concat(arr)
         }
-        this.modulesTree = arr;
+        console.log(this.modulesTree, 'modulesTree')
+        this.totalCount = count
+        // this.modulesTree = arr;
         this.listLoading = false;
-      });
+      }).catch(() => {
+        this.listLoading = false
+      })
+    },
+    _normalizeTree (data) {
+      let arr = []
+      for (let i = 0; i < data.length; i++) {
+        arr[i] = [];
+        arr[i].label = `服务号:${data[i].u_SAP_ID}`;
+        arr[i].key1 = `${data[i].u_SAP_ID}`;
+        arr[i].key = `${data[i].u_SAP_ID}`;
+        arr[i].children = [];
+        // work
+        
+        data[i].materialTypes.map((item1, index) => {
+          arr[i].children.push({
+            label: `物料类型号:${data[i].workMaterialTypes[index]}`,
+            // label: `物料类型号:${item1}`,
+            key: `${data[i].u_SAP_ID}`,
+            key1: `${data[i].u_SAP_ID}&${item1}`,
+            // label: 
+            id: item1,
+          });
+        });
+        // console.log(arr)
+      }
+      return arr 
     },
     getAllRight() {
       //展开全部工单
@@ -885,6 +923,7 @@ export default {
 </script>
 <style lang="scss" scoped>
 .ls-border {
+  // width: 300px;
   ::v-deep .el-tree-node > .el-tree-node__children {
     overflow: visible;
   }
