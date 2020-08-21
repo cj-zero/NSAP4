@@ -378,8 +378,8 @@ export default {
       dialogTree: false,
       dialogStatus: "",
       textMap: {
-        update: "确认呼叫服务单",
-        create: "新建呼叫服务单",
+        update: "确认服务呼叫单",
+        create: "新建服务呼叫单",
       },
       dataForm: {}, //获取的详情表单
       dialogPvVisible: false,
@@ -686,11 +686,15 @@ export default {
             arr[i].key1 = `${resul[i].u_SAP_ID}`;
             arr[i].key = `${resul[i].u_SAP_ID}`;
             arr[i].children = [];
-            resul[i].materialTypes.map((item1) => {
+            // work
+            
+            resul[i].materialTypes.map((item1, index) => {
               arr[i].children.push({
-                label: `物料类型号:${item1}`,
+                label: `物料类型号:${resul[i].workMaterialTypes[index]}`,
+                // label: `物料类型号:${item1}`,
                 key: `${resul[i].u_SAP_ID}`,
                 key1: `${resul[i].u_SAP_ID}&${item1}`,
+                // label: 
                 id: item1,
               });
             });
@@ -891,7 +895,13 @@ export default {
   },
 };
 </script>
-<style>
+<style lang="scss" scoped>
+.ls-border {
+  // ::v-deep .el-tree-node > .el-tree-node__children {
+  //   overflow: none;
+  // }
+}
+
 .dialog-mini .el-select {
   width: 100%;
 }

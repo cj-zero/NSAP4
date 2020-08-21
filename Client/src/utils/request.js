@@ -25,7 +25,7 @@ service.interceptors.request.use(config => {
     config.paramsSerializer = function(params) {
         return qs.stringify(params, {arrayFormat: 'repeat'})
     }}
-
+    console.log(config, 'config')
   return config
 }, error => {
   // Do something with request error
