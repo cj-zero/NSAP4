@@ -12,7 +12,7 @@ namespace OpenAuth.App.SignalR
     {
         public static IServiceCollection AddNsapSignalR(this IServiceCollection services)
         {
-            services.AddSignalR();
+            services.AddSignalR().AddMessagePackProtocol();
             services.AddSingleton<IUserIdProvider, NameUserIdProvider>();
             return services;
         }
