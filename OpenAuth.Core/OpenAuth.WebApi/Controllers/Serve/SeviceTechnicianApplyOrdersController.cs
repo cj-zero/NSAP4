@@ -40,6 +40,27 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        ///获取技术员提交/修改的设备信息
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetApplyDevices([FromQuery] GetApplyDevicesReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.GetApplyDevices(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
         public SeviceTechnicianApplyOrdersController(SeviceTechnicianApplyOrdersApp app)
         {
             _app = app;
