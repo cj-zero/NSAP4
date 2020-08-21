@@ -6,8 +6,8 @@
         type="primary" 
         size="small" 
         class="left-btn" 
-        @click="operate(0, leftBtnText)" 
-        v-loading.fullscreen.lock="isSend"
+        @click="operate(0, leftBtnText, 'left')" 
+        v-loading.fullscreen.lock="isLeftSend"
         :element-loading-text="`正在${leftBtnText}中`"
         element-loading-spinner="el-icon-loading"
         element-loading-background="rgba(0, 0, 0, 0.5)"
@@ -15,9 +15,9 @@
       <el-button 
         type="primary" 
         size="small" 
-        @click="operate(1, rightBtnText)" 
+        @click="operate(1, rightBtnText, 'right')" 
         v-if="type !== 'query' && type !== 'submit'" 
-        v-loading.fullscreen.lock="isSend"
+        v-loading.fullscreen.lock="isRightSend"
         :element-loading-text="`正在${rightBtnText}中`"
         element-loading-spinner="el-icon-loading"
         element-loading-background="rgba(0, 0, 0, 0.5)"
@@ -115,17 +115,17 @@ export default {
       return rightTextMap[this.type]
     },
     pdfURL () {
-      return `${this.baseURL}/${this.certNo}?X-Token=${this.$store.state.user.token}`
+      return `${this.baseURL}/${this.currentData.certNo}?X-Token=${this.$store.state.user.token}`
     }
   },
   methods: {
-    operate (type, message) {
+    operate (type, message, direction) {
       if (message === '下载') {
         this._download()
         return
       }
       console.log(this.currentData, 'currentData')
-      this._certVerificate(this.currentData, type, message, this.advice)
+      this._certVerificate(this.currentData, type, message, direction, this.advice)
     },
     getNumPages (url) {
       console.log(url, 'url')
@@ -216,7 +216,16 @@ export default {
     }
   },
   watch: {
-    certNo: {
+    // certNo: {
+    //   handler (val, oldVal) {
+    //     // 证书编号发生变化就重新加载PDF
+    //     console.log(val, oldVal, 'val')
+    //     this.reset()
+    //     this.getNumPages(this.pdfURL)
+    //   },
+    //   immediate: true
+    // },
+    currentData: {
       handler (val, oldVal) {
         // 证书编号发生变化就重新加载PDF
         console.log(val, oldVal, 'val')

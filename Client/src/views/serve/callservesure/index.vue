@@ -114,7 +114,7 @@
           >
             <template slot-scope="scope">
               <!-- <span v-if="fruit.name === 'order'">{{ scope.$index + 1 }}</span> -->
-              <div class="flex_middle pointer" 
+              <div class="link-container pointer" 
                 v-if="fruit.name === 'u_SAP_ID'"
                 @click="openTree(scope.row.id)">
                 <img :src="rightImg" />
@@ -759,6 +759,17 @@ export default {
 //   }
 
 // }
+
+.link-container {
+  display: inline-block;
+  vertical-align: middle;
+  img {
+    vertical-align: middle;
+  }
+  a {
+    vertical-align: middle;
+  }
+}
 </style>
 
 

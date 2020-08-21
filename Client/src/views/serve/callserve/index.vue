@@ -96,13 +96,13 @@
             :width="fruit.width"
           >
             <template slot-scope="scope">
-              <div v-if="fruit.name === 'u_SAP_ID'" class="flex_middle pointer" @click="openTree(scope.row.serviceOrderId)">
+              <div v-if="fruit.name === 'u_SAP_ID'" class="link-container pointer" @click="openTree(scope.row.serviceOrderId)">
                 <img :src="rightImg" />
                 <el-link
                   type="primary"
                 >{{ scope.row.u_SAP_ID }}</el-link>
               </div>
-              <div v-if="fruit.name === 'customerId'" class="flex_middle pointer" @click="getCustomerInfo(scope.row.customerId)">
+              <div v-if="fruit.name === 'customerId'" class="link-container pointer" @click="getCustomerInfo(scope.row.customerId)">
                 <img :src="rightImg" />
                 <el-link
                   type="primary"
@@ -908,6 +908,16 @@ export default {
 }
 .mr48 {
   margin-left: 48px;
+}
+.link-container {
+  display: inline-block;
+  vertical-align: middle;
+  img {
+    vertical-align: middle;
+  }
+  a {
+    vertical-align: middle;
+  }
 }
 // }
 </style>

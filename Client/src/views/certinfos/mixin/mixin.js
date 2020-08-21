@@ -2,14 +2,21 @@ import { certVerificate } from '@/api/cerfiticate'
 export let certVerMixin = { // 审核操作mixin
   data () {
     return {
-      isSend: false // 是否发送请求
+      isSend: false, // 是否发送请求
+      isLeftSend: false, // 左侧请求按钮loading
+      isRightSend: false // 右侧请求按钮loading
     }
   },
   methods: {
-    _certVerificate (data, type, message, verificationOpinion) { // type 0: 表示通过、送审等正常操作 2: 表示不通过、撤回等失败操作 3: 退回
-      // this.isSend = true
+    _certVerificate (data, type, message, direction, verificationOpinion) { // type 0: 表示通过、送审等正常操作 2: 表示不通过、撤回等失败操作 3: 退回
       if (this.isSend) return
-      this.isSend = true
+      if (
+        (direction === 'left' && this.isLeftSend === true) ||
+        (direction === 'right' && this.isRightSend === true)
+      ) {
+        return
+      }
+      direction === 'left' ? (this.isLeftSend = true) : (this.isRightSend = true)
       let { id, flowInstanceId } = data
       console.log(type, 'setType')
       certVerificate({
@@ -26,10 +33,12 @@ export let certVerMixin = { // 审核操作mixin
         this.$message({
           message: `${message}成功`
         })
-        this.isSend = false
+        this.isLeftSend = false
+        this.isRightSend = false
         this.$emit('handleSubmit')
       }).catch((err) => {
-        this.isSend = false
+        this.isLeftSend = false
+        this.isRightSend = false
         this.$emit('close')
         // this.$message.error(`${message}失败`)
         this.$message.error(`${err.message}`)

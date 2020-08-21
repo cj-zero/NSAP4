@@ -897,9 +897,9 @@ export default {
 </script>
 <style lang="scss" scoped>
 .ls-border {
-  // ::v-deep .el-tree-node > .el-tree-node__children {
-  //   overflow: none;
-  // }
+  ::v-deep .el-tree-node > .el-tree-node__children {
+    overflow: visible;
+  }
 }
 
 .dialog-mini .el-select {
