@@ -235,7 +235,7 @@ namespace Sap.Handler.Service
             }
             catch (Exception e)
             {
-                Log.Logger.Warning($"同步ID：{ServiceOrderId}失败,错误信息：{e.Message}", typeof(ServiceOrderSapHandler));
+                Log.Logger.Error($"同步ID：{ServiceOrderId}失败,错误信息：{e.Message}", typeof(ServiceOrderSapHandler));
             }
             
         }
