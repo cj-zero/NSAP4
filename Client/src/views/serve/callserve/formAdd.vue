@@ -1079,10 +1079,7 @@ export default {
       deep: true,
       handler(val) {
         console.log(this.form, val, 'customerId change')
-        // this.$nextTick(() => {
-
-        // })
-        // this.listQuery.CardCode = val.customerId;
+        this.listQuery.CardCode = val.customerId;
         getSerialNumber(this.listQuery)
           .then((res) => {
             this.SerialNumberList = res.data;
@@ -1096,6 +1093,26 @@ export default {
           });
       },
     },
+    // 'form.customerId': {
+    //   handler(val) {
+    //     console.log(this.form, val, 'customerId change')
+    //     // this.$nextTick(() => {
+
+    //     // })
+    //     // this.listQuery.CardCode = val.customerId;
+    //     getSerialNumber(this.listQuery)
+    //       .then((res) => {
+    //         this.SerialNumberList = res.data;
+    //         this.filterSerialNumberList = this.SerialNumberList;
+    //         this.SerialCount = res.count;
+    //         this.serLoad = false;
+    //         this.listLoading = false;
+    //       })
+    //       .catch((error) => {
+    //         console.log(error);
+    //       });
+    //   },
+    // },
     formList: {
       deep: true,
       handler (val) {
