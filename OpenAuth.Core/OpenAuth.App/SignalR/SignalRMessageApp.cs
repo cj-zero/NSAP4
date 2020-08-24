@@ -52,7 +52,7 @@ namespace OpenAuth.App.SignalR
         public async Task SendPendingNumber(SendRoleMessageReq req)
         {
 
-            await _hubContext.Clients.Groups(req.Role,req.RoleTwo).SendAsync("PendingNumber", _auth.GetUserName(), req.Message);
+            await _hubContext.Clients.Groups(req.Role,req.RoleTwo).SendAsync("PendingNumber", "系统", req.Message);
 
         }
         

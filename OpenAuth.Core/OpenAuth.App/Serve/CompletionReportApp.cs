@@ -89,22 +89,26 @@ namespace OpenAuth.App
                 workorder.Add(item.Id);
             }
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id), s => new ServiceWorkOrder { Status = 7 });
-            await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
+            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
                 Title = "技术员完成服务",
                 Details = $"感谢您对新威的支持。您的服务已完成，如有疑问请及时拨打客服电话：8008308866，新威客服会全力帮您继续跟进",
                 LogType = 1,
-                ServiceOrderId = req.ServiceOrderId
-            }, workorder);
-            await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
+                ServiceOrderId = req.ServiceOrderId,
+                ServiceWorkOrder = string.Join(',', workorder.ToArray()),
+                MaterialType = req.MaterialType
+            });
+            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
                 Title = "技术员完成售后维修",
                 Details = $"提交了《行为服务报告单》，完成了本次任务",
                 LogType = 2,
-                ServiceOrderId = req.ServiceOrderId
-            }, workorder);
+                ServiceOrderId = req.ServiceOrderId,
+                ServiceWorkOrder = string.Join(',', workorder.ToArray()),
+                MaterialType = req.MaterialType
+            });
             //反写完工报告Id至工单
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && string.IsNullOrEmpty(req.MaterialType) ? true : string.IsNullOrEmpty(s.MaterialCode) ? "其他设备" == s.ManufacturerSerialNumber : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType,
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id),
                 o => new ServiceWorkOrder { CompletionReportId = completionReportId });
             //解除隐私号码绑定
             //await UnbindProtectPhone(req.ServiceOrderId, req.MaterialType);
