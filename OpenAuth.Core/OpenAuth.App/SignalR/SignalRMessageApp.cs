@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Response;
 using OpenAuth.App.SignalR.Request;
 using OpenAuth.Repository.Interface;
 using System;
@@ -43,5 +44,17 @@ namespace OpenAuth.App.SignalR
         {
             await _hubContext.Clients.All.SendAsync("ReceiveMessage", _auth.GetUserName(), req.Message);
         }
+
+        /// <summary>
+        /// 推送待处理呼叫服务数量和待派单数量
+        /// </summary>
+        /// <returns></returns>
+        public async Task SendPendingNumber(SendRoleMessageReq req)
+        {
+
+            await _hubContext.Clients.Groups(req.Role,req.RoleTwo).SendAsync("PendingNumber", _auth.GetUserName(), req.Message);
+
+        }
+        
     }
 }

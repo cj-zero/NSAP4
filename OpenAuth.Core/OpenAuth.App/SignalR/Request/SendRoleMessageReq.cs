@@ -7,6 +7,8 @@ namespace OpenAuth.App.SignalR.Request
     public class SendRoleMessageReq
     {
         public string Role { get; set; }
+
+        public string RoleTwo { get; set; }
         public string Message { get; set; }
     }
 }
