@@ -962,7 +962,8 @@ namespace OpenAuth.App
                 Distance = (req.Latitude == 0 || s.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
                 s.Count,
                 s.ProblemTypeName,
-                MaterialTypeQty = s.MaterialTypeInfo.Count
+                MaterialTypeQty = s.MaterialTypeInfo.Count,
+                MaterialType = string.IsNullOrEmpty(s.MaterialTypeInfo.FirstOrDefault()) ? "其他设备" : s.MaterialTypeInfo.FirstOrDefault()
             }).ToList();
 
             var count = await query.CountAsync();
@@ -2474,34 +2475,38 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var ServiceOrderId = (await UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == SapOrderId).FirstOrDefaultAsync()).Id;
+            //获取当前服务单的设备类型接单状态进度
+            var orderTakeType = (await UnitWork.Find<ServiceWorkOrder>(null).Where(s => s.CurrentUserId == CurrentUserId && s.ServiceOrderId == ServiceOrderId)
+                .WhereIf("其他设备".Equals(MaterialType), a => a.MaterialCode == "其他设备")
+                .WhereIf(!"其他设备".Equals(MaterialType), o => o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")) == MaterialType).FirstOrDefaultAsync())?.OrderTakeType;
             //获取客户号码 做隐私处理
             string custMobile = (await GetProtectPhone(ServiceOrderId, MaterialType, 1)).Data;
             var query = UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == SapOrderId)
                 .Include(s => s.ServiceWorkOrders);
             var list = (await query
-            .ToListAsync()).Select(s => new
-            {
-                s.Id,
-                s.AppUserId,
-                s.Services,
-                s.Latitude,
-                s.Longitude,
-                s.Province,
-                s.City,
-                s.Area,
-                s.Addr,
-                s.Status,
-                CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
-                s.CustomerName,
-                s.Supervisor,
-                s.SalesMan,
-                s.U_SAP_ID,
-                s.ProblemTypeName,
-                s.ProblemTypeId,
-                s.NewestContacter,
-                custMobile,
-                OrderTakeType = s.ServiceWorkOrders.Where(o => o.ServiceOrderId == s.Id && o.CurrentUserId == CurrentUserId && "其他设备".Equals(MaterialType) ? o.MaterialCode == "其他设备" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")) == MaterialType).Select(s => s.OrderTakeType).Distinct().FirstOrDefault()
-            }).ToList();
+                         .ToListAsync()).Select(s => new
+                         {
+                             s.Id,
+                             s.AppUserId,
+                             s.Services,
+                             s.Latitude,
+                             s.Longitude,
+                             s.Province,
+                             s.City,
+                             s.Area,
+                             s.Addr,
+                             s.Status,
+                             CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
+                             s.CustomerName,
+                             s.Supervisor,
+                             s.SalesMan,
+                             s.U_SAP_ID,
+                             s.ProblemTypeName,
+                             s.ProblemTypeId,
+                             s.NewestContacter,
+                             custMobile,
+                             orderTakeType
+                         }).ToList();
             result.Data = list;
             return result;
         }
@@ -2533,7 +2538,9 @@ namespace OpenAuth.App
             var result = new TableData();
             string ProtectPhone = string.Empty;
             //获取技术员Id
-            int? TechnicianId = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == ServiceOrderId).ToListAsync()).Where(w => "其他设备".Equals(MaterialType) ? w.MaterialCode == "其他设备" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-")) == MaterialType).FirstOrDefault()?.CurrentUserId;
+            int? TechnicianId = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == ServiceOrderId)
+                .WhereIf("其他设备".Equals(MaterialType), w => w.MaterialCode == "其他设备")
+                .WhereIf(!"其他设备".Equals(MaterialType), w => w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-")) == MaterialType).FirstOrDefaultAsync())?.CurrentUserId;
             var query = from a in UnitWork.Find<AppUserMap>(null)
                         join b in UnitWork.Find<User>(null) on a.UserID equals b.Id into ab
                         from b in ab.DefaultIfEmpty()

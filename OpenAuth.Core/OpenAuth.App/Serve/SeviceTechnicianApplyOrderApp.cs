@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
+using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using NetOffice.WordApi;
 using OpenAuth.App.Interface;
@@ -33,7 +34,10 @@ namespace OpenAuth.App
         public async System.Threading.Tasks.Task ApplyNewOrErrorDevices(ApplyNewOrErrorDevicesReq request)
         {
             //获取当前设备类型服务信息
-            var currentMaterialTypeInfo = (await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == request.AppUserId && s.ServiceOrderId == request.ServiceOrderId).ToListAsync()).Where(s => "其他设备".Equals(request.MaterialType) ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == request.MaterialType).FirstOrDefault();
+            var currentMaterialTypeInfo = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == request.AppUserId && s.ServiceOrderId == request.ServiceOrderId)
+                .WhereIf("其他设备".Equals(request.MaterialType), a => a.MaterialCode == "其他设备")
+                .WhereIf(!"其他设备".Equals(request.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == request.MaterialType)
+                .FirstOrDefaultAsync();
             //发送消息至聊天室
             string head = "技术员核对设备有误提交给呼叫中心的信息";
             string Content = string.Empty;
@@ -50,7 +54,7 @@ namespace OpenAuth.App
                     obj.TechnicianId = request.AppUserId;
                     obj.CreateTime = DateTime.Now;
                     obj.IsSolved = 0;
-                    if (request.MaterialType.Equals((string.IsNullOrEmpty(item.newCode) ? "其他设备" : item.newCode.Substring(0, item.newCode.IndexOf("-"))), StringComparison.OrdinalIgnoreCase))
+                    if (request.MaterialType.Equals((("其他设备".Equals(item.newCode)) ? "其他设备" : item.newCode.Substring(0, item.newCode.IndexOf("-"))), StringComparison.OrdinalIgnoreCase))
                     {
                         obj.Status = currentMaterialTypeInfo.Status;
                         obj.OrderTakeType = currentMaterialTypeInfo.OrderTakeType;
@@ -83,7 +87,7 @@ namespace OpenAuth.App
                     obj.TechnicianId = request.AppUserId;
                     obj.CreateTime = DateTime.Now;
                     obj.IsSolved = 0;
-                    if (request.MaterialType.Equals((string.IsNullOrEmpty(item.ItemCode) ? "其他设备" : item.ItemCode.Substring(0, item.ItemCode.IndexOf("-"))), StringComparison.OrdinalIgnoreCase))
+                    if (request.MaterialType.Equals(("其他设备".Equals(item.ItemCode) ? "其他设备" : item.ItemCode.Substring(0, item.ItemCode.IndexOf("-"))), StringComparison.OrdinalIgnoreCase))
                     {
                         obj.Status = currentMaterialTypeInfo.Status;
                         obj.OrderTakeType = currentMaterialTypeInfo.OrderTakeType;
