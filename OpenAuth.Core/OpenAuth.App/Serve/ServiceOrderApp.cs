@@ -2549,7 +2549,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<int> GetServiceOrderCount()
         {
-            return UnitWork.Find<ServiceOrder>(u => u.Status == 1).Count();
+            return await UnitWork.Find<ServiceOrder>(u => u.Status == 1).CountAsync();
         }
         /// <summary>
         /// 获取为派单工单总数
@@ -2557,7 +2557,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<int> GetServiceWorkOrderCount()
         {
-            return UnitWork.Find<ServiceWorkOrder>(u => u.Status == 1).Count();
+            return await UnitWork.Find<ServiceWorkOrder>(u => u.Status == 1).CountAsync();
         }
         /// <summary>
         /// 获取隐私号码
