@@ -120,7 +120,6 @@ namespace OpenAuth.App
                                 o.CurrentUserId,
                                 MaterialType = "其他设备".Equals(o.MaterialCode) ? "其他设备" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-"))
                             }).ToList(),
-                            MaterialTypeInfo = a.ServiceWorkOrders.GroupBy(g => g.MaterialCode.Substring(0, g.MaterialCode.IndexOf("-"))).Select(s => s.Key).ToList(),
                         });
 
 
@@ -158,8 +157,7 @@ namespace OpenAuth.App
                         Orders = s.ToList()
                     }
                     ).ToList(),
-                    WorkOrderState = a.ServiceWorkOrders.Distinct().OrderBy(o => o.Status).FirstOrDefault()?.Status,
-                    MaterialTypeQty = a.MaterialTypeInfo.Count
+                    WorkOrderState = a.ServiceWorkOrders.Distinct().OrderBy(o => o.Status).FirstOrDefault()?.Status
                 });
 
             var result = new TableData();
@@ -2378,7 +2376,7 @@ namespace OpenAuth.App
                     Count = a.Count(),
                     orders = a.ToList(),
                     Status = s.ServiceWorkOrders.FirstOrDefault(b => "其他设备".Equals(a.Key) ? b.MaterialCode == "其他设备" : b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == a.Key)?.Status,
-                    MaterialTypeName = string.IsNullOrEmpty(a.Key) ? "其他设备" : MaterialTypeModel.Where(m => m.TypeAlias == a.Key).FirstOrDefault().TypeName
+                    MaterialTypeName = "其他设备".Equals(a.Key) ? "其他设备" : MaterialTypeModel.Where(m => m.TypeAlias == a.Key).FirstOrDefault().TypeName
                 })
             }).ToList();
             result.Data = list;
@@ -2559,7 +2557,7 @@ namespace OpenAuth.App
             }
             else
             {
-                ProtectPhone = AliPhoneNumberProtect.bindAxb(custMobile, TechnicianTel);
+                //ProtectPhone = AliPhoneNumberProtect.bindAxb(custMobile, TechnicianTel);
                 if (string.IsNullOrEmpty(ProtectPhone))
                 {
                     if (type == 1)

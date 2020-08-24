@@ -79,7 +79,10 @@ namespace OpenAuth.App
             pictures.ForEach(r => r.CompletionReportId = o.Id);
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
-            var workOrderList = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId).ToListAsync()).Where(s => string.IsNullOrEmpty(req.MaterialType) ? true : "其他设备".Equals(req.MaterialType) ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType).ToList();
+            var workOrderList = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId)
+                .WhereIf("其他设备".Equals(req.MaterialType), a => a.MaterialCode == "其他设备")
+                .WhereIf(!"其他设备".Equals(req.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == req.MaterialType)
+                .ToListAsync());
             List<int> workorder = new List<int>();
             foreach (var item in workOrderList)
             {
@@ -104,7 +107,7 @@ namespace OpenAuth.App
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && string.IsNullOrEmpty(req.MaterialType) ? true : string.IsNullOrEmpty(s.MaterialCode) ? "其他设备" == s.ManufacturerSerialNumber : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType,
                 o => new ServiceWorkOrder { CompletionReportId = completionReportId });
             //解除隐私号码绑定
-            await UnbindProtectPhone(req.ServiceOrderId, req.MaterialType);
+            //await UnbindProtectPhone(req.ServiceOrderId, req.MaterialType);
         }
 
 
