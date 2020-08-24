@@ -35,7 +35,18 @@ namespace OpenAuth.WebApi.Controllers
         [HttpGet]
         public TableData Load([FromQuery]QueryassetListReq request)
         {
-            return  _app.Load(request);
+            var result = new TableData();
+            try
+            {
+                return _app.Load(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
         }
 
         #region 获取单个自资产详情
@@ -112,8 +123,19 @@ namespace OpenAuth.WebApi.Controllers
         [HttpGet]
         public TableData GetListCategoryName()
         {
-            string ids = "SYS_AssetStatus,SYS_AssetCategory,SYS_AssetSJType,SYS_CategoryNondeterminacy,SYS_AssetSJWay"; 
-            return _app.GetListCategoryName(ids);
+            var result = new TableData();
+            try
+            {
+                string ids = "SYS_AssetStatus,SYS_AssetCategory,SYS_AssetSJType,SYS_CategoryNondeterminacy,SYS_AssetSJWay";
+                return _app.GetListCategoryName(ids);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
         }
 
         /// <summary>
@@ -124,7 +146,18 @@ namespace OpenAuth.WebApi.Controllers
         [HttpGet]
         public TableData GetListOrg(string name)
         {
-            return _app.GetListOrg(name);
+            var result = new TableData();
+            try
+            {
+                return _app.GetListOrg(name);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
         }
 
         /// <summary>
@@ -136,7 +169,19 @@ namespace OpenAuth.WebApi.Controllers
         [HttpGet]
         public TableData GetListUser(string name,string Orgid)
         {
-            return _app.GetListUser(name, Orgid);
+            var result = new TableData();
+            try
+            {
+                return _app.GetListUser(name, Orgid);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+            
         }
 
 
@@ -146,7 +191,18 @@ namespace OpenAuth.WebApi.Controllers
         [HttpGet]
         public TableData AssetInspectsLoad(string AssetId)
         {
-            return  _app.AssetInspectsLoad(AssetId);
+            var result = new TableData();
+            try
+            {
+                return _app.AssetInspectsLoad(AssetId);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
         }
 
         /// <summary>
@@ -154,8 +210,20 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         [HttpGet]
         public async Task<TableData> AssetOperationsLoad(string AssetId)
-        { 
-            return await _app.AssetOperationsLoad(AssetId);
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.AssetOperationsLoad(AssetId);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+            
         }
 
     }
