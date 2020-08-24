@@ -679,6 +679,8 @@ namespace OpenAuth.App
                                select new { ServiceOrderId = g.Key, U_SAP_ID, MaterialTypes = WorkMTypes, WorkMaterialTypes= MTypes };
             var grouplist = grouplistsql.ToList();
 
+            result.Count = query.Count();
+
             grouplist = grouplist.OrderBy(s => s.U_SAP_ID).Skip((req.page - 1) * req.limit)
                 .Take(req.limit).ToList();
             result.Data = grouplist;
