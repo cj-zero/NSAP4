@@ -33,7 +33,7 @@ namespace OpenAuth.App
         public async System.Threading.Tasks.Task ApplyNewOrErrorDevices(ApplyNewOrErrorDevicesReq request)
         {
             //获取当前设备类型服务信息
-            var currentMaterialTypeInfo = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == request.AppUserId && s.ServiceOrderId == request.ServiceOrderId && "其他设备".Equals(request.MaterialType) ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == request.MaterialType).FirstOrDefaultAsync();
+            var currentMaterialTypeInfo = (await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == request.AppUserId && s.ServiceOrderId == request.ServiceOrderId).ToListAsync()).Where(s => "其他设备".Equals(request.MaterialType) ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == request.MaterialType).FirstOrDefault();
             //发送消息至聊天室
             string head = "技术员核对设备有误提交给呼叫中心的信息";
             string Content = string.Empty;
