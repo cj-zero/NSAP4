@@ -656,8 +656,9 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.a.ManufacturerSerialNumber.Contains(req.QryManufSN))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.b.RecepUserName.Contains(req.QryRecepUser))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.a.ProblemTypeId.Equals(req.QryProblemType))
-                         .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
-                         .Where(q => q.b.U_SAP_ID != null);
+                         .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.b.CreateTime >= req.QryCreateTimeFrom && q.b.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.b.ContactTel.Equals(req.ContactTel) || q.b.NewestContactTel.Equals(req.ContactTel))
+                         .Where(q => q.b.U_SAP_ID != null&& q.a.Status>0 && q.a.Status<7 && q.b.Status==2);
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
@@ -849,9 +850,10 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.a.ManufacturerSerialNumber.Contains(req.QryManufSN))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.b.RecepUserName.Contains(req.QryRecepUser))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.c.Name.Contains(req.QryProblemType))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.b.ContactTel.Equals(req.ContactTel) || q.b.NewestContactTel.Equals(req.ContactTel))
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                          .WhereIf(req.QryMaterialTypes != null && req.QryMaterialTypes.Count > 0, q => req.QryMaterialTypes.Contains(q.a.MaterialCode == "其他设备" ? "其他设备" : q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))))
-                         .Where(q => q.a.FromType != 2);
+                         .Where(q => q.b.U_SAP_ID != null && q.a.Status > 0 && q.a.Status < 7 && q.b.Status == 2);
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
@@ -2516,7 +2518,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<int> GetServiceOrderCount()
         {
-            return UnitWork.Find<ServiceOrder>(u => u.Status == 1).Count();
+            return await UnitWork.Find<ServiceOrder>(u => u.Status == 1).CountAsync();
         }
         /// <summary>
         /// 获取为派单工单总数
@@ -2524,7 +2526,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<int> GetServiceWorkOrderCount()
         {
-            return UnitWork.Find<ServiceWorkOrder>(u => u.Status == 1).Count();
+            return await UnitWork.Find<ServiceWorkOrder>(u => u.Status == 1).CountAsync();
         }
         /// <summary>
         /// 获取隐私号码
