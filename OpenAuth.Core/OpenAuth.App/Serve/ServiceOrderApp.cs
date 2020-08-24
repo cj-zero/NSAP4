@@ -2409,7 +2409,7 @@ namespace OpenAuth.App
                     UnitName = "台",
                     Count = a.Count(),
                     orders = a.ToList(),
-                    Status = s.ServiceWorkOrders.FirstOrDefault(b => "其他设备".Equals(a.Key) ? b.MaterialCode == "其他设备" : b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == a.Key)?.Status,
+                    Status = s.ServiceWorkOrders.FirstOrDefault(b => "其他设备".Equals(a.Key) ? b.MaterialCode == "其他设备" : b.MaterialCode.Contains(a.Key))?.Status,
                     MaterialTypeName = "其他设备".Equals(a.Key) ? "其他设备" : MaterialTypeModel.Where(m => m.TypeAlias == a.Key).FirstOrDefault().TypeName
                 })
             }).ToList();
