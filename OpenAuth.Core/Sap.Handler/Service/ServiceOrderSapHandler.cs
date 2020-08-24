@@ -156,7 +156,7 @@ namespace Sap.Handler.Service
                 //{
                 //    sc.Origin = (int)thisSorder.FromId;
                 //}
-                if (thisSorder.ServiceOrderSNs!=null && thisSorder.ServiceOrderSNs.Count > 0)
+                if (thisSorder.ServiceOrderSNs != null && thisSorder.ServiceOrderSNs.Count > 0)
                 {
                     var thisSN = thisSorder.ServiceOrderSNs[0];
                     if (!string.IsNullOrEmpty(thisSN.ItemCode) && IsValidItemCode(thisSN.ItemCode))
@@ -180,7 +180,7 @@ namespace Sap.Handler.Service
                 {
                     var queryp = UnitWork.Find<ProblemType>(s => s.Id.Equals(thisSorder.ProblemTypeId)).FirstOrDefault();
                     var pbltype = queryp.MapTo<ProblemType>();
-                    if (pbltype!=null)
+                    if (pbltype != null)
                     {
                         sc.ProblemType = pbltype.PrblmTypID;
                     }
