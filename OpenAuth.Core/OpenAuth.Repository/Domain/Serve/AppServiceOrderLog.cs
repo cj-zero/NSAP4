@@ -24,14 +24,14 @@ namespace OpenAuth.Repository.Domain
     {
         public AppServiceOrderLog()
         {
-          this.Title= string.Empty;
-          this.Details= string.Empty;
-          this.CreateTime= DateTime.Now;
-          this.CreateUserId= string.Empty;
-          this.CreateUserName= string.Empty;
+            this.Title = string.Empty;
+            this.Details = string.Empty;
+            this.CreateTime = DateTime.Now;
+            this.CreateUserId = string.Empty;
+            this.CreateUserName = string.Empty;
         }
 
-        
+
         /// <summary>
         /// 头
         /// </summary>
@@ -67,13 +67,19 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 工单Id
         /// </summary>
-        [Description("工单Id")]
-        public int? ServiceWorkOrder { get; set; }
+        [Description("工单Id集合")]
+        public string ServiceWorkOrder { get; set; }
 
         /// <summary>
         /// 日志类型
         /// </summary>
         [Description("日志类型")]
         public int? LogType { get; set; }
+
+        /// <summary>
+        /// 设备类型
+        /// </summary>
+        [Description("设备类型")]
+        public string MaterialType { get; set; }
     }
 }
