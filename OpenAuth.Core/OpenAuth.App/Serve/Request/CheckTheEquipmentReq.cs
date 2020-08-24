@@ -28,5 +28,11 @@ namespace OpenAuth.App.Request
         /// </summary>
         [Required]
         public int CurrentUserId { get; set; }
+
+        /// <summary>
+        /// 设备类型
+        /// </summary>
+        [Required]
+        public string MaterialType { get; set; }
     }
 }

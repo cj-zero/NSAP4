@@ -51,15 +51,21 @@ namespace OpenAuth.App.Request
         /// 
         /// </summary>
         public int? ServiceOrderId { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        public int? ServiceWorkOrder { get; set; }
 
         /// <summary>
         /// 日志类型 1客户 2技术员
         /// </summary>
         public int LogType { get; set; }
+
+        /// <summary>
+        /// 服务工单Id集合
+        /// </summary>
+        public string ServiceWorkOrder { get; set; }
+
+        /// <summary>
+        /// 设备类型
+        /// </summary>
+        public string MaterialType { get; set; }
 
         //todo:添加自己的请求字段
     }
