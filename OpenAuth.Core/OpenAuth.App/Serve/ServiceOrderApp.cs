@@ -368,14 +368,17 @@ namespace OpenAuth.App
             await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"修改服务工单单状态为:{statusStr}", ActionType = "修改服务工单状态", ServiceWorkOrderId = id });
         }
         /// <summary>
-        /// 查询超24小时未处理的订单
+        /// 查询超时未处理的订单
         /// </summary>
         /// <returns></returns>
-        public async Task<List<ServiceOrder>> FindTimeoutOrder()
+        public async Task<List<ServiceOrder>> FindTimeoutOrder(int hours = 1)
         {
             var query = UnitWork.Find<ServiceOrder>(null);
-            query = query.Where(s => s.Status == 1 && (DateTime.Now - s.CreateTime).Value.Hours >= 24);
-            return await query.ToListAsync();
+            new TimeSpan(24, 0, 0);
+            query = query.Where(s => s.Status == 1);
+            var list = await query.ToListAsync();
+            list = list.Where(s => (DateTime.Now - s.CreateTime.Value).Hours > hours).ToList();
+            return list;
         }
         /// <summary>
         /// 待确认服务呼叫列表
