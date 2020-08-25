@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
@@ -62,6 +63,24 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 _app.Update(obj);
+
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        [HttpPost]
+        public async Task<Response> MarkRead([FromBody] string[] ids)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.MarkRead(ids);
 
             }
             catch (Exception ex)

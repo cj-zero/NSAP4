@@ -1039,27 +1039,27 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
-        /// <summary>
-        /// 获取隐私号码
-        /// </summary>
-        /// <param name="ServiceOrderId"></param>
-        /// <param name="MaterialType"></param>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        [HttpGet]
-        public async Task<TableData> GetProtectPhone(int ServiceOrderId, string MaterialType, int type)
-        {
-            var result = new TableData();
-            try
-            {
-                result = await _serviceOrderApp.GetProtectPhone(ServiceOrderId, MaterialType, type);
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.Message;
-            }
-            return result;
-        }
+        ///// <summary>
+        ///// 获取隐私号码
+        ///// </summary>
+        ///// <param name="ServiceOrderId"></param>
+        ///// <param name="MaterialType"></param>
+        ///// <param name="type"></param>
+        ///// <returns></returns>
+        //[HttpGet]
+        //public async Task<TableData> GetProtectPhone(int ServiceOrderId, string MaterialType, int type)
+        //{
+        //    var result = new TableData();
+        //    try
+        //    {
+        //        result = await _serviceOrderApp.GetProtectPhone(ServiceOrderId, MaterialType, type);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        result.Code = 500;
+        //        result.Message = ex.Message;
+        //    }
+        //    return result;
+        //}
     }
 }

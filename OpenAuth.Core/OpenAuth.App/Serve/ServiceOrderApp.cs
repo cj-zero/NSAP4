@@ -119,7 +119,7 @@ namespace OpenAuth.App
                                 o.MaterialCode,
                                 o.CurrentUserId,
                                 MaterialType = "其他设备".Equals(o.MaterialCode) ? "其他设备" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-"))
-                            }).ToList()
+                            }).ToList(),
                         });
 
 
@@ -157,7 +157,7 @@ namespace OpenAuth.App
                         Orders = s.ToList()
                     }
                     ).ToList(),
-                    WorkOrderState = a.ServiceWorkOrders.Distinct().OrderBy(o => o.Status).FirstOrDefault()?.Status,
+                    WorkOrderState = a.ServiceWorkOrders.Distinct().OrderBy(o => o.Status).FirstOrDefault()?.Status
                 });
 
             var result = new TableData();
@@ -368,14 +368,17 @@ namespace OpenAuth.App
             await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"修改服务工单单状态为:{statusStr}", ActionType = "修改服务工单状态", ServiceWorkOrderId = id });
         }
         /// <summary>
-        /// 查询超24小时未处理的订单
+        /// 查询超时未处理的订单
         /// </summary>
         /// <returns></returns>
-        public async Task<List<ServiceOrder>> FindTimeoutOrder()
+        public async Task<List<ServiceOrder>> FindTimeoutOrder(int hours = 1)
         {
             var query = UnitWork.Find<ServiceOrder>(null);
-            query = query.Where(s => s.Status == 1 && (DateTime.Now - s.CreateTime).Value.Hours >= 24);
-            return await query.ToListAsync();
+            new TimeSpan(24, 0, 0);
+            query = query.Where(s => s.Status == 1);
+            var list = await query.ToListAsync();
+            list = list.Where(s => (DateTime.Now - s.CreateTime.Value).Hours > hours).ToList();
+            return list;
         }
         /// <summary>
         /// 待确认服务呼叫列表
@@ -656,8 +659,9 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.a.ManufacturerSerialNumber.Contains(req.QryManufSN))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.b.RecepUserName.Contains(req.QryRecepUser))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.a.ProblemTypeId.Equals(req.QryProblemType))
-                         .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
-                         .Where(q => q.b.U_SAP_ID != null);
+                         .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.b.CreateTime >= req.QryCreateTimeFrom && q.b.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.b.ContactTel.Equals(req.ContactTel) || q.b.NewestContactTel.Equals(req.ContactTel))
+                         .Where(q => q.b.U_SAP_ID != null&& q.a.Status>0 && q.a.Status<7 && q.b.Status==2);
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
@@ -675,9 +679,11 @@ namespace OpenAuth.App
                                group c by c.ServiceOrderId into g
                                let U_SAP_ID = g.Select(a => a.U_SAP_ID).First()
                                let MTypes = g.Select(o => o.MaterialType == "其他设备" ? "其他设备" : MaterialTypeModel.Where(u => u.TypeAlias == o.MaterialType).FirstOrDefault().TypeName).ToArray()
-                               let WorkMTypes=g.Select(o => o.MaterialType == "其他设备" ? "其他设备": o.MaterialType)
-                               select new { ServiceOrderId = g.Key, U_SAP_ID, MaterialTypes = WorkMTypes, WorkMaterialTypes= MTypes };
+                               let WorkMTypes = g.Select(o => o.MaterialType == "其他设备" ? "其他设备" : o.MaterialType)
+                               select new { ServiceOrderId = g.Key, U_SAP_ID, MaterialTypes = WorkMTypes, WorkMaterialTypes = MTypes };
             var grouplist = grouplistsql.ToList();
+
+            result.Count = grouplistsql.Count();
 
             grouplist = grouplist.OrderBy(s => s.U_SAP_ID).Skip((req.page - 1) * req.limit)
                 .Take(req.limit).ToList();
@@ -782,7 +788,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceWorkOrders.Any(a => a.ManufacturerSerialNumber.Contains(req.QryManufSN)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.RecepUserName.Contains(req.QryRecepUser))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ServiceWorkOrders.Any(a => a.ProblemTypeId.Equals(req.QryProblemType)))
-                .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.ServiceWorkOrders.Any(a => a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440)))
+                .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.ContactTel.Contains(req.ContactTel) || q.NewestContactTel.Contains(req.ContactTel))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromType), q => q.ServiceWorkOrders.Any(a => a.FromType.Equals(Convert.ToInt32(req.QryFromType))))
                 .Where(q => q.Status == 2);
@@ -811,7 +817,7 @@ namespace OpenAuth.App
                 ServiceWorkOrders = q.ServiceWorkOrders.Where(a => (string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId) || a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
                 && (string.IsNullOrWhiteSpace(req.QryState) || a.Status.Equals(Convert.ToInt32(req.QryState)))
                 && (string.IsNullOrWhiteSpace(req.QryManufSN) || a.ManufacturerSerialNumber.Contains(req.QryManufSN))
-                && ((req.QryCreateTimeFrom == null || req.QryCreateTimeTo == null) || (a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
+                //&& ((req.QryCreateTimeFrom == null || req.QryCreateTimeTo == null) || (a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
                 && (string.IsNullOrWhiteSpace(req.QryFromType) || a.FromType.Equals(Convert.ToInt32(req.QryFromType)))).ToList()
             });
 
@@ -847,9 +853,10 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.a.ManufacturerSerialNumber.Contains(req.QryManufSN))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.b.RecepUserName.Contains(req.QryRecepUser))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.c.Name.Contains(req.QryProblemType))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.b.ContactTel.Equals(req.ContactTel) || q.b.NewestContactTel.Equals(req.ContactTel))
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
-                         .WhereIf(req.QryMaterialTypes != null && req.QryMaterialTypes.Count > 0, q => req.QryMaterialTypes.Contains(q.a.MaterialCode== "其他设备" ? "其他设备": q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))))
-                         .Where(q => q.a.FromType != 2);
+                         .WhereIf(req.QryMaterialTypes != null && req.QryMaterialTypes.Count > 0, q => req.QryMaterialTypes.Contains(q.a.MaterialCode == "其他设备" ? "其他设备" : q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))))
+                         .Where(q => q.b.U_SAP_ID != null && q.a.Status > 0 && q.a.Status < 7 && q.b.Status == 2);
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
@@ -932,6 +939,7 @@ namespace OpenAuth.App
                     s.CreateTime,
                     s.U_SAP_ID,
                     Count = s.ServiceWorkOrders.Where(w => w.ServiceOrderId == s.Id && w.CurrentUserId == req.TechnicianId).Count(),
+                    MaterialTypeInfo = s.ServiceWorkOrders.GroupBy(g => g.MaterialCode.Substring(0, g.MaterialCode.IndexOf("-"))).Select(s => s.Key).ToList(),
                     s.ProblemTypeName
                 });
 
@@ -958,7 +966,9 @@ namespace OpenAuth.App
                 s.U_SAP_ID,
                 Distance = (req.Latitude == 0 || s.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
                 s.Count,
-                s.ProblemTypeName
+                s.ProblemTypeName,
+                MaterialTypeQty = s.MaterialTypeInfo.Count,
+                MaterialType = string.IsNullOrEmpty(s.MaterialTypeInfo.FirstOrDefault()) ? "其他设备" : s.MaterialTypeInfo.FirstOrDefault()
             }).ToList();
 
             var count = await query.CountAsync();
@@ -1083,21 +1093,25 @@ namespace OpenAuth.App
             });
             await UnitWork.SaveAsync();
 
-            await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
+            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
                 Title = "技术员接单",
                 Details = "已为您分配专属技术员进行处理，感谢您的耐心等待",
                 LogType = 1,
-                ServiceOrderId = serviceOrderId
-            }, req.ServiceWorkOrderIds);
+                ServiceOrderId = serviceOrderId,
+                ServiceWorkOrder = String.Join(',', req.ServiceWorkOrderIds.ToArray()),
+                MaterialType = "其他设备".Equals(workOrderInfo.FirstOrDefault().MaterialCode) ? "其他设备" : workOrderInfo.FirstOrDefault().MaterialCode.Substring(0, workOrderInfo.FirstOrDefault().MaterialCode.IndexOf("-"))
+            });
 
-            await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
+            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
                 Title = "技术员接单成功",
                 Details = "已接单成功，请选择服务方式：远程服务或上门服务",
                 LogType = 2,
-                ServiceOrderId = serviceOrderId
-            }, req.ServiceWorkOrderIds);
+                ServiceOrderId = serviceOrderId,
+                ServiceWorkOrder = String.Join(',', req.ServiceWorkOrderIds.ToArray()),
+                MaterialType = "其他设备".Equals(workOrderInfo.FirstOrDefault().MaterialCode) ? "其他设备" : workOrderInfo.FirstOrDefault().MaterialCode.Substring(0, workOrderInfo.FirstOrDefault().MaterialCode.IndexOf("-"))
+            });
             await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{u.User.Name}接单工单：{string.Join(",", req.ServiceWorkOrderIds)}", ActionType = "技术员接单" }, req.ServiceWorkOrderIds);
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = req.ServiceOrderId, Content = "技术员已接单成功，请尽快选择服务", AppUserId = 0 });
             await PushMessageToApp(req.TechnicianId, "接单成功提醒", "您已成功接取一个新的售后服务，请尽快处理");
@@ -1141,13 +1155,13 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task BookingWorkOrder(BookingWorkOrderReq req)
         {
-            var orderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && "其他设备".Equals(req.MaterialType) ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType).Select(o => o.Id).ToListAsync();
+            var orderIds = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId).ToListAsync()).Where(s => "其他设备".Equals(req.MaterialType) ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType).Select(s => s.Id).ToList();
             List<int> workOrderIds = new List<int>();
             foreach (var id in orderIds)
             {
                 workOrderIds.Add(id);
             }
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && "其他设备".Equals(req.MaterialType) ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType, o => new ServiceWorkOrder
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workOrderIds.Contains(s.Id), o => new ServiceWorkOrder
             {
                 BookingDate = req.BookingDate,
                 OrderTakeType = 4,
@@ -1159,7 +1173,9 @@ namespace OpenAuth.App
                 Title = "技术员预约服务时间",
                 Details = $"为您分配的技术员预约了服务时间，请注意接听来电",
                 LogType = 1,
-                ServiceOrderId = req.ServiceOrderId
+                ServiceOrderId = req.ServiceOrderId,
+                ServiceWorkOrder = string.Join(',', workOrderIds.ToArray()),
+                MaterialType = req.MaterialType
             });
 
             await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
@@ -1167,7 +1183,9 @@ namespace OpenAuth.App
                 Title = "技术员预约时间成功",
                 Details = $"已预约时间，请尽快完成电访，并安排你的服务行程。避免可能存在的行程风险问题",
                 LogType = 2,
-                ServiceOrderId = req.ServiceOrderId
+                ServiceOrderId = req.ServiceOrderId,
+                ServiceWorkOrder = string.Join(',', workOrderIds.ToArray()),
+                MaterialType = req.MaterialType
             });
             await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{req.CurrentUserId}预约工单{string.Join(",", workOrderIds)}", ActionType = "预约工单" }, workOrderIds);
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = req.ServiceOrderId, Content = "技术员已预约上门时间成功，请尽早安排行程", AppUserId = 0 });
@@ -1200,7 +1218,8 @@ namespace OpenAuth.App
                         await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id == int.Parse(itemcheck), o => new ServiceWorkOrder
                         {
                             IsCheck = 1,
-                            Status = 4
+                            Status = 4,
+                            OrderTakeType = 5
                         });
                         await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{req.CurrentUserId}核对工单{itemcheck}设备（成功）", ActionType = "核对设备", ServiceWorkOrderId = int.Parse(itemcheck) });
                     }
@@ -1224,20 +1243,24 @@ namespace OpenAuth.App
                 }
             }
             await UnitWork.SaveAsync();
-            await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
+            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
                 Title = "技术员已外出",
                 Details = $"技术员当前正在为您上门服务",
                 LogType = 1,
-                ServiceOrderId = req.ServiceOrderId
-            }, obj);
-            await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
+                ServiceOrderId = req.ServiceOrderId,
+                ServiceWorkOrder = req.CheckWorkOrderIds,
+                MaterialType = req.MaterialType
+            });
+            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
                 Title = "技术员完成设备信息核对",
                 Details = $"已核对设备，请尽快开始为客户提供高效优质的服务",
                 LogType = 2,
-                ServiceOrderId = req.ServiceOrderId
-            }, obj);
+                ServiceOrderId = req.ServiceOrderId,
+                ServiceWorkOrder = req.CheckWorkOrderIds,
+                MaterialType = req.MaterialType
+            });
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = req.ServiceOrderId, Content = "技术员已核对设备，请完成维修任务", AppUserId = 0 });
         }
 
@@ -1313,22 +1336,26 @@ namespace OpenAuth.App
                 Status = 2
             });
             await UnitWork.SaveAsync();
-            var serviceOrderId = (await UnitWork.Find<ServiceWorkOrder>(s => req.WorkOrderIds.Contains(s.Id)).FirstOrDefaultAsync()).ServiceOrderId;
-            await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
+            var serviceOrderInfo = await UnitWork.Find<ServiceWorkOrder>(s => req.WorkOrderIds.Contains(s.Id)).FirstOrDefaultAsync();
+            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
                 Title = "技术员接单",
                 Details = "已为您分配专属技术员进行处理，感谢您的耐心等待",
                 LogType = 1,
-                ServiceOrderId = serviceOrderId
-            }, req.WorkOrderIds);
+                ServiceOrderId = serviceOrderInfo.ServiceOrderId,
+                ServiceWorkOrder = String.Join(",", req.WorkOrderIds.ToArray()),
+                MaterialType = "其他设备".Equals(serviceOrderInfo.MaterialCode) ? "其他设备" : serviceOrderInfo.MaterialCode.Substring(0, serviceOrderInfo.MaterialCode.IndexOf("-"))
+            });
 
-            await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
+            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
                 Title = "技术员接单成功",
                 Details = "已接单成功，请选择服务方式：远程服务或上门服务",
                 LogType = 2,
-                ServiceOrderId = serviceOrderId
-            }, req.WorkOrderIds);
+                ServiceOrderId = serviceOrderInfo.ServiceOrderId,
+                ServiceWorkOrder = String.Join(",", req.WorkOrderIds.ToArray()),
+                MaterialType = "其他设备".Equals(serviceOrderInfo.MaterialCode) ? "其他设备" : serviceOrderInfo.MaterialCode.Substring(0, serviceOrderInfo.MaterialCode.IndexOf("-"))
+            });
             await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{string.Join(",", req.WorkOrderIds)}", ActionType = "主管派单工单" }, req.WorkOrderIds);
             await PushMessageToApp(req.CurrentUserId, "派单成功提醒", "您已被派有一个新的售后服务，请尽快处理");
         }
@@ -1527,7 +1554,13 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task UpdateWorkOrderDescription(UpdateWorkOrderDescriptionReq request)
         {
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId && s.CurrentUserId == request.CurrentUserId && "其他设备".Equals(request.MaterialType) ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == request.MaterialType, e => new ServiceWorkOrder
+            var orderIds = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId && s.CurrentUserId == request.CurrentUserId).ToListAsync()).Where(s => "其他设备".Equals(request.MaterialType) ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == request.MaterialType).Select(s => s.Id).ToList();
+            List<int> workOrderIds = new List<int>();
+            foreach (var id in orderIds)
+            {
+                workOrderIds.Add(id);
+            }
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId && s.CurrentUserId == request.CurrentUserId && orderIds.Contains(s.Id), e => new ServiceWorkOrder
             {
                 ProcessDescription = request.Description
             });
@@ -1541,11 +1574,25 @@ namespace OpenAuth.App
         public async Task SaveOrderTakeType(SaveWorkOrderTakeTypeReq request)
         {
             int status = 2;
+            //拨打完电话 工单状态变为已预约
             if (request.Type == 3)
             {
                 status = 3;
             }
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId && s.CurrentUserId == request.CurrentUserId && (string.IsNullOrEmpty(s.MaterialCode) ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-"))) == request.MaterialType, e => new ServiceWorkOrder
+            else if (request.Type > 4)
+            {
+                status = 4;
+            }
+            var orderIds = await UnitWork.Find<ServiceWorkOrder>(null).Where(s => s.ServiceOrderId == request.ServiceOrderId && s.CurrentUserId == request.CurrentUserId)
+                .WhereIf("其他设备".Equals(request.MaterialType), a => a.MaterialCode == "其他设备")
+                .WhereIf(!"其他设备".Equals(request.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == request.MaterialType).Select(s => s.Id)
+                .ToListAsync();
+            List<int> workOrderIds = new List<int>();
+            foreach (var id in orderIds)
+            {
+                workOrderIds.Add(id);
+            }
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => workOrderIds.Contains(s.Id), e => new ServiceWorkOrder
             {
                 OrderTakeType = request.Type,
                 Status = status
@@ -2294,7 +2341,7 @@ namespace OpenAuth.App
             }
             else
             {
-                currentTechnicianId = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && "其他设备".Equals(req.MaterialType) ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType).Distinct().FirstOrDefaultAsync())?.CurrentUserId;
+                currentTechnicianId = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId).ToListAsync()).Where(s => "其他设备".Equals(req.MaterialType) ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType).FirstOrDefault()?.CurrentUserId;
             }
             data.Add("TechnicianId", currentTechnicianId);
             //获取技术员电话
@@ -2331,6 +2378,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
             var query = UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId)
                 .Include(s => s.ServiceOrderSNs)
                 .Include(s => s.ServiceWorkOrders);
@@ -2363,7 +2411,8 @@ namespace OpenAuth.App
                     UnitName = "台",
                     Count = a.Count(),
                     orders = a.ToList(),
-                    Status = s.ServiceWorkOrders.FirstOrDefault(b => "其他设备".Equals(a.Key) ? b.MaterialCode == "其他设备" : b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == a.Key)?.Status
+                    Status = s.ServiceWorkOrders.FirstOrDefault(b => "其他设备".Equals(a.Key) ? b.MaterialCode == "其他设备" : b.MaterialCode.Contains(a.Key))?.Status,
+                    MaterialTypeName = "其他设备".Equals(a.Key) ? "其他设备" : MaterialTypeModel.Where(m => m.TypeAlias == a.Key).FirstOrDefault().TypeName
                 })
             }).ToList();
             result.Data = list;
@@ -2386,6 +2435,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
             var query = UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == SapOrderId)
                         .Include(s => s.ServiceWorkOrders)
                         .Select(a => new
@@ -2399,7 +2449,7 @@ namespace OpenAuth.App
                             a.NewestContacter,
                             a.NewestContactTel,
                             AppCustId = a.AppUserId,
-                            ServiceWorkOrders = a.ServiceWorkOrders.Where(w => w.CurrentUserId == CurrentUserId && string.IsNullOrEmpty(MaterialType) ? true : (string.IsNullOrEmpty(w.MaterialCode) ? "其他设备" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-"))) == MaterialType).Select(o => new
+                            ServiceWorkOrders = a.ServiceWorkOrders.Where(w => string.IsNullOrEmpty(MaterialType) ? true : w.CurrentUserId == CurrentUserId && "其他设备".Equals(MaterialType) ? w.MaterialCode == "其他设备" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-")) == MaterialType).Select(o => new
                             {
                                 o.Id,
                                 o.Status,
@@ -2435,7 +2485,7 @@ namespace OpenAuth.App
                         Count = s.Count(),
                         Orders = s.ToList(),
                         UnitName = "台",
-                        MaterialTypeName = string.Empty
+                        MaterialTypeName = string.IsNullOrEmpty(s.Key) ? "其他设备" : MaterialTypeModel.Where(a => a.TypeAlias == s.Key).FirstOrDefault().TypeName
                     }
                     ).ToList()
                 });
@@ -2460,34 +2510,38 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var ServiceOrderId = (await UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == SapOrderId).FirstOrDefaultAsync()).Id;
+            //获取当前服务单的设备类型接单状态进度
+            var orderTakeType = (await UnitWork.Find<ServiceWorkOrder>(null).Where(s => s.CurrentUserId == CurrentUserId && s.ServiceOrderId == ServiceOrderId)
+                .WhereIf("其他设备".Equals(MaterialType), a => a.MaterialCode == "其他设备")
+                .WhereIf(!"其他设备".Equals(MaterialType), o => o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")) == MaterialType).FirstOrDefaultAsync())?.OrderTakeType;
             //获取客户号码 做隐私处理
             string custMobile = (await GetProtectPhone(ServiceOrderId, MaterialType, 1)).Data;
             var query = UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == SapOrderId)
                 .Include(s => s.ServiceWorkOrders);
             var list = (await query
-            .ToListAsync()).Select(s => new
-            {
-                s.Id,
-                s.AppUserId,
-                s.Services,
-                s.Latitude,
-                s.Longitude,
-                s.Province,
-                s.City,
-                s.Area,
-                s.Addr,
-                s.Status,
-                CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
-                s.CustomerName,
-                s.Supervisor,
-                s.SalesMan,
-                s.U_SAP_ID,
-                s.ProblemTypeName,
-                s.ProblemTypeId,
-                s.NewestContacter,
-                custMobile,
-                OrderTakeType = s.ServiceWorkOrders.Where(o => o.ServiceOrderId == s.Id && o.CurrentUserId == CurrentUserId && "其他设备".Equals(MaterialType) ? o.MaterialCode == "其他设备" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")) == MaterialType).Select(s => s.OrderTakeType).Distinct().FirstOrDefault()
-            }).ToList();
+                         .ToListAsync()).Select(s => new
+                         {
+                             s.Id,
+                             s.AppUserId,
+                             s.Services,
+                             s.Latitude,
+                             s.Longitude,
+                             s.Province,
+                             s.City,
+                             s.Area,
+                             s.Addr,
+                             s.Status,
+                             CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
+                             s.CustomerName,
+                             s.Supervisor,
+                             s.SalesMan,
+                             s.U_SAP_ID,
+                             s.ProblemTypeName,
+                             s.ProblemTypeId,
+                             s.NewestContacter,
+                             custMobile,
+                             orderTakeType
+                         }).ToList();
             result.Data = list;
             return result;
         }
@@ -2495,9 +2549,9 @@ namespace OpenAuth.App
         /// 获取待处理服务单总数
         /// </summary>
         /// <returns></returns>
-        public async Task<int> GetServiceOrderCount() 
+        public async Task<int> GetServiceOrderCount()
         {
-            return UnitWork.Find<ServiceOrder>(u => u.Status == 1).Count();
+            return await UnitWork.Find<ServiceOrder>(u => u.Status == 1).CountAsync();
         }
         /// <summary>
         /// 获取为派单工单总数
@@ -2505,7 +2559,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<int> GetServiceWorkOrderCount()
         {
-            return UnitWork.Find<ServiceWorkOrder>(u => u.Status == 1).Count();
+            return await UnitWork.Find<ServiceWorkOrder>(u => u.Status == 1).CountAsync();
         }
         /// <summary>
         /// 获取隐私号码
@@ -2519,7 +2573,9 @@ namespace OpenAuth.App
             var result = new TableData();
             string ProtectPhone = string.Empty;
             //获取技术员Id
-            int? TechnicianId = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == ServiceOrderId && string.IsNullOrEmpty(s.MaterialCode) ? "其他设备" == s.ManufacturerSerialNumber : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == MaterialType).Distinct().FirstOrDefaultAsync())?.CurrentUserId;
+            int? TechnicianId = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == ServiceOrderId)
+                .WhereIf("其他设备".Equals(MaterialType), w => w.MaterialCode == "其他设备")
+                .WhereIf(!"其他设备".Equals(MaterialType), w => w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-")) == MaterialType).FirstOrDefaultAsync())?.CurrentUserId;
             var query = from a in UnitWork.Find<AppUserMap>(null)
                         join b in UnitWork.Find<User>(null) on a.UserID equals b.Id into ab
                         from b in ab.DefaultIfEmpty()
@@ -2543,7 +2599,7 @@ namespace OpenAuth.App
             }
             else
             {
-                ProtectPhone = AliPhoneNumberProtect.bindAxb(custMobile, TechnicianTel);
+                //ProtectPhone = AliPhoneNumberProtect.bindAxb(custMobile, TechnicianTel);
                 if (string.IsNullOrEmpty(ProtectPhone))
                 {
                     if (type == 1)

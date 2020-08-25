@@ -4,6 +4,7 @@ using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
+using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
@@ -94,20 +95,17 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        public async Task BatchAddAsync(AddOrUpdateAppServiceOrderLogReq req, List<int> ids)
+        public async Task BatchAddAsync(AddOrUpdateAppServiceOrderLogReq req, string ids)
         {
             var objs = new List<AppServiceOrderLog>();
-            ids.ForEach(i =>
-            {
-                var obj = req.MapTo<AppServiceOrderLog>();
-                //todo:补充或调整自己需要的字段
-                obj.ServiceWorkOrder = i;
-                obj.CreateTime = DateTime.Now;
-                var user = _auth.GetCurrentUser().User;
-                obj.CreateUserId = user.Id;
-                obj.CreateUserName = user.Name;
-                objs.Add(obj);
-            });
+            var obj = req.MapTo<AppServiceOrderLog>();
+            //todo:补充或调整自己需要的字段
+            obj.ServiceWorkOrder = ids;
+            obj.CreateTime = DateTime.Now;
+            var user = _auth.GetCurrentUser().User;
+            obj.CreateUserId = user.Id;
+            obj.CreateUserName = user.Name;
+            objs.Add(obj);
 
             await Repository.BatchAddAsync(objs.ToArray());
         }
@@ -143,11 +141,13 @@ namespace OpenAuth.App
                         join c in UnitWork.Find<ServiceWorkOrder>(null) on a.ServiceOrderId equals c.ServiceOrderId into abc
                         from c in abc.DefaultIfEmpty()
                         select new { a, b, c };
-            query = query.Where(q => q.b.U_SAP_ID == request.SapOrderId && "其他设备".Equals(request.MaterialType) ? q.c.MaterialCode == "其他设备" : q.c.MaterialCode.Substring(0, q.c.MaterialCode.IndexOf("-")) == request.MaterialType);
-            var status = await query.Select(s => s.c.Status).Distinct().FirstOrDefaultAsync();
+            var queryStatus = query.Where(q => q.b.U_SAP_ID == request.SapOrderId)
+                .WhereIf("其他设备".Equals(request.MaterialType), q => q.c.MaterialCode == "其他设备")
+                .WhereIf(!"其他设备".Equals(request.MaterialType), q => q.c.MaterialCode.Substring(0, q.c.MaterialCode.IndexOf("-")) == request.MaterialType);
+            var status = await queryStatus.Select(s => s.c.Status).Distinct().FirstOrDefaultAsync();
             result.Add("status", status);
             var list = new List<OrderLogListResp>();
-            var orderLogs = (await query.Select(q => new OrderLogListResp { Title = q.a.Title, Details = q.a.Details, CreateTime = q.a.CreateTime.ToString("yyyy.MM.dd HH:mm:ss") }).ToListAsync()).GroupBy(g => g.Title).Select(s => s.First());
+            var orderLogs = (await query.Where(w => w.b.U_SAP_ID == request.SapOrderId && (w.a.MaterialType == request.MaterialType || string.IsNullOrWhiteSpace(w.a.MaterialType))).Select(q => new OrderLogListResp { Title = q.a.Title, Details = q.a.Details, CreateTime = q.a.CreateTime.ToString("yyyy.MM.dd HH:mm:ss") }).ToListAsync()).GroupBy(g => g.Title).Select(s => s.First());
             list.AddRange(orderLogs);
             result.Add("orderLogs", list.OrderByDescending(l => l.CreateTime).ToList());
             return result;

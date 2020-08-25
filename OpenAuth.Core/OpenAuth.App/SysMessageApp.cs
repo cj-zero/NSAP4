@@ -33,7 +33,7 @@ namespace OpenAuth.App
                 objs = objs.Where(u => u.Title.Contains(request.key) || u.Id.Contains(request.key));
             }
 
-            result.Data = objs.OrderBy(u => u.Id)
+            result.Data = objs.OrderByDescending(u => u.CreateTime)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit);
             result.Count = objs.Count();
@@ -54,6 +54,15 @@ namespace OpenAuth.App
             UnitWork.Update<SysMessage>(u => u.Id == obj.Id, u => new SysMessage
             {
                 ToStatus = obj.ToStatus
+               //todo:要修改的字段赋值
+            });
+
+        }
+        public async Task MarkRead(string[] ids)
+        {
+            await UnitWork.UpdateAsync<SysMessage>(u => ids.Contains( u.Id ), u => new SysMessage
+            {
+                ToStatus = 1
                //todo:要修改的字段赋值
             });
 

@@ -436,7 +436,7 @@ namespace OpenAuth.WebApi.Controllers
                             double cvAcceptance = 0;
                             var cvAcceptanceStr = "";
 
-                            var mdcv = plcrmd.Where(d => d.Commanded_Value.Equals(cvData.Commanded_Value) && d.VoltsorAmps.Equals("Volts") && d.Channel == item2.Key && d.Mode.Equals("Charge") && d.Verify_Type.Equals("Post-Calibration")).ToList();
+                            var mdcv = plcrmd.Where(d => d.Commanded_Value.Equals(cvData.Commanded_Value) && d.VoltsorAmps.Equals("Volts") && d.Mode.Equals("Charge") && d.Verify_Type.Equals("Post-Calibration")).GroupBy(a => a.Channel).First().ToList();
                             double ror;
                             if (baseInfo.RepetitiveMeasurementsCount >= 6)//贝塞尔公式法
                             {
@@ -576,7 +576,7 @@ namespace OpenAuth.WebApi.Controllers
                             double Acceptance = 0;
                             var AcceptanceStr = "";
 
-                            var mdcv = plcrmd.Where(d => d.Commanded_Value.Equals(cvData.Commanded_Value) && d.VoltsorAmps.Equals("Amps") && d.Channel == item2.Key && d.Mode.Equals("Charge") && d.Verify_Type.Equals("Post-Calibration")).ToList();
+                            var mdcv = plcrmd.Where(d => d.Commanded_Value.Equals(cvData.Commanded_Value) && d.VoltsorAmps.Equals("Amps") && d.Mode.Equals("Charge") && d.Verify_Type.Equals("Post-Calibration")).GroupBy(a => a.Channel).First().ToList();
                             double ror;
                             if (baseInfo.RepetitiveMeasurementsCount >= 6)//贝塞尔公式法
                             {

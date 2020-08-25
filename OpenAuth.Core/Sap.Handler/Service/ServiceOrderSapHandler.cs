@@ -156,7 +156,7 @@ namespace Sap.Handler.Service
                 //{
                 //    sc.Origin = (int)thisSorder.FromId;
                 //}
-                if (thisSorder.ServiceOrderSNs!=null && thisSorder.ServiceOrderSNs.Count > 0)
+                if (thisSorder.ServiceOrderSNs != null && thisSorder.ServiceOrderSNs.Count > 0)
                 {
                     var thisSN = thisSorder.ServiceOrderSNs[0];
                     if (!string.IsNullOrEmpty(thisSN.ItemCode) && IsValidItemCode(thisSN.ItemCode))
@@ -180,7 +180,7 @@ namespace Sap.Handler.Service
                 {
                     var queryp = UnitWork.Find<ProblemType>(s => s.Id.Equals(thisSorder.ProblemTypeId)).FirstOrDefault();
                     var pbltype = queryp.MapTo<ProblemType>();
-                    if (pbltype!=null)
+                    if (pbltype != null)
                     {
                         sc.ProblemType = pbltype.PrblmTypID;
                     }
@@ -224,12 +224,20 @@ namespace Sap.Handler.Service
         [CapSubscribe("Serve.ServcieOrder.CreateWorkNumber")]
         public async Task HandleCreateWorkNumber(int ServiceOrderId)
         {
-            var ServiceOrder = UnitWork.Find<ServiceOrder>(s => s.Id.Equals(ServiceOrderId)).FirstOrDefault();
-            var ServiceWorkOrders = await UnitWork.Find<ServiceWorkOrder>(u => u.ServiceOrderId.Equals(ServiceOrderId)).AsNoTracking().ToListAsync();
-            int num = 0;
-            ServiceWorkOrders.ForEach(u => u.WorkOrderNumber = ServiceOrder.U_SAP_ID + "-" + ++num);
-            UnitWork.BatchUpdate<ServiceWorkOrder>(ServiceWorkOrders.ToArray());
-            await UnitWork.SaveAsync();
+            try
+            {
+                var ServiceOrder = UnitWork.Find<ServiceOrder>(s => s.Id.Equals(ServiceOrderId)).AsNoTracking().FirstOrDefault();
+                var ServiceWorkOrders = await UnitWork.Find<ServiceWorkOrder>(u => u.ServiceOrderId.Equals(ServiceOrderId)).AsNoTracking().ToListAsync();
+                int num = 0;
+                ServiceWorkOrders.ForEach(u => u.WorkOrderNumber = ServiceOrder.U_SAP_ID + "-" + ++num);
+                UnitWork.BatchUpdate<ServiceWorkOrder>(ServiceWorkOrders.ToArray());
+                await UnitWork.SaveAsync();
+            }
+            catch (Exception e)
+            {
+                Log.Logger.Error($"同步ID：{ServiceOrderId}失败,错误信息：{e.Message}", typeof(ServiceOrderSapHandler));
+            }
+            
         }
 
 

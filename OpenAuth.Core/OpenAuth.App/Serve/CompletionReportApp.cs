@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Reactive;
+using Infrastructure.Extensions;
 
 namespace OpenAuth.App
 {
@@ -78,32 +79,39 @@ namespace OpenAuth.App
             pictures.ForEach(r => r.CompletionReportId = o.Id);
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && string.IsNullOrEmpty(req.MaterialType) ? true : "其他设备".Equals(req.MaterialType) ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType, s => new ServiceWorkOrder { Status = 7 });
-            var workOrderList = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && string.IsNullOrEmpty(req.MaterialType) ? true : "其他设备".Equals(req.MaterialType) ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType).ToList();
+            var workOrderList = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId)
+                .WhereIf("其他设备".Equals(req.MaterialType), a => a.MaterialCode == "其他设备")
+                .WhereIf(!"其他设备".Equals(req.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == req.MaterialType)
+                .ToListAsync());
             List<int> workorder = new List<int>();
             foreach (var item in workOrderList)
             {
                 workorder.Add(item.Id);
             }
-            await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id), s => new ServiceWorkOrder { Status = 7 });
+            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
                 Title = "技术员完成服务",
                 Details = $"感谢您对新威的支持。您的服务已完成，如有疑问请及时拨打客服电话：8008308866，新威客服会全力帮您继续跟进",
                 LogType = 1,
-                ServiceOrderId = req.ServiceOrderId
-            }, workorder);
-            await _appServiceOrderLogApp.BatchAddAsync(new AddOrUpdateAppServiceOrderLogReq
+                ServiceOrderId = req.ServiceOrderId,
+                ServiceWorkOrder = string.Join(',', workorder.ToArray()),
+                MaterialType = req.MaterialType
+            });
+            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
                 Title = "技术员完成售后维修",
                 Details = $"提交了《行为服务报告单》，完成了本次任务",
                 LogType = 2,
-                ServiceOrderId = req.ServiceOrderId
-            }, workorder);
+                ServiceOrderId = req.ServiceOrderId,
+                ServiceWorkOrder = string.Join(',', workorder.ToArray()),
+                MaterialType = req.MaterialType
+            });
             //反写完工报告Id至工单
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && string.IsNullOrEmpty(req.MaterialType) ? true : string.IsNullOrEmpty(s.MaterialCode) ? "其他设备" == s.ManufacturerSerialNumber : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType,
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id),
                 o => new ServiceWorkOrder { CompletionReportId = completionReportId });
             //解除隐私号码绑定
-            await UnbindProtectPhone(req.ServiceOrderId, req.MaterialType);
+            //await UnbindProtectPhone(req.ServiceOrderId, req.MaterialType);
         }
 
 
@@ -161,7 +169,9 @@ namespace OpenAuth.App
                       join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
                       from b in ab.DefaultIfEmpty()
                       select new { a, b };
-            obj = obj.Where(o => o.b.Id == serviceOrderId && o.a.CurrentUserId == currentUserId && string.IsNullOrEmpty(MaterialType) ? true : "其他设备".Equals(MaterialType) ? o.a.MaterialCode == "其他设备" : o.a.MaterialCode.Substring(0, o.a.MaterialCode.IndexOf("-")) == MaterialType);
+            obj = obj.Where(o => o.b.Id == serviceOrderId && o.a.CurrentUserId == currentUserId)
+                .WhereIf("其他设备".Equals(MaterialType), q => q.a.MaterialCode.Equals("其他设备"))
+                .WhereIf(!"其他设备".Equals(MaterialType), q => q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-")) == MaterialType);
             var query = await obj.Select(q => new
             {
                 q.b.U_SAP_ID,
@@ -201,7 +211,9 @@ namespace OpenAuth.App
                       join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into abc
                       from b in abc.DefaultIfEmpty()
                       select new { a, b, c };
-            obj = obj.Where(o => o.a.ServiceOrderId == serviceOrderId && o.a.CurrentUserId == currentUserId && string.IsNullOrEmpty(MaterialType) ? true : (string.IsNullOrEmpty(o.a.MaterialCode) ? "其他设备" : o.a.MaterialCode.Substring(0, o.a.MaterialCode.IndexOf("-"))) == MaterialType);
+            obj = obj.Where(o => o.a.ServiceOrderId == serviceOrderId && o.a.CurrentUserId == currentUserId)
+                     .WhereIf("其他设备".Equals(MaterialType), q => q.a.MaterialCode.Equals("其他设备"))
+                     .WhereIf(!"其他设备".Equals(MaterialType), q => q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-")) == MaterialType);
             var query = await obj.Select(q => new
             {
                 q.b.U_SAP_ID,
@@ -329,7 +341,7 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             //获取技术员Id
-            int? TechnicianId = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == ServiceOrderId && "其他设备".Equals(MaterialType) ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == MaterialType).Distinct().FirstOrDefaultAsync())?.CurrentUserId;
+            int? TechnicianId = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == ServiceOrderId).ToListAsync()).Where(s => "其他设备".Equals(MaterialType) ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == MaterialType).FirstOrDefault()?.CurrentUserId;
             var query = from a in UnitWork.Find<AppUserMap>(null)
                         join b in UnitWork.Find<User>(null) on a.UserID equals b.Id into ab
                         from b in ab.DefaultIfEmpty()

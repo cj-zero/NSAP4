@@ -194,26 +194,26 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
-        /// <summary>
-        /// 解除绑定
-        /// </summary>
-        /// <param name="ServiceOrderId"></param>
-        /// <param name="MaterialType"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public async Task<bool> UnbindProtectPhone(int ServiceOrderId, string MaterialType)
-        {
-            bool IsSuccess;
-            try
-            {
-                IsSuccess = await _app.UnbindProtectPhone(ServiceOrderId, MaterialType);
-            }
-            catch (Exception ex)
-            {
-                return false;
-            }
-            return IsSuccess;
-        }
+        ///// <summary>
+        ///// 解除绑定
+        ///// </summary>
+        ///// <param name="ServiceOrderId"></param>
+        ///// <param name="MaterialType"></param>
+        ///// <returns></returns>
+        //[HttpPost]
+        //public async Task<bool> UnbindProtectPhone(int ServiceOrderId, string MaterialType)
+        //{
+        //    bool IsSuccess;
+        //    try
+        //    {
+        //        IsSuccess = await _app.UnbindProtectPhone(ServiceOrderId, MaterialType);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return false;
+        //    }
+        //    return IsSuccess;
+        //}
         public CompletionReportsController(CompletionReportApp app)
         {
             _app = app;

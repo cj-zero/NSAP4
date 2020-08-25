@@ -51,7 +51,7 @@ namespace OpenAuth.WebApi.Controllers.Sap
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<TableData> AppGet([FromQuery] QueryAppSerialNumberListReq req)
+        public async Task<TableData> AppGet(QueryAppSerialNumberListReq req)
         {
             var result = new TableData();
             try
