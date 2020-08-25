@@ -40,3 +40,10 @@ export function del(data) {
   })
 }
 
+export function markRead(data) {
+  return request({
+    url: '/SysMessages/MarkRead',  // 标记消息已读
+    method: 'post',
+    data
+  })
+}
