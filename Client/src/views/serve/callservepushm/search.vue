@@ -76,17 +76,6 @@
 <script>
 import * as problemtypes from "@/api/problemtypes";
 export default {
-  props: {
-    QryU_SAP_ID: {
-      type: [Number, String],
-      default: ''
-    }
-  },
-  watch: {
-    QryU_SAP_ID (val) {
-      this.listQuery.QryU_SAP_ID = val
-    }
-  },
   data() {
     return {
       defaultProps:{

@@ -25,7 +25,6 @@
       <zxsearch 
         @change-Search="changeSearch" 
         @change-Order="changeOrder"
-        :QryU_SAP_ID="listQuery.QryU_SAP_ID"
       ></zxsearch>
       <el-row class="fh" type="flex">
         <div class="fh ls-border" style="min-width:200px;" @scroll="onScroll">

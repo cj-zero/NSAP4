@@ -117,7 +117,7 @@
                 {{ scope.row.serviceWorkOrders.length }}
               </span>
               <span v-if="fruit.name === 'fromTheme'">
-                {{ scope.row.serviceWorkOrders[0].fromTheme }}
+                {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].fromTheme: '' }}
               </span>
               <span
                 v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
@@ -152,6 +152,15 @@
         title="客户信息"
       >
         <CustomerInfo :formData="customerInfo" />
+      </el-dialog>
+      <!-- 电话回访弹窗 -->
+      <el-dialog
+        width="800px"
+        :close-on-click-modal="false"
+        :visible.sync="dialogPhoneVisible"
+        title="客户信息"
+      >
+        <Rate />
       </el-dialog>
       <!-- 客服新建服务单 -->
       <el-dialog
@@ -269,6 +278,7 @@ import zxsearch from "./search";
 import zxchat from "./chatOnRight";
 import treeList from "./treeList";
 import CustomerInfo from './customerInfo'
+import Rate from './rate'
 import rightImg from '@/assets/table/right.png'
 // import serveTableVue from '../serveTable.vue';
 // import { callserve } from "@/mock/serve";
@@ -292,7 +302,8 @@ export default {
     treeList,
     zxsearch,
     zxchat,
-    CustomerInfo
+    CustomerInfo,
+    Rate
   },
   directives: {
     waves,
@@ -429,7 +440,9 @@ export default {
       dataForm1: {}, //获取的详情表单
       downloadLoading: false,
       problemOptions: [], // 问题类型
-      serviceOrderId: '' // 服务单ID 用于后续工单的创建和修改
+      serviceOrderId: '', // 服务单ID 用于后续工单的创建和修改
+      dialogPhoneVisible: false, // 电话回访弹窗
+      exportExcelUrl: '/serve/ServiceOrder/ExportExcel' // 表格导出地址
     };
   },
   filters: {
@@ -483,7 +496,7 @@ export default {
       handler() {
         if (this.formValue && this.formValue.customerId) {
           this.customer = this.formValue;
-          console.log(this.customer)
+          // console.log(this.customer)
           //编辑获得的数据
         } else {
           if (!this.dialogFormVisible) {
@@ -504,11 +517,9 @@ export default {
   methods: {
     checkServeId(res) {
       if (res.children) {
-        // console.log()
         this.listQuery.QryServiceOrderId = res.label.split("服务单号：")[1];
       }
       if (res === true) {
-        // console.log()
         this.radio = "";
         this.listQuery.QryServiceOrderId = "";
       }
@@ -530,14 +541,14 @@ export default {
       callservesure.GetDetails(res).then(res => {
         if (res.code == 200) {
           this.dataForm1 = res.result;
-          console.log(this.dataForm1, 'dateForm1')
+          // console.log(this.dataForm1, 'dateForm1')
           this.dialogFormView = true;
         }
         this.listLoading = false;
       });
     },
     getCustomerInfo (customerId) { // 打开用户信息弹窗
-      console.log('客户信息')
+      // console.log('客户信息')
       if (!customerId) {
         return this.$message.error('客户代码不能为空!')
       }
@@ -574,6 +585,19 @@ export default {
         case "editTable":
           this.dialogTable = true;
           break;
+        case "btnPhone": // 电话回访
+          if (!this.multipleSelection.serviceOrderId) {
+            this.$message({
+              message: "请选择需要进行回访的数据",
+              type: "warning"
+            });
+            return;
+          }
+          this.handlePhone(this.multipleSelection)
+          break
+        case "btnExcel": // 表格导出Execl表格
+          this.handleExcel()
+          break
         case "btnRecall":
           if (!this.multipleSelection.serviceOrderId) {
             this.$message({
@@ -665,7 +689,7 @@ export default {
       .getList()
       .then((res) => {
         this.problemOptions = this._normalizeProblemType(res.data);
-        console.log(this.problemOptions, 'options')
+        // console.log(this.problemOptions, 'options')
       })
       .catch((error) => {
         console.log(error);
@@ -781,7 +805,7 @@ export default {
         if (res.code == 200) {
           this.dataForm1 = res.result;
           this.serviceOrderId = row.serviceOrderId // 服务单ID
-          console.log(this.dataForm1, 'dateForm1')
+          // console.log(this.dataForm1, 'dateForm1')
           this.dialogStatus = "update";
           this.FormUpdate = true;
         }
@@ -794,7 +818,7 @@ export default {
       //   this.FormUpdate = true;
       // });
     },
-    handleRecall (row) {
+    handleRecall (row) { // 撤回功能
       let { serviceOrderId } = row
       this.$confirm("确认撤销?", "提示", {
         confirmButtonText: "确定",
@@ -814,6 +838,25 @@ export default {
           this.$message.error(err.message)
         })
       })
+    },
+    handlePhone () { // 电话回访
+      // 
+      this.dialogPhoneVisible = true
+    },
+    handleExcel () { // 导出表格
+      let baseURL = `${process.env.VUE_APP_BASE_API}${this.exportExcelUrl}`
+      let params = this.serializeParams(this.listQuery)
+      window.location.href = `${baseURL}?X-Token=${this.$store.state.user.token}&${params}`
+      // console.log(`${baseURL}?X-Token=${this.$store.state.user.token}&${params}`)
+    },
+    serializeParams (params) {
+      let result = []
+      for (let key in params) {
+        if (params[key]) {
+          result.push(`${key}=${params[key]}`)
+        } 
+      }
+      return result.join('&')
     },
     closeDia(a) {
       if (a === 'y') {

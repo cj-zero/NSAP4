@@ -658,7 +658,7 @@ export default {
       this.openTree(row.id);
     },
     closeDia(a) {
-      if (a === 1) {
+      if (a === 'y') {
         this.getList();
       }
       if (a == "N") {
