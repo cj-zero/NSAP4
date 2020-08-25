@@ -97,7 +97,7 @@ export default {
     position: relative;
     .notice {
       position: absolute;
-      right: -43px;
+      right: -27px;
       top: -14px;
       color: red !important;
     }
