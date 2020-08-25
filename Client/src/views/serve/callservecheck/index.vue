@@ -225,8 +225,7 @@ export default {
       this.listLoading = true;
       callservecheck.getList(this.listQuery).then(res => {
         this.checkList = res.data
-        console.log(res)
-          this.total = res.count;
+        this.total = res.count;
         // this.list = response.data.data;
         this.listLoading = false;
       });

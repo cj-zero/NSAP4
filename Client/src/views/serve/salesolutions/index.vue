@@ -277,9 +277,6 @@ export default {
     this.getList();
   },
   methods: {
-    changeTable(result){
-      console.log(result)
-    },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.$refs.mainTable.toggleRowSelection(row);

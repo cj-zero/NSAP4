@@ -18,7 +18,6 @@ export function getList(params) {
   }
 
 export function getForm(data) {
-  console.log(data)
     return request({
       url: `/serve/ServiceOrder/GetUnConfirmedServiceOrderDetails?serviceOrderId=${data}`,
       method: 'get'

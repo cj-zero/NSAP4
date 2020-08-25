@@ -93,7 +93,6 @@ export default {
       // this.dialogImage = src
     },
     _download (src) {
-      console.log(src, 'src')
       download(src)
     },
     _print (url) {

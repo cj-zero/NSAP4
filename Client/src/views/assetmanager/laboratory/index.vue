@@ -184,10 +184,7 @@ export default {
   methods: {
     _getList (pageConfig) {
       getList(pageConfig).then(res => {
-        console.log(res)
         this.tableData = this._normalizeData(res.data)
-        // this.tableData = res.data
-        console.log(this.tableData)
       })
     },
     /** 格式化tabelData */
@@ -200,18 +197,17 @@ export default {
         item.assetJZDataList = dataList
         if (metrological) {
           metrologicalList = metrological.split('\\r\\n')
-          console.log('metrologicalList', metrological, metrologicalList)
         }
         item.metrologicalList = metrologicalList
         return item
       })
-      console.log(newList, 'newList')
+      // console.log(newList, 'newList')
       return newList
     },
     _getListCategoryName () {
       getListCategoryName().then(res => {
         this.options = this._initOptions(res.data)
-        console.log(this.options, 'options')
+        // console.log(this.options, 'options')
       })
     },
     onSearch () {
@@ -236,9 +232,6 @@ export default {
     handleClick(row) {
       console.log(row);
       this.dialogFormVisible = true
-    },
-    onTabChange (tab, event) {
-      console.log(tab, event)
     },
     handleChange (pageConfig) {
       this._getList({

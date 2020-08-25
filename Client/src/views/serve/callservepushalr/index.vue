@@ -22,7 +22,11 @@
       </div>
     </sticky>
     <div class="app-container flex-item bg-white">
-      <zxsearch @change-Search="changeSearch" @change-Order="changeOrder"></zxsearch>
+      <zxsearch 
+        @change-Search="changeSearch" 
+        @change-Order="changeOrder"
+        :QryU_SAP_ID="listQuery.QryU_SAP_ID"
+      ></zxsearch>
       <el-row class="fh" type="flex">
         <div class="fh ls-border" style="min-width:200px;" @scroll="onScroll">
           <el-card shadow="never" class="card-body-none fh" style>
@@ -395,11 +399,12 @@ export default {
       },
       downloadLoading: false,
       listQueryServer: {
-        QryState: '', // 客户状态
+        QryState: "", // 客户状态
         QryU_SAP_ID: '', // 查询服务ID
         limit: 30, // 条数
         page: 1 // 页数
-      }
+      },
+      isClear: false // 清空树形数据moduleTree
     };
   },
   filters: {
@@ -445,12 +450,13 @@ export default {
   mounted() {
     let el = document.getElementsByClassName('el-tree')[0]
     el.addEventListener('scroll', debounce(this.onScroll, 400))
-    console.log(el, 'tree')
     this.afterLeft();
   },
   methods: {
     onScroll (e) {
-      console.log(e, 'onSCROLL')
+      if (this.totalCount <= this.modulesTree.length) {
+        return
+      }
       let { scrollHeight, scrollTop, clientHeight } = e.target
       if (scrollHeight <= (scrollTop + clientHeight + 10)) {
         this.listQueryServer.page++
@@ -473,10 +479,13 @@ export default {
     async afterLeft() {
       await this.getLeftList();
       if (this.modulesTree.length > 0) {
-        console.log(this.modulesTree[0].key)
+        // console.log(this.modulesTree[0].key)
         // this.$refs.treeForm.setCheckedKeys([this.modulesTree[0].key]);
         this.checkGroupNode(this.modulesTree[0]);
         this.getRightList();
+      } else {
+        this.list = []
+        this.total = 0
       }
     },
    async   changeOrder() {
@@ -545,17 +554,26 @@ export default {
           });
       }
     },
-    changeSearch(val) {
-      if (val === 1) {
-         this.getRightList();
-      } else {
-        Object.assign(this.listQuery, val);
-      if(val.QryU_SAP_ID){
-        this.$refs.treeForm.setCheckedKeys([val.QryU_SAP_ID]);
-      }
-        // }        this.getLeftList()
-      }
+    async changeSearch(val) {
+      this.isClear = true
+      this.ifParent = ""; // 清空父级选择
+      this.listQuery.QryMaterialTypes = [];
+      this.listQuery = Object.assign(this.listQuery, val)
+      this.listQueryServer = Object.assign(this.listQueryServer, val)
+      this.afterLeft()
     },
+    // idSearch (val) {
+    //   this.listQueryServer.page = 1
+    //   this.isClear = true // 是否清空树形数据数组
+    //   Object.assign(this.listQueryServer, {
+    //     QryU_SAP_ID: val
+    //   });
+    //   // if(val.QryU_SAP_ID){
+    //   //   this.$refs.treeForm.setCheckedKeys([val.QryU_SAP_ID]);
+    //   // }
+    //   this.$refs.treeForm.setCheckedKeys([val]);
+    //   this.afterLeft()
+    // },
     openTree(res) {
       this.listLoading = true;
       callservesure.GetDetails(res).then((res) => {
@@ -566,15 +584,15 @@ export default {
         this.listLoading = false;
       });
     },
-    treeClick(data) {
+    // treeClick(data) {
       // 左侧treetable点击事件
-      console.log(data);
+      // console.log(data);
       // this.currentModule = data
       // this.currentModule.parent = null
       // this.getList()
-    },
+    // },
     onSubmit() {
-      console.log("submit!");
+      // console.log("submit!");
     },
     changeTable(result) {
       console.log(result);
@@ -699,21 +717,16 @@ export default {
 
     getLeftList() {
       this.listLoading = true;
-      return callservepushm.getLeftList({ 
-        QryState: this.listQueryServer.QryState,
-        QryU_SAP_ID: this.listQueryServer.QryU_SAP_ID,
-        page: this.listQueryServer.page,
-        limit: this.listQueryServer.limit
-      }).then((res) => {
-        let { data, count } = res.data
+      return callservepushm.getLeftList(this.listQueryServer).then((res) => {
+        let { data } = res.data
         let arr = this._normalizeTree(data)
-        if (!this.modulesTree.length) {
+        if (!this.modulesTree.length || this.isClear) {
           this.modulesTree = arr
+          this.isClear = false
         } else {
           this.modulesTree = this.modulesTree.concat(arr)
         }
-        console.log(this.modulesTree, 'modulesTree')
-        this.totalCount = count
+        this.totalCount = data.count
         // this.modulesTree = arr;
         this.listLoading = false;
       }).catch(() => {
@@ -757,7 +770,6 @@ export default {
     },
     getRightList() {
       this.listLoading = true;
-      console.log(this.listQuery, 'search')
       callservepushm
         .getRightList(this.listQuery)
         .then((response) => {

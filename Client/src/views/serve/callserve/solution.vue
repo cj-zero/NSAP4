@@ -149,9 +149,9 @@ export default {
       // }
       this.key = this.key + 1; // 为了保证table 每次都会重渲 In order to ensure the table will be re-rendered each time
     },
-    total:function(a,b){
-        console.log(a,b)
-    }
+    // total:function(a,b){
+    //     console.log(a,b)
+    // }
   },
   created() {
     // this.getList();

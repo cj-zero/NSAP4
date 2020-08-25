@@ -186,12 +186,10 @@ export default {
   },
   methods: {
     downloadFile (url) {
-      console.log(url, 'download')
       download(url)
     },
     handlePreviewFile(item) {
       //预览图片
-      console.log(item, 'preview')
       this.previewVisible = true;
       this.previewUrl = item;
     },

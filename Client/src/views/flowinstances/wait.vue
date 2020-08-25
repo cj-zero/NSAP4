@@ -218,7 +218,6 @@
           this.multipleSelection = val
         },
         onBtnClicked: function(domId) {
-          console.log('you click:' + domId)
           switch (domId) {
             case 'btnDetail':
               if (this.multipleSelection.length !== 1) {

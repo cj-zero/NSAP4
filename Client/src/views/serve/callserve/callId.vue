@@ -110,40 +110,13 @@ export default {
       }
     }
   },
-    mounted() {
-    console.log(this.toCallList);
-  },
-  watch:{
-    toCallList:{
-      handler(val){
-      console.log(val);
-      }
-    }
-  },
+  mounted() {},
   methods:{
     openTree (id) {
-      console.log(this.instance)
+      // console.log(this.instance)
       this.instance.openTree(id)
-    },
-    //       openDialog() {   //打开前赋值
-    //   // this.filterPartnerList = this.partnerList;
-    //   console.log(11)
-    // },
-    //  handleChange(val) {
-    //   this.listQuery.page = val.page;
-    //   this.listQuery.limit = val.limit;
-    //   // this.getList();
-    // },
-    //     handleChange1(val) {
-    //   this.listQuery1.page = val.page;
-    //   this.listQuery1.limit = val.limit;
-    //   // this.getList();
-    // },
-   handleCurrentChange(val) {
-        console.log(val)
-      }
-
-}
+    }
+  }
 }
 </script>
 

@@ -6,7 +6,6 @@ function initSignalR (token = '') {
     return
   }
   let signalR = window.signalR
-  console.log('token', token, `${process.env.VUE_APP_BASE_API}/MessageHub`)
   const connection = new signalR.HubConnectionBuilder()
     .withUrl(`${process.env.VUE_APP_BASE}/MessageHub?x-token=${token}`, {
       skipNegotiation: true,
@@ -18,10 +17,9 @@ function initSignalR (token = '') {
   async function start() {
     try {
       await connection.start()
-      console.log("connected")
     } catch (err) {
-      console.log(err)
-      // setTimeout(() => start(), 5000)
+      // console.log(err)
+      setTimeout(() => start(), 5000)
     }
   }
 
@@ -30,7 +28,7 @@ function initSignalR (token = '') {
   })
   // 消息
   connection.on("ReceiveMessage", (user, message) => {
-    console.log(user, message, 'user')
+    // console.log(user, message, 'user')
     vm.$notify.info({
       title: `来自${user}的消息`,
       message,
@@ -39,7 +37,7 @@ function initSignalR (token = '') {
   })
   // 系统消息
   connection.on("SystemMessage", (user, message) => {
-    console.log(user, message, 'user')
+    // console.log(user, message, 'user')
     vm.$notify.info({
       title: `来自${user}的消息`,
       message,
@@ -56,12 +54,11 @@ function initSignalR (token = '') {
         // TODO
       }
     }
-    console.log(user, message, 'pending', vm)
     vm.$emit('pendingNumber', message)
   })
   // 连接完成
   connection.on('Connected', () => {
-    console.log('success connected')
+    console.log("websocket has connected")
     hasConnected = true
   })
   
