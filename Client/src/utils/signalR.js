@@ -1,16 +1,22 @@
 // 消息推送
-import vm from './eventBus'
+// import vm from './eventBus'
+/**
+ * 相关文档地址: https://docs.microsoft.com/zh-cn/aspnet/core/signalr/javascript-client?view=aspnetcore-3.1
+ */
 let hasConnected = false
 function initSignalR (token = '') {
   if (hasConnected) {
     return
   }
+  console.log(this, 'init')
   let signalR = window.signalR
   const connection = new signalR.HubConnectionBuilder()
     .withUrl(`${process.env.VUE_APP_BASE}/MessageHub?x-token=${token}`, {
       skipNegotiation: true,
       transport: signalR.HttpTransportType.WebSockets
     })
+    .withAutomaticReconnect()
+    .withHubProtocol(new signalR.protocols.msgpack.MessagePackHubProtocol())
     .configureLogging(signalR.LogLevel.Information)
     .build()
 
@@ -29,7 +35,7 @@ function initSignalR (token = '') {
   // 消息
   connection.on("ReceiveMessage", (user, message) => {
     // console.log(user, message, 'user')
-    vm.$notify.info({
+    this.$notify.info({
       title: `来自${user}的消息`,
       message,
       duration: 0
@@ -38,7 +44,7 @@ function initSignalR (token = '') {
   // 系统消息
   connection.on("SystemMessage", (user, message) => {
     // console.log(user, message, 'user')
-    vm.$notify.info({
+    this.$notify.info({
       title: `来自${user}的消息`,
       message,
       duration: 0
@@ -54,7 +60,8 @@ function initSignalR (token = '') {
         // TODO
       }
     }
-    vm.$emit('pendingNumber', message)
+    console.log('pendingNumber', message)
+    this.message = message
   })
   // 连接完成
   connection.on('Connected', () => {

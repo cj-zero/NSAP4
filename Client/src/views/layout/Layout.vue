@@ -18,7 +18,8 @@
 <script>
 import { Navbar, Sidebar, AppMain, TagsView } from './components'
 import ResizeMixin from './mixin/ResizeHandler'
-
+import { getToken } from '@/utils/auth' // 验权
+import initSignalR from '@/utils/signalR'
 export default {
   name: 'layout',
   components: {
@@ -28,6 +29,11 @@ export default {
     TagsView
   },
   mixins: [ResizeMixin],
+  provide () {
+    return {
+      vm: this
+    }
+  },
   computed: {
     sidebar() {
       return this.$store.state.app.sidebar
@@ -43,6 +49,18 @@ export default {
         mobile: this.device === 'mobile'
       }
     }
+  },
+  data () {
+    return {
+      message: {
+        ServiceOrderCount: '',
+        ServiceWorkOrderCount: ''
+      }
+    }
+  },
+  mounted () {
+    console.log('mounted sider')
+    initSignalR.call(this, getToken())
   },
   methods: {
     handleClickOutside() {

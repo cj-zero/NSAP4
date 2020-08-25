@@ -4,7 +4,6 @@ import NProgress from 'nprogress' // Progress 进度条
 import 'nprogress/nprogress.css'// Progress 进度条样式
 import { Message } from 'element-ui'
 import { getToken } from '@/utils/auth' // 验权
-import initSignalR from '@/utils/signalR'
 const whiteList = ['/login', '/oidc-callback', '/swagger', '/usermanager/profile'] // 不重定向白名单
 router.beforeEach((to, from, next) => {
   NProgress.start()
@@ -30,12 +29,12 @@ router.beforeEach((to, from, next) => {
         }
         if (to.path === '/login') { // 登录后login自动跳转
           next({ path: '/' })
-          initSignalR(getToken())
+          // initSignalR(getToken())
           return
         }
         if (store.getters.modules != null) {
           next()
-          initSignalR(getToken())
+          // initSignalR(getToken())
           return
         }
         store.dispatch('GetModulesTree').then(modules => { // 获取用户可访问的模块
@@ -50,12 +49,12 @@ router.beforeEach((to, from, next) => {
       if (getToken()) {
         if (to.path === '/login') { // 登录后login自动跳转
           next({ path: '/' })
-          initSignalR(getToken())
+          // initSignalR(getToken())
           return
         }
         if (store.getters.modules != null) {
           next()
-          initSignalR(getToken())
+          // initSignalR(getToken())
           return
         }
 

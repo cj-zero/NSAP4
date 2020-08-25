@@ -21,30 +21,29 @@
                 <i :class="`iconfont icon-${child.meta.icon}`"></i>
                 <span v-if="child.meta&&child.meta.title" slot="title">{{child.meta.title}}</span>
                 <span class="notice-wrapper" 
-                  v-if="child.meta.title === '服务呼叫待确认' && message"
+                  v-if="child.meta.title === '服务呼叫待确认' && vm.message.ServiceOrderCount"
                 >
-                  {{ message.ServiceOrderCount | process }}
+                  {{vm.message.ServiceOrderCount | process }}
                 </span>
                 <span 
                   class="notice-wrapper" 
-                  v-if="child.meta.title === '服务呼叫未派单' && message"
+                  v-if="child.meta.title === '服务呼叫未派单' && vm.message.ServiceWorkOrderCount"
                 >
-                  {{ message.ServiceWorkOrderCount | process }}
+                  {{vm.message.ServiceWorkOrderCount | process }}
                 </span>
               </div>
             </el-menu-item>
           </template>
         </template>
       </el-submenu>
-
   </div>
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
 // import { message } from '@/utils/signalR'
 export default {
   name: 'SidebarItem',
+  inject: ['vm'],
   props: {
     // route配置json
     item: {
@@ -62,11 +61,7 @@ export default {
   },
   data() {
     return {
-      routes: [],
-      message: this.$pendingNumber || {
-        ServiceOrderCount: 0,
-        ServiceWorkOrderCount: 0
-      }
+      routes: []
     }
   },
   filters: {
@@ -79,6 +74,9 @@ export default {
       this.groupRouters()
     }
   },
+  mounted () {
+    
+  },
   created() {
     this.groupRouters()
   },
@@ -86,12 +84,6 @@ export default {
     groupRouters() {
       this.routes = this.item.children && this.item.children.length > 0 && this.item.children.sort((a, b) => a.meta.sortNo - b.meta.sortNo)
     }
-  },
-  computed: {
-    ...mapGetters([
-      'serviceOrderCount',
-      'serviceWorkOrderCount'
-    ])
   }
 }
 </script>
@@ -106,7 +98,7 @@ export default {
     .notice-wrapper {
       position: relative;
       display: inline-block;
-      right: 23px;
+      right: 15px;
       top: -17px;
       // padding: 5px;
       color:#fff !important;

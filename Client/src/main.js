@@ -1,7 +1,6 @@
 import Vue from 'vue'
 import layer from 'vue-layer'
 import VueAMap from 'vue-amap';
-import vm from '@/utils/eventBus'
 import 'normalize.css/normalize.css'// A modern alternative to CSS resets
 
 import ElementUI from 'element-ui'
@@ -37,10 +36,10 @@ VueAMap.initAMapApiLoader({
   v: '1.4.4'
 });
 
-vm.$on('pendingNumber', val => {
-  // console.log(val, 'message')
-  Vue.prototype.$pendingNumber = val
-})
+// vm.$on('pendingNumber', val => {
+//   console.log(val, 'message')
+//   Vue.prototype.$pendingNumber = val
+// })
 Vue.config.productionTip = false
 Vue.prototype.$layer = layer(Vue, {
   msgtime: 3
