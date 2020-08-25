@@ -684,7 +684,7 @@ export default {
       //地图选择赋值地址
       let getArr = this.allAddress.regeocode.addressComponent;
       // let str = getArr.province +getArr.city+getArr.district
-      this.form.city = getArr.city;
+      this.form.city = Array.isArray(getArr.city) ? "" : getArr.city;
       this.form.province = getArr.province;
       this.form.area = Array.isArray(getArr.district) ? "" : getArr.district;
       this.form.addr = this.allAddress.address
@@ -887,6 +887,9 @@ export default {
               // 新建服务单
               if (Array.isArray(this.form.area)) {
                 this.form.area = "";
+              }
+              if (Array.isArray(this.form.city)) {
+                this.form.city = ""
               }
               callservesure
                 .CreateOrder(this.form)
