@@ -52,9 +52,35 @@ namespace OpenAuth.App.SignalR
         public async Task SendPendingNumber(SendRoleMessageReq req)
         {
 
-            await _hubContext.Clients.Groups(req.Role,req.RoleTwo).SendAsync("PendingNumber", _auth.GetUserName(), req.Message);
+            await _hubContext.Clients.Groups(req.Role,req.RoleTwo).SendAsync("PendingNumber", "系统", req.Message);
 
         }
         
+        public async Task SendSystemMessage(SignalRSendType type, string message, IReadOnlyList<string> sendTo = default)
+        {
+            switch (type)
+            {
+                case SignalRSendType.All:
+                    await _hubContext.Clients.All.SendAsync("SystemMessage", "系统", message);
+                    break;
+                case SignalRSendType.User:
+                    if(sendTo != default)
+                        await _hubContext.Clients.Users(sendTo).SendAsync("SystemMessage", "系统", message);
+                    break;
+                case SignalRSendType.Role:
+                    if (sendTo != default)
+                        await _hubContext.Clients.Groups(sendTo).SendAsync("SystemMessage", "系统", message);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+    }
+    public enum SignalRSendType : int
+    {
+        All = 1,
+        User = 2,
+        Role = 3
     }
 }

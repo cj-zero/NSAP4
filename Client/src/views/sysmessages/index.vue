@@ -52,7 +52,12 @@
 
       <el-table-column align="center" :label="'操作'" width="230" class-name="small-padding fixed-width">
         <template slot-scope="scope">
-          <el-button  type="primary" size="mini" @click="handleUpdate(scope.row)">标记已读</el-button>
+          <el-button  
+          type="primary" 
+          size="mini" 
+          @click="handleUpdate(scope.row)"
+          v-if="scope.row.toStatus == 0"
+        >标记已读</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -250,10 +255,15 @@ export default {
     },
     handleUpdate(row) { // 弹出编辑框
       this.temp = Object.assign({}, row) // copy obj
-      this.dialogStatus = 'update'
-      this.dialogFormVisible = true
-      this.$nextTick(() => {
-        this.$refs['dataForm'].clearValidate()
+      console.log(row, 'row')
+      sysMessages.markRead([row.id]).then(() => {
+        this.$message({
+          message: '标记成功',
+          type: 'success'
+        })
+        this.getList()
+      }).catch(() => {
+        this.$message.error('标记失败')
       })
     },
     updateData() { // 更新提交
