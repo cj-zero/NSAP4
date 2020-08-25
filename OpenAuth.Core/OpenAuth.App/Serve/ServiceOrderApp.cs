@@ -2536,7 +2536,7 @@ namespace OpenAuth.App
             //获取当前服务单的设备类型接单状态进度
             var orderTakeType = (await UnitWork.Find<ServiceWorkOrder>(null).Where(s => s.CurrentUserId == CurrentUserId && s.ServiceOrderId == ServiceOrderId)
                 .WhereIf("其他设备".Equals(MaterialType), a => a.MaterialCode == "其他设备")
-                .WhereIf(!"其他设备".Equals(MaterialType), o => o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")) == MaterialType).FirstOrDefaultAsync())?.OrderTakeType;
+                .WhereIf(!"其他设备".Equals(MaterialType), o => o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")) == MaterialType).OrderBy(o => o.OrderTakeType).FirstOrDefaultAsync())?.OrderTakeType;
             //获取客户号码 做隐私处理
             string custMobile = (await GetProtectPhone(ServiceOrderId, MaterialType, 1)).Data;
             var query = UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == SapOrderId)
