@@ -72,7 +72,7 @@ namespace OpenAuth.App.Jobs
                     await _sysMessageApp.AddAsync(new Repository.Domain.SysMessage
                     {
                         Title = "超时服务单未处理",
-                        Content = $"服务单:{string.Join(",", list.Select(s => s.Id.ToString()).ToArray())}超时未处理，请及时处理。若已处理请忽略。",
+                        Content = $"服务单:{string.Join(",", list.Select(s => s.U_SAP_ID.ToString()).ToArray())}超时未处理，请及时处理。若已处理请忽略。",
                         CreateId = Guid.Empty.ToString(),
                         CreateTime = DateTime.Now,
                         FromId = Guid.Empty.ToString(),
@@ -83,7 +83,7 @@ namespace OpenAuth.App.Jobs
                         TypeId = Guid.Empty.ToString()
                     });
                 }
-                await _signalrmessage.SendSystemMessage(SignalRSendType.Role, $"服务单:{string.Join(",", list.Select(s => s.Id.ToString()).ToArray())}超时未处理，请及时处理。若已处理请忽略。", new List<string>() { "呼叫中心" });
+                await _signalrmessage.SendSystemMessage(SignalRSendType.Role, $"服务单:{string.Join(",", list.Select(s => s.U_SAP_ID.ToString()).ToArray())}超时未处理，请及时处理。若已处理请忽略。", new List<string>() { "呼叫中心" });
             }
             _openJobApp.RecordRun(jobId);
         }
