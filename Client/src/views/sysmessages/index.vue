@@ -153,7 +153,7 @@ export default {
       this.multipleSelection = val
     },
     onBtnClicked: function(domId) {
-      console.log('you click:' + domId)
+      // console.log('you click:' + domId)
       switch (domId) {
         case 'btnAdd':
           this.handleCreate()
@@ -255,7 +255,6 @@ export default {
     },
     handleUpdate(row) { // 弹出编辑框
       this.temp = Object.assign({}, row) // copy obj
-      console.log(row, 'row')
       sysMessages.markRead([row.id]).then(() => {
         this.$message({
           message: '标记成功',

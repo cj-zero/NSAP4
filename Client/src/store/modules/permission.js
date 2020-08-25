@@ -99,7 +99,7 @@ const permission = {
           await data.modules.forEach((value) => {
             newPaths.push(groupRoutes(value, dispatch))
           })
-          console.log(newPaths, 'NEWPaths')
+          // console.log(newPaths, 'NEWPaths')
           const routers = groupRouterLists(newPaths, dispatch)
           const addrouters = routers.find(item => item.name === 'layout').children.filter(itemF=>!constantRouterMap.find(item => item.name === 'layout').children.some(ele=>ele.path===itemF.path))
           newPaths.length > 0 && newPaths.forEach(item => {

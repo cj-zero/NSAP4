@@ -76,21 +76,31 @@
 <script>
 import * as problemtypes from "@/api/problemtypes";
 export default {
+  props: {
+    QryU_SAP_ID: {
+      type: [Number, String],
+      default: ''
+    }
+  },
+  watch: {
+    QryU_SAP_ID (val) {
+      this.listQuery.QryU_SAP_ID = val
+    }
+  },
   data() {
     return {
-                  defaultProps:{
+      defaultProps:{
         label:'name',
         children:'childTypes'
       },//树形控件的显示状态
       listQuery: {
         // 查询条件
         page: 1,
-        limit: 20,
+        // limit: 20,
         key: undefined,
         appId: undefined,
         Name: "", //	Description
         QryU_SAP_ID: "", //- 查询服务ID查询条件
-        QryState: 1, //- 呼叫状态查询条件
         QryCustomer: "", //- 客户查询条件
         QryManufSN: "", // - 制造商序列号查询条件
         QryCreateTimeFrom: "", //- 创建日期从查询条件
@@ -108,7 +118,7 @@ export default {
       .getList()
       .then((res) => {
         this.dataTree = this._normalizeProblemTypes(res.data);
-        console.log(this.dataTree)
+        // console.log(this.dataTree)
       })
       .catch((error) => {
         console.log(error);
@@ -116,7 +126,7 @@ export default {
   },
   methods: {
     onSubmit() {
-        this.$emit("change-Search", 1);
+        this.$emit("change-Search", this.listQuery);
     },
     sendOrder(){
       // console.log(11)
@@ -137,15 +147,15 @@ export default {
       return typeList
     }
   },
-  watch: {
-    listQuery: {
-      deep: true,
-      immediate:true,
-      handler(val) {
-        this.$emit("change-Search", val);
-      }
-    }
-  }
+  // watch: {
+  //   listQuery: {
+  //     deep: true,
+  //     // immediate:true,
+  //     handler(val) {
+  //       this.$emit("change-Search", val);
+  //     }
+  //   }
+  // }
 };
 </script>
 

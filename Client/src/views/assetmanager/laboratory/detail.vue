@@ -308,10 +308,10 @@ export default {
     querySearchAsync () {},
     toggleInputDisabled (type, val) {
       let input = this.$refs[type].$el.childNodes[0].childNodes[1] // 取到input元素
-      console.log(val, 'val')
+      // console.log(val, 'val')
       if (val) { // 图片有值时
         input.setAttribute('disabled', 'disabled')
-        console.log(input, 'input')
+        // console.log(input, 'input')
       } else {
         setTimeout(() => {
           input.removeAttribute('disabled')
@@ -347,7 +347,7 @@ export default {
       this.formData.assetImg = URL.createObjectURL(file.raw);
     },
     setImg (type, file) {
-      console.log('222')
+      // console.log('222')
       this.formData[type] = URL.createObjectURL(file.raw);
     },
     beforeAvatarUpload(file) {

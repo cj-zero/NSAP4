@@ -84,12 +84,23 @@ import * as problemtypes from "@/api/problemtypes";
 // import { delete } from 'vuedraggable';
 
 export default {
+  props: {
+    QryU_SAP_ID: {
+      type: [Number, String],
+      default: ''
+    }
+  },
+  watch: {
+    QryU_SAP_ID (val) {
+      this.listQuery.QryU_SAP_ID = val
+    }
+  },
   data() {
     return {
       listQuery: {
         // 查询条件
         page: 1,
-        limit: 20,
+        // limit: 20,
         key: undefined,
         appId: undefined,
         Name: "", //	Description
@@ -126,20 +137,21 @@ export default {
 
     };
   },
-    created(){
-       problemtypes
-      .getList()
-      .then((res) => {
-        // this.dataTree = res.data;
-        this.dataTree = this._normalizeProblemTypes(res.data)
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+  created(){
+      problemtypes
+    .getList()
+    .then((res) => {
+      // this.dataTree = res.data;
+      this.dataTree = this._normalizeProblemTypes(res.data)
+    })
+    .catch((error) => {
+      console.log(error);
+    });
   },
   methods: {
     onSubmit() {
-        this.$emit("change-Search", 1);
+      console.log(this.listQuery, 'submit')
+      this.$emit("change-Search", this.listQuery);
     },
     sendOrder(){
       // console.log(11)
@@ -160,15 +172,15 @@ export default {
       return typeList
     }
   },
-  watch: {
-    listQuery: {
-      deep: true,
-      immediate:true,
-      handler(val) {
-        this.$emit("change-Search", val);
-      }
-    }
-  }
+  // watch: {
+  //   listQuery: {
+  //     deep: true,
+  //     immediate:true,
+  //     handler(val) {
+  //       this.$emit("change-Search", val);
+  //     }
+  //   }
+  // }
 };
 </script>
 

@@ -108,7 +108,6 @@ export default {
   },
   computed: {
     leftBtnText () {
-      console.log(this.type, leftTextMap[this.type], 'leftBtnText')
       return leftTextMap[this.type]
     },
     rightBtnText () {
@@ -124,26 +123,22 @@ export default {
         this._download()
         return
       }
-      console.log(this.currentData, 'currentData')
       this._certVerificate(this.currentData, type, message, direction, this.advice)
     },
     getNumPages (url) {
-      console.log(url, 'url')
       try {
         let loadingTask = pdf.createLoadingTask(url)
-        console.log(loadingTask, typeof loadingTask, 'loadingTask')
         loadingTask.promise.then(pdf => {
           this.url = loadingTask
           this.numPages = pdf.numPages
           if (this.numPages) {
             this.realPageNum = 1
           }
-          console.log(this.numPages, 'numPage')
         }).catch(() => {
           this.$message.error('pdf加载出错')
         })
       } catch (err) {
-        console.log(err, 'err')
+        // TODO
       }
       
     },
@@ -191,10 +186,8 @@ export default {
       // axios
       //   .get('http://192.168.1.207:52789/api/Cert/DownloadCertPdf/NWO080091?X-Token=1723b9dc')
       //   .then(res => {
-      //     console.log(res, 'res')
       //     // let blob = new Blob(res.data)
       //     // this.funDownload(res.data, 'pdf')
-      //     // console.log(blob, 'blob')
       //   })
       // download(this.url)
       // downloadPDF(this.url)
@@ -219,16 +212,14 @@ export default {
     // certNo: {
     //   handler (val, oldVal) {
     //     // 证书编号发生变化就重新加载PDF
-    //     console.log(val, oldVal, 'val')
     //     this.reset()
     //     this.getNumPages(this.pdfURL)
     //   },
     //   immediate: true
     // },
     currentData: {
-      handler (val, oldVal) {
+      handler () {
         // 证书编号发生变化就重新加载PDF
-        console.log(val, oldVal, 'val')
         this.reset()
         this.getNumPages(this.pdfURL)
       },

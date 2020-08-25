@@ -464,9 +464,6 @@ export default {
     onSubmit() {
       this.getList();
     },
-    changeTable(result) {
-      console.log(result);
-    },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.multipleSelection = row;
@@ -550,7 +547,6 @@ export default {
           }
         })
         .catch(() => {
-          console.log("sdsad");
           this.listLoading = false
           this.$message({
             type: "warning",

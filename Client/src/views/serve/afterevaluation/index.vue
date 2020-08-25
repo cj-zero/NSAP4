@@ -28,24 +28,24 @@
           <el-row :gutter="10">
             <el-col :span="3">
               <el-form-item label="服务ID" size="small">
-                <el-input v-model="listQuery.ServiceOrderId" @keyup.enter.native='onSubmit'></el-input>
+                <el-input v-model="listQuery.ServiceOrderId" @keyup.enter.native="onSubmit"></el-input>
               </el-form-item>
             </el-col>
 
             <el-col :span="3">
               <el-form-item label="客户ID" size="small">
-                <el-input v-model="listQuery.CustomerId" @keyup.enter.native='onSubmit'></el-input>
+                <el-input v-model="listQuery.CustomerId" @keyup.enter.native="onSubmit"></el-input>
               </el-form-item>
             </el-col>
 
             <el-col :span="3">
               <el-form-item label="技术员ID" size="small">
-                <el-input v-model="listQuery.TechnicianId" @keyup.enter.native='onSubmit'></el-input>
+                <el-input v-model="listQuery.TechnicianId" @keyup.enter.native="onSubmit"></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="3">
               <el-form-item label="回访人ID" size="small">
-                <el-input v-model="listQuery.VisitPeopleId" @keyup.enter.native='onSubmit'></el-input>
+                <el-input v-model="listQuery.VisitPeopleId" @keyup.enter.native="onSubmit"></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="6">
@@ -78,7 +78,13 @@
               </el-form-item>
             </el-col>
             <el-col :span="3" style="margin-left:20px;">
-              <el-button type="primary" @click="onSubmit" @keyup.enter.native='onSubmit' size="small" icon="el-icon-search">搜 索</el-button>
+              <el-button
+                type="primary"
+                @click="onSubmit"
+                @keyup.enter.native="onSubmit"
+                size="small"
+                icon="el-icon-search"
+              >搜 索</el-button>
             </el-col>
           </el-row>
         </el-form>
@@ -113,8 +119,13 @@
                 type="primary"
                 @click="openTree(scope.row.serviceOrderId)"
               >{{scope.row.serviceOrderId}}</el-link>
-              <span :class="colorClass[scope.row[fruit.name]]" v-if="fruit.name==='responseSpeed'||fruit.name==='schemeEffectiveness'||fruit.name==='serviceAttitude'||fruit.name==='productQuality'||fruit.name==='servicePrice'">{{backStatus(scope.row[fruit.name])}}</span>
-              <span v-if="fruit.name!=='serviceOrderId'&&fruit.name!=='responseSpeed'&&fruit.name!=='schemeEffectiveness'&&fruit.name!=='serviceAttitude'&&fruit.name!=='productQuality'&&fruit.name!=='servicePrice'">{{scope.row[fruit.name]}}</span>
+              <span
+                :class="colorClass[scope.row[fruit.name]]"
+                v-if="fruit.name==='responseSpeed'||fruit.name==='schemeEffectiveness'||fruit.name==='serviceAttitude'||fruit.name==='productQuality'||fruit.name==='servicePrice'"
+              >{{backStatus(scope.row[fruit.name])}}</span>
+              <span
+                v-if="fruit.name!=='serviceOrderId'&&fruit.name!=='responseSpeed'&&fruit.name!=='schemeEffectiveness'&&fruit.name!=='serviceAttitude'&&fruit.name!=='productQuality'&&fruit.name!=='servicePrice'"
+              >{{scope.row[fruit.name]}}</span>
             </template>
           </el-table-column>
         </el-table>
@@ -168,16 +179,23 @@ export default {
   name: "afterevaluation",
   components: {
     Pagination,
-    zxform
+    zxform,
   },
   directives: {
     waves,
-    elDragDialog
+    elDragDialog,
   },
   data() {
     return {
       multipleSelection: [], // 列表checkbox选中的值
-      colorClass:['','redWord','redWord','orangeWord','blueWord','greenWord'],
+      colorClass: [
+        "",
+        "redWord",
+        "redWord",
+        "orangeWord",
+        "blueWord",
+        "greenWord",
+      ],
       formTheadOptions: [
         // { name: "id", label: "Id"},
         { name: "serviceOrderId", label: "服务号", width: "80px" },
@@ -193,7 +211,7 @@ export default {
         { name: "servicePrice", label: "服务价格" },
         { name: "comment", label: "客户建议或意见" },
         { name: "visitPeople", label: "回访人" },
-        { name: "commentDate", label: "评价日期" }
+        { name: "commentDate", label: "评价日期" },
       ],
       checkList: [],
       total: 0,
@@ -203,7 +221,7 @@ export default {
         // 查询条件
         page: 1,
         limit: 20,
-        key: undefined
+        key: undefined,
       },
       temp: {
         id: "", // Id
@@ -213,7 +231,7 @@ export default {
         symptom: "", // Symptom
         descriptio: "", // Descriptio
         status: "", // Status
-        extendInfo: "" // 其他信息,防止最后加逗号，可以删除
+        extendInfo: "", // 其他信息,防止最后加逗号，可以删除
       },
       dataForm: {},
       checkd: "",
@@ -224,51 +242,47 @@ export default {
       pvData: [],
       rules: {
         appId: [
-          { required: true, message: "必须选择一个应用", trigger: "change" }
+          { required: true, message: "必须选择一个应用", trigger: "change" },
         ],
-        name: [{ required: true, message: "名称不能为空", trigger: "blur" }]
+        name: [{ required: true, message: "名称不能为空", trigger: "blur" }],
       },
-      downloadLoading: false
+      downloadLoading: false,
     };
   },
 
   created() {
     this.getList();
   },
-  computed:{
-
-  },
-  watch:{
-    'listQuery.ServiceOrderId':{
-        handler(val){
-          let str = val.toString()
-          if(str.length>1){
-           if(val.indexOf('mp4')){
-                console.log(val.split('mp4'))
-          }else{
-            console.log(222)
+  computed: {},
+  watch: {
+    "listQuery.ServiceOrderId": {
+      handler(val) {
+        let str = val.toString();
+        if (str.length > 1) {
+          if (val.indexOf("mp4")) {
+            console.log(val.split("mp4"));
+          } else {
+            console.log(222);
           }
-    }
-    }
-    }
+        }
+      },
+    },
   },
   methods: {
-        backStatus(res){
-      if(res==0){
-        return '未统计'
-      }else if(res<=2){
-        return '差'; 
-              }
-      else if(res<=3){
-        return '一般'; 
-              }else if(res<=4){
-        return '满意'; 
-              }else if(res<=5){
-        return '非常满意';
-              }
-            },
-        
-  
+    backStatus(res) {
+      if (res == 0) {
+        return "未统计";
+      } else if (res <= 2) {
+        return "差";
+      } else if (res <= 3) {
+        return "一般";
+      } else if (res <= 4) {
+        return "满意";
+      } else if (res <= 5) {
+        return "非常满意";
+      }
+    },
+
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.$refs.mainTable.toggleRowSelection(row);
@@ -281,7 +295,7 @@ export default {
     },
     openTree(res) {
       this.listLoading = true;
-      callservesure.GetDetails(res).then(res => {
+      callservesure.GetDetails(res).then((res) => {
         if (res.code == 200) {
           this.dataForm = res.result;
           this.dialogFormView = true;
@@ -291,7 +305,7 @@ export default {
     },
     getList() {
       this.listLoading = true;
-      afterevaluation.getList(this.listQuery).then(res => {
+      afterevaluation.getList(this.listQuery).then((res) => {
         this.checkList = res.data;
         this.total = res.count;
         // this.list = response.data.data;
@@ -311,12 +325,11 @@ export default {
       this.listQuery.page = val.page;
       this.listQuery.limit = val.limit;
       this.getList();
-    }
-  }
+    },
+  },
 };
 </script>
 <style>
-
 .dialog-mini .el-select {
   width: 100%;
 }
@@ -326,8 +339,8 @@ export default {
 .orangeWord {
   color: orange;
 }
-.blueWord{
-  color: #409EFF;
+.blueWord {
+  color: #409eff;
 }
 .redWord {
   color: orangered;

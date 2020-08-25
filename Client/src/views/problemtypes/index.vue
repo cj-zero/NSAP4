@@ -178,7 +178,7 @@ export default {
     },
     rowClick(row) {
       this.multipleSelection = row;
-      console.log(this.multipleSelection, 'row')
+      // console.log(this.multipleSelection, 'row')
       // this.$refs.mainTable.clearSelection();
       // this.$refs.mainTable.toggleRowSelection(row);
     },
@@ -189,7 +189,7 @@ export default {
       }
     },
     onBtnClicked: function(domId) {
-      console.log("you click:" + domId);
+      // console.log("you click:" + domId);
       switch (domId) {
         case "btnAdd":
           this.handleCreate(this.multipleSelection);

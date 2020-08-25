@@ -14,7 +14,11 @@ namespace OpenAuth.App.SignalR
         public static IServiceCollection AddNsapSignalR(this IServiceCollection services, IConfiguration configuration)
         {
             var redis = configuration.GetSection("AppSetting:SignalR").GetValue<string>("Redis");
-            services.AddSignalR().AddMessagePackProtocol().AddRedis(redis);
+            services.AddSignalR()
+                .AddMessagePackProtocol()
+                .AddStackExchangeRedis(redis, options => {
+                    options.Configuration.ChannelPrefix = "SignalR_";
+                });
             services.AddSingleton<IUserIdProvider, NameUserIdProvider>();
             return services;
         }

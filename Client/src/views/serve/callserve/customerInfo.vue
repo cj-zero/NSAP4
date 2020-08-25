@@ -71,7 +71,6 @@ export default {
   },
   methods: {
     getColor (num) {
-      console.log(num >= 0 ? '' : 'red-color', 'cust')
       return num >= 0 ? '' : 'red-color'
     }
   }
