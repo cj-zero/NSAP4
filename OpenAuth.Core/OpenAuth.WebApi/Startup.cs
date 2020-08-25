@@ -167,7 +167,7 @@ namespace OpenAuth.WebApi
             services.AddHostedService<QuartzService>();
 
             //SignalR
-            services.AddNsapSignalR();
+            services.AddNsapSignalR(Configuration);
 
             //SAP
             //services.AddSap();

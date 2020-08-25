@@ -34,34 +34,6 @@ namespace OpenAuth.App.Jobs
         {
             var jobId = context.MergedJobDataMap.GetString(Define.JOBMAPKEY);
 
-            if (_serviceOrderApp is null)
-            {
-                _sysLogApp.Add(new SysLog
-                {
-                    TypeName = "定时任务",
-                    TypeId = "AUTOJOB",
-                    Content = "ServiceOrderApp对象为空"
-                });
-            }
-            if (_userManagerApp is null)
-            {
-                _sysLogApp.Add(new SysLog
-                {
-                    TypeName = "定时任务",
-                    TypeId = "AUTOJOB",
-                    Content = "UserManagerApp对象为空"
-                });
-            }
-            if (_sysMessageApp is null)
-            {
-                _sysLogApp.Add(new SysLog
-                {
-                    TypeName = "定时任务",
-                    TypeId = "AUTOJOB",
-                    Content = "SysMessageApp对象为空"
-                });
-            }
-
             //todo:这里可以加入自己的自动任务逻辑
             var list = await _serviceOrderApp.FindTimeoutOrder();
             if(list.Count > 0)
