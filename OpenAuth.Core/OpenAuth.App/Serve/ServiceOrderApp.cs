@@ -2472,7 +2472,7 @@ namespace OpenAuth.App
                             a.NewestContacter,
                             a.NewestContactTel,
                             AppCustId = a.AppUserId,
-                            ServiceWorkOrders = a.ServiceWorkOrders.Where(w => string.IsNullOrEmpty(MaterialType) ? true : w.CurrentUserId == CurrentUserId && "其他设备".Equals(MaterialType) ? w.MaterialCode == "其他设备" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-")) == MaterialType).Select(o => new
+                            ServiceWorkOrders = a.ServiceWorkOrders.Where(w => w.CurrentUserId == CurrentUserId && (string.IsNullOrEmpty(MaterialType) ? true : "其他设备".Equals(MaterialType) ? w.MaterialCode == "其他设备" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-")) == MaterialType)).Select(o => new
                             {
                                 o.Id,
                                 o.Status,
