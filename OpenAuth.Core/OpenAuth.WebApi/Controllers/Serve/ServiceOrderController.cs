@@ -1061,5 +1061,29 @@ namespace OpenAuth.WebApi.Controllers
         //    }
         //    return result;
         //}
+
+        /// <summary>
+        /// 技术员填写解决方案
+        /// </summary>
+        /// <param name="ServiceOrderId">服务单Id</param>
+        /// <param name="MaterialType">设备类型</param>
+        /// <param name="CurrentUserId">当前技术员App用户Id</param>
+        /// <param name="SolutionId">解决方案Id</param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> SaveWorkOrderSolution(int ServiceOrderId, string MaterialType, int CurrentUserId, string SolutionId)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.SaveWorkOrderSolution(ServiceOrderId, MaterialType, CurrentUserId, SolutionId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }
