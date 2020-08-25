@@ -4,8 +4,6 @@
         <el-menu-item :index="item.path" :class="{'submenu-title-noDropdown':!isNest}">
           <i :class="`iconfont icon-${item.meta.icon}`"></i>
           <span v-if="item.meta && item.meta.title" slot="title">{{item.meta.title}}</span>
-          <span class="notice" v-if="item.meta.title === '服务呼叫待确认'">{{ serviceOrderCount }}</span>
-          <span class="notice" v-if="item.meta.title === '服务呼叫未派单'">{{ serviceWorkOrderCount }}</span>
         </el-menu-item>
       </template>
 
@@ -22,8 +20,17 @@
               <div class="menu-outer-wrapper">
                 <i :class="`iconfont icon-${child.meta.icon}`"></i>
                 <span v-if="child.meta&&child.meta.title" slot="title">{{child.meta.title}}</span>
-                <span class="notice" v-if="child.meta.title === '服务呼叫待确认' && message">{{ message.ServiceOrderCount }}</span>
-                <span class="notice" v-if="child.meta.title === '服务呼叫未派单' && message">{{ message.ServiceWorkOrderCount }}</span>
+                <span class="notice-wrapper" 
+                  v-if="child.meta.title === '服务呼叫待确认' && message"
+                >
+                  {{ message.ServiceOrderCount | process }}
+                </span>
+                <span 
+                  class="notice-wrapper" 
+                  v-if="child.meta.title === '服务呼叫未派单' && message"
+                >
+                  {{ message.ServiceWorkOrderCount | process }}
+                </span>
               </div>
             </el-menu-item>
           </template>
@@ -54,7 +61,6 @@ export default {
     }
   },
   data() {
-    console.log(this.$pendingNumber, 'pendingNubmer')
     return {
       routes: [],
       message: this.$pendingNumber || {
@@ -63,12 +69,14 @@ export default {
       }
     }
   },
+  filters: {
+    process (val) {
+      return val >= 99 ? '99+' : val
+    }
+  },
   watch: {
     item() {
       this.groupRouters()
-    },
-    message (val) {
-      console.log(val, 'message pending')
     }
   },
   created() {
@@ -95,11 +103,21 @@ export default {
   }
   .menu-outer-wrapper {
     position: relative;
-    .notice {
-      position: absolute;
-      right: -27px;
-      top: -14px;
-      color: red !important;
+    .notice-wrapper {
+      position: relative;
+      display: inline-block;
+      right: 23px;
+      top: -17px;
+      // padding: 5px;
+      color:#fff !important;
+      height: 18px;
+      line-height: 18px;
+      font-size: 12px;
+      padding: 0 6px;
+      text-align: center;
+      white-space: nowrap;
+      background-color: rgba(230, 162, 60, 1);
+      border-radius: 10px;
     }
   }
 </style>
