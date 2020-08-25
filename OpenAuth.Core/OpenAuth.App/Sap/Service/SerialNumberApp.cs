@@ -98,6 +98,9 @@ namespace OpenAuth.App.Sap.Service
             //查询当前服务单已选择的制造商序列号
             var manufSNsList = await UnitWork.Find<ServiceOrderSerial>(s => s.ServiceOrderId == req.ServiceOrderId).ToListAsync();
             string manufSNs = string.Join(",", manufSNsList.Select(s => s.ManufSN).Distinct().ToArray());
+            //查询技术员已经提交的制造商序列号
+            var technicianApplyList = await UnitWork.Find<SeviceTechnicianApplyOrder>(s => s.ServiceOrderId == req.ServiceOrderId).ToListAsync();
+            string technicianApplys = string.Join(",", technicianApplyList.Select(s => s.ManufSN).Distinct().ToArray());
             var query = from a in UnitWork.Find<OINS>(null)
                         join b in UnitWork.Find<CTR1>(null) on a.insID equals b.InsID into ab
                         from b in ab.DefaultIfEmpty()
@@ -111,6 +114,7 @@ namespace OpenAuth.App.Sap.Service
                 .WhereIf(!string.IsNullOrEmpty(req.key), q => q.a.itemCode.Contains(req.key) || q.a.manufSN.Contains(req.key))
                 .WhereIf(!string.IsNullOrEmpty(manufSNs), q => !manufSNs.Contains(q.a.manufSN))
                 .WhereIf(req.ManufSNs.Count > 0 && req.ManufSNs != null, q => !req.ManufSNs.Contains(q.a.manufSN))
+                .WhereIf(!string.IsNullOrEmpty(technicianApplys), q => !technicianApplys.Contains(q.a.manufSN))
                 ;
             var query2 = query.Select(q => new
             {

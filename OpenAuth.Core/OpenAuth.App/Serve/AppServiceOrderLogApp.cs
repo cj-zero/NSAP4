@@ -147,7 +147,7 @@ namespace OpenAuth.App
             var status = await queryStatus.Select(s => s.c.Status).Distinct().FirstOrDefaultAsync();
             result.Add("status", status);
             var list = new List<OrderLogListResp>();
-            var orderLogs = (await query.Where(w => w.b.U_SAP_ID == request.SapOrderId && (w.a.MaterialType == request.MaterialType || string.IsNullOrWhiteSpace(w.a.MaterialType))).Select(q => new OrderLogListResp { Title = q.a.Title, Details = q.a.Details, CreateTime = q.a.CreateTime.ToString("yyyy.MM.dd HH:mm:ss") }).ToListAsync()).GroupBy(g => g.Title).Select(s => s.First());
+            var orderLogs = (await query.Where(w => w.b.U_SAP_ID == request.SapOrderId && (w.a.MaterialType.Contains(request.MaterialType) || string.IsNullOrWhiteSpace(w.a.MaterialType))).Select(q => new OrderLogListResp { Title = q.a.Title, Details = q.a.Details, CreateTime = q.a.CreateTime.ToString("yyyy.MM.dd HH:mm:ss") }).ToListAsync()).GroupBy(g => g.Title).Select(s => s.First());
             list.AddRange(orderLogs);
             result.Add("orderLogs", list.OrderByDescending(l => l.CreateTime).ToList());
             return result;
