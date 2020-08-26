@@ -5,6 +5,7 @@ using OpenAuth.App.SignalR.Request;
 using OpenAuth.Repository.Interface;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,9 +14,11 @@ namespace OpenAuth.App.SignalR
     public class SignalRMessageApp : OnlyUnitWorkBaeApp
     {
         private readonly IHubContext<MessageHub> _hubContext;
-        public SignalRMessageApp(IUnitWork unitWork, IAuth auth, IHubContext<MessageHub> hubContext) : base(unitWork, auth)
+        private readonly ServiceOrderApp _serviceOrderApp;
+        public SignalRMessageApp(IUnitWork unitWork, IAuth auth, ServiceOrderApp serviceOrderApp, IHubContext<MessageHub> hubContext) : base(unitWork, auth)
         {
             _hubContext = hubContext;
+            _serviceOrderApp = serviceOrderApp;
         }
         /// <summary>
         /// 给单个用户发消息
@@ -49,11 +52,17 @@ namespace OpenAuth.App.SignalR
         /// 推送待处理呼叫服务数量和待派单数量
         /// </summary>
         /// <returns></returns>
-        public async Task SendPendingNumber(SendRoleMessageReq req)
+        public async Task SendPendingNumber()
         {
+            await _hubContext.Clients.Groups("呼叫中心").SendAsync("ServiceOrderCount", "系统", await _serviceOrderApp.GetServiceOrderCount());
 
-            await _hubContext.Clients.Groups(req.Role,req.RoleTwo).SendAsync("PendingNumber", "系统", req.Message);
+            var data = await _serviceOrderApp.GetServiceWorkOrderCount();
 
+            foreach (var item in data)
+            {
+                await _hubContext.Clients.User(item.Key).SendAsync("ServiceOrderCount", "系统",item.Count());
+            }
+            
         }
         
         public async Task SendSystemMessage(SignalRSendType type, string message, IReadOnlyList<string> sendTo = default)

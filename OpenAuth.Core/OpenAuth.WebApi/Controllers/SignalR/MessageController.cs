@@ -82,5 +82,26 @@ namespace OpenAuth.WebApi.Controllers.SignalR
             }
             return result;
         }
+
+        /// <summary>
+        /// 推送未处理和待派单消息
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> SendPendingNumber()
+        {
+            var result = new Response();
+            try
+            {
+                await _messageApp.SendPendingNumber();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }
