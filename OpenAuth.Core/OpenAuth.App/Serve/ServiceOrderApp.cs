@@ -102,8 +102,8 @@ namespace OpenAuth.App
                             a.Addr,
                             a.Contacter,
                             a.ContactTel,
-                            a.NewestContacter,
-                            a.NewestContactTel,
+                            NewestContacter = string.IsNullOrEmpty(a.NewestContacter) ? a.Contacter : a.NewestContacter,
+                            NewestContactTel = string.IsNullOrEmpty(a.NewestContactTel) ? a.ContactTel : a.NewestContactTel,
                             a.CustomerName,
                             a.CustomerId,
                             a.U_SAP_ID,
@@ -430,10 +430,8 @@ namespace OpenAuth.App
                 s.CustomerName,
                 s.Services,
                 CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
-                s.Contacter,
-                s.ContactTel,
-                s.NewestContacter,
-                s.NewestContactTel,
+                NewestContacter = string.IsNullOrEmpty(s.NewestContacter) ? s.Contacter : s.NewestContacter,
+                NewestContactTel = string.IsNullOrEmpty(s.NewestContactTel) ? s.ContactTel : s.NewestContactTel,
                 s.Supervisor,
                 s.SalesMan,
                 s.Status,
@@ -959,10 +957,8 @@ namespace OpenAuth.App
                 s.City,
                 s.Area,
                 s.Addr,
-                s.Contacter,
-                s.ContactTel,
-                s.NewestContacter,
-                s.NewestContactTel,
+                NewestContacter = string.IsNullOrEmpty(s.NewestContacter) ? s.Contacter : s.NewestContacter,
+                NewestContactTel = string.IsNullOrEmpty(s.NewestContactTel) ? s.ContactTel : s.NewestContactTel,
                 s.Status,
                 CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
                 s.U_SAP_ID,
@@ -2403,10 +2399,11 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            //获取设备类型列表
             var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
             var query = UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId)
                 .Include(s => s.ServiceOrderSNs)
-                .Include(s => s.ServiceWorkOrders);
+                .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType);
             var list = (await query
             .ToListAsync()).Select(s => new
             {
@@ -2421,14 +2418,14 @@ namespace OpenAuth.App
                 s.Addr,
                 s.Status,
                 CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
-                s.NewestContacter,
+                NewestContacter = string.IsNullOrEmpty(s.NewestContacter) ? s.Contacter : s.NewestContacter,
+                NewestContactTel = string.IsNullOrEmpty(s.NewestContactTel) ? s.ContactTel : s.NewestContactTel,
                 s.CustomerName,
                 s.Supervisor,
                 s.SalesMan,
                 s.U_SAP_ID,
-                s.ProblemTypeName,
-                s.ProblemTypeId,
-                s.NewestContactTel,
+                ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Name : s.ProblemTypeName,
+                ProblemTypeId = string.IsNullOrEmpty(s.ProblemTypeId) ? s.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Id : s.ProblemTypeId,
                 ServiceOrderSNs = s.ServiceOrderSNs.GroupBy(o => "其他设备".Equals(o.ItemCode) ? "其他设备" : o.ItemCode.Substring(0, o.ItemCode.IndexOf("-"))).ToList()
                 .Select(a => new
                 {
@@ -2471,8 +2468,8 @@ namespace OpenAuth.App
                             a.City,
                             a.Area,
                             a.Addr,
-                            a.NewestContacter,
-                            a.NewestContactTel,
+                            NewestContacter = string.IsNullOrEmpty(a.NewestContacter) ? a.Contacter : a.NewestContacter,
+                            NewestContactTel = string.IsNullOrEmpty(a.NewestContactTel) ? a.ContactTel : a.NewestContactTel,
                             AppCustId = a.AppUserId,
                             ServiceWorkOrders = a.ServiceWorkOrders.Where(w => w.CurrentUserId == CurrentUserId && (string.IsNullOrEmpty(MaterialType) ? true : "其他设备".Equals(MaterialType) ? w.MaterialCode == "其他设备" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-")) == MaterialType)).Select(o => new
                             {
@@ -2563,7 +2560,8 @@ namespace OpenAuth.App
                              s.U_SAP_ID,
                              s.ProblemTypeName,
                              s.ProblemTypeId,
-                             s.NewestContacter,
+                             NewestContacter = string.IsNullOrEmpty(s.NewestContacter) ? s.Contacter : s.NewestContacter,
+                             NewestContactTel = string.IsNullOrEmpty(s.NewestContactTel) ? s.ContactTel : s.NewestContactTel,
                              custMobile,
                              orderTakeType
                          }).ToList();

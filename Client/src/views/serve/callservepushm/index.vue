@@ -529,7 +529,8 @@ export default {
               });
               this.listQuery.QryState = 1;
               this.listQuery.QryU_SAP_ID = "";
-                this.listQuery.limit=20
+              this.listQuery.limit=20
+              this.isClear = true
               this.afterLeft();
               this.dialogOrder = false;
               this.listLoading = false;
@@ -710,6 +711,7 @@ export default {
         // this.modulesTree = arr;
         this.listLoading = false;
       }).catch(() => {
+        this.isClear = false
         this.listLoading = false
       })
     },

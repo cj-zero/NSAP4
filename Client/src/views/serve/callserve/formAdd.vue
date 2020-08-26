@@ -1075,11 +1075,11 @@ export default {
         }
       },
     },
-    form: {
+    "form.customerId": {
       deep: true,
       handler(val) {
         console.log(this.form, val, 'customerId change')
-        this.listQuery.CardCode = val.customerId;
+        this.listQuery.CardCode = val;
         getSerialNumber(this.listQuery)
           .then((res) => {
             this.SerialNumberList = res.data;

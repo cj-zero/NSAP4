@@ -20,6 +20,7 @@ import { Navbar, Sidebar, AppMain, TagsView } from './components'
 import ResizeMixin from './mixin/ResizeHandler'
 import { getToken } from '@/utils/auth' // 验权
 import initSignalR from '@/utils/signalR'
+import { sendPendingNumber } from '@/api/message'
 export default {
   name: 'layout',
   components: {
@@ -53,14 +54,16 @@ export default {
   data () {
     return {
       message: {
-        ServiceOrderCount: '',
-        ServiceWorkOrderCount: ''
+        serviceOrderCount: 0,
+        serviceWorkOrderCount: 0
       }
     }
   },
   mounted () {
     console.log('mounted sider')
-    initSignalR.call(this, getToken())
+    initSignalR.call(this, getToken(), () => {
+      sendPendingNumber()
+    })
   },
   methods: {
     handleClickOutside() {
