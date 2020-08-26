@@ -1,10 +1,9 @@
-// 消息推送
-// import vm from './eventBus'
 /**
  * 相关文档地址: https://docs.microsoft.com/zh-cn/aspnet/core/signalr/javascript-client?view=aspnetcore-3.1
  */
+
 let hasConnected = false
-function initSignalR (token = '') {
+function initSignalR (token = '', callBack) { 
   if (hasConnected) {
     return
   }
@@ -52,7 +51,18 @@ function initSignalR (token = '') {
   })
 
   // 工单数量 (服务呼叫模块)
-  connection.on('PendingNumber', (user, message) => {
+  // connection.on('PendingNumber', (user, message) => {
+  //   if (typeof message === 'string') {
+  //     try {
+  //       message = JSON.parse(message)
+  //     } catch (e) {
+  //       // TODO
+  //     }
+  //   }
+  //   console.log('pendingNumber', message)
+  //   this.message = message
+  // })
+  connection.on('ServiceOrderCount', (user, message) => {
     if (typeof message === 'string') {
       try {
         message = JSON.parse(message)
@@ -60,12 +70,24 @@ function initSignalR (token = '') {
         // TODO
       }
     }
-    console.log('pendingNumber', message)
-    this.message = message
+    console.log('ServiceOrderCount', message)
+    this.message.serviceOrderCount = message
+  })
+  connection.on('ServiceWordOrderCount', (user, message) => {
+    if (typeof message === 'string') {
+      try {
+        message = JSON.parse(message)
+      } catch (e) {
+        // TODO
+      }
+    }
+    console.log('wwwServiceOrderCount', message)
+    this.message.serviceWorkOrderCount = message
   })
   // 连接完成
   connection.on('Connected', () => {
     console.log("websocket has connected")
+    callBack && callBack()
     hasConnected = true
   })
   

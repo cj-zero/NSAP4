@@ -21,15 +21,15 @@
                 <i :class="`iconfont icon-${child.meta.icon}`"></i>
                 <span v-if="child.meta&&child.meta.title" slot="title">{{child.meta.title}}</span>
                 <span class="notice-wrapper" 
-                  v-if="child.meta.title === '服务呼叫待确认' && vm.message.ServiceOrderCount"
+                  v-if="child.meta.title === '服务呼叫待确认' && vm.message.serviceOrderCount"
                 >
-                  {{vm.message.ServiceOrderCount | process }}
+                  {{vm.message.serviceOrderCount | process }}
                 </span>
                 <span 
                   class="notice-wrapper" 
-                  v-if="child.meta.title === '服务呼叫未派单' && vm.message.ServiceWorkOrderCount"
+                  v-if="child.meta.title === '服务呼叫未派单' && vm.message.serviceWorkOrderCount"
                 >
-                  {{vm.message.ServiceWorkOrderCount | process }}
+                  {{vm.message.serviceWorkOrderCount | process }}
                 </span>
               </div>
             </el-menu-item>
