@@ -6,7 +6,7 @@ using System.Text;
 
 namespace OpenAuth.App.Response
 {
-    [ExcelExporter(Name = "呼叫服务", TableStyle = "None")]
+    [ExcelExporter(Name = "呼叫服务", TableStyle = "Medium2")]
     public class ServiceOrderExcelDto
     {
         [ExporterHeader(DisplayName = "服务单号")]
