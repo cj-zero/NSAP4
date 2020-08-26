@@ -160,11 +160,11 @@
         :visible.sync="dialogPhoneVisible"
         title="客户信息"
       >
-        <Rate />
       </el-dialog>
       <!-- 客服新建服务单 -->
       <el-dialog
         width="800px"
+        top="10vh"
         class="dialog-mini"
         @close="closeCustoner"
         :close-on-click-modal="false"
@@ -190,6 +190,7 @@
       <!-- 客服编辑服务单 -->
       <el-dialog
         width="800px"
+        top="10vh"
         class="dialog-mini"
         @open="openDetail"
         @close="closeCustoner"
@@ -219,6 +220,7 @@
       <!-- 只能查看的表单 -->
       <el-dialog
         width="1080px"
+        top="10vh"
         title="服务单详情"
         :close-on-click-modal="false"
         destroy-on-close
@@ -278,7 +280,6 @@ import zxsearch from "./search";
 import zxchat from "./chatOnRight";
 import treeList from "./treeList";
 import CustomerInfo from './customerInfo'
-import Rate from './rate'
 import rightImg from '@/assets/table/right.png'
 // import serveTableVue from '../serveTable.vue';
 // import { callserve } from "@/mock/serve";
@@ -302,8 +303,7 @@ export default {
     treeList,
     zxsearch,
     zxchat,
-    CustomerInfo,
-    Rate
+    CustomerInfo
   },
   directives: {
     waves,
@@ -321,10 +321,10 @@ export default {
         { name: "customerId", label: "客户代码",align:'left', width: '100' },
         { name: "customerName", label: "客户名称" ,align:'left', width: '180' },
         { name: "fromTheme", label: "呼叫主题", align: 'left', width: '275' },
-        { name: "contacter", label: "联系人" ,align:'left', width: '100' },
-        { name: "contactTel", label: "电话号码" ,align:'left', width: '125' },
+        // { name: "contacter", label: "联系人" ,align:'left', width: '100' },
+        // { name: "contactTel", label: "电话号码" ,align:'left', width: '125' },
         { name: "newestContacter", label: "最近联系人" ,align:'left', width: '100' },
-        { name: "newestContactTel", label: "最新电话号码" ,align:'left', width: '125' },
+        { name: "newestContactTel", label: "最新联系方式" ,align:'left', width: '125' },
         { name: "supervisor", label: "售后主管" ,align:'left', width: '100' },
         { name: "salesMan", label: "销售员" ,align:'left', width: '100' },
         { name: "recepUserName", label: "接单员" ,align:'left', width: '100' },
@@ -859,6 +859,9 @@ export default {
       return result.join('&')
     },
     closeDia(a) {
+      if (a === 'closeLoading') {
+        return this.loadingBtn = false
+      }
       if (a === 'y') {
         this.getList();
       }

@@ -28,7 +28,7 @@
                 v-if="fruit.name === 'id'"
                 type="primary"
                 @click="openTree(scope.row.id)"
-              >{{ scope.row.id }}</el-link>
+              >{{ scope.row.u_SAP_ID }}</el-link>
               <span v-if="fruit.name === 'createTime'">
                 {{ scope.row.createTime }}
               </span>
