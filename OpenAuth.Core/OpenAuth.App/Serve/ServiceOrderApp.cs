@@ -750,6 +750,8 @@ namespace OpenAuth.App
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.TechName)))?.Id;
             obj.ServiceWorkOrders.ForEach(s =>
             {
+                s.SubmitDate = DateTime.Now;
+                s.SubmitUserId = loginContext.User.Id;
                 if (s.FromType == 2)
                     s.Status = 7;
             });
@@ -2330,7 +2332,7 @@ namespace OpenAuth.App
                         Priority = workOrder.Priority == 3 ? "高" : workOrder.Priority == 2 ? "中" : "低",
                         WorkOrderStatus = statusDic.GetValueOrDefault(workOrder.Status.Value),
                         CurrentUser = workOrder.CurrentUser,
-                        SubmitDate = workOrder.SubmitDate,
+                        SubmitDate = workOrder.CreateTime,
                         BookingDate = workOrder.BookingDate,
                         VisitTime = workOrder.VisitTime,
                         LiquidationDate = workOrder.LiquidationDate,
