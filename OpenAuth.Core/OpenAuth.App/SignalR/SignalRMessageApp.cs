@@ -60,7 +60,7 @@ namespace OpenAuth.App.SignalR
 
             foreach (var item in data)
             {
-                await _hubContext.Clients.User(item.Key).SendAsync("ServiceOrderCount", "系统",item.Count());
+                await _hubContext.Clients.User(item.Key).SendAsync("ServiceWordOrderCount", "系统",item.Count());
             }
             
         }
