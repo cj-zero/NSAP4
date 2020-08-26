@@ -2399,10 +2399,11 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            //获取设备类型列表
             var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
             var query = UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId)
                 .Include(s => s.ServiceOrderSNs)
-                .Include(s => s.ServiceWorkOrders);
+                .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType);
             var list = (await query
             .ToListAsync()).Select(s => new
             {
@@ -2423,8 +2424,8 @@ namespace OpenAuth.App
                 s.Supervisor,
                 s.SalesMan,
                 s.U_SAP_ID,
-                s.ProblemTypeName,
-                s.ProblemTypeId,
+                ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Name : s.ProblemTypeName,
+                ProblemTypeId = string.IsNullOrEmpty(s.ProblemTypeId) ? s.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Id : s.ProblemTypeId,
                 ServiceOrderSNs = s.ServiceOrderSNs.GroupBy(o => "其他设备".Equals(o.ItemCode) ? "其他设备" : o.ItemCode.Substring(0, o.ItemCode.IndexOf("-"))).ToList()
                 .Select(a => new
                 {
