@@ -852,7 +852,7 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.b.CustomerId.Contains(req.QryCustomer) || q.b.CustomerName.Contains(req.QryCustomer))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.a.ManufacturerSerialNumber.Contains(req.QryManufSN))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.b.RecepUserName.Contains(req.QryRecepUser))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.c.Name.Contains(req.QryProblemType))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.a.ProblemTypeId.Contains(req.QryProblemType))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.b.ContactTel.Equals(req.ContactTel) || q.b.NewestContactTel.Equals(req.ContactTel))
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                          .WhereIf(req.QryMaterialTypes != null && req.QryMaterialTypes.Count > 0, q => req.QryMaterialTypes.Contains(q.a.MaterialCode == "其他设备" ? "其他设备" : q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))))
@@ -2274,8 +2274,8 @@ namespace OpenAuth.App
                 ServiceWorkOrders = q.ServiceWorkOrders.Where(a => (string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId) || a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
                 && (string.IsNullOrWhiteSpace(req.QryState) || a.Status.Equals(Convert.ToInt32(req.QryState)))
                 && (string.IsNullOrWhiteSpace(req.QryManufSN) || a.ManufacturerSerialNumber.Contains(req.QryManufSN))
-                && ((req.QryCreateTimeFrom == null || req.QryCreateTimeTo == null) || (a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
-                  ).ToList()
+                //&& ((req.QryCreateTimeFrom == null || req.QryCreateTimeTo == null) || (a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
+                && (string.IsNullOrWhiteSpace(req.QryFromType) || a.FromType.Equals(Convert.ToInt32(req.QryFromType)))).ToList()
             });
 
             var dataList = await resultsql.ToListAsync(); ;
@@ -2580,9 +2580,15 @@ namespace OpenAuth.App
         /// 获取为派单工单总数
         /// </summary>
         /// <returns></returns>
-        public async Task<int> GetServiceWorkOrderCount()
+        public async Task<List<IGrouping<string,ServiceOrder>>> GetServiceWorkOrderCount()
         {
-            return await UnitWork.Find<ServiceWorkOrder>(u => u.Status == 1).CountAsync();
+            var result = new TableData();
+            var model = UnitWork.Find<ServiceWorkOrder>(s => s.Status == 1).Select(s=>s.ServiceOrderId).Distinct();
+            var ids = await model.ToListAsync();
+            var query = await UnitWork.Find<ServiceOrder>(s => ids.Contains(s.Id)).ToListAsync();
+            var groub = query.GroupBy(s => s.Supervisor).ToList();
+            
+            return groub;
         }
         /// <summary>
         /// 获取隐私号码

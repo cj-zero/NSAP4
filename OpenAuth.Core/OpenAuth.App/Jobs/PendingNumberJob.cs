@@ -32,10 +32,8 @@ namespace OpenAuth.App.Jobs
         {
             var jobId = context.MergedJobDataMap.GetString(Define.JOBMAPKEY);
             //todo:这里可以加入自己的自动任务逻辑
-            var message = new { ServiceOrderCount = await _serviceOrderApp.GetServiceOrderCount(), ServiceWorkOrderCount = await _serviceOrderApp.GetServiceWorkOrderCount() };
                 
-            
-            await _signalrmessage.SendPendingNumber(new SendRoleMessageReq { Role="售后主管",RoleTwo= "呼叫中心", Message= message.ToJson() });
+            await _signalrmessage.SendPendingNumber();
 
             _openJobApp.RecordRun(jobId);
         }
