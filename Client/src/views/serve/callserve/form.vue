@@ -9,7 +9,7 @@
             :rules="rules"
             ref="form"
             class="rowStyle1"
-            :disabled="!isCreate"
+            :disabled="this.formName !== '新建'"
             :label-width="labelwidth"
             :inline-message="true"
             :show-message="false"
@@ -795,7 +795,7 @@ export default {
         for (let i = 0; i < res.length; i++) {
           targetList.push({
             manufacturerSerialNumber: res[i].data[0].manufSN,
-            editTrue: false,
+            editTrue: i === 0,
             internalSerialNumber: res[i].data[0].internalSN,
             materialCode: res[i].data[0].itemCode,
             materialDescription: res[i].data[0].itemName,
