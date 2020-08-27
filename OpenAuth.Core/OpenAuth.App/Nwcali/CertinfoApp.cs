@@ -172,7 +172,7 @@ namespace OpenAuth.App
                 throw new CommonException("证书不存在", 80001);
 
             var b = await CheckCanOperation(certInfo.Id, loginContext.User.Name);
-            if (!b)
+            if (!b || certInfo.Operator.Equals(loginContext.User.Name))
             {
                 throw new CommonException("您无法操作此步骤。", 80011);
             }
@@ -201,8 +201,8 @@ namespace OpenAuth.App
                         });
                         await UnitWork.UpdateAsync<Certinfo>(c => c.Id.Equals(req.CertInfoId), o => new Certinfo { Operator = loginContext.User.Name, OperatorId = loginContext.User.Id });
                         await UnitWork.SaveAsync();
-                        var signPath1 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", nameDic.GetValueOrDefault(loginContext.User.Name));
-                        list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 1, ValueData = signPath1 });
+                        //var signPath1 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", nameDic.GetValueOrDefault(loginContext.User.Name));
+                        //list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 1, ValueData = signPath1 });
                     }
                     else if (flowInstance.ActivityName.Equals("待审核"))
                     {

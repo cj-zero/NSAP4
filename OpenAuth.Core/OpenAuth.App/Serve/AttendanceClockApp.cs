@@ -42,7 +42,6 @@ namespace OpenAuth.App
             {
                 throw new Exception("当前登录用户没有访问该模块字段的权限，请联系管理员配置");
             }
-
             var result = new TableData();
             var objs = UnitWork.Find<AttendanceClock>(null);
             objs = objs.WhereIf(!string.IsNullOrEmpty(request.key), u => u.Id.Contains(request.key))
@@ -52,6 +51,12 @@ namespace OpenAuth.App
                 .WhereIf(request.DateFrom != null && request.DateTo != null, u => u.ClockDate >= request.DateFrom && u.ClockDate < Convert.ToDateTime(request.DateTo).AddMinutes(1440))
                 ;
 
+            // 主管只能看到本部门的技术员的打卡记录
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
+            {
+                var userIds = _revelanceApp.Get(Define.USERORG, false, loginContext.Orgs.Select(o=>o.Id).ToArray());
+                objs = objs.Where(q => userIds.Contains(q.UserId));
+            }
 
             var propertyStr = string.Join(',', properties.Select(u => u.Key));
             result.columnHeaders = properties;
