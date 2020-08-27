@@ -920,6 +920,7 @@ namespace OpenAuth.App
                 .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
 
             var query = UnitWork.Find<ServiceOrder>(s => serviceOrderIds.Contains(s.Id))
+                .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                 .Select(s => new
                 {
                     s.Id,
@@ -940,7 +941,9 @@ namespace OpenAuth.App
                     s.U_SAP_ID,
                     Count = s.ServiceWorkOrders.Where(w => w.ServiceOrderId == s.Id && w.CurrentUserId == req.TechnicianId).Count(),
                     MaterialTypeInfo = s.ServiceWorkOrders.GroupBy(g => g.MaterialCode.Substring(0, g.MaterialCode.IndexOf("-"))).Select(s => s.Key).ToList(),
-                    s.ProblemTypeName
+                    s.ProblemTypeName,
+                    s.ServiceWorkOrders,
+                    ProblemType = s.ServiceWorkOrders.Select(s => s.ProblemType).FirstOrDefault()
                 });
 
             var result = new TableData();
@@ -964,7 +967,7 @@ namespace OpenAuth.App
                 s.U_SAP_ID,
                 Distance = (req.Latitude == 0 || s.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
                 s.Count,
-                s.ProblemTypeName,
+                ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.ProblemType.Name : s.ProblemTypeName,
                 MaterialTypeQty = s.MaterialTypeInfo.Count,
                 MaterialType = string.IsNullOrEmpty(s.MaterialTypeInfo.FirstOrDefault()) ? "其他设备" : s.MaterialTypeInfo.FirstOrDefault()
             }).ToList();
@@ -1140,7 +1143,10 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<List<UploadFileResp>> GetServiceOrderPictures(int id, int type)
         {
-            var idList = await UnitWork.Find<ServiceOrderPicture>(p => p.ServiceOrderId.Equals(id) && p.PictureType.Equals(type)).Select(p => p.PictureId).ToListAsync();
+            var idList = await UnitWork.Find<ServiceOrderPicture>(p => p.ServiceOrderId.Equals(id))
+               .WhereIf(type == 0, a => a.PictureType == 1 || a.PictureType == 2)
+               .WhereIf(type > 0, b => b.PictureType.Equals(type))
+               .Select(p => p.PictureId).ToListAsync();
             var files = await UnitWork.Find<UploadFile>(f => idList.Contains(f.Id)).ToListAsync();
             var list = files.MapTo<List<UploadFileResp>>();
             return list;
@@ -2119,7 +2125,15 @@ namespace OpenAuth.App
                 q.City,
                 q.Area,
                 q.Addr,
-                q.U_SAP_ID
+                q.U_SAP_ID,
+                MaterialInfo = q.ServiceWorkOrders.Where(o => o.Status == 1).Select(o => new
+                {
+                    o.MaterialCode,
+                    o.ManufacturerSerialNumber,
+                    MaterialType = "其他设备".Equals(o.MaterialCode) ? "其他设备" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
+                    o.Status,
+                    o.Id
+                }),
             });
 
             result.Data =
@@ -2143,7 +2157,8 @@ namespace OpenAuth.App
                 s.City,
                 s.Area,
                 s.Addr,
-                s.U_SAP_ID
+                s.U_SAP_ID,
+                ServiceWorkOrders = s.MaterialInfo.GroupBy(o => o.MaterialType).ToList()
             });
             result.Count = query.Count();
             return result;
@@ -2580,14 +2595,14 @@ namespace OpenAuth.App
         /// 获取为派单工单总数
         /// </summary>
         /// <returns></returns>
-        public async Task<List<IGrouping<string,ServiceOrder>>> GetServiceWorkOrderCount()
+        public async Task<List<IGrouping<string, ServiceOrder>>> GetServiceWorkOrderCount()
         {
             var result = new TableData();
-            var model = UnitWork.Find<ServiceWorkOrder>(s => s.Status == 1).Select(s=>s.ServiceOrderId).Distinct();
+            var model = UnitWork.Find<ServiceWorkOrder>(s => s.Status == 1).Select(s => s.ServiceOrderId).Distinct();
             var ids = await model.ToListAsync();
             var query = await UnitWork.Find<ServiceOrder>(s => ids.Contains(s.Id)).ToListAsync();
             var groub = query.GroupBy(s => s.Supervisor).ToList();
-            
+
             return groub;
         }
         /// <summary>
@@ -2612,7 +2627,8 @@ namespace OpenAuth.App
             //获取技术员联系方式
             string TechnicianTel = await query.Where(w => w.a.AppUserId == TechnicianId).Select(s => s.b.Mobile).FirstOrDefaultAsync();
             //获取客户联系方式
-            string custMobile = (await UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId).FirstOrDefaultAsync()).NewestContactTel;
+            var serviceOrderInfo = await UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId).FirstOrDefaultAsync();
+            string custMobile = string.IsNullOrEmpty(serviceOrderInfo.NewestContactTel) ? serviceOrderInfo.ContactTel : serviceOrderInfo.NewestContactTel;
             if (string.IsNullOrEmpty(TechnicianTel) || string.IsNullOrEmpty(custMobile))
             {
                 //判断当前操作角色 0客户 1技术员
@@ -2667,6 +2683,62 @@ namespace OpenAuth.App
                 SolutionId = req.SolutionId
             });
             await UnitWork.SaveAsync();
+        }
+
+
+        /// <summary>
+        /// 获取管理员服务单详情
+        /// </summary>
+        /// <param name="ServiceOrderId"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetAppAdminServiceOrderDetails(int ServiceOrderId)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取设备类型列表
+            var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
+            var query = UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId)
+                .Include(s => s.ServiceOrderSNs)
+                .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType);
+            var list = (await query
+            .ToListAsync()).Select(s => new
+            {
+                s.Id,
+                s.AppUserId,
+                s.Services,
+                s.Latitude,
+                s.Longitude,
+                s.Province,
+                s.City,
+                s.Area,
+                s.Addr,
+                s.Status,
+                CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
+                NewestContacter = string.IsNullOrEmpty(s.NewestContacter) ? s.Contacter : s.NewestContacter,
+                NewestContactTel = string.IsNullOrEmpty(s.NewestContactTel) ? s.ContactTel : s.NewestContactTel,
+                s.CustomerName,
+                s.Supervisor,
+                s.SalesMan,
+                s.U_SAP_ID,
+                ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Name : s.ProblemTypeName,
+                ProblemTypeId = string.IsNullOrEmpty(s.ProblemTypeId) ? s.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Id : s.ProblemTypeId,
+                ServiceWorkOrders = s.ServiceWorkOrders.GroupBy(o => "其他设备".Equals(o.MaterialCode) ? "其他设备" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-"))).ToList()
+                .Select(a => new
+                {
+                    MaterialType = a.Key,
+                    UnitName = "台",
+                    Count = a.Count(),
+                    Status = s.ServiceWorkOrders.FirstOrDefault(b => "其他设备".Equals(a.Key) ? b.MaterialCode == "其他设备" : b.MaterialCode.Contains(a.Key))?.Status,
+                    MaterialTypeName = "其他设备".Equals(a.Key) ? "其他设备" : MaterialTypeModel.Where(m => m.TypeAlias == a.Key).FirstOrDefault().TypeName,
+                    orders = a.Select(b => new { b.MaterialCode, b.ManufacturerSerialNumber, b.Id }).ToList()
+                })
+            }).ToList();
+            result.Data = list;
+            return result;
         }
     }
 }

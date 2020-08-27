@@ -1082,5 +1082,25 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// 获取管理员查看的服务单详情
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetAppAdminServiceOrderDetails(int ServiceOrderId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetAppAdminServiceOrderDetails(ServiceOrderId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }
