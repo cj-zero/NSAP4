@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Response;
 using OpenAuth.App.SignalR.Request;
+using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 using System;
 using System.Collections.Generic;
@@ -14,11 +16,9 @@ namespace OpenAuth.App.SignalR
     public class SignalRMessageApp : OnlyUnitWorkBaeApp
     {
         private readonly IHubContext<MessageHub> _hubContext;
-        private readonly ServiceOrderApp _serviceOrderApp;
-        public SignalRMessageApp(IUnitWork unitWork, IAuth auth, ServiceOrderApp serviceOrderApp, IHubContext<MessageHub> hubContext) : base(unitWork, auth)
+        public SignalRMessageApp(IUnitWork unitWork, IAuth auth, IHubContext<MessageHub> hubContext) : base(unitWork, auth)
         {
             _hubContext = hubContext;
-            _serviceOrderApp = serviceOrderApp;
         }
         /// <summary>
         /// 给单个用户发消息
@@ -54,9 +54,9 @@ namespace OpenAuth.App.SignalR
         /// <returns></returns>
         public async Task SendPendingNumber()
         {
-            await _hubContext.Clients.Groups("呼叫中心").SendAsync("ServiceOrderCount", "系统", await _serviceOrderApp.GetServiceOrderCount());
+            await _hubContext.Clients.Groups("呼叫中心").SendAsync("ServiceOrderCount", "系统", await GetServiceOrderCount());
 
-            var data = await _serviceOrderApp.GetServiceWorkOrderCount();
+            var data = await GetServiceWorkOrderCount();
 
             foreach (var item in data)
             {
@@ -83,6 +83,28 @@ namespace OpenAuth.App.SignalR
                 default:
                     break;
             }
+        }
+
+        /// <summary>
+        /// 获取未处理服务单总数
+        /// </summary>
+        /// <returns></returns>
+        private async Task<int> GetServiceOrderCount() 
+        {
+            return await UnitWork.Find<ServiceOrder>(u => u.Status == 1).CountAsync();
+        }
+        /// <summary>
+        /// 获取未派单工单总数
+        /// </summary>
+        /// <returns></returns>
+        private async Task<List<IGrouping<string, ServiceOrder>>> GetServiceWorkOrderCount()
+        {
+            var result = new TableData();
+            var model = UnitWork.Find<ServiceWorkOrder>(s => s.Status == 1).Select(s => s.ServiceOrderId).Distinct();
+            var ids = await model.ToListAsync();
+            var query = await UnitWork.Find<ServiceOrder>(s => ids.Contains(s.Id)).ToListAsync();
+            var groub = query.GroupBy(s => s.Supervisor).ToList();
+            return groub;
         }
 
     }
