@@ -10,7 +10,7 @@
           :placeholder="'名称'"
           v-model="listQuery.CardCodeOrCardName"
         ></el-input> -->
-  <el-input
+        <el-input
           @keyup.enter.native="handleFilter"
           size="mini"
           style="width: 200px;margin:0 10px;"
@@ -69,7 +69,11 @@
         </template>
       </el-table-column>
       <el-table-column prop="cntctPrsn" label="客户联系人" align="left" show-overflow-tooltip width="100"></el-table-column>
-      <el-table-column prop="cellular" label="客户电话" align="left" show-overflow-tooltip></el-table-column>
+      <el-table-column label="客户电话" align="left" show-overflow-tooltip>
+        <template slot-scope="scope">
+          {{ scope.row.cellular ? scope.row.cellular : scope.row.phone1 }}
+        </template>
+      </el-table-column>
       <!-- <el-table-column prop="slpName" label="业务员" align="left" show-overflow-tooltip></el-table-column> -->
       <el-table-column prop="slpName" label="销售员" align="left" show-overflow-tooltip></el-table-column>
       <el-table-column prop="technician" label="售后技术员" align="left" show-overflow-tooltip width="100"></el-table-column>
@@ -402,5 +406,11 @@ export default {
 <style>
 .dialog-mini .el-select {
   width: 100%;
+}
+.redColor {
+  color: red;
+}
+.greenColro {
+  color: green;
 }
 </style>

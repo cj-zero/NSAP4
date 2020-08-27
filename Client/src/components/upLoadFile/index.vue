@@ -43,7 +43,9 @@
       :on-remove="handleRemove"
       :headers="headers"
       class="img"
+      :limit="limit"
       :auto-upload="true"
+      :on-exceed="onExeed"
       >
       <i class="el-icon-plus"></i>
       <span class="el-upload-list__item-delete" @click="handleDownload(file)">
@@ -54,14 +56,30 @@
       <!-- <el-row style="margin-bottom: 20px">
         <el-button type="primary" @click="handleDownload" style="margin-left: 20px" size="mini">下载</el-button>
       </el-row> -->
-      <img width="100%" :src="dialogImageUrl" alt />
+      <el-image
+        :src="dialogImageUrl"
+        :fit="fit"></el-image>
+        <!-- <img width="100%" :src="dialogImageUrl" alt /> -->
     </el-dialog>
   </div>
 </template>
 
 <script>
 export default {
-  props: ["setImage"],
+  props: {
+    setImage: {
+      type: [String, Object],
+      default: ''
+    },
+    limit: {
+      type: Number,
+      default: 0
+    },
+    fit: {
+      type: String,
+      default: 'fill'
+    }
+  },
   data() {
     return {
       dialogImageUrl: "",
@@ -109,7 +127,12 @@ export default {
       if (!testmsg) {
         this.$message.error('上传图片格式不对!')
       }
+      // if (this.pictures.length >)
       return testmsg
+    },
+    onExeed () {
+      console.log('onecdsad')
+      this.$message.error(`最多上传${this.limit}个文件`)
     },
     successBack(res, file, fileList){
       this.newPictureList.push({
