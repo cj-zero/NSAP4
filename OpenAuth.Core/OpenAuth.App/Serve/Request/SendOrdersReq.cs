@@ -11,6 +11,12 @@ namespace OpenAuth.App.Request
         public List<int> WorkOrderIds { get; set; }
 
         [Required]
+        public string ServiceOrderId { get; set; }
+
+        [Required]
+        public List<string> QryMaterialTypes { get; set; }
+
+        [Required]
         public int CurrentUserId { get; set; }
     }
 }
