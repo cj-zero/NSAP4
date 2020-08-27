@@ -531,6 +531,8 @@ export default {
               this.listQuery.QryU_SAP_ID = "";
               this.listQuery.limit=20
               this.isClear = true
+              this.listQueryServer.page = 1
+              this.listQuery.page = 1
               this.afterLeft();
               this.dialogOrder = false;
               this.listLoading = false;
