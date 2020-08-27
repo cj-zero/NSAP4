@@ -13,24 +13,25 @@
             :label-width="labelwidth"
             :inline-message="true"
             :show-message="false"
+            size="mini"
+            :label-position="labelposition"
           >
             <!-- <div
               style="font-size:22px;color:#67C23A;text-align:center;height:40px;line-height:35px;border-bottom:1px solid silver;margin-bottom:10px;"
             >{{formName}}呼叫服务单</div> -->
             <el-row type="flex" class="row-bg" justify="space-around">
-              <el-col :span="8">
+              <el-col :span="6">
                 <el-form-item label="客户代码" prop="customerId">
                   <!-- <el-input size="mini" v-model="form.customerId" ><i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i></el-input> -->
                   <el-autocomplete
                     popper-class="my-autocomplete"
                     v-model="form.customerId"
-                    size="small"
                     :fetch-suggestions="querySearch"
                     placeholder="请输入内容"
                     class="myAuto"
-                    @select="handleSelect"
+                    @select="handleSelectCustomer"
                   >
-                    <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i>
+                    <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick('customer')"></i>
                     <template slot-scope="{ item }">
                       <div class="name">
                         <p style="height:20px;margin:2px;">{{ item.cardCode }}</p>
@@ -43,13 +44,18 @@
                   </el-autocomplete>
                 </el-form-item>
               </el-col>
-              <el-col :span="8">
+              <el-col :span="6">
+                <el-form-item label="客户名称" prop="customerName">
+                  <el-input size="mini" v-model="form.customerName" disabled style="width: 140px;"></el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="6">
                 <el-form-item label="服务ID">
                   <el-input size="mini" v-model="form.u_SAP_ID" disabled placeholder="请选择">
                   </el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="8">
+              <el-col :span="6">
                 <!-- <el-form-item label="服务合同">
                 <el-input v-model="form.contractId" disabled></el-input>
                 </el-form-item>-->
@@ -59,12 +65,35 @@
               </el-col>
             </el-row>
             <el-row type="flex" class="row-bg" justify="space-around">
-              <el-col :span="8">
-                <el-form-item label="客户名称" prop="customerName">
-                  <el-input size="mini" v-model="form.customerName" disabled></el-input>
+              <el-col :span="6">
+                <el-form-item label="终端客户代码">
+                  <el-autocomplete
+                    popper-class="my-autocomplete"
+                    v-model="form.terminalCustomerId"
+                    :fetch-suggestions="querySearch"
+                    placeholder="请输入内容"
+                    class="myAuto"
+                    @select="handleSelectTerminal"
+                  >
+                    <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick('terminalCustomer')"></i>
+                    <template slot-scope="{ item }">
+                      <div class="name">
+                        <p style="height:20px;margin:2px;">{{ item.cardCode }}</p>
+                        <p
+                          style="font-size:12px;height:20px;margin:2px;color:silver;"
+                        >{{ item.cardName }}</p>
+                      </div>
+                      <!-- <span class="addr">{{ item.cardName }}</span> -->
+                    </template>
+                  </el-autocomplete>
                 </el-form-item>
               </el-col>
-              <el-col :span="8">
+              <el-col :span="6">
+                <el-form-item label="终端客户名称">
+                  <el-input size="mini" v-model="form.terminalCustomer" disabled style="width: 140px;"></el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="6">
                 <el-form-item label="联系人" prop="contacter">
                   <el-select
                     size="mini"
@@ -81,42 +110,26 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="8">
+              <el-col :span="6">
                 <el-form-item label="最近联系人">
                   <el-input size="mini" v-model="form.newestContacter"></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
-            <el-row type="flex" class="row-bg" justify="space-around">
+            <!-- <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="8">
                 <el-form-item label="终端客户">
                   <el-input size="mini" v-model="form.terminalCustomer"></el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="8">
-                <el-form-item label="电话号码">
-                  <el-input size="mini" v-model.number="form.contactTel" disabled></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <!-- <el-form-item
-                  label="最新电话号码"
-                  prop="newestContactTel"
-                  :rules="[
-                    { type: 'number', message: '电话号码格式有误'}
-                  ]"
-                >-->
-                <el-form-item label="最新电话号码" prop="newestContactTel">
-                  <el-input size="mini" v-model="form.newestContactTel"></el-input>
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <el-row :gutter="20">
-              <el-col :span="8">
+              
+            </el-row> -->
+            <el-row>
+              <el-col :span="6">
                 <el-form-item label="呼叫来源" prop="fromId">
                   <el-select
                     size="mini"
-                    style="width:150px;"
+                    style="width: 110px;"
                     v-model="form.fromId"
                     placeholder="请选择"
                   >
@@ -129,46 +142,48 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="8">
-                <el-form-item label="创建时间" label-width="95px">
+              <el-col :span="6">
+                <el-form-item label="创建时间">
                   <el-date-picker v-if="isCreate"
                     @focus="setThisTime"
                     :clearable="false"
                     size="mini"
                     v-model="form.createTimeNow"
-                    style="width:150px;"
                     type="datetime"
                     format="yyyy-MM-dd HH:mm"
                     placeholder="选择日期时间"
                     @change="onDateChange"
+                    prefix-icon
                   ></el-date-picker>
                   <el-date-picker v-else
                     @focus="setThisTime"
                     :clearable="false"
                     size="mini"
                     v-model="form.createTime"
-                    style="width:150px;"
                     type="datetime"
                     format="yyyy-MM-dd HH:mm"
                     placeholder="选择日期时间"
                   ></el-date-picker>
                 </el-form-item>
               </el-col>
-              <el-col :span="8">
-                <el-form-item label label-width="70px">
-                  <el-radio-group v-model="form.name" disabled>
-                    <el-radio style="color:red;">售后审核:{{form.supervisor}}</el-radio>
-                    <el-radio style="color:red;">销售审核:{{form.salesMan}}</el-radio>
-                  </el-radio-group>
+              <el-col :span="6">
+                <el-form-item label="电话号码">
+                  <el-input size="mini" v-model.number="form.contactTel" disabled></el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="6">
+                <el-form-item label="最新电话号码" prop="newestContactTel">
+                  <el-input size="mini" v-model="form.newestContactTel"></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
-            <el-row :gutter="10" type="flex" class="row-bg" justify="space-around">
-              <el-col :span="8">
+            <el-row :gutter="10" type="flex" class="row-bg">
+              <el-col :span="6">
                 <el-form-item label="地址标识">
                   <!-- <el-input v-model="form.addressDesignator"></el-input> -->
                   <el-select
                     size="mini"
+                    style="width: 110px;"
                     v-model="form.addressDesignator"
                     @change="changeAddr"
                     placeholder="请选择"
@@ -182,28 +197,43 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="16">
+              <el-col :span="14">
                 <el-input
                   size="mini"
                   disabled
-                  style="height:30px;line-height:30px;padding:2px 0 0 0;"
+                  style="height:30px;line-height:30px;padding:2px 0 0 2px;"
                   v-model="form.address"
                 ></el-input>
               </el-col>
+              <el-col :span="2">
+                <el-form-item label label-width="0">
+                  <el-radio style="color:red;" disabled>售后审核:{{form.supervisor}}</el-radio>
+                </el-form-item>
+              </el-col>
             </el-row>
             <el-row :gutter="10">
-              <el-col :span="8">
+              <el-col :span="6">
                 <el-form-item label="现地址">
-                  <el-input size="mini" v-model="allArea" disabled></el-input>
+                  <el-input size="mini" v-model="allArea" readonly style="width: 110px;"></el-input>
+                  <area-selector
+                    class="area-content-wrapper"
+                    @change="onAreaChange"
+                  ></area-selector>
+                  <!-- <div >我是</div> -->
                   <!-- <p
                     style="overflow-x:hidden;border: 1px solid silver; border-radius:5px;height:30px;margin:0;padding-left:10px;font-size:12px;"
                   >{{allArea}}</p> -->
                 </el-form-item>
               </el-col>
-              <el-col :span="16" style="height:30px;line-height:30px;padding:2px 0 0 0;">
+              <el-col :span="14" style="height:30px;line-height:30px;padding:2px 0 0 7px;">
                 <el-input size="mini" v-model="form.addr">
                   <el-button size="mini" slot="append" icon="el-icon-position" @click="openMap"></el-button>
                 </el-input>
+              </el-col>
+              <el-col :span="2">
+                <el-form-item label label-width="0">
+                  <el-radio style="color:red;" disabled>销售审核:{{form.salesMan}}</el-radio>
+                </el-form-item>
               </el-col>
             </el-row>
             <!-- //上传图片组件暂时放在这里 -->
@@ -214,17 +244,16 @@
               style="margin:0 0 10px 0 ;"
               class="row-bg"
             >
-              <el-col :span="1" style="line-height:40px;"></el-col>
-              <el-col :span="2" style="line-height:40px;">
-                <div style="font-size:12px;color:#606266;width:100px;">上传图片</div>
+              <!-- <el-col :span="1" style="line-height:40px;"></el-col> -->
+              <el-col class="upload-text">
+                上传图片
               </el-col>
-              <el-col :span="18">
-                <upLoadImage :setImage="setImage" @get-ImgList="getImgList"></upLoadImage>
+              <el-col :span="22">
+                <upLoadImage :setImage="setImage" @get-ImgList="getImgList" :limit="limit"></upLoadImage>
               </el-col>
               <!-- <el-col :span="2" style="line-height:40px;">  暂时取消
                 <el-button
                   type="primary"
-                  size="small"
                   v-if="ifEdit"
                   icon="el-icon-share"
                   @click="postService"
@@ -238,11 +267,10 @@
               style="margin:0 0 10px 0 ;"
               class="row-bg"
             >
-              <el-col :span="1" style="line-height:40px;"></el-col>
-              <el-col :span="2" style="line-height:40px;">
-                <div style="font-size:12px;color:#606266;width:120px;">已上传图片</div>
+              <el-col class="upload-text">
+                已上传图片
               </el-col>
-              <el-col :span="20" v-if="form.serviceOrderPictures&&form.serviceOrderPictures.length">
+              <el-col :span="22" v-if="form.serviceOrderPictures&&form.serviceOrderPictures.length">
                 <div class="demo-image__lazy">
                   <div class="img-list" v-for="url in form.serviceOrderPictures" :key="url.id">
                     <el-image
@@ -388,11 +416,13 @@ import zmap from "@/components/amap";
 import upLoadImage from "@/components/upLoadFile";
 import Model from "@/components/Formcreated/components/Model";
 import { timeToFormat } from "@/utils";
+import { isCustomerCode } from '@/utils/validate'
 import { debounce } from '@/utils/process'
 // import { isMobile, isPhone } from "@/utils/validate";
 import { download } from "@/utils/file";
 import formPartner from "./formPartner";
 import formAdd from "./formAdd";
+import AreaSelector from '@/components/AreaSelector'
 // import { delete } from 'vuedraggable';
 export default {
   name: "formTable",
@@ -404,7 +434,8 @@ export default {
     upLoadImage, 
     Model, 
     // bmap,
-    callId 
+    callId,
+    AreaSelector 
   },
   props: [
     "modelValue",
@@ -436,6 +467,12 @@ export default {
     //     }
     //   }, 500);
     // };
+    // let checkCustomerId = (rule, value, callback) => {
+    //   if (!value || isCustomerCode(value)) {
+    //     return callback()
+    //   }
+    //   return callback(this.$message.error("请输入正确的代码"))
+    // }
     return {
       baseURL: process.env.VUE_APP_BASE_API + "/files/Download",
       tokenValue: this.$store.state.user.token,
@@ -471,6 +508,8 @@ export default {
       form: {
         customerId: "", //客户代码,
         customerName: "", //客户名称,
+        terminalCustomerId: "", // 终端客户代码
+        terminalCustomer: "", // 终端客户名称
         contacter: "", //联系人,
         contactTel: "", //联系人电话,
         supervisor: "", //主管名字,
@@ -479,7 +518,6 @@ export default {
         salesManId: "", //销售用户Id,fv
         newestContacter: "", //最新联系人,
         newestContactTel: "", //最新联系人电话号码,
-        terminalCustomer: "", //终端客户,recepUserName
         contractId: "", //服务合同
         recepUserName: "", //接单员
         addressDesignator: "", //地址标识
@@ -495,7 +533,7 @@ export default {
         addr: "", //地区
         longitude: "", //number经度
         latitude: "", //	number纬度
-        fromId: 1, //integer($int32)呼叫来源 1-电话 2-APP
+        fromId: this.formName === '确认' ? 6 : 1, //integer($int32)呼叫来源 1-电话 2-APP
         pictures: [], //
         serviceWorkOrders: [],
       },
@@ -529,7 +567,9 @@ export default {
       needPos: false,
       dialogCallId: false, // 最近十个服务单弹窗
       CallList: [], // 最近十个服务单列表
-      selectSerNumberDisabled: true // 用于选择客户代码后，工单序列号是否可以操作
+      selectSerNumberDisabled: true, // 用于选择客户代码后，工单序列号是否可以操作
+      limit: 9, // 图片上传限制
+      handleSelectType: '' // 用来区分选择的是客户代码还是终端客户代码
     };
   },
   computed: {
@@ -538,11 +578,11 @@ export default {
     },
   },
   watch: {
-    ifEdit: {
-      handler(val) {
-        console.log(val);
-      },
-    },
+    // ifEdit: {
+    //   handler(val) {
+    //     console.log(val);
+    //   },
+    // },
     customer: {
       handler(val) {
         this.getPartnerInfo(val.customerId)
@@ -605,8 +645,18 @@ export default {
           this.selectSerNumberDisabled = true
         }
         // }
+        console.log('form.customerId change')
         this.getPartnerInfo(val);
       },
+    },
+    "form.terminalCustomerId" (val) {
+      if (!val) {
+        console.log('reset Info')
+        this.resetInfo()
+        if (isCustomerCode(this.form.customerId)) {
+          this.getPartnerInfo(this.form.customerId)
+        }
+      }
     },
     refValue: {
       deep: true,
@@ -622,7 +672,7 @@ export default {
                 item.problemType && item.problemType.name;
             });
           }
-          console.log(val, 'refValueChange', this.form)
+          // console.log(val, 'refValueChange', this.form)
           this.propForm = this.form.serviceWorkOrders;
         }
         // this.propForm = this.refValue.serviceWorkOrders
@@ -738,7 +788,21 @@ export default {
     dragmap(res) {
       this.allAddress = res;
     }, 
-
+    onAreaChange (val) { // 地址发生变化
+      console.log(val)
+    },
+    resetInfo () { // 清空终端客户相关的数据
+      this.addressList = [];
+      this.cntctPrsnList = [];
+      this.form.contactTel = ''
+      this.form.terminalCustomer = ''
+      this.form.supervisor = '';
+      this.form.contacter = ''
+      this.form.contactTel = ''
+      this.form.addressDesignator = '';
+      this.form.address = '';
+      console.log(this.addressList, this.cntctPrsnList, this.form)
+    },
     async setForm(val) {
       val = JSON.parse(JSON.stringify(val));
       if (val) {
@@ -770,7 +834,6 @@ export default {
         page: 1,
         limit: 10
       }
-      console.log(val, 'val')
       let CardCode = val.customerId
       let manufSNList = val.serviceOrderSNs.map(item => {
         return item.manufSN
@@ -778,7 +841,6 @@ export default {
       let promiseList = [], otherIndex = 0, hasOther = false
       for (let i = 0; i < manufSNList.length; i++) {
         let manufSN = manufSNList[i]
-        console.log(manufSN, 'man')
         if (manufSN !== '其他设备') {
           promiseList.push(getSerialNumber({
             ...listQuery,
@@ -800,6 +862,7 @@ export default {
             materialCode: res[i].data[0].itemCode,
             materialDescription: res[i].data[0].itemName,
             feeType: 1,
+            orderTakeType: 1,
             fromTheme:  "",
             fromType:  1,
             problemTypeName:  "",
@@ -819,6 +882,7 @@ export default {
             materialCode: "其他设备",
             materialDescription: "",
             feeType: 1,
+            orderTakeType: 1,
             fromTheme:  "",
             fromType:  1,
             problemTypeName:  "",
@@ -831,6 +895,7 @@ export default {
           })
         }
         this.propForm = targetList
+        console.log(targetList, 'taragetList')
       }).catch((err) => {
         console.log(err, 'err')
         this.$message.error('查询序列号失败')
@@ -880,6 +945,14 @@ export default {
         //   return item;
         // });
         this.isValid = await this.$refs.form.validate();
+        if (!isCustomerCode(this.form.customerId)) {
+          this.$message('请填入正确的客户代码格式')
+          return this.$emit('close-Dia', 'closeLoading')
+        }
+        if (this.form.terminalCustomerId && !isCustomerCode(this.form.terminalCustomerId)) {
+          this.$message.error('请输入正确的终端代码格式')
+          return this.$emit('close-Dia', 'closeLoading')
+        }
         console.log(chec, this.isValid, "isValid", this.$router.path);
         if (chec && this.isValid) {
           if (this.$route.path === "/serve/callserve") {
@@ -974,7 +1047,12 @@ export default {
       callservesure
         .forServe(num)
         .then((res) => {
-          console.log(res, "售后主管");
+          console.log(res, "售后主管", this.handleSelectType, isCustomerCode(this.form.terminalCustomerId));
+          if (this.handleSelectType === 'customer') { // 如果点击客户代码的时候
+            if (this.form.terminalCustomerId) { // 如果终端客户存在，则不进行值的覆盖
+              return 
+            }
+          }
           this.addressList = res.result.addressList;
           this.cntctPrsnList = res.result.cntctPrsnList;
           console.log(this.cntctPrsnList, 'this.cntctPrsnList')
@@ -1103,7 +1181,7 @@ export default {
       return getPartner(this.listQuery)
         .then((res) => {
           this.partnerList = res.data;
-          console.log(res.data, '返回')
+          // console.log(res.data, '返回')
           this.filterPartnerList = this.partnerList;
           this.parentCount = res.count;
           this.parentLoad = false;
@@ -1113,16 +1191,30 @@ export default {
           this.parentLoad = false
         });
     },
-    handleSelect(item) {
+    handleSelectCustomer(item) {
+      console.log(item)
+      this.handleSelect(item, 'customer')
+    },
+    handleSelectTerminal (item) {
+      this.handleSelect(item, 'termianlCustomer')
+    },
+    handleSelect (item, type) {
+      // if (!this.form.customerId && type === 'terminalCustomer') {
+      //   return this.$message.error('请先选择客户代码')
+      // }
       this.inputSearch = item.customerId;
-      this.form.customerId = item.cardCode;
-      this.form.customerName = item.cardName;
-      // this.form.contacter = item.cntctPrsn;
-      this.form.contactTel = item.cellular;
-      // this.form.addressDesignator = item.address;
-      // this.form.address = item.address;
-      this.form.salesMan = item.slpName;
-      console.log(item, 'item handleSelect')
+      this.handleSelectType = type // 选择的类型
+      if (type === 'customer') { // 客户代码
+        this.form.customerId = item.cardCode;
+        this.form.customerName = item.cardName;
+        this.form.salesMan = item.slpName;
+        if (!this.form.terminalCustomerId) {
+          this.form.contactTel = item.cellular;
+        }
+      } else { // 终端客户代码
+        this.form.terminalCustomerId = item.cardCode
+        this.form.terminalCustomer = item.cardName
+      }
       this.handleCurrentChange(item)
     },
     sureVal() {
@@ -1165,10 +1257,14 @@ export default {
         this.disableBtn = false;
       }
     },
-    handleIconClick() {
+    handleIconClick(type) {
       if (!this.isCreate) {
         return
       }
+      // if (type === 'terminal' && !this.form.customerId) {
+      //   this.$message.error('请先选择客户代码')
+      // }
+      this.handleSelectType = type // 设置选择的类型
       this.dialogPartner = true;
     },
     onSubmit() {
@@ -1209,6 +1305,24 @@ export default {
   ::v-deep .el-input__inner {
     padding-right: 5px;
     // padding-left:25px;
+  }
+  ::v-deep .el-date-editor {
+    .el-input__inner {
+      width: 140px;
+    }
+  }
+  .upload-text {
+    width: 95px;
+    line-height: 40px; 
+    text-align: right;
+    font-size: 12px;
+    color: #606266;
+  }
+  .area-content-wrapper {
+    position: absolute;
+    top: 28px;
+    z-index: 2;
+    // background-color: red;
   }
 }
 .addClass1 {
