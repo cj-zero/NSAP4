@@ -521,12 +521,16 @@ export default {
     postOrder() {
       this.listLoading = true;
       this.params.currentUserId = this.orderRadio;
-      this.params.workOrderIds = this.workorderidList;
+      // this.params.workOrderIds = this.workorderidList;
+      let checkedKey = this.$refs.treeForm.getCheckedkeys()
+      this.params.qryMaterialTypes = this.listQuery.QryMaterialTypes
+      this.params.serviceOrderId = checkedKey[0] 
       if (this.hasAlreadNum > 2) {
         this.$message({
           type: "warning",
           message: "单个技术员接单不能超过3个",
         });
+        this.listLoading = false
       } else {
         callservepushm
           .SendOrders(this.params)
@@ -605,6 +609,9 @@ export default {
           this.open();
           break;
         case "btnPost":
+          if (!this.$refs.treeForm.getCheckedkeys().length) {
+            return this.$message.error('请先选择服务单')
+          }
           this.changeOrder();
           break;
         case "editTable":
@@ -729,7 +736,7 @@ export default {
       for (let i = 0; i < data.length; i++) {
         arr[i] = [];
         arr[i].label = `服务号:${data[i].u_SAP_ID}`;
-        arr[i].key1 = `${data[i].u_SAP_ID}`;
+        arr[i].key1 = `${data[i].serviceOrderId}`;
         arr[i].key = `${data[i].u_SAP_ID}`;
         arr[i].children = [];
         // work

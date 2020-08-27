@@ -14,7 +14,7 @@
     <div class="app-container flex-item">
           <div class="bg-white fh">
             <el-table ref="mainTable" :key='tableKey' :data="list" v-loading="listLoading" border fit
-              highlight-current-row style="width: 100%;" height="calc(100% - 52px)" @row-click="rowClick" @selection-change="handleSelectionChange">
+              highlight-current-row style="width: 100%; height:calc(100% - 52px);overflow-y:scroll;" @row-click="rowClick" @selection-change="handleSelectionChange">
               <el-table-column align="center" type="selection" width="55">
               </el-table-column>
 
