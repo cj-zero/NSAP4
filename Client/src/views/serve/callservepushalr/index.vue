@@ -540,6 +540,8 @@ export default {
               this.listQuery.QryState=''
               this.listQuery.QryU_SAP_ID = ''
               this.isClear = true
+              this.listQueryServer.page = 1
+              this.listQuery.page = 1
               this.afterLeft()
               this.dialogOrder = false;
               this.listLoading = false;
@@ -562,18 +564,6 @@ export default {
       this.listQueryServer = Object.assign(this.listQueryServer, val)
       this.afterLeft()
     },
-    // idSearch (val) {
-    //   this.listQueryServer.page = 1
-    //   this.isClear = true // 是否清空树形数据数组
-    //   Object.assign(this.listQueryServer, {
-    //     QryU_SAP_ID: val
-    //   });
-    //   // if(val.QryU_SAP_ID){
-    //   //   this.$refs.treeForm.setCheckedKeys([val.QryU_SAP_ID]);
-    //   // }
-    //   this.$refs.treeForm.setCheckedKeys([val]);
-    //   this.afterLeft()
-    // },
     openTree(res) {
       this.listLoading = true;
       callservesure.GetDetails(res).then((res) => {

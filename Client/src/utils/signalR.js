@@ -63,25 +63,9 @@ function initSignalR (token = '', callBack) {
   //   this.message = message
   // })
   connection.on('ServiceOrderCount', (user, message) => {
-    if (typeof message === 'string') {
-      try {
-        message = JSON.parse(message)
-      } catch (e) {
-        // TODO
-      }
-    }
-    console.log('ServiceOrderCount', message)
     this.message.serviceOrderCount = message
   })
   connection.on('ServiceWordOrderCount', (user, message) => {
-    if (typeof message === 'string') {
-      try {
-        message = JSON.parse(message)
-      } catch (e) {
-        // TODO
-      }
-    }
-    console.log('wwwServiceOrderCount', message)
     this.message.serviceWorkOrderCount = message
   })
   // 连接完成

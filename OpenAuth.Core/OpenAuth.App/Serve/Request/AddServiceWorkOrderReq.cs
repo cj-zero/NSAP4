@@ -2,6 +2,7 @@
 using OpenAuth.Repository.Domain;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 
 namespace OpenAuth.App.Request
@@ -40,6 +41,7 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 呼叫主题
         /// </summary>
+        [MaxLength(255)]
         public string FromTheme { get; set; }
         /// <summary>
         /// 问题类型Id
