@@ -1481,9 +1481,9 @@ namespace OpenAuth.App
             }
             var u = await UnitWork.Find<AppUserMap>(s => s.AppUserId == req.CurrentUserId).Include(s => s.User).FirstOrDefaultAsync();
             
-            if (req.WorkOrderIds.Count <= 0 || req.WorkOrderIds == null)
+            if (req.WorkOrderIds == null||req.WorkOrderIds.Count <= 0 )
             {
-                var Model = UnitWork.Find<ServiceWorkOrder>(s => s.Id.ToString() == req.ServiceOrderId && req.QryMaterialTypes.Contains(s.MaterialCode == "其他设备" ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")))).Select(s => s.ServiceOrderId);
+                var Model = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.ToString() == req.ServiceOrderId && req.QryMaterialTypes.Contains(s.MaterialCode == "其他设备" ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")))).Select(s => s.Id);
                 var ids = await Model.ToListAsync();
                 await UnitWork.UpdateAsync<ServiceWorkOrder>(s => ids.Contains(s.Id), o => new ServiceWorkOrder
                 {
