@@ -1329,49 +1329,89 @@ namespace OpenAuth.App
                 throw new CommonException("技术员接单已经达到上限", 60001);
             }
             var u = await UnitWork.Find<AppUserMap>(s => s.AppUserId == req.CurrentUserId).Include(s => s.User).FirstOrDefaultAsync();
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => req.WorkOrderIds.Contains(s.Id), o => new ServiceWorkOrder
+            
+            if (req.WorkOrderIds.Count <= 0 || req.WorkOrderIds == null)
             {
-                CurrentUser = u.User.Name,
-                CurrentUserNsapId = u.User.Id,
-                CurrentUserId = req.CurrentUserId,
-                Status = 2
-            });
-            await UnitWork.SaveAsync();
-            //获取服务单Id
-            var serviceOrderId = (await UnitWork.Find<ServiceWorkOrder>(s => req.WorkOrderIds.Contains(s.Id)).FirstOrDefaultAsync()).ServiceOrderId;
-            //获取设备类型集合
-            List<string> MaterialTypes = new List<string>();
-            var MaterialTypeInfo = (await UnitWork.Find<ServiceWorkOrder>(s => req.WorkOrderIds.Contains(s.Id) && !"其他设备".Equals(s.MaterialCode)).ToListAsync()).GroupBy(g => g.MaterialCode.Substring(0, g.MaterialCode.IndexOf("-"))).Select(a => new
-            {
-                a.Key
-            }).ToList();
-            MaterialTypeInfo.ForEach(i => MaterialTypes.Add(i.Key));
-            //判断是否存在其他设备类型的工单
-            var otherMaterialCount = (await UnitWork.Find<ServiceWorkOrder>(s => req.WorkOrderIds.Contains(s.Id) && "其他设备".Equals(s.MaterialCode)).ToListAsync()).Count();
-            if (otherMaterialCount > 0)
-            {
-                MaterialTypes.Add("其他设备");
-            }
-            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
-            {
-                Title = "技术员接单",
-                Details = "已为您分配专属技术员进行处理，感谢您的耐心等待",
-                LogType = 1,
-                ServiceOrderId = serviceOrderId,
-                ServiceWorkOrder = string.Join(",", req.WorkOrderIds.ToArray()),
-                MaterialType = string.Join(",", MaterialTypes.ToArray())
-            });
+                var Model = UnitWork.Find<ServiceWorkOrder>(s => s.Id.ToString() == req.ServiceOrderId && req.QryMaterialTypes.Contains(s.MaterialCode == "其他设备" ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")))).Select(s => s.ServiceOrderId);
+                var ids = await Model.ToListAsync();
+                await UnitWork.UpdateAsync<ServiceWorkOrder>(s => ids.Contains(s.Id), o => new ServiceWorkOrder
+                {
+                    CurrentUser = u.User.Name,
+                    CurrentUserNsapId = u.User.Id,
+                    CurrentUserId = req.CurrentUserId,
+                    Status = 2
+                });
+                await UnitWork.SaveAsync();
+                await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+                {
+                    Title = "技术员接单",
+                    Details = "已为您分配专属技术员进行处理，感谢您的耐心等待",
+                    LogType = 1,
+                    ServiceOrderId = Convert.ToInt32(req.ServiceOrderId),
+                    ServiceWorkOrder = string.Join(",", ids.ToArray()),
+                    MaterialType = string.Join(",", req.QryMaterialTypes.ToArray())
+                });
 
-            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+                await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+                {
+                    Title = "技术员接单成功",
+                    Details = "已接单成功，请选择服务方式：远程服务或上门服务",
+                    LogType = 2,
+                    ServiceOrderId = Convert.ToInt32(req.ServiceOrderId),
+                    ServiceWorkOrder = string.Join(",", ids.ToArray()),
+                    MaterialType = string.Join(",", req.QryMaterialTypes.ToArray())
+                });
+                await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{string.Join(",", ids.ToArray())}", ActionType = "主管派单工单" }, ids);
+            }
+            else 
             {
-                Title = "技术员接单成功",
-                Details = "已接单成功，请选择服务方式：远程服务或上门服务",
-                LogType = 2,
-                ServiceOrderId = serviceOrderId,
-                ServiceWorkOrder = string.Join(",", req.WorkOrderIds.ToArray()),
-                MaterialType = string.Join(",", MaterialTypes.ToArray())
-            });
-            await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{string.Join(",", req.WorkOrderIds)}", ActionType = "主管派单工单" }, req.WorkOrderIds);
+                await UnitWork.UpdateAsync<ServiceWorkOrder>(s => req.WorkOrderIds.Contains(s.Id), o => new ServiceWorkOrder
+                {
+                    CurrentUser = u.User.Name,
+                    CurrentUserNsapId = u.User.Id,
+                    CurrentUserId = req.CurrentUserId,
+                    Status = 2
+                });
+                await UnitWork.SaveAsync();
+                //获取服务单Id
+                var serviceOrderId = (await UnitWork.Find<ServiceWorkOrder>(s => req.WorkOrderIds.Contains(s.Id)).FirstOrDefaultAsync()).ServiceOrderId;
+                //获取设备类型集合
+                List<string> MaterialTypes = new List<string>();
+                var MaterialTypeInfo = (await UnitWork.Find<ServiceWorkOrder>(s => req.WorkOrderIds.Contains(s.Id) && !"其他设备".Equals(s.MaterialCode)).ToListAsync()).GroupBy(g => g.MaterialCode.Substring(0, g.MaterialCode.IndexOf("-"))).Select(a => new
+                {
+                    a.Key
+                }).ToList();
+                MaterialTypeInfo.ForEach(i => MaterialTypes.Add(i.Key));
+                //判断是否存在其他设备类型的工单
+                var otherMaterialCount = (await UnitWork.Find<ServiceWorkOrder>(s => req.WorkOrderIds.Contains(s.Id) && "其他设备".Equals(s.MaterialCode)).ToListAsync()).Count();
+                if (otherMaterialCount > 0)
+                {
+                    MaterialTypes.Add("其他设备");
+                }
+
+                await UnitWork.SaveAsync();
+                await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+                {
+                    Title = "技术员接单",
+                    Details = "已为您分配专属技术员进行处理，感谢您的耐心等待",
+                    LogType = 1,
+                    ServiceOrderId = Convert.ToInt32(req.ServiceOrderId),
+                    ServiceWorkOrder = string.Join(",", req.WorkOrderIds.ToArray()),
+                    MaterialType = string.Join(",", MaterialTypes.ToArray())
+                });
+
+                await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+                {
+                    Title = "技术员接单成功",
+                    Details = "已接单成功，请选择服务方式：远程服务或上门服务",
+                    LogType = 2,
+                    ServiceOrderId = Convert.ToInt32(req.ServiceOrderId),
+                    ServiceWorkOrder = string.Join(",", req.WorkOrderIds.ToArray()),
+                    MaterialType = string.Join(",", MaterialTypes.ToArray())
+                });
+                await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{string.Join(",", req.WorkOrderIds.ToArray())}", ActionType = "主管派单工单" }, req.WorkOrderIds);
+
+            }
             await PushMessageToApp(req.CurrentUserId, "派单成功提醒", "您已被派有一个新的售后服务，请尽快处理");
         }
 
@@ -2568,28 +2608,30 @@ namespace OpenAuth.App
             result.Data = list;
             return result;
         }
-        /// <summary>
-        /// 获取待处理服务单总数
-        /// </summary>
-        /// <returns></returns>
-        public async Task<int> GetServiceOrderCount()
-        {
-            return await UnitWork.Find<ServiceOrder>(u => u.Status == 1).CountAsync();
-        }
-        /// <summary>
-        /// 获取为派单工单总数
-        /// </summary>
-        /// <returns></returns>
-        public async Task<List<IGrouping<string,ServiceOrder>>> GetServiceWorkOrderCount()
-        {
-            var result = new TableData();
-            var model = UnitWork.Find<ServiceWorkOrder>(s => s.Status == 1).Select(s=>s.ServiceOrderId).Distinct();
-            var ids = await model.ToListAsync();
-            var query = await UnitWork.Find<ServiceOrder>(s => ids.Contains(s.Id)).ToListAsync();
-            var groub = query.GroupBy(s => s.Supervisor).ToList();
-            
-            return groub;
-        }
+        #region
+        ///// <summary>
+        ///// 获取待处理服务单总数
+        ///// </summary>
+        ///// <returns></returns>
+        //public async Task<int> GetServiceOrderCount()
+        //{
+        //    return await UnitWork.Find<ServiceOrder>(u => u.Status == 1).CountAsync();
+        //}
+        ///// <summary>
+        ///// 获取为派单工单总数
+        ///// </summary>
+        ///// <returns></returns>
+        //public async Task<List<IGrouping<string,ServiceOrder>>> GetServiceWorkOrderCount()
+        //{
+        //    var result = new TableData();
+        //    var model = UnitWork.Find<ServiceWorkOrder>(s => s.Status == 1).Select(s=>s.ServiceOrderId).Distinct();
+        //    var ids = await model.ToListAsync();
+        //    var query = await UnitWork.Find<ServiceOrder>(s => ids.Contains(s.Id)).ToListAsync();
+        //    var groub = query.GroupBy(s => s.Supervisor).ToList();
+
+        //    return groub;
+        //}
+        #endregion
         /// <summary>
         /// 获取隐私号码
         /// </summary>
