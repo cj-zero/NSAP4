@@ -391,7 +391,6 @@ export default {
       this.selectMenus = val
     },
     onBtnClicked: function(domId) {
-      console.log('you click:' + domId)
       switch (domId) {
         case 'btnAdd':
           this.handleCreate()

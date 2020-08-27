@@ -9,7 +9,7 @@
             :rules="rules"
             ref="form"
             class="rowStyle1"
-            :disabled="!isCreate"
+            :disabled="this.formName !== '新建'"
             :label-width="labelwidth"
             :inline-message="true"
             :show-message="false"
@@ -219,7 +219,7 @@
                 <div style="font-size:12px;color:#606266;width:100px;">上传图片</div>
               </el-col>
               <el-col :span="18">
-                <upLoadImage :setImage="setImage" @get-ImgList="getImgList"></upLoadImage>
+                <upLoadImage :setImage="setImage" @get-ImgList="getImgList" :limit="limit"></upLoadImage>
               </el-col>
               <!-- <el-col :span="2" style="line-height:40px;">  暂时取消
                 <el-button
@@ -495,7 +495,7 @@ export default {
         addr: "", //地区
         longitude: "", //number经度
         latitude: "", //	number纬度
-        fromId: 1, //integer($int32)呼叫来源 1-电话 2-APP
+        fromId: this.formName === '确认' ? 6 : 1, //integer($int32)呼叫来源 1-电话 2-APP
         pictures: [], //
         serviceWorkOrders: [],
       },
@@ -529,7 +529,8 @@ export default {
       needPos: false,
       dialogCallId: false, // 最近十个服务单弹窗
       CallList: [], // 最近十个服务单列表
-      selectSerNumberDisabled: true // 用于选择客户代码后，工单序列号是否可以操作
+      selectSerNumberDisabled: true, // 用于选择客户代码后，工单序列号是否可以操作
+      limit: 9 // 图片上传限制
     };
   },
   computed: {
@@ -795,7 +796,7 @@ export default {
         for (let i = 0; i < res.length; i++) {
           targetList.push({
             manufacturerSerialNumber: res[i].data[0].manufSN,
-            editTrue: false,
+            editTrue: i === 0,
             internalSerialNumber: res[i].data[0].internalSN,
             materialCode: res[i].data[0].itemCode,
             materialDescription: res[i].data[0].itemName,
@@ -1167,6 +1168,9 @@ export default {
     },
     handleIconClick() {
       if (!this.isCreate) {
+        return
+      }
+      if (this.formName !== '新建') {
         return
       }
       this.dialogPartner = true;

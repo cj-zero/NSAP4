@@ -25,7 +25,6 @@ service.interceptors.request.use(config => {
     config.paramsSerializer = function(params) {
         return qs.stringify(params, {arrayFormat: 'repeat'})
     }}
-    console.log(config, 'config')
   return config
 }, error => {
   // Do something with request error
@@ -39,7 +38,7 @@ service.interceptors.response.use(
   * code为非200是抛错 可结合自己业务进行修改
   */
     const res = response.data
-    if (res.code !== 200) {
+     if (res.code !== 200) {
       // 50008:非法的token; 50012:其他客户端登录了;  50014:Token 过期了;
       if (res.code === 50008 || res.code === 50012 || res.code === 50014) {
         MessageBox.confirm('登录已超时，可以【取消】继续留在该页面，或者【重新登录】', '超时提醒', {

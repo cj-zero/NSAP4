@@ -93,7 +93,7 @@ export default {
   watch: {
     content: function(val) {
       if (val !== undefined && val !== '') {
-        console.log(val)
+        // console.log(val)
         window.ue.setContent(val)
       }
     }

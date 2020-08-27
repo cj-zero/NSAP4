@@ -244,10 +244,10 @@ export default {
       //     this.$refs.multipleTable.toggleRowSelection(row)
       //   })
       // })
-      console.log(this.tableData.selectIds, this.tableData.datas)
+      // console.log(this.tableData.selectIds, this.tableData.datas)
       this.$nextTick(() => {
         const rows = [...this.tableData.datas].filter(x => [...this.tableData.selectIdsC].some(y => y === x.id))
-        console.log(rows)
+        // console.log(rows)
         rows.forEach(row => {
           this.$refs.multipleTable.toggleRowSelection(row)
         })

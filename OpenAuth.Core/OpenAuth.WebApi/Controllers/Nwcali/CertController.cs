@@ -38,6 +38,15 @@ namespace OpenAuth.WebApi.Controllers
             { 5, 2.33 }
         };
 
+        private static readonly Dictionary<string, string> nameDic = new Dictionary<string, string>()
+            {
+                { "肖淑惠","xiao.png" },
+                { "覃金英","tan.png" },
+                { "周定坤","zhou.png" },
+                { "杨浩杰","yang.png" },
+                { "陈大为","chen.png" },
+            };
+
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
 
         public CertController(CertinfoApp certinfoApp, CertPlcApp certPlcApp, ModuleFlowSchemeApp moduleFlowSchemeApp, FlowInstanceApp flowInstanceApp)
@@ -80,7 +89,7 @@ namespace OpenAuth.WebApi.Controllers
                         Model = baseInfo.TesterModel,
                         CalibrationDate = DateTime.Parse(baseInfo.Time),
                         ExpirationDate = DateTime.Parse(ConvertTestInterval(baseInfo.Time, baseInfo.TestInterval)),
-                        //Operator = baseInfo.Operator
+                        Operator = baseInfo.Operator
                     });
                 }
                 finally
@@ -217,7 +226,7 @@ namespace OpenAuth.WebApi.Controllers
             list.Add(new WordModel { MarkPosition = 0, TableMark = 1, ValueType = 0, XCellMark = 3, YCellMark = 2, ValueData = baseInfo.TesterModel });
             list.Add(new WordModel { MarkPosition = 0, TableMark = 1, ValueType = 0, XCellMark = 3, YCellMark = 4, ValueData = ConvertTestInterval(baseInfo.Time, baseInfo.TestInterval) });
             list.Add(new WordModel { MarkPosition = 0, TableMark = 1, ValueType = 0, XCellMark = 4, YCellMark = 2, ValueData = baseInfo.TesterSn });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 1, ValueType = 0, XCellMark = 4, YCellMark = 4, ValueData = "------" });
+            list.Add(new WordModel { MarkPosition = 0, TableMark = 1, ValueType = 0, XCellMark = 4, YCellMark = 4, ValueData = "-" });
             list.Add(new WordModel { MarkPosition = 0, TableMark = 1, ValueType = 0, XCellMark = 5, YCellMark = 2, ValueData = baseInfo.AssetNo == "0" ? "------" : baseInfo.AssetNo });
             list.Add(new WordModel { MarkPosition = 0, TableMark = 1, ValueType = 0, XCellMark = 5, YCellMark = 4, ValueData = baseInfo.SiteCode });
             list.Add(new WordModel { MarkPosition = 0, TableMark = 1, ValueType = 0, XCellMark = 6, YCellMark = 2, ValueData = baseInfo.Temperature });
@@ -723,6 +732,12 @@ namespace OpenAuth.WebApi.Controllers
             //list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 1, ValueData = signPath3 });
             //var signetPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "印章.png");
             //list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 3, ValueData = signetPath });
+            var signer = nameDic.GetValueOrDefault(baseInfo.Operator);
+            if(signer != null)
+            {
+                var signPath1 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", nameDic.GetValueOrDefault(baseInfo.Operator));
+                list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 1, ValueData = signPath1 });
+            }
             #endregion
             return list;
         }

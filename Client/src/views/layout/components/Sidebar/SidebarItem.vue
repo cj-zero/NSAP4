@@ -17,19 +17,33 @@
           <template v-if="!child.hidden">
             <sidebar-item :is-nest="true" class="nest-menu" v-if="child.children && child.children.length>0" :item="child" :key="child.path"></sidebar-item>
             <el-menu-item  v-else :key="child.name" :index="child.path">
-              <i :class="`iconfont icon-${child.meta.icon}`"></i>
-              <span v-if="child.meta&&child.meta.title" slot="title">{{child.meta.title}}</span>
+              <div class="menu-outer-wrapper">
+                <i :class="`iconfont icon-${child.meta.icon}`"></i>
+                <span v-if="child.meta&&child.meta.title" slot="title">{{child.meta.title}}</span>
+                <span class="notice-wrapper" 
+                  v-if="child.meta.title === '服务呼叫待确认' && vm.message.serviceOrderCount"
+                >
+                  {{vm.message.serviceOrderCount | process }}
+                </span>
+                <span 
+                  class="notice-wrapper" 
+                  v-if="child.meta.title === '服务呼叫未派单' && vm.message.serviceWorkOrderCount"
+                >
+                  {{vm.message.serviceWorkOrderCount | process }}
+                </span>
+              </div>
             </el-menu-item>
           </template>
         </template>
       </el-submenu>
-
   </div>
 </template>
 
 <script>
+// import { message } from '@/utils/signalR'
 export default {
   name: 'SidebarItem',
+  inject: ['vm'],
   props: {
     // route配置json
     item: {
@@ -50,10 +64,18 @@ export default {
       routes: []
     }
   },
+  filters: {
+    process (val) {
+      return val >= 99 ? '99+' : val
+    }
+  },
   watch: {
     item() {
       this.groupRouters()
     }
+  },
+  mounted () {
+    
   },
   created() {
     this.groupRouters()
@@ -70,6 +92,25 @@ export default {
     margin-right: 5px;
     font-size: 16px;
     vertical-align: middle;
+  }
+  .menu-outer-wrapper {
+    position: relative;
+    .notice-wrapper {
+      position: relative;
+      display: inline-block;
+      right: 15px;
+      top: -17px;
+      // padding: 5px;
+      color:#fff !important;
+      height: 18px;
+      line-height: 18px;
+      font-size: 12px;
+      padding: 0 6px;
+      text-align: center;
+      white-space: nowrap;
+      background-color: rgba(230, 162, 60, 1);
+      border-radius: 10px;
+    }
   }
 </style>
 

@@ -31,6 +31,17 @@
         "TtlSeconds": 5,
         "Region": ""
       }
+    },
+    {
+      "DownstreamPathTemplate": "/MessageHub",
+      "UpstreamPathTemplate": "/MessageHub",
+      "DownstreamScheme": "ws",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ]
     }
   ],
   // 全局配置，此节点的配置会覆盖ReRoutes，可以在这里设置一些通用的配置

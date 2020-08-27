@@ -114,7 +114,7 @@ export default {
         .GetServiceOrderMessages({ serviceOrderId: this.serveId })
         .then((res) => {
           this.wordList = res.result;
-          console.log(this.wordList, 'wordList')
+          // console.log(this.wordList, 'wordList')
         });
     },
     getInfo() {

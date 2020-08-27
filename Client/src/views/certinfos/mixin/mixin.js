@@ -18,7 +18,6 @@ export let certVerMixin = { // 审核操作mixin
       }
       direction === 'left' ? (this.isLeftSend = true) : (this.isRightSend = true)
       let { id, flowInstanceId } = data
-      console.log(type, 'setType')
       certVerificate({
         certInfoId: id,
         verification: {
@@ -28,8 +27,7 @@ export let certVerMixin = { // 审核操作mixin
           nodeRejectStep: '',
           nodeRejectType: 0
         }
-      }).then((res) => {
-        console.log(res, '审核操作')
+      }).then(() => {
         this.$message({
           message: `${message}成功`
         })
@@ -71,7 +69,6 @@ export let commonMixin = {
       this.type === 'query' ? this._getQueryList() : this._loadApprover()
     },
     onOpenDetail (params) {
-      console.log(params, 'params')
       let { id, certNo } = params
       this.currentCertNo = certNo
       this.currentData = params

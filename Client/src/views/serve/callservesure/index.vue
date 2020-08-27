@@ -145,6 +145,7 @@
       width="1000px"  新建呼叫服务单-->
       <el-dialog
         width="1480px"
+        top="10vh"
         class="dialog-mini"
         @open="openCustoner"
         @close="closeCustoner"
@@ -464,9 +465,6 @@ export default {
     onSubmit() {
       this.getList();
     },
-    changeTable(result) {
-      console.log(result);
-    },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.multipleSelection = row;
@@ -550,7 +548,6 @@ export default {
           }
         })
         .catch(() => {
-          console.log("sdsad");
           this.listLoading = false
           this.$message({
             type: "warning",
@@ -662,7 +659,7 @@ export default {
       this.openTree(row.id);
     },
     closeDia(a) {
-      if (a === 1) {
+      if (a === 'y') {
         this.getList();
       }
       if (a == "N") {

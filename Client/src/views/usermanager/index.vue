@@ -298,7 +298,7 @@
         this.multipleSelection = val
       },
       onBtnClicked: function(domId) {
-        console.log('you click:' + domId)
+        // console.log('you click:' + domId)
         switch (domId) {
           case 'btnAdd':
             this.handleCreate()
@@ -359,7 +359,7 @@
         this.getList()
       },
       handleModifyStatus(row, status) { // 模拟修改状态
-        console.log(row, 'row', typeof row.id)
+        // console.log(row, 'row', typeof row.id)
         users.blockUp({
           userId: row.id
         }).then(() => {
@@ -368,8 +368,8 @@
             type: 'success'
           })
           row.status = status
-        }).catch((err) => {
-          console.log(err, 'err')
+        }).catch(() => {
+          // console.log(err, 'err')
           this.$message({
             message: '操作失败',
             type: 'fail'

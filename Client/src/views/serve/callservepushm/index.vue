@@ -22,7 +22,10 @@
       </div>
     </sticky>
     <div class="app-container flex-item bg-white">
-      <zxsearch @change-Search="changeSearch" @change-Order="changeOrder"></zxsearch>
+      <zxsearch 
+        @change-Search="changeSearch" 
+        @change-Order="changeOrder"
+      ></zxsearch>
       <el-row class="fh" type="flex">
         <el-col class="fh ls-border"  style="min-width:200px;">
           <el-card shadow="never" class="card-body-none fh" style>
@@ -320,7 +323,7 @@ export default {
         // QryServiceOrderId: "", //- 查询服务ID查询条件
         // u_SAP_ID: "", // 服务ID查询条件
         QryU_SAP_ID: "", // 服务ID查询条件
-        QryState: "", //- 呼叫状态查询条件
+        QryState: 1, //- 呼叫状态查询条件
         QryCustomer: "", //- 客户查询条件
         QryManufSN: "", // - 制造商序列号查询条件
         QryCreateTimeFrom: "", //- 创建日期从查询条件
@@ -398,11 +401,12 @@ export default {
       },
       downloadLoading: false,
       listQueryServer: {
-        QryState: '', // 客户状态
+        QryState: 1, // 客户状态
         QryU_SAP_ID: '', // 查询服务ID
         limit: 30, // 条数
         page: 1 // 页数
-      }
+      },
+      isClear: false // 是否清空moduleTree
     };
   },
   filters: {
@@ -449,12 +453,13 @@ export default {
     //左边无数据不查右边，有数据就查左边第一条
     let el = document.getElementsByClassName('el-tree')[0]
     el.addEventListener('scroll', debounce(this.onScroll, 400))
-    console.log(el, 'tree')
     this.afterLeft();
   },
   methods: {
     onScroll (e) {
-      console.log(e, 'onSCROLL')
+      if (this.totalCount <= this.modulesTree.length) {
+        return
+      }
       let { scrollHeight, scrollTop, clientHeight } = e.target
       if (scrollHeight <= (scrollTop + clientHeight + 10)) {
         this.listQueryServer.page++
@@ -475,6 +480,9 @@ export default {
         this.$refs.treeForm.setCheckedKeys([this.modulesTree[0].key]);
         this.checkGroupNode(this.modulesTree[0]);
         this.getRightList();
+      } else {
+        this.list = []
+        this.total = 0
       }
     },
     // searchBtn(){
@@ -521,7 +529,10 @@ export default {
               });
               this.listQuery.QryState = 1;
               this.listQuery.QryU_SAP_ID = "";
-                this.listQuery.limit=20
+              this.listQuery.limit=20
+              this.isClear = true
+              this.listQueryServer.page = 1
+              this.listQuery.page = 1
               this.afterLeft();
               this.dialogOrder = false;
               this.listLoading = false;
@@ -538,16 +549,13 @@ export default {
           });
       }
     },
-    changeSearch(val) {
-      if (val === 1) {
-        this.getRightList();
-      } else {
-        Object.assign(this.listQuery, val);
-        if(val.QryU_SAP_ID){
-          this.$refs.treeForm.setCheckedKeys([val.QryU_SAP_ID]);
-        }
-        // this.getLeftList();
-      }
+    async changeSearch(val) {
+      this.isClear = true
+      this.ifParent = ""; // 清空父级选择
+      this.listQuery.QryMaterialTypes = [];
+      this.listQuery = Object.assign(this.listQuery, val)
+      this.listQueryServer = Object.assign(this.listQueryServer, val)
+      this.afterLeft()
     },
     openTree(res) {
       this.listLoading = true;
@@ -559,15 +567,15 @@ export default {
         this.listLoading = false;
       });
     },
-    treeClick(data) {
-      // 左侧treetable点击事件
-      console.log(data);
-      // this.currentModule = data
-      // this.currentModule.parent = null
-      // this.getList()
-    },
+    // treeClick(data) {
+    //   左侧treetable点击事件
+    //   console.log(data);
+    //   this.currentModule = data
+    //   this.currentModule.parent = null
+    //   this.getList()
+    // },
     onSubmit() {
-      console.log("submit!");
+      // console.log("submit!");
     },
     changeTable(result) {
       console.log(result);
@@ -690,24 +698,22 @@ export default {
 
     getLeftList() {
       this.listLoading = true;
-      return callservepushm.getLeftList({ 
-        QryState: this.listQueryServer.QryState,
-        QryU_SAP_ID: this.listQueryServer.QryU_SAP_ID,
-        page: this.listQueryServer.page,
-        limit: this.listQueryServer.limit
-      }).then((res) => {
-        let { data, count } = res.data
+      return callservepushm.
+        getLeftList(this.listQueryServer).then((res) => {
+        let { data } = res.data
         let arr = this._normalizeTree(data)
-        if (!this.modulesTree.length) {
+        if (!this.modulesTree.length || this.isClear) {
           this.modulesTree = arr
+          this.isClear = false
         } else {
           this.modulesTree = this.modulesTree.concat(arr)
         }
-        console.log(this.modulesTree, 'modulesTree')
-        this.totalCount = count
+        // console.log(this.modulesTree, 'modulesTree')
+        this.totalCount = data.count
         // this.modulesTree = arr;
         this.listLoading = false;
       }).catch(() => {
+        this.isClear = false
         this.listLoading = false
       })
     },

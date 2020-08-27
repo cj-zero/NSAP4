@@ -159,7 +159,7 @@ export default {
   methods: {
     handleChange() {
       const files = this.$refs.uploadInput.files
-      console.log('files>>>>>', files)
+      // console.log('files>>>>>', files)
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
         const reader = new FileReader()
@@ -206,7 +206,7 @@ export default {
       xhr.onreadystatechange = () => {
         if (xhr.readyState === 4) {
           const resData = JSON.parse(xhr.response)
-          console.log('resData', resData)
+          // console.log('resData', resData)
           if (resData && resData.result && resData.result.length > 0) {
             this.$set(this.fileList, this.fileList.findIndex(item => item.key === key), {
               ...this.fileList[this.fileList.findIndex(item => item.key === key)],
@@ -228,13 +228,13 @@ export default {
             })
             this.fileList.splice(this.fileList.findIndex(item => item.key === key), 1)
           }
-          console.log('fileList>>>>>>>>>>>>>>', this.fileList)
+          // console.log('fileList>>>>>>>>>>>>>>', this.fileList)
         }
       }
       xhr.onprogress = (res) => {
-        console.log('res>>>>>>>>.1', res)
+        // console.log('res>>>>>>>>.1', res)
         if (res.total && res.loaded) {
-          console.log('res>>>>>>>>.2', res)
+          // console.log('res>>>>>>>>.2', res)
           this.$set(this.fileList[this.fileList.findIndex(item => item.key === key)], 'percent', res.loaded / res.total * 100)
         }
       }

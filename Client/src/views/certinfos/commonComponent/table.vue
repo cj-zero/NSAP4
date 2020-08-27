@@ -106,18 +106,16 @@ export default {
       } : {}
     },
     getColor (text) {
-      console.log(text, 'mapText', colorList[text])
+      // console.log(text, 'mapText', colorList[text])
       return {
         color: colorList[text]
       }
     },
     onRowClick (row)  {
-      console.log(row, 'row')
       this.radio = row.zsOrder
     },
     openDetail (row) {
       // 传出数据跟操作类型
-      console.log('openDetail')
       this.$emit('openDetail', row)
     },
     submit (row, type) { // type: 0： 送审 1：撤回
@@ -135,7 +133,6 @@ export default {
 
   },
   updated () {
-    console.log(this.tableData, this.headOptions, 'updated')
   }
 }
 </script>
