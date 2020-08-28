@@ -9,7 +9,7 @@ namespace OpenAuth.App.Serve.Request
     public class QueryAppServiceOrderListReq : PageReq
     {
         /// <summary>
-        /// 呼叫状态查询条件 0:全部 1待确认 2已确认
+        /// 呼叫状态查询条件 0:全部 1待派单 2已派单
         /// </summary>
         [Required]
         public string QryState { get; set; }

@@ -881,7 +881,7 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        /// 待确认/已确认服务呼叫列表（App）
+        ///  获取管理员服务单列表（App）
         /// </summary>
         /// <param name="req">查询条件对象</param>
         /// <returns></returns>
@@ -1084,16 +1084,37 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        /// 获取管理员查看的服务单详情
+        /// 获取待派单的服务单详情/获取设备类型列表（管理员）
         /// </summary>
+        /// <param name="SapOrderId">SapId</param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetAppAdminServiceOrderDetails(int ServiceOrderId)
+        public async Task<TableData> GetAppAdminServiceOrderDetails(int SapOrderId)
         {
             var result = new TableData();
             try
             {
-                result = await _serviceOrderApp.GetAppAdminServiceOrderDetails(ServiceOrderId);
+                result = await _serviceOrderApp.GetAppAdminServiceOrderDetails(SapOrderId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取售后详情（技术员）
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetAppTechServiceOrderDetails(int ServiceOrderId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetAppTechServiceOrderDetails(ServiceOrderId);
             }
             catch (Exception ex)
             {
