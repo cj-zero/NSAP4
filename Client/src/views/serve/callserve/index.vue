@@ -108,16 +108,21 @@
                   type="primary"
                 >{{ scope.row.customerId }}</el-link>
               </div>
-              <span
+              <!-- <span
                 v-if="fruit.name === 'status'"
                 :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-              >{{statusOptions[scope.row[fruit.name]].label}}</span>
+              >{{statusOptions[scope.row[fruit.name]].label}}</span> -->
               <span
                 v-if="fruit.name === 'workOrderNumber'">
                 {{ scope.row.serviceWorkOrders.length }}
               </span>
               <span v-if="fruit.name === 'fromTheme'">
                 {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].fromTheme: '' }}
+              </span>
+              <span v-if="fruit.name === 'status'"
+                :class="[scope.row.serviceWorkOrders[0].status===1?'greenWord':(scope.row.serviceWorkOrders[0].status===2?'orangeWord':'redWord')]"
+              >
+                {{ scope.row.serviceWorkOrders[0] ? statusOptions[scope.row.serviceWorkOrders[0].status - 1].label: '' }}
               </span>
               <span
                 v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
@@ -318,7 +323,8 @@ export default {
       rightImg,
       ParentHeadOptions: [
         { name: "u_SAP_ID", label: "服务单号", align:'left', sortable:true, width: '100'},
-        { name: "customerId", label: "客户代码",align:'left', width: '100' },
+        { name: "status", label: "工单状态", align: 'left', width: '100' },
+        { name: "customerId", label: "客户代码", align:'left', width: '100' },
         { name: "customerName", label: "客户名称" ,align:'left', width: '180' },
         { name: "fromTheme", label: "呼叫主题", align: 'left', width: '275' },
         // { name: "contacter", label: "联系人" ,align:'left', width: '100' },
