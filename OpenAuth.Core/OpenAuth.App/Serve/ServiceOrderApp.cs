@@ -2915,7 +2915,7 @@ namespace OpenAuth.App
         }
 
         /// <summary>
-        /// 获取客户提交的服务单详情
+        /// 获取售后详情（技术员）
         /// </summary>
         /// <param name="ServiceOrderId">服务单Id</param>
         /// <returns></returns>

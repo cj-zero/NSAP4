@@ -49,6 +49,16 @@ namespace Sap.Handler.Service
 
                     sc.CustomerCode = thisSorder.CustomerId;
                     sc.CustomerName = thisSorder.CustomerName;
+                    //判断是客户还是供应商
+                    string cardtype = UnitWork.Find<OCRD>(w => w.CardCode.Equals(thisSorder.CustomerId)).FirstOrDefault().CardType;
+                    if (!string.IsNullOrEmpty(cardtype) && cardtype == "S")
+                    {
+                        sc.ServiceBPType = ServiceTypeEnum.srvcPurchasing;
+                    }
+                    else
+                    {
+                        sc.ServiceBPType = ServiceTypeEnum.srvcSales;
+                    }
                     sc.Subject = thisSwork.FromTheme;
                     //sc.ContactCode = 15;
                    if (!string.IsNullOrWhiteSpace(thisSwork.ContractId) && thisSwork.ContractId.Trim() != "-1")
@@ -151,6 +161,16 @@ namespace Sap.Handler.Service
 
                 sc.CustomerCode = thisSorder.CustomerId;
                 sc.CustomerName = thisSorder.CustomerName;
+                //判断是客户还是供应商
+                string cardtype = UnitWork.Find<OCRD>(w => w.CardCode.Equals(thisSorder.CustomerId)).FirstOrDefault().CardType;
+                if (!string.IsNullOrEmpty(cardtype) && cardtype == "S")
+                {
+                    sc.ServiceBPType = ServiceTypeEnum.srvcPurchasing;
+                }
+                else
+                {
+                    sc.ServiceBPType = ServiceTypeEnum.srvcSales;
+                }
                 sc.Subject = thisSorder.Services.Length>250? thisSorder.Services.Substring(0, 250):thisSorder.Services ;
                 //if (thisSorder.FromId != null && thisSorder.FromId != -1)
                 //{

@@ -86,5 +86,25 @@ namespace OpenAuth.WebApi.Controllers.Sap
             }
             return result;
         }
+        /// <summary>
+        /// 服务呼叫序列号列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetContractList([FromQuery] QuerySerialNumberListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serialNumberApp.GetContractList(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
     }
 }

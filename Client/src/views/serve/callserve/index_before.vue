@@ -438,7 +438,6 @@ export default {
           this.dialogTable = true;
           break;
         case "btnEdit":
-          console.log(this.multipleSelection);
           if (!this.multipleSelection.serviceOrderId) {
             this.$message({
               message: "请选择需要编辑的数据",

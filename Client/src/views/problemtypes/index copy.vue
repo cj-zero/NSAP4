@@ -209,7 +209,7 @@ export default {
       handler(){
     this.listChild_list= this.result1.slice(0,this.currentSize)
 
-      console.log(this.currentSize)
+      // console.log(this.currentSize)
       }
 
     }
@@ -226,7 +226,7 @@ export default {
       }
     },
     onBtnClicked: function(domId) {
-      console.log("you click:" + domId);
+      // console.log("you click:" + domId);
       switch (domId) {
         case "btnAdd":
           this.handleCreate();
@@ -275,23 +275,23 @@ export default {
     //   this.getList();
     // },
     handleSizeChange(val) {
-      console.log(`每页 ${val} 条`);
+      // console.log(`每页 ${val} 条`);
       this.currentSize = val;
     },
     handleCurrentChange(val) {
-      console.log(`当前页: ${val}`, `每页 ${this.currentSize} 条`);
+      // console.log(`当前页: ${val}`, `每页 ${this.currentSize} 条`);
 
       if (this.multipleSelection) {
-        console.log(1)
+        // console.log(1)
         let newList = this.result1.slice((val-1)*this.currentSize,val*this.currentSize)
 
         this.listChild_list = newList;
       } else {
-         console.log(2)
+        //  console.log(2)
                let newList = this.result1.slice((val-1)*this.currentSize,val*this.currentSize)
 
         this.listChild_list = newList;
-        console.log(this.listChild_list)
+        // console.log(this.listChild_list)
       }
     },
     handlePageChange(val) {
