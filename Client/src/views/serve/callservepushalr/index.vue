@@ -210,6 +210,23 @@
           <el-button type="primary" @click="postOrder">确 定</el-button>
         </span>
       </el-dialog>
+      <!-- 完工报告  -->
+      <el-dialog
+        width="800px"
+        class="dialog-mini"
+        :close-on-click-modal="false"
+        title="新增服务行为报告单"
+        :visible.sync="dialogReportVisible"
+      >
+        <Report 
+          :type="reportType"
+          :data="reportData"
+        ></Report>
+        <div slot="footer">
+          <el-button size="mini" @click="dialogReportVisible = false">取消</el-button>
+          <el-button size="mini" type="primary" @click="updateData">确认</el-button>
+        </div>
+      </el-dialog>
     </div>
   </div>
 </template>
@@ -228,6 +245,7 @@ import zxsearch from "./search";
 import zxform from "../callserve/form";
 import treeList from "../callserve/treeList";
 import { debounce } from '@/utils/process'
+import Report from './report'
 // import treeTable from "@/components/TreeTableMlt";
 
 // import { callserve, count } from "@/mock/serve";
@@ -241,6 +259,7 @@ export default {
     zxsearch,
     zxform,
     treeList,
+    Report
   },
   directives: {
     waves,
@@ -403,7 +422,10 @@ export default {
         limit: 30, // 条数
         page: 1 // 页数
       },
-      isClear: false // 清空树形数据moduleTree
+      isClear: false, // 清空树形数据moduleTree
+      dialogReportVisible: false, // 完工报告弹窗标识
+      reportType: 'create', // 完工报告类型 create: 填写 view: 查看
+      reportData: {} // 完工报告详情
     };
   },
   filters: {
@@ -620,6 +642,12 @@ export default {
         case "editTable":
           this.dialogTable = true;
           break;
+        case "btnReport":
+          if (!this.$refs.treeForm.getCheckedKeys().length) { // 没有选中
+            return this.$message.error("请选择服务单")
+          }
+          this.handleReport(this.$refs.treeForm.getCheckedKeys()[0]) // 传入key中的第一个 服务单ID
+          break
         case "btnEdit":
           this.$message({
             message: "抱歉，暂不提供编辑功能",
@@ -739,7 +767,7 @@ export default {
       for (let i = 0; i < data.length; i++) {
         arr[i] = [];
         arr[i].label = `服务号:${data[i].u_SAP_ID}`;
-        arr[i].key1 = `${data[i].u_SAP_ID}`;
+        arr[i].key1 = `${data[i].serviceOrderId}`;
         arr[i].key = `${data[i].u_SAP_ID}`;
         arr[i].children = [];
         // work
@@ -915,6 +943,19 @@ export default {
           });
         }
       });
+    },
+    handleReport (serviceOrderId) {
+      console.log(serviceOrderId, this.$store.state.user.name)
+      callservepushm.getServiceOrder({
+        serviceOrderId
+      }).then(() => {
+        // if (!res.data) {
+        //   return this.$message.error("当前用户不可填写完工报告")
+        // }
+        this.dialogReportVisible = true
+      }).catch(() => {
+        this.$message.error('获取报告信息失败')
+      })
     },
     handleDelete(rows) {
       // 多行删除

@@ -841,7 +841,7 @@ export default {
     },
     handlePhone () { // 电话回访
       // 
-      this.dialogPhoneVisible = true
+      // this.dialogPhoneVisible = true
     },
     handleExcel () { // 导出表格
       let baseURL = `${process.env.VUE_APP_BASE_API}${this.exportExcelUrl}`
