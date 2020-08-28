@@ -1002,7 +1002,7 @@ export default {
       });
     },
     NodeClick(res) {
-      console.log(this.formList, this.sortForm - 1);
+      // console.log(this.formList, this.sortForm - 1);
       this.formList[this.sortForm - 1].problemTypeName = res.name;
       this.formList[this.sortForm - 1].problemTypeId = res.id;
       this.problemLabel = res.name;
@@ -1013,7 +1013,7 @@ export default {
       this.formList[this.sortForm - 1].solutionsubject = res.subject;
       this.formList[this.sortForm - 1].solutionId = res.id;
       // this.problemLabel = res.name;
-      console.log(this.formList[this.sortForm - 1], res, this.sortForm - 1);
+      // console.log(this.formList[this.sortForm - 1], res, this.sortForm - 1);
       this.solutionOpen = false;
     },
     switchType(val) {
@@ -1038,7 +1038,6 @@ export default {
       return res.length ? res[0].subject : "请选择";
     },
     openDialog() {
-      console.log(this.formList, 'formList', this.SerialNumberList)
       this.filterSerialNumberList = this.SerialNumberList.filter(
         // (item) => item.manufSN === res.manufSN
         item => {
@@ -1208,12 +1207,10 @@ export default {
     async querySearch(queryString, cb) {
       this.listQuery.ManufSN = queryString;
       await this.getSerialNumberList();
-      var filterSerialNumberList = this.SerialNumberList;
-      console.log(filterSerialNumberList, this.listQuery.ManufSN);
+      var filterSerialNumberList = this.SerialNumberList
       var results = queryString
         ? filterSerialNumberList.filter(this.createFilter(queryString))
         : filterSerialNumberList;
-      console.log(results);
       // 调用 callback 返回建议列表的数据
       cb(results);
     },

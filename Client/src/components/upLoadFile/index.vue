@@ -62,15 +62,6 @@
         <el-button size="mini" @click="dialogVisible = false">关闭</el-button>
       </template>
     </Model>
-    <!-- <el-dialog :visible.sync="dialogVisible"> -->
-      <!-- <el-row style="margin-bottom: 20px">
-        <el-button type="primary" @click="handleDownload" style="margin-left: 20px" size="mini">下载</el-button>
-      </el-row> -->
-      <!-- <el-image
-        :src="dialogImageUrl"
-        :fit="fit"></el-image> -->
-        <!-- <img width="100%" :src="dialogImageUrl" alt />
-    </el-dialog> -->
   </div>
 </template>
 

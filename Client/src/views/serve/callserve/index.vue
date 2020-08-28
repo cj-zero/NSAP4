@@ -163,7 +163,7 @@
       </el-dialog>
       <!-- 客服新建服务单 -->
       <el-dialog
-        width="800px"
+        width="900px"
         top="10vh"
         class="dialog-mini"
         @close="closeCustoner"
@@ -189,7 +189,7 @@
       </el-dialog>
       <!-- 客服编辑服务单 -->
       <el-dialog
-        width="800px"
+        width="900px"
         top="10vh"
         class="dialog-mini"
         @open="openDetail"
@@ -841,7 +841,7 @@ export default {
     },
     handlePhone () { // 电话回访
       // 
-      this.dialogPhoneVisible = true
+      // this.dialogPhoneVisible = true
     },
     handleExcel () { // 导出表格
       let baseURL = `${process.env.VUE_APP_BASE_API}${this.exportExcelUrl}`

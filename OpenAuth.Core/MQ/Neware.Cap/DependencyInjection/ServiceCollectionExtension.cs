@@ -28,11 +28,14 @@ namespace Neware.Cap.DependencyInjection
                     options.UserName = capSettings.RabbitMq.UserName;
                     options.Password = capSettings.RabbitMq.Password;
                 });
-
                 config.SucceedMessageExpiredAfter = capSettings.SucceedMessageExpiredAfter;
                 config.FailedRetryCount = capSettings.FailedRetryCount;
                 config.FailedRetryInterval = capSettings.FailedRetryInterval;
                 config.ConsumerThreadCount = capSettings.ConsumerThreadCount;
+                if (!string.IsNullOrWhiteSpace(capSettings.Version))
+                {
+                    config.Version = capSettings.Version;
+                }
             });
             return services;
         }

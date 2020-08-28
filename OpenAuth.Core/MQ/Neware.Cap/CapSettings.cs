@@ -11,6 +11,7 @@ namespace Neware.Cap
         /// </summary>
         public bool UseDashboard { get; set; } = false;
         public RabbitMqSetting RabbitMq { get; set; }
+        public string Version { get; set; }
         public string MySqlConnectionString { get; set; }
         /// <summary>
         /// 成功消息的过期时间（秒）。 当消息发送或者消费成功时候，在时间达到 SucceedMessageExpiredAfter 秒时候将会从 Persistent 中删除，你可以通过指定此值来设置过期的时间。

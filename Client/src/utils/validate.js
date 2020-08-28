@@ -33,3 +33,7 @@ export function isMobile (mobile) {
 export function isPhone (phone) {
   return /^(?:0[1-9][0-9]{1,2}-)?[2-8][0-9]{6,7}$/.test(phone)
 }
+
+export function isCustomerCode (code) {
+  return /^\w\d{5}/g.test(code)
+}

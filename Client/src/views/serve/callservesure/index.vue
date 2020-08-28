@@ -144,7 +144,7 @@
       <!--   v-el-drag-dialog
       width="1000px"  新建呼叫服务单-->
       <el-dialog
-        width="1480px"
+        width="1655px"
         top="10vh"
         class="dialog-mini"
         @open="openCustoner"
