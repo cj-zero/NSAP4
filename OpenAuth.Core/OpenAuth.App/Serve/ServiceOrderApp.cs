@@ -523,11 +523,11 @@ namespace OpenAuth.App
                 SupervisorId = obj.SupervisorId,
             });
             //获取"其他"问题类型及其子类
-            var otherProblemType = UnitWork.Find<ProblemType>(o => o.Name.Equals("其他")).FirstOrDefault();
+            var otherProblemType =await UnitWork.Find<ProblemType>(o => o.Name.Equals("其他")).FirstOrDefaultAsync();
             var ChildTypes = new List<ProblemType>();
             if (otherProblemType != null && !string.IsNullOrEmpty(otherProblemType.Id))
             {
-                ChildTypes = UnitWork.Find<ProblemType>(null).Where(o1 => o1.ParentId.Equals(otherProblemType.Id)).ToList();
+                ChildTypes =await UnitWork.Find<ProblemType>(null).Where(o1 => o1.ParentId.Equals(otherProblemType.Id)).ToListAsync();
             }
             var u = await UnitWork.Find<AppUserMap>(s => s.UserID == obj.SupervisorId).Include(s => s.User).FirstOrDefaultAsync();
             //工单赋值
@@ -539,11 +539,9 @@ namespace OpenAuth.App
                 if (s.FromType == 2)
                     s.Status = 7;
                 #region 问题类型是其他的子类型直接分配给售后主管
-                var thispbId = s.ProblemTypeId;
-                if (!string.IsNullOrEmpty(thispbId))
+                if (!string.IsNullOrEmpty(s.ProblemTypeId))
                 {
-                    var theProblemType = UnitWork.FindSingle<ProblemType>(o => o.Id.Equals(thispbId));
-                    if (ChildTypes.Contains(theProblemType))
+                    if (ChildTypes.Count()>0 && ChildTypes.Where(p => p.Id.Equals(s.ProblemTypeId)).ToList().Count() > 0)
                     {
                         s.CurrentUser = d.TechName;
                         s.CurrentUserId = u?.AppUserId;
@@ -639,17 +637,16 @@ namespace OpenAuth.App
                 obj.WorkOrderNumber = WorkOrderNumber.Substring(0, WorkOrderNumber.IndexOf("-") + 1) + (num + 1);
                 #region 如果问题类型是其他下面子类型,默认分配给技术主管
                 //获取"其他"问题类型及其子类
-                var theservice = UnitWork.Find<ServiceOrder>(o => o.Id.Equals(obj.ServiceOrderId)).FirstOrDefault();
+                var theservice =await UnitWork.Find<ServiceOrder>(o => o.Id.Equals(obj.ServiceOrderId)).FirstOrDefaultAsync();
                 if (!string.IsNullOrEmpty(obj.ProblemTypeId))
                 {
-                    var theProblemType = UnitWork.FindSingle<ProblemType>(o => o.Id.Equals(obj.ProblemTypeId));
-                    var otherProblemType = UnitWork.Find<ProblemType>(o => o.Name.Equals("其他")).FirstOrDefault();
+                    var otherProblemType =await UnitWork.Find<ProblemType>(o => o.Name.Equals("其他")).FirstOrDefaultAsync();
                     var ChildTypes = new List<ProblemType>();
                     if (otherProblemType != null && !string.IsNullOrEmpty(otherProblemType.Id))
                     {
-                        ChildTypes = UnitWork.Find<ProblemType>(null).Where(o1 => o1.ParentId.Equals(otherProblemType.Id)).ToList();
+                        ChildTypes =await UnitWork.Find<ProblemType>(null).Where(o1 => o1.ParentId.Equals(otherProblemType.Id)).ToListAsync();
                     }
-                    if (theProblemType != null && ChildTypes.Contains(theProblemType))
+                    if (ChildTypes.Count()>0 && ChildTypes.Where(p => p.Id.Equals(obj.ProblemTypeId)).ToList().Count() > 0)
                     {
                         var u = await UnitWork.Find<AppUserMap>(s => s.UserID == theservice.SupervisorId).Include(s => s.User).FirstOrDefaultAsync();
                         obj.CurrentUser = theservice.Supervisor;
@@ -845,11 +842,11 @@ namespace OpenAuth.App
             obj.Supervisor = d.TechName;
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.TechName)))?.Id;
             //获取"其他"问题类型及其子类
-            var otherProblemType = UnitWork.Find<ProblemType>(o => o.Name.Equals("其他")).FirstOrDefault();
+            var otherProblemType =await UnitWork.Find<ProblemType>(o => o.Name.Equals("其他")).FirstOrDefaultAsync();
             var ChildTypes = new List<ProblemType>();
             if (otherProblemType != null && !string.IsNullOrEmpty(otherProblemType.Id))
             {
-                ChildTypes = UnitWork.Find<ProblemType>(null).Where(o1 => o1.ParentId.Equals(otherProblemType.Id)).ToList();
+                ChildTypes =await UnitWork.Find<ProblemType>(null).Where(o1 => o1.ParentId.Equals(otherProblemType.Id)).ToListAsync();
             }
             var u = await UnitWork.Find<AppUserMap>(s => s.UserID == obj.SupervisorId).Include(s => s.User).FirstOrDefaultAsync();
 
@@ -860,11 +857,9 @@ namespace OpenAuth.App
                 if (s.FromType == 2)
                     s.Status = 7;
                 #region 问题类型是其他的子类型直接分配给售后主管
-                var thispbId = s.ProblemTypeId;
-                if (!string.IsNullOrEmpty(thispbId))
+                if (!string.IsNullOrEmpty(s.ProblemTypeId))
                 {
-                    var theProblemType = UnitWork.FindSingle<ProblemType>(o => o.Id.Equals(thispbId));
-                    if (ChildTypes.Contains(theProblemType))
+                    if (ChildTypes.Count()>0 && ChildTypes.Where(p=>p.Id.Equals(s.ProblemTypeId)).ToList().Count()>0)
                     {
                         s.CurrentUser = d.TechName;
                         s.CurrentUserId = u?.AppUserId;

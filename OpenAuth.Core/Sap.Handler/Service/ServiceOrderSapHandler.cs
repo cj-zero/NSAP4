@@ -30,8 +30,8 @@ namespace Sap.Handler.Service
         [CapSubscribe("Serve.ServcieOrder.Create")]
         public async Task HandleServiceOrder(int theServiceOrderId)
         {
-            var query = UnitWork.Find<ServiceOrder>(s => s.Id.Equals(theServiceOrderId))
-                .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType).FirstOrDefault();
+            var query =await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(theServiceOrderId))
+                .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType).FirstOrDefaultAsync();
                
             var thisSorder =  query.MapTo<ServiceOrder>();
             if (thisSorder.ServiceWorkOrders.Count > 0) {
@@ -50,7 +50,7 @@ namespace Sap.Handler.Service
                     sc.CustomerCode = thisSorder.CustomerId;
                     sc.CustomerName = thisSorder.CustomerName;
                     //判断是客户还是供应商
-                    string cardtype = UnitWork.Find<OCRD>(w => w.CardCode.Equals(thisSorder.CustomerId)).FirstOrDefault().CardType;
+                    string cardtype =await UnitWork.Find<OCRD>(w => w.CardCode.Equals(thisSorder.CustomerId)).Select(s =>s.CardType).FirstOrDefaultAsync();
                     if (!string.IsNullOrEmpty(cardtype) && cardtype == "S")
                     {
                         sc.ServiceBPType = ServiceTypeEnum.srvcPurchasing;
