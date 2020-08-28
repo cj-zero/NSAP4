@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Infrastructure;
+using Infrastructure.Extensions;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -21,25 +22,10 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             
-            var GlobalArealist= UnitWork.Find<GlobalArea>(null);
-
-            if (request.StateCode != null)
-            {
-                GlobalArealist = GlobalArealist.Where(g => g.StateCode == request.StateCode && g.provinceCode != "0"&& g.cityCode == "0");
-            }
-            else if (request.provinceCode != null) 
-            {
-                GlobalArealist = GlobalArealist.Where(g => g.provinceCode == request.provinceCode && g.cityCode!="0" && g.CountyCode== "0");
-            }
-            else if (request.cityCode != null)
-            {
-                GlobalArealist = GlobalArealist.Where(g => g.cityCode == request.cityCode && g.CountyCode!="0");
-            }
-            else 
-            {
-                GlobalArealist = GlobalArealist.Where(g => g.provinceCode == "0");
-            }
-
+            var GlobalArealist= UnitWork.Find<GlobalArea>(null)
+                .WhereIf(!string.IsNullOrWhiteSpace(request.ReqId), u => u.Pid == request.ReqId)
+                .WhereIf(string.IsNullOrWhiteSpace(request.ReqId),u=> u.AreaLevel.Equals("1"));
+            
             result.Data = GlobalArealist.ToList();
             return result;
         }

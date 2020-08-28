@@ -4,16 +4,8 @@
     {
         //todo:添加自己的请求字段
         /// <summary>
-        /// 省编号
+        /// 地区ID
         /// </summary>
-        public string provinceCode { get; set; }
-        /// <summary>
-        /// 市编号
-        /// </summary>
-        public string cityCode { get; set; }
-        /// <summary>
-        /// 国家编号
-        /// </summary>
-        public string StateCode { get; set; }
+        public string ReqId { get; set; }
     }
 }

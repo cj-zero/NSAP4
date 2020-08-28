@@ -25,37 +25,37 @@ namespace OpenAuth.Repository.Domain
         public GlobalArea()
         {
           this.AreaName= string.Empty;
-          this.provinceCode= string.Empty;
-          this.cityCode= string.Empty;
-          this.StateCode= string.Empty;
-          this.CountyCode= string.Empty;
+          this.Pid = string.Empty;
+          this.Path = string.Empty;
+          this.AreaLevel = string.Empty;
         }
 
-
+        /// <summary>
+        /// 地区ID
+        /// </summary>
+        [Description("地区ID")]
+        public string Id { get; set; }
+        /// <summary>
+        /// 上级地区
+        /// </summary>
+        [Description("上级地区")]
+        public string Pid { get; set; }
+        /// <summary>
+        /// 所有上级地区
+        /// </summary>
+        [Description("所有上级地区")]
+        public string Path { get; set; }
+        
         /// <summary>
         /// 地区名称
         /// </summary>
         [Description("地区名称")]
         public string AreaName { get; set; }
+
         /// <summary>
-        /// 省编号
+        /// 地区等级
         /// </summary>
-        [Description("省编号")]
-        public string provinceCode { get; set; }
-        /// <summary>
-        /// 市编号
-        /// </summary>
-        [Description("市编号")]
-        public string cityCode { get; set; }
-        /// <summary>
-        /// 国家编号
-        /// </summary>
-        [Description("国家编号")]
-        public string StateCode { get; set; }
-        /// <summary>
-        /// 区/市编号
-        /// </summary>
-        [Description("区/市编号")]
-        public string CountyCode { get; set; }
+        [Description("地区等级")]
+        public string AreaLevel { get; set; }
     }
 }
