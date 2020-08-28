@@ -54,7 +54,7 @@
               required: true, message: '呼叫主题不能为空', trigger: 'blur'
             }"
             >
-              <el-input v-model="formList[0].fromTheme"></el-input>
+              <el-input v-model="formList[0].fromTheme"  type="textarea" maxlength="255"></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="6">
@@ -381,7 +381,7 @@
                   required: true, message: '呼叫主题不能为空', trigger: 'blur'
                 }"
                 >
-                  <el-input v-model="item.fromTheme"></el-input>
+                  <el-input type="textarea" maxlength="255" v-model="item.fromTheme"></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="6">

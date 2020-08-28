@@ -36,68 +36,41 @@
             <el-input v-model="form.newestContacter"></el-input>
           </el-form-item>
         </el-col>
-        <!-- <el-col :span="8">
-          <el-form-item label="电话号码">
-            <el-input v-model="form.newestContactTel"></el-input>
-          </el-form-item>
-        </el-col> -->
       </el-row>
       <el-row type="flex" class="row-bg" justify="space-around">
-        <el-form-item label="问题类型">
-          <el-input v-model="form.newestContacter"></el-input>
-        </el-form-item>
+        <el-col :span="16">
+          <el-form-item label="问题类型">
+            <el-input v-model="form.problemTypeName"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="电话号码">
+            <el-input v-model="form.newestContactTel"></el-input>
+          </el-form-item> 
+        </el-col> 
       </el-row>
       <el-row type="flex" class="row-bg" justify="space-around">
         <el-col :span="8">
           <!-- <el-form-item label="地址">
             <el-input v-model="form.city"></el-input>
           </el-form-item> -->
-                <el-form-item label="现地址">
-                    <!-- <el-input size="mini" v-model="form.city"></el-input> -->
-                    <p
-                      style="border: 1px solid silver;color:silver; border-radius:5px;line-height:30px;overflow:hidden;height:30px;background-color:#F5F7FA;margin:0;padding-left:10px;font-size:12px;"
-                    >{{allArea}}</p>
-                  </el-form-item>
+          <el-form-item label="现地址">
+              <!-- <el-input size="mini" v-model="form.city"></el-input> -->
+            <p
+              style="border: 1px solid silver;color:silver; border-radius:5px;line-height:30px;overflow:hidden;height:30px;background-color:#F5F7FA;margin:0;padding-left:10px;font-size:12px;"
+            >{{allArea}}</p>
+          </el-form-item>
         </el-col>
         <el-col :span="16">
-          <el-form-item label>
+          <el-form-item label-width="10px">
             <el-input v-model="form.addr"></el-input>
           </el-form-item>
         </el-col>
       </el-row>
       <el-row type="flex" class="row-bg" justify="space-around">
         <el-col :span="24">
-          <el-form-item label="服务内容">
+          <el-form-item label="申请说明">
             <el-input type="textarea" v-model="form.services"></el-input>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row
-        type="flex"
-        class="row-bg"
-        justify="space-around"
-        v-for=" (item,index) in form.serviceOrderSNs"
-        :key="`inx${index}`"
-      >
-        <el-col>
-          <el-row type="flex" class="row-bg" justify="space-around">
-            <el-col>
-              <el-form-item label="制造商序列号">
-                <el-input v-model="item.manufSN" style="width: 130px;"></el-input>
-                <!-- <div style="border:1px solid #E4E7ED;background-color:#F5F7FA;border-radius:5px;padding-left:5px;">{{item.manufSN?item.manufSN:'暂无数据'}}</div> -->
-              </el-form-item>
-            </el-col>
-            <el-col>
-              <el-form-item label="物料编码">
-                <el-input v-model="item.itemCode" style="width: 150px;"></el-input>
-              </el-form-item>
-            </el-col>
-      
-          </el-row>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label>
-            <span></span>
           </el-form-item>
         </el-col>
       </el-row>
@@ -129,6 +102,35 @@
               </div>
             </div>
           </div>
+        </el-col>
+      </el-row>
+      <el-row
+        type="flex"
+        class="row-bg"
+        justify="space-around"
+        v-for=" (item,index) in form.serviceOrderSNs"
+        :key="`inx${index}`"
+      >
+        <el-col>
+          <el-row type="flex" class="row-bg" justify="space-around">
+            <el-col>
+              <el-form-item label="制造商序列号">
+                <el-input v-model="item.manufSN" style="width: 130px;"></el-input>
+                <!-- <div style="border:1px solid #E4E7ED;background-color:#F5F7FA;border-radius:5px;padding-left:5px;">{{item.manufSN?item.manufSN:'暂无数据'}}</div> -->
+              </el-form-item>
+            </el-col>
+            <el-col>
+              <el-form-item label="物料编码">
+                <el-input v-model="item.itemCode" style="width: 150px;"></el-input>
+              </el-form-item>
+            </el-col>
+      
+          </el-row>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label>
+            <span></span>
+          </el-form-item>
         </el-col>
       </el-row>
     </el-form>

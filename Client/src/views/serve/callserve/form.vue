@@ -215,10 +215,10 @@
               <el-col :span="6">
                 <el-form-item label="现地址">
                   <el-input size="mini" v-model="allArea" readonly style="width: 110px;"></el-input>
-                  <area-selector
+                  <!-- <area-selector
                     class="area-content-wrapper"
                     @change="onAreaChange"
-                  ></area-selector>
+                  ></area-selector> -->
                   <!-- <div >我是</div> -->
                   <!-- <p
                     style="overflow-x:hidden;border: 1px solid silver; border-radius:5px;height:30px;margin:0;padding-left:10px;font-size:12px;"
@@ -422,7 +422,7 @@ import { debounce } from '@/utils/process'
 import { download } from "@/utils/file";
 import formPartner from "./formPartner";
 import formAdd from "./formAdd";
-import AreaSelector from '@/components/AreaSelector'
+// import AreaSelector from '@/components/AreaSelector'
 // import { delete } from 'vuedraggable';
 export default {
   name: "formTable",
@@ -435,7 +435,7 @@ export default {
     Model, 
     // bmap,
     callId,
-    AreaSelector 
+    // AreaSelector 
   },
   props: [
     "modelValue",
@@ -807,6 +807,7 @@ export default {
     },
     async setForm(val) {
       val = JSON.parse(JSON.stringify(val));
+      console.log(val, 'json.stringify')
       if (val) {
         val.serviceOrderPictures = await this.getServeImg(val.id);
         this.$emit("imgChange", val.serviceOrderPictures); // 告诉父组件
@@ -816,7 +817,7 @@ export default {
       } else {
         this.needPos = true;
       }
-      let { newestContactTel, newestContacter } = val;
+      let { newestContactTel, newestContacter, problemTypeName, problemTypeId } = val;
       // let newVal = Object.create(null);
       // for (let key in val) {
       //   if (key == "contactTel" || key !== "contacter") {
@@ -867,8 +868,8 @@ export default {
             orderTakeType: 1,
             fromTheme:  "",
             fromType:  1,
-            problemTypeName:  "",
-            problemTypeId:  "",
+            problemTypeName,
+            problemTypeId,
             priority:  1,
             remark:  "",
             solutionId:  "",
@@ -887,8 +888,8 @@ export default {
             orderTakeType: 1,
             fromTheme:  "",
             fromType:  1,
-            problemTypeName:  "",
-            problemTypeId:  "",
+            problemTypeName,
+            problemTypeId,
             priority:  1,
             remark:  "",
             solutionId:  "",
