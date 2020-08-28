@@ -29,11 +29,11 @@
           <span>{{scope.row.itemName}}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="internalSN" label="内部序列号" width="120">
-        <template slot-scope="scope">
+      <!-- <el-table-column prop="internalSN" label="内部序列号" width="120"> -->
+        <!-- <template slot-scope="scope">
           <span>{{scope.row.internalSN?scope.row.internalSN:'暂无数据'}}</span>
         </template>
-      </el-table-column>
+      </el-table-column> -->
       <el-table-column label="客户代码" width="120">
         <template slot-scope="scope">
           <span>{{scope.row.customer}}</span>

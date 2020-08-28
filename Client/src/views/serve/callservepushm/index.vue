@@ -220,6 +220,7 @@
 import * as solutions from "@/api/solutions";
 import * as callservepushm from "@/api/serve/callservepushm";
 import * as callservesure from "@/api/serve/callservesure";
+import * as category from "@/api/categorys"
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
@@ -390,8 +391,7 @@ export default {
       dialogPvVisible: false,
       pvData: [],
       params: {
-        currentUserId: "",
-        workOrderIds: [],
+        currentUserId: ""
       },
       rules: {
         appId: [
@@ -454,6 +454,7 @@ export default {
     let el = document.getElementsByClassName('el-tree')[0]
     el.addEventListener('scroll', debounce(this.onScroll, 400))
     this.afterLeft();
+    this.getCategory()
   },
   methods: {
     onScroll (e) {
@@ -465,6 +466,19 @@ export default {
         this.listQueryServer.page++
         this.getLeftList()
       }
+    },
+    getCategory () {
+      category.loadCategory({
+        typeID: 'Aftermarket'
+      }).then(res => {
+        let { data } = res
+        console.log(data, 'data')
+        let target = data.filter(item => {
+          return item.dtCode === 'Send_Order_Count'
+        })
+        this.totalLimit = target[0].dtValue
+        console.log(this.totalLimit)
+      })
     },
     cancelPost() {
       this.dialogOrder = false, 
@@ -510,48 +524,51 @@ export default {
     },
     postOrder() {
       this.params.currentUserId = this.orderRadio;
-      // this.params.workOrderIds = this.workorderidList;
-      let checkedKey = this.$refs.treeForm.getCheckedKeys()
+      let checkedKey = this.$refs.treeForm.getCheckedKeys()[0]
+      if (checkedKey.indexOf('&') !== -1) {
+        let index = checkedKey.indexOf('&')
+        checkedKey = checkedKey.slice(0, index)
+      }
       this.params.qryMaterialTypes = this.listQuery.QryMaterialTypes
-      this.params.serviceOrderId = checkedKey[0] 
+      this.params.serviceOrderId = checkedKey 
       console.log(this.params, 'params')
-      if (this.hasAlreadNum > 2) {
+      if (this.hasAlreadNum > this.totalLimit) {
         this.$message({
           type: "warning",
-          message: "单个技术员接单不能超过3个",
+          message: `单个技术员接单不能超过${this.totalLimit}个`
         });
         this.listLoading = false
       } else {
-        this.listLoading = true;
-        callservepushm
-          .SendOrders(this.params)
-          .then((res) => {
-            if (res.code == 200) {
-              this.dataForm = res.result;
-              this.$message({
-                type: "success",
-                message: "派单成功",
-              });
-              this.listQuery.QryState = 1;
-              this.listQuery.QryU_SAP_ID = "";
-              this.listQuery.limit=20
-              this.isClear = true
-              this.listQueryServer.page = 1
-              this.listQuery.page = 1
-              this.afterLeft();
-              this.dialogOrder = false;
-              this.listLoading = false;
-                     
-              //  this.getRightList();
-            }
-          })
-          .catch((error) => {
+      this.listLoading = true;
+      callservepushm
+        .SendOrders(this.params)
+        .then((res) => {
+          if (res.code == 200) {
+            this.dataForm = res.result;
             this.$message({
-              type: "danger",
-              message: `${error}`,
+              type: "success",
+              message: "派单成功",
             });
+            this.listQuery.QryState = 1;
+            this.listQuery.QryU_SAP_ID = "";
+            this.listQuery.limit=20
+            this.isClear = true
+            this.listQueryServer.page = 1
+            this.listQuery.page = 1
+            this.afterLeft();
+            this.dialogOrder = false;
             this.listLoading = false;
+                    
+            //  this.getRightList();
+          }
+        })
+        .catch((error) => {
+          this.$message({
+            type: "danger",
+            message: `${error}`,
           });
+          this.listLoading = false;
+        });
       }
     },
     async changeSearch(val) {
@@ -606,7 +623,7 @@ export default {
           this.dialogTable = true;
           break;
         case "btnPost":
-          console.log(this.$refs.treeForm.getCheckedKeys, 'changeOrder')
+          console.log(this.$refs.treeForm.getCheckedKeys(), 'changeOrder')
           if (!this.$refs.treeForm.getCheckedKeys().length) {
             return this.$message.error('请先选择服务单')
           }
@@ -704,7 +721,6 @@ export default {
         this.getRightList();
       }
     },
-
     getLeftList() {
       this.listLoading = true;
       return callservepushm.
@@ -740,7 +756,7 @@ export default {
             label: `物料类型号:${data[i].workMaterialTypes[index]}`,
             // label: `物料类型号:${item1}`,
             key: `${data[i].u_SAP_ID}`,
-            key1: `${data[i].u_SAP_ID}&${item1}`,
+            key1: `${data[i].serviceOrderId}&${item1}`,
             // label: 
             id: item1,
           });

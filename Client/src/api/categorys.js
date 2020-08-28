@@ -64,3 +64,11 @@ export function loadType(params) {
     params
   })
 }
+
+export function loadCategory(params) {
+  return request({
+    url: '/Categorys/Load',
+    method: 'get',
+    params
+  })
+}
