@@ -46,5 +46,6 @@ namespace OpenAuth.App.Response
         public List<OCPR> CntctPrsnList { get; set; }
 
         public List<CRD1> AddressList { get; set; }
+
     }
 }
