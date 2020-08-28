@@ -162,7 +162,7 @@ namespace Sap.Handler.Service
                 sc.CustomerCode = thisSorder.CustomerId;
                 sc.CustomerName = thisSorder.CustomerName;
                 //判断是客户还是供应商
-                string cardtype = UnitWork.Find<OCRD>(w => w.CardCode.Equals(thisSorder.CustomerId)).FirstOrDefault().CardType;
+                string cardtype = await UnitWork.Find<OCRD>(w => w.CardCode.Equals(thisSorder.CustomerId)).Select(s => s.CardType).FirstOrDefaultAsync();
                 if (!string.IsNullOrEmpty(cardtype) && cardtype == "S")
                 {
                     sc.ServiceBPType = ServiceTypeEnum.srvcPurchasing;
