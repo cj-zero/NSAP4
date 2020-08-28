@@ -112,7 +112,12 @@
               required: true, message: '呼叫主题不能为空', trigger: 'blur'
             }"
             >
-              <el-input size="small" v-model="formList[0].fromTheme"></el-input>
+              <el-input 
+                size="small" 
+                v-model.trim="formList[0].fromTheme" 
+                type="textarea"
+                maxlength="255"
+              ></el-input>
             </el-form-item>
           </el-col>
         </el-row>
@@ -349,8 +354,8 @@
         >确定新增</el-button>
       </div> -->
     </div>
-    <el-collapse v-model="activeNames" class="openClass" v-if="formList.length>1">
-      <el-collapse-item title="展开更多订单" name="1">
+    <el-collapse v-model="activeNames" class="openClass" v-if="formList.length>1" @change="handleCollapseChange">
+      <el-collapse-item :title="collapseTitle" name="1">
         <div
           v-for="(item,index) in formList.slice(1)"
           :key="`key_${index}`"
@@ -468,7 +473,12 @@
                     required: true, message: '呼叫主题不能为空', trigger: 'blur'
                   }"
                 >
-                  <el-input size="small" v-model="item.fromTheme"></el-input>
+                  <el-input 
+                    size="small" 
+                    v-model.trim="item.fromTheme"
+                    type="textarea"
+                    maxlength="255"
+                  ></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -945,6 +955,7 @@ export default {
         ],
       },
       isDisalbed: false,
+      collapseTitle: '展开更多订单'
     };
   },
   created() {
@@ -1167,7 +1178,10 @@ export default {
           console.log(error);
         });
     },
-
+    handleCollapseChange (val) {
+      this.collapseTitle = val.length ? '折叠' : '展开更多订单'
+      console.log(val, 'val change')
+    },
     handleChange(val) {
       this.listQuery.page = val.page;
       this.listQuery.limit = val.limit;
@@ -1583,6 +1597,8 @@ export default {
 <style lang="scss" scoped>
 .form-add-wrapper {
   max-height: 500px;
+  padding-top: 2px;
+  border-top: 1px solid silver;
   overflow-y: scroll;
   .order-wrapper {
     position: relative;

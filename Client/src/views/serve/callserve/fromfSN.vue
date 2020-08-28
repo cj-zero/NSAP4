@@ -14,6 +14,7 @@
       @selection-change="handleSelectionChange"
       style="width: 100%"
       row-key="manufSN"
+      align="left"
     >
       <el-table-column
         type="selection" 
@@ -21,25 +22,25 @@
         :selectable="checkSelectable" 
         :reserve-selection="true">
       </el-table-column>
-      <el-table-column prop="manufSN" fixed align="center" label="制造商序列号" width="120"></el-table-column>
-      <el-table-column prop="internalSN" label="内部序列号" align="center" width="120">
-        <template slot-scope="scope">
-          <span>{{scope.row.internalSN?scope.row.internalSN:'暂无数据'}}</span>
-        </template>
-      </el-table-column>
-      <el-table-column align="center" label="客户代码" width="120">
-        <template slot-scope="scope">
-          <span>{{scope.row.customer}}</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="custmrName" label="客户名称" align="center" min-width="100"></el-table-column>
-      <el-table-column prop="dlvryDate" align="center" label="保修结束时间" width="160"></el-table-column>
-      <el-table-column align="center" prop="itemCode" width="200" label="物料编码"></el-table-column>
-      <el-table-column align="center" label="物料描述" min-width="120">
+      <el-table-column prop="manufSN" fixed label="制造商序列号" width="120"></el-table-column>
+      <el-table-column prop="itemCode" width="200" label="物料编码"></el-table-column>
+      <el-table-column label="物料描述" min-width="120">
         <template slot-scope="scope">
           <span>{{scope.row.itemName}}</span>
         </template>
       </el-table-column>
+      <el-table-column prop="internalSN" label="内部序列号" width="120">
+        <template slot-scope="scope">
+          <span>{{scope.row.internalSN?scope.row.internalSN:'暂无数据'}}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="客户代码" width="120">
+        <template slot-scope="scope">
+          <span>{{scope.row.customer}}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="custmrName" label="客户名称" min-width="100"></el-table-column>
+      <el-table-column prop="dlvryDate" label="保修结束时间" width="160"></el-table-column>
     </el-table>
   </div>
 </template>

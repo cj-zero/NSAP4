@@ -7,8 +7,12 @@ namespace OpenAuth.App.Request
 {
     public class SendOrdersReq
     {
-        [Required]
+        
         public List<int> WorkOrderIds { get; set; }
+
+        public string ServiceOrderId { get; set; }
+
+        public List<string> QryMaterialTypes { get; set; }
 
         [Required]
         public int CurrentUserId { get; set; }

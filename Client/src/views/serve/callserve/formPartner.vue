@@ -9,6 +9,7 @@
       highlight-current-row
       @current-change="getPartner"
       style="width: 100%"
+      align="left"
     >
       <el-table-column width="50">
         <template slot-scope="scope">
@@ -16,25 +17,31 @@
         </template>
       </el-table-column>
       <el-table-column prop="cardCode" label="客户代码" width="80"></el-table-column>
-      <el-table-column prop="cardName" label="客户名称" align="center" min-width="120"></el-table-column>
-      <el-table-column align="center" label="状态冻结" width="120">
+      <el-table-column prop="cardName" label="客户名称" align="left" min-width="120"></el-table-column>
+      <el-table-column align="left" label="状态冻结" width="120">
         <template slot-scope="scope">
           <span
             :class="[scope.row.frozenFor=='N'?'greenColro':'redColor']"
           >{{scope.row.frozenFor=="N"?"正常":'冻结'}}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="cntctPrsn" label="联系人" align="center" width="100"></el-table-column>
-      <el-table-column prop="slpName" align="center" label="销售员" width="100"></el-table-column>
-      <el-table-column align="center" prop="currency" width="100" label="货币种类"></el-table-column>
-      <el-table-column align="center" label="科目余额" width="120">
+      <el-table-column prop="cntctPrsn" label="联系人" align="left" width="100"></el-table-column>
+      <el-table-column label="电话号码" align="left" width="110">
         <template slot-scope="scope">
-          <span :class="[scope.row.balance>=0?'redColor':'greenColro']">{{scope.row.balance}}0000</span>
+          {{ scope.row.cellular ? scope.row.cellular : scope.row.phone1 }}
         </template>
       </el-table-column>
-      <el-table-column prop="address" align="center" label="开票地址" min-width="180"></el-table-column>
+      <el-table-column prop="slpName" align="left" label="销售员" width="100"></el-table-column>
+      <el-table-column prop="technician" label="售后主管" align="left"></el-table-column>
+      <el-table-column align="left" prop="currency" width="100" label="货币种类"></el-table-column>
+      <el-table-column align="right" label="科目余额" width="120">
+        <template slot-scope="scope">
+          <span :class="[scope.row.balance>=0?'':'redColor']">{{scope.row.balance}}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="address" align="left" label="开票地址" min-width="180"></el-table-column>
       <el-table-column prop="address2" label="收货地址" min-width="180"></el-table-column>
-      <el-table-column prop="u_FPLB" align="center" width="120px" label="发票类别"></el-table-column>
+      <el-table-column prop="u_FPLB" align="left" width="120px" label="发票类别"></el-table-column>
     </el-table>
 
     <!-- <el-dialog :modal-append-to-body='false'
