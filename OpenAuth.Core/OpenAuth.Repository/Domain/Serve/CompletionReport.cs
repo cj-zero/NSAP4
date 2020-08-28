@@ -26,29 +26,29 @@ namespace OpenAuth.Repository.Domain
     {
         public CompletionReport()
         {
-          this.FromTheme= string.Empty;
-          this.CustomerId= string.Empty;
-          this.CustomerName= string.Empty;
-          this.Contacter= string.Empty;
-          this.ContactTel= string.Empty;
-          this.TerminalCustomer= string.Empty;
-          this.MaterialCode= string.Empty;
-          this.ManufacturerSerialNumber= string.Empty;
-          this.TechnicianId= string.Empty;
-          this.TechnicianName= string.Empty;
-          this.BusinessTripDate= DateTime.Now;
-          this.EndDate= DateTime.Now;
-          this.Becity= string.Empty;
-          this.Destination= string.Empty;
-          this.CompleteAddress= string.Empty;
-          this.ProblemDescription= string.Empty;
-          this.SolutionId= string.Empty;
-          this.ReplacementMaterialDetails= string.Empty;
-          this.Legacy= string.Empty;
-          this.Remark= string.Empty;
-          this.CreateTime= DateTime.Now;
-          this.CreateUserId= string.Empty;
-          this.TerminalCustomerId = string.Empty;
+            this.FromTheme = string.Empty;
+            this.CustomerId = string.Empty;
+            this.CustomerName = string.Empty;
+            this.Contacter = string.Empty;
+            this.ContactTel = string.Empty;
+            this.TerminalCustomer = string.Empty;
+            this.MaterialCode = string.Empty;
+            this.ManufacturerSerialNumber = string.Empty;
+            this.TechnicianId = string.Empty;
+            this.TechnicianName = string.Empty;
+            this.BusinessTripDate = DateTime.Now;
+            this.EndDate = DateTime.Now;
+            this.Becity = string.Empty;
+            this.Destination = string.Empty;
+            this.CompleteAddress = string.Empty;
+            this.ProblemDescription = string.Empty;
+            this.SolutionId = string.Empty;
+            this.ReplacementMaterialDetails = string.Empty;
+            this.Legacy = string.Empty;
+            this.Remark = string.Empty;
+            this.CreateTime = DateTime.Now;
+            this.CreateUserId = string.Empty;
+            this.TerminalCustomerId = string.Empty;
         }
 
 
@@ -203,6 +203,42 @@ namespace OpenAuth.Repository.Domain
         [Description("创建人ID")]
         [Browsable(false)]
         public string CreateUserId { get; set; }
+
+        /// <summary>
+        /// 出发省
+        /// </summary>
+        [Description("出发省")]
+        public int StartProvinceId { get; set; }
+
+        /// <summary>
+        /// 出发市
+        /// </summary>
+        [Description("出发市")]
+        public int StartCityId { get; set; }
+
+        /// <summary>
+        /// 出发 区/县
+        /// </summary>
+        [Description("出发 区/县")]
+        public int StartAreaId { get; set; }
+
+        /// <summary>
+        /// 到达省
+        /// </summary>
+        [Description("到达省")]
+        public int ArriveProvinceId { get; set; }
+
+        /// <summary>
+        /// 到达省
+        /// </summary>
+        [Description("到达市")]
+        public int ArriveCityId { get; set; }
+        /// <summary>
+        /// 到达省
+        /// </summary>
+        [Description("到达区/县")]
+        public int ArriveAreaId { get; set; }
+
         /// <summary>
         /// 完工报告关联的图片
         /// </summary>
