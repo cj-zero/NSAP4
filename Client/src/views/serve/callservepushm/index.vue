@@ -461,7 +461,7 @@ export default {
         return
       }
       let { scrollHeight, scrollTop, clientHeight } = e.target
-      if (scrollHeight <= (scrollTop + clientHeight + 10)) {
+      if (scrollHeight <= (scrollTop + clientHeight + 50)) {
         this.listQueryServer.page++
         this.getLeftList()
       }

@@ -52,20 +52,34 @@
         <i class="el-icon-download"></i>
       </span>
     </el-upload>
-    <el-dialog :visible.sync="dialogVisible">
+    <Model
+        :visible="dialogVisible"
+        @on-close="dialogVisible = false"
+        width="600px"
+      >
+      <img :src="dialogImageUrl" alt style="display: block;width: 80%;margin: 0 auto;" />
+      <template slot="action">
+        <el-button size="mini" @click="dialogVisible = false">关闭</el-button>
+      </template>
+    </Model>
+    <!-- <el-dialog :visible.sync="dialogVisible"> -->
       <!-- <el-row style="margin-bottom: 20px">
         <el-button type="primary" @click="handleDownload" style="margin-left: 20px" size="mini">下载</el-button>
       </el-row> -->
-      <el-image
+      <!-- <el-image
         :src="dialogImageUrl"
-        :fit="fit"></el-image>
-        <!-- <img width="100%" :src="dialogImageUrl" alt /> -->
-    </el-dialog>
+        :fit="fit"></el-image> -->
+        <!-- <img width="100%" :src="dialogImageUrl" alt />
+    </el-dialog> -->
   </div>
 </template>
 
 <script>
+import Model from "@/components/Formcreated/components/Model";
 export default {
+  components: {
+    Model
+  },
   props: {
     setImage: {
       type: [String, Object],

@@ -457,7 +457,7 @@ export default {
         return
       }
       let { scrollHeight, scrollTop, clientHeight } = e.target
-      if (scrollHeight <= (scrollTop + clientHeight + 10)) {
+      if (scrollHeight <= (scrollTop + clientHeight + 50)) {
         this.listQueryServer.page++
         this.getLeftList()
       }
@@ -522,7 +522,7 @@ export default {
       this.listLoading = true;
       this.params.currentUserId = this.orderRadio;
       // this.params.workOrderIds = this.workorderidList;
-      let checkedKey = this.$refs.treeForm.getCheckedkeys()
+      let checkedKey = this.$refs.treeForm.getCheckedKeys()
       this.params.qryMaterialTypes = this.listQuery.QryMaterialTypes
       this.params.serviceOrderId = checkedKey[0] 
       if (this.hasAlreadNum > 2) {
@@ -609,7 +609,7 @@ export default {
           this.open();
           break;
         case "btnPost":
-          if (!this.$refs.treeForm.getCheckedkeys().length) {
+          if (!this.$refs.treeForm.getCheckedKeys().length) {
             return this.$message.error('请先选择服务单')
           }
           this.changeOrder();

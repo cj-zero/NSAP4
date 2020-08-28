@@ -463,7 +463,6 @@
               type="flex"
               class="row-bg"
               justify="space-around"
-              style="height:40px;line-height:40px;"
             >
               <el-col :span="24">
                 <el-form-item
@@ -807,7 +806,7 @@
         @pagination="handleChange"
       />
       <span slot="footer" class="dialog-footer">
-        <el-button @click="dialogfSN = false">取 消</el-button>
+        <el-button @click="onClose">取 消</el-button>
         <el-button type="primary" @click="pushForm" :disabled="isDisalbed">确 定</el-button>
       </span>
     </el-dialog>
@@ -1143,6 +1142,10 @@ export default {
   // },f
   // inject: ["form"],
   methods: {
+    onClose () {
+      this.dialogfSN = false
+      this.inputSearch = ''
+    },
     ...mapMutations('form', {
       setFormList: 'SET_FORM_LIST'
     }),
