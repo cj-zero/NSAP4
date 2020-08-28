@@ -7,8 +7,6 @@ namespace OpenAuth.App.Request
 {
     public class SendOrdersReq
     {
-        
-        public List<int> WorkOrderIds { get; set; }
 
         public string ServiceOrderId { get; set; }
 
