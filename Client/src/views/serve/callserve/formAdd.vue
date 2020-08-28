@@ -28,10 +28,10 @@
               </el-radio-group>
             </el-form-item>
           </el-col>
-          <el-col :span="4" style="transform: translate3d(-15px, 0, 0);">
+          <el-col :span="4" style="transform: translate3d(-15px, 0, 0);" v-if="formName === '查看'">
             <el-form-item label="服务方式">
               <el-radio-group
-              
+                disabled
                 class="radio-item right"
                 v-model="formList[0].orderTakeType"
               >
@@ -558,56 +558,6 @@
               </el-col>
             </el-row>
             <el-row type="flex" class="row-bg" justify="space-around">
-              <el-col :span="8">
-                <el-form-item
-                  label="问题类型"
-                  prop="problemTypeId"
-                  :rules="{
-                  required: true, message: '问题类型不能为空', trigger: 'clear' }"
-                >
-                  <el-input style="display:none;" v-model="item.problemTypeId"></el-input>
-                  <el-input
-                    :value="item.problemTypeName"
-                    readonly
-                  
-                    @focus="()=>{proplemTree=true,sortForm=index+2}"
-                  >
-                    <el-button
-                      size="mini"
-                      slot="append"
-                      icon="el-icon-search"
-                      @click="()=>{proplemTree=true,sortForm=index+2}"
-                    ></el-button>
-                  </el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="优先级">
-                  <!-- <el-input v-model="item.priority"></el-input> -->
-                  <el-select v-model="item.priority" placeholder="请选择">
-                    <el-option
-                      v-for="ite in options_quick"
-                      :key="ite.value"
-                      :label="ite.label"
-                      :value="ite.value"
-                    ></el-option>
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="预约时间">
-                  <el-date-picker
-                    disabled
-                  
-                    type="date"
-                    placeholder="选择日期"
-                    v-model="item.bookingDate"
-                    style="width: 100%;"
-                  ></el-date-picker>
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="18">
                 <el-form-item
                   label="解决方案"
@@ -653,17 +603,17 @@
             </el-form-item>
             <el-row type="flex">
               <el-col :span="6">
-                <el-form-item label="售后问题类型" prop="remark" v-if="formName === '新建'">
+                <el-form-item label="售后问题类型" prop="remark" v-if="formName === '查看'">
                   <el-input v-model="item.troubleDescription" disabled></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="售后解决方案" prop="remark" v-if="formName === '新建'">
+                <el-form-item label="售后解决方案" prop="remark" v-if="formName === '查看'">
                   <el-input v-model="item.processDescription" disabled></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="6">
-                <el-form-item label="完工报告" prop="remark" v-if="formName === '新建'">
+                <el-form-item label="完工报告" prop="remark" v-if="formName === '查看'">
                   <el-button type="primary" size="mini" @click="showReport" style="width: 112.5px;">查看</el-button>
                 </el-form-item>
               </el-col>
@@ -867,7 +817,6 @@ export default {
           // serviceOrderId:'',
           priority: 1, //优先级 4-紧急 3-高 2-中 1-低
           feeType: 1, //服务类型 1-免费 2-收费
-          orderTakeType: 1, // 服务方式 1-电话 2-上门
           submitDate: "", //工单提交时间
           recepUserId: "", //接单人用户Id
           remark: "", //备注
@@ -1276,7 +1225,6 @@ export default {
               itemCode: "其他设备",
               itemName: "",
               feeType: 1,
-              orderTakeType: 1,
               fromTheme: "",
               fromType:1,
               problemTypeName:  "",
@@ -1314,7 +1262,6 @@ export default {
               materialCode: newList[i].itemCode,
               materialDescription: newList[i].itemName,
               feeType: 1,
-              orderTakeType: 1,
               fromTheme: "",
               fromType:  1,
               problemTypeName: "",
@@ -1340,7 +1287,6 @@ export default {
                 itemCode: "其他设备",
                 itemName: "",
                 feeType: 1,
-                orderTakeType: 1,
                 fromTheme:  "",
                 fromType:  1,
                 problemTypeName:  "",
@@ -1378,7 +1324,6 @@ export default {
                 itemCode: "其他设备",
                 materialDescription: "",
                 feeType: 1,
-                orderTakeType: 1,
                 fromTheme:  "",
                 fromType:  1,
                 problemTypeName:  "",
@@ -1398,7 +1343,6 @@ export default {
                 materialCode: this.formListStart[i].itemCode,
                 materialDescription: this.formListStart[i].itemName,
                 feeType: 1,
-                orderTakeType: 1,
                 fromTheme:  "",
                 fromType:  1,
                 problemTypeName:  "",

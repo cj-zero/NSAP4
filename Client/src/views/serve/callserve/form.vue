@@ -668,13 +668,16 @@ export default {
           this.form = Object.assign({}, this.form, val);
           if (val.serviceWorkOrders.length > 0) {
             val.serviceWorkOrders.map((item, index) => {
+              if (item.orderTakeType !== undefined) {
+                this.form.serviceWorkOrders[index].orderTakeType = this.processTakeType(item.orderTakeType)
+              }
               this.form.serviceWorkOrders[index].solutionsubject =
                 item.solution && item.solution.subject;
               this.form.serviceWorkOrders[index].problemTypeName =
                 item.problemType && item.problemType.name;
             });
           }
-          // console.log(val, 'refValueChange', this.form)
+          console.log(val, 'refValueChange', this.form)
           this.propForm = this.form.serviceWorkOrders;
         }
         // this.propForm = this.refValue.serviceWorkOrders
@@ -715,6 +718,12 @@ export default {
     window.removeEventListener("resize", this.resizeWin);
   },
   methods: {
+    processTakeType (takeType) {
+      if (!takeType || !Number(takeType)) {
+        return takeType
+      }
+      return (takeType == 3 || takeType === 1) ? 1 : 2
+    },
     onMapInitail (map) {
       console.log(map, 'mapBAIDU')
     },
@@ -865,7 +874,6 @@ export default {
             materialCode: res[i].data[0].itemCode,
             materialDescription: res[i].data[0].itemName,
             feeType: 1,
-            orderTakeType: 1,
             fromTheme:  "",
             fromType:  1,
             problemTypeName,
@@ -885,7 +893,6 @@ export default {
             materialCode: "其他设备",
             materialDescription: "",
             feeType: 1,
-            orderTakeType: 1,
             fromTheme:  "",
             fromType:  1,
             problemTypeName,
