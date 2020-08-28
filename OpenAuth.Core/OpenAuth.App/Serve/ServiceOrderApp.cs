@@ -584,7 +584,7 @@ namespace OpenAuth.App
 
             #endregion
             //log日志与发送消息
-            var assignedWorks = obj.ServiceWorkOrders.FindAll(o => o.CurrentUserNsapId.Equals(obj.SupervisorId));
+            var assignedWorks = obj.ServiceWorkOrders.FindAll(o => obj.SupervisorId.Equals(o.CurrentUserNsapId));
             if (assignedWorks.Count() > 0)
             {
                 await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
@@ -886,7 +886,7 @@ namespace OpenAuth.App
             _capBus.Publish("Serve.ServcieOrder.Create", obj.Id);
             #endregion
             //log日志与发送消息
-            var assignedWorks = obj.ServiceWorkOrders.FindAll(o => o.CurrentUserNsapId.Equals(obj.SupervisorId));
+            var assignedWorks = obj.ServiceWorkOrders.FindAll(o => obj.SupervisorId.Equals(o.CurrentUserNsapId));
             if (assignedWorks.Count() > 0)
             {
                 await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
