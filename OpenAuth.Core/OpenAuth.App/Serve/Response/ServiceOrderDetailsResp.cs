@@ -91,6 +91,15 @@ namespace OpenAuth.App.Response
         /// </summary>
         public decimal? Latitude { get; set; }
         /// <summary>
+        /// 问题类型Id
+        /// </summary>
+        public string ProblemTypeId { get; set; }
+
+        /// <summary>
+        /// 问题类型名称
+        /// </summary>
+        public string ProblemTypeName { get; set; }
+        /// <summary>
         /// 服务单号
         /// </summary>
         public int? U_SAP_ID { get; set; }
