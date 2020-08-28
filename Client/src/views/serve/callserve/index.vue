@@ -258,6 +258,13 @@
           <el-button type="primary" @click="dialogTree = false">确 定</el-button>
         </span>
       </el-dialog>
+      <!-- 电话回访评价 -->
+      <el-dialog
+        :visible.sync="dialogRate"
+        width="1015px"
+      >
+        <Rate />
+      </el-dialog>
     </div>
   </div>
 </template>
@@ -281,6 +288,7 @@ import zxchat from "./chatOnRight";
 import treeList from "./treeList";
 import CustomerInfo from './customerInfo'
 import rightImg from '@/assets/table/right.png'
+import Rate from './rate'
 // import serveTableVue from '../serveTable.vue';
 // import { callserve } from "@/mock/serve";
 export default {
@@ -303,7 +311,8 @@ export default {
     treeList,
     zxsearch,
     zxchat,
-    CustomerInfo
+    CustomerInfo,
+    Rate
   },
   directives: {
     waves,
@@ -442,7 +451,8 @@ export default {
       problemOptions: [], // 问题类型
       serviceOrderId: '', // 服务单ID 用于后续工单的创建和修改
       dialogPhoneVisible: false, // 电话回访弹窗
-      exportExcelUrl: '/serve/ServiceOrder/ExportExcel' // 表格导出地址
+      exportExcelUrl: '/serve/ServiceOrder/ExportExcel', // 表格导出地址
+      dialogRate: true
     };
   },
   filters: {
