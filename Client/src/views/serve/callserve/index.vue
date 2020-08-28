@@ -219,7 +219,7 @@
       </el-dialog>
       <!-- 只能查看的表单 -->
       <el-dialog
-        width="1080px"
+        width="1210px"
         top="10vh"
         title="服务单详情"
         :close-on-click-modal="false"

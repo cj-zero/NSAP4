@@ -171,20 +171,29 @@ namespace Sap.Handler.Service
                 {
                     sc.ServiceBPType = ServiceTypeEnum.srvcSales;
                 }
-                sc.Subject = thisSorder.Services.Length>250? thisSorder.Services.Substring(0, 250):thisSorder.Services ;
+                if (string.IsNullOrWhiteSpace(thisSorder.Services))
+                {
+                    sc.Subject = "无";
+                    sc.Description = "无";
+                }
+                else
+                {
+                    sc.Subject = thisSorder.Services.Length > 250 ? thisSorder.Services.Substring(0, 250) : thisSorder.Services;
+                    sc.Description = thisSorder.Services;
+                }
                 //if (thisSorder.FromId != null && thisSorder.FromId != -1)
                 //{
                 //    sc.Origin = (int)thisSorder.FromId;
                 //}
-                if (thisSorder.ServiceOrderSNs != null && thisSorder.ServiceOrderSNs.Count > 0)
-                {
-                    var thisSN = thisSorder.ServiceOrderSNs[0];
-                    if (!string.IsNullOrEmpty(thisSN.ItemCode) && IsValidItemCode(thisSN.ItemCode))
-                    {
-                        sc.ItemCode = thisSN.ItemCode;
-                        sc.ManufacturerSerialNum = thisSN.ManufSN;
-                    }
-                }
+                //if (thisSorder.ServiceOrderSNs != null && thisSorder.ServiceOrderSNs.Count > 0)
+                //{
+                //    var thisSN = thisSorder.ServiceOrderSNs[0];
+                //    if (!string.IsNullOrEmpty(thisSN.ItemCode) && IsValidItemCode(thisSN.ItemCode))
+                //    {
+                //        sc.ItemCode = thisSN.ItemCode;
+                //        sc.ManufacturerSerialNum = thisSN.ManufSN;
+                //    }
+                //}
                 sc.Status = -3;// 待处理 
                 sc.Priority = BoSvcCallPriorities.scp_Low;
                 //if (thisSwork.FromType != null)
@@ -196,16 +205,15 @@ namespace Sap.Handler.Service
 
                 //    sc.ProblemType = thisSorder.PRO;
                 //}
-                if (!string.IsNullOrEmpty(thisSorder.ProblemTypeId))
-                {
-                    var queryp = UnitWork.Find<ProblemType>(s => s.Id.Equals(thisSorder.ProblemTypeId)).FirstOrDefault();
-                    var pbltype = queryp.MapTo<ProblemType>();
-                    if (pbltype != null)
-                    {
-                        sc.ProblemType = pbltype.PrblmTypID;
-                    }
-                }
-                sc.Description = thisSorder.Services;
+                //if (!string.IsNullOrEmpty(thisSorder.ProblemTypeId))
+                //{
+                //    var queryp = UnitWork.Find<ProblemType>(s => s.Id.Equals(thisSorder.ProblemTypeId)).FirstOrDefault();
+                //    var pbltype = queryp.MapTo<ProblemType>();
+                //    if (pbltype != null)
+                //    {
+                //        sc.ProblemType = pbltype.PrblmTypID;
+                //    }
+                //}
 
                 #endregion
                 int res = sc.Add();
