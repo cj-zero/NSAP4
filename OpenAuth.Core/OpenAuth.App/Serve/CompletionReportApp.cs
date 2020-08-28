@@ -181,11 +181,14 @@ namespace OpenAuth.App
                 q.b.CustomerName,
                 q.b.TerminalCustomer,
                 q.a.ServiceOrderId,
-                q.b.Contacter,
-                q.b.ContactTel,
+                Contacter = string.IsNullOrEmpty(q.b.NewestContacter) ? q.b.Contacter : q.b.NewestContacter,
+                ContactTel = string.IsNullOrEmpty(q.b.NewestContactTel) ? q.b.ContactTel : q.b.NewestContactTel,
                 q.a.ManufacturerSerialNumber,
                 q.a.MaterialCode,
-                ProblemDescription = "故障描述：" + q.a.TroubleDescription + "；解决方案：" + q.a.Solution.Subject
+                ProblemDescription = "故障描述：" + q.a.TroubleDescription + "；解决方案：" + q.a.Solution.Subject,
+                q.a.TroubleDescription,
+                q.a.Solution.Subject,
+                q.b.TerminalCustomerId
             }).FirstOrDefaultAsync();
             var thisworkdetail = query.MapTo<CompletionReportDetailsResp>();
             if (thisworkdetail.CurrentUserId != null)
@@ -223,8 +226,8 @@ namespace OpenAuth.App
                 q.c.CustomerName,
                 q.c.TerminalCustomer,
                 q.c.ServiceOrderId,
-                q.c.Contacter,
-                q.c.ContactTel,
+                Contacter = string.IsNullOrEmpty(q.b.NewestContacter) ? q.b.Contacter : q.b.NewestContacter,
+                ContactTel = string.IsNullOrEmpty(q.b.NewestContactTel) ? q.b.ContactTel : q.b.NewestContactTel,
                 q.a.ManufacturerSerialNumber,
                 q.a.MaterialCode,
                 q.c.ProblemDescription,

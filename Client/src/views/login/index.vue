@@ -5,7 +5,7 @@
 
       <div class="login-img" v-if="dialogQ">
         <h3 class="title">nSAP-V4.0</h3>
-        <p class="tips">nSAP-V4.0 管理系统</p>
+        <p class="tips">管理系统</p>
         <p>请用新威智能App扫描此二维码</p>
         <el-image :src="url" placeholder="请稍等">
              <div slot="error" class="image-slot">
@@ -30,7 +30,7 @@
         label-position="left"
       >
         <h3 class="title">nSAP-V4.0</h3>
-        <p class="tips">nSAP-V4.0 管理系统</p>
+        <p class="tips">管理系统</p>
         <el-form-item prop="username">
           <span class="svg-container svg-container_login">
             <svg-icon icon-class="user" />

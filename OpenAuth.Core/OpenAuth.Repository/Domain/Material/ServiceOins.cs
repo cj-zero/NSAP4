@@ -311,5 +311,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         public string StreetNo { get; set; }
+
+        /// <summary>
+        /// 调用标识
+        /// </summary>
+        [Description("调用标识")]
+        public int insID { get; set; }
     }
 }
