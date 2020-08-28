@@ -185,7 +185,7 @@ namespace OpenAuth.App
                 ContactTel = string.IsNullOrEmpty(q.b.NewestContactTel) ? q.b.ContactTel : q.b.NewestContactTel,
                 q.a.ManufacturerSerialNumber,
                 q.a.MaterialCode,
-                ProblemDescription = "故障描述：" + q.a.TroubleDescription + "；解决方案：" + q.a.Solution.Subject
+                ProblemDescription = "故障描述：" + q.a.TroubleDescription + "；解决方案：" + q.a.Solution.Subject,
                 q.a.TroubleDescription,
                 q.a.Solution.Subject,
                 q.b.TerminalCustomerId
