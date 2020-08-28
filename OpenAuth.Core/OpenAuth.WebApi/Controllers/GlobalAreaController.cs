@@ -10,6 +10,9 @@ using OpenAuth.App.Response;
 
 namespace OpenAuth.WebApi.Controllers
 {
+    /// <summary>
+    /// 地图
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class GlobalAreaController : ControllerBase
