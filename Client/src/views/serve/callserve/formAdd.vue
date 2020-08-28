@@ -695,7 +695,8 @@
       class="addClass1"
       title="选择制造商序列号"
       @open="openDialog"
-      width="70%"
+      width="1196px"
+      top="8vh"
       :close-on-click-modal="false"
       :visible.sync="dialogfSN">
       <div style="width:600px;margin:10px 0;" class="search-wrapper">
@@ -920,8 +921,12 @@ export default {
       .catch((error) => {
         console.log(error);
       });
-    solutions.getList().then((response) => {
+    solutions.getList({
+      page: 1,
+      limit: 20
+    }).then((response) => {
       this.datasolution = response.data;
+      console.log(this.datasolution, 'solution')
       this.solutionCount = response.count;
       this.listLoading = false;
     });
