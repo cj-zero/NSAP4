@@ -204,40 +204,40 @@ namespace OpenAuth.Repository.Domain
         [Browsable(false)]
         public string CreateUserId { get; set; }
 
-        /// <summary>
-        /// 出发省
-        /// </summary>
-        [Description("出发省")]
-        public int StartProvinceId { get; set; }
+        ///// <summary>
+        ///// 出发省
+        ///// </summary>
+        //[Description("出发省")]
+        //public int StartProvinceId { get; set; }
 
-        /// <summary>
-        /// 出发市
-        /// </summary>
-        [Description("出发市")]
-        public int StartCityId { get; set; }
+        ///// <summary>
+        ///// 出发市
+        ///// </summary>
+        //[Description("出发市")]
+        //public int StartCityId { get; set; }
 
-        /// <summary>
-        /// 出发 区/县
-        /// </summary>
-        [Description("出发 区/县")]
-        public int StartAreaId { get; set; }
+        ///// <summary>
+        ///// 出发 区/县
+        ///// </summary>
+        //[Description("出发 区/县")]
+        //public int StartAreaId { get; set; }
 
-        /// <summary>
-        /// 到达省
-        /// </summary>
-        [Description("到达省")]
-        public int ArriveProvinceId { get; set; }
+        ///// <summary>
+        ///// 到达省
+        ///// </summary>
+        //[Description("到达省")]
+        //public int ArriveProvinceId { get; set; }
 
-        /// <summary>
-        /// 到达省
-        /// </summary>
-        [Description("到达市")]
-        public int ArriveCityId { get; set; }
-        /// <summary>
-        /// 到达省
-        /// </summary>
-        [Description("到达区/县")]
-        public int ArriveAreaId { get; set; }
+        ///// <summary>
+        ///// 到达省
+        ///// </summary>
+        //[Description("到达市")]
+        //public int ArriveCityId { get; set; }
+        ///// <summary>
+        ///// 到达省
+        ///// </summary>
+        //[Description("到达区/县")]
+        //public int ArriveAreaId { get; set; }
 
         /// <summary>
         /// 完工报告关联的图片
