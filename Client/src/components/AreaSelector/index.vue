@@ -124,22 +124,27 @@ export default {
       if (Number(areaLevel) !== 3) {
         if (this.tabList.length >= 2) {
           this.tabList = this.tabList.slice(0, 1)
+          this.city = ''
+          this.district = ''
         }
         this._normalizeAddressList(id)
       }
     },
-    city () {
+    city (val) {
       let { id, areaLevel } = this.currentItem
-      if (Number(areaLevel) !== 3) { 
+      if (Number(areaLevel) !== 3 && val) { 
         if (this.tabList.length >= 3) {
+          console.log('ciry', this.tabList.slice(0, 2))
           this.tabList = this.tabList.slice(0, 2)
+          this.district = ''
+          console.log(this.tabList, 'tabList')
         }
         this._normalizeAddressList(id)
       }
     },
-    district () {
+    district (val) {
       let { id, areaLevel } = this.currentItem
-      if (Number(areaLevel) !== 3) { 
+      if (Number(areaLevel) !== 3 && val) { 
         if (this.tabList.length >= 4) {
           this.tabList = this.tabList.slice(0, 4)
         }

@@ -212,9 +212,9 @@
               </el-col>
             </el-row>
             <el-row :gutter="10">
-              <el-col :span="6">
+              <el-col :span="10">
                 <el-form-item label="现地址">
-                  <el-input size="mini" v-model="allArea" readonly style="width: 110px;" >
+                  <el-input size="mini" v-model="allArea" readonly>
                     <el-button size="mini" slot="append" icon="el-icon-position" @click="onAreaClick"></el-button>
                   </el-input>
                   <area-selector
@@ -229,7 +229,7 @@
                   >{{allArea}}</p> -->
                 </el-form-item>
               </el-col>
-              <el-col :span="14" style="height:30px;line-height:30px;padding:2px 0 0 7px;">
+              <el-col :span="10" style="height:30px;line-height:30px;padding:2px 0 0 7px;">
                 <el-input size="mini" v-model="form.addr">
                   <!-- <el-button size="mini" slot="append" icon="el-icon-position" @click="openMap"></el-button> -->
                 </el-input>
@@ -255,6 +255,7 @@
               <el-col :span="22">
                 <upLoadImage :setImage="setImage" @get-ImgList="getImgList" :limit="limit"></upLoadImage>
               </el-col>
+              <bmap @mapInitail="onMapInitail"></bmap>
               <!-- <el-col :span="2" style="line-height:40px;">  暂时取消
                 <el-button
                   type="primary"
@@ -412,11 +413,11 @@ import { getPartner, getSerialNumber } from "@/api/callserve";
 import * as callformPartner from "@/api/serve/callformPartner";
 import callId from "./callId";
 // import BMap from 'BMap'
-// import http from "@/api/serve/whiteHttp";
+import http from "@/api/serve/whiteHttp";
 import * as callservesure from "@/api/serve/callservesure";
 import Pagination from "@/components/Pagination";
 import zmap from "@/components/amap";
-// import bmap from '@/components/bmap'
+import bmap from '@/components/bmap'
 import upLoadImage from "@/components/upLoadFile";
 import Model from "@/components/Formcreated/components/Model";
 import { timeToFormat } from "@/utils";
@@ -427,7 +428,7 @@ import { download } from "@/utils/file";
 import formPartner from "./formPartner";
 import formAdd from "./formAdd";
 import AreaSelector from '@/components/AreaSelector'
-import jsonp from '@/utils/jsonp'
+// import jsonp from '@/utils/jsonp'
 // import { delete } from 'vuedraggable';
 export default {
   name: "formTable",
@@ -438,7 +439,7 @@ export default {
     Pagination, 
     upLoadImage, 
     Model, 
-    // bmap,
+    bmap,
     callId,
     AreaSelector 
   },
@@ -576,8 +577,11 @@ export default {
       limit: 9, // 图片上传限制
       handleSelectType: '', // 用来区分选择的是客户代码还是终端客户代码
       areaVisible: false, // 地址选择器弹窗
-      parasePositionURL: 'http://api.map.baidu.com/geocoding/v3/?',
-      bMapkey: 'uGyEag9q02RPI81dcfk7h7vT8tUovWfG'
+      parasePositionURL: 'http://api.map.baidu.com/geocoding/v3/?', // 
+      bMapkey: 'uGyEag9q02RPI81dcfk7h7vT8tUovWfG', // 百度key
+      positionTransformURL: 'https://restapi.amap.com/v3/assistant/coordinate/convert?', // 高德坐标转换地址
+      // gdKey: 'cfd8da5cf010c5f7441834ff5e764f5b' // 高德key
+      gdKey: '6cacd440b344fa2d3ef098f0fe1ee33b'
     };
   },
   computed: {
@@ -723,8 +727,10 @@ export default {
     window.removeEventListener("resize", this.resizeWin);
   },
   methods: {
-    onMapInitail (map) {
-      console.log(map, 'mapBAIDU')
+    onMapInitail (val) {
+      console.log(val, 'mapBAIDU')
+      this.map = val.map
+      this.BMap = val.BMap
     },
     onDateChange(val) {
       console.log(typeof val);
@@ -745,25 +751,52 @@ export default {
       let { province, city, district } = val
       this.form.province = province
       this.form.city = city
-      this.form.district = district
-      this._getPosition()
+      this.form.area = district
+      function onSearchComplete () {
+        let pp = local.getResults().getPoi(0).point;    //获取第一个智能搜索的结果
+        let { lat, lng } = pp
+        console.log(pp, 'pp')
+        lat = lat.toFixed(6)
+        lng = lng.toFixed(6)
+        this._transformPosition(lat, lng)
+      }
+      let local = new this.BMap.LocalSearch(this.map, { //智能搜索
+        onSearchComplete: onSearchComplete.bind(this)
+      });
+      local.search(`${province}${city}${district}`.replace('海外', ''));
+      console.log(local, 'local', local.search)
     },
-    _getPosition () {
-      // address=北京市海淀区上地十街10号&output=json&ak=您的ak&callback=showLocation
-      let params = `address=${encodeURIComponent(this.allArea.replace('海外', ''))}&output=json&ak=${this.bMapkey}`
-      jsonp(`${this.parasePositionURL}${params}`).then(res => {
-        let { status, result } = res
-        console.log(res, status, result, 'status', status == 0)
-        if (status == 0) {
-          let { lat, lng } = result.location
-          console.log(res, lat, lng, 'lng')
-        } else {
-          console.log('错误')
-          this.$message.error('地址解析错误')
+    // _getPosition () {
+    //   // address=北京市海淀区上地十街10号&output=json&ak=您的ak&callback=showLocation
+    //   let params = `address=${encodeURIComponent(this.allArea.replace('海外', ''))}&output=json&ak=${this.bMapkey}`
+    //   jsonp(`${this.parasePositionURL}${params}`).then(res => {
+    //     let { status, result } = res
+    //     console.log(res, status, result, 'status', status == 0)
+    //     if (status == 0) {
+    //       let { lat, lng } = result.location
+    //       console.log(res, lat, lng, 'lng')
+    //     } else {
+    //       console.log('错误')
+    //       this.$message.error('地址解析错误')
+    //     }
+    //   }).catch((err) => {
+    //     console.log(err, 'err')
+    //     this.$message.error('地址解析错误')
+    //   })
+    // },
+    _transformPosition (lng, lat) {
+      let queryParams = `locations=${lng},${lat}&coordsys=baidu&output=json&key=${this.gdKey}`
+      http.get(`${this.positionTransformURL}${queryParams}`, (err, res) => {
+        if (err) {
+          return this.$message.error('坐标转换失败')
         }
-      }).catch((err) => {
-        console.log(err, 'err')
-        this.$message.error('地址解析错误')
+        if (res.status != 1) {
+          return this.$message.error('坐标转换失败')
+        }
+        let [lat, lng] = res.locations.split(',')
+        this.form.longitude = lng
+        this.form.latitude = lat
+        console.log(this.form, 'form', lng, lat)
       })
     },
     onAreaClose () {
