@@ -267,7 +267,7 @@ namespace OpenAuth.App.Sap.Service
                     .Take(req.limit).ToListAsync();
                 qlist.ForEach(o =>
                 {
-                    o.SlpName = slpList.Where(s => s.CardCode.Equals(o.Customer)).FirstOrDefault().SlpName;
+                    o.SlpName =slpList.Where(s => s.CardCode.Equals(o.Customer)).FirstOrDefault().SlpName;
                 });
                 result.Data = qlist;
                 result.Count = await qqq.CountAsync();
