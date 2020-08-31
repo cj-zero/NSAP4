@@ -764,7 +764,16 @@ namespace OpenAuth.App
                 }
                 else
                 {
-                    query = query.Where(q => q.a.CurrentUserNsapId.Equals(loginContext.User.Id));
+                    if (loginContext.User.Name.Equals("李健梅"))
+                    {
+                        var orderProblemType = await UnitWork.FindSingleAsync<ProblemType>(p=>p.Name.Equals("其他"));
+                        var pIds = await UnitWork.Find<ProblemType>(p => p.ParentId.Equals(orderProblemType.Id)).Select(a => a.Id).ToListAsync();
+                        query = query.Where(q => pIds.Contains(q.a.ProblemTypeId));
+                    }
+                    else
+                    {
+                        query = query.Where(q => q.a.CurrentUserNsapId.Equals(loginContext.User.Id));
+                    }
                 }
             }
             var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
@@ -1013,7 +1022,16 @@ namespace OpenAuth.App
                 }
                 else
                 {
-                    query = query.Where(q => q.a.CurrentUserNsapId.Equals(loginContext.User.Id));
+                    if (loginContext.User.Name.Equals("李健梅"))
+                    {
+                        var orderProblemType = await UnitWork.FindSingleAsync<ProblemType>(p => p.Name.Equals("其他"));
+                        var pIds = await UnitWork.Find<ProblemType>(p => p.ParentId.Equals(orderProblemType.Id)).Select(a => a.Id).ToListAsync();
+                        query = query.Where(q => pIds.Contains(q.a.ProblemTypeId));
+                    }
+                    else
+                    {
+                        query = query.Where(q => q.a.CurrentUserNsapId.Equals(loginContext.User.Id));
+                    }
                 }
             }
 
