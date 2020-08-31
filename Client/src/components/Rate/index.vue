@@ -4,7 +4,8 @@
       v-model="realScore"
       @change="onChange"
       :texts="texts"
-      show-text>
+      show-text
+      :disabled="disabled">
     </el-rate>
   </div>
 </template>
@@ -24,12 +25,23 @@ export default {
     index: {
       type: Number,
       default: -1
+    },
+    disabled: {
+      type: Boolean,
+      default: false
+    },
+    data: {
+      type: [Object, Array],
+      default () {
+        return {}
+      }
     }
   },
   watch: {
     score: {
       immediate: true,
       handler (val) {
+        console.log(val, 'val')
         this.realScore = val
       }
     }
@@ -42,14 +54,15 @@ export default {
   },
   methods: {  
     onChange (val) {
-      console.log(val, 'limit')
-      // this.$emit('change', val)
       this.$emit('change', {
         val,
         type: this.type,
         index: this.index
       })
-    }
+    },
+    clearScore () {
+      this.realScore = 0
+    } 
   },
   created () {
 

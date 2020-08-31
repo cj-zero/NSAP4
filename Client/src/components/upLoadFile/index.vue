@@ -144,7 +144,7 @@ export default {
       // if (this.pictures.length >)
       return testmsg
     },
-    onExeed () {
+    onExeed () { 
       console.log('onecdsad')
       this.$message.error(`最多上传${this.limit}个文件`)
     },

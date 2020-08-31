@@ -153,14 +153,6 @@
       >
         <CustomerInfo :formData="customerInfo" />
       </el-dialog>
-      <!-- 电话回访弹窗 -->
-      <el-dialog
-        width="800px"
-        :close-on-click-modal="false"
-        :visible.sync="dialogPhoneVisible"
-        title="客户信息"
-      >
-      </el-dialog>
       <!-- 客服新建服务单 -->
       <el-dialog
         width="800px"
@@ -260,10 +252,15 @@
       </el-dialog>
       <!-- 电话回访评价 -->
       <el-dialog
-        :visible.sync="dialogRate"
+        :visible.sync="dialogRateVisible"
         width="1015px"
+        center
       >
-        <Rate />
+        <Rate :data="commentList" @changeComment="onChangeComment" :isView="isView" ref="rateRoot" />
+        <div slot="footer">
+          <el-button size="mini" type="primary" :loading="loadingBtn" @click="onCommentSubmit">确认</el-button>
+          <el-button size="mini" @click="onRateClose">取消</el-button>
+        </div>
       </el-dialog>
     </div>
   </div>
@@ -273,6 +270,7 @@
 import { mapState } from 'vuex'
 import * as callservesure from "@/api/serve/callservesure";
 import * as businesspartner from "@/api/businesspartner";
+import * as afterEvaluation from '@/api/serve/afterevaluation'
 import * as problemtypes from "@/api/problemtypes";
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
@@ -450,9 +448,11 @@ export default {
       downloadLoading: false,
       problemOptions: [], // 问题类型
       serviceOrderId: '', // 服务单ID 用于后续工单的创建和修改
-      dialogPhoneVisible: false, // 电话回访弹窗
       exportExcelUrl: '/serve/ServiceOrder/ExportExcel', // 表格导出地址
-      dialogRate: true
+      dialogRateVisible: false,
+      commentList: {}, // 评价内容 (新增评价或者查看评价 都要用到)
+      newCommentList: {}, // 用于存放修改后的评分列表
+      isView: false // 评分标识(是否是查看)
     };
   },
   filters: {
@@ -849,15 +849,107 @@ export default {
         })
       })
     },
-    handlePhone () { // 电话回访
-      // 
-      this.dialogPhoneVisible = true
+    handlePhone (row) { // 电话回访
+      let { serviceOrderId, serviceWorkOrders } = row // 8 代表已回访
+      let hasAllFinished = serviceWorkOrders.every(item => { // 所有的工单都已经解决了并且呼叫状态不是在线解答
+        return Number(item.status) === 7 && Number(item.fromType) !== 2
+      })
+      let hasVisit = serviceWorkOrders.every(item => { // 是否已经回访
+        return Number(item.status) === 8
+      })
+      if (hasVisit) {
+        // afterEvaluation.getComment({
+        //   id: serviceOrderId
+        // }).then(res => {
+        //   this.isView = true
+        //   this.dialogRateVisible = true
+        //   console.log(res, 'commentList')
+        // })
+      } else {
+        if (hasAllFinished) {
+          afterEvaluation.getTechnicianName({
+            serviceOrderId
+          }).then(res => {
+            this.isView = false
+            this.commentList = this._normalizeCommentList(res, row)
+            this.dialogRateVisible = true
+            console.log(this.commentList, 'commentList')
+          })
+        } else {
+          this.$message({
+            type: 'warning',
+            message: '工单未解决或在线解答方式不可回访'
+          })
+        }
+      }
+    },
+    _normalizeCommentList (res, row) {
+      let { serviceOrderId, contactTel, customerId, customerName, contacter } = row
+      let technicianEvaluates = res.data || []// 技术员列表
+      let commentList = {
+        serviceOrderId,
+        customerId,
+        cutomer: customerName,
+        contact: contacter,
+        caontactTel: contactTel,
+        productQuality: 0,
+        servicePrice: 0,
+        comment: '',
+        technicianEvaluates: []
+      }
+      technicianEvaluates.forEach(item => {
+        if (!item.currentUserId) {
+          return
+        }
+        commentList.technicianEvaluates.push({
+          technicianAppId: item.currentUserId,
+          responseSpeed: 0,
+          schemeEffectiveness: 0,
+          serviceAttitude: 0,
+          name: item.currentUser
+        })
+      })
+      return commentList
+    },
+    onRateClose () {
+      this.dialogRateVisible = false
+      if (!this.isView) { // 关闭弹窗时，清空数据
+        let { rate, rateProduct, ratePrice } = this.$refs.rateRoot.$refs
+        rate.forEach(rateItem => {
+          rateItem.clearScore()
+        })
+        rateProduct.clearScore()
+        ratePrice.clearScore()
+      }
+    },
+    onCommentSubmit () { // 提交评论
+      if (this.isView) { // 如果是查看操作，则直接关闭弹窗
+        return this.dialogRateVisible = false
+      }
+      this.commentList = this.newCommentList 
+      this.loadingBtn = true
+      afterEvaluation.addComment(this.commentList)
+        .then(() => {
+          this.$message({
+            message: '评论成功',
+            type: 'success'
+          })
+          this.loadingBtn = false
+          this.dialogRateVisible = false
+          this.getList()
+        }).catch(() => {
+          this.loadingBtn = false
+          this.$message.error('评论失败')
+        })
     },
     handleExcel () { // 导出表格
       let baseURL = `${process.env.VUE_APP_BASE_API}${this.exportExcelUrl}`
       let params = this.serializeParams(this.listQuery)
       window.location.href = `${baseURL}?X-Token=${this.$store.state.user.token}&${params}`
       // console.log(`${baseURL}?X-Token=${this.$store.state.user.token}&${params}`)
+    },
+    onChangeComment (val) {
+      this.newCommentList = val
     },
     serializeParams (params) {
       let result = []

@@ -10,13 +10,13 @@
           <el-col :span="8"> 
             <el-row type="flex" align="middle">
               <span class="product-item">产品质量</span>
-              <Rate :score="newData.quality" type="quality" @change="onChange"/>
+              <Rate :score="newData.productQuality" type="productQuality" @change="onChange" :disabled="isView" ref="rateProduct" />
             </el-row>
           </el-col>
           <el-col :span="8"> 
             <el-row type="flex" align="middle">
               <span class="product-item">产品价格</span>
-              <Rate :score="newData.price" type="price" @change="onChange" />
+              <Rate :score="newData.servicePrice" type="servicePrice" @change="onChange" :disabled="isView" ref="ratePrice" />
             </el-row>
           </el-col>
         </el-row>
@@ -26,10 +26,10 @@
         <el-row 
           type="flex" 
           align="middle"
-          v-for="(item, index) in newData.rateList"
+          v-for="(item, index) in newData.technicianEvaluates"
           :key="item.name">
           <div class="avatar-wrapper">
-            <div class="avatar" :style="`background-image: url(${item.src});`"></div>
+            <!-- <div class="avatar" :style="`background-image: url(${item.src});`"></div> -->
             <span class="name">{{ item.name }}</span>
           </div>
           <el-row 
@@ -40,19 +40,19 @@
             <el-col>
               <el-row type="flex" align="middle">
                 <span class="title">响应速度</span>
-                <Rate @change="onChange" type="xy" :index="index" :score="item.xy" />
+                <Rate @change="onChange" type="responseSpeed" :index="index" :score="item.responseSpeed" :disabled="isView" ref="rate" />
               </el-row>
             </el-col>
             <el-col>
               <el-row type="flex" align="middle">
                 <span class="title">方案有效性</span>
-                <Rate @change="onChange" type="fa" :score="item.fa" />
+                <Rate @change="onChange" type="schemeEffectiveness" :index="index" :score="item.schemeEffectiveness" :disabled="isView" ref="rate" />
               </el-row>
             </el-col>
             <el-col>
               <el-row type="flex" align="middle">
                 <span class="title">服务态度</span>
-                <Rate @change="onChange" type="fw" :score="item.fw" />
+                <Rate @change="onChange" type="serviceAttitude" :index="index" :score="item.serviceAttitude" :disabled="isView" ref="rate" />
               </el-row>
             </el-col>
           </el-row>
@@ -64,30 +64,24 @@
 
 <script>
 import Rate from '@/components/Rate'
-const rateList = []
-for (let i = 0; i < 10; i++) {
-  rateList.push({
-    src: 'http://192.168.1.207:52789/api/files/Download/084569cc-c152-4f04-91a3-8363a108c726?X-Token=3ff24de6', 
-    name: 'lxb' + i,
-    xy: Math.floor(Math.random() * 6),
-    fa: Math.floor(Math.random() * 6),
-    fw: Math.floor(Math.random() * 6)
-  })
-}
 export default {
+  props: {
+    data: {
+      type: Object,
+      default () {
+        return {}
+      }
+    },
+    isView: {
+      type: Boolean,
+      default: false
+    }
+  },
   components: {
     Rate
   },
   data () {
     return {
-      data: {
-        quality: 3,
-        price: 1,
-        rateList
-      },
-      isEdit: true,
-      currentIndex: -1,
-      type: ''
     }
   },
   computed: {
@@ -96,22 +90,15 @@ export default {
     }
   },
   methods: {
-    onChange (val) {
-      if (this.currentIndex !== -1) {
-        this.$set(this.newData[this.currentIndex], this.type, val)
-      } else {
-        this.$set(this.newData, this.type, val)
-      }
-      console.log(val, 'after', this.newData)
-    },
-    onUpdate ({ val, type }) {
-      console.log(val, 'update', type)
-      if (this.currentIndex !== -1) {
-        this.$set(this.newData[this.currentIndex], type, val)
+    onChange (data) {
+      let { index, val, type } = data
+      if (index !== -1) {
+        this.$set(this.newData.technicianEvaluates[index], type, val)
       } else {
         this.$set(this.newData, type, val)
       }
-      console.log(this.newData, 'newData')
+      this.$emit('changeComment', this.newData)
+      console.log(val, 'after', this.newData, this.data)
     }
   },
   created () {
@@ -154,6 +141,9 @@ export default {
       overflow-y: scroll;
       max-height: 400px;
       margin-top: 20px;
+      &::-webkit-scrollbar {
+        display: none;
+      }
       .avatar-wrapper {
         display: flex;
         flex-direction: column;
