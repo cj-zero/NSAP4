@@ -48,6 +48,9 @@ export default {
   methods: {
     selectTab (item, index) {
       let { pid } = item
+      // if (areaName === '请选择') {
+      //   return
+      // }
       console.log(item, 'item')
       this.activeIndex = index
       this.currentIndex = index
@@ -100,13 +103,13 @@ export default {
     closeSelector () {
       this.$emit("close")
     },
-    _normalizeAddressList (id) {
+    _normalizeAddressList (id, isReset) { // id: 根据id查询省市区 isRest: 根据省市区是否发生变化
       getAreaList({
         ReqId: id
       }).then(res => {
         this.selectList = res.data
         console.log(this.selectList, 'selectList')
-        if (id && Number(this.currentItem.areaLevel) !== 3) {
+        if (isReset && Number(this.currentItem.areaLevel) !== 3) {
           this.tabList.push({
             areaName: '请选择',
             pid: id
@@ -114,6 +117,7 @@ export default {
           this.activeIndex++
           this.currentIndex++ 
         }
+        this.isFirst = false
       })
     }
   },
@@ -127,7 +131,7 @@ export default {
           this.city = ''
           this.district = ''
         }
-        this._normalizeAddressList(id)
+        this._normalizeAddressList(id, true)
       }
     },
     city (val) {
@@ -139,7 +143,7 @@ export default {
           this.district = ''
           console.log(this.tabList, 'tabList')
         }
-        this._normalizeAddressList(id)
+        this._normalizeAddressList(id, true)
       }
     },
     district (val) {
@@ -148,7 +152,7 @@ export default {
         if (this.tabList.length >= 4) {
           this.tabList = this.tabList.slice(0, 4)
         }
-        this._normalizeAddressList(id)
+        this._normalizeAddressList(id, true)
       }
     }
   },
@@ -164,7 +168,7 @@ export default {
 .area-selector-wrap {
   box-sizing: border-box;
   overflow: hidden;
-  width: 400px;
+  width: 630px;
   margin: 10px 0;
   padding: 10px;
   border: 1px solid #e4e7ed;
@@ -211,6 +215,7 @@ export default {
     
     & > li {
       width: 25%;
+      white-space: nowrap;
       &:hover {
         color: rgba(205, 49, 40, 1);
         cursor: pointer;

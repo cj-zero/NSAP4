@@ -430,6 +430,7 @@ import formAdd from "./formAdd";
 import AreaSelector from '@/components/AreaSelector'
 // import jsonp from '@/utils/jsonp'
 // import { delete } from 'vuedraggable';
+const districtReg = /.+?区/  // 用来从百度地图获取到的地址取出 区地址
 export default {
   name: "formTable",
   components: { 
@@ -631,25 +632,25 @@ export default {
     //     }
     //   },
     // },
-    // "form.address": {
-    //   //地图标识地址
+    "form.address": {
+      //地图标识地址
 
-    //   handler(val, oldVal) {
-    //     if (val && this.formName === '新建') {
-    //       if (this.ifFirstLook) {
-    //         if (oldVal) {
-    //           this.needPos = true;
-    //         } else {
-    //           this.needPos = false;
-    //         }
-    //       } else {
-    //         this.needPos = true;
-    //       }
-    //       if (this.needPos) this.getPosition(val);
-    //     }
-    //   },
-    //   immediate: true,
-    // },
+      handler(val, oldVal) {
+        if (val && this.formName === '新建') {
+          if (this.ifFirstLook) {
+            if (oldVal) {
+              this.needPos = true;
+            } else {
+              this.needPos = false;
+            }
+          } else {
+            this.needPos = true;
+          }
+          if (this.needPos) this._getPosition(val, true);
+        }
+      },
+      immediate: true,
+    },
     "form.customerId": {
       handler(val) {
         // if (val && this.isCreate) {
@@ -663,7 +664,6 @@ export default {
     },
     "form.terminalCustomerId" (val) {
       if (!val) {
-        console.log('reset Info')
         this.resetInfo()
         if (isCustomerCode(this.form.customerId)) {
           this.getPartnerInfo(this.form.customerId)
@@ -728,14 +728,13 @@ export default {
   },
   methods: {
     onMapInitail (val) {
-      console.log(val, 'mapBAIDU')
+      // console.log(val, 'mapBAIDU')
       this.map = val.map
       this.BMap = val.BMap
     },
     onDateChange(val) {
-      console.log(typeof val);
       this.form.createTime = timeToFormat("yyyy-MM-dd HH-mm-ss", val);
-      console.log("date", this.form.createTime);
+      // console.log("date", this.form.createTime);
     },
     downloadFile(url) {
       download(url);
@@ -752,19 +751,44 @@ export default {
       this.form.province = province
       this.form.city = city
       this.form.area = district
+      this._getPosition(`${province}${city}${district}`.replace('海外', ''))
+    },
+    _getPosition (address, auto) {
+      let local = new this.BMap.LocalSearch(this.map, { //智能搜索
+        onSearchComplete: onSearchComplete.bind(this)
+      })
+      local.search(address)
       function onSearchComplete () {
-        let pp = local.getResults().getPoi(0).point;    //获取第一个智能搜索的结果
-        let { lat, lng } = pp
-        console.log(pp, 'pp')
+        if (!local.getResults().getPoi(0)) {
+          return this.$message.error('无法获取地址，请手动进行选择')
+        }
+        let { point, address, city, province } = local.getResults().getPoi(0) //获取第一个智能搜索的结果
+        if (auto) { // 如果是通过客户代码或者终端代码进行选择的
+          this.form.province = province
+          if (province === city) { // 如果省和市名字一样则直接取省
+            this.form.city = ''
+          } else {
+            this.form.city = city
+          }
+          let district = address
+            .replace(province, '')
+            .replace(city, '')
+            .match(districtReg)
+          if (district) {
+            this.form.area = district[0]
+          } else {
+            this.form.area = ''
+          }
+          this.form.addr = address
+            .replace(province, '')
+            .replace(city, '')
+            .replace(district, '')
+        }
+        let { lat, lng } = point
         lat = lat.toFixed(6)
         lng = lng.toFixed(6)
         this._transformPosition(lat, lng)
       }
-      let local = new this.BMap.LocalSearch(this.map, { //智能搜索
-        onSearchComplete: onSearchComplete.bind(this)
-      });
-      local.search(`${province}${city}${district}`.replace('海外', ''));
-      console.log(local, 'local', local.search)
     },
     // _getPosition () {
     //   // address=北京市海淀区上地十街10号&output=json&ak=您的ak&callback=showLocation
@@ -796,7 +820,7 @@ export default {
         let [lat, lng] = res.locations.split(',')
         this.form.longitude = lng
         this.form.latitude = lat
-        console.log(this.form, 'form', lng, lat)
+        // console.log(this.form, 'form', lng, lat)
       })
     },
     onAreaClose () {
@@ -873,11 +897,10 @@ export default {
       this.form.contactTel = ''
       this.form.addressDesignator = '';
       this.form.address = '';
-      console.log(this.addressList, this.cntctPrsnList, this.form)
     },
     async setForm(val) {
       val = JSON.parse(JSON.stringify(val));
-      console.log(val, 'json.stringify')
+      // console.log(val, 'json.stringify')
       if (val) {
         val.serviceOrderPictures = await this.getServeImg(val.id);
         this.$emit("imgChange", val.serviceOrderPictures); // 告诉父组件
@@ -968,7 +991,6 @@ export default {
           })
         }
         this.propForm = targetList
-        console.log(targetList, 'taragetList')
       }).catch((err) => {
         console.log(err, 'err')
         this.$message.error('查询序列号失败')
@@ -1089,7 +1111,6 @@ export default {
                 });
             }
           } else {
-            console.log(this.form);
             callservesure
               .CreateWorkOrder(this.form)
               .then(() => {
@@ -1120,7 +1141,7 @@ export default {
       callservesure
         .forServe(num)
         .then((res) => {
-          console.log(res, "售后主管", this.handleSelectType, isCustomerCode(this.form.terminalCustomerId));
+          // console.log(res, "售后主管", this.handleSelectType, isCustomerCode(this.form.terminalCustomerId));
           if (this.handleSelectType === 'customer') { // 如果点击客户代码的时候
             if (this.form.terminalCustomerId) { // 如果终端客户存在，则不进行值的覆盖
               return 
@@ -1128,13 +1149,12 @@ export default {
           }
           this.addressList = res.result.addressList;
           this.cntctPrsnList = res.result.cntctPrsnList;
-          console.log(this.cntctPrsnList, 'this.cntctPrsnList')
           this.form.supervisor = res.result.techName;
           if (this.formName !== '编辑' && this.formName !== '查看') {
             if (this.cntctPrsnList && this.cntctPrsnList.length) {
             let firstValue = res.result.cntctPrsnList[0]
               let { tel1, tel2, cellolar, name } = firstValue
-              console.log(name, 'name')
+              // console.log(name, 'name')
               this.form.contacter = name
               this.form.contactTel = tel1 || tel2 || cellolar
             }
@@ -1259,8 +1279,7 @@ export default {
           this.parentCount = res.count;
           this.parentLoad = false;
         })
-        .catch((error) => {
-          console.log(error);
+        .catch(() => {
           this.parentLoad = false
         });
     },
@@ -1300,7 +1319,6 @@ export default {
       // this.form.addressDesignator = val.address;
       // this.form.address = val.address;
       this.form.salesMan = val.slpName;
-      console.log('sureVal', 'val')
       this.handleCurrentChange(val)
       // this.$refs.formPartner.handleCurrentChange(val)
     },
