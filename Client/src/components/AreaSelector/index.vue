@@ -168,13 +168,14 @@ export default {
 .area-selector-wrap {
   box-sizing: border-box;
   overflow: hidden;
-  width: 745px;
+  width: 640px;
   margin: 10px 0;
   padding: 10px;
   border: 1px solid #e4e7ed;
   border-radius: 4px;
   background-color: #fff;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 1);
+  font-size: 12px;
   .close-btn {
     position: absolute;
     right: 10px;

@@ -59,7 +59,7 @@
           </el-col>
           <el-col :span="6">
             <el-form-item label="技术员">
-              <el-input disabled></el-input>
+              <el-input disabled v-model="formList[0].currentUser"></el-input>
             </el-form-item>
           </el-col>
         </el-row>
@@ -386,7 +386,7 @@
               </el-col>
               <el-col :span="6">
                 <el-form-item label="技术员">
-                  <el-input disabled></el-input>
+                  <el-input disabled v-model="item.currentUser"></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -1240,22 +1240,22 @@ export default {
               solutionsubject:  "",
             });
           }
-            (this.formList[0].manufacturerSerialNumber = this.formListStart[0].manufSN),
-            (this.formList[0].internalSerialNumber = this.formListStart[0].internalSN),
-            (this.formList[0].materialCode = this.formListStart[0].itemCode),
-            (this.formList[0].materialDescription = this.formListStart[0].itemName),
-            (this.formList[0].feeType = 1),
-            this.formList[0].orderTakeType = 1,
-            (this.formList[0].editTrue = true),
-            (this.formList[0].fromTheme =""),
-            (this.formList[0].fromType =  1),
-            (this.formList[0].problemTypeName = ""),
-            (this.formList[0].problemTypeId =  ""),
-            (this.formList[0].priority =  1),
-            (this.formList[0].remark = ""),
-            (this.formList[0].solutionId =  ""),
-            (this.formList[0].status = 1),
-            (this.formList[0].solutionsubject =  "");
+            this.formList[0].manufacturerSerialNumber = this.formListStart[0].manufSN
+            this.formList[0].internalSerialNumber = this.formListStart[0].internalSN
+            this.formList[0].materialCode = this.formListStart[0].itemCode
+            this.formList[0].materialDescription = this.formListStart[0].itemName
+            this.formList[0].feeType = 1
+            this.formList[0].orderTakeType = 1
+            this.formList[0].editTrue = true
+            // this.formList[0].fromTheme = ""
+            this.formList[0].fromType =  this.formList[0].fromType || 1
+            // this.formList[0].problemTypeName = ""
+            // this.formList[0].problemTypeId = ""
+            this.formList[0].priority =  this.formList[0].priority || 1
+            // this.formList[0].remark = ""
+            // this.formList[0].solutionId = ""
+            this.formList[0].status = 1
+            // this.formList[0].solutionsubject = ""
 
           const newList = this.formListStart.splice(1,this.formListStart.length);
           for (let i = 0; i < newList.length; i++) {
@@ -1302,22 +1302,22 @@ export default {
                 solutionsubject:  "",
               }
             }
-            (this.formList[this.thisPage].manufacturerSerialNumber = this.formListStart.manufSN),
-            (this.formList[this.thisPage].internalSerialNumber = this.formListStart.internalSN),
-            (this.formList[this.thisPage].materialCode = this.formListStart.itemCode),
-            (this.formList[this.thisPage].materialDescription = this.formListStart.itemName),
-            (this.formList[this.thisPage].feeType = 1),
-            (this.formList[this.thisPage].orderTakeType = 1),
-            (this.formList[this.thisPage].editTrue = false),
-            (this.formList[this.thisPage].fromTheme =""),
-            (this.formList[this.thisPage].fromType =  1),
-            (this.formList[this.thisPage].problemTypeName = ""),
-            (this.formList[this.thisPage].problemTypeId =  ""),
-            (this.formList[this.thisPage].priority =  1),
-            (this.formList[this.thisPage].remark = ""),
-            (this.formList[this.thisPage].solutionId =  ""),
-            (this.formList[this.thisPage].status = 1),
-            (this.formList[this.thisPage].solutionsubject =  "");
+            this.formList[this.thisPage].manufacturerSerialNumber = this.formListStart.manufSN
+            this.formList[this.thisPage].internalSerialNumber = this.formListStart.internalSN
+            this.formList[this.thisPage].materialCode = this.formListStart.itemCode
+            this.formList[this.thisPage].materialDescription = this.formListStart.itemName
+            // (this.formList[this.thisPage].feeType = 1),
+            // (this.formList[this.thisPage].orderTakeType = 1),
+            // (this.formList[this.thisPage].editTrue = false),
+            // (this.formList[this.thisPage].fromTheme =""),
+            // (this.formList[this.thisPage].fromType =  1),
+            // (this.formList[this.thisPage].problemTypeName = ""),
+            // (this.formList[this.thisPage].problemTypeId =  ""),
+            // (this.formList[this.thisPage].priority =  1),
+            // (this.formList[this.thisPage].remark = ""),
+            // (this.formList[this.thisPage].solutionId =  ""),
+            // (this.formList[this.thisPage].status = 1),
+            // (this.formList[this.thisPage].solutionsubject =  "");
           }else{
             if (this.inputname) {
               this.inputname = false

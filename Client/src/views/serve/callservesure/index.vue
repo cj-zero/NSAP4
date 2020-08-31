@@ -114,13 +114,10 @@
           >
             <template slot-scope="scope">
               <!-- <span v-if="fruit.name === 'order'">{{ scope.$index + 1 }}</span> -->
-              <div class="link-container pointer" 
-                v-if="fruit.name === 'u_SAP_ID'"
-                @click="openTree(scope.row.id)">
-                <img :src="rightImg" />
-                <el-link
-                  type="primary"
-                >{{ scope.row.u_SAP_ID }}</el-link>
+              <div class="link-container" 
+                v-if="fruit.name === 'u_SAP_ID'">
+                <img :src="rightImg" class="pointer" @click="openTree(scope.row.id)" />
+                <span>{{ scope.row.u_SAP_ID }}</span>
               </div>
               <span
                 v-if="fruit.name === 'status'"
