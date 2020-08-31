@@ -205,8 +205,19 @@ namespace OpenAuth.App
         {
             return await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId).Select(s => s.CurrentUserId.Value).Distinct().ToListAsync();
         }
-
-
+        /// <summary>
+        /// 获取服务单下所有不重复的技术员  by zlg 2020.08.31
+        /// </summary>
+        /// <param name="serviceOrderId"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetTechnicianName(int serviceOrderId)
+        {
+            var result = new TableData();
+            var model = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId).Select(s => new { s.CurrentUser, s.CurrentUserId }).Distinct().ToListAsync();
+            result.Data= model;
+            result.Count = model.Count;
+            return result;
+        }
         public ServiceEvaluateApp(IUnitWork unitWork,
             RevelanceManagerApp app, IAuth auth) : base(unitWork, auth)
         {

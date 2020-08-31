@@ -153,6 +153,30 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
+        /// <summary>
+        /// 获取技术员姓名列表
+        /// </summary>
+        /// <param name="serviceOrderId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetTechnicianName(int serviceOrderId)
+        {
+
+            var result = new TableData();
+            try
+            {
+                return await _app.GetTechnicianName(serviceOrderId);
+
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
         public ServiceEvaluatesController(ServiceEvaluateApp app) 
         {
             _app = app;
