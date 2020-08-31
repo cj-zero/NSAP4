@@ -185,7 +185,7 @@ namespace OpenAuth.App
                 ContactTel = string.IsNullOrEmpty(q.b.NewestContactTel) ? q.b.ContactTel : q.b.NewestContactTel,
                 q.a.ManufacturerSerialNumber,
                 q.a.MaterialCode,
-                ProblemDescription = "故障描述：" + q.a.TroubleDescription + "；解决方案：" + q.a.Solution.Subject,
+                ProblemDescription = "故障描述：" + q.a.TroubleDescription + "；解决方案：" + q.a.ProcessDescription,
                 q.a.TroubleDescription,
                 q.a.Solution.Subject,
                 q.b.TerminalCustomerId
@@ -308,9 +308,6 @@ namespace OpenAuth.App
             obj.CreateTime = DateTime.Now;
             var user = _auth.GetCurrentUser().User;
             obj.CreateUserId = user.Id;
-            // = user.Id;
-            //obj.CreateUserName = user.Name;
-            //todo:补充或调整自己需要的字段
             //保存完工报告
             var o = await Repository.AddAsync(obj);
             //保存图片
@@ -329,8 +326,8 @@ namespace OpenAuth.App
             //保存日志
             await _ServiceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq
             {
-                Action = $"技术员于{DateTime.Now}结束上门服务",
-                ActionType = "服务技术员上门服务中",
+                Action = $"技术员完成售后维修",
+                ActionType = $"{user.Name}提交了《行为服务报告单》，完成了本次任务",
             }, workorder);
         }
 
