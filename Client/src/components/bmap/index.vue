@@ -88,12 +88,16 @@ export default {
       //   // 启动拖放
       //   positionPicker.start()
       // })
-      let BMap = window.BMap
+      let BMap = this.BMap = window.BMap
       this.map = new BMap.Map("js-container");
       console.log(window.BMap, 'map', this.map)
       let point = new BMap.Point(116.404, 39.915);
       this.map.centerAndZoom(point, 15); 
       this.map.enableScrollWheelZoom() // 滚轮缩放
+      this.$emit('mapInitail', {
+        map: this.map,
+        BMap: this.BMap
+      })
       // let geoc = new BMap.Geocoder();    
       // this.map.addEventListener("click", function(e){   /* 点击获取地址坐标*/     
       //     var pt = e.point;
@@ -141,7 +145,7 @@ export default {
 </script>
 
 <style lang="css">
-.m-map{ min-width: 500px; height: 600px; position: relative; }
+.m-map{ min-width: 0; height: 0; position: relative; opacity: 0; }
 .m-map .map{ width: 100%; height: 100%; }
 .m-map .search{ position: absolute; top: 10px; right: 30px; width: 285px; z-index: 1; }
 .m-map .search input{ width: 180px; border: 1px solid #ccc; line-height: 20px; padding: 5px; outline: none; }
