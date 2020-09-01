@@ -1068,6 +1068,7 @@ export default {
   vertical-align: middle;
   img {
     vertical-align: middle;
+    margin-top: -3px;
   }
   a {
     vertical-align: middle;

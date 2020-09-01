@@ -124,7 +124,7 @@ export default {
       // 8.已回访-app自动回访&呼叫中心电话回访（不可选）
       callStatus: [
         { value: '', label: '全部' },
-        { value: 1, label: "待处理" },
+        // { value: 1, label: "待处理" },
         { value: 2, label: "已排配" },
         { value: 3, label: "已预约" },
         { value: 4, label: "已外出" },
