@@ -2993,5 +2993,73 @@ namespace OpenAuth.App
             result.Data = list;
             return result;
         }
+
+        /// <summary>
+        /// 服务呼叫各统计排行（包括售后部门、销售员、问题类型、接单员处理呼叫量
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> ServiceWorkOrderReport(QueryServiceOrderListReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = new TableData();
+
+            var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceWorkOrders)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryU_SAP_ID), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.QryU_SAP_ID)))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId), q => q.ServiceWorkOrders.Any(a => a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId))))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.ServiceWorkOrders.Any(a => a.Status.Equals(Convert.ToInt32(req.QryState))))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.CustomerId.Contains(req.QryCustomer) || q.CustomerName.Contains(req.QryCustomer))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceWorkOrders.Any(a => a.ManufacturerSerialNumber.Contains(req.QryManufSN)))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.RecepUserName.Contains(req.QryRecepUser))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ServiceWorkOrders.Any(a => a.ProblemTypeId.Equals(req.QryProblemType)))
+                .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.ContactTel.Contains(req.ContactTel) || q.NewestContactTel.Contains(req.ContactTel))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromType), q => q.ServiceWorkOrders.Any(a => a.FromType.Equals(Convert.ToInt32(req.QryFromType))));
+                //.Where(q => q.Status == 2);
+            ;
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
+            {
+                query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id));
+            }
+            var resultlist = new List<ServerOrderStatListResp>();
+            var list1 = await query.GroupBy(g => new{ g.SupervisorId,g.Supervisor}).Select(q => new ServiceOrderReportResp
+            {
+                StatId = q.Key.SupervisorId,
+                StatName = q.Key.Supervisor,
+                ServiceCnt = q.Count()
+            }).Where(w => w.ServiceCnt > 10).OrderByDescending(s => s.ServiceCnt).ToListAsync();
+            resultlist.Add(new ServerOrderStatListResp {  StatType = "Supervisor",StatList=list1});
+
+            var list2 = await query.GroupBy(g => new { g.SalesManId, g.SalesMan }).Select(q => new ServiceOrderReportResp
+            {
+                StatId = q.Key.SalesManId,
+                StatName = q.Key.SalesMan,
+                ServiceCnt = q.Count()
+            }).OrderByDescending(s => s.ServiceCnt).ToListAsync();
+            resultlist.Add(new ServerOrderStatListResp { StatType = "SalesMan", StatList = list1 });
+
+            var list3 = await query.GroupBy(g => new { g.ProblemTypeId, g.ProblemTypeName }).Select(q => new ServiceOrderReportResp
+            {
+                StatId = q.Key.ProblemTypeId,
+                StatName = q.Key.ProblemTypeName,
+                ServiceCnt = q.Count()
+            }).OrderByDescending(s => s.ServiceCnt).ToListAsync();
+            resultlist.Add(new ServerOrderStatListResp { StatType = "ProblemType", StatList = list1 });
+
+            var list4 = await query.GroupBy(g => new { g.RecepUserId, g.RecepUserName }).Select(q => new ServiceOrderReportResp
+            {
+                StatId = q.Key.RecepUserId,
+                StatName = q.Key.RecepUserName,
+                ServiceCnt = q.Count()
+            }).OrderByDescending(s => s.ServiceCnt).ToListAsync();
+            resultlist.Add(new ServerOrderStatListResp { StatType = "RecepUser", StatList = list1 });
+            result.Data = resultlist;
+            return result;
+        }
+
     }
 }
