@@ -276,12 +276,12 @@
           <el-input type="textarea" v-model="formList[0].remark"></el-input>
         </el-form-item>
         <el-row type="flex">
-          <el-col :span="6">
+          <el-col :span="7">
             <el-form-item label="售后问题类型" prop="remark" v-if="formName === '查看'">
               <el-input v-model="formList[0].troubleDescription" disabled></el-input>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="11">
             <el-form-item label="售后解决方案" prop="remark" v-if="formName === '查看'">
               <el-input v-model="formList[0].processDescription" disabled></el-input>
             </el-form-item>
@@ -602,12 +602,12 @@
               <el-input type="textarea" v-model="item.remark"></el-input>
             </el-form-item>
             <el-row type="flex">
-              <el-col :span="6">
+              <el-col :span="7">
                 <el-form-item label="售后问题类型" prop="remark" v-if="formName === '查看'">
                   <el-input v-model="item.troubleDescription" disabled></el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :span="11">
                 <el-form-item label="售后解决方案" prop="remark" v-if="formName === '查看'">
                   <el-input v-model="item.processDescription" disabled></el-input>
                 </el-form-item>
