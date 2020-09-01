@@ -153,16 +153,16 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 获取完工报告详情Web
         /// </summary>
-        /// <param name="CompletionReportId"></param>
-        /// <param name="ServiceWorkOrderId"></param>
+        /// <param name="ServiceOrderId"></param>
         /// <returns></returns>
+
         [HttpGet]
-        public async Task<Response<TableData>> GetCompletionReportDetailsWeb(string CompletionReportId, int ServiceWorkOrderId)
+        public async Task<Response<TableData>> GetCompletionReportDetailsWeb(int ServiceOrderId)
         {
             var result = new Response<TableData>();
             try
             {
-                result.Result = await _app.GetCompletionReportDetailsWeb(CompletionReportId, ServiceWorkOrderId);
+                result.Result = await _app.GetCompletionReportDetailsWeb(ServiceOrderId);
             }
             catch (Exception ex)
             {
@@ -177,22 +177,22 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        [HttpPost]
-        public async Task<Response> AddWeb(AddOrUpdateCompletionReportReq obj)
-        {
-            var result = new Response();
-            try
-            {
-                await _app.AddWeb(obj);
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
-            }
+        //[HttpPost]
+        //public async Task<Response> AddWeb(AddOrUpdateCompletionReportReq obj)
+        //{
+        //    var result = new Response();
+        //    try
+        //    {
+        //        await _app.AddWeb(obj);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        result.Code = 500;
+        //        result.Message = ex.InnerException?.Message ?? ex.Message;
+        //    }
 
-            return result;
-        }
+        //    return result;
+        //}
 
         ///// <summary>
         ///// 解除绑定

@@ -1,5 +1,6 @@
 ﻿using AutoMapper.Configuration.Annotations;
 using Infrastructure.AutoMapper;
+using OpenAuth.App.Serve.Response;
 using OpenAuth.Repository.Domain;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,10 @@ namespace OpenAuth.App.Response
     [AutoMapTo(typeof(CompletionReport))]
     public class CompletionReportDetailsResp
     {
+        /// <summary>
+        /// 完工报告Id
+        /// </summary>
+        public string Id { get; set; }
         /// <summary>
         /// 服务工单Id
         /// </summary>
@@ -139,5 +144,19 @@ namespace OpenAuth.App.Response
         /// 过程描述
         /// </summary>
         public string ProcessDescription { get; set; }
+
+        /// <summary>
+        /// 服务方式
+        /// </summary>
+        public int? ServiceMode { get; set; }
+        /// <summary>
+        /// 工单
+        /// </summary>
+        public virtual List<WorkCompletionReportResp> ServiceWorkOrders { get; set; }
+
+        /// <summary>
+        /// 设备类型名称
+        /// </summary>
+        public string MaterialCodeTypeName { get; set; }
     }
 }

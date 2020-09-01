@@ -204,6 +204,12 @@ namespace OpenAuth.Repository.Domain
         [Browsable(false)]
         public string CreateUserId { get; set; }
 
+        /// <summary>
+        /// 服务方式
+        /// </summary>
+        [Description("服务方式")]
+        public int? ServiceMode { get; set; }
+        
         ///// <summary>
         ///// 出发省
         ///// </summary>
