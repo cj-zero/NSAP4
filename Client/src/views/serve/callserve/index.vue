@@ -1063,17 +1063,7 @@ export default {
 .mr48 {
   margin-left: 48px;
 }
-.link-container {
-  display: inline-block;
-  vertical-align: middle;
-  img {
-    vertical-align: middle;
-    margin-top: -3px;
-  }
-  a {
-    vertical-align: middle;
-  }
-}
+
 // }
 </style>
 
