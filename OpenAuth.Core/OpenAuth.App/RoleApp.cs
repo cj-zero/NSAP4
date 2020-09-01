@@ -20,6 +20,10 @@ namespace OpenAuth.App
         {
             var loginUser = _auth.GetCurrentUser();
             var roles = loginUser.Roles;
+
+            if (roles.Exists(r => r.Name.Equals("系统管理员")))
+                roles = UnitWork.Find<Role>(null).ToList();
+
             if (!string.IsNullOrEmpty(request.key))
             {
                 roles = roles.Where(u => u.Name.Contains(request.key)).ToList();
