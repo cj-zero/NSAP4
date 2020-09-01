@@ -97,5 +97,10 @@ namespace OpenAuth.App.Request
         /// 过程描述
         /// </summary>
         public string ProcessDescription { get; set; }
+
+        /// <summary>
+        /// 服务方式
+        /// </summary>
+        public int? ServiceMode { get; set; }
     }
 }
