@@ -756,7 +756,7 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.a.ProblemTypeId.Equals(req.QryProblemType))
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.b.CreateTime >= req.QryCreateTimeFrom && q.b.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.b.ContactTel.Equals(req.ContactTel) || q.b.NewestContactTel.Equals(req.ContactTel))
-                         .Where(q => q.b.U_SAP_ID != null && q.b.Status == 2);
+                         .Where(q => q.b.U_SAP_ID != null && q.b.Status == 2 && q.a.FromType != 2);
             if (req.QryState != "1")
             {
                 query = query.Where(q => q.a.Status >1);
@@ -851,8 +851,8 @@ namespace OpenAuth.App
             obj.Status = 2;
             obj.SalesMan = d.SlpName;
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
-            obj.Supervisor = d.TechName;
-            obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.TechName)))?.Id;
+            //obj.Supervisor = d.TechName;
+            obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(req.Supervisor)))?.Id;
             //获取"其他"问题类型及其子类
             var otherProblemType =await UnitWork.Find<ProblemType>(o => o.Name.Equals("其他")).FirstOrDefaultAsync();
             var ChildTypes = new List<ProblemType>();
@@ -1008,7 +1008,7 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.b.ContactTel.Equals(req.ContactTel) || q.b.NewestContactTel.Equals(req.ContactTel))
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                          .WhereIf(req.QryMaterialTypes != null && req.QryMaterialTypes.Count > 0, q => req.QryMaterialTypes.Contains(q.a.MaterialCode == "其他设备" ? "其他设备" : q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))))
-                         .Where(q => q.b.U_SAP_ID != null && q.b.Status == 2);
+                         .Where(q => q.b.U_SAP_ID != null && q.b.Status == 2 && q.a.FromType != 2);
             if (req.QryState != "1")
             {
                 query = query.Where(q => q.a.Status > 1);
