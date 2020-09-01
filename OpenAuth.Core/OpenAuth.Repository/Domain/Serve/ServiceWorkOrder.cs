@@ -41,6 +41,7 @@ namespace OpenAuth.Repository.Domain
             this.BookingDate = DateTime.Now;
             this.VisitTime = DateTime.Now;
             this.LiquidationDate = DateTime.Now;
+            this.ServiceMode = 0;
         }
         /// <summary>
         /// 工单ID
@@ -227,6 +228,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("接单类型")]
         public int IsCheck { get; set; }
+
+        /// <summary>
+        /// 服务方式 1上门服务 2电话服务
+        /// </summary>
+        [Description("服务方式")]
+        public int? ServiceMode { get; set; }
 
         /// <summary>
         /// 技术员留言消息
