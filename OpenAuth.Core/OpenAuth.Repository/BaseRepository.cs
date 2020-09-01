@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -132,14 +133,30 @@ namespace OpenAuth.Repository
 
         public void Save()
         {
-            //try
-            //{
-            _context.SaveChanges();
-            //}
-            //catch (DbEntityValidationException e)
-            //{
-            //    throw new Exception(e.EntityValidationErrors.First().ValidationErrors.First().ErrorMessage);
-            //}
+            try
+            {
+                var entities = _context.ChangeTracker.Entries()
+                    .Where(e => e.State == EntityState.Added
+                                || e.State == EntityState.Modified)
+                    .Select(e => e.Entity);
+
+                foreach (var entity in entities)
+                {
+                    var validationContext = new ValidationContext(entity);
+                    Validator.ValidateObject(entity, validationContext, validateAllProperties: true);
+                }
+
+                _context.SaveChanges();
+            }
+            catch (ValidationException exc)
+            {
+                Console.WriteLine($"{nameof(Save)} validation exception: {exc?.Message}");
+                throw (exc.InnerException as Exception ?? exc);
+            }
+            catch (Exception ex) //DbUpdateException 
+            {
+                throw (ex.InnerException as Exception ?? ex);
+            }
         }
 
         private IQueryable<T> Filter(Expression<Func<T, bool>> exp)
@@ -234,7 +251,30 @@ namespace OpenAuth.Repository
 
         public async Task SaveAsync(CancellationToken cancellationToken = default)
         {
-            await _context.SaveChangesAsync(cancellationToken);
+            try
+            {
+                var entities = _context.ChangeTracker.Entries()
+                    .Where(e => e.State == EntityState.Added
+                                || e.State == EntityState.Modified)
+                    .Select(e => e.Entity);
+
+                foreach (var entity in entities)
+                {
+                    var validationContext = new ValidationContext(entity);
+                    Validator.ValidateObject(entity, validationContext, validateAllProperties: true);
+                }
+
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (ValidationException exc)
+            {
+                Console.WriteLine($"{nameof(SaveAsync)} validation exception: {exc?.Message}");
+                throw (exc.InnerException as Exception ?? exc);
+            }
+            catch (Exception ex) //DbUpdateException 
+            {
+                throw (ex.InnerException as Exception ?? ex);
+            }
         }
 
         public async Task<int> ExecuteSqlAsync(string sql, CancellationToken cancellationToken = default)
