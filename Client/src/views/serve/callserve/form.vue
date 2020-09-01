@@ -769,6 +769,7 @@ export default {
       local.search(address)
       function onSearchComplete () {
         if (!local.getResults().getPoi(0)) {
+          this.resetPositionInfo()
           return this.$message.error('无法获取地址，请手动进行选择')
         }
         let { point, address, city, province } = local.getResults().getPoi(0) //获取第一个智能搜索的结果
@@ -821,9 +822,11 @@ export default {
       let queryParams = `locations=${lng},${lat}&coordsys=baidu&output=json&key=${this.gdKey}`
       http.get(`${this.positionTransformURL}${queryParams}`, (err, res) => {
         if (err) {
+          this.resetPositionInfo()
           return this.$message.error('坐标转换失败')
         }
         if (res.status != 1) {
+          this.resetPositionInfo()
           return this.$message.error('坐标转换失败')
         }
         let [lat, lng] = res.locations.split(',')
@@ -906,6 +909,14 @@ export default {
       this.form.contactTel = ''
       this.form.addressDesignator = '';
       this.form.address = '';
+    },
+    resetPositionInfo () { // 重置地址信息包括经纬度
+      this.form.province = ''
+      this.form.city = ''
+      this.form.area = ''
+      this.form.addr = ''
+      this.form.longitude = ''
+      this.form.latitude = ''
     },
     async setForm(val) {
       val = JSON.parse(JSON.stringify(val));

@@ -356,7 +356,7 @@
                   </el-radio-group>
                 </el-form-item>
               </el-col>
-              <el-col :span="4" style="transform: translate3d(-15px, 0, 0);">
+              <el-col :span="4" style="transform: translate3d(-15px, 0, 0);" v-if="formName === '查看'">
                 <el-form-item label="服务方式">
                   <el-radio-group
                   
@@ -522,13 +522,13 @@
                     v-model="item.problemTypeName"
                     readonly
                   
-                    @focus="()=>{proplemTree=true,sortForm=1}"
+                    @focus="()=>{proplemTree=true,sortForm= index + 2 }"
                   >
                     <el-button
                       size="mini"
                       slot="append"
                       icon="el-icon-search"
-                      @click="()=>{proplemTree=true,sortForm=1}"
+                      @click="()=>{proplemTree=true,sortForm= index + 2 }"
                     ></el-button>
                   </el-input>
                 </el-form-item>
@@ -572,7 +572,7 @@
                   ></el-input>
                   <el-input
                     v-model="item.solutionsubject"
-                    @focus="()=>{solutionOpen=true,sortForm=1}"
+                    @focus="()=>{solutionOpen=true,sortForm= index + 2 }"
                     :disabled="item.fromType!==2"
                     readonly
                   >
@@ -581,7 +581,7 @@
                       size="mini"
                       slot="append"
                       icon="el-icon-search"
-                      @click="()=>{solutionOpen=true,sortForm=1}"
+                      @click="()=>{solutionOpen=true,sortForm= index + 2 }"
                     ></el-button>
                   </el-input>
                 </el-form-item>
@@ -932,6 +932,7 @@ export default {
     });
     if (this.propForm && this.propForm.length) {
       this.formList = this.propForm.slice();
+      console.log(this.formList === this.propForm, 'prop')
       this.formInitailList = this.propForm.slice() // 保存已经新建的表单项，用于后续判断后续是否能够编辑
       this.setFormList(this.formList)
     }
@@ -1166,8 +1167,9 @@ export default {
       this.copyForm.problemTypeName = res.name;
       this.copyForm.problemTypeId = res.id;
       // this.$set(this.formList[this.sortForm - 1], 'problemTypeName', res.name)
+      console.log(this.formList === this.form, 'nodeClick')
       this.formList[this.sortForm - 1].problemTypeName = res.name;
-      // console.log(this.formList[this.sortForm - 1].problemTypeName, 'name')
+      // // console.log(this.formList[this.sortForm - 1].problemTypeName, 'name')
       this.formList[this.sortForm - 1].problemTypeId = res.id;
       this.problemLabel = res.name;
       this.proplemTree = false;
@@ -1552,6 +1554,7 @@ export default {
   padding-top: 2px;
   border-top: 1px solid silver;
   overflow-y: scroll;
+  overflow-x: hidden;
   .order-wrapper {
     position: relative;
     .operation-btn-wrapper {

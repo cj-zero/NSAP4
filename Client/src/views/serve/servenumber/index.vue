@@ -29,12 +29,12 @@
           <el-row :gutter="10">
             <el-col :span="4">
               <el-form-item label="序列号" size="medium">
-                <el-input v-model="listQuery.ManufSN"></el-input>
+                <el-input v-model="listQuery.ManufSN" @keyup.enter.native="getList"></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="4">
               <el-form-item label="客户" size="medium">
-                <el-input v-model="listQuery.CardName"></el-input>
+                <el-input v-model="listQuery.CardName" @keyup.enter.native="getList"></el-input>
               </el-form-item>
             </el-col>
             <!-- <el-col :span="4">
@@ -49,7 +49,7 @@
 
             <el-col :span="4">
               <el-form-item label="物料编码" size="medium">
-                <el-input v-model="listQuery.ItemCode"></el-input>
+                <el-input v-model="listQuery.ItemCode" @keyup.enter.native="getList"></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="4">
