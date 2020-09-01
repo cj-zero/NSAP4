@@ -497,7 +497,7 @@ export default {
         return
       }
       let { scrollHeight, scrollTop, clientHeight } = e.target
-      if (scrollHeight <= (scrollTop + clientHeight + 50)) {
+      if (scrollHeight <= (scrollTop + clientHeight + 100)) {
         this.listQueryServer.page++
         this.getLeftList()
       }
@@ -762,7 +762,7 @@ export default {
       this.listLoading = true;
       return callservepushm.
         getLeftList(this.listQueryServer).then((res) => {
-        let { data } = res.data
+        let { data, count } = res.data
         let arr = this._normalizeTree(data)
         if (!this.modulesTree.length || this.isClear) {
           this.modulesTree = arr
@@ -771,7 +771,7 @@ export default {
           this.modulesTree = this.modulesTree.concat(arr)
         }
         // console.log(this.modulesTree, 'modulesTree')
-        this.totalCount = data.count
+        this.totalCount = count
         // this.modulesTree = arr;
         this.listLoading = false;
       }).catch(() => {
