@@ -756,7 +756,7 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.b.ContactTel.Equals(req.ContactTel) || q.b.NewestContactTel.Equals(req.ContactTel))
                          .Where(q => q.b.U_SAP_ID != null && q.a.Status > 0 && q.a.Status < 7 && q.b.Status == 2);
 
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME)
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.User.Account.Equals("lijianmei"))
             {
                 if (loginContext.Roles.Any(r => r.Name.Equals("售后主管")))
                 {
@@ -764,16 +764,7 @@ namespace OpenAuth.App
                 }
                 else
                 {
-                    if (loginContext.User.Name.Equals("李健梅"))
-                    {
-                        var orderProblemType = await UnitWork.FindSingleAsync<ProblemType>(p=>p.Name.Equals("其他"));
-                        var pIds = await UnitWork.Find<ProblemType>(p => p.ParentId.Equals(orderProblemType.Id)).Select(a => a.Id).ToListAsync();
-                        query = query.Where(q => pIds.Contains(q.a.ProblemTypeId));
-                    }
-                    else
-                    {
-                        query = query.Where(q => q.a.CurrentUserNsapId.Equals(loginContext.User.Id));
-                    }
+                    query = query.Where(q => q.a.CurrentUserNsapId.Equals(loginContext.User.Id));
                 }
             }
             var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
@@ -1014,7 +1005,7 @@ namespace OpenAuth.App
                          .WhereIf(req.QryMaterialTypes != null && req.QryMaterialTypes.Count > 0, q => req.QryMaterialTypes.Contains(q.a.MaterialCode == "其他设备" ? "其他设备" : q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))))
                          .Where(q => q.b.U_SAP_ID != null && q.a.Status > 0 && q.a.Status < 7 && q.b.Status == 2);
 
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME)
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.User.Account.Equals("lijianmei"))
             {
                 if (loginContext.Roles.Any(r => r.Name.Equals("售后主管")))
                 {
@@ -1022,16 +1013,7 @@ namespace OpenAuth.App
                 }
                 else
                 {
-                    if (loginContext.User.Name.Equals("李健梅"))
-                    {
-                        var orderProblemType = await UnitWork.FindSingleAsync<ProblemType>(p => p.Name.Equals("其他"));
-                        var pIds = await UnitWork.Find<ProblemType>(p => p.ParentId.Equals(orderProblemType.Id)).Select(a => a.Id).ToListAsync();
-                        query = query.Where(q => pIds.Contains(q.a.ProblemTypeId));
-                    }
-                    else
-                    {
-                        query = query.Where(q => q.a.CurrentUserNsapId.Equals(loginContext.User.Id));
-                    }
+                    query = query.Where(q => q.a.CurrentUserNsapId.Equals(loginContext.User.Id));
                 }
             }
 
