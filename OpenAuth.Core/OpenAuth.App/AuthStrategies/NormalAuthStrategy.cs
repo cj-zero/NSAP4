@@ -103,7 +103,8 @@ namespace OpenAuth.App
             {
                 var orgids = UnitWork.Find<Relevance>(
                     u =>u.FirstId == _user.Id && u.Key == Define.USERORG).Select(u => u.SecondId);
-                return UnitWork.Find<OpenAuth.Repository.Domain.Org>(u => orgids.Contains(u.Id)).ToList();
+                var orgs = UnitWork.Find<OpenAuth.Repository.Domain.Org>(u => orgids.Contains(u.Id)).ToList().Min(o=>o.CascadeId);
+                return UnitWork.Find<OpenAuth.Repository.Domain.Org>(u => u.CascadeId.Contains(orgs)).ToList();
             }
         }
 
