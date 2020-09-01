@@ -27,10 +27,10 @@ namespace OpenAuth.App
 
             var properties = loginContext.GetProperties("problemtype");
 
-            if (properties == null || properties.Count == 0)
-            {
-                throw new Exception("当前登录用户没有访问该模块字段的权限，请联系管理员配置");
-            }
+            //if (properties == null || properties.Count == 0)
+            //{
+            //    throw new Exception("当前登录用户没有访问该模块字段的权限，请联系管理员配置");
+            //}
 
 
             var result = new TableData();

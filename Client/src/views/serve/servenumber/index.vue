@@ -29,12 +29,12 @@
           <el-row :gutter="10">
             <el-col :span="4">
               <el-form-item label="序列号" size="medium">
-                <el-input v-model="listQuery.ManufSN"></el-input>
+                <el-input v-model="listQuery.ManufSN" @keyup.enter.native="getList"></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="4">
               <el-form-item label="客户" size="medium">
-                <el-input v-model="listQuery.CardName"></el-input>
+                <el-input v-model="listQuery.CardName" @keyup.enter.native="getList"></el-input>
               </el-form-item>
             </el-col>
             <!-- <el-col :span="4">
@@ -49,7 +49,7 @@
 
             <el-col :span="4">
               <el-form-item label="物料编码" size="medium">
-                <el-input v-model="listQuery.ItemCode"></el-input>
+                <el-input v-model="listQuery.ItemCode" @keyup.enter.native="getList"></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="4">
@@ -92,7 +92,8 @@
                 v-if="fruit.name === 'status'"
                 :class="[scope.row[fruit.name]===1?'orangeWord':(scope.row[fruit.name]===2?'greenWord':'redWord')]"
               >{{stateValue[scope.row[fruit.name]-1]}}</span> -->
-              <span
+              <span v-if="fruit.name === 'serveId'">{{ scope.$index + 1}}</span>
+              <span v-else
               >{{scope.row[fruit.name]}}</span>
             </template>
           </el-table-column>
@@ -129,22 +130,22 @@ export default {
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
       formTheadOptions: [
-         { name: "serveid", label: "编号" ,fixed:true},
+         { name: "serveId", label: "编号" ,fixed:true},
         { name: "customer", label: "客户代码" ,align:'left'},
         { name: "custmrName", label: "客户名称" },
         { name: "manufSN", label: "制造商序列号",width:'120px' },
-        { name: "internalSN", label: "内部序列号" },
+        { name: "internalSN", label: "内部序列号", width: '120px' },
         { name: "itemCode", label: "物料编码" },
         { name: "itemName", label: "物料描述" },
-        { name: "", label: "制造日期" },
-        { name: "", label: "交货单号" },
-        { name: "", label: "交货日期" },
-        { name: "", label: "合同号" },
-        { name: "", label: "服务费" },
-        { name: "", label: "销售员" },
-        { name: "", label: "合同开始时间",width:'110px' },
-        { name: "", label: "合同结束时间",width:'110px' },
-        { name: "", label: "创建时间" }
+        { name: "manufDate", label: "制造日期" },
+        { name: "deliveryNo", label: "交货单号" },
+        { name: "dlvryDate", label: "交货日期" },
+        { name: "contractId", label: "合同号" },
+        { name: "serviceFee", label: "服务费" },
+        { name: "slpName", label: "销售员" },
+        { name: "cntrctStrt", label: "合同开始时间",width:'110px' },
+        { name: "cntrctEnd", label: "合同结束时间",width:'110px' },
+        { name: "createDate", label: "创建时间" }
       ],
 
       tableKey: 0,
@@ -272,7 +273,7 @@ export default {
 
     getList() {
       this.listLoading = true;
-      callservesure.SerialList(this.listQuery).then(response => {
+      callservesure.getContractList(this.listQuery).then(response => {
         this.list = response.data;
         this.total = response.count;      
         this.listLoading = false;

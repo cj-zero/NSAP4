@@ -28,10 +28,10 @@
               </el-radio-group>
             </el-form-item>
           </el-col>
-          <el-col :span="4" style="transform: translate3d(-15px, 0, 0);">
+          <el-col :span="4" style="transform: translate3d(-15px, 0, 0);" v-if="formName === '查看'">
             <el-form-item label="服务方式">
               <el-radio-group
-              
+                disabled
                 class="radio-item right"
                 v-model="formList[0].orderTakeType"
               >
@@ -59,7 +59,7 @@
           </el-col>
           <el-col :span="6">
             <el-form-item label="技术员">
-              <el-input disabled></el-input>
+              <el-input disabled v-model="formList[0].currentUser"></el-input>
             </el-form-item>
           </el-col>
         </el-row>
@@ -276,12 +276,12 @@
           <el-input type="textarea" v-model="formList[0].remark"></el-input>
         </el-form-item>
         <el-row type="flex">
-          <el-col :span="6">
+          <el-col :span="7">
             <el-form-item label="售后问题类型" prop="remark" v-if="formName === '查看'">
               <el-input v-model="formList[0].troubleDescription" disabled></el-input>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="11">
             <el-form-item label="售后解决方案" prop="remark" v-if="formName === '查看'">
               <el-input v-model="formList[0].processDescription" disabled></el-input>
             </el-form-item>
@@ -356,7 +356,7 @@
                   </el-radio-group>
                 </el-form-item>
               </el-col>
-              <el-col :span="4" style="transform: translate3d(-15px, 0, 0);">
+              <el-col :span="4" style="transform: translate3d(-15px, 0, 0);" v-if="formName === '查看'">
                 <el-form-item label="服务方式">
                   <el-radio-group
                   
@@ -386,7 +386,7 @@
               </el-col>
               <el-col :span="6">
                 <el-form-item label="技术员">
-                  <el-input disabled></el-input>
+                  <el-input disabled v-model="item.currentUser"></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -522,13 +522,13 @@
                     v-model="item.problemTypeName"
                     readonly
                   
-                    @focus="()=>{proplemTree=true,sortForm=1}"
+                    @focus="()=>{proplemTree=true,sortForm= index + 2 }"
                   >
                     <el-button
                       size="mini"
                       slot="append"
                       icon="el-icon-search"
-                      @click="()=>{proplemTree=true,sortForm=1}"
+                      @click="()=>{proplemTree=true,sortForm= index + 2 }"
                     ></el-button>
                   </el-input>
                 </el-form-item>
@@ -558,56 +558,6 @@
               </el-col>
             </el-row>
             <el-row type="flex" class="row-bg" justify="space-around">
-              <el-col :span="8">
-                <el-form-item
-                  label="问题类型"
-                  prop="problemTypeId"
-                  :rules="{
-                  required: true, message: '问题类型不能为空', trigger: 'clear' }"
-                >
-                  <el-input style="display:none;" v-model="item.problemTypeId"></el-input>
-                  <el-input
-                    :value="item.problemTypeName"
-                    readonly
-                  
-                    @focus="()=>{proplemTree=true,sortForm=index+2}"
-                  >
-                    <el-button
-                      size="mini"
-                      slot="append"
-                      icon="el-icon-search"
-                      @click="()=>{proplemTree=true,sortForm=index+2}"
-                    ></el-button>
-                  </el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="优先级">
-                  <!-- <el-input v-model="item.priority"></el-input> -->
-                  <el-select v-model="item.priority" placeholder="请选择">
-                    <el-option
-                      v-for="ite in options_quick"
-                      :key="ite.value"
-                      :label="ite.label"
-                      :value="ite.value"
-                    ></el-option>
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="预约时间">
-                  <el-date-picker
-                    disabled
-                  
-                    type="date"
-                    placeholder="选择日期"
-                    v-model="item.bookingDate"
-                    style="width: 100%;"
-                  ></el-date-picker>
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="18">
                 <el-form-item
                   label="解决方案"
@@ -622,7 +572,7 @@
                   ></el-input>
                   <el-input
                     v-model="item.solutionsubject"
-                    @focus="()=>{solutionOpen=true,sortForm=1}"
+                    @focus="()=>{solutionOpen=true,sortForm= index + 2 }"
                     :disabled="item.fromType!==2"
                     readonly
                   >
@@ -631,7 +581,7 @@
                       size="mini"
                       slot="append"
                       icon="el-icon-search"
-                      @click="()=>{solutionOpen=true,sortForm=1}"
+                      @click="()=>{solutionOpen=true,sortForm= index + 2 }"
                     ></el-button>
                   </el-input>
                 </el-form-item>
@@ -652,18 +602,18 @@
               <el-input type="textarea" v-model="item.remark"></el-input>
             </el-form-item>
             <el-row type="flex">
-              <el-col :span="6">
-                <el-form-item label="售后问题类型" prop="remark" v-if="formName === '新建'">
+              <el-col :span="7">
+                <el-form-item label="售后问题类型" prop="remark" v-if="formName === '查看'">
                   <el-input v-model="item.troubleDescription" disabled></el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
-                <el-form-item label="售后解决方案" prop="remark" v-if="formName === '新建'">
+              <el-col :span="11">
+                <el-form-item label="售后解决方案" prop="remark" v-if="formName === '查看'">
                   <el-input v-model="item.processDescription" disabled></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="6">
-                <el-form-item label="完工报告" prop="remark" v-if="formName === '新建'">
+                <el-form-item label="完工报告" prop="remark" v-if="formName === '查看'">
                   <el-button type="primary" size="mini" @click="showReport" style="width: 112.5px;">查看</el-button>
                 </el-form-item>
               </el-col>
@@ -745,7 +695,8 @@
       class="addClass1"
       title="选择制造商序列号"
       @open="openDialog"
-      width="70%"
+      width="1196px"
+      top="8vh"
       :close-on-click-modal="false"
       :visible.sync="dialogfSN">
       <div style="width:600px;margin:10px 0;" class="search-wrapper">
@@ -867,7 +818,6 @@ export default {
           // serviceOrderId:'',
           priority: 1, //优先级 4-紧急 3-高 2-中 1-低
           feeType: 1, //服务类型 1-免费 2-收费
-          orderTakeType: 1, // 服务方式 1-电话 2-上门
           submitDate: "", //工单提交时间
           recepUserId: "", //接单人用户Id
           remark: "", //备注
@@ -971,13 +921,18 @@ export default {
       .catch((error) => {
         console.log(error);
       });
-    solutions.getList().then((response) => {
+    solutions.getList({
+      page: 1,
+      limit: 20
+    }).then((response) => {
       this.datasolution = response.data;
+      console.log(this.datasolution, 'solution')
       this.solutionCount = response.count;
       this.listLoading = false;
     });
     if (this.propForm && this.propForm.length) {
       this.formList = this.propForm.slice();
+      console.log(this.formList === this.propForm, 'prop')
       this.formInitailList = this.propForm.slice() // 保存已经新建的表单项，用于后续判断后续是否能够编辑
       this.setFormList(this.formList)
     }
@@ -1173,7 +1128,6 @@ export default {
           console.log(error);
         });
     },
-
     handleCollapseChange (val) {
       this.collapseTitle = val.length ? '折叠' : '展开更多订单'
       console.log(val, 'val change')
@@ -1213,8 +1167,9 @@ export default {
       this.copyForm.problemTypeName = res.name;
       this.copyForm.problemTypeId = res.id;
       // this.$set(this.formList[this.sortForm - 1], 'problemTypeName', res.name)
+      console.log(this.formList === this.form, 'nodeClick')
       this.formList[this.sortForm - 1].problemTypeName = res.name;
-      // console.log(this.formList[this.sortForm - 1].problemTypeName, 'name')
+      // // console.log(this.formList[this.sortForm - 1].problemTypeName, 'name')
       this.formList[this.sortForm - 1].problemTypeId = res.id;
       this.problemLabel = res.name;
       this.proplemTree = false;
@@ -1276,7 +1231,6 @@ export default {
               itemCode: "其他设备",
               itemName: "",
               feeType: 1,
-              orderTakeType: 1,
               fromTheme: "",
               fromType:1,
               problemTypeName:  "",
@@ -1288,22 +1242,22 @@ export default {
               solutionsubject:  "",
             });
           }
-            (this.formList[0].manufacturerSerialNumber = this.formListStart[0].manufSN),
-            (this.formList[0].internalSerialNumber = this.formListStart[0].internalSN),
-            (this.formList[0].materialCode = this.formListStart[0].itemCode),
-            (this.formList[0].materialDescription = this.formListStart[0].itemName),
-            (this.formList[0].feeType = 1),
-            this.formList[0].orderTakeType = 1,
-            (this.formList[0].editTrue = true),
-            (this.formList[0].fromTheme =""),
-            (this.formList[0].fromType =  1),
-            (this.formList[0].problemTypeName = ""),
-            (this.formList[0].problemTypeId =  ""),
-            (this.formList[0].priority =  1),
-            (this.formList[0].remark = ""),
-            (this.formList[0].solutionId =  ""),
-            (this.formList[0].status = 1),
-            (this.formList[0].solutionsubject =  "");
+            this.formList[0].manufacturerSerialNumber = this.formListStart[0].manufSN
+            this.formList[0].internalSerialNumber = this.formListStart[0].internalSN
+            this.formList[0].materialCode = this.formListStart[0].itemCode
+            this.formList[0].materialDescription = this.formListStart[0].itemName
+            this.formList[0].feeType = 1
+            this.formList[0].orderTakeType = 1
+            this.formList[0].editTrue = true
+            // this.formList[0].fromTheme = ""
+            this.formList[0].fromType =  this.formList[0].fromType || 1
+            // this.formList[0].problemTypeName = ""
+            // this.formList[0].problemTypeId = ""
+            this.formList[0].priority =  this.formList[0].priority || 1
+            // this.formList[0].remark = ""
+            // this.formList[0].solutionId = ""
+            this.formList[0].status = 1
+            // this.formList[0].solutionsubject = ""
 
           const newList = this.formListStart.splice(1,this.formListStart.length);
           for (let i = 0; i < newList.length; i++) {
@@ -1314,7 +1268,6 @@ export default {
               materialCode: newList[i].itemCode,
               materialDescription: newList[i].itemName,
               feeType: 1,
-              orderTakeType: 1,
               fromTheme: "",
               fromType:  1,
               problemTypeName: "",
@@ -1340,7 +1293,6 @@ export default {
                 itemCode: "其他设备",
                 itemName: "",
                 feeType: 1,
-                orderTakeType: 1,
                 fromTheme:  "",
                 fromType:  1,
                 problemTypeName:  "",
@@ -1352,22 +1304,22 @@ export default {
                 solutionsubject:  "",
               }
             }
-            (this.formList[this.thisPage].manufacturerSerialNumber = this.formListStart.manufSN),
-            (this.formList[this.thisPage].internalSerialNumber = this.formListStart.internalSN),
-            (this.formList[this.thisPage].materialCode = this.formListStart.itemCode),
-            (this.formList[this.thisPage].materialDescription = this.formListStart.itemName),
-            (this.formList[this.thisPage].feeType = 1),
-            (this.formList[this.thisPage].orderTakeType = 1),
-            (this.formList[this.thisPage].editTrue = false),
-            (this.formList[this.thisPage].fromTheme =""),
-            (this.formList[this.thisPage].fromType =  1),
-            (this.formList[this.thisPage].problemTypeName = ""),
-            (this.formList[this.thisPage].problemTypeId =  ""),
-            (this.formList[this.thisPage].priority =  1),
-            (this.formList[this.thisPage].remark = ""),
-            (this.formList[this.thisPage].solutionId =  ""),
-            (this.formList[this.thisPage].status = 1),
-            (this.formList[this.thisPage].solutionsubject =  "");
+            this.formList[this.thisPage].manufacturerSerialNumber = this.formListStart.manufSN
+            this.formList[this.thisPage].internalSerialNumber = this.formListStart.internalSN
+            this.formList[this.thisPage].materialCode = this.formListStart.itemCode
+            this.formList[this.thisPage].materialDescription = this.formListStart.itemName
+            // (this.formList[this.thisPage].feeType = 1),
+            // (this.formList[this.thisPage].orderTakeType = 1),
+            // (this.formList[this.thisPage].editTrue = false),
+            // (this.formList[this.thisPage].fromTheme =""),
+            // (this.formList[this.thisPage].fromType =  1),
+            // (this.formList[this.thisPage].problemTypeName = ""),
+            // (this.formList[this.thisPage].problemTypeId =  ""),
+            // (this.formList[this.thisPage].priority =  1),
+            // (this.formList[this.thisPage].remark = ""),
+            // (this.formList[this.thisPage].solutionId =  ""),
+            // (this.formList[this.thisPage].status = 1),
+            // (this.formList[this.thisPage].solutionsubject =  "");
           }else{
             if (this.inputname) {
               this.inputname = false
@@ -1378,7 +1330,6 @@ export default {
                 itemCode: "其他设备",
                 materialDescription: "",
                 feeType: 1,
-                orderTakeType: 1,
                 fromTheme:  "",
                 fromType:  1,
                 problemTypeName:  "",
@@ -1398,7 +1349,6 @@ export default {
                 materialCode: this.formListStart[i].itemCode,
                 materialDescription: this.formListStart[i].itemName,
                 feeType: 1,
-                orderTakeType: 1,
                 fromTheme:  "",
                 fromType:  1,
                 problemTypeName:  "",
@@ -1604,6 +1554,7 @@ export default {
   padding-top: 2px;
   border-top: 1px solid silver;
   overflow-y: scroll;
+  overflow-x: hidden;
   .order-wrapper {
     position: relative;
     .operation-btn-wrapper {

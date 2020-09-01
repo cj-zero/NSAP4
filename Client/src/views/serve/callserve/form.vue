@@ -212,22 +212,26 @@
               </el-col>
             </el-row>
             <el-row :gutter="10">
-              <el-col :span="6">
+              <el-col :span="10">
                 <el-form-item label="现地址">
-                  <el-input size="mini" v-model="allArea" readonly style="width: 110px;"></el-input>
-                  <!-- <area-selector
+                  <el-input size="mini" v-model="allArea" readonly>
+                    <el-button size="mini" slot="append" icon="el-icon-position" @click="onAreaClick"></el-button>
+                  </el-input>
+                  <area-selector
+                    v-show="areaVisible"
                     class="area-content-wrapper"
                     @change="onAreaChange"
-                  ></area-selector> -->
+                    @close="onAreaClose"
+                  ></area-selector>
                   <!-- <div >我是</div> -->
                   <!-- <p
                     style="overflow-x:hidden;border: 1px solid silver; border-radius:5px;height:30px;margin:0;padding-left:10px;font-size:12px;"
                   >{{allArea}}</p> -->
                 </el-form-item>
               </el-col>
-              <el-col :span="14" style="height:30px;line-height:30px;padding:2px 0 0 7px;">
+              <el-col :span="10" style="height:30px;line-height:30px;padding:2px 0 0 7px;">
                 <el-input size="mini" v-model="form.addr">
-                  <el-button size="mini" slot="append" icon="el-icon-position" @click="openMap"></el-button>
+                  <!-- <el-button size="mini" slot="append" icon="el-icon-position" @click="openMap"></el-button> -->
                 </el-input>
               </el-col>
               <el-col :span="2">
@@ -251,6 +255,7 @@
               <el-col :span="22">
                 <upLoadImage :setImage="setImage" @get-ImgList="getImgList" :limit="limit"></upLoadImage>
               </el-col>
+              <bmap @mapInitail="onMapInitail"></bmap>
               <!-- <el-col :span="2" style="line-height:40px;">  暂时取消
                 <el-button
                   type="primary"
@@ -412,7 +417,7 @@ import http from "@/api/serve/whiteHttp";
 import * as callservesure from "@/api/serve/callservesure";
 import Pagination from "@/components/Pagination";
 import zmap from "@/components/amap";
-// import bmap from '@/components/bmap'
+import bmap from '@/components/bmap'
 import upLoadImage from "@/components/upLoadFile";
 import Model from "@/components/Formcreated/components/Model";
 import { timeToFormat } from "@/utils";
@@ -422,8 +427,10 @@ import { debounce } from '@/utils/process'
 import { download } from "@/utils/file";
 import formPartner from "./formPartner";
 import formAdd from "./formAdd";
-// import AreaSelector from '@/components/AreaSelector'
+import AreaSelector from '@/components/AreaSelector'
+// import jsonp from '@/utils/jsonp'
 // import { delete } from 'vuedraggable';
+const districtReg = /.+?区/  // 用来从百度地图获取到的地址取出 区地址
 export default {
   name: "formTable",
   components: { 
@@ -433,9 +440,9 @@ export default {
     Pagination, 
     upLoadImage, 
     Model, 
-    // bmap,
+    bmap,
     callId,
-    // AreaSelector 
+    AreaSelector 
   },
   props: [
     "modelValue",
@@ -569,7 +576,13 @@ export default {
       CallList: [], // 最近十个服务单列表
       selectSerNumberDisabled: true, // 用于选择客户代码后，工单序列号是否可以操作
       limit: 9, // 图片上传限制
-      handleSelectType: '' // 用来区分选择的是客户代码还是终端客户代码
+      handleSelectType: '', // 用来区分选择的是客户代码还是终端客户代码
+      areaVisible: false, // 地址选择器弹窗
+      parasePositionURL: 'http://api.map.baidu.com/geocoding/v3/?', // 
+      bMapkey: 'uGyEag9q02RPI81dcfk7h7vT8tUovWfG', // 百度key
+      positionTransformURL: 'https://restapi.amap.com/v3/assistant/coordinate/convert?', // 高德坐标转换地址
+      // gdKey: 'cfd8da5cf010c5f7441834ff5e764f5b' // 高德key
+      gdKey: '6cacd440b344fa2d3ef098f0fe1ee33b'
     };
   },
   computed: {
@@ -597,28 +610,28 @@ export default {
         }
       },
     },
-    "form.addr": {
-      //现地址详细地址
-      handler(val) {
-        if (val && this.formName === '新建') {
-          if (!this.ifFirstLook) {
-            this.needPos = true;
-          } else {
-            if (this.customer.addr != val) {
-              this.needPos = true;
-            } else {
-              this.needPos = false;
-            }
-          }
-          let addre =
-            this.form.province +
-            this.form.city +
-            this.form.area +
-            this.form.addr;
-          if (this.needPos) this.getPosition(addre);
-        }
-      },
-    },
+    // "form.addr": {
+    //   //现地址详细地址
+    //   handler(val) {
+    //     if (val && this.formName === '新建') {
+    //       if (!this.ifFirstLook) {
+    //         this.needPos = true;
+    //       } else {
+    //         if (this.customer.addr != val) {
+    //           this.needPos = true;
+    //         } else {
+    //           this.needPos = false;
+    //         }
+    //       }
+    //       let addre =
+    //         this.form.province +
+    //         this.form.city +
+    //         this.form.area +
+    //         this.form.addr;
+    //       if (this.needPos) this.getPosition(addre);
+    //     }
+    //   },
+    // },
     "form.address": {
       //地图标识地址
 
@@ -633,7 +646,7 @@ export default {
           } else {
             this.needPos = true;
           }
-          if (this.needPos) this.getPosition(val);
+          if (this.needPos) this._getPosition(val, true);
         }
       },
       immediate: true,
@@ -651,7 +664,6 @@ export default {
     },
     "form.terminalCustomerId" (val) {
       if (!val) {
-        console.log('reset Info')
         this.resetInfo()
         if (isCustomerCode(this.form.customerId)) {
           this.getPartnerInfo(this.form.customerId)
@@ -668,13 +680,16 @@ export default {
           this.form = Object.assign({}, this.form, val);
           if (val.serviceWorkOrders.length > 0) {
             val.serviceWorkOrders.map((item, index) => {
+              if (item.orderTakeType !== undefined) {
+                this.form.serviceWorkOrders[index].orderTakeType = this.processTakeType(item.orderTakeType)
+              }
               this.form.serviceWorkOrders[index].solutionsubject =
                 item.solution && item.solution.subject;
               this.form.serviceWorkOrders[index].problemTypeName =
                 item.problemType && item.problemType.name;
             });
           }
-          // console.log(val, 'refValueChange', this.form)
+          console.log(val, 'refValueChange', this.form)
           this.propForm = this.form.serviceWorkOrders;
         }
         // this.propForm = this.refValue.serviceWorkOrders
@@ -715,13 +730,20 @@ export default {
     window.removeEventListener("resize", this.resizeWin);
   },
   methods: {
-    onMapInitail (map) {
-      console.log(map, 'mapBAIDU')
+    processTakeType (takeType) {
+      if (!takeType || !Number(takeType)) {
+        return takeType
+      }
+      return (takeType == 3 || takeType === 1) ? 1 : 2
+    },
+    onMapInitail (val) {
+      // console.log(val, 'mapBAIDU')
+      this.map = val.map
+      this.BMap = val.BMap
     },
     onDateChange(val) {
-      console.log(typeof val);
       this.form.createTime = timeToFormat("yyyy-MM-dd HH-mm-ss", val);
-      console.log("date", this.form.createTime);
+      // console.log("date", this.form.createTime);
     },
     downloadFile(url) {
       download(url);
@@ -731,6 +753,93 @@ export default {
       //预览图片
       this.previewVisible = true;
       this.previewUrl = item;
+    },
+    onAreaChange (val) { // 地址发生变化
+      console.log(val)
+      let { province, city, district } = val
+      this.form.province = province
+      this.form.city = city
+      this.form.area = district
+      this._getPosition(`${province}${city}${district}`.replace('海外', ''))
+    },
+    _getPosition (address, auto) {
+      let local = new this.BMap.LocalSearch(this.map, { //智能搜索
+        onSearchComplete: onSearchComplete.bind(this)
+      })
+      local.search(address)
+      function onSearchComplete () {
+        if (!local.getResults().getPoi(0)) {
+          this.resetPositionInfo()
+          return this.$message.error('无法获取地址，请手动进行选择')
+        }
+        let { point, address, city, province } = local.getResults().getPoi(0) //获取第一个智能搜索的结果
+        if (auto) { // 如果是通过客户代码或者终端代码进行选择的
+          this.form.province = province
+          if (province === city) { // 如果省和市名字一样则直接取省
+            this.form.city = ''
+          } else {
+            this.form.city = city
+          }
+          let district = address
+            .replace(province, '')
+            .replace(city, '')
+            .match(districtReg)
+          if (district) {
+            this.form.area = district[0]
+          } else {
+            this.form.area = ''
+          }
+          this.form.addr = address
+            .replace(province, '')
+            .replace(city, '')
+            .replace(district, '')
+        }
+        let { lat, lng } = point
+        lat = lat.toFixed(6)
+        lng = lng.toFixed(6)
+        this._transformPosition(lat, lng)
+      }
+    },
+    // _getPosition () {
+    //   // address=北京市海淀区上地十街10号&output=json&ak=您的ak&callback=showLocation
+    //   let params = `address=${encodeURIComponent(this.allArea.replace('海外', ''))}&output=json&ak=${this.bMapkey}`
+    //   jsonp(`${this.parasePositionURL}${params}`).then(res => {
+    //     let { status, result } = res
+    //     console.log(res, status, result, 'status', status == 0)
+    //     if (status == 0) {
+    //       let { lat, lng } = result.location
+    //       console.log(res, lat, lng, 'lng')
+    //     } else {
+    //       console.log('错误')
+    //       this.$message.error('地址解析错误')
+    //     }
+    //   }).catch((err) => {
+    //     console.log(err, 'err')
+    //     this.$message.error('地址解析错误')
+    //   })
+    // },
+    _transformPosition (lng, lat) {
+      let queryParams = `locations=${lng},${lat}&coordsys=baidu&output=json&key=${this.gdKey}`
+      http.get(`${this.positionTransformURL}${queryParams}`, (err, res) => {
+        if (err) {
+          this.resetPositionInfo()
+          return this.$message.error('坐标转换失败')
+        }
+        if (res.status != 1) {
+          this.resetPositionInfo()
+          return this.$message.error('坐标转换失败')
+        }
+        let [lat, lng] = res.locations.split(',')
+        this.form.longitude = lng
+        this.form.latitude = lat
+        // console.log(this.form, 'form', lng, lat)
+      })
+    },
+    onAreaClose () {
+      this.areaVisible = false
+    },
+    onAreaClick () {
+      this.areaVisible = true
     },
     chooseAddre() {
       //地图选择赋值地址
@@ -747,41 +856,41 @@ export default {
       this.form.latitude = this.allAddress.position.lat;
       this.drawerMap = false;
     },
-    getPosition(val) {
-      //从接口获取地址
-      let that = this;
-      let url = `https://restapi.amap.com/v3/geocode/geo?key=c97ee5ef9156461c04b552da5b78039d&address=${encodeURIComponent(
-        val
-      )}`;
-      http.get(url, function (err, result) {
-        if (result.geocodes.length) {
-          let res = result.geocodes[0];
-          that.form.province = res.province;
-          that.form.city = res.city;
-          that.form.area = res.district;
-          that.form.addr = val
-            .replace(res.province, "")
-            .replace(res.city, "")
-            .replace(res.district, "");
-          that.form.latitude = res.location.split(",")[1]; // 维度
-          that.form.longitude = res.location.split(",")[0]; // 精度
-        } else {
-          if (that.isCreate || that.ifEdit) {
-            that.$message({
-              message: "未识别到地址，请手动选择",
-              type: "error",
-            });
-          }
-          that.form.province = "";
-          that.form.city = "";
-          that.form.area = "";
-          that.form.addr = "";
-          that.form.latitude = "";
-          that.form.longitude = "";
-        }
-        // 这里对结果进行处理
-      });
-    },
+    // getPosition(val) {
+    //   //从接口获取地址
+    //   let that = this;
+    //   let url = `https://restapi.amap.com/v3/geocode/geo?key=c97ee5ef9156461c04b552da5b78039d&address=${encodeURIComponent(
+    //     val
+    //   )}`;
+    //   http.get(url, function (err, result) {
+    //     if (result.geocodes.length) {
+    //       let res = result.geocodes[0];
+    //       that.form.province = res.province;
+    //       that.form.city = res.city;
+    //       that.form.area = res.district;
+    //       that.form.addr = val
+    //         .replace(res.province, "")
+    //         .replace(res.city, "")
+    //         .replace(res.district, "");
+    //       that.form.latitude = res.location.split(",")[1]; // 维度
+    //       that.form.longitude = res.location.split(",")[0]; // 精度
+    //     } else {
+    //       if (that.isCreate || that.ifEdit) {
+    //         that.$message({
+    //           message: "未识别到地址，请手动选择",
+    //           type: "error",
+    //         });
+    //       }
+    //       that.form.province = "";
+    //       that.form.city = "";
+    //       that.form.area = "";
+    //       that.form.addr = "";
+    //       that.form.latitude = "";
+    //       that.form.longitude = "";
+    //     }
+    //     // 这里对结果进行处理
+    //   });
+    // },
     getImgList(val) {
       //获取图片列表
 
@@ -790,9 +899,6 @@ export default {
     dragmap(res) {
       this.allAddress = res;
     }, 
-    onAreaChange (val) { // 地址发生变化
-      console.log(val)
-    },
     resetInfo () { // 清空终端客户相关的数据
       this.addressList = [];
       this.cntctPrsnList = [];
@@ -803,11 +909,18 @@ export default {
       this.form.contactTel = ''
       this.form.addressDesignator = '';
       this.form.address = '';
-      console.log(this.addressList, this.cntctPrsnList, this.form)
+    },
+    resetPositionInfo () { // 重置地址信息包括经纬度
+      this.form.province = ''
+      this.form.city = ''
+      this.form.area = ''
+      this.form.addr = ''
+      this.form.longitude = ''
+      this.form.latitude = ''
     },
     async setForm(val) {
       val = JSON.parse(JSON.stringify(val));
-      console.log(val, 'json.stringify')
+      // console.log(val, 'json.stringify')
       if (val) {
         val.serviceOrderPictures = await this.getServeImg(val.id);
         this.$emit("imgChange", val.serviceOrderPictures); // 告诉父组件
@@ -865,7 +978,6 @@ export default {
             materialCode: res[i].data[0].itemCode,
             materialDescription: res[i].data[0].itemName,
             feeType: 1,
-            orderTakeType: 1,
             fromTheme:  "",
             fromType:  1,
             problemTypeName,
@@ -885,7 +997,6 @@ export default {
             materialCode: "其他设备",
             materialDescription: "",
             feeType: 1,
-            orderTakeType: 1,
             fromTheme:  "",
             fromType:  1,
             problemTypeName,
@@ -898,7 +1009,6 @@ export default {
           })
         }
         this.propForm = targetList
-        console.log(targetList, 'taragetList')
       }).catch((err) => {
         console.log(err, 'err')
         this.$message.error('查询序列号失败')
@@ -1019,7 +1129,6 @@ export default {
                 });
             }
           } else {
-            console.log(this.form);
             callservesure
               .CreateWorkOrder(this.form)
               .then(() => {
@@ -1050,7 +1159,7 @@ export default {
       callservesure
         .forServe(num)
         .then((res) => {
-          console.log(res, "售后主管", this.handleSelectType, isCustomerCode(this.form.terminalCustomerId));
+          // console.log(res, "售后主管", this.handleSelectType, isCustomerCode(this.form.terminalCustomerId));
           if (this.handleSelectType === 'customer') { // 如果点击客户代码的时候
             if (this.form.terminalCustomerId) { // 如果终端客户存在，则不进行值的覆盖
               return 
@@ -1058,13 +1167,12 @@ export default {
           }
           this.addressList = res.result.addressList;
           this.cntctPrsnList = res.result.cntctPrsnList;
-          console.log(this.cntctPrsnList, 'this.cntctPrsnList')
           this.form.supervisor = res.result.techName;
           if (this.formName !== '编辑' && this.formName !== '查看') {
             if (this.cntctPrsnList && this.cntctPrsnList.length) {
             let firstValue = res.result.cntctPrsnList[0]
               let { tel1, tel2, cellolar, name } = firstValue
-              console.log(name, 'name')
+              // console.log(name, 'name')
               this.form.contacter = name
               this.form.contactTel = tel1 || tel2 || cellolar
             }
@@ -1132,7 +1240,7 @@ export default {
       //  this.drawerMap=false
     },
     openMap() {
-      this.drawerMap = true;
+      // this.drawerMap = true;
     },
     openDialog() {
       //打开前赋值
@@ -1189,8 +1297,7 @@ export default {
           this.parentCount = res.count;
           this.parentLoad = false;
         })
-        .catch((error) => {
-          console.log(error);
+        .catch(() => {
           this.parentLoad = false
         });
     },
@@ -1230,7 +1337,6 @@ export default {
       // this.form.addressDesignator = val.address;
       // this.form.address = val.address;
       this.form.salesMan = val.slpName;
-      console.log('sureVal', 'val')
       this.handleCurrentChange(val)
       // this.$refs.formPartner.handleCurrentChange(val)
     },

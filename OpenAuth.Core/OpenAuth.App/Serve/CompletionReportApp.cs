@@ -11,6 +11,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Reactive;
 using Infrastructure.Extensions;
+using OpenAuth.App.Serve.Response;
+using Npoi.Mapper;
 
 namespace OpenAuth.App
 {
@@ -185,7 +187,7 @@ namespace OpenAuth.App
                 ContactTel = string.IsNullOrEmpty(q.b.NewestContactTel) ? q.b.ContactTel : q.b.NewestContactTel,
                 q.a.ManufacturerSerialNumber,
                 q.a.MaterialCode,
-                ProblemDescription = "故障描述：" + q.a.TroubleDescription + "；解决方案：" + q.a.Solution.Subject,
+                ProblemDescription = "故障描述：" + q.a.TroubleDescription + "；解决方案：" + q.a.ProcessDescription,
                 q.a.TroubleDescription,
                 q.a.Solution.Subject,
                 q.b.TerminalCustomerId
@@ -260,41 +262,46 @@ namespace OpenAuth.App
         /// <param name="CompletionReportId"></param>
         /// <param name="ServiceWorkOrderId"></param>
         /// <returns></returns>
-        public async Task<TableData> GetCompletionReportDetailsWeb(string CompletionReportId, int ServiceWorkOrderId)
+        public async Task<TableData> GetCompletionReportDetailsWeb(int ServiceOrderId)
         {
             var result = new TableData();
-            var ServiceWorkOrderModel = UnitWork.Find<ServiceWorkOrder>(u => u.Id == ServiceWorkOrderId).FirstOrDefault();
-            var Files = new List<UploadFileResp>();
-            var pics = UnitWork.Find<CompletionReportPicture>(m => m.CompletionReportId == CompletionReportId).Select(c => c.PictureId).ToList();
-            var picfiles = await UnitWork.Find<UploadFile>(f => pics.Contains(f.Id)).ToListAsync();
-            Files.AddRange(picfiles.MapTo<List<UploadFileResp>>());
-            var CompletionReportModel = UnitWork.Find<CompletionReport>(u => u.Id == CompletionReportId).Select(L => new
+            var loginContext = _auth.GetCurrentUser();
+            var CompletionReportModel = await UnitWork.Find<CompletionReport>(u => u.ServiceOrderId == ServiceOrderId).ToListAsync();
+            var s = loginContext.User;
+            if (!loginContext.Roles.Any(r => r.Name.Equals("售后主管")) && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
             {
-                id = L.Id,
-                ServiceOrderId = L.ServiceOrderId,
-                CustomerId = L.CustomerId,
-                CustomerName = L.CustomerName,
-                TechnicianName = L.TechnicianName,
-                TerminalCustomerId = L.TerminalCustomerId,
-                TerminalCustomer = L.TerminalCustomer,
-                Contacter = L.Contacter,
-                ContactTel = L.ContactTel,
-                Becity = L.Becity,
-                Destination = L.Destination,
-                BusinessTripDate = L.BusinessTripDate,
-                EndDate = L.EndDate,
-                CompleteAddress = L.CompleteAddress,
-                BusinessTripDays = L.BusinessTripDays,
-                WorkOrderNumber = ServiceWorkOrderModel.WorkOrderNumber,
-                ManufacturerSerialNumber = ServiceWorkOrderModel.ManufacturerSerialNumber,
-                MaterialCode = ServiceWorkOrderModel.MaterialCode,
-                Files = Files,
-                ProblemDescription = L.ProblemDescription,
-                ReplacementMaterialDetails = L.ReplacementMaterialDetails,
-                Legacy = L.Legacy,
-                Remark = L.Remark
-            }).FirstOrDefault();
-            result.Data = CompletionReportModel;
+                var appuserid = await UnitWork.Find<AppUserMap>(u => u.UserID.Equals(loginContext.User.Id)).Select(u => u.AppUserId).FirstOrDefaultAsync();
+                CompletionReportModel = CompletionReportModel.Where(c => c.TechnicianId.Equals(appuserid.ToString())).ToList();
+            }
+
+            var thisworkdetail = CompletionReportModel.MapToList<CompletionReportDetailsResp>();
+            var workmodel= await UnitWork.Find<ServiceWorkOrder>(w => w.ServiceOrderId.Equals(ServiceOrderId)).ToListAsync();
+            foreach (var item in thisworkdetail)
+            {
+                item.Files = new List<UploadFileResp>();
+                item.ServiceWorkOrders = new List<WorkCompletionReportResp>();
+                if (item != null)
+                {
+                    var pics = UnitWork.Find<CompletionReportPicture>(m => m.CompletionReportId == item.Id).Select(c => c.PictureId).ToList();
+                    var picfiles = await UnitWork.Find<UploadFile>(f => pics.Contains(f.Id)).ToListAsync();
+                    item.Files.AddRange(picfiles.MapTo<List<UploadFileResp>>());
+                    var worklist = workmodel.Where(w => w.CompletionReportId==item.Id).ToList();
+                    item.ServiceWorkOrders.AddRange(worklist.MapToList<WorkCompletionReportResp>());
+                }
+                item.MaterialCodeTypeName=item.MaterialCode=="其他设备"?"其他设备": await UnitWork.Find<MaterialType>(m => m.TypeAlias.Equals(item.MaterialCode.Substring(0, item.MaterialCode.IndexOf("-")))).Select(m => m.TypeName).FirstOrDefaultAsync();
+            }
+            var Materialworkmodel = workmodel.Where(w => string.IsNullOrWhiteSpace(w.CompletionReportId)).Select(w => w.MaterialCode).ToList() ;
+            List<string> MaterialTypeName = new List<string>();
+            Materialworkmodel.ForEach(m => MaterialTypeName.Add(m=="其他设备"?"其他设备": m.Substring(0, m.IndexOf("-"))));
+
+            foreach (var item in MaterialTypeName.Distinct())
+            {
+                thisworkdetail.Add(new CompletionReportDetailsResp
+                {
+                    MaterialCodeTypeName = item == "其他设备" ? "其他设备" : await UnitWork.Find<MaterialType>(m => m.TypeAlias.Equals(item)).Select(m => m.TypeName).FirstOrDefaultAsync()
+                });
+            }
+            result.Data = thisworkdetail;
             return result;
         }
         /// <summary>
@@ -304,34 +311,31 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task AddWeb(AddOrUpdateCompletionReportReq req)
         {
-            var obj = req.MapTo<CompletionReport>();
-            obj.CreateTime = DateTime.Now;
-            var user = _auth.GetCurrentUser().User;
-            obj.CreateUserId = user.Id;
-            // = user.Id;
-            //obj.CreateUserName = user.Name;
-            //todo:补充或调整自己需要的字段
-            //保存完工报告
-            var o = await Repository.AddAsync(obj);
-            //保存图片
-            var pictures = req.Pictures.MapToList<CompletionReportPicture>();
-            pictures.ForEach(r => r.CompletionReportId = o.Id);
-            await UnitWork.BatchAddAsync(pictures.ToArray());
-            await UnitWork.SaveAsync();
-            //修改工单状态及反写工单号
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId, s => new ServiceWorkOrder { Status = 7, CompletionReportId = o.Id });
-            var workOrderList = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId).ToList();
-            List<int> workorder = new List<int>();
-            foreach (var item in workOrderList)
-            {
-                workorder.Add(item.Id);
-            }
-            //保存日志
-            await _ServiceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq
-            {
-                Action = $"技术员于{DateTime.Now}结束上门服务",
-                ActionType = "服务技术员上门服务中",
-            }, workorder);
+            //var obj = req.MapTo<CompletionReport>();
+            //obj.CreateTime = DateTime.Now;
+            //var user = _auth.GetCurrentUser().User;
+            //obj.CreateUserId = user.Id;
+            ////保存完工报告
+            //var o = await Repository.AddAsync(obj);
+            ////保存图片
+            //var pictures = req.Pictures.MapToList<CompletionReportPicture>();
+            //pictures.ForEach(r => r.CompletionReportId = o.Id);
+            //await UnitWork.BatchAddAsync(pictures.ToArray());
+            //await UnitWork.SaveAsync();
+            ////修改工单状态及反写工单号
+            //await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId, s => new ServiceWorkOrder { Status = 7, CompletionReportId = o.Id });
+            //var workOrderList = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId).ToList();
+            //List<int> workorder = new List<int>();
+            //foreach (var item in workOrderList)
+            //{
+            //    workorder.Add(item.Id);
+            //}
+            ////保存日志
+            //await _ServiceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq
+            //{
+            //    Action = $"技术员完成售后维修",
+            //    ActionType = $"{user.Name}提交了《行为服务报告单》，完成了本次任务",
+            //}, workorder);
         }
 
         /// <summary>

@@ -77,11 +77,10 @@
                 :width="fruit.width"
               >
                 <template slot-scope="scope">
-                  <el-link
-                    v-if="fruit.name === 'serviceOrderId'"
-                    type="primary"
-                    @click="openTree(scope.row.serviceOrderId)"
-                  >{{scope.row.u_SAP_ID}}</el-link>
+                  <div v-if="fruit.name === 'workOrderNumber'" class="link-container" >
+                    <img :src="rightImg" @click="openTree(scope.row.serviceOrderId)" class="pointer" />
+                    <span>{{ scope.row.workOrderNumber }}</span>
+                  </div>
                   <span
                     v-if="fruit.name === 'status'"
                     :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
@@ -89,7 +88,7 @@
                   <span v-if="fruit.name === 'fromType'">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
                   <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
                   <span
-                    v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
+                    v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'&&fruit.name !== 'workOrderNumber'"
                   >{{scope.row[fruit.name]}}</span>
                 </template>
               </el-table-column>
@@ -129,7 +128,7 @@
         </div>
       </el-dialog>
       <!-- 只能查看的表单 -->
-      <el-dialog
+      <!-- <el-dialog
         width="800px"
         class="dialog-mini"
         title="服务单详情"
@@ -145,6 +144,38 @@
           :isCreate="false"
           :refValue="dataForm"
         ></zxform>
+
+        <div slot="footer">
+          <el-button size="mini" @click="dialogFormView = false">取消</el-button>
+          <el-button size="mini" type="primary" @click="dialogFormView = false">确认</el-button>
+        </div>
+      </el-dialog> -->
+      <!-- 只能查看的表单 -->
+      <el-dialog
+        width="1210px"
+        top="10vh"
+        title="服务单详情"
+        :close-on-click-modal="false"
+        destroy-on-close
+        class="addClass1 dialog-mini"
+        :visible.sync="dialogFormView"
+      >
+      <el-row :gutter="20" class="position-view">
+        <el-col :span="18" >
+        <zxform
+          :form="temp"
+          formName="查看"
+          labelposition="right"
+          labelwidth="100px"
+          max-width="800px"
+          :isCreate="false"
+          :refValue="dataForm"
+        ></zxform>
+        </el-col>
+            <el-col :span="6" class="lastWord">   
+              <zxchat :serveId='serveid'></zxchat>
+            </el-col>
+        </el-row>
 
         <div slot="footer">
           <el-button size="mini" @click="dialogFormView = false">取消</el-button>
@@ -244,9 +275,11 @@ import DynamicTable from "@/components/DynamicTable";
 import elDragDialog from "@/directive/el-dragDialog";
 import zxsearch from "./search";
 import zxform from "../callserve/form";
+import zxchat from "../callserve/chatOnRight"
 import treeList from "../callserve/treeList";
 import { debounce } from '@/utils/process'
 import Report from './report'
+import rightImg from '@/assets/table/right.png'
 // import treeTable from "@/components/TreeTableMlt";
 
 // import { callserve, count } from "@/mock/serve";
@@ -260,7 +293,8 @@ export default {
     zxsearch,
     zxform,
     treeList,
-    Report
+    Report,
+    zxchat
   },
   directives: {
     waves,
@@ -425,7 +459,9 @@ export default {
       isClear: false, // 清空树形数据moduleTree
       dialogReportVisible: false, // 完工报告弹窗标识
       reportType: 'create', // 完工报告类型 create: 填写 view: 查看
-      reportData: {} // 完工报告详情
+      reportData: {}, // 完工报告详情
+      serveid: '',
+      rightImg
     };
   },
   filters: {
@@ -480,7 +516,7 @@ export default {
         return
       }
       let { scrollHeight, scrollTop, clientHeight } = e.target
-      if (scrollHeight <= (scrollTop + clientHeight + 50)) {
+      if (scrollHeight <= (scrollTop + clientHeight + 100)) {
         this.listQueryServer.page++
         this.getLeftList()
       }
@@ -609,15 +645,33 @@ export default {
       this.afterLeft()
     },
     openTree(res) {
-      this.listLoading = true;
+      console.log(res, 'res')
+      // this.listLoading = true;
+      this.serveid = res
       callservesure.GetDetails(res).then((res) => {
         if (res.code == 200) {
           this.dataForm = res.result;
           this.dialogFormView = true;
         }
-        this.listLoading = false;
+        // this.listLoading = false;
       });
     },
+
+    // closeCustoner() {
+    //   // this.getList();
+    // },
+    // openTree(res) {
+    //   this.listLoading = true;
+    //    this.serveid = res
+    //   callservesure.GetDetails(res).then(res => {
+    //     if (res.code == 200) {
+    //       this.dataForm1 = res.result;
+    //       // console.log(this.dataForm1, 'dateForm1')
+    //       this.dialogFormView = true;
+    //     }
+    //     this.listLoading = false;
+    //   });
+    // },
     // treeClick(data) {
       // 左侧treetable点击事件
       // console.log(data);
@@ -761,7 +815,7 @@ export default {
     getLeftList() {
       this.listLoading = true;
       return callservepushm.getLeftList(this.listQueryServer).then((res) => {
-        let { data } = res.data
+        let { data, count } = res.data
         let arr = this._normalizeTree(data)
         if (!this.modulesTree.length || this.isClear) {
           this.modulesTree = arr
@@ -769,7 +823,8 @@ export default {
         } else {
           this.modulesTree = this.modulesTree.concat(arr)
         }
-        this.totalCount = data.count
+        this.totalCount = count
+        console.log()
         // this.modulesTree = arr;
         this.listLoading = false;
       }).catch(() => {

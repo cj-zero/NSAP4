@@ -1,11 +1,12 @@
 <template>
   <section class="app-main" ref="appMain">
     <transition name="fade-transform" mode="out-in">
-      <keep-alive :include="keepAliveDatas" v-if="keepAliveDatas.length > 0">
+      <!-- <keep-alive :include="keepAliveDatas" v-if="keepAliveDatas.length > 0">
         <router-view :key="key"></router-view>
+      </keep-alive> -->
+      <keep-alive>
+        <router-view></router-view>
       </keep-alive>
-  
-        
     </transition>
   </section>
 </template>
