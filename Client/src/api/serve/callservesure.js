@@ -17,6 +17,14 @@ export function SerialList(params) {
   })
 }
 
+export function getContractList (params) {
+  return request({
+    url: '/Sap/SerialNumber/GetContractList',
+    method: 'get',
+    params
+  })
+}
+
 export function getForm(data) {
   return request({   //待确认服务申请信息
     url: `/serve/ServiceOrder/GetUnConfirmedServiceOrderDetails?serviceOrderId=${data}`,

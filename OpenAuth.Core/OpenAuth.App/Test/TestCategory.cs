@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using OpenAuth.App.Request;
 using OpenAuth.App.SSO;
+using System.Threading.Tasks;
 
 namespace OpenAuth.App.Test
 {
@@ -31,10 +32,10 @@ namespace OpenAuth.App.Test
 
 
         [Test]
-        public void TestLoadCategories()
+        public async Task TestLoadCategories()
         {
             var app = _autofacServiceProvider.GetService<CategoryApp>();
-           var result =  app.Load(new QueryCategoryListReq
+           var result = await app.Load(new QueryCategoryListReq
            {
                limit = 10,
                page = 1

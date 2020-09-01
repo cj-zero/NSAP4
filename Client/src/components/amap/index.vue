@@ -6,7 +6,6 @@
       <div id="js-result" v-show="searchKey" class="result"></div>
     </div>
     <div id="js-container" class="map">正在加载数据 ...</div>
-
   </div>
 </template>
 
@@ -142,7 +141,7 @@ export default {
 </script>
 
 <style lang="css">
-.m-map{ min-width: 500px; height: 600px; position: relative; }
+.m-map{ width: 0; height: 0; position: relative; opacity: 0; }
 .m-map .map{ width: 100%; height: 100%; }
 .m-map .search{ position: absolute; top: 10px; right: 30px; width: 285px; z-index: 1; }
 .m-map .search input{ width: 180px; border: 1px solid #ccc; line-height: 20px; padding: 5px; outline: none; }

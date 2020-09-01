@@ -763,7 +763,23 @@ namespace OpenAuth.App
             }
             if (loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
-                query = query.Where(q => q.b.SupervisorId.Equals(loginContext.User.Id));
+                if (loginContext.Roles.Any(r => r.Name.Equals("售后主管")))
+                {
+                    query = query.Where(q => q.b.SupervisorId.Equals(loginContext.User.Id));
+                }
+                else
+                {
+                    if (loginContext.User.Name.Equals("李健梅"))
+                    {
+                        var orderProblemType = await UnitWork.FindSingleAsync<ProblemType>(p=>p.Name.Equals("其他"));
+                        var pIds = await UnitWork.Find<ProblemType>(p => p.ParentId.Equals(orderProblemType.Id)).Select(a => a.Id).ToListAsync();
+                        query = query.Where(q => pIds.Contains(q.a.ProblemTypeId));
+                    }
+                    else
+                    {
+                        query = query.Where(q => q.a.CurrentUserNsapId.Equals(loginContext.User.Id));
+                    }
+                }
             }
             var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
             var workorderlist = await query.OrderBy(r => r.a.CreateTime).Select(q => new
@@ -1008,7 +1024,23 @@ namespace OpenAuth.App
             }
             if (loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
-                query = query.Where(q => q.b.SupervisorId.Equals(loginContext.User.Id));
+                if (loginContext.Roles.Any(r => r.Name.Equals("售后主管")))
+                {
+                    query = query.Where(q => q.b.SupervisorId.Equals(loginContext.User.Id));
+                }
+                else
+                {
+                    if (loginContext.User.Name.Equals("李健梅"))
+                    {
+                        var orderProblemType = await UnitWork.FindSingleAsync<ProblemType>(p => p.Name.Equals("其他"));
+                        var pIds = await UnitWork.Find<ProblemType>(p => p.ParentId.Equals(orderProblemType.Id)).Select(a => a.Id).ToListAsync();
+                        query = query.Where(q => pIds.Contains(q.a.ProblemTypeId));
+                    }
+                    else
+                    {
+                        query = query.Where(q => q.a.CurrentUserNsapId.Equals(loginContext.User.Id));
+                    }
+                }
             }
 
             var resultsql = query.OrderBy(r => r.a.Id).ThenBy(r => r.a.WorkOrderNumber).Select(q => new

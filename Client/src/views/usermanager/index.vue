@@ -160,7 +160,7 @@
   import elDragDialog from '@/directive/el-dragDialog'
 
   export default {
-    name: 'user',
+    name: 'usermanager',
     components: {
       Sticky,
       permissionBtn,
@@ -234,7 +234,15 @@
     computed: {
       selectOrgs: {
         get: function() {
+          var _this = this
           if (this.dialogStatus === 'update') {
+            let isEmpty = false
+            if (Array.isArray(this.temp.organizationIds)) {
+              isEmpty = this.temp.organizationIdsthis.temp.organizationIds.every(id => !id)
+            }
+            if (!_this.temp.organizationIds || isEmpty) {
+              return []
+            }
             return this.temp.organizationIds && this.temp.organizationIds.split(',')
           } else {
             return []
@@ -279,6 +287,7 @@
         })
         var orgstmp = JSON.parse(JSON.stringify(_this.orgs))
         _this.orgsTree = listToTreeSelect(orgstmp)
+        console.log(this.orgsTree, 'orgsTree')
       })
     },
     methods: {
