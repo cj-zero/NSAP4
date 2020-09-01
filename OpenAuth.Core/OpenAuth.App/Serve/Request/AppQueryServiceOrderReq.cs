@@ -7,11 +7,15 @@ namespace OpenAuth.App.Request
 {
     public class AppQueryServiceOrderReq
     {
-
-        [Required]
-        public int AppUserId { get; set; }
-
+        /// <summary>
+        /// 服务单Id
+        /// </summary>
         [Required]
         public int ServiceOrderId { get; set; }
+
+        /// <summary>
+        /// 设备类型
+        /// </summary>
+        public string MaterialType { get; set; }
     }
 }

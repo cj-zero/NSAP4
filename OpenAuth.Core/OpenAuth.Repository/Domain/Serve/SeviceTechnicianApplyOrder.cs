@@ -33,74 +33,92 @@ namespace OpenAuth.Repository.Domain
           this.ProblemTypeId= string.Empty;
         }
 
-        
+
         /// <summary>
-        /// 
+        /// 设备类型
         /// </summary>
-        [Description("")]
+        [Description("设备类型")]
         public string MaterialType { get; set; }
+
         /// <summary>
-        /// 
+        /// 制造商序列号
         /// </summary>
-        [Description("")]
+        [Description("制造商序列号")]
         public string ManufSN { get; set; }
+
         /// <summary>
-        /// 
+        /// 物料编码
         /// </summary>
-        [Description("")]
+        [Description("物料编码")]
         public string ItemCode { get; set; }
+
         /// <summary>
-        /// 
+        /// 服务单Id
         /// </summary>
-        [Description("")]
+        [Description("服务单Id")]
         [Browsable(false)]
         public int? ServiceOrderId { get; set; }
+
         /// <summary>
-        /// 
+        ///原始序列号 
         /// </summary>
-        [Description("")]
+        [Description("原始序列号")]
         public string OrginalManufSN { get; set; }
+
         /// <summary>
-        /// 
+        /// 工单状态
         /// </summary>
-        [Description("")]
+        [Description("工单状态")]
         public int? Status { get; set; }
+
         /// <summary>
-        /// 
+        /// 接单类型
         /// </summary>
-        [Description("")]
+        [Description("接单类型")]
         public int? OrderTakeType { get; set; }
+
         /// <summary>
-        /// 
+        /// 技术员Id
         /// </summary>
-        [Description("")]
+        [Description("技术员Id")]
         [Browsable(false)]
         public int? TechnicianId { get; set; }
+
         /// <summary>
-        /// 
+        /// 创建时间
         /// </summary>
-        [Description("")]
+        [Description("创建时间")]
         public System.DateTime? CreateTime { get; set; }
+
         /// <summary>
-        /// 
+        /// 呼叫主题
         /// </summary>
-        [Description("")]
+        [Description("呼叫主题")]
         public string FromTheme { get; set; }
+
         /// <summary>
-        /// 
+        /// 呼叫类型 1-提交呼叫 2-在线解答（已解决）
         /// </summary>
-        [Description("")]
+        [Description("呼叫类型")]
         public int? FromType { get; set; }
+
         /// <summary>
-        /// 
+        /// 问题类型
         /// </summary>
-        [Description("")]
+        [Description("问题类型")]
         [Browsable(false)]
         public string ProblemTypeId { get; set; }
+
         /// <summary>
-        /// 
+        /// 服务台是否处理 1已处理 0未处理
         /// </summary>
-        [Description("")]
+        [Description("是否处理")]
         public int? IsSolved { get; set; }
+
+        /// <summary>
+        /// 原始工单号
+        /// </summary>
+        [Description("原始工单号")]
+        public int? OrginalWorkOrderId { get; set; }
     }
 }

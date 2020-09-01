@@ -186,7 +186,7 @@ namespace OpenAuth.App
                 q.a.ManufacturerSerialNumber,
                 q.a.MaterialCode,
                 q.a.TroubleDescription,
-                q.a.Solution.Subject,
+                q.a.ProcessDescription,
                 q.b.TerminalCustomerId
             }).FirstOrDefaultAsync();
             var thisworkdetail = query.MapTo<CompletionReportDetailsResp>();

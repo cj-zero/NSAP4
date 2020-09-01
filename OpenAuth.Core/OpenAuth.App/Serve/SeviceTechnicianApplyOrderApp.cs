@@ -54,6 +54,7 @@ namespace OpenAuth.App
                     obj.TechnicianId = request.AppUserId;
                     obj.CreateTime = DateTime.Now;
                     obj.IsSolved = 0;
+                    obj.OrginalWorkOrderId = item.workOrderId;
                     if (request.MaterialType.Equals((("其他设备".Equals(item.newCode)) ? "其他设备" : item.newCode.Substring(0, item.newCode.IndexOf("-"))), StringComparison.OrdinalIgnoreCase))
                     {
                         obj.Status = currentMaterialTypeInfo.Status;

@@ -67,16 +67,16 @@ namespace OpenAuth.App
             obj.CreateTime = DateTime.Now;
             //todo:补充或调整自己需要的字段
             //判断是否已存在记录 若存在则做更新操作
-            var locations = await UnitWork.Find<RealTimeLocation>(r => r.AppUserId == req.AppUserId).FirstOrDefaultAsync();
-            if (locations != null)
-            {
-                obj.Id = locations.Id;
-                Repository.Update(obj);
-            }
-            else
-            {
-                Repository.Add(obj);
-            }
+            //var locations = await UnitWork.Find<RealTimeLocation>(r => r.AppUserId == req.AppUserId).FirstOrDefaultAsync();
+            //if (locations != null)
+            //{
+            //    obj.Id = locations.Id;
+            //    Repository.Update(obj);
+            //}
+            //else
+            //{
+            Repository.Add(obj);
+            //}
         }
     }
 }
