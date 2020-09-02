@@ -243,20 +243,17 @@
       </el-dialog>
       <!-- 完工报告  -->
       <el-dialog
-        width="800px"
+        width="932px"
         class="dialog-mini"
         :close-on-click-modal="false"
-        title="新增服务行为报告单"
+        title="服务行为报告单"
         :visible.sync="dialogReportVisible"
+        @closed="onReportClosed"
       >
-        <Report 
-          :type="reportType"
+        <Report
+          ref="report"
           :data="reportData"
         ></Report>
-        <div slot="footer">
-          <el-button size="mini" @click="dialogReportVisible = false">取消</el-button>
-          <el-button size="mini" type="primary" @click="updateData">确认</el-button>
-        </div>
       </el-dialog>
     </div>
   </div>
@@ -278,10 +275,10 @@ import zxform from "../callserve/form";
 import zxchat from "../callserve/chatOnRight"
 import treeList from "../callserve/treeList";
 import { debounce } from '@/utils/process'
-import Report from './report'
+import Report from '../common/components/report'
 import rightImg from '@/assets/table/right.png'
 // import treeTable from "@/components/TreeTableMlt";
-
+import { reportMixin } from '../common/js/mixins'
 // import { callserve, count } from "@/mock/serve";
 export default {
   name: "solutions",
@@ -296,6 +293,7 @@ export default {
     Report,
     zxchat
   },
+  mixins: [reportMixin],
   directives: {
     waves,
     elDragDialog,
@@ -457,11 +455,9 @@ export default {
         page: 1 // 页数
       },
       isClear: false, // 清空树形数据moduleTree
-      dialogReportVisible: false, // 完工报告弹窗标识
-      reportType: 'create', // 完工报告类型 create: 填写 view: 查看
-      reportData: {}, // 完工报告详情
+      // reportData: {}, // 完工报告详情
       serveid: '',
-      rightImg
+      rightImg,
     };
   },
   filters: {
@@ -512,6 +508,7 @@ export default {
   },
   methods: {
     onScroll (e) {
+      console.log(this.totalCount, this.modulesTree.length, 'scroll')
       if (this.totalCount <= this.modulesTree.length) {
         return
       }
@@ -715,7 +712,7 @@ export default {
           if (!this.$refs.treeForm.getCheckedKeys().length) { // 没有选中
             return this.$message.error("请选择服务单")
           }
-          this.handleReport(this.$refs.treeForm.getCheckedKeys()[0]) // 传入key中的第一个 服务单ID
+          this.handleReport(this.$refs.treeForm.getCheckedKeys()[0], this.list) // 传入key中的第一个 服务单ID
           break
         case "btnEdit":
           this.$message({
@@ -1013,18 +1010,31 @@ export default {
         }
       });
     },
-    handleReport (serviceOrderId) {
+    onReportClosed () {
+      this.reportData = []
+      this.$refs.report.reset()
+    },
+    handleReport (serviceOrderId, data) {
       console.log(serviceOrderId, this.$store.state.user.name)
-      callservepushm.getServiceOrder({
-        serviceOrderId
-      }).then(() => {
-        // if (!res.data) {
-        //   return this.$message.error("当前用户不可填写完工报告")
-        // }
-        this.dialogReportVisible = true
-      }).catch(() => {
-        this.$message.error('获取报告信息失败')
+      console.log(this.list, 'list')
+      let hasFinished = data.some(workOrder => {
+        let { status, fromType } = workOrder
+        return Number(status) === 7 && Number(fromType) !== 2 // 所有工单状态为已解决且呼叫类型不为在线解答
       })
+      if (hasFinished) {
+        callservesure.getReportDetail({
+          serviceOrderId
+        }).then(res => {
+          console.log(res, 'reportData')
+          this.reportData = res.result.data
+          this.dialogReportVisible = true
+        })
+      } else {
+        this.$message({
+            type: 'warning',
+            message: '工单未解决或在线解答方式无完工报告'
+          })
+      }
     },
     handleDelete(rows) {
       // 多行删除

@@ -146,3 +146,10 @@ export function add(data) {
     data
   })
 }
+export function getReportDetail (params) {
+  return request({
+    url: '/serve/CompletionReports/GetCompletionReportDetailsWeb',
+    method: 'get',
+    params
+  })
+}
