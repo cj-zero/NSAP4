@@ -354,13 +354,13 @@
           <el-form-item label="制造商序列号:">
             <el-input @input="searchList" v-model="inputSerial" placeholder="制造商序列号"></el-input>
           </el-form-item>
-          <el-form-item label="客户">
+          <el-form-item label="售后主管">
             <el-input @input="searchList" v-model="inputTech" placeholder="售后主管"></el-input>
           </el-form-item>
-          <el-form-item label="制造商序列号:">
+          <el-form-item label="销售员:">
             <el-input @input="searchList" v-model="inputSlpName" placeholder="销售员"></el-input>
           </el-form-item>
-          <el-form-item label="制造商序列号:">
+          <el-form-item label="收货地址:">
             <el-input @input="searchList" v-model="inputAddress" placeholder="收货地址"></el-input>
           </el-form-item>
         </el-form>
@@ -1284,7 +1284,7 @@ export default {
       this.listQuery.CardCodeOrCardName = this.inputSearch;
       this.listQuery.ManufSN = this.inputSerial
       // this.form.customerId = this.inputSearch;
-      this.listQuery.slpName = this.inputName
+      this.listQuery.slpName = this.inputSlpName
       this.listQuery.Technician = this.inputTech
       this.listQuery.Address = this.inputAddress
       console.log('searchList')
