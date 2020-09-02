@@ -23,35 +23,42 @@
     </sticky>-->
     <div class="app-container">
       <div class="bg-white">
-        <el-form ref="listQuery" :model="listQuery" label-width="80px">
+        <el-form ref="listQuery" :model="listQuery" label-width="80px" inline>
           <div style="padding:10px 0;"></div>
           <el-row :gutter="10">
-            <el-col :span="3">
+            <!-- <el-col :span="3"> -->
               <el-form-item label="服务ID" size="small">
-                <el-input v-model="listQuery.ServiceOrderId" @keyup.enter.native="onSubmit"></el-input>
+                <el-input v-model="listQuery.ServiceOrderId" @keyup.enter.native="onSubmit" class="input-item"></el-input>
               </el-form-item>
-            </el-col>
+            <!-- </el-col> -->
 
-            <el-col :span="3">
+            <!-- <el-col :span="3"> -->
               <el-form-item label="客户ID" size="small">
-                <el-input v-model="listQuery.CustomerId" @keyup.enter.native="onSubmit"></el-input>
+                <el-input v-model="listQuery.CustomerId" @keyup.enter.native="onSubmit" class="input-item"></el-input>
               </el-form-item>
-            </el-col>
+            <!-- </el-col> -->
 
-            <el-col :span="3">
+            <!-- <el-col :span="3"> -->
               <el-form-item label="技术员ID" size="small">
-                <el-input v-model="listQuery.TechnicianId" @keyup.enter.native="onSubmit"></el-input>
+                <el-input v-model="listQuery.TechnicianId" @keyup.enter.native="onSubmit" class="input-item"></el-input>
               </el-form-item>
-            </el-col>
-            <el-col :span="3">
+            <!-- </el-col> -->
+            <!-- <el-col :span="3"> -->
               <el-form-item label="回访人ID" size="small">
-                <el-input v-model="listQuery.VisitPeopleId" @keyup.enter.native="onSubmit"></el-input>
+                <el-input v-model="listQuery.VisitPeopleId" @keyup.enter.native="onSubmit" class="input-item"></el-input>
               </el-form-item>
-            </el-col>
-            <el-col :span="6">
+            <!-- </el-col> -->
+            <!-- <el-col :span="6"> -->
               <el-form-item label="评价日期" size="small">
-                <el-col :span="11">
-                  <el-time-select
+                <!-- <el-col :span="11"> -->
+                  <el-date-picker
+                    style="width: 150px;"
+                    v-model="listQuery.DateFrom"
+                    type="date"
+                    value-format="yyyy-MM-dd"
+                    placeholder="选择开始日期">
+                  </el-date-picker>
+                  <!-- <el-time-select
                     placeholder="选择开始日期"
                     v-model="listQuery.DateFrom"
                     style="width: 100%;"
@@ -60,11 +67,11 @@
                         step: '00:15',
                         end: '23:30'
                       }"
-                  ></el-time-select>
-                </el-col>
-                <el-col class="line" :span="2">至</el-col>
-                <el-col :span="11">
-                  <el-time-select
+                  ></el-time-select> -->
+                <!-- </el-col> -->
+                <span style="margin: 0 5px;">至</span>
+                <!-- <el-col :span="11"> -->
+                  <!-- <el-time-select
                     placeholder="选择结束时间"
                     v-model="listQuery.DateTo"
                     style="width: 100%;"
@@ -73,19 +80,26 @@
                         step: '00:15',
                         end: '23:30'
                       }"
-                  ></el-time-select>
-                </el-col>
+                  ></el-time-select> -->
+                  <el-date-picker
+                    style="width: 150px;"
+                    v-model="listQuery.DateTo"
+                    type="date"
+                    value-format="yyyy-MM-dd"
+                    placeholder="选择结束日期">
+                  </el-date-picker>
+                <!-- </el-col> -->
               </el-form-item>
-            </el-col>
-            <el-col :span="3" style="margin-left:20px;">
-              <el-button
-                type="primary"
-                @click="onSubmit"
-                @keyup.enter.native="onSubmit"
-                size="small"
-                icon="el-icon-search"
-              >搜 索</el-button>
-            </el-col>
+            <!-- </el-col> -->
+            <!-- <el-col :span="3" style="margin-left:20px;"> -->
+            <el-button
+              type="primary"
+              @click="onSubmit"
+              @keyup.enter.native="onSubmit"
+              size="small"
+              icon="el-icon-search"
+            >搜 索</el-button>
+            <!-- </el-col> -->
           </el-row>
         </el-form>
         <el-table
@@ -329,7 +343,7 @@ export default {
   },
 };
 </script>
-<style>
+<style scoped lang="scss">
 .dialog-mini .el-select {
   width: 100%;
 }
@@ -344,5 +358,8 @@ export default {
 }
 .redWord {
   color: orangered;
+}
+.input-item {
+  width: 100px;
 }
 </style>

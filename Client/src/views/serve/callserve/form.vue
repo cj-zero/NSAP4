@@ -347,12 +347,21 @@
         :destroy-on-close="true"
         :visible.sync="dialogPartner"
       >
-        <el-form :inline="true" class="demo-form-inline">
+        <el-form :inline="true" class="demo-form-inline" size="mini">
           <el-form-item label="客户">
             <el-input @input="searchList" v-model="inputSearch" placeholder="客户"></el-input>
           </el-form-item>
           <el-form-item label="制造商序列号:">
-            <el-input @input="searSerial" v-model="inputSerial" placeholder="制造商序列号"></el-input>
+            <el-input @input="searchList" v-model="inputSerial" placeholder="制造商序列号"></el-input>
+          </el-form-item>
+          <el-form-item label="客户">
+            <el-input @input="searchList" v-model="inputTech" placeholder="售后主管"></el-input>
+          </el-form-item>
+          <el-form-item label="制造商序列号:">
+            <el-input @input="searchList" v-model="inputSlpName" placeholder="销售员"></el-input>
+          </el-form-item>
+          <el-form-item label="制造商序列号:">
+            <el-input @input="searchList" v-model="inputAddress" placeholder="收货地址"></el-input>
           </el-form-item>
         </el-form>
         <formPartner
@@ -490,6 +499,9 @@ export default {
       filterPartnerList: [],
       inputSearch: "",
       inputSerial: "",
+      inputTech: "",
+      inputAddress: "",
+      inputSlpName: "",
       // SerialNumberList: [], //序列号列表
       state: "",
       addressList: [], //用户地址列表
@@ -1270,7 +1282,11 @@ export default {
     searchList: debounce(function() {
       console.log(this, 'this')
       this.listQuery.CardCodeOrCardName = this.inputSearch;
-      this.form.customerId = this.inputSearch;
+      this.listQuery.ManufSN = this.inputSerial
+      // this.form.customerId = this.inputSearch;
+      this.listQuery.slpName = this.inputName
+      this.listQuery.Technician = this.inputTech
+      this.listQuery.Address = this.inputAddress
       console.log('searchList')
       this.getPartnerList();
       // if (!res) {
