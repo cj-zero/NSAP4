@@ -1,7 +1,12 @@
-﻿using Autofac.Extensions.DependencyInjection;
+﻿using App.Metrics;
+using App.Metrics.AspNetCore;
+using App.Metrics.Formatters.Prometheus;
+using Autofac.Extensions.DependencyInjection;
+using Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 
 namespace OpenAuth.WebApi
 {
@@ -14,6 +19,7 @@ namespace OpenAuth.WebApi
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
+                .ConfigurationPrometheusAppMetrics()
                 .ConfigureLogging((hostingContext, logging) =>
                 {
                     logging.ClearProviders(); //去掉默认的日志
