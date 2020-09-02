@@ -61,6 +61,27 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 服务台处理技术员提交的设备信息
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> SolveTechApplyDevices(SolveTechApplyDevicesReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.SolveTechApplyDevices(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
         public SeviceTechnicianApplyOrdersController(SeviceTechnicianApplyOrdersApp app)
         {
             _app = app;

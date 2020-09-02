@@ -670,28 +670,6 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
-
-        /// <summary>
-        /// 获取描述
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet]
-        public async Task<TableData> GetWorkOrderDescription([FromQuery] QueryWorkOrderDescriptionReq req)
-        {
-            var result = new TableData();
-
-            try
-            {
-                result = await _serviceOrderApp.GetWorkOrderDescription(req);
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.Message;
-            }
-            return result;
-        }
-
         /// <summary>
         ///获取当前技术员剩余可接单数
         /// </summary>
@@ -860,27 +838,6 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        /// 获取服务工单详情(管理员)
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet]
-        public async Task<TableData> GetAdminServiceOrderDetail([FromQuery] QueryServiceOrderDetailReq req)
-        {
-            var result = new TableData();
-
-            try
-            {
-                result = await _serviceOrderApp.GetAdminServiceOrderDetail(req);
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.Message;
-            }
-            return result;
-        }
-
-        /// <summary>
         ///  获取管理员服务单列表（App）
         /// </summary>
         /// <param name="req">查询条件对象</param>
@@ -977,7 +934,7 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        /// 获取客户提交的服务单详情
+        /// 获取设备列表中间页/售后详情页（客户）
         /// </summary>
         /// <returns></returns>
         [HttpGet]

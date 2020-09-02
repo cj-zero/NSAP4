@@ -41,6 +41,11 @@ namespace OpenAuth.App.Serve.Request
     public class Device
     {
         /// <summary>
+        /// 工单号
+        /// </summary>
+        public int workOrderId { get; set; }
+
+        /// <summary>
         /// 旧序列号
         /// </summary>
         public string manufacturerSerialNumber { get; set; }

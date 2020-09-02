@@ -14,7 +14,7 @@ namespace OpenAuth.App.Request
         public int AppUserId { get; set; }
 
         /// <summary>
-        /// 类型 0默认 1评价列表
+        /// 类型 0默认全部 1待受理 2已受理 3待评价 4已评价
         /// </summary>
         [Required]
         public int Type { get; set; }

@@ -189,7 +189,7 @@ namespace OpenAuth.App
                 q.a.MaterialCode,
                 ProblemDescription = "故障描述：" + q.a.TroubleDescription + "；解决方案：" + q.a.ProcessDescription,
                 q.a.TroubleDescription,
-                q.a.Solution.Subject,
+                q.a.ProcessDescription,
                 q.b.TerminalCustomerId
             }).FirstOrDefaultAsync();
             var thisworkdetail = query.MapTo<CompletionReportDetailsResp>();
