@@ -57,7 +57,7 @@ namespace OpenAuth.App
             _signalrmessage = signalrmessage;
         }
 
-        #region<<nSAP系统>>
+        #region<<nSAP System>>
         /// <summary>
         /// 加载列表
         /// </summary>
@@ -234,6 +234,11 @@ namespace OpenAuth.App
             result.Data = list;
             result.Count = query.Count();
             return result;
+        }
+
+        internal Task PushMessageToApp(int? currentUserId, string v1, string v2)
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -984,7 +989,7 @@ namespace OpenAuth.App
         }
         #endregion
 
-        #region<<公共方法>>
+        #region<<Common Methods>>
         /// <summary>
         /// 导出excel
         /// </summary>
@@ -1256,7 +1261,7 @@ namespace OpenAuth.App
         }
         #endregion
 
-        #region<<消息>>
+        #region<<Message>>
 
         /// <summary>
         /// 发送聊天室消息
@@ -1494,7 +1499,7 @@ namespace OpenAuth.App
         /// <param name="title">消息标题</param>
         /// <param name="content">消息内容</param>
         /// <returns></returns>
-        private async Task PushMessageToApp(int userId, string title, string content)
+        public async Task PushMessageToApp(int userId, string title, string content)
         {
             _helper.Post(new
             {
@@ -1505,7 +1510,7 @@ namespace OpenAuth.App
         }
         #endregion
 
-        #region<<客户>>
+        #region<<Customer>>
         /// <summary>
         /// 售后进度列表(客户)
         /// </summary>
@@ -1801,7 +1806,7 @@ namespace OpenAuth.App
         }
         #endregion
 
-        #region<<技术员>>
+        #region<<Technician>>
         /// <summary>
         /// 获取技术员设备类型列表/售后详情
         /// </summary>
@@ -2508,6 +2513,7 @@ namespace OpenAuth.App
                     s.Status,
                     s.CreateTime,
                     s.U_SAP_ID,
+                    s.CustomerId,
                     Count = s.ServiceWorkOrders.Where(w => w.ServiceOrderId == s.Id && w.CurrentUserId == req.TechnicianId).Count(),
                     MaterialInfo = s.ServiceWorkOrders.Select(o => new
                     {
@@ -2516,6 +2522,7 @@ namespace OpenAuth.App
                         MaterialType = "其他设备".Equals(o.MaterialCode) ? "其他设备" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
                         o.Status,
                         o.Id,
+                        o.OrderTakeType
                     }),
                     s.ProblemTypeName,
                     ProblemType = s.ServiceWorkOrders.Select(s => s.ProblemType).FirstOrDefault()
@@ -2540,6 +2547,7 @@ namespace OpenAuth.App
                 s.Status,
                 CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
                 s.U_SAP_ID,
+                s.CustomerId,
                 Distance = (req.Latitude == 0 || s.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
                 s.Count,
                 ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.ProblemType.Name : s.ProblemTypeName,
@@ -2550,6 +2558,7 @@ namespace OpenAuth.App
                     MaterialType = o.Key,
                     Status = o.ToList().Select(s => s.Status).Distinct().FirstOrDefault(),
                     MaterialTypeName = "其他设备".Equals(o.Key) ? "其他设备" : MaterialTypeModel.Where(a => a.TypeAlias == o.Key).FirstOrDefault().TypeName,
+                    OrderTakeType = o.ToList().Select(s => s.OrderTakeType).Distinct().FirstOrDefault()
                 })
             }).ToList();
 
@@ -2561,7 +2570,7 @@ namespace OpenAuth.App
 
         #endregion
 
-        #region<<管理员/主管>>
+        #region<<Admin/Supervisor>>
         /// <summary>
         /// 获取管理员服务单列表（App）
         /// </summary>
