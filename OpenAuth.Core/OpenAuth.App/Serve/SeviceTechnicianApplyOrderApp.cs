@@ -63,6 +63,8 @@ namespace OpenAuth.App
                         obj.FromTheme = currentMaterialTypeInfo.FromTheme;
                         obj.FromType = currentMaterialTypeInfo.FromType;
                         obj.ProblemTypeId = currentMaterialTypeInfo.ProblemTypeId;
+                        obj.CurrentUser = currentMaterialTypeInfo.CurrentUser;
+                        obj.CurrentUserNsapId = currentMaterialTypeInfo.CurrentUserNsapId;
                     }
                     else
                     {
@@ -96,6 +98,8 @@ namespace OpenAuth.App
                         obj.FromTheme = currentMaterialTypeInfo.FromTheme;
                         obj.FromType = currentMaterialTypeInfo.FromType;
                         obj.ProblemTypeId = currentMaterialTypeInfo.ProblemTypeId;
+                        obj.CurrentUser = currentMaterialTypeInfo.CurrentUser;
+                        obj.CurrentUserNsapId = currentMaterialTypeInfo.CurrentUserNsapId;
                     }
                     else
                     {
@@ -184,18 +188,15 @@ namespace OpenAuth.App
         {
             //在这个服务单下新建一个工单
             await _serviceOrderApp.AddWorkOrder(request);
-
             //判断当前设备的设备类型是否已存在服务单中
             var materialType = "其他设备".Equals(request.MaterialCode) ? "其他设备" : request.MaterialCode.Substring(0, request.MaterialCode.IndexOf("-"));
             //如果已经存在则将新建的工单派给这个设备类型的技术员
             if (MaterialTypes.Contains(materialType))
             {
-                //获取当前设备类型的技术员Id
-                var newOrderInfo = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialCode == request.MaterialCode).OrderBy(o => o.Id).FirstOrDefaultAsync();
                 //派单给该技术员
-                await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialCode == request.MaterialCode, a => new ServiceWorkOrder { CurrentUserId = newOrderInfo.CurrentUserId, Status = ApplyInfo.Status, OrderTakeType = (int)ApplyInfo.OrderTakeType, CurrentUserNsapId = newOrderInfo.CurrentUserNsapId, CurrentUser = newOrderInfo.CurrentUser });
-                await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"系统派单给技术员{newOrderInfo.CurrentUser}派单", ActionType = "系统派单工单" });
-                await _serviceOrderApp.PushMessageToApp(newOrderInfo.CurrentUserId, "派单成功提醒", "您已被派有一个新的售后服务，请尽快处理");
+                await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialCode == request.MaterialCode, a => new ServiceWorkOrder { CurrentUserId = ApplyInfo.TechnicianId, Status = ApplyInfo.Status, OrderTakeType = (int)ApplyInfo.OrderTakeType, CurrentUserNsapId = ApplyInfo.CurrentUserNsapId, CurrentUser = ApplyInfo.CurrentUser });
+                await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"系统派单给技术员{ApplyInfo.CurrentUser}派单", ActionType = "系统派单工单" });
+                await _serviceOrderApp.PushMessageToApp((int)ApplyInfo.TechnicianId, "派单成功提醒", "您已被派有一个新的售后服务，请尽快处理");
             }
         }
 

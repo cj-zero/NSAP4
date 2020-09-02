@@ -132,6 +132,18 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("处理时间")]
         public System.DateTime? SolvedTime { get; set; }
-        
+
+        /// <summary>
+        /// 技术员NSAPId
+        /// </summary>
+        [Description("技术员NSAPId")]
+        public string CurrentUserNsapId { get; set; }
+
+        /// <summary>
+        /// 当前接单技术员名称
+        /// </summary>
+        [Description("当前接单技术员名称")]
+        public string CurrentUser { get; set; }
+
     }
 }

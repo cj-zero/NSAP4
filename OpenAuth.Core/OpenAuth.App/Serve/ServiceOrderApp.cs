@@ -236,11 +236,6 @@ namespace OpenAuth.App
             return result;
         }
 
-        internal Task PushMessageToApp(int? currentUserId, string v1, string v2)
-        {
-            throw new NotImplementedException();
-        }
-
         /// <summary>
         /// 待确认服务申请信息
         /// </summary>
@@ -2125,29 +2120,32 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task SaveOrderTakeType(SaveWorkOrderTakeTypeReq request)
         {
-            int status = 2;
-            //拨打完电话 工单状态变为已预约
-            if (request.Type == 3)
-            {
-                status = 3;
-            }
-            else if (request.Type > 4)
-            {
-                status = 4;
-            }
             var orderIds = await UnitWork.Find<ServiceWorkOrder>(null).Where(s => s.ServiceOrderId == request.ServiceOrderId && s.CurrentUserId == request.CurrentUserId)
-                .WhereIf("其他设备".Equals(request.MaterialType), a => a.MaterialCode == "其他设备")
-                .WhereIf(!"其他设备".Equals(request.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == request.MaterialType).Select(s => s.Id)
-                .ToListAsync();
+    .WhereIf("其他设备".Equals(request.MaterialType), a => a.MaterialCode == "其他设备")
+    .WhereIf(!"其他设备".Equals(request.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == request.MaterialType).Select(s => s.Id)
+    .ToListAsync();
             List<int> workOrderIds = new List<int>();
             foreach (var id in orderIds)
             {
                 workOrderIds.Add(id);
             }
+            var servicemode = (await UnitWork.Find<ServiceWorkOrder>(s => workOrderIds.Contains(s.Id)).FirstOrDefaultAsync()).ServiceMode;
+            int status = 2;
+            //拨打完电话 工单状态变为已预约
+            if (request.Type == 3)
+            {
+                status = 3;
+                servicemode = 2;
+            }
+            else if (request.Type > 4)
+            {
+                status = 4;
+            }
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => workOrderIds.Contains(s.Id), e => new ServiceWorkOrder
             {
                 OrderTakeType = request.Type,
-                Status = status
+                Status = status,
+                ServiceMode = servicemode
             });
             await UnitWork.SaveAsync();
         }
@@ -2282,7 +2280,8 @@ namespace OpenAuth.App
             {
                 BookingDate = req.BookingDate,
                 OrderTakeType = 4,
-                Status = 3
+                Status = 3,
+                ServiceMode = 1
             });
             await UnitWork.SaveAsync();
             await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
