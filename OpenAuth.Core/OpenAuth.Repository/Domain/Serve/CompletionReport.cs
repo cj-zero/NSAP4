@@ -210,10 +210,9 @@ namespace OpenAuth.Repository.Domain
         [Description("服务方式")]
         public int? ServiceMode { get; set; }
         
-        ///// <summary>
-        ///// 出发省
-        ///// </summary>
-        //[Description("出发省")]
+        /// 出发省
+        /// </summary>
+        [Description("出发省")]
         public int StartProvinceId { get; set; }
 
         /// <summary>
