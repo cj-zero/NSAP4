@@ -57,71 +57,66 @@
         </el-form-item>
       </el-col>
     </el-row>
-    <transition
-      name="expand"
-      @before-enter="beforeEnter"
-      @enter="enter"
-      @after-enter="afterEnter"
-      @enter-cancelled="enterCancelled"
-      @before-leave="beforeLeave"
-      @leave="leave"
-      @after-leave="afterLeave"
-      :css="false">
-      <el-row v-show="isVisible">
-        <el-col :span="4" style="margin-left: 10px;">
-          <el-form-item label="问题类型">
-            <el-cascader
-              :props="{ value:'id',label:'name',children:'childTypes',expandTrigger: 'hover', emitPath: false }"  
-              clearable
-              v-model="form.QryProblemType"
-              :options="options"
-              @change="handleChange"></el-cascader>
-            <!-- <el-input  v-model="form.QryProblemType" @keyup.enter.native='onSubmit'></el-input> -->
+    <el-row :class="{ show: isVisible }" class="other-parts">
+      <el-col :span="4">
+        <el-form-item label="主管">
+          <el-input  v-model="form.QrySupervisor" @keyup.enter.native='onSubmit'></el-input>
+        </el-form-item>
+      </el-col>
+      <el-col :span="4">
+        <el-form-item label="问题类型">
+          <el-cascader
+            :props="{ value:'id',label:'name',children:'childTypes',expandTrigger: 'hover', emitPath: false }"  
+            clearable
+            v-model="form.QryProblemType"
+            :options="options"
+            @change="handleChange"></el-cascader>
+          <!-- <el-input  v-model="form.QryProblemType" @keyup.enter.native='onSubmit'></el-input> -->
+        </el-form-item>
+      </el-col>
+      <el-col :span="3">
+        <el-form-item label="呼叫类型">
+          <el-select  clearable v-model="form.QryFromType" placeholder="请选择呼叫类型">
+            <el-option
+              v-for="(item,index) in options_type"
+              :key="index"
+              :label="item.label"
+              :value="item.value"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+      </el-col>
+      <el-col :span="4" style="margin-left: 10px;">
+        <el-form-item label="联系电话">
+          <el-input  v-model="form.ContactTel" @keyup.enter.native='onSubmit'></el-input>
+          <!-- <el-input  v-model="form.QryProblemType" @keyup.enter.native='onSubmit'></el-input> -->
+        </el-form-item>
+      </el-col>
+      <el-col :span="8" style="margin-left: 10px">
+        <el-row :gutter="3">
+          <el-form-item label="创建日期">
+            <el-col :span="11">
+              <el-date-picker
+                value-format="yyyy-MM-dd"
+                type="date"
+                placeholder="选择开始日期"
+                v-model="form.QryCreateTimeFrom"
+              ></el-date-picker>
+            </el-col>
+            <el-col class="line" :span="1">至</el-col>
+            <el-col :span="11">
+              <el-date-picker
+                type="date"
+                value-format="yyyy-MM-dd"
+                placeholder="选择结束时间"
+                v-model="form.QryCreateTimeTo"
+              ></el-date-picker>
+            </el-col>
           </el-form-item>
-        </el-col>
-        <el-col :span="3">
-          <el-form-item label="呼叫类型">
-            <el-select  clearable v-model="form.QryFromType" placeholder="请选择呼叫类型">
-              <el-option
-                v-for="(item,index) in options_type"
-                :key="index"
-                :label="item.label"
-                :value="item.value"
-              ></el-option>
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="4" style="margin-left: 10px;">
-          <el-form-item label="联系电话">
-            <el-input  v-model="form.ContactTel" @keyup.enter.native='onSubmit'></el-input>
-            <!-- <el-input  v-model="form.QryProblemType" @keyup.enter.native='onSubmit'></el-input> -->
-          </el-form-item>
-        </el-col>
-        <el-col :span="8" style="margin-left: 10px">
-          <el-row :gutter="3">
-            <el-form-item label="创建日期">
-              <el-col :span="11">
-                <el-date-picker
-                  value-format="yyyy-MM-dd"
-                  type="date"
-                  placeholder="选择开始日期"
-                  v-model="form.QryCreateTimeFrom"
-                ></el-date-picker>
-              </el-col>
-              <el-col class="line" :span="1">至</el-col>
-              <el-col :span="11">
-                <el-date-picker
-                  type="date"
-                  value-format="yyyy-MM-dd"
-                  placeholder="选择结束时间"
-                  v-model="form.QryCreateTimeTo"
-                ></el-date-picker>
-              </el-col>
-            </el-form-item>
-          </el-row>
-        </el-col>
-      </el-row>
-    </transition>
+        </el-row>
+      </el-col>
+    </el-row>
+
   </el-form>
 </template>
 
@@ -231,4 +226,10 @@ export default {
   //   margin-left: 6px;
   // }
 }
-.my-transition{transition: .3s height ease-in-out/* , 10.5s padding-top ease-in-out, 10.5s padding-bottom ease-in-out */}
+.other-parts {
+  transition: height .4s;
+  height: 0;
+  &.show {
+    height: auto;
+  }
+}
