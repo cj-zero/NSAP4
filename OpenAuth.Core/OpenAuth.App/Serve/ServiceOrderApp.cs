@@ -2855,7 +2855,7 @@ namespace OpenAuth.App
             var locations = (await UnitWork.Find<RealTimeLocation>(null).OrderByDescending(o => o.CreateTime).ToListAsync()).GroupBy(g => g.AppUserId).Select(s => s.First());
             var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
             var ids = userIds.Intersect(tUsers.Select(u => u.UserID));
-            var users = await UnitWork.Find<User>(u => ids.Contains(u.Id)).WhereIf(!string.IsNullOrEmpty(req.key), u => u.Name.Equals(req.key)).ToListAsync();
+            var users = await UnitWork.Find<User>(u => ids.Contains(u.Id) && u.Status == 0).WhereIf(!string.IsNullOrEmpty(req.key), u => u.Name.Equals(req.key)).ToListAsync();
             var us = users.Select(u => new { u.Name, AppUserId = tUsers.FirstOrDefault(a => a.UserID.Equals(u.Id)).AppUserId, u.Id });
             var appUserIds = tUsers.Where(u => userIds.Contains(u.UserID)).Select(u => u.AppUserId).ToList();
 
@@ -2987,7 +2987,7 @@ namespace OpenAuth.App
             //5.根据组织信息获取组织下的所有用户Id集合
             var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
             //6.取得相关用户信息
-            var query = from a in UnitWork.Find<User>(u => userIds.Contains(u.Id))
+            var query = from a in UnitWork.Find<User>(u => userIds.Contains(u.Id) && u.Status == 0)
                         join b in UnitWork.Find<Relevance>(null) on a.Id equals b.FirstId into ab
                         from b in ab.DefaultIfEmpty()
                         join c in UnitWork.Find<Repository.Domain.Org>(null) on b.SecondId equals c.Id into bc

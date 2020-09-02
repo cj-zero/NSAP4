@@ -30,7 +30,7 @@ namespace Sap.Handler.Service
         [CapSubscribe("Serve.ServcieOrder.Create")]
         public async Task HandleServiceOrder(int theServiceOrderId)
         {
-            var query =await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(theServiceOrderId))
+            var query =await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(theServiceOrderId)).AsNoTracking()
                 .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType).FirstOrDefaultAsync();
                
             var thisSorder =  query.MapTo<ServiceOrder>();
@@ -185,15 +185,15 @@ namespace Sap.Handler.Service
                 //{
                 //    sc.Origin = (int)thisSorder.FromId;
                 //}
-                //if (thisSorder.ServiceOrderSNs != null && thisSorder.ServiceOrderSNs.Count > 0)
-                //{
-                //    var thisSN = thisSorder.ServiceOrderSNs[0];
-                //    if (!string.IsNullOrEmpty(thisSN.ItemCode) && IsValidItemCode(thisSN.ItemCode))
-                //    {
-                //        sc.ItemCode = thisSN.ItemCode;
-                //        sc.ManufacturerSerialNum = thisSN.ManufSN;
-                //    }
-                //}
+                if (thisSorder.ServiceOrderSNs != null && thisSorder.ServiceOrderSNs.Count > 0)
+                {
+                    var thisSN = thisSorder.ServiceOrderSNs[0];
+                    if (!string.IsNullOrEmpty(thisSN.ItemCode) && IsValidItemCode(thisSN.ItemCode))
+                    {
+                        sc.ItemCode = thisSN.ItemCode;
+                        sc.ManufacturerSerialNum = thisSN.ManufSN;
+                    }
+                }
                 sc.Status = -3;// 待处理 
                 sc.Priority = BoSvcCallPriorities.scp_Low;
                 //if (thisSwork.FromType != null)
@@ -205,15 +205,15 @@ namespace Sap.Handler.Service
 
                 //    sc.ProblemType = thisSorder.PRO;
                 //}
-                //if (!string.IsNullOrEmpty(thisSorder.ProblemTypeId))
-                //{
-                //    var queryp = UnitWork.Find<ProblemType>(s => s.Id.Equals(thisSorder.ProblemTypeId)).FirstOrDefault();
-                //    var pbltype = queryp.MapTo<ProblemType>();
-                //    if (pbltype != null)
-                //    {
-                //        sc.ProblemType = pbltype.PrblmTypID;
-                //    }
-                //}
+                if (!string.IsNullOrEmpty(thisSorder.ProblemTypeId))
+                {
+                    var queryp = UnitWork.Find<ProblemType>(s => s.Id.Equals(thisSorder.ProblemTypeId)).FirstOrDefault();
+                    var pbltype = queryp.MapTo<ProblemType>();
+                    if (pbltype != null)
+                    {
+                        sc.ProblemType = pbltype.PrblmTypID;
+                    }
+                }
 
                 #endregion
                 int res = sc.Add();
