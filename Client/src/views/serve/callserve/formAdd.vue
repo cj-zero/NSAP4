@@ -898,7 +898,8 @@ export default {
         ],
       },
       isDisalbed: false,
-      collapseTitle: '展开更多订单'
+      collapseTitle: '展开更多订单',
+      dialogReportVisible: false
     };
   },
   created() {
@@ -1092,6 +1093,9 @@ export default {
     onClose () {
       this.dialogfSN = false
       this.inputSearch = ''
+    },
+    onReportClosed () {
+      this.$refs.report.reset()
     },
     ...mapMutations('form', {
       setFormList: 'SET_FORM_LIST'
