@@ -118,6 +118,7 @@ namespace OpenAuth.App
             var objs = UnitWork.Find<Certinfo>(null);
             objs = objs
                 .Where(o => fsid.Contains(o.FlowInstanceId))
+                .WhereIf(request.FlowStatus == 1, u => u.Operator.Equals(user.User.Name))
                 .WhereIf(!string.IsNullOrEmpty(request.CertNo), u => u.CertNo.Contains(request.CertNo))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.AssetNo), u => u.AssetNo.Contains(request.AssetNo))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.Model), u => u.Model.Contains(request.Model))
@@ -172,7 +173,7 @@ namespace OpenAuth.App
                 throw new CommonException("证书不存在", 80001);
 
             var b = await CheckCanOperation(certInfo.Id, loginContext.User.Name);
-            if (!b || certInfo.Operator.Equals(loginContext.User.Name))
+            if (!b || !certInfo.Operator.Equals(loginContext.User.Name))
             {
                 throw new CommonException("您无法操作此步骤。", 80011);
             }
