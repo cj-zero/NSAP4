@@ -13,18 +13,42 @@
         <el-input
           @keyup.enter.native="handleFilter"
           size="mini"
-          style="width: 200px;margin:0 10px;"
-          class="filter-item"
+          style="width: 150px;"
+          class="filter-item item"
           placeholder="按客户代码/客户名称"
           v-model="listQuery.CardCodeOrCardName"
         ></el-input> 
          <el-input
           @keyup.enter.native="handleFilter"
           size="mini"
-          style="width: 200px;"
-          class="filter-item"
+          style="width: 150px;"
+          class="filter-item item"
           placeholder="按序列号查询"
           v-model="listQuery.ManufSN"
+        ></el-input>
+        <el-input
+          @keyup.enter.native="handleFilter"
+          size="mini"
+          style="width: 150px;"
+          class="filter-item item"
+          placeholder="按主管查询"
+          v-model="listQuery.Technician"
+        ></el-input>
+        <el-input
+          @keyup.enter.native="handleFilter"
+          size="mini"
+          style="width: 150px;"
+          class="filter-item item"
+          placeholder="按销售员查询"
+          v-model="listQuery.slpName"
+        ></el-input>
+        <el-input
+          @keyup.enter.native="handleFilter"
+          size="mini"
+          style="width: 200px;"
+          class="filter-item item"
+          placeholder="按收货地址查询"
+          v-model="listQuery.Address"
         ></el-input>
          <el-button
           class="filter-item"
@@ -174,7 +198,10 @@ export default {
         ManufSN:'',
         key: undefined,
         appId: undefined,
-        CardCodeOrCardName:''
+        CardCodeOrCardName:'',
+        slpName: '',
+        Technician: '',
+        Address: ''
       },
       statusOptions: [
         { key: 1, display_name: "停用" },
@@ -290,7 +317,9 @@ export default {
         this.list = response.data;
         this.total = response.count;
         this.listLoading = false;
-      });
+      }).catch(() => {
+        this.listLoading = false;
+      })
     },
 
     handleFilter() {
@@ -403,7 +432,12 @@ export default {
   },
 };
 </script>
-<style>
+<style scoped lang="scss">
+.filter-container {
+  .item {
+    margin:0 5px;
+  }
+}
 .dialog-mini .el-select {
   width: 100%;
 }
