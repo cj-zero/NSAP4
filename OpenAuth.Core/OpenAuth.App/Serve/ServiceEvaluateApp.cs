@@ -43,7 +43,7 @@ namespace OpenAuth.App
             var result = new TableData();
             var objs = UnitWork.Find<ServiceEvaluate>(null)
                 .WhereIf(request.ServiceOrderId != null, s => s.ServiceOrderId == request.ServiceOrderId)
-                .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerId), s => s.CustomerId.Contains(request.CustomerId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerId), s => s.CustomerId.Contains(request.CustomerId)|| s.Cutomer.Contains(request.CustomerId))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.TechnicianId), s => s.TechnicianId.Equals(request.TechnicianId))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.VisitPeopleId), s => s.VisitPeopleId.Equals(request.VisitPeopleId))
                 .WhereIf(request.DateFrom != null && request.DateTo != null, s => s.CommentDate >= request.DateFrom && s.CommentDate <= request.DateTo)
@@ -146,8 +146,16 @@ namespace OpenAuth.App
         public async Task AppAdd(APPAddServiceEvaluateReq req)
         {
             var order = await UnitWork.FindSingleAsync<ServiceOrder>(s => s.Id == req.ServiceOrderId);
-            req.CustomerId = order.CustomerId;
-            req.Cutomer = order.CustomerName;
+            if (!string.IsNullOrWhiteSpace(order.TerminalCustomerId))
+            {
+                req.CustomerId = order.TerminalCustomerId;
+                req.Cutomer = order.TerminalCustomer;
+            }
+            else 
+            {
+                req.CustomerId = order.CustomerId;
+                req.Cutomer = order.CustomerName;
+            }
             foreach (var technicianEvaluates in req.TechnicianEvaluates)
             {
                 var obj = req.MapTo<ServiceEvaluate>();

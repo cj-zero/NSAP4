@@ -65,5 +65,10 @@ namespace OpenAuth.App.Request
         /// 呼叫类型
         /// </summary>
         public string QryFromType { get; set; }
+
+        /// <summary>
+        /// 主管名字
+        /// </summary>
+        public string QrySupervisor { get; set; }
     }
 }
