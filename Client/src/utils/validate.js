@@ -35,5 +35,5 @@ export function isPhone (phone) {
 }
 
 export function isCustomerCode (code) {
-  return /^\w\d{5}/g.test(code)
+  return /^[a-z|A-Z]\d{5}$/g.test(code)
 }

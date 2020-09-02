@@ -67,15 +67,12 @@
             <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="6">
                 <el-form-item label="终端客户代码">
-                  <el-autocomplete
-                    popper-class="my-autocomplete"
+                  <el-input
                     v-model="form.terminalCustomerId"
-                    :fetch-suggestions="querySearch"
-                    placeholder="请输入内容"
-                    class="myAuto"
-                    @select="handleSelectTerminal"
+                    readonly
+                    @focus="handleIconClick('terminalCustomer')"
                   >
-                    <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick('terminalCustomer')"></i>
+                    <i class="el-icon-circle-close" slot="suffix" @click="clearTerminalCode"></i>
                     <template slot-scope="{ item }">
                       <div class="name">
                         <p style="height:20px;margin:2px;">{{ item.cardCode }}</p>
@@ -85,7 +82,7 @@
                       </div>
                       <!-- <span class="addr">{{ item.cardName }}</span> -->
                     </template>
-                  </el-autocomplete>
+                  </el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="6">
@@ -214,7 +211,7 @@
             <el-row :gutter="10">
               <el-col :span="10">
                 <el-form-item label="现地址">
-                  <el-input size="mini" v-model="allArea" readonly>
+                  <el-input size="mini" v-model="allArea" readonly @focus="onAreaClick">
                     <el-button size="mini" slot="append" icon="el-icon-position" @click="onAreaClick"></el-button>
                   </el-input>
                   <area-selector
@@ -345,6 +342,7 @@
         width="70%"
         @open="openDialog"
         :modal-append-to-body="false"
+        :close-on-click-modal="false"
         :append-to-body="true"
         :destroy-on-close="true"
         :visible.sync="dialogPartner"
@@ -373,7 +371,7 @@
         />
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialogPartner = false">取 消</el-button>
-          <el-button type="primary" @click="sureVal" :disabled="disableBtn">确 定</el-button>
+          <el-button type="primary" @click="sureVal(checkVal, handleSelectType)" :disabled="disableBtn">确 定</el-button>
         </span>
       </el-dialog>
       <el-dialog 
@@ -653,19 +651,29 @@ export default {
     },
     "form.customerId": {
       handler(val) {
-        // if (val && this.isCreate) {
         if (!val) {
           this.selectSerNumberDisabled = true
         }
-        // }
-        console.log('form.customerId change')
-        this.getPartnerInfo(val);
-      },
+        this.handleSelectType = 'customer'
+        if (this.formName === '新建') {
+          this.form.terminalCustomerId = ''
+        }
+        if (isCustomerCode(val)) {
+          if (this.formName !== '编辑' && this.formName !== '查看') {
+            this.getPartnerInfo(val)
+          }
+        } else {
+          this.resetInfo()
+          this.resetPositionInfo()
+        }
+      }
     },
     "form.terminalCustomerId" (val) {
       if (!val) {
         this.resetInfo()
+        this.resetPositionInfo()
         if (isCustomerCode(this.form.customerId)) {
+          this.handleSelectType = 'customer'
           this.getPartnerInfo(this.form.customerId)
         } else {
           this.$message.error('请填入正确的客户代码')
@@ -678,6 +686,7 @@ export default {
         if (val) {
           this.form.serviceWorkOrders = []; // 清空数组
           this.form = Object.assign({}, this.form, val);
+          this.form.createTimeNow = this.form.createTime
           if (val.serviceWorkOrders.length > 0) {
             val.serviceWorkOrders.map((item, index) => {
               if (item.orderTakeType !== undefined) {
@@ -730,6 +739,9 @@ export default {
     window.removeEventListener("resize", this.resizeWin);
   },
   methods: {
+    clearTerminalCode () {
+      this.form.terminalCustomerId = ''
+    },
     processTakeType (takeType) {
       if (!takeType || !Number(takeType)) {
         return takeType
@@ -900,6 +912,10 @@ export default {
       this.allAddress = res;
     }, 
     resetInfo () { // 清空终端客户相关的数据
+      if (this.handleSelectType === 'customer') {
+        this.form.customerName = ''
+        this.form.salesMan = ''
+      }
       this.addressList = [];
       this.cntctPrsnList = [];
       this.form.contactTel = ''
@@ -909,6 +925,7 @@ export default {
       this.form.contactTel = ''
       this.form.addressDesignator = '';
       this.form.address = '';
+      
     },
     resetPositionInfo () { // 重置地址信息包括经纬度
       this.form.province = ''
@@ -940,6 +957,7 @@ export default {
       Object.assign(this.form, val);
       this.form.newestContacter = newestContacter; //最新联系人,
       this.form.newestContactTel = newestContactTel;
+      // this.form.createTimeNow = createTime
       // let that =  this
       //  let addre = val.province + val.city + val.area +val.addr
       // setTimeout(function(){
@@ -1159,31 +1177,34 @@ export default {
       callservesure
         .forServe(num)
         .then((res) => {
+          if (!res.result) {
+            return
+          }
           // console.log(res, "售后主管", this.handleSelectType, isCustomerCode(this.form.terminalCustomerId));
-          if (this.handleSelectType === 'customer') { // 如果点击客户代码的时候
-            if (this.form.terminalCustomerId) { // 如果终端客户存在，则不进行值的覆盖
-              return 
-            }
+          // if (this.handleSelectType === 'customer') { // 如果点击客户代码的时候
+          //   if (this.form.terminalCustomerId) { // 如果终端客户存在，则不进行值的覆盖
+          //     return 
+          //   }
+          // }f
+          if (this.handleSelectType === 'customer') {
+            this.form.salesMan = res.result.slpName
+            this.form.customerName = res.result.cardName
+          } else {
+            this.form.terminalCustomer = res.result.cardName
           }
           this.addressList = res.result.addressList;
           this.cntctPrsnList = res.result.cntctPrsnList;
           this.form.supervisor = res.result.techName;
-          if (this.formName !== '编辑' && this.formName !== '查看') {
-            if (this.cntctPrsnList && this.cntctPrsnList.length) {
-            let firstValue = res.result.cntctPrsnList[0]
-              let { tel1, tel2, cellolar, name } = firstValue
-              // console.log(name, 'name')
-              this.form.contacter = name
-              this.form.contactTel = tel1 || tel2 || cellolar
-            }
-            // this.form.contacter = item.cntctPrsn;
-            // this.form.contactTel
-            if (this.addressList.length) {
-              let { address, building } = this.addressList[0];
-              this.form.addressDesignator = address;
-              this.form.address = building;
-              // this.form.address = building;
-            }
+          if (this.cntctPrsnList && this.cntctPrsnList.length) {
+          let firstValue = res.result.cntctPrsnList[0]
+            let { tel1, tel2, cellolar, name } = firstValue
+            this.form.contacter = name
+            this.form.contactTel = tel1 || tel2 || cellolar
+          }
+          if (this.addressList.length) {
+            let { address, building } = this.addressList[0];
+            this.form.addressDesignator = address;
+            this.form.address = building
           }
         })
         .catch(() => {
@@ -1267,8 +1288,8 @@ export default {
       this.getPartnerList();
     }, 400),
     async querySearch(queryString, cb) {
-      this.listQuery.CardCodeOrCardName = queryString;
-      this.inputSearch = queryString;
+      // this.listQuery.CardCodeOrCardName = queryString;
+      // this.inputSearch = queryString;
 
       await this.getPartnerList();
       console.log(this.partnerList, 'partnerList')
@@ -1312,7 +1333,7 @@ export default {
       // if (!this.form.customerId && type === 'terminalCustomer') {
       //   return this.$message.error('请先选择客户代码')
       // }
-      this.inputSearch = item.customerId;
+      // this.inputSearch = item.customerId;
       this.handleSelectType = type // 选择的类型
       if (type === 'customer') { // 客户代码
         this.form.customerId = item.cardCode;
@@ -1327,18 +1348,26 @@ export default {
       }
       this.handleCurrentChange(item)
     },
-    sureVal() {
+    sureVal(item, type) {
       this.dialogPartner = false;
-      let val = this.checkVal;
-      this.form.customerId = val.cardCode;
-      this.form.customerName = val.cardName;
-      this.form.contacter = val.cntctPrsn;
-      this.form.contactTel = val.cellular;
-      // this.form.addressDesignator = val.address;
-      // this.form.address = val.address;
-      this.form.salesMan = val.slpName;
-      this.handleCurrentChange(val)
-      // this.$refs.formPartner.handleCurrentChange(val)
+      if (!Object.keys(item).length) {
+        return
+      }
+      this.handleSelectType = type // 选择的类型
+      if (type === 'customer') { // 客户代码
+      console.log('customer')
+        this.form.customerId = item.cardCode;
+        this.form.customerName = item.cardName;
+        this.form.salesMan = item.slpName;
+        if (!this.form.terminalCustomerId) {
+          this.form.contactTel = item.cellular;
+        }
+      } else { // 终端客户代码
+        console.log('terminal')
+        this.form.terminalCustomerId = item.cardCode
+        this.form.terminalCustomer = item.cardName
+      }
+      this.handleCurrentChange(item)
     },
     handleCurrentChange (val) {
       if (val.frozenFor == "Y") {
