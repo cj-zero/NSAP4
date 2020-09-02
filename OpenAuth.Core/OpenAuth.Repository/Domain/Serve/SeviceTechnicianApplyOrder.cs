@@ -24,13 +24,13 @@ namespace OpenAuth.Repository.Domain
     {
         public SeviceTechnicianApplyOrder()
         {
-          this.MaterialType= string.Empty;
-          this.ManufSN= string.Empty;
-          this.ItemCode= string.Empty;
-          this.OrginalManufSN= string.Empty;
-          this.CreateTime= DateTime.Now;
-          this.FromTheme= string.Empty;
-          this.ProblemTypeId= string.Empty;
+            this.MaterialType = string.Empty;
+            this.ManufSN = string.Empty;
+            this.ItemCode = string.Empty;
+            this.OrginalManufSN = string.Empty;
+            this.CreateTime = DateTime.Now;
+            this.FromTheme = string.Empty;
+            this.ProblemTypeId = string.Empty;
         }
 
 
@@ -120,5 +120,18 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("原始工单号")]
         public int? OrginalWorkOrderId { get; set; }
+
+        /// <summary>
+        /// 处理结果 0不处理 1修改 2新增
+        /// </summary>
+        [Description("处理结果")]
+        public int? SolvedResult { get; set; }
+
+        /// <summary>
+        /// 处理时间
+        /// </summary>
+        [Description("处理时间")]
+        public System.DateTime? SolvedTime { get; set; }
+        
     }
 }

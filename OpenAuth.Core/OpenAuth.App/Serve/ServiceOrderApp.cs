@@ -1518,6 +1518,8 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            //获取设备类型列表
+            var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
             var query = UnitWork.Find<ServiceOrder>(s => s.AppUserId == request.AppUserId)
                         .Include(s => s.ServiceWorkOrders)
                         .WhereIf(request.Type == 1, s => s.Status == 1) //待受理
@@ -1586,6 +1588,7 @@ namespace OpenAuth.App
                     ServiceWorkOrders = a.ServiceWorkOrders.GroupBy(o => o.MaterialType).Select(s => new
                     {
                         MaterialType = s.Key,
+                        MaterialTypeName = "其他设备".Equals(s.Key) ? "其他设备" : MaterialTypeModel.Where(m => m.TypeAlias == s.Key).FirstOrDefault().TypeName,
                         TechnicianId = s.ToList().Select(s => s.CurrentUserId).Distinct().FirstOrDefault(),
                         Status = s.ToList().Select(s => s.Status).Distinct().FirstOrDefault(),
                         Count = s.Count(),
@@ -2567,13 +2570,14 @@ namespace OpenAuth.App
         public async Task<TableData> AppUnConfirmedServiceOrderList(QueryAppServiceOrderListReq req)
         {
             var result = new TableData();
+            int QryState = Convert.ToInt32(req.QryState);
             //获取设备类型列表
             var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
             var query = UnitWork.Find<ServiceOrder>(s => s.Status == 2) //服务单已确认
                          .Include(s => s.ServiceOrderSNs)
                          .Include(s => s.ServiceWorkOrders)
-                         .WhereIf(Convert.ToInt32(req.QryState) == 1, q => q.ServiceWorkOrders.Any(q => q.Status == 1))//待派单
-                         .WhereIf(Convert.ToInt32(req.QryState) == 2, q => q.ServiceWorkOrders.Any(q => q.Status > 1 && q.Status < 7))//已派单
+                         .WhereIf(QryState == 1, q => q.ServiceWorkOrders.Any(q => q.Status == 1))//待派单
+                         .WhereIf(QryState == 2, q => q.ServiceWorkOrders.Any(q => q.Status > 1 && q.Status < 7))//已派单
                          .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => (s.U_SAP_ID == id || s.U_SAP_ID == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key))))
             .OrderBy(r => r.CreateTime).Select(q => new
             {
@@ -2592,7 +2596,9 @@ namespace OpenAuth.App
                 q.Area,
                 q.Addr,
                 q.U_SAP_ID,
-                MaterialInfo = q.ServiceWorkOrders.Select(o => new
+                q.Longitude,
+                q.Latitude,
+                MaterialInfo = q.ServiceWorkOrders.Where(a => QryState > 0 ? QryState == 1 ? a.Status == 1 : a.Status > 1 && a.Status < 7 : true).Select(o => new
                 {
                     o.MaterialCode,
                     o.ManufacturerSerialNumber,
@@ -2627,6 +2633,8 @@ namespace OpenAuth.App
                 s.Area,
                 s.Addr,
                 s.U_SAP_ID,
+                s.Latitude,
+                s.Longitude,
                 WorkOrderCount = s.ServiceWorkOrders.Count(),
                 ServiceWorkOrders = s.MaterialInfo.GroupBy(o => o.MaterialType).ToList().Select(a => new
                 {
@@ -2676,6 +2684,8 @@ namespace OpenAuth.App
                             a.CustomerName,
                             a.Supervisor,
                             a.SalesMan,
+                            a.Longitude,
+                            a.Latitude,
                             ServiceWorkOrders = a.ServiceWorkOrders.Select(o => new
                             {
                                 o.Id,
@@ -2710,6 +2720,8 @@ namespace OpenAuth.App
                     a.CustomerName,
                     a.Supervisor,
                     a.SalesMan,
+                    a.Longitude,
+                    a.Latitude,
                     Priority = a.ServiceWorkOrders.FirstOrDefault()?.Priority == 3 ? "高" : a.ServiceWorkOrders.FirstOrDefault()?.Priority == 2 ? "中" : "低",
                     ServiceWorkOrders = a.ServiceWorkOrders.GroupBy(o => o.MaterialType).Select(s => new
                     {
