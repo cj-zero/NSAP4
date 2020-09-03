@@ -261,7 +261,7 @@ import elDragDialog from "@/directive/el-dragDialog";
 import zxsearch from "./search";
 import zxform from "../callserve/form";
 import treeList from "../callserve/treeList";
-import zxchat from "../callserve/chatOnRight"
+import zxchat from "../callserve/chat/index"
 import { debounce } from '@/utils/process'
 // import treeTable from "@/components/TreeTableMlt";
 import rightImg from '@/assets/table/right.png'

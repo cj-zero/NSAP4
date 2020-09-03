@@ -97,7 +97,7 @@
           >
             <template slot-scope="scope">
               <div v-if="fruit.name === 'u_SAP_ID'" class="link-container" >
-                <img :src="rightImg" @click="openTree(scope.row.serviceOrderId)" class="pointer" />
+                <img :src="rightImg" @click="openTree(scope.row)" class="pointer" />
                 <span>{{ scope.row.u_SAP_ID }}</span>
               </div>
               <div v-if="fruit.name === 'customerId'" class="link-container" >
@@ -182,7 +182,7 @@
       </el-dialog>
       <!-- 客服编辑服务单 -->
       <el-dialog
-        width="900px"
+        width="1210px"
         top="10vh"
         class="dialog-mini"
         @open="openDetail"
@@ -192,18 +192,26 @@
         :title="textMap[dialogStatus]"
         :visible.sync="FormUpdate"
       >
-        <zxform
-          :form="temp"
-          formName="编辑"
-          labelposition="right"
-          labelwidth="100px"
-          ifEdit="true"
-          :isCreate="false"
-          :sure="sure"
-          :refValue="dataForm"
-          @close-Dia="closeDia"
-          :serviceOrderId="serviceOrderId"
-        ></zxform>
+      <el-row :gutter="20" class="position-view">
+        <el-col :span="18" >
+          <zxform
+            :form="temp"
+            formName="编辑"
+            labelposition="right"
+            labelwidth="100px"
+            ifEdit="true"
+            :isCreate="false"
+            :sure="sure"
+            :refValue="dataForm"
+            @close-Dia="closeDia"
+            :serviceOrderId="serviceOrderId"
+          ></zxform>
+        </el-col>
+          <el-col :span="6" class="lastWord">   
+            <zxchat :serveId="serveId" formName="编辑" :sapOrderId="sapOrderId" :customerId="customerId"></zxchat>
+          </el-col>
+        </el-row>
+       
         <div slot="footer">
           <span class="order-num">工单数量: {{ formList.length }}</span>
           <el-button size="mini" @click="FormUpdate = false">取消</el-button>
@@ -223,19 +231,19 @@
       >
       <el-row :gutter="20" class="position-view">
         <el-col :span="18" >
-        <zxform
-          :form="temp"
-          formName="查看"
-          labelposition="right"
-          labelwidth="100px"
-          max-width="800px"
-          :isCreate="false"
-          :refValue="dataForm"
-        ></zxform>
+          <zxform
+            :form="temp"
+            formName="查看"
+            labelposition="right"
+            labelwidth="100px"
+            max-width="800px"
+            :isCreate="false"
+            :refValue="dataForm"
+          ></zxform>
         </el-col>
-            <el-col :span="6" class="lastWord">   
-              <zxchat :serveId='serveid'></zxchat>
-            </el-col>
+          <el-col :span="6" class="lastWord">   
+            <zxchat :serveId='serveId' formName="查看"></zxchat>
+          </el-col>
         </el-row>
 
         <div slot="footer">
@@ -283,7 +291,8 @@ import elDragDialog from "@/directive/el-dragDialog";
 // import customerupload from "../callservesure/customerupload";
 import zxform from "./form";
 import zxsearch from "./search";
-import zxchat from "./chatOnRight";
+// import zxchat from "./chatOnRight";
+import zxchat from './chat/index'
 import treeList from "./treeList";
 import CustomerInfo from './customerInfo'
 import rightImg from '@/assets/table/right.png'
@@ -436,7 +445,9 @@ export default {
         create: "新建服务呼叫单",
         info: "查看服务呼叫单"
       },
-      serveid:'',
+      serveId:'', // 当前服务单ID
+      sapOrderId: '', // 当前NSAP_ID
+      customerId: "", // 当前客户代码
       dialogPvVisible: false,
       pvData: [],
       rules: {
@@ -547,10 +558,19 @@ export default {
     closeCustoner() {
       // this.getList();
     },
+    _getDetails () {
+      let serviceOrderId = this.serveId
+      callservesure.GetDetails(serviceOrderId).then(res => {
+        if (res.code == 200) {
+          this.dataForm = this.dataForm1 = res.result;
+        }
+      })
+    },
     openTree(res) {
       this.listLoading = true;
-       this.serveid = res
-      callservesure.GetDetails(res).then(res => {
+      let { serviceOrderId } = res
+       this.serveId = serviceOrderId
+      callservesure.GetDetails(serviceOrderId).then(res => {
         if (res.code == 200) {
           this.dataForm1 = res.result;
           // console.log(this.dataForm1, 'dateForm1')
@@ -816,7 +836,11 @@ export default {
       callservesure.GetDetails(row.serviceOrderId).then(res => {
         if (res.code == 200) {
           this.dataForm1 = res.result;
-          this.serviceOrderId = row.serviceOrderId // 服务单ID
+          let { serviceOrderId, u_SAP_ID, customerId } = row
+          this.serveId = serviceOrderId
+          this.sapOrderId = u_SAP_ID
+          this.customerId = customerId 
+          this.serviceOrderId = serviceOrderId // 服务单ID
           // console.log(this.dataForm1, 'dateForm1')
           this.dialogStatus = "update";
           this.FormUpdate = true;

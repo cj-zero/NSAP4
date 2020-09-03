@@ -275,7 +275,7 @@ import DynamicTable from "@/components/DynamicTable";
 import elDragDialog from "@/directive/el-dragDialog";
 import zxsearch from "./search";
 import zxform from "../callserve/form";
-import zxchat from "../callserve/chatOnRight"
+import zxchat from "../callserve/chat/index"
 import treeList from "../callserve/treeList";
 import { debounce } from '@/utils/process'
 import Report from './report'
