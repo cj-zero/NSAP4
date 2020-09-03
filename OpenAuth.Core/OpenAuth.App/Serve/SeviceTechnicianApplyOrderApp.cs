@@ -147,7 +147,8 @@ namespace OpenAuth.App
                 s.OrginalManufSN,
                 s.ManufSN,
                 s.ItemCode,
-                IsNew = s.OrginalWorkOrderId > 0 ? 1 : 0
+                IsNew = s.OrginalWorkOrderId > 0 ? 1 : 0,
+                s.IsSolved
             }).ToListAsync();
             data.Add("newData", newData);
             result.Data = data;

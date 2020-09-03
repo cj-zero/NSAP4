@@ -2601,7 +2601,7 @@ namespace OpenAuth.App
                     s.U_SAP_ID,
                     s.CustomerId,
                     Count = s.ServiceWorkOrders.Where(w => w.ServiceOrderId == s.Id && w.CurrentUserId == req.TechnicianId).Count(),
-                    MaterialInfo = s.ServiceWorkOrders.Select(o => new
+                    MaterialInfo = s.ServiceWorkOrders.Where(w => w.CurrentUserId == req.TechnicianId).Select(o => new
                     {
                         o.MaterialCode,
                         o.ManufacturerSerialNumber,
