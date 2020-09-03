@@ -41,7 +41,7 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        ///获取技术员提交/修改的设备信息
+        ///获取技术员提交/修改的设备信息(APP)
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
@@ -73,6 +73,27 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 await _app.SolveTechApplyDevices(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        ///获取技术员提交/修改的设备信息
+        /// </summary>
+        /// <param name="sapOrderId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetTechnicianApplyDevices(int sapOrderId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.GetTechnicianApplyDevices(sapOrderId);
             }
             catch (Exception ex)
             {

@@ -115,7 +115,7 @@ namespace OpenAuth.App
         }
 
         /// <summary>
-        /// 获取技术员提交/修改的设备信息
+        /// 获取技术员提交/修改的设备信息(APP)
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
@@ -147,7 +147,7 @@ namespace OpenAuth.App
                 s.OrginalManufSN,
                 s.ManufSN,
                 s.ItemCode,
-                IsNew = s.OrginalWorkOrderId > 0 ? 1 : 0,
+                IsNew = s.OrginalWorkOrderId > 0 ? 0 : 1,
                 s.IsSolved,
                 s.Id
             }).ToListAsync();
@@ -197,7 +197,7 @@ namespace OpenAuth.App
             {
                 //派单给该技术员
                 await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialCode == request.MaterialCode, a => new ServiceWorkOrder { CurrentUserId = ApplyInfo.TechnicianId, Status = ApplyInfo.Status, OrderTakeType = (int)ApplyInfo.OrderTakeType, CurrentUserNsapId = ApplyInfo.CurrentUserNsapId, CurrentUser = ApplyInfo.CurrentUser });
-                await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"系统派单给技术员{ApplyInfo.CurrentUser}派单", ActionType = "系统派单工单" });
+                await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"系统派单给技术员{ApplyInfo.CurrentUser}派单", ActionType = "系统派单工单",ServiceOrderId=request.ServiceOrderId });
                 await _serviceOrderApp.PushMessageToApp((int)ApplyInfo.TechnicianId, "派单成功提醒", "您已被派有一个新的售后服务，请尽快处理");
             }
         }
@@ -227,5 +227,42 @@ namespace OpenAuth.App
             //删除旧工单
             await _serviceOrderApp.DeleteWorkOrder((int)ApplyInfo.OrginalWorkOrderId);
         }
+
+        /// <summary>
+        /// 获取技术员提交/修改的设备信息
+        /// </summary>
+        /// <param name="sapOrderId"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetTechnicianApplyDevices(int sapOrderId)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var query = from a in UnitWork.Find<SeviceTechnicianApplyOrder>(null)
+                        join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
+                        from b in ab.DefaultIfEmpty()
+                        select new { a, b };
+            query = query.Where(q => q.b.U_SAP_ID == sapOrderId);
+            var data = await query.OrderByDescending(o => o.a.CreateTime).Select(s => new
+            {
+                s.a.OrginalWorkOrderId,
+                s.a.OrginalManufSN,
+                s.a.ManufSN,
+                s.a.ItemCode,
+                IsNew = s.a.OrginalWorkOrderId > 0 ? 0 : 1,
+                s.a.IsSolved,
+                s.a.Id,
+                s.a.FromTheme,
+                s.a.FromType,
+                s.a.ProblemTypeId,
+                s.a.SolvedResult
+            }).ToListAsync();
+            result.Data = data;
+            return result;
+        }
+
     }
 }

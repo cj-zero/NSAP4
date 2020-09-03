@@ -1070,6 +1070,25 @@ namespace OpenAuth.App
             result.Data = resultlist;
             return result;
         }
+
+
+        /// <summary>
+        /// 获取工单详情根据工单Id
+        /// </summary>
+        /// <param name="workOrderId"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetWorkOrderDetailById(int workOrderId)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = new TableData();
+            var data = await UnitWork.Find<ServiceWorkOrder>(s => s.Id == workOrderId).ToListAsync();
+            result.Data = data;
+            return result;
+        }
         #endregion
 
         #region<<Common Methods>>
