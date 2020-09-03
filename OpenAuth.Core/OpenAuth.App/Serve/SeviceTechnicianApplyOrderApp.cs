@@ -36,6 +36,7 @@ namespace OpenAuth.App
         {
             //获取当前设备类型服务信息
             var currentMaterialTypeInfo = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == request.AppUserId && s.ServiceOrderId == request.ServiceOrderId)
+                .Include(s => s.ProblemType)
                 .WhereIf("其他设备".Equals(request.MaterialType), a => a.MaterialCode == "其他设备")
                 .WhereIf(!"其他设备".Equals(request.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == request.MaterialType)
                 .FirstOrDefaultAsync();
@@ -56,6 +57,10 @@ namespace OpenAuth.App
                     obj.CreateTime = DateTime.Now;
                     obj.IsSolved = 0;
                     obj.OrginalWorkOrderId = item.workOrderId;
+                    obj.WarrantyEndDate = item.dlvryDate;
+                    obj.ContractId = item.ContractId;
+                    obj.MaterialDescription = item.ItemName;
+                    obj.InternalSerialNumber = item.InternalSN;
                     if (request.MaterialType.Equals((("其他设备".Equals(item.newCode)) ? "其他设备" : item.newCode.Substring(0, item.newCode.IndexOf("-"))), StringComparison.OrdinalIgnoreCase))
                     {
                         obj.Status = currentMaterialTypeInfo.Status;
@@ -63,6 +68,7 @@ namespace OpenAuth.App
                         obj.FromTheme = currentMaterialTypeInfo.FromTheme;
                         obj.FromType = currentMaterialTypeInfo.FromType;
                         obj.ProblemTypeId = currentMaterialTypeInfo.ProblemTypeId;
+                        obj.ProblemTypeName = currentMaterialTypeInfo.ProblemType.Name;
                         obj.CurrentUser = currentMaterialTypeInfo.CurrentUser;
                         obj.CurrentUserNsapId = currentMaterialTypeInfo.CurrentUserNsapId;
                     }
@@ -91,6 +97,10 @@ namespace OpenAuth.App
                     obj.TechnicianId = request.AppUserId;
                     obj.CreateTime = DateTime.Now;
                     obj.IsSolved = 0;
+                    obj.WarrantyEndDate = item.dlvryDate;
+                    obj.ContractId = item.ContractId;
+                    obj.MaterialDescription = item.ItemName;
+                    obj.InternalSerialNumber = item.InternalSN;
                     if (request.MaterialType.Equals(("其他设备".Equals(item.ItemCode) ? "其他设备" : item.ItemCode.Substring(0, item.ItemCode.IndexOf("-"))), StringComparison.OrdinalIgnoreCase))
                     {
                         obj.Status = currentMaterialTypeInfo.Status;
@@ -98,6 +108,7 @@ namespace OpenAuth.App
                         obj.FromTheme = currentMaterialTypeInfo.FromTheme;
                         obj.FromType = currentMaterialTypeInfo.FromType;
                         obj.ProblemTypeId = currentMaterialTypeInfo.ProblemTypeId;
+                        obj.ProblemTypeName = currentMaterialTypeInfo.ProblemType.Name;
                         obj.CurrentUser = currentMaterialTypeInfo.CurrentUser;
                         obj.CurrentUserNsapId = currentMaterialTypeInfo.CurrentUserNsapId;
                     }
@@ -259,7 +270,12 @@ namespace OpenAuth.App
                 s.a.FromType,
                 s.a.ProblemTypeId,
                 s.a.SolvedResult,
-                s.a.CurrentUser
+                s.a.CurrentUser,
+                s.a.ProblemTypeName,
+                s.a.WarrantyEndDate,
+                s.a.InternalSerialNumber,
+                s.a.MaterialDescription,
+                s.a.ContractId
             }).ToListAsync();
             result.Data = data;
             return result;
