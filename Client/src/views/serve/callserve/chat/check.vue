@@ -144,7 +144,7 @@ export default {
             fromId: 1, //呼叫来源 1-电话 2-APP
             problemTypeId: problemTypeId || "", //问题类型Id
             problemTypeName: problemTypeName || "",
-            fromType: 1, //呼叫类型1-提交呼叫 2-在线解答（已解决）
+            fromType: "", //呼叫类型1-提交呼叫 2-在线解答（已解决）
             materialCode: itemCode || "", //物料编码
             materialDescription: materialDescription || "", //物料描述
             manufacturerSerialNumber: manufSN || "", //制造商序列号

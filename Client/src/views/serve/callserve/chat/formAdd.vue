@@ -446,7 +446,7 @@ export default {
         fromTheme: "", //呼叫主题
         fromId: 1, //呼叫来源 1-电话 2-APP
         problemTypeId: "", //问题类型Id
-        fromType: 1, //呼叫类型1-提交呼叫 2-在线解答（已解决）
+        fromType: "", //呼叫类型1-提交呼叫 2-在线解答（已解决）
         materialCode: "", //物料编码
         materialDescription: "", //物料描述
         manufacturerSerialNumber: "", //制造商序列号
