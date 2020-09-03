@@ -77,9 +77,10 @@ namespace OpenAuth.App.Sap.BusinessPartner
             }
 
             query = query.WhereIf(!string.IsNullOrWhiteSpace(req.CardCodeOrCardName), q => q.a.CardCode.Contains(req.CardCodeOrCardName) || q.a.CardName.Contains(req.CardCodeOrCardName))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), q => q.a.CardCode.Equals(carCode));
-                ;
-            var query2 = query.Select(q => new {
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), q => q.a.CardCode.Equals(carCode))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.slpName), q => q.b.SlpName.Contains(req.slpName));
+                         
+            var query2 = await query.Select(q => new {
                             q.a.CardCode, q.a.CardName, q.a.CntctPrsn, q.b.SlpName, q.a.Currency,
                             Balance = q.a.Balance ?? 0m,
                             Technician = $"{q.e.lastName??""}{q.e.firstName}",
@@ -92,15 +93,18 @@ namespace OpenAuth.App.Sap.BusinessPartner
                             q.c.GroupName,q.a.Free_Text,
                             q.a.U_FPLB,
                             q.a.SlpCode
-                        });
+                        }).ToListAsync();
 
-
+            if (!string.IsNullOrWhiteSpace(req.Technician)) query2= query2.Where(q => q.Technician.Contains(req.Technician)).ToList();
+            if(!string.IsNullOrWhiteSpace(req.Address)) query2= query2.Where(q => q.Address2.Contains(req.Address)).ToList();
+                        
+            //query3.Where(q=>q.Technician.Contains(req.Technician));
             //var propertyStr = string.Join(',', properties.Select(u => u.Key));
             //result.columnHeaders = properties;
-            result.Data = await query2//.OrderBy(u => u.Id)
+            result.Data = query2
                 .Skip((req.page - 1) * req.limit)
-                .Take(req.limit).ToListAsync();///Select($"new ({propertyStr})");
-            result.Count = query.Count();
+                .Take(req.limit);
+            result.Count = query2.Count();
             return result;
         }
         /// <summary>
