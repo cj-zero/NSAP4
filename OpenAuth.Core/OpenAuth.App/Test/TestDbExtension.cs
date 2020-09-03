@@ -1,14 +1,15 @@
 ﻿using System;
 using Infrastructure;
-using log4net;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using Serilog;
+using Serilog.Core;
 
 namespace OpenAuth.App.Test
 {
     class TestDbExtension :TestBase
     {
-        private ILog log = LogManager.GetLogger(typeof(TestDbExtension));
+        private ILogger log = Log.Logger;
 
         [Test]
         public void TestGetProperties()
