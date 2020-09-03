@@ -197,7 +197,7 @@ namespace OpenAuth.App
             {
                 //派单给该技术员
                 await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialCode == request.MaterialCode, a => new ServiceWorkOrder { CurrentUserId = ApplyInfo.TechnicianId, Status = ApplyInfo.Status, OrderTakeType = (int)ApplyInfo.OrderTakeType, CurrentUserNsapId = ApplyInfo.CurrentUserNsapId, CurrentUser = ApplyInfo.CurrentUser });
-                await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"系统派单给技术员{ApplyInfo.CurrentUser}派单", ActionType = "系统派单工单",ServiceOrderId=request.ServiceOrderId });
+                await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"系统派单给技术员{ApplyInfo.CurrentUser}派单", ActionType = "系统派单工单", ServiceOrderId = request.ServiceOrderId });
                 await _serviceOrderApp.PushMessageToApp((int)ApplyInfo.TechnicianId, "派单成功提醒", "您已被派有一个新的售后服务，请尽快处理");
             }
         }
@@ -253,12 +253,13 @@ namespace OpenAuth.App
                 s.a.ManufSN,
                 s.a.ItemCode,
                 IsNew = s.a.OrginalWorkOrderId > 0 ? 0 : 1,
-                s.a.IsSolved,
+                Status = s.a.IsSolved == 1 ? (s.a.SolvedResult > 0 ? 1 : 2) : 0,//0未处理 1已通过 2未通过
                 s.a.Id,
                 s.a.FromTheme,
                 s.a.FromType,
                 s.a.ProblemTypeId,
-                s.a.SolvedResult
+                s.a.SolvedResult,
+                s.a.CurrentUser
             }).ToListAsync();
             result.Data = data;
             return result;
