@@ -26,8 +26,8 @@ namespace OpenAuth.App.Serve
         {
             var list = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == serviceOrderId).ToListAsync();
 
-            var groupList = list.GroupBy(s => s.FroTechnicianName).ToList().Select(s => new { s.Key, Data = s.ToList() });
-            return groupList;
+            //var groupList = list.GroupBy(s => s.FroTechnicianName).ToList().Select(s => new { s.Key, Data = s.ToList() });
+            return list;
         }
 
         public async Task SendMessageToTechnician(SendMessageToTechnicianReq req)

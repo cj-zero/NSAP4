@@ -16,5 +16,20 @@ namespace OpenAuth.App.Sap.Request
         /// 制造商序列号
         /// </summary>
         public string ManufSN { get; set; }
+
+        /// <summary>
+        /// 售后主管
+        /// </summary>
+        public string Technician { get; set; }
+
+        /// <summary>
+        /// 销售员
+        /// </summary>
+        public string slpName { get; set; }
+
+        /// <summary>
+        /// 收货地址
+        /// </summary>
+        public string Address { get; set; }
     }
 }
