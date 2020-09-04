@@ -31,37 +31,54 @@
         <!-- </span>
       </div>
     </el-upload> -->
-    <el-upload 
-      :action="action"
-      list-type="picture-card"
-      multiple
-      name="files"
-      :before-upload="beforeUpload"
-      :width="setImage"
-      :on-success="successBack"
-      :on-preview="handlePictureCardPreview"
-      :on-remove="handleRemove"
-      :headers="headers"
-      class="img"
-      :limit="limit"
-      :auto-upload="true"
-      :on-exceed="onExeed"
-      >
-      <i class="el-icon-plus"></i>
-      <span class="el-upload-list__item-delete" @click="handleDownload(file)">
-        <i class="el-icon-download"></i>
-      </span>
-    </el-upload>
-    <Model
-        :visible="dialogVisible"
-        @on-close="dialogVisible = false"
-        width="600px"
-      >
-      <img :src="dialogImageUrl" alt style="display: block;width: 80%;margin: 0 auto;" />
-      <template slot="action">
-        <el-button size="mini" @click="dialogVisible = false">关闭</el-button>
-      </template>
-    </Model>
+    <template v-if="uploadType === 'image'">
+      <el-upload 
+        :action="action"
+        list-type="picture-card"
+        multiple
+        name="files"
+        :before-upload="beforeUpload"
+        :width="setImage"
+        :on-success="successBack"
+        :on-preview="handlePictureCardPreview"
+        :on-remove="handleRemove"
+        :headers="headers"
+        class="img"
+        :limit="limit"
+        :auto-upload="true"
+        :on-exceed="onExeed"
+        >
+        <i class="el-icon-plus"></i>
+        <span class="el-upload-list__item-delete" @click="handleDownload(file)">
+          <i class="el-icon-download"></i>
+        </span>
+      </el-upload>
+      <Model
+          :visible="dialogVisible"
+          @on-close="dialogVisible = false"
+          width="600px"
+        >
+        <img :src="dialogImageUrl" alt style="display: block;width: 80%;margin: 0 auto;" />
+        <template slot="action">
+          <el-button size="mini" @click="dialogVisible = false">关闭</el-button>
+        </template>
+      </Model>
+    </template>
+    <template v-else>
+      <el-upload
+        class="upload-demo"
+        :action="action"
+        :headers="headers"
+        :on-success="successBack"
+        :on-preview="handlePreview"
+        :on-remove="handleRemove"
+        multiple
+        :limit="limit"
+        :on-exceed="onExeed"
+        >
+        <el-button size="mini" type="primary">点击上传</el-button>
+      </el-upload>
+    </template>
   </div>
 </template>
 
@@ -72,6 +89,10 @@ export default {
     Model
   },
   props: {
+    uploadType: {
+      type: String,
+      default: 'image'
+    },
     setImage: {
       type: [String, Object],
       default: ''
@@ -100,12 +121,12 @@ export default {
       }
   },
   watch:{
-      fileList:{
-          deep:true,
-          handler(val){
-              console.log(val, 'fileList')
-          }
+    fileList:{
+      deep:true,
+      handler(val){
+          console.log(val, 'fileList')
       }
+    }
   },
   methods: {
     handleRemove(file) {
@@ -140,19 +161,24 @@ export default {
       this.$message.error(`最多上传${this.limit}个文件`)
     },
     successBack(res, file, fileList){
+      console.log(res, 'res')
       this.newPictureList.push({
         pictureId:res.result[0].id,
         uid: file.uid
       })
       console.log(res, res.result[0].id, 'id', file, fileList)
-      this.pictures.push({
-        pictureId:res.result[0].id
-      }) 
+      let picConig = {
+        pictureId: res.result[0].id
+      }
+      if (this.uploadType === 'file') {
+        picConig.pictureType = 3
+      }
+      this.pictures.push(picConig) 
       this.$message({
         type:'success',
         message:'上传成功'
       })
-      this.$emit('get-ImgList',this.pictures)
+      this.$emit('get-ImgList', this.pictures)
     }
   }
 };

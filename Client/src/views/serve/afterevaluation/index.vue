@@ -27,24 +27,24 @@
           <div style="padding:10px 0;"></div>
           <el-row :gutter="10">
             <!-- <el-col :span="3"> -->
-              <el-form-item label="服务ID" size="small">
+              <el-form-item label="服务" size="small">
                 <el-input v-model="listQuery.ServiceOrderId" @keyup.enter.native="onSubmit" class="input-item"></el-input>
               </el-form-item>
             <!-- </el-col> -->
 
             <!-- <el-col :span="3"> -->
-              <el-form-item label="客户ID" size="small">
+              <el-form-item label="客户" size="small">
                 <el-input v-model="listQuery.CustomerId" @keyup.enter.native="onSubmit" class="input-item"></el-input>
               </el-form-item>
             <!-- </el-col> -->
 
             <!-- <el-col :span="3"> -->
-              <el-form-item label="技术员ID" size="small">
+              <el-form-item label="技术员" size="small">
                 <el-input v-model="listQuery.TechnicianId" @keyup.enter.native="onSubmit" class="input-item"></el-input>
               </el-form-item>
             <!-- </el-col> -->
             <!-- <el-col :span="3"> -->
-              <el-form-item label="回访人ID" size="small">
+              <el-form-item label="回访人" size="small">
                 <el-input v-model="listQuery.VisitPeopleId" @keyup.enter.native="onSubmit" class="input-item"></el-input>
               </el-form-item>
             <!-- </el-col> -->
@@ -128,11 +128,15 @@
             :width="fruit.width"
           >
             <template slot-scope="scope">
-              <el-link
+              <div class="link-container" v-if="fruit.name === 'serviceOrderId'">
+                <img :src="rightImg" @click="openTree(scope.row.serviceOrderId)" class="pointer">
+                <span>{{ scope.row.serviceOrderId }}</span>
+              </div>
+              <!-- <el-link
                 v-if="fruit.name === 'serviceOrderId'"
                 type="primary"
                 @click="openTree(scope.row.serviceOrderId)"
-              >{{scope.row.serviceOrderId}}</el-link>
+              >{{scope.row.serviceOrderId}}</el-link> -->
               <span
                 :class="colorClass[scope.row[fruit.name]]"
                 v-if="fruit.name==='responseSpeed'||fruit.name==='schemeEffectiveness'||fruit.name==='serviceAttitude'||fruit.name==='productQuality'||fruit.name==='servicePrice'"
@@ -151,6 +155,7 @@
           :destroy-on-close="true"
           :close-on-click-modal="false"
           :visible.sync="dialogFormView"
+          @open="openDetail"
         >
         <el-row :gutter="20" class="position-view">
           <el-col :span="18" >
@@ -164,7 +169,7 @@
             ></zxform>
           </el-col>
           <el-col :span="6" class="lastWord">   
-            <zxchat :serveId='serveId'></zxchat>
+            <zxchat :serveId='serveId' formName="查看"></zxchat>
           </el-col>
         </el-row>
 
@@ -187,7 +192,7 @@
 
 <script>
 import * as afterevaluation from "@/api/serve/afterevaluation";
-import * as callservesure from "@/api/serve/callservesure";
+// import * as callservesure from "@/api/serve/callservesure";
 
 import waves from "@/directive/waves"; // 水波纹指令
 // import Sticky from "@/components/Sticky";
@@ -195,7 +200,9 @@ import waves from "@/directive/waves"; // 水波纹指令
 import Pagination from "@/components/Pagination";
 import elDragDialog from "@/directive/el-dragDialog";
 import zxform from "../callserve/form";
-import zxchat from '../callserve/chatOnRight.vue'
+import zxchat from '../callserve/chat'
+import { chatMixin } from '../common/js/mixins'
+import rightImg from '@/assets/table/right.png'
 export default {
   name: "afterevaluation",
   components: {
@@ -207,8 +214,10 @@ export default {
     waves,
     elDragDialog,
   },
+  mixins: [chatMixin],
   data() {
     return {
+      rightImg,
       multipleSelection: [], // 列表checkbox选中的值
       colorClass: [
         "",
@@ -255,7 +264,7 @@ export default {
         status: "", // Status
         extendInfo: "", // 其他信息,防止最后加逗号，可以删除
       },
-      dataForm: {},
+      // dataForm: {},
       checkd: "",
       dialogFormView: false,
       dialogTable: false,
@@ -316,18 +325,18 @@ export default {
     onSubmit() {
       this.getList();
     },
-    openTree(res) {
-      this.listLoading = true;
-      console.log(res)
-      this.serveId = res
-      callservesure.GetDetails(res).then((res) => {
-        if (res.code == 200) {
-          this.dataForm = res.result;
-          this.dialogFormView = true;
-        }
-        this.listLoading = false;
-      });
-    },
+    // openTree(res) {
+    //   this.listLoading = true;
+    //   console.log(res)
+    //   this.serveId = res
+    //   callservesure.GetDetails(res).then((res) => {
+    //     if (res.code == 200) {
+    //       this.dataForm = res.result;
+    //       this.dialogFormView = true;
+    //     }
+    //     this.listLoading = false;
+    //   });
+    // },
     getList() {
       this.listLoading = true;
       afterevaluation.getList(this.listQuery).then((res) => {

@@ -159,6 +159,7 @@
         destroy-on-close
         class="addClass1 dialog-mini"
         :visible.sync="dialogFormView"
+        @open="openDetail"
       >
       <el-row :gutter="20" class="position-view">
         <el-col :span="18" >
@@ -172,9 +173,9 @@
           :refValue="dataForm"
         ></zxform>
         </el-col>
-            <el-col :span="6" class="lastWord">   
-              <zxchat :serveId='serveid'></zxchat>
-            </el-col>
+          <el-col :span="6" class="lastWord">   
+            <zxchat :serveId='serveId' formName="查看"></zxchat>
+          </el-col>
         </el-row>
 
         <div slot="footer">
@@ -220,7 +221,16 @@
         center
         :modal-append-to-body="false"
         width="550px"
+        @closed="onClosed"
       >
+        <el-row type="flex" justify="end" style="margin-bottom: 10px;">
+          <el-input 
+            v-model="listQuery2.currentUser" 
+            size="mini" 
+            @keyup.enter.native="onSearchUser"
+            style="width:200px;"
+            placeholder="技术员"></el-input>
+        </el-row>
         <el-table :data="tableData" border @row-click="setRadio" style="width: 100%">
           <el-table-column align="center">
             <template slot-scope="scope">
@@ -250,7 +260,7 @@
 <script>
 import * as solutions from "@/api/solutions";
 import * as callservepushm from "@/api/serve/callservepushm";
-import * as callservesure from "@/api/serve/callservesure";
+// import * as callservesure from "@/api/serve/callservesure";
 import * as category from "@/api/categorys"
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
@@ -261,13 +271,15 @@ import elDragDialog from "@/directive/el-dragDialog";
 import zxsearch from "./search";
 import zxform from "../callserve/form";
 import treeList from "../callserve/treeList";
-import zxchat from "../callserve/chatOnRight"
+import zxchat from "../callserve/chat/index"
 import { debounce } from '@/utils/process'
 // import treeTable from "@/components/TreeTableMlt";
 import rightImg from '@/assets/table/right.png'
 // import { callserve, count } from "@/mock/serve";
+import { dispatchMixin, chatMixin } from '../common/js/mixins'
 export default {
   name: "solutions",
+  mixins: [dispatchMixin, chatMixin],
   components: {
     Sticky,
     permissionBtn,
@@ -369,10 +381,7 @@ export default {
       },
       total2: 0,
       totalCount: 0, // 左侧树形数据的数量
-      listQuery2: {
-        page: 1,
-        limit: 10,
-      },
+      
       listQuery1: {
         // 查询条件
         page: 1,
@@ -420,7 +429,7 @@ export default {
         update: "确认服务呼叫单",
         create: "新建服务呼叫单",
       },
-      dataForm: {}, //获取的详情表单
+      // dataForm: {}, //获取的详情表单
       dialogPvVisible: false,
       pvData: [],
       params: {
@@ -440,7 +449,6 @@ export default {
         page: 1 // 页数
       },
       isClear: false, // 是否清空moduleTree
-      serveid: '',
       rightImg // 箭头图标
     };
   },
@@ -540,10 +548,11 @@ export default {
     async changeOrder() {
       if (this.ifParent) {
         this.dialogOrder = true;
-        callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
-          this.tableData = res.data;
-          this.total2 = res.count;
-        });
+        // callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
+        //   this.tableData = res.data;
+        //   this.total2 = res.count;
+        // });
+        this._getAllowSendOrderUser()
         // this.listQuery.limit = 999;
         await this.getRightList();
       } else {
@@ -614,18 +623,18 @@ export default {
       this.listQueryServer = Object.assign(this.listQueryServer, val)
       this.afterLeft()
     },
-    openTree(res) {
-      console.log(res, 'res')
-      // this.listLoading = true;
-      this.serveid = res
-      callservesure.GetDetails(res).then((res) => {
-        if (res.code == 200) {
-          this.dataForm = res.result;
-          this.dialogFormView = true;
-        }
-        // this.listLoading = false;
-      });
-    },
+    // openTree(res) {
+    //   console.log(res, 'res')
+    //   // this.listLoading = true;
+    //   this.serveid = res
+    //   callservesure.GetDetails(res).then((res) => {
+    //     if (res.code == 200) {
+    //       this.dataForm = res.result;
+    //       this.dialogFormView = true;
+    //     }
+    //     // this.listLoading = false;
+    //   });
+    // },
     // treeClick(data) {
     //   左侧treetable点击事件
     //   console.log(data);
@@ -881,14 +890,6 @@ export default {
       this.listQuery.page = val.page;
       this.listQuery.limit = val.limit;
       this.getRightList();
-    },
-    handleCurrentChange2(val) {
-      this.listQuery2.page = val.page;
-      this.listQuery2.limit = val.limit;
-         callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
-          this.tableData = res.data;
-          this.total2 = res.count;
-        });
     },
     handleModifyStatus(row, disable) {
       // 模拟修改状态

@@ -123,6 +123,15 @@ export function deleteServiceOrder(params) {
   })
 }
 
+// 查看工单详情
+export function getWorkOrderDetailById(params) {
+  return request({
+    url: `/serve/ServiceOrder/GetWorkOrderDetailById`,
+    method: 'get',
+    params
+  })
+}
+
 export function update(data) {
   return request({
     url: '/certinfos/delete',
@@ -144,5 +153,12 @@ export function add(data) {
     url: '/certinfos/delete',
     method: 'post',
     data
+  })
+}
+export function getReportDetail (params) {
+  return request({
+    url: '/serve/CompletionReports/GetCompletionReportDetailsWeb',
+    method: 'get',
+    params
   })
 }

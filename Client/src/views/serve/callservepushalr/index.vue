@@ -159,6 +159,7 @@
         destroy-on-close
         class="addClass1 dialog-mini"
         :visible.sync="dialogFormView"
+        @open="openDetail"
       >
       <el-row :gutter="20" class="position-view">
         <el-col :span="18" >
@@ -172,9 +173,9 @@
           :refValue="dataForm"
         ></zxform>
         </el-col>
-            <el-col :span="6" class="lastWord">   
-              <zxchat :serveId='serveid'></zxchat>
-            </el-col>
+          <el-col :span="6" class="lastWord">   
+            <zxchat :serveId="serveId"></zxchat>
+          </el-col>
         </el-row>
 
         <div slot="footer">
@@ -219,7 +220,16 @@
         title="选择转派对象"
         center
         width="500px"
+        @closed="onClosed"
       >
+        <el-row type="flex" justify="end" style="margin-bottom: 10px;">
+          <el-input 
+            v-model="listQuery2.currentUser" 
+            size="mini" 
+            @keyup.enter.native="onSearchUser"
+            style="width:200px;"
+            placeholder="技术员"></el-input>
+        </el-row>
         <el-table :data="tableData" border @row-click="setRadio" style="width: 100%">
           <el-table-column align="center">
             <template slot-scope="scope">
@@ -235,6 +245,7 @@
           :page.sync="listQuery2.page"
           :limit.sync="listQuery2.limit"
           @pagination="handleCurrentChange2"
+          layout="total, prev, pager, next"
         />
         <span slot="footer" class="dialog-footer">
           <el-button @click="cancelPost">取 消</el-button>
@@ -243,20 +254,17 @@
       </el-dialog>
       <!-- 完工报告  -->
       <el-dialog
-        width="800px"
+        width="932px"
         class="dialog-mini"
         :close-on-click-modal="false"
-        title="新增服务行为报告单"
+        title="服务行为报告单"
         :visible.sync="dialogReportVisible"
+        @closed="onReportClosed"
       >
-        <Report 
-          :type="reportType"
+        <Report
+          ref="report"
           :data="reportData"
         ></Report>
-        <div slot="footer">
-          <el-button size="mini" @click="dialogReportVisible = false">取消</el-button>
-          <el-button size="mini" type="primary" @click="updateData">确认</el-button>
-        </div>
       </el-dialog>
     </div>
   </div>
@@ -265,7 +273,7 @@
 <script>
 import * as solutions from "@/api/solutions";
 import * as callservepushm from "@/api/serve/callservepushm";
-import * as callservesure from "@/api/serve/callservesure";
+// import * as callservesure from "@/api/serve/callservesure";
 import * as category from "@/api/categorys"
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
@@ -275,13 +283,13 @@ import DynamicTable from "@/components/DynamicTable";
 import elDragDialog from "@/directive/el-dragDialog";
 import zxsearch from "./search";
 import zxform from "../callserve/form";
-import zxchat from "../callserve/chatOnRight"
+import zxchat from "../callserve/chat/index"
 import treeList from "../callserve/treeList";
 import { debounce } from '@/utils/process'
-import Report from './report'
+import Report from '../common/components/report'
 import rightImg from '@/assets/table/right.png'
 // import treeTable from "@/components/TreeTableMlt";
-
+import { reportMixin, dispatchMixin, chatMixin } from '../common/js/mixins'
 // import { callserve, count } from "@/mock/serve";
 export default {
   name: "solutions",
@@ -296,6 +304,7 @@ export default {
     Report,
     zxchat
   },
+  mixins: [reportMixin, dispatchMixin, chatMixin],
   directives: {
     waves,
     elDragDialog,
@@ -352,10 +361,6 @@ export default {
         // "problemTypeName": "数值异常",
         // "currentUserId": 1
       ],
-      listQuery2: {
-        page: 1,
-        limit: 20,
-      },
       defaultProps: {
         children: "children",
         label: "label",
@@ -437,7 +442,7 @@ export default {
         update: "确认服务呼叫单",
         create: "新建服务呼叫单",
       },
-      dataForm: {}, //获取的详情表单
+      // dataForm: {}, //获取的详情表单
       dialogPvVisible: false,
       pvData: [],
       params: {
@@ -457,11 +462,9 @@ export default {
         page: 1 // 页数
       },
       isClear: false, // 清空树形数据moduleTree
-      dialogReportVisible: false, // 完工报告弹窗标识
-      reportType: 'create', // 完工报告类型 create: 填写 view: 查看
-      reportData: {}, // 完工报告详情
+      // reportData: {}, // 完工报告详情
       serveid: '',
-      rightImg
+      rightImg,
     };
   },
   filters: {
@@ -501,7 +504,7 @@ export default {
         });
         // console.log(this.workorderidList);
       },
-    },
+    }
   },
   created() {},
   mounted() {
@@ -512,6 +515,7 @@ export default {
   },
   methods: {
     onScroll (e) {
+      console.log(this.totalCount, this.modulesTree.length, 'scroll')
       if (this.totalCount <= this.modulesTree.length) {
         return
       }
@@ -538,14 +542,6 @@ export default {
       (this.dialogOrder = false), (this.listLoading = false);
       // this.afterLeft()
       this.getRightList();
-    },
-    handleCurrentChange2(val) {
-      this.listQuery2.page = val.page;
-      this.listQuery2.limit = val.limit;
-         callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
-          this.tableData = res.data;
-          this.total2 = res.count;
-        });
     },
     async afterLeft() {
       await this.getLeftList();
@@ -574,10 +570,7 @@ export default {
           this.dialogOrder = true;
               //  this.listQuery.limit=999
         await this.getRightList(); 
-          callservepushm.AllowSendOrderUser().then((res) => {
-            this.tableData = res.data;
-            this.total2 = res.count;
-          });
+          this._getAllowSendOrderUser()
         }
       } else {
         this.$message({
@@ -644,19 +637,18 @@ export default {
       this.listQueryServer = Object.assign(this.listQueryServer, val)
       this.afterLeft()
     },
-    openTree(res) {
-      console.log(res, 'res')
-      // this.listLoading = true;
-      this.serveid = res
-      callservesure.GetDetails(res).then((res) => {
-        if (res.code == 200) {
-          this.dataForm = res.result;
-          this.dialogFormView = true;
-        }
-        // this.listLoading = false;
-      });
-    },
-
+    // openTree(res) {
+    //   console.log(res, 'res')
+    //   // this.listLoading = true;
+    //   this.serveid = res
+    //   callservesure.GetDetails(res).then((res) => {
+    //     if (res.code == 200) {
+    //       this.dataForm = res.result;
+    //       this.dialogFormView = true;
+    //     }
+    //     // this.listLoading = false;
+    //   });
+    // },
     // closeCustoner() {
     //   // this.getList();
     // },
@@ -715,7 +707,7 @@ export default {
           if (!this.$refs.treeForm.getCheckedKeys().length) { // 没有选中
             return this.$message.error("请选择服务单")
           }
-          this.handleReport(this.$refs.treeForm.getCheckedKeys()[0]) // 传入key中的第一个 服务单ID
+          this.handleReport(this.$refs.treeForm.getCheckedKeys()[0], this.list) // 传入key中的第一个 服务单ID
           break
         case "btnEdit":
           this.$message({
@@ -1014,19 +1006,32 @@ export default {
         }
       });
     },
-    handleReport (serviceOrderId) {
-      console.log(serviceOrderId, this.$store.state.user.name)
-      callservepushm.getServiceOrder({
-        serviceOrderId
-      }).then(() => {
-        // if (!res.data) {
-        //   return this.$message.error("当前用户不可填写完工报告")
-        // }
-        this.dialogReportVisible = true
-      }).catch(() => {
-        this.$message.error('获取报告信息失败')
-      })
-    },
+    // onReportClosed () {
+    //   this.reportData = []
+    //   this.$refs.report.reset()
+    // },
+    // handleReport (serviceOrderId, data) {
+    //   console.log(serviceOrderId, this.$store.state.user.name)
+    //   console.log(this.list, 'list')
+    //   let hasFinished = data.some(workOrder => {
+    //     let { status, fromType } = workOrder
+    //     return Number(status) === 7 && Number(fromType) !== 2 // 所有工单状态为已解决且呼叫类型不为在线解答
+    //   })
+    //   if (hasFinished) {
+    //     callservesure.getReportDetail({
+    //       serviceOrderId
+    //     }).then(res => {
+    //       console.log(res, 'reportData')
+    //       this.reportData = res.result.data
+    //       this.dialogReportVisible = true
+    //     })
+    //   } else {
+    //     this.$message({
+    //         type: 'warning',
+    //         message: '工单未解决或在线解答方式无完工报告'
+    //       })
+    //   }
+    // },
     handleDelete(rows) {
       // 多行删除
       solutions.del(rows.map((u) => u.id)).then(() => {

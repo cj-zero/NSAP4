@@ -182,7 +182,7 @@
       </el-dialog>
       <!-- 客服编辑服务单 -->
       <el-dialog
-        width="900px"
+        width="1210px"
         top="10vh"
         class="dialog-mini"
         @open="openDetail"
@@ -192,18 +192,26 @@
         :title="textMap[dialogStatus]"
         :visible.sync="FormUpdate"
       >
-        <zxform
-          :form="temp"
-          formName="编辑"
-          labelposition="right"
-          labelwidth="100px"
-          ifEdit="true"
-          :isCreate="false"
-          :sure="sure"
-          :refValue="dataForm"
-          @close-Dia="closeDia"
-          :serviceOrderId="serviceOrderId"
-        ></zxform>
+      <el-row :gutter="20" class="position-view">
+        <el-col :span="18" >
+          <zxform
+            :form="temp"
+            formName="编辑"
+            labelposition="right"
+            labelwidth="100px"
+            ifEdit="true"
+            :isCreate="false"
+            :sure="sure"
+            :refValue="dataForm"
+            @close-Dia="closeDia"
+            :serviceOrderId="serviceOrderId"
+          ></zxform>
+        </el-col>
+          <el-col :span="6" class="lastWord">   
+            <zxchat :serveId="serveId" formName="编辑" :sapOrderId="sapOrderId" :customerId="customerId"></zxchat>
+          </el-col>
+        </el-row>
+       
         <div slot="footer">
           <span class="order-num">工单数量: {{ formList.length }}</span>
           <el-button size="mini" @click="FormUpdate = false">取消</el-button>
@@ -223,19 +231,19 @@
       >
       <el-row :gutter="20" class="position-view">
         <el-col :span="18" >
-        <zxform
-          :form="temp"
-          formName="查看"
-          labelposition="right"
-          labelwidth="100px"
-          max-width="800px"
-          :isCreate="false"
-          :refValue="dataForm"
-        ></zxform>
+          <zxform
+            :form="temp"
+            formName="查看"
+            labelposition="right"
+            labelwidth="100px"
+            max-width="800px"
+            :isCreate="false"
+            :refValue="dataForm"
+          ></zxform>
         </el-col>
-            <el-col :span="6" class="lastWord">   
-              <zxchat :serveId='serveid'></zxchat>
-            </el-col>
+          <el-col :span="6" class="lastWord">   
+            <zxchat :serveId='serveId' formName="查看"></zxchat>
+          </el-col>
         </el-row>
 
         <div slot="footer">
@@ -283,13 +291,15 @@ import elDragDialog from "@/directive/el-dragDialog";
 // import customerupload from "../callservesure/customerupload";
 import zxform from "./form";
 import zxsearch from "./search";
-import zxchat from "./chatOnRight";
+// import zxchat from "./chatOnRight";
+import zxchat from './chat/index'
 import treeList from "./treeList";
 import CustomerInfo from './customerInfo'
 import rightImg from '@/assets/table/right.png'
 import Rate from './rate'
 // import serveTableVue from '../serveTable.vue';
 // import { callserve } from "@/mock/serve";
+import { chatMixin } from '../common/js/mixins'
 export default {
   provide () {
     return {
@@ -302,6 +312,7 @@ export default {
       'formList'
     ])
   },
+  mixins: [chatMixin],
   components: {
     Sticky,
     permissionBtn,
@@ -436,7 +447,9 @@ export default {
         create: "新建服务呼叫单",
         info: "查看服务呼叫单"
       },
-      serveid:'',
+      serveId:'', // 当前服务单ID
+      sapOrderId: '', // 当前NSAP_ID
+      customerId: "", // 当前客户代码
       dialogPvVisible: false,
       pvData: [],
       rules: {
@@ -445,8 +458,6 @@ export default {
         ],
         name: [{ required: true, message: "名称不能为空", trigger: "blur" }]
       },
-      dataForm: {}, //传递的表单props
-      dataForm1: {}, //获取的详情表单
       downloadLoading: false,
       problemOptions: [], // 问题类型
       serviceOrderId: '', // 服务单ID 用于后续工单的创建和修改
@@ -547,18 +558,23 @@ export default {
     closeCustoner() {
       // this.getList();
     },
-    openTree(res) {
-      this.listLoading = true;
-       this.serveid = res
-      callservesure.GetDetails(res).then(res => {
+    _getDetails () {
+      let serviceOrderId = this.serveId
+      callservesure.GetDetails(serviceOrderId).then(res => {
         if (res.code == 200) {
-          this.dataForm1 = res.result;
-          // console.log(this.dataForm1, 'dateForm1')
-          this.dialogFormView = true;
+          this.dataForm = this.dataForm1 = res.result;
         }
-        this.listLoading = false;
-      });
+      })
     },
+    // openTree(serviceOrderId) {
+    //   callservesure.GetDetails(serviceOrderId).then(res => {
+    //     if (res.code == 200) {
+    //       this.dataForm1 = res.result;
+    //       this.serveId = serviceOrderId
+    //       this.dialogFormView = true;
+    //     }
+    //   });
+    // },
     getCustomerInfo (customerId) { // 打开用户信息弹窗
       // console.log('客户信息')
       if (!customerId) {
@@ -816,7 +832,11 @@ export default {
       callservesure.GetDetails(row.serviceOrderId).then(res => {
         if (res.code == 200) {
           this.dataForm1 = res.result;
-          this.serviceOrderId = row.serviceOrderId // 服务单ID
+          let { serviceOrderId, u_SAP_ID, customerId } = row
+          this.serveId = serviceOrderId
+          this.sapOrderId = u_SAP_ID
+          this.customerId = customerId 
+          this.serviceOrderId = serviceOrderId // 服务单ID
           // console.log(this.dataForm1, 'dateForm1')
           this.dialogStatus = "update";
           this.FormUpdate = true;
