@@ -43,43 +43,94 @@ namespace OpenAuth.App
             //发送消息至聊天室
             string head = "技术员核对设备有误提交给呼叫中心的信息";
             string Content = string.Empty;
+            //技术员修改设备集合 发送消息
             if (request.Devices != null && request.Devices.Count > 0)
             {
                 foreach (Device item in request.Devices)
                 {
                     SeviceTechnicianApplyOrder obj = new SeviceTechnicianApplyOrder();
-                    obj.MaterialType = request.MaterialType;
-                    obj.ManufSN = item.newNumber;
-                    obj.ItemCode = item.newCode;
-                    obj.ServiceOrderId = request.ServiceOrderId;
-                    obj.OrginalManufSN = item.manufacturerSerialNumber;
-                    obj.TechnicianId = request.AppUserId;
-                    obj.CreateTime = DateTime.Now;
-                    obj.IsSolved = 0;
-                    obj.OrginalWorkOrderId = item.workOrderId;
-                    obj.WarrantyEndDate = item.dlvryDate;
-                    obj.ContractId = item.ContractId;
-                    obj.MaterialDescription = item.ItemName;
-                    obj.InternalSerialNumber = item.InternalSN;
-                    if (request.MaterialType.Equals((("其他设备".Equals(item.newCode)) ? "其他设备" : item.newCode.Substring(0, item.newCode.IndexOf("-"))), StringComparison.OrdinalIgnoreCase))
+                    //判断是否存在已经提交的申请 若已存在则更新 不存在则新增
+                    var IsExist = (await UnitWork.Find<SeviceTechnicianApplyOrder>(s => s.ServiceOrderId == request.ServiceOrderId && s.OrginalWorkOrderId == item.workOrderId).ToListAsync()).Count;
+                    if (IsExist > 0)
                     {
-                        obj.Status = currentMaterialTypeInfo.Status;
-                        obj.OrderTakeType = currentMaterialTypeInfo.OrderTakeType;
-                        obj.FromTheme = currentMaterialTypeInfo.FromTheme;
-                        obj.FromType = currentMaterialTypeInfo.FromType;
-                        obj.ProblemTypeId = currentMaterialTypeInfo.ProblemTypeId;
-                        obj.ProblemTypeName = currentMaterialTypeInfo.ProblemType.Name;
-                        obj.CurrentUser = currentMaterialTypeInfo.CurrentUser;
-                        obj.CurrentUserNsapId = currentMaterialTypeInfo.CurrentUserNsapId;
+                        obj.ManufSN = item.newNumber;
+                        obj.ItemCode = item.newCode;
+                        obj.WarrantyEndDate = item.dlvryDate;
+                        obj.ContractId = item.ContractId;
+                        obj.MaterialDescription = item.ItemName;
+                        obj.InternalSerialNumber = item.InternalSN;
+                        if (request.MaterialType.Equals((("其他设备".Equals(item.newCode)) ? "其他设备" : item.newCode.Substring(0, item.newCode.IndexOf("-"))), StringComparison.OrdinalIgnoreCase))
+                        {
+                            obj.Status = currentMaterialTypeInfo.Status;
+                            obj.OrderTakeType = currentMaterialTypeInfo.OrderTakeType;
+                            obj.FromTheme = currentMaterialTypeInfo.FromTheme;
+                            obj.FromType = currentMaterialTypeInfo.FromType;
+                            obj.ProblemTypeId = currentMaterialTypeInfo.ProblemTypeId;
+                            obj.ProblemTypeName = currentMaterialTypeInfo.ProblemType.Name;
+                            obj.CurrentUser = currentMaterialTypeInfo.CurrentUser;
+                            obj.CurrentUserNsapId = currentMaterialTypeInfo.CurrentUserNsapId;
+                        }
+                        else
+                        {
+                            obj.Status = 0;
+                            obj.OrderTakeType = 0;
+                        }
+                        await UnitWork.UpdateAsync<SeviceTechnicianApplyOrder>(s => s.ServiceOrderId == request.ServiceOrderId && s.OrginalWorkOrderId == item.workOrderId, u => new SeviceTechnicianApplyOrder
+                        {
+                            ManufSN = obj.ManufSN,
+                            ItemCode = obj.ItemCode,
+                            WarrantyEndDate = obj.WarrantyEndDate,
+                            ContractId = obj.ContractId,
+                            MaterialDescription = obj.MaterialDescription,
+                            InternalSerialNumber = obj.InternalSerialNumber,
+                            Status = obj.Status,
+                            OrderTakeType = obj.OrderTakeType,
+                            FromTheme = obj.FromTheme,
+                            FromType = obj.FromType,
+                            ProblemTypeId = obj.ProblemTypeId,
+                            ProblemTypeName = obj.ProblemTypeName,
+                            CurrentUser = obj.CurrentUser,
+                            CurrentUserNsapId = obj.CurrentUserNsapId,
+                            CreateTime = DateTime.Now
+                        });
+                        await UnitWork.SaveAsync();
+                        Content += $"<br>待编辑序列号: {item.manufacturerSerialNumber}<br>正确的序列号: {item.newNumber}<br>正确的物料编码: {item.newCode}<br>";
                     }
                     else
                     {
-                        obj.Status = 0;
-                        obj.OrderTakeType = 0;
+                        obj.MaterialType = request.MaterialType;
+                        obj.ManufSN = item.newNumber;
+                        obj.ItemCode = item.newCode;
+                        obj.ServiceOrderId = request.ServiceOrderId;
+                        obj.OrginalManufSN = item.manufacturerSerialNumber;
+                        obj.TechnicianId = request.AppUserId;
+                        obj.CreateTime = DateTime.Now;
+                        obj.IsSolved = 0;
+                        obj.OrginalWorkOrderId = item.workOrderId;
+                        obj.WarrantyEndDate = item.dlvryDate;
+                        obj.ContractId = item.ContractId;
+                        obj.MaterialDescription = item.ItemName;
+                        obj.InternalSerialNumber = item.InternalSN;
+                        if (request.MaterialType.Equals((("其他设备".Equals(item.newCode)) ? "其他设备" : item.newCode.Substring(0, item.newCode.IndexOf("-"))), StringComparison.OrdinalIgnoreCase))
+                        {
+                            obj.Status = currentMaterialTypeInfo.Status;
+                            obj.OrderTakeType = currentMaterialTypeInfo.OrderTakeType;
+                            obj.FromTheme = currentMaterialTypeInfo.FromTheme;
+                            obj.FromType = currentMaterialTypeInfo.FromType;
+                            obj.ProblemTypeId = currentMaterialTypeInfo.ProblemTypeId;
+                            obj.ProblemTypeName = currentMaterialTypeInfo.ProblemType.Name;
+                            obj.CurrentUser = currentMaterialTypeInfo.CurrentUser;
+                            obj.CurrentUserNsapId = currentMaterialTypeInfo.CurrentUserNsapId;
+                        }
+                        else
+                        {
+                            obj.Status = 0;
+                            obj.OrderTakeType = 0;
+                        }
+                        await UnitWork.AddAsync(obj);
+                        await UnitWork.SaveAsync();
+                        Content += $"<br>待编辑序列号: {item.manufacturerSerialNumber}<br>正确的序列号: {item.newNumber}<br>正确的物料编码: {item.newCode}<br>";
                     }
-                    await UnitWork.AddAsync(obj);
-                    await UnitWork.SaveAsync();
-                    Content += $"<br>待编辑序列号: {item.manufacturerSerialNumber}<br>正确的序列号: {item.newNumber}<br>正确的物料编码: {item.newCode}<br>";
                 }
                 await _serviceOrderApp.SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = request.ServiceOrderId, Content = head + Content, AppUserId = request.AppUserId });
             }
@@ -199,6 +250,12 @@ namespace OpenAuth.App
         //新增工单
         private async Task AddDeviceAsync(AddServiceWorkOrderReq request, string[] MaterialTypes, SeviceTechnicianApplyOrder ApplyInfo)
         {
+            //添加工单时先判断当前服务单下是否已存在该设备
+            var IsExist = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId && s.ManufacturerSerialNumber == request.ManufacturerSerialNumber && s.MaterialCode == request.MaterialCode).ToListAsync()).Count;
+            if (IsExist > 0)
+            {
+                throw new CommonException("当前设备已存在,请勿重复添加", 50001);
+            }
             //在这个服务单下新建一个工单
             await _serviceOrderApp.AddWorkOrder(request);
             //判断当前设备的设备类型是否已存在服务单中

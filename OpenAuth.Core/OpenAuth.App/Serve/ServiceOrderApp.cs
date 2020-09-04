@@ -2340,7 +2340,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("当前技术员无法核对此工单设备。", 9001);
             }
-            List<int> obj = new List<int>();
+            List<int> workOrderIds = new List<int>();
             //处理核对成功的设备信息
             if (!string.IsNullOrEmpty(req.CheckWorkOrderIds))
             {
@@ -2349,12 +2349,10 @@ namespace OpenAuth.App
                 {
                     foreach (var itemcheck in checkArr)
                     {
-                        obj.Add(int.Parse(itemcheck));
+                        workOrderIds.Add(int.Parse(itemcheck));
                         await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id == int.Parse(itemcheck), o => new ServiceWorkOrder
                         {
-                            IsCheck = 1,
-                            Status = 4,
-                            OrderTakeType = 5
+                            IsCheck = 1
                         });
                         await _serviceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{req.CurrentUserId}核对工单{itemcheck}设备（成功）", ActionType = "核对设备", ServiceWorkOrderId = int.Parse(itemcheck) });
                     }
@@ -2377,6 +2375,17 @@ namespace OpenAuth.App
                     }
                 }
             }
+            else
+            {
+                //判断没有错误的设备信息的再更新状态
+                await UnitWork.UpdateAsync<ServiceWorkOrder>(s => workOrderIds.Contains(s.Id), o => new ServiceWorkOrder
+                {
+                    IsCheck = 1,
+                    Status = 4,
+                    OrderTakeType = 5
+                });
+            }
+
             await UnitWork.SaveAsync();
             await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
@@ -2950,6 +2959,7 @@ namespace OpenAuth.App
                 MaterialType = string.Join(",", req.QryMaterialTypes.ToArray())
             });
             await _serviceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{string.Join(",", ids.ToArray())}", ActionType = "主管派单工单" }, ids);
+            await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = Convert.ToInt32(req.ServiceOrderId), Content = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{string.Join(",", ids.ToArray())}", AppUserId = req.CurrentUserId });
             await PushMessageToApp(req.CurrentUserId, "派单成功提醒", "您已被派有一个新的售后服务，请尽快处理");
         }
 
