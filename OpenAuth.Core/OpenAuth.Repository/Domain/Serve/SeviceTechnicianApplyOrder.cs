@@ -132,6 +132,48 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("处理时间")]
         public System.DateTime? SolvedTime { get; set; }
-        
+
+        /// <summary>
+        /// 技术员NSAPId
+        /// </summary>
+        [Description("技术员NSAPId")]
+        public string CurrentUserNsapId { get; set; }
+
+        /// <summary>
+        /// 当前接单技术员名称
+        /// </summary>
+        [Description("当前接单技术员名称")]
+        public string CurrentUser { get; set; }
+
+        /// <summary>
+        /// 内部序列号
+        /// </summary>
+        [Description("内部序列号")]
+        public string InternalSerialNumber { get; set; }
+
+        /// <summary>
+        /// 物料描述
+        /// </summary>
+        [Description("物料描述")]
+        public string MaterialDescription { get; set; }
+
+        /// <summary>
+        /// 问题类型名称
+        /// </summary>
+        [Description("问题类型名称")]
+        public string ProblemTypeName { get; set; }
+
+        /// <summary>
+        /// 服务合同
+        /// </summary>
+        [Description("服务合同")]
+        public string ContractId { get; set; }
+
+        /// <summary>
+        /// 保修结束日期
+        /// </summary>
+        [Description("保修结束日期")]
+        public System.DateTime? WarrantyEndDate { get; set; }
+
     }
 }

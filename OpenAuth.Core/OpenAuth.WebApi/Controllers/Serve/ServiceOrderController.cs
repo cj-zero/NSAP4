@@ -1101,5 +1101,26 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// 获取工单详情根据工单Id
+        /// </summary>
+        /// <param name="workOrderId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetWorkOrderDetailById(int workOrderId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetWorkOrderDetailById(workOrderId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }

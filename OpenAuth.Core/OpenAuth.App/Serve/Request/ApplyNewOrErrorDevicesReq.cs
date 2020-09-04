@@ -59,6 +59,26 @@ namespace OpenAuth.App.Serve.Request
         /// 新型号
         /// </summary>
         public string newCode { get; set; }
+
+        /// <summary>
+        /// 保修结束日期
+        /// </summary>
+        public DateTime? dlvryDate { get; set; }
+
+        /// <summary>
+        /// 服务合同
+        /// </summary>
+        public string ContractId { get; set; }
+
+        /// <summary>
+        /// 物料描述
+        /// </summary>
+        public string ItemName { get; set; }
+
+        /// <summary>
+        /// 内部序列号
+        /// </summary>
+        public string InternalSN { get; set; }
     }
 
     /// <summary>
@@ -76,5 +96,25 @@ namespace OpenAuth.App.Serve.Request
         /// 型号
         /// </summary>
         public string ItemCode { get; set; }
+
+        /// <summary>
+        /// 保修结束日期
+        /// </summary>
+        public DateTime? dlvryDate { get; set; }
+
+        /// <summary>
+        /// 服务合同
+        /// </summary>
+        public string ContractId { get; set; }
+
+        /// <summary>
+        /// 物料描述
+        /// </summary>
+        public string ItemName { get; set; }
+
+        /// <summary>
+        /// 内部序列号
+        /// </summary>
+        public string InternalSN { get; set; }
     }
 }
