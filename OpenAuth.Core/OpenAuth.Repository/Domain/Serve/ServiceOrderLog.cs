@@ -70,5 +70,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("操作人名字")]
         public string CreateUserName { get; set; }
+
+        /// <summary>
+        /// 设备类型
+        /// </summary>
+        [Description("设备类型")]
+        public string MaterialType { get; set; }
     }
 }
