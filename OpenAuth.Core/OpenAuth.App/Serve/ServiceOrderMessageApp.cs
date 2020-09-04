@@ -24,7 +24,7 @@ namespace OpenAuth.App.Serve
 
         public async Task<dynamic> GetServiceOrderMessages(int serviceOrderId)
         {
-            var list = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == serviceOrderId).ToListAsync();
+            var list = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == serviceOrderId).OrderByDescending(s=>s.CreateTime).ToListAsync();
 
             //var groupList = list.GroupBy(s => s.FroTechnicianName).ToList().Select(s => new { s.Key, Data = s.ToList() });
             return list;
