@@ -286,11 +286,11 @@
               <el-input v-model="formList[0].processDescription" disabled></el-input>
             </el-form-item>
           </el-col>
-          <el-col :span="6">
+          <!-- <el-col :span="6">
             <el-form-item label="完工报告" prop="remark" v-if="formName === '查看'">
               <el-button type="primary" size="mini" @click="showReport" style="width: 112.5px;">查看</el-button>
             </el-form-item>
-          </el-col>
+          </el-col> -->
         </el-row>
         <el-form-item>
           <el-row :gutter="10" type="flex" class="row-bg" justify="end">
@@ -322,6 +322,10 @@
           >新增</el-button>
         </div>
       </div>
+      <el-col :span="6" class="report-btn-wrapper" v-if="formName === '查看'">
+        <span class="title">完工报告</span>
+        <el-button type="primary" size="mini" @click="handleReport(form.id, formList)" style="width: 127.5px;">查看</el-button>
+      </el-col>
     </div>
     <el-collapse v-model="activeNames" class="openClass" v-if="formList.length>1" @change="handleCollapseChange">
       <el-collapse-item :title="collapseTitle" name="1">
@@ -612,11 +616,11 @@
                   <el-input v-model="item.processDescription" disabled></el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="6">
+              <!-- <el-col :span="6">
                 <el-form-item label="完工报告" prop="remark" v-if="formName === '查看'">
                   <el-button type="primary" size="mini" @click="showReport" style="width: 112.5px;">查看</el-button>
                 </el-form-item>
-              </el-col>
+              </el-col> -->
             </el-row>
             <el-form-item>
               <el-row :gutter="10" type="flex" class="row-bg" justify="end">
@@ -647,6 +651,10 @@
               >新增</el-button>
             </div>
           </div>
+          <el-col :span="6" class="report-btn-wrapper" v-if="formName === '查看'">
+            <span class="title">完工报告</span>
+            <el-button type="primary" size="mini" @click="handleReport(form.id, formList)" style="width: 127.5px;">查看</el-button>
+          </el-col>
         </div>
       </el-collapse-item>
     </el-collapse>
@@ -754,6 +762,20 @@
         <el-button type="primary" @click="pushForm" :disabled="isDisalbed">确 定</el-button>
       </span>
     </el-dialog>
+    <el-dialog
+      width="932px"
+      class="dialog-mini"
+      :append-to-body="true"
+      :close-on-click-modal="false"
+      title="服务行为报告单"
+      :visible.sync="dialogReportVisible"
+      @closed="onReportClosed"
+    >
+      <Report
+        ref="report"
+        :data="reportData"
+      ></Report>
+    </el-dialog>
   </div>
 </template>
 
@@ -768,8 +790,11 @@ import * as solutions from "@/api/solutions";
 import problemtype from "./problemtype";
 import solution from "./solution";
 import { mapMutations } from 'vuex'
+import Report from '../common/components/report'
+import { reportMixin } from '../common/js/mixins'
 export default {
-  components: { fromfSN, problemtype, solution, Pagination, fromfSNC },
+  components: { fromfSN, problemtype, solution, Pagination, fromfSNC, Report },
+  mixins: [reportMixin],
   provide() {
     let that = this;
     return {
@@ -1136,7 +1161,6 @@ export default {
       this.collapseTitle = val.length ? '折叠' : '展开更多订单'
       console.log(val, 'val change')
     },
-    showReport () {}, // 查看完工报告
     handleChange(val) {
       this.listQuery.page = val.page;
       this.listQuery.limit = val.limit;
@@ -1566,6 +1590,15 @@ export default {
       display: flex;
       top: 15px;
       right: 26px;
+    }
+    .report-btn-wrapper {
+      position: absolute;
+      right: 12px;
+      bottom: 53px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
     }
   }
   .radio-item {
