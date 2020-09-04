@@ -34,7 +34,6 @@ namespace OpenAuth.App
     public class ServiceOrderApp : OnlyUnitWorkBaeApp
     {
         private readonly RevelanceManagerApp _revelanceApp;
-        //private readonly ServiceOrderLogApp _serviceOrderLogApp;
         private readonly BusinessPartnerApp _businessPartnerApp;
         private readonly AppServiceOrderLogApp _appServiceOrderLogApp;
         private readonly ServiceOrderLogApp _ServiceOrderLogApp;
@@ -48,7 +47,6 @@ namespace OpenAuth.App
         {
             _appConfiguration = appConfiguration;
             _revelanceApp = app;
-            //_serviceOrderLogApp = serviceOrderLogApp;
             _businessPartnerApp = businessPartnerApp;
             _appServiceOrderLogApp = appServiceOrderLogApp;
             _helper = new HttpHelper(_appConfiguration.Value.AppPushMsgUrl);
@@ -2356,9 +2354,8 @@ namespace OpenAuth.App
             {
                 throw new CommonException("当前技术员无法核对此工单设备。", 9001);
             }
-            var username=UnitWork.Find<AppUserMap>(a => a.AppUserId.Equals(req.CurrentUserId)).Include(a=>a.User).Select(a => a.User.Name).FirstOrDefault();
-           
-            List<int> obj = new List<int>();
+            var username = UnitWork.Find<AppUserMap>(a => a.AppUserId.Equals(req.CurrentUserId)).Include(a => a.User).Select(a => a.User.Name).FirstOrDefault();
+            List<int> workOrderIds = new List<int>();
             //处理核对成功的设备信息
             if (!string.IsNullOrEmpty(req.CheckWorkOrderIds))
             {
@@ -2367,12 +2364,10 @@ namespace OpenAuth.App
                 {
                     foreach (var itemcheck in checkArr)
                     {
-                        obj.Add(int.Parse(itemcheck));
+                        workOrderIds.Add(int.Parse(itemcheck));
                         await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.Id == int.Parse(itemcheck), o => new ServiceWorkOrder
                         {
-                            IsCheck = 1,
-                            Status = 4,
-                            OrderTakeType = 5
+                            IsCheck = 1
                         });
                         var WorkNumber=UnitWork.Find<ServiceWorkOrder>(s => s.Id.Equals(itemcheck)).Select(s => s.WorkOrderNumber).FirstOrDefault();
                         await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{username}核对工单{WorkNumber}设备（成功）", ActionType = "核对设备", ServiceWorkOrderId = int.Parse(itemcheck),MaterialType=req.MaterialType });
@@ -2397,6 +2392,17 @@ namespace OpenAuth.App
                     }
                 }
             }
+            else
+            {
+                //判断没有错误的设备信息的再更新状态
+                await UnitWork.UpdateAsync<ServiceWorkOrder>(s => workOrderIds.Contains(s.Id), o => new ServiceWorkOrder
+                {
+                    IsCheck = 1,
+                    Status = 4,
+                    OrderTakeType = 5
+                });
+            }
+
             await UnitWork.SaveAsync();
             await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
             {
@@ -2972,6 +2978,7 @@ namespace OpenAuth.App
             var WorkOrderNumbers = String.Join(',', UnitWork.Find<ServiceWorkOrder>(s => ids.Contains(s.Id)).Select(s => s.WorkOrderNumber).ToArray());
 
             await _ServiceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{WorkOrderNumbers}", ActionType = "主管派单工单", MaterialType = string.Join(",", req.QryMaterialTypes.ToArray()) }, ids);
+            await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = Convert.ToInt32(req.ServiceOrderId), Content = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{string.Join(",", ids.ToArray())}", AppUserId = req.CurrentUserId });
             await PushMessageToApp(req.CurrentUserId, "派单成功提醒", "您已被派有一个新的售后服务，请尽快处理");
         }
 
