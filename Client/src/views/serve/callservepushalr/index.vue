@@ -235,6 +235,7 @@
           :page.sync="listQuery2.page"
           :limit.sync="listQuery2.limit"
           @pagination="handleCurrentChange2"
+          layout="total, prev, pager, next"
         />
         <span slot="footer" class="dialog-footer">
           <el-button @click="cancelPost">取 消</el-button>
@@ -571,7 +572,7 @@ export default {
           this.dialogOrder = true;
               //  this.listQuery.limit=999
         await this.getRightList(); 
-          callservepushm.AllowSendOrderUser().then((res) => {
+          callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
             this.tableData = res.data;
             this.total2 = res.count;
           });
