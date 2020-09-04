@@ -58,7 +58,12 @@ namespace OpenAuth.App.Request
         /// 
         /// </summary>
         public string CreateUserName { get; set; }
-        
-         //todo:添加自己的请求字段
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string MaterialType { get; set; }
+
+        //todo:添加自己的请求字段
     }
 }

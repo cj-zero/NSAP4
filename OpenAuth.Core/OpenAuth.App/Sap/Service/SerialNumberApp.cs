@@ -36,26 +36,56 @@ namespace OpenAuth.App.Sap.Service
                         {
                             a,
                             b
-                        };
+                        }; 
             query = query
-                .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), q => q.a.manufSN.Contains(req.ManufSN))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), q => q.a.customer.Contains(req.CardName) || q.a.custmrName.Contains(req.CardName))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), q => q.a.customer.Contains(req.CardCode))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), q => q.a.itemCode.Contains(req.ItemCode))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.ItemName), q => q.a.itemCode.Contains(req.ItemName))
-                .WhereIf(!string.IsNullOrEmpty(req.ManufSNOrItemCode), q => q.a.itemCode.Contains(req.ManufSNOrItemCode) || q.a.manufSN.Contains(req.ManufSNOrItemCode))
-                ;
-            var query2 = query.Select(q => new
+                 .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), q => q.a.manufSN.Contains(req.ManufSN))
+                 .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), q => q.a.customer.Contains(req.CardName) || q.a.custmrName.Contains(req.CardName))
+                 .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), q => q.a.customer.Contains(req.CardCode))
+                 .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), q => q.a.itemCode.Contains(req.ItemCode))
+                 .WhereIf(!string.IsNullOrWhiteSpace(req.ItemName), q => q.a.itemCode.Contains(req.ItemName))
+                 .WhereIf(!string.IsNullOrEmpty(req.ManufSNOrItemCode), q => q.a.itemCode.Contains(req.ManufSNOrItemCode) || q.a.manufSN.Contains(req.ManufSNOrItemCode))
+                 ;
+
+            var query2 = query.Select(q => new SerialNumberListResp
             {
-                q.a.manufSN,
-                q.a.internalSN,
-                q.a.customer,
-                q.a.custmrName,
-                q.b.ContractID,
-                dlvryDate = q.a.dlvryDate.Value.AddYears(1),
-                q.a.itemCode,
-                q.a.itemName,
+                ManufSN = q.a.manufSN,
+                InternalSN = q.a.internalSN,
+                Customer = q.a.customer,
+                CustmrName = q.a.custmrName,
+                ContractID = q.b.ContractID,
+                DlvryDate = q.a.dlvryDate.Value.AddYears(1),
+                ItemCode = q.a.itemCode,
+                ItemName = q.a.itemName,
             });
+
+            var qqq = UnitWork.Find<ServiceOins>(null)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), q => q.manufSN.Contains(req.ManufSN))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), q => q.customer.Contains(req.CardCode))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), q => q.customer.Contains(req.CardName) || q.custmrName.Contains(req.CardName))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), q => q.itemCode.Contains(req.ItemCode))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.ItemName), q => q.itemCode.Contains(req.ItemName)).Select(q => new SerialNumberListResp
+                {
+                   ManufSN =  q.manufSN,
+                   InternalSN = q.internalSN,
+                   Customer = q.customer,
+                   CustmrName = q.custmrName,
+                   ContractID = q.contract.Value,
+                   DlvryDate  =  q.dlvryDate.Value.AddYears(1),
+                   ItemCode = q.itemCode,
+                    ItemName = q.itemName
+                });
+
+            if (!string.IsNullOrWhiteSpace(req.CardCode)) 
+            {
+                var data1 = await query2.ToListAsync();
+                var data2 = await qqq.ToListAsync();
+                data1.AddRange(data2);
+                result.Data = data1.Skip((req.page - 1) * req.limit)
+                .Take(req.limit).ToList();
+                result.Count = await query2.CountAsync() + await qqq.CountAsync();
+                return result;
+            }
+            
             result.Data = await query2//.OrderBy(u => u.Id)
                 .Skip((req.page - 1) * req.limit)
                 .Take(req.limit).ToListAsync(); ///Select($"new ({propertyStr})");
@@ -63,22 +93,7 @@ namespace OpenAuth.App.Sap.Service
 
             if (result.Count == 0)
             {
-                var qqq = UnitWork.Find<ServiceOins>(null)
-                .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), q => q.manufSN.Contains(req.ManufSN))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), q => q.customer.Contains(req.CardCode))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), q => q.customer.Contains(req.CardName) || q.custmrName.Contains(req.CardName))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), q => q.itemCode.Contains(req.ItemCode))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.ItemName), q => q.itemCode.Contains(req.ItemName)).Select(q => new
-                {
-                    q.manufSN,
-                    q.internalSN,
-                    q.customer,
-                    q.custmrName,
-                    ContractID = q.contract,
-                    dlvryDate = q.dlvryDate.Value.AddYears(1),
-                    q.itemCode,
-                    q.itemName
-                });
+                
                 result.Data = await qqq//.OrderBy(u => u.Id)
                     .Skip((req.page - 1) * req.limit)
                     .Take(req.limit).ToListAsync(); ///Select($"new ({propertyStr})");
