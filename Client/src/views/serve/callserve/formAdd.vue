@@ -851,7 +851,7 @@ export default {
           fromTheme: "", //呼叫主题
           fromId: 1, //呼叫来源 1-电话 2-APP
           problemTypeId: "", //问题类型Id
-          fromType: 1, //呼叫类型1-提交呼叫 2-在线解答（已解决）
+          fromType: "", //呼叫类型1-提交呼叫 2-在线解答（已解决）
           materialCode: "", //物料编码
           materialDescription: "", //物料描述
           manufacturerSerialNumber: "", //制造商序列号
@@ -1260,7 +1260,7 @@ export default {
               itemName: "",
               feeType: 1,
               fromTheme: "",
-              fromType:1,
+              fromType: "",
               problemTypeName:  "",
               problemTypeId: "",
               priority: 1,
@@ -1278,7 +1278,7 @@ export default {
             this.formList[0].orderTakeType = 1
             this.formList[0].editTrue = true
             // this.formList[0].fromTheme = ""
-            this.formList[0].fromType =  this.formList[0].fromType || 1
+            this.formList[0].fromType =  this.formList[0].fromType || ""
             // this.formList[0].problemTypeName = ""
             // this.formList[0].problemTypeId = ""
             this.formList[0].priority =  this.formList[0].priority || 1
@@ -1297,7 +1297,7 @@ export default {
               materialDescription: newList[i].itemName,
               feeType: 1,
               fromTheme: "",
-              fromType:  1,
+              fromType:  "",
               problemTypeName: "",
               problemTypeId:  "",
               priority:  1,
@@ -1322,7 +1322,7 @@ export default {
                 itemName: "",
                 feeType: 1,
                 fromTheme:  "",
-                fromType:  1,
+                fromType:  "",
                 problemTypeName:  "",
                 problemTypeId:  "",
                 priority:  1,
@@ -1359,7 +1359,7 @@ export default {
                 materialDescription: "",
                 feeType: 1,
                 fromTheme:  "",
-                fromType:  1,
+                fromType:  "",
                 problemTypeName:  "",
                 problemTypeId:  "",
                 priority:  1,
@@ -1378,7 +1378,7 @@ export default {
                 materialDescription: this.formListStart[i].itemName,
                 feeType: 1,
                 fromTheme:  "",
-                fromType:  1,
+                fromType:  "",
                 problemTypeName:  "",
                 problemTypeId:  "",
                 priority:  1,

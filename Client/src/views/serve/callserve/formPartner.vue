@@ -102,6 +102,9 @@ export default {
     },
 
     getPartner(val) {
+      if (!val) {
+        return
+      }
       if (val.frozenFor&&val.frozenFor == "Y") {
       this.$message({
         message: `${val.cardName}账户被冻结，无法操作`,

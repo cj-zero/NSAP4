@@ -159,6 +159,7 @@
         destroy-on-close
         class="addClass1 dialog-mini"
         :visible.sync="dialogFormView"
+        @open="openDetail"
       >
       <el-row :gutter="20" class="position-view">
         <el-col :span="18" >
@@ -172,9 +173,9 @@
           :refValue="dataForm"
         ></zxform>
         </el-col>
-            <el-col :span="6" class="lastWord">   
-              <zxchat :serveId='serveid'></zxchat>
-            </el-col>
+          <el-col :span="6" class="lastWord">   
+            <zxchat :serveId="serveId"></zxchat>
+          </el-col>
         </el-row>
 
         <div slot="footer">
@@ -219,7 +220,16 @@
         title="选择转派对象"
         center
         width="500px"
+        @closed="onClosed"
       >
+        <el-row type="flex" justify="end" style="margin-bottom: 10px;">
+          <el-input 
+            v-model="listQuery2.currentUser" 
+            size="mini" 
+            @keyup.enter.native="onSearchUser"
+            style="width:200px;"
+            placeholder="技术员"></el-input>
+        </el-row>
         <el-table :data="tableData" border @row-click="setRadio" style="width: 100%">
           <el-table-column align="center">
             <template slot-scope="scope">
@@ -263,7 +273,7 @@
 <script>
 import * as solutions from "@/api/solutions";
 import * as callservepushm from "@/api/serve/callservepushm";
-import * as callservesure from "@/api/serve/callservesure";
+// import * as callservesure from "@/api/serve/callservesure";
 import * as category from "@/api/categorys"
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
@@ -273,13 +283,13 @@ import DynamicTable from "@/components/DynamicTable";
 import elDragDialog from "@/directive/el-dragDialog";
 import zxsearch from "./search";
 import zxform from "../callserve/form";
-import zxchat from "../callserve/chatOnRight"
+import zxchat from "../callserve/chat/index"
 import treeList from "../callserve/treeList";
 import { debounce } from '@/utils/process'
 import Report from '../common/components/report'
 import rightImg from '@/assets/table/right.png'
 // import treeTable from "@/components/TreeTableMlt";
-import { reportMixin } from '../common/js/mixins'
+import { reportMixin, dispatchMixin, chatMixin } from '../common/js/mixins'
 // import { callserve, count } from "@/mock/serve";
 export default {
   name: "solutions",
@@ -294,7 +304,7 @@ export default {
     Report,
     zxchat
   },
-  mixins: [reportMixin],
+  mixins: [reportMixin, dispatchMixin, chatMixin],
   directives: {
     waves,
     elDragDialog,
@@ -351,10 +361,6 @@ export default {
         // "problemTypeName": "数值异常",
         // "currentUserId": 1
       ],
-      listQuery2: {
-        page: 1,
-        limit: 20,
-      },
       defaultProps: {
         children: "children",
         label: "label",
@@ -436,7 +442,7 @@ export default {
         update: "确认服务呼叫单",
         create: "新建服务呼叫单",
       },
-      dataForm: {}, //获取的详情表单
+      // dataForm: {}, //获取的详情表单
       dialogPvVisible: false,
       pvData: [],
       params: {
@@ -498,7 +504,7 @@ export default {
         });
         // console.log(this.workorderidList);
       },
-    },
+    }
   },
   created() {},
   mounted() {
@@ -537,14 +543,6 @@ export default {
       // this.afterLeft()
       this.getRightList();
     },
-    handleCurrentChange2(val) {
-      this.listQuery2.page = val.page;
-      this.listQuery2.limit = val.limit;
-         callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
-          this.tableData = res.data;
-          this.total2 = res.count;
-        });
-    },
     async afterLeft() {
       await this.getLeftList();
       if (this.modulesTree.length > 0) {
@@ -572,10 +570,7 @@ export default {
           this.dialogOrder = true;
               //  this.listQuery.limit=999
         await this.getRightList(); 
-          callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
-            this.tableData = res.data;
-            this.total2 = res.count;
-          });
+          this._getAllowSendOrderUser()
         }
       } else {
         this.$message({
@@ -642,19 +637,18 @@ export default {
       this.listQueryServer = Object.assign(this.listQueryServer, val)
       this.afterLeft()
     },
-    openTree(res) {
-      console.log(res, 'res')
-      // this.listLoading = true;
-      this.serveid = res
-      callservesure.GetDetails(res).then((res) => {
-        if (res.code == 200) {
-          this.dataForm = res.result;
-          this.dialogFormView = true;
-        }
-        // this.listLoading = false;
-      });
-    },
-
+    // openTree(res) {
+    //   console.log(res, 'res')
+    //   // this.listLoading = true;
+    //   this.serveid = res
+    //   callservesure.GetDetails(res).then((res) => {
+    //     if (res.code == 200) {
+    //       this.dataForm = res.result;
+    //       this.dialogFormView = true;
+    //     }
+    //     // this.listLoading = false;
+    //   });
+    // },
     // closeCustoner() {
     //   // this.getList();
     // },
@@ -1012,32 +1006,32 @@ export default {
         }
       });
     },
-    onReportClosed () {
-      this.reportData = []
-      this.$refs.report.reset()
-    },
-    handleReport (serviceOrderId, data) {
-      console.log(serviceOrderId, this.$store.state.user.name)
-      console.log(this.list, 'list')
-      let hasFinished = data.some(workOrder => {
-        let { status, fromType } = workOrder
-        return Number(status) === 7 && Number(fromType) !== 2 // 所有工单状态为已解决且呼叫类型不为在线解答
-      })
-      if (hasFinished) {
-        callservesure.getReportDetail({
-          serviceOrderId
-        }).then(res => {
-          console.log(res, 'reportData')
-          this.reportData = res.result.data
-          this.dialogReportVisible = true
-        })
-      } else {
-        this.$message({
-            type: 'warning',
-            message: '工单未解决或在线解答方式无完工报告'
-          })
-      }
-    },
+    // onReportClosed () {
+    //   this.reportData = []
+    //   this.$refs.report.reset()
+    // },
+    // handleReport (serviceOrderId, data) {
+    //   console.log(serviceOrderId, this.$store.state.user.name)
+    //   console.log(this.list, 'list')
+    //   let hasFinished = data.some(workOrder => {
+    //     let { status, fromType } = workOrder
+    //     return Number(status) === 7 && Number(fromType) !== 2 // 所有工单状态为已解决且呼叫类型不为在线解答
+    //   })
+    //   if (hasFinished) {
+    //     callservesure.getReportDetail({
+    //       serviceOrderId
+    //     }).then(res => {
+    //       console.log(res, 'reportData')
+    //       this.reportData = res.result.data
+    //       this.dialogReportVisible = true
+    //     })
+    //   } else {
+    //     this.$message({
+    //         type: 'warning',
+    //         message: '工单未解决或在线解答方式无完工报告'
+    //       })
+    //   }
+    // },
     handleDelete(rows) {
       // 多行删除
       solutions.del(rows.map((u) => u.id)).then(() => {
