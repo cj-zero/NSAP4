@@ -678,7 +678,7 @@ namespace OpenAuth.App
             var e = await UnitWork.AddAsync<ServiceOrder, int>(obj);
             await UnitWork.SaveAsync();
             var pictures = req.Pictures.MapToList<ServiceOrderPicture>();
-            pictures.ForEach(p => { p.ServiceOrderId = e.Id; p.PictureType = 2; });
+            pictures.ForEach(p => { p.ServiceOrderId = e.Id; p.PictureType = p.PictureType == 3?3:2; });
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
 
@@ -2340,7 +2340,9 @@ namespace OpenAuth.App
                 ServiceWorkOrder = string.Join(',', workOrderIds.ToArray()),
                 MaterialType = req.MaterialType
             });
-            await _ServiceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{req.CurrentUserId}预约工单{string.Join(",", orderIds.Select(s => s.WorkOrderNumber).ToArray())}", ActionType = "预约工单", MaterialType = req.MaterialType }, workOrderIds);
+            var username = UnitWork.Find<AppUserMap>(a => a.AppUserId.Equals(req.CurrentUserId)).Include(a => a.User).Select(a => a.User.Name).FirstOrDefault();
+
+            await _ServiceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{username}预约工单{string.Join(",", orderIds.Select(s => s.WorkOrderNumber).ToArray())}", ActionType = "预约工单", MaterialType=req.MaterialType }, workOrderIds);
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = req.ServiceOrderId, Content = "技术员已预约上门时间成功，请尽早安排行程", AppUserId = 0 });
 
         }
