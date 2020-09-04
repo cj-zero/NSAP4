@@ -1646,8 +1646,8 @@ namespace OpenAuth.App
                         .Include(s => s.ServiceWorkOrders)
                         .WhereIf(request.Type == 1, s => s.Status == 1) //待受理
                         .WhereIf(request.Type == 2, s => s.Status == 2)//已受理
-                        .WhereIf(request.Type == 3, q => q.ServiceWorkOrders.All(a => a.Status == 7)) //待评价
-                        .WhereIf(request.Type == 4, q => q.ServiceWorkOrders.All(a => a.Status == 8))//已评价
+                        .WhereIf(request.Type == 3, q => q.ServiceWorkOrders.All(a => a.Status == 7) && q.ServiceWorkOrders.Count > 0) //待评价
+                        .WhereIf(request.Type == 4, q => q.ServiceWorkOrders.All(a => a.Status == 8) && q.ServiceWorkOrders.Count > 0)//已评价
                         .Select(a => new
                         {
                             a.Id,
@@ -2758,7 +2758,7 @@ namespace OpenAuth.App
                     o.ProblemType,
                     o.ProblemTypeId
                 }),
-                q.ServiceWorkOrders,
+                ServiceWorkOrders = q.ServiceWorkOrders.Where(w => !string.IsNullOrEmpty(w.MaterialCode)),
                 q.ProblemTypeId,
                 q.ProblemTypeName
             });
@@ -2786,7 +2786,7 @@ namespace OpenAuth.App
                 s.Latitude,
                 s.Longitude,
                 WorkOrderCount = s.ServiceWorkOrders.Count(),
-                ServiceWorkOrders = s.MaterialInfo.GroupBy(o => o.MaterialType).ToList().Select(a => new
+                ServiceWorkOrders = s.MaterialInfo.Where(w => !string.IsNullOrEmpty(w.MaterialType)).GroupBy(o => o.MaterialType).ToList().Select(a => new
                 {
                     MaterialType = a.Key,
                     UnitName = "台",
@@ -2984,7 +2984,7 @@ namespace OpenAuth.App
             var WorkOrderNumbers = String.Join(',', UnitWork.Find<ServiceWorkOrder>(s => ids.Contains(s.Id)).Select(s => s.WorkOrderNumber).ToArray());
 
             await _ServiceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{WorkOrderNumbers}", ActionType = "主管派单工单", MaterialType = string.Join(",", req.QryMaterialTypes.ToArray()) }, ids);
-            await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = Convert.ToInt32(req.ServiceOrderId), Content = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{string.Join(",", ids.ToArray())}", AppUserId = req.CurrentUserId });
+            await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = Convert.ToInt32(req.ServiceOrderId), Content = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{string.Join(",", ids.ToArray())}", AppUserId = 0 });
             await PushMessageToApp(req.CurrentUserId, "派单成功提醒", "您已被派有一个新的售后服务，请尽快处理");
         }
 
