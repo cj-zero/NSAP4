@@ -13,9 +13,9 @@
     <!-- <template v-show="currentName === 'progress'">
 
     </template> -->
-    <!-- <template v-show="currentName === 'check'"> -->
+    <template v-if="formName === '编辑'">
       <check :sapOrderId="sapOrderId" :customerId="customerId" v-show="currentName === 'check'"></check>
-    <!-- </template> -->
+    </template>
   </div>
 </template>
 
@@ -87,9 +87,7 @@ export default {
   mounted () {
 
   },
-  updated () {
-    console.log(this.tabList, 'tabList')
-  }
+  updated () {}
 }
 </script>
 <style lang='scss' scoped>

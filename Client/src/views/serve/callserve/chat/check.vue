@@ -40,8 +40,10 @@
       title="核对设备"
       :visible.sync="dialogFormVisible"
       append-to-body
+      @closed="onClosed"
     >
       <form-add 
+        ref="formAdd"
         :formData="formData" 
         :isNew="dialogStatus" 
         :info="info"
@@ -207,6 +209,9 @@ export default {
         console.log(res, 'devices')
         this.checkList = res.data
       })
+    },
+    onClosed () {
+      this.$refs.formAdd.reset()
     }
   },
   created () {

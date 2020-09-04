@@ -354,13 +354,13 @@
           <el-form-item label="制造商序列号:">
             <el-input @input="searchList" v-model="inputSerial" placeholder="制造商序列号"></el-input>
           </el-form-item>
-          <el-form-item label="客户">
+          <el-form-item label="售后主管">
             <el-input @input="searchList" v-model="inputTech" placeholder="售后主管"></el-input>
           </el-form-item>
-          <el-form-item label="制造商序列号:">
+          <el-form-item label="销售员:">
             <el-input @input="searchList" v-model="inputSlpName" placeholder="销售员"></el-input>
           </el-form-item>
-          <el-form-item label="制造商序列号:">
+          <el-form-item label="收货地址:">
             <el-input @input="searchList" v-model="inputAddress" placeholder="收货地址"></el-input>
           </el-form-item>
         </el-form>
@@ -374,8 +374,8 @@
         <pagination
           v-show="parentCount>0"
           :total="parentCount"
-          :page.sync="listQuery.page"
-          :limit.sync="listQuery.limit"
+          :page.sync="listQuerySearch.page"
+          :limit.sync="listQuerySearch.limit"
           @pagination="handleChange"
         />
         <span slot="footer" class="dialog-footer">
@@ -581,6 +581,10 @@ export default {
         page: 1,
         limit: 40,
       },
+      listQuerySearch: {
+        page: 1,
+        limit: 40
+      },
       needPos: false,
       dialogCallId: false, // 最近十个服务单弹窗
       CallList: [], // 最近十个服务单列表
@@ -728,7 +732,7 @@ export default {
     };
   },
   mounted() {
-    this.getPartnerList();
+    this.getPartnerList(this.listQuery, 'first');
     if (this.customer) {
       this.setForm(this.customer);
     }
@@ -1197,7 +1201,7 @@ export default {
           //   if (this.form.terminalCustomerId) { // 如果终端客户存在，则不进行值的覆盖
           //     return 
           //   }
-          // }f
+          // }
           if (this.handleSelectType === 'customer') {
             this.form.salesMan = res.result.slpName
             this.form.customerName = res.result.cardName
@@ -1263,9 +1267,9 @@ export default {
       console.log(val);
     },
     handleChange(val) {
-      this.listQuery.page = val.page;
-      this.listQuery.limit = val.limit;
-      this.getPartnerList();
+      this.listQuerySearch.page = val.page;
+      this.listQuerySearch.limit = val.limit;
+      this.getPartnerList(this.listQuerySearch, 'search');
     },
     handleClose() {
       //  ##地图关闭之前执行的操作
@@ -1277,18 +1281,16 @@ export default {
     },
     openDialog() {
       //打开前赋值
-      this.filterPartnerList = this.partnerList;
+      // this.filterPartnerList = this.partnerList;
     },
     searchList: debounce(function() {
-      console.log(this, 'this')
-      this.listQuery.CardCodeOrCardName = this.inputSearch;
-      this.listQuery.ManufSN = this.inputSerial
+      this.listQuerySearch.CardCodeOrCardName = this.inputSearch;
+      this.listQuerySearch.ManufSN = this.inputSerial
       // this.form.customerId = this.inputSearch;
-      this.listQuery.slpName = this.inputName
-      this.listQuery.Technician = this.inputTech
-      this.listQuery.Address = this.inputAddress
-      console.log('searchList')
-      this.getPartnerList();
+      this.listQuerySearch.slpName = this.inputName
+      this.listQuerySearch.Technician = this.inputTech
+      this.listQuerySearch.Address = this.inputAddress
+      this.getPartnerList(this.listQuerySearch, 'search');
       // if (!res) {
       //   this.filterPartnerList = this.partnerList;
       // } else {
@@ -1304,10 +1306,10 @@ export default {
       this.getPartnerList();
     }, 400),
     async querySearch(queryString, cb) {
-      // this.listQuery.CardCodeOrCardName = queryString;
+      this.listQuery.CardCodeOrCardName = queryString;
       // this.inputSearch = queryString;
 
-      await this.getPartnerList();
+      await this.getPartnerList(this.listQuery);
       console.log(this.partnerList, 'partnerList')
       // var results = queryString
       //   ? partnerList.filter(this.createFilter(queryString))
@@ -1324,14 +1326,24 @@ export default {
     //     );
     //   };
     // },
-    getPartnerList() {
+    getPartnerList(listQuery, type) {
       this.parentLoad = true;
-      return getPartner(this.listQuery)
+      return getPartner(listQuery)
         .then((res) => {
-          this.partnerList = res.data;
+          // this.partnerList = res.data;
           // console.log(res.data, '返回')
-          this.filterPartnerList = this.partnerList;
-          this.parentCount = res.count;
+          let list = res.data
+          if (type === 'first') {
+            this.filterPartnerList = list
+            this.partnerList = list
+            this.parentCount = res.count;
+          } else if (type === 'search') {
+            this.filterPartnerList = list;
+            this.parentCount = res.count;
+          } else {
+            this.partnerList = list;
+          }
+          // this.parentCount = res.count;
           this.parentLoad = false;
         })
         .catch(() => {

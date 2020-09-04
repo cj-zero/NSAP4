@@ -220,7 +220,16 @@
         center
         :modal-append-to-body="false"
         width="550px"
+        @closed="onClosed"
       >
+        <el-row type="flex" justify="end" style="margin-bottom: 10px;">
+          <el-input 
+            v-model="listQuery2.currentUser" 
+            size="mini" 
+            @keyup.enter.native="onSearchUser"
+            style="width:200px;"
+            placeholder="技术员"></el-input>
+        </el-row>
         <el-table :data="tableData" border @row-click="setRadio" style="width: 100%">
           <el-table-column align="center">
             <template slot-scope="scope">
@@ -372,6 +381,7 @@ export default {
       listQuery2: {
         page: 1,
         limit: 10,
+        currentUser: ''
       },
       listQuery1: {
         // 查询条件
@@ -482,6 +492,9 @@ export default {
         // console.log(this.workorderidList);
       },
     },
+    'listQuery2.currentUser' () {
+      this.listQuery2.page = 1
+    }
   },
   created() {},
   mounted() {
@@ -540,10 +553,11 @@ export default {
     async changeOrder() {
       if (this.ifParent) {
         this.dialogOrder = true;
-        callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
-          this.tableData = res.data;
-          this.total2 = res.count;
-        });
+        // callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
+        //   this.tableData = res.data;
+        //   this.total2 = res.count;
+        // });
+        this._getAllowSendOrderUser()
         // this.listQuery.limit = 999;
         await this.getRightList();
       } else {
@@ -882,13 +896,23 @@ export default {
       this.listQuery.limit = val.limit;
       this.getRightList();
     },
+    _getAllowSendOrderUser () {
+      callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
+        this.tableData = res.data;
+        this.total2 = res.count;
+      });
+    },
+    onClosed () {
+      this.listQuery2.currentUser = ''
+      this.listQuery2.page = 1
+    },
+    onSearchUser () {
+      this._getAllowSendOrderUser()
+    },
     handleCurrentChange2(val) {
       this.listQuery2.page = val.page;
       this.listQuery2.limit = val.limit;
-         callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
-          this.tableData = res.data;
-          this.total2 = res.count;
-        });
+      this._getAllowSendOrderUser()
     },
     handleModifyStatus(row, disable) {
       // 模拟修改状态

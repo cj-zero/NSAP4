@@ -219,7 +219,16 @@
         title="选择转派对象"
         center
         width="500px"
+        @closed="onClosed"
       >
+        <el-row type="flex" justify="end" style="margin-bottom: 10px;">
+          <el-input 
+            v-model="listQuery2.currentUser" 
+            size="mini" 
+            @keyup.enter.native="onSearchUser"
+            style="width:200px;"
+            placeholder="技术员"></el-input>
+        </el-row>
         <el-table :data="tableData" border @row-click="setRadio" style="width: 100%">
           <el-table-column align="center">
             <template slot-scope="scope">
@@ -355,6 +364,7 @@ export default {
       listQuery2: {
         page: 1,
         limit: 20,
+        currentUser: ''
       },
       defaultProps: {
         children: "children",
@@ -502,6 +512,9 @@ export default {
         // console.log(this.workorderidList);
       },
     },
+    'listQuery2.currentUser' () {
+      this.listQuery2.page = 1
+    }
   },
   created() {},
   mounted() {
@@ -539,13 +552,24 @@ export default {
       // this.afterLeft()
       this.getRightList();
     },
+    _getAllowSendOrderUser () {
+      callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
+        this.tableData = res.data;
+        this.total2 = res.count;
+      });
+    },
+    onSearchUser () {
+      this._getAllowSendOrderUser()
+    },
+    onClosed () {
+      console.log('closed')
+      this.listQuery2.currentUser = ''
+      this.listQuery2.page = 1
+    },
     handleCurrentChange2(val) {
       this.listQuery2.page = val.page;
       this.listQuery2.limit = val.limit;
-         callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
-          this.tableData = res.data;
-          this.total2 = res.count;
-        });
+      this._getAllowSendOrderUser()
     },
     async afterLeft() {
       await this.getLeftList();
@@ -574,10 +598,7 @@ export default {
           this.dialogOrder = true;
               //  this.listQuery.limit=999
         await this.getRightList(); 
-          callservepushm.AllowSendOrderUser().then((res) => {
-            this.tableData = res.data;
-            this.total2 = res.count;
-          });
+          this._getAllowSendOrderUser()
         }
       } else {
         this.$message({

@@ -587,6 +587,33 @@ export default {
     },
     close () {
       this.$emit('close')
+    },
+    reset () {
+      this.from = {
+        priority: 1, //优先级 4-紧急 3-高 2-中 1-低
+        feeType: 1, //服务类型 1-免费 2-收费
+        submitDate: "", //工单提交时间
+        recepUserId: "", //接单人用户Id
+        remark: "", //备注
+        status: 1, //呼叫状态 1-待确认 2-已确认 3-已取消 4-待处理 5-已排配 6-已外出 7-已挂起 8-已接收 9-已解决 10-已回访
+        currentUserId: "", //App当前流程处理用户Id
+        fromTheme: "", //呼叫主题
+        fromId: 1, //呼叫来源 1-电话 2-APP
+        problemTypeId: "", //问题类型Id
+        fromType: "", //呼叫类型1-提交呼叫 2-在线解答（已解决）
+        materialCode: "", //物料编码
+        materialDescription: "", //物料描述
+        manufacturerSerialNumber: "", //制造商序列号
+        internalSerialNumber: "", //内部序列号
+        warrantyEndDate: "", //保修结束日期
+        bookingDate: "", //预约时间
+        visitTime: "", //上门时间
+        liquidationDate: "", //清算日期
+        contractId: "", //服务合同
+        solutionId: "", //解决方案
+        troubleDescription: "",
+        processDescription: "",
+      }
     }
   },
   created() {},
