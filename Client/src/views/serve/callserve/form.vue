@@ -298,7 +298,7 @@
                 上传附件
               </el-col>
               <el-col :span="22">
-                <upLoadImage  @get-ImgList="getImgList" :limit="limit" uploadType="file"></upLoadImage>
+                <upLoadImage  @get-ImgList="getFileList" :limit="limit" uploadType="file"></upLoadImage>
               </el-col>
             </el-row>
             <el-row
@@ -619,7 +619,9 @@ export default {
       bMapkey: 'uGyEag9q02RPI81dcfk7h7vT8tUovWfG', // 百度key
       positionTransformURL: 'https://restapi.amap.com/v3/assistant/coordinate/convert?', // 高德坐标转换地址
       // gdKey: 'cfd8da5cf010c5f7441834ff5e764f5b' // 高德key
-      gdKey: '6cacd440b344fa2d3ef098f0fe1ee33b'
+      gdKey: '6cacd440b344fa2d3ef098f0fe1ee33b',
+      upLoadFileList: [], // 附件列表
+      upLoadImgList: [] // 图片列表
     };
   },
   computed: {
@@ -960,8 +962,14 @@ export default {
     // },
     getImgList(val) {
       //获取图片列表
-      console.log(val, 'imgList')
-      this.form.pictures = val;
+      console.log('getImgList', val)
+      this.upLoadImgList = val
+      // this.form.pictures = val;
+      // console.log(this.form.pictures, 'pictures')
+    },
+    getFileList (val) {
+      console.log('getFileList', val)
+      this.upLoadFileList = val
     },
     dragmap(res) {
       this.allAddress = res;
@@ -1142,7 +1150,7 @@ export default {
         console.log(chec, this.isValid, "isValid", this.$router.path);
         if (chec && this.isValid) {
           if (this.$route.path === "/serve/callserve") {
-            if (this.isCreate) {
+            if (this.formName === '新建') {
               // 新建服务单
               if (Array.isArray(this.form.area)) {
                 this.form.area = "";
@@ -1150,6 +1158,10 @@ export default {
               if (Array.isArray(this.form.city)) {
                 this.form.city = ""
               }
+              console.log(this.upLoadImgList, 'uploadImg', this.upLoadFileList)
+              this.form.pictures = [...this.upLoadImgList, ...this.upLoadFileList]
+              console.log(this.form.pictures, 'picturesList')
+              // this.form.pictures = this.upLoadImgList.contact(this.upLoadFileList)
               callservesure
                 .CreateOrder(this.form)
                 .then(() => {

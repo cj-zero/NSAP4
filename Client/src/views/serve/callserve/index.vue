@@ -271,6 +271,20 @@
           <el-button size="mini" @click="onRateClose">取消</el-button>
         </div>
       </el-dialog>
+      <!-- 完工报告  -->
+      <el-dialog
+        width="932px"
+        class="dialog-mini"
+        :close-on-click-modal="false"
+        title="服务行为报告单"
+        :visible.sync="dialogReportVisible"
+        @closed="onReportClosed"
+      >
+        <Report
+          ref="report"
+          :data="reportData"
+        ></Report>
+      </el-dialog>
     </div>
   </div>
 </template>
@@ -297,9 +311,10 @@ import treeList from "./treeList";
 import CustomerInfo from './customerInfo'
 import rightImg from '@/assets/table/right.png'
 import Rate from './rate'
+import Report from '../common/components/report'
 // import serveTableVue from '../serveTable.vue';
 // import { callserve } from "@/mock/serve";
-import { chatMixin } from '../common/js/mixins'
+import { chatMixin, reportMixin } from '../common/js/mixins'
 export default {
   provide () {
     return {
@@ -312,7 +327,7 @@ export default {
       'formList'
     ])
   },
-  mixins: [chatMixin],
+  mixins: [chatMixin, reportMixin],
   components: {
     Sticky,
     permissionBtn,
@@ -322,7 +337,8 @@ export default {
     zxsearch,
     zxchat,
     CustomerInfo,
-    Rate
+    Rate,
+    Report
   },
   directives: {
     waves,
@@ -612,6 +628,16 @@ export default {
           break;
         case "editTable":
           this.dialogTable = true;
+          break;
+        case "btnReport":
+          if (!this.multipleSelection.serviceOrderId) {
+            this.$message({
+              message: "请先选择服务单",
+              type: "warning"
+            });
+            return;
+          }
+          this.handleReport(this.multipleSelection.serviceOrderId, this.multipleSelection.serviceWorkOrders) // 传入key中的第一个 服务单ID
           break;
         case "btnPhone": // 电话回访
           if (!this.multipleSelection.serviceOrderId) {
