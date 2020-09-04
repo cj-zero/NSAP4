@@ -140,17 +140,17 @@
       </el-row>
       <el-row>
         <el-form-item label="更换的资料明细">
-          <el-input type="textarea" v-model="showData.replacementMaterialDetails"></el-input>
+          <el-input type="textarea" v-model="showData.replacementMaterialDetails" readonly></el-input>
         </el-form-item>
       </el-row>
       <el-row>
         <el-form-item label="遗留问题">
-          <el-input type="textarea" v-model="showData.troubleDescription"></el-input>
+          <el-input type="textarea" v-model="showData.troubleDescription" readonly></el-input>
         </el-form-item>
       </el-row>
       <el-row>
         <el-form-item label="备注">
-          <el-input type="textarea" v-model="showData.remark"></el-input>
+          <el-input type="textarea" v-model="showData.remark" readonly></el-input>
         </el-form-item>
       </el-row>
     </el-form>
