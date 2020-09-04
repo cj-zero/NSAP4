@@ -237,9 +237,10 @@
                 </el-form-item>
               </el-col>
             </el-row>
+            <bmap @mapInitail="onMapInitail" v-if="formName === '新建'"></bmap>
             <!-- //上传图片组件暂时放在这里 -->
             <el-row
-              v-if="isCreate"
+              v-if="formName === '新建'"
               :gutter="10"
               type="flex"
               style="margin:0 0 10px 0 ;"
@@ -252,15 +253,6 @@
               <el-col :span="22">
                 <upLoadImage :setImage="setImage" @get-ImgList="getImgList" :limit="limit"></upLoadImage>
               </el-col>
-              <bmap @mapInitail="onMapInitail"></bmap>
-              <!-- <el-col :span="2" style="line-height:40px;">  暂时取消
-                <el-button
-                  type="primary"
-                  v-if="ifEdit"
-                  icon="el-icon-share"
-                  @click="postService"
-                >确定修改</el-button>
-              </el-col>-->
             </el-row>
             <el-row
               v-if="form.serviceOrderPictures&&form.serviceOrderPictures.length"
@@ -294,6 +286,19 @@
                 </div>
               </el-col>
             </el-row>
+            <!-- <el-row
+              :gutter="10"
+              type="flex"
+              style="margin:0 0 10px 0 ;"
+              class="row-bg"
+            >
+              <el-col class="upload-text">
+                上传附件
+              </el-col>
+              <el-col :span="22">
+                <upLoadImage  @get-ImgList="getImgList" :limit="limit" uploadType="file"></upLoadImage>
+              </el-col>
+            </el-row> -->
             <el-row
               :gutter="10"
               type="flex"
@@ -374,8 +379,8 @@
         <pagination
           v-show="parentCount>0"
           :total="parentCount"
-          :page.sync="listQuery.page"
-          :limit.sync="listQuery.limit"
+          :page.sync="listQuerySearch.page"
+          :limit.sync="listQuerySearch.limit"
           @pagination="handleChange"
         />
         <span slot="footer" class="dialog-footer">
@@ -581,6 +586,10 @@ export default {
         page: 1,
         limit: 40,
       },
+      listQuerySearch: {
+        page: 1,
+        limit: 40
+      },
       needPos: false,
       dialogCallId: false, // 最近十个服务单弹窗
       CallList: [], // 最近十个服务单列表
@@ -728,7 +737,7 @@ export default {
     };
   },
   mounted() {
-    this.getPartnerList();
+    this.getPartnerList(this.listQuery, 'first');
     if (this.customer) {
       this.setForm(this.customer);
     }
@@ -917,7 +926,7 @@ export default {
     // },
     getImgList(val) {
       //获取图片列表
-
+      console.log(val, 'imgList')
       this.form.pictures = val;
     },
     dragmap(res) {
@@ -1009,7 +1018,7 @@ export default {
             materialDescription: res[i].data[0].itemName,
             feeType: 1,
             fromTheme:  "",
-            fromType:  1,
+            fromType:  "",
             problemTypeName,
             problemTypeId,
             priority:  1,
@@ -1028,7 +1037,7 @@ export default {
             materialDescription: "",
             feeType: 1,
             fromTheme:  "",
-            fromType:  1,
+            fromType:  "",
             problemTypeName,
             problemTypeId,
             priority:  1,
@@ -1197,7 +1206,7 @@ export default {
           //   if (this.form.terminalCustomerId) { // 如果终端客户存在，则不进行值的覆盖
           //     return 
           //   }
-          // }f
+          // }
           if (this.handleSelectType === 'customer') {
             this.form.salesMan = res.result.slpName
             this.form.customerName = res.result.cardName
@@ -1263,9 +1272,9 @@ export default {
       console.log(val);
     },
     handleChange(val) {
-      this.listQuery.page = val.page;
-      this.listQuery.limit = val.limit;
-      this.getPartnerList();
+      this.listQuerySearch.page = val.page;
+      this.listQuerySearch.limit = val.limit;
+      this.getPartnerList(this.listQuerySearch, 'search');
     },
     handleClose() {
       //  ##地图关闭之前执行的操作
@@ -1277,18 +1286,16 @@ export default {
     },
     openDialog() {
       //打开前赋值
-      this.filterPartnerList = this.partnerList;
+      // this.filterPartnerList = this.partnerList;
     },
     searchList: debounce(function() {
-      console.log(this, 'this')
-      this.listQuery.CardCodeOrCardName = this.inputSearch;
-      this.listQuery.ManufSN = this.inputSerial
+      this.listQuerySearch.CardCodeOrCardName = this.inputSearch;
+      this.listQuerySearch.ManufSN = this.inputSerial
       // this.form.customerId = this.inputSearch;
-      this.listQuery.slpName = this.inputSlpName
-      this.listQuery.Technician = this.inputTech
-      this.listQuery.Address = this.inputAddress
-      console.log('searchList')
-      this.getPartnerList();
+      this.listQuerySearch.slpName = this.inputName
+      this.listQuerySearch.Technician = this.inputTech
+      this.listQuerySearch.Address = this.inputAddress
+      this.getPartnerList(this.listQuerySearch, 'search');
       // if (!res) {
       //   this.filterPartnerList = this.partnerList;
       // } else {
@@ -1304,10 +1311,9 @@ export default {
       this.getPartnerList();
     }, 400),
     async querySearch(queryString, cb) {
-      // this.listQuery.CardCodeOrCardName = queryString;
+      this.listQuery.CardCodeOrCardName = queryString;
       // this.inputSearch = queryString;
-
-      await this.getPartnerList();
+      await this.getPartnerList(this.listQuery);
       console.log(this.partnerList, 'partnerList')
       // var results = queryString
       //   ? partnerList.filter(this.createFilter(queryString))
@@ -1324,14 +1330,24 @@ export default {
     //     );
     //   };
     // },
-    getPartnerList() {
+    getPartnerList(listQuery, type) {
       this.parentLoad = true;
-      return getPartner(this.listQuery)
+      return getPartner(listQuery)
         .then((res) => {
-          this.partnerList = res.data;
+          // this.partnerList = res.data;
           // console.log(res.data, '返回')
-          this.filterPartnerList = this.partnerList;
-          this.parentCount = res.count;
+          let list = res.data
+          if (type === 'first') {
+            this.filterPartnerList = list
+            this.partnerList = list
+            this.parentCount = res.count;
+          } else if (type === 'search') {
+            this.filterPartnerList = list;
+            this.parentCount = res.count;
+          } else {
+            this.partnerList = list;
+          }
+          // this.parentCount = res.count;
           this.parentLoad = false;
         })
         .catch(() => {

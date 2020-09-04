@@ -170,11 +170,11 @@ export default {
       formTheadOptions: [
         // { name: "id" ,label:'ID',align:'right'},
         { name: "sltCode" ,label:'编号',align:'left' },
-        { name: "status" ,label:'状态' },
+        // { name: "status" ,label:'状态' },
         { name: "symptom" ,label:'症状' },
         { name: "subject" ,label:'解决方案' },
-        { name: "cause"  ,label:'原因'},
-        { name: "descriptio"  ,label:'备注'},
+        // { name: "cause"  ,label:'原因'},
+        // { name: "descriptio"  ,label:'备注'},
         { name: "updateUserName"  ,label:'更新人名字'},
         { name: "createTime" ,label:'创建时间' }
       ],

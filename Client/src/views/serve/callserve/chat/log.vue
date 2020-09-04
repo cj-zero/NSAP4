@@ -114,7 +114,7 @@ export default {
         .GetServiceOrderMessages({ serviceOrderId: this.serveId })
         .then((res) => {
           this.wordList = res.result;
-          // console.log(this.wordList, 'wordList')
+          console.log(this.wordList, 'wordList')
         });
     },
     getInfo() {
@@ -123,6 +123,7 @@ export default {
         .GetUserProfile(this.tokenValue)
         .then((res) => {
           this.userType = res.result.name;
+          console.log(res, 'res info')
         })
         .catch((error) => {
           console.log(error);
