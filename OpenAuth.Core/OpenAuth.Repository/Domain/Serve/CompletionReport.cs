@@ -244,6 +244,17 @@ namespace OpenAuth.Repository.Domain
         [Description("到达区/县")]
         public int ArriveAreaId { get; set; }
 
+        // <summary>
+        /// 问题描述
+        /// </summary>
+        [Description("问题描述")]
+        public int TroubleDescription { get; set; }
+        /// <summary>
+        /// 解决方案
+        /// </summary>
+        [Description("解决方案")]
+        public int ProcessDescription { get; set; }
+
         /// <summary>
         /// 完工报告关联的图片
         /// </summary>
