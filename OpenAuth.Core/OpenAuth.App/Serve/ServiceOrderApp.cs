@@ -330,6 +330,7 @@ namespace OpenAuth.App
                         s.CurrentUser = d.TechName;
                         s.CurrentUserId = u?.AppUserId;
                         s.CurrentUserNsapId = obj.SupervisorId;
+                        s.Status = 2;
                     }
                 }
                 #endregion
@@ -440,6 +441,7 @@ namespace OpenAuth.App
                         obj.CurrentUser = theservice.Supervisor;
                         obj.CurrentUserNsapId = theservice.SupervisorId;
                         obj.CurrentUserId = u.AppUserId;
+                        obj.Status = 2;
                     }
                 }
                 #endregion
@@ -668,6 +670,7 @@ namespace OpenAuth.App
                         s.CurrentUser = d.TechName;
                         s.CurrentUserId = u?.AppUserId;
                         s.CurrentUserNsapId = obj.SupervisorId;
+                        s.Status = 2;
                     }
                 }
                 #endregion
