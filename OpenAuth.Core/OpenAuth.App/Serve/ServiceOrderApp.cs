@@ -2352,6 +2352,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("当前技术员无法核对此工单设备。", 9001);
             }
+            var username = UnitWork.Find<AppUserMap>(a => a.AppUserId.Equals(req.CurrentUserId)).Include(a => a.User).Select(a => a.User.Name).FirstOrDefault();
             List<int> workOrderIds = new List<int>();
             //处理核对成功的设备信息
             if (!string.IsNullOrEmpty(req.CheckWorkOrderIds))
