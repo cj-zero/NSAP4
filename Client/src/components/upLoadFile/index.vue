@@ -75,7 +75,7 @@
         multiple
         :limit="limit"
         :on-exceed="onExeed"
-        :file-list="fileList">
+        >
         <el-button size="mini" type="primary">点击上传</el-button>
       </el-upload>
     </template>
@@ -161,6 +161,7 @@ export default {
       this.$message.error(`最多上传${this.limit}个文件`)
     },
     successBack(res, file, fileList){
+      console.log(res, 'res')
       this.newPictureList.push({
         pictureId:res.result[0].id,
         uid: file.uid

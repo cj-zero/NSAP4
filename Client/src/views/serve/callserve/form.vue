@@ -243,7 +243,7 @@
               v-if="formName === '新建'"
               :gutter="10"
               type="flex"
-              style="margin:0 0 10px 0 ;"
+              style="margin:5px 0 10px 0 ;"
               class="row-bg"
             >
               <!-- <el-col :span="1" style="line-height:40px;"></el-col> -->
@@ -255,17 +255,18 @@
               </el-col>
             </el-row>
             <el-row
-              v-if="form.serviceOrderPictures&&form.serviceOrderPictures.length"
+              v-if="imgList && imgList.length"
               :gutter="10"
               type="flex"
-              style="margin:0 0 10px 0 ;"
+              style="margin:5px 0 10px 0 ;"
               class="row-bg"
             >
               <el-col class="upload-text">
                 已上传图片
               </el-col>
-              <el-col :span="22" v-if="form.serviceOrderPictures&&form.serviceOrderPictures.length">
-                <div class="demo-image__lazy">
+              <el-col :span="22" >
+                <img-list :imgList="imgList"></img-list>
+                <!-- <div class="demo-image__lazy">
                   <div class="img-list" v-for="url in form.serviceOrderPictures" :key="url.id">
                     <el-image
                       style="width:60px;height:50px;display:inline-block;"
@@ -283,14 +284,15 @@
                       ></i>
                     </div>
                   </div>
-                </div>
+                </div> -->
               </el-col>
             </el-row>
-            <!-- <el-row
+            <el-row
               :gutter="10"
               type="flex"
-              style="margin:0 0 10px 0 ;"
+              style="margin:5px 0 10px 0 ;"
               class="row-bg"
+              v-if="formName === '新建'"
             >
               <el-col class="upload-text">
                 上传附件
@@ -298,11 +300,25 @@
               <el-col :span="22">
                 <upLoadImage  @get-ImgList="getImgList" :limit="limit" uploadType="file"></upLoadImage>
               </el-col>
-            </el-row> -->
+            </el-row>
             <el-row
+              v-if="attachmentList && attachmentList.length"
               :gutter="10"
               type="flex"
               style="margin:0 0 10px 0 ;"
+              class="row-bg"
+            >
+              <el-col class="upload-text">
+                已上传附件
+              </el-col>
+              <el-col :span="22">
+                <img-list :imgList="attachmentList" listType="file"></img-list>
+              </el-col>
+            </el-row>
+            <el-row
+              :gutter="10"
+              type="flex"
+              style="margin:5px 0 10px 0 ;"
               class="row-bg"
               justify="space-around"
             >
@@ -440,6 +456,7 @@ import { download } from "@/utils/file";
 import formPartner from "./formPartner";
 import formAdd from "./formAdd";
 import AreaSelector from '@/components/AreaSelector'
+import ImgList from '@/components/imgList'
 // import jsonp from '@/utils/jsonp'
 // import { delete } from 'vuedraggable';
 const districtReg = /.+?区/  // 用来从百度地图获取到的地址取出 区地址
@@ -454,7 +471,8 @@ export default {
     Model, 
     bmap,
     callId,
-    AreaSelector 
+    AreaSelector,
+    ImgList
   },
   props: [
     "modelValue",
@@ -608,6 +626,22 @@ export default {
     allArea() {
       return this.form.province + this.form.city + this.form.area;
     },
+    imgList () {
+      if (this.form.serviceOrderPictures) {
+        return this.form.serviceOrderPictures.filter(item => {
+          return Number(item.pictureType) !== 3
+        })
+      }
+      return []
+    },
+    attachmentList () {
+      if (this.form.serviceOrderPictures) {
+        return this.form.serviceOrderPictures.filter(item => {
+          return Number(item.pictureType) === 3
+        })
+      }
+      return []
+    }
   },
   watch: {
     // ifEdit: {
