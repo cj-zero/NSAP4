@@ -1104,6 +1104,49 @@ namespace OpenAuth.App
             result.Data = data;
             return result;
         }
+
+        /// <summary>
+        /// 查询可以被派单的技术员列表
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> GetAllowSendOrderUser(GetAllowSendOrderUserReq req)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var orgs = loginContext.Orgs.Select(o => o.Id).ToArray();
+
+            var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole == 2).ToListAsync();
+            var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
+            var ids = userIds.Intersect(tUsers.Select(u => u.UserID));
+            var users = await UnitWork.Find<User>(u => ids.Contains(u.Id) && u.Status == 0).WhereIf(!string.IsNullOrEmpty(req.key), u => u.Name.Equals(req.key)).ToListAsync();
+            var us = users.Select(u => new { u.Name, AppUserId = tUsers.FirstOrDefault(a => a.UserID.Equals(u.Id)).AppUserId, u.Id });
+            var appUserIds = tUsers.Where(u => userIds.Contains(u.UserID)).Select(u => u.AppUserId).ToList();
+
+            var userCount = await UnitWork.Find<ServiceWorkOrder>(s => appUserIds.Contains(s.CurrentUserId) && s.Status.Value < 7)
+                .Select(s => new { s.CurrentUserId, s.ServiceOrderId }).Distinct().GroupBy(s => s.CurrentUserId)
+                .Select(g => new { g.Key, Count = g.Count() }).ToListAsync();
+
+            var userInfos = us.Select(u => new AllowSendOrderUserResp
+            {
+                Id = u.Id,
+                Name = u.Name,
+                Count = userCount.FirstOrDefault(s => s.Key.Equals(u.AppUserId))?.Count ?? 0,
+                AppUserId = u.AppUserId,
+            }).ToList();
+
+            if (!string.IsNullOrWhiteSpace(req.CurrentUser)) userInfos = userInfos.Where(u => u.Name.Contains(req.CurrentUser)).ToList();
+
+            var list = userInfos
+            .Skip((req.page - 1) * req.limit)
+            .Take(req.limit).ToList();
+            result.Data = list;
+            result.Count = userInfos.Count;
+            return result;
+        }
         #endregion
 
         #region<<Common Methods>>
@@ -2888,49 +2931,6 @@ namespace OpenAuth.App
                 });
             result.Count = count;
             result.Data = list;
-            return result;
-        }
-
-        /// <summary>
-        /// 查询可以被派单的技术员列表
-        /// </summary>
-        /// <returns></returns>
-        public async Task<TableData> GetAllowSendOrderUser(GetAllowSendOrderUserReq req)
-        {
-            var result = new TableData();
-            var loginContext = _auth.GetCurrentUser();
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-            var orgs = loginContext.Orgs.Select(o => o.Id).ToArray();
-
-            var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole == 2).ToListAsync();
-            var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
-            var ids = userIds.Intersect(tUsers.Select(u => u.UserID));
-            var users = await UnitWork.Find<User>(u => ids.Contains(u.Id) && u.Status == 0).WhereIf(!string.IsNullOrEmpty(req.key), u => u.Name.Equals(req.key)).ToListAsync();
-            var us = users.Select(u => new { u.Name, AppUserId = tUsers.FirstOrDefault(a => a.UserID.Equals(u.Id)).AppUserId, u.Id });
-            var appUserIds = tUsers.Where(u => userIds.Contains(u.UserID)).Select(u => u.AppUserId).ToList();
-
-            var userCount = await UnitWork.Find<ServiceWorkOrder>(s => appUserIds.Contains(s.CurrentUserId) && s.Status.Value < 7)
-                .Select(s => new { s.CurrentUserId, s.ServiceOrderId }).Distinct().GroupBy(s => s.CurrentUserId)
-                .Select(g => new { g.Key, Count = g.Count() }).ToListAsync();
-
-            var userInfos = us.Select(u => new AllowSendOrderUserResp
-            {
-                Id = u.Id,
-                Name = u.Name,
-                Count = userCount.FirstOrDefault(s => s.Key.Equals(u.AppUserId))?.Count ?? 0,
-                AppUserId = u.AppUserId,
-            }).ToList();
-
-            if (!string.IsNullOrWhiteSpace(req.CurrentUser)) userInfos = userInfos.Where(u => u.Name.Contains(req.CurrentUser)).ToList();
-
-            var list = userInfos
-            .Skip((req.page - 1) * req.limit)
-            .Take(req.limit).ToList();
-            result.Data = list;
-            result.Count = userInfos.Count;
             return result;
         }
 
