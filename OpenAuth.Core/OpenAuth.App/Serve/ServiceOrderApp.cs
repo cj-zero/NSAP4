@@ -2768,9 +2768,11 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             int QryState = Convert.ToInt32(req.QryState);
+            //获取主管的nsap用户Id
+            var nsapUserId = (await UnitWork.Find<AppUserMap>(u => u.AppUserId == req.AppUserId).FirstOrDefaultAsync()).UserID;
             //获取设备类型列表
             var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
-            var query = UnitWork.Find<ServiceOrder>(s => s.Status == 2 && s.CreateTime > Convert.ToDateTime("2020-08-01")) //服务单已确认 
+            var query = UnitWork.Find<ServiceOrder>(s => s.Status == 2 && s.CreateTime > Convert.ToDateTime("2020-08-01") && s.SupervisorId == nsapUserId) //服务单已确认 
                          .Include(s => s.ServiceOrderSNs)
                          .Include(s => s.ServiceWorkOrders)
                          .WhereIf(QryState == 1, q => q.ServiceWorkOrders.Any(q => q.Status == 1))//待派单
