@@ -27,7 +27,7 @@
           <div style="padding:10px 0;"></div>
           <el-row :gutter="10">
             <!-- <el-col :span="3"> -->
-              <el-form-item label="服务" size="small">
+              <el-form-item label="服务单号" size="small">
                 <el-input v-model="listQuery.ServiceOrderId" @keyup.enter.native="onSubmit" class="input-item"></el-input>
               </el-form-item>
             <!-- </el-col> -->
@@ -229,7 +229,7 @@ export default {
       ],
       formTheadOptions: [
         // { name: "id", label: "Id"},
-        { name: "serviceOrderId", label: "服务号", width: "80px" },
+        { name: "serviceOrderId", label: "服务单号", width: "80px" },
         { name: "customerId", label: "客户代码", width: "100px" },
         { name: "cutomer", label: "客户名称", width: "100px" },
         { name: "contact", label: "联系人", width: "100px" },

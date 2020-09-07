@@ -85,7 +85,7 @@ export default {
       download(url);
     },
     downloadFile (item) {
-      window.location.href = `${this.baseURL}/${item.pictureId ? item.pictureId : item.id}?X-Token=${this.tokenValue}`
+      download(`${this.baseURL}/${item.pictureId ? item.pictureId : item.id}?X-Token=${this.tokenValue}`)
     }
   },
   created () {

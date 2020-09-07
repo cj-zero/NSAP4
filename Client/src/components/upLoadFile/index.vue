@@ -68,9 +68,9 @@
       <el-upload
         class="upload-demo"
         :action="action"
+        name="files"
         :headers="headers"
         :on-success="successBack"
-        :on-preview="handlePreview"
         :on-remove="handleRemove"
         multiple
         :limit="limit"
@@ -118,7 +118,7 @@ export default {
       },
       pictures:[],
       newPictureList: []
-      }
+    }
   },
   watch:{
     fileList:{
@@ -135,6 +135,7 @@ export default {
         return item.uid === uid
       })
       this.pictures.splice(findIndex)
+      this.$emit('get-ImgList', this.pictures)
     },
     handlePictureCardPreview(file) {
       this.dialogImageUrl = file.url;
@@ -157,16 +158,13 @@ export default {
       return testmsg
     },
     onExeed () { 
-      console.log('onecdsad')
       this.$message.error(`最多上传${this.limit}个文件`)
     },
-    successBack(res, file, fileList){
-      console.log(res, 'res')
+    successBack(res, file){
       this.newPictureList.push({
         pictureId:res.result[0].id,
         uid: file.uid
       })
-      console.log(res, res.result[0].id, 'id', file, fileList)
       let picConig = {
         pictureId: res.result[0].id
       }

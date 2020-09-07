@@ -84,8 +84,8 @@
           </el-form-item>
         </el-col>
       </el-row>
-      <el-row type="flex" justify="space-around">
-        <el-col :span="18">
+      <el-row type="flex" justify="space-between">
+        <el-col :span="12">
           <el-table
             v-if="showData.serviceWorkOrders && showData.serviceWorkOrders.length"
             :data="showData.serviceWorkOrders"
@@ -139,7 +139,7 @@
         </el-col>
       </el-row>
       <el-row>
-        <el-form-item label="更换的资料明细">
+        <el-form-item label="更换物料明细">
           <el-input type="textarea" v-model="showData.replacementMaterialDetails" readonly></el-input>
         </el-form-item>
       </el-row>
@@ -214,6 +214,9 @@ export default {
 </script>
 <style lang='scss' scoped>
 .report-wrapper {
+  ::v-deep .el-form-item--mini.el-form-item{
+    margin-bottom: 5px;
+  }
   .img-outer-wrapper {
     margin: 10px auto;
     .pic-title {

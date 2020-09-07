@@ -57,7 +57,7 @@
         </el-form-item>
       </el-col>
     </el-row>
-    <el-row :class="{ show: isVisible }" class="other-parts">
+    <el-row v-show="isVisible">
       <el-col :span="4">
         <el-form-item label="主管">
           <el-input  v-model="form.QrySupervisor" @keyup.enter.native='onSubmit'></el-input>
