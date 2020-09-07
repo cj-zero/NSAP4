@@ -678,7 +678,7 @@ namespace OpenAuth.App
             var e = await UnitWork.AddAsync<ServiceOrder, int>(obj);
             await UnitWork.SaveAsync();
             var pictures = req.Pictures.MapToList<ServiceOrderPicture>();
-            pictures.ForEach(p => { p.ServiceOrderId = e.Id; p.PictureType = p.PictureType == 3?3:2; });
+            pictures.ForEach(p => { p.ServiceOrderId = e.Id; p.PictureType = p.PictureType == 3 ? 3 : 2; });
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
 
@@ -1688,7 +1688,7 @@ namespace OpenAuth.App
             var query = UnitWork.Find<ServiceOrder>(s => s.AppUserId == request.AppUserId)
                         .Include(s => s.ServiceWorkOrders)
                         .WhereIf(request.Type == 1, s => s.Status == 1) //待受理
-                        .WhereIf(request.Type == 2, s => s.Status == 2)//已受理
+                        .WhereIf(request.Type == 2, s => s.Status == 2 && s.ServiceWorkOrders.Any(a => a.Status < 7))//已受理
                         .WhereIf(request.Type == 3, q => q.ServiceWorkOrders.All(a => a.Status == 7) && q.ServiceWorkOrders.Count > 0) //待评价
                         .WhereIf(request.Type == 4, q => q.ServiceWorkOrders.All(a => a.Status == 8) && q.ServiceWorkOrders.Count > 0)//已评价
                         .Select(a => new
@@ -2385,7 +2385,7 @@ namespace OpenAuth.App
             });
             var username = UnitWork.Find<AppUserMap>(a => a.AppUserId.Equals(req.CurrentUserId)).Include(a => a.User).Select(a => a.User.Name).FirstOrDefault();
 
-            await _ServiceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{username}预约工单{string.Join(",", orderIds.Select(s => s.WorkOrderNumber).ToArray())}", ActionType = "预约工单", MaterialType=req.MaterialType }, workOrderIds);
+            await _ServiceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{username}预约工单{string.Join(",", orderIds.Select(s => s.WorkOrderNumber).ToArray())}", ActionType = "预约工单", MaterialType = req.MaterialType }, workOrderIds);
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = req.ServiceOrderId, Content = "技术员已预约上门时间成功，请尽早安排行程", AppUserId = 0 });
 
         }
@@ -2443,13 +2443,17 @@ namespace OpenAuth.App
             }
             else
             {
-                //判断没有错误的设备信息的再更新状态
-                await UnitWork.UpdateAsync<ServiceWorkOrder>(s => workOrderIds.Contains(s.Id), o => new ServiceWorkOrder
+                //判断没有错误的设备信息并且没有待确认的设备再更新状态
+                var applyCount = (await UnitWork.Find<SeviceTechnicianApplyOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.MaterialType.Contains(req.MaterialType) && s.TechnicianId == req.CurrentUserId).ToListAsync()).Count;
+                if (applyCount == 0)
                 {
-                    IsCheck = 1,
-                    Status = 4,
-                    OrderTakeType = 5
-                });
+                    await UnitWork.UpdateAsync<ServiceWorkOrder>(s => workOrderIds.Contains(s.Id), o => new ServiceWorkOrder
+                    {
+                        IsCheck = 1,
+                        Status = 4,
+                        OrderTakeType = 5
+                    });
+                }
             }
 
             await UnitWork.SaveAsync();

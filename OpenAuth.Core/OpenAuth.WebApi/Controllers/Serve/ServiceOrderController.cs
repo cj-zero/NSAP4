@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using NetOffice.Extensions.Invoker;
 using OpenAuth.App;
 using OpenAuth.App.Request;
@@ -26,13 +27,15 @@ namespace OpenAuth.WebApi.Controllers
     {
         private readonly ServiceOrderApp _serviceOrderApp;
         private AppServiceOrderLogApp _appServiceOrderLogApp;
-
+        private IOptions<AppSetting> _appConfiguration;
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
+
         public ServiceOrderController(ServiceOrderApp serviceOrderApp, AppServiceOrderLogApp appServiceOrderLogApp)
         {
             _serviceOrderApp = serviceOrderApp;
             _appServiceOrderLogApp = appServiceOrderLogApp;
         }
+
         /// <summary>
         /// App提交服务单
         /// </summary>
@@ -44,7 +47,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Response();
             try
             {
-                var order = await _serviceOrderApp.Add(addServiceOrderReq);
+                await _serviceOrderApp.Add(addServiceOrderReq);
             }
             catch (Exception ex)
             {
