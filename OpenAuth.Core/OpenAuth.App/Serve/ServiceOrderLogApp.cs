@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
+using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
@@ -38,6 +39,8 @@ namespace OpenAuth.App
 
             var result = new TableData();
             var objs = UnitWork.Find<ServiceOrderLog>(null);
+
+            objs.WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId),s=>s.ServiceOrderId.Equals(request.ServiceOrderId));
             if (!string.IsNullOrEmpty(request.key))
             {
                 objs = objs.Where(u => u.Id.Contains(request.key));
