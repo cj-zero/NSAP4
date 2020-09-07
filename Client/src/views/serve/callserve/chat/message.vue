@@ -53,7 +53,6 @@
 <script>
 import * as callserve from "@/api/callserve";
 import upLoadImage from "@/components/upLoadFile";
-// import { mapState } from "vuex";
 
 export default {
   props: ["serveId"],
@@ -90,9 +89,6 @@ export default {
     this.getList();
     this.getInfo();
   },
-  // computed:mapState([
-  //  "count"
-  // ]),
   watch: {
     serveId: {
       handler(val) {

@@ -46,6 +46,7 @@ export let dispatchMixin = { // 派单 转派
         limit: 10,
         currentUser: ''
       },
+      orderRadio: '' //接单员单选
     }
   },
   methods: {
@@ -58,6 +59,7 @@ export let dispatchMixin = { // 派单 转派
     onClosed () {
       this.listQuery2.currentUser = ''
       this.listQuery2.page = 1
+      this.orderRadio = ''
     },
     onSearchUser () {
       this._getAllowSendOrderUser()

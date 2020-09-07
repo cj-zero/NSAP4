@@ -312,7 +312,6 @@ export default {
   data() {
     return {
       tableData: [], //接单员列表
-      orderRadio: "", //接单员单选
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
       defaultFormThead: [
@@ -839,7 +838,7 @@ export default {
             label: `物料类型号:${data[i].workMaterialTypes[index]}`,
             // label: `物料类型号:${item1}`,
             key: `${data[i].u_SAP_ID}`,
-            key1: `${data[i].u_SAP_ID}&${item1}`,
+            key1: `${data[i].serviceOrderId}&${item1}`,
             // label: 
             id: item1,
           });

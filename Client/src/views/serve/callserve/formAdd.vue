@@ -972,7 +972,7 @@ export default {
       return this.formList.some(item => {
         return item.manufacturerSerialNumber === '其他设备'
       })
-    },
+    }
   },
   watch: {
     newValue: {
@@ -1033,7 +1033,10 @@ export default {
           if (oldVal[index] !== undefined) {
             let oldItem = oldVal[index]
             if (item.fromType !== oldItem.fromType) {
-              this.formList[index].status = this.getStatus(item.fromType)
+              console.log('formList.item')
+              if (this.isChangeStatus(item)) {
+                this.formList[index].status = this.getStatus(item.fromType)
+              }
             }
           }
         })
@@ -1044,7 +1047,11 @@ export default {
     },
     'formList.0' (newVal, oldVal) {
       if (newVal.fromType !== oldVal.fromType) {
-        newVal.status = this.getStatus(newVal.fromType)
+        console.log('formList.0')
+        // if (forn)
+        if (this.isChangeStatus(newVal)) {
+          newVal.status = this.getStatus(newVal.fromType)
+        }
       }
     },
     propForm: {
@@ -1115,6 +1122,11 @@ export default {
   // },f
   // inject: ["form"],
   methods: {
+    isChangeStatus (val) { // 是否可以改变状态
+      return (this.formName === '编辑' && !this.formInitailList.every(item => item.id === val.id)) 
+      || this.formName === '新建' 
+      || this.formName === '确认'
+    },
     onClose () {
       this.dialogfSN = false
       this.inputSearch = ''
@@ -1135,8 +1147,8 @@ export default {
     toggleDisabledClick(val) {
       this.isDisalbed = val;
     },
-    getStatus (formType) { // 根据呼叫类型 来改变状态
-      return formType === 1 ? 1 : 7
+    getStatus (formType) { // 根据呼叫类型 来改变状态\
+      return Number(formType) === 1 ? 1 : 7
     },  
     getSerialNumberList(code) {
       this.listLoading = true;

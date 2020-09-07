@@ -79,6 +79,14 @@ export default {
       default: ''
     }
   },
+  watch: {
+    sapOrderId () {
+      this._getTechnicianApplyDevices()
+    },
+    customerId (newVal) {
+      this._getSerialNumber(newVal)
+    }
+  },
   filters: {
     processText (status) {
       return status === 0 ? '核对' :

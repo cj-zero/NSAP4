@@ -297,7 +297,6 @@ export default {
   data() {
     return {
       tableData: [], //接单员列表
-      orderRadio: "", //接单员单选
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
       defaultFormThead: [
@@ -575,7 +574,6 @@ export default {
       }
       this.params.qryMaterialTypes = this.listQuery.QryMaterialTypes
       this.params.serviceOrderId = checkedKey 
-      console.log(this.params, 'params')
       if (this.hasAlreadNum > this.totalLimit) {
         this.$message({
           type: "warning",
@@ -602,7 +600,6 @@ export default {
             this.afterLeft();
             this.dialogOrder = false;
             this.listLoading = false;
-                    
             //  this.getRightList();
           }
         })

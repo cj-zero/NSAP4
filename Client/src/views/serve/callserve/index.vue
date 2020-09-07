@@ -936,11 +936,11 @@ export default {
       }
     },
     _normalizeCommentList (res, row) {
-      let { serviceOrderId, contactTel, customerId, customerName, contacter } = row
+      let { serviceOrderId, contactTel, customerId, customerName, contacter, terminalCustomerId } = row
       let technicianEvaluates = res.data || []// 技术员列表
       let commentList = {
         serviceOrderId,
-        customerId,
+        customerId: terminalCustomerId || customerId,
         cutomer: customerName,
         contact: contacter,
         caontactTel: contactTel,
