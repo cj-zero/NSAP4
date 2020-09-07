@@ -837,8 +837,17 @@ namespace OpenAuth.WebApi.Controllers
         /// <returns></returns>
         private static (string, string, string, string, string) ReduceVoltage(double indication, double measuredValue, double error, double acceptance, double uncertainty)
         {
-            var istr = indication.ToString("f6").Split('.')[1];
-            var mstr = measuredValue.ToString().Split('.')[1];
+            var istr = indication.ToString("f6").Split('.')[1]; 
+            var spMstr = measuredValue.ToString().Split('.');
+            string mstr;
+            if (spMstr.Count() == 1)
+            {
+                mstr = "00";
+            }
+            else
+            {
+                mstr = measuredValue.ToString().Split('.')[1];
+            }
             var sp = uncertainty.ToString("G2").Split('.');
             if (sp[0] == "1" || sp[0] == "2")
                 sp = (uncertainty / 1000).ToString("f4").Split('.');
@@ -882,7 +891,16 @@ namespace OpenAuth.WebApi.Controllers
         {
             var istr = indication.ToString("f3").Split('.')[1];
             istr = (indication / 1000).ToString($"f{istr.Length + 3}").Split('.')[1];
-            var mstr = measuredValue.ToString().Split('.')[1];
+            var spMstr = measuredValue.ToString().Split('.');
+            string mstr;
+            if (spMstr.Count() == 1)
+            {
+                mstr = "00";
+            }
+            else
+            {
+                mstr = measuredValue.ToString().Split('.')[1];
+            }
             mstr = measuredValue.ToString($"f{mstr.Length + 3}").Split('.')[1];
             var sp = ((decimal)uncertainty).ToString("G2").Split('.');
             if (sp[0] == "1" || sp[0] == "2")
