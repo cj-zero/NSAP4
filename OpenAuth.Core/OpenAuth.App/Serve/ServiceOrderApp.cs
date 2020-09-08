@@ -28,6 +28,7 @@ using MessagePack.Formatters;
 using NPOI.SS.Formula.Functions;
 using Infrastructure.Test;
 using NetOffice.Extensions.Conversion;
+using OpenAuth.App.Serve.Response;
 
 namespace OpenAuth.App
 {
@@ -85,7 +86,7 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public async Task<ServiceOrder> GetDetails(int id)
+        public async Task<ServiceOrderDetailsResp> GetDetails(int id)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -98,10 +99,13 @@ namespace OpenAuth.App
                 .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                 .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.Solution)
                 .Include(s => s.ServiceOrderPictures).FirstOrDefaultAsync();
+            
             var result = obj.MapTo<ServiceOrderDetailsResp>();
-            var serviceOrderPictureIds = obj.ServiceOrderPictures.Select(s => s.PictureId).ToList();
+            var serviceOrderPictures = obj.ServiceOrderPictures.Select(s =>new { s.PictureId,s.PictureType }).ToList();
+            var serviceOrderPictureIds = serviceOrderPictures.Select(s => s.PictureId).ToList();
             var files = await UnitWork.Find<UploadFile>(f => serviceOrderPictureIds.Contains(f.Id)).ToListAsync();
             result.Files = files.MapTo<List<UploadFileResp>>();
+            result.Files.ForEach(f => f.PictureType = serviceOrderPictures.Where(p => f.Id.Equals(p.PictureId)).Select(p => p.PictureType).FirstOrDefault());
             //result.ServiceWorkOrders.ForEach(async s => 
             //{
             //    if(s.CompletionReport != null)
@@ -113,7 +117,7 @@ namespace OpenAuth.App
             //        s.CompletionReport.Files = completionReportFiles.MapTo<List<UploadFileResp>>();
             //    }
             //});
-            return obj;
+            return result;
         }
 
         /// <summary>
@@ -642,6 +646,7 @@ namespace OpenAuth.App
             var obj = req.MapTo<ServiceOrder>();
             obj.RecepUserName = loginContext.User.Name;
             obj.RecepUserId = loginContext.User.Id;
+            obj.CreateUserId = loginContext.User.Id;
             obj.Status = 2;
             obj.SalesMan = d.SlpName;
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
@@ -832,6 +837,7 @@ namespace OpenAuth.App
                 q.a.FromType,
                 q.a.Status,
                 q.b.CustomerId,
+                q.b.TerminalCustomerId,
                 q.b.TerminalCustomer,
                 q.b.CustomerName,
                 q.a.FromTheme,
@@ -872,12 +878,14 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<List<UploadFileResp>> GetServiceOrderPictures(int id, int type)
         {
-            var idList = await UnitWork.Find<ServiceOrderPicture>(p => p.ServiceOrderId.Equals(id))
+            var Pictures = await UnitWork.Find<ServiceOrderPicture>(p => p.ServiceOrderId.Equals(id))
                .WhereIf(type == 0, a => a.PictureType == 1 || a.PictureType == 2)
                .WhereIf(type > 0, b => b.PictureType.Equals(type))
-               .Select(p => p.PictureId).ToListAsync();
+               .Select(p => new { p.PictureId,p.PictureType }).ToListAsync();
+            var idList = Pictures.Select(p => p.PictureId).ToList();
             var files = await UnitWork.Find<UploadFile>(f => idList.Contains(f.Id)).ToListAsync();
             var list = files.MapTo<List<UploadFileResp>>();
+            list.ForEach(L => L.PictureType = Pictures.Where(p => L.Id.Equals(p.PictureId)).Select(f => f.PictureType).FirstOrDefault());
             return list;
         }
 
@@ -2418,7 +2426,7 @@ namespace OpenAuth.App
                         {
                             IsCheck = 1
                         });
-                        var WorkNumber = UnitWork.Find<ServiceWorkOrder>(s => s.Id.Equals(itemcheck)).Select(s => s.WorkOrderNumber).FirstOrDefault();
+                        var WorkNumber =await UnitWork.Find<ServiceWorkOrder>(s => s.Id == int.Parse(itemcheck)).Select(s => s.WorkOrderNumber).FirstOrDefaultAsync();
                         await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{username}核对工单{WorkNumber}设备（成功）", ActionType = "核对设备", ServiceWorkOrderId = int.Parse(itemcheck), MaterialType = req.MaterialType });
                     }
                 }
@@ -2436,7 +2444,7 @@ namespace OpenAuth.App
                             IsCheck = 2,
                             Status = 3
                         });
-                        var WorkNumber = UnitWork.Find<ServiceWorkOrder>(s => s.Id.Equals(itemerr)).Select(s => s.WorkOrderNumber).FirstOrDefault();
+                        var WorkNumber = await UnitWork.Find<ServiceWorkOrder>(s => s.Id == int.Parse(itemerr)).Select(s => s.WorkOrderNumber).FirstOrDefaultAsync();
                         await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{username}核对工单{WorkNumber}设备(错误)", ActionType = "核对设备", ServiceWorkOrderId = int.Parse(itemerr), MaterialType = req.MaterialType });
                     }
                 }
@@ -2985,7 +2993,7 @@ namespace OpenAuth.App
                 ServiceWorkOrder = string.Join(",", ids.ToArray()),
                 MaterialType = string.Join(",", req.QryMaterialTypes.ToArray())
             });
-            var WorkOrderNumbers = String.Join(',', UnitWork.Find<ServiceWorkOrder>(s => ids.Contains(s.Id)).Select(s => s.WorkOrderNumber).ToArray());
+            var WorkOrderNumbers = String.Join(',',await UnitWork.Find<ServiceWorkOrder>(s => ids.Contains(s.Id)).Select(s => s.WorkOrderNumber).ToArrayAsync());
 
             await _ServiceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{WorkOrderNumbers}", ActionType = "主管派单工单", MaterialType = string.Join(",", req.QryMaterialTypes.ToArray()) }, ids);
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = Convert.ToInt32(req.ServiceOrderId), Content = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{WorkOrderNumbers}", AppUserId = 0 });
