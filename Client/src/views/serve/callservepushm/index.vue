@@ -83,7 +83,7 @@
                   </div>
                   <span
                     v-if="fruit.name === 'status'"
-                    :class="processStatus(scope.row[fruit.name])"
+                    :class="processStatus(scope.row)"
                   >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
                   <span v-if="fruit.name === 'fromType'">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
                   <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>

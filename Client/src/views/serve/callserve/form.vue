@@ -268,7 +268,7 @@
                 上传图片
               </el-col>
               <el-col :span="22">
-                <upLoadImage :setImage="setImage" @get-ImgList="getImgList" :limit="limit"></upLoadImage>
+                <upLoadImage :setImage="setImage" @get-ImgList="getImgList" :limit="limit" ref="uploadImg"></upLoadImage>
               </el-col>
             </el-row>
             <el-row
@@ -296,7 +296,7 @@
                 上传附件
               </el-col>
               <el-col :span="22">
-                <upLoadImage  @get-ImgList="getFileList" :limit="limit" uploadType="file"></upLoadImage>
+                <upLoadImage  @get-ImgList="getFileList" :limit="limit" uploadType="file" ref="uploadFile"></upLoadImage>
               </el-col>
             </el-row>
             <el-row
@@ -671,6 +671,7 @@ export default {
       handler(val) {
         this.getPartnerInfo(val.customerId)
         this.setForm(val);
+        // console.log(this.$refs.uploadImg, 'uploadImg')
       },
     },
     sure: {
@@ -813,6 +814,11 @@ export default {
     window.removeEventListener("resize", this.resizeWin);
   },
   methods: {
+    clearFiles () {
+      this.$refs.uploadImg.clearFiles()
+      this.$refs.uploadFile.clearFiles()
+      this.form.files = []
+    },
     onCustomerIdChange (e) {
       let val = e.target.value
       if (!isCustomerCode(val)) {

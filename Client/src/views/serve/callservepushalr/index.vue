@@ -83,7 +83,7 @@
                   </div>
                   <span
                     v-if="fruit.name === 'status'"
-                    :class="processStatus(scope.row[fruit.name])"
+                    :class="processStatus(scope.row)"
                   >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
                   <span v-if="fruit.name === 'customerId'">
                     {{ scope.row.terminalCustomerId ? scope.row.terminalCustomerId : scope.row.customerId }}

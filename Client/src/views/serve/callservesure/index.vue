@@ -147,7 +147,7 @@
         @open="openCustoner"
         @close="closeCustoner"
         :close-on-click-modal="false"
-        :destroy-on-close="true"
+        :destroy-on-close="false"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
@@ -161,6 +161,7 @@
           </el-col>
           <el-col :span="13">
             <zxform
+              ref="confirmForm"
               :form="temp"
               formName="确认"
               labelposition="right"
@@ -439,6 +440,7 @@ export default {
       this.dataForm = this.dataForm1;
     },
     closeCustoner() {
+      this.$refs.confirmForm.clearFiles()
       // this.getList();
     },
     openTree(res) {
