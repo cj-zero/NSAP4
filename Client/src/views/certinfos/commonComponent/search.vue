@@ -1,6 +1,6 @@
 <template>
   <div class="search-wrapper w949">
-    <el-form :model="form" inline label-width="80px" size="mini">
+    <el-form :model="form" inline label-width="90px" size="mini">
       <el-form-item label="证书编号">
         <el-input v-model="form.certNo" style="width: 100px;"></el-input>
       </el-form-item>

@@ -87,8 +87,20 @@
                   >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
                   <span v-if="fruit.name === 'fromType'">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
                   <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
+                  <span v-if="fruit.name === 'customerId'">
+                    {{ scope.row.terminalCustomerId ? scope.row.terminalCustomerId : scope.row.customerId }}
+                  </span>
+                  <span v-if="fruit.name === 'customerName'">
+                    {{ scope.row.terminalCustomerName ? scope.row.terminalCustomerName : scope.row.customerName }}
+                  </span>
                   <span
-                    v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'&&fruit.name !== 'workOrderNumber'"
+                    v-if="fruit.name != 'priority' 
+                    && fruit.name!='fromType' 
+                    && fruit.name!='status'
+                    && fruit.name!='serviceOrderId'
+                    && fruit.name !== 'workOrderNumber'
+                    && fruit.name !== 'customerName'
+                    && fruit.name !== 'customerId'"
                   >{{scope.row[fruit.name]}}</span>
                 </template>
               </el-table-column>

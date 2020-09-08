@@ -906,40 +906,30 @@ export default {
     },
     handlePhone (row) { // 电话回访
       let { serviceOrderId, serviceWorkOrders } = row // 8 代表已回访
-      let hasAllFinished = serviceWorkOrders.every(item => { // 所有的工单都已经解决了并且呼叫状态不是在线解答
-        return Number(item.status) === 7 && Number(item.fromType) !== 2
-      })
       let hasVisit = serviceWorkOrders.every(item => { // 是否已经回访
         return Number(item.status) === 8
       })
       if (hasVisit) {
-        // afterEvaluation.getComment({
-        //   id: serviceOrderId
-        // }).then(res => {
-        //   this.isView = true
-        //   this.dialogRateVisible = true
-        //   console.log(res, 'commentList')
-        // })
         this.$message({
           type: 'warning',
           message: '该服务单已评价'
         })
       } else {
-        if (hasAllFinished) {
-          afterEvaluation.getTechnicianName({
-            serviceOrderId
-          }).then(res => {
-            this.isView = false
-            this.commentList = this._normalizeCommentList(res, row)
-            this.dialogRateVisible = true
-            console.log(this.commentList, 'commentList')
-          })
-        } else {
-          this.$message({
-            type: 'warning',
-            message: '工单未解决或在线解答方式不可回访'
-          })
-        }
+        afterEvaluation.getTechnicianName({
+          serviceOrderId
+        }).then(res => {
+          if (!res.data) {
+            return this.$message({
+              type: 'warning',
+              message: '工单未解决或在线解答方式不可回访'
+            })
+          }
+          this.isView = false
+          this.commentList = this._normalizeCommentList(res, row)
+          this.dialogRateVisible = true
+        }).catch(err => {
+          this.$message.error(err.message)
+        })
       }
     },
     _normalizeCommentList (res, row) {
