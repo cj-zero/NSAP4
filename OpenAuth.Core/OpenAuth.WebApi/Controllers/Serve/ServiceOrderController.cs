@@ -28,13 +28,18 @@ namespace OpenAuth.WebApi.Controllers
         private readonly ServiceOrderApp _serviceOrderApp;
         private AppServiceOrderLogApp _appServiceOrderLogApp;
         private IOptions<AppSetting> _appConfiguration;
+        private readonly HttpHelper _helper;
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
 
-        public ServiceOrderController(ServiceOrderApp serviceOrderApp, AppServiceOrderLogApp appServiceOrderLogApp)
+        public ServiceOrderController(ServiceOrderApp serviceOrderApp, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration)
         {
             _serviceOrderApp = serviceOrderApp;
             _appServiceOrderLogApp = appServiceOrderLogApp;
+            _appConfiguration = appConfiguration;
+            _helper = new HttpHelper(_appConfiguration.Value.AppServerUrl);
         }
+
+
 
         /// <summary>
         /// App提交服务单
@@ -849,8 +854,16 @@ namespace OpenAuth.WebApi.Controllers
         public async Task<TableData> AppUnConfirmedServiceOrderList([FromQuery] QueryAppServiceOrderListReq req)
         {
             var result = new TableData();
+            Dictionary<string, object> parameters = new Dictionary<string, object>();
+            parameters.Add("QryState", req.QryState);
+            parameters.Add("AppUserId", req.AppUserId);
+            parameters.Add("limit", req.limit);
+            parameters.Add("page", req.page);
+            parameters.Add("key", req.key);
+            parameters.Add("X-Token", "");
             try
             {
+                //var r = _helper.Get(parameters, "api/serve/ServiceOrder/AppUnConfirmedServiceOrderList");
                 result = await _serviceOrderApp.AppUnConfirmedServiceOrderList(req);
             }
             catch (Exception ex)
