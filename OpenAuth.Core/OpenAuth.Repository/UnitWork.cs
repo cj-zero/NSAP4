@@ -182,7 +182,6 @@ namespace OpenAuth.Repository
             //}
             foreach (var context in DbContexts)
             {
-                context.Value.SaveChanges();
                 var _context = context.Value;
                 try
                 {
@@ -298,7 +297,6 @@ namespace OpenAuth.Repository
         {
             foreach (var context in DbContexts)
             {
-                context.Value.SaveChanges();
                 var _context = context.Value;
                 try
                 {
