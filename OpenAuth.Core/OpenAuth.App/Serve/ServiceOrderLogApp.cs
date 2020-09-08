@@ -5,9 +5,11 @@ using System.Threading.Tasks;
 using Infrastructure;
 using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
+using Npoi.Mapper;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
+using OpenAuth.App.Serve.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 
@@ -17,7 +19,6 @@ namespace OpenAuth.App
     public class ServiceOrderLogApp : BaseApp<ServiceOrderLog>
     {
         private RevelanceManagerApp _revelanceApp;
-
         /// <summary>
         /// 加载列表
         /// </summary>
@@ -109,8 +110,35 @@ namespace OpenAuth.App
             });
 
         }
-            
 
+        /// <summary>
+        /// 根据服务单id查找关于该服务单日志 by zlg 2020.09.07
+        /// </summary>
+        /// <param name="ServiceOrderId"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetServiceOrderLog(int ServiceOrderId)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = new TableData();
+            var ids = await UnitWork.Find<ServiceWorkOrder>(s=>s.ServiceOrderId.Equals(ServiceOrderId)).Select(s => s.Id).ToListAsync();
+
+            var objs = UnitWork.Find<ServiceOrderLog>(s => s.ServiceOrderId.Equals(ServiceOrderId) || ids.Contains((int)s.ServiceWorkOrderId));
+            var ActionList = await objs.Select(s =>s.Action).Distinct().ToListAsync();
+            var loglist = new List<ServiceOrderLogResp>();
+            foreach (var item in ActionList)
+            {
+               loglist.Add(await objs.Where(s => s.Action.Equals(item)).Select(s=>new ServiceOrderLogResp {
+                   CreateTime=s.CreateTime, 
+                   CreateUserName=s.CreateUserName, 
+                   Action=s.Action}).FirstOrDefaultAsync());
+            }
+            result.Data = loglist.OrderBy(u => u.CreateTime).ToList();
+            return result;
+        }
         public ServiceOrderLogApp(IUnitWork unitWork, IRepository<ServiceOrderLog> repository,
             RevelanceManagerApp app, IAuth auth) : base(unitWork, repository,auth)
         {

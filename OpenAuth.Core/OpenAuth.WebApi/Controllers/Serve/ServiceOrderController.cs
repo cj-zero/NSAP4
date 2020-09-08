@@ -443,10 +443,10 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<Response<ServiceOrder>> GetDetails(int id)
+        public async Task<Response<ServiceOrderDetailsResp>> GetDetails(int id)
         {
 
-            var result = new Response<ServiceOrder>();
+            var result = new Response<ServiceOrderDetailsResp>();
 
             try
             {
