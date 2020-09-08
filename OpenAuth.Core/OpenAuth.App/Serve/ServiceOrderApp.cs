@@ -2226,6 +2226,7 @@ namespace OpenAuth.App
             {
                 status = 3;
                 servicemode = 2;
+                await UnitWork.UpdateAsync<ServiceWorkOrder>(s => workOrderIds.Contains(s.Id) && s.BookingDate == null, e => new ServiceWorkOrder { BookingDate = DateTime.Now });
             }
             else if (request.Type > 4)
             {
@@ -2465,7 +2466,8 @@ namespace OpenAuth.App
                     });
                 }
             }
-
+            //更新上门时间
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => workOrderIds.Contains(s.Id) && s.VisitTime == null, o => new ServiceWorkOrder { VisitTime = DateTime.Now });
             await UnitWork.SaveAsync();
             await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
             {

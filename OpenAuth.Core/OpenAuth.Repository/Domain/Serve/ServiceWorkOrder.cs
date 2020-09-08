@@ -236,6 +236,12 @@ namespace OpenAuth.Repository.Domain
         public int? ServiceMode { get; set; }
 
         /// <summary>
+        /// 完工时间
+        /// </summary>
+        [Description("完工时间")]
+        public System.DateTime? CompleteDate { get; set; }
+
+        /// <summary>
         /// 技术员留言消息
         /// </summary>
         [Description("技术员留言消息")]
