@@ -31,6 +31,6 @@ namespace OpenAuth.App.Serve.Request
         /// <summary>
         /// 原技术员Id
         /// </summary>
-        public int TechnicianId { get; set; }
+        public string TechnicianId { get; set; }
     }
 }
