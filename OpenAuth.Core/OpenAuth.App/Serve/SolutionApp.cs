@@ -41,7 +41,7 @@ namespace OpenAuth.App
             var objs = UnitWork.Find<Solution>(s => s.UseBy == 1);
             if (!string.IsNullOrEmpty(request.key))
             {
-                objs = objs.Where(u => u.Id.Contains(request.key) || u.Subject.Contains(request.key)).WhereIf(int.TryParse(request.key, out int code), u => u.SltCode == code);
+                objs = objs.Where(u => u.Id.Contains(request.key) || u.Subject.Contains(request.key) || u.Symptom.Contains(request.key)).WhereIf(int.TryParse(request.key, out int code), u => u.SltCode == code);
             }
 
 
@@ -76,7 +76,7 @@ namespace OpenAuth.App
             var objs = UnitWork.Find<Solution>(s => s.UseBy == 2);
             if (!string.IsNullOrEmpty(request.key))
             {
-                objs = objs.Where(u => u.Id.Contains(request.key) || u.Subject.Contains(request.key)).WhereIf(int.TryParse(request.key, out int code), u => u.SltCode == code);
+                objs = objs.Where(u => u.Id.Contains(request.key) || u.Subject.Contains(request.key) || u.Symptom.Contains(request.key)).WhereIf(int.TryParse(request.key, out int code), u => u.SltCode == code);
             }
 
 
