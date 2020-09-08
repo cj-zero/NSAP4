@@ -54,7 +54,7 @@
               required: true, message: '呼叫主题不能为空', trigger: 'blur'
             }"
             >
-              <el-input v-model="formList[0].fromTheme"  type="textarea" maxlength="255"></el-input>
+              <el-input v-model="formList[0].fromTheme" type="textarea" maxlength="255" autosize></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="6">
@@ -385,7 +385,7 @@
                   required: true, message: '呼叫主题不能为空', trigger: 'blur'
                 }"
                 >
-                  <el-input type="textarea" maxlength="255" v-model="item.fromTheme"></el-input>
+                  <el-input type="textarea" maxlength="255" v-model="item.fromTheme" autosize></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="6">
@@ -660,6 +660,7 @@
     </el-collapse>
     <!-- </div> -->
     <el-dialog
+      v-el-drag-dialog
       :modal-append-to-body="false"
       :append-to-body="true"
       :close-on-click-modal="false"
@@ -673,6 +674,7 @@
       <problemtype @node-click="NodeClick" :dataTree="dataTree"></problemtype>
     </el-dialog>
     <el-dialog
+      v-el-drag-dialog
       :title="`第${sortForm}个工单的解决方案`"
       center
       :modal-append-to-body="false"
@@ -697,6 +699,7 @@
       </span>-->
     </el-dialog>
     <el-dialog
+      v-el-drag-dialog
       :append-to-body="true"
       :destroy-on-close="true"
       :modal-append-to-body="false"
@@ -763,6 +766,7 @@
       </span>
     </el-dialog>
     <el-dialog
+      v-el-drag-dialog
       width="932px"
       class="dialog-mini"
       :append-to-body="true"
@@ -792,6 +796,7 @@ import solution from "./solution";
 import { mapMutations } from 'vuex'
 import Report from '../common/components/report'
 import { reportMixin } from '../common/js/mixins'
+import elDragDialog from '@/directive/el-dragDialog'
 export default {
   components: { fromfSN, problemtype, solution, Pagination, fromfSNC, Report },
   mixins: [reportMixin],
@@ -800,6 +805,9 @@ export default {
     return {
       vm: that,
     };
+  },
+  directives: {
+    elDragDialog
   },
   props: ["isCreate", "ifEdit", "serviceOrderId", "propForm", "formName", "form"],
   // ##propForm编辑或者查看详情传过来的数据
@@ -952,13 +960,13 @@ export default {
       limit: 20
     }).then((response) => {
       this.datasolution = response.data;
-      console.log(this.datasolution, 'solution')
+      // console.log(this.datasolution, 'solution')
       this.solutionCount = response.count;
       this.listLoading = false;
     });
     if (this.propForm && this.propForm.length) {
       this.formList = this.propForm.slice();
-      console.log(this.formList === this.propForm, 'prop')
+      // console.log(this.formList === this.propForm, 'prop')
       this.formInitailList = this.propForm.slice() // 保存已经新建的表单项，用于后续判断后续是否能够编辑
       this.setFormList(this.formList)
     }

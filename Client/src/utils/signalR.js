@@ -7,7 +7,6 @@ function initSignalR (token = '', callBack) {
   if (hasConnected) {
     return
   }
-  console.log(this, 'init')
   let signalR = window.signalR
   const connection = new signalR.HubConnectionBuilder()
     .withUrl(`${process.env.VUE_APP_BASE}/MessageHub?x-token=${token}`, {

@@ -142,6 +142,7 @@ export function changeIcon(icon) {
 }
 // 深拷贝
 export const deepClone = (obj) => {
+  if (typeof obj !== 'object' && !obj) return obj
   var objArray = Array.isArray(obj) ? [] : {};
   if(obj && typeof obj === "object") {
     for(let key in obj) {

@@ -36,12 +36,12 @@
     <template v-else>
       <ul class="file-list">
         <li 
-          v-for="(item, index) in imgList"
+          v-for="item in imgList"
           :key="item.id"
           class="file-item" 
           @click="downloadFile(item)">
           <i class="el-icon-tickets"></i>
-          <span class="file-name">附件 {{ index + 1 }}</span>
+          <span class="file-name">附件 {{ item.fileName }}</span>
         </li>
       </ul>
     </template>
@@ -51,7 +51,7 @@
 <script>
 
 import Model from "@/components/Formcreated/components/Model";
-import { download } from '@/utils/file'
+import { download, downloadFile } from '@/utils/file'
 export default {
   components: {
     Model
@@ -85,7 +85,7 @@ export default {
       download(url);
     },
     downloadFile (item) {
-      download(`${this.baseURL}/${item.pictureId ? item.pictureId : item.id}?X-Token=${this.tokenValue}`)
+      downloadFile(`${this.baseURL}/${item.pictureId ? item.pictureId : item.id}?X-Token=${this.tokenValue}`)
     }
   },
   created () {

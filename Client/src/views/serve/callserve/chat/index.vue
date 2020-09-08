@@ -12,7 +12,7 @@
     <Message :serveId="serveId" v-show="currentName === 'message'"></Message>
     <!-- </template> -->
     <!-- 服务进度 -->
-    <Log v-show="currentName === 'progress'"></Log>
+    <Log v-show="currentName === 'progress'" :serveId="serveId"></Log>
     <!-- 核对设备 -->
     <template v-if="formName === '编辑'">
       <check :sapOrderId="sapOrderId" :customerId="customerId" v-show="currentName === 'check'"></check>

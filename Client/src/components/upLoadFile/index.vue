@@ -47,6 +47,7 @@
         :limit="limit"
         :auto-upload="true"
         :on-exceed="onExeed"
+        :disabled="disabled"
         >
         <i class="el-icon-plus"></i>
         <span class="el-upload-list__item-delete" @click="handleDownload(file)">
@@ -75,6 +76,7 @@
         multiple
         :limit="limit"
         :on-exceed="onExeed"
+        :disabled="disabled"
         >
         <el-button size="mini" type="primary">点击上传</el-button>
       </el-upload>
@@ -104,13 +106,16 @@ export default {
     fit: {
       type: String,
       default: 'fill'
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
     return {
       dialogImageUrl: "",
       dialogVisible: false,
-      disabled: false,
       action: `${process.env.VUE_APP_BASE_API}/Files/Upload`,
       fileList:[],
       headers:{

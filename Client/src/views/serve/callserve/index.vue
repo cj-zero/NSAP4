@@ -147,6 +147,7 @@
       </div>
       <!-- 客户信息 -->
       <el-dialog
+        v-el-drag-dialog
         width="800px"
         :close-on-click-modal="false"
         :visible.sync="dialogInfoVisible"
@@ -156,6 +157,7 @@
       </el-dialog>
       <!-- 客服新建服务单 -->
       <el-dialog
+        v-el-drag-dialog
         width="900px"
         top="10vh"
         class="dialog-mini"
@@ -182,6 +184,7 @@
       </el-dialog>
       <!-- 客服编辑服务单 -->
       <el-dialog
+        v-el-drag-dialog
         width="1210px"
         top="10vh"
         class="dialog-mini"
@@ -220,11 +223,13 @@
       </el-dialog>
       <!-- 只能查看的表单 -->
       <el-dialog
+        v-el-drag-dialog
         width="1210px"
         top="10vh"
         title="服务单详情"
         :close-on-click-modal="false"
         destroy-on-close
+        :modal-append-to-body="false"
         class="addClass1 dialog-mini"
         @open="openDetail"
         :visible.sync="dialogFormView"
@@ -264,6 +269,7 @@
         :visible.sync="dialogRateVisible"
         width="1015px"
         center
+        v-el-drag-dialog
       >
         <Rate :data="commentList" @changeComment="onChangeComment" :isView="isView" ref="rateRoot" />
         <div slot="footer">
@@ -273,6 +279,7 @@
       </el-dialog>
       <!-- 完工报告  -->
       <el-dialog
+        v-el-drag-dialog
         width="932px"
         class="dialog-mini"
         :close-on-click-modal="false"

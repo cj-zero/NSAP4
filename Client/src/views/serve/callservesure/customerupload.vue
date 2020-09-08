@@ -70,7 +70,7 @@
       <el-row type="flex" class="row-bg" justify="space-around">
         <el-col :span="24">
           <el-form-item label="申请说明">
-            <el-input type="textarea" v-model="form.services"></el-input>
+            <el-input type="textarea" v-model="form.services" :autosize="true"></el-input>
           </el-form-item>
         </el-col>
       </el-row>

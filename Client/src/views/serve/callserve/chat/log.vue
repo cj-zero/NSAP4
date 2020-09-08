@@ -1,7 +1,7 @@
 <template>
-  <div style="width:100%;">
+  <div style="width:100%;max-height:600px;">
     <template v-if="serviceLogsList.length">
-      <el-collapse accordion>
+      <!-- <el-collapse accordion>
         <div class="item"
           v-for="item in serviceLogsList"
           :title="item.materialType"
@@ -26,7 +26,20 @@
           </el-collapse-item>
           <span class="user">{{ item.createuserName }}</span>
         </div>
-      </el-collapse>
+      </el-collapse> -->
+      <el-timeline>
+        <el-timeline-item
+        v-for="(item, index) in serviceLogsList"
+        :key="index"
+        :timestamp="item.createTime">
+        <el-row type="flex" justify="space-between">
+          <span class="operator">{{ item.createuserName }}</span>
+        </el-row>
+        <el-row>
+          {{ item.action }}
+        </el-row>
+        </el-timeline-item>
+      </el-timeline>
     </template>
     <template v-else>
       暂无数据~~
@@ -37,6 +50,12 @@
 <script>
 import { getServiceOrderLogs } from '@/api/serve/serviceLog'
 export default {
+  props: {
+    serveId: {
+      type: [Number, String],
+      default: ''
+    }
+  },
   data() {
     return {
       serviceLogsList: [],
@@ -52,22 +71,26 @@ export default {
         }]
     }
   },
-  created () {
-    getServiceOrderLogs().then(res => {
-      console.log(res, 'res')
-      this.serviceLogsList = res.data
-    }).catch(err => {
-      console.log(err)
-    })
+  watch: {
+    serveId () {
+      this._getServiceOrderLogs()
+    }
   },
-  mounted() {
-
-  },
-  // computed:mapState([
-  //  "count"
-  // ]),
- 
   methods: {
+    _getServiceOrderLogs () {
+      getServiceOrderLogs({
+        serviceOrderId: this.serveId
+      }).then(res => {
+        console.log(res, 'res')
+        this.serviceLogsList = res.data
+      }).catch(() => {
+        this.serviceLogsList = []
+        this.$message.error('加载日志失败')
+      })
+    }
+  },
+  created () {
+    this._getServiceOrderLogs()
   }
 };
 </script>
