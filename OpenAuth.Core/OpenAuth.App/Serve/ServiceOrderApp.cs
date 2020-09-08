@@ -758,6 +758,7 @@ namespace OpenAuth.App
                 ServiceOrderId = q.Id,
                 q.CustomerId,
                 q.CustomerName,
+                q.TerminalCustomerId,
                 q.TerminalCustomer,
                 q.RecepUserName,
                 q.Contacter,
