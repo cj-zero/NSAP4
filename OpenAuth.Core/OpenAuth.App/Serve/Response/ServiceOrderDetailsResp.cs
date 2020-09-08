@@ -51,6 +51,10 @@ namespace OpenAuth.App.Response
         /// <summary>
         /// 终端客户
         /// </summary>
+        public string TerminalCustomerId { get; set; }
+        /// <summary>
+        /// 终端客户
+        /// </summary>
         public string TerminalCustomer { get; set; }
         /// <summary>
         /// 创建时间
