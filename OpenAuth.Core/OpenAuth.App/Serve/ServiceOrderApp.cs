@@ -3088,7 +3088,7 @@ namespace OpenAuth.App
             //2.取出nSAP中该用户对应的部门信息
             var orgs = _revelanceApp.Get(Define.USERORG, true, userId).ToArray();
             //3.取出nSAP用户与APP用户关联的用户信息（角色为技术员）
-            var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole > 1 && req.TechnicianId > 0 ? u.AppUserId != req.TechnicianId : true).ToListAsync();
+            var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole > 1 && !string.IsNullOrEmpty(req.TechnicianId) ? u.AppUserId != Convert.ToInt32(req.TechnicianId) : true).ToListAsync();
             //4.获取定位信息（登录APP时保存的位置信息）
             var locations = (await UnitWork.Find<RealTimeLocation>(null).OrderByDescending(o => o.CreateTime).ToListAsync()).GroupBy(g => g.AppUserId).Select(s => s.First());
             //5.根据组织信息获取组织下的所有用户Id集合

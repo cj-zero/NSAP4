@@ -147,7 +147,7 @@
         @open="openCustoner"
         @close="closeCustoner"
         :close-on-click-modal="false"
-        :destroy-on-close="false"
+        :destroy-on-close="true"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >

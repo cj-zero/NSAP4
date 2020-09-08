@@ -669,7 +669,6 @@ export default {
     // },
     customer: {
       handler(val) {
-        console.log(val, 'customer change')
         this.getPartnerInfo(val.customerId)
         this.setForm(val);
       },
@@ -1283,7 +1282,8 @@ export default {
           // 如果已经存在终端客户，则只有改变终端客户时才可以更改相关信息
           // 如果终端客户代码和客户代码一致，则可以更改相关信息
           if ((this.handleSelectType === 'terminalCustomer' && this.form.terminalCustomerId) || 
-            (this.handleSelectType === 'customer' && this.form.terminalCustomerId === this.form.customerId)) {
+            (this.handleSelectType === 'customer' && this.form.terminalCustomerId === this.form.customerId) ||
+            this.formName === '确认') {
             this.addressList = res.result.addressList;
             this.cntctPrsnList = res.result.cntctPrsnList;
             this.form.supervisor = res.result.techName;
