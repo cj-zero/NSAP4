@@ -964,12 +964,12 @@ export default {
       this.solutionCount = response.count;
       this.listLoading = false;
     });
-    if (this.propForm && this.propForm.length) {
-      this.formList = this.propForm.slice();
-      // console.log(this.formList === this.propForm, 'prop')
-      this.formInitailList = this.propForm.slice() // 保存已经新建的表单项，用于后续判断后续是否能够编辑
-      this.setFormList(this.formList)
-    }
+    // if (this.propForm && this.propForm.length) {
+    //   this.formList = JSON.parse(JSON.stringify(this.propForm))
+    //   this.formInitailList = JSON.parse(JSON.stringify(this.propForm)) // 保存已经新建的表单项，用于后续判断后续是否能够编辑
+    //   this.setFormList(this.formList)
+    //   console.log('mounted')
+    // }
   },
   computed: {
     newValue() {
@@ -1041,7 +1041,6 @@ export default {
           if (oldVal[index] !== undefined) {
             let oldItem = oldVal[index]
             if (item.fromType !== oldItem.fromType) {
-              console.log('formList.item')
               if (this.isChangeStatus(item)) {
                 this.formList[index].status = this.getStatus(item.fromType)
               }
@@ -1055,8 +1054,6 @@ export default {
     },
     'formList.0' (newVal, oldVal) {
       if (newVal.fromType !== oldVal.fromType) {
-        console.log('formList.0')
-        // if (forn)
         if (this.isChangeStatus(newVal)) {
           newVal.status = this.getStatus(newVal.fromType)
         }
@@ -1067,8 +1064,9 @@ export default {
       immediate: true,
       handler(val) {
         if (val && val.length) {
-          this.formList = val.slice();
-          this.formInitailList = val.slice()
+          this.formList = JSON.parse(JSON.stringify(val))
+          this.formInitailList = JSON.parse(JSON.stringify(val))
+          this.setFormList(this.formList)
           console.log(this.formList, 'formInitailList');
         }
       },

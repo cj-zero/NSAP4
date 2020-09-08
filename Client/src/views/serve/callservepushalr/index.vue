@@ -83,13 +83,13 @@
                   </div>
                   <span
                     v-if="fruit.name === 'status'"
-                    :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
+                    :class="processStatus(scope.row[fruit.name])"
                   >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
                   <span v-if="fruit.name === 'customerId'">
                     {{ scope.row.terminalCustomerId ? scope.row.terminalCustomerId : scope.row.customerId }}
                   </span>
                   <span v-if="fruit.name === 'customerName'">
-                    {{ scope.row.terminalCustomerName ? scope.row.terminalCustomerName : scope.row.customerName }}
+                    {{ scope.row.terminalCustomer ? scope.row.terminalCustomer : scope.row.customerName }}
                   </span>
                   <span v-if="fruit.name === 'fromType'">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
                   <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
@@ -301,7 +301,12 @@ import { debounce } from '@/utils/process'
 import Report from '../common/components/report'
 import rightImg from '@/assets/table/right.png'
 // import treeTable from "@/components/TreeTableMlt";
-import { reportMixin, dispatchMixin, chatMixin } from '../common/js/mixins'
+import { 
+  reportMixin, 
+  dispatchMixin, 
+  chatMixin, 
+  tableMixin 
+} from '../common/js/mixins'
 // import { callserve, count } from "@/mock/serve";
 export default {
   name: "solutions",
@@ -316,7 +321,7 @@ export default {
     Report,
     zxchat
   },
-  mixins: [reportMixin, dispatchMixin, chatMixin],
+  mixins: [reportMixin, dispatchMixin, chatMixin, tableMixin],
   directives: {
     waves,
     elDragDialog,

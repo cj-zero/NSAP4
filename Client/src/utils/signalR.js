@@ -69,9 +69,9 @@ function initSignalR (token = '', callBack) {
   })
   // 连接完成
   connection.on('Connected', () => {
-    console.log("websocket has connected")
     callBack && callBack()
     hasConnected = true
+    console.log("websocket has connected", hasConnected)
   })
   
   // Start the connection.

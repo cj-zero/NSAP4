@@ -412,7 +412,7 @@
         :visible.sync="dialogCallId"
         :center="true"
       >
-        <callId :toCallList="CallList"></callId>
+        <callId :toCallList="CallList" :openTree="openTree"></callId>
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialogCallId = false">关闭</el-button>
           <!-- <el-button type="primary" @click="dialogCallId = false">确 定</el-button> -->
@@ -462,6 +462,7 @@ import ImgList from '@/components/imgList'
 const districtReg = /.+?区/  // 用来从百度地图获取到的地址取出 区地址
 export default {
   name: "formTable",
+  // inject: ['instance'],
   components: { 
     formPartner, 
     formAdd, 
@@ -489,6 +490,7 @@ export default {
     "sure", //用于待确认，新建页面确定之后的响应
     "ifFirstLook", //是否是待确认页面
     "serviceOrderId", // 服务单ID
+    'openTree'
   ],
   //  ##isCreate是否可以编辑  ##look只能看   ##create新增页  ##customer获取服务端对比的信息
   //customer确认订单时传递的信息
@@ -627,7 +629,7 @@ export default {
       upLoadFileList: [], // 附件列表
       upLoadImgList: [], // 图片列表
       currentItem: {}, // 当前选中的数据
-      selectType: '' // 改变客户/终端客户代码的方式
+      selectType: '', // 改变客户/终端客户代码的方式
     };
   },
   computed: {
@@ -667,6 +669,7 @@ export default {
     // },
     customer: {
       handler(val) {
+        console.log(val, 'customer change')
         this.getPartnerInfo(val.customerId)
         this.setForm(val);
       },
@@ -776,8 +779,8 @@ export default {
                 item.problemType && item.problemType.name;
             });
           }
-          console.log(val, 'refValueChange', this.form)
-          this.propForm = this.form.serviceWorkOrders;
+          // console.log(val, 'refValueChange', this.form)
+          this.propForm = this.form.serviceWorkOrders
         }
         // this.propForm = this.refValue.serviceWorkOrders
       },
@@ -1481,12 +1484,14 @@ export default {
       } else {
         this.selectSerNumberDisabled = false
         this.getPartnerInfo(val.cardCode)
-        callformPartner.getTableList({ code: val.cardCode }).then(res => {
-          this.CallList = res.result;
-          this.dialogCallId = true
-          // this.newestNotCloseOrder=res.reault.newestNotCloseOrder
-          // this.newestOrder=res.reault.newestNotCloseOrder
-        });
+        if (this.formName === '新建') {
+          callformPartner.getTableList({ code: val.cardCode }).then(res => {
+            this.CallList = res.result;
+            this.dialogCallId = true
+            // this.newestNotCloseOrder=res.reault.newestNotCloseOrder
+            // this.newestOrder=res.reault.newestNotCloseOrder
+          });
+        }
       }
     },
     ChildValue(val) {

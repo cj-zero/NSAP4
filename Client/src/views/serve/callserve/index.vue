@@ -68,7 +68,7 @@
                     <template slot-scope="scope">
                       <span
                         v-if="fruit.name === 'status'"
-                        :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
+                        :class="processStatus(scope.row[fruit.name])"
                       >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
                       <span
                         v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
@@ -116,7 +116,7 @@
                 {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].fromTheme: '' }}
               </span>
               <span v-if="fruit.name === 'status'"
-                :class="[scope.row.serviceWorkOrders[0].status===1?'greenWord':(scope.row.serviceWorkOrders[0].status===2?'orangeWord':'redWord')]"
+                :class="processStatus(scope.row.serviceWorkOrders[0].status)"
               >
                 {{ scope.row.serviceWorkOrders[0] ? statusOptions[scope.row.serviceWorkOrders[0].status - 1].label: '' }}
               </span>
@@ -175,6 +175,7 @@
           :isCreate="true"
           :sure="sure"
           @close-Dia="closeDia"
+          :openTree="openTree"
         ></zxform>
         <div slot="footer">
           <span class="order-num">工单数量: {{ formList.length }}</span>
@@ -321,7 +322,7 @@ import Rate from './rate'
 import Report from '../common/components/report'
 // import serveTableVue from '../serveTable.vue';
 // import { callserve } from "@/mock/serve";
-import { chatMixin, reportMixin } from '../common/js/mixins'
+import { chatMixin, reportMixin, tableMixin } from '../common/js/mixins'
 export default {
   provide () {
     return {
@@ -334,7 +335,7 @@ export default {
       'formList'
     ])
   },
-  mixins: [chatMixin, reportMixin],
+  mixins: [chatMixin, reportMixin, tableMixin],
   components: {
     Sticky,
     permissionBtn,
@@ -561,6 +562,7 @@ export default {
     this.getProblemTypeList()
   },
   methods: {
+    // 处理状态的样式
     checkServeId(res) {
       if (res.children) {
         this.listQuery.QryServiceOrderId = res.label.split("服务单号：")[1];
@@ -712,7 +714,14 @@ export default {
     // },
     _normalize (data) {
       let resultArr = data.map(item => {
-        let { recepUserName, serviceWorkOrders } = item
+        let { recepUserName, 
+          serviceWorkOrders, 
+          customerId,
+          customerName,
+          terminalCustomerId,
+          terminalCustomer } = item
+        item.customerId = terminalCustomerId ? terminalCustomerId : customerId
+        item.customerName = terminalCustomer ? terminalCustomer : customerName
         serviceWorkOrders.forEach(workItem => {
           workItem.recepUserName = recepUserName
         })
@@ -723,9 +732,9 @@ export default {
     getList() {
       this.listLoading = true;
       callservesure.rightList(this.listQuery).then(response => {
-        let resul = response.data.data;
+        let result = response.data.data;
         this.total =response.count;
-        this._normalize(resul)
+        this._normalize(result)
         this.listLoading = false;
       }).catch(() => {
         this.listLoading = false;

@@ -169,6 +169,7 @@
               :sure="sure"
               :ifFirstLook="true"
               :customer="customer"
+              :openTree="openTree"
               @imgChange="onImgChange"
               @close-Dia="closeDia"
             ></zxform>

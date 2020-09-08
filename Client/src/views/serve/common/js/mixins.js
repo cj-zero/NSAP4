@@ -1,5 +1,7 @@
 import { getReportDetail, GetDetails } from '@/api/serve/callservesure'
 import { AllowSendOrderUser } from "@/api/serve/callservepushm";
+import { STATUS_COLOR_MAP } from '@/utils/declaration'
+
 export let reportMixin = {
   data () {
     return {
@@ -96,5 +98,13 @@ export let chatMixin = { // 查看、编辑服务单时 右侧出现的聊天记
     openDetail() {
       this.dataForm = this.dataForm1;
     },
+  }
+}
+
+export let tableMixin = {
+  methods: {
+    processStatus (status) {
+      return STATUS_COLOR_MAP[status]
+    }
   }
 }
