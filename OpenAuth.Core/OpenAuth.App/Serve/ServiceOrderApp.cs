@@ -1656,12 +1656,7 @@ namespace OpenAuth.App
         public async Task<TableData> GetMessageCount(int currentUserId)
         {
             var result = new TableData();
-            var query = from a in UnitWork.Find<ServiceOrderMessage>(null)
-                        join b in UnitWork.Find<ServiceOrderMessageUser>(null) on a.Id equals b.MessageId
-                        select new { a, b };
-            query = query.Where(q => q.b.FroUserId == currentUserId.ToString() && q.b.HasRead == false)
-                .Where(q => UnitWork.Find<ServiceWorkOrder>(null).Any(a => a.ServiceOrderId == q.a.ServiceOrderId && a.Status < 7 && a.CurrentUserId == currentUserId));
-            var msgCount = (await query.ToListAsync()).Count;
+            var msgCount = (await UnitWork.Find<ServiceOrderMessageUser>(s => s.FroUserId == currentUserId.ToString() && s.HasRead == false).ToListAsync()).Count;
             result.Data = msgCount;
             return result;
         }
