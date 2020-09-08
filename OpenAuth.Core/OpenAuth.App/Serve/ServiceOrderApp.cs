@@ -340,8 +340,9 @@ namespace OpenAuth.App
                 #endregion
             });
             await UnitWork.BatchAddAsync<ServiceWorkOrder, int>(obj.ServiceWorkOrders.ToArray());
+
             var pictures = request.Pictures.MapToList<ServiceOrderPicture>();
-            pictures.ForEach(p => { p.ServiceOrderId = request.Id; p.PictureType = 2; });
+            pictures.ForEach(p => { p.ServiceOrderId = obj.Id; p.PictureType = p.PictureType == 3 ? 3 : 2; });
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
             await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
