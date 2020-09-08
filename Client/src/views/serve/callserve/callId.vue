@@ -53,9 +53,20 @@
 // import Pagination from "@/components/Pagination";
 
 export default {
-  props: ["toCallList" ],
-    // components: {  Pagination },
-  inject: ['instance'],
+  props: {
+    toCallList: {
+      type: Object,
+      default () {
+        return {}
+      }
+    },
+    openTree: {
+      type: Function,
+      default () {
+        return () => {}
+      }
+    }
+  },
   data() {
     return {
        currentRow: [] ,//选择项
@@ -112,9 +123,10 @@ export default {
   },
   mounted() {},
   methods:{
-    openTree (id) {
-      // console.log(this.instance)
-      this.instance.openTree(id)
+    _openTree (id) {
+      console.log(this.instance, 'instance', this.openTree)
+      // this.instance.openTree(id)
+      this.openTree(id)
     }
   }
 }

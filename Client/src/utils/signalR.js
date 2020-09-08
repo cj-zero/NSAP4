@@ -7,7 +7,6 @@ function initSignalR (token = '', callBack) {
   if (hasConnected) {
     return
   }
-  console.log(this, 'init')
   let signalR = window.signalR
   const connection = new signalR.HubConnectionBuilder()
     .withUrl(`${process.env.VUE_APP_BASE}/MessageHub?x-token=${token}`, {
@@ -70,9 +69,9 @@ function initSignalR (token = '', callBack) {
   })
   // 连接完成
   connection.on('Connected', () => {
-    console.log("websocket has connected")
     callBack && callBack()
     hasConnected = true
+    console.log("websocket has connected", hasConnected)
   })
   
   // Start the connection.

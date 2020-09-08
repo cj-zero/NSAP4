@@ -68,7 +68,7 @@
                     <template slot-scope="scope">
                       <span
                         v-if="fruit.name === 'status'"
-                        :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
+                        :class="processStatus(scope.row[fruit.name])"
                       >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
                       <span
                         v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
@@ -116,7 +116,7 @@
                 {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].fromTheme: '' }}
               </span>
               <span v-if="fruit.name === 'status'"
-                :class="[scope.row.serviceWorkOrders[0].status===1?'greenWord':(scope.row.serviceWorkOrders[0].status===2?'orangeWord':'redWord')]"
+                :class="processStatus(scope.row.serviceWorkOrders[0].status)"
               >
                 {{ scope.row.serviceWorkOrders[0] ? statusOptions[scope.row.serviceWorkOrders[0].status - 1].label: '' }}
               </span>
@@ -147,6 +147,7 @@
       </div>
       <!-- 客户信息 -->
       <el-dialog
+        v-el-drag-dialog
         width="800px"
         :close-on-click-modal="false"
         :visible.sync="dialogInfoVisible"
@@ -156,6 +157,7 @@
       </el-dialog>
       <!-- 客服新建服务单 -->
       <el-dialog
+        v-el-drag-dialog
         width="900px"
         top="10vh"
         class="dialog-mini"
@@ -173,6 +175,7 @@
           :isCreate="true"
           :sure="sure"
           @close-Dia="closeDia"
+          :openTree="openTree"
         ></zxform>
         <div slot="footer">
           <span class="order-num">工单数量: {{ formList.length }}</span>
@@ -182,6 +185,7 @@
       </el-dialog>
       <!-- 客服编辑服务单 -->
       <el-dialog
+        v-el-drag-dialog
         width="1210px"
         top="10vh"
         class="dialog-mini"
@@ -220,11 +224,13 @@
       </el-dialog>
       <!-- 只能查看的表单 -->
       <el-dialog
+        v-el-drag-dialog
         width="1210px"
         top="10vh"
         title="服务单详情"
         :close-on-click-modal="false"
         destroy-on-close
+        :modal-append-to-body="false"
         class="addClass1 dialog-mini"
         @open="openDetail"
         :visible.sync="dialogFormView"
@@ -264,6 +270,7 @@
         :visible.sync="dialogRateVisible"
         width="1015px"
         center
+        v-el-drag-dialog
       >
         <Rate :data="commentList" @changeComment="onChangeComment" :isView="isView" ref="rateRoot" />
         <div slot="footer">
@@ -273,6 +280,7 @@
       </el-dialog>
       <!-- 完工报告  -->
       <el-dialog
+        v-el-drag-dialog
         width="932px"
         class="dialog-mini"
         :close-on-click-modal="false"
@@ -314,7 +322,7 @@ import Rate from './rate'
 import Report from '../common/components/report'
 // import serveTableVue from '../serveTable.vue';
 // import { callserve } from "@/mock/serve";
-import { chatMixin, reportMixin } from '../common/js/mixins'
+import { chatMixin, reportMixin, tableMixin } from '../common/js/mixins'
 export default {
   provide () {
     return {
@@ -327,7 +335,7 @@ export default {
       'formList'
     ])
   },
-  mixins: [chatMixin, reportMixin],
+  mixins: [chatMixin, reportMixin, tableMixin],
   components: {
     Sticky,
     permissionBtn,
@@ -554,6 +562,7 @@ export default {
     this.getProblemTypeList()
   },
   methods: {
+    // 处理状态的样式
     checkServeId(res) {
       if (res.children) {
         this.listQuery.QryServiceOrderId = res.label.split("服务单号：")[1];
@@ -705,7 +714,14 @@ export default {
     // },
     _normalize (data) {
       let resultArr = data.map(item => {
-        let { recepUserName, serviceWorkOrders } = item
+        let { recepUserName, 
+          serviceWorkOrders, 
+          customerId,
+          customerName,
+          terminalCustomerId,
+          terminalCustomer } = item
+        item.customerId = terminalCustomerId ? terminalCustomerId : customerId
+        item.customerName = terminalCustomer ? terminalCustomer : customerName
         serviceWorkOrders.forEach(workItem => {
           workItem.recepUserName = recepUserName
         })
@@ -716,9 +732,9 @@ export default {
     getList() {
       this.listLoading = true;
       callservesure.rightList(this.listQuery).then(response => {
-        let resul = response.data.data;
+        let result = response.data.data;
         this.total =response.count;
-        this._normalize(resul)
+        this._normalize(result)
         this.listLoading = false;
       }).catch(() => {
         this.listLoading = false;
@@ -899,48 +915,38 @@ export default {
     },
     handlePhone (row) { // 电话回访
       let { serviceOrderId, serviceWorkOrders } = row // 8 代表已回访
-      let hasAllFinished = serviceWorkOrders.every(item => { // 所有的工单都已经解决了并且呼叫状态不是在线解答
-        return Number(item.status) === 7 && Number(item.fromType) !== 2
-      })
       let hasVisit = serviceWorkOrders.every(item => { // 是否已经回访
         return Number(item.status) === 8
       })
       if (hasVisit) {
-        // afterEvaluation.getComment({
-        //   id: serviceOrderId
-        // }).then(res => {
-        //   this.isView = true
-        //   this.dialogRateVisible = true
-        //   console.log(res, 'commentList')
-        // })
         this.$message({
           type: 'warning',
           message: '该服务单已评价'
         })
       } else {
-        if (hasAllFinished) {
-          afterEvaluation.getTechnicianName({
-            serviceOrderId
-          }).then(res => {
-            this.isView = false
-            this.commentList = this._normalizeCommentList(res, row)
-            this.dialogRateVisible = true
-            console.log(this.commentList, 'commentList')
-          })
-        } else {
-          this.$message({
-            type: 'warning',
-            message: '工单未解决或在线解答方式不可回访'
-          })
-        }
+        afterEvaluation.getTechnicianName({
+          serviceOrderId
+        }).then(res => {
+          if (!res.data) {
+            return this.$message({
+              type: 'warning',
+              message: '工单未解决或在线解答方式不可回访'
+            })
+          }
+          this.isView = false
+          this.commentList = this._normalizeCommentList(res, row)
+          this.dialogRateVisible = true
+        }).catch(err => {
+          this.$message.error(err.message)
+        })
       }
     },
     _normalizeCommentList (res, row) {
-      let { serviceOrderId, contactTel, customerId, customerName, contacter } = row
+      let { serviceOrderId, contactTel, customerId, customerName, contacter, terminalCustomerId } = row
       let technicianEvaluates = res.data || []// 技术员列表
       let commentList = {
         serviceOrderId,
-        customerId,
+        customerId: terminalCustomerId || customerId,
         cutomer: customerName,
         contact: contacter,
         caontactTel: contactTel,

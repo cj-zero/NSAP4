@@ -1,5 +1,7 @@
 import { getReportDetail, GetDetails } from '@/api/serve/callservesure'
 import { AllowSendOrderUser } from "@/api/serve/callservepushm";
+import { STATUS_COLOR_MAP } from '@/utils/declaration'
+
 export let reportMixin = {
   data () {
     return {
@@ -46,6 +48,7 @@ export let dispatchMixin = { // 派单 转派
         limit: 10,
         currentUser: ''
       },
+      orderRadio: '' //接单员单选
     }
   },
   methods: {
@@ -58,6 +61,7 @@ export let dispatchMixin = { // 派单 转派
     onClosed () {
       this.listQuery2.currentUser = ''
       this.listQuery2.page = 1
+      this.orderRadio = ''
     },
     onSearchUser () {
       this._getAllowSendOrderUser()
@@ -94,5 +98,13 @@ export let chatMixin = { // 查看、编辑服务单时 右侧出现的聊天记
     openDetail() {
       this.dataForm = this.dataForm1;
     },
+  }
+}
+
+export let tableMixin = {
+  methods: {
+    processStatus (status) {
+      return STATUS_COLOR_MAP[status]
+    }
   }
 }

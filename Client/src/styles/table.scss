@@ -1,3 +1,5 @@
+@import './variables.scss';
+
 .el-table {
   font-size: 12px !important;
 }
@@ -13,4 +15,17 @@
   a {
     vertical-align: middle;
   }
+}
+
+.status-red {
+  color: $statusRed;
+}
+.status-yellow {
+  color: $statusYellow;
+}
+.status-green {
+  color: $statusGreen;
+}
+.status-gray {
+  color: $statusGray;
 }

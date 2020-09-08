@@ -8,11 +8,12 @@
         @tabChange="onTabChange"></tab-list>
     </div>
     <!-- <template v-show="currentName === 'message'"> -->
-      <Message :serveId="serveId" v-show="currentName === 'message'"></Message>
+    <!-- 留言 -->
+    <Message :serveId="serveId" v-show="currentName === 'message'"></Message>
     <!-- </template> -->
-    <!-- <template v-show="currentName === 'progress'">
-
-    </template> -->
+    <!-- 服务进度 -->
+    <Log v-show="currentName === 'progress'" :serveId="serveId"></Log>
+    <!-- 核对设备 -->
     <template v-if="formName === '编辑'">
       <check :sapOrderId="sapOrderId" :customerId="customerId" v-show="currentName === 'check'"></check>
     </template>
@@ -23,11 +24,13 @@
 import TabList from './tabList'
 import Message from './message'
 import Check from './check'
+import Log from './log'
 export default {
   components: {
     TabList,
     Message,
-    Check
+    Check,
+    Log
   },
   props: {
     serveId: {

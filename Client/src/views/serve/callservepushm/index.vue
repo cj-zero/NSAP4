@@ -83,12 +83,24 @@
                   </div>
                   <span
                     v-if="fruit.name === 'status'"
-                    :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
+                    :class="processStatus(scope.row[fruit.name])"
                   >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
                   <span v-if="fruit.name === 'fromType'">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
                   <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
+                  <span v-if="fruit.name === 'customerId'">
+                    {{ scope.row.terminalCustomerId ? scope.row.terminalCustomerId : scope.row.customerId }}
+                  </span>
+                  <span v-if="fruit.name === 'customerName'">
+                    {{ scope.row.terminalCustomer ? scope.row.terminalCustomer : scope.row.customerName }}
+                  </span>
                   <span
-                    v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'&&fruit.name !== 'workOrderNumber'"
+                    v-if="fruit.name != 'priority' 
+                    && fruit.name!='fromType' 
+                    && fruit.name!='status'
+                    && fruit.name!='serviceOrderId'
+                    && fruit.name !== 'workOrderNumber'
+                    && fruit.name !== 'customerName'
+                    && fruit.name !== 'customerId'"
                   >{{scope.row[fruit.name]}}</span>
                 </template>
               </el-table-column>
@@ -276,10 +288,10 @@ import { debounce } from '@/utils/process'
 // import treeTable from "@/components/TreeTableMlt";
 import rightImg from '@/assets/table/right.png'
 // import { callserve, count } from "@/mock/serve";
-import { dispatchMixin, chatMixin } from '../common/js/mixins'
+import { dispatchMixin, chatMixin, tableMixin } from '../common/js/mixins'
 export default {
   name: "solutions",
-  mixins: [dispatchMixin, chatMixin],
+  mixins: [dispatchMixin, chatMixin, tableMixin],
   components: {
     Sticky,
     permissionBtn,
@@ -297,7 +309,6 @@ export default {
   data() {
     return {
       tableData: [], //接单员列表
-      orderRadio: "", //接单员单选
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
       defaultFormThead: [
@@ -575,7 +586,6 @@ export default {
       }
       this.params.qryMaterialTypes = this.listQuery.QryMaterialTypes
       this.params.serviceOrderId = checkedKey 
-      console.log(this.params, 'params')
       if (this.hasAlreadNum > this.totalLimit) {
         this.$message({
           type: "warning",
@@ -602,7 +612,6 @@ export default {
             this.afterLeft();
             this.dialogOrder = false;
             this.listLoading = false;
-                    
             //  this.getRightList();
           }
         })
