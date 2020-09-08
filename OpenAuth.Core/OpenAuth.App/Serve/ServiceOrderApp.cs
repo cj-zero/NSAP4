@@ -1607,10 +1607,16 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var serviceIdList = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.CurrentUserId && s.Status < 7).ToListAsync();
+            //获取当前登陆者的nsapId
+            var nsapUserId = (await UnitWork.Find<AppUserMap>(u => u.AppUserId == req.CurrentUserId).FirstOrDefaultAsync()).UserID;
+            var queryService = from a in UnitWork.Find<ServiceWorkOrder>(null)
+                               join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id
+                               select new { a, b };
+
+            var serviceIdList = await queryService.Where(w => w.a.Status < 7 && (w.b.SupervisorId == nsapUserId || w.a.CurrentUserId == req.CurrentUserId)).ToListAsync();
             if (serviceIdList != null)
             {
-                string serviceIds = string.Join(",", serviceIdList.Select(s => s.ServiceOrderId).Distinct().ToArray());
+                string serviceIds = string.Join(",", serviceIdList.Select(s => s.b.Id).Distinct().ToArray());
                 var query = from a in UnitWork.Find<ServiceOrderMessage>(null)
                             join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
                             from b in ab.DefaultIfEmpty()
