@@ -669,10 +669,7 @@ export default {
     // },
     customer: {
       handler(val) {
-        console.log(val, 'customer change')
         this.getPartnerInfo(val.customerId)
-        this.upLoadFileList = []
-        this.upLoadImgList = []
         this.setForm(val);
       },
     },
