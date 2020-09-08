@@ -13,5 +13,7 @@ namespace OpenAuth.App.Serve.Request
         /// </summary>
         [Required]
         public string QryState { get; set; }
+
+        public int AppUserId { get; set; }
     }
 }

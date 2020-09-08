@@ -1127,7 +1127,7 @@ namespace OpenAuth.App
             }
             var orgs = loginContext.Orgs.Select(o => o.Id).ToArray();
 
-            var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole == 2).ToListAsync();
+            var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole > 1).ToListAsync();
             var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
             var ids = userIds.Intersect(tUsers.Select(u => u.UserID));
             var users = await UnitWork.Find<User>(u => ids.Contains(u.Id) && u.Status == 0).WhereIf(!string.IsNullOrEmpty(req.key), u => u.Name.Equals(req.key)).ToListAsync();
@@ -1615,10 +1615,16 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var serviceIdList = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.CurrentUserId && s.Status < 7).ToListAsync();
+            //获取当前登陆者的nsapId
+            var nsapUserId = (await UnitWork.Find<AppUserMap>(u => u.AppUserId == req.CurrentUserId).FirstOrDefaultAsync()).UserID;
+            var queryService = from a in UnitWork.Find<ServiceWorkOrder>(null)
+                               join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id
+                               select new { a, b };
+
+            var serviceIdList = await queryService.Where(w => w.a.Status < 7 && (w.b.SupervisorId == nsapUserId || w.a.CurrentUserId == req.CurrentUserId)).ToListAsync();
             if (serviceIdList != null)
             {
-                string serviceIds = string.Join(",", serviceIdList.Select(s => s.ServiceOrderId).Distinct().ToArray());
+                string serviceIds = string.Join(",", serviceIdList.Select(s => s.b.Id).Distinct().ToArray());
                 var query = from a in UnitWork.Find<ServiceOrderMessage>(null)
                             join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
                             from b in ab.DefaultIfEmpty()
@@ -2776,9 +2782,11 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             int QryState = Convert.ToInt32(req.QryState);
+            //获取主管的nsap用户Id
+            var nsapUserId = (await UnitWork.Find<AppUserMap>(u => u.AppUserId == req.AppUserId).FirstOrDefaultAsync()).UserID;
             //获取设备类型列表
             var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
-            var query = UnitWork.Find<ServiceOrder>(s => s.Status == 2 && s.CreateTime > Convert.ToDateTime("2020-08-01")) //服务单已确认 
+            var query = UnitWork.Find<ServiceOrder>(s => s.Status == 2 && s.CreateTime > Convert.ToDateTime("2020-08-01") && s.SupervisorId == nsapUserId) //服务单已确认 
                          .Include(s => s.ServiceOrderSNs)
                          .Include(s => s.ServiceWorkOrders)
                          .WhereIf(QryState == 1, q => q.ServiceWorkOrders.Any(q => q.Status == 1))//待派单
@@ -3046,7 +3054,7 @@ namespace OpenAuth.App
             //2.取出nSAP中该用户对应的部门信息
             var orgs = _revelanceApp.Get(Define.USERORG, true, userId).ToArray();
             //3.取出nSAP用户与APP用户关联的用户信息（角色为技术员）
-            var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole == 2).ToListAsync();
+            var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole > 1).ToListAsync();
             //4.获取定位信息（登录APP时保存的位置信息）
             var locations = (await UnitWork.Find<RealTimeLocation>(null).OrderByDescending(o => o.CreateTime).ToListAsync()).GroupBy(g => g.AppUserId).Select(s => s.First());
             //5.根据组织信息获取组织下的所有用户Id集合
