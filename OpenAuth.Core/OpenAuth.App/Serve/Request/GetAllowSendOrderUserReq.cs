@@ -27,5 +27,10 @@ namespace OpenAuth.App.Serve.Request
         /// 技术员名称
         /// </summary>
         public string CurrentUser { get; set; }
+
+        /// <summary>
+        /// 原技术员Id
+        /// </summary>
+        public int TechnicianId { get; set; }
     }
 }

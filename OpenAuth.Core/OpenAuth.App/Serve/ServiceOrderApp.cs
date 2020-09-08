@@ -99,9 +99,9 @@ namespace OpenAuth.App
                 .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                 .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.Solution)
                 .Include(s => s.ServiceOrderPictures).FirstOrDefaultAsync();
-            
+
             var result = obj.MapTo<ServiceOrderDetailsResp>();
-            var serviceOrderPictures = obj.ServiceOrderPictures.Select(s =>new { s.PictureId,s.PictureType }).ToList();
+            var serviceOrderPictures = obj.ServiceOrderPictures.Select(s => new { s.PictureId, s.PictureType }).ToList();
             var serviceOrderPictureIds = serviceOrderPictures.Select(s => s.PictureId).ToList();
             var files = await UnitWork.Find<UploadFile>(f => serviceOrderPictureIds.Contains(f.Id)).ToListAsync();
             result.Files = files.MapTo<List<UploadFileResp>>();
@@ -882,7 +882,7 @@ namespace OpenAuth.App
             var Pictures = await UnitWork.Find<ServiceOrderPicture>(p => p.ServiceOrderId.Equals(id))
                .WhereIf(type == 0, a => a.PictureType == 1 || a.PictureType == 2)
                .WhereIf(type > 0, b => b.PictureType.Equals(type))
-               .Select(p => new { p.PictureId,p.PictureType }).ToListAsync();
+               .Select(p => new { p.PictureId, p.PictureType }).ToListAsync();
             var idList = Pictures.Select(p => p.PictureId).ToList();
             var files = await UnitWork.Find<UploadFile>(f => idList.Contains(f.Id)).ToListAsync();
             var list = files.MapTo<List<UploadFileResp>>();
@@ -2428,7 +2428,7 @@ namespace OpenAuth.App
                         {
                             IsCheck = 1
                         });
-                        var WorkNumber =await UnitWork.Find<ServiceWorkOrder>(s => s.Id == int.Parse(itemcheck)).Select(s => s.WorkOrderNumber).FirstOrDefaultAsync();
+                        var WorkNumber = await UnitWork.Find<ServiceWorkOrder>(s => s.Id == int.Parse(itemcheck)).Select(s => s.WorkOrderNumber).FirstOrDefaultAsync();
                         await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{username}核对工单{WorkNumber}设备（成功）", ActionType = "核对设备", ServiceWorkOrderId = int.Parse(itemcheck), MaterialType = req.MaterialType });
                     }
                 }
@@ -2852,6 +2852,7 @@ namespace OpenAuth.App
                     Count = a.Count(),
                     Status = s.ServiceWorkOrders.FirstOrDefault(b => "其他设备".Equals(a.Key) ? b.MaterialCode == "其他设备" : b.MaterialCode.Contains(a.Key))?.Status,
                     MaterialTypeName = "其他设备".Equals(a.Key) ? "其他设备" : MaterialTypeModel.Where(m => m.TypeAlias == a.Key).FirstOrDefault().TypeName,
+                    TechnicianId = s.ServiceWorkOrders.FirstOrDefault(b => "其他设备".Equals(a.Key) ? b.MaterialCode == "其他设备" : b.MaterialCode.Contains(a.Key))?.CurrentUserId,
                 }),
                 ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.MaterialInfo.FirstOrDefault().ProblemType.Name : s.ProblemTypeName,
                 ProblemTypeId = string.IsNullOrEmpty(s.ProblemTypeId) ? s.MaterialInfo.FirstOrDefault().ProblemTypeId : s.ProblemTypeId
@@ -2997,11 +2998,45 @@ namespace OpenAuth.App
                 ServiceWorkOrder = string.Join(",", ids.ToArray()),
                 MaterialType = string.Join(",", req.QryMaterialTypes.ToArray())
             });
-            var WorkOrderNumbers = String.Join(',',await UnitWork.Find<ServiceWorkOrder>(s => ids.Contains(s.Id)).Select(s => s.WorkOrderNumber).ToArrayAsync());
+            var WorkOrderNumbers = String.Join(',', await UnitWork.Find<ServiceWorkOrder>(s => ids.Contains(s.Id)).Select(s => s.WorkOrderNumber).ToArrayAsync());
 
             await _ServiceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{WorkOrderNumbers}", ActionType = "主管派单工单", MaterialType = string.Join(",", req.QryMaterialTypes.ToArray()) }, ids);
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = Convert.ToInt32(req.ServiceOrderId), Content = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{WorkOrderNumbers}", AppUserId = 0 });
             await PushMessageToApp(req.CurrentUserId, "派单成功提醒", "您已被派有一个新的售后服务，请尽快处理");
+        }
+
+        /// <summary>
+        /// 主管给技术员派单（转派）
+        /// </summary>
+        /// <returns></returns>
+        public async Task TransferOrders(TransferOrdersReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var canSendOrder = await CheckCanTakeOrder(req.TechnicianId);
+            if (!canSendOrder)
+            {
+                throw new CommonException("技术员接单已经达到上限", 60001);
+            }
+            var u = await UnitWork.Find<AppUserMap>(s => s.AppUserId == req.TechnicianId).Include(s => s.User).FirstOrDefaultAsync();
+
+            var Model = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.ToString() == req.ServiceOrderId && req.MaterialType.Equals(s.MaterialCode == "其他设备" ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")))).Select(s => s.Id);
+            var ids = await Model.ToListAsync();
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => ids.Contains(s.Id), o => new ServiceWorkOrder
+            {
+                CurrentUser = u.User.Name,
+                CurrentUserNsapId = u.User.Id,
+                CurrentUserId = req.TechnicianId
+            });
+            await UnitWork.SaveAsync();
+            var WorkOrderNumbers = String.Join(',', await UnitWork.Find<ServiceWorkOrder>(s => ids.Contains(s.Id)).Select(s => s.WorkOrderNumber).ToArrayAsync());
+
+            await _ServiceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单（转派）{WorkOrderNumbers}", ActionType = "主管派单工单", MaterialType = req.MaterialType }, ids);
+            await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = Convert.ToInt32(req.ServiceOrderId), Content = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单（转派）{WorkOrderNumbers}", AppUserId = 0 });
+            await PushMessageToApp(req.TechnicianId, "派单成功提醒", "您已被派有一个新的售后服务，请尽快处理");
         }
 
         /// <summary>
@@ -3050,7 +3085,7 @@ namespace OpenAuth.App
             //2.取出nSAP中该用户对应的部门信息
             var orgs = _revelanceApp.Get(Define.USERORG, true, userId).ToArray();
             //3.取出nSAP用户与APP用户关联的用户信息（角色为技术员）
-            var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole > 1).ToListAsync();
+            var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole > 1 && req.TechnicianId > 0 ? u.AppUserId != req.TechnicianId : true).ToListAsync();
             //4.获取定位信息（登录APP时保存的位置信息）
             var locations = (await UnitWork.Find<RealTimeLocation>(null).OrderByDescending(o => o.CreateTime).ToListAsync()).GroupBy(g => g.AppUserId).Select(s => s.First());
             //5.根据组织信息获取组织下的所有用户Id集合

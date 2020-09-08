@@ -28,7 +28,7 @@ namespace OpenAuth.WebApi.Controllers
         private readonly ServiceOrderApp _serviceOrderApp;
         private AppServiceOrderLogApp _appServiceOrderLogApp;
         private IOptions<AppSetting> _appConfiguration;
-        private readonly HttpHelper _helper;
+        //private readonly HttpHelper _helper;
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
 
         public ServiceOrderController(ServiceOrderApp serviceOrderApp, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration)
@@ -36,7 +36,7 @@ namespace OpenAuth.WebApi.Controllers
             _serviceOrderApp = serviceOrderApp;
             _appServiceOrderLogApp = appServiceOrderLogApp;
             _appConfiguration = appConfiguration;
-            _helper = new HttpHelper(_appConfiguration.Value.AppServerUrl);
+            //_helper = new HttpHelper(_appConfiguration.Value.AppServerUrl);
         }
 
 
@@ -583,6 +583,30 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 await _serviceOrderApp.SendOrders(req);
+
+                result.Result = true;
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                result.Result = false;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 主管给技术员派单
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response<bool>> TransferOrders(TransferOrdersReq req)
+        {
+
+            var result = new Response<bool>();
+            try
+            {
+                await _serviceOrderApp.TransferOrders(req);
 
                 result.Result = true;
             }
