@@ -34,5 +34,10 @@ namespace OpenAuth.App.Response
 	    /// 上传人姓名
 	    /// </summary>
         public string CreateUserName { get; set; }
+
+        /// <summary>
+        /// 图片类型
+        /// </summary>
+        public int? PictureType { get; set; }
     }
 }

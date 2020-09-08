@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using NetOffice.Extensions.Invoker;
 using OpenAuth.App;
 using OpenAuth.App.Request;
@@ -26,13 +27,20 @@ namespace OpenAuth.WebApi.Controllers
     {
         private readonly ServiceOrderApp _serviceOrderApp;
         private AppServiceOrderLogApp _appServiceOrderLogApp;
-
+        private IOptions<AppSetting> _appConfiguration;
+        //private readonly HttpHelper _helper;
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
-        public ServiceOrderController(ServiceOrderApp serviceOrderApp, AppServiceOrderLogApp appServiceOrderLogApp)
+
+        public ServiceOrderController(ServiceOrderApp serviceOrderApp, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration)
         {
             _serviceOrderApp = serviceOrderApp;
             _appServiceOrderLogApp = appServiceOrderLogApp;
+            _appConfiguration = appConfiguration;
+            //_helper = new HttpHelper(_appConfiguration.Value.AppServerUrl);
         }
+
+
+
         /// <summary>
         /// App提交服务单
         /// </summary>
@@ -44,7 +52,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Response();
             try
             {
-                var order = await _serviceOrderApp.Add(addServiceOrderReq);
+                await _serviceOrderApp.Add(addServiceOrderReq);
             }
             catch (Exception ex)
             {
@@ -435,10 +443,10 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<Response<ServiceOrder>> GetDetails(int id)
+        public async Task<Response<ServiceOrderDetailsResp>> GetDetails(int id)
         {
 
-            var result = new Response<ServiceOrder>();
+            var result = new Response<ServiceOrderDetailsResp>();
 
             try
             {
@@ -575,6 +583,30 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 await _serviceOrderApp.SendOrders(req);
+
+                result.Result = true;
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                result.Result = false;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 主管给技术员派单
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response<bool>> TransferOrders(TransferOrdersReq req)
+        {
+
+            var result = new Response<bool>();
+            try
+            {
+                await _serviceOrderApp.TransferOrders(req);
 
                 result.Result = true;
             }
@@ -846,9 +878,17 @@ namespace OpenAuth.WebApi.Controllers
         public async Task<TableData> AppUnConfirmedServiceOrderList([FromQuery] QueryAppServiceOrderListReq req)
         {
             var result = new TableData();
+            Dictionary<string, object> parameters = new Dictionary<string, object>();
+            parameters.Add("QryState", req.QryState);
+            parameters.Add("AppUserId", req.AppUserId);
+            parameters.Add("limit", req.limit);
+            parameters.Add("page", req.page);
+            parameters.Add("key", req.key);
+            parameters.Add("X-Token", "");
             try
             {
-                result.Data = await _serviceOrderApp.AppUnConfirmedServiceOrderList(req);
+                //var r = _helper.Get(parameters, "api/serve/ServiceOrder/AppUnConfirmedServiceOrderList");
+                result = await _serviceOrderApp.AppUnConfirmedServiceOrderList(req);
             }
             catch (Exception ex)
             {

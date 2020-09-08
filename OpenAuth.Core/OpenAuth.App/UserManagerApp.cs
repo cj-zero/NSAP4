@@ -287,8 +287,8 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task BindAppUser(AddOrUpdateAppUserMapReq req)
         {
-            var o = await UnitWork.FindSingleAsync<AppUserMap>(a=>a.AppUserId == req.AppUserId);
-            if(o is null)
+            var o = await UnitWork.FindSingleAsync<AppUserMap>(a => a.AppUserId == req.AppUserId);
+            if (o is null)
             {
                 var obj = req.MapTo<AppUserMap>();
                 await UnitWork.AddAsync(obj);
@@ -393,6 +393,19 @@ namespace OpenAuth.App
             var objs = UnitWork.Find<User>(null);
             objs = objs.Where(u => u.Name.Contains(name) && userIds.Contains(u.Id));
             result.Data = objs.Select(u => new { u.Name, u.Id }).ToList();
+            return result;
+        }
+
+        /// <summary>
+        /// 根据App用户Id获取用户信息
+        /// </summary>
+        /// <param name="AppUserId"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetUserInfoByAppUserId(int AppUserId)
+        {
+            var result = new TableData();
+            var userInfo = await UnitWork.Find<AppUserMap>(null).Include(a => a.User).Where(w => w.AppUserId == AppUserId).Select(s => new { s.User.Name, s.User.Id, s.AppUserId }).FirstOrDefaultAsync();
+            result.Data = userInfo;
             return result;
         }
     }

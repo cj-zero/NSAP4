@@ -221,9 +221,17 @@ namespace OpenAuth.App
         public async Task<TableData> GetTechnicianName(int serviceOrderId)
         {
             var result = new TableData();
-            var model = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId).Select(s => new { s.CurrentUser, s.CurrentUserId }).Distinct().ToListAsync();
-            result.Data= model;
-            result.Count = model.Count;
+            var WorkCount = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId && (s.Status < 7 || s.FromType==2)).CountAsync();
+            if (WorkCount <= 0)
+            {
+                var model = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId).Select(s => new { s.CurrentUser, s.CurrentUserId }).Distinct().ToListAsync();
+                result.Data = model;
+                result.Count = model.Count;
+            }
+            else 
+            {
+                result.Data = null;
+            }
             return result;
         }
         public ServiceEvaluateApp(IUnitWork unitWork,

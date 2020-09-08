@@ -108,5 +108,28 @@ namespace OpenAuth.WebApi.Controllers
         {
             _app = app;
         }
+
+        /// <summary>
+        /// 根据服务单id获取日志信息
+        /// </summary>
+        /// <param name="ServiceOrderId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetServiceOrderLog(int ServiceOrderId)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetServiceOrderLog(ServiceOrderId);
+            }
+            catch (Exception e)
+            {
+
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+        
     }
 }

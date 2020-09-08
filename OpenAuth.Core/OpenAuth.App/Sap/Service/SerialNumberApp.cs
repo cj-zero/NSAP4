@@ -112,8 +112,8 @@ namespace OpenAuth.App.Sap.Service
         {
             var result = new TableData();
             //查询当前服务单已选择的制造商序列号
-            var manufSNsList = await UnitWork.Find<ServiceOrderSerial>(s => s.ServiceOrderId == req.ServiceOrderId).ToListAsync();
-            string manufSNs = string.Join(",", manufSNsList.Select(s => s.ManufSN).Distinct().ToArray());
+            var manufSNsList = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId).ToListAsync();
+            string manufSNs = string.Join(",", manufSNsList.Select(s => s.ManufacturerSerialNumber).Distinct().ToArray());
             //查询技术员已经提交的制造商序列号
             var technicianApplyList = await UnitWork.Find<SeviceTechnicianApplyOrder>(s => s.ServiceOrderId == req.ServiceOrderId).ToListAsync();
             string technicianApplys = string.Join(",", technicianApplyList.Select(s => s.ManufSN).Distinct().ToArray());

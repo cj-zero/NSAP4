@@ -173,12 +173,17 @@ namespace OpenAuth.App
                 throw new CommonException("证书不存在", 80001);
 
             var b = await CheckCanOperation(certInfo.Id, loginContext.User.Name);
-            if (!b || !certInfo.Operator.Equals(loginContext.User.Name))
+            if (!b)
             {
                 throw new CommonException("您无法操作此步骤。", 80011);
             }
 
             var flowInstance = await UnitWork.FindSingleAsync<FlowInstance>(c => c.Id.Equals(certInfo.FlowInstanceId));
+
+            if (flowInstance.ActivityName.Equals("待送审") && !certInfo.Operator.Equals(loginContext.User.Name)) 
+            {
+                throw new CommonException("您无法操作此步骤。", 80011);
+            }
             var list = new List<WordModel>();
             var nameDic = new Dictionary<string, string>()
             {

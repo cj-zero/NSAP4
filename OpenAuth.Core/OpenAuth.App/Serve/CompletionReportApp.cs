@@ -111,7 +111,7 @@ namespace OpenAuth.App
             });
             //反写完工报告Id至工单
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id),
-                o => new ServiceWorkOrder { CompletionReportId = completionReportId });
+                o => new ServiceWorkOrder { CompletionReportId = completionReportId, CompleteDate = DateTime.Now });
             //解除隐私号码绑定
             //await UnbindProtectPhone(req.ServiceOrderId, req.MaterialType);
         }
@@ -269,7 +269,7 @@ namespace OpenAuth.App
             var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
             var CompletionReportModel = await UnitWork.Find<CompletionReport>(u => u.ServiceOrderId == ServiceOrderId).ToListAsync();
-            var s = loginContext.User;
+
             if (!loginContext.Roles.Any(r => r.Name.Equals("售后主管")) && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
             {
                 var appuserid = await UnitWork.Find<AppUserMap>(u => u.UserID.Equals(loginContext.User.Id)).Select(u => u.AppUserId).FirstOrDefaultAsync();
@@ -277,7 +277,7 @@ namespace OpenAuth.App
             }
 
             var thisworkdetail = CompletionReportModel.MapToList<CompletionReportDetailsResp>();
-            var workmodel= await UnitWork.Find<ServiceWorkOrder>(w => w.ServiceOrderId.Equals(ServiceOrderId)).ToListAsync();
+            var workmodel = await UnitWork.Find<ServiceWorkOrder>(w => w.ServiceOrderId.Equals(ServiceOrderId)).ToListAsync();
             foreach (var item in thisworkdetail)
             {
                 item.Files = new List<UploadFileResp>();
@@ -287,14 +287,14 @@ namespace OpenAuth.App
                     var pics = UnitWork.Find<CompletionReportPicture>(m => m.CompletionReportId == item.Id).Select(c => c.PictureId).ToList();
                     var picfiles = await UnitWork.Find<UploadFile>(f => pics.Contains(f.Id)).ToListAsync();
                     item.Files.AddRange(picfiles.MapTo<List<UploadFileResp>>());
-                    var worklist = workmodel.Where(w => w.CompletionReportId==item.Id).ToList();
+                    var worklist = workmodel.Where(w => w.CompletionReportId == item.Id).ToList();
                     item.ServiceWorkOrders.AddRange(worklist.MapToList<WorkCompletionReportResp>());
                 }
-                item.MaterialCodeTypeName=item.MaterialCode=="其他设备"?"其他设备": await UnitWork.Find<MaterialType>(m => m.TypeAlias.Equals(item.MaterialCode.Substring(0, item.MaterialCode.IndexOf("-")))).Select(m => m.TypeName).FirstOrDefaultAsync();
+                item.MaterialCodeTypeName = item.MaterialCode == "其他设备" ? "其他设备" : await UnitWork.Find<MaterialType>(m => m.TypeAlias.Equals(item.MaterialCode.Substring(0, item.MaterialCode.IndexOf("-")))).Select(m => m.TypeName).FirstOrDefaultAsync();
             }
-            var Materialworkmodel = workmodel.Where(w => string.IsNullOrWhiteSpace(w.CompletionReportId)).Select(w => w.MaterialCode).ToList() ;
+            var Materialworkmodel = workmodel.Where(w => string.IsNullOrWhiteSpace(w.CompletionReportId)).Select(w => w.MaterialCode).ToList();
             List<string> MaterialTypeName = new List<string>();
-            Materialworkmodel.ForEach(m => MaterialTypeName.Add(m=="其他设备"?"其他设备": m.Substring(0, m.IndexOf("-"))));
+            Materialworkmodel.ForEach(m => MaterialTypeName.Add(m == "其他设备" ? "其他设备" : m.Substring(0, m.IndexOf("-"))));
 
             foreach (var item in MaterialTypeName.Distinct())
             {
