@@ -10,14 +10,18 @@
                   {{tValue.replier?tValue.replier:'未知发送者'}}
                   <span>{{tValue.createTime}}</span>
                 </p>
-                <p>{{tValue.content}}</p>
+                <template v-for="(content, index) in tValue.content">
+                  <p class="text" v-if="content" :key="index">{{ content }}</p>
+                </template>
               </div>
               <div v-else class="ownWord">
                 <p style="text-align:right;">
                   <span>{{tValue.createTime}}</span>
                   {{tValue.replier}}
                 </p>
-                <p>{{tValue.content}}</p>
+                <template v-for="(content, index) in tValue.content">
+                  <p class="text" v-if="content" :key="index">{{ content }}</p>
+                </template>
               </div>
             </li>
           </ul>
@@ -27,7 +31,7 @@
     <template v-else>暂无留言噢~~</template>
     <div class="content-wrapper">
       <p class="title">留言</p>
-      <el-input type="textarea" v-model.trim="content" size="mini"></el-input>
+      <el-input type="textarea" v-model="content" size="mini" :rows="2"></el-input>
       <div class="btn-wrapper">
         <el-button type="success" size="mini" @click="dialogVisible=true">上传图片</el-button>
         <el-button type="primary" size="mini" @click="submitForm()">确定</el-button>
@@ -91,13 +95,8 @@ export default {
   },
   watch: {
     serveId: {
-      handler(val) {
-        callserve
-          .GetServiceOrderMessages({ serviceOrderId: val })
-          .then((res) => {
-            this.wordList = res.result;
-            console.log(res.result);
-          });
+      handler() {
+        this.getList()
       },
     },
   },
@@ -106,7 +105,7 @@ export default {
       callserve
         .GetServiceOrderMessages({ serviceOrderId: this.serveId })
         .then((res) => {
-          this.wordList = res.result;
+          this.wordList = this._normalizeWordList(res.result);
           console.log(this.wordList, "wordList");
         }).catch(() => {
           this.$message.error('加载留言列表失败')
@@ -125,6 +124,13 @@ export default {
         });
       // })
     },
+    _normalizeWordList (wordList) {
+      return wordList.map(item => {
+        item.content = item.content.replace(/\n/g, '<br>')
+        item.content = item.content.split('<br>')
+        return item
+      })
+    },
     getImgList(val) {
       //获取图片列表
       this.serviceOrderMessagePictures = val;
@@ -135,7 +141,7 @@ export default {
       // });
     },
     submitForm() {
-      if (!this.content) {
+      if (!this.content.trim()) {
         return this.$message.error("留言内容不能为空");
       }
       callserve
@@ -223,6 +229,9 @@ ul {
       p:nth-child(2) {
         border-radius: 5px;
         padding: 2px;
+        // color: #409eff;
+      }
+      .text {
         color: #409eff;
       }
     }
@@ -233,6 +242,9 @@ ul {
       padding: 5px;
 
       p:nth-child(2) {
+        // color: #67c23a;
+      }
+      .text {
         color: #67c23a;
       }
     }

@@ -29,7 +29,7 @@
         ref="loginForm"
         label-position="left"
       >
-        <h3 class="title">nSAP-V4.0</h3>
+        <h3 class="title">ERP4.0</h3>
         <p class="tips">管理系统</p>
         <el-form-item prop="username">
           <span class="svg-container svg-container_login">
@@ -383,7 +383,7 @@ $dark_gray: #d1dfe8;
   .title {
     font-size: 26px;
     font-weight: 400;
-    color: #4452d5;
+    color: #f8b500;
     margin: 0;
     // font-weight: bold;
     text-align: left;
