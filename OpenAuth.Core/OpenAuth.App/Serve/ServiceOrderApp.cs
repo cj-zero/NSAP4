@@ -2851,15 +2851,15 @@ namespace OpenAuth.App
                 s.U_SAP_ID,
                 s.Latitude,
                 s.Longitude,
-                WorkOrderCount = s.ServiceWorkOrders.Count(),
+                WorkOrderCount = s.ServiceWorkOrders?.Count(),
                 ServiceWorkOrders = s.MaterialInfo.Where(w => !string.IsNullOrEmpty(w.MaterialType)).GroupBy(o => o.MaterialType).ToList().Select(a => new
                 {
                     MaterialType = a.Key,
                     UnitName = "台",
                     Count = a.Count(),
-                    Status = s.ServiceWorkOrders.FirstOrDefault(b => "其他设备".Equals(a.Key) ? b.MaterialCode == "其他设备" : b.MaterialCode.Contains(a.Key))?.Status,
-                    MaterialTypeName = "其他设备".Equals(a.Key) ? "其他设备" : MaterialTypeModel.Where(m => m.TypeAlias == a.Key).FirstOrDefault().TypeName,
-                    TechnicianId = s.ServiceWorkOrders.FirstOrDefault(b => "其他设备".Equals(a.Key) ? b.MaterialCode == "其他设备" : b.MaterialCode.Contains(a.Key))?.CurrentUserId,
+                    Status = s.ServiceWorkOrders?.FirstOrDefault(b => "其他设备".Equals(a.Key) ? b.MaterialCode == "其他设备" : b.MaterialCode.Contains(a.Key))?.Status,
+                    MaterialTypeName = "其他设备".Equals(a.Key) ? "其他设备" : MaterialTypeModel.Where(m => m.TypeAlias == a.Key)?.FirstOrDefault().TypeName,
+                    TechnicianId = s.ServiceWorkOrders?.FirstOrDefault(b => "其他设备".Equals(a.Key) ? b.MaterialCode == "其他设备" : b.MaterialCode.Contains(a.Key))?.CurrentUserId,
                 }),
                 ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.MaterialInfo.FirstOrDefault().ProblemType.Name : s.ProblemTypeName,
                 ProblemTypeId = string.IsNullOrEmpty(s.ProblemTypeId) ? s.MaterialInfo.FirstOrDefault().ProblemTypeId : s.ProblemTypeId
