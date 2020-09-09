@@ -666,8 +666,6 @@ namespace OpenAuth.App
             {
                 s.SubmitDate = DateTime.Now;
                 s.SubmitUserId = loginContext.User.Id;
-                if (s.FromType == 2)
-                    s.Status = 7;
                 #region 问题类型是其他的子类型直接分配给售后主管
                 if (!string.IsNullOrEmpty(s.ProblemTypeId))
                 {
@@ -679,6 +677,8 @@ namespace OpenAuth.App
                         s.Status = 2;
                     }
                 }
+                if (s.FromType == 2)
+                s.Status = 7;
                 #endregion
             });
             var e = await UnitWork.AddAsync<ServiceOrder, int>(obj);
