@@ -15,8 +15,6 @@ export let reportMixin = {
       this.$refs.report.reset()
     },
     handleReport (serviceOrderId, data) {
-      console.log(serviceOrderId, 'serviceOrderId')
-      console.log(data, 'list')
       let hasFinished = data.some(workOrder => {
         let { status, fromType } = workOrder
         return Number(status) >= 7 && Number(fromType) !== 2 // 所有工单状态为已解决且呼叫类型不为在线解答
@@ -25,7 +23,6 @@ export let reportMixin = {
         getReportDetail({
           serviceOrderId
         }).then(res => {
-          console.log(res, 'reportData')
           this.reportData = res.result.data
           this.dialogReportVisible = true
         })

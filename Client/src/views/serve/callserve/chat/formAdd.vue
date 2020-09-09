@@ -25,7 +25,7 @@
         </el-col>
         <el-col :span="4">
           <el-form-item label="服务方式" class="service-way">
-            <el-radio-group disabled class="radio-item right" v-model="form.orderTakeType">
+            <el-radio-group disabled class="radio-item right" v-model="form.serviceMode">
               <el-radio :label="1">电话服务</el-radio>
               <el-radio :label="2">上门服务</el-radio>
               <el-radio :label="3">返厂维修</el-radio>

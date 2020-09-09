@@ -818,6 +818,8 @@ export default {
       this.$refs.uploadImg.clearFiles()
       this.$refs.uploadFile.clearFiles()
       this.form.files = []
+      this.upLoadFileList = []
+      this.upLoadImgList = []
     },
     onCustomerIdChange (e) {
       let val = e.target.value
@@ -1098,7 +1100,7 @@ export default {
         if (hasOther) {
           targetList.splice(otherIndex, 0, {
             manufacturerSerialNumber: "其他设备",
-            editTrue: false,
+            editTrue: otherIndex === 0,
             internalSerialNumber: "",
             materialCode: "其他设备",
             materialDescription: "",
