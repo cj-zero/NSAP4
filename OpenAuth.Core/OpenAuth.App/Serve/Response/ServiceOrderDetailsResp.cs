@@ -107,6 +107,60 @@ namespace OpenAuth.App.Response
         /// 服务单号
         /// </summary>
         public int? U_SAP_ID { get; set; }
+
+        /// <summary>
+        /// 地址标识
+        /// </summary>
+        public string AddressDesignator { get; set; }
+
+        /// <summary>
+        /// 主管用户Id
+        /// </summary>
+        public string SupervisorId { get; set; }
+        /// <summary>
+        /// 销售用户Id
+        /// </summary>
+        public string SalesManId { get; set; }
+        /// <summary>
+        /// 创建人Id
+        /// </summary>
+        public string CreateUserId { get; set; }
+        /// <summary>
+        /// App用户Id
+        /// </summary>
+        //[Browsable(false)]
+        public int? AppUserId { get; set; }
+        /// <summary>
+        /// 接单人用户Id
+        /// </summary>
+        public string RecepUserId { get; set; }
+        /// <summary>
+        /// 服务单状态 1-待确认 2-已确认 3-已取消
+        /// </summary>
+        public int Status { get; set; }
+        /// <summary>
+        /// App技术主管Id
+        /// </summary>
+        public int? ManagerId { get; set; }
+        /// <summary>
+        /// 是否关单
+        /// </summary>
+        public bool IsClose { get; set; }
+        /// <summary>
+        /// 是否修改过
+        /// </summary>
+        public bool IsModified { get; set; }
+        /// <summary>
+        /// 地址
+        /// </summary>
+        public string Address { get; set; }
+        /// <summary>
+        /// 呼叫来源  1-电话 2-APP 
+        /// </summary>
+        public int? FromId { get; set; }
+
+
+
         /// <summary>
         /// 服务单关联的工单
         /// </summary>
