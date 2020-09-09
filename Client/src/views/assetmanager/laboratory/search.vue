@@ -1,14 +1,14 @@
 <template>
-  <el-form :inline="true" :model="formData" class="demo-form-inline" label-width="60px">
+  <el-form :model="formData" class="demo-form-inline" label-width="90px">
     <el-row>
       <el-col :span="3">
         <el-form-item label="资产ID">
-          <el-input v-model="form.user" placeholder="审批人"></el-input>
+          <el-input v-model="formData.user" placeholder="审批人"></el-input>
         </el-form-item>
       </el-col>
       <el-col :span="3">
         <el-form-item label="类别">
-          <el-select v-model="assetCategoryRes" placeholder="请选择" @change="onTypeChange">
+          <el-select v-model="formData.assetCategory" placeholder="请选择">
             <el-option v-for="item in assetCategory" :value="item" :key="item.name"></el-option>
           </el-select>
         </el-form-item>
@@ -45,13 +45,13 @@
       <el-col :span="4">
         <el-form-item label="状态">
           <el-select v-model="formData.assetStatus" placeholder="请选择状态">
-            <el-option v-for="item in item in assetStatus" :value="item" :key="item"></el-option>
+            <el-option v-for="item in assetStatus" :value="item" :key="item"></el-option>
           </el-select>
         </el-form-item>
       </el-col>
       <el-col :span="6">
         <el-date-picker
-          v-model="value1"
+          v-model="formData.date"
           type="daterange"
           range-separator="至"
           start-placeholder="开始日期"
@@ -83,7 +83,8 @@ export default {
         assetSJType: '',
         assetStatus: '',
         assetJZData: '',
-        assetSXDate: ''
+        assetSXDate: '',
+        date: ''
       }
     }
   },

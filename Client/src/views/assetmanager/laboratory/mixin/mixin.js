@@ -17,7 +17,8 @@ export default {
     assetCategory () {
       return this.options[SYS_AssetCategory] || []
     }, 
-    assetSatus () {
+    assetStatus () {
+      console.log(this.options, 'status')
       return this.options[SYS_AssetStatus] || []
     },
     assetSJType () {
