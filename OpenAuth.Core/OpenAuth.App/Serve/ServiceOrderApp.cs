@@ -744,7 +744,6 @@ namespace OpenAuth.App
                 .OrderBy(s=>s.CreateTime).Select(s=>s.ServiceOrderId).Distinct().ToListAsync();
 
             var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceWorkOrders)
-                .WhereIf(true, q => ids.Contains(q.Id))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryU_SAP_ID), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.QryU_SAP_ID)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.CustomerId.Contains(req.QryCustomer) || q.CustomerName.Contains(req.QryCustomer) || q.TerminalCustomerId.Contains(req.QryCustomer) || q.TerminalCustomer.Contains(req.QryCustomer))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.RecepUserName.Contains(req.QryRecepUser))
@@ -781,7 +780,7 @@ namespace OpenAuth.App
                 //&& ((req.QryCreateTimeFrom == null || req.QryCreateTimeTo == null) || (a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
                 && (string.IsNullOrWhiteSpace(req.QryFromType) || a.FromType.Equals(Convert.ToInt32(req.QryFromType)))
                 && (string.IsNullOrWhiteSpace(req.QryTechName) || a.CurrentUser.Equals(req.QryTechName))
-                && (string.IsNullOrWhiteSpace(req.QryProblemType) || a.ProblemType.Equals(req.QryProblemType))).ToList()
+                && (string.IsNullOrWhiteSpace(req.QryProblemType) || a.ProblemTypeId.Equals(req.QryProblemType))).ToList()
             });
 
             result.Data = await resultsql.Skip((req.page - 1) * req.limit)
