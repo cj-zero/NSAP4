@@ -116,7 +116,7 @@
                 {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].fromTheme: '' }}
               </span>
               <span v-if="fruit.name === 'status'"
-                :class="processStatus(scope.row.serviceWorkOrders[0].status)"
+                :class="processStatus(scope.row.serviceWorkOrders[0])"
               >
                 {{ scope.row.serviceWorkOrders[0] ? statusOptions[scope.row.serviceWorkOrders[0].status - 1].label: '' }}
               </span>
@@ -733,7 +733,7 @@ export default {
       this.listLoading = true;
       callservesure.rightList(this.listQuery).then(response => {
         let result = response.data.data;
-        this.total =response.count;
+        this.total = response.count;
         this._normalize(result)
         this.listLoading = false;
       }).catch(() => {

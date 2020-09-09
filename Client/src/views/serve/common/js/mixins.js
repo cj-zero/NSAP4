@@ -19,7 +19,7 @@ export let reportMixin = {
       console.log(data, 'list')
       let hasFinished = data.some(workOrder => {
         let { status, fromType } = workOrder
-        return Number(status) === 7 && Number(fromType) !== 2 // 所有工单状态为已解决且呼叫类型不为在线解答
+        return Number(status) >= 7 && Number(fromType) !== 2 // 所有工单状态为已解决且呼叫类型不为在线解答
       })
       if (hasFinished) {
         getReportDetail({
@@ -103,7 +103,11 @@ export let chatMixin = { // 查看、编辑服务单时 右侧出现的聊天记
 
 export let tableMixin = {
   methods: {
-    processStatus (status) {
+    processStatus (val) {
+      if (!val) {
+        return
+      }
+      let { status } = val
       return STATUS_COLOR_MAP[status]
     }
   }

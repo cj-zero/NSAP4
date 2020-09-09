@@ -33,6 +33,7 @@
     </el-upload> -->
     <template v-if="uploadType === 'image'">
       <el-upload 
+        ref="img"
         :action="action"
         list-type="picture-card"
         multiple
@@ -67,6 +68,7 @@
     </template>
     <template v-else>
       <el-upload
+        ref="file"
         class="upload-demo"
         :action="action"
         name="files"
@@ -182,6 +184,11 @@ export default {
         message:'上传成功'
       })
       this.$emit('get-ImgList', this.pictures)
+    },
+    clearFiles () {
+      this.uploadType === 'image'
+        ? this.$refs.img.clearFiles()
+        : this.$refs.file.clearFiles()
     }
   }
 };

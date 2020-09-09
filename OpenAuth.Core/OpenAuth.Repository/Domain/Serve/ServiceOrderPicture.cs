@@ -37,10 +37,10 @@ namespace OpenAuth.Repository.Domain
         [Description("图片Id")]
         public string PictureId { get; set; }
         /// <summary>
-        /// 图片类型 1-客户上传 2-客服上传
+        /// 图片类型 1-客户上传 2-客服上传 3-附件上传
         /// </summary>
         [Description("图片类型")]
-        public int PictureType { get; set; }
+        public int? PictureType { get; set; }
 
     }
 }
