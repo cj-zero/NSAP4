@@ -134,7 +134,19 @@ namespace OpenAuth.App.Response
         /// </summary>
         public string ContractId { get; set; }
 
-       
-       
+        /// <summary>
+        /// 故障描述
+        /// </summary>
+        public string TroubleDescription { get; set; }
+        /// <summary>
+        /// 过程描述
+        /// </summary>
+        public string ProcessDescription { get; set; }
+
+        /// <summary>
+        /// 服务方式 1上门服务 2电话服务
+        /// </summary>
+        public int? ServiceMode { get; set; }
+
     }
 }
