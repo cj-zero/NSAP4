@@ -247,6 +247,12 @@ namespace OpenAuth.App
         {
             //获取要处理的设备信息（技术员提交）
             var ApplyInfo = await UnitWork.Find<SeviceTechnicianApplyOrder>(s => s.Id == req.ApplyId).FirstOrDefaultAsync();
+            //判断是否生成了工单号
+            var count = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == ApplyInfo.ServiceOrderId && string.IsNullOrEmpty(s.WorkOrderNumber)).ToListAsync()).Count;
+            if (count > 0)
+            {
+                throw new CommonException("该服务单查询到无效的工单号，请确认", 09091);
+            }
             //获取当前的服务单设备类型集合
             var MaterialTypes = (await UnitWork.Find<ServiceWorkOrder>(a => a.ServiceOrderId == ApplyInfo.ServiceOrderId).ToListAsync()).GroupBy(g => "其他设备".Equals(g.MaterialCode) ? "其他设备" : g.MaterialCode.Substring(0, g.MaterialCode.IndexOf("-"))).Select(s => s.Key).ToArray();
             switch (req.SolveType)
