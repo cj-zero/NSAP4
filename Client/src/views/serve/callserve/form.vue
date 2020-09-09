@@ -1098,6 +1098,9 @@ export default {
           })
         }
         if (hasOther) {
+          if (targetList.length && otherIndex === 0) {
+            targetList[0].editTrue = false
+          }
           targetList.splice(otherIndex, 0, {
             manufacturerSerialNumber: "其他设备",
             editTrue: otherIndex === 0,
