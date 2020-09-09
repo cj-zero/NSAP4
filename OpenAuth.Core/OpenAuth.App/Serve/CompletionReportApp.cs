@@ -112,6 +112,8 @@ namespace OpenAuth.App
             //反写完工报告Id至工单
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id),
                 o => new ServiceWorkOrder { CompletionReportId = completionReportId, CompleteDate = DateTime.Now });
+            //清空消息为已读
+            await UnitWork.UpdateAsync<ServiceOrderMessageUser>(s => s.FroUserId == req.CurrentUserId.ToString(), e => new ServiceOrderMessageUser { HasRead = true });
             //解除隐私号码绑定
             //await UnbindProtectPhone(req.ServiceOrderId, req.MaterialType);
         }

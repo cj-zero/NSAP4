@@ -119,7 +119,6 @@ export default {
       dialogImageUrl: "",
       dialogVisible: false,
       action: `${process.env.VUE_APP_BASE_API}/Files/Upload`,
-      fileList:[],
       headers:{
         "X-Token":this.$store.state.user.token
       },
@@ -141,7 +140,8 @@ export default {
       let findIndex = this.newPictureList.findIndex(item => {
         return item.uid === uid
       })
-      this.pictures.splice(findIndex)
+      this.newPictureList.splice(findIndex, 1)
+      this.pictures.splice(findIndex, 1)
       this.$emit('get-ImgList', this.pictures)
     },
     handlePictureCardPreview(file) {
@@ -156,7 +156,6 @@ export default {
       a.click()
     },
     beforeUpload (file) {
-      console.log(file, 'file')
       let testmsg = /^image\/(jpeg|png|jpg)$/.test(file.type)
       if (!testmsg) {
         this.$message.error('上传图片格式不对!')
@@ -189,6 +188,8 @@ export default {
       this.uploadType === 'image'
         ? this.$refs.img.clearFiles()
         : this.$refs.file.clearFiles()
+      this.pictures = []
+      this.newPictureList = []
     }
   }
 };

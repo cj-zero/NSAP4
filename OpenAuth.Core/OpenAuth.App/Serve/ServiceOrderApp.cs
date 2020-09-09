@@ -878,25 +878,6 @@ namespace OpenAuth.App
 
 
         /// <summary>
-        /// 获取服务单图片Id列表
-        /// </summary>
-        /// <param name="id">服务单Id</param>
-        /// <param name="type">1-客户上传 2-客服上传</param>
-        /// <returns></returns>
-        public async Task<List<UploadFileResp>> GetServiceOrderPictures(int id, int type)
-        {
-            var Pictures = await UnitWork.Find<ServiceOrderPicture>(p => p.ServiceOrderId.Equals(id))
-               .WhereIf(type == 0, a => a.PictureType == 1 || a.PictureType == 2)
-               .WhereIf(type > 0, b => b.PictureType.Equals(type))
-               .Select(p => new { p.PictureId, p.PictureType }).ToListAsync();
-            var idList = Pictures.Select(p => p.PictureId).ToList();
-            var files = await UnitWork.Find<UploadFile>(f => idList.Contains(f.Id)).ToListAsync();
-            var list = files.MapTo<List<UploadFileResp>>();
-            list.ForEach(L => L.PictureType = Pictures.Where(p => L.Id.Equals(p.PictureId)).Select(f => f.PictureType).FirstOrDefault());
-            return list;
-        }
-
-        /// <summary>
         /// 调出该客户代码近10个呼叫ID,及未关闭的近10个呼叫ID
         /// </summary>
         /// <returns></returns>
@@ -1165,6 +1146,25 @@ namespace OpenAuth.App
         #endregion
 
         #region<<Common Methods>>
+        /// <summary>
+        /// 获取服务单图片Id列表
+        /// </summary>
+        /// <param name="id">服务单Id</param>
+        /// <param name="type">1-客户上传 2-客服上传</param>
+        /// <returns></returns>
+        public async Task<List<UploadFileResp>> GetServiceOrderPictures(int id, int type)
+        {
+            var Pictures = await UnitWork.Find<ServiceOrderPicture>(p => p.ServiceOrderId.Equals(id))
+               .WhereIf(type == 0, a => a.PictureType == 1 || a.PictureType == 2)
+               .WhereIf(type > 0, b => b.PictureType.Equals(type))
+               .Select(p => new { p.PictureId, p.PictureType }).ToListAsync();
+            var idList = Pictures.Select(p => p.PictureId).ToList();
+            var files = await UnitWork.Find<UploadFile>(f => idList.Contains(f.Id)).ToListAsync();
+            var list = files.MapTo<List<UploadFileResp>>();
+            list.ForEach(L => L.PictureType = Pictures.Where(p => L.Id.Equals(p.PictureId)).Select(f => f.PictureType).FirstOrDefault());
+            return list;
+        }
+
         /// <summary>
         /// 导出excel
         /// </summary>
@@ -3093,7 +3093,7 @@ namespace OpenAuth.App
             //2.取出nSAP中该用户对应的部门信息
             var orgs = _revelanceApp.Get(Define.USERORG, true, userId).ToArray();
             //3.取出nSAP用户与APP用户关联的用户信息（角色为技术员）
-            var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole > 1 && !string.IsNullOrEmpty(req.TechnicianId) ? u.AppUserId != Convert.ToInt32(req.TechnicianId) : true).ToListAsync();
+            var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole > 1 && req.TechnicianId > 0 ? u.AppUserId != req.TechnicianId : true).ToListAsync();
             //4.获取定位信息（登录APP时保存的位置信息）
             var locations = (await UnitWork.Find<RealTimeLocation>(null).OrderByDescending(o => o.CreateTime).ToListAsync()).GroupBy(g => g.AppUserId).Select(s => s.First());
             //5.根据组织信息获取组织下的所有用户Id集合

@@ -609,6 +609,7 @@ export default {
             this.isClear = true
             this.listQueryServer.page = 1
             this.listQuery.page = 1
+            this.ifParent= ""
             this.afterLeft();
             this.dialogOrder = false;
             this.listLoading = false;
@@ -843,7 +844,6 @@ export default {
         .getRightList(this.listQuery)
         .then((response) => {
           if (response.code === 200) {
-            // this.ifParent=""
             this.list = response.data.data;
             this.total = response.data.count;
             this.listLoading = false;
