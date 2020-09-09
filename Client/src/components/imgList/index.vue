@@ -20,18 +20,12 @@
           </div>
         </div>
       </div>
-      <Model
-        :visible="previewVisible"
-        @on-close="previewVisible = false"
-        ref="formPreview"
-        width="600px"
-        form
+      <el-image-viewer
+        v-if="previewVisible"
+        :url-list="[previewUrl]"
+        :on-close="closeViewer"
       >
-        <img :src="previewUrl" alt style="display: block;width: 80%;margin: 0 auto;" />
-        <template slot="action">
-          <el-button size="mini" @click="previewVisible = false">关闭</el-button>
-        </template>
-      </Model>
+      </el-image-viewer>
     </template>
     <template v-else>
       <ul class="file-list">
@@ -50,11 +44,11 @@
   
 <script>
 
-import Model from "@/components/Formcreated/components/Model";
+import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import { download, downloadFile } from '@/utils/file'
 export default {
   components: {
-    Model
+    ElImageViewer
   },
   props: {
     listType: {
@@ -73,7 +67,7 @@ export default {
       baseURL: process.env.VUE_APP_BASE_API + "/files/Download",
       tokenValue: this.$store.state.user.token,
       previewVisible: false,
-      previewUrl: ''
+      previewUrl: '',
     }
   },
   methods: {
@@ -86,6 +80,9 @@ export default {
     },
     downloadFile (item) {
       downloadFile(`${this.baseURL}/${item.pictureId ? item.pictureId : item.id}?X-Token=${this.tokenValue}`)
+    },
+    closeViewer () {
+      this.previewVisible = false
     }
   },
   created () {

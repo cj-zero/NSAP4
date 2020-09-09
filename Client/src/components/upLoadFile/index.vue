@@ -55,16 +55,23 @@
           <i class="el-icon-download"></i>
         </span>
       </el-upload>
-      <Model
+      <!-- <Model
           :visible="dialogVisible"
           @on-close="dialogVisible = false"
           width="600px"
+          :fullscreen="true"
         >
         <img :src="dialogImageUrl" alt style="display: block;width: 80%;margin: 0 auto;" />
         <template slot="action">
           <el-button size="mini" @click="dialogVisible = false">关闭</el-button>
         </template>
-      </Model>
+      </Model> -->
+      <el-image-viewer
+        v-if="dialogVisible"
+        :url-list="[dialogImageUrl]"
+        :on-close="closeViewer"
+      >
+      </el-image-viewer>
     </template>
     <template v-else>
       <el-upload
@@ -87,10 +94,12 @@
 </template>
 
 <script>
-import Model from "@/components/Formcreated/components/Model";
+// import Model from "@/components/Formcreated/components/Model";
+import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 export default {
   components: {
-    Model
+    // Model
+    ElImageViewer
   },
   props: {
     uploadType: {
@@ -135,6 +144,9 @@ export default {
     }
   },
   methods: {
+    closeViewer () {
+      this.dialogVisible = false
+    },
     handleRemove(file) {
       let { uid } = file
       let findIndex = this.newPictureList.findIndex(item => {
