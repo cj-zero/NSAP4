@@ -629,6 +629,7 @@ export default {
               this.isClear = true
               this.listQueryServer.page = 1
               this.listQuery.page = 1
+              this.ifParent = ''
               this.afterLeft()
               this.dialogOrder = false;
               this.listLoading = false;

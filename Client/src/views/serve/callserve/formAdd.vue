@@ -31,12 +31,14 @@
           <el-col :span="4" style="transform: translate3d(-15px, 0, 0);" v-if="formName === '查看'">
             <el-form-item label="服务方式">
               <el-radio-group
+                style="margin-top: -9px;"
                 disabled
                 class="radio-item right"
-                v-model="formList[0].orderTakeType"
+                v-model="formList[0].serviceMode"
               >
                 <el-radio :label="1">电话服务</el-radio>
                 <el-radio :label="2">上门服务</el-radio>
+                <el-radio :label="3">返厂维修</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -46,24 +48,6 @@
           <!-- <el-col :span="2" v-if="ifEdit"></el-col> -->
         </el-row>
         <el-row type="flex" class="row-bg" justify="space-around">
-          <el-col :span="18">
-            <el-form-item
-              label="呼叫主题"
-              prop="fromTheme"
-              :rules="{
-              required: true, message: '呼叫主题不能为空', trigger: 'blur'
-            }"
-            >
-              <el-input v-model="formList[0].fromTheme" type="textarea" maxlength="255" autosize></el-input>
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="技术员">
-              <el-input disabled v-model="formList[0].currentUser"></el-input>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row type="flex" class="row-bg" justify="space-between">
           <el-col :span="7">
             <el-form-item
               label="序列号"
@@ -101,17 +85,12 @@
             </el-form-item>
           </el-col>
           <el-col :span="6">
-            <el-form-item label="保修结束日期">
-              <el-date-picker
-                disabled
-                type="date"
-                placeholder="选择日期"
-                v-model="formList[0].warrantyEndDate"
-              ></el-date-picker>
+            <el-form-item label="技术员">
+              <el-input disabled v-model="formList[0].currentUser"></el-input>
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row type="flex" class="row-bg" justify="space-around">
+        <el-row type="flex" class="row-bg" justify="space-between">
           <el-col :span="7">
             <el-form-item label="物料编码">
               <el-input v-model="formList[0].materialCode" disabled></el-input>
@@ -136,6 +115,23 @@
           </el-col>
           <el-col :span="5"></el-col>
           <el-col :span="6">
+            <el-form-item label="保修结束日期">
+              <el-date-picker
+                disabled
+                type="date"
+                placeholder="选择日期"
+                v-model="formList[0].warrantyEndDate"
+              ></el-date-picker>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row type="flex" class="row-bg" justify="space-around">
+          <el-col :span="18">
+            <el-form-item label="物料描述">
+              <el-input disabled v-model="formList[0].materialDescription"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
             <el-form-item label="清算日期">
               <el-date-picker
                 disabled
@@ -149,8 +145,14 @@
         </el-row>
         <el-row type="flex">
           <el-col :span="18">
-            <el-form-item label="物料描述">
-              <el-input disabled v-model="formList[0].materialDescription"></el-input>
+            <el-form-item
+              label="呼叫主题"
+              prop="fromTheme"
+              :rules="{
+              required: true, message: '呼叫主题不能为空', trigger: 'blur'
+            }"
+            >
+              <el-input v-model="formList[0].fromTheme" type="textarea" maxlength="255" autosize></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="6">
@@ -363,12 +365,13 @@
               <el-col :span="4" style="transform: translate3d(-15px, 0, 0);" v-if="formName === '查看'">
                 <el-form-item label="服务方式">
                   <el-radio-group
-                  
+                    style="margin-top: -9px;"
                     class="radio-item right"
-                    v-model="item.orderTakeType"
+                    v-model="item.serviceMode"
                   >
                     <el-radio :label="1">电话服务</el-radio>
                     <el-radio :label="2">上门服务</el-radio>
+                    <el-radio :label="3">返厂维修</el-radio>
                   </el-radio-group>
                 </el-form-item>
               </el-col>
@@ -377,24 +380,6 @@
               </el-col>
             </el-row>
             <el-row type="flex" class="row-bg" justify="space-around">
-              <el-col :span="18">
-                <el-form-item
-                  label="呼叫主题"
-                  prop="fromTheme"
-                  :rules="{
-                  required: true, message: '呼叫主题不能为空', trigger: 'blur'
-                }"
-                >
-                  <el-input type="textarea" maxlength="255" v-model="item.fromTheme" autosize></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="6">
-                <el-form-item label="技术员">
-                  <el-input disabled v-model="item.currentUser"></el-input>
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <el-row type="flex" class="row-bg" justify="space-between">
               <el-col :span="7">
                 <el-form-item
                   label="序列号"
@@ -431,17 +416,12 @@
                 </el-form-item>
               </el-col>
               <el-col :span="6">
-                <el-form-item label="保修结束日期">
-                  <el-date-picker
-                    disabled
-                    type="date"
-                    placeholder="选择日期"
-                    v-model="item.warrantyEndDate"
-                  ></el-date-picker>
+                <el-form-item label="技术员">
+                  <el-input disabled v-model="item.currentUser"></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
-            <el-row type="flex" class="row-bg" justify="space-around">
+            <el-row type="flex" class="row-bg" justify="space-between">
               <el-col :span="7">
                 <el-form-item label="物料编码">
                   <el-input v-model="item.materialCode" disabled></el-input>
@@ -466,6 +446,23 @@
               </el-col>
               <el-col :span="5"></el-col>
               <el-col :span="6">
+                <el-form-item label="保修结束日期">
+                  <el-date-picker
+                    disabled
+                    type="date"
+                    placeholder="选择日期"
+                    v-model="item.warrantyEndDate"
+                  ></el-date-picker>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row type="flex" class="row-bg" justify="space-around">
+              <el-col :span="18">
+                <el-form-item label="物料描述">
+                  <el-input disabled v-model="item.materialDescription"></el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="6">
                 <el-form-item label="清算日期">
                   <el-date-picker
                     disabled
@@ -479,8 +476,14 @@
             </el-row>
             <el-row type="flex">
               <el-col :span="18">
-                <el-form-item label="物料描述">
-                  <el-input disabled v-model="item.materialDescription"></el-input>
+                <el-form-item
+                  label="呼叫主题"
+                  prop="fromTheme"
+                  :rules="{
+                  required: true, message: '呼叫主题不能为空', trigger: 'blur'
+                }"
+                >
+                  <el-input type="textarea" maxlength="255" v-model="item.fromTheme" autosize></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="6">
@@ -1325,7 +1328,6 @@ export default {
               solutionsubject:  "",
             });
           }
-          
           this.ifFormPush = true;
         } else {
           this.ifFormPush = true;
