@@ -90,14 +90,14 @@ namespace OpenAuth.App.nwcali
                     AssetImage = L.AssetImage,
                     AssetCreateTime = L.AssetCreateTime,
                     AssetCategorys = CalculateMetrological(L.AssetCategorys, L.AssetCategory)
-        });
+            });
 
             result.Count = objs.Count();
             return result;
         }
 
         /// <summary>
-        /// 
+        /// 获取单个资产
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
@@ -116,8 +116,7 @@ namespace OpenAuth.App.nwcali
         {
             var obj = req.MapTo<Asset>();
             var user = _auth.GetCurrentUser().User;
-            string ZCNumber="";
-            ZCNumber = "JZ" + Convert.ToInt32(req.AssetSerial).ToString("00")+ DateTime.Today.ToString("yy")+DateTime.Today.ToString("MM");
+            var ZCNumber = "JZ" + Convert.ToInt32(req.AssetSerial).ToString("00")+ DateTime.Today.ToString("yy")+DateTime.Today.ToString("MM");
             var Listasset = UnitWork.Find<Asset>(u => u.AssetNumber.Contains(ZCNumber)).OrderByDescending(u => u.AssetCreateTime).FirstOrDefault();
             if (Listasset == null)
             {
