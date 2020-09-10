@@ -1142,6 +1142,28 @@ namespace OpenAuth.App
             result.Count = userInfos.Count;
             return result;
         }
+
+        /// <summary>
+        /// 修改未生成的工单号
+        /// </summary>
+        /// <returns></returns>
+        public async Task UpDateWorkOrderNumber()
+        {
+            var query = await UnitWork.Find<ServiceWorkOrder>(s => string.IsNullOrWhiteSpace(s.WorkOrderNumber)).ToListAsync();
+            if (query.Count() > 0) 
+            {
+                var ids = query.Where(s=>s.ServiceOrderId!=0).Select(s => s.ServiceOrderId).Distinct().ToList();
+                foreach (var item in ids)
+                {
+                    var ServiceOrder = UnitWork.Find<ServiceOrder>(s => s.Id.Equals(item)).AsNoTracking().FirstOrDefault();
+                    var ServiceWorkOrders = await UnitWork.Find<ServiceWorkOrder>(u => u.ServiceOrderId.Equals(item)).AsNoTracking().ToListAsync();
+                    int num = 0;
+                    ServiceWorkOrders.ForEach(u => u.WorkOrderNumber = ServiceOrder.U_SAP_ID + "-" + ++num);
+                    UnitWork.BatchUpdate<ServiceWorkOrder>(ServiceWorkOrders.ToArray());
+                    await UnitWork.SaveAsync();
+                }
+            }
+        }
         #endregion
 
         #region<<Common Methods>>
