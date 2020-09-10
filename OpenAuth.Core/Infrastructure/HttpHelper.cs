@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Org.BouncyCastle.Asn1.Ocsp;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -116,7 +118,8 @@ namespace Infrastructure
                         temp.Add(item.Key, item.Value.ToString());
                     }
                 }
-                else {
+                else
+                {
                     temp.Add(item.Key, "");
                 }
             }
@@ -170,6 +173,47 @@ namespace Infrastructure
             string parameter = Convert.ToBase64String(toBase64);
 
             return new AuthenticationHeaderValue("Basic", parameter);
+        }
+        /// <summary>
+        /// Get请求数据
+        /// <para>最终以url参数的方式提交</para>
+        /// </summary>
+        /// <param name="parameters">参数字典,可为空</param>
+        /// <param name="requestUri">例如/api/Files/UploadFile</param>
+        /// <returns></returns>
+        public string Get(Dictionary<string, object> parameters, string requestUri)
+        {
+            if (parameters != null)
+            {
+                var strParam = string.Join("&", parameters.Select(o => o.Key + "=" + o.Value));
+                requestUri = string.Concat(ConcatURL(requestUri), '?', strParam);
+            }
+            else
+            {
+                requestUri = ConcatURL(requestUri);
+            }
+
+            var result = _httpClient.GetStringAsync(requestUri);
+            return result.Result;
+        }
+
+        /// <summary>
+        /// 以json的方式Post数据 返回string类型
+        /// <para>最终以json的方式放置在http体中</para>
+        /// </summary>
+        /// <param name="entity">实体</param>
+        /// <param name="requestUri">例如/api/Files/UploadFile</param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public string Post(object entity, string requestUri, string token)
+        {
+            string request = string.Empty;
+            if (entity != null)
+                request = JsonHelper.Instance.Serialize(entity);
+            HttpContent httpContent = new StringContent(request);
+            httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            httpContent.Headers.Add("X-Token", token);
+            return Post(requestUri, httpContent);
         }
     }
 }

@@ -48,5 +48,10 @@
         /// App版本号
         /// </summary>
         public string AppVersion { get; set; }
+
+        /// <summary>
+        /// App 售后服务地址
+        /// </summary>
+        public string AppServerUrl { get; set; }
     }
 }
