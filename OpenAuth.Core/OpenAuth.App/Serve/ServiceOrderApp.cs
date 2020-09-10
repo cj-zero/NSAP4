@@ -2847,7 +2847,12 @@ namespace OpenAuth.App
                 q.ProblemTypeName
             });
 
-            var data = await query//.OrderBy(u => u.Id)
+            //待派单按最新的单子在前排序
+            if (QryState == 1)
+            {
+                query = query.OrderByDescending(o => o.Id);
+            }
+            var data = await query
             .Skip((req.page - 1) * req.limit)
             .Take(req.limit).ToListAsync();
 
