@@ -678,7 +678,7 @@ namespace OpenAuth.App
                     }
                 }
                 if (s.FromType == 2)
-                s.Status = 7;
+                    s.Status = 7;
                 #endregion
             });
             var e = await UnitWork.AddAsync<ServiceOrder, int>(obj);
@@ -1150,9 +1150,9 @@ namespace OpenAuth.App
         public async Task UpDateWorkOrderNumber()
         {
             var query = await UnitWork.Find<ServiceWorkOrder>(s => string.IsNullOrWhiteSpace(s.WorkOrderNumber)).ToListAsync();
-            if (query.Count() > 0) 
+            if (query.Count() > 0)
             {
-                var ids = query.Where(s=>s.ServiceOrderId!=0).Select(s => s.ServiceOrderId).Distinct().ToList();
+                var ids = query.Where(s => s.ServiceOrderId != 0).Select(s => s.ServiceOrderId).Distinct().ToList();
                 foreach (var item in ids)
                 {
                     var ServiceOrder = UnitWork.Find<ServiceOrder>(s => s.Id.Equals(item)).AsNoTracking().FirstOrDefault();
@@ -1911,7 +1911,7 @@ namespace OpenAuth.App
             obj.RecepUserId = loginContext.User.Id;
             obj.RecepUserName = loginContext.User.Name;
             obj.Status = 1;
-
+            obj.FromId = 6;//APP提交
 
             var obj2 = from a in UnitWork.Find<OCRD>(null)
                        join b in UnitWork.Find<OSLP>(null) on a.SlpCode equals b.SlpCode into ab
@@ -1962,6 +1962,8 @@ namespace OpenAuth.App
                 ServiceOrderId = o.Id,
                 LogType = 2
             });
+            var MaterialTypes = string.Join(",", obj.ServiceWorkOrders.Select(s => s.MaterialCode == "其他设备" ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-"))).Distinct().ToArray());
+            await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"APP客户提交售后申请创建服务单", ActionType = "创建服务单", ServiceOrderId = o.Id, MaterialType = MaterialTypes });
             return o;
         }
 
