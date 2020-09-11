@@ -291,6 +291,10 @@ namespace OpenAuth.App
                     item.Files.AddRange(picfiles.MapTo<List<UploadFileResp>>());
                     var worklist = workmodel.Where(w => w.CompletionReportId == item.Id).ToList();
                     item.ServiceWorkOrders.AddRange(worklist.MapToList<WorkCompletionReportResp>());
+                    item.ServiceMode = worklist.Select(s => s.ServiceMode).FirstOrDefault();
+                    item.ProcessDescription = worklist.Select(s => s.ProcessDescription).FirstOrDefault();
+                    item.TroubleDescription = worklist.Select(s => s.TroubleDescription).FirstOrDefault();
+                    item.U_SAP_ID = worklist.Select(s => s.WorkOrderNumber).FirstOrDefault().Substring(0, worklist.Select(s => s.WorkOrderNumber).FirstOrDefault().IndexOf("-"));
                 }
                 item.MaterialCodeTypeName = item.MaterialCode == "其他设备" ? "其他设备" : await UnitWork.Find<MaterialType>(m => m.TypeAlias.Equals(item.MaterialCode.Substring(0, item.MaterialCode.IndexOf("-")))).Select(m => m.TypeName).FirstOrDefaultAsync();
             }

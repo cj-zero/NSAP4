@@ -158,5 +158,10 @@ namespace OpenAuth.App.Response
         /// 设备类型名称
         /// </summary>
         public string MaterialCodeTypeName { get; set; }
+
+        /// <summary>
+        /// U_SAP_ID
+        /// </summary>
+        public string U_SAP_ID { get; set; }
     }
 }

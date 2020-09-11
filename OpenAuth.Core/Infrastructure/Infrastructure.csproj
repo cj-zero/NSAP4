@@ -16,10 +16,11 @@
     <PackageReference Include="AutoMapper" Version="9.0.0" />
     <PackageReference Include="BarcodeLib" Version="2.2.5" />
     <PackageReference Include="Caching.CSRedis" Version="3.6.5" />
+    <PackageReference Include="Chinese" Version="0.2.5" />
     <PackageReference Include="CSRedisCore" Version="3.6.5" />
     <PackageReference Include="EnyimMemcachedCore" Version="2.1.5" />
     <PackageReference Include="log4net" Version="2.0.8" />
-    <PackageReference Include="Magicodes.IE.Excel" Version="2.3.0-beta8"  />
+    <PackageReference Include="Magicodes.IE.Excel" Version="2.3.0-beta8" />
     <PackageReference Include="Magicodes.IE.Word" Version="2.3.0-beta8" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="3.1.7" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.2" />
