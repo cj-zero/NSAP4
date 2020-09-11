@@ -270,7 +270,7 @@
       </el-dialog>
       <!-- 完工报告  -->
       <el-dialog
-        width="932px"
+        width="983px"
         class="dialog-mini"
         :close-on-click-modal="false"
         title="服务行为报告单"

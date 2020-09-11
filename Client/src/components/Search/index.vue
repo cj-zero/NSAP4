@@ -46,6 +46,7 @@
       <template v-else-if="item.type === 'date'">
         <div class="filter-item" :key="index">
           <el-date-picker
+            :style="{ width: item.width + 'px' }"
             :value-format="item.valueFormat || 'yyyy-MM-dd'"
             :type="item.dateType || 'date'"
             :placeholder="item.placeholder"

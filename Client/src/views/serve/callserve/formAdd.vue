@@ -770,7 +770,7 @@
     </el-dialog>
     <el-dialog
       v-el-drag-dialog
-      width="932px"
+      width="983px"
       class="dialog-mini"
       :append-to-body="true"
       :close-on-click-modal="false"

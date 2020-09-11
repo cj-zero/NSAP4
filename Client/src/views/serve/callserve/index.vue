@@ -80,7 +80,7 @@
                     <template slot-scope="scope">
                       <span
                         v-if="fruit.name === 'status'"
-                        :class="processStatus(scope.row[fruit.name])"
+                        :class="processStatus(scope.row)"
                       >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
                       <span
                         v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
@@ -299,7 +299,7 @@
       <!-- 完工报告  -->
       <el-dialog
         v-el-drag-dialog
-        width="932px"
+        width="983px"
         class="dialog-mini"
         :close-on-click-modal="false"
         title="服务行为报告单"
@@ -365,8 +365,8 @@ export default {
         { width: 140, placeholder: '问题类型', prop: 'QryProblemType', options: this.problemOptions, type: 'tree' },
         { width: 100, placeholder: '呼叫类型', prop: 'QryFromType', options: this.options_type, type: 'select' },
         { width: 100, placeholder: '联系电话', prop: 'QryContactTel' },
-        { width: 100, placeholder: '创建日期', prop: 'QryCreateTimeFrom', type: 'date', showText: true },
-        { width: 100, placeholder: '结束日期', prop: 'QryCreateTimeTo', type: 'date' },
+        { width: 150, placeholder: '创建日期', prop: 'QryCreateTimeFrom', type: 'date', showText: true },
+        { width: 150, placeholder: '结束日期', prop: 'QryCreateTimeTo', type: 'date' },
       ]
     }
   },
