@@ -3,6 +3,8 @@
     :model="formData"
     disabled
     label-width="100px"
+    class="form-wrapper"
+    size="mini"
   >
     <el-row type="flex" justify="space-around">
       <el-form-item label="客户代码">
@@ -11,8 +13,8 @@
       <el-form-item label="客户名称">
         <el-input v-model="formData.cardCode"></el-input>
       </el-form-item>
-      <el-form-item label="客户地址">
-        <el-input v-model="formData.address"></el-input>
+      <el-form-item label="更新时间">
+        <el-input v-model="formData.updateDate"></el-input>
       </el-form-item>
     </el-row>
     <el-row type="flex" justify="space-around">
@@ -38,8 +40,8 @@
       </el-form-item>
     </el-row>
     <el-row>
-      <el-form-item label="更新时间">
-        <el-input v-model="formData.updateDate"></el-input>
+      <el-form-item label="客户地址">
+        <el-input v-model="formData.address"></el-input>
       </el-form-item>
     </el-row>
   </el-form>
@@ -77,6 +79,11 @@ export default {
 }
 </script>
 <style lang='scss' scoped>
+.form-wrapper {
+  ::v-deep .el-form-item{
+    margin-bottom:5px;
+  }
+}
 .red-color {
   color: #ff0000;
 }

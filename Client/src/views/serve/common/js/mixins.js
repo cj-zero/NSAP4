@@ -1,7 +1,6 @@
 import { getReportDetail, GetDetails } from '@/api/serve/callservesure'
-import { AllowSendOrderUser } from "@/api/serve/callservepushm";
+import { AllowSendOrderUser } from "@/api/serve/callservepushm"
 import { STATUS_COLOR_MAP } from '@/utils/declaration'
-
 export let reportMixin = {
   data () {
     return {
@@ -40,6 +39,7 @@ export let reportMixin = {
 export let dispatchMixin = { // 派单 转派
   data () {
     return {
+      dataTree: [], // 问题类型数组
       listQuery2: {
         page: 1,
         limit: 10,
@@ -49,13 +49,13 @@ export let dispatchMixin = { // 派单 转派
     }
   },
   methods: {
-    _getAllowSendOrderUser () {
+    _getAllowSendOrderUser () { // 获取派单人员
       AllowSendOrderUser(this.listQuery2).then((res) => {
         this.tableData = res.data;
         this.total2 = res.count;
       });
     },
-    onClosed () {
+    onClosed () { // 关闭派单窗口
       this.listQuery2.currentUser = ''
       this.listQuery2.page = 1
       this.orderRadio = ''
@@ -69,8 +69,10 @@ export let dispatchMixin = { // 派单 转派
       this._getAllowSendOrderUser()
     }
   },
-  'listQuery2.currentUser' () {
-    this.listQuery2.page = 1
+  watch: {
+    'listQuery2.currentUser' () {
+      this.listQuery2.page = 1
+    }
   }
 }
 

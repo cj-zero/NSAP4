@@ -37,7 +37,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .app-main {
     width: 100%;
     height: calc(100% - 35px);
@@ -45,5 +45,10 @@ export default {
     overflow: auto;
 		background-color: #efefef;
     box-sizing: border-box;
+    ::v-deep > div {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
 }
 </style>
