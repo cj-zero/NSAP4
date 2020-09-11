@@ -643,7 +643,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var d = await _businessPartnerApp.GetDetails(req.CustomerId);
+            var d = await _businessPartnerApp.GetDetails(req.CustomerId.ToUpper());
             var obj = req.MapTo<ServiceOrder>();
             obj.RecepUserName = loginContext.User.Name;
             obj.RecepUserId = loginContext.User.Id;
@@ -1919,7 +1919,7 @@ namespace OpenAuth.App
                        join e in UnitWork.Find<OHEM>(null) on a.DfTcnician equals e.empID into ae
                        from e in ae.DefaultIfEmpty()
                        select new { a, b, e };
-            obj2 = obj2.Where(o => o.a.CardCode.Equals(obj.CustomerId));
+            obj2 = obj2.Where(o => o.a.CardCode.Equals(obj.CustomerId.ToUpper()));
 
             var query = obj2.Select(q => new
             {
