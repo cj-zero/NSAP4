@@ -245,12 +245,12 @@ ul {
       border: 2px solid white;
       border-radius: 5px;
       padding: 5px;
-
+      text-align: right;
       p:nth-child(2) {
         // color: #67c23a;
       }
       .text {
-        color: #67c23a;
+        // color: #67c23a;
       }
     }
   }
