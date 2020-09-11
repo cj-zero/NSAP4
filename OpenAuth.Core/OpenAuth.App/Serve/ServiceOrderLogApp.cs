@@ -136,7 +136,7 @@ namespace OpenAuth.App
                    CreateUserName=s.CreateUserName, 
                    Action=s.Action}).FirstOrDefaultAsync());
             }
-            result.Data = loglist.OrderBy(u => u.CreateTime).ToList();
+            result.Data = loglist.OrderByDescending(u => u.CreateTime).ToList();
             return result;
         }
         public ServiceOrderLogApp(IUnitWork unitWork, IRepository<ServiceOrderLog> repository,
