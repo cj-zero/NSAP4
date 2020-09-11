@@ -61,6 +61,8 @@
         </el-table>
         <!-- 只能查看的表单 -->
         <el-dialog
+          v-el-drag-dialog
+          top="5vh"
           width="1210px"
           class="dialog-mini"
           title="服务单详情"

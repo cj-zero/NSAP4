@@ -5,6 +5,7 @@
       <el-form
         v-loading="waitingAdd "
         :model="formList[0]"
+        :class="{ 'form-disabled': !isCreate && isOrderDisabled(formList[0]) }"
         :disabled="!isCreate && isOrderDisabled(formList[0])"
         label-width="90px"
         class="rowStyle"
@@ -339,6 +340,7 @@
         >
           <el-form
             :model="item"
+            :class="{ 'form-disabled': !isCreate && isOrderDisabled(item) }"
             :disabled="!isCreate && isOrderDisabled(item)"
             label-width="90px"
             class="rowStyle"
@@ -717,7 +719,7 @@
         <el-input
           @keyup.enter.native="searchList"
           style="width:150px;margin:0 20px;display:inline-block;"
-          v-model="inputSearch"
+          v-model.trim="inputSearch"
           placeholder="制造商序列号"
         >
           <i class="el-icon-search el-input__icon" slot="suffix"></i>
@@ -725,7 +727,7 @@
         <el-input
           @keyup.enter.native="searchList"
           style="width:150px;margin:0 20px;display:inline-block;"
-          v-model="inputItemCode"
+          v-model.trim="inputItemCode"
           placeholder="输入物料编码"
         >
           <i class="el-icon-search el-input__icon" slot="suffix"></i>
@@ -1619,6 +1621,20 @@ export default {
   overflow-x: hidden;
   .order-wrapper {
     position: relative;
+    .form-disabled {
+      ::v-deep .el-input.is-disabled .el-input__inner {
+        background-color: #fff;
+        cursor: default;
+        color: #606266;
+        border-color: #DCDFE6;
+      }
+      ::v-deep .el-textarea.is-disabled .el-textarea__inner {
+        background-color: #fff;
+        cursor: default;
+        color: #606266;
+        border-color: #DCDFE6;
+      }
+    }
     .operation-btn-wrapper {
       position: absolute;
       display: flex;

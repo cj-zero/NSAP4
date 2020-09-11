@@ -127,11 +127,11 @@
               <span v-if="fruit.name === 'fromTheme'">
                 {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].fromTheme: '' }}
               </span>
+              <span v-if="fruit.name === 'manufacturerSerialNumber'">
+                {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].manufacturerSerialNumber: '' }}
+              </span>
               <span v-if="fruit.name === 'materialCode'">
                 {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].materialCode: '' }}
-              </span>
-              <span v-if="fruit.name === 'materialDescription'">
-                {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].materialDescription: '' }}
               </span>
               <span v-if="fruit.name === 'status'"
                 :class="processStatus(scope.row.serviceWorkOrders[0])"
@@ -149,7 +149,9 @@
                 fruit.name!='u_SAP_ID'&&
                 fruit.name !== 'workOrderNumber' &&
                 fruit.name !== 'workOrderNumber' && 
-                fruit.name !== 'customerId'"
+                fruit.name !== 'customerId' &&
+                fruit.name !== 'materialCode' &&
+                fruit.name !== 'manufacturerSerialNumber'"
               >{{scope.row[fruit.name]}}</span>
             </template>
           </el-table-column>
@@ -401,8 +403,8 @@ export default {
         { name: "customerId", label: "客户代码", align:'left', width: '90' },
         { name: "customerName", label: "客户名称" ,align:'left', width: '180' },
         { name: "fromTheme", label: "呼叫主题", align: 'left', width: '275' },
-        { name: "materialCode", label: "物料编码",width:'156px' ,align:'left' },
-        { name: "materialDescription", label: "物料描述",width:'275px' ,align:'left' },
+        { name: "manufacturerSerialNumber", label: "制造商序列号",width:'120px' ,align:'left' },
+        { name: "materialCode", label: "物料编码",width:'150px' ,align:'left' },
         // { name: "contacter", label: "联系人" ,align:'left', width: '100' },
         // { name: "contactTel", label: "电话号码" ,align:'left', width: '125' },
         { name: "newestContacter", label: "最近联系人" ,align:'left', width: '90' },

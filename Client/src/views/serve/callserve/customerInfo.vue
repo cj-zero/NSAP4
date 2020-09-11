@@ -83,6 +83,12 @@ export default {
   ::v-deep .el-form-item{
     margin-bottom:5px;
   }
+  ::v-deep .el-input.is-disabled .el-input__inner {
+    background-color: #fff;
+    cursor: default;
+    color: #606266;
+    border-color: #DCDFE6;
+  }
 }
 .red-color {
   color: #ff0000;

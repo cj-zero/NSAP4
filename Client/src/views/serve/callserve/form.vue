@@ -9,6 +9,7 @@
             :rules="rules"
             ref="form"
             class="rowStyle1"
+            :class="{ 'form-disabled': this.formName !== '新建' }"
             :disabled="this.formName !== '新建'"
             :label-width="labelwidth"
             :inline-message="true"
@@ -374,10 +375,10 @@
             <el-input @input="searchList" v-model.trim="inputSerial" placeholder="制造商序列号"></el-input>
           </el-form-item>
           <el-form-item label="售后主管">
-            <el-input @input="searchList" v-model.trim="inputTech" placeholder="售后主管"></el-input>
+            <el-input @input="searchList" v-model.trim="inputTech" placeholder="售后主管" style="width: 100px;"></el-input>
           </el-form-item>
           <el-form-item label="销售员:">
-            <el-input @input="searchList" v-model.trim="inputSlpName" placeholder="销售员"></el-input>
+            <el-input @input="searchList" v-model.trim="inputSlpName" placeholder="销售员" style="width: 100px;"></el-input>
           </el-form-item>
           <el-form-item label="收货地址:">
             <el-input @input="searchList" v-model.trim="inputAddress" placeholder="收货地址"></el-input>
@@ -1612,6 +1613,20 @@ export default {
   ::v-deep .el-form {
     padding: 5px;
     // margin-bottom: 2px;
+  }
+  &.form-disabled {
+    ::v-deep .el-input.is-disabled .el-input__inner {
+      background-color: #fff;
+      cursor: default;
+      color: #606266;
+      border-color: #DCDFE6;
+    }
+    ::v-deep .el-textarea.is-disabled .el-textarea__inner {
+      background-color: #fff;
+      cursor: default;
+      color: #606266;
+      border-color: #DCDFE6;
+    }
   }
   ::v-deep .el-form-item__label {
     line-height: 30px;

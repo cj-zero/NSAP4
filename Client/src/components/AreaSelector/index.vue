@@ -211,7 +211,7 @@ export default {
   .select-list {
     display: flex;
     flex-wrap: wrap;
-    overflow-y: scroll;
+    overflow-y: auto;
     max-height: 300px;
     
     & > li {
