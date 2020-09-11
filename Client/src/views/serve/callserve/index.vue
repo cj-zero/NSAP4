@@ -19,12 +19,24 @@
           icon="el-icon-search"
           @click="handleFilter"
         >搜索</el-button> -->
+        <Search 
+          :listQuery="listQuery" 
+          :config="searchConfig"
+          @changeForm="onChangeForm" 
+          @search="onSearch"
+          @advanced="onAdvanced"></Search>
         <permission-btn moduleName="callserve" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
+        <Search 
+          :listQuery="listQuery" 
+          :config="searchConfigAdv"
+          @changeForm="onChangeForm" 
+          @search="onSearch"
+          v-show="advancedVisible"></Search>
       </div>
     </sticky>
     <div class="app-container">
       <div class="bg-white serve-table-wrapper" >
-        <zxsearch @change-Search="changeSearch" :options="problemOptions"></zxsearch>
+        <!-- <zxsearch @change-Search="changeSearch" :options="problemOptions"></zxsearch> -->
         <el-table
           ref="mainTable"
           class="table_label"
@@ -33,7 +45,7 @@
           v-loading="listLoading"
           border
           fit
-          max-height="580"
+          max-height="750"
           style="width: 100%;"
           highlight-current-row
           @row-click="rowClick"
@@ -68,7 +80,7 @@
                     <template slot-scope="scope">
                       <span
                         v-if="fruit.name === 'status'"
-                        :class="processStatus(scope.row[fruit.name])"
+                        :class="processStatus(scope.row)"
                       >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
                       <span
                         v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
@@ -114,6 +126,12 @@
               </span>
               <span v-if="fruit.name === 'fromTheme'">
                 {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].fromTheme: '' }}
+              </span>
+              <span v-if="fruit.name === 'materialCode'">
+                {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].materialCode: '' }}
+              </span>
+              <span v-if="fruit.name === 'materialDescription'">
+                {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].materialDescription: '' }}
               </span>
               <span v-if="fruit.name === 'status'"
                 :class="processStatus(scope.row.serviceWorkOrders[0])"
@@ -281,7 +299,7 @@
       <!-- 完工报告  -->
       <el-dialog
         v-el-drag-dialog
-        width="932px"
+        width="983px"
         class="dialog-mini"
         :close-on-click-modal="false"
         title="服务行为报告单"
@@ -307,21 +325,16 @@ import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
 import Pagination from "@/components/Pagination";
-// import treeTable from "@/components/TreeTable";
 import elDragDialog from "@/directive/el-dragDialog";
-// import zxsearch from "./search";
-// import customerupload from "../callservesure/customerupload";
 import zxform from "./form";
-import zxsearch from "./search";
-// import zxchat from "./chatOnRight";
+import Search from '@/components/Search'
+// import zxsearch from "./search";
 import zxchat from './chat/index'
 import treeList from "./treeList";
 import CustomerInfo from './customerInfo'
 import rightImg from '@/assets/table/right.png'
 import Rate from './rate'
 import Report from '../common/components/report'
-// import serveTableVue from '../serveTable.vue';
-// import { callserve } from "@/mock/serve";
 import { chatMixin, reportMixin, tableMixin } from '../common/js/mixins'
 export default {
   provide () {
@@ -333,7 +346,29 @@ export default {
   computed: {
     ...mapState('form', [
       'formList'
-    ])
+    ]),
+    searchConfig () {
+      return [
+        { width: 100, placeholder: '服务ID', prop: 'QryU_SAP_ID' },
+        { width: 90, placeholder: '请选择呼叫状态', prop: 'QryState', options: this.callStatus, type: 'select' },
+        { width: 200, placeholder: '客户', prop: 'QryCustomer' },
+        { width: 150, placeholder: '序列号', prop: 'QryManufSN' },
+        { width: 90, placeholder: '接单员', prop: 'QryRecepUser' },
+        { width: 90, placeholder: '技术员', prop: 'QryTechName' },
+        { width: 90, placeholder: '主管', prop: 'QrySupervisor' },
+        { type: 'search' },
+        { type: 'search', btnText: '高级查询' }
+      ]
+    },
+    searchConfigAdv () {
+      return [
+        { width: 140, placeholder: '问题类型', prop: 'QryProblemType', options: this.problemOptions, type: 'tree' },
+        { width: 100, placeholder: '呼叫类型', prop: 'QryFromType', options: this.options_type, type: 'select' },
+        { width: 100, placeholder: '联系电话', prop: 'QryContactTel' },
+        { width: 150, placeholder: '创建日期', prop: 'QryCreateTimeFrom', type: 'date', showText: true },
+        { width: 150, placeholder: '结束日期', prop: 'QryCreateTimeTo', type: 'date' },
+      ]
+    }
   },
   mixins: [chatMixin, reportMixin, tableMixin],
   components: {
@@ -342,11 +377,12 @@ export default {
     Pagination,
     zxform,
     treeList,
-    zxsearch,
+    // zxsearch,
     zxchat,
     CustomerInfo,
     Rate,
-    Report
+    Report,
+    Search
   },
   directives: {
     waves,
@@ -360,18 +396,20 @@ export default {
       sure: 0,
       rightImg,
       ParentHeadOptions: [
-        { name: "u_SAP_ID", label: "服务单号", align:'left', sortable:true, width: '100'},
-        { name: "status", label: "工单状态", align: 'left', width: '100' },
-        { name: "customerId", label: "客户代码", align:'left', width: '100' },
+        { name: "u_SAP_ID", label: "服务单号", align:'left', sortable:true, width: '80'},
+        { name: "status", label: "工单状态", align: 'left', width: '70' },
+        { name: "customerId", label: "客户代码", align:'left', width: '90' },
         { name: "customerName", label: "客户名称" ,align:'left', width: '180' },
         { name: "fromTheme", label: "呼叫主题", align: 'left', width: '275' },
+        { name: "materialCode", label: "物料编码",width:'156px' ,align:'left' },
+        { name: "materialDescription", label: "物料描述",width:'275px' ,align:'left' },
         // { name: "contacter", label: "联系人" ,align:'left', width: '100' },
         // { name: "contactTel", label: "电话号码" ,align:'left', width: '125' },
-        { name: "newestContacter", label: "最近联系人" ,align:'left', width: '100' },
-        { name: "newestContactTel", label: "最新联系方式" ,align:'left', width: '125' },
-        { name: "supervisor", label: "售后主管" ,align:'left', width: '100' },
-        { name: "salesMan", label: "销售员" ,align:'left', width: '100' },
-        { name: "recepUserName", label: "接单员" ,align:'left', width: '100' },
+        { name: "newestContacter", label: "最近联系人" ,align:'left', width: '90' },
+        { name: "newestContactTel", label: "最新联系方式" ,align:'left', width: '100' },
+        { name: "supervisor", label: "售后主管" ,align:'left', width: '70' },
+        { name: "salesMan", label: "销售员" ,align:'left', width: '70' },
+        { name: "recepUserName", label: "接单员" ,align:'left', width: '85' },
         { name: 'serviceCreateTime', label: '创建时间', align: 'left', width: '140' },
         { name: 'workOrderNumber', label: '工单数', align: 'left', width: '' } 
       ],
@@ -414,6 +452,22 @@ export default {
         { value: 7, label: "已解决" },
         { value: 8, label: "已回访" }
       ],
+      callStatus: [
+        { value: '', label: '全部' },
+        { value: 1, label: "待处理" },
+        { value: 2, label: "已排配" },
+        { value: 3, label: "已预约" },
+        { value: 4, label: "已外出" },
+        { value: 5, label: "已挂起" },
+        { value: 6, label: "已接收" },
+        { value: 7, label: "已解决" },
+        { value: 8, label: "已回访" }
+      ],
+      options_type: [
+        { value: '', label: '全部' },
+        { value: 1, label: "提交呼叫" },
+        { value: 2, label: "在线解答" },
+      ], //呼叫类型
       modulesTree: [],
       priorityOptions: ["低", "中", "高"],
       tableKey: 0,
@@ -430,6 +484,7 @@ export default {
         limit: 50,
         key: undefined,
         appId: undefined,
+        QryState: ''
         // QryServiceOrderId: "" //查询服务单号查询条件
         // QryState: "", //呼叫状态查询条件
         // QryCustomer: "", //客户查询条件
@@ -489,7 +544,8 @@ export default {
       dialogRateVisible: false,
       commentList: {}, // 评价内容 (新增评价或者查看评价 都要用到)
       newCommentList: {}, // 用于存放修改后的评分列表
-      isView: false // 评分标识(是否是查看)
+      isView: false, // 评分标识(是否是查看)
+      advancedVisible: false // 高级搜索是否展示
     };
   },
   filters: {
@@ -514,30 +570,30 @@ export default {
     }
   },
   watch: {
-    listQuery: {
-      // deep: true,
-      handler(val) {
-           let arr = [];
-      callservesure.rightList(val).then(response => {
-            let resul = response.data.data;
-        for (let i = 0; i < resul.length; i++) {
-          arr[i] = resul[i];
-          arr[i].label = `服务${resul[i].serviceOrderId}`;
-          resul[i].serviceWorkOrders.map((item1,index) => {
-            arr[i].serviceWorkOrders[index].label= `工单${item1.id}` ;
-            arr[i].serviceWorkOrders[index].recepUserName = arr[i].recepUserName
-          })
-        }
-        this.total = response.data.count;
-        this.list =arr ;
-      }).catch(()=>{
-        this.$message({
-          type:'warning',
-          message:`请输入正确的搜索值`
-        })
-      })
-      }
-    },
+    // listQuery: {
+    //   // deep: true,
+    //   handler(val) {
+    //        let arr = [];
+    //   callservesure.rightList(val).then(response => {
+    //         let resul = response.data.data;
+    //     for (let i = 0; i < resul.length; i++) {
+    //       arr[i] = resul[i];
+    //       arr[i].label = `服务${resul[i].serviceOrderId}`;
+    //       resul[i].serviceWorkOrders.map((item1,index) => {
+    //         arr[i].serviceWorkOrders[index].label= `工单${item1.id}` ;
+    //         arr[i].serviceWorkOrders[index].recepUserName = arr[i].recepUserName
+    //       })
+    //     }
+    //     this.total = response.data.count;
+    //     this.list =arr ;
+    //   }).catch(()=>{
+    //     this.$message({
+    //       type:'warning',
+    //       message:`请输入正确的搜索值`
+    //     })
+    //   })
+    //   }
+    // },
     formValue: {
       deep: true,
       handler() {
@@ -563,6 +619,16 @@ export default {
   },
   methods: {
     // 处理状态的样式
+    onSearch () {
+      this.getList()
+    },
+    onChangeForm (val) {
+      Object.assign(this.listQuery, val)
+      this.listQuery.page = 1
+    },
+    onAdvanced () {
+      this.advancedVisible = !this.advancedVisible
+    },
     checkServeId(res) {
       if (res.children) {
         this.listQuery.QryServiceOrderId = res.label.split("服务单号：")[1];
@@ -1073,6 +1139,7 @@ export default {
   color: orangered;
 }
 .position-view {
+  position: relative;
   .lastWord {
     position: sticky;
     top: 0;

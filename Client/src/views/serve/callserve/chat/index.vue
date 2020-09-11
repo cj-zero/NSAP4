@@ -9,14 +9,17 @@
     </div>
     <!-- <template v-show="currentName === 'message'"> -->
     <!-- 留言 -->
-    <Message :serveId="serveId" v-show="currentName === 'message'"></Message>
-    <!-- </template> -->
-    <!-- 服务进度 -->
-    <Log v-show="currentName === 'progress'" :serveId="serveId"></Log>
-    <!-- 核对设备 -->
-    <template v-if="formName === '编辑'">
-      <check :sapOrderId="sapOrderId" :customerId="customerId" v-show="currentName === 'check'"></check>
-    </template>
+    <div class="content-wrapper">
+      <Message :serveId="serveId" v-show="currentName === 'message'"></Message>
+      <!-- </template> -->
+      <!-- 服务进度 -->
+      <Log v-show="currentName === 'progress'" :serveId="serveId"></Log>
+      <!-- 核对设备 -->
+      <template v-if="formName === '编辑'">
+        <check :sapOrderId="sapOrderId" :customerId="customerId" v-show="currentName === 'check'"></check>
+      </template>
+    </div>
+    
   </div>
 </template>
 
@@ -94,4 +97,13 @@ export default {
 }
 </script>
 <style lang='scss' scoped>
+.chat-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  .content-wrapper {
+    overflow: hidden;
+    flex: 1;
+  }
+}
 </style>

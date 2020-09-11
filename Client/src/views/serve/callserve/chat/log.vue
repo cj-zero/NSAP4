@@ -1,5 +1,5 @@
 <template>
-  <div style="width:100%;max-height:600px;overflow-y:scroll;">
+  <div style="width:100%;max-height:600px;overflow-y:auto;">
     <template v-if="serviceLogsList.length">
       <!-- <el-collapse accordion>
         <div class="item"

@@ -41,6 +41,7 @@
           v-loading="listLoading"
           border
           highlight-current-row
+          max-height="750"
           style="width: 100%;"
           @row-click="rowClick"
           @selection-change="handleSelectionChange"

@@ -21,7 +21,7 @@
       <el-row type="flex" justify="space-around">
         <!-- <el-col :span="6"> -->
           <el-form-item label="服务ID">
-            <el-input readonly v-model="showData.serviceOrderId"></el-input>
+            <el-input readonly v-model="showData.u_SAP_ID"></el-input>
           </el-form-item>
         <!-- </el-col> -->
         <!-- <el-col :span="6"> -->
@@ -145,7 +145,7 @@
       </el-row>
       <el-row>
         <el-form-item label="遗留问题">
-          <el-input type="textarea" v-model="showData.troubleDescription" readonly></el-input>
+          <el-input type="textarea" v-model="showData.legacy" readonly></el-input>
         </el-form-item>
       </el-row>
       <el-row>

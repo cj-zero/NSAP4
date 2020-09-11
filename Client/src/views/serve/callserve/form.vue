@@ -228,7 +228,7 @@
                 </el-form-item>
               </el-col>
               <el-col :span="10" style="height:30px;line-height:30px;padding:0 0 0 7px;margin-top: -1px;">
-                <el-input size="mini" v-model="form.addr">
+                <el-input size="mini" v-model="form.addr" maxlength="30">
                   <!-- <el-button size="mini" slot="append" icon="el-icon-position" @click="openMap"></el-button> -->
                 </el-input>
               </el-col>
@@ -368,19 +368,19 @@
       >
         <el-form :inline="true" class="demo-form-inline" size="mini">
           <el-form-item label="客户">
-            <el-input @input="searchList" v-model="inputSearch" placeholder="客户"></el-input>
+            <el-input @input="searchList" v-model.trim="inputSearch" placeholder="客户"></el-input>
           </el-form-item>
           <el-form-item label="制造商序列号:">
-            <el-input @input="searchList" v-model="inputSerial" placeholder="制造商序列号"></el-input>
+            <el-input @input="searchList" v-model.trim="inputSerial" placeholder="制造商序列号"></el-input>
           </el-form-item>
           <el-form-item label="售后主管">
-            <el-input @input="searchList" v-model="inputTech" placeholder="售后主管"></el-input>
+            <el-input @input="searchList" v-model.trim="inputTech" placeholder="售后主管"></el-input>
           </el-form-item>
           <el-form-item label="销售员:">
-            <el-input @input="searchList" v-model="inputSlpName" placeholder="销售员"></el-input>
+            <el-input @input="searchList" v-model.trim="inputSlpName" placeholder="销售员"></el-input>
           </el-form-item>
           <el-form-item label="收货地址:">
-            <el-input @input="searchList" v-model="inputAddress" placeholder="收货地址"></el-input>
+            <el-input @input="searchList" v-model.trim="inputAddress" placeholder="收货地址"></el-input>
           </el-form-item>
         </el-form>
         <formPartner

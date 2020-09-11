@@ -34,7 +34,7 @@
       <el-input type="textarea" v-model="content" size="mini" :rows="2"></el-input>
       <div class="btn-wrapper">
         <el-button type="success" size="mini" @click="dialogVisible=true">上传图片</el-button>
-        <el-button type="primary" size="mini" @click="submitForm()">确定</el-button>
+        <el-button type="primary" size="mini" @click="submitForm()" :loading="loadingBtn">确定</el-button>
       </div>
     </div>
     <el-dialog title="提示" :visible.sync="dialogVisible" :append-to-body="true" width="500px">
@@ -87,6 +87,7 @@ export default {
         //   },
         // ],
       },
+      loadingBtn: false
     };
   },
   mounted() {
@@ -144,6 +145,7 @@ export default {
       if (!this.content.trim()) {
         return this.$message.error("留言内容不能为空");
       }
+      this.loadingBtn = true
       callserve
         .SendMessageToTechnician({
           content: this.content,
@@ -158,8 +160,10 @@ export default {
               type: "success",
               message: "发送成功",
             });
+            this.loadingBtn = false
             this.getList();
           } else {
+            this.loadingBtn = false
             this.$message({
               type: "warning",
               message: `${res}`,
@@ -167,6 +171,7 @@ export default {
           }
         })
         .catch((res) => {
+          this.loadingBtn = false
           this.$message({
             type: "error",
             message: `${res}`,

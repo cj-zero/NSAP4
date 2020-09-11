@@ -18,14 +18,18 @@
           icon="el-icon-search"
           @click="handleFilter"
         >搜索</el-button> -->
+        <zxsearch 
+          @change-Search="changeSearch" 
+          @change-Order="changeOrder"
+        ></zxsearch>
         <permission-btn moduleName="callservepushalr" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
     </sticky>
     <div class="app-container flex-item bg-white">
-      <zxsearch 
+      <!-- <zxsearch 
         @change-Search="changeSearch" 
         @change-Order="changeOrder"
-      ></zxsearch>
+      ></zxsearch> -->
       <el-row class="fh" type="flex">
         <div class="fh ls-border" style="min-width:200px;" @scroll="onScroll">
           <el-card shadow="never" class="card-body-none fh" style>
@@ -38,7 +42,7 @@
             >服务单列表</div>
 
             <el-tree
-              style="max-height:600px;overflow-y: auto;"
+              style="overflow-y: auto;"
               :data="modulesTree"
               show-checkbox
               node-key="key1"
@@ -266,7 +270,7 @@
       </el-dialog>
       <!-- 完工报告  -->
       <el-dialog
-        width="932px"
+        width="983px"
         class="dialog-mini"
         :close-on-click-modal="false"
         title="服务行为报告单"
@@ -1071,6 +1075,14 @@ export default {
   // width: 300px;
   ::v-deep .el-tree-node > .el-tree-node__children {
     overflow: visible;
+  }
+  ::v-deep .el-card__body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    .el-tree {
+      flex: 1;
+    }
   }
 }
 .dialog-mini .el-select {
