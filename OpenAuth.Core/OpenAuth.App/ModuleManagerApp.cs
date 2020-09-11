@@ -22,15 +22,15 @@ namespace OpenAuth.App
             
             Repository.Add(model);
             //当前登录用户的所有角色自动分配模块
-            loginContext.Roles.ForEach(u =>
-            {    
-                _revelanceApp.Assign(new AssignReq
-                {
-                    type=Define.ROLEMODULE,
-                    firstId = u.Id,
-                    secIds = new[]{model.Id}
-                });
-            });
+            //loginContext.Roles.ForEach(u =>
+            //{    
+            //    _revelanceApp.Assign(new AssignReq
+            //    {
+            //        type=Define.ROLEMODULE,
+            //        firstId = u.Id,
+            //        secIds = new[]{model.Id}
+            //    });
+            //});
            
         }
 
@@ -95,15 +95,15 @@ namespace OpenAuth.App
             UnitWork.Add(model);
             
             //当前登录用户的所有角色自动分配菜单
-            loginContext.Roles.ForEach(u =>
-            {    
-                _revelanceApp.Assign(new AssignReq
-                {
-                    type=Define.ROLEELEMENT,
-                    firstId = u.Id,
-                    secIds = new[]{model.Id}
-                });
-            });
+            //loginContext.Roles.ForEach(u =>
+            //{    
+            //    _revelanceApp.Assign(new AssignReq
+            //    {
+            //        type=Define.ROLEELEMENT,
+            //        firstId = u.Id,
+            //        secIds = new[]{model.Id}
+            //    });
+            //});
             UnitWork.Save();
         }
         #endregion
