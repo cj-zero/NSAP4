@@ -1,113 +1,25 @@
 <template>
   <div>
-    <!-- <sticky :className="'sub-navbar'">
+    <sticky :className="'sub-navbar'">
       <div class="filter-container">
-        <el-input
-          @keyup.enter.native="handleFilter"
-          size="mini"
-          style="width: 200px;"
-          class="filter-item"
-          :placeholder="'名称'"
-          v-model="listQuery.key"
-        ></el-input>
-        <el-button
-          class="filter-item"
-          size="mini"
-          style="margin:0 15px;"
-          v-waves
-          icon="el-icon-search"
-          @click="handleFilter"
-        >搜索</el-button>
-        <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
+        <Search 
+          :listQuery="listQuery" 
+          :config="searchConfig"
+          @changeForm="onChangeForm" 
+          @search="onSearch">
+        </Search>
+        <!-- <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn> -->
       </div>
-    </sticky>-->
+    </sticky>
     <div class="app-container">
       <div class="bg-white">
-        <el-form ref="listQuery" :model="listQuery" label-width="80px" inline>
-          <div style="padding:10px 0;"></div>
-          <el-row :gutter="10">
-            <!-- <el-col :span="3"> -->
-              <el-form-item label="服务单号" size="small">
-                <el-input v-model="listQuery.ServiceOrderId" @keyup.enter.native="onSubmit" class="input-item"></el-input>
-              </el-form-item>
-            <!-- </el-col> -->
-
-            <!-- <el-col :span="3"> -->
-              <el-form-item label="客户" size="small">
-                <el-input v-model="listQuery.CustomerId" @keyup.enter.native="onSubmit" class="input-item"></el-input>
-              </el-form-item>
-            <!-- </el-col> -->
-
-            <!-- <el-col :span="3"> -->
-              <el-form-item label="技术员" size="small">
-                <el-input v-model="listQuery.TechnicianId" @keyup.enter.native="onSubmit" class="input-item"></el-input>
-              </el-form-item>
-            <!-- </el-col> -->
-            <!-- <el-col :span="3"> -->
-              <el-form-item label="回访人" size="small">
-                <el-input v-model="listQuery.VisitPeopleId" @keyup.enter.native="onSubmit" class="input-item"></el-input>
-              </el-form-item>
-            <!-- </el-col> -->
-            <!-- <el-col :span="6"> -->
-              <el-form-item label="评价日期" size="small">
-                <!-- <el-col :span="11"> -->
-                  <el-date-picker
-                    style="width: 150px;"
-                    v-model="listQuery.DateFrom"
-                    type="date"
-                    value-format="yyyy-MM-dd"
-                    placeholder="选择开始日期">
-                  </el-date-picker>
-                  <!-- <el-time-select
-                    placeholder="选择开始日期"
-                    v-model="listQuery.DateFrom"
-                    style="width: 100%;"
-                    :picker-options="{
-                        start: '05:30',
-                        step: '00:15',
-                        end: '23:30'
-                      }"
-                  ></el-time-select> -->
-                <!-- </el-col> -->
-                <span style="margin: 0 5px;">至</span>
-                <!-- <el-col :span="11"> -->
-                  <!-- <el-time-select
-                    placeholder="选择结束时间"
-                    v-model="listQuery.DateTo"
-                    style="width: 100%;"
-                    :picker-options="{
-                        start: '05:30',
-                        step: '00:15',
-                        end: '23:30'
-                      }"
-                  ></el-time-select> -->
-                  <el-date-picker
-                    style="width: 150px;"
-                    v-model="listQuery.DateTo"
-                    type="date"
-                    value-format="yyyy-MM-dd"
-                    placeholder="选择结束日期">
-                  </el-date-picker>
-                <!-- </el-col> -->
-              </el-form-item>
-            <!-- </el-col> -->
-            <!-- <el-col :span="3" style="margin-left:20px;"> -->
-            <el-button
-              type="primary"
-              @click="onSubmit"
-              @keyup.enter.native="onSubmit"
-              size="small"
-              icon="el-icon-search"
-            >搜 索</el-button>
-            <!-- </el-col> -->
-          </el-row>
-        </el-form>
         <el-table
           ref="mainTable"
           :data="checkList"
           v-loading="listLoading"
           border
           fit
+          max-height="750"
           style="width: 100%;"
           highlight-current-row
           @current-change="handleSelectionChange"
@@ -130,7 +42,7 @@
             <template slot-scope="scope">
               <div class="link-container" v-if="fruit.name === 'serviceOrderId'">
                 <img :src="rightImg" @click="openTree(scope.row.serviceOrderId)" class="pointer">
-                <span>{{ scope.row.serviceOrderId }}</span>
+                <span>{{ scope.row.u_SAP_ID }}</span>
               </div>
               <!-- <el-link
                 v-if="fruit.name === 'serviceOrderId'"
@@ -195,7 +107,7 @@ import * as afterevaluation from "@/api/serve/afterevaluation";
 // import * as callservesure from "@/api/serve/callservesure";
 
 import waves from "@/directive/waves"; // 水波纹指令
-// import Sticky from "@/components/Sticky";
+import Sticky from "@/components/Sticky";
 //  import showImg from "@/components/showImg";
 import Pagination from "@/components/Pagination";
 import elDragDialog from "@/directive/el-dragDialog";
@@ -203,12 +115,15 @@ import zxform from "../callserve/form";
 import zxchat from '../callserve/chat'
 import { chatMixin } from '../common/js/mixins'
 import rightImg from '@/assets/table/right.png'
+import Search from '@/components/Search'
 export default {
   name: "afterevaluation",
   components: {
     Pagination,
     zxform,
-    zxchat
+    zxchat,
+    Sticky,
+    Search
   },
   directives: {
     waves,
@@ -278,7 +193,16 @@ export default {
         name: [{ required: true, message: "名称不能为空", trigger: "blur" }],
       },
       downloadLoading: false,
-      serveId: ''
+      serveId: '',
+      searchConfig: [
+        { width: 100, placeholder: '服务单号', prop: 'ServiceOrderId' },
+        { width: 100, placeholder: '客户', prop: 'CustomerId' },
+        { width: 100, placeholder: '技术员', prop: 'TechnicianId' },
+        { width: 100, placeholder: '回访人', prop: 'VisitPeopleId' },
+        { width: 150, placeholder: '评价起始日期', prop: 'DateFrom', type: 'date' },
+        { width: 150, placeholder: '评价结束日期', prop: 'DateTo', type: 'date' },
+        { type: 'search' },
+      ]
     };
   },
 
@@ -314,7 +238,13 @@ export default {
         return "非常满意";
       }
     },
-
+    onSearch () {
+      this.getList()
+    },
+    onChangeForm (val) {
+      Object.assign(this.listQuery, val)
+      this.listQuery.page = 1
+    },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.$refs.mainTable.toggleRowSelection(row);

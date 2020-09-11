@@ -2,89 +2,69 @@
   <div style="position:relative;">
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
-        <!-- <el-input
-          @keyup.enter.native="handleFilter"
-          size="mini"
-          style="width: 200px;"
+        <el-input 
+          v-model="listQuery.QryU_SAP_ID" 
+          @keyup.enter.native="onSubmit"
           class="filter-item"
-          :placeholder="'名称'"
-          v-model="listQuery.key"
+          style="width: 100px;"
+          placeholder="服务ID"
+          size="mini"
         ></el-input>
-
-        <el-button
+        <el-select 
+          v-model="listQuery.QryState" 
+          placeholder="请选择呼叫状态"
+          style="width: 100px;"
+          size="mini">
+          <el-option 
+            v-for="item in statusOptions"
+            :key="item.label"
+            :label="item.label"
+            :value="item.value">
+          </el-option>
+        </el-select>
+        <el-input 
+          v-model="listQuery.QryCustomer"
+          @keyup.enter.native="onSubmit"
           class="filter-item"
+          style="width: 100px;"
+          placeholder="客户"
           size="mini"
-          style="margin:0 15px;"
+        ></el-input>
+        <el-input 
+          v-model="listQuery.QryManufSN"
+          @keyup.enter.native="onSubmit"
+          class="filter-item"
+          style="width: 165px;"
+          placeholder="序列号"
+          size="mini"
+        ></el-input>
+        <el-date-picker
+          placeholder="创建日期"
+          v-model="listQuery.QryCreateTimeFrom"
+          style="width: 200px;"
+          value-format="yyyy-MM-dd"
+          size="mini"
+        ></el-date-picker>
+        <el-date-picker
+          placeholder="结束日期"
+          v-model="listQuery.QryCreateTimeTo"
+          style="width: 200px"
+          value-format="yyyy-MM-dd"
+          size="mini"
+        ></el-date-picker>
+        <el-button
+          @click="onSubmit"
           v-waves
+          size="mini"
           icon="el-icon-search"
-          @click="handleFilter"
-        >搜索</el-button> -->
+          class="filter-item"
+        >查询</el-button>
         <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
     </sticky>
     <div class="app-container">
       <div class="bg-white">
-        <el-form ref="listQuery" :model="listQuery" label-width="80px" size="small">
-          <div style="padding:10px 0;"></div>
-          <el-row :gutter="10">
-            <el-col :span="3">
-              <el-form-item label="服务ID">
-                <el-input v-model="listQuery.QryU_SAP_ID" @keyup.enter.native="onSubmit"></el-input>
-              </el-form-item>
-            </el-col>
-            <el-col :span="3">
-              <el-form-item label="呼叫状态">
-                <el-select v-model="listQuery.QryState" placeholder="请选择呼叫状态">
-                  <el-option label="全部" value></el-option>
-                  <el-option label="待确认" :value="1"></el-option>
-                  <el-option label="已确认" :value="2"></el-option>
-                  <el-option label="已取消" :value="3"></el-option>
-                </el-select>
-              </el-form-item>
-            </el-col>
-
-            <el-col :span="3">
-              <el-form-item label="客户">
-                <el-input v-model="listQuery.QryCustomer"></el-input>
-              </el-form-item>
-            </el-col>
-            <el-col :span="3">
-              <el-form-item label="序列号">
-                <el-input v-model="listQuery.QryManufSN"></el-input>
-              </el-form-item>
-            </el-col>
-            <el-col :span="6">
-              <el-form-item label="创建日期">
-                <el-col :span="11">
-                  <el-date-picker
-                    placeholder="选择开始日期"
-                    v-model="listQuery.QryCreateTimeFrom"
-                    style="width: 100%;"
-                    value-format="yyyy-MM-dd"
-                  ></el-date-picker>
-                </el-col>
-                <el-col class="line" :span="2">至</el-col>
-                <el-col :span="11">
-                  <el-date-picker
-                    placeholder="选择结束时间"
-                    v-model="listQuery.QryCreateTimeTo"
-                    style="width: 100%;"
-                    value-format="yyyy-MM-dd"
-                  ></el-date-picker>
-                </el-col>
-              </el-form-item>
-            </el-col>
-            <el-col :span="3" style="margin-left:20px;">
-              <el-button
-                type="primary"
-                @click="onSubmit"
-                @keyup.enter.native="onSubmit"
-                size="small"
-                icon="el-icon-search"
-              >搜 索</el-button>
-            </el-col>
-          </el-row>
-        </el-form>
+        
         <el-table
           ref="mainTable"
           class="table_label"
@@ -92,6 +72,7 @@
           :data="list"
           v-loading="listLoading"
           border
+          max-height="750"
           style="width: 100%;height:650px;"
           highlight-current-row
           @row-click="rowClick"
@@ -257,32 +238,32 @@ export default {
       rightImg,
       formTheadOptions: [
         // { name: "id", label: "服务单ID", align: "left", width: "100px" },
-        { name: "u_SAP_ID", label: '服务单号', align: "left", width: "100" },
-        { name: "customerId", label: "客户代码", align: "left", width: "100" },
-        { name: "status", label: "状态", align: "left", width: "80px" },
+        { name: "u_SAP_ID", label: '服务单号', align: "left", width: "80" },
+        { name: "customerId", label: "客户代码", align: "left", width: "80" },
+        { name: "status", label: "状态", align: "left", width: "70px" },
         {
           name: "customerName",
           label: "客户名称",
           align: "left",
           width: "220",
         },
-        { name: "createTime", label: "创建日期", align: "left", width: "158" },
+        { name: "createTime", label: "创建日期", align: "left", width: "135" },
         {
           name: "newestContacter",
           label: "联系人",
           align: "left",
-          width: "100",
+          width: "70",
         },
         {
           name: "newestContactTel",
           label: "电话号码",
           align: "left",
-          width: "120px",
+          width: "100px",
         },
         { name: "services", label: "服务内容", align: "left", width: "120" },
-        { name: "supervisor", label: "售后主管", align: "left", width: "100" },
-        { name: "salesMan", label: "销售员", align: "left", width: "100" },
-        { name: "manufSN", label: "制造商序列号", align: "left" },
+        { name: "supervisor", label: "售后主管", align: "left", width: "80" },
+        { name: "salesMan", label: "销售员", align: "left", width: "70" },
+        { name: "manufSN", label: "制造商序列号", align: "left", width: 100 },
         { name: "itemCode", label: "物料编码", align: "left" },
       ],
       tableKey: 0,
@@ -312,11 +293,11 @@ export default {
         // QryMaterialTypes:""//物料类别（多选)
       },
       stateValue: ["待确认", "已确认", "已取消"],
-      statusOptions: [
-        { key: 1, display_name: "待确认" },
-        { key: 2, display_name: "已确认" },
-        { key: 3, display_name: "已取消" },
-      ],
+      // statusOptions: [
+      //   { key: 1, display_name: "待确认" },
+      //   { key: 2, display_name: "已确认" },
+      //   { key: 3, display_name: "已取消" },
+      // ],
       temp: {
         id: "", // Id
         sltCode: "", // SltCode
@@ -346,6 +327,12 @@ export default {
         ],
         name: [{ required: true, message: "名称不能为空", trigger: "blur" }],
       },
+      statusOptions: [
+        { label: '全部', value: '' },
+        { label: '待确认', value: 1 },
+        { label: '已确认', value: 2 },
+        { label: '已取消', value: 3 },
+      ],
       dataForm: {}, //传递的表单props
       dataForm1: {}, //获取的详情表单
       downloadLoading: false,

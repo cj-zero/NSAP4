@@ -9,7 +9,11 @@
       <el-col :span="3">
         <el-form-item label="类别">
           <el-select v-model="formData.assetCategory" placeholder="请选择">
-            <el-option v-for="item in assetCategory" :value="item" :key="item.name"></el-option>
+            <el-option 
+              v-for="item in assetCategory" 
+              :value="item.value" 
+              :label="item.label"
+              :key="item.value"></el-option>
           </el-select>
         </el-form-item>
       </el-col>
@@ -38,14 +42,23 @@
       <el-col :span="4">
         <el-form-item label="类型">
           <el-select v-model="formData.assetSJType" placeholder="请选择">
-            <el-option v-for="item in assetSJType" :key="item"></el-option>
+            <el-option 
+              v-for="item in assetSJType" 
+              :value="item.value"
+              :label="item.label"
+              :key="item.value"></el-option>
           </el-select>
         </el-form-item>
       </el-col>
       <el-col :span="4">
         <el-form-item label="状态">
           <el-select v-model="formData.assetStatus" placeholder="请选择状态">
-            <el-option v-for="item in assetStatus" :value="item" :key="item"></el-option>
+            <el-option 
+              v-for="item in assetStatus" 
+              :value="item.value" 
+              :label="item.label"
+              :key="item.value"
+              ></el-option>
           </el-select>
         </el-form-item>
       </el-col>

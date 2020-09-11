@@ -32,7 +32,7 @@ export default {
     }
   },
   mounted() {
-    this.height = this.$el.getBoundingClientRect().height
+    // this.height = this.$el.getBoundingClientRect().height
     window.addEventListener('scroll', this.handleScroll)
     window.addEventListener('resize', this.handleReize)
   },
@@ -93,8 +93,9 @@ export default {
     background-color: #2d3a4b;
     background-color: #24262f;
     background-color: #f8f8f8;
-    text-align: right;
+    text-align: left;
     line-height: 42px;
-    padding-right: 20px;
+    padding-left: 10px;
+    /* padding-right: 20px; */
 }
 </style>

@@ -1,81 +1,97 @@
 <template>
-  <el-form ref="form" :model="listQuery" label-width="70px" size='mini '>
-    <div style="padding:10px 0;"></div>
-    <el-row :gutter="4">
-      <el-col :span="2">
-        <el-form-item label="服务ID" >
-          <el-input v-model="listQuery.QryU_SAP_ID" @keyup.enter.native='onSubmit'></el-input>
-        </el-form-item>
-      </el-col>
-      <el-col :span="3">
-        <el-form-item label="呼叫状态" >
-          <el-select v-model="listQuery.QryState" disabled placeholder="请选择呼叫状态">
-        <el-option label="待处理" :value="1"></el-option>
-          </el-select>
-        </el-form-item>
-      </el-col>
-      <el-col :span="2">
-        <el-form-item label="客户" >
-          <el-input v-model="listQuery.QryCustomer" @keyup.enter.native='onSubmit'></el-input>
-        </el-form-item>
-      </el-col>
-      <el-col :span="2">
-        <el-form-item label="序列号" >
-          <el-input v-model="listQuery.QryManufSN" @keyup.enter.native='onSubmit'></el-input>
-        </el-form-item>
-      </el-col>
-      <el-col :span="2">
-        <el-form-item label="接单员" >
-          <el-input v-model="listQuery.QryRecepUser" @keyup.enter.native='onSubmit'></el-input>
-        </el-form-item>
-      </el-col>
- 
-      <el-col :span="2">
-        <el-form-item label="技术员" >
-          <el-input v-model="listQuery.QryTechName" @keyup.enter.native='onSubmit'></el-input>
-        </el-form-item>
-      </el-col>
-      <el-col :span="3">
-        <el-form-item label="问题类型" >
-          <el-cascader :options="dataTree" class="malchack" v-model="listQuery.QryProblemType" 
-          :props="{ value:'id',label:'name',children:'childTypes',expandTrigger: 'hover', emitPath: false }"  
-          clearable></el-cascader>
-        </el-form-item>
-      </el-col>
-      <el-col :span="6">
-        <el-form-item label="创建日期" >
-          <el-col :span="11">
-            <el-date-picker
-              format="yyyy-MM-dd"   
-              value-format="yyyy-MM-dd"
-              placeholder="选择开始日期"
-              v-model="listQuery.QryCreateTimeFrom"
-              style="width: 100%;"
-            ></el-date-picker>
-          </el-col>
-          <el-col class="line" :span="2">至</el-col>
-          <el-col :span="11">
-            <el-date-picker
-              format="yyyy-MM-dd"   
-              value-format="yyyy-MM-dd"
-              placeholder="选择结束时间"
-              v-model="listQuery.QryCreateTimeTo"
-              style="width: 100%;"
-            ></el-date-picker>
-          </el-col>
-        </el-form-item>
-      </el-col>
-
-      <el-col :span="2" style="margin-left:0;" >
-               <el-button type="primary" @click="onSubmit" size="mini"  icon="el-icon-search"> 搜 索 </el-button>
-      </el-col>
-    </el-row>
-  </el-form>
+  <div class="search-wrapper">
+    <el-input 
+      v-model="listQuery.QryU_SAP_ID" 
+      size="mini"
+      @keyup.enter.native="onSubmit" 
+      style="width: 100px;"
+      class="filter-item"
+      placeholder="服务ID">
+    </el-input>
+    <el-select 
+      v-model="listQuery.QryState" 
+      disabled 
+      style="width: 120px;"
+      class="filter-item"
+      size="mini"
+      placeholder="请选择呼叫状态">
+      <el-option label="待处理" :value="1"></el-option>
+    </el-select>
+    <el-input 
+      v-model="listQuery.QryCustomer" 
+      size="mini"
+      @keyup.enter.native="onSubmit" 
+      style="width: 100px;"
+      class="filter-item"
+      placeholder="客户">
+    </el-input>
+    <el-input 
+      v-model="listQuery.QryManufSN" 
+      size="mini"
+      @keyup.enter.native="onSubmit" 
+      style="width: 165px;"
+      class="filter-item"
+      placeholder="序列号">
+    </el-input>
+    <el-input 
+      v-model="listQuery.QryRecepUser" 
+      size="mini"
+      @keyup.enter.native="onSubmit" 
+      style="width: 100px;"
+      class="filter-item"
+      placeholder="接单员">
+    </el-input>
+    <el-input 
+      v-model="listQuery.QryTechName" 
+      size="mini"
+      @keyup.enter.native="onSubmit" 
+      style="width: 100px;"
+      class="filter-item"
+      placeholder="技术员">
+    </el-input>
+    <el-cascader 
+      style="width: 180px;"
+      palceholder="问题类型"
+      size="mini"
+      :options="dataTree" class="malchack filter-item" v-model="listQuery.QryProblemType" 
+      :props="{ value:'id',label:'name',children:'childTypes',expandTrigger: 'hover', emitPath: false }"  
+      clearable>
+    </el-cascader>
+    <el-date-picker
+      class="filter-item"
+      format="yyyy-MM-dd"   
+      value-format="yyyy-MM-dd"
+      placeholder="选择开始日期"
+      v-model="listQuery.QryCreateTimeFrom"
+      style="width: 150px"
+      size="mini"
+    ></el-date-picker>
+    <el-date-picker
+      class="filter-item"
+      format="yyyy-MM-dd"   
+      size="mini"
+      value-format="yyyy-MM-dd"
+      placeholder="选择结束时间"
+      v-model="listQuery.QryCreateTimeTo"
+      style="width: 150px"
+    ></el-date-picker>
+    <el-button
+      class="filter-item"
+      size="mini"
+      v-waves
+      icon="el-icon-search"
+      @click="onSubmit"
+    >查询</el-button>
+  </div>
 </template>
 
 <script>
+import waves from "@/directive/waves";
 import * as problemtypes from "@/api/problemtypes";
 export default {
+  directives: {
+    waves
+  },
   data() {
     return {
       defaultProps:{
@@ -90,6 +106,7 @@ export default {
         appId: undefined,
         Name: "", //	Description
         QryU_SAP_ID: "", //- 查询服务ID查询条件
+        QryState: 1,
         QryCustomer: "", //- 客户查询条件
         QryManufSN: "", // - 制造商序列号查询条件
         QryCreateTimeFrom: "", //- 创建日期从查询条件
@@ -98,12 +115,12 @@ export default {
         QryTechName: "", // - 工单技术员
         QryProblemType: "" // - 问题类型
       },
-          dataTree:[],
+      dataTree:[],
     };
 
   },
   created(){
-       problemtypes
+    problemtypes
       .getList()
       .then((res) => {
         this.dataTree = this._normalizeProblemTypes(res.data);
@@ -149,7 +166,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-
+.search-wrapper {
+  display: inline-block;
+}
 
 // .{
 //   ::v-deep  .el-cascader-menu{

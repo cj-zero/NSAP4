@@ -215,7 +215,7 @@ export default {
     },
     _initOptions (data) {
       const target = {}
-      data.forEach((item, index) => {
+      data.forEach(item => {
         let { typeId, name } = item
         // if (!target[typeId]) {
         //   target[typeId] = []
@@ -223,8 +223,10 @@ export default {
         // } else {
         //   target[typeId].push(name)
         // }
-        let value = typeId === 'SYS_AssetCategory' ? { name, number: index + 1 } : name
-        target[typeId] || (target[typeId] = []).push(value)
+        let value = { label: name, value: name }
+        target[typeId] 
+          ? target[typeId].push(value)
+          : (target[typeId] = []).push(value)
       })
       return target
     },

@@ -1,99 +1,104 @@
 <template>
-  <el-form ref="form" :model="listQuery" label-width="70px" size='mini '>
-    <div style="padding:10px 0;"></div>
-    <el-row :gutter="4">
-      <el-col :span="2">
-        <el-form-item label="服务ID" >
-          <el-input v-model="listQuery.QryU_SAP_ID" @keyup.enter.native='onSubmit'></el-input>
-        </el-form-item>
-      </el-col>
-      <el-col :span="3">
-        <el-form-item label="呼叫状态" >
-              <el-select v-model="listQuery.QryState" clearable  placeholder="请选择呼叫状态">
-            <el-option
-              v-for="(item,index) in callStatus"
-              :key="index"
-              :disabled="item.disabled"
-              :label="item.label"
-              :value="item.value"
-            ></el-option>
-          </el-select>
-        </el-form-item>
-      </el-col>
-      <el-col :span="2">
-        <el-form-item label="客户" >
-          <el-input v-model="listQuery.QryCustomer" @keyup.enter.native='onSubmit'></el-input>
-        </el-form-item>
-      </el-col>
-      <el-col :span="2">
-        <el-form-item label="序列号" >
-          <el-input v-model="listQuery.QryManufSN" @keyup.enter.native='onSubmit'></el-input>
-        </el-form-item>
-      </el-col>
-      <el-col :span="2">
-        <el-form-item label="接单员" >
-          <el-input v-model="listQuery.QryRecepUser" @keyup.enter.native='onSubmit'></el-input>
-        </el-form-item>
-      </el-col>
- 
-      <el-col :span="2">
-        <el-form-item label="技术员" >
-          <el-input v-model="listQuery.QryTechName" @keyup.enter.native='onSubmit'></el-input>
-        </el-form-item>
-      </el-col>
-     <el-col :span="3">
-        <el-form-item label="问题类型" >
-          <el-cascader :options="dataTree" class="malchack" v-model="listQuery.QryProblemType" 
-          :props="{ value:'id',label:'name',children:'childTypes',expandTrigger: 'hover', emitPath: false }"  clearable></el-cascader>
-        </el-form-item>
-      </el-col>
-      <el-col :span="6">
-        <el-form-item label="创建日期" >
-          <el-col :span="11">
-            <el-date-picker
-            
-           format="yyyy-MM-dd"   
-              value-format="yyyy-MM-dd"
-              placeholder="选择开始日期"
-              v-model="listQuery.QryCreateTimeFrom"
-              style="width: 100%;"
-            ></el-date-picker>
-          </el-col>
-          <el-col class="line" :span="2">至</el-col>
-          <el-col :span="11">
-            <el-date-picker
-               format="yyyy-MM-dd"   
-              value-format="yyyy-MM-dd"
-              placeholder="选择结束时间"
-              v-model="listQuery.QryCreateTimeTo"
-              style="width: 100%;"
-            ></el-date-picker>
-          </el-col>
-        </el-form-item>
-      </el-col>
-
-      <el-col :span="2" style="margin-left:0;" >
-               <el-button type="primary" @click="onSubmit" size="mini"  icon="el-icon-search"> 搜 索 </el-button>
-      </el-col>
-    </el-row>
-  </el-form>
+  <div class="search-wrapper">
+    <div class="search-wrapper">
+    <el-input 
+      v-model="listQuery.QryU_SAP_ID" 
+      size="mini"
+      @keyup.enter.native="onSubmit" 
+      style="width: 100px;"
+      class="filter-item"
+      placeholder="服务ID">
+    </el-input>
+    <el-select 
+      v-model="listQuery.QryState" 
+      style="width: 120px;"
+      class="filter-item"
+      size="mini"
+      placeholder="请选择呼叫状态">
+      <el-option
+        v-for="(item,index) in callStatus"
+        :key="index"
+        :disabled="item.disabled"
+        :label="item.label"
+        :value="item.value"
+      ></el-option>
+    </el-select>
+    <el-input 
+      v-model.trim="listQuery.QryCustomer" 
+      size="mini"
+      @keyup.enter.native="onSubmit" 
+      style="width: 200px;"
+      class="filter-item"
+      placeholder="客户">
+    </el-input>
+    <el-input 
+      v-model="listQuery.QryManufSN" 
+      size="mini"
+      @keyup.enter.native="onSubmit" 
+      style="width: 165px;"
+      class="filter-item"
+      placeholder="序列号">
+    </el-input>
+    <el-input 
+      v-model="listQuery.QryRecepUser" 
+      size="mini"
+      @keyup.enter.native="onSubmit" 
+      style="width: 100px;"
+      class="filter-item"
+      placeholder="接单员">
+    </el-input>
+    <el-input 
+      v-model="listQuery.QryTechName" 
+      size="mini"
+      @keyup.enter.native="onSubmit" 
+      style="width: 100px;"
+      class="filter-item"
+      placeholder="技术员">
+    </el-input>
+    <el-cascader 
+      style="width: 180px;"
+      palceholder="问题类型"
+      size="mini"
+      :options="dataTree" class="malchack filter-item" v-model="listQuery.QryProblemType" 
+      :props="{ value:'id',label:'name',children:'childTypes',expandTrigger: 'hover', emitPath: false }"  
+      clearable>
+    </el-cascader>
+    <el-date-picker
+      class="filter-item"
+      format="yyyy-MM-dd"   
+      value-format="yyyy-MM-dd"
+      placeholder="选择开始日期"
+      v-model="listQuery.QryCreateTimeFrom"
+      style="width: 150px"
+      size="mini"
+    ></el-date-picker>
+    <el-date-picker
+      class="filter-item"
+      format="yyyy-MM-dd"   
+      size="mini"
+      value-format="yyyy-MM-dd"
+      placeholder="选择结束时间"
+      v-model="listQuery.QryCreateTimeTo"
+      style="width: 150px"
+    ></el-date-picker>
+    <el-button
+      class="filter-item"
+      size="mini"
+      v-waves
+      icon="el-icon-search"
+      @click="onSubmit"
+    >查询</el-button>
+  </div>
+  </div>
 </template>
 
 <script>
 import * as problemtypes from "@/api/problemtypes";
 // import { delete } from 'vuedraggable';
-
+import waves from "@/directive/waves";
 export default {
-  props: {
-    QryU_SAP_ID: {
-      type: [Number, String],
-      default: ''
-    }
-  },
-  watch: {
-    QryU_SAP_ID (val) {
-      this.listQuery.QryU_SAP_ID = val
-    }
+  directives: {
+    waves
   },
   data() {
     return {
@@ -133,8 +138,7 @@ export default {
         { value: 7, label: "已解决" },
         { value: 8, label: "已回访" }
       ],
-                dataTree:[],
-
+      dataTree:[]
     };
   },
   created(){
@@ -150,7 +154,6 @@ export default {
   },
   methods: {
     onSubmit() {
-      console.log(this.listQuery, 'submit')
       this.$emit("change-Search", this.listQuery);
     },
     sendOrder(){
@@ -184,5 +187,8 @@ export default {
 };
 </script>
 
-<style>
-</style>
+<style lang="scss" scoped>
+.search-wrapper {
+  display: inline-block;
+}
+</style>>

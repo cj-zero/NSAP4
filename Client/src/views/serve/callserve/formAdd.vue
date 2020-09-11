@@ -320,7 +320,7 @@
             type="success"
             size="mini"
             icon="el-icon-share"
-            @click="handleIconClick({})"
+            @click="handleIconClick(formList[0])"
           >新增</el-button>
         </div>
       </div>
@@ -650,7 +650,7 @@
                 type="success"
                 size="mini"
                 icon="el-icon-share"
-                @click="handleIconClick({})"
+                @click="handleIconClick(item)"
               >新增</el-button>
             </div>
           </div>
@@ -1268,6 +1268,17 @@ export default {
           this.dialogfSN = false;
           return
         }
+        let { fromTheme, 
+          fromType, 
+          feeType, 
+          problemTypeName, 
+          problemTypeId, 
+          priority, 
+          remark, 
+          solutionId, 
+          status, 
+          solutionsubject
+        } = this.currentTarget || {}
         if (!this.formList[0].manufacturerSerialNumber) {
           //判断从哪里新增的依据是第一个工单是否有id
           if (this.inputname) {
@@ -1296,7 +1307,6 @@ export default {
             this.formList[0].materialCode = this.formListStart[0].itemCode
             this.formList[0].materialDescription = this.formListStart[0].itemName
             this.formList[0].feeType = 1
-            this.formList[0].orderTakeType = 1
             this.formList[0].editTrue = true
             // this.formList[0].fromTheme = ""
             this.formList[0].fromType =  this.formList[0].fromType || ""
@@ -1307,7 +1317,7 @@ export default {
             // this.formList[0].solutionId = ""
             this.formList[0].status = 1
             // this.formList[0].solutionsubject = ""
-
+          
           const newList = this.formListStart.splice(1,this.formListStart.length);
           for (let i = 0; i < newList.length; i++) {
             this.formList.push({
@@ -1316,16 +1326,16 @@ export default {
               internalSerialNumber: newList[i].internalSN,
               materialCode: newList[i].itemCode,
               materialDescription: newList[i].itemName,
-              feeType: 1,
-              fromTheme: "",
-              fromType:  "",
-              problemTypeName: "",
-              problemTypeId:  "",
-              priority:  1,
-              remark:  "",
-              solutionId: "",
-              status: 1,
-              solutionsubject:  "",
+              feeType: feeType || 1,
+              fromTheme: fromTheme || "",
+              fromType: fromType || "",
+              problemTypeName: problemTypeName || "",
+              problemTypeId: problemTypeId || "",
+              priority: priority || 1,
+              remark: remark || "",
+              solutionId: solutionId || "",
+              status: status || 1,
+              solutionsubject: solutionsubject || "",
             });
           }
           this.ifFormPush = true;
@@ -1357,7 +1367,7 @@ export default {
             this.formList[this.thisPage].materialCode = this.formListStart.itemCode
             this.formList[this.thisPage].materialDescription = this.formListStart.itemName
             // (this.formList[this.thisPage].feeType = 1),
-            // (this.formList[this.thisPage].orderTakeType = 1),
+            // (this.formList[this.thisPage].serviceMode = 1),
             // (this.formList[this.thisPage].editTrue = false),
             // (this.formList[this.thisPage].fromTheme =""),
             // (this.formList[this.thisPage].fromType =  1),
@@ -1377,16 +1387,16 @@ export default {
                 internalSN: "",
                 itemCode: "其他设备",
                 materialDescription: "",
-                feeType: 1,
-                fromTheme:  "",
-                fromType:  "",
-                problemTypeName:  "",
-                problemTypeId:  "",
-                priority:  1,
-                remark:  "",
-                solutionId:  "",
-                status:  1,
-                solutionsubject:  "",
+                feeType: feeType || 1,
+                fromTheme: fromTheme || "",
+                fromType: fromType || "",
+                problemTypeName: problemTypeName || "",
+                problemTypeId: problemTypeId || "",
+                priority: priority || 1,
+                remark: remark || "",
+                solutionId: solutionId || "",
+                status: status || 1,
+                solutionsubject: solutionsubject || "",
               });
             }
             for (let i = 0; i < this.formListStart.length; i++) {
@@ -1396,16 +1406,16 @@ export default {
                 internalSerialNumber: this.formListStart[i].internalSN,
                 materialCode: this.formListStart[i].itemCode,
                 materialDescription: this.formListStart[i].itemName,
-                feeType: 1,
-                fromTheme:  "",
-                fromType:  "",
-                problemTypeName:  "",
-                problemTypeId:  "",
-                priority:  1,
-                remark:  "",
-                solutionId:  "",
-                status:  1,
-                solutionsubject:  "",
+                feeType: feeType || 1,
+                fromTheme: fromTheme || "",
+                fromType: fromType || "",
+                problemTypeName: problemTypeName || "",
+                problemTypeId: problemTypeId || "",
+                priority: priority || 1,
+                remark: remark || "",
+                solutionId: solutionId || "",
+                status: status || 1,
+                solutionsubject: solutionsubject || "",
               });
             }
           }
@@ -1431,9 +1441,13 @@ export default {
       this.thisPage = index;
       this.$nextTick(() => {
         this.currentTarget = value;
-        this.isEditOperation = value
-          ? Boolean(value.manufacturerSerialNumber)
-          : false;
+        this.isEditOperation = index !== undefined
+          ? Boolean(value.manufacturerSerialNumber) 
+          : false
+        console.log(this.isEditOperation, 'ISEDIT', index)
+        // this.isEditOperation = value
+        //   ? Boolean(value.manufacturerSerialNumber)
+        //   : false;
         this.dialogfSN = true;
       });
     },
