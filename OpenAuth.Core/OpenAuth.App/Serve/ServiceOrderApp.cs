@@ -645,6 +645,8 @@ namespace OpenAuth.App
             }
             var d = await _businessPartnerApp.GetDetails(req.CustomerId.ToUpper());
             var obj = req.MapTo<ServiceOrder>();
+            obj.CustomerId = req.CustomerId.ToUpper();
+            obj.TerminalCustomerId = req.TerminalCustomerId.ToUpper();
             obj.RecepUserName = loginContext.User.Name;
             obj.RecepUserId = loginContext.User.Id;
             obj.CreateUserId = loginContext.User.Id;
@@ -1906,6 +1908,7 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var obj = req.MapTo<ServiceOrder>();
+            obj.CustomerId = obj.CustomerId.ToUpper();
             obj.CreateTime = DateTime.Now;
             obj.CreateUserId = loginContext.User.Id;
             obj.RecepUserId = loginContext.User.Id;
@@ -1919,7 +1922,7 @@ namespace OpenAuth.App
                        join e in UnitWork.Find<OHEM>(null) on a.DfTcnician equals e.empID into ae
                        from e in ae.DefaultIfEmpty()
                        select new { a, b, e };
-            obj2 = obj2.Where(o => o.a.CardCode.Equals(obj.CustomerId.ToUpper()));
+            obj2 = obj2.Where(o => o.a.CardCode.Equals(obj.CustomerId));
 
             var query = obj2.Select(q => new
             {
