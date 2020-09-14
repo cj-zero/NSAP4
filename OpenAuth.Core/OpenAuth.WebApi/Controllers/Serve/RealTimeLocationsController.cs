@@ -21,6 +21,7 @@ namespace OpenAuth.WebApi.Controllers
         {
             _realTimeLocationApp = realTimeLocationApp;
         }
+
         /// <summary>
         /// 添加定位信息
         /// </summary>

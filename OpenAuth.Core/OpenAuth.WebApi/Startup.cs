@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Autofac;
 using IdentityServer4.AccessTokenValidation;
+using Infrastructure;
 using Infrastructure.AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
@@ -49,7 +50,7 @@ namespace OpenAuth.WebApi
                 return new StartupLogger(service);
             });
             var logger = services.BuildServiceProvider().GetRequiredService<StartupLogger>();
-            
+
             var identityServer = ((ConfigurationSection)Configuration.GetSection("AppSetting:IdentityServerUrl")).Value;
             if (!string.IsNullOrEmpty(identityServer))
             {
@@ -61,9 +62,9 @@ namespace OpenAuth.WebApi
                         options.Authority = identityServer;
                         options.RequireHttpsMetadata = false;  // 指定是否为HTTPS
                         options.Audience = "openauthapi";
-                   });
+                    });
             }
-         
+
 
             services.AddSwaggerGen(option =>
             {
@@ -73,12 +74,12 @@ namespace OpenAuth.WebApi
                     Title = " NSAP4 API",
                     Description = "By Neware-R7"
                 });
-                
+
                 logger.LogInformation($"api doc basepath:{AppContext.BaseDirectory}");
                 foreach (var name in Directory.GetFiles(AppContext.BaseDirectory, "*.*",
-                    SearchOption.AllDirectories).Where(f =>Path.GetExtension(f).ToLower() == ".xml"))
+                    SearchOption.AllDirectories).Where(f => Path.GetExtension(f).ToLower() == ".xml"))
                 {
-                    option.IncludeXmlComments(name,includeControllerXmlComments:true);
+                    option.IncludeXmlComments(name, includeControllerXmlComments: true);
                     logger.LogInformation($"find api file{name}");
                 }
 
@@ -106,12 +107,12 @@ namespace OpenAuth.WebApi
                     option.OperationFilter<AuthResponsesOperationFilter>();
                 }
 
-                
+
             });
             services.Configure<AppSetting>(Configuration.GetSection("AppSetting"));
             services.AddControllers(option =>
             {
-                option.Filters.Add< OpenAuthFilter>();
+                option.Filters.Add<OpenAuthFilter>();
             }).AddNewtonsoftJson(options =>
             {
                 //忽略循环引用
@@ -130,22 +131,22 @@ namespace OpenAuth.WebApi
                 services.AddSingleton<IDistributedCache>(new Microsoft.Extensions.Caching.Redis.CSRedisCache(RedisHelper.Instance));
             }
             services.AddCors();
-//          todo:如果正式 环境请用下面的方式限制随意访问跨域
-//            var origins = new []
-//            {
-//                "http://localhost:1803",
-//                "http://localhost:52789"
-//            };
-//            if (Environment.IsProduction())
-//            {
-//                origins = new []
-//                {
-//                    "http://demo.openauth.me:1803",
-//                    "http://demo.openauth.me:52789"
-//                };
-//            }
-//            services.AddCors(option=>option.AddPolicy("cors", policy =>
-//                policy.AllowAnyHeader().AllowAnyMethod().AllowCredentials().WithOrigins(origins)));
+            //          todo:如果正式 环境请用下面的方式限制随意访问跨域
+            //            var origins = new []
+            //            {
+            //                "http://localhost:1803",
+            //                "http://localhost:52789"
+            //            };
+            //            if (Environment.IsProduction())
+            //            {
+            //                origins = new []
+            //                {
+            //                    "http://demo.openauth.me:1803",
+            //                    "http://demo.openauth.me:52789"
+            //                };
+            //            }
+            //            services.AddCors(option=>option.AddPolicy("cors", policy =>
+            //                policy.AllowAnyHeader().AllowAnyMethod().AllowCredentials().WithOrigins(origins)));
             //在startup里面只能通过这种方式获取到appsettings里面的值，不能用IOptions😰
             //var dbType = ((ConfigurationSection)Configuration.GetSection("AppSetting:DbType")).Value;
             //if (dbType == Define.DBTYPE_SQLSERVER)
@@ -162,7 +163,7 @@ namespace OpenAuth.WebApi
             services.AddHttpClient();
 
             services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(Configuration["DataProtection"]));
-            
+
             //设置定时启动的任务
             services.AddHostedService<QuartzService>();
 
@@ -175,8 +176,10 @@ namespace OpenAuth.WebApi
             ///CAP
             services.AddNewareCAP(Configuration);
 
+            services.AddHttpClient<HttpHelper>();
+
         }
-        
+
         public void ConfigureContainer(ContainerBuilder builder)
         {
             AutofacExt.InitAutofac(builder, Configuration);
@@ -192,17 +195,17 @@ namespace OpenAuth.WebApi
             // 配置静态autoMapper
             AutoMapperHelper.UseStateAutoMapper(app);
             //可以访问根目录下面的静态文件
-            var staticfile = new StaticFileOptions {FileProvider = new PhysicalFileProvider(AppContext.BaseDirectory) };
+            var staticfile = new StaticFileOptions { FileProvider = new PhysicalFileProvider(AppContext.BaseDirectory) };
             app.UseStaticFiles(staticfile);
 
             //todo:测试可以允许任意跨域，正式环境要加权限
             app.UseCors(builder => builder.AllowAnyOrigin()
                 .AllowAnyMethod()
                 .AllowAnyHeader());
-            
+
             app.UseRouting();
             app.UseAuthentication();
-            
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapMessageHub();
