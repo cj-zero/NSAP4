@@ -21,7 +21,7 @@
       <el-row type="flex" justify="space-around">
         <!-- <el-col :span="6"> -->
           <el-form-item label="服务ID">
-            <el-input readonly v-model="showData.u_SAP_ID"></el-input>
+            <el-input readonly v-model="showData.serviceOrderId"></el-input>
           </el-form-item>
         <!-- </el-col> -->
         <!-- <el-col :span="6"> -->
@@ -62,7 +62,7 @@
           </el-form-item>
         <!-- </el-col> -->
       </el-row>
-      <el-row type="flex" justify="space-around"> 
+      <el-row type="flex" justify="space-around" v-if="!showData.isPhoneService"> 
         <el-col :span="6">
           <el-form-item label="出发地点">
             <el-input readonly v-model="showData.becity"></el-input>
@@ -102,7 +102,7 @@
             ></el-table-column>
           </el-table>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="6" v-if="!showData.isPhoneService">
           <el-form-item label="出差天数">
             <el-input readonly v-model="showData.businessTripDays"></el-input>
           </el-form-item>
@@ -134,7 +134,7 @@
         </el-col>
         <el-col :span="8">
           <el-form-item label="服务方式">
-            <el-input readonly v-model="showData.serviceMode"></el-input>
+            <el-input readonly v-model="showData.serviceText"></el-input>
           </el-form-item>
         </el-col>
       </el-row>
