@@ -44,10 +44,15 @@
                 v-if="fruit.name === 'status'"
                 :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
               >{{stateValue[scope.row[fruit.name]-1]}}</span> -->
-              <span v-if="fruit.name === 'attendanceClockPictures'">
+              <!-- <span v-if="fruit.name === 'attendanceClockPictures'">
                 <showImg :PicturesList="scope.row[fruit.name]" 
                 ></showImg>
-                </span> 
+
+              </span>  -->
+              <div class="link-container" v-if="fruit.name === 'attendanceClockPictures'">
+                <img :src="rightImg" @click="toView(scope.row[fruit.name])" class="pointer">
+                <span>查看</span>
+              </div>
               <span
                 v-if="fruit.name !== 'attendanceClockPictures'"
               >{{scope.row[fruit.name]}}</span>
@@ -63,6 +68,12 @@
           @pagination="handleCurrentChange"
         />
       </div>
+      <el-image-viewer
+        v-if="previewVisible"
+        :url-list="[previewUrl]"
+        :on-close="closeViewer"
+      >
+      </el-image-viewer>
     </div>
   </div>
 </template>
@@ -71,17 +82,20 @@
 import * as callservecheck from "@/api/serve/callservecheck";
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
-import showImg from "@/components/showImg";
+// import showImg from "@/components/showImg";
 import Pagination from "@/components/Pagination";
 import elDragDialog from "@/directive/el-dragDialog";
 import Search from '@/components/Search'
+import rightImg from '@/assets/table/right.png'
+import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 export default {
   name: "callservecheck",
   components: {
     Pagination,
-    showImg,
+    // showImg,
     Search,
-    Sticky
+    Sticky,
+    ElImageViewer
   },
   directives: {
     waves,
@@ -143,7 +157,12 @@ export default {
         { width: 150, placeholder: '起始日期', prop: 'DateFrom', type: 'date' },
         { width: 150, placeholder: '结束日期', prop: 'DateTo', type: 'date' },
         { type: 'search' }
-      ]
+      ],
+      baseURL: process.env.VUE_APP_BASE_API,
+      tokenValue: this.$store.state.user.token,
+      previewUrl: "", //预览图片的定义
+      previewVisible: false,
+      rightImg
     };
   },
 
@@ -152,6 +171,18 @@ export default {
   },
 
   methods: {
+    toView (picturesList) {
+      if (picturesList && picturesList.length) {
+        let { pictureId, id } = picturesList[0]
+        // this.previewUrl = 'https://nsapgateway.neware.work/api/files/Download/ffcd9b63-a0c9-45de-9c83-1ae61d027914?X-Token=db53ea7e'
+        this.previewUrl = `${this.baseURL}/files/Download/${pictureId || id}?X-Token=${this.tokenValue}`
+        this.previewVisible = true
+      }
+    },
+    closeViewer () {
+      // this.previewUrl = false
+      this.previewVisible = false
+    },
     onSearch () {
       this.getList()
     },

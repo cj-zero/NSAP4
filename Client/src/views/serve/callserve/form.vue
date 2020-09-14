@@ -26,7 +26,7 @@
                   <!-- <el-input size="mini" v-model="form.customerId" ><i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i></el-input> -->
                   <el-autocomplete
                     popper-class="my-autocomplete"
-                    v-model="form.customerId"
+                    v-model.trim="form.customerId"
                     :fetch-suggestions="querySearch"
                     placeholder="请输入内容"
                     class="myAuto"
