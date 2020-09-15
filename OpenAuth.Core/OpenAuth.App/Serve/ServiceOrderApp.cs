@@ -1965,7 +1965,8 @@ namespace OpenAuth.App
                 ServiceOrderId = o.Id,
                 LogType = 2
             });
-            var MaterialTypes = string.Join(",", obj.ServiceWorkOrders.Select(s => s.MaterialCode == "其他设备" ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-"))).Distinct().ToArray());
+            var MaterialTypes = string.Join(",", obj.ServiceOrderSNs?.Select(s => s.ItemCode == "其他设备" ? "其他设备" : s.ItemCode.Substring(0, s.ItemCode.IndexOf("-"))).Distinct().ToArray());
+
             await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"APP客户提交售后申请创建服务单", ActionType = "创建服务单", ServiceOrderId = o.Id, MaterialType = MaterialTypes });
             return o;
         }
@@ -2832,9 +2833,12 @@ namespace OpenAuth.App
             int QryState = Convert.ToInt32(req.QryState);
             //获取主管的nsap用户Id
             var nsapUserId = (await UnitWork.Find<AppUserMap>(u => u.AppUserId == req.AppUserId).FirstOrDefaultAsync()).UserID;
+            //判断账号是否为服务台帐号 若是则默认显示所有主管下的单据
+            var nsapUserInfo = await UnitWork.Find<User>(u => u.Id == nsapUserId).FirstOrDefaultAsync();
+            bool isAdmin = "lijianmei".Equals(nsapUserInfo.Account, StringComparison.OrdinalIgnoreCase);
             //获取设备类型列表
             var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
-            var query = UnitWork.Find<ServiceOrder>(s => s.Status == 2 && s.CreateTime > Convert.ToDateTime("2020-08-01") && s.CreateTime != null && s.SupervisorId == nsapUserId) //服务单已确认 
+            var query = UnitWork.Find<ServiceOrder>(s => s.Status == 2 && s.CreateTime > Convert.ToDateTime("2020-08-01") && s.CreateTime != null && (isAdmin ? true : s.SupervisorId == nsapUserId)) //服务单已确认 
                          .Include(s => s.ServiceOrderSNs)
                          .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                          .WhereIf(QryState == 1, q => q.ServiceWorkOrders.Any(q => q.Status == 1))//待派单
