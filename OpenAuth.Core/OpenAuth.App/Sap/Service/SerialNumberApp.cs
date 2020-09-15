@@ -229,30 +229,26 @@ namespace OpenAuth.App.Sap.Service
                 DeliveryNo = q.a.deliveryNo,
                 DlvryDate = q.a.dlvryDate,
                 ContractId = q.a.contract,
-                ServiceFee = GetServiceMoney(q.a.itemCode),
+                ServiceFee = q.a.itemCode,
                 SlpName = q.s.SlpName,
                 CntrctStrt = q.a.cntrctStrt,
                 CntrctEnd = q.a.cntrctEnd,
                 CreateDate = q.a.createDate
             });
-            result.Data = await query2//.OrderBy(u => u.Id)
-                .Skip((req.page - 1) * req.limit)
-                .Take(req.limit).ToListAsync(); ///Select($"new ({propertyStr})");
-            result.Count = await query2.CountAsync();
-
-            if (result.Count == 0)
+            int count = await query2.CountAsync();
+            if (count == 0 || !string.IsNullOrWhiteSpace(req.CardCode) || !string.IsNullOrWhiteSpace(req.CardName))
             {
-                var slpq= from b in UnitWork.Find<OCRD>(null) 
-                        join s in UnitWork.Find<OSLP>(null) on b.SlpCode equals s.SlpCode into ac
-                        from s in ac.DefaultIfEmpty()
-                             select new
-                             {
-                                 b.CardCode,
-                                 s.SlpName
-                             };
+                var slpq = from b in UnitWork.Find<OCRD>(null)
+                           join s in UnitWork.Find<OSLP>(null) on b.SlpCode equals s.SlpCode into ac
+                           from s in ac.DefaultIfEmpty()
+                           select new
+                           {
+                               b.CardCode,
+                               s.SlpName
+                           };
                 var slpList = await slpq.ToListAsync();
 
-                var qqq = UnitWork.Find<ServiceOins>(null).Select(q => new SerialNumberResp
+                var ServiceOinsModels = UnitWork.Find<ServiceOins>(null).Select(q => new SerialNumberResp
                 {
                     InsID = q.insID,
                     Customer = q.customer,
@@ -265,27 +261,59 @@ namespace OpenAuth.App.Sap.Service
                     DeliveryNo = q.deliveryNo,
                     DlvryDate = q.dlvryDate,
                     ContractId = q.contract,
-                    ServiceFee = GetServiceMoney(q.itemCode),
+                    ServiceFee = q.itemCode,
                     SlpName = "",
                     CntrctStrt = q.cntrctStrt,
                     CntrctEnd = q.cntrctEnd,
                     CreateDate = q.createDate
                 })
-               .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), q => q.ManufSN.Contains(req.ManufSN))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), q => q.ManufSN.Contains(req.ManufSN))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), q => q.Customer.Contains(req.CardCode))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), q => q.Customer.Contains(req.CardName) || q.CustmrName.Contains(req.CardName))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), q => q.ItemCode.Contains(req.ItemCode))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ItemName), q => q.ItemName.Contains(req.ItemName));
-                
-                var qlist= await qqq//.OrderBy(u => u.Id)
-                    .Skip((req.page - 1) * req.limit)
-                    .Take(req.limit).ToListAsync();
-                qlist.ForEach(o =>
+
+                var MergeModels = query2.ToList().Union(ServiceOinsModels.ToList());
+
+                //var data1 = await query2.ToListAsync();
+                //var data2 = await qqq.ToListAsync();
+                //data2.ForEach(o =>
+                //{
+                //    o.SlpName = slpList.Where(s => s.CardCode.Equals(o.Customer)).FirstOrDefault().SlpName;
+                //});
+                //data1.AddRange(data2);
+
+                var DataList = MergeModels.OrderBy(o => o.Customer).ThenBy(o=>o.ManufSN).Skip((req.page - 1) * req.limit)
+                .Take(req.limit).ToList();
+                DataList.ForEach(o =>
                 {
-                    o.SlpName =slpList.Where(s => s.CardCode.Equals(o.Customer)).FirstOrDefault().SlpName;
+                    o.ServiceFee = GetServiceMoney(o.ServiceFee);
+                    o.SlpName = slpList.Where(s => s.CardCode.Equals(o.Customer)).FirstOrDefault().SlpName;
                 });
-                result.Data = qlist;
-                result.Count = await qqq.CountAsync();
+                result.Data = DataList;
+                result.Count = MergeModels.Count();
+                return result;
+                //var qlist= await qqq//.OrderBy(u => u.Id)
+                //    .Skip((req.page - 1) * req.limit)
+                //    .Take(req.limit).ToListAsync();
+                //qlist.ForEach(o =>
+                //{
+                //    o.SlpName =slpList.Where(s => s.CardCode.Equals(o.Customer)).FirstOrDefault().SlpName;
+                //});
+                //result.Data = qlist;
+                //result.Count = await qqq.CountAsync();
+            }
+            else
+            {
+                var queryList = await query2.OrderBy(o => o.Customer).ThenBy(o => o.ManufSN)//.OrderBy(u => u.Id)
+               .Skip((req.page - 1) * req.limit)
+               .Take(req.limit).ToListAsync(); ///Select($"new ({propertyStr})");
+                queryList.ForEach(o =>
+                {
+                    o.ServiceFee = GetServiceMoney(o.ServiceFee);
+                });
+                result.Data = queryList;
+                result.Count = await query2.CountAsync();
             }
 
             return result;
