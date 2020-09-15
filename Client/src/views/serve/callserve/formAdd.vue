@@ -1080,7 +1080,7 @@ export default {
       deep: true,
       handler(val) {
         // console.log(this.form, val, 'customerId change')
-        this.listQuery.CardCode = val
+        this.listQuery.CardCode = String(val).toUpperCase()
         getSerialNumber(this.listQuery)
           .then((res) => {
             this.SerialNumberList = res.data;

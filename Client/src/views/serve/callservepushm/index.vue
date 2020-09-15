@@ -36,67 +36,69 @@
           </el-col>
           <el-col :span="21" class="fh">
             <div class="bg-white">
-              <el-table
-                ref="mainTable"
-                :key="key"
-                :data="list"
-                v-loading="listLoading"
-                border
-                fit
-                height="615px"
-                tooltip-effect="dark"
-                style="width: 100%;"
-                highlight-current-row
-                @row-click="rowClick"
-              >
-                <el-table-column
-                  show-overflow-tooltip
-                  v-for="(fruit,index) in formTheadOptions"
-                  :align="fruit.align?fruit.align:'left'"
-                  :header-align="fruit.align?fruit.align:'left'"
-                  :key="`ind${index}`"
-                  :sortable="fruit=='chaungjianriqi'?true:false"
-                  style="background-color:silver;"
-                  :label="fruit.label"
-                  :fixed="fruit.ifFixed"
-                  :width="fruit.width"
+              <div class="content-wrapper">
+                <el-table
+                  ref="mainTable"
+                  :key="key"
+                  :data="list"
+                  v-loading="listLoading"
+                  border
+                  fit
+                  height="100%"
+                  tooltip-effect="dark"
+                  style="width: 100%;"
+                  highlight-current-row
+                  @row-click="rowClick"
                 >
-                  <template slot-scope="scope">
-                    <div v-if="fruit.name === 'workOrderNumber'" class="link-container" >
-                      <img :src="rightImg" @click="openTree(scope.row.serviceOrderId)" class="pointer" />
-                      <span>{{ scope.row.workOrderNumber }}</span>
-                    </div>
-                    <span
-                      v-if="fruit.name === 'status'"
-                      :class="processStatus(scope.row)"
-                    >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
-                    <span v-if="fruit.name === 'fromType'">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
-                    <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
-                    <span v-if="fruit.name === 'customerId'">
-                      {{ scope.row.terminalCustomerId ? scope.row.terminalCustomerId : scope.row.customerId }}
-                    </span>
-                    <span v-if="fruit.name === 'customerName'">
-                      {{ scope.row.terminalCustomer ? scope.row.terminalCustomer : scope.row.customerName }}
-                    </span>
-                    <span
-                      v-if="fruit.name != 'priority' 
-                      && fruit.name!='fromType' 
-                      && fruit.name!='status'
-                      && fruit.name!='serviceOrderId'
-                      && fruit.name !== 'workOrderNumber'
-                      && fruit.name !== 'customerName'
-                      && fruit.name !== 'customerId'"
-                    >{{scope.row[fruit.name]}}</span>
-                  </template>
-                </el-table-column>
-              </el-table>
-              <pagination
-                v-show="total>0"
-                :total="total"
-                :page.sync="listQuery.page"
-                :limit.sync="listQuery.limit"
-                @pagination="handleCurrentChange"
-              />
+                  <el-table-column
+                    show-overflow-tooltip
+                    v-for="(fruit,index) in formTheadOptions"
+                    :align="fruit.align?fruit.align:'left'"
+                    :header-align="fruit.align?fruit.align:'left'"
+                    :key="`ind${index}`"
+                    :sortable="fruit=='chaungjianriqi'?true:false"
+                    style="background-color:silver;"
+                    :label="fruit.label"
+                    :fixed="fruit.ifFixed"
+                    :width="fruit.width"
+                  >
+                    <template slot-scope="scope">
+                      <div v-if="fruit.name === 'workOrderNumber'" class="link-container" >
+                        <img :src="rightImg" @click="openTree(scope.row.serviceOrderId)" class="pointer" />
+                        <span>{{ scope.row.workOrderNumber }}</span>
+                      </div>
+                      <span
+                        v-if="fruit.name === 'status'"
+                        :class="processStatus(scope.row)"
+                      >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
+                      <span v-if="fruit.name === 'fromType'">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
+                      <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
+                      <span v-if="fruit.name === 'customerId'">
+                        {{ scope.row.terminalCustomerId ? scope.row.terminalCustomerId : scope.row.customerId }}
+                      </span>
+                      <span v-if="fruit.name === 'customerName'">
+                        {{ scope.row.terminalCustomer ? scope.row.terminalCustomer : scope.row.customerName }}
+                      </span>
+                      <span
+                        v-if="fruit.name != 'priority' 
+                        && fruit.name!='fromType' 
+                        && fruit.name!='status'
+                        && fruit.name!='serviceOrderId'
+                        && fruit.name !== 'workOrderNumber'
+                        && fruit.name !== 'customerName'
+                        && fruit.name !== 'customerId'"
+                      >{{scope.row[fruit.name]}}</span>
+                    </template>
+                  </el-table-column>
+                </el-table>
+                <pagination
+                  v-show="total>0"
+                  :total="total"
+                  :page.sync="listQuery.page"
+                  :limit.sync="listQuery.limit"
+                  @pagination="handleCurrentChange"
+                />
+              </div>
             </div>
           </el-col>
         </el-row>

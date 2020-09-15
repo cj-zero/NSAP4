@@ -255,6 +255,12 @@ table thead th {
       flex-direction: column;
       justify-content: space-between;
       height: 100%;
+      > .content-wrapper {
+        box-sizing: border-box; 
+        height: 100%; 
+        padding-bottom: 52px;
+        margin-bottom: -52px
+      }
     }
 }
 // .app-main {

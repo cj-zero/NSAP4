@@ -38,54 +38,55 @@
     </sticky>
     <div class="app-container">
       <div class="bg-white">
-        
-        <el-table
-          ref="mainTable"
-          class="table_label"
-          :key="key"
-          :data="list"
-          v-loading="listLoading"
-          border
-          max-height="750px"
-          fit
-          style="width: 100%;"
-          highlight-current-row
-        >
-          <el-table-column
-            show-overflow-tooltip
-            v-for="(fruit,index) in formTheadOptions"
-            :align="fruit.align"
-            :key="`ind${index}`"
-            header-align="left"
-            :width="fruit.width"
-            :fixed="fruit.fixed"
-            :sortable="fruit=='chaungjianriqi'?true:false"
-            style="background-color:silver;"
-            :label="fruit.label"
+        <div class="content-wrapper">
+          <el-table
+            ref="mainTable"
+            class="table_label"
+            :key="key"
+            :data="list"
+            v-loading="listLoading"
+            border
+            height="100%"
+            fit
+            style="width: 100%;"
+            highlight-current-row
           >
-            <template slot-scope="scope">
-              <!-- <el-link
-                v-if="fruit.name === 'id'"
-                type="primary"
-                @click="openTree(scope.row.id)"
-              >{{scope.row.id}}</el-link>
-              <span
-                v-if="fruit.name === 'status'"
-                :class="[scope.row[fruit.name]===1?'orangeWord':(scope.row[fruit.name]===2?'greenWord':'redWord')]"
-              >{{stateValue[scope.row[fruit.name]-1]}}</span> -->
-              <span v-if="fruit.name === 'serveId'">{{ scope.$index + 1}}</span>
-              <span v-else
-              >{{scope.row[fruit.name]}}</span>
-            </template>
-          </el-table-column>
-        </el-table>
-        <pagination
-          v-show="total>0"
-          :total="total"
-          :page.sync="listQuery.page"
-          :limit.sync="listQuery.limit"
-          @pagination="handleCurrentChange"
-        />
+            <el-table-column
+              show-overflow-tooltip
+              v-for="(fruit,index) in formTheadOptions"
+              :align="fruit.align"
+              :key="`ind${index}`"
+              header-align="left"
+              :width="fruit.width"
+              :fixed="fruit.fixed"
+              :sortable="fruit=='chaungjianriqi'?true:false"
+              style="background-color:silver;"
+              :label="fruit.label"
+            >
+              <template slot-scope="scope">
+                <!-- <el-link
+                  v-if="fruit.name === 'id'"
+                  type="primary"
+                  @click="openTree(scope.row.id)"
+                >{{scope.row.id}}</el-link>
+                <span
+                  v-if="fruit.name === 'status'"
+                  :class="[scope.row[fruit.name]===1?'orangeWord':(scope.row[fruit.name]===2?'greenWord':'redWord')]"
+                >{{stateValue[scope.row[fruit.name]-1]}}</span> -->
+                <span v-if="fruit.name === 'serveId'">{{ scope.$index + 1}}</span>
+                <span v-else
+                >{{scope.row[fruit.name]}}</span>
+              </template>
+            </el-table-column>
+          </el-table>
+          <pagination
+            v-show="total>0"
+            :total="total"
+            :page.sync="listQuery.page"
+            :limit.sync="listQuery.limit"
+            @pagination="handleCurrentChange"
+          />
+        </div>
       </div>
     </div>
   </div>

@@ -35,135 +35,136 @@
       </div>
     </sticky>
     <div class="app-container">
-      <div class="bg-white serve-table-wrapper" >
+      <div class="bg-white serve-table-wrapper">
         <!-- <zxsearch @change-Search="changeSearch" :options="problemOptions"></zxsearch> -->
-        <el-table
-          ref="mainTable"
-          class="table_label"
-          :key="key"
-          :data="list"
-          v-loading="listLoading"
-          border
-          fit
-          max-height="750"
-          style="width: 100%;"
-          highlight-current-row
-          @row-click="rowClick"
-        >
-          <div class="mr48">
-            <el-table-column type="expand">
-              <template slot-scope="scope">
-                <el-table
-                  ref="mainTablechuldren"
-                  :key="key"
-                  :data="scope.row.serviceWorkOrders"
-                  v-loading="listLoading"
-                  border
-                  fit
+        <div class="content-wrapper">
+          <el-table
+            ref="mainTable"
+            class="table_label"
+            :key="key"
+            :data="list"
+            v-loading="listLoading"
+            border
+            fit
+            height="100%"
+            style="width: 100%;"
+            highlight-current-row
+            @row-click="rowClick"
+          >
+            <div class="mr48">
+              <el-table-column type="expand">
+                <template slot-scope="scope">
+                  <el-table
+                    ref="mainTablechuldren"
+                    :key="key"
+                    :data="scope.row.serviceWorkOrders"
+                    v-loading="listLoading"
+                    border
+                    fit
 
-                  style="width: 100%;"
-                  highlight-current-row
-                  @row-click="rowClickChild"
-                  :row-style="rowStyle"
-                >
-                  <el-table-column
-                    show-overflow-tooltip
-                    v-for="(fruit,index) in ChildheadOptions"
-                    :align="fruit.align"
-                    :key="`ind${index}`"
-                    style="background-color:silver;"
-                    :label="fruit.label"
-                    header-align="left"
-                    :fixed="fruit.ifFixed"
-                    :width="fruit.width"
+                    style="width: 100%;"
+                    highlight-current-row
+                    @row-click="rowClickChild"
+                    :row-style="rowStyle"
                   >
-                    <template slot-scope="scope">
-                      <span
-                        v-if="fruit.name === 'status'"
-                        :class="processStatus(scope.row)"
-                      >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
-                      <span
-                        v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
-                      >{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
-                      <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority - 1]}}</span>
-                      <span
-                        v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
-                      >{{scope.row[fruit.name]}}</span>
-                      <!-- <span v-if="fruit.name === 'recepUserName'">{{ scope.row.</span> -->
-                    </template>
-                  </el-table-column>
-                </el-table>
+                    <el-table-column
+                      show-overflow-tooltip
+                      v-for="(fruit,index) in ChildheadOptions"
+                      :align="fruit.align"
+                      :key="`ind${index}`"
+                      style="background-color:silver;"
+                      :label="fruit.label"
+                      header-align="left"
+                      :fixed="fruit.ifFixed"
+                      :width="fruit.width"
+                    >
+                      <template slot-scope="scope">
+                        <span
+                          v-if="fruit.name === 'status'"
+                          :class="processStatus(scope.row)"
+                        >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
+                        <span
+                          v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
+                        >{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
+                        <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority - 1]}}</span>
+                        <span
+                          v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
+                        >{{scope.row[fruit.name]}}</span>
+                        <!-- <span v-if="fruit.name === 'recepUserName'">{{ scope.row.</span> -->
+                      </template>
+                    </el-table-column>
+                  </el-table>
+                </template>
+              </el-table-column>
+            </div>
+            <el-table-column
+              show-overflow-tooltip
+              v-for="(fruit,index) in ParentHeadOptions"
+              :align="fruit.align"
+              :key="`ind${index}`"
+              style="background-color:silver;"
+              :label="fruit.label"
+              header-align="left"
+              :fixed="fruit.ifFixed"
+              :width="fruit.width"
+            >
+              <template slot-scope="scope">
+                <div v-if="fruit.name === 'u_SAP_ID'" class="link-container" >
+                  <img :src="rightImg" @click="openTree(scope.row.serviceOrderId)" class="pointer" />
+                  <span>{{ scope.row.u_SAP_ID }}</span>
+                </div>
+                <div v-if="fruit.name === 'customerId'" class="link-container" >
+                  <img :src="rightImg" @click="getCustomerInfo(scope.row.customerId)" class="pointer" />
+                  <span>{{ scope.row.customerId }}</span>
+                </div>
+                <!-- <span
+                  v-if="fruit.name === 'status'"
+                  :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
+                >{{statusOptions[scope.row[fruit.name]].label}}</span> -->
+                <span
+                  v-if="fruit.name === 'workOrderNumber'">
+                  {{ scope.row.serviceWorkOrders.length }}
+                </span>
+                <span v-if="fruit.name === 'fromTheme'">
+                  {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].fromTheme: '' }}
+                </span>
+                <span v-if="fruit.name === 'manufacturerSerialNumber'">
+                  {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].manufacturerSerialNumber: '' }}
+                </span>
+                <span v-if="fruit.name === 'materialCode'">
+                  {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].materialCode: '' }}
+                </span>
+                <span v-if="fruit.name === 'status'"
+                  :class="processStatus(scope.row.serviceWorkOrders[0])"
+                >
+                  {{ scope.row.serviceWorkOrders[0] ? statusOptions[scope.row.serviceWorkOrders[0].status - 1].label: '' }}
+                </span>
+                <span
+                  v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
+                >{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
+                <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority - 1]}}</span>
+                <span
+                  v-if="fruit.name!='priority'&&
+                  fruit.name!='fromType'&&
+                  fruit.name!='status'&&
+                  fruit.name!='u_SAP_ID'&&
+                  fruit.name !== 'workOrderNumber' &&
+                  fruit.name !== 'workOrderNumber' && 
+                  fruit.name !== 'customerId' &&
+                  fruit.name !== 'materialCode' &&
+                  fruit.name !== 'manufacturerSerialNumber'"
+                >{{scope.row[fruit.name]}}</span>
               </template>
             </el-table-column>
-          </div>
-          <el-table-column
-            show-overflow-tooltip
-            v-for="(fruit,index) in ParentHeadOptions"
-            :align="fruit.align"
-            :key="`ind${index}`"
-            style="background-color:silver;"
-            :label="fruit.label"
-            header-align="left"
-            :fixed="fruit.ifFixed"
-            :width="fruit.width"
-          >
-            <template slot-scope="scope">
-              <div v-if="fruit.name === 'u_SAP_ID'" class="link-container" >
-                <img :src="rightImg" @click="openTree(scope.row.serviceOrderId)" class="pointer" />
-                <span>{{ scope.row.u_SAP_ID }}</span>
-              </div>
-              <div v-if="fruit.name === 'customerId'" class="link-container" >
-                <img :src="rightImg" @click="getCustomerInfo(scope.row.customerId)" class="pointer" />
-                <span>{{ scope.row.customerId }}</span>
-              </div>
-              <!-- <span
-                v-if="fruit.name === 'status'"
-                :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-              >{{statusOptions[scope.row[fruit.name]].label}}</span> -->
-              <span
-                v-if="fruit.name === 'workOrderNumber'">
-                {{ scope.row.serviceWorkOrders.length }}
-              </span>
-              <span v-if="fruit.name === 'fromTheme'">
-                {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].fromTheme: '' }}
-              </span>
-              <span v-if="fruit.name === 'manufacturerSerialNumber'">
-                {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].manufacturerSerialNumber: '' }}
-              </span>
-              <span v-if="fruit.name === 'materialCode'">
-                {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].materialCode: '' }}
-              </span>
-              <span v-if="fruit.name === 'status'"
-                :class="processStatus(scope.row.serviceWorkOrders[0])"
-              >
-                {{ scope.row.serviceWorkOrders[0] ? statusOptions[scope.row.serviceWorkOrders[0].status - 1].label: '' }}
-              </span>
-              <span
-                v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
-              >{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
-              <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority - 1]}}</span>
-              <span
-                v-if="fruit.name!='priority'&&
-                fruit.name!='fromType'&&
-                fruit.name!='status'&&
-                fruit.name!='u_SAP_ID'&&
-                fruit.name !== 'workOrderNumber' &&
-                fruit.name !== 'workOrderNumber' && 
-                fruit.name !== 'customerId' &&
-                fruit.name !== 'materialCode' &&
-                fruit.name !== 'manufacturerSerialNumber'"
-              >{{scope.row[fruit.name]}}</span>
-            </template>
-          </el-table-column>
-        </el-table>
-
-        <pagination
-          v-show="total>0"
-          :total="total"
-          :page.sync="listQuery.page"
-          :limit.sync="listQuery.limit"
-          @pagination="handleCurrentChange"
-        />
+          </el-table>
+          <pagination
+            v-show="total>0"
+            :total="total"
+            :page.sync="listQuery.page"
+            :limit.sync="listQuery.limit"
+            @pagination="handleCurrentChange"
+          />
+        </div>
       </div>
       <!-- 客户信息 -->
       <el-dialog

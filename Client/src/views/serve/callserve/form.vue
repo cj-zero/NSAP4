@@ -26,7 +26,7 @@
                   <!-- <el-input size="mini" v-model="form.customerId" ><i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i></el-input> -->
                   <el-autocomplete
                     popper-class="my-autocomplete"
-                    v-model="form.customerId"
+                    v-model.trim="form.customerId"
                     :fetch-suggestions="querySearch"
                     placeholder="请输入内容"
                     class="myAuto"
@@ -229,7 +229,7 @@
                 </el-form-item>
               </el-col>
               <el-col :span="10" style="height:30px;line-height:30px;padding:0 0 0 7px;margin-top: -1px;">
-                <el-input size="mini" v-model="form.addr" maxlength="30">
+                <el-input size="mini" v-model="form.addr" maxlength="50">
                   <!-- <el-button size="mini" slot="append" icon="el-icon-position" @click="openMap"></el-button> -->
                 </el-input>
               </el-col>
@@ -670,7 +670,7 @@ export default {
     // },
     customer: {
       handler(val) {
-        this.getPartnerInfo(val.customerId)
+        this.getPartnerInfo(String(val.customerId).toUpperCase())
         this.setForm(val);
         // console.log(this.$refs.uploadImg, 'uploadImg')
       },
@@ -866,6 +866,7 @@ export default {
       let local = new this.BMap.LocalSearch(this.map, { //智能搜索
         onSearchComplete: onSearchComplete.bind(this)
       })
+      address = address.replace(/^中国/i, '') // 如果以中国开头会直接搜索北京市
       local.search(address)
       function onSearchComplete () {
         if (!local.getResults().getPoi(0)) {
@@ -1495,9 +1496,10 @@ export default {
         });
       } else {
         this.selectSerNumberDisabled = false
-        this.getPartnerInfo(val.cardCode)
+        let cardCode = String(val.cardCode).toUpperCase()
+        this.getPartnerInfo(cardCode)
         if (this.formName === '新建') {
-          callformPartner.getTableList({ code: val.cardCode }).then(res => {
+          callformPartner.getTableList({ code: cardCode }).then(res => {
             this.CallList = res.result;
             this.dialogCallId = true
             // this.newestNotCloseOrder=res.reault.newestNotCloseOrder
