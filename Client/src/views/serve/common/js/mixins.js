@@ -5,7 +5,12 @@ export let reportMixin = {
   data () {
     return {
       dialogReportVisible: false, // 完工报告弹窗标识
-      reportData: [] // 完工报告数据
+      reportData: [], // 完工报告数据
+      serviceModeMap: {
+        1: '电话服务',
+        2: '返厂服务',
+        3: '上门服务'
+      }
     }
   },
   methods: {
@@ -22,7 +27,7 @@ export let reportMixin = {
         getReportDetail({
           serviceOrderId
         }).then(res => {
-          this.reportData = res.result.data
+          this.reportData = this._normalizeReportData(res.result.data)
           this.dialogReportVisible = true
         })
       } else {
@@ -31,6 +36,14 @@ export let reportMixin = {
           message: '工单未解决或在线解答方式无完工报告'
         })
       }
+    },
+    _normalizeReportData (data) {
+      return data.map(item => {
+        let { serviceMode } = item
+        item.serviceText = serviceMode ? this.serviceModeMap[serviceMode] : serviceMode
+        item.isPhoneService = Number(serviceMode) === 1
+        return item
+      })
     }
   }
 }

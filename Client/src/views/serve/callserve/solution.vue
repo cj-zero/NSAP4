@@ -2,7 +2,7 @@
   <div>
     <div class="app-container">
       <el-row class="search-wrapper" type="flex" justify="start">
-        <el-input v-model="query" style="width: 150px;margin-right: 10px"></el-input>
+        <el-input @keyup.enter.native="handleSearch" v-model="query" style="width: 150px;margin-right: 10px"></el-input>
         <el-button type="primary" size="mini" icon="el-icon-search" @click="handleSearch" style="margin-right: 10px">搜索</el-button>
       </el-row>
       <div class="bg-white" style="margin-top: 20px;">

@@ -96,10 +96,10 @@ export default {
         // { name: "org", label: "职位",width:'100px' },
         { name: "org", label: "部门" ,width:'100px'},
         // { name: "clockTime", label: "打卡时间" ,width:'100px'},
-         { name: "clockDate", label: "打卡日期" },
+         { name: "clockDate", label: "打卡日期", width: '150' },
         { name: "location", label: "地点" },
         // { name: "specificLocation", label: "详细地址" },
-        { name: "visitTo", label: "拜访对象" },
+        { name: "visitTo", label: "拜访对象", width: 100 },
         { name: "remark", label: "备注" },
         { name: "attendanceClockPictures", label: "图片" }
       ],
