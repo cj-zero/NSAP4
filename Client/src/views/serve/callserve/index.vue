@@ -627,7 +627,7 @@ export default {
     },
     onChangeForm (val) {
       Object.assign(this.listQuery, val)
-      this.listQuery.page = 1
+      // this.listQuery.page = 1
     },
     onAdvanced () {
       this.advancedVisible = !this.advancedVisible

@@ -182,7 +182,8 @@ export default {
     },
     onChangeForm (val) {
       Object.assign(this.listQuery, val)
-      this.listQuery.page = 1
+      console.log('changeForm')
+      // this.listQuery.page = 1
     },
     changeTable(result) {
       console.log(result);
@@ -218,6 +219,7 @@ export default {
     handleCurrentChange(val) {
       this.listQuery.page = val.page;
       this.listQuery.limit = val.limit;
+      console.log(val, 'change')
       this.getList();
     }
   }
