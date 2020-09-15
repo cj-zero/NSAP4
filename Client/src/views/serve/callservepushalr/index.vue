@@ -657,6 +657,8 @@ export default {
       this.listQuery.QryMaterialTypes = [];
       this.listQuery = Object.assign(this.listQuery, val)
       this.listQueryServer = Object.assign(this.listQueryServer, val)
+      this.listQueryServer.page = 1
+      this.listQuery.page = 1
       this.afterLeft()
     },
     // openTree(res) {

@@ -5,7 +5,7 @@
         <el-input 
           v-model="listQuery.ManufSN" 
           size="mini"
-          @keyup.enter.native="getList" 
+          @keyup.enter.native="onSubmit" 
           style="width: 150px;" 
           class="filter-item"
           placeholder="序列号">
@@ -13,7 +13,7 @@
         <el-input 
           v-model="listQuery.CardName" 
           size="mini"
-          @keyup.enter.native="getList" 
+          @keyup.enter.native="onSubmit" 
           style="width: 100px;"
           class="filter-item"
           placeholder="客户"
@@ -21,7 +21,7 @@
         <el-input 
           v-model="listQuery.ItemCode" 
           size="mini"
-          @keyup.enter.native="getList" 
+          @keyup.enter.native="onSubmit" 
           style="width: 165px;"
           class="filter-item"
           placeholder="物料编码">
@@ -31,7 +31,7 @@
           size="mini"
           v-waves
           icon="el-icon-search"
-          @click="getList"
+          @click="onSubmit"
         >搜索</el-button>
         <permission-btn moduleName="servenumber" size="mini" v-on:btn-event="onBtnClicked"></permission-btn> 
       </div>
@@ -213,6 +213,10 @@ export default {
   mounted () {    
   },
   methods: {
+    onSubmit () {
+      this.listQuery.page = 1
+      this.getList()
+    },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.$refs.mainTable.toggleRowSelection(row);

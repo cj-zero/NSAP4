@@ -451,6 +451,7 @@ export default {
       });
     },
     onSubmit() {
+      this.listQuery.page = 1
       this.getList();
     },
     rowClick(row) {
