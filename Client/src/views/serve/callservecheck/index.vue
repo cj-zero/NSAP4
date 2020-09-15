@@ -178,6 +178,7 @@ export default {
       this.previewVisible = false
     },
     onSearch () {
+      this.listQuery.page = 1
       this.getList()
     },
     onChangeForm (val) {

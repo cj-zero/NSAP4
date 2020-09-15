@@ -623,6 +623,7 @@ export default {
   methods: {
     // 处理状态的样式
     onSearch () {
+      this.listQuery.page = 1
       this.getList()
     },
     onChangeForm (val) {

@@ -243,6 +243,7 @@ export default {
       }
     },
     onSearch () {
+      this.listQuery.page = 1
       this.getList()
     },
     onChangeForm (val) {
