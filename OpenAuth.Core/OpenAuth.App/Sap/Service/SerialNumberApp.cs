@@ -36,7 +36,7 @@ namespace OpenAuth.App.Sap.Service
                         {
                             a,
                             b
-                        }; 
+                        };
             query = query
                  .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), q => q.a.manufSN.Contains(req.ManufSN))
                  .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), q => q.a.customer.Contains(req.CardName) || q.a.custmrName.Contains(req.CardName))
@@ -65,17 +65,17 @@ namespace OpenAuth.App.Sap.Service
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), q => q.itemCode.Contains(req.ItemCode))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ItemName), q => q.itemCode.Contains(req.ItemName)).Select(q => new SerialNumberListResp
                 {
-                   ManufSN =  q.manufSN,
-                   InternalSN = q.internalSN,
-                   Customer = q.customer,
-                   CustmrName = q.custmrName,
-                   ContractID = q.contract.Value,
-                   DlvryDate  =  q.dlvryDate.Value.AddYears(1),
-                   ItemCode = q.itemCode,
+                    ManufSN = q.manufSN,
+                    InternalSN = q.internalSN,
+                    Customer = q.customer,
+                    CustmrName = q.custmrName,
+                    ContractID = q.contract.Value,
+                    DlvryDate = q.dlvryDate.Value.AddYears(1),
+                    ItemCode = q.itemCode,
                     ItemName = q.itemName
                 });
 
-            if (!string.IsNullOrWhiteSpace(req.CardCode)) 
+            if (!string.IsNullOrWhiteSpace(req.CardCode))
             {
                 var data1 = await query2.ToListAsync();
                 var data2 = await qqq.ToListAsync();
@@ -85,7 +85,7 @@ namespace OpenAuth.App.Sap.Service
                 result.Count = await query2.CountAsync() + await qqq.CountAsync();
                 return result;
             }
-            
+
             result.Data = await query2//.OrderBy(u => u.Id)
                 .Skip((req.page - 1) * req.limit)
                 .Take(req.limit).ToListAsync(); ///Select($"new ({propertyStr})");
@@ -93,7 +93,7 @@ namespace OpenAuth.App.Sap.Service
 
             if (result.Count == 0)
             {
-                
+
                 result.Data = await qqq//.OrderBy(u => u.Id)
                     .Skip((req.page - 1) * req.limit)
                     .Take(req.limit).ToListAsync(); ///Select($"new ({propertyStr})");
@@ -103,6 +103,7 @@ namespace OpenAuth.App.Sap.Service
             return result;
         }
 
+        #region 新威智能App使用 若修改请告知谢谢！！！
         /// <summary>
         /// 查询制造商序列号(App 已生成服务单)
         /// </summary>
@@ -126,8 +127,8 @@ namespace OpenAuth.App.Sap.Service
                             b
                         };
             query = query
-                .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), q => q.a.customer.Contains(req.CardCode))
-                .WhereIf(!string.IsNullOrEmpty(req.key), q => q.a.itemCode.Contains(req.key) || q.a.manufSN.Contains(req.key))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), q => q.a.customer.ToUpper().Contains(req.CardCode.ToUpper()))
+                .WhereIf(!string.IsNullOrEmpty(req.key), q => q.a.itemCode.ToUpper().Contains(req.key.ToUpper()) || q.a.manufSN.ToUpper().Contains(req.key.ToUpper()))
                 .WhereIf(!string.IsNullOrEmpty(manufSNs), q => !manufSNs.Contains(q.a.manufSN))
                 .WhereIf(req.ManufSNs.Count > 0 && req.ManufSNs != null, q => !req.ManufSNs.Contains(q.a.manufSN))
                 .WhereIf(!string.IsNullOrEmpty(technicianApplys), q => !technicianApplys.Contains(q.a.manufSN))
@@ -143,10 +144,34 @@ namespace OpenAuth.App.Sap.Service
                 q.a.itemCode,
                 q.a.itemName
             });
+            var query3 = UnitWork.Find<ServiceOins>(null)
+           .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), q => q.customer.ToUpper().Contains(req.CardCode.ToUpper()))
+                .WhereIf(!string.IsNullOrEmpty(req.key), q => q.itemCode.ToUpper().Contains(req.key.ToUpper()) || q.manufSN.ToUpper().Contains(req.key.ToUpper()))
+                .WhereIf(!string.IsNullOrEmpty(manufSNs), q => !manufSNs.Contains(q.manufSN))
+                .WhereIf(req.ManufSNs.Count > 0 && req.ManufSNs != null, q => !req.ManufSNs.Contains(q.manufSN))
+                .WhereIf(!string.IsNullOrEmpty(technicianApplys), q => !technicianApplys.Contains(q.manufSN)).Select(q => new SerialNumberListResp
+                {
+                    ManufSN = q.manufSN,
+                    InternalSN = q.internalSN,
+                    Customer = q.customer,
+                    CustmrName = q.custmrName,
+                    ContractID = q.contract.Value,
+                    DlvryDate = q.dlvryDate.Value.AddYears(1),
+                    ItemCode = q.itemCode,
+                    ItemName = q.itemName
+                });
             result.Data = await query2
                 .Skip((req.page - 1) * req.limit)
                 .Take(req.limit).ToListAsync();
             result.Count = await query2.CountAsync();
+            if (result.Count == 0)
+            {
+
+                result.Data = await query3
+                    .Skip((req.page - 1) * req.limit)
+                    .Take(req.limit).ToListAsync();
+                result.Count = await query3.CountAsync();
+            }
             return result;
         }
 
@@ -167,9 +192,9 @@ namespace OpenAuth.App.Sap.Service
                             b
                         };
             query = query
-                .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), q => q.a.customer.Contains(req.CardCode))
-                .WhereIf(!string.IsNullOrEmpty(req.key), q => q.a.itemCode.Contains(req.key) || q.a.manufSN.Contains(req.key))
-                .WhereIf(req.ManufSNs.Count > 0 && req.ManufSNs != null, q => !req.ManufSNs.Contains(q.a.manufSN))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), q => q.a.customer.ToUpper().Contains(req.CardCode.ToUpper()))
+                .WhereIf(!string.IsNullOrEmpty(req.key), q => q.a.itemCode.ToUpper().Contains(req.key.ToUpper()) || q.a.manufSN.ToUpper().Contains(req.key.ToUpper()))
+                .WhereIf(req.ManufSNs.Count > 0 && req.ManufSNs != null, q => !req.ManufSNs.Contains(q.a.manufSN.ToUpper()))
                 ;
             var query2 = query.Select(q => new
             {
@@ -182,13 +207,35 @@ namespace OpenAuth.App.Sap.Service
                 q.a.itemCode,
                 q.a.itemName
             });
+            var query3 = UnitWork.Find<ServiceOins>(null)
+              .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), q => q.customer.ToUpper().Contains(req.CardCode.ToUpper()))
+              .WhereIf(req.ManufSNs.Count > 0 && req.ManufSNs != null, q => !req.ManufSNs.Contains(q.manufSN.ToUpper()))
+              .WhereIf(!string.IsNullOrEmpty(req.key), q => q.itemCode.ToUpper().Contains(req.key.ToUpper()) || q.manufSN.ToUpper().Contains(req.key.ToUpper())).Select(q => new SerialNumberListResp
+              {
+                  ManufSN = q.manufSN,
+                  InternalSN = q.internalSN,
+                  Customer = q.customer,
+                  CustmrName = q.custmrName,
+                  ContractID = q.contract.Value,
+                  DlvryDate = q.dlvryDate.Value.AddYears(1),
+                  ItemCode = q.itemCode,
+                  ItemName = q.itemName
+              });
             result.Data = await query2
                 .Skip((req.page - 1) * req.limit)
                 .Take(req.limit).ToListAsync();
             result.Count = await query2.CountAsync();
+            if (result.Count == 0)
+            {
+
+                result.Data = await query3
+                    .Skip((req.page - 1) * req.limit)
+                    .Take(req.limit).ToListAsync();
+                result.Count = await query3.CountAsync();
+            }
             return result;
         }
-
+        #endregion
         /// <summary>
         /// 得到序列号交易列表
         /// </summary>
@@ -242,14 +289,14 @@ namespace OpenAuth.App.Sap.Service
 
             if (result.Count == 0)
             {
-                var slpq= from b in UnitWork.Find<OCRD>(null) 
-                        join s in UnitWork.Find<OSLP>(null) on b.SlpCode equals s.SlpCode into ac
-                        from s in ac.DefaultIfEmpty()
-                             select new
-                             {
-                                 b.CardCode,
-                                 s.SlpName
-                             };
+                var slpq = from b in UnitWork.Find<OCRD>(null)
+                           join s in UnitWork.Find<OSLP>(null) on b.SlpCode equals s.SlpCode into ac
+                           from s in ac.DefaultIfEmpty()
+                           select new
+                           {
+                               b.CardCode,
+                               s.SlpName
+                           };
                 var slpList = await slpq.ToListAsync();
 
                 var qqq = UnitWork.Find<ServiceOins>(null).Select(q => new SerialNumberResp
@@ -276,13 +323,13 @@ namespace OpenAuth.App.Sap.Service
                 .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), q => q.Customer.Contains(req.CardName) || q.CustmrName.Contains(req.CardName))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), q => q.ItemCode.Contains(req.ItemCode))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ItemName), q => q.ItemName.Contains(req.ItemName));
-                
-                var qlist= await qqq//.OrderBy(u => u.Id)
+
+                var qlist = await qqq//.OrderBy(u => u.Id)
                     .Skip((req.page - 1) * req.limit)
                     .Take(req.limit).ToListAsync();
                 qlist.ForEach(o =>
                 {
-                    o.SlpName =slpList.Where(s => s.CardCode.Equals(o.Customer)).FirstOrDefault().SlpName;
+                    o.SlpName = slpList.Where(s => s.CardCode.Equals(o.Customer)).FirstOrDefault().SlpName;
                 });
                 result.Data = qlist;
                 result.Count = await qqq.CountAsync();
