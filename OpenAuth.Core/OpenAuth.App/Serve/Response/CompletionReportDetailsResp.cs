@@ -44,6 +44,10 @@ namespace OpenAuth.App.Response
         /// </summary>
         public string ContactTel { get; set; }
         /// <summary>
+        /// 终端客户Id
+        /// </summary>
+        public string TerminalCustomerId { get; set; }
+        /// <summary>
         /// 终端客户
         /// </summary>
         public string TerminalCustomer { get; set; }
