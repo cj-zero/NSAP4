@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
+using OpenAuth.App.Sap.Request;
+using OpenAuth.App.Sap.Service;
 using OpenAuth.App.Serve.Request;
 using OpenAuth.Repository.Domain;
 
@@ -26,15 +28,17 @@ namespace NSAP.App.WebApi.Controllers
         private readonly ServiceEvaluateApp _serviceEvaluateApp;
         private readonly SeviceTechnicianApplyOrdersApp _seviceTechnicianApplyOrdersApp;
         private readonly CompletionReportApp _completionReportApp;
+        private readonly SerialNumberApp _serialNumberApp;
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
 
-        public ServiceOrderController(ServiceOrderApp serviceOrderApp, AppServiceOrderLogApp appServiceOrderLogApp, ServiceEvaluateApp serviceEvaluateApp, SeviceTechnicianApplyOrdersApp seviceTechnicianApplyOrdersApp, CompletionReportApp completionReportApp)
+        public ServiceOrderController(ServiceOrderApp serviceOrderApp, AppServiceOrderLogApp appServiceOrderLogApp, ServiceEvaluateApp serviceEvaluateApp, SeviceTechnicianApplyOrdersApp seviceTechnicianApplyOrdersApp, CompletionReportApp completionReportApp, SerialNumberApp serialNumberApp)
         {
             _serviceOrderApp = serviceOrderApp;
             _appServiceOrderLogApp = appServiceOrderLogApp;
             _serviceEvaluateApp = serviceEvaluateApp;
             _seviceTechnicianApplyOrdersApp = seviceTechnicianApplyOrdersApp;
             _completionReportApp = completionReportApp;
+            _serialNumberApp = serialNumberApp;
         }
 
 
@@ -746,6 +750,47 @@ namespace NSAP.App.WebApi.Controllers
             try
             {
                 result = await _serviceOrderApp.GetTechnicianLocation(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// 序列号查询（App 已生成服务单）
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> AppSerialNumberGet(QueryAppSerialNumberListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serialNumberApp.AppGet(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 序列号查询
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> AppSerialNumberFind(QueryAppSerialNumberListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serialNumberApp.AppFind(req);
             }
             catch (Exception ex)
             {
