@@ -13,55 +13,57 @@
     </sticky>
     <div class="app-container">
       <div class="bg-white">
-        <el-table
-          ref="mainTable"
-          :data="checkList"
-          v-loading="listLoading"
-          border
-          fit
-          max-height="750"
-          style="width: 100%;"
-          highlight-current-row
-          @current-change="handleSelectionChange"
-          @row-click="rowClick"
-        >
-          <!-- <el-table-column     v-for="(fruit,index) in formTheadOptions"  :key="`ind${index}`">
-              <el-radio v-model="fruit.id" ></el-radio>
-          </el-table-column>-->
-
-          <el-table-column
-            show-overflow-tooltip
-            v-for="(fruit,index) in formTheadOptions"
-            :align="fruit.align?fruit.align:'left'"
-            :key="`ind${index}`"
-            :sortable="fruit=='chaungjianriqi'?true:false"
-            style="background-color:silver;"
-            :label="fruit.label"
-            :width="fruit.width"
+        <div class="content-wrapper">
+          <el-table
+            ref="mainTable"
+            :data="checkList"
+            v-loading="listLoading"
+            border
+            fit
+            height="100%"
+            style="width: 100%;"
+            highlight-current-row
+            @current-change="handleSelectionChange"
+            @row-click="rowClick"
           >
-            <template slot-scope="scope">
-              <!-- <span
-                v-if="fruit.name === 'status'"
-                :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-              >{{stateValue[scope.row[fruit.name]-1]}}</span> -->
-              <span v-if="fruit.name === 'attendanceClockPictures'">
-                <showImg :PicturesList="scope.row[fruit.name]" 
-                ></showImg>
-                </span> 
-              <span
-                v-if="fruit.name !== 'attendanceClockPictures'"
-              >{{scope.row[fruit.name]}}</span>
-            </template>
-          </el-table-column>
-        </el-table>
+            <!-- <el-table-column     v-for="(fruit,index) in formTheadOptions"  :key="`ind${index}`">
+                <el-radio v-model="fruit.id" ></el-radio>
+            </el-table-column>-->
 
-        <pagination
-          v-show="total>0"
-          :total="total"
-          :page.sync="listQuery.page"
-          :limit.sync="listQuery.limit"
-          @pagination="handleCurrentChange"
-        />
+            <el-table-column
+              show-overflow-tooltip
+              v-for="(fruit,index) in formTheadOptions"
+              :align="fruit.align?fruit.align:'left'"
+              :key="`ind${index}`"
+              :sortable="fruit=='chaungjianriqi'?true:false"
+              style="background-color:silver;"
+              :label="fruit.label"
+              :width="fruit.width"
+            >
+              <template slot-scope="scope">
+                <!-- <span
+                  v-if="fruit.name === 'status'"
+                  :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
+                >{{stateValue[scope.row[fruit.name]-1]}}</span> -->
+                <span v-if="fruit.name === 'attendanceClockPictures'">
+                  <showImg :PicturesList="scope.row[fruit.name]" 
+                  ></showImg>
+                  </span> 
+                <span
+                  v-if="fruit.name !== 'attendanceClockPictures'"
+                >{{scope.row[fruit.name]}}</span>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <pagination
+            v-show="total>0"
+            :total="total"
+            :page.sync="listQuery.page"
+            :limit.sync="listQuery.limit"
+            @pagination="handleCurrentChange"
+          />
+        </div>
       </div>
     </div>
   </div>

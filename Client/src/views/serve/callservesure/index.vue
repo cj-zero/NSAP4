@@ -64,60 +64,61 @@
     </sticky>
     <div class="app-container">
       <div class="bg-white">
-        
-        <el-table
-          ref="mainTable"
-          class="table_label"
-          :key="key"
-          :data="list"
-          v-loading="listLoading"
-          border
-          max-height="750"
-          style="width: 100%;height:650px;"
-          highlight-current-row
-          @row-click="rowClick"
-        >
-          <el-table-column width="50">
-            <template slot-scope="scope">
-              <el-radio v-model="radio" :label="scope.row.id"></el-radio>
-            </template>
-          </el-table-column>
-          <el-table-column
-            show-overflow-tooltip
-            v-for="(fruit,index) in formTheadOptions"
-            :align="fruit.align"
-            :key="`ind${index}`"
-            header-align="left"
-            :sortable="fruit=='chaungjianriqi'?true:false"
-            style="background-color:silver;"
-            :label="fruit.label"
-            :width="fruit.width"
+        <div class="content-wrapper">
+          <el-table
+            ref="mainTable"
+            class="table_label"
+            :key="key"
+            :data="list"
+            v-loading="listLoading"
+            border
+            height="100%"
+            style="width: 100%;"
+            highlight-current-row
+            @row-click="rowClick"
           >
-            <template slot-scope="scope">
-              <!-- <span v-if="fruit.name === 'order'">{{ scope.$index + 1 }}</span> -->
-              <div class="link-container" 
-                v-if="fruit.name === 'u_SAP_ID'">
-                <img :src="rightImg" class="pointer" @click="openTree(scope.row.id)" />
-                <span>{{ scope.row.u_SAP_ID }}</span>
-              </div>
-              <span
-                v-if="fruit.name === 'status'"
-                :class="[scope.row[fruit.name]===1?'orangeWord':(scope.row[fruit.name]===2?'greenWord':'redWord')]"
-              >{{stateValue[scope.row[fruit.name]-1]}}</span>
-              <span v-if="fruit.name === 'subject'">{{scope.row[fruit.name]}}</span>
-              <span
-                v-if="!(fruit.name ==='status'||fruit.name ==='subject'||fruit.name ==='id' || fruit.name === 'u_SAP_ID')"
-              >{{scope.row[fruit.name]}}</span>
-            </template>
-          </el-table-column>
-        </el-table>
-        <pagination
-          v-show="total>0"
-          :total="total"
-          :page.sync="listQuery.page"
-          :limit.sync="listQuery.limit"
-          @pagination="handleCurrentChange"
-        />
+            <el-table-column width="50">
+              <template slot-scope="scope">
+                <el-radio v-model="radio" :label="scope.row.id"></el-radio>
+              </template>
+            </el-table-column>
+            <el-table-column
+              show-overflow-tooltip
+              v-for="(fruit,index) in formTheadOptions"
+              :align="fruit.align"
+              :key="`ind${index}`"
+              header-align="left"
+              :sortable="fruit=='chaungjianriqi'?true:false"
+              style="background-color:silver;"
+              :label="fruit.label"
+              :width="fruit.width"
+            >
+              <template slot-scope="scope">
+                <!-- <span v-if="fruit.name === 'order'">{{ scope.$index + 1 }}</span> -->
+                <div class="link-container" 
+                  v-if="fruit.name === 'u_SAP_ID'">
+                  <img :src="rightImg" class="pointer" @click="openTree(scope.row.id)" />
+                  <span>{{ scope.row.u_SAP_ID }}</span>
+                </div>
+                <span
+                  v-if="fruit.name === 'status'"
+                  :class="[scope.row[fruit.name]===1?'orangeWord':(scope.row[fruit.name]===2?'greenWord':'redWord')]"
+                >{{stateValue[scope.row[fruit.name]-1]}}</span>
+                <span v-if="fruit.name === 'subject'">{{scope.row[fruit.name]}}</span>
+                <span
+                  v-if="!(fruit.name ==='status'||fruit.name ==='subject'||fruit.name ==='id' || fruit.name === 'u_SAP_ID')"
+                >{{scope.row[fruit.name]}}</span>
+              </template>
+            </el-table-column>
+          </el-table>
+          <pagination
+            v-show="total>0"
+            :total="total"
+            :page.sync="listQuery.page"
+            :limit.sync="listQuery.limit"
+            @pagination="handleCurrentChange"
+          />
+        </div>
       </div>
       <!--   v-el-drag-dialog
       width="1000px"  新建呼叫服务单-->
