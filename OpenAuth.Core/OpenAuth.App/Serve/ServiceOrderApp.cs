@@ -1519,7 +1519,7 @@ namespace OpenAuth.App
         /// <param name="FromUserId"></param>
         /// <param name="MessageId"></param>
         /// <returns></returns>
-        private async Task SendMessageToRelatedUsers(string Content, int ServiceOrderId, int FromUserId, string MessageId)
+        public async Task SendMessageToRelatedUsers(string Content, int ServiceOrderId, int FromUserId, string MessageId)
         {
             //发给服务单客服/主管
             var serviceInfo = await UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId).FirstOrDefaultAsync();
