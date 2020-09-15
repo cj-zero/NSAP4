@@ -38,5 +38,14 @@ namespace OpenAuth.Repository
         public virtual DbSet<RealTimeLocation> Realtimelocations { get; set; }
 
         public virtual DbSet<SeviceTechnicianApplyOrder> Sevicetechnicianapplyorders { get; set; }
+        #region 报销
+        public virtual DbSet<ReimburseAccommodationSubsidy> Reimburseaccommodationsubsidies { get; set; }
+        public virtual DbSet<ReimburseAttachment> Reimburseattachments { get; set; }
+        public virtual DbSet<ReimburseFare> Reimbursefares { get; set; }
+        public virtual DbSet<ReimburseInfo> Reimburseinfos { get; set; }
+        public virtual DbSet<ReimburseOtherCharges> Reimburseordercharges { get; set; }
+        public virtual DbSet<ReimburseTravellingAllowance> Reimbursetravellingallowances { get; set; }
+        public virtual DbSet<ReimurseOperationHistory> Reimurseoperationhistories { get; set; }
+        #endregion
     }
 }
