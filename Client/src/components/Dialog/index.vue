@@ -1,6 +1,7 @@
 <template>
   <el-dialog
     v-el-drag-dialog
+    :center="center"
     :width="width"
     :title="title"
     :visible.sync="dialogVisible"
@@ -10,18 +11,26 @@
   >
     <slot></slot>
     <span slot="footer" class="dialog-footer" v-if="isShowBtn">
-      <el-button @click="cancel">取 消</el-button>
-      <el-button type="primary" @click="confirm">确 定</el-button>
+      <el-button
+        v-for="btnItem in btnList"
+        :key="btnItem.btnText"
+        :type="btnItem.type || 'primary'"
+        @click="btnItem.handleClick"
+        :size="btnItem.size || 'mini'"
+      >{{ btnItem.btnText }}</el-button>
     </span>
   </el-dialog>
 </template>
 
 <script>
-import { noop } from '@/utils/declaration'
+import elDragDialog from "@/directive/el-dragDialog";
 export default {
+  directives: {
+    elDragDialog
+  },
   props: {
     width: {
-      type: Stirng,
+      type: String,
       default: '50%'
     },
     title: {
@@ -44,22 +53,20 @@ export default {
       type: Boolean,
       default: false 
     },
-    cancel: {
-      type: Function,
-      default () {
-        return noop
-      }
+    center: {
+      type: Boolean,
+      default: false
     },
-    confirm: {
-      type: Function,
+    btnList: {
+      type: Array,
       default () {
-        return noop
+        return []
       }
     }
   },
   data () {
     return {
-      visible: false
+      dialogVisible: false
     }
   },
   methods: {

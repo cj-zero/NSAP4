@@ -25,6 +25,11 @@ import '@/assets/public/css/comIconfont/iconfont/iconfont.js'
 // 请假条表单和详情
 import FrmLeaveReqAdd from '@/views/forms/userDefine/frmLeaveReq/add'
 import FrmLeaveReqDetail from '@/views/forms/userDefine/frmLeaveReq/detail'
+
+// 全局过滤器
+import { toThousands } from '@/utils/format'
+
+Vue.filter(toThousands, toThousands)
 // 引入PDFJS
 Vue.use(ElementUI, { locale })
 Vue.use(VueContextMenu)

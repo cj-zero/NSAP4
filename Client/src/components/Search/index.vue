@@ -1,6 +1,7 @@
 <template>
   <div class="search-wrapper">
     <template v-for="(item, index) in config">
+      <!-- 普通el-input -->
       <template v-if="!item.type">
         <el-input
           class="filter-item"
@@ -13,6 +14,7 @@
           :disabled="item.disabled"
         ></el-input>
       </template>
+      <!-- 下拉选择 -->
       <template v-else-if="item.type === 'select'">
         <el-select 
           class="filter-item"
@@ -31,6 +33,7 @@
           ></el-option>
         </el-select>
       </template>
+      <!-- 树状选择 -->
       <template v-else-if="item.type === 'tree'">
         <el-cascader
           :key="index"
@@ -43,6 +46,7 @@
           :options="item.options"
           :size="item.size || 'mini'"></el-cascader>
       </template>
+      <!-- 日期选择 -->
       <template v-else-if="item.type === 'date'">
         <div class="filter-item" :key="index">
           <el-date-picker
@@ -56,11 +60,22 @@
           <!-- <span class="filter-item" v-if="item.showText">至</span> -->
         </div>
       </template>
+      <!-- 查询按钮 -->
       <template v-else-if="item.type === 'search'">
         <el-button
           :key="index"
           class="filter-item"
           @click="onSearch(item)"
+          icon="el-icon-search"
+          :size="item.size || 'mini'">
+          {{ item.btnText ? item.btnText : '查询' }}
+        </el-button>
+      </template>
+      <template v-else-if="item.type === 'button'">
+        <el-button
+          :key="index"
+          class="filter-item"
+          @click="item.handleClick(listSearchQuery)"
           icon="el-icon-search"
           :size="item.size || 'mini'">
           {{ item.btnText ? item.btnText : '查询' }}
