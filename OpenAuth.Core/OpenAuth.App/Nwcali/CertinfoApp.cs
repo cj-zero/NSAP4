@@ -104,12 +104,13 @@ namespace OpenAuth.App
             var result = new TableData();
             var user = _auth.GetCurrentUser();
 
+            var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("校准证书"));
             var instances = new List<string>();
             if( request.FlowStatus == 1   )
                 instances = await UnitWork.Find<FlowInstanceTransitionHistory>(u => u.CreateUserId == user.User.Id)
                     .Select(u => u.InstanceId).Distinct().ToListAsync();
 
-            var fs = await UnitWork.Find<FlowInstance>(null)
+            var fs = await UnitWork.Find<FlowInstance>(f => f.SchemeId == mf.FlowSchemeId)
                 .Where(o => o.MakerList == "1" || o.MakerList.Contains(user.User.Id))//待办事项
                 .WhereIf(request.FlowStatus == 1, o => o.ActivityName == "待送审" || instances.Contains(o.Id))
                 .WhereIf(request.FlowStatus == 2, o => o.ActivityName == "待审核" || o.ActivityName == "待批准")
