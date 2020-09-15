@@ -229,7 +229,7 @@
                 </el-form-item>
               </el-col>
               <el-col :span="10" style="height:30px;line-height:30px;padding:0 0 0 7px;margin-top: -1px;">
-                <el-input size="mini" v-model="form.addr" maxlength="30">
+                <el-input size="mini" v-model="form.addr" maxlength="50">
                   <!-- <el-button size="mini" slot="append" icon="el-icon-position" @click="openMap"></el-button> -->
                 </el-input>
               </el-col>
@@ -866,6 +866,7 @@ export default {
       let local = new this.BMap.LocalSearch(this.map, { //智能搜索
         onSearchComplete: onSearchComplete.bind(this)
       })
+      address = address.replace(/^中国/i, '') // 如果以中国开头会直接搜索北京市
       local.search(address)
       function onSearchComplete () {
         if (!local.getResults().getPoi(0)) {
