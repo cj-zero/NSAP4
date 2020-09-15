@@ -13,52 +13,61 @@
     </sticky>
     <div class="app-container">
       <div class="bg-white">
-        <el-table
-          ref="mainTable"
-          :data="checkList"
-          v-loading="listLoading"
-          border
-          fit
-          max-height="750"
-          style="width: 100%;"
-          highlight-current-row
-          @current-change="handleSelectionChange"
-          @row-click="rowClick"
-        >
-          <!-- <el-table-column     v-for="(fruit,index) in formTheadOptions"  :key="`ind${index}`">
-              <el-radio v-model="fruit.id" ></el-radio>
-          </el-table-column>-->
-
-          <el-table-column
-            show-overflow-tooltip
-            v-for="(fruit,index) in formTheadOptions"
-            :align="fruit.align?fruit.align:'left'"
-            :key="`ind${index}`"
-            :sortable="fruit=='chaungjianriqi'?true:false"
-            style="background-color:silver;"
-            :label="fruit.label"
-            :width="fruit.width"
+        <div class="content-wrapper">
+          <el-table
+            ref="mainTable"
+            :data="checkList"
+            v-loading="listLoading"
+            border
+            fit
+            height="100%"
+            style="width: 100%;"
+            highlight-current-row
+            @current-change="handleSelectionChange"
+            @row-click="rowClick"
           >
-            <template slot-scope="scope">
-              <div class="link-container" v-if="fruit.name === 'serviceOrderId'">
-                <img :src="rightImg" @click="openTree(scope.row.serviceOrderId)" class="pointer">
-                <span>{{ scope.row.u_SAP_ID }}</span>
-              </div>
-              <!-- <el-link
-                v-if="fruit.name === 'serviceOrderId'"
-                type="primary"
-                @click="openTree(scope.row.serviceOrderId)"
-              >{{scope.row.serviceOrderId}}</el-link> -->
-              <span
-                :class="colorClass[scope.row[fruit.name]]"
-                v-if="fruit.name==='responseSpeed'||fruit.name==='schemeEffectiveness'||fruit.name==='serviceAttitude'||fruit.name==='productQuality'||fruit.name==='servicePrice'"
-              >{{backStatus(scope.row[fruit.name])}}</span>
-              <span
-                v-if="fruit.name!=='serviceOrderId'&&fruit.name!=='responseSpeed'&&fruit.name!=='schemeEffectiveness'&&fruit.name!=='serviceAttitude'&&fruit.name!=='productQuality'&&fruit.name!=='servicePrice'"
-              >{{scope.row[fruit.name]}}</span>
-            </template>
-          </el-table-column>
-        </el-table>
+            <!-- <el-table-column     v-for="(fruit,index) in formTheadOptions"  :key="`ind${index}`">
+                <el-radio v-model="fruit.id" ></el-radio>
+            </el-table-column>-->
+
+            <el-table-column
+              show-overflow-tooltip
+              v-for="(fruit,index) in formTheadOptions"
+              :align="fruit.align?fruit.align:'left'"
+              :key="`ind${index}`"
+              :sortable="fruit=='chaungjianriqi'?true:false"
+              style="background-color:silver;"
+              :label="fruit.label"
+              :width="fruit.width"
+            >
+              <template slot-scope="scope">
+                <div class="link-container" v-if="fruit.name === 'serviceOrderId'">
+                  <img :src="rightImg" @click="openTree(scope.row.serviceOrderId)" class="pointer">
+                  <span>{{ scope.row.u_SAP_ID }}</span>
+                </div>
+                <!-- <el-link
+                  v-if="fruit.name === 'serviceOrderId'"
+                  type="primary"
+                  @click="openTree(scope.row.serviceOrderId)"
+                >{{scope.row.serviceOrderId}}</el-link> -->
+                <span
+                  :class="colorClass[scope.row[fruit.name]]"
+                  v-if="fruit.name==='responseSpeed'||fruit.name==='schemeEffectiveness'||fruit.name==='serviceAttitude'||fruit.name==='productQuality'||fruit.name==='servicePrice'"
+                >{{backStatus(scope.row[fruit.name])}}</span>
+                <span
+                  v-if="fruit.name!=='serviceOrderId'&&fruit.name!=='responseSpeed'&&fruit.name!=='schemeEffectiveness'&&fruit.name!=='serviceAttitude'&&fruit.name!=='productQuality'&&fruit.name!=='servicePrice'"
+                >{{scope.row[fruit.name]}}</span>
+              </template>
+            </el-table-column>
+          </el-table>
+          <pagination
+            v-show="total>0"
+            :total="total"
+            :page.sync="listQuery.page"
+            :limit.sync="listQuery.limit"
+            @pagination="handleCurrentChange"
+          />
+        </div>
         <!-- 只能查看的表单 -->
         <el-dialog
           v-el-drag-dialog
@@ -92,13 +101,6 @@
             <el-button size="mini" type="primary" @click="dialogFormView = false">确认</el-button>
           </div>
         </el-dialog>
-        <pagination
-          v-show="total>0"
-          :total="total"
-          :page.sync="listQuery.page"
-          :limit.sync="listQuery.limit"
-          @pagination="handleCurrentChange"
-        />
       </div>
     </div>
   </div>
@@ -272,7 +274,7 @@ export default {
     getList() {
       this.listLoading = true;
       afterevaluation.getList(this.listQuery).then((res) => {
-        this.checkList = res.data;
+        this.checkList = res.data
         this.total = res.count;
         // this.list = response.data.data;
         this.listLoading = false;

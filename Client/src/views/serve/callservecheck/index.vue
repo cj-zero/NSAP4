@@ -13,60 +13,54 @@
     </sticky>
     <div class="app-container">
       <div class="bg-white">
-        <el-table
-          ref="mainTable"
-          :data="checkList"
-          v-loading="listLoading"
-          border
-          fit
-          max-height="750"
-          style="width: 100%;"
-          highlight-current-row
-          @current-change="handleSelectionChange"
-          @row-click="rowClick"
-        >
-          <!-- <el-table-column     v-for="(fruit,index) in formTheadOptions"  :key="`ind${index}`">
-              <el-radio v-model="fruit.id" ></el-radio>
-          </el-table-column>-->
-
-          <el-table-column
-            show-overflow-tooltip
-            v-for="(fruit,index) in formTheadOptions"
-            :align="fruit.align?fruit.align:'left'"
-            :key="`ind${index}`"
-            :sortable="fruit=='chaungjianriqi'?true:false"
-            style="background-color:silver;"
-            :label="fruit.label"
-            :width="fruit.width"
+        <div class="content-wrapper">
+          <el-table
+            ref="mainTable"
+            :data="checkList"
+            v-loading="listLoading"
+            border
+            fit
+            height="100%"
+            style="width: 100%;"
+            highlight-current-row
+            @current-change="handleSelectionChange"
+            @row-click="rowClick"
           >
-            <template slot-scope="scope">
-              <!-- <span
-                v-if="fruit.name === 'status'"
-                :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-              >{{stateValue[scope.row[fruit.name]-1]}}</span> -->
-              <!-- <span v-if="fruit.name === 'attendanceClockPictures'">
-                <showImg :PicturesList="scope.row[fruit.name]" 
-                ></showImg>
-
-              </span>  -->
-              <div class="link-container" v-if="fruit.name === 'attendanceClockPictures'">
-                <img :src="rightImg" @click="toView(scope.row[fruit.name])" class="pointer">
-                <span>查看</span>
-              </div>
-              <span
-                v-if="fruit.name !== 'attendanceClockPictures'"
-              >{{scope.row[fruit.name]}}</span>
-            </template>
-          </el-table-column>
-        </el-table>
-
-        <pagination
-          v-show="total>0"
-          :total="total"
-          :page.sync="listQuery.page"
-          :limit.sync="listQuery.limit"
-          @pagination="handleCurrentChange"
-        />
+            <el-table-column
+              show-overflow-tooltip
+              v-for="(fruit,index) in formTheadOptions"
+              :align="fruit.align?fruit.align:'left'"
+              :key="`ind${index}`"
+              :sortable="fruit=='chaungjianriqi'?true:false"
+              style="background-color:silver;"
+              :label="fruit.label"
+              :width="fruit.width"
+            >
+              <template slot-scope="scope">
+                <!-- <span
+                  v-if="fruit.name === 'status'"
+                  :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
+                >{{stateValue[scope.row[fruit.name]-1]}}</span> -->
+                <div class="link-container" 
+                  v-if="fruit.name === 'attendanceClockPictures' && scope.row[fruit.name] && scope.row[fruit.name].length"
+                >
+                  <img :src="rightImg" @click="toView(scope.row[fruit.name])" class="pointer">
+                  <span>查看</span>
+                </div>
+                <span
+                  v-if="fruit.name !== 'attendanceClockPictures'"
+                >{{scope.row[fruit.name]}}</span>
+              </template>
+            </el-table-column>
+          </el-table>
+          <pagination
+            v-show="total>0"
+            :total="total"
+            :page.sync="listQuery.page"
+            :limit.sync="listQuery.limit"
+            @pagination="handleCurrentChange"
+          />
+        </div>
       </div>
       <el-image-viewer
         v-if="previewVisible"
@@ -111,7 +105,7 @@ export default {
         { name: "org", label: "部门" ,width:'100px'},
         // { name: "clockTime", label: "打卡时间" ,width:'100px'},
          { name: "clockDate", label: "打卡日期", width: '150' },
-        { name: "location", label: "地点" },
+        { name: "location", label: "地点", width: 360 },
         // { name: "specificLocation", label: "详细地址" },
         { name: "visitTo", label: "拜访对象", width: 100 },
         { name: "remark", label: "备注" },

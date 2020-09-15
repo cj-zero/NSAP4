@@ -21,7 +21,7 @@ import { noop } from '@/utils/declaration'
 export default {
   props: {
     width: {
-      type: Stirng,
+      type: String,
       default: '50%'
     },
     title: {
