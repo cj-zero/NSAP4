@@ -14,14 +14,16 @@
     </sticky>
       <div class="app-container">
         <div class="bg-white">
-          <common-table :data="tableData" :columns="columns" :loading="tableLoading"></common-table>
-          <pagination
-            v-show="total>0"
-            :total="total"
-            :page.sync="listQuery.page"
-            :limit.sync="listQuery.limit"
-            @pagination="handleCurrentChange"
-          />
+          <div class="content-wrapper">
+            <common-table :data="tableData" :columns="columns" :loading="tableLoading"></common-table>
+            <pagination
+              v-show="total>0"
+              :total="total"
+              :page.sync="listQuery.page"
+              :limit.sync="listQuery.limit"
+              @pagination="handleCurrentChange"
+            />
+          </div>
         </div>
         <my-dialog
           ref="myDialog"

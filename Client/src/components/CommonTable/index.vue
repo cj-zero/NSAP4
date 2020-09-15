@@ -1,5 +1,11 @@
 <template>
-  <el-table :data="data" v-loading="loading" size="mini">
+  <el-table 
+    :data="data" 
+    v-loading="loading" 
+    size="mini"
+    stripe
+    border
+    max-height="750px">
     <el-table-column
       v-for="item in columns"
       :key="item.prop"
@@ -7,6 +13,7 @@
       :label="item.label"
       :align="item.align || 'left'"
       :sortable="item.isSort || false"
+      :type="item.originType || ''"
     >
       <template slot-scope="scope" >
         <div class="link-container" v-if="item.type === 'link'">
