@@ -8,8 +8,8 @@ export let reportMixin = {
       reportData: [], // 完工报告数据
       serviceModeMap: {
         1: '电话服务',
-        2: '返厂服务',
-        3: '上门服务'
+        2: '上门服务',
+        3: '返厂维修'
       }
     }
   },

@@ -155,7 +155,7 @@ export default {
         { name: "caontactTel", label: "联系电话" },
         { name: "technician", label: "技术员" },
         { name: "responseSpeed", label: "响应速度" },
-        { name: "schemeEffectiveness", label: "方案有效性" },
+        { name: "schemeEffectiveness", label: "方案有效性", width: 90 },
         { name: "serviceAttitude", label: "服务态度" },
         { name: "productQuality", label: "产品质量" },
         { name: "servicePrice", label: "服务价格" },

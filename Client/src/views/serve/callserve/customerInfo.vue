@@ -11,7 +11,7 @@
         <el-input v-model="formData.cardCode"></el-input>
       </el-form-item>
       <el-form-item label="客户名称">
-        <el-input v-model="formData.cardCode"></el-input>
+        <el-input v-model="formData.cardName"></el-input>
       </el-form-item>
       <el-form-item label="更新时间">
         <el-input v-model="formData.updateDate"></el-input>

@@ -38,3 +38,10 @@ export function getList(params) {
     })
 }
 
+export function getCustomerInfo (params) {
+  return request({
+    url: '/Sap/BusinessPartner/GetBusinessAssociate',
+    method: 'get',
+    params
+  })
+}

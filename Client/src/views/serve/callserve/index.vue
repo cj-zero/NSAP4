@@ -314,6 +314,19 @@
           :data="reportData"
         ></Report>
       </el-dialog>
+      <el-dialog
+        v-el-drag-dialog
+        width="983px"
+        class="dialog-mini"
+        :close-on-click-modal="false"
+        title="分析报表"
+        :visible.sync="dialogAnalysisVisible"
+      >
+        <Analysis
+          ref="report"
+          :data="analysisData"
+        ></Analysis>
+      </el-dialog>
     </div>
   </div>
 </template>
@@ -324,6 +337,7 @@ import * as callservesure from "@/api/serve/callservesure";
 import * as businesspartner from "@/api/businesspartner";
 import * as afterEvaluation from '@/api/serve/afterevaluation'
 import * as problemtypes from "@/api/problemtypes";
+import { getReport } from '@/api/serve/report'
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
@@ -338,6 +352,7 @@ import CustomerInfo from './customerInfo'
 import rightImg from '@/assets/table/right.png'
 import Rate from './rate'
 import Report from '../common/components/report'
+import Analysis from './workOrderReport'
 import { chatMixin, reportMixin, tableMixin } from '../common/js/mixins'
 export default {
   provide () {
@@ -385,7 +400,8 @@ export default {
     CustomerInfo,
     Rate,
     Report,
-    Search
+    Search,
+    Analysis
   },
   directives: {
     waves,
@@ -548,7 +564,9 @@ export default {
       commentList: {}, // 评价内容 (新增评价或者查看评价 都要用到)
       newCommentList: {}, // 用于存放修改后的评分列表
       isView: false, // 评分标识(是否是查看)
-      advancedVisible: false // 高级搜索是否展示
+      advancedVisible: false, // 高级搜索是否展示
+      dialogAnalysisVisible: false,
+      analysisData: []
     };
   },
   filters: {
@@ -675,10 +693,12 @@ export default {
       if (!customerId) {
         return this.$message.error('客户代码不能为空!')
       }
-      this.listQuery.CardCodeOrCardName = customerId
-      businesspartner.getList(this.listQuery)
+      // this.listQuery.CardCodeOrCardName = customerId
+      businesspartner.getCustomerInfo({ CardCode: customerId })
         .then((response) => {
-          this.customerInfo = response.data[0];
+          let { cellular, phone1 } = response.data
+          response.data.cellular = cellular || phone1
+          this.customerInfo = response.data;
           this.dialogInfoVisible = true
         })
         .catch(() => {
@@ -718,6 +738,9 @@ export default {
           }
           this.handleReport(this.multipleSelection.serviceOrderId, this.multipleSelection.serviceWorkOrders) // 传入key中的第一个 服务单ID
           break;
+        case "btnAnalysis":
+          this.handleAnalysis()
+          break
         case "btnPhone": // 电话回访
           if (!this.multipleSelection.serviceOrderId) {
             this.$message({
@@ -981,6 +1004,11 @@ export default {
         }).catch(err => {
           this.$message.error(err.message)
         })
+      })
+    },
+    handleAnalysis () {
+      getReport(this.listQuery).then(res => {
+        console.log(res, 'Analysis')
       })
     },
     handlePhone (row) { // 电话回访
