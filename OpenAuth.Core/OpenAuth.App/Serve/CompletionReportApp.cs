@@ -1,18 +1,16 @@
-﻿using System;
-using System.Linq;
-using Infrastructure;
+﻿using Infrastructure;
+using Infrastructure.Extensions;
+using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
+using OpenAuth.App.Serve.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
-using System.Reactive;
-using Infrastructure.Extensions;
-using OpenAuth.App.Serve.Response;
-using Npoi.Mapper;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace OpenAuth.App
 {
@@ -112,8 +110,10 @@ namespace OpenAuth.App
             //反写完工报告Id至工单
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id),
                 o => new ServiceWorkOrder { CompletionReportId = completionReportId, CompleteDate = DateTime.Now });
+            //获取当前服务单下的所有消息Id集合
+            var msgList = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == req.ServiceOrderId).Select(s => s.Id).ToListAsync();
             //清空消息为已读
-            await UnitWork.UpdateAsync<ServiceOrderMessageUser>(s => s.FroUserId == req.CurrentUserId.ToString(), e => new ServiceOrderMessageUser { HasRead = true });
+            await UnitWork.UpdateAsync<ServiceOrderMessageUser>(s => s.FroUserId == req.CurrentUserId.ToString() && msgList.Contains(s.MessageId), e => new ServiceOrderMessageUser { HasRead = true });
             //解除隐私号码绑定
             //await UnbindProtectPhone(req.ServiceOrderId, req.MaterialType);
         }
