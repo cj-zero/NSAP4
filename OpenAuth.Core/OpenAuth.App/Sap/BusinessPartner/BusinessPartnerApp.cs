@@ -18,7 +18,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
     {
 
 
-        public BusinessPartnerApp(IUnitWork unitWork, IAuth auth) : base(unitWork,auth)
+        public BusinessPartnerApp(IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
         {
         }
 
@@ -36,13 +36,19 @@ namespace OpenAuth.App.Sap.BusinessPartner
                         from e in ae.DefaultIfEmpty()
                         select new { a, b, c, d, e };
             query = query.WhereIf(!string.IsNullOrWhiteSpace(req.CardCodeOrCardName), q => q.a.CardCode.Contains(req.CardCodeOrCardName) || q.a.CardName.Contains(req.CardCodeOrCardName));
-            var query2 = query.Select(q => new {
-                            q.a.CardCode, q.a.CardName, q.a.CntctPrsn, q.b.SlpName, q.a.Currency, q.a.Balance,
-                            Address = $"{ q.a.ZipCode ?? "" }{ q.c.Name ?? "" }{ q.d.Name ?? "" }{ q.a.City ?? ""}{ q.a.Building ?? "" }",
-                            Address2 = $"{ q.a.MailZipCod ?? "" }{ q.e.Name ?? "" }{ q.d.Name ?? "" }{ q.a.MailCity ?? "" }{ q.a.MailBuildi ?? "" }",
-                            q.a.U_FPLB,
-                            q.a.SlpCode
-                        });
+            var query2 = query.Select(q => new
+            {
+                q.a.CardCode,
+                q.a.CardName,
+                q.a.CntctPrsn,
+                q.b.SlpName,
+                q.a.Currency,
+                q.a.Balance,
+                Address = $"{ q.a.ZipCode ?? "" }{ q.c.Name ?? "" }{ q.d.Name ?? "" }{ q.a.City ?? ""}{ q.a.Building ?? "" }",
+                Address2 = $"{ q.a.MailZipCod ?? "" }{ q.e.Name ?? "" }{ q.d.Name ?? "" }{ q.a.MailCity ?? "" }{ q.a.MailBuildi ?? "" }",
+                q.a.U_FPLB,
+                q.a.SlpCode
+            });
 
 
             //var propertyStr = string.Join(',', properties.Select(u => u.Key));
@@ -79,25 +85,45 @@ namespace OpenAuth.App.Sap.BusinessPartner
             query = query.WhereIf(!string.IsNullOrWhiteSpace(req.CardCodeOrCardName), q => q.a.CardCode.Contains(req.CardCodeOrCardName) || q.a.CardName.Contains(req.CardCodeOrCardName))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), q => q.a.CardCode.Equals(carCode))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.slpName), q => q.b.SlpName.Contains(req.slpName));
-                         
-            var query2 = await query.Select(q => new {
-                            q.a.CardCode, q.a.CardName, q.a.CntctPrsn, q.b.SlpName, q.a.Currency,
-                            Balance = q.a.Balance ?? 0m,
-                            Technician = $"{q.e.lastName??""}{q.e.firstName}",
-                            Address = $"{ q.a.ZipCode ?? "" }{ q.f.Name ?? "" }{ q.g.Name ?? "" }{ q.a.City ?? "" }{ q.a.Building ?? "" }",
-                            Address2 = $"{ q.a.MailZipCod ?? "" }{ q.f.Name ?? "" }{ q.g.Name ?? "" }{ q.a.MailCity ?? "" }{ q.a.MailBuildi ?? "" }",
-                            q.a.Phone1, q.a.Cellular,q.a.DNotesBal,q.a.OrdersBal,
-                            q.a.OprCount,q.a.UpdateDate,q.a.DfTcnician,
-                            BalanceTotal = 0.00m,
-                            q.a.validFor,q.a.validFrom,q.a.validTo,q.a.ValidComm,q.a.frozenFor,q.a.frozenFrom,q.a.frozenTo,q.a.FrozenComm,q.a.QryGroup2,q.a.QryGroup3,
-                            q.c.GroupName,q.a.Free_Text,
-                            q.a.U_FPLB,
-                            q.a.SlpCode
-                        }).ToListAsync();
 
-            if (!string.IsNullOrWhiteSpace(req.Technician)) query2= query2.Where(q => q.Technician.Contains(req.Technician)).ToList();
-            if(!string.IsNullOrWhiteSpace(req.Address)) query2= query2.Where(q => q.Address2.Contains(req.Address)).ToList();
-                        
+            var query2 = await query.Select(q => new
+            {
+                q.a.CardCode,
+                q.a.CardName,
+                q.a.CntctPrsn,
+                q.b.SlpName,
+                q.a.Currency,
+                Balance = q.a.Balance ?? 0m,
+                Technician = $"{q.e.lastName ?? ""}{q.e.firstName}",
+                Address = $"{ q.a.ZipCode ?? "" }{ q.f.Name ?? "" }{ q.g.Name ?? "" }{ q.a.City ?? "" }{ q.a.Building ?? "" }",
+                Address2 = $"{ q.a.MailZipCod ?? "" }{ q.f.Name ?? "" }{ q.g.Name ?? "" }{ q.a.MailCity ?? "" }{ q.a.MailBuildi ?? "" }",
+                q.a.Phone1,
+                q.a.Cellular,
+                q.a.DNotesBal,
+                q.a.OrdersBal,
+                q.a.OprCount,
+                q.a.UpdateDate,
+                q.a.DfTcnician,
+                BalanceTotal = 0.00m,
+                q.a.validFor,
+                q.a.validFrom,
+                q.a.validTo,
+                q.a.ValidComm,
+                q.a.frozenFor,
+                q.a.frozenFrom,
+                q.a.frozenTo,
+                q.a.FrozenComm,
+                q.a.QryGroup2,
+                q.a.QryGroup3,
+                q.c.GroupName,
+                q.a.Free_Text,
+                q.a.U_FPLB,
+                q.a.SlpCode
+            }).ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(req.Technician)) query2 = query2.Where(q => q.Technician.Contains(req.Technician)).ToList();
+            if (!string.IsNullOrWhiteSpace(req.Address)) query2 = query2.Where(q => q.Address2.Contains(req.Address)).ToList();
+
             //query3.Where(q=>q.Technician.Contains(req.Technician));
             //var propertyStr = string.Join(',', properties.Select(u => u.Key));
             //result.columnHeaders = properties;
@@ -132,7 +158,8 @@ namespace OpenAuth.App.Sap.BusinessPartner
                         select new { a, b, c, d, e, f, g };
             query = query.Where(q => q.a.CardCode.Equals(CardCode));
 
-            var BusinessAssociate = await query.Select(q => new {
+            var BusinessAssociate = await query.Select(q => new
+            {
                 q.a.CardCode,
                 q.a.CardName,
                 q.a.CntctPrsn,
@@ -203,14 +230,48 @@ namespace OpenAuth.App.Sap.BusinessPartner
                 q.a.Phone1,
                 q.a.SlpCode,
                 q.b.SlpName,
-                TechID= q.a.DfTcnician,
-                TechName= $"{q.e.lastName ?? ""}{q.e.firstName}",
+                TechID = q.a.DfTcnician,
+                TechName = $"{q.e.lastName ?? ""}{q.e.firstName}",
                 CntctPrsnList = UnitWork.Find<OCPR>(null).Where(o => o.CardCode.Equals(q.a.CardCode)).ToList(),
                 AddressList = UnitWork.Find<CRD1>(null).Where(o => o.CardCode.Equals(q.a.CardCode)).ToList(),
             });
 
             var rltList = await query.FirstOrDefaultAsync();
             var result = rltList.MapTo<BusinessPartnerDetailsResp>();
+            return result;
+        }
+
+        /// <summary>
+        /// 验证是否存在客户（新威智能App）
+        /// </summary>
+        /// <param name="cardCode">客户编码</param>
+        /// <param name="customerName">客户编码</param>
+        /// <returns></returns>
+        public async Task<TableData> AppGetCustomerCode(string cardCode, string customerName)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var obj = from a in UnitWork.Find<OCRD>(null)
+                      join b in UnitWork.Find<OSLP>(null) on a.SlpCode equals b.SlpCode into ab
+                      from b in ab.DefaultIfEmpty()
+                      join e in UnitWork.Find<OHEM>(null) on a.DfTcnician equals e.empID into ae
+                      from e in ae.DefaultIfEmpty()
+                      select new { a, b, e };
+            obj = obj.Where(o => o.a.CardCode.ToLower().Equals(cardCode.ToLower()) && o.a.CardName.ToLower().Equals(customerName.ToLower()));
+
+            var rltList = await obj.Select(q => new
+            {
+                q.a.CardCode,
+            }).FirstOrDefaultAsync();
+            if (rltList == null)
+            {
+                throw new CommonException("当前客户不存在", 90016);
+            }
+            result.Data = rltList.CardCode;
             return result;
         }
     }

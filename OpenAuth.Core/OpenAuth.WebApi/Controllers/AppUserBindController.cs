@@ -22,7 +22,7 @@ namespace OpenAuth.WebApi.Controllers
         private readonly AppUserBindApp _app;
         private readonly HttpClienService _httpClienService;
 
-        public AppUserBindController(AppUserBindApp app, IOptions<AppSetting> appConfiguration, HttpClienService httpClienService)
+        public AppUserBindController(AppUserBindApp app, HttpClienService httpClienService)
         {
             _app = app;
             _httpClienService = httpClienService;

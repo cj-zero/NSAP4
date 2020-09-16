@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
+using OpenAuth.App.Sap.BusinessPartner;
 
 namespace NSAP.App.WebApi.Controllers
 {
@@ -19,10 +20,11 @@ namespace NSAP.App.WebApi.Controllers
     public class UserManageController : Controller
     {
         private readonly AppUserBindApp _app;
-
-        public UserManageController(AppUserBindApp app)
+        private readonly BusinessPartnerApp _businessPartnerApp;
+        public UserManageController(AppUserBindApp app, BusinessPartnerApp businessPartnerApp)
         {
             _app = app;
+            _businessPartnerApp = businessPartnerApp;
         }
 
         /// <summary>
@@ -64,6 +66,29 @@ namespace NSAP.App.WebApi.Controllers
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
             }
+            return result;
+        }
+
+        /// <summary>
+        /// 验证是否存在客户（新威智能App）
+        /// </summary>
+        /// <param name="cardCode">客户编号</param>
+        /// /// <param name="custName">客户名称</param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> AppGetCustomerCode(string cardCode, string custName)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _businessPartnerApp.AppGetCustomerCode(cardCode, custName);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
             return result;
         }
     }
