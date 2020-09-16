@@ -622,7 +622,7 @@ export default {
         this.listLoading = false
       } else {
         callservepushm
-          .SendOrders(this.params)
+          .nSAPSendOrders(this.params)
           .then((res) => {
             if (res.code == 200) {
               this.dataForm = res.result;
