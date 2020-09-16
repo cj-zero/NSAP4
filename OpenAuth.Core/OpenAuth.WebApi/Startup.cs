@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http.Headers;
 using Autofac;
 using IdentityServer4.AccessTokenValidation;
 using Infrastructure;
@@ -176,8 +177,13 @@ namespace OpenAuth.WebApi
             ///CAP
             services.AddNewareCAP(Configuration);
 
-            services.AddHttpClient<HttpHelper>();
-
+            services.AddHttpClient("NsapApp", c =>
+            {
+                var appServerUrl = Configuration.GetValue<string>("AppSetting:AppServerUrl");
+                c.BaseAddress = new Uri(appServerUrl);
+                c.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json; charset=utf-8");
+            });
+            services.AddSingleton<HttpClienService>();
         }
 
         public void ConfigureContainer(ContainerBuilder builder)

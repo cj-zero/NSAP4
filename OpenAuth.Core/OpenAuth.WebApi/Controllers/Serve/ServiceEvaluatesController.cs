@@ -20,14 +20,11 @@ namespace OpenAuth.WebApi.Controllers
     public class ServiceEvaluatesController : ControllerBase
     {
         private readonly ServiceEvaluateApp _app;
-        private IOptions<AppSetting> _appConfiguration;
-        private readonly HttpHelper _helper;
-
-        public ServiceEvaluatesController(ServiceEvaluateApp app, IOptions<AppSetting> appConfiguration)
+        private readonly HttpClienService _httpClienService;
+        public ServiceEvaluatesController(ServiceEvaluateApp app, HttpClienService httpClienService)
         {
             _app = app;
-            _appConfiguration = appConfiguration;
-            _helper = new HttpHelper(_appConfiguration.Value.AppServerUrl);
+            _httpClienService = httpClienService;
         }
 
         //获取详情
@@ -75,7 +72,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Response();
             try
             {
-                var r = _helper.Post(req, "api/serve/ServiceOrder/AppEvaluateAdd", Request.Headers["X-Token"].ToString());
+                var r = await _httpClienService.Post(req, "api/serve/ServiceOrder/AppEvaluateAdd");
                 result = JsonConvert.DeserializeObject<Response>(r);
                 //await _app.AppAdd(req);
 
@@ -104,8 +101,7 @@ namespace OpenAuth.WebApi.Controllers
                 parameters.Add("VisitPeopleId", request.VisitPeopleId);
                 parameters.Add("DateFrom", request.DateFrom);
                 parameters.Add("DateTo", request.DateTo);
-                parameters.Add("X-Token", Request.Headers["X-Token"].ToString());
-                var r = _helper.Get(parameters, "api/serve/ServiceOrder/AppEvaluateLoad");
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/AppEvaluateLoad");
                 result = JsonConvert.DeserializeObject<TableData>(r);
             }
             catch (Exception ex)
