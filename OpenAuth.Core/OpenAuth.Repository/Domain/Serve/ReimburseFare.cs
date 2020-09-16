@@ -79,6 +79,17 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("备注")]
         public string Remark { get; set; }
+        /// <summary>
+        /// 我的费用Id
+        /// </summary>
+        [Description("我的费用Id")]
+        public string MyExpendsId { get; set; }
+
+        /// <summary>
+        /// 创建时间
+        /// </summary>
+        [Description("创建时间")]
+        public DateTime CreateTime { get; set; }
 
         public override void GenerateDefaultKeyVal()
         {
