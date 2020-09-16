@@ -107,6 +107,67 @@ namespace OpenAuth.App.Sap.BusinessPartner
             result.Count = query2.Count();
             return result;
         }
+
+        /// <summary>
+        /// 服务呼叫查询单个客户信息 by zlg 2020.09.15
+        /// </summary>
+        /// <param name="CardCode"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetBusinessAssociate(string CardCode)
+        {
+            var result = new TableData();
+            var query = from a in UnitWork.Find<OCRD>(null)
+                        join b in UnitWork.Find<OSLP>(null) on a.SlpCode equals b.SlpCode into ab
+                        from b in ab.DefaultIfEmpty()
+                        join c in UnitWork.Find<OCRG>(null) on (int)a.GroupCode equals c.GroupCode into ac
+                        from c in ac.DefaultIfEmpty()
+                        join d in UnitWork.Find<OIDC>(null) on a.Indicator equals d.Code into ad
+                        from d in ad.DefaultIfEmpty()
+                        join e in UnitWork.Find<OHEM>(null) on a.DfTcnician equals e.empID into ae
+                        from e in ae.DefaultIfEmpty()
+                        join f in UnitWork.Find<OCRY>(null) on a.Country equals f.Code into af
+                        from f in af.DefaultIfEmpty()
+                        join g in UnitWork.Find<OCST>(null) on a.State1 equals g.Code into ag
+                        from g in ag.DefaultIfEmpty()
+                        select new { a, b, c, d, e, f, g };
+            query = query.Where(q => q.a.CardCode.Equals(CardCode));
+
+            var BusinessAssociate = await query.Select(q => new {
+                q.a.CardCode,
+                q.a.CardName,
+                q.a.CntctPrsn,
+                q.b.SlpName,
+                q.a.Currency,
+                Balance = q.a.Balance ?? 0m,
+                Technician = $"{q.e.lastName ?? ""}{q.e.firstName}",
+                Address = $"{ q.a.ZipCode ?? "" }{ q.f.Name ?? "" }{ q.g.Name ?? "" }{ q.a.City ?? "" }{ q.a.Building ?? "" }",
+                Address2 = $"{ q.a.MailZipCod ?? "" }{ q.f.Name ?? "" }{ q.g.Name ?? "" }{ q.a.MailCity ?? "" }{ q.a.MailBuildi ?? "" }",
+                q.a.Phone1,
+                q.a.Cellular,
+                q.a.DNotesBal,
+                q.a.OrdersBal,
+                q.a.OprCount,
+                q.a.UpdateDate,
+                q.a.DfTcnician,
+                BalanceTotal = 0.00m,
+                q.a.validFor,
+                q.a.validFrom,
+                q.a.validTo,
+                q.a.ValidComm,
+                q.a.frozenFor,
+                q.a.frozenFrom,
+                q.a.frozenTo,
+                q.a.FrozenComm,
+                q.a.QryGroup2,
+                q.a.QryGroup3,
+                q.c.GroupName,
+                q.a.Free_Text,
+                q.a.U_FPLB,
+                q.a.SlpCode
+            }).FirstOrDefaultAsync();
+            result.Data = BusinessAssociate;
+            return result;
+        }
         /// <summary>
         /// 通过客户编码得到业务伙伴名称，联系人与地址列表
         /// </summary>
