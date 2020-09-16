@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Infrastructure.Extensions;
+using OpenAuth.Repository.Domain;
 
 namespace OpenAuth.App.Sap.BusinessPartner
 {
@@ -70,14 +71,17 @@ namespace OpenAuth.App.Sap.BusinessPartner
                         join g in UnitWork.Find<OCST>(null) on a.State1 equals g.Code into ag
                         from g in ag.DefaultIfEmpty()
                         select new { a, b, c, d, e, f, g };
-            var carCode = "";
+            List<string> carCode = new List<string>();
             if (!string.IsNullOrWhiteSpace(req.ManufSN))
             {
-                carCode = await UnitWork.Find<OINS>(null).Where(o => o.manufSN.Contains(req.ManufSN)).Select(o => o.customer).FirstOrDefaultAsync();
-            }
+                carCode = await UnitWork.Find<OINS>(null).Where(o => o.manufSN.Contains(req.ManufSN)).Select(o => o.customer).ToListAsync();
+                if (carCode.Count==0) {
+                    carCode = await UnitWork.Find<ServiceOins>(s => s.manufSN.Contains(req.ManufSN)).Select(s => s.customer).ToListAsync() ;
+                }
+            } 
 
             query = query.WhereIf(!string.IsNullOrWhiteSpace(req.CardCodeOrCardName), q => q.a.CardCode.Contains(req.CardCodeOrCardName) || q.a.CardName.Contains(req.CardCodeOrCardName))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), q => q.a.CardCode.Equals(carCode))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), q => carCode.Contains(q.a.CardCode))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.slpName), q => q.b.SlpName.Contains(req.slpName));
                          
             var query2 = await query.Select(q => new {
@@ -105,6 +109,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
                 .Skip((req.page - 1) * req.limit)
                 .Take(req.limit);
             result.Count = query2.Count();
+           
             return result;
         }
 
