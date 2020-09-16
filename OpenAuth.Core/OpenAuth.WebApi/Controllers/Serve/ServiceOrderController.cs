@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Infrastructure;
@@ -13,6 +14,7 @@ using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.App.Serve.Request;
 using OpenAuth.Repository.Domain;
+using static Infrastructure.HttpHelper;
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -28,16 +30,14 @@ namespace OpenAuth.WebApi.Controllers
     {
         private readonly ServiceOrderApp _serviceOrderApp;
         private AppServiceOrderLogApp _appServiceOrderLogApp;
-        private IOptions<AppSetting> _appConfiguration;
-        private readonly HttpHelper _helper;
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
+        private readonly HttpClienService _httpClienService;
 
-        public ServiceOrderController(ServiceOrderApp serviceOrderApp, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration)
+        public ServiceOrderController(ServiceOrderApp serviceOrderApp, AppServiceOrderLogApp appServiceOrderLogApp, HttpClienService httpClienService)
         {
             _serviceOrderApp = serviceOrderApp;
             _appServiceOrderLogApp = appServiceOrderLogApp;
-            _appConfiguration = appConfiguration;
-            _helper = new HttpHelper(_appConfiguration.Value.AppServerUrl);
+            _httpClienService = httpClienService;
         }
 
 
@@ -692,7 +692,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Response();
             try
             {
-                var r = _helper.Post(addServiceOrderReq, "api/serve/ServiceOrder/Add", Request.Headers["X-Token"].ToString());
+                var r = await _httpClienService.Post(addServiceOrderReq, "api/serve/ServiceOrder/Add");
                 result = JsonConvert.DeserializeObject<Response>(r);
                 //await _serviceOrderApp.Add(addServiceOrderReq);
             }
@@ -717,8 +717,8 @@ namespace OpenAuth.WebApi.Controllers
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("ServiceOrderId", request.ServiceOrderId);
                 parameters.Add("MaterialType", request.MaterialType);
-                parameters.Add("X-Token", Request.Headers["X-Token"].ToString());
-                var r = _helper.Get(parameters, "api/serve/ServiceOrder/AppLoadServiceOrderDetails");
+                
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/AppLoadServiceOrderDetails");
                 result = JsonConvert.DeserializeObject<Response<dynamic>>(r);
                 //result = await _serviceOrderApp.AppLoadServiceOrderDetails(request);
             }
@@ -742,8 +742,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("ServiceOrderId", ServiceOrderId);
-                parameters.Add("X-Token", Request.Headers["X-Token"].ToString());
-                var r = _helper.Get(parameters, "api/serve/ServiceOrder/GetAppCustServiceOrderDetails");
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetAppCustServiceOrderDetails");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _serviceOrderApp.GetAppCustServiceOrderDetails(ServiceOrderId);
             }
@@ -772,8 +771,8 @@ namespace OpenAuth.WebApi.Controllers
                 parameters.Add("limit", request.limit);
                 parameters.Add("page", request.page);
                 parameters.Add("key", request.key);
-                parameters.Add("X-Token", Request.Headers["X-Token"].ToString());
-                var r = _helper.Get(parameters, "api/serve/ServiceOrder/AppLoad");
+                
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/AppLoad");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _serviceOrderApp.AppLoad(request);
             }
@@ -807,8 +806,7 @@ namespace OpenAuth.WebApi.Controllers
                 parameters.Add("limit", req.limit);
                 parameters.Add("page", req.page);
                 parameters.Add("key", req.key);
-                parameters.Add("X-Token", Request.Headers["X-Token"].ToString());
-                var r = _helper.Get(parameters, "api/serve/ServiceOrder/GetTechnicianServiceOrder");
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetTechnicianServiceOrder");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _serviceOrderApp.GetTechnicianServiceOrder(req);
             }
@@ -834,8 +832,8 @@ namespace OpenAuth.WebApi.Controllers
                 parameters.Add("SapOrderId", SapOrderId);
                 parameters.Add("CurrentUserId", CurrentUserId);
                 parameters.Add("MaterialType", MaterialType);
-                parameters.Add("X-Token", Request.Headers["X-Token"].ToString());
-                var r = _helper.Get(parameters, "api/serve/ServiceOrder/AppTechnicianLoad");
+                
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/AppTechnicianLoad");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _serviceOrderApp.AppTechnicianLoad(SapOrderId, CurrentUserId, MaterialType);
             }
@@ -859,7 +857,7 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 var parameters = new { request.ServiceOrderId, request.Type, request.CurrentUserId, request.MaterialType };
-                var r = _helper.Post(parameters, "api/serve/ServiceOrder/SaveOrderTakeType", Request.Headers["X-Token"].ToString());
+                var r = await _httpClienService.Post(parameters, "api/serve/ServiceOrder/SaveOrderTakeType");
                 result = JsonConvert.DeserializeObject<Response>(r);
                 //await _serviceOrderApp.SaveOrderTakeType(request);
             }
@@ -883,7 +881,7 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 var parameters = new { req.BookingDate, req.ServiceOrderId, req.CurrentUserId, req.MaterialType };
-                var r = _helper.Post(parameters, "api/serve/ServiceOrder/BookingWorkOrder", Request.Headers["X-Token"].ToString());
+                var r = await _httpClienService.Post(parameters, "api/serve/ServiceOrder/BookingWorkOrder");
                 result = JsonConvert.DeserializeObject<Response>(r);
                 //await _serviceOrderApp.BookingWorkOrder(req);
             }
@@ -907,7 +905,7 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 var parameters = new { req.MaterialType, req.ServiceOrderId, req.CurrentUserId, req.ErrorWorkOrderIds, req.CheckWorkOrderIds };
-                var r = _helper.Post(parameters, "api/serve/ServiceOrder/CheckTheEquipment", Request.Headers["X-Token"].ToString());
+                var r = await _httpClienService.Post(parameters, "api/serve/ServiceOrder/CheckTheEquipment");
                 result = JsonConvert.DeserializeObject<Response>(r);
                 //await _serviceOrderApp.CheckTheEquipment(req);
             }
@@ -931,7 +929,7 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 var parameters = new { request.MaterialType, request.ServiceOrderId, request.CurrentUserId, request.Description };
-                var r = _helper.Post(parameters, "api/serve/ServiceOrder/UpdateWorkOrderDescription", Request.Headers["X-Token"].ToString());
+                var r = await _httpClienService.Post(parameters, "api/serve/ServiceOrder/UpdateWorkOrderDescription");
                 result = JsonConvert.DeserializeObject<Response>(r);
                 //await _serviceOrderApp.UpdateWorkOrderDescription(request);
             }
@@ -955,7 +953,7 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 var parameters = new { req.MaterialType, req.ServiceOrderId, req.CurrentUserId, req.SolutionId };
-                var r = _helper.Post(parameters, "api/serve/ServiceOrder/SaveWorkOrderSolution", Request.Headers["X-Token"].ToString());
+                var r = await _httpClienService.Post(parameters, "api/serve/ServiceOrder/SaveWorkOrderSolution");
                 result = JsonConvert.DeserializeObject<Response>(r);
                 //await _serviceOrderApp.SaveWorkOrderSolution(req);
             }
@@ -1015,8 +1013,7 @@ namespace OpenAuth.WebApi.Controllers
                 parameters.Add("ServiceOrderId", req.ServiceOrderId);
                 parameters.Add("TechnicianId", req.TechnicianId);
                 parameters.Add("Type", req.Type);
-                parameters.Add("X-Token", Request.Headers["X-Token"].ToString());
-                var r = _helper.Get(parameters, "api/serve/ServiceOrder/GetAppTechnicianServiceWorkOrder");
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetAppTechnicianServiceWorkOrder");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _serviceOrderApp.GetAppTechnicianServiceWorkOrder(req);
             }
@@ -1046,8 +1043,8 @@ namespace OpenAuth.WebApi.Controllers
                 parameters.Add("SapOrderId", SapOrderId);
                 parameters.Add("CurrentUserId", CurrentUserId);
                 parameters.Add("MaterialType", MaterialType);
-                parameters.Add("X-Token", Request.Headers["X-Token"].ToString());
-                var r = _helper.Get(parameters, "api/serve/ServiceOrder/GetAppTechnicianServiceOrderDetails");
+                
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetAppTechnicianServiceOrderDetails");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _serviceOrderApp.GetAppTechnicianServiceOrderDetails(SapOrderId, CurrentUserId, MaterialType);
             }
@@ -1071,8 +1068,8 @@ namespace OpenAuth.WebApi.Controllers
             {
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("ServiceOrderId", ServiceOrderId);
-                parameters.Add("X-Token", Request.Headers["X-Token"].ToString());
-                var r = _helper.Get(parameters, "api/serve/ServiceOrder/GetAppTechServiceOrderDetails");
+                
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetAppTechServiceOrderDetails");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _serviceOrderApp.GetAppTechServiceOrderDetails(ServiceOrderId);
             }
@@ -1103,8 +1100,7 @@ namespace OpenAuth.WebApi.Controllers
                 parameters.Add("limit", req.limit);
                 parameters.Add("page", req.page);
                 parameters.Add("key", req.key);
-                parameters.Add("X-Token", Request.Headers["X-Token"].ToString());
-                var r = _helper.Get(parameters, "api/serve/ServiceOrder/AppUnConfirmedServiceOrderList");
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/AppUnConfirmedServiceOrderList");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _serviceOrderApp.AppUnConfirmedServiceOrderList(req);
             }
@@ -1129,8 +1125,8 @@ namespace OpenAuth.WebApi.Controllers
             {
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("SapOrderId", SapOrderId);
-                parameters.Add("X-Token", Request.Headers["X-Token"].ToString());
-                var r = _helper.Get(parameters, "api/serve/ServiceOrder/GetAppAdminServiceOrderDetails");
+                
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetAppAdminServiceOrderDetails");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _serviceOrderApp.GetAppAdminServiceOrderDetails(SapOrderId);
             }
@@ -1161,8 +1157,8 @@ namespace OpenAuth.WebApi.Controllers
                 parameters.Add("limit", req.limit);
                 parameters.Add("page", req.page);
                 parameters.Add("key", req.key);
-                parameters.Add("X-Token", Request.Headers["X-Token"].ToString());
-                var r = _helper.Get(parameters, "api/serve/ServiceOrder/GetAppAllowSendOrderUser");
+                
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetAppAllowSendOrderUser");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _serviceOrderApp.GetAppAllowSendOrderUser(req);
             }
@@ -1186,7 +1182,7 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 var parameters = new { req.ServiceOrderId, req.QryMaterialTypes, req.CurrentUserId };
-                var r = _helper.Post(parameters, "api/serve/ServiceOrder/SendOrders", Request.Headers["X-Token"].ToString());
+                var r = await _httpClienService.Post(parameters, "api/serve/ServiceOrder/SendOrders");
                 result = JsonConvert.DeserializeObject<Response<bool>>(r);
                 //await _serviceOrderApp.SendOrders(req);
                 //result.Result = true;
@@ -1212,7 +1208,7 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 var parameters = new { req.ServiceOrderId, req.MaterialType, req.TechnicianId };
-                var r = _helper.Post(parameters, "api/serve/ServiceOrder/TransferOrders", Request.Headers["X-Token"].ToString());
+                var r = await _httpClienService.Post(parameters, "api/serve/ServiceOrder/TransferOrders");
                 result = JsonConvert.DeserializeObject<Response<bool>>(r);
                 //await _serviceOrderApp.SendOrders(req);
                 //result.Result = true;
@@ -1238,7 +1234,7 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 var parameters = new { request.ServiceOrderId, request.Reason, request.CurrentUserId };
-                var r = _helper.Post(parameters, "api/serve/ServiceOrder/CloseWorkOrder", Request.Headers["X-Token"].ToString());
+                var r = await _httpClienService.Post(parameters, "api/serve/ServiceOrder/CloseWorkOrder");
                 result = JsonConvert.DeserializeObject<Response>(r);
                 //await _serviceOrderApp.CloseWorkOrder(request);
             }
@@ -1263,8 +1259,8 @@ namespace OpenAuth.WebApi.Controllers
             {
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("id", id);
-                parameters.Add("X-Token", Request.Headers["X-Token"].ToString());
-                var r = _helper.Get(parameters, "api/serve/ServiceOrder/GetUserCanOrderCount");
+                
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetUserCanOrderCount");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result.Data = await _serviceOrderApp.GetUserCanOrderCount(id);
             }

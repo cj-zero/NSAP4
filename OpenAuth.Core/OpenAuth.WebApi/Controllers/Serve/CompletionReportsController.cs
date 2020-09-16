@@ -21,14 +21,12 @@ namespace OpenAuth.WebApi.Controllers
     public class CompletionReportsController : ControllerBase
     {
         private readonly CompletionReportApp _app;
-        private IOptions<AppSetting> _appConfiguration;
-        private readonly HttpHelper _helper;
+        private readonly HttpClienService _httpClienService;
 
-        public CompletionReportsController(CompletionReportApp app, IOptions<AppSetting> appConfiguration)
+        public CompletionReportsController(CompletionReportApp app, HttpClienService httpClienService)
         {
             _app = app;
-            _appConfiguration = appConfiguration;
-            _helper = new HttpHelper(_appConfiguration.Value.AppServerUrl);
+            _httpClienService = httpClienService;
         }
 
         //获取详情
@@ -57,7 +55,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Response();
             try
             {
-                var r = _helper.Post(obj, "api/serve/ServiceOrder/AddCompletionReport", Request.Headers["X-Token"].ToString());
+                var r = await _httpClienService.Post(obj, "api/serve/ServiceOrder/AddCompletionReport");
                 result = JsonConvert.DeserializeObject<Response>(r);
                 //await _app.Add(obj);
             }
@@ -88,8 +86,7 @@ namespace OpenAuth.WebApi.Controllers
                 parameters.Add("ServiceOrderId", ServiceOrderId);
                 parameters.Add("currentUserId", currentUserId);
                 parameters.Add("MaterialType", MaterialType);
-                parameters.Add("X-Token", Request.Headers["X-Token"].ToString());
-                var r = _helper.Get(parameters, "api/serve/ServiceOrder/GetOrderWorkInfoForAdd");
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetOrderWorkInfoForAdd");
                 JObject data = JsonConvert.DeserializeObject<JObject>(r);
                 result.Result = JsonConvert.DeserializeObject<CompletionReportDetailsResp>(data.Property("result").Value.ToString());
                 //result.Result = await _app.GetOrderWorkInfoForAdd(ServiceOrderId, currentUserId, MaterialType);

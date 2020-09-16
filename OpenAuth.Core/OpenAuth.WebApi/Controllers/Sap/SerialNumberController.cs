@@ -23,14 +23,12 @@ namespace OpenAuth.WebApi.Controllers.Sap
     public class SerialNumberController : ControllerBase
     {
         private readonly SerialNumberApp _serialNumberApp;
-        private IOptions<AppSetting> _appConfiguration;
-        private readonly HttpHelper _helper;
+        private readonly HttpClienService _httpClienService;
 
-        public SerialNumberController(SerialNumberApp serialNumberApp, IOptions<AppSetting> appConfiguration)
+        public SerialNumberController(SerialNumberApp serialNumberApp, HttpClienService httpClienService)
         {
             _serialNumberApp = serialNumberApp;
-            _appConfiguration = appConfiguration;
-            _helper = new HttpHelper(_appConfiguration.Value.AppServerUrl);
+            _httpClienService = httpClienService;
         }
 
         /// <summary>
@@ -64,7 +62,7 @@ namespace OpenAuth.WebApi.Controllers.Sap
             var result = new TableData();
             try
             {
-                var r = _helper.Post(req, "api/serve/ServiceOrder/AppSerialNumberGet", Request.Headers["X-Token"].ToString());
+                var r = await _httpClienService.Post(req, "api/serve/ServiceOrder/AppSerialNumberGet");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _serialNumberApp.AppGet(req);
             }
@@ -87,7 +85,7 @@ namespace OpenAuth.WebApi.Controllers.Sap
             var result = new TableData();
             try
             {
-                var r = _helper.Post(req, "api/serve/ServiceOrder/AppSerialNumberFind", Request.Headers["X-Token"].ToString());
+                var r = await _httpClienService.Post(req, "api/serve/ServiceOrder/AppSerialNumberFind");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _serialNumberApp.AppFind(req);
             }
