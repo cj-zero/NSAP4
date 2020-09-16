@@ -10,3 +10,11 @@ export function debounce (fn, delay) {
     }, delay)
   }
 }
+
+export function swap (list, a, b) {
+  console.log(list[a], list[b])
+  let temp = list[a]
+  list[a] = list[b]
+  list[b] = temp
+  console.log(list, 'list')
+}

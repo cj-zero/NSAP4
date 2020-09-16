@@ -141,6 +141,12 @@ export default {
       handler(val){
           console.log(val, 'fileList')
       }
+    },
+    uploadType: {
+      immediate: true,
+      handler (val) {
+        console.log(val, 'uploadType')
+      }
     }
   },
   methods: {

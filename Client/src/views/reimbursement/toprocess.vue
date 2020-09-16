@@ -46,7 +46,10 @@ import Order from './common/components/order'
 import tableData from './mock'
 import { isSameObjectByValue } from '@/utils/validate'
 import { deepClone } from '@/utils'
+import { tableMixin } from './common/js/mixins'
+import { commonSearch } from './common/js/search'
 export default {
+  mixins: [tableMixin],
   components: {
     Search,
     Sticky,
@@ -57,49 +60,6 @@ export default {
   },
   data () {
     return {
-      columns: [ // 表格配置
-        { label: '报销单号', prop: 'accountId', type: 'link', width: 100, handleJump: this.openTree },
-        { label: '填报日期', prop: 'fillDate', width: 100 },
-        { label: '报销部门', prop: 'org', width: 100 },
-        { label: '报销人', prop: 'people', width: 100 },
-        { label: '职位', prop: 'position', width: 100 },
-        { label: '总金额', prop: 'totalMoney', width: 100 },
-        { label: '报销状态', prop: 'status', width: 100 },
-        { label: '项目名称', prop: 'projectName', width: 100 },
-        { label: '客户代码', prop: 'customerId', width: 100 },
-        { label: '客户名称', prop: 'customerName', width: 100 },
-        { label: '客户简称', prop: 'customerRefer', width: 100 },
-        { label: '业务员', prop: 'saleMan', width: 100 },
-        { label: '出发地', prop: 'origin', width: 100 },
-        { label: '到达地', prop: 'destination', width: 100 },
-        { label: '出发日期', prop: 'originDate', width: 100 },
-        { label: '结束日期', prop: 'endDate', width: 100 },
-        { label: '总天数', prop: 'totalDay', width: 100 },
-        { label: '服务ID', prop: 'serviceOrderId', width: 100 },
-        { label: '序列号', prop: 'serialNumber', width: 100 },
-        { label: '呼叫主题', prop: 'theme', width: 100 },
-        { label: '问题类型', prop: 'problemType', width: 100 },
-        { label: '解决方案', prop: 'solution', width: 100 },
-        { label: '责任承担', prop: 'responsibility', width: 100 },
-        { label: '费用承担', prop: 'expense', width: 100 },
-        { label: '劳务关系', prop: 'laborRelations', width: 100 },
-        { label: '报销类别', prop: 'category', width: 100 },
-        { label: '备注', prop: 'remark', width: 100 }
-      ],
-      tableData: [],
-      totalTableData: [],
-      formQuery: { // 查询字段参数
-        accountId: '',
-        status: '',
-        people: '',
-        customer: '',
-        serviceId: '',
-        org: '',
-        expense: '',
-        responsibility: '',
-        dateFrom: '',
-        dateTo: ''
-      },
       statusOptions: [ // 审核状态
         { label: '全部', value: '' },
         { label: '审批中', value: '1' },
@@ -108,16 +68,7 @@ export default {
         { label: '草稿箱', value: '4' }
       ],
       searchConfig: [ // 搜索配置
-        { placeholder: '报销单号', prop: 'accountId', width: 100 },
-        { placeholder: '报销状态', prop: 'status', width: 100 },
-        { placeholder: '报销人', prop: 'people', width: 100 },
-        { placeholder: '客户代码/名称', prop: 'customer', width: 150 },
-        { placeholder: '服务ID', prop: 'serviceId', width: 100 },
-        { placeholder: '报销部门', prop: 'org', width: 100 },
-        { placeholder: '费用承担', prop: 'expense', width: 100 },
-        { placeholder: '责任承担', prop: 'responsibility', width: 100 },
-        { placeholder: '填报起始时间', prop: 'dateFrom', type: 'date', width: 150 },
-        { placeholder: '填报结束事件', prop: 'dateTo', type: 'date', width: 150 },
+        ...commonSearch,
         { type: 'search' },
         { type: 'button', btnText: '审批', handleClick: this.approval},
       ],
@@ -127,9 +78,8 @@ export default {
       },
       tableLoading: false,
       btnList: [
-        { btnText: '提交', handleClick: this.submit },
-        { btnText: '存为草稿', handleClick: this.saveAsDraft },
-        { btnText: '重置', handleClick: this.reset },
+        { btnText: '同意', handleClick: this.agree },
+        { btnText: '驳回到发起人', handleClick: this.reject },
         { btnText: '关闭', handleClick: this.closeDialog }
       ]
     }
@@ -174,9 +124,8 @@ export default {
       this.$refs.myDialog.open()
       console.log('add')
     },
-    submit () {}, // 提交
-    saveAsDraft () {}, // 存为草稿
-    reset () {}, // 重置
+    agree () {},
+    reject () {},
     closeDialog () {
       this.$refs.myDialog.close()
     }

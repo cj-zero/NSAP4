@@ -23,7 +23,7 @@
           <template v-if="!item.type">
             <el-input 
               v-model="formData[item.prop]" 
-              :style="{ width: item.width }"
+              :style="{ width: item.width + 'px' }"
               :maxlength="item.maxlength || 0"
               :disabled="item.disabled">
               <i :class="item.icon" v-if="item.icon"></i>
@@ -32,7 +32,7 @@
           <template v-else-if="item.type === 'select'">
             <el-select 
               clearable
-              :style="{ width: item.width }"
+              :style="{ width: item.width + 'px' }"
               v-model="formData[item.prop]" 
               :placeholder="item.placeholder"
               :disabled="item.disabled">
@@ -46,7 +46,7 @@
           </template>
           <template v-else-if="item.type === 'date'">
             <el-date-picker
-              :style="{ width: item.width }"
+              :style="{ width: item.width + 'px' }"
               :value-format="item.valueFormat || 'yyyy-MM-dd'"
               :type="item.dateType || 'date'"
               :placeholder="item.placeholder"
@@ -152,5 +152,9 @@ export default {
 }
 </script>
 <style lang='scss' scoped>
-.my-form-wrapper {}
+.my-form-wrapper {
+  ::v-deep .el-form-item--mini {
+    margin-bottom: 7px;
+  }
+}
 </style>

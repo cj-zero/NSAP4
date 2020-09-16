@@ -29,7 +29,7 @@ import FrmLeaveReqDetail from '@/views/forms/userDefine/frmLeaveReq/detail'
 // 全局过滤器
 import { toThousands } from '@/utils/format'
 
-Vue.filter(toThousands, toThousands)
+Vue.filter('toThousands', toThousands)
 // 引入PDFJS
 Vue.use(ElementUI, { locale })
 Vue.use(VueContextMenu)

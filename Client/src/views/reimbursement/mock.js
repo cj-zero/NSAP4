@@ -31,8 +31,25 @@ for (let i = 0; i < 1000; i++) {
     category: '出差',
     remark: '无'
   })
-
 }
 
 export default data
 
+const payData = []
+for (let i = 0; i < 1000; i++) {
+  payData.push({
+    summaryId: i + 1,
+    summaryDate: '2020.02.02',
+    creator: '李雪梅',
+    total: toThousands(100000),
+    accommodation: toThousands(10032232),
+    traffic: toThousands(100000),
+    travel: toThousands(100000),
+    other: toThousands(100000),
+    laborRelations: '丛书关系',
+    status: statusText[i % 3],
+    payTime: '2020.02.02'
+  })
+}
+
+export { payData }
