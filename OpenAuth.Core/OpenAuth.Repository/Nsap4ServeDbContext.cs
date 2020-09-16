@@ -36,7 +36,6 @@ namespace OpenAuth.Repository
         public virtual DbSet<AppServiceOrderLog> Appserviceorderlogs { get; set; }
         public virtual DbSet<ServiceEvaluate> Serviceevaluates { get; set; }
         public virtual DbSet<RealTimeLocation> Realtimelocations { get; set; }
-
         public virtual DbSet<SeviceTechnicianApplyOrder> Sevicetechnicianapplyorders { get; set; }
         #region 报销
         public virtual DbSet<ReimburseAccommodationSubsidy> Reimburseaccommodationsubsidies { get; set; }
@@ -46,6 +45,9 @@ namespace OpenAuth.Repository
         public virtual DbSet<ReimburseOtherCharges> Reimburseordercharges { get; set; }
         public virtual DbSet<ReimburseTravellingAllowance> Reimbursetravellingallowances { get; set; }
         public virtual DbSet<ReimurseOperationHistory> Reimurseoperationhistories { get; set; }
+
+        public virtual DbSet<ServiceOrderParticipationRecord> ServiceOrderParticipationRecords { get; set; }
+        
         #endregion
     }
 }

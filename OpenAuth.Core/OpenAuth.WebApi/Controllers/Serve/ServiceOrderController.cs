@@ -544,6 +544,32 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// nSAP主管给技术员派单
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response<bool>> nSAPSendOrders(SendOrdersReq req)
+        {
+
+            var result = new Response<bool>();
+            try
+            {
+                //var parameters = new { req.ServiceOrderId, req.QryMaterialTypes, req.CurrentUserId };
+                //var r = _helper.Post(parameters, "api/serve/ServiceOrder/SendOrders", Request.Headers["X-Token"].ToString());
+                //result = JsonConvert.DeserializeObject<Response<bool>>(r);
+                await _serviceOrderApp.nSAPSendOrders(req);
+                result.Result = true;
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                result.Result = false;
+            }
+            return result;
+        }
         #endregion
 
         #region App售后接口 如无特殊情况勿动，修改请告知！！！
