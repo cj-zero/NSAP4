@@ -1008,7 +1008,16 @@ export default {
     },
     handleAnalysis () {
       getReport(this.listQuery).then(res => {
+        let isEmpty = res.data.every(item => item.statList.length === 0)
+        console.log(isEmpty, 'isEmpty')
+        if (isEmpty) {
+          return this.$message.error('暂无数据')
+        }
+        this.analysisData = res.data
+        this.dialogAnalysisVisible = true
         console.log(res, 'Analysis')
+      }).catch(() => {
+        this.$message.error('暂无数据')
       })
     },
     handlePhone (row) { // 电话回访
