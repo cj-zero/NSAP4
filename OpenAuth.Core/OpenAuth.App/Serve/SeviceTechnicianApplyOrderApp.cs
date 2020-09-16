@@ -234,6 +234,10 @@ namespace OpenAuth.App
                 s.Id
             }).ToListAsync();
             data.Add("newData", newData);
+            //判断服务单是否已存在其他设备的设备类型 若有则再添加新设备时不显示其他设备
+            var otherMaterialInfo = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId&&"其他设备".Equals(s.MaterialCode)).ToListAsync();
+            var isShowOtherMaterial = otherMaterialInfo != null && otherMaterialInfo?.Count > 0 ? 0 : 1;
+            data.Add("isShowOtherMaterial", isShowOtherMaterial);
             result.Data = data;
             return result;
         }

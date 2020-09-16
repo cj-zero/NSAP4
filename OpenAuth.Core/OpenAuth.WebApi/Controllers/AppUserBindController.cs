@@ -20,14 +20,12 @@ namespace OpenAuth.WebApi.Controllers
     public class AppUserBindController : Controller
     {
         private readonly AppUserBindApp _app;
-        private readonly HttpHelper _helper;
-        private IOptions<AppSetting> _appConfiguration;
+        private readonly HttpClienService _httpClienService;
 
-        public AppUserBindController(AppUserBindApp app, IOptions<AppSetting> appConfiguration)
+        public AppUserBindController(AppUserBindApp app, HttpClienService httpClienService)
         {
             _app = app;
-            _appConfiguration = appConfiguration;
-            _helper = new HttpHelper(_appConfiguration.Value.AppServerUrl);
+            _httpClienService = httpClienService;
         }
 
 
@@ -52,7 +50,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Response();
             try
             {
-                var r = _helper.Post(obj, "api/user/UserManage/AddOrUpdateAppUserBind", Request.Headers["X-Token"].ToString());
+                var r = await _httpClienService.Post(obj, "api/user/UserManage/AddOrUpdateAppUserBind");
                 result = JsonConvert.DeserializeObject<Response>(r);
                 //await _app.Add(obj);
 
@@ -77,8 +75,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("AppUserId", AppUserId);
-                parameters.Add("X-Token", Request.Headers["X-Token"].ToString());
-                var r = _helper.Get(parameters, "api/user/UserManage/GetBindInfo");
+                var r = await _httpClienService.Get(parameters, "api/user/UserManage/GetBindInfo");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _app.GetBindInfo(AppUserId);
             }

@@ -21,14 +21,12 @@ namespace OpenAuth.WebApi.Controllers
     public class SeviceTechnicianApplyOrdersController : ControllerBase
     {
         private readonly SeviceTechnicianApplyOrdersApp _app;
-        private IOptions<AppSetting> _appConfiguration;
-        private readonly HttpHelper _helper;
+        private readonly HttpClienService _httpClienService;
 
-        public SeviceTechnicianApplyOrdersController(SeviceTechnicianApplyOrdersApp app, IOptions<AppSetting> appConfiguration)
+        public SeviceTechnicianApplyOrdersController(SeviceTechnicianApplyOrdersApp app, HttpClienService httpClienService)
         {
             _app = app;
-            _appConfiguration = appConfiguration;
-            _helper = new HttpHelper(_appConfiguration.Value.AppServerUrl);
+            _httpClienService = httpClienService;
         }
 
         #region 新威智能App 售后接口 如修改请告知！！
@@ -43,7 +41,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Response();
             try
             {
-                var r = _helper.Post(request, "api/serve/ServiceOrder/ApplyNewOrErrorDevices", Request.Headers["X-Token"].ToString());
+                var r = await _httpClienService.Post(request, "api/serve/ServiceOrder/ApplyNewOrErrorDevices");
                 result = JsonConvert.DeserializeObject<Response>(r);
                 //await _app.ApplyNewOrErrorDevices(request);
             }
@@ -70,8 +68,7 @@ namespace OpenAuth.WebApi.Controllers
                 parameters.Add("TechnicianId", request.TechnicianId);
                 parameters.Add("ServiceOrderId", request.ServiceOrderId);
                 parameters.Add("MaterialType", request.MaterialType);
-                parameters.Add("X-Token", Request.Headers["X-Token"].ToString());
-                var r = _helper.Get(parameters, "api/serve/ServiceOrder/GetApplyDevices");
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetApplyDevices");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _app.GetApplyDevices(request);
             }
