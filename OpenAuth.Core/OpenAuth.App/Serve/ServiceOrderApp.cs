@@ -1166,6 +1166,72 @@ namespace OpenAuth.App
                 }
             }
         }
+
+        /// <summary>
+        /// nSAP主管给技术员派单
+        /// </summary>
+        /// <returns></returns>
+        public async Task nSAPSendOrders(SendOrdersReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var canSendOrder = await CheckCanTakeOrder(req.CurrentUserId);
+            if (!canSendOrder)
+            {
+                throw new CommonException("技术员接单已经达到上限", 60001);
+            }
+            var u = await UnitWork.Find<AppUserMap>(s => s.AppUserId == req.CurrentUserId).Include(s => s.User).FirstOrDefaultAsync();
+            var ServiceOrderModel = await UnitWork.Find<ServiceOrder>(s => s.Id==Convert.ToInt32(req.ServiceOrderId)).FirstOrDefaultAsync();
+
+            var Model = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.ToString() == req.ServiceOrderId && req.QryMaterialTypes.Contains(s.MaterialCode == "其他设备" ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")))).Select(s => s.Id);
+            var ids = await Model.ToListAsync();
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => ids.Contains(s.Id), o => new ServiceWorkOrder
+            {
+                CurrentUser = u.User.Name,
+                CurrentUserNsapId = u.User.Id,
+                CurrentUserId = req.CurrentUserId,
+                Status = 2
+            });
+
+            await UnitWork.AddAsync<ServiceOrderParticipationRecord>(new ServiceOrderParticipationRecord
+            {
+                ServiceOrderId = ServiceOrderModel.Id,
+                UserId = u.User.Id,
+                SapId = ServiceOrderModel.U_SAP_ID,
+                ReimburseType = 0,
+                CreateTime = DateTime.Now
+
+            });
+            await UnitWork.SaveAsync();
+            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+            {
+                Title = "技术员接单",
+                Details = "已为您分配专属技术员进行处理，感谢您的耐心等待",
+                LogType = 1,
+                ServiceOrderId = Convert.ToInt32(req.ServiceOrderId),
+                ServiceWorkOrder = string.Join(",", ids.ToArray()),
+                MaterialType = string.Join(",", req.QryMaterialTypes.ToArray())
+            });
+
+            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+            {
+                Title = "技术员接单成功",
+                Details = "已接单成功，请选择服务方式：远程服务或上门服务",
+                LogType = 2,
+                ServiceOrderId = Convert.ToInt32(req.ServiceOrderId),
+                ServiceWorkOrder = string.Join(",", ids.ToArray()),
+                MaterialType = string.Join(",", req.QryMaterialTypes.ToArray())
+            });
+            var WorkOrderNumbers = String.Join(',', await UnitWork.Find<ServiceWorkOrder>(s => ids.Contains(s.Id)).Select(s => s.WorkOrderNumber).ToArrayAsync());
+
+            await _ServiceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{WorkOrderNumbers}", ActionType = "主管派单工单", MaterialType = string.Join(",", req.QryMaterialTypes.ToArray()) }, ids);
+            await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = Convert.ToInt32(req.ServiceOrderId), Content = $"主管{loginContext.User.Name}给技术员{u.User.Name}派单{WorkOrderNumbers}", AppUserId = 0 });
+            await PushMessageToApp(req.CurrentUserId, "派单成功提醒", "您已被派有一个新的售后服务，请尽快处理");
+        }
+
         #endregion
 
         #region<<Common Methods>>
@@ -3031,6 +3097,7 @@ namespace OpenAuth.App
                 throw new CommonException("技术员接单已经达到上限", 60001);
             }
             var u = await UnitWork.Find<AppUserMap>(s => s.AppUserId == req.CurrentUserId).Include(s => s.User).FirstOrDefaultAsync();
+            var ServiceOrderModel = await UnitWork.Find<ServiceOrder>(s => s.Id == Convert.ToInt32(req.ServiceOrderId)).FirstOrDefaultAsync();
 
             var Model = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.ToString() == req.ServiceOrderId && req.QryMaterialTypes.Contains(s.MaterialCode == "其他设备" ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")))).Select(s => s.Id);
             var ids = await Model.ToListAsync();
@@ -3040,6 +3107,16 @@ namespace OpenAuth.App
                 CurrentUserNsapId = u.User.Id,
                 CurrentUserId = req.CurrentUserId,
                 Status = 2
+            });
+
+            await UnitWork.AddAsync<ServiceOrderParticipationRecord>(new ServiceOrderParticipationRecord
+            {
+                ServiceOrderId = ServiceOrderModel.Id,
+                UserId = u.User.Id,
+                SapId = ServiceOrderModel.U_SAP_ID,
+                ReimburseType = 0,
+                CreateTime = DateTime.Now
+
             });
             await UnitWork.SaveAsync();
             await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
@@ -3085,6 +3162,7 @@ namespace OpenAuth.App
                 throw new CommonException("技术员接单已经达到上限", 60001);
             }
             var u = await UnitWork.Find<AppUserMap>(s => s.AppUserId == req.TechnicianId).Include(s => s.User).FirstOrDefaultAsync();
+            var ServiceOrderModel = await UnitWork.Find<ServiceOrder>(s => s.Id == Convert.ToInt32(req.ServiceOrderId)).FirstOrDefaultAsync();
 
             var Model = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.ToString() == req.ServiceOrderId && req.MaterialType.Equals(s.MaterialCode == "其他设备" ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")))).Select(s => s.Id);
             var ids = await Model.ToListAsync();
@@ -3094,6 +3172,16 @@ namespace OpenAuth.App
                 CurrentUserNsapId = u.User.Id,
                 CurrentUserId = req.TechnicianId
             });
+
+            await UnitWork.AddAsync<ServiceOrderParticipationRecord>(new ServiceOrderParticipationRecord
+            {
+                ServiceOrderId = ServiceOrderModel.Id,
+                UserId = u.User.Id,
+                SapId = ServiceOrderModel.U_SAP_ID,
+                ReimburseType = 0,
+                CreateTime=DateTime.Now
+                
+            }) ;
             await UnitWork.SaveAsync();
             var WorkOrderNumbers = String.Join(',', await UnitWork.Find<ServiceWorkOrder>(s => ids.Contains(s.Id)).Select(s => s.WorkOrderNumber).ToArrayAsync());
 

@@ -14,90 +14,72 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using OpenAuth.Repository.Core;
 
-namespace OpenAuth.Repository.Domain
+namespace OpenAuth.App.Request
 {
     /// <summary>
-	/// 差旅报销交通费用
+	/// 
 	/// </summary>
-    [Table("reimbursefare")]
-    public partial class ReimburseFare : BaseEntity<int>
+    [Table("myexpends")]
+    public partial class AddOrUpdateMyExpendsReq
     {
-        public ReimburseFare()
-        {
-          this.TrafficType= string.Empty;
-          this.Transport= string.Empty;
-          this.From= string.Empty;
-          this.To= string.Empty;
-          this.InvoiceNumber= string.Empty;
-          this.Remark= string.Empty;
-        }
-
 
         /// <summary>
-        /// 报销单ID
+        /// 
         /// </summary>
-        [Description("报销单ID")]
-        [Browsable(false)]
-        public int ReimburseInfoId { get; set; }
+        public string Id { get; set; }
         /// <summary>
-        /// 序号
+        /// 
         /// </summary>
-        [Description("序号")]
+        public string FeeType { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
         public int? SerialNumber { get; set; }
         /// <summary>
-        /// 交通类型
+        /// 
         /// </summary>
-        [Description("交通类型")]
         public string TrafficType { get; set; }
         /// <summary>
-        /// 交通工具
+        /// 
         /// </summary>
-        [Description("交通工具")]
         public string Transport { get; set; }
         /// <summary>
-        /// 出发地
+        /// 
         /// </summary>
-        [Description("出发地")]
         public string From { get; set; }
         /// <summary>
-        /// 目的地
+        /// 
         /// </summary>
-        [Description("目的地")]
         public string To { get; set; }
         /// <summary>
-        /// 金额
+        /// 
         /// </summary>
-        [Description("金额")]
         public decimal? Money { get; set; }
         /// <summary>
-        /// 发票号码
+        /// 
         /// </summary>
-        [Description("发票号码")]
         public string InvoiceNumber { get; set; }
         /// <summary>
-        /// 备注
+        /// 
         /// </summary>
-        [Description("备注")]
         public string Remark { get; set; }
         /// <summary>
-        /// 我的费用Id
+        /// 
         /// </summary>
-        [Description("我的费用Id")]
-        public string MyExpendsId { get; set; }
-
+        public System.DateTime CreateTime { get; set; }
         /// <summary>
-        /// 创建时间
+        /// 
         /// </summary>
-        [Description("创建时间")]
-        public DateTime CreateTime { get; set; }
-
-        public override void GenerateDefaultKeyVal()
-        {
-        }
-
-        public override bool KeyIsNull()
-        {
-            return Id == 0;
-        }
+        public int? Days { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal? TotalMoney { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string ExpenseCategory { get; set; }
+        
+         //todo:添加自己的请求字段
     }
 }

@@ -247,7 +247,7 @@ export default {
     },
     onChangeForm (val) {
       Object.assign(this.listQuery, val)
-      this.listQuery.page = 1
+      // this.listQuery.page = 1
     },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
