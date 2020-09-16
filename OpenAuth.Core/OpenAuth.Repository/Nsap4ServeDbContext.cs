@@ -48,6 +48,7 @@ namespace OpenAuth.Repository
 
         public virtual DbSet<ServiceOrderParticipationRecord> ServiceOrderParticipationRecords { get; set; }
         
+        public virtual DbSet<MyExpends> Myexpends { get; set; }
         #endregion
     }
 }

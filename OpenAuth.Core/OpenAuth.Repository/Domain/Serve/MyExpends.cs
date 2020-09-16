@@ -17,28 +17,30 @@ using OpenAuth.Repository.Core;
 namespace OpenAuth.Repository.Domain
 {
     /// <summary>
-	/// 差旅报销交通费用
+	/// 
 	/// </summary>
-    [Table("reimbursefare")]
-    public partial class ReimburseFare : BaseEntity<int>
+    [Table("myexpends")]
+    public partial class MyExpends : Entity
     {
-        public ReimburseFare()
+        public MyExpends()
         {
+          this.FeeType= string.Empty;
           this.TrafficType= string.Empty;
           this.Transport= string.Empty;
           this.From= string.Empty;
           this.To= string.Empty;
           this.InvoiceNumber= string.Empty;
           this.Remark= string.Empty;
+          this.CreateTime= DateTime.Now;
+          this.ExpenseCategory= string.Empty;
         }
 
 
         /// <summary>
-        /// 报销单ID
+        /// 费用类型
         /// </summary>
-        [Description("报销单ID")]
-        [Browsable(false)]
-        public int ReimburseInfoId { get; set; }
+        [Description("费用类型")]
+        public string FeeType { get; set; }
         /// <summary>
         /// 序号
         /// </summary>
@@ -80,24 +82,29 @@ namespace OpenAuth.Repository.Domain
         [Description("备注")]
         public string Remark { get; set; }
         /// <summary>
-        /// 我的费用Id
-        /// </summary>
-        [Description("我的费用Id")]
-        public string MyExpendsId { get; set; }
-
-        /// <summary>
         /// 创建时间
         /// </summary>
         [Description("创建时间")]
-        public DateTime CreateTime { get; set; }
-
-        public override void GenerateDefaultKeyVal()
-        {
-        }
-
-        public override bool KeyIsNull()
-        {
-            return Id == 0;
-        }
+        public System.DateTime CreateTime { get; set; }
+        /// <summary>
+        /// 天数
+        /// </summary>
+        [Description("天数")]
+        public int? Days { get; set; }
+        /// <summary>
+        /// 总金额
+        /// </summary>
+        [Description("总金额")]
+        public decimal? TotalMoney { get; set; }
+        /// <summary>
+        /// 费用类别
+        /// </summary>
+        [Description("费用类别")]
+        public string ExpenseCategory { get; set; }
+        public DateTime? UpdateTime { get; set; }
+        public string UpdateUserId { get; set; }
+        public string UpdateUserName { get; set; }
+        public string CreateUserId { get; set; }
+        public string CreateUserName { get; set; }
     }
 }
