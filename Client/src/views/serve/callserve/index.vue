@@ -382,7 +382,7 @@ export default {
       return [
         { width: 140, placeholder: '问题类型', prop: 'QryProblemType', options: this.problemOptions, type: 'tree' },
         { width: 100, placeholder: '呼叫类型', prop: 'QryFromType', options: this.options_type, type: 'select' },
-        { width: 100, placeholder: '联系电话', prop: 'QryContactTel' },
+        { width: 140, placeholder: '联系电话', prop: 'ContactTel' },
         { width: 150, placeholder: '创建日期', prop: 'QryCreateTimeFrom', type: 'date', showText: true },
         { width: 150, placeholder: '结束日期', prop: 'QryCreateTimeTo', type: 'date' },
       ]
