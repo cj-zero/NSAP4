@@ -21,7 +21,7 @@
         <permission-btn moduleName="problemtypes" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
     </sticky>
-    <el-card shadow="never" class="card-body-none fh" style="height:100%;">
+    <el-card shadow="never" class="card-body-none fh" style="height:100%;overflow-y:auto;">
       <tree-table
         @row-click="rowClick"
         @selection-change="handleSelectionChange"
