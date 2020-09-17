@@ -755,7 +755,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), q => q.Supervisor.Contains(req.QrySupervisor))
                 .WhereIf(true, q => ids.Contains(q.Id) && q.Status == 2);
 
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.User.Account.Equals("wanghaitao") && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
             {
                 query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id));
             }
@@ -1064,7 +1064,7 @@ namespace OpenAuth.App
                 StatName = q.Key.SalesMan,
                 ServiceCnt = q.Count()
             }).OrderByDescending(s => s.ServiceCnt).ToListAsync();
-            resultlist.Add(new ServerOrderStatListResp { StatType = "SalesMan", StatList = list1 });
+            resultlist.Add(new ServerOrderStatListResp { StatType = "SalesMan", StatList = list2 });
 
             var list3 = await query.GroupBy(g => new { g.ProblemTypeId, g.ProblemTypeName }).Select(q => new ServiceOrderReportResp
             {
@@ -1072,7 +1072,7 @@ namespace OpenAuth.App
                 StatName = q.Key.ProblemTypeName,
                 ServiceCnt = q.Count()
             }).OrderByDescending(s => s.ServiceCnt).ToListAsync();
-            resultlist.Add(new ServerOrderStatListResp { StatType = "ProblemType", StatList = list1 });
+            resultlist.Add(new ServerOrderStatListResp { StatType = "ProblemType", StatList = list3 });
 
             var list4 = await query.GroupBy(g => new { g.RecepUserId, g.RecepUserName }).Select(q => new ServiceOrderReportResp
             {
@@ -1080,7 +1080,7 @@ namespace OpenAuth.App
                 StatName = q.Key.RecepUserName,
                 ServiceCnt = q.Count()
             }).OrderByDescending(s => s.ServiceCnt).ToListAsync();
-            resultlist.Add(new ServerOrderStatListResp { StatType = "RecepUser", StatList = list1 });
+            resultlist.Add(new ServerOrderStatListResp { StatType = "RecepUser", StatList = list4 });
             result.Data = resultlist;
             return result;
         }
