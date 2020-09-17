@@ -105,7 +105,7 @@ export default {
         { name: "org", label: "部门" ,width:'100px'},
         // { name: "clockTime", label: "打卡时间" ,width:'100px'},
          { name: "clockDate", label: "打卡日期", width: '150' },
-        { name: "location", label: "地点", width: 360 },
+        { name: "location", label: "地址", width: 360 },
         // { name: "specificLocation", label: "详细地址" },
         { name: "visitTo", label: "拜访对象", width: 100 },
         { name: "remark", label: "备注" },
@@ -148,6 +148,7 @@ export default {
         { width: 100, placeholder: '姓名', prop: 'Name' },
         { width: 100, placeholder: '部门', prop: 'Org' },
         { width: 100, placeholder: '拜访对象', prop: 'VisitTo' },
+        { width: 150, placeholder: '地址', prop: 'Location' },
         { width: 150, placeholder: '起始日期', prop: 'DateFrom', type: 'date' },
         { width: 150, placeholder: '结束日期', prop: 'DateTo', type: 'date' },
         { type: 'search' }
