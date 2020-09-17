@@ -1064,7 +1064,7 @@ namespace OpenAuth.App
                 StatName = q.Key.SalesMan,
                 ServiceCnt = q.Count()
             }).OrderByDescending(s => s.ServiceCnt).ToListAsync();
-            resultlist.Add(new ServerOrderStatListResp { StatType = "SalesMan", StatList = list1 });
+            resultlist.Add(new ServerOrderStatListResp { StatType = "SalesMan", StatList = list2 });
 
             var list3 = await query.GroupBy(g => new { g.ProblemTypeId, g.ProblemTypeName }).Select(q => new ServiceOrderReportResp
             {
@@ -1072,7 +1072,7 @@ namespace OpenAuth.App
                 StatName = q.Key.ProblemTypeName,
                 ServiceCnt = q.Count()
             }).OrderByDescending(s => s.ServiceCnt).ToListAsync();
-            resultlist.Add(new ServerOrderStatListResp { StatType = "ProblemType", StatList = list1 });
+            resultlist.Add(new ServerOrderStatListResp { StatType = "ProblemType", StatList = list3 });
 
             var list4 = await query.GroupBy(g => new { g.RecepUserId, g.RecepUserName }).Select(q => new ServiceOrderReportResp
             {
@@ -1080,7 +1080,7 @@ namespace OpenAuth.App
                 StatName = q.Key.RecepUserName,
                 ServiceCnt = q.Count()
             }).OrderByDescending(s => s.ServiceCnt).ToListAsync();
-            resultlist.Add(new ServerOrderStatListResp { StatType = "RecepUser", StatList = list1 });
+            resultlist.Add(new ServerOrderStatListResp { StatType = "RecepUser", StatList = list4 });
             result.Data = resultlist;
             return result;
         }
