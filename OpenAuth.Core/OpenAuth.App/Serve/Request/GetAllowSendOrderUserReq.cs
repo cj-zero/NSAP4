@@ -9,12 +9,12 @@ namespace OpenAuth.App.Serve.Request
     public class GetAllowSendOrderUserReq : PageReq
     {
         /// <summary>
-        /// 经度
+        /// 客户位置的经度
         /// </summary>
         public decimal Longitude { get; set; }
 
         /// <summary>
-        /// 纬度
+        /// 客户位置的纬度
         /// </summary>
         public decimal Latitude { get; set; }
 
@@ -27,5 +27,10 @@ namespace OpenAuth.App.Serve.Request
         /// 技术员名称
         /// </summary>
         public string CurrentUser { get; set; }
+
+        /// <summary>
+        /// 原技术员Id
+        /// </summary>
+        public int TechnicianId { get; set; }
     }
 }

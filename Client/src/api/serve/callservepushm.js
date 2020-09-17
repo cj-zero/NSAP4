@@ -35,7 +35,7 @@ export function AllowSendOrderUser(params) {
   });
 }
 
-export function SendOrders(data) {
+export function nSAPSendOrders(data) {
   return request({
     url: "/serve/ServiceOrder/SendOrders", //主管给技术员派单
     method: "post",

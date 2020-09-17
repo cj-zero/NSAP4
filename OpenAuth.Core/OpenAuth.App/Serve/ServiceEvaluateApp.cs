@@ -41,30 +41,61 @@ namespace OpenAuth.App
 
 
             var result = new TableData();
-            var objs = UnitWork.Find<ServiceEvaluate>(null)
-                .WhereIf(request.ServiceOrderId != null, s => s.ServiceOrderId == request.ServiceOrderId)
-                .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerId), s => s.CustomerId.Contains(request.CustomerId)|| s.Cutomer.Contains(request.CustomerId))
-                .WhereIf(!string.IsNullOrWhiteSpace(request.TechnicianId), s => s.TechnicianId.Equals(request.TechnicianId))
-                .WhereIf(!string.IsNullOrWhiteSpace(request.VisitPeopleId), s => s.VisitPeopleId.Equals(request.VisitPeopleId))
-                .WhereIf(request.DateFrom != null && request.DateTo != null, s => s.CommentDate >= request.DateFrom && s.CommentDate <= request.DateTo)
+
+            var query = from a in UnitWork.Find<ServiceEvaluate>(null)
+                        join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
+                        from b in ab.DefaultIfEmpty()
+                        select new { a, b };
+
+
+            var objs = query
+                .WhereIf(request.ServiceOrderId != null, s => s.b.U_SAP_ID == request.ServiceOrderId)
+                .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerId), s => s.a.CustomerId.Contains(request.CustomerId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.TechnicianId), s => s.a.TechnicianId.Equals(request.TechnicianId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.VisitPeopleId), s => s.a.VisitPeopleId.Equals(request.VisitPeopleId))
+                .WhereIf(request.DateFrom != null && request.DateTo != null, s => s.a.CommentDate >= request.DateFrom && s.a.CommentDate < Convert.ToDateTime(request.DateTo).AddMinutes(1440))
                 ;
+            var ServiceEvaluates = objs.Select(s => new
+            {
+                s.a.ServiceOrderId,
+                s.a.CustomerId,
+                s.a.Cutomer,
+                s.a.Contact,
+                s.a.CaontactTel,
+                s.a.Technician,
+                s.a.TechnicianId,
+                s.a.TechnicianAppId,
+                s.a.ResponseSpeed,
+                s.a.SchemeEffectiveness,
+                s.a.ServiceAttitude,
+                s.a.ProductQuality,
+                s.a.ServicePrice,
+                s.a.Comment,
+                s.a.VisitPeopleId,
+                s.a.VisitPeople,
+                s.a.CommentDate,
+                s.a.CreateTime,
+                s.a.CreateUserId,
+                s.a.CreateUserName,
+                s.b.U_SAP_ID
+             });
             //if (!string.IsNullOrEmpty(request.key))
             //{
             //    objs = objs.Where(u => u.Id.Contains(request.key));
             //}
-            
+
             // 主管只能看到本部门的技术员的评价
             if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
             {
                 var userIds = _revelanceApp.Get(Define.USERORG, false, loginContext.Orgs.Select(o => o.Id).ToArray());
-                objs = objs.Where(q => userIds.Contains(q.TechnicianId));
+                ServiceEvaluates = ServiceEvaluates.Where(q => userIds.Contains(q.TechnicianId));
             }
 
-            var propertyStr = string.Join(',', properties.Select(u => u.Key));
+            //var propertyStr = string.Join(',', properties.Select(u => u.Key));
             result.columnHeaders = properties;
-            result.Data = objs.OrderByDescending(u => u.CreateTime)
+            result.Data = ServiceEvaluates.OrderByDescending(u => u.CreateTime)
                 .Skip((request.page - 1) * request.limit)
-                .Take(request.limit).Select($"new ({propertyStr})");
+                .Take(request.limit).ToList();
             result.Count = objs.Count();
             return result;
         }
@@ -221,9 +252,17 @@ namespace OpenAuth.App
         public async Task<TableData> GetTechnicianName(int serviceOrderId)
         {
             var result = new TableData();
-            var model = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId).Select(s => new { s.CurrentUser, s.CurrentUserId }).Distinct().ToListAsync();
-            result.Data= model;
-            result.Count = model.Count;
+            var WorkCount = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId && (s.Status < 7 || s.FromType==2)).CountAsync();
+            if (WorkCount <= 0)
+            {
+                var model = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId).Select(s => new { s.CurrentUser, s.CurrentUserId }).Distinct().ToListAsync();
+                result.Data = model;
+                result.Count = model.Count;
+            }
+            else 
+            {
+                result.Data = null;
+            }
             return result;
         }
         public ServiceEvaluateApp(IUnitWork unitWork,

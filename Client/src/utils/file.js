@@ -17,7 +17,7 @@ export function download (src) {
     context.drawImage(img, 0, 0, img.width, img.height);
     link.href = canvas.toDataURL('image/png')
     link.download = ''
-    link.target = '_selft'
+    link.target = '_self'
     link.click()
   }
   img.src = src

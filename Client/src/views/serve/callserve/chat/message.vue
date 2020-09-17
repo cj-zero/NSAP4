@@ -1,42 +1,42 @@
 <template>
   <div style="width:100%;">
-    <el-collapse accordion>
-      <el-collapse-item
-        :title="`技术员：${item.key}`"
-        :key="`key_${index}`"
-        v-for="(item, index) in wordList"
-        :name="index"
-      >
-        <el-form label-position="top" label-width="80px" :model="item" class="chatForm">
-          <el-form-item label="留言">
-            <!-- <el-input v-model="item.says" disabled></el-input> -->
-            <ul max-height="200px">
-              <li v-for="tValue in item.data" :key="tValue.id">
-                <div v-if="userType!==tValue.replier" class="otherWord">
-                  <p>
-                    {{tValue.replier?tValue.replier:'未知发送者'}}
-                    <span>{{tValue.createTime}}</span>
-                  </p>
-                  <p>{{tValue.content}}</p>
-                </div>
-                <div v-else class="ownWord">
-                  <p style="text-align:right;">
-                    <span>{{tValue.createTime}}</span>
-                    {{tValue.replier}}
-                  </p>
-                  <p>{{tValue.content}}</p>
-                </div>
-              </li>
-            </ul>
-          </el-form-item>
-          <el-form-item label="回复">
-            <el-input type="textarea" v-model="item.content" size="mini"></el-input>
-          </el-form-item>
-          <el-button type="success" size="mini" @click="dialogVisible=true">上传图片</el-button>
-          <el-button type="primary" size="mini" @click="submitForm(item)">确定</el-button>
-        </el-form>
-      </el-collapse-item>
-    </el-collapse>
+    <template v-if="wordList && wordList.length">
+      <el-form label-position="top" label-width="80px" class="chatForm">
+        <el-form-item label="留言">
+          <ul max-height="200px">
+            <li v-for="tValue in wordList" :key="tValue.id">
+              <div v-if="userType!==tValue.replier" class="otherWord">
+                <p>
+                  {{tValue.replier?tValue.replier:'未知发送者'}}
+                  <span>{{tValue.createTime}}</span>
+                </p>
+                <template v-for="(content, index) in tValue.content">
+                  <p class="text" v-if="content" :key="index">{{ content }}</p>
+                </template>
+              </div>
+              <div v-else class="ownWord">
+                <p style="text-align:right;">
+                  <span>{{tValue.createTime}}</span>
+                  {{tValue.replier}}
+                </p>
+                <template v-for="(content, index) in tValue.content">
+                  <p class="text" v-if="content" :key="index">{{ content }}</p>
+                </template>
+              </div>
+            </li>
+          </ul>
+        </el-form-item>
+      </el-form>
+    </template>
+    <template v-else>暂无留言噢~~</template>
+    <div class="content-wrapper">
+      <p class="title">留言</p>
+      <el-input type="textarea" v-model="content" size="mini" :rows="2"></el-input>
+      <div class="btn-wrapper">
+        <el-button type="success" size="mini" @click="dialogVisible=true">上传图片</el-button>
+        <el-button type="primary" size="mini" @click="submitForm()" :loading="loadingBtn">确定</el-button>
+      </div>
+    </div>
     <el-dialog title="提示" :visible.sync="dialogVisible" :append-to-body="true" width="500px">
       <el-row :gutter="10" type="flex" style="margin:0 0 10px 0 ;" class="row-bg">
         <el-col :span="4" style="line-height:40px;">
@@ -57,7 +57,6 @@
 <script>
 import * as callserve from "@/api/callserve";
 import upLoadImage from "@/components/upLoadFile";
-// import { mapState } from "vuex";
 
 export default {
   props: ["serveId"],
@@ -65,6 +64,7 @@ export default {
   data() {
     return {
       wordList: [],
+      content: "", // 输入内容
       baseURL: process.env.VUE_APP_BASE_API,
       tokenValue: this.$store.state.user.token,
       previewUrl: "", //预览图片的定义
@@ -87,24 +87,17 @@ export default {
         //   },
         // ],
       },
+      loadingBtn: false
     };
   },
   mounted() {
     this.getList();
     this.getInfo();
   },
-  // computed:mapState([
-  //  "count"
-  // ]),
   watch: {
     serveId: {
-      handler(val) {
-        callserve
-          .GetServiceOrderMessages({ serviceOrderId: val })
-          .then((res) => {
-            this.wordList = res.result;
-            console.log(res.result);
-          });
+      handler() {
+        this.getList()
       },
     },
   },
@@ -113,9 +106,11 @@ export default {
       callserve
         .GetServiceOrderMessages({ serviceOrderId: this.serveId })
         .then((res) => {
-          this.wordList = res.result;
-          // console.log(this.wordList, 'wordList')
-        });
+          this.wordList = this._normalizeWordList(res.result);
+          console.log(this.wordList, "wordList");
+        }).catch(() => {
+          this.$message.error('加载留言列表失败')
+        })
     },
     getInfo() {
       // return new Promise((resolve,reject)=>{
@@ -123,58 +118,65 @@ export default {
         .GetUserProfile(this.tokenValue)
         .then((res) => {
           this.userType = res.result.name;
+          console.log(res, "res info");
         })
         .catch((error) => {
           console.log(error);
         });
       // })
     },
+    _normalizeWordList (wordList) {
+      return wordList.map(item => {
+        item.content = item.content.replace(/\n/g, '<br>')
+        item.content = item.content.split('<br>')
+        return item
+      })
+    },
     getImgList(val) {
       //获取图片列表
-      this.formValue.serviceOrderMessagePictures = val
+      this.serviceOrderMessagePictures = val;
+      console.log(val, "val");
       // this.formValue.serviceOrderMessagePictures = val.map((item) => {
       //   item.id = item.pictureId;
       //   return item;
       // });
     },
-    submitForm(item) {
-      this.formValue.froTechnicianName = item.data[0].froTechnicianName;
-      this.formValue.froTechnicianId = item.data[0].froTechnicianId;
-      this.formValue.serviceOrderId = item.data[0].serviceOrderId;
-      this.formValue.content = item.content;
-      this.formValue.appUserId = item.data[0].appUserId;
-      if (
-        !this.formValue.content &&
-        !this.formValue.serviceOrderMessagePictures
-      ) {
-        this.$message({
-          type: "warning",
-          message: "你不能发送空消息",
-        });
-      } else {
-        callserve
-          .SendMessageToTechnician(this.formValue)
-          .then((res) => {
-            if(res.code==200){
-     this.getList();
+    submitForm() {
+      if (!this.content.trim()) {
+        return this.$message.error("留言内容不能为空");
+      }
+      this.loadingBtn = true
+      callserve
+        .SendMessageToTechnician({
+          content: this.content,
+          serviceOrderMessagePictures: this.serviceOrderMessagePictures,
+          serviceOrderId: this.serveId
+        })
+        .then((res) => {
+          if (res.code == 200) {
+            this.serviceOrderMessagePictures = []
+            this.content = ''
             this.$message({
               type: "success",
               message: "发送成功",
             });
-            }else{
-                  this.$message({
-              type: "warning",
-              message:  `${res}`,
-            });
-            }
-          })
-          .catch((res) => {
+            this.loadingBtn = false
+            this.getList();
+          } else {
+            this.loadingBtn = false
             this.$message({
-              type: "error",
+              type: "warning",
               message: `${res}`,
             });
+          }
+        })
+        .catch((res) => {
+          this.loadingBtn = false
+          this.$message({
+            type: "error",
+            message: `${res}`,
           });
-      }
+        });
     },
   },
 };
@@ -191,6 +193,14 @@ export default {
     .el-form-item__content {
       line-height: 30px;
     }
+  }
+}
+.content-wrapper {
+  .title {
+    margin-bottom: 10px;
+  }
+  .btn-wrapper {
+    margin-top: 10px;
   }
 }
 
@@ -224,6 +234,9 @@ ul {
       p:nth-child(2) {
         border-radius: 5px;
         padding: 2px;
+        // color: #409eff;
+      }
+      .text {
         color: #409eff;
       }
     }
@@ -232,9 +245,12 @@ ul {
       border: 2px solid white;
       border-radius: 5px;
       padding: 5px;
-
+      text-align: right;
       p:nth-child(2) {
-        color: #67c23a;
+        // color: #67c23a;
+      }
+      .text {
+        // color: #67c23a;
       }
     }
   }

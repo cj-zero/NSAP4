@@ -9,6 +9,7 @@
             :rules="rules"
             ref="form"
             class="rowStyle1"
+            :class="{ 'form-disabled': this.formName !== '新建' }"
             :disabled="this.formName !== '新建'"
             :label-width="labelwidth"
             :inline-message="true"
@@ -25,11 +26,12 @@
                   <!-- <el-input size="mini" v-model="form.customerId" ><i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick"></i></el-input> -->
                   <el-autocomplete
                     popper-class="my-autocomplete"
-                    v-model="form.customerId"
+                    v-model.trim="form.customerId"
                     :fetch-suggestions="querySearch"
                     placeholder="请输入内容"
                     class="myAuto"
                     @select="handleSelectCustomer"
+                    @input.native="onCustomerIdChange"
                   >
                     <i class="el-icon-search el-input__icon" slot="suffix" @click="handleIconClick('customer')"></i>
                     <template slot-scope="{ item }">
@@ -72,7 +74,7 @@
                     readonly
                     @focus="handleIconClick('terminalCustomer')"
                   >
-                    <i class="el-icon-circle-close" slot="suffix" @click="clearTerminalCode"></i>
+                    <!-- <i class="el-icon-circle-close" slot="suffix" @click="clearTerminalCode"></i> -->
                     <template slot-scope="{ item }">
                       <div class="name">
                         <p style="height:20px;margin:2px;">{{ item.cardCode }}</p>
@@ -208,7 +210,7 @@
                 </el-form-item>
               </el-col>
             </el-row>
-            <el-row :gutter="10">
+            <el-row :gutter="10" type="flex" align="top">
               <el-col :span="10">
                 <el-form-item label="现地址">
                   <el-input size="mini" v-model="allArea" readonly @focus="onAreaClick">
@@ -226,8 +228,8 @@
                   >{{allArea}}</p> -->
                 </el-form-item>
               </el-col>
-              <el-col :span="10" style="height:30px;line-height:30px;padding:2px 0 0 7px;">
-                <el-input size="mini" v-model="form.addr">
+              <el-col :span="10" style="height:30px;line-height:30px;padding:0 0 0 7px;margin-top: -1px;">
+                <el-input size="mini" v-model="form.addr" maxlength="50">
                   <!-- <el-button size="mini" slot="append" icon="el-icon-position" @click="openMap"></el-button> -->
                 </el-input>
               </el-col>
@@ -237,12 +239,29 @@
                 </el-form-item>
               </el-col>
             </el-row>
-            <!-- //上传图片组件暂时放在这里 -->
+            <bmap @mapInitail="onMapInitail" v-if="formName === '新建'"></bmap> 
+          </el-form>
+          <!-- //上传图片组件暂时放在这里 -->
+          <div class="file-wrapper">
             <el-row
-              v-if="isCreate"
+              v-if="customerList && customerList.length"
               :gutter="10"
               type="flex"
-              style="margin:0 0 10px 0 ;"
+              style="margin:5px 0 10px 0 ;"
+              class="row-bg"
+            >
+              <el-col class="upload-text">
+                客户上传图片
+              </el-col>
+              <el-col :span="22" >
+                <img-list :imgList="customerList"></img-list>
+              </el-col>
+            </el-row>
+            <el-row
+              v-if="formName === '新建' || formName === '确认'"
+              :gutter="10"
+              type="flex"
+              style="margin:5px 0 10px 0 ;"
               class="row-bg"
             >
               <!-- <el-col :span="1" style="line-height:40px;"></el-col> -->
@@ -250,62 +269,61 @@
                 上传图片
               </el-col>
               <el-col :span="22">
-                <upLoadImage :setImage="setImage" @get-ImgList="getImgList" :limit="limit"></upLoadImage>
+                <upLoadImage :setImage="setImage" @get-ImgList="getImgList" :limit="limit" ref="uploadImg"></upLoadImage>
               </el-col>
-              <bmap @mapInitail="onMapInitail"></bmap>
-              <!-- <el-col :span="2" style="line-height:40px;">  暂时取消
-                <el-button
-                  type="primary"
-                  v-if="ifEdit"
-                  icon="el-icon-share"
-                  @click="postService"
-                >确定修改</el-button>
-              </el-col>-->
             </el-row>
             <el-row
-              v-if="form.serviceOrderPictures&&form.serviceOrderPictures.length"
+              v-if="serviceList && serviceList.length"
+              :gutter="10"
+              type="flex"
+              style="margin:5px 0 10px 0 ;"
+              class="row-bg"
+            >
+              <el-col class="upload-text">
+                客服上传图片
+              </el-col>
+              <el-col :span="22" >
+                <img-list :imgList="serviceList"></img-list>
+              </el-col>
+            </el-row>
+            <el-row
+              :gutter="10"
+              type="flex"
+              style="margin:5px 0 10px 0 ;"
+              class="row-bg"
+              v-if="formName === '新建' || formName === '确认'"
+            >
+              <el-col class="upload-text">
+                上传附件
+              </el-col>
+              <el-col :span="22">
+                <upLoadImage  @get-ImgList="getFileList" :limit="limit" uploadType="file" ref="uploadFile"></upLoadImage>
+              </el-col>
+            </el-row>
+            <el-row
+              v-if="attachmentList && attachmentList.length"
               :gutter="10"
               type="flex"
               style="margin:0 0 10px 0 ;"
               class="row-bg"
             >
               <el-col class="upload-text">
-                已上传图片
+                已上传附件
               </el-col>
-              <el-col :span="22" v-if="form.serviceOrderPictures&&form.serviceOrderPictures.length">
-                <div class="demo-image__lazy">
-                  <div class="img-list" v-for="url in form.serviceOrderPictures" :key="url.id">
-                    <el-image
-                      style="width:60px;height:50px;display:inline-block;"
-                      :src="`${baseURL}/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`"
-                      lazy
-                    ></el-image>
-                    <div class="operation-wrapper">
-                      <i
-                        class="el-icon-zoom-in"
-                        @click="handlePreviewFile(`${baseURL}/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`)"
-                      ></i>
-                      <i
-                        class="el-icon-download"
-                        @click="downloadFile(`${baseURL}/${url.pictureId?url.pictureId:url.id}?X-Token=${tokenValue}`)"
-                      ></i>
-                    </div>
-                  </div>
-                </div>
+              <el-col :span="22">
+                <img-list :imgList="attachmentList" listType="file"></img-list>
               </el-col>
             </el-row>
             <el-row
               :gutter="10"
               type="flex"
-              style="margin:0 0 10px 0 ;"
+              style="margin:5px 0 10px 0 ;"
               class="row-bg"
               justify="space-around"
             >
               <el-col :span="20"></el-col>
             </el-row>
-            <!-- 选择制造商序列号 -->
-            <!-- <formAdd :SerialNumberList="SerialNumberList"></formAdd> -->
-          </el-form>
+          </div>
           <formAdd
             :isCreate="isCreateAdd"
             :ifEdit="ifEdit"
@@ -319,6 +337,7 @@
         </el-col>
       </el-row>
       <el-dialog
+        v-el-drag-dialog
         title="选择地址"
         width="1000px"
         :modal-append-to-body="false"
@@ -337,6 +356,7 @@
         </el-row>
       </el-dialog>
       <el-dialog
+        v-el-drag-dialog
         title="选择业务伙伴"
         class="addClass1"
         width="70%"
@@ -349,19 +369,19 @@
       >
         <el-form :inline="true" class="demo-form-inline" size="mini">
           <el-form-item label="客户">
-            <el-input @input="searchList" v-model="inputSearch" placeholder="客户"></el-input>
+            <el-input @input="searchList" v-model.trim="inputSearch" placeholder="客户"></el-input>
           </el-form-item>
           <el-form-item label="制造商序列号:">
-            <el-input @input="searchList" v-model="inputSerial" placeholder="制造商序列号"></el-input>
+            <el-input @input="searchList" v-model.trim="inputSerial" placeholder="制造商序列号"></el-input>
           </el-form-item>
           <el-form-item label="售后主管">
-            <el-input @input="searchList" v-model="inputTech" placeholder="售后主管"></el-input>
+            <el-input @input="searchList" v-model.trim="inputTech" placeholder="售后主管" style="width: 100px;"></el-input>
           </el-form-item>
           <el-form-item label="销售员:">
-            <el-input @input="searchList" v-model="inputSlpName" placeholder="销售员"></el-input>
+            <el-input @input="searchList" v-model.trim="inputSlpName" placeholder="销售员" style="width: 100px;"></el-input>
           </el-form-item>
           <el-form-item label="收货地址:">
-            <el-input @input="searchList" v-model="inputAddress" placeholder="收货地址"></el-input>
+            <el-input @input="searchList" v-model.trim="inputAddress" placeholder="收货地址"></el-input>
           </el-form-item>
         </el-form>
         <formPartner
@@ -374,8 +394,8 @@
         <pagination
           v-show="parentCount>0"
           :total="parentCount"
-          :page.sync="listQuery.page"
-          :limit.sync="listQuery.limit"
+          :page.sync="listQuerySearch.page"
+          :limit.sync="listQuerySearch.limit"
           @pagination="handleChange"
         />
         <span slot="footer" class="dialog-footer">
@@ -384,6 +404,7 @@
         </span>
       </el-dialog>
       <el-dialog 
+        v-el-drag-dialog
         :modal-append-to-body='false'
         :append-to-body="true" 
         title="最近服务单情况" 
@@ -392,7 +413,7 @@
         :visible.sync="dialogCallId"
         :center="true"
       >
-        <callId :toCallList="CallList"></callId>
+        <callId :toCallList="CallList" :openTree="openTree"></callId>
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialogCallId = false">关闭</el-button>
           <!-- <el-button type="primary" @click="dialogCallId = false">确 定</el-button> -->
@@ -421,6 +442,7 @@ import * as callformPartner from "@/api/serve/callformPartner";
 import callId from "./callId";
 // import BMap from 'BMap'
 import http from "@/api/serve/whiteHttp";
+import elDragDialog from '@/directive/el-dragDialog'
 import * as callservesure from "@/api/serve/callservesure";
 import Pagination from "@/components/Pagination";
 import zmap from "@/components/amap";
@@ -435,11 +457,13 @@ import { download } from "@/utils/file";
 import formPartner from "./formPartner";
 import formAdd from "./formAdd";
 import AreaSelector from '@/components/AreaSelector'
+import ImgList from '@/components/imgList'
 // import jsonp from '@/utils/jsonp'
 // import { delete } from 'vuedraggable';
 const districtReg = /.+?区/  // 用来从百度地图获取到的地址取出 区地址
 export default {
   name: "formTable",
+  // inject: ['instance'],
   components: { 
     formPartner, 
     formAdd, 
@@ -449,7 +473,11 @@ export default {
     Model, 
     bmap,
     callId,
-    AreaSelector 
+    AreaSelector,
+    ImgList
+  },
+  directives: {
+    elDragDialog
   },
   props: [
     "modelValue",
@@ -463,6 +491,7 @@ export default {
     "sure", //用于待确认，新建页面确定之后的响应
     "ifFirstLook", //是否是待确认页面
     "serviceOrderId", // 服务单ID
+    'openTree'
   ],
   //  ##isCreate是否可以编辑  ##look只能看   ##create新增页  ##customer获取服务端对比的信息
   //customer确认订单时传递的信息
@@ -553,6 +582,7 @@ export default {
         fromId: this.formName === '确认' ? 6 : 1, //integer($int32)呼叫来源 1-电话 2-APP
         pictures: [], //
         serviceWorkOrders: [],
+        files: []
       },
       disableBtn: false,
       newDate: [],
@@ -581,6 +611,10 @@ export default {
         page: 1,
         limit: 40,
       },
+      listQuerySearch: {
+        page: 1,
+        limit: 40
+      },
       needPos: false,
       dialogCallId: false, // 最近十个服务单弹窗
       CallList: [], // 最近十个服务单列表
@@ -592,13 +626,41 @@ export default {
       bMapkey: 'uGyEag9q02RPI81dcfk7h7vT8tUovWfG', // 百度key
       positionTransformURL: 'https://restapi.amap.com/v3/assistant/coordinate/convert?', // 高德坐标转换地址
       // gdKey: 'cfd8da5cf010c5f7441834ff5e764f5b' // 高德key
-      gdKey: '6cacd440b344fa2d3ef098f0fe1ee33b'
+      gdKey: '6cacd440b344fa2d3ef098f0fe1ee33b',
+      upLoadFileList: [], // 附件列表
+      upLoadImgList: [], // 图片列表
+      currentItem: {}, // 当前选中的数据
+      selectType: '', // 改变客户/终端客户代码的方式
     };
   },
   computed: {
     allArea() {
       return this.form.province + this.form.city + this.form.area;
     },
+    customerList () {
+      if (this.form.files && this.form.files.length) {
+        return this.form.files.filter(item => {
+          return Number(item.pictureType) === 1
+        })
+      }
+      return []
+    },
+    serviceList () {
+      if (this.form.files && this.form.files.length) {
+        return this.form.files.filter(item => {
+          return Number(item.pictureType) === 2
+        })
+      }
+      return []
+    },
+    attachmentList () {
+      if (this.form.files && this.form.files.length) {
+        return this.form.files.filter(item => {
+          return Number(item.pictureType) === 3
+        })
+      }
+      return []
+    }
   },
   watch: {
     // ifEdit: {
@@ -608,8 +670,9 @@ export default {
     // },
     customer: {
       handler(val) {
-        this.getPartnerInfo(val.customerId)
+        this.getPartnerInfo(String(val.customerId).toUpperCase())
         this.setForm(val);
+        // console.log(this.$refs.uploadImg, 'uploadImg')
       },
     },
     sure: {
@@ -668,11 +731,18 @@ export default {
         }
         this.handleSelectType = 'customer'
         if (this.formName === '新建') {
-          this.form.terminalCustomerId = ''
+          if (!this.form.terminalCustomerId) {
+            isCustomerCode(val) ?
+            this.form.terminalCustomerId = val :
+            this.form.terminalCustomerId = ''
+          }
         }
         if (isCustomerCode(val)) {
-          if (this.formName !== '编辑' && this.formName !== '查看') {
-            this.getPartnerInfo(val)
+          if (this.formName !== '编辑' && this.formName !== '查看') {         
+            let value = this.selectType === 'click'
+              ? this.currentItem
+              : { cardCode: val }
+            this.handleCurrentChange(value)
           }
         } else {
           this.resetInfo()
@@ -710,8 +780,8 @@ export default {
                 item.problemType && item.problemType.name;
             });
           }
-          console.log(val, 'refValueChange', this.form)
-          this.propForm = this.form.serviceWorkOrders;
+          // console.log(val, 'refValueChange', this.form)
+          this.propForm = this.form.serviceWorkOrders
         }
         // this.propForm = this.refValue.serviceWorkOrders
       },
@@ -724,21 +794,15 @@ export default {
   },
   provide: function () {
     return {
-      form: this.form,
+      form: this.form
     };
   },
   mounted() {
-    this.getPartnerList();
+    this.getPartnerList(this.listQuery, 'first');
     if (this.customer) {
       this.setForm(this.customer);
     }
     this.isCreateAdd = this.isCreate;
-    // if (this.formName === '确认') {
-    //   // 确认页面的话，直接调用
-    //   console.log('look')
-    //   this.getPartnerInfo(this.customer.customerId)
-    // }
-    console.log(this.isCreateAdd, "isCreatedAdd");
   },
   updated () {
     // if (this.formName === '确认') {
@@ -751,9 +815,23 @@ export default {
     window.removeEventListener("resize", this.resizeWin);
   },
   methods: {
-    clearTerminalCode () {
-      this.form.terminalCustomerId = ''
+    clearFiles () {
+      this.$refs.uploadImg.clearFiles()
+      this.$refs.uploadFile.clearFiles()
+      this.form.files = []
+      this.upLoadFileList = []
+      this.upLoadImgList = []
     },
+    onCustomerIdChange (e) {
+      let val = e.target.value
+      if (!isCustomerCode(val)) {
+        this.form.terminalCustomerId = ''
+      }
+      this.selectType = 'type' // 键盘键入
+    },
+    // clearTerminalCode () {f
+    //   this.form.terminalCustomerId = ''
+    // },
     processTakeType (takeType) {
       if (!takeType || !Number(takeType)) {
         return takeType
@@ -761,7 +839,6 @@ export default {
       return (takeType == 3 || takeType === 1) ? 1 : 2
     },
     onMapInitail (val) {
-      // console.log(val, 'mapBAIDU')
       this.map = val.map
       this.BMap = val.BMap
     },
@@ -779,7 +856,6 @@ export default {
       this.previewUrl = item;
     },
     onAreaChange (val) { // 地址发生变化
-      console.log(val)
       let { province, city, district } = val
       this.form.province = province
       this.form.city = city
@@ -790,6 +866,7 @@ export default {
       let local = new this.BMap.LocalSearch(this.map, { //智能搜索
         onSearchComplete: onSearchComplete.bind(this)
       })
+      address = address.replace(/^中国/i, '') // 如果以中国开头会直接搜索北京市
       local.search(address)
       function onSearchComplete () {
         if (!local.getResults().getPoi(0)) {
@@ -917,8 +994,10 @@ export default {
     // },
     getImgList(val) {
       //获取图片列表
-
-      this.form.pictures = val;
+      this.upLoadImgList = val
+    },
+    getFileList (val) {
+      this.upLoadFileList = val
     },
     dragmap(res) {
       this.allAddress = res;
@@ -951,8 +1030,9 @@ export default {
       val = JSON.parse(JSON.stringify(val));
       // console.log(val, 'json.stringify')
       if (val) {
-        val.serviceOrderPictures = await this.getServeImg(val.id);
-        this.$emit("imgChange", val.serviceOrderPictures); // 告诉父组件
+        val.files = await this.getServeImg(val.id);
+        this.form.files = val.files
+        this.$emit("imgChange", val.files); // 告诉父组件
       }
       if (val.province && val.city && val.area && val.addr) {
         this.needPos = false;
@@ -1009,7 +1089,7 @@ export default {
             materialDescription: res[i].data[0].itemName,
             feeType: 1,
             fromTheme:  "",
-            fromType:  1,
+            fromType:  "",
             problemTypeName,
             problemTypeId,
             priority:  1,
@@ -1020,15 +1100,18 @@ export default {
           })
         }
         if (hasOther) {
+          if (targetList.length && otherIndex === 0) {
+            targetList[0].editTrue = false
+          }
           targetList.splice(otherIndex, 0, {
             manufacturerSerialNumber: "其他设备",
-            editTrue: false,
+            editTrue: otherIndex === 0,
             internalSerialNumber: "",
             materialCode: "其他设备",
             materialDescription: "",
             feeType: 1,
             fromTheme:  "",
-            fromType:  1,
+            fromType:  "",
             problemTypeName,
             problemTypeId,
             priority:  1,
@@ -1096,10 +1179,10 @@ export default {
           this.$message.error('请输入正确的终端代码格式')
           return this.$emit('close-Dia', 'closeLoading')
         }
-        console.log(chec, this.isValid, "isValid", this.$router.path);
+        // console.log(chec, this.isValid, "isValid", this.$router.path);
         if (chec && this.isValid) {
           if (this.$route.path === "/serve/callserve") {
-            if (this.isCreate) {
+            if (this.formName === '新建') {
               // 新建服务单
               if (Array.isArray(this.form.area)) {
                 this.form.area = "";
@@ -1107,6 +1190,7 @@ export default {
               if (Array.isArray(this.form.city)) {
                 this.form.city = ""
               }
+              this.form.pictures = [...this.upLoadImgList, ...this.upLoadFileList]
               callservesure
                 .CreateOrder(this.form)
                 .then(() => {
@@ -1159,6 +1243,7 @@ export default {
                 });
             }
           } else {
+            this.form.pictures = [...this.upLoadImgList, ...this.upLoadFileList]
             callservesure
               .CreateWorkOrder(this.form)
               .then(() => {
@@ -1197,26 +1282,35 @@ export default {
           //   if (this.form.terminalCustomerId) { // 如果终端客户存在，则不进行值的覆盖
           //     return 
           //   }
-          // }f
+          // }
           if (this.handleSelectType === 'customer') {
             this.form.salesMan = res.result.slpName
             this.form.customerName = res.result.cardName
+            if (this.form.terminalCustomerId === this.form.customerId) {
+              this.form.terminalCustomer = res.result.cardName
+            }
           } else {
             this.form.terminalCustomer = res.result.cardName
           }
-          this.addressList = res.result.addressList;
-          this.cntctPrsnList = res.result.cntctPrsnList;
-          this.form.supervisor = res.result.techName;
-          if (this.cntctPrsnList && this.cntctPrsnList.length) {
-          let firstValue = res.result.cntctPrsnList[0]
-            let { tel1, tel2, cellolar, name } = firstValue
-            this.form.contacter = name
-            this.form.contactTel = tel1 || tel2 || cellolar
-          }
-          if (this.addressList.length) {
-            let { address, building } = this.addressList[0];
-            this.form.addressDesignator = address;
-            this.form.address = building
+          // 如果已经存在终端客户，则只有改变终端客户时才可以更改相关信息
+          // 如果终端客户代码和客户代码一致，则可以更改相关信息
+          if ((this.handleSelectType === 'terminalCustomer' && this.form.terminalCustomerId) || 
+            (this.handleSelectType === 'customer' && this.form.terminalCustomerId === this.form.customerId) ||
+            this.formName === '确认') {
+            this.addressList = res.result.addressList;
+            this.cntctPrsnList = res.result.cntctPrsnList;
+            this.form.supervisor = res.result.techName;
+            if (this.cntctPrsnList && this.cntctPrsnList.length) {
+            let firstValue = res.result.cntctPrsnList[0]
+              let { tel1, tel2, cellolar, name } = firstValue
+              this.form.contacter = name
+              this.form.contactTel = tel1 || tel2 || cellolar
+            }
+            if (this.addressList.length) {
+              let { address, building } = this.addressList[0];
+              this.form.addressDesignator = address;
+              this.form.address = building
+            }
           }
         })
         .catch(() => {
@@ -1237,7 +1331,6 @@ export default {
     },
     changeForm(val) {
       this.form.serviceWorkOrders = val;
-      console.log(this.form.serviceWorkOrders, "serviceWorkOrders");
     },
     postService() {
       //更新服务单
@@ -1263,9 +1356,9 @@ export default {
       console.log(val);
     },
     handleChange(val) {
-      this.listQuery.page = val.page;
-      this.listQuery.limit = val.limit;
-      this.getPartnerList();
+      this.listQuerySearch.page = val.page;
+      this.listQuerySearch.limit = val.limit;
+      this.getPartnerList(this.listQuerySearch, 'search');
     },
     handleClose() {
       //  ##地图关闭之前执行的操作
@@ -1277,18 +1370,16 @@ export default {
     },
     openDialog() {
       //打开前赋值
-      this.filterPartnerList = this.partnerList;
+      // this.filterPartnerList = this.partnerList;
     },
     searchList: debounce(function() {
-      console.log(this, 'this')
-      this.listQuery.CardCodeOrCardName = this.inputSearch;
-      this.listQuery.ManufSN = this.inputSerial
+      this.listQuerySearch.CardCodeOrCardName = this.inputSearch;
+      this.listQuerySearch.ManufSN = this.inputSerial
       // this.form.customerId = this.inputSearch;
-      this.listQuery.slpName = this.inputSlpName
-      this.listQuery.Technician = this.inputTech
-      this.listQuery.Address = this.inputAddress
-      console.log('searchList')
-      this.getPartnerList();
+      this.listQuerySearch.slpName = this.inputName
+      this.listQuerySearch.Technician = this.inputTech
+      this.listQuerySearch.Address = this.inputAddress
+      this.getPartnerList(this.listQuerySearch, 'search');
       // if (!res) {
       //   this.filterPartnerList = this.partnerList;
       // } else {
@@ -1304,10 +1395,9 @@ export default {
       this.getPartnerList();
     }, 400),
     async querySearch(queryString, cb) {
-      // this.listQuery.CardCodeOrCardName = queryString;
+      this.listQuery.CardCodeOrCardName = queryString;
       // this.inputSearch = queryString;
-
-      await this.getPartnerList();
+      await this.getPartnerList(this.listQuery);
       console.log(this.partnerList, 'partnerList')
       // var results = queryString
       //   ? partnerList.filter(this.createFilter(queryString))
@@ -1324,14 +1414,24 @@ export default {
     //     );
     //   };
     // },
-    getPartnerList() {
+    getPartnerList(listQuery, type) {
       this.parentLoad = true;
-      return getPartner(this.listQuery)
+      return getPartner(listQuery)
         .then((res) => {
-          this.partnerList = res.data;
+          // this.partnerList = res.data;
           // console.log(res.data, '返回')
-          this.filterPartnerList = this.partnerList;
-          this.parentCount = res.count;
+          let list = res.data
+          if (type === 'first') {
+            this.filterPartnerList = list
+            this.partnerList = list
+            this.parentCount = res.count;
+          } else if (type === 'search') {
+            this.filterPartnerList = list;
+            this.parentCount = res.count;
+          } else {
+            this.partnerList = list;
+          }
+          // this.parentCount = res.count;
           this.parentLoad = false;
         })
         .catch(() => {
@@ -1339,18 +1439,19 @@ export default {
         });
     },
     handleSelectCustomer(item) {
-      console.log(item)
       this.handleSelect(item, 'customer')
     },
     handleSelectTerminal (item) {
-      this.handleSelect(item, 'termianlCustomer')
+      this.handleSelect(item, 'terminalCustomer')
     },
     handleSelect (item, type) {
       // if (!this.form.customerId && type === 'terminalCustomer') {
       //   return this.$message.error('请先选择客户代码')
       // }
       // this.inputSearch = item.customerId;
+      this.selectType = 'click' // 通过什么方式来填写客户/终端客户代码
       this.handleSelectType = type // 选择的类型
+      this.currentItem = item
       if (type === 'customer') { // 客户代码
         this.form.customerId = item.cardCode;
         this.form.customerName = item.cardName;
@@ -1358,20 +1459,22 @@ export default {
         if (!this.form.terminalCustomerId) {
           this.form.contactTel = item.cellular;
         }
-      } else { // 终端客户代码
-        this.form.terminalCustomerId = item.cardCode
-        this.form.terminalCustomer = item.cardName
-      }
-      this.handleCurrentChange(item)
+      } 
+      // else { // 终端客户代码
+      //   this.form.terminalCustomerId = item.cardCode
+      //   this.form.terminalCustomer = item.cardName
+      // }
+      // this.handleCurrentChange(item)
     },
     sureVal(item, type) {
       this.dialogPartner = false;
       if (!Object.keys(item).length) {
         return
       }
+      this.selectType = 'click'
       this.handleSelectType = type // 选择的类型
+      this.currentItem = item
       if (type === 'customer') { // 客户代码
-      console.log('customer')
         this.form.customerId = item.cardCode;
         this.form.customerName = item.cardName;
         this.form.salesMan = item.slpName;
@@ -1382,8 +1485,8 @@ export default {
         console.log('terminal')
         this.form.terminalCustomerId = item.cardCode
         this.form.terminalCustomer = item.cardName
+        this.handleCurrentChange(item)
       }
-      this.handleCurrentChange(item)
     },
     handleCurrentChange (val) {
       if (val.frozenFor == "Y") {
@@ -1393,19 +1496,21 @@ export default {
         });
       } else {
         this.selectSerNumberDisabled = false
-        this.getPartnerInfo(val.cardCode)
-        callformPartner.getTableList({ code: val.cardCode }).then(res => {
-          this.CallList = res.result;
-          this.dialogCallId = true
-          // this.newestNotCloseOrder=res.reault.newestNotCloseOrder
-          // this.newestOrder=res.reault.newestNotCloseOrder
-        });
+        let cardCode = String(val.cardCode).toUpperCase()
+        this.getPartnerInfo(cardCode)
+        if (this.formName === '新建') {
+          callformPartner.getTableList({ code: cardCode }).then(res => {
+            this.CallList = res.result;
+            this.dialogCallId = true
+            // this.newestNotCloseOrder=res.reault.newestNotCloseOrder
+            // this.newestOrder=res.reault.newestNotCloseOrder
+          });
+        }
       }
     },
     ChildValue(val) {
       if (val == 1) {
         this.disableBtn = true;
-        console.log(11);
       } else {
         this.checkVal = val;
         this.disableBtn = false;
@@ -1453,6 +1558,14 @@ export default {
     position: sticky;
     top: 0;
     // width: 200px;
+  }
+  ::v-deep .el-upload-list {
+    .el-upload-list__item-name {
+      font-size: 12px;
+      line-height: 1.2 !important;
+      margin-top: 0;
+      padding-left: 0;
+    }
   }
   ::v-deep .el-radio {
     margin-left: 0 !important;
@@ -1502,6 +1615,20 @@ export default {
   ::v-deep .el-form {
     padding: 5px;
     // margin-bottom: 2px;
+  }
+  &.form-disabled {
+    ::v-deep .el-input.is-disabled .el-input__inner {
+      background-color: #fff;
+      cursor: default;
+      color: #606266;
+      border-color: #DCDFE6;
+    }
+    ::v-deep .el-textarea.is-disabled .el-textarea__inner {
+      background-color: #fff;
+      cursor: default;
+      color: #606266;
+      border-color: #DCDFE6;
+    }
   }
   ::v-deep .el-form-item__label {
     line-height: 30px;

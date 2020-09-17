@@ -33,7 +33,7 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
-        
+
         /// <summary>
         /// 修改用户资料
         /// </summary>
@@ -43,7 +43,7 @@ namespace OpenAuth.WebApi.Controllers
         public Response ChangeProfile(ChangeProfileReq request)
         {
             var result = new Response();
-            
+
             try
             {
                 _app.ChangeProfile(request);
@@ -81,7 +81,7 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         //添加或修改
-       [HttpPost]
+        [HttpPost]
         public Response<string> AddOrUpdate(UpdateUserReq obj)
         {
             var result = new Response<string>();
@@ -104,13 +104,13 @@ namespace OpenAuth.WebApi.Controllers
         /// 加载列表
         /// </summary>
         [HttpGet]
-        public TableData Load([FromQuery]QueryUserListReq request)
+        public TableData Load([FromQuery] QueryUserListReq request)
         {
             return _app.Load(request);
         }
 
-       [HttpPost]
-        public Response Delete([FromBody]string[] ids)
+        [HttpPost]
+        public Response Delete([FromBody] string[] ids)
         {
             var result = new Response();
             try
@@ -131,7 +131,7 @@ namespace OpenAuth.WebApi.Controllers
         /// 加载指定角色的用户
         /// </summary>
         [HttpGet]
-        public TableData LoadByRole([FromQuery]QueryUserListByRoleReq request)
+        public TableData LoadByRole([FromQuery] QueryUserListByRoleReq request)
         {
             return _app.LoadByRole(request);
         }
@@ -141,7 +141,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> LoadByRoleName([FromQuery]QueryUserListByRoleNameReq request)
+        public async Task<TableData> LoadByRoleName([FromQuery] QueryUserListByRoleNameReq request)
         {
             return await _app.LoadByRoleName(request);
         }
@@ -173,7 +173,29 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 await _app.BlockUp(req);
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 根据App用户Id获取用户信息
+        /// </summary>
+        /// <param name="appUserId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetUserInfoByAppUserId(int appUserId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.GetUserInfoByAppUserId(appUserId);
+            }
+            catch (Exception ex)
             {
                 result.Code = 500;
                 result.Message = ex.Message;
@@ -182,7 +204,8 @@ namespace OpenAuth.WebApi.Controllers
         }
 
 
-        public UsersController(UserManagerApp app) 
+
+        public UsersController(UserManagerApp app)
         {
             _app = app;
         }

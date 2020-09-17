@@ -60,7 +60,6 @@ export default {
     }
   },
   mounted () {
-    console.log('mounted sider')
     initSignalR.call(this, getToken(), () => {
       sendPendingNumber()
     })

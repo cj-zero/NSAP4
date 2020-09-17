@@ -1,135 +1,73 @@
 <template>
   <div>
-    <!-- <sticky :className="'sub-navbar'">
+    <sticky :className="'sub-navbar'">
       <div class="filter-container">
-        <el-input
-          @keyup.enter.native="handleFilter"
-          size="mini"
-          style="width: 200px;"
-          class="filter-item"
-          :placeholder="'名称'"
-          v-model="listQuery.key"
-        ></el-input>
-        <el-button
-          class="filter-item"
-          size="mini"
-          style="margin:0 15px;"
-          v-waves
-          icon="el-icon-search"
-          @click="handleFilter"
-        >搜索</el-button>
-        <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
+        <Search 
+          :listQuery="listQuery" 
+          :config="searchConfig"
+          @changeForm="onChangeForm" 
+          @search="onSearch">
+        </Search>
+        <!-- <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn> -->
       </div>
-    </sticky>-->
+    </sticky>
     <div class="app-container">
       <div class="bg-white">
-        <el-form ref="listQuery" :model="listQuery" label-width="80px">
-          <div style="padding:10px 0;"></div>
-          <el-row :gutter="10">
-            <el-col :span="3">
-              <el-form-item label="姓名" size="small" >
-                         <el-input v-model="listQuery.Name" ></el-input>
-
-              </el-form-item>
-            </el-col>
-
-            <el-col :span="3">
-              <el-form-item label="部门" size="small" >
-                <el-input v-model="listQuery.Org"></el-input>
-
-                <!-- <el-select v-model="listQuery.Org" placeholder="请选择部门">
-                  <el-option label="全部" value></el-option>
-                  <el-option label="部门1" value="1"></el-option>
-                  <el-option label="部门2" value="2"></el-option>
-                  <el-option label="部门3" value="3"></el-option>
-                </el-select> -->
-              </el-form-item>
-            </el-col>
-
-            <el-col :span="3">
-              <el-form-item label="拜访对象" size="small" >
-                <el-input v-model="listQuery.VisitTo"></el-input>
-              </el-form-item>
-            </el-col>
-            <el-col :span="6">
-                          <el-form-item label="创建日期" >
-          <el-col :span="11">
-            <el-date-picker
-            
-           format="yyyy-MM-dd"   
-              value-format="yyyy-MM-dd"
-              placeholder="选择开始日期"
-              v-model="listQuery.DateFrom"
-              style="width: 100%;"
-            ></el-date-picker>
-          </el-col>
-          <el-col class="line" :span="2">至</el-col>
-          <el-col :span="11">
-            <el-date-picker
-               format="yyyy-MM-dd"   
-              value-format="yyyy-MM-dd"
-              placeholder="选择结束时间"
-              v-model="listQuery.DateTo"
-              style="width: 100%;"
-            ></el-date-picker>
-          </el-col>
-        </el-form-item>
-               
-            </el-col>
-              <el-col :span="3" style="margin-left:20px;" >
-                    <el-button type="primary" @click="onSubmit" size="small" icon="el-icon-search"> 搜 索 </el-button>
-      </el-col>
-          </el-row>
-        </el-form>
-        <el-table
-          ref="mainTable"
-          :data="checkList"
-          v-loading="listLoading"
-          border
-          fit
-          style="width: 100%;"
-          highlight-current-row
-          @current-change="handleSelectionChange"
-          @row-click="rowClick"
-        >
-          <!-- <el-table-column     v-for="(fruit,index) in formTheadOptions"  :key="`ind${index}`">
-              <el-radio v-model="fruit.id" ></el-radio>
-          </el-table-column>-->
-
-          <el-table-column
-            show-overflow-tooltip
-            v-for="(fruit,index) in formTheadOptions"
-            :align="fruit.align?fruit.align:'left'"
-            :key="`ind${index}`"
-            :sortable="fruit=='chaungjianriqi'?true:false"
-            style="background-color:silver;"
-            :label="fruit.label"
-            :width="fruit.width"
+        <div class="content-wrapper">
+          <el-table
+            ref="mainTable"
+            :data="checkList"
+            v-loading="listLoading"
+            border
+            fit
+            height="100%"
+            style="width: 100%;"
+            highlight-current-row
+            @current-change="handleSelectionChange"
+            @row-click="rowClick"
           >
-            <template slot-scope="scope">
-              <!-- <span
-                v-if="fruit.name === 'status'"
-                :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-              >{{stateValue[scope.row[fruit.name]-1]}}</span> -->
-              <span v-if="fruit.name === 'attendanceClockPictures'">
-                <showImg :PicturesList="scope.row[fruit.name]" 
-                ></showImg>
-                </span> 
-              <span
-                v-if="fruit.name !== 'attendanceClockPictures'"
-              >{{scope.row[fruit.name]}}</span>
-            </template>
-          </el-table-column>
-        </el-table>
-
-        <pagination
-          v-show="total>0"
-          :total="total"
-          :page.sync="listQuery.page"
-          :limit.sync="listQuery.limit"
-          @pagination="handleCurrentChange"
-        />
+            <el-table-column
+              show-overflow-tooltip
+              v-for="(fruit,index) in formTheadOptions"
+              :align="fruit.align?fruit.align:'left'"
+              :key="`ind${index}`"
+              :sortable="fruit=='chaungjianriqi'?true:false"
+              style="background-color:silver;"
+              :label="fruit.label"
+              :width="fruit.width"
+            >
+              <template slot-scope="scope">
+                <!-- <span
+                  v-if="fruit.name === 'status'"
+                  :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
+                >{{stateValue[scope.row[fruit.name]-1]}}</span> -->
+                <div class="link-container" 
+                  v-if="fruit.name === 'attendanceClockPictures' && scope.row[fruit.name] && scope.row[fruit.name].length"
+                >
+                  <img :src="rightImg" @click="toView(scope.row[fruit.name])" class="pointer">
+                  <span>查看</span>
+                </div>
+                <span
+                  v-if="fruit.name !== 'attendanceClockPictures'"
+                >{{scope.row[fruit.name]}}</span>
+              </template>
+            </el-table-column>
+          </el-table>
+          <pagination
+            v-show="total>0"
+            :total="total"
+            :page.sync="listQuery.page"
+            :limit.sync="listQuery.limit"
+            @pagination="handleCurrentChange"
+          />
+        </div>
       </div>
+      <el-image-viewer
+        v-if="previewVisible"
+        :url-list="[previewUrl]"
+        :on-close="closeViewer"
+      >
+      </el-image-viewer>
     </div>
   </div>
 </template>
@@ -137,15 +75,21 @@
 <script>
 import * as callservecheck from "@/api/serve/callservecheck";
 import waves from "@/directive/waves"; // 水波纹指令
-// import Sticky from "@/components/Sticky";
- import showImg from "@/components/showImg";
+import Sticky from "@/components/Sticky";
+// import showImg from "@/components/showImg";
 import Pagination from "@/components/Pagination";
 import elDragDialog from "@/directive/el-dragDialog";
+import Search from '@/components/Search'
+import rightImg from '@/assets/table/right.png'
+import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 export default {
   name: "callservecheck",
   components: {
     Pagination,
-    showImg
+    // showImg,
+    Search,
+    Sticky,
+    ElImageViewer
   },
   directives: {
     waves,
@@ -157,13 +101,13 @@ export default {
       formTheadOptions: [
         // { name: "id", label: "Id"},
         { name: "name", label: "姓名" ,width:'80px'},
-        { name: "org", label: "职位",width:'100px' },
+        // { name: "org", label: "职位",width:'100px' },
         { name: "org", label: "部门" ,width:'100px'},
-        { name: "clockTime", label: "打卡时间" ,width:'100px'},
-         { name: "clockDate", label: "打卡日期" },
-        { name: "location", label: "地点" },
-        { name: "specificLocation", label: "详细地址" },
-        { name: "visitTo", label: "拜访对象" },
+        // { name: "clockTime", label: "打卡时间" ,width:'100px'},
+         { name: "clockDate", label: "打卡日期", width: '150' },
+        { name: "location", label: "地点", width: 360 },
+        // { name: "specificLocation", label: "详细地址" },
+        { name: "visitTo", label: "拜访对象", width: 100 },
         { name: "remark", label: "备注" },
         { name: "attendanceClockPictures", label: "图片" }
       ],
@@ -199,7 +143,20 @@ export default {
         ],
         name: [{ required: true, message: "名称不能为空", trigger: "blur" }]
       },
-      downloadLoading: false
+      downloadLoading: false,
+      searchConfig: [
+        { width: 100, placeholder: '姓名', prop: 'Name' },
+        { width: 100, placeholder: '部门', prop: 'Org' },
+        { width: 100, placeholder: '拜访对象', prop: 'VisitTo' },
+        { width: 150, placeholder: '起始日期', prop: 'DateFrom', type: 'date' },
+        { width: 150, placeholder: '结束日期', prop: 'DateTo', type: 'date' },
+        { type: 'search' }
+      ],
+      baseURL: process.env.VUE_APP_BASE_API,
+      tokenValue: this.$store.state.user.token,
+      previewUrl: "", //预览图片的定义
+      previewVisible: false,
+      rightImg
     };
   },
 
@@ -208,6 +165,27 @@ export default {
   },
 
   methods: {
+    toView (picturesList) {
+      if (picturesList && picturesList.length) {
+        let { pictureId, id } = picturesList[0]
+        // this.previewUrl = 'https://nsapgateway.neware.work/api/files/Download/ffcd9b63-a0c9-45de-9c83-1ae61d027914?X-Token=db53ea7e'
+        this.previewUrl = `${this.baseURL}/files/Download/${pictureId || id}?X-Token=${this.tokenValue}`
+        this.previewVisible = true
+      }
+    },
+    closeViewer () {
+      // this.previewUrl = false
+      this.previewVisible = false
+    },
+    onSearch () {
+      this.listQuery.page = 1
+      this.getList()
+    },
+    onChangeForm (val) {
+      Object.assign(this.listQuery, val)
+      console.log('changeForm')
+      // this.listQuery.page = 1
+    },
     changeTable(result) {
       console.log(result);
     },
@@ -242,6 +220,7 @@ export default {
     handleCurrentChange(val) {
       this.listQuery.page = val.page;
       this.listQuery.limit = val.limit;
+      console.log(val, 'change')
       this.getList();
     }
   }

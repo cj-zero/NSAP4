@@ -2,107 +2,108 @@
   <div>
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
-        <!-- <el-input
-          @keyup.enter.native="handleFilter"
-          size="mini"
-          style="width: 200px;"
-          class="filter-item"
-          :placeholder="'名称'"
-          v-model="listQuery.key"
-        ></el-input>
-        <el-button
-          class="filter-item"
-          size="mini"
-          style="margin:0 15px;"
-          v-waves
-          icon="el-icon-search"
-          @click="handleFilter"
-        >搜索</el-button> -->
+        <zxsearch 
+          @change-Search="changeSearch" 
+          @change-Order="changeOrder"
+        ></zxsearch>
         <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
     </sticky>
-    <div class="app-container flex-item bg-white">
-      <zxsearch 
-        @change-Search="changeSearch" 
-        @change-Order="changeOrder"
-      ></zxsearch>
-      <el-row class="fh" type="flex">
-        <el-col class="fh ls-border"  style="min-width:200px;">
-          <el-card shadow="never" class="card-body-none fh" style>
-            <!-- <el-link
-              style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;"
-              @click="getAllRight"    
-            >全部服务单>></el-link>-->
-            <div
-              style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;"
-            >服务单列表</div>
-            <el-tree
-              style="max-height:600px;overflow-y: auto;"
-              :data="modulesTree"
-              show-checkbox
-              node-key="key1"
-              @check="checkGroupNode"
-              ref="treeForm"
-              highlight-current
-              :props="defaultProps"
-            ></el-tree>
-            <!--  -->
-          </el-card>
-        </el-col>
-        <el-col :span="21" class="fh">
-          <div class="bg-white">
-            <el-table
-              ref="mainTable"
-              :key="key"
-              :data="list"
-              v-loading="listLoading"
-              border
-              fit
-              height="615px"
-              tooltip-effect="dark"
-              style="width: 100%;"
-              highlight-current-row
-              @row-click="rowClick"
-            >
-              <el-table-column
-                show-overflow-tooltip
-                v-for="(fruit,index) in formTheadOptions"
-                :align="fruit.align?fruit.align:'left'"
-                :header-align="fruit.align?fruit.align:'left'"
-                :key="`ind${index}`"
-                :sortable="fruit=='chaungjianriqi'?true:false"
-                style="background-color:silver;"
-                :label="fruit.label"
-                :fixed="fruit.ifFixed"
-                :width="fruit.width"
-              >
-                <template slot-scope="scope">
-                  <div v-if="fruit.name === 'workOrderNumber'" class="link-container" >
-                    <img :src="rightImg" @click="openTree(scope.row.serviceOrderId)" class="pointer" />
-                    <span>{{ scope.row.workOrderNumber }}</span>
-                  </div>
-                  <span
-                    v-if="fruit.name === 'status'"
-                    :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-                  >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
-                  <span v-if="fruit.name === 'fromType'">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
-                  <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
-                  <span
-                    v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'&&fruit.name !== 'workOrderNumber'"
-                  >{{scope.row[fruit.name]}}</span>
-                </template>
-              </el-table-column>
-            </el-table>
-            <pagination
-              v-show="total>0"
-              :total="total"
-              :page.sync="listQuery.page"
-              :limit.sync="listQuery.limit"
-              @pagination="handleCurrentChange"
-            />
-          </div>
-        </el-col>
-      </el-row>
+    <div class="app-container flex-item ">
+      <div class="bg-white">
+        <el-row class="fh" type="flex">
+          <el-col class="fh ls-border"  style="min-width:200px;">
+            <el-card shadow="never" class="card-body-none fh" style>
+              <!-- <el-link
+                style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;"
+                @click="getAllRight"    
+              >全部服务单>></el-link>-->
+              <div
+                style="width:100%;height:30px;color:#409EFF;font-size:16px;text-align:center;line-height:30px;border:1px silver solid;"
+              >服务单列表</div>
+              <el-tree
+                style="overflow-y: scroll;"
+                :data="modulesTree"
+                show-checkbox
+                node-key="key1"
+                @check="checkGroupNode"
+                ref="treeForm"
+                highlight-current
+                :props="defaultProps"
+              ></el-tree>
+              <!--  -->
+            </el-card>
+          </el-col>
+          <el-col :span="21" class="fh">
+            <div class="bg-white">
+              <div class="content-wrapper">
+                <el-table
+                  ref="mainTable"
+                  :key="key"
+                  :data="list"
+                  v-loading="listLoading"
+                  border
+                  fit
+                  height="100%"
+                  tooltip-effect="dark"
+                  style="width: 100%;"
+                  highlight-current-row
+                  @row-click="rowClick"
+                >
+                  <el-table-column
+                    show-overflow-tooltip
+                    v-for="(fruit,index) in formTheadOptions"
+                    :align="fruit.align?fruit.align:'left'"
+                    :header-align="fruit.align?fruit.align:'left'"
+                    :key="`ind${index}`"
+                    :sortable="fruit=='chaungjianriqi'?true:false"
+                    style="background-color:silver;"
+                    :label="fruit.label"
+                    :fixed="fruit.ifFixed"
+                    :width="fruit.width"
+                  >
+                    <template slot-scope="scope">
+                      <div v-if="fruit.name === 'workOrderNumber'" class="link-container" >
+                        <img :src="rightImg" @click="openTree(scope.row.serviceOrderId)" class="pointer" />
+                        <span>{{ scope.row.workOrderNumber }}</span>
+                      </div>
+                      <span
+                        v-if="fruit.name === 'status'"
+                        :class="processStatus(scope.row)"
+                      >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
+                      <span v-if="fruit.name === 'fromType'">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
+                      <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
+                      <span v-if="fruit.name === 'customerId'">
+                        {{ scope.row.terminalCustomerId ? scope.row.terminalCustomerId : scope.row.customerId }}
+                      </span>
+                      <span v-if="fruit.name === 'customerName'">
+                        {{ scope.row.terminalCustomer ? scope.row.terminalCustomer : scope.row.customerName }}
+                      </span>
+                      <span
+                        v-if="fruit.name != 'priority' 
+                        && fruit.name!='fromType' 
+                        && fruit.name!='status'
+                        && fruit.name!='serviceOrderId'
+                        && fruit.name !== 'workOrderNumber'
+                        && fruit.name !== 'customerName'
+                        && fruit.name !== 'customerId'"
+                      >{{scope.row[fruit.name]}}</span>
+                    </template>
+                  </el-table-column>
+                </el-table>
+                <pagination
+                  v-show="total>0"
+                  :total="total"
+                  :page.sync="listQuery.page"
+                  :limit.sync="listQuery.limit"
+                  @pagination="handleCurrentChange"
+                />
+              </div>
+            </div>
+          </el-col>
+        </el-row>
+      </div>
+      
       <!--   v-el-drag-dialog
       width="1000px"  新建呼叫服务单-->
       <el-dialog
@@ -159,6 +160,7 @@
         destroy-on-close
         class="addClass1 dialog-mini"
         :visible.sync="dialogFormView"
+        @open="openDetail"
       >
       <el-row :gutter="20" class="position-view">
         <el-col :span="18" >
@@ -172,9 +174,9 @@
           :refValue="dataForm"
         ></zxform>
         </el-col>
-            <el-col :span="6" class="lastWord">   
-              <zxchat :serveId='serveid'></zxchat>
-            </el-col>
+          <el-col :span="6" class="lastWord">   
+            <zxchat :serveId='serveId' formName="查看"></zxchat>
+          </el-col>
         </el-row>
 
         <div slot="footer">
@@ -220,7 +222,16 @@
         center
         :modal-append-to-body="false"
         width="550px"
+        @closed="onClosed"
       >
+        <el-row type="flex" justify="end" style="margin-bottom: 10px;">
+          <el-input 
+            v-model="listQuery2.currentUser" 
+            size="mini" 
+            @keyup.enter.native="onSearchUser"
+            style="width:200px;"
+            placeholder="技术员"></el-input>
+        </el-row>
         <el-table :data="tableData" border @row-click="setRadio" style="width: 100%">
           <el-table-column align="center">
             <template slot-scope="scope">
@@ -250,7 +261,7 @@
 <script>
 import * as solutions from "@/api/solutions";
 import * as callservepushm from "@/api/serve/callservepushm";
-import * as callservesure from "@/api/serve/callservesure";
+// import * as callservesure from "@/api/serve/callservesure";
 import * as category from "@/api/categorys"
 import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
@@ -261,13 +272,13 @@ import elDragDialog from "@/directive/el-dragDialog";
 import zxsearch from "./search";
 import zxform from "../callserve/form";
 import treeList from "../callserve/treeList";
-import zxchat from "../callserve/chatOnRight"
+import zxchat from "../callserve/chat/index"
 import { debounce } from '@/utils/process'
-// import treeTable from "@/components/TreeTableMlt";
 import rightImg from '@/assets/table/right.png'
-// import { callserve, count } from "@/mock/serve";
+import { dispatchMixin, chatMixin, tableMixin } from '../common/js/mixins'
 export default {
   name: "solutions",
+  mixins: [dispatchMixin, chatMixin, tableMixin],
   components: {
     Sticky,
     permissionBtn,
@@ -285,7 +296,6 @@ export default {
   data() {
     return {
       tableData: [], //接单员列表
-      orderRadio: "", //接单员单选
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
       defaultFormThead: [
@@ -369,10 +379,7 @@ export default {
       },
       total2: 0,
       totalCount: 0, // 左侧树形数据的数量
-      listQuery2: {
-        page: 1,
-        limit: 10,
-      },
+      
       listQuery1: {
         // 查询条件
         page: 1,
@@ -420,7 +427,7 @@ export default {
         update: "确认服务呼叫单",
         create: "新建服务呼叫单",
       },
-      dataForm: {}, //获取的详情表单
+      // dataForm: {}, //获取的详情表单
       dialogPvVisible: false,
       pvData: [],
       params: {
@@ -440,7 +447,6 @@ export default {
         page: 1 // 页数
       },
       isClear: false, // 是否清空moduleTree
-      serveid: '',
       rightImg // 箭头图标
     };
   },
@@ -540,10 +546,11 @@ export default {
     async changeOrder() {
       if (this.ifParent) {
         this.dialogOrder = true;
-        callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
-          this.tableData = res.data;
-          this.total2 = res.count;
-        });
+        // callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
+        //   this.tableData = res.data;
+        //   this.total2 = res.count;
+        // });
+        this._getAllowSendOrderUser()
         // this.listQuery.limit = 999;
         await this.getRightList();
       } else {
@@ -566,7 +573,6 @@ export default {
       }
       this.params.qryMaterialTypes = this.listQuery.QryMaterialTypes
       this.params.serviceOrderId = checkedKey 
-      console.log(this.params, 'params')
       if (this.hasAlreadNum > this.totalLimit) {
         this.$message({
           type: "warning",
@@ -576,7 +582,7 @@ export default {
       } else {
       this.listLoading = true;
       callservepushm
-        .SendOrders(this.params)
+        .nSAPSendOrders(this.params)
         .then((res) => {
           if (res.code == 200) {
             this.dataForm = res.result;
@@ -590,10 +596,10 @@ export default {
             this.isClear = true
             this.listQueryServer.page = 1
             this.listQuery.page = 1
+            this.ifParent= ""
             this.afterLeft();
             this.dialogOrder = false;
             this.listLoading = false;
-                    
             //  this.getRightList();
           }
         })
@@ -612,20 +618,22 @@ export default {
       this.listQuery.QryMaterialTypes = [];
       this.listQuery = Object.assign(this.listQuery, val)
       this.listQueryServer = Object.assign(this.listQueryServer, val)
+      this.listQueryServer.page = 1
+      this.listQuery.page = 1
       this.afterLeft()
     },
-    openTree(res) {
-      console.log(res, 'res')
-      // this.listLoading = true;
-      this.serveid = res
-      callservesure.GetDetails(res).then((res) => {
-        if (res.code == 200) {
-          this.dataForm = res.result;
-          this.dialogFormView = true;
-        }
-        // this.listLoading = false;
-      });
-    },
+    // openTree(res) {
+    //   console.log(res, 'res')
+    //   // this.listLoading = true;
+    //   this.serveid = res
+    //   callservesure.GetDetails(res).then((res) => {
+    //     if (res.code == 200) {
+    //       this.dataForm = res.result;
+    //       this.dialogFormView = true;
+    //     }
+    //     // this.listLoading = false;
+    //   });
+    // },
     // treeClick(data) {
     //   左侧treetable点击事件
     //   console.log(data);
@@ -825,7 +833,6 @@ export default {
         .getRightList(this.listQuery)
         .then((response) => {
           if (response.code === 200) {
-            // this.ifParent=""
             this.list = response.data.data;
             this.total = response.data.count;
             this.listLoading = false;
@@ -881,14 +888,6 @@ export default {
       this.listQuery.page = val.page;
       this.listQuery.limit = val.limit;
       this.getRightList();
-    },
-    handleCurrentChange2(val) {
-      this.listQuery2.page = val.page;
-      this.listQuery2.limit = val.limit;
-         callservepushm.AllowSendOrderUser(this.listQuery2).then((res) => {
-          this.tableData = res.data;
-          this.total2 = res.count;
-        });
     },
     handleModifyStatus(row, disable) {
       // 模拟修改状态
@@ -998,8 +997,15 @@ export default {
   ::v-deep .el-tree-node > .el-tree-node__children {
     overflow: visible;
   }
+  ::v-deep .el-card__body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    .el-tree {
+      flex: 1;
+    }
+  }
 }
-
 .dialog-mini .el-select {
   width: 100%;
 }

@@ -212,9 +212,9 @@ namespace OpenAuth.Repository.Domain
         [Description("纬度")]
         public decimal? Latitude { get; set; }
         /// <summary>
-        /// 呼叫来源  1-电话 2-APP 
+        /// 呼叫来源  呼叫来源  1-电话 2-钉钉 3-QQ 4-微信 5-邮件 6-APP 7-Web
         /// </summary>
-        [Description("呼叫来源  1-电话 2-APP ")]
+        [Description("呼叫来源 1-电话 2-钉钉 3-QQ 4-微信 5-邮件 6-APP 7-Web")]
         //[Browsable(false)]
         public int? FromId { get; set; }
 

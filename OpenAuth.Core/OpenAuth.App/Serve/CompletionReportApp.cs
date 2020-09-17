@@ -1,18 +1,16 @@
-﻿using System;
-using System.Linq;
-using Infrastructure;
+﻿using Infrastructure;
+using Infrastructure.Extensions;
+using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
+using OpenAuth.App.Serve.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
-using System.Reactive;
-using Infrastructure.Extensions;
-using OpenAuth.App.Serve.Response;
-using Npoi.Mapper;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace OpenAuth.App
 {
@@ -111,7 +109,11 @@ namespace OpenAuth.App
             });
             //反写完工报告Id至工单
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id),
-                o => new ServiceWorkOrder { CompletionReportId = completionReportId });
+                o => new ServiceWorkOrder { CompletionReportId = completionReportId, CompleteDate = DateTime.Now });
+            //获取当前服务单下的所有消息Id集合
+            var msgList = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == req.ServiceOrderId).Select(s => s.Id).ToListAsync();
+            //清空消息为已读
+            await UnitWork.UpdateAsync<ServiceOrderMessageUser>(s => s.FroUserId == req.CurrentUserId.ToString() && msgList.Contains(s.MessageId), e => new ServiceOrderMessageUser { HasRead = true });
             //解除隐私号码绑定
             //await UnbindProtectPhone(req.ServiceOrderId, req.MaterialType);
         }
@@ -244,7 +246,9 @@ namespace OpenAuth.App
                 q.c.EndDate,
                 q.c.CompleteAddress,
                 q.c.TechnicianId,
-                q.c.TechnicianName
+                q.c.TechnicianName,
+                q.c.TroubleDescription,
+                q.c.ProcessDescription
             }).FirstOrDefaultAsync();
             var thisworkdetail = query.MapTo<CompletionReportDetailsResp>();
             thisworkdetail.Files = new List<UploadFileResp>();
@@ -267,7 +271,7 @@ namespace OpenAuth.App
             var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
             var CompletionReportModel = await UnitWork.Find<CompletionReport>(u => u.ServiceOrderId == ServiceOrderId).ToListAsync();
-            var s = loginContext.User;
+
             if (!loginContext.Roles.Any(r => r.Name.Equals("售后主管")) && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
             {
                 var appuserid = await UnitWork.Find<AppUserMap>(u => u.UserID.Equals(loginContext.User.Id)).Select(u => u.AppUserId).FirstOrDefaultAsync();
@@ -275,7 +279,7 @@ namespace OpenAuth.App
             }
 
             var thisworkdetail = CompletionReportModel.MapToList<CompletionReportDetailsResp>();
-            var workmodel= await UnitWork.Find<ServiceWorkOrder>(w => w.ServiceOrderId.Equals(ServiceOrderId)).ToListAsync();
+            var workmodel = await UnitWork.Find<ServiceWorkOrder>(w => w.ServiceOrderId.Equals(ServiceOrderId)).ToListAsync();
             foreach (var item in thisworkdetail)
             {
                 item.Files = new List<UploadFileResp>();
@@ -285,14 +289,18 @@ namespace OpenAuth.App
                     var pics = UnitWork.Find<CompletionReportPicture>(m => m.CompletionReportId == item.Id).Select(c => c.PictureId).ToList();
                     var picfiles = await UnitWork.Find<UploadFile>(f => pics.Contains(f.Id)).ToListAsync();
                     item.Files.AddRange(picfiles.MapTo<List<UploadFileResp>>());
-                    var worklist = workmodel.Where(w => w.CompletionReportId==item.Id).ToList();
+                    var worklist = workmodel.Where(w => w.CompletionReportId == item.Id).ToList();
                     item.ServiceWorkOrders.AddRange(worklist.MapToList<WorkCompletionReportResp>());
+                    item.ServiceMode = worklist.Select(s => s.ServiceMode).FirstOrDefault();
+                    item.ProcessDescription = worklist.Select(s => s.ProcessDescription).FirstOrDefault();
+                    item.TroubleDescription = worklist.Select(s => s.TroubleDescription).FirstOrDefault();
+                    item.U_SAP_ID = worklist.Select(s => s.WorkOrderNumber).FirstOrDefault().Substring(0, worklist.Select(s => s.WorkOrderNumber).FirstOrDefault().IndexOf("-"));
                 }
-                item.MaterialCodeTypeName=item.MaterialCode=="其他设备"?"其他设备": await UnitWork.Find<MaterialType>(m => m.TypeAlias.Equals(item.MaterialCode.Substring(0, item.MaterialCode.IndexOf("-")))).Select(m => m.TypeName).FirstOrDefaultAsync();
+                item.MaterialCodeTypeName = item.MaterialCode == "其他设备" ? "其他设备" : await UnitWork.Find<MaterialType>(m => m.TypeAlias.Equals(item.MaterialCode.Substring(0, item.MaterialCode.IndexOf("-")))).Select(m => m.TypeName).FirstOrDefaultAsync();
             }
-            var Materialworkmodel = workmodel.Where(w => string.IsNullOrWhiteSpace(w.CompletionReportId)).Select(w => w.MaterialCode).ToList() ;
+            var Materialworkmodel = workmodel.Where(w => string.IsNullOrWhiteSpace(w.CompletionReportId)).Select(w => w.MaterialCode).ToList();
             List<string> MaterialTypeName = new List<string>();
-            Materialworkmodel.ForEach(m => MaterialTypeName.Add(m=="其他设备"?"其他设备": m.Substring(0, m.IndexOf("-"))));
+            Materialworkmodel.ForEach(m => MaterialTypeName.Add(m == "其他设备" ? "其他设备" : m.Substring(0, m.IndexOf("-"))));
 
             foreach (var item in MaterialTypeName.Distinct())
             {

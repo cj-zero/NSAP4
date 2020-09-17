@@ -17,14 +17,16 @@ namespace OpenAuth.App.Serve
     public class ServiceOrderMessageApp : OnlyUnitWorkBaeApp
     {
         private HttpHelper _helper;
-        public ServiceOrderMessageApp(IUnitWork unitWork, IAuth auth, IOptions<AppSetting> appConfiguration) : base(unitWork, auth)
+        private readonly ServiceOrderApp _serviceOrderApp;
+        public ServiceOrderMessageApp(IUnitWork unitWork, IAuth auth, IOptions<AppSetting> appConfiguration, ServiceOrderApp serviceOrderApp) : base(unitWork, auth)
         {
             _helper = new HttpHelper(appConfiguration.Value.AppPushMsgUrl);
+            _serviceOrderApp = serviceOrderApp;
         }
 
         public async Task<dynamic> GetServiceOrderMessages(int serviceOrderId)
         {
-            var list = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == serviceOrderId).OrderByDescending(s=>s.CreateTime).ToListAsync();
+            var list = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == serviceOrderId).OrderByDescending(s => s.CreateTime).ToListAsync();
 
             //var groupList = list.GroupBy(s => s.FroTechnicianName).ToList().Select(s => new { s.Key, Data = s.ToList() });
             return list;
@@ -48,6 +50,8 @@ namespace OpenAuth.App.Serve
                 await UnitWork.BatchAddAsync(pictures?.ToArray());
                 await UnitWork.SaveAsync();
             }
+            //发送消息给相关人员
+            await _serviceOrderApp.SendMessageToRelatedUsers(req.Content, (int)req.ServiceOrderId, 0, obj.Id);
             await PushMessageToApp(req.AppUserId, "服务单消息", $"{obj.Replier}给你发送消息：{obj.Content}");
         }
 

@@ -107,7 +107,7 @@ export default {
       if (!route) {
         return false;
       }
-
+      
       this.$store.dispatch("addVisitedViews", route);
     },
     async addViewTags_copy(page) {

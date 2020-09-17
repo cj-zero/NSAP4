@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Infrastructure;
+using Infrastructure.Extensions;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -93,7 +94,7 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var objs = UnitWork.Find<OpenAuth.Repository.Domain.Org>(null);
-            objs = objs.Where(u => u.Name.Contains(name));
+            objs = objs.WhereIf(!string.IsNullOrWhiteSpace(name),u => u.Name.Contains(name.ToUpper()));
             result.Data = objs.Select(u => new { u.Name, u.Id }).ToList();
             return result;
         }

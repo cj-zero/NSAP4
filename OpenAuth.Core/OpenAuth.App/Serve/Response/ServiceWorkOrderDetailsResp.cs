@@ -134,7 +134,73 @@ namespace OpenAuth.App.Response
         /// </summary>
         public string ContractId { get; set; }
 
-       
-       
+        /// <summary>
+        /// 故障描述
+        /// </summary>
+        public string TroubleDescription { get; set; }
+        /// <summary>
+        /// 过程描述
+        /// </summary>
+        public string ProcessDescription { get; set; }
+
+        /// <summary>
+        /// 服务方式 1上门服务 2电话服务
+        /// </summary>
+        public int? ServiceMode { get; set; }
+
+        /// <summary>
+        /// 服务单Id
+        /// </summary>
+        /// <summary>
+        /// 服务单
+        /// </summary>
+        public virtual ServiceOrder ServiceOrder { get; set; }
+        /// <summary>
+        /// 工单提交用户Id
+        /// </summary>
+        public string SubmitUserId { get; set; }
+        /// <summary>
+        /// APP用户Id
+        /// </summary>
+        //[Browsable(false)]
+        public int? AppUserId { get; set; }
+        /// <summary>
+        /// App当前流程处理用户Id
+        /// </summary>
+        //[Browsable(false)]
+        public int? CurrentUserId { get; set; }
+
+        /// <summary>
+        /// 当前接单技术员名称
+        /// </summary>
+        public string CurrentUser { get; set; }
+        /// <summary>
+        /// 技术员NSAPId
+        /// </summary>
+        public string CurrentUserNsapId { get; set; }
+        /// <summary>
+        /// 完工报告Id
+        /// </summary>
+        public string CompletionReportId { get; set; }
+        /// <summary>
+        /// 工单号
+        /// </summary>
+        public string WorkOrderNumber { get; set; }
+
+        /// <summary>
+        /// 接单类型 0未接单 1电话服务 2上门服务 3电话服务(已拨打)
+        /// </summary>
+        public int OrderTakeType { get; set; }
+
+        /// <summary>
+        ///核对设备 0未核对 1正确 2失败
+        /// </summary>
+        public int IsCheck { get; set; }
+
+        /// <summary>
+        /// 完工时间
+        /// </summary>
+        public System.DateTime? CompleteDate { get; set; }
+
     }
 }

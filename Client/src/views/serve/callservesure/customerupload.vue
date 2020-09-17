@@ -55,10 +55,7 @@
             <el-input v-model="form.city"></el-input>
           </el-form-item> -->
           <el-form-item label="现地址">
-              <!-- <el-input size="mini" v-model="form.city"></el-input> -->
-            <p
-              style="border: 1px solid silver;color:silver; border-radius:5px;line-height:30px;overflow:hidden;height:30px;background-color:#F5F7FA;margin:0;padding-left:10px;font-size:12px;"
-            >{{allArea}}</p>
+            <el-input size="mini" v-model="allArea"></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="16">
@@ -70,7 +67,7 @@
       <el-row type="flex" class="row-bg" justify="space-around">
         <el-col :span="24">
           <el-form-item label="申请说明">
-            <el-input type="textarea" v-model="form.services"></el-input>
+            <el-input type="textarea" v-model="form.services" :autosize="true"></el-input>
           </el-form-item>
         </el-col>
       </el-row>
@@ -211,6 +208,18 @@ export default {
 .rowStyle{
   ::v-deep .el-form-item{
     margin-bottom:5px;
+  }
+  ::v-deep .el-input.is-disabled .el-input__inner {
+    background-color: #fff;
+    cursor: default;
+    color: #606266;
+    border-color: #DCDFE6;
+  }
+  ::v-deep .el-textarea.is-disabled .el-textarea__inner {
+    background-color: #fff;
+    cursor: default;
+    color: #606266;
+    border-color: #DCDFE6;
   }
 }
 /* 图片样式 */

@@ -6,6 +6,10 @@ using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace OpenAuth.WebApi.Controllers
 {
@@ -17,6 +21,13 @@ namespace OpenAuth.WebApi.Controllers
     public class CompletionReportsController : ControllerBase
     {
         private readonly CompletionReportApp _app;
+        private readonly HttpClienService _httpClienService;
+
+        public CompletionReportsController(CompletionReportApp app, HttpClienService httpClienService)
+        {
+            _app = app;
+            _httpClienService = httpClienService;
+        }
 
         //获取详情
         [HttpGet]
@@ -36,6 +47,7 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        #region 新威智能APP售后接口 若修改请告知！！！
         //添加
         [HttpPost]
         public async Task<Response> Add(AddOrUpdateCompletionReportReq obj)
@@ -43,7 +55,9 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Response();
             try
             {
-                await _app.Add(obj);
+                var r = await _httpClienService.Post(obj, "api/serve/ServiceOrder/AddCompletionReport");
+                result = JsonConvert.DeserializeObject<Response>(r);
+                //await _app.Add(obj);
             }
             catch (Exception ex)
             {
@@ -54,6 +68,39 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+
+        /// <summary>
+        /// 填写完工报告单页面需要取到的服务工单信息。
+        /// </summary>
+        /// <param name="ServiceOrderId">服务单ID</param>
+        /// <param name="currentUserId">当前技术员Id</param>
+        /// <param name="MaterialType">设备类型</param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response<CompletionReportDetailsResp>> GetOrderWorkInfoForAdd(int ServiceOrderId, int currentUserId, string MaterialType)
+        {
+            var result = new Response<CompletionReportDetailsResp>();
+            try
+            {
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
+                parameters.Add("ServiceOrderId", ServiceOrderId);
+                parameters.Add("currentUserId", currentUserId);
+                parameters.Add("MaterialType", MaterialType);
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetOrderWorkInfoForAdd");
+                JObject data = JsonConvert.DeserializeObject<JObject>(r);
+                result.Result = JsonConvert.DeserializeObject<CompletionReportDetailsResp>(data.Property("result").Value.ToString());
+                //result.Result = await _app.GetOrderWorkInfoForAdd(ServiceOrderId, currentUserId, MaterialType);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        #endregion
         //修改
         [HttpPost]
         public Response Update(AddOrUpdateCompletionReportReq obj)
@@ -93,29 +140,6 @@ namespace OpenAuth.WebApi.Controllers
             {
                 _app.Delete(ids);
 
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
-            }
-
-            return result;
-        }
-        /// <summary>
-        /// 填写完工报告单页面需要取到的服务工单信息。
-        /// </summary>
-        /// <param name="ServiceOrderId">服务单ID</param>
-        /// <param name="currentUserId">当前技术员Id</param>
-        /// <param name="MaterialType">设备类型</param>
-        /// <returns></returns>
-        [HttpGet]
-        public async Task<Response<CompletionReportDetailsResp>> GetOrderWorkInfoForAdd(int ServiceOrderId, int currentUserId, string MaterialType)
-        {
-            var result = new Response<CompletionReportDetailsResp>();
-            try
-            {
-                result.Result = await _app.GetOrderWorkInfoForAdd(ServiceOrderId, currentUserId, MaterialType);
             }
             catch (Exception ex)
             {
@@ -214,9 +238,5 @@ namespace OpenAuth.WebApi.Controllers
         //    }
         //    return IsSuccess;
         //}
-        public CompletionReportsController(CompletionReportApp app)
-        {
-            _app = app;
-        }
     }
 }

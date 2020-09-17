@@ -5,6 +5,7 @@
       <el-form
         v-loading="waitingAdd "
         :model="formList[0]"
+        :class="{ 'form-disabled': !isCreate && isOrderDisabled(formList[0]) }"
         :disabled="!isCreate && isOrderDisabled(formList[0])"
         label-width="90px"
         class="rowStyle"
@@ -31,12 +32,14 @@
           <el-col :span="4" style="transform: translate3d(-15px, 0, 0);" v-if="formName === '查看'">
             <el-form-item label="服务方式">
               <el-radio-group
+                style="margin-top: -9px;"
                 disabled
                 class="radio-item right"
-                v-model="formList[0].orderTakeType"
+                v-model="formList[0].serviceMode"
               >
                 <el-radio :label="1">电话服务</el-radio>
                 <el-radio :label="2">上门服务</el-radio>
+                <el-radio :label="3">返厂维修</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -46,24 +49,6 @@
           <!-- <el-col :span="2" v-if="ifEdit"></el-col> -->
         </el-row>
         <el-row type="flex" class="row-bg" justify="space-around">
-          <el-col :span="18">
-            <el-form-item
-              label="呼叫主题"
-              prop="fromTheme"
-              :rules="{
-              required: true, message: '呼叫主题不能为空', trigger: 'blur'
-            }"
-            >
-              <el-input v-model="formList[0].fromTheme"  type="textarea" maxlength="255"></el-input>
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="技术员">
-              <el-input disabled v-model="formList[0].currentUser"></el-input>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row type="flex" class="row-bg" justify="space-between">
           <el-col :span="7">
             <el-form-item
               label="序列号"
@@ -101,17 +86,12 @@
             </el-form-item>
           </el-col>
           <el-col :span="6">
-            <el-form-item label="保修结束日期">
-              <el-date-picker
-                disabled
-                type="date"
-                placeholder="选择日期"
-                v-model="formList[0].warrantyEndDate"
-              ></el-date-picker>
+            <el-form-item label="技术员">
+              <el-input disabled v-model="formList[0].currentUser"></el-input>
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row type="flex" class="row-bg" justify="space-around">
+        <el-row type="flex" class="row-bg" justify="space-between">
           <el-col :span="7">
             <el-form-item label="物料编码">
               <el-input v-model="formList[0].materialCode" disabled></el-input>
@@ -136,6 +116,23 @@
           </el-col>
           <el-col :span="5"></el-col>
           <el-col :span="6">
+            <el-form-item label="保修结束日期">
+              <el-date-picker
+                disabled
+                type="date"
+                placeholder="选择日期"
+                v-model="formList[0].warrantyEndDate"
+              ></el-date-picker>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row type="flex" class="row-bg" justify="space-around">
+          <el-col :span="18">
+            <el-form-item label="物料描述">
+              <el-input disabled v-model="formList[0].materialDescription"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
             <el-form-item label="清算日期">
               <el-date-picker
                 disabled
@@ -149,8 +146,14 @@
         </el-row>
         <el-row type="flex">
           <el-col :span="18">
-            <el-form-item label="物料描述">
-              <el-input disabled v-model="formList[0].materialDescription"></el-input>
+            <el-form-item
+              label="呼叫主题"
+              prop="fromTheme"
+              :rules="{
+              required: true, message: '呼叫主题不能为空', trigger: 'blur'
+            }"
+            >
+              <el-input v-model="formList[0].fromTheme" type="textarea" maxlength="255" autosize></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="6">
@@ -286,11 +289,11 @@
               <el-input v-model="formList[0].processDescription" disabled></el-input>
             </el-form-item>
           </el-col>
-          <el-col :span="6">
+          <!-- <el-col :span="6">
             <el-form-item label="完工报告" prop="remark" v-if="formName === '查看'">
               <el-button type="primary" size="mini" @click="showReport" style="width: 112.5px;">查看</el-button>
             </el-form-item>
-          </el-col>
+          </el-col> -->
         </el-row>
         <el-form-item>
           <el-row :gutter="10" type="flex" class="row-bg" justify="end">
@@ -318,10 +321,14 @@
             type="success"
             size="mini"
             icon="el-icon-share"
-            @click="handleIconClick({})"
+            @click="handleIconClick(formList[0])"
           >新增</el-button>
         </div>
       </div>
+      <el-col :span="6" class="report-btn-wrapper" v-if="formName === '查看'">
+        <span class="title">完工报告</span>
+        <el-button type="primary" size="mini" @click="handleReport(form.id, formList)" style="width: 127.5px;">查看</el-button>
+      </el-col>
     </div>
     <el-collapse v-model="activeNames" class="openClass" v-if="formList.length>1" @change="handleCollapseChange">
       <el-collapse-item :title="collapseTitle" name="1">
@@ -333,6 +340,7 @@
         >
           <el-form
             :model="item"
+            :class="{ 'form-disabled': !isCreate && isOrderDisabled(item) }"
             :disabled="!isCreate && isOrderDisabled(item)"
             label-width="90px"
             class="rowStyle"
@@ -359,12 +367,13 @@
               <el-col :span="4" style="transform: translate3d(-15px, 0, 0);" v-if="formName === '查看'">
                 <el-form-item label="服务方式">
                   <el-radio-group
-                  
+                    style="margin-top: -9px;"
                     class="radio-item right"
-                    v-model="item.orderTakeType"
+                    v-model="item.serviceMode"
                   >
                     <el-radio :label="1">电话服务</el-radio>
                     <el-radio :label="2">上门服务</el-radio>
+                    <el-radio :label="3">返厂维修</el-radio>
                   </el-radio-group>
                 </el-form-item>
               </el-col>
@@ -373,24 +382,6 @@
               </el-col>
             </el-row>
             <el-row type="flex" class="row-bg" justify="space-around">
-              <el-col :span="18">
-                <el-form-item
-                  label="呼叫主题"
-                  prop="fromTheme"
-                  :rules="{
-                  required: true, message: '呼叫主题不能为空', trigger: 'blur'
-                }"
-                >
-                  <el-input type="textarea" maxlength="255" v-model="item.fromTheme"></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="6">
-                <el-form-item label="技术员">
-                  <el-input disabled v-model="item.currentUser"></el-input>
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <el-row type="flex" class="row-bg" justify="space-between">
               <el-col :span="7">
                 <el-form-item
                   label="序列号"
@@ -427,17 +418,12 @@
                 </el-form-item>
               </el-col>
               <el-col :span="6">
-                <el-form-item label="保修结束日期">
-                  <el-date-picker
-                    disabled
-                    type="date"
-                    placeholder="选择日期"
-                    v-model="item.warrantyEndDate"
-                  ></el-date-picker>
+                <el-form-item label="技术员">
+                  <el-input disabled v-model="item.currentUser"></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
-            <el-row type="flex" class="row-bg" justify="space-around">
+            <el-row type="flex" class="row-bg" justify="space-between">
               <el-col :span="7">
                 <el-form-item label="物料编码">
                   <el-input v-model="item.materialCode" disabled></el-input>
@@ -462,6 +448,23 @@
               </el-col>
               <el-col :span="5"></el-col>
               <el-col :span="6">
+                <el-form-item label="保修结束日期">
+                  <el-date-picker
+                    disabled
+                    type="date"
+                    placeholder="选择日期"
+                    v-model="item.warrantyEndDate"
+                  ></el-date-picker>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row type="flex" class="row-bg" justify="space-around">
+              <el-col :span="18">
+                <el-form-item label="物料描述">
+                  <el-input disabled v-model="item.materialDescription"></el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="6">
                 <el-form-item label="清算日期">
                   <el-date-picker
                     disabled
@@ -475,8 +478,14 @@
             </el-row>
             <el-row type="flex">
               <el-col :span="18">
-                <el-form-item label="物料描述">
-                  <el-input disabled v-model="item.materialDescription"></el-input>
+                <el-form-item
+                  label="呼叫主题"
+                  prop="fromTheme"
+                  :rules="{
+                  required: true, message: '呼叫主题不能为空', trigger: 'blur'
+                }"
+                >
+                  <el-input type="textarea" maxlength="255" v-model="item.fromTheme" autosize></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="6">
@@ -612,11 +621,11 @@
                   <el-input v-model="item.processDescription" disabled></el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="6">
+              <!-- <el-col :span="6">
                 <el-form-item label="完工报告" prop="remark" v-if="formName === '查看'">
                   <el-button type="primary" size="mini" @click="showReport" style="width: 112.5px;">查看</el-button>
                 </el-form-item>
-              </el-col>
+              </el-col> -->
             </el-row>
             <el-form-item>
               <el-row :gutter="10" type="flex" class="row-bg" justify="end">
@@ -643,15 +652,20 @@
                 type="success"
                 size="mini"
                 icon="el-icon-share"
-                @click="handleIconClick({})"
+                @click="handleIconClick(item)"
               >新增</el-button>
             </div>
           </div>
+          <el-col :span="6" class="report-btn-wrapper" v-if="formName === '查看'">
+            <span class="title">完工报告</span>
+            <el-button type="primary" size="mini" @click="handleReport(form.id, formList)" style="width: 127.5px;">查看</el-button>
+          </el-col>
         </div>
       </el-collapse-item>
     </el-collapse>
     <!-- </div> -->
     <el-dialog
+      v-el-drag-dialog
       :modal-append-to-body="false"
       :append-to-body="true"
       :close-on-click-modal="false"
@@ -665,6 +679,7 @@
       <problemtype @node-click="NodeClick" :dataTree="dataTree"></problemtype>
     </el-dialog>
     <el-dialog
+      v-el-drag-dialog
       :title="`第${sortForm}个工单的解决方案`"
       center
       :modal-append-to-body="false"
@@ -689,6 +704,7 @@
       </span>-->
     </el-dialog>
     <el-dialog
+      v-el-drag-dialog
       :append-to-body="true"
       :destroy-on-close="true"
       :modal-append-to-body="false"
@@ -703,7 +719,7 @@
         <el-input
           @keyup.enter.native="searchList"
           style="width:150px;margin:0 20px;display:inline-block;"
-          v-model="inputSearch"
+          v-model.trim="inputSearch"
           placeholder="制造商序列号"
         >
           <i class="el-icon-search el-input__icon" slot="suffix"></i>
@@ -711,7 +727,7 @@
         <el-input
           @keyup.enter.native="searchList"
           style="width:150px;margin:0 20px;display:inline-block;"
-          v-model="inputItemCode"
+          v-model.trim="inputItemCode"
           placeholder="输入物料编码"
         >
           <i class="el-icon-search el-input__icon" slot="suffix"></i>
@@ -754,6 +770,21 @@
         <el-button type="primary" @click="pushForm" :disabled="isDisalbed">确 定</el-button>
       </span>
     </el-dialog>
+    <el-dialog
+      v-el-drag-dialog
+      width="983px"
+      class="dialog-mini"
+      :append-to-body="true"
+      :close-on-click-modal="false"
+      title="服务行为报告单"
+      :visible.sync="dialogReportVisible"
+      @closed="onReportClosed"
+    >
+      <Report
+        ref="report"
+        :data="reportData"
+      ></Report>
+    </el-dialog>
   </div>
 </template>
 
@@ -768,13 +799,20 @@ import * as solutions from "@/api/solutions";
 import problemtype from "./problemtype";
 import solution from "./solution";
 import { mapMutations } from 'vuex'
+import Report from '../common/components/report'
+import { reportMixin } from '../common/js/mixins'
+import elDragDialog from '@/directive/el-dragDialog'
 export default {
-  components: { fromfSN, problemtype, solution, Pagination, fromfSNC },
+  components: { fromfSN, problemtype, solution, Pagination, fromfSNC, Report },
+  mixins: [reportMixin],
   provide() {
     let that = this;
     return {
       vm: that,
     };
+  },
+  directives: {
+    elDragDialog
   },
   props: ["isCreate", "ifEdit", "serviceOrderId", "propForm", "formName", "form"],
   // ##propForm编辑或者查看详情传过来的数据
@@ -826,7 +864,7 @@ export default {
           fromTheme: "", //呼叫主题
           fromId: 1, //呼叫来源 1-电话 2-APP
           problemTypeId: "", //问题类型Id
-          fromType: 1, //呼叫类型1-提交呼叫 2-在线解答（已解决）
+          fromType: "", //呼叫类型1-提交呼叫 2-在线解答（已解决）
           materialCode: "", //物料编码
           materialDescription: "", //物料描述
           manufacturerSerialNumber: "", //制造商序列号
@@ -927,16 +965,16 @@ export default {
       limit: 20
     }).then((response) => {
       this.datasolution = response.data;
-      console.log(this.datasolution, 'solution')
+      // console.log(this.datasolution, 'solution')
       this.solutionCount = response.count;
       this.listLoading = false;
     });
-    if (this.propForm && this.propForm.length) {
-      this.formList = this.propForm.slice();
-      console.log(this.formList === this.propForm, 'prop')
-      this.formInitailList = this.propForm.slice() // 保存已经新建的表单项，用于后续判断后续是否能够编辑
-      this.setFormList(this.formList)
-    }
+    // if (this.propForm && this.propForm.length) {
+    //   this.formList = JSON.parse(JSON.stringify(this.propForm))
+    //   this.formInitailList = JSON.parse(JSON.stringify(this.propForm)) // 保存已经新建的表单项，用于后续判断后续是否能够编辑
+    //   this.setFormList(this.formList)
+    //   console.log('mounted')
+    // }
   },
   computed: {
     newValue() {
@@ -947,7 +985,7 @@ export default {
       return this.formList.some(item => {
         return item.manufacturerSerialNumber === '其他设备'
       })
-    },
+    }
   },
   watch: {
     newValue: {
@@ -1008,7 +1046,9 @@ export default {
           if (oldVal[index] !== undefined) {
             let oldItem = oldVal[index]
             if (item.fromType !== oldItem.fromType) {
-              this.formList[index].status = this.getStatus(item.fromType)
+              if (this.isChangeStatus(item)) {
+                this.formList[index].status = this.getStatus(item.fromType)
+              }
             }
           }
         })
@@ -1019,7 +1059,9 @@ export default {
     },
     'formList.0' (newVal, oldVal) {
       if (newVal.fromType !== oldVal.fromType) {
-        newVal.status = this.getStatus(newVal.fromType)
+        if (this.isChangeStatus(newVal)) {
+          newVal.status = this.getStatus(newVal.fromType)
+        }
       }
     },
     propForm: {
@@ -1027,8 +1069,9 @@ export default {
       immediate: true,
       handler(val) {
         if (val && val.length) {
-          this.formList = val.slice();
-          this.formInitailList = val.slice()
+          this.formList = JSON.parse(JSON.stringify(val))
+          this.formInitailList = JSON.parse(JSON.stringify(val))
+          this.setFormList(this.formList)
           console.log(this.formList, 'formInitailList');
         }
       },
@@ -1037,7 +1080,7 @@ export default {
       deep: true,
       handler(val) {
         // console.log(this.form, val, 'customerId change')
-        this.listQuery.CardCode = val
+        this.listQuery.CardCode = String(val).toUpperCase()
         getSerialNumber(this.listQuery)
           .then((res) => {
             this.SerialNumberList = res.data;
@@ -1090,6 +1133,11 @@ export default {
   // },f
   // inject: ["form"],
   methods: {
+    isChangeStatus (val) { // 是否可以改变状态
+      return (this.formName === '编辑' && !this.formInitailList.every(item => item.id === val.id)) 
+      || this.formName === '新建' 
+      || this.formName === '确认'
+    },
     onClose () {
       this.dialogfSN = false
       this.inputSearch = ''
@@ -1110,8 +1158,8 @@ export default {
     toggleDisabledClick(val) {
       this.isDisalbed = val;
     },
-    getStatus (formType) { // 根据呼叫类型 来改变状态
-      return formType === 1 ? 1 : 7
+    getStatus (formType) { // 根据呼叫类型 来改变状态\
+      return Number(formType) === 1 ? 1 : 7
     },  
     getSerialNumberList(code) {
       this.listLoading = true;
@@ -1136,7 +1184,6 @@ export default {
       this.collapseTitle = val.length ? '折叠' : '展开更多订单'
       console.log(val, 'val change')
     },
-    showReport () {}, // 查看完工报告
     handleChange(val) {
       this.listQuery.page = val.page;
       this.listQuery.limit = val.limit;
@@ -1223,6 +1270,17 @@ export default {
           this.dialogfSN = false;
           return
         }
+        let { fromTheme, 
+          fromType, 
+          feeType, 
+          problemTypeName, 
+          problemTypeId, 
+          priority, 
+          remark, 
+          solutionId, 
+          status, 
+          solutionsubject
+        } = this.currentTarget || {}
         if (!this.formList[0].manufacturerSerialNumber) {
           //判断从哪里新增的依据是第一个工单是否有id
           if (this.inputname) {
@@ -1236,7 +1294,7 @@ export default {
               itemName: "",
               feeType: 1,
               fromTheme: "",
-              fromType:1,
+              fromType: "",
               problemTypeName:  "",
               problemTypeId: "",
               priority: 1,
@@ -1251,10 +1309,9 @@ export default {
             this.formList[0].materialCode = this.formListStart[0].itemCode
             this.formList[0].materialDescription = this.formListStart[0].itemName
             this.formList[0].feeType = 1
-            this.formList[0].orderTakeType = 1
             this.formList[0].editTrue = true
             // this.formList[0].fromTheme = ""
-            this.formList[0].fromType =  this.formList[0].fromType || 1
+            this.formList[0].fromType =  this.formList[0].fromType || ""
             // this.formList[0].problemTypeName = ""
             // this.formList[0].problemTypeId = ""
             this.formList[0].priority =  this.formList[0].priority || 1
@@ -1262,7 +1319,7 @@ export default {
             // this.formList[0].solutionId = ""
             this.formList[0].status = 1
             // this.formList[0].solutionsubject = ""
-
+          
           const newList = this.formListStart.splice(1,this.formListStart.length);
           for (let i = 0; i < newList.length; i++) {
             this.formList.push({
@@ -1271,19 +1328,18 @@ export default {
               internalSerialNumber: newList[i].internalSN,
               materialCode: newList[i].itemCode,
               materialDescription: newList[i].itemName,
-              feeType: 1,
-              fromTheme: "",
-              fromType:  1,
-              problemTypeName: "",
-              problemTypeId:  "",
-              priority:  1,
-              remark:  "",
-              solutionId: "",
-              status: 1,
-              solutionsubject:  "",
+              feeType: feeType || 1,
+              fromTheme: fromTheme || "",
+              fromType: fromType || "",
+              problemTypeName: problemTypeName || "",
+              problemTypeId: problemTypeId || "",
+              priority: priority || 1,
+              remark: remark || "",
+              solutionId: solutionId || "",
+              status: status || 1,
+              solutionsubject: solutionsubject || "",
             });
           }
-          
           this.ifFormPush = true;
         } else {
           this.ifFormPush = true;
@@ -1298,7 +1354,7 @@ export default {
                 itemName: "",
                 feeType: 1,
                 fromTheme:  "",
-                fromType:  1,
+                fromType:  "",
                 problemTypeName:  "",
                 problemTypeId:  "",
                 priority:  1,
@@ -1313,7 +1369,7 @@ export default {
             this.formList[this.thisPage].materialCode = this.formListStart.itemCode
             this.formList[this.thisPage].materialDescription = this.formListStart.itemName
             // (this.formList[this.thisPage].feeType = 1),
-            // (this.formList[this.thisPage].orderTakeType = 1),
+            // (this.formList[this.thisPage].serviceMode = 1),
             // (this.formList[this.thisPage].editTrue = false),
             // (this.formList[this.thisPage].fromTheme =""),
             // (this.formList[this.thisPage].fromType =  1),
@@ -1333,16 +1389,16 @@ export default {
                 internalSN: "",
                 itemCode: "其他设备",
                 materialDescription: "",
-                feeType: 1,
-                fromTheme:  "",
-                fromType:  1,
-                problemTypeName:  "",
-                problemTypeId:  "",
-                priority:  1,
-                remark:  "",
-                solutionId:  "",
-                status:  1,
-                solutionsubject:  "",
+                feeType: feeType || 1,
+                fromTheme: fromTheme || "",
+                fromType: fromType || "",
+                problemTypeName: problemTypeName || "",
+                problemTypeId: problemTypeId || "",
+                priority: priority || 1,
+                remark: remark || "",
+                solutionId: solutionId || "",
+                status: status || 1,
+                solutionsubject: solutionsubject || "",
               });
             }
             for (let i = 0; i < this.formListStart.length; i++) {
@@ -1352,16 +1408,16 @@ export default {
                 internalSerialNumber: this.formListStart[i].internalSN,
                 materialCode: this.formListStart[i].itemCode,
                 materialDescription: this.formListStart[i].itemName,
-                feeType: 1,
-                fromTheme:  "",
-                fromType:  1,
-                problemTypeName:  "",
-                problemTypeId:  "",
-                priority:  1,
-                remark:  "",
-                solutionId:  "",
-                status:  1,
-                solutionsubject:  "",
+                feeType: feeType || 1,
+                fromTheme: fromTheme || "",
+                fromType: fromType || "",
+                problemTypeName: problemTypeName || "",
+                problemTypeId: problemTypeId || "",
+                priority: priority || 1,
+                remark: remark || "",
+                solutionId: solutionId || "",
+                status: status || 1,
+                solutionsubject: solutionsubject || "",
               });
             }
           }
@@ -1387,9 +1443,13 @@ export default {
       this.thisPage = index;
       this.$nextTick(() => {
         this.currentTarget = value;
-        this.isEditOperation = value
-          ? Boolean(value.manufacturerSerialNumber)
-          : false;
+        this.isEditOperation = index !== undefined
+          ? Boolean(value.manufacturerSerialNumber) 
+          : false
+        console.log(this.isEditOperation, 'ISEDIT', index)
+        // this.isEditOperation = value
+        //   ? Boolean(value.manufacturerSerialNumber)
+        //   : false;
         this.dialogfSN = true;
       });
     },
@@ -1561,11 +1621,34 @@ export default {
   overflow-x: hidden;
   .order-wrapper {
     position: relative;
+    .form-disabled {
+      ::v-deep .el-input.is-disabled .el-input__inner {
+        background-color: #fff;
+        cursor: default;
+        color: #606266;
+        border-color: #DCDFE6;
+      }
+      ::v-deep .el-textarea.is-disabled .el-textarea__inner {
+        background-color: #fff;
+        cursor: default;
+        color: #606266;
+        border-color: #DCDFE6;
+      }
+    }
     .operation-btn-wrapper {
       position: absolute;
       display: flex;
       top: 15px;
       right: 26px;
+    }
+    .report-btn-wrapper {
+      position: absolute;
+      right: 12px;
+      bottom: 53px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
     }
   }
   .radio-item {

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -18,7 +20,13 @@ namespace OpenAuth.WebApi.Controllers
     public class ServiceEvaluatesController : ControllerBase
     {
         private readonly ServiceEvaluateApp _app;
-        
+        private readonly HttpClienService _httpClienService;
+        public ServiceEvaluatesController(ServiceEvaluateApp app, HttpClienService httpClienService)
+        {
+            _app = app;
+            _httpClienService = httpClienService;
+        }
+
         //获取详情
         [HttpGet]
         public async Task<Response<ServiceEvaluate>> Get(long id)
@@ -38,7 +46,7 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         //添加
-       [HttpPost]
+        [HttpPost]
         public async Task<Response> Add(AddOrUpdateServiceEvaluateReq obj)
         {
             var result = new Response();
@@ -56,6 +64,7 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        #region 新威智能App使用 修改请告知！！！
         [HttpPost]
         public async Task<Response> AppAdd(APPAddServiceEvaluateReq req)
         {
@@ -63,7 +72,9 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Response();
             try
             {
-                await _app.AppAdd(req);
+                var r = await _httpClienService.Post(req, "api/serve/ServiceOrder/AppEvaluateAdd");
+                result = JsonConvert.DeserializeObject<Response>(r);
+                //await _app.AppAdd(req);
 
             }
             catch (Exception ex)
@@ -74,8 +85,37 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
+        /// <summary>
+        /// 加载列表
+        /// </summary>
+        [HttpGet]
+        public async Task<TableData> AppLoad([FromQuery] QueryServiceEvaluateListReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
+                parameters.Add("ServiceOrderId", request.ServiceOrderId);
+                parameters.Add("CustomerId", request.CustomerId);
+                parameters.Add("TechnicianId", request.TechnicianId);
+                parameters.Add("VisitPeopleId", request.VisitPeopleId);
+                parameters.Add("DateFrom", request.DateFrom);
+                parameters.Add("DateTo", request.DateTo);
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/AppEvaluateLoad");
+                result = JsonConvert.DeserializeObject<TableData>(r);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+            //return await _app.AppLoad(request);
+        }
+        #endregion
+
         //修改
-       [HttpPost]
+        [HttpPost]
         public async Task<Response> Update(AddOrUpdateServiceEvaluateReq obj)
         {
             var result = new Response();
@@ -97,24 +137,16 @@ namespace OpenAuth.WebApi.Controllers
         /// 加载列表
         /// </summary>
         [HttpGet]
-        public TableData Load([FromQuery]QueryServiceEvaluateListReq request)
+        public TableData Load([FromQuery] QueryServiceEvaluateListReq request)
         {
             return _app.Load(request);
-        }
-        /// <summary>
-        /// 加载列表
-        /// </summary>
-        [HttpGet]
-        public async Task<TableData>AppLoad([FromQuery]QueryServiceEvaluateListReq request)
-        {
-            return  await _app.AppLoad(request);
         }
 
         /// <summary>
         /// 批量删除
         /// </summary>
-       [HttpPost]
-        public async Task<Response> Delete([FromBody]long[] ids)
+        [HttpPost]
+        public async Task<Response> Delete([FromBody] long[] ids)
         {
             var result = new Response();
             try
@@ -175,11 +207,6 @@ namespace OpenAuth.WebApi.Controllers
             }
 
             return result;
-        }
-
-        public ServiceEvaluatesController(ServiceEvaluateApp app) 
-        {
-            _app = app;
         }
     }
 }

@@ -7,5 +7,6 @@ namespace OpenAuth.App.Request
     public class FileBind
     {
         public string PictureId { get; set; }
+        public int? PictureType { get; set; }
     }
 }

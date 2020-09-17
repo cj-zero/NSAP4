@@ -108,7 +108,7 @@ export default {
         ReqId: id
       }).then(res => {
         this.selectList = res.data
-        console.log(this.selectList, 'selectList')
+        // console.log(this.selectList, 'selectList')
         if (isReset && Number(this.currentItem.areaLevel) !== 3) {
           this.tabList.push({
             areaName: '请选择',
@@ -211,7 +211,7 @@ export default {
   .select-list {
     display: flex;
     flex-wrap: wrap;
-    overflow-y: scroll;
+    overflow-y: auto;
     max-height: 300px;
     
     & > li {

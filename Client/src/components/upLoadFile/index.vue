@@ -31,47 +31,81 @@
         <!-- </span>
       </div>
     </el-upload> -->
-    <el-upload 
-      :action="action"
-      list-type="picture-card"
-      multiple
-      name="files"
-      :before-upload="beforeUpload"
-      :width="setImage"
-      :on-success="successBack"
-      :on-preview="handlePictureCardPreview"
-      :on-remove="handleRemove"
-      :headers="headers"
-      class="img"
-      :limit="limit"
-      :auto-upload="true"
-      :on-exceed="onExeed"
+    <template v-if="uploadType === 'image'">
+      <el-upload 
+        ref="img"
+        :action="action"
+        list-type="picture-card"
+        multiple
+        name="files"
+        :before-upload="beforeUpload"
+        :width="setImage"
+        :on-success="successBack"
+        :on-preview="handlePictureCardPreview"
+        :on-remove="handleRemove"
+        :headers="headers"
+        class="img"
+        :limit="limit"
+        :auto-upload="true"
+        :on-exceed="onExeed"
+        :disabled="disabled"
+        >
+        <i class="el-icon-plus"></i>
+        <span class="el-upload-list__item-delete" @click="handleDownload(file)">
+          <i class="el-icon-download"></i>
+        </span>
+      </el-upload>
+      <!-- <Model
+          :visible="dialogVisible"
+          @on-close="dialogVisible = false"
+          width="600px"
+          :fullscreen="true"
+        >
+        <img :src="dialogImageUrl" alt style="display: block;width: 80%;margin: 0 auto;" />
+        <template slot="action">
+          <el-button size="mini" @click="dialogVisible = false">关闭</el-button>
+        </template>
+      </Model> -->
+      <el-image-viewer
+        v-if="dialogVisible"
+        :url-list="[dialogImageUrl]"
+        :on-close="closeViewer"
       >
-      <i class="el-icon-plus"></i>
-      <span class="el-upload-list__item-delete" @click="handleDownload(file)">
-        <i class="el-icon-download"></i>
-      </span>
-    </el-upload>
-    <Model
-        :visible="dialogVisible"
-        @on-close="dialogVisible = false"
-        width="600px"
-      >
-      <img :src="dialogImageUrl" alt style="display: block;width: 80%;margin: 0 auto;" />
-      <template slot="action">
-        <el-button size="mini" @click="dialogVisible = false">关闭</el-button>
-      </template>
-    </Model>
+      </el-image-viewer>
+    </template>
+    <template v-else>
+      <el-upload
+        ref="file"
+        class="upload-demo"
+        :action="action"
+        name="files"
+        :headers="headers"
+        :on-success="successBack"
+        :on-remove="handleRemove"
+        multiple
+        :limit="limit"
+        :on-exceed="onExeed"
+        :disabled="disabled"
+        >
+        <el-button size="mini" type="primary">点击上传</el-button>
+      </el-upload>
+    </template>
   </div>
 </template>
 
 <script>
-import Model from "@/components/Formcreated/components/Model";
+// import Model from "@/components/Formcreated/components/Model";
+import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 export default {
   components: {
-    Model
+    // Model
+    ElImageViewer
   },
   props: {
+    uploadType: {
+      type: String,
+      default: 'image'
+    },
     setImage: {
       type: [String, Object],
       default: ''
@@ -83,37 +117,44 @@ export default {
     fit: {
       type: String,
       default: 'fill'
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
     return {
       dialogImageUrl: "",
       dialogVisible: false,
-      disabled: false,
       action: `${process.env.VUE_APP_BASE_API}/Files/Upload`,
-      fileList:[],
       headers:{
         "X-Token":this.$store.state.user.token
       },
       pictures:[],
       newPictureList: []
-      }
+    }
   },
   watch:{
-      fileList:{
-          deep:true,
-          handler(val){
-              console.log(val, 'fileList')
-          }
+    fileList:{
+      deep:true,
+      handler(val){
+          console.log(val, 'fileList')
       }
+    }
   },
   methods: {
+    closeViewer () {
+      this.dialogVisible = false
+    },
     handleRemove(file) {
       let { uid } = file
       let findIndex = this.newPictureList.findIndex(item => {
         return item.uid === uid
       })
-      this.pictures.splice(findIndex)
+      this.newPictureList.splice(findIndex, 1)
+      this.pictures.splice(findIndex, 1)
+      this.$emit('get-ImgList', this.pictures)
     },
     handlePictureCardPreview(file) {
       this.dialogImageUrl = file.url;
@@ -127,7 +168,6 @@ export default {
       a.click()
     },
     beforeUpload (file) {
-      console.log(file, 'file')
       let testmsg = /^image\/(jpeg|png|jpg)$/.test(file.type)
       if (!testmsg) {
         this.$message.error('上传图片格式不对!')
@@ -136,23 +176,32 @@ export default {
       return testmsg
     },
     onExeed () { 
-      console.log('onecdsad')
       this.$message.error(`最多上传${this.limit}个文件`)
     },
-    successBack(res, file, fileList){
+    successBack(res, file){
       this.newPictureList.push({
         pictureId:res.result[0].id,
         uid: file.uid
       })
-      console.log(res, res.result[0].id, 'id', file, fileList)
-      this.pictures.push({
-        pictureId:res.result[0].id
-      }) 
+      let picConig = {
+        pictureId: res.result[0].id
+      }
+      if (this.uploadType === 'file') {
+        picConig.pictureType = 3
+      }
+      this.pictures.push(picConig) 
       this.$message({
         type:'success',
         message:'上传成功'
       })
-      this.$emit('get-ImgList',this.pictures)
+      this.$emit('get-ImgList', this.pictures)
+    },
+    clearFiles () {
+      this.uploadType === 'image'
+        ? this.$refs.img.clearFiles()
+        : this.$refs.file.clearFiles()
+      this.pictures = []
+      this.newPictureList = []
     }
   }
 };

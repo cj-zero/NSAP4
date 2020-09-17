@@ -22,7 +22,7 @@
         </template>
       </el-table-column>
       <el-table-column prop="manufSN" fixed label="制造商序列号" width="120"></el-table-column>
-      <el-table-column prop="itemCode" width="120" label="物料编码"></el-table-column>
+      <el-table-column prop="itemCode" width="160" label="物料编码"></el-table-column>
       <el-table-column label="物料描述" width="400">
         <template slot-scope="scope">
           <span>{{scope.row.itemName}}</span>

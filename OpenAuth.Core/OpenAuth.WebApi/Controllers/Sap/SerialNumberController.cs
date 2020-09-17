@@ -2,7 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using OpenAuth.App;
 using OpenAuth.App.Response;
 using OpenAuth.App.Sap.Request;
 using OpenAuth.App.Sap.Service;
@@ -19,10 +23,12 @@ namespace OpenAuth.WebApi.Controllers.Sap
     public class SerialNumberController : ControllerBase
     {
         private readonly SerialNumberApp _serialNumberApp;
+        private readonly HttpClienService _httpClienService;
 
-        public SerialNumberController(SerialNumberApp serialNumberApp)
+        public SerialNumberController(SerialNumberApp serialNumberApp, HttpClienService httpClienService)
         {
             _serialNumberApp = serialNumberApp;
+            _httpClienService = httpClienService;
         }
 
         /// <summary>
@@ -56,7 +62,9 @@ namespace OpenAuth.WebApi.Controllers.Sap
             var result = new TableData();
             try
             {
-                result = await _serialNumberApp.AppGet(req);
+                var r = await _httpClienService.Post(req, "api/serve/ServiceOrder/AppSerialNumberGet");
+                result = JsonConvert.DeserializeObject<TableData>(r);
+                //result = await _serialNumberApp.AppGet(req);
             }
             catch (Exception ex)
             {
@@ -77,7 +85,9 @@ namespace OpenAuth.WebApi.Controllers.Sap
             var result = new TableData();
             try
             {
-                result = await _serialNumberApp.AppFind(req);
+                var r = await _httpClienService.Post(req, "api/serve/ServiceOrder/AppSerialNumberFind");
+                result = JsonConvert.DeserializeObject<TableData>(r);
+                //result = await _serialNumberApp.AppFind(req);
             }
             catch (Exception ex)
             {

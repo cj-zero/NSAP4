@@ -37,3 +37,7 @@ export function isPhone (phone) {
 export function isCustomerCode (code) {
   return /^[a-z|A-Z]\d{5}$/g.test(code)
 }
+
+export function isSameObjectByValue (oldVal, newVal) {
+  return JSON.parse(JSON.stringify(oldVal)) === JSON.parse(JSON.stringify(newVal))
+}

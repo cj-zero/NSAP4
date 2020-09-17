@@ -182,33 +182,6 @@ export default {
       console.log(this.isVisible, 'isVisible')
       this.isVisible = !this.isVisible
     },
-    beforeEnter(el){
-        el.className= el.className+' my-transition';
-        el.style.height = '0';
-    },
-    enter(el, done){
-        el.style.height = el.scrollHeight + 'px';
-        done()
-    },
-    afterEnter(el){
-        el.className= el.className.replace("my-transition",'');
-        el.style.height = '';
-    },
-    enterCancelled(){
-      //
-    },
-    beforeLeave(el){
-        el.style.height = el.scrollHeight + 'px';
-    },
-    leave(el, done){
-        el.className= el.className+' my-transition';
-        el.style.height = 0;
-        done()
-    },
-    afterLeave(el){
-        el.className=el.className.replace("my-transition",'');
-        el.style.height = '';
-    },
     handleChange (val) {
       console.log(val, 'change', this.form.QryProblemType)
     }

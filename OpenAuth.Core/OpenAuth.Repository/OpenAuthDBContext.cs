@@ -52,5 +52,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<AppUserMap> AppUserMaps { get; set; }
 
         public virtual DbSet<GlobalArea> GlobalAreas { get; set; }
+
+        public virtual DbSet<AppUserBind> AppUserBinds { get; set; }
     }
 }

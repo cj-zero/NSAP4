@@ -1,110 +1,92 @@
 <template>
   <div>
-    <!-- <sticky :className="'sub-navbar'">
+    <sticky :className="'sub-navbar'">
       <div class="filter-container">
-        <el-input
-          @keyup.enter.native="handleFilter"
+        <el-input 
+          v-model="listQuery.ManufSN" 
           size="mini"
-          style="width: 200px;"
+          @keyup.enter.native="onSubmit" 
+          style="width: 150px;" 
           class="filter-item"
-          :placeholder="'名称'"
-          v-model="listQuery.key"
+          placeholder="序列号">
+        </el-input>
+        <el-input 
+          v-model="listQuery.CardName" 
+          size="mini"
+          @keyup.enter.native="onSubmit" 
+          style="width: 100px;"
+          class="filter-item"
+          placeholder="客户"
         ></el-input>
-
+        <el-input 
+          v-model="listQuery.ItemCode" 
+          size="mini"
+          @keyup.enter.native="onSubmit" 
+          style="width: 165px;"
+          class="filter-item"
+          placeholder="物料编码">
+        </el-input>
         <el-button
           class="filter-item"
           size="mini"
-          style="margin:0 15px;"
           v-waves
           icon="el-icon-search"
-          @click="handleFilter"
+          @click="onSubmit"
         >搜索</el-button>
-         <permission-btn moduleName="servenumber" size="mini" v-on:btn-event="onBtnClicked"></permission-btn> 
+        <permission-btn moduleName="servenumber" size="mini" v-on:btn-event="onBtnClicked"></permission-btn> 
       </div>
-    </sticky>-->
+    </sticky>
     <div class="app-container">
       <div class="bg-white">
-        <el-form ref="form" :model="listQuery" label-width="80px">
-          <div style="padding:10px 0;"></div>
-          <el-row :gutter="10">
-            <el-col :span="4">
-              <el-form-item label="序列号" size="medium">
-                <el-input v-model="listQuery.ManufSN" @keyup.enter.native="getList"></el-input>
-              </el-form-item>
-            </el-col>
-            <el-col :span="4">
-              <el-form-item label="客户" size="medium">
-                <el-input v-model="listQuery.CardName" @keyup.enter.native="getList"></el-input>
-              </el-form-item>
-            </el-col>
-            <!-- <el-col :span="4">
-              <el-form-item label="呼叫状态" size="medium">
-                <el-select v-model="listQuery.region" placeholder="请选择呼叫状态">
-                  <el-option label="待确认" value="1"></el-option>
-                  <el-option label="已确认" value="2"></el-option>
-                  <el-option label="已取消" value="3"></el-option>
-                </el-select>
-              </el-form-item>
-            </el-col>-->
-
-            <el-col :span="4">
-              <el-form-item label="物料编码" size="medium">
-                <el-input v-model="listQuery.ItemCode" @keyup.enter.native="getList"></el-input>
-              </el-form-item>
-            </el-col>
-            <el-col :span="4">
-              <el-button type="primary" size="medium" @click="getList">搜索</el-button>
-            </el-col>
-          </el-row>
-        </el-form>
-<el-table
-          ref="mainTable"
-          class="table_label"
-          :key="key"
-          :data="list"
-          v-loading="listLoading"
-          border
-                      height="700px"
-
-          fit
-          style="width: 100%;"
-          highlight-current-row
-        >
-          <el-table-column
-            show-overflow-tooltip
-            v-for="(fruit,index) in formTheadOptions"
-            :align="fruit.align"
-            :key="`ind${index}`"
-            header-align="left"
-            :width="fruit.width"
-            :fixed="fruit.fixed"
-            :sortable="fruit=='chaungjianriqi'?true:false"
-            style="background-color:silver;"
-            :label="fruit.label"
+        <div class="content-wrapper">
+          <el-table
+            ref="mainTable"
+            class="table_label"
+            :key="key"
+            :data="list"
+            v-loading="listLoading"
+            border
+            height="100%"
+            fit
+            style="width: 100%;"
+            highlight-current-row
           >
-            <template slot-scope="scope">
-              <!-- <el-link
-                v-if="fruit.name === 'id'"
-                type="primary"
-                @click="openTree(scope.row.id)"
-              >{{scope.row.id}}</el-link>
-              <span
-                v-if="fruit.name === 'status'"
-                :class="[scope.row[fruit.name]===1?'orangeWord':(scope.row[fruit.name]===2?'greenWord':'redWord')]"
-              >{{stateValue[scope.row[fruit.name]-1]}}</span> -->
-              <span v-if="fruit.name === 'serveId'">{{ scope.$index + 1}}</span>
-              <span v-else
-              >{{scope.row[fruit.name]}}</span>
-            </template>
-          </el-table-column>
-        </el-table>
-        <pagination
-          v-show="total>0"
-          :total="total"
-          :page.sync="listQuery.page"
-          :limit.sync="listQuery.limit"
-          @pagination="handleCurrentChange"
-        />
+            <el-table-column
+              show-overflow-tooltip
+              v-for="(fruit,index) in formTheadOptions"
+              :align="fruit.align"
+              :key="`ind${index}`"
+              header-align="left"
+              :width="fruit.width"
+              :fixed="fruit.fixed"
+              :sortable="fruit=='chaungjianriqi'?true:false"
+              style="background-color:silver;"
+              :label="fruit.label"
+            >
+              <template slot-scope="scope">
+                <!-- <el-link
+                  v-if="fruit.name === 'id'"
+                  type="primary"
+                  @click="openTree(scope.row.id)"
+                >{{scope.row.id}}</el-link>
+                <span
+                  v-if="fruit.name === 'status'"
+                  :class="[scope.row[fruit.name]===1?'orangeWord':(scope.row[fruit.name]===2?'greenWord':'redWord')]"
+                >{{stateValue[scope.row[fruit.name]-1]}}</span> -->
+                <span v-if="fruit.name === 'serveId'">{{ scope.$index + 1}}</span>
+                <span v-else
+                >{{scope.row[fruit.name]}}</span>
+              </template>
+            </el-table-column>
+          </el-table>
+          <pagination
+            v-show="total>0"
+            :total="total"
+            :page.sync="listQuery.page"
+            :limit.sync="listQuery.limit"
+            @pagination="handleCurrentChange"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -114,29 +96,32 @@
 import * as callservesure from "@/api/serve/callservesure.js";
 
 import waves from "@/directive/waves"; // 水波纹指令
-// import Sticky from "@/components/Sticky";
-// import permissionBtn from "@/components/PermissionBtn";
+import Sticky from "@/components/Sticky";
+import permissionBtn from "@/components/PermissionBtn";
 import Pagination from "@/components/Pagination";
 export default {
   name: "servenumber",
   components: {
-    Pagination
+    Pagination,
+    Sticky,
+    permissionBtn
   },
   directives: {
     waves
   },
   data() {
     return {
+      maxHeight: 0,
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
       formTheadOptions: [
-         { name: "serveId", label: "编号" ,fixed:true},
+         { name: "serveId", label: "编号" ,fixed:true, width: '50px' },
         { name: "customer", label: "客户代码" ,align:'left'},
-        { name: "custmrName", label: "客户名称" },
+        { name: "custmrName", label: "客户名称", width: 180 },
         { name: "manufSN", label: "制造商序列号",width:'120px' },
-        { name: "internalSN", label: "内部序列号", width: '120px' },
-        { name: "itemCode", label: "物料编码" },
-        { name: "itemName", label: "物料描述" },
+        // { name: "internalSN", label: "内部序列号", width: '120px' },
+        { name: "itemCode", label: "物料编码", width: 150 },
+        { name: "itemName", label: "物料描述", width: 180 },
         { name: "manufDate", label: "制造日期" },
         { name: "deliveryNo", label: "交货单号" },
         { name: "dlvryDate", label: "交货日期" },
@@ -225,8 +210,13 @@ export default {
   created() {
     this.getList();
   },
-
+  mounted () {    
+  },
   methods: {
+    onSubmit () {
+      this.listQuery.page = 1
+      this.getList()
+    },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.$refs.mainTable.toggleRowSelection(row);
@@ -342,9 +332,9 @@ export default {
       this.resetTemp();
       this.dialogStatus = "create";
       this.dialogFormVisible = true;
-      this.$nextTick(() => {
-        this.$refs["dataForm"].clearValidate();
-      });
+      // this.$nextTick(() => {
+      //   this.$refs["dataForm"].clearValidate();
+      // });
     },
     createData() {
       // 保存提交

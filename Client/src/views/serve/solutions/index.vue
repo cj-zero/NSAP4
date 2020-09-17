@@ -34,39 +34,42 @@
     </sticky>
     <div class="app-container">
       <div class="bg-white">
-        <el-table
-          ref="mainTable"
-          :key="key"
-          :data="list"
-          v-loading="listLoading"
-          border
-          highlight-current-row
-          style="width: 100%;"
-          @row-click="rowClick"
-          @selection-change="handleSelectionChange"
-        >
-   
-          <el-table-column
-            show-overflow-tooltip
-            v-for="fruit in formTheadOptions"
-            :key="fruit.name"
-            :label="fruit.label"
-            :align="fruit.align"
+        <div class="content-wrapper">
+          <el-table
+            ref="mainTable"
+            :key="key"
+            :data="list"
+            v-loading="listLoading"
+            border
+            highlight-current-row
+            height="100%"
+            style="width: 100%;"
+            @row-click="rowClick"
+            @selection-change="handleSelectionChange"
           >
-            <template slot-scope="scope">
-              <span v-if="fruit.name === 'status'" :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]">{{stateValue[scope.row[fruit.name]-1]}}</span>
-              <span v-if="fruit.name === 'subject'">{{scope.row[fruit.name]}}</span>
-              <span v-if="!(fruit.name ==='status'||fruit.name ==='subject')">{{scope.row[fruit.name]}}</span>
-            </template>
-          </el-table-column>
-        </el-table>
-        <pagination
-          v-show="total>0"
-          :total="total"
-          :page.sync="listQuery.page"
-          :limit.sync="listQuery.limit"
-          @pagination="handleCurrentChange"
-        />
+    
+            <el-table-column
+              show-overflow-tooltip
+              v-for="fruit in formTheadOptions"
+              :key="fruit.name"
+              :label="fruit.label"
+              :align="fruit.align"
+            >
+              <template slot-scope="scope">
+                <span v-if="fruit.name === 'status'" :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]">{{stateValue[scope.row[fruit.name]-1]}}</span>
+                <span v-if="fruit.name === 'subject'">{{scope.row[fruit.name]}}</span>
+                <span v-if="!(fruit.name ==='status'||fruit.name ==='subject')">{{scope.row[fruit.name]}}</span>
+              </template>
+            </el-table-column>
+          </el-table>
+          <pagination
+            v-show="total>0"
+            :total="total"
+            :page.sync="listQuery.page"
+            :limit.sync="listQuery.limit"
+            @pagination="handleCurrentChange"
+          />
+        </div>
       </div>
       <el-dialog
         v-el-drag-dialog
@@ -170,11 +173,11 @@ export default {
       formTheadOptions: [
         // { name: "id" ,label:'ID',align:'right'},
         { name: "sltCode" ,label:'编号',align:'left' },
-        { name: "status" ,label:'状态' },
+        // { name: "status" ,label:'状态' },
         { name: "symptom" ,label:'症状' },
         { name: "subject" ,label:'解决方案' },
-        { name: "cause"  ,label:'原因'},
-        { name: "descriptio"  ,label:'备注'},
+        // { name: "cause"  ,label:'原因'},
+        // { name: "descriptio"  ,label:'备注'},
         { name: "updateUserName"  ,label:'更新人名字'},
         { name: "createTime" ,label:'创建时间' }
       ],

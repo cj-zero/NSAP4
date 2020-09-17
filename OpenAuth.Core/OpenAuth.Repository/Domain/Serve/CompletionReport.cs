@@ -213,36 +213,47 @@ namespace OpenAuth.Repository.Domain
         /// 出发省
         /// </summary>
         [Description("出发省")]
-        public int StartProvinceId { get; set; }
+        public int? StartProvinceId { get; set; }
 
         /// <summary>
         /// 出发市
         /// </summary>
         [Description("出发市")]
-        public int StartCityId { get; set; }
+        public int? StartCityId { get; set; }
 
         /// <summary>
         /// 出发 区/县
         /// </summary>
         [Description("出发 区/县")]
-        public int StartAreaId { get; set; }
+        public int? StartAreaId { get; set; }
 
         /// <summary>
         /// 到达省
         /// </summary>
         [Description("到达省")]
-        public int ArriveProvinceId { get; set; }
+        public int? ArriveProvinceId { get; set; }
 
         /// <summary>
         /// 到达省
         /// </summary>
         [Description("到达市")]
-        public int ArriveCityId { get; set; }
+        public int? ArriveCityId { get; set; }
         /// <summary>
         /// 到达省
         /// </summary>
         [Description("到达区/县")]
-        public int ArriveAreaId { get; set; }
+        public int? ArriveAreaId { get; set; }
+
+        // <summary>
+        /// 问题描述
+        /// </summary>
+        [Description("问题描述")]
+        public string TroubleDescription { get; set; }
+        /// <summary>
+        /// 解决方案
+        /// </summary>
+        [Description("解决方案")]
+        public string ProcessDescription { get; set; }
 
         /// <summary>
         /// 完工报告关联的图片

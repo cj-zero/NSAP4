@@ -6,6 +6,7 @@
 @import "./btn.scss";
 @import "./global.scss";
 @import "./table.scss";
+@import "./reset.scss";
 body {
   height: 100%;
   -moz-osx-font-smoothing: grayscale;
@@ -179,10 +180,11 @@ code {
     display: inline-block;
     vertical-align: middle;
     margin-bottom: 0px;
+    margin: 0 5px;
   }
   .filter-items {
     display: inline-block;
-    margin-left: 20px;
+    // margin-left: 10px;
   }
   .iconfont {
     margin-right: 3px;
@@ -247,6 +249,19 @@ table thead th {
 .app-container {
     background-color: #efefef;
     padding: 10px;
+    flex: 1;
+    .bg-white {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100%;
+      > .content-wrapper {
+        box-sizing: border-box; 
+        height: 100%; 
+        padding-bottom: 52px;
+        margin-bottom: -52px
+      }
+    }
 }
 // .app-main {
 //   & > div {
@@ -433,12 +448,12 @@ table thead th {
     }
   }
   .logo {
-    width: 180px;
+    // width: 180px;
     text-align: center;
     float: left;
     .user-avatar {
-      width: 90%;
-      height: 30px;
+      width: 100px;
+      height: 20px;
       vertical-align: middle;
       margin: 0 5%;
     }

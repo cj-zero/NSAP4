@@ -44,6 +44,10 @@ namespace OpenAuth.App.Response
         /// </summary>
         public string ContactTel { get; set; }
         /// <summary>
+        /// 终端客户Id
+        /// </summary>
+        public string TerminalCustomerId { get; set; }
+        /// <summary>
         /// 终端客户
         /// </summary>
         public string TerminalCustomer { get; set; }
@@ -158,5 +162,10 @@ namespace OpenAuth.App.Response
         /// 设备类型名称
         /// </summary>
         public string MaterialCodeTypeName { get; set; }
+
+        /// <summary>
+        /// U_SAP_ID
+        /// </summary>
+        public string U_SAP_ID { get; set; }
     }
 }

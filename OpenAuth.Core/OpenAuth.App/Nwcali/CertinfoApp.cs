@@ -104,12 +104,13 @@ namespace OpenAuth.App
             var result = new TableData();
             var user = _auth.GetCurrentUser();
 
+            var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("校准证书"));
             var instances = new List<string>();
             if( request.FlowStatus == 1   )
                 instances = await UnitWork.Find<FlowInstanceTransitionHistory>(u => u.CreateUserId == user.User.Id)
                     .Select(u => u.InstanceId).Distinct().ToListAsync();
 
-            var fs = await UnitWork.Find<FlowInstance>(null)
+            var fs = await UnitWork.Find<FlowInstance>(f => f.SchemeId == mf.FlowSchemeId)
                 .Where(o => o.MakerList == "1" || o.MakerList.Contains(user.User.Id))//待办事项
                 .WhereIf(request.FlowStatus == 1, o => o.ActivityName == "待送审" || instances.Contains(o.Id))
                 .WhereIf(request.FlowStatus == 2, o => o.ActivityName == "待审核" || o.ActivityName == "待批准")
@@ -173,12 +174,17 @@ namespace OpenAuth.App
                 throw new CommonException("证书不存在", 80001);
 
             var b = await CheckCanOperation(certInfo.Id, loginContext.User.Name);
-            if (!b || !certInfo.Operator.Equals(loginContext.User.Name))
+            if (!b)
             {
                 throw new CommonException("您无法操作此步骤。", 80011);
             }
 
             var flowInstance = await UnitWork.FindSingleAsync<FlowInstance>(c => c.Id.Equals(certInfo.FlowInstanceId));
+
+            if (flowInstance.ActivityName.Equals("待送审") && !certInfo.Operator.Equals(loginContext.User.Name)) 
+            {
+                throw new CommonException("您无法操作此步骤。", 80011);
+            }
             var list = new List<WordModel>();
             var nameDic = new Dictionary<string, string>()
             {

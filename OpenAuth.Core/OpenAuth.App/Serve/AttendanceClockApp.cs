@@ -6,6 +6,7 @@ using Infrastructure;
 using Infrastructure.Extensions;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Npoi.Mapper;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -43,28 +44,30 @@ namespace OpenAuth.App
                 throw new Exception("当前登录用户没有访问该模块字段的权限，请联系管理员配置");
             }
             var result = new TableData();
-            var objs = UnitWork.Find<AttendanceClock>(null);
-            objs = objs.WhereIf(!string.IsNullOrEmpty(request.key), u => u.Id.Contains(request.key))
+            var objs = UnitWork.Find<AttendanceClock>(null).Include(a=>a.AttendanceClockPictures);
+            var ClockModels = objs.WhereIf(!string.IsNullOrEmpty(request.key), u => u.Id.Contains(request.key))
                 .WhereIf(!string.IsNullOrEmpty(request.Name), u => u.Name.Contains(request.Name))
-                .WhereIf(!string.IsNullOrEmpty(request.Org), u => u.OrgId.Equals(request.Org))
+                .WhereIf(!string.IsNullOrEmpty(request.Org), u => u.Org.Contains(request.Org.ToUpper()))
                 .WhereIf(!string.IsNullOrEmpty(request.VisitTo), u => u.VisitTo.Contains(request.VisitTo))
                 .WhereIf(request.DateFrom != null && request.DateTo != null, u => u.ClockDate >= request.DateFrom && u.ClockDate < Convert.ToDateTime(request.DateTo).AddMinutes(1440))
                 ;
-
             // 主管只能看到本部门的技术员的打卡记录
             if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
             {
-                var userIds = _revelanceApp.Get(Define.USERORG, false, loginContext.Orgs.Select(o=>o.Id).ToArray());
-                objs = objs.Where(q => userIds.Contains(q.UserId));
+                var userIds = _revelanceApp.Get(Define.USERORG, false, loginContext.Orgs.Select(o => o.Id).ToArray());
+                ClockModels = ClockModels.Where(q => userIds.Contains(q.UserId));
             }
+            var listobj = ClockModels.ToList();
+            listobj.ForEach(s => s.ClockDate = s.ClockDate + s.ClockTime);
 
-            var propertyStr = string.Join(',', properties.Select(u => u.Key));
+            //var propertyStr = string.Join(',', properties.Select(u => u.Key));
             result.columnHeaders = properties;
-            result.Data = objs.OrderBy(u => u.Id)
+            result.Data = listobj.OrderByDescending(u => u.ClockDate)
                 .Skip((request.page - 1) * request.limit)
-                .Take(request.limit).Select($"new ({propertyStr})");
+                .Take(request.limit);
             result.Count = objs.Count();
             return result;
+
         }
 
         /// <summary>
