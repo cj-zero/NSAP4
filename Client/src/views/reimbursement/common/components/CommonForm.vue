@@ -61,9 +61,14 @@
     </el-row>
     <!-- 插槽 -->
     <el-row v-for="item in slotConfig" :key="item.id">
-      <el-form-item :label="item.label">
+      <template v-if="item.showLabel">
+        <el-form-item :label="item.label">
+          <slot :name="item.id" :data="formData"></slot>
+        </el-form-item>
+      </template>
+      <template v-else>
         <slot :name="item.id" :data="formData"></slot>
-      </el-form-item>
+      </template>
     </el-row>
   </el-form>
 </template>
