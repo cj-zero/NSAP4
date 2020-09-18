@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -13,6 +14,7 @@ using OpenAuth.App.Sap.Request;
 using OpenAuth.App.Sap.Service;
 using OpenAuth.App.Serve.Request;
 using OpenAuth.Repository.Domain;
+using Serilog;
 
 namespace NSAP.App.WebApi.Controllers
 {
@@ -392,6 +394,7 @@ namespace NSAP.App.WebApi.Controllers
             }
             catch (Exception ex)
             {
+                Log.Error(ex, "AddCompletionReport"+ JsonConvert.SerializeObject(obj));
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
             }
