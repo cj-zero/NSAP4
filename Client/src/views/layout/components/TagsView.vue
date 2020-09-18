@@ -27,6 +27,7 @@
 
 <script>
 import ScrollPane from "@/components/ScrollPane";
+import { mapGetters } from 'vuex'
 export default {
   components: { ScrollPane },
   data() {
@@ -39,6 +40,7 @@ export default {
     };
   },
   computed: {
+    ...mapGetters(['iframeViews']),
     visitedViews() {
       // console.log(this.$store.state.tagsView.visitedViews);
       //页面加载mounted前执行
