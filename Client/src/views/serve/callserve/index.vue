@@ -332,7 +332,7 @@
 </template>
 
 <script>
-import { mapState } from 'vuex'
+import { mapGetters } from 'vuex'
 import * as callservesure from "@/api/serve/callservesure";
 import * as businesspartner from "@/api/businesspartner";
 import * as afterEvaluation from '@/api/serve/afterevaluation'
@@ -362,7 +362,7 @@ export default {
   },
   name: "callservesure",
   computed: {
-    ...mapState('form', [
+    ...mapGetters([
       'formList'
     ]),
     searchConfig () {

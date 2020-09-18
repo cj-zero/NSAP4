@@ -1145,7 +1145,7 @@ export default {
     onReportClosed () {
       this.$refs.report.reset()
     },
-    ...mapMutations('form', {
+    ...mapMutations({
       setFormList: 'SET_FORM_LIST'
     }),
     isOrderDisabled (val) {

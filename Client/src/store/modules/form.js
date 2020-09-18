@@ -1,6 +1,5 @@
 import { deepClone } from '@/utils'
 const form = {
-  namespaced: true,
   state: {
     formDetails: {},
     addFormDetail: '',
