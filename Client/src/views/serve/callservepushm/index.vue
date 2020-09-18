@@ -72,7 +72,7 @@
                         :class="processStatus(scope.row)"
                       >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
                       <span v-if="fruit.name === 'fromType'">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
-                      <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
+                      <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority - 1]}}</span>
                       <span v-if="fruit.name === 'customerId'">
                         {{ scope.row.terminalCustomerId ? scope.row.terminalCustomerId : scope.row.customerId }}
                       </span>
@@ -318,28 +318,28 @@ export default {
           ifFixed: true,
           align: "left",
         },
-        { name: "priority", label: "优先级" },
-        { name: "fromType", label: "呼叫类型", width: "100px" },
-        { name: "status", label: "呼叫状态" },
-        { name: "", label: "费用审核" },
-        { name: "customerId", label: "客户代码" },
-        { name: "terminalCustomer", label: "终端客户" },
-        { name: "customerName", label: "客户名称" },
-        { name: "fromTheme", label: "呼叫主题" },
-        { name: "createTime", label: "创建日期" },
-        { name: "recepUserName", label: "接单员" },
-        { name: "currentUser", label: "技术员" },
+        { name: "priority", label: "优先级", width: 80 },
+        // { name: "fromType", label: "呼叫类型", width: "100px" },
+        { name: "status", label: "呼叫状态", width: 100 },
+        // { name: "", label: "费用审核" },
+        // { name: "customerId", label: "客户代码" },
+        { name: "customerName", label: "客户名称", width: 200 },
+        { name: "fromTheme", label: "呼叫主题", width: 100 },
+        { name: "createTime", label: "创建日期", width: 150 },
+        { name: "recepUserName", label: "接单员", width: 100 },
+        
         {
           name: "manufacturerSerialNumber",
           label: "制造商序列号",
           width: "120px",
         },
-        { name: "materialCode", label: "物料编码" },
-        { name: "materialDescription", label: "物料描述" },
-        { name: "contacter", label: "联系人" },
-        { name: "contactTel", label: "电话号码" },
-        { name: "supervisor", label: "售后主管" },
-        { name: "salesMan", label: "销售员" },
+        { name: "materialCode", label: "物料编码", width: 150, },
+        { name: "materialDescription", label: "物料描述", width: 150, },
+        { name: "contacter", label: "联系人", width: 100 },
+        { name: "contactTel", label: "电话号码", width: 150 },
+        { name: "supervisor", label: "售后主管", width: 80 },
+        { name: "salesMan", label: "销售员", width: 80 },
+        { name: "currentUser", label: "技术员", width: 80 },
         // "serviceWorkOrderId": 1,
         // "problemTypeName": "数值异常",
         // "currentUserId": 1
