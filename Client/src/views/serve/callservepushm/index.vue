@@ -326,8 +326,7 @@ export default {
         { name: "customerName", label: "客户名称", width: 200 },
         { name: "fromTheme", label: "呼叫主题", width: 100 },
         { name: "createTime", label: "创建日期", width: 150 },
-        { name: "recepUserName", label: "接单员", width: 100 },
-        
+        { name: "currentUser", label: "技术员", width: 80 },
         {
           name: "manufacturerSerialNumber",
           label: "制造商序列号",
@@ -339,7 +338,7 @@ export default {
         { name: "contactTel", label: "电话号码", width: 150 },
         { name: "supervisor", label: "售后主管", width: 80 },
         { name: "salesMan", label: "销售员", width: 80 },
-        { name: "currentUser", label: "技术员", width: 80 },
+        { name: "recepUserName", label: "接单员", width: 100 },
         // "serviceWorkOrderId": 1,
         // "problemTypeName": "数值异常",
         // "currentUserId": 1
