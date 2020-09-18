@@ -18,6 +18,10 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string VisitTo { get; set; }
         /// <summary>
+        /// 地址
+        /// </summary>
+        public string Location { get; set; }
+        /// <summary>
         /// 打卡日期起点
         /// </summary>
         public DateTime? DateFrom { get; set; }
