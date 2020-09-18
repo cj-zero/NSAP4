@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
 using Infrastructure.AutoMapper;
+using Infrastructure.Exceptions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -65,6 +66,7 @@ namespace NSAP.App.WebApi
             services.AddControllersWithViews(option =>
             {
                 option.Filters.Add<OpenAuthFilter>();
+                option.Filters.Add<ExceptionFilter>();
             }).AddNewtonsoftJson(options =>
             {
                 //ºöÂÔÑ­»·ÒıÓÃ

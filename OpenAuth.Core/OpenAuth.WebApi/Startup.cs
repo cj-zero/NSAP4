@@ -7,6 +7,7 @@ using Autofac;
 using IdentityServer4.AccessTokenValidation;
 using Infrastructure;
 using Infrastructure.AutoMapper;
+using Infrastructure.Exceptions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
@@ -114,6 +115,7 @@ namespace OpenAuth.WebApi
             services.AddControllers(option =>
             {
                 option.Filters.Add<OpenAuthFilter>();
+                option.Filters.Add<ExceptionFilter>();
             }).AddNewtonsoftJson(options =>
             {
                 //忽略循环引用
