@@ -152,7 +152,7 @@ import Pagination from "@/components/Pagination";
 import DynamicTable from "@/components/DynamicTable";
 import elDragDialog from "@/directive/el-dragDialog";
 export default {
-  name: "solutions",
+  name: "solution",
   components: { Sticky, permissionBtn, Pagination, DynamicTable },
   directives: {
     waves,

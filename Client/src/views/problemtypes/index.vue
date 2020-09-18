@@ -81,7 +81,7 @@ import elDragDialog from "@/directive/el-dragDialog";
 import treeTable from "@/components/TreeTable";
 
 export default {
-  name: "problemtypes",
+  name: "problemtype",
   components: { Sticky, treeTable, permissionBtn },
   directives: {
     waves,

@@ -277,7 +277,7 @@ import { debounce } from '@/utils/process'
 import rightImg from '@/assets/table/right.png'
 import { dispatchMixin, chatMixin, tableMixin } from '../common/js/mixins'
 export default {
-  name: "solutions",
+  name: "callServePushM",
   mixins: [dispatchMixin, chatMixin, tableMixin],
   components: {
     Sticky,

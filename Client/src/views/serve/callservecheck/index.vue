@@ -83,7 +83,7 @@ import Search from '@/components/Search'
 import rightImg from '@/assets/table/right.png'
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 export default {
-  name: "callservecheck",
+  name: "attendanceclock",
   components: {
     Pagination,
     // showImg,

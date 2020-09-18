@@ -315,7 +315,7 @@ import {
 } from '../common/js/mixins'
 // import { callserve, count } from "@/mock/serve";
 export default {
-  name: "solutions",
+  name: "callServePushAlr",
   components: {
     Sticky,
     permissionBtn,

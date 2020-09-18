@@ -1,12 +1,12 @@
 <template>
   <section class="app-main" ref="appMain">
     <transition name="fade-transform" mode="out-in">
-      <!-- <keep-alive :include="keepAliveDatas" v-if="keepAliveDatas.length > 0">
+      <keep-alive :include="keepAliveDatas" v-if="keepAliveDatas.length > 0">
         <router-view :key="key"></router-view>
-      </keep-alive> -->
-      <keep-alive>
-        <router-view></router-view>
       </keep-alive>
+      <!-- <keep-alive> -->
+        <router-view v-else></router-view>
+      <!-- </keep-alive> -->
     </transition>
   </section>
 </template>
@@ -32,6 +32,12 @@ export default {
   watch: {
     $route() {
       this.$refs.appMain.scrollTop = 0
+    },
+    keepAliveDatas: {
+      immediate: true,
+      handler (val) {
+        console.log(val, 'keepAliveDatas')
+      }
     }
   }
 }

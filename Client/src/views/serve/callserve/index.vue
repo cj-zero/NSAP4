@@ -360,7 +360,7 @@ export default {
       instance: this
     }
   },
-  name: "callservesure",
+  name: "callServer",
   computed: {
     ...mapGetters([
       'formList'

@@ -54,6 +54,7 @@ import Certifiate from '../commonComponent/certifiate'
 import { queryLoad } from '@/api/cerfiticate'
 import { commonMixin } from '../mixin/mixin'
 export default {
+  name: 'query',
   mixins: [commonMixin],
   components: {
     CommonTable,
