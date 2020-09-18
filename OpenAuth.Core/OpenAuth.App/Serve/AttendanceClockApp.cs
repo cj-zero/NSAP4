@@ -49,6 +49,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrEmpty(request.Name), u => u.Name.Contains(request.Name))
                 .WhereIf(!string.IsNullOrEmpty(request.Org), u => u.Org.Contains(request.Org.ToUpper()))
                 .WhereIf(!string.IsNullOrEmpty(request.VisitTo), u => u.VisitTo.Contains(request.VisitTo))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.Location),u=> u.Location.Contains(request.Location))
                 .WhereIf(request.DateFrom != null && request.DateTo != null, u => u.ClockDate >= request.DateFrom && u.ClockDate < Convert.ToDateTime(request.DateTo).AddMinutes(1440))
                 ;
             // 主管只能看到本部门的技术员的打卡记录
@@ -65,7 +66,7 @@ namespace OpenAuth.App
             result.Data = listobj.OrderByDescending(u => u.ClockDate)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit);
-            result.Count = objs.Count();
+            result.Count = listobj.Count();
             return result;
 
         }
