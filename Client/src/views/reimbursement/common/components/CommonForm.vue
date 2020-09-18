@@ -24,8 +24,8 @@
             <el-input 
               v-model="formData[item.prop]" 
               :style="{ width: item.width + 'px' }"
-              :maxlength="item.maxlength || 0"
-              :disabled="item.disabled">
+              :maxlength="item.maxlength"
+              >
               <i :class="item.icon" v-if="item.icon"></i>
             </el-input>
           </template>
@@ -123,6 +123,13 @@ export default {
       handler (val) {
         this.formData = deepClone(val)
       }
+    },
+    formData: {
+      immediate: true,
+      handler (val) {
+        console.log('formDataChange', val)
+        this.$emit('dataChange', val)
+      }
     }
   },
   computed: {
@@ -139,6 +146,7 @@ export default {
           j++
         }
       }
+      console.log(result,' normalConfig')
       return result
     },
     slotConfig () {

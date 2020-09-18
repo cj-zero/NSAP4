@@ -121,6 +121,14 @@ export default {
     disabled: {
       type: Boolean,
       default: false
+    },
+    prop: { // 在组件用于数组遍历的时候
+      type: String,
+      default: ''
+    },
+    index: { // 在组件用于数组遍历的时候
+      type: Number,
+      default: 0
     }
   },
   data() {
@@ -160,7 +168,7 @@ export default {
       })
       this.newPictureList.splice(findIndex, 1)
       this.pictures.splice(findIndex, 1)
-      this.$emit('get-ImgList', this.pictures)
+      this.$emit('get-ImgList', this.pictures, this.prop, this.index)
     },
     handlePictureCardPreview(file) {
       this.dialogImageUrl = file.url;
@@ -200,7 +208,8 @@ export default {
         type:'success',
         message:'上传成功'
       })
-      this.$emit('get-ImgList', this.pictures)
+      console.log('beofore', this.index)
+      this.$emit('get-ImgList', this.pictures, this.prop, this.index)
     },
     clearFiles () {
       this.uploadType === 'image'

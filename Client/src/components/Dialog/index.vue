@@ -8,6 +8,7 @@
     :modal-append-to-body="mAddToBody"
     :close-on-click-modal="closeByClickModal"
     :append-to-body="appendToBody"
+    @closed="onClosed"
   >
     <slot></slot>
     <span slot="footer" class="dialog-footer" v-if="isShowBtn">
@@ -62,6 +63,10 @@ export default {
       default () {
         return []
       }
+    },
+    onClosed: {
+      type: Function,
+      default () { () => {} }
     }
   },
   data () {

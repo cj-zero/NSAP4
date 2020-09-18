@@ -30,8 +30,9 @@
           :center="true"
           width="1000px"
           :btnList="btnList"
+          :onClosed="closeDialog"
         >
-          <order></order>
+          <order ref="order"></order>
         </my-dialog>
       </div>
   </div>
@@ -146,6 +147,7 @@ export default {
     saveAsDraft () {}, // 存为草稿
     reset () {}, // 重置
     closeDialog () {
+      this.$refs.order.resetInfo()
       this.$refs.myDialog.close()
     }
   },
