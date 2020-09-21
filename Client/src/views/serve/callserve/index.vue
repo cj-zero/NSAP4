@@ -415,7 +415,7 @@ export default {
       sure: 0,
       rightImg,
       ParentHeadOptions: [
-        { name: "u_SAP_ID", label: "服务单号", align:'left', sortable:true, width: '80'},
+        { name: "u_SAP_ID", label: "服务单号", align:'left', sortable:true, width: '80' },
         { name: "status", label: "工单状态", align: 'left', width: '70' },
         { name: "customerId", label: "客户代码", align:'left', width: '90' },
         { name: "customerName", label: "客户名称" ,align:'left', width: '180' },

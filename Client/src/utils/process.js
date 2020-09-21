@@ -10,3 +10,15 @@ export function debounce (fn, delay) {
     }, delay)
   }
 }
+
+export function swap (list, a, b) {
+  let temp = list[a]
+  list[a] = list[b]
+  list[b] = temp
+}
+
+export function findIndex (list, fn) {
+  let index = list.findIndex(fn)
+  return index
+}
+

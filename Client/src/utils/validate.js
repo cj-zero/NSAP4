@@ -38,6 +38,16 @@ export function isCustomerCode (code) {
   return /^[a-z|A-Z]\d{5}$/g.test(code)
 }
 
+const _toString = Object.prototype.toString
+export function isPlainObject (val) {
+  return _toString.call(val) === '[object Object]'
+}
+
 export function isSameObjectByValue (oldVal, newVal) {
-  return JSON.parse(JSON.stringify(oldVal)) === JSON.parse(JSON.stringify(newVal))
+  for (let key in newVal) {
+    if (newVal[key] !== oldVal[key]) {
+      return false
+    }
+  }
+  return true
 }

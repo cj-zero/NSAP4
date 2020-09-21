@@ -90,6 +90,7 @@ export default {
 }
 .sticky {
     /* background-color: rgb(48, 65, 86); */
+    min-width: 800px;
     background-color: #2d3a4b;
     background-color: #24262f;
     background-color: #f8f8f8;
