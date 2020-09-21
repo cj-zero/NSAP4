@@ -565,7 +565,7 @@ namespace OpenAuth.App
             {
                 if (loginContext.Roles.Any(r => r.Name.Equals("售后主管")))
                 {
-                    query = query.Where(q => q.b.SupervisorId.Equals(loginContext.User.Id));
+                    query = query.Where(q => q.b.SupervisorId.Equals(loginContext.User.Id) || q.a.CurrentUserNsapId.Equals(loginContext.User.Id));
                 }
                 else
                 {
@@ -832,7 +832,7 @@ namespace OpenAuth.App
             {
                 if (loginContext.Roles.Any(r => r.Name.Equals("售后主管")))
                 {
-                    query = query.Where(q => q.b.SupervisorId.Equals(loginContext.User.Id));
+                    query = query.Where(q => q.b.SupervisorId.Equals(loginContext.User.Id) || q.a.CurrentUserNsapId.Equals(loginContext.User.Id));
                 }
                 else
                 {
