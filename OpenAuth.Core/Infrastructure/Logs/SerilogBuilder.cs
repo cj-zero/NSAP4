@@ -30,7 +30,7 @@ namespace Infrastructure
             if (!string.IsNullOrWhiteSpace(esUrl))
                 loggerConfiguration = loggerConfiguration.WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri(esUrl))
                 {
-                    MinimumLogEventLevel = LogEventLevel.Information,
+                    MinimumLogEventLevel = LogEventLevel.Warning,
                     AutoRegisterTemplate = true,
                     IndexFormat = $"{esProject}-{DateTime.Now:yyyy.MM.dd}",
                     ModifyConnectionSettings = x => x.BasicAuthentication(userName, password)
