@@ -86,6 +86,7 @@
         :limit="limit"
         :on-exceed="onExeed"
         :disabled="disabled"
+        :file-list="fileList"
         >
         <el-button size="mini" type="primary">点击上传</el-button>
       </el-upload>
@@ -129,6 +130,12 @@ export default {
     index: { // 在组件用于数组遍历的时候
       type: Number,
       default: 0
+    },
+    fileList: {
+      type: Array,
+      default () {
+        return []
+      }
     }
   },
   data() {

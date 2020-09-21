@@ -28,7 +28,7 @@
         <my-dialog
           ref="myDialog"
           :center="true"
-          width="1000px"
+          width="800px"
           :btnList="btnList"
           :onClosed="closeDialog"
         >

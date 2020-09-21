@@ -217,7 +217,14 @@
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'upload'">   
-                  <upLoadFile  @get-ImgList="getTrafficList" :limit="limit" uploadType="file" ref="trafficUploadFile" :prop="item.prop"></upLoadFile>
+                  <upLoadFile  
+                  @get-ImgList="getTrafficList" 
+                  :limit="limit"
+                   uploadType="file" 
+                   ref="trafficUploadFile" 
+                   :prop="item.prop" 
+                   :fileList="scope.row[item.prop]">
+                  </upLoadFile>
                 </template>
                 <template v-else-if="item.type === 'operation'">
                   <template v-for="iconItem in item.iconList">
@@ -309,7 +316,14 @@
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'upload'">
-                  <upLoadFile  @get-ImgList="getAccList" :limit="limit" uploadType="file" ref="accUploadFile" :prop="item.prop"></upLoadFile>
+                  <upLoadFile  
+                    @get-ImgList="getAccList" 
+                    :limit="limit" 
+                    uploadType="file" 
+                    ref="accUploadFile" 
+                    :prop="item.prop" 
+                    :fileList="scope.row[item.prop]">
+                  </upLoadFile>
                 </template>
                 <template v-else-if="item.type === 'operation'">
                   <template v-for="iconItem in item.iconList">
@@ -400,7 +414,7 @@
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'upload'">
-                  <upLoadFile  @get-ImgList="getOtherList" :limit="limit" uploadType="file" ref="otherUploadFile" :prop="item.prop"></upLoadFile>                   
+                  <upLoadFile  @get-ImgList="getOtherList" :limit="limit" uploadType="file" ref="otherUploadFile" :prop="item.prop" :fileList="scope.row[item.prop]"></upLoadFile>                   
                 </template>
                 <template v-else-if="item.type === 'operation'">
                   <template v-for="iconItem in item.iconList">
@@ -916,6 +930,24 @@ export default {
       this.clearFile()
       this.ifShowTraffic = this.ifShowOther = this.ifShowAcc = this.ifShowTravel = true
     }
+  },
+  mergeFileList (data) {   
+    data.forEach(item => {
+      let { invoiceAttachment, otherAttachment } = item
+      item.reimburseAttachments = [...invoiceAttachment, ...otherAttachment]
+    })
+  },
+  submit () { // 提交
+    let { 
+      reimburseTravellingAllowances, 
+      reimburseAccommodationSubsidies, 
+      reimburseOtherCharges, 
+      reimburseFares 
+    } = this.formData
+    this.mergeFileList(reimburseTravellingAllowances)
+    this.mergeFileList(reimburseAccommodationSubsidies)
+    this.mergeFileList(reimburseOtherCharges)
+    this.mergeFileList(reimburseFares)
   },
   created () {
 

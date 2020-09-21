@@ -15,7 +15,7 @@ for (let i = 0; i < 1000; i++) {
     customerName: '深圳道',
     customerRefer: '欣慰',
     salMan: '正则',
-    origin: '道乐',
+    origin: '欣慰',
     destination: '欣慰',
     originDate: '2020.03.04',
     endDate: '2020.03.04',
