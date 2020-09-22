@@ -373,7 +373,7 @@ export default {
         // { name: "", label: "费用审核" },
         // { name: "customerId", label: "客户代码" },
         { name: "customerName", label: "客户名称", width: 200 },
-        { name: "fromTheme", label: "呼叫主题", width: 100 },
+        { name: "fromTheme", label: "呼叫主题", width: 275 },
         { name: "createTime", label: "创建日期", width: 150 },
         { name: "currentUser", label: "技术员", width: 80 },
         {
@@ -414,7 +414,7 @@ export default {
         // u_SAP_ID: "", //- 查询服务ID查询条件
         u_SAP_ID: "",
         QryU_SAP_ID: "", // 查询服务ID
-        QryState: 2, //- 呼叫状态查询条件
+        QryState: "", //- 呼叫状态查询条件
         QryCustomer: "", //- 客户查询条件
         QryManufSN: "", // - 制造商序列号查询条件
         QryCreateTimeFrom: "", //- 创建日期从查询条件
@@ -487,7 +487,7 @@ export default {
       },
       downloadLoading: false,
       listQueryServer: {
-        QryState: 2, // 客户状态
+        QryState: "", // 客户状态
         QryU_SAP_ID: '', // 查询服务ID
         limit: 30, // 条数
         page: 1 // 页数
@@ -583,7 +583,7 @@ export default {
         // console.log(this.modulesTree[0].key)
         // this.$refs.treeForm.setCheckedKeys([this.modulesTree[0].key]);
         this.checkGroupNode(this.modulesTree[0]);
-        this.getRightList();
+        // this.getRightList();
       } else {
         this.list = []
         this.total = 0
@@ -777,6 +777,7 @@ export default {
 
     checkGroupNode(a) {
       //点击复选框触发
+      console.log(this.ifParent, 'IFparent')
       if (this.ifParent) {
         if (this.ifParent == a.key) {
           //同一级，不做限制，添加编码请求
@@ -794,6 +795,7 @@ export default {
               );
               if (this.listQuery.QryMaterialTypes.length == 0) {
                 this.listQuery.QryU_SAP_ID = "";
+                console.log('cancel')
               }
             }
           } else {
@@ -821,11 +823,14 @@ export default {
               this.listQuery.QryMaterialTypes.push(item.id);
             });
           }
+          console.log('再次起飞')
           this.getRightList();
         }
       } else {
         //第一次点击
+        console.log('初次起飞')
         this.listQuery.QryMaterialTypes = [];
+        this.listQuery.page = 1
         if (!a.children) {
           this.listQuery.QryMaterialTypes.push(a.id);
         } else {

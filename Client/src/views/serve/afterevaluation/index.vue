@@ -200,7 +200,7 @@ export default {
       serveId: '',
       searchConfig: [
         { width: 100, placeholder: '服务单号', prop: 'ServiceOrderId' },
-        { width: 100, placeholder: '客户', prop: 'CustomerId' },
+        { width: 170, placeholder: '客户', prop: 'CustomerId' },
         { width: 100, placeholder: '技术员', prop: 'TechnicianId' },
         { width: 100, placeholder: '回访人', prop: 'VisitPeopleId' },
         { width: 150, placeholder: '评价起始日期', prop: 'DateFrom', type: 'date' },
