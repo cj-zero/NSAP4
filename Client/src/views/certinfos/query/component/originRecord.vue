@@ -2,7 +2,7 @@
   <el-table :data="tableData" border class="origin-wrapper">
     <el-table-column label="序号"> 
       <template slot-scope="scope">
-        {{ scope.$index }}
+        {{ scope.$index + 1 }}
       </template>
     </el-table-column>
     <el-table-column label="校准证书"> 
@@ -15,7 +15,7 @@
         <span class="certNo" @click="_downloadFile('execl')">{{ scope.row.certNo }}</span>
       </template>
     </el-table-column>
-    <el-table-column label="原始数据上传事件"> 
+    <el-table-column label="原始数据上传时间"> 
       <template slot-scope="scope">
         {{ scope.row.createTime }}
       </template>
@@ -38,7 +38,6 @@ export default {
     tableData () {
       if (Object.keys(this.currentData).length) {
         let { createTime, certNo } = this.currentData
-        console.log(createTime, certNo, 'origin')
         return [{
           createTime,
           certNo
