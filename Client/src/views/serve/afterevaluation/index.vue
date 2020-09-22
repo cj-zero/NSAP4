@@ -121,7 +121,7 @@ import { chatMixin } from '../common/js/mixins'
 import rightImg from '@/assets/table/right.png'
 import Search from '@/components/Search'
 export default {
-  name: "afterevaluation",
+  name: "serviceevaluate",
   components: {
     Pagination,
     zxform,

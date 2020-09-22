@@ -100,7 +100,7 @@ import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
 import Pagination from "@/components/Pagination";
 export default {
-  name: "servenumber",
+  name: "serveNumber",
   components: {
     Pagination,
     Sticky,

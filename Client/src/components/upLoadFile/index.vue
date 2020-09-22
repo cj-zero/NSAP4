@@ -86,6 +86,7 @@
         :limit="limit"
         :on-exceed="onExeed"
         :disabled="disabled"
+        :file-list="fileList"
         >
         <el-button size="mini" type="primary">点击上传</el-button>
       </el-upload>
@@ -121,6 +122,20 @@ export default {
     disabled: {
       type: Boolean,
       default: false
+    },
+    prop: { // 在组件用于数组遍历的时候
+      type: String,
+      default: ''
+    },
+    index: { // 在组件用于数组遍历的时候
+      type: Number,
+      default: 0
+    },
+    fileList: {
+      type: Array,
+      default () {
+        return []
+      }
     }
   },
   data() {
@@ -141,6 +156,12 @@ export default {
       handler(val){
           console.log(val, 'fileList')
       }
+    },
+    uploadType: {
+      immediate: true,
+      handler (val) {
+        console.log(val, 'uploadType')
+      }
     }
   },
   methods: {
@@ -154,7 +175,7 @@ export default {
       })
       this.newPictureList.splice(findIndex, 1)
       this.pictures.splice(findIndex, 1)
-      this.$emit('get-ImgList', this.pictures)
+      this.$emit('get-ImgList', this.pictures, this.prop, this.index)
     },
     handlePictureCardPreview(file) {
       this.dialogImageUrl = file.url;
@@ -194,7 +215,8 @@ export default {
         type:'success',
         message:'上传成功'
       })
-      this.$emit('get-ImgList', this.pictures)
+      console.log('beofore', this.index)
+      this.$emit('get-ImgList', this.pictures, this.prop, this.index)
     },
     clearFiles () {
       this.uploadType === 'image'

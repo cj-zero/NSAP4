@@ -47,6 +47,7 @@ import Certifiate from '../commonComponent/certifiate'
 import { commonMixin } from '../mixin/mixin'
 import { loadApprover } from '@/api/cerfiticate'
 export default {
+  name: 'review',
   mixins: [commonMixin],
   components: {
     CommonTable,

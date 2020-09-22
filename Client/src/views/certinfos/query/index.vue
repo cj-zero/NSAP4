@@ -36,6 +36,9 @@
           <el-tab-pane label="操作记录" name="second">
             <operation-record :id="currentId"></operation-record>
           </el-tab-pane>
+          <el-tab-pane label="原始记录" name="third">
+            <origin-record :currentData="currentData"></origin-record>
+          </el-tab-pane>
         </el-tabs>
         <span slot="footer" class="dialog-footer">
           <el-button @click="closeDialog" size="mini">取 消</el-button>
@@ -50,16 +53,19 @@ import CommonTable from '../commonComponent/table'
 import Search from '../commonComponent/search'
 import Pagination from '@/components/Pagination'
 import OperationRecord from './component/operationRecord'
+import OriginRecord from './component/originRecord'
 import Certifiate from '../commonComponent/certifiate'
 import { queryLoad } from '@/api/cerfiticate'
 import { commonMixin } from '../mixin/mixin'
 export default {
+  name: 'query',
   mixins: [commonMixin],
   components: {
     CommonTable,
     Pagination,
     Search,
     OperationRecord,
+    OriginRecord,
     Certifiate
   },
   data () {
@@ -83,7 +89,6 @@ export default {
   methods: {
     _getQueryList () { // 获取表格列表
       queryLoad(this.pageConfig).then(res => {
-        console.log(res, 'res')
         this.tableData = res.data.map(item => {
           item.calibrationDate = this.formatDate(item.calibrationDate)
           return item

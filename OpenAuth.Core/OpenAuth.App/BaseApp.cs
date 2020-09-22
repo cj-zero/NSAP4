@@ -165,6 +165,45 @@ namespace OpenAuth.App
 
             entity.CascadeId = cascadeId;
         }
+        /// <summary>
+        /// 如果一个类有层级结构（树状），则修改该节点时，要修改该节点的所有子节点
+        /// //修改对象的级联ID，生成类似XXX.XXX.X.XX
+        /// </summary>
+        /// <typeparam name="U">U必须是一个继承TreeEntity的结构</typeparam>
+        /// <param name="entity"></param>
+        public async Task CaculateCascadeAsync<U>(U entity) where U : TreeEntity
+        {
+            if (entity.ParentId == "") entity.ParentId = null;
+            string cascadeId;
+            int currentCascadeId = 1; //当前结点的级联节点最后一位
+            var sameLevels = await UnitWork.Find<U>(o => o.ParentId == entity.ParentId && o.Id != entity.Id).ToListAsync();
+            foreach (var obj in sameLevels)
+            {
+                int objCascadeId = int.Parse(obj.CascadeId.TrimEnd('.').Split('.').Last());
+                if (currentCascadeId <= objCascadeId) currentCascadeId = objCascadeId + 1;
+            }
+
+            if (!string.IsNullOrEmpty(entity.ParentId))
+            {
+                var parentOrg = await UnitWork.FindSingleAsync<U>(o => o.Id == entity.ParentId);
+                if (parentOrg != null)
+                {
+                    cascadeId = parentOrg.CascadeId + currentCascadeId + ".";
+                    entity.ParentName = parentOrg.Name;
+                }
+                else
+                {
+                    throw new Exception("未能找到该组织的父节点信息");
+                }
+            }
+            else
+            {
+                cascadeId = ".0." + currentCascadeId + ".";
+                entity.ParentName = "根节点";
+            }
+
+            entity.CascadeId = cascadeId;
+        }
 
         public bool CheckExist(Expression<Func<T, bool>> exp)
         {

@@ -6,8 +6,11 @@ const tagsView = {
   mutations: {
     ADD_VISITED_VIEWS: (state, view) => {
       if (state.visitedViews.some(v => v.path === view.path)) return
+      // state.visitedViews.push(Object.assign({}, view, {
+      //   title: view.meta.title || 'no-name'
+      // }))
       state.visitedViews.push(Object.assign({}, view, {
-        title: view.meta.title || 'no-name'
+        title: view.name === 'iframePage' ? state.iframeViews[view.params.code].name : view.meta.title || 'no-name'
       }))
       if (!view.meta.noCache) {
         state.cachedViews.push(view.name)
@@ -60,9 +63,15 @@ const tagsView = {
     DEL_ALL_VIEWS: (state) => {
       state.visitedViews = []
       state.cachedViews = []
+    },
+    SET_IFRAME_TAGVIEWS(state, data){
+      state.iframeViews = { ...state.iframeViews, ...data }
     }
   },
   actions: {
+    setIframeTagViews({ commit }, data) {
+      commit('SET_IFRAME_TAGVIEWS', data)
+    },
     addVisitedViews({ commit }, view) {
       commit('ADD_VISITED_VIEWS', view)
     },
@@ -93,6 +102,9 @@ const tagsView = {
         resolve([...state.visitedViews])
       })
     }
+  },
+  getters: {
+    iframeViews: state => state.iframeViews
   }
 }
 

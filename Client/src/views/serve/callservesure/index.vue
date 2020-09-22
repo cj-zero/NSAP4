@@ -217,7 +217,7 @@ import treeList from "../callserve/treeList";
 import rightImg from '@/assets/table/right.png'
 // import { callserve } from "@/mock/serve";
 export default {
-  name: "callservesure",
+  name: "callServeSure",
   components: {
     Sticky,
     permissionBtn,

@@ -1,5 +1,6 @@
 <template>
   <div>
+    <tab-list :initialName="initialName" :texts="texts" @tabChange="onTabChange" class="tabList"></tab-list>
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <!-- <el-input
@@ -21,6 +22,7 @@
         <zxsearch 
           @change-Search="changeSearch" 
           @change-Order="changeOrder"
+          :activeName="activeName"
         ></zxsearch>
         <permission-btn moduleName="callservepushalr" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
@@ -290,6 +292,7 @@
 
 <script>
 import * as solutions from "@/api/solutions";
+import TabList from '@/components/TabList'
 import * as callservepushm from "@/api/serve/callservepushm";
 // import * as callservesure from "@/api/serve/callservesure";
 import * as category from "@/api/categorys"
@@ -315,7 +318,7 @@ import {
 } from '../common/js/mixins'
 // import { callserve, count } from "@/mock/serve";
 export default {
-  name: "solutions",
+  name: "callServePushAlr",
   components: {
     Sticky,
     permissionBtn,
@@ -325,7 +328,8 @@ export default {
     zxform,
     treeList,
     Report,
-    zxchat
+    zxchat,
+    TabList
   },
   mixins: [reportMixin, dispatchMixin, chatMixin, tableMixin],
   directives: {
@@ -337,6 +341,12 @@ export default {
       tableData: [], //接单员列表
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
+      initialName: 'first',
+      texts: [ // 标签数组
+        { label: '已派单', name: 'first' },
+        { label: '已解决', name: 'second' },
+      ],
+      activeName: 'first',
       defaultFormThead: [
         "priority",
         "calltype",
@@ -365,8 +375,7 @@ export default {
         { name: "customerName", label: "客户名称", width: 200 },
         { name: "fromTheme", label: "呼叫主题", width: 100 },
         { name: "createTime", label: "创建日期", width: 150 },
-        { name: "recepUserName", label: "接单员", width: 100 },
-        
+        { name: "currentUser", label: "技术员", width: 80 },
         {
           name: "manufacturerSerialNumber",
           label: "制造商序列号",
@@ -378,7 +387,7 @@ export default {
         { name: "contactTel", label: "电话号码", width: 150 },
         { name: "supervisor", label: "售后主管", width: 80 },
         { name: "salesMan", label: "销售员", width: 80 },
-        { name: "currentUser", label: "技术员", width: 80 },
+        { name: "recepUserName", label: "接单员", width: 100 },
         // "serviceWorkOrderId": 1,
         // "problemTypeName": "数值异常",
         // "currentUserId": 1
@@ -405,7 +414,7 @@ export default {
         // u_SAP_ID: "", //- 查询服务ID查询条件
         u_SAP_ID: "",
         QryU_SAP_ID: "", // 查询服务ID
-        QryState: "", //- 呼叫状态查询条件
+        QryState: 2, //- 呼叫状态查询条件
         QryCustomer: "", //- 客户查询条件
         QryManufSN: "", // - 制造商序列号查询条件
         QryCreateTimeFrom: "", //- 创建日期从查询条件
@@ -478,7 +487,7 @@ export default {
       },
       downloadLoading: false,
       listQueryServer: {
-        QryState: "", // 客户状态
+        QryState: 2, // 客户状态
         QryU_SAP_ID: '', // 查询服务ID
         limit: 30, // 条数
         page: 1 // 页数
@@ -546,6 +555,9 @@ export default {
         this.listQueryServer.page++
         this.getLeftList()
       }
+    },
+    onTabChange (name) {
+      this.activeName = name
     },
     getCategory () {
       category.loadCategory({
@@ -1076,6 +1088,12 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
+.tabList {
+  background-color: #fff;
+  ::v-deep .el-tabs__header {
+    margin-bottom: 0;
+  }
+}
 .ls-border {
   // width: 300px;
   ::v-deep .el-tree-node > .el-tree-node__children {
