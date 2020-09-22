@@ -38,7 +38,7 @@ namespace OpenAuth.WebApi.Controllers
 
         //添加
        [HttpPost]
-        public Response Add(AddOrUpdateKnowledgeBaseReq obj)
+        public Response Add(KnowledgeBase obj)
         {
             var result = new Response();
             try
