@@ -58,29 +58,7 @@ namespace OpenAuth.Repository.Domain
         /// 
         /// </summary>
         [Description("")]
-        public string Name { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
         public string Content { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        [Browsable(false)]
-        public string ParentId { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string ParentName { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        [Browsable(false)]
-        public string CascadeId { get; set; }
         /// <summary>
         /// 
         /// </summary>

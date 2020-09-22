@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,7 @@ using OpenAuth.Repository.Domain;
 namespace OpenAuth.WebApi.Controllers
 {
     /// <summary>
-    /// knowledgebase操作
+    /// 知识库操作
     /// </summary>
     [Route("api/Serve/[controller]/[action]")]
     [ApiController]
@@ -41,16 +42,7 @@ namespace OpenAuth.WebApi.Controllers
         public Response Add(KnowledgeBase obj)
         {
             var result = new Response();
-            try
-            {
-                _app.Add(obj);
-
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
-            }
+            _app.Add(obj);
 
             return result;
         }
@@ -81,6 +73,15 @@ namespace OpenAuth.WebApi.Controllers
         public async Task<TableData> Load([FromQuery] QueryKnowledgeBaseListReq request)
         {
             return await _app.Load(request);
+        }
+        
+        /// <summary>
+        /// 加载列表(树型)
+        /// </summary>
+        [HttpGet]
+        public async Task<Response<IEnumerable<TreeItem<KnowledgeBase>>>> LoadTree([FromQuery] QueryKnowledgeBaseListReq request)
+        {
+            return await _app.LoadTree(request);
         }
 
         /// <summary>
