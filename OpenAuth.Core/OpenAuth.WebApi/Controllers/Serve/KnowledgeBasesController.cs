@@ -57,7 +57,7 @@ namespace OpenAuth.WebApi.Controllers
 
         //修改
        [HttpPost]
-        public Response Update(AddOrUpdateKnowledgeBaseReq obj)
+        public Response Update(KnowledgeBase obj)
         {
             var result = new Response();
             try

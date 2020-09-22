@@ -42,7 +42,7 @@ namespace OpenAuth.App
             return result;
         }
 
-        public void Add(AddOrUpdateKnowledgeBaseReq req)
+        public async Task Add(AddOrUpdateKnowledgeBaseReq req)
         {
             var obj = req.MapTo<KnowledgeBase>();
             //todo:补充或调整自己需要的字段
@@ -50,17 +50,21 @@ namespace OpenAuth.App
             var user = _auth.GetCurrentUser().User;
             obj.CreateUserId = user.Id;
             obj.CreateUserName = user.Name;
-            Repository.Add(obj);
+            obj.Org = _auth.GetCurrentUser().Orgs.OrderByDescending(s => s.CascadeId).FirstOrDefault().Name;
+            var maxSN = await Repository.Find(k => k.Type == req.Type).MaxAsync(k=>k.SequenceNumber);
+            if (maxSN != null)
+            {
+                obj.SequenceNumber = ++maxSN;
+            }
+            await Repository.AddAsync(obj);
+            await Repository.SaveAsync();
         }
 
-         public void Update(AddOrUpdateKnowledgeBaseReq obj)
+         public void Update(KnowledgeBase obj)
         {
             var user = _auth.GetCurrentUser().User;
             UnitWork.Update<KnowledgeBase>(u => u.Id == obj.Id, u => new KnowledgeBase
             {
-                SequenceNumber = obj.SequenceNumber,
-                Type = obj.Type,
-                Org = obj.Org,
                 Name = obj.Name,
                 Content = obj.Content,
                 ParentId = obj.ParentId,
@@ -71,7 +75,7 @@ namespace OpenAuth.App
                 UpdateUserName = user.Name
                 //todo:补充或调整自己需要的字段
             });
-
+            UpdateTreeObj(obj);
         }
             
 
