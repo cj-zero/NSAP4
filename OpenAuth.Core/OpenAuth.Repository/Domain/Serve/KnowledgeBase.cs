@@ -40,24 +40,24 @@ namespace OpenAuth.Repository.Domain
 
         
         /// <summary>
-        /// 
+        /// 序号
         /// </summary>
-        [Description("")]
+        [Description("序号")]
         public int? SequenceNumber { get; set; }
         /// <summary>
-        /// 
+        /// 类型（1 产品类型 2 问题类型 3 问题主题 4 问题现象 5 解决方案）
         /// </summary>
-        [Description("")]
+        [Description("类型")]
         public int? Type { get; set; }
         /// <summary>
-        /// 
+        /// 提交信息部门
         /// </summary>
-        [Description("")]
+        [Description("提交信息部门")]
         public string Org { get; set; }
         /// <summary>
-        /// 
+        /// 内容
         /// </summary>
-        [Description("")]
+        [Description("内容")]
         public string Content { get; set; }
         /// <summary>
         /// 
