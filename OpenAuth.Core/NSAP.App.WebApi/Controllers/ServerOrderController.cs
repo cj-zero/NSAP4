@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -14,7 +13,6 @@ using OpenAuth.App.Sap.Request;
 using OpenAuth.App.Sap.Service;
 using OpenAuth.App.Serve.Request;
 using OpenAuth.Repository.Domain;
-using Serilog;
 
 namespace NSAP.App.WebApi.Controllers
 {
@@ -31,9 +29,10 @@ namespace NSAP.App.WebApi.Controllers
         private readonly SeviceTechnicianApplyOrdersApp _seviceTechnicianApplyOrdersApp;
         private readonly CompletionReportApp _completionReportApp;
         private readonly SerialNumberApp _serialNumberApp;
+        private readonly ProblemTypeApp _problemTypeApp;
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
 
-        public ServiceOrderController(ServiceOrderApp serviceOrderApp, AppServiceOrderLogApp appServiceOrderLogApp, ServiceEvaluateApp serviceEvaluateApp, SeviceTechnicianApplyOrdersApp seviceTechnicianApplyOrdersApp, CompletionReportApp completionReportApp, SerialNumberApp serialNumberApp)
+        public ServiceOrderController(ServiceOrderApp serviceOrderApp, AppServiceOrderLogApp appServiceOrderLogApp, ServiceEvaluateApp serviceEvaluateApp, SeviceTechnicianApplyOrdersApp seviceTechnicianApplyOrdersApp, CompletionReportApp completionReportApp, SerialNumberApp serialNumberApp, ProblemTypeApp problemTypeApp)
         {
             _serviceOrderApp = serviceOrderApp;
             _appServiceOrderLogApp = appServiceOrderLogApp;
@@ -41,6 +40,7 @@ namespace NSAP.App.WebApi.Controllers
             _seviceTechnicianApplyOrdersApp = seviceTechnicianApplyOrdersApp;
             _completionReportApp = completionReportApp;
             _serialNumberApp = serialNumberApp;
+            _problemTypeApp = problemTypeApp;
         }
 
 
@@ -107,7 +107,7 @@ namespace NSAP.App.WebApi.Controllers
             return result;
         }
 
-       
+
         /// <summary>
         /// 评价
         /// </summary>
@@ -162,6 +162,15 @@ namespace NSAP.App.WebApi.Controllers
             return result;
         }
 
+
+        /// <summary>
+        /// 加载客户问题类型列表(APP只显示一级)
+        /// </summary>
+        [HttpGet]
+        public TableData AppProblemTypesLoad()
+        {
+            return _problemTypeApp.AppLoad();
+        }
         #endregion
 
         #region<<Technician>>
@@ -394,7 +403,6 @@ namespace NSAP.App.WebApi.Controllers
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "AddCompletionReport"+ JsonConvert.SerializeObject(obj));
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
             }

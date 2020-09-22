@@ -34,7 +34,7 @@ namespace OpenAuth.App
 
 
             var result = new TableData();
-            var objs =  UnitWork.Find<ProblemType>(null).Where(o=>o.ParentId.Trim().Length.Equals(0)).Select(f=> new
+            var objs = UnitWork.Find<ProblemType>(null).Where(o => o.ParentId.Trim().Length.Equals(0)).Select(f => new
             {
                 f.Id,
                 f.Name,
@@ -64,7 +64,7 @@ namespace OpenAuth.App
             Repository.Add(obj);
         }
 
-         public void Update(AddOrUpdateProblemTypeReq obj)
+        public void Update(AddOrUpdateProblemTypeReq obj)
         {
             var user = _auth.GetCurrentUser().User;
             UnitWork.Update<ProblemType>(u => u.Id == obj.Id, u => new ProblemType
@@ -83,10 +83,32 @@ namespace OpenAuth.App
             });
 
         }
-            
+
+        /// <summary>
+        /// 加载客户问题类型列表(APP只显示一级)
+        /// </summary>
+        public TableData AppLoad()
+        {
+            var result = new TableData();
+            string[] ChildTypes = new string[0];
+            var objs = UnitWork.Find<ProblemType>(null).Where(o => o.ParentId.Trim().Length.Equals(0)).Select(f => new
+            {
+                f.Id,
+                f.Name,
+                f.InuseFlag,
+                f.OrderIdx,
+                f.Description,
+                f.ParentId,
+                ChildTypes
+            }).ToList();
+            result.Data = objs;
+            result.Count = objs.Count();
+            return result;
+        }
+
 
         public ProblemTypeApp(IUnitWork unitWork, IRepository<ProblemType> repository,
-            RevelanceManagerApp app, IAuth auth) : base(unitWork, repository,auth)
+            RevelanceManagerApp app, IAuth auth) : base(unitWork, repository, auth)
         {
             _revelanceApp = app;
         }
