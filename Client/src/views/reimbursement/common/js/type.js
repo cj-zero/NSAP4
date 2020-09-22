@@ -50,3 +50,22 @@ export const EXPENSE_CATEGORY = [ // 报销类别
   { label: '软件项目测试', value: '10' },
   { label: '软件售后安装维护', value: '11' }
 ]
+
+export const RESPONSIBILITY_TYPE = [ // 责任承担
+  { label: '请选择', value: '' },
+  { label: '研发环节', value: '1' },
+  { label: '工程环节', value: '2' },
+  { label: '品质环节', value: '3' },
+  { label: '生厂环节', value: '4' },
+  { label: '物流环节', value: '5' },
+  { label: '售前环节', value: '6' },
+  { label: '售后环节', value: '7' }
+]
+
+
+export const RELATION_TYPE = [ // 劳务关系
+  { label: '请选择', value: '' },
+  { label: '东莞新威', value: '1' },
+  { label: '新威尔', value: '2' },
+  { label: '新威新能源', value: '3' }
+]

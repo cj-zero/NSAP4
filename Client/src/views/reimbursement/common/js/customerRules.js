@@ -10,7 +10,7 @@ let validateMoney = (rule, value, callback) => {
 
 export let travelRules =  { // 出差补贴
   days: [ { required: true, trigger: 'blur', validator: validateMoney } ],
-  money: [ { required: true, trigger: 'blur' } ],
+  money: [ { required: true, trigger: 'change' } ],
 }
 
 export let trafficRules = { // 交通

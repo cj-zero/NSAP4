@@ -8,21 +8,22 @@
           @changeForm="onChangeForm" 
           @search="onSearch">
         </Search>
-        <!-- <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn> -->
       </div>
     </sticky>
       <div class="app-container">
         <div class="bg-white">
           <div class="content-wrapper">
             <common-table :data="tableData" :columns="columns" :loading="tableLoading"></common-table>
-            <pagination
+            <div style="height: 50px;"></div>
+            <!-- <pagination 
               v-show="total>0"
               :total="total"
               :page.sync="listQuery.page"
               :limit.sync="listQuery.limit"
               @pagination="handleCurrentChange"
-            />
-            </div>
+            />  -->
+            <!-- <div style="height: 52px;">dsadasd</div> -->
+          </div>
         </div>
         <my-dialog
           ref="myDialog"
@@ -40,7 +41,7 @@
 import Search from '@/components/Search'
 import Sticky from '@/components/Sticky'
 import CommonTable from '@/components/CommonTable'
-import Pagination from '@/components/Pagination'
+// import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
 import tableData from './mock'
@@ -54,7 +55,7 @@ export default {
     Search,
     Sticky,
     CommonTable,
-    Pagination,
+    // Pagination,
     MyDialog,
     Order
   },

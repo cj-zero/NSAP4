@@ -35,8 +35,8 @@ export default {
     },
     keepAliveDatas: {
       immediate: true,
-      handler (val) {
-        console.log(val, 'keepAliveDatas')
+      handler () {
+        // console.log(val, 'keepAliveDatas')
       }
     }
   }
