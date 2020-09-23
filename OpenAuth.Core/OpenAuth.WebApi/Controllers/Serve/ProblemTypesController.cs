@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -16,7 +19,13 @@ namespace OpenAuth.WebApi.Controllers
     public class ProblemTypesController : ControllerBase
     {
         private readonly ProblemTypeApp _app;
-        
+        private readonly HttpClienService _httpClienService;
+
+        public ProblemTypesController(ProblemTypeApp app, HttpClienService httpClienService)
+        {
+            _app = app;
+            _httpClienService = httpClienService;
+        }
         //获取详情
         [HttpGet]
         public Response<ProblemType> Get(string id)
@@ -36,7 +45,7 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         //添加
-       [HttpPost]
+        [HttpPost]
         public Response Add(AddOrUpdateProblemTypeReq obj)
         {
             var result = new Response();
@@ -55,7 +64,7 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         //修改
-       [HttpPost]
+        [HttpPost]
         public Response Update(AddOrUpdateProblemTypeReq obj)
         {
             var result = new Response();
@@ -85,8 +94,8 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 批量删除
         /// </summary>
-       [HttpPost]
-        public Response Delete([FromBody]string[] ids)
+        [HttpPost]
+        public Response Delete([FromBody] string[] ids)
         {
             var result = new Response();
             try
@@ -103,9 +112,26 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
-        public ProblemTypesController(ProblemTypeApp app) 
+        /// <summary>
+        /// 加载列表
+        /// </summary>
+        [HttpGet]
+        public async Task<TableData> AppLoad()
         {
-            _app = app;
+            var result = new TableData();
+            try
+            {
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/AppProblemTypesLoad");
+                result = JsonConvert.DeserializeObject<TableData>(r);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
         }
     }
 }

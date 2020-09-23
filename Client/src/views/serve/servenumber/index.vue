@@ -14,7 +14,7 @@
           v-model="listQuery.CardName" 
           size="mini"
           @keyup.enter.native="onSubmit" 
-          style="width: 100px;"
+          style="width: 170px;"
           class="filter-item"
           placeholder="客户"
         ></el-input>

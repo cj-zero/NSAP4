@@ -26,7 +26,7 @@
           v-model="listQuery.QryCustomer"
           @keyup.enter.native="onSubmit"
           class="filter-item"
-          style="width: 100px;"
+          style="width: 170px;"
           placeholder="客户"
           size="mini"
         ></el-input>

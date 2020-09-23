@@ -1,6 +1,5 @@
 <template>
   <div class="search-wrapper">
-    <div class="search-wrapper">
     <el-input 
       v-model="listQuery.QryU_SAP_ID" 
       size="mini"
@@ -11,9 +10,10 @@
     </el-input>
     <el-select 
       v-model="listQuery.QryState" 
-      style="width: 120px;"
+      style="width: 140px;"
       class="filter-item"
       size="mini"
+      @change="onChange"
       placeholder="请选择呼叫状态">
       <el-option
         v-for="(item,index) in callStatus"
@@ -27,7 +27,7 @@
       v-model.trim="listQuery.QryCustomer" 
       size="mini"
       @keyup.enter.native="onSubmit" 
-      style="width: 200px;"
+      style="width: 170px;"
       class="filter-item"
       placeholder="客户">
     </el-input>
@@ -89,7 +89,6 @@
       @click="onSubmit"
     >查询</el-button>
   </div>
-  </div>
 </template>
 
 <script>
@@ -99,6 +98,36 @@ import waves from "@/directive/waves";
 export default {
   directives: {
     waves
+  },
+  props: {
+    activeName: {
+      type: String,
+      defualt: ''
+    }
+  },
+  watch: {
+    activeName () {
+      this.listQuery.QryState = ''
+      this.onSubmit()
+    }
+  },
+  computed: {
+    callStatus () {
+      return this.activeName === 'first'
+        ? [
+            { value: '', label: '全部' },
+            { value: 2, label: "已排配" },
+            { value: 3, label: "已预约" },
+            { value: 4, label: "已外出" },
+            { value: 5, label: "已挂起" },
+            { value: 6, label: "已接收" }
+          ]
+        : [
+            { value: '', label: '全部' },
+            { value: 7, label: "已解决" },
+            { value: 8, label: "已回访" }
+          ]
+    }
   },
   data() {
     return {
@@ -110,7 +139,7 @@ export default {
         appId: undefined,
         Name: "", //	Description
         QryU_SAP_ID: "", //- 查询服务ID查询条件
-        QryState: '', //- 呼叫状态查询条件
+        QryState: "", //- 呼叫状态查询条件
         QryCustomer: "", //- 客户查询条件
         QryManufSN: "", // - 制造商序列号查询条件
         QryCreateTimeFrom: "", //- 创建日期从查询条件
@@ -127,17 +156,17 @@ export default {
       // 6.已接收-研发测试发反馈报告（不可选）
       // 7.已解决-技术员点击了完成工单（不可选）
       // 8.已回访-app自动回访&呼叫中心电话回访（不可选）
-      callStatus: [
-        { value: '', label: '全部' },
-        // { value: 1, label: "待处理" },
-        { value: 2, label: "已排配" },
-        { value: 3, label: "已预约" },
-        { value: 4, label: "已外出" },
-        { value: 5, label: "已挂起" },
-        { value: 6, label: "已接收" },
-        { value: 7, label: "已解决" },
-        { value: 8, label: "已回访" }
-      ],
+      // callStatus: [
+      //   { value: '', label: '全部' },
+      //   // { value: 1, label: "待处理" },
+      //   { value: 2, label: "已排配" },
+      //   { value: 3, label: "已预约" },
+      //   { value: 4, label: "已外出" },
+      //   { value: 5, label: "已挂起" },
+      //   { value: 6, label: "已接收" },
+      //   { value: 7, label: "已解决" },
+      //   { value: 8, label: "已回访" }
+      // ],
       dataTree:[]
     };
   },
@@ -159,6 +188,9 @@ export default {
     sendOrder(){
       // console.log(11)
       this.$emit("change-Order",true)
+    },
+    onChange () {
+      this.onSubmit()
     },
     _normalizeProblemTypes (data) {
       // 处理问题类型数据

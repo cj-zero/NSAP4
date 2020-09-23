@@ -52,5 +52,7 @@ namespace OpenAuth.Repository
         
         public virtual DbSet<MyExpends> Myexpends { get; set; }
         #endregion
+
+        public virtual DbSet<KnowledgeBase> KnowledgeBases { get; set; }
     }
 }

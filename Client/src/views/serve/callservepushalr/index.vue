@@ -1,5 +1,6 @@
 <template>
   <div>
+    <tab-list :initialName="initialName" :texts="texts" @tabChange="onTabChange" class="tabList"></tab-list>
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <!-- <el-input
@@ -21,6 +22,7 @@
         <zxsearch 
           @change-Search="changeSearch" 
           @change-Order="changeOrder"
+          :activeName="activeName"
         ></zxsearch>
         <permission-btn moduleName="callservepushalr" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
@@ -290,6 +292,7 @@
 
 <script>
 import * as solutions from "@/api/solutions";
+import TabList from '@/components/TabList'
 import * as callservepushm from "@/api/serve/callservepushm";
 // import * as callservesure from "@/api/serve/callservesure";
 import * as category from "@/api/categorys"
@@ -325,7 +328,8 @@ export default {
     zxform,
     treeList,
     Report,
-    zxchat
+    zxchat,
+    TabList
   },
   mixins: [reportMixin, dispatchMixin, chatMixin, tableMixin],
   directives: {
@@ -337,6 +341,12 @@ export default {
       tableData: [], //接单员列表
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
+      initialName: 'first',
+      texts: [ // 标签数组
+        { label: '已派单', name: 'first' },
+        { label: '已解决', name: 'second' },
+      ],
+      activeName: 'first',
       defaultFormThead: [
         "priority",
         "calltype",
@@ -363,7 +373,7 @@ export default {
         // { name: "", label: "费用审核" },
         // { name: "customerId", label: "客户代码" },
         { name: "customerName", label: "客户名称", width: 200 },
-        { name: "fromTheme", label: "呼叫主题", width: 100 },
+        { name: "fromTheme", label: "呼叫主题", width: 275 },
         { name: "createTime", label: "创建日期", width: 150 },
         { name: "currentUser", label: "技术员", width: 80 },
         {
@@ -546,6 +556,9 @@ export default {
         this.getLeftList()
       }
     },
+    onTabChange (name) {
+      this.activeName = name
+    },
     getCategory () {
       category.loadCategory({
         typeID: 'Aftermarket'
@@ -570,7 +583,7 @@ export default {
         // console.log(this.modulesTree[0].key)
         // this.$refs.treeForm.setCheckedKeys([this.modulesTree[0].key]);
         this.checkGroupNode(this.modulesTree[0]);
-        this.getRightList();
+        // this.getRightList();
       } else {
         this.list = []
         this.total = 0
@@ -764,6 +777,7 @@ export default {
 
     checkGroupNode(a) {
       //点击复选框触发
+      console.log(this.ifParent, 'IFparent')
       if (this.ifParent) {
         if (this.ifParent == a.key) {
           //同一级，不做限制，添加编码请求
@@ -781,6 +795,7 @@ export default {
               );
               if (this.listQuery.QryMaterialTypes.length == 0) {
                 this.listQuery.QryU_SAP_ID = "";
+                console.log('cancel')
               }
             }
           } else {
@@ -808,11 +823,14 @@ export default {
               this.listQuery.QryMaterialTypes.push(item.id);
             });
           }
+          console.log('再次起飞')
           this.getRightList();
         }
       } else {
         //第一次点击
+        console.log('初次起飞')
         this.listQuery.QryMaterialTypes = [];
+        this.listQuery.page = 1
         if (!a.children) {
           this.listQuery.QryMaterialTypes.push(a.id);
         } else {
@@ -1075,6 +1093,12 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
+.tabList {
+  background-color: #fff;
+  ::v-deep .el-tabs__header {
+    margin-bottom: 0;
+  }
+}
 .ls-border {
   // width: 300px;
   ::v-deep .el-tree-node > .el-tree-node__children {

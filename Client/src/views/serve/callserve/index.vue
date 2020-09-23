@@ -369,7 +369,7 @@ export default {
       return [
         { width: 100, placeholder: '服务ID', prop: 'QryU_SAP_ID' },
         { width: 90, placeholder: '请选择呼叫状态', prop: 'QryState', options: this.callStatus, type: 'select' },
-        { width: 200, placeholder: '客户', prop: 'QryCustomer' },
+        { width: 170, placeholder: '客户', prop: 'QryCustomer' },
         { width: 150, placeholder: '序列号', prop: 'QryManufSN' },
         { width: 90, placeholder: '接单员', prop: 'QryRecepUser' },
         { width: 90, placeholder: '技术员', prop: 'QryTechName' },

@@ -324,7 +324,7 @@ export default {
         // { name: "", label: "费用审核" },
         // { name: "customerId", label: "客户代码" },
         { name: "customerName", label: "客户名称", width: 200 },
-        { name: "fromTheme", label: "呼叫主题", width: 100 },
+        { name: "fromTheme", label: "呼叫主题", width: 275 },
         { name: "createTime", label: "创建日期", width: 150 },
         { name: "currentUser", label: "技术员", width: 80 },
         {
