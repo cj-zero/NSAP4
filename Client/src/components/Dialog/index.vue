@@ -9,6 +9,7 @@
     :close-on-click-modal="closeByClickModal"
     :append-to-body="appendToBody"
     @closed="onClosed"
+    @close="onClosed"
   >
     <slot></slot>
     <span slot="footer" class="dialog-footer" v-if="isShowBtn">

@@ -80,7 +80,7 @@
         width="800px"
         :btnList="btnList"
         :onClosed="closeDialog"
-        :title="title"
+        :title="textMap[title]"
       >
         <order 
           ref="order" 
@@ -105,7 +105,7 @@ import Order from './common/components/order'
 // import { deepClone } from '@/utils'
 import { commonSearch } from './common/js/search'
 import { tableMixin } from './common/js/mixins'
-import { getOrder, getList, getDetails } from '@/api/reimburse'
+import { getOrder, getList, getDetails, getCategoryName } from '@/api/reimburse'
 export default {
   mixins: [tableMixin],
   components: {
@@ -158,12 +158,19 @@ export default {
         ...this.listQuery
       }).then(res => {
         let { data, count } = res
-        this.tableData = this._normalizeList(data)
+        this.tableData = this._normalizeList(data).reverse()
         this.total = count
         console.log(res, 'res', this.tableData)
         this.tableLoading = false
       }).catch(() => {
         this.tableLoading = false
+      })
+    },
+    _getCategoryName () {
+      getCategoryName().then(res => {
+        console.log(res, 'cate')
+      }).catch(() => {
+        this.$message.error('获取字典分类失败')
       })
     },
     _normalizeList (data) {
@@ -225,7 +232,7 @@ export default {
             endDate,
             destination
           }
-          this.formName = '新建'
+          this.title = 'create'
           this.$refs.myDialog.open()
         }
       }).catch(() => {
@@ -243,33 +250,87 @@ export default {
         reimburseInfoId: this.currentRow.id
       }).then(res => {
         console.log(res, 'detail')
-        let { 
-          fromTheme, 
-          orgName, 
-          reimburseResp, 
-          terminalCustomer, 
-          terminalCustomerId,
-          userName 
-        } = res.data
-        this.detailData = { fromTheme, orgName, ...reimburseResp, terminalCustomer, terminalCustomerId, userName }
-        // this._normalizeDetail(this.detailData)
+        let { reimburseResp } = res.data
+        delete res.data.reimburseResp
+        this.detailData = Object.assign({}, res.data, { ...reimburseResp })
+        try {
+          this._normalizeDetail(this.detailData)
+        } catch (err) {
+          console.log(err, 'err')
+        }
+        
+        this.title = 'edit'
+        console.log(this.detailData, 'detialData')
         this.$refs.myDialog.open()
       }).catch(() => {
         this.$message.error('获取详情失败')
       })
     },
-    _normalizeDetail () {
-      // let { }
+    _normalizeDetail (data) {
+      let { 
+        reimburseAttachments,
+        // reimburseTravellingAllowances,
+        reimburseFares,
+        reimburseAccommodationSubsidies,
+        reimburseOtherCharges 
+      } = data
+      data.attachmentsFileList = reimburseAttachments
+        .map(item => {
+          item.name = item.attachmentName
+          item.url = `${this.baseURL}/${item.fileId}?X-Token=${this.tokenValue}`
+          return item
+        })
+      data.reimburseAttachments = []
+      // this._buildAttachment(reimburseTravellingAllowances)
+      this._buildAttachment(reimburseFares)
+      this._buildAttachment(reimburseAccommodationSubsidies)
+      this._buildAttachment(reimburseOtherCharges)
+    },
+    _buildAttachment (data) { // 为了回显，并且编辑 目标是为了保证跟order.vue的数据保持相同的逻辑
+      data.forEach(item => {
+        let { reimburseAttachments } = item
+        console.log(reimburseAttachments, 'foeEach', item)
+        item.invoiceFileList = this.getTargetAttachment(reimburseAttachments, 2)
+        item.otherFileList = this.getTargetAttachment(reimburseAttachments, 1)
+        item.invoiceAttachment = [],
+        item.otherAttachment = []
+        item.reimburseAttachments = []
+      })
+    },
+    getTargetAttachment (data, attachmentType) { // 用于el-upload 回显
+      return data.filter(item => item.attachmentType === attachmentType)
+        .map(item => {
+          item.name = item.attachmentName
+          item.url = `${this.baseURL}/${item.fileId}?X-Token=${this.tokenValue}`
+          return item
+        })
     },
     recall () { // 撤回操作
       console.log('recall')
     },
-    submit () {
+    async submit () {
       console.log(this.$refs.order, 'order', this.$refs)
-      this.$refs.order.submit()
+      await this.$refs.order.submit()
+      this.$refs.order.resetInfo()
+      this.closeDialog()
+      this._getList()
     }, // 提交
-    saveAsDraft () {}, // 存为草稿
-    reset () {}, // 重置
+    async saveAsDraft () {
+      await this.$refs.order.submit(true)
+      this.$refs.order.resetInfo()
+      this.closeDialog()
+      this._getList()
+    }, // 存为草稿
+    reset () {
+      this.$confirm('确定重置?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          this.$refs.order.resetInfo()
+        })
+      // this.$refs.order.resetInfo()
+    }, // 重置
     closeDialog () {
       this.$refs.order.resetInfo()
       this.$refs.myDialog.close()

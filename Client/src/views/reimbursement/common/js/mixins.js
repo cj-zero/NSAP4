@@ -4,6 +4,11 @@ export let tableMixin = {
   data () {
     return {
       rightImg,
+      textMap: {
+        create: '新建',
+        edit: '编辑',
+        view: '查看'
+      },
       columns: [ // 表格配置
         { label: '报销单号', prop: 'id', type: 'link', width: 100, handleJump: this.openTree },
         { label: '填报日期', prop: 'createTime', width: 150 },
@@ -50,15 +55,15 @@ export let tableMixin = {
       currentRow: null, // 当前行的数据
       title: '', // 弹窗标题 同时也用于区别 报销单的状态
       detailData: {}, // 报销单详情
-      baseURL: process.env.VUE_APP_BASE_API + "/files/Download",
-      tokenValue: this.$store.state.user.token,
       dialogReportVisible: false, // 完工报告弹窗标识
       reportData: [], // 完工报告数据
       serviceModeMap: {
         1: '电话服务',
         2: '上门服务',
         3: '返厂维修'
-      }
+      },
+      baseURL: process.env.VUE_APP_BASE_API + "/files/Download", // 图片基地址
+      tokenValue: this.$store.state.user.token
     }
   },
   methods: {

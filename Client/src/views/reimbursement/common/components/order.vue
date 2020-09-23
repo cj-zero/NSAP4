@@ -23,7 +23,10 @@
           <el-form-item :label="item.label" 
             :prop="item.prop"
             :rules="rules[item.prop] || { required: false }">
-            <template v-if="!item.type">
+            <template v-if="item.label === '总金额'">
+              ￥{{ totalMoney | toThousands }}
+            </template>
+            <template v-else-if="!item.type">
               <el-input 
                 v-model="formData[item.prop]" 
                 :style="{ width: item.width + 'px' }"
@@ -68,7 +71,7 @@
     </el-form>
     <el-row type="flex" class="upload-wrapper">
       <span class="upload-title">上传附件</span>
-      <upLoadFile @get-ImgList="getFileList" :limit="limit" uploadType="file" ref="uploadFile"></upLoadFile>
+      <upLoadFile @get-ImgList="getFileList" uploadType="file" ref="uploadFile" :fileList="formData.attachmentsFileList || []"></upLoadFile>
     </el-row>
     <!-- 出差 -->
     <div class="form-item-wrapper">
@@ -224,11 +227,16 @@
                 </template>
                 <template v-else-if="item.type === 'upload'">   
                   <upLoadFile  
-                  @get-ImgList="getTrafficList" 
-                  :limit="limit"
-                   uploadType="file" 
-                   ref="trafficUploadFile" 
-                   :prop="item.prop" 
+                    @get-ImgList="getTrafficList" 
+                    :limit="item.prop === 'invoiceAttachment' ? 1 : 100" 
+                    uploadType="file" 
+                    ref="trafficUploadFile" 
+                    :prop="item.prop" 
+                    :fileList="
+                      (item.prop === 'invoiceAttachment' 
+                        ? formData.reimburseFares[scope.$index].invoiceFileList 
+                        : formData.reimburseFares[scope.$index].otherFileList
+                      ) || []"
                    >
                   </upLoadFile>
                 </template>
@@ -324,10 +332,15 @@
                 <template v-else-if="item.type === 'upload'">
                   <upLoadFile  
                     @get-ImgList="getAccList" 
-                    :limit="limit" 
+                    :limit="item.prop === 'invoiceAttachment' ? 1 : 100" 
                     uploadType="file" 
                     ref="accUploadFile" 
                     :prop="item.prop" 
+                    :fileList="
+                      (item.prop === 'invoiceAttachment' 
+                        ? formData.reimburseFares[scope.$index].invoiceFileList 
+                        : formData.reimburseFares[scope.$index].otherFileList
+                      ) || []"
                     >
                   </upLoadFile>
                 </template>
@@ -420,7 +433,18 @@
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'upload'">
-                  <upLoadFile  @get-ImgList="getOtherList" :limit="limit" uploadType="file" ref="otherUploadFile" :prop="item.prop"></upLoadFile>                   
+                  <upLoadFile  
+                    @get-ImgList="getOtherList" 
+                    :limit="item.prop === 'invoiceAttachment' ? 1 : 100" 
+                    uploadType="file" 
+                    ref="otherUploadFile" 
+                    :prop="item.prop"
+                    :fileList="
+                      (item.prop === 'invoiceAttachment' 
+                        ? formData.reimburseFares[scope.$index].invoiceFileList 
+                        : formData.reimburseFares[scope.$index].otherFileList
+                      ) || []"
+                    ></upLoadFile>                   
                 </template>
                 <template v-else-if="item.type === 'operation'">
                   <template v-for="iconItem in item.iconList">
@@ -491,7 +515,7 @@ export default {
     CommonTable
   },
   props: {
-    operation: {
+    title: {
       type: String,
       default: 'create'
     },
@@ -542,9 +566,9 @@ export default {
         terminalCustomerId: '',
         terminalCustomer: '',
         shortCustomerName: '',
-        origin: '',
+        becity: '',
         destination: '',
-        originDate: '',
+        businessTripDate: '',
         endDate: '',
         remburseType: '',
         projectName: '',
@@ -557,7 +581,7 @@ export default {
         serviceRelations: '',
         payTime: '',
         remark: '',
-        totalMoney: '',
+        totalMoney: 0,
         reimburseAttachments: [],
         reimburseTravellingAllowances: [],
         reimburseFares: [],
@@ -565,39 +589,6 @@ export default {
         reimburseOtherCharges: [],
         isDraft: false // 是否是草稿
       },
-      formConfig: [
-        { label: '报销单号', prop: 'id', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
-        { label: '报销人', prop: 'userName', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
-        { label: '部门', prop: 'orgName', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
-        { label: '职位', prop: 'position', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true, width: 100 },
-        { label: '服务ID', prop: 'serviceOrderSapId', palceholder: '请选择', col: 6, width: 100, onFocus: this.customerFocus, readonly: true },
-        { label: '客户代码', prop: 'terminalCustomerId', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
-        { label: '客户名称', prop: 'terminalCustomer', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
-        { label: '客户简称', prop: 'shortCustomerName', palceholder: '最长5个字', disabled: true, col: 6, maxlength: 5, isEnd: true, width: 100 },
-        { label: '出发地点', prop: 'origin', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
-        { label: '到达地点', prop: 'destination', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
-        { label: '出发日期', prop: 'originDate', palceholder: '请输入内容', disabled: true, col: 6, type: 'date', width: 100 },
-        { label: '结束日期', prop: 'endDate', palceholder: '请输入内容', disabled: true, col: 6, type: 'date', isEnd: true, width: 100 },
-        { label: '报销类别', prop: 'remburseType', palceholder: '请输入内容', disabled: true, col: 6, type: 'select', options: EXPENSE_CATEGORY, width: 100 },
-        { label: '项目名称', prop: 'projectName', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
-        { label: '报销状态', prop: 'remburseStatus', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true, width: 100 },
-        { label: '呼叫主题', prop: 'fromTheme', palceholder: '请输入内容', disabled: true, col: 18, width: 474 },
-        { label: '填报事件', prop: 'fillDate', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
-        { label: '设备类型', prop: 'materialType', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
-        { label: '解决方案', prop: 'solution', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
-        { label: '服务报告', prop: 'report',  disabled: true, col: 6, type: 'inline-slot', id: 'report', isEnd: true },
-        { label: '费用承担', prop: 'bearToPay', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
-        { label: '责任承担', prop: 'responsibility', palceholder: '请输入内容',  col: 6, width: 100, options: RESPONSIBILITY_TYPE, type: 'select' },
-        { label: '劳务关系', prop: 'serviceRelations', palceholder: '请输入内容', col: 6, width: 100, type: 'select', options: RELATION_TYPE },
-        { label: '支付时间', prop: 'payTime', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
-        { label: '备注', prop: 'remark', palceholder: '请输入内容', col: 18, width: 474 },
-        { label: '总金额', prop: 'totalMoney', col: 6, isEnd: true, type: 'inline-slot', id: 'money' },
-        { label: '附件', prop: 'reimburseAttachments', type: 'slot', id: 'attachment', showLabel: true },
-        { label: '出差补贴', prop: 'reimburseTravellingAllowances', type: 'slot', id: 'travel' },
-        { label: '交通费用', prop: 'reimburseFares', type: 'slot', id: 'traffic' },
-        { label: '住宿补贴', prop: 'reimburseAccommodationSubsidies', type: 'slot', id: 'accommodation' },
-        { label: '其他费用', prop: 'reimburseOtherCharges', type: 'slot', id: 'other' }
-      ],
       rules: {
         userName: [ { required: true, trigger: 'focus' } ],
         serviceOrderSapId: [ { required: true } ],
@@ -634,11 +625,32 @@ export default {
       deep: true,
       handler (val) {
         console.log(val, 'detailData')
+        let { 
+          reimburseTravellingAllowances: travel,
+          reimburseFares: traffic,
+          reimburseAccommodationSubsidies: acc,
+          reimburseOtherCharges: other 
+        } = val
+        if (travel && travel.length) {
+          this.ifShowTravel = false
+        }
+        if (traffic && traffic.length) {
+          this.ifShowTraffic = false
+        }
+        if (acc && acc.length) {
+          this.ifShowAcc = false
+        }
+        if (other && other.length) {
+          this.ifShowOther = false
+        }
         Object.assign(this.formData, val)
+        console.log(this.formData, 'watch detailData')
       }
     },
     totalMoney (val) {
+      console.log(val, 'totalMoney')
       this.formData.totalMoney = val
+      console.log(this.formData.totalMoney, 'totalMoney')
     },
     formData: {
       deep: true,
@@ -654,13 +666,74 @@ export default {
         this.formData.createUserId = val.userId
         this.formData.userName = val.userName
         this.formData.orgName = val.orgName
+        this.formData.becity = val.becity
+        this.formData.businessTripDate = val.businessTripDate
+        this.formData.endDate = val.endDate
+        this.formData.destination = val.destination
         this._getCustomerInfo()    
       }
     }
   },
   computed: {
+    formConfig () {
+      return [
+        { label: '报销单号', prop: 'id', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
+        { label: '报销人', prop: 'userName', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
+        { label: '部门', prop: 'orgName', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
+        { label: '职位', prop: 'position', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true, width: 100 },
+        { 
+          label: '服务ID', prop: 'serviceOrderSapId', palceholder: '请选择', 
+          col: 6, width: 100, onFocus: this.customerFocus, readonly: true, disabled: this.title !== 'create' 
+        },
+        { label: '客户代码', prop: 'terminalCustomerId', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
+        { label: '客户名称', prop: 'terminalCustomer', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
+        { label: '客户简称', prop: 'shortCustomerName', palceholder: '最长5个字', disabled: true, col: 6, maxlength: 5, isEnd: true, width: 100 },
+        { label: '出发地点', prop: 'becity', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
+        { label: '到达地点', prop: 'destination', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
+        { label: '出发日期', prop: 'businessTripDate', palceholder: '请输入内容', disabled: true, col: 6, type: 'date', width: 100 },
+        { label: '结束日期', prop: 'endDate', palceholder: '请输入内容', disabled: true, col: 6, type: 'date', isEnd: true, width: 100 },
+        { label: '报销类别', prop: 'remburseType', palceholder: '请输入内容', disabled: true, col: 6, type: 'select', options: EXPENSE_CATEGORY, width: 100 },
+        { label: '项目名称', prop: 'projectName', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
+        { label: '报销状态', prop: 'remburseStatus', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true, width: 100 },
+        { label: '呼叫主题', prop: 'fromTheme', palceholder: '请输入内容', disabled: true, col: 18, width: 474 },
+        { label: '填报事件', prop: 'fillDate', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
+        { label: '设备类型', prop: 'materialType', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
+        { label: '解决方案', prop: 'solution', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
+        { label: '服务报告', prop: 'report',  disabled: true, col: 6, type: 'inline-slot', id: 'report', isEnd: true },
+        { label: '费用承担', prop: 'bearToPay', palceholder: '请输入内容', disabled: true, col: 6, width: 100 },
+        { label: '责任承担', prop: 'responsibility', palceholder: '请输入内容',  col: 6, width: 100, options: RESPONSIBILITY_TYPE, type: 'select' },
+        { label: '劳务关系', prop: 'serviceRelations', palceholder: '请输入内容', col: 6, width: 100, type: 'select', options: RELATION_TYPE },
+        { label: '支付时间', prop: 'payTime', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
+        { label: '备注', prop: 'remark', palceholder: '请输入内容', col: 18, width: 474 },
+        { label: '总金额', prop: 'totalMoney', col: 6, isEnd: true, type: 'inline-slot', id: 'money' },
+        { label: '附件', prop: 'reimburseAttachments', type: 'slot', id: 'attachment', showLabel: true },
+        { label: '出差补贴', prop: 'reimburseTravellingAllowances', type: 'slot', id: 'travel' },
+        { label: '交通费用', prop: 'reimburseFares', type: 'slot', id: 'traffic' },
+        { label: '住宿补贴', prop: 'reimburseAccommodationSubsidies', type: 'slot', id: 'accommodation' },
+        { label: '其他费用', prop: 'reimburseOtherCharges', type: 'slot', id: 'other' }
+      ]
+    }, 
     totalMoney () {
-      return 1
+      let result = 0
+      let { 
+        reimburseTravellingAllowances, 
+        reimburseFares, 
+        reimburseAccommodationSubsidies,
+        reimburseOtherCharges 
+      } = this.formData
+      if (reimburseTravellingAllowances.length) {
+        result += this.getTotal(reimburseTravellingAllowances)
+      }
+      if (reimburseFares.length) {
+        result += this.getTotal(reimburseFares)
+      }
+      if (reimburseAccommodationSubsidies.length) {
+        result += this.getTotal(reimburseAccommodationSubsidies)
+      }
+      if (reimburseOtherCharges.length) {
+        result += this.getTotal(reimburseOtherCharges)
+      }
+      return result
     },
     normalConfig () {
       let noneSlotConfig = this.formConfig.filter(item => item.type !== 'slot')
@@ -675,13 +748,26 @@ export default {
           j++
         }
       }
-      console.log(result, 'normalConfig')
       return result
     }
   },
   methods: {
     noop () {
       noop() 
+    },
+    getTotal (data) {
+      let result = 0
+      let isVliad = data.every(item => {
+        return item.totalMoney ? this.isValidaNumber(item.totalMoney) : this.isValidaNumber(item.money)
+      })
+      if (isVliad) {
+        result += data.reduce((prev, next) => {
+          return prev + Number(next.totalMoney || next.money)
+        }, 0)
+      } else {
+        result = 0
+      }
+      return result
     },
     showForm (data, type) { // 展示表格
       switch (type) {
@@ -704,7 +790,9 @@ export default {
             remark: '',
             invoiceNumber: '1',
             invoiceAttachment: [],
-            otherAttachment: []
+            otherAttachment: [],
+            invoiceFileList: [],
+            otherFileList: []
           })
           break
         case 'ifShowAcc':
@@ -716,7 +804,9 @@ export default {
             remark: '',
             invoiceNumber: '1',
             invoiceAttachment: [],
-            otherAttachment: []
+            otherAttachment: [],
+            invoiceFileList: [],
+            otherFileList: []
           })
           break
         case 'ifShowOther':
@@ -727,14 +817,15 @@ export default {
             remark: '',
             invoiceNumber: '1',
             invoiceAttachment: [],
-            otherAttachment: []
+            otherAttachment: [],
+            invoiceFileList: [],
+            otherFileList: []
           })
       }
       this[type] = false
     },
     onDataChange (val) {
       Object.assign(this.formData, this.process(val))
-      console.log(this.formData, 'formData')
     },
     process (val) {
       let result = {}
@@ -753,15 +844,16 @@ export default {
       )
     },
     async validate (ref ,data) {
-      console.log(this.$refs[ref], data, ref, 'validate inner')
+      console.log(this.$refs, data, ref, 'validate inner')
       let isValid = true
       if (!data) {
         isValid = await this.$refs[ref].validate()
         return isValid
       } else {
+        console.log(this.formData[data], 'formData')
         let ifInvoiceAttachment = this.formData[data].every(item => item.invoiceAttachment && item.invoiceAttachment.length)
         let isValid = await this.$refs[ref].validate()
-        console.log('valid', isValid, this.formData)
+        console.log('valid', isValid, this.formData, ifInvoiceAttachment)
         return ref === 'travelForm' ? isValid : ifInvoiceAttachment && isValid
       }
     },
@@ -796,7 +888,7 @@ export default {
     getTrafficList (val, prop) {
       let data = this.formData.reimburseFares
       let resultArr = []
-      if (this.operation === 'create') {
+      if (this.title === 'create') {
         resultArr = this.createFileList(val, {
           reimburseType: 2,
           attachmentType: prop === 'invoiceAttachment' ? 2 : 1
@@ -807,7 +899,7 @@ export default {
     getAccList (val, prop) {
       let data = this.formData.reimburseAccommodationSubsidies
       let resultArr = []
-      if (this.operation === 'create') {
+      if (this.title === 'create') {
         resultArr = this.createFileList(val, {
           reimburseType: 3,
           attachmentType:  prop === 'invoiceAttachment' ? 2 : 1
@@ -818,7 +910,7 @@ export default {
     getOtherList (val, prop) {
       let data = this.formData.reimburseOtherCharges
       let resultArr = []
-      if (this.operation === 'create') {
+      if (this.title === 'create') {
         resultArr = this.createFileList(val, {
           reimburseType: 4,
           attachmentType: prop === 'invoiceAttachment' ? 2 : 1
@@ -897,7 +989,9 @@ export default {
             remark: operationType === 'add' ? '' : row.remark,
             invoiceNumber: '1',
             invoiceAttachment: [],
-            otherAttachment: []
+            otherAttachment: [],
+            invoiceFileList: [], // 用于回显
+            otherFileList: [] // 用于回显
           })
           break
         case 'accommodation':
@@ -909,7 +1003,9 @@ export default {
             remark: operationType === 'add' ? '' : row.remark,
             invoiceNumber: '1',
             invoiceAttachment: [],
-            otherAttachment: []
+            otherAttachment: [],
+            invoiceFileList: [], // 用于回显
+            otherFileList: [] // 用于回显
           })
           break
         case 'other':
@@ -920,7 +1016,9 @@ export default {
             remark: operationType === 'add' ? '' : row.remark,
             invoiceNumber: '1',
             invoiceAttachment: [],
-            otherAttachment: []
+            otherAttachment: [],
+            invoiceFileList: [], // 用于回显
+            otherFileList: [] // 用于回显
           })
       }
     },
@@ -957,7 +1055,6 @@ export default {
       return false
     },
     getSummaries ({ columns, data }) { // 金额合计
-      console.log(columns, data, 'getSum')
       const sums = []
       let hasTotalMoney = this.hasTotalMoneyKey(data)
       columns.forEach((column, index) => {
@@ -1016,51 +1113,68 @@ export default {
       console.log(this.$refs.customerTable)
       let currentRow = this.$refs.customerTable.getCurrentRow()
       if (Object.keys(currentRow).length) {
-        let { terminalCustomerId, terminalCustomer, u_SAP_ID, fromTheme, id, userId } = currentRow
-        this.formData.terminalCustomerId = terminalCustomerId
-        this.formData.terminalCustomer = terminalCustomer
-        this.formData.serviceOrderId = id
-        this.formData.serviceOrderSapId = u_SAP_ID
-        this.formData.fromTheme = fromTheme
-        this.formData.CreateUserId = userId
+        let { 
+          terminalCustomerId, 
+          terminalCustomer, 
+          u_SAP_ID, 
+          fromTheme, 
+          id, 
+          userId,
+          becity,
+          businessTripDate,
+          endDate,
+          destination } = currentRow
+        let formData = this.formData
+        formData.terminalCustomerId = terminalCustomerId
+        formData.terminalCustomer = terminalCustomer
+        formData.serviceOrderId = id
+        formData.serviceOrderSapId = u_SAP_ID
+        formData.fromTheme = fromTheme
+        formData.CreateUserId = userId
+        formData.becity = becity
+        formData.businessTripDate = businessTripDate
+        formData.endDate = endDate
+        formData.destination = destination
       }
       this.closeDialog()
     },
     resetInfo () {
-      this.formData = { // 表单参数
-        id: '',
-        userName: '',
-        createUserId: '',
-        orgName: '',
-        position: '',
-        serviceOrderId: '',
-        serviceOrderSapId: '',
-        terminalCustomerId: '',
-        terminalCustomer: '',
-        shortCustomerName: '',
-        origin: '',
-        destination: '',
-        originDate: '',
-        endDate: '',
-        remburseType: '',
-        projectName: '',
-        remburseStatus: '',
-        fromTheme: '',
-        fillDate: '',
-        report: '',
-        bearToPay: '',
-        responsibility: '',
-        serviceRelations: '',
-        payTime: '',
-        remark: '',
-        totalMoney: '',
-        reimburseAttachments: [],
-        reimburseTravellingAllowances: [],
-        reimburseFares: [],
-        reimburseAccommodationSubsidies: [],
-        reimburseOtherCharges: [],
-        isDraft: false // 是否是草稿
-      }
+      // this.formData = { // 表单参数
+      //   id: '',
+      //   userName: '',
+      //   createUserId: '',
+      //   orgName: '',
+      //   position: '',
+      //   serviceOrderId: '',
+      //   serviceOrderSapId: '',
+      //   terminalCustomerId: '',
+      //   terminalCustomer: '',
+      //   shortCustomerName: '',
+      //   origin: '',
+      //   destination: '',
+      //   originDate: '',
+      //   endDate: '',
+      //   remburseType: '',
+      //   projectName: '',
+      //   remburseStatus: '',
+      //   fromTheme: '',
+      //   fillDate: '',
+      //   report: '',
+      //   bearToPay: '',
+      //   responsibility: '',
+      //   serviceRelations: '',
+      //   payTime: '',
+      //   remark: '',
+      //   totalMoney: '',
+      //   reimburseAttachments: [],
+      //   reimburseTravellingAllowances: [],
+      //   reimburseFares: [],
+      //   reimburseAccommodationSubsidies: [],
+      //   reimburseOtherCharges: [],
+      //   isDraft: false // 是否是草稿
+      // }
+      this.$refs.form.resetFields()
+      this.$refs.form.clearValidate()
       this.clearFile()
       this.ifShowTraffic = this.ifShowOther = this.ifShowAcc = this.ifShowTravel = true
     },
@@ -1073,7 +1187,9 @@ export default {
     async checkData () { // 校验表单数据是否通过
       let isFormValid = true, isTravelValid = true, isTrafficValid = true, isAccValid = true, isOtherValid = true
       isFormValid = await this.validate('form')
-      isTravelValid = await this.validate('travelForm', 'reimburseTravellingAllowances')
+      if (!this.ifShowTravel) {
+        isTravelValid = await this.validate('travelForm', 'reimburseTravellingAllowances')
+      }
       if (!this.ifShowTraffic) {
         isTrafficValid = await this.validate('trafficForm', 'reimburseFares')
       }
@@ -1086,12 +1202,16 @@ export default {
       console.log('checkData', isFormValid, isTravelValid, isTrafficValid, isAccValid, isOtherValid)
       return isFormValid && isTrafficValid && isAccValid && isOtherValid && isTravelValid
     },
-    async submit () { // 提交
+    async submit (isDraft) { // 提交
       let isValid = await this.checkData()
       console.log('submit', isValid)
       if (!isValid) {
         console.log('error')
-        return this.$message.error('请将必填项填写完整')
+        this.$message.error('请将必填项填写完整')
+        return Promise.reject('')
+      }
+      if (isDraft) {
+        this.formData.isDraft = true
       }
       let { 
         reimburseAccommodationSubsidies, 
@@ -1101,9 +1221,8 @@ export default {
       this.mergeFileList(reimburseAccommodationSubsidies)
       this.mergeFileList(reimburseOtherCharges)
       this.mergeFileList(reimburseFares)
-      console.log(this.formData, 'formData')
-      // if (this.add) {
-        addOrder(this.formData).then(res => {
+      console.log(this.formData, 'formData', addOrder)
+      return addOrder(this.formData).then(res => {
           console.log(res, 'res')
           this.$message(({
             message: '添加成功'
@@ -1111,7 +1230,6 @@ export default {
         }).catch(err => {
           console.error(err)
         })
-      // }
     }
   },
     
