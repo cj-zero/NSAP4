@@ -58,7 +58,8 @@ export let dispatchMixin = { // 派单 转派
         limit: 10,
         currentUser: ''
       },
-      orderRadio: '' //接单员单选
+      orderRadio: '', //接单员单选
+      loadingBtn: false // 按钮loading
     }
   },
   methods: {

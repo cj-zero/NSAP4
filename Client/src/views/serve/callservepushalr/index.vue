@@ -269,7 +269,7 @@
         />
         <span slot="footer" class="dialog-footer">
           <el-button @click="cancelPost">取 消</el-button>
-          <el-button type="primary" @click="postOrder">确 定</el-button>
+          <el-button type="primary" @click="postOrder" :loading="loadingBtn">确 定</el-button>
         </span>
       </el-dialog>
       <!-- 完工报告  -->
@@ -633,7 +633,13 @@ export default {
           message: `单个技术员接单不能超过${this.totalLimit}个`,
         });
         this.listLoading = false
+      } else if (!this.orderRadio) {
+        this.$message({
+          type: "warning",
+          message: '请先选择技术员'
+        });
       } else {
+        this.loadingBtn = true
         callservepushm
           .nSAPSendOrders(this.params)
           .then((res) => {
@@ -652,6 +658,7 @@ export default {
               this.afterLeft()
               this.dialogOrder = false;
               this.listLoading = false;
+              this.loadingBtn = false
             }
           })
           .catch((error) => {
@@ -660,6 +667,7 @@ export default {
               message: `${error}`,
             });
             this.listLoading = false;
+            this.loadingBtn = false
           });
       }
 

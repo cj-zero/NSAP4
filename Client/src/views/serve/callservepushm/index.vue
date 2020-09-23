@@ -251,7 +251,7 @@
         />
         <span slot="footer" class="dialog-footer">
           <el-button @click="cancelPost">取 消</el-button>
-          <el-button type="primary" @click="postOrder">确 定</el-button>
+          <el-button type="primary" @click="postOrder" :loading="loadingBtn">确 定</el-button>
         </span>
       </el-dialog>
     </div>
@@ -578,37 +578,45 @@ export default {
           message: `单个技术员接单不能超过${this.totalLimit}个`
         });
         this.listLoading = false
-      } else {
-      this.listLoading = true;
-      callservepushm
-        .nSAPSendOrders(this.params)
-        .then((res) => {
-          if (res.code == 200) {
-            this.dataForm = res.result;
-            this.$message({
-              type: "success",
-              message: "派单成功",
-            });
-            this.listQuery.QryState = 1;
-            this.listQuery.QryU_SAP_ID = "";
-            this.listQuery.limit=20
-            this.isClear = true
-            this.listQueryServer.page = 1
-            this.listQuery.page = 1
-            this.ifParent= ""
-            this.afterLeft();
-            this.dialogOrder = false;
-            this.listLoading = false;
-            //  this.getRightList();
-          }
-        })
-        .catch((error) => {
-          this.$message({
-            type: "danger",
-            message: `${error}`,
-          });
-          this.listLoading = false;
+      } else if (!this.orderRadio) {
+        this.$message({
+          type: "warning",
+          message: '请先选择技术员'
         });
+      } else {
+        this.listLoading = true;
+        this.loadingBtn = true
+        callservepushm
+          .nSAPSendOrders(this.params)
+          .then((res) => {
+            if (res.code == 200) {
+              this.dataForm = res.result;
+              this.$message({
+                type: "success",
+                message: "派单成功",
+              });
+              this.listQuery.QryState = 1;
+              this.listQuery.QryU_SAP_ID = "";
+              this.listQuery.limit=20
+              this.isClear = true
+              this.listQueryServer.page = 1
+              this.listQuery.page = 1
+              this.ifParent= ""
+              this.afterLeft();
+              this.dialogOrder = false;
+              this.listLoading = false;
+              //  this.getRightList();
+              this.loadingBtn = false
+            }
+          })
+          .catch((error) => {
+            this.$message({
+              type: "danger",
+              message: `${error}`,
+            });
+            this.listLoading = false;
+            this.loadingBtn = false
+          });
       }
     },
     async changeSearch(val) {
