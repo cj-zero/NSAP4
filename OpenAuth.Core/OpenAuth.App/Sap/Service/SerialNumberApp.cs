@@ -46,7 +46,7 @@ namespace OpenAuth.App.Sap.Service
                  .WhereIf(!string.IsNullOrEmpty(req.ManufSNOrItemCode), q => q.a.itemCode.Contains(req.ManufSNOrItemCode) || q.a.manufSN.Contains(req.ManufSNOrItemCode))
                  ;
 
-            var query2 = query.Select(q => new SerialNumberListResp
+            var query2 = query.Select(q => new 
             {
                 ManufSN = q.a.manufSN,
                 InternalSN = q.a.internalSN,
@@ -63,7 +63,7 @@ namespace OpenAuth.App.Sap.Service
                 .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), q => q.customer.Contains(req.CardCode))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), q => q.customer.Contains(req.CardName) || q.custmrName.Contains(req.CardName))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), q => q.itemCode.Contains(req.ItemCode))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.ItemName), q => q.itemCode.Contains(req.ItemName)).Select(q => new SerialNumberListResp
+                .WhereIf(!string.IsNullOrWhiteSpace(req.ItemName), q => q.itemCode.Contains(req.ItemName)).Select(q => new 
                 {
                     ManufSN = q.manufSN,
                     InternalSN = q.internalSN,
@@ -80,9 +80,10 @@ namespace OpenAuth.App.Sap.Service
                 var data1 = await query2.ToListAsync();
                 var data2 = await qqq.ToListAsync();
                 data1.AddRange(data2);
+                data1 = data1.Distinct().ToList();
                 result.Data = data1.Skip((req.page - 1) * req.limit)
                 .Take(req.limit).ToList();
-                result.Count = await query2.CountAsync() + await qqq.CountAsync();
+                result.Count = data1.Count();
                 return result;
             }
 
@@ -321,7 +322,7 @@ namespace OpenAuth.App.Sap.Service
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ItemName), q => q.ItemName.Contains(req.ItemName));
 
                 var MergeModels = query2.ToList().Union(ServiceOinsModels.ToList());
-
+               
                 //var data1 = await query2.ToListAsync();
                 //var data2 = await qqq.ToListAsync();
                 //data2.ForEach(o =>

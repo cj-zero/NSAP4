@@ -16,7 +16,9 @@ namespace OpenAuth.Repository
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-
+            modelBuilder.Entity<ReimburseInfo>(options => {
+                options.Ignore(e => e.ReimburseAttachments);
+            });
         }
         public virtual DbSet<Solution> Solutions { get; set; }
         public virtual DbSet<ProblemType> Problemtypes { get; set; }
