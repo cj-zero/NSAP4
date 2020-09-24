@@ -51,9 +51,6 @@
                       :size="item.size || 'mini'"
                     >{{ btnItem.btnText }}</el-button>
                   </template>
-                  <template v-else-if="item.label === '总金额'">
-                    {{ scope.row[item.prop] | toThousands }}
-                  </template>
                   <template v-else-if="item.label === '服务报告'">
                     <el-button @click="item.handleClick" size="mini" type="primary">{{ item.btnText }}</el-button>
                   </template>
@@ -81,14 +78,17 @@
         :btnList="btnList"
         :onClosed="closeDialog"
         :title="textMap[title]"
+        :loading="dialogLoading"
       >
         <order 
           ref="order" 
           :title="title"
           :detailData="detailData"
+          :categoryList="categoryList"
           :customerInfo="customerInfo">
         </order>
       </my-dialog>
+      <upload></upload>
   </div>
 </template>
 
@@ -96,19 +96,16 @@
 import TabList from '@/components/TabList'
 import Search from '@/components/Search'
 import Sticky from '@/components/Sticky'
-// import CommonTable from '@/components/CommonTable'
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
-// import tableData from './mock'
-// import { isSameObjectByValue } from '@/utils/validate'
-// import { deepClone } from '@/utils'
-import { commonSearch } from './common/js/search'
-import { tableMixin } from './common/js/mixins'
-import { getOrder, getList, getDetails, getCategoryName } from '@/api/reimburse'
+import { tableMixin, categoryMixin } from './common/js/mixins'
+import { getOrder } from '@/api/reimburse'
+import Upload from './upload'
 export default {
-  mixins: [tableMixin],
+  mixins: [tableMixin, categoryMixin],
   components: {
+    Upload,
     TabList,
     Search,
     Sticky,
@@ -117,12 +114,31 @@ export default {
     MyDialog,
     Order
   },
+  computed: {
+    searchConfig () {
+      return [
+        ...this.commonSearch,
+        { type: 'search' },
+        { type: 'button', btnText: '新建', handleClick: this.addAccount },
+        { type: 'button', btnText: '编辑', handleClick: this.getDetail, options: { type: 'edit' } },
+        { type: 'button', btnText: '撤回', handleClick: this.recall }
+      ]
+    }, // 搜索配置
+    btnList () {
+      return [
+        { btnText: '提交', handleClick: this.submit, loading: this.submitLoading },
+        { btnText: '存为草稿', handleClick: this.saveAsDraft, loading: this.draftLoading },
+        { btnText: '重置', handleClick: this.reset, isShow: this.title === 'create' },
+        { btnText: '关闭', handleClick: this.closeDialog }
+      ]
+    }
+  },
   data () {
     return {
       initialName: '', // 初始标签的值
       texts: [ // 标签数组
         { label: '全部', name: '' },
-        { label: '草稿箱', name: 'draft' },
+        { label: '草稿箱', name: '3' },
         { label: '报销中', name: '4' },
         { label: '已支付', name: '9' },
         { label: '已撤回/已驳回', name: '1' }
@@ -134,77 +150,26 @@ export default {
         { label: '已撤回', value: '3' },
         { label: '草稿箱', value: '4' }
       ],
-      searchConfig: [ // 搜索配置
-        ...commonSearch,
-        { type: 'search' },
-        { type: 'button', btnText: '新建', handleClick: this.addAccount },
-        { type: 'button', btnText: '编辑', handleClick: this.edit },
-        { type: 'button', btnText: '撤回', handleClick: this.recall }
-      ],
-      btnList: [
-        { btnText: '提交', handleClick: this.submit },
-        { btnText: '存为草稿', handleClick: this.saveAsDraft },
-        { btnText: '重置', handleClick: this.reset },
-        { btnText: '关闭', handleClick: this.closeDialog }
-      ],
-      customerInfo: {} // 当前报销人的id， 名字
-    }
+      customerInfo: {}, // 当前报销人的id， 名字
+      categoryList: [], // 字典数组
+      submitLoading: false, 
+      draftLoading: false,
+      editLoading: false,
+      dialogLoading: false
+    } 
   },
   methods: {
-    _getList () {
-      this.tableLoading = true
-      getList({
-        ...this.formQuery,
-        ...this.listQuery
-      }).then(res => {
-        let { data, count } = res
-        this.tableData = this._normalizeList(data).reverse()
-        this.total = count
-        console.log(res, 'res', this.tableData)
-        this.tableLoading = false
-      }).catch(() => {
-        this.tableLoading = false
-      })
-    },
-    _getCategoryName () {
-      getCategoryName().then(res => {
-        console.log(res, 'cate')
-      }).catch(() => {
-        this.$message.error('获取字典分类失败')
-      })
-    },
-    _normalizeList (data) {
-      return data.map(item => {
-        let { reimburseResp } = item
-        delete item.reimburseResp
-        item = Object.assign({}, item, { ...reimburseResp })
-        return item
-      })
-    },
-    handleCurrentChange ({page, limit}) {
-      this.listQuery.page = page
-      this.listQuery.limit = limit
-      this.isCurrentChange = true
-      this._getList('search')
-    },
     onTabChange (name) {
-      console.log('tabCHange', name)
-      if (name === 'draft') {
-        this.formQuery.isDraft = true
-        this.formQuery.remburseStatus = ''
-      } else {
-        this.formQuery.remburseStatus = name
-        this.formQuery.isDraft = false
-      }
+      this.listQuery.remburseStatus = name
+      console.log(this.listQuery.remburseStatus, 'status')
       this.listQuery.page = 1
-      this.getList()
+      this._getList()
     },
     onChangeForm (val) {
-      this.currentFormQuery = val
       Object.assign(this.listQuery, val)
     },
     onSearch () {
-      this._getList('search')
+      this._getList()
     },
     openTree (row) { // 打开详情
       console.log(row, 'row')
@@ -239,88 +204,73 @@ export default {
         this.$message.error('获取失败')
       })
     },
-    edit () {
-      if (!this.currentRow) {
-        return this.$message({
-          type: 'warning',
-          message: '请先选择报销单'
-        })
-      }
-      getDetails({
-        reimburseInfoId: this.currentRow.id
-      }).then(res => {
-        console.log(res, 'detail')
-        let { reimburseResp } = res.data
-        delete res.data.reimburseResp
-        this.detailData = Object.assign({}, res.data, { ...reimburseResp })
-        try {
-          this._normalizeDetail(this.detailData)
-        } catch (err) {
-          console.log(err, 'err')
-        }
-        
-        this.title = 'edit'
-        console.log(this.detailData, 'detialData')
-        this.$refs.myDialog.open()
-      }).catch(() => {
-        this.$message.error('获取详情失败')
-      })
-    },
-    _normalizeDetail (data) {
-      let { 
-        reimburseAttachments,
-        // reimburseTravellingAllowances,
-        reimburseFares,
-        reimburseAccommodationSubsidies,
-        reimburseOtherCharges 
-      } = data
-      data.attachmentsFileList = reimburseAttachments
-        .map(item => {
-          item.name = item.attachmentName
-          item.url = `${this.baseURL}/${item.fileId}?X-Token=${this.tokenValue}`
-          return item
-        })
-      data.reimburseAttachments = []
-      // this._buildAttachment(reimburseTravellingAllowances)
-      this._buildAttachment(reimburseFares)
-      this._buildAttachment(reimburseAccommodationSubsidies)
-      this._buildAttachment(reimburseOtherCharges)
-    },
-    _buildAttachment (data) { // 为了回显，并且编辑 目标是为了保证跟order.vue的数据保持相同的逻辑
-      data.forEach(item => {
-        let { reimburseAttachments } = item
-        console.log(reimburseAttachments, 'foeEach', item)
-        item.invoiceFileList = this.getTargetAttachment(reimburseAttachments, 2)
-        item.otherFileList = this.getTargetAttachment(reimburseAttachments, 1)
-        item.invoiceAttachment = [],
-        item.otherAttachment = []
-        item.reimburseAttachments = []
-      })
-    },
-    getTargetAttachment (data, attachmentType) { // 用于el-upload 回显
-      return data.filter(item => item.attachmentType === attachmentType)
-        .map(item => {
-          item.name = item.attachmentName
-          item.url = `${this.baseURL}/${item.fileId}?X-Token=${this.tokenValue}`
-          return item
-        })
-    },
     recall () { // 撤回操作
       console.log('recall')
     },
-    async submit () {
+    _addOrder (isDraft = false) {
+      isDraft
+        ? this.draftLoading = true
+        : this.submitLoading = true
+      this.dialogLoading = true
       console.log(this.$refs.order, 'order', this.$refs)
-      await this.$refs.order.submit()
-      this.$refs.order.resetInfo()
-      this.closeDialog()
-      this._getList()
-    }, // 提交
-    async saveAsDraft () {
-      await this.$refs.order.submit(true)
-      this.$refs.order.resetInfo()
-      this.closeDialog()
-      this._getList()
-    }, // 存为草稿
+      this.$refs.order.submit(isDraft).then(() => {
+        this.$message({
+          type: 'success',
+          message: '提交成功'
+        })
+        this._getList()
+        this.$refs.order.resetInfo()
+        this.closeDialog()
+        isDraft
+          ? this.draftLoading = false
+          : this.submitLoading = false
+        this.dialogLoading = false
+      }).catch(() => {
+        isDraft
+          ? this.draftLoading = false
+          : this.submitLoading = false
+        this.dialogLoading = false
+        this.$message.error('提交失败')
+      })
+    },
+    submit () { // 提交
+      this.title === 'create'
+        ? this._addOrder()
+        : this.edit()
+    }, 
+    saveAsDraft () { // 存为草稿
+      this.title === 'create' // 判断是新建的还是已经创建的
+        ? this._addOrder(true)
+        : this.edit(true)
+    }, 
+    edit (isDraft) {
+      // 编辑
+      console.log('草稿')
+      isDraft
+        ? this.draftLoading = true
+        : this.editLoading = true
+      this.dialogLoading = true
+      this.$refs.order.updateOrder().then(() => {
+        this.$message({
+          type: 'success',
+          message: '编辑成功'
+        })
+        this._getList()
+        this.$refs.order.resetInfo()
+        this.closeDialog()
+        isDraft
+          ? this.draftLoading = false
+          : this.editLoading = false
+        this.dialogLoading = false
+      }).catch((err) => {
+        console.log(err, 'err')
+        isDraft
+          ? this.draftLoading = false
+          : this.editLoading = false
+        this.dialogLoading = false
+        this.$message.error('编辑失败')
+      })
+    },
     reset () {
       this.$confirm('确定重置?', '提示', {
           confirmButtonText: '确定',
@@ -337,7 +287,9 @@ export default {
     }
   },
   created () {
+    this.listQuery.pageType = 1
     this._getList()
+    this._getCategoryName()
   },
   mounted () {
 

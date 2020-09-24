@@ -156,12 +156,6 @@ export default {
       handler(val){
           console.log(val, 'fileList')
       }
-    },
-    uploadType: {
-      immediate: true,
-      handler (val) {
-        console.log(val, 'uploadType')
-      }
     }
   },
   methods: {
@@ -169,13 +163,24 @@ export default {
       this.dialogVisible = false
     },
     handleRemove(file) {
-      let { uid } = file
+      let { uid, id } = file
+      if (this.fileList && this.fileList.length) { // 如果是fileList列表则直接通过id来判断，将id值传出去，用于删除附件
+        let findIndex = this.fileList.findIndex(item => item.id === id)
+        if (findIndex !== -1) { 
+          // 如果找到了，则说明删除的是fileList里面的值，这个时候不可以直接删除fileList中对应的元素，
+          // 因为会触发upload组件的fileList，引发图片错乱问题
+          // 通过向外传递fileList中删除的图片id，父组件调用接口的时候进行相应的传参
+          console.log(id, 'delete id')
+          return this.$emit('deleteFileList', id)
+        }
+      }
       let findIndex = this.newPictureList.findIndex(item => {
         return item.uid === uid
       })
       this.newPictureList.splice(findIndex, 1)
       this.pictures.splice(findIndex, 1)
-      this.$emit('get-ImgList', this.pictures, this.prop, this.index)
+      console.log(file, 'deleteFile')
+      // this.$emit('get-ImgList', this.pictures, this.prop, this.index)
     },
     handlePictureCardPreview(file) {
       this.dialogImageUrl = file.url;

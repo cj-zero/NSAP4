@@ -13,132 +13,259 @@
       <div class="app-container">
         <div class="bg-white">
           <div class="content-wrapper">
-            <common-table :data="tableData" :columns="columns" :loading="tableLoading"></common-table>
-            <div style="height: 50px;"></div>
-            <!-- <pagination 
+            <el-table 
+              ref="table"
+              :data="tableData" 
+              v-loading="tableLoading" 
+              size="mini"
+              border
+              fit
+              show-overflow-tooltip
+              height="100%"
+              style="width: 100%;"
+              @row-click="onRowClick"
+              highlight-current-row
+              >
+              <el-table-column
+                v-for="item in columns"
+                :key="item.prop"
+                :width="item.width"
+                :label="item.label"
+                :align="item.align || 'left'"
+                :sortable="item.isSort || false"
+                :type="item.originType || ''"
+              >
+                <template slot-scope="scope" >
+                  <div class="link-container" v-if="item.type === 'link'">
+                    <img :src="rightImg" @click="item.handleJump(scope.row)" class="pointer">
+                    <span>{{ scope.row[item.prop] }}</span>
+                  </div>
+                  <template v-else-if="item.type === 'operation'">
+                    <el-button 
+                      v-for="btnItem in item.actions"
+                      :key="btnItem.btnText"
+                      @click="btnItem.btnClick(scope.row)" 
+                      type="text" 
+                      :icon="item.icon || ''"
+                      :size="item.size || 'mini'"
+                    >{{ btnItem.btnText }}</el-button>
+                  </template>
+                  <template v-else-if="item.label === '服务报告'">
+                    <el-button @click="item.handleClick" size="mini" type="primary">{{ item.btnText }}</el-button>
+                  </template>
+                  <template v-else>
+                    {{ scope.row[item.prop] }}
+                  </template>
+                </template>    
+              </el-table-column>
+            </el-table>
+            <!-- <common-table :data="tableData" :columns="columns" :loading="tableLoading"></common-table> -->
+            <pagination
               v-show="total>0"
               :total="total"
               :page.sync="listQuery.page"
               :limit.sync="listQuery.limit"
               @pagination="handleCurrentChange"
-            />  -->
-            <!-- <div style="height: 52px;">dsadasd</div> -->
+            />
           </div>
         </div>
-        <my-dialog
-          ref="myDialog"
-          :center="true"
-          width="800px"
-          :btnList="btnList"
-        >
-          <order></order>
-        </my-dialog>
       </div>
+      <my-dialog
+        ref="myDialog"
+        :center="true"
+        width="800px"
+        :btnList="btnList"
+        :onClosed="closeDialog"
+        :title="textMap[title]"
+      >
+        <order 
+          ref="order" 
+          :title="title"
+          :detailData="detailData"
+          :categoryList="categoryList"
+          :customerInfo="customerInfo">
+        </order>
+      </my-dialog>
   </div>
 </template>
 
 <script>
 import Search from '@/components/Search'
 import Sticky from '@/components/Sticky'
-import CommonTable from '@/components/CommonTable'
-// import Pagination from '@/components/Pagination'
+import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
-import tableData from './mock'
-import { isSameObjectByValue } from '@/utils/validate'
-import { deepClone } from '@/utils'
-import { tableMixin } from './common/js/mixins'
-import { commonSearch } from './common/js/search'
+import { tableMixin, categoryMixin } from './common/js/mixins'
+import { getList, getDetails } from '@/api/reimburse'
+
 export default {
-  mixins: [tableMixin],
+  mixins: [tableMixin, categoryMixin],
   components: {
     Search,
     Sticky,
-    CommonTable,
-    // Pagination,
+    // CommonTable,
+    Pagination,
     MyDialog,
     Order
   },
+  computed: {
+    searchConfig () {
+      return [
+        ...this.commonSearch,
+        { type: 'search' },
+        { type: 'button', btnText: '审批', handleClick: this.approve }
+      ]
+    } // 搜索配置
+  },
   data () {
     return {
-      statusOptions: [ // 审核状态
-        { label: '全部', value: '' },
-        { label: '审批中', value: '1' },
-        { label: '已支付', value: '2' },
-        { label: '已撤回', value: '3' },
-        { label: '草稿箱', value: '4' }
-      ],
-      searchConfig: [ // 搜索配置
-        ...commonSearch,
-        { type: 'search' },
-        { type: 'button', btnText: '审批', handleClick: this.approval},
-      ],
-      listQuery: { // 分页参数
-        page: 1,
-        limit: 30
-      },
-      tableLoading: false,
       btnList: [
         { btnText: '同意', handleClick: this.agree },
-        { btnText: '驳回到发起人', handleClick: this.reject },
-        { btnText: '关闭', handleClick: this.closeDialog }
-      ]
+        { btnText: '驳回到发起人', handleClick: this.reject }
+      ],
+      customerInfo: {}, // 当前报销人的id， 名字
+      categoryList: [], // 字典数组
     }
   },
   methods: {
-    _getList (type) {
-      let { page, limit } = this.listQuery
-      this.totalTableData = tableData
-      if (type) {
-        if (this.isCurrentChange) {
-          this.tableData = tableData.slice((page - 1) * limit, limit * page - 1)
-          this.isCurrentChange = false // 将翻页标识置为false
-          console.log('current change')
-        } else if (this.currentFormQuery && !isSameObjectByValue(this.formQuery, this.currentFormQuery)) { // 判断
-          this.listQuery.page = 1
-          this.tableData = tableData.slice((page - 1) * limit, limit * page - 1)
-          this.formQuery = deepClone(this.currentFormQuery)
-        }
-      } else {
-        console.log('no search')
-        this.tableData = tableData.slice((page - 1) * limit, limit * page - 1)
-      }
-      console.log('getList')
+    _getList () {
+      this.tableLoading = true
+      console.log('before getList', this.formQuery, this.listQuery)
+      getList({
+        ...this.formQuery,
+        ...this.listQuery
+      }).then(res => {
+        let { data, count } = res
+        this.tableData = this._normalizeList(data).reverse()
+        this.total = count
+        console.log(res, 'res', this.tableData)
+        this.tableLoading = false
+      }).catch(() => {
+        this.tableLoading = false
+      })
+    },
+    _normalizeList (data) {
+      return data.map(item => {
+        let { reimburseResp } = item
+        delete item.reimburseResp
+        item = Object.assign({}, item, { ...reimburseResp })
+        return item
+      })
     },
     handleCurrentChange ({page, limit}) {
       this.listQuery.page = page
       this.listQuery.limit = limit
-      this.isCurrentChange = true
-      this._getList('search')
+      this._getList()
     },
     onChangeForm (val) {
       this.currentFormQuery = val
       Object.assign(this.listQuery, val)
     },
     onSearch () {
-      this._getList('search')
+      this._getList()
     },
     openTree (row) { // 打开详情
       console.log(row, 'row')
     },
-    approval () { // 添加
-      this.$refs.myDialog.open()
-      console.log('add')
+    approve () {
+      if (!this.currentRow) {
+        return this.$message({
+          type: 'warning',
+          message: '请先选择报销单'
+        })
+      }
+      getDetails({
+        reimburseInfoId: this.currentRow.id
+      }).then(res => {
+        console.log(res, 'detail')
+        let { reimburseResp } = res.data
+        delete res.data.reimburseResp
+        this.detailData = Object.assign({}, res.data, { ...reimburseResp })
+        try {
+          this._normalizeDetail(this.detailData)
+        } catch (err) {
+          console.log(err, 'err')
+        }
+        this.title = 'approve'
+        console.log(this.detailData, 'detialData')
+        this.$refs.myDialog.open()
+      }).catch(() => {
+        this.$message.error('获取详情失败')
+      })
     },
-    agree () {},
-    reject () {},
+    _normalizeDetail (data) {
+      let { 
+        reimburseAttachments,
+        // reimburseTravellingAllowances,
+        reimburseFares,
+        reimburseAccommodationSubsidies,
+        reimburseOtherCharges 
+      } = data
+      data.attachmentsFileList = reimburseAttachments
+        .map(item => {
+          item.name = item.attachmentName
+          item.url = `${this.baseURL}/${item.fileId}?X-Token=${this.tokenValue}`
+          return item
+        })
+      data.reimburseAttachments = []
+      // this._buildAttachment(reimburseTravellingAllowances)
+      this._buildAttachment(reimburseFares)
+      this._buildAttachment(reimburseAccommodationSubsidies)
+      this._buildAttachment(reimburseOtherCharges)
+    },
+    _buildAttachment (data) { // 为了回显，并且编辑 目标是为了保证跟order.vue的数据保持相同的逻辑
+      data.forEach(item => {
+        let { reimburseAttachments } = item
+        console.log(reimburseAttachments, 'foeEach', item)
+        item.invoiceFileList = this.getTargetAttachment(reimburseAttachments, 2)
+        item.otherFileList = this.getTargetAttachment(reimburseAttachments, 1)
+        item.invoiceAttachment = [],
+        item.otherAttachment = []
+        item.reimburseAttachments = []
+      })
+    },
+    getTargetAttachment (data, attachmentType) { // 用于el-upload 回显
+      return data.filter(item => item.attachmentType === attachmentType)
+        .map(item => {
+          item.name = item.attachmentName
+          item.url = `${this.baseURL}/${item.fileId}?X-Token=${this.tokenValue}`
+          return item
+        })
+    },
+    recall () { // 撤回操作
+      console.log('recall')
+    },
+    async agree () {
+      console.log('统一审批')
+      try {
+        await this.$refs.order.update()
+        this._getList()
+        this.$refs.order.resetInfo()
+        this.closeDialog()
+      } catch (err) {
+        this.$message.error('同意审批')
+      }
+    }, // 存为草稿
+    reject () {},// 驳回
+    reset () {
+      this.$confirm('确定重置?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          this.$refs.order.resetInfo()
+        })
+      // this.$refs.order.resetInfo()
+    }, // 重置
     closeDialog () {
+      this.$refs.order.resetInfo()
       this.$refs.myDialog.close()
     }
   },
-  computed: {
-    total () {
-      return this.totalTableData.length
-    }
-  },
   created () {
-    this.oldListQuery = JSON.parse(JSON.stringify(this.listQuery))
+    this.listQuery.pageType = 2
     this._getList()
+    this._getCategoryName()
   },
   mounted () {
 

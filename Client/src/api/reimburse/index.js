@@ -32,7 +32,7 @@ export function getDetails(params) { // 新建报销单获取当前用户客户�
   })
 }
 
-export function getList (params) {
+export function getList (params) { // 加载表格数据
   return request({
     url: '/serve/Reimburse/Load',
     method: 'get',
@@ -40,9 +40,18 @@ export function getList (params) {
   })
 }
 
-export function getCategoryName (params) {
+export function getCategoryName (params) { // 获取字典类别
   return request({
     url: '/serve/Reimburse/GetListCategoryName',
+    method: 'get',
+    params
+  })
+}
+
+
+export function withdraw (params) { // 撤销报销单
+  return request({
+    url: '/serve/Reimburse/Revocation',
     method: 'get',
     params
   })

@@ -51,5 +51,9 @@ export let customerColumns = [ // 用户信息表单配置
   { label: '报销人', prop: 'userName' },
   { label: '客户代码', prop: 'terminalCustomerId' },
   { label: '客户名称', prop: 'terminalCustomer' },
-  { label: '呼叫主题', prop: 'fromTheme' }
+  { label: '呼叫主题', prop: 'fromTheme' },
+  { label: '出发地点', prop: 'becity' },
+  { label: '到达地点', prop: 'destination' },
+  { label: '出发日期', prop: 'businessTripDate' },
+  { label: '结束日期', prop: 'endDate' },
 ]

@@ -75,7 +75,7 @@
         <el-button
           :key="index"
           class="filter-item"
-          @click="item.handleClick(listSearchQuery)"
+          @click="item.handleClick({ listSearchQuery, ...(item.options || {}) })"
           :icon="item.icon || ''"
           :size="item.size || 'mini'">
           {{ item.btnText ? item.btnText : '查询' }}
