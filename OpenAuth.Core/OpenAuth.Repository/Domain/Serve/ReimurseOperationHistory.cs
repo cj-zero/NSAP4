@@ -32,7 +32,12 @@ namespace OpenAuth.Repository.Domain
           this.Remark= string.Empty;
         }
 
-
+        /// <summary>
+        /// 报销单ID
+        /// </summary>
+        [Description("报销单ID")]
+        [Browsable(false)]
+        public int ReimburseInfoId { get; set; }
         /// <summary>
         /// 操作行为
         /// </summary>
@@ -69,5 +74,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("备注")]
         public string Remark { get; set; }
+
+        /// <summary>
+        /// 审批阶段
+        /// </summary>
+        [Description("审批阶段")]
+        public int? ApprovalStage { get; set; }
+        
     }
 }

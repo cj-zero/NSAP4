@@ -55,6 +55,12 @@ namespace OpenAuth.Repository.Domain
         [Description("备注")]
         public string Remark { get; set; }
 
+        /// <summary>
+        /// 创建时间
+        /// </summary>
+        [Description("创建时间")]
+        public DateTime? CreateTime { get; set; }
+
         public override void GenerateDefaultKeyVal()
         {
         }

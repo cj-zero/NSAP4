@@ -69,8 +69,9 @@ namespace OpenAuth.App
             var obj = req.MapTo<CompletionReport>();
 
             obj.CreateTime = DateTime.Now;
-            var user = _auth.GetCurrentUser().User;
-            obj.CreateUserId = user.Id;
+            //获取当前登陆者的nsap用户Id
+            var nsap_userId = (await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.CurrentUserId).FirstOrDefaultAsync())?.UserID;
+            obj.CreateUserId = nsap_userId;
             //obj.CreateUserName = user.Name;
             //todo:补充或调整自己需要的字段
             var o = await Repository.AddAsync(obj);
