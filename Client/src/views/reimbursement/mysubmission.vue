@@ -252,7 +252,8 @@ export default {
         : this.edit()
     }, 
     saveAsDraft () { // 存为草稿
-      this.title === 'edit' // 判断是新建的还是已经创建的
+      console.log(this.title, 'title')
+      this.title === 'create' // 判断是新建的还是已经创建的
         ? this._addOrder(true)
         : this.edit(true)
     }, 
