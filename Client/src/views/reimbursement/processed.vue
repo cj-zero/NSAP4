@@ -101,11 +101,7 @@ import Order from './common/components/order'
 import { tableMixin, categoryMixin } from './common/js/mixins'
 
 export default {
-  provide () {
-    return {
-      parentVm: this
-    }
-  },
+  name: 'processed',
   mixins: [tableMixin, categoryMixin],
   components: {
     Search,

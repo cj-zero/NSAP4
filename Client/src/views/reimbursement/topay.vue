@@ -100,11 +100,7 @@ import Order from './common/components/order'
 import { tableMixin, categoryMixin } from './common/js/mixins'
 
 export default {
-  provide () {
-    return {
-      parentVm: this
-    }
-  },
+  name: 'toPay',
   mixins: [tableMixin, categoryMixin],
   components: {
     Search,
@@ -119,15 +115,15 @@ export default {
       return [
         ...this.commonSearch,
         { type: 'search' },
-        { type: 'button', handleClick: this.getDetail, btnText: '支付', options:  { type: 'view' } }
+        { type: 'button', handleClick: this.getDetail, btnText: '支付', options:  { type: 'approve' } }
       ]
     } // 搜索配置
   },
   data () {
     return {
       btnList: [
-        { btnText: '同意', handleClick: this.agree },
-        { btnText: '驳回到发起人', handleClick: this.reject }
+        { btnText: '确认支付', handleClick: this.toPay },
+        { btnText: '关闭', handleClick: this.closeDialog }
       ],
       customerInfo: {}, // 当前报销人的id， 名字
       categoryList: [], // 字典数组
@@ -140,6 +136,9 @@ export default {
     },
     onSearch () {
       this._getList()
+    },
+    toPay () {
+      this.$refs.order.openRemarkDialog('pay')
     },
     closeDialog () {
       this.$refs.order.resetInfo()

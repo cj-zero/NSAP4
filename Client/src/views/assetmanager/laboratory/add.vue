@@ -791,7 +791,7 @@
 								id: '', //类别ID
 								assetId: '', //资产ID
 								categoryNumber: nums[i], //序号
-								categoryOhms: '-', //阻值
+								categoryOhms: encodeURIComponent('-'), //阻值
 								categoryNondeterminacy: '', //不确定度
 								categoryType:'' , //不确定类型
 								categoryTypeList:arrs[i],//不确定类型数组
@@ -829,7 +829,7 @@
 						this.isshowgz = false;
 						this.isshowflq = true;
 						console.log(this.commonArr2)
-						// this.formData.listcategory = [];
+						this.formData.listcategory = [];
 						this.formData.assetSerial = '3';
 						this.formData.listcategory.push({
 							id: '', //类别ID
@@ -849,6 +849,7 @@
 					this.isshowgz = false;
 					this.isshowflq = false;
 						this.formData.assetSerial = '4'
+						this.formData.listcategory = [];
 						break;
 					default:
 						this.isshowmeter = false;

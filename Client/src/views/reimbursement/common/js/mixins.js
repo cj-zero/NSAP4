@@ -87,7 +87,7 @@ export let tableMixin = {
         ...this.listQuery
       }).then(res => {
         let { data, count } = res
-        this.tableData = this._normalizeList(data).reverse()
+        this.tableData = this._normalizeList(data)
         this.total = count
         this.tableLoading = false
       }).catch(() => {
@@ -114,7 +114,7 @@ export let tableMixin = {
     },
     getDetail (val) { // 获取服务单详情
       let id
-      if (val.type === 'view') { // 如果是查看详情
+      if (val.type === 'view') { // 如果是点击底部表格里的查看详情
         id = val.id
       } else {
         if (!this.currentRow) { // 编辑审核等操作
@@ -338,7 +338,7 @@ export let categoryMixin = {
         { label: '填报时间', prop: 'fillDate', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
         // { label: '设备类型', prop: 'materialType', palceholder: '请输入内容', disabled: true, col: 6 },
         // { label: '解决方案', prop: 'solution', palceholder: '请输入内容', disabled: true, col: 6 },
-        { label: '费用承担', prop: 'bearToPay', palceholder: '请输入内容', disabled: !this.isCustomerSupervisor && this.title !== 'approve', 
+        { label: '费用承担', prop: 'bearToPay', palceholder: '请输入内容', disabled: (!this.isCustomerSupervisor && this.title !== 'approve') || this.title === 'view', 
           col: 6, type: 'select', options: EXPENSE_LIST
         },
         { label: '责任承担', prop: 'responsibility', palceholder: '请输入内容', 

@@ -483,6 +483,21 @@
         </el-table>
       </el-form>
     </div> 
+    <!-- 操作记录 -->
+    <template v-if="this.title !== 'create' && this.title !== 'edit'">
+      <el-table 
+        :data="formData.reimurseOperationHistories"
+        border
+        max-height="300px"
+      >
+        <el-table-column label="操作记录" prop="action"></el-table-column>
+        <el-table-column label="操作人" prop="createUser"></el-table-column>
+        <el-table-column label="操作时间" prop="createTime"></el-table-column>
+        <el-table-column label="审批时长" prop="intervalTime"></el-table-column>
+        <el-table-column label="审批结果" prop="approvalResult"></el-table-column>
+        <el-table-column label="备注" prop="remark"></el-table-column>
+      </el-table>
+    </template>
     <!-- 客户选择列表 -->
     <my-dialog 
       ref="customerDialog" 
@@ -626,6 +641,7 @@ export default {
         reimburseFares: [],
         reimburseAccommodationSubsidies: [],
         reimburseOtherCharges: [],
+        reimurseOperationHistories: [], // 操作记录 我的提交不可见
         isDraft: false, // 是否是草稿
         delteReimburse: [], // 需要删除的行数据
         fileId: [], // 需要删除的附件ID
@@ -661,7 +677,6 @@ export default {
       immediate: true,
       deep: true,
       handler (val) {
-        console.log(val, 'change')
         this.formData.createUserId = val.createUserId
         this.formData.userName = val.userName
         this.formData.orgName = val.orgName
@@ -695,7 +710,6 @@ export default {
           this.ifShowOther = false
         }
         Object.assign(this.formData, val)
-        console.log(this.formData, 'detailData', val)
       }
     },
     totalMoney (val) {
@@ -709,8 +723,7 @@ export default {
     }
   },
   computed: {
-    ifFormEdit () { // 
-      console.log(this)
+    ifFormEdit () { 
       return this.title === 'create' || this.title === 'edit'
     },
     totalMoney () {
@@ -751,7 +764,7 @@ export default {
       return result
     },
     rules () { // 报销单上层表单规则
-      console.log('rules roleName', this.isCustomerSupervisor)
+      // console.log('rules roleName', this.isCustomerSupervisor)
       return {
         serviceOrderSapId: [ { required: true } ],
         reimburseType: [ { required: true, trigger: ['change', 'blur'] } ],
@@ -783,15 +796,11 @@ export default {
       }
       return result
     },
-    onRearmkChange (val) {
-      console.log(val, 'remark change')
-    },
     setTravelMoney () {
       // 以R或者M开头都是65
       return /^[R|M]/i.test(this.formData.orgName) ? '65' : '50'
     },
     showForm (data, type) { // 展示表格
-      console.log(this.ifFormEdit, 'ifFormEdit')
       if (!this.ifFormEdit) return
       switch (type) {
         case 'ifShowTravel':
@@ -855,7 +864,6 @@ export default {
       )
     },
     async validate (ref ,data) {
-      console.log(this.$refs, data, ref, 'validate inner')
       let isValid = true
       if (!data) {
         isValid = await this.$refs[ref].validate()
@@ -886,7 +894,6 @@ export default {
                 // 只有有一个是false 就直接break
                 if (!ifInvoiceAttachment) break
               } else {
-                console.log('invoiceFIleList is none')
                 ifInvoiceAttachment = Boolean(invoiceAttachment && invoiceAttachment.length)
               }
             }
@@ -926,7 +933,6 @@ export default {
         attachmentType: 1
       })
       this.formData.reimburseAttachments = resultArr
-      console.log(this.formData.reimburseAttachments, 'fileList')
     },
     getTrafficList (val, prop, index) {
       let data = this.formData.reimburseFares
@@ -958,7 +964,6 @@ export default {
     setCurrentIndex (data, row) {
       this.currentRow = row
       this.currentIndex = findIndex(data, item => item === row)
-      console.log(this.currentIndex, 'currentIndex')
     },
     onTravelCellClick (row, column) {
       this.setCurrentProp(column, row)
@@ -981,7 +986,6 @@ export default {
       this.currentProp = property
     },
     onChange (value) { // 天数 总金额 计算
-      console.log(value, 'onchange')
       if (!this.isValidaNumber(value)) {
         return
       }
@@ -1054,7 +1058,6 @@ export default {
         console.log(this.formData.delteReimburse, 'deleterei')
       } 
       data.splice(scope.$index, 1)
-      console.log(data.length, 'datalength')
       if (!data.length) {
         console.log(IF_SHOW_MAP[type], 'IF_SHOW_MAP[type]')
         this[IF_SHOW_MAP[type]] = true
@@ -1064,7 +1067,6 @@ export default {
       let { $index } = scope
       let prevIndex = $index - 1
       let currentItem = data[$index]
-      console.log(currentItem)
       // let { invoiceFileList, otherFileList } = 
       this.$set(data, $index, data[prevIndex])
       this.$set(data, prevIndex, currentItem)
@@ -1123,7 +1125,6 @@ export default {
     },
     customerFocus (prop) {
       if (prop === 'serviceOrderSapId') {
-        console.log('focus')
         this.$refs.customerDialog.open()
       }
     },
@@ -1147,7 +1148,6 @@ export default {
       this.$refs.customerDialog.close()
     },
     confirm () {
-      console.log(this.$refs.customerTable)
       let currentRow = this.$refs.customerTable.getCurrentRow()
       if (Object.keys(currentRow).length) {
         let { 
@@ -1174,6 +1174,8 @@ export default {
         formData.endDate = endDate
         formData.destination = destination
       }
+      this.$refs.customerTable.resetRadio()
+      this.currentRow = {}
       this.closeDialog()
     },
     openRemarkDialog (type) { // 打开备注弹窗，二次确认
@@ -1283,9 +1285,7 @@ export default {
       let isValid = await this.checkData()
       console.log('submit', isValid, isDraft)
       if (!isValid) {
-        console.log('error')
-        this.$message.error('请将必填项填写完整')
-        return Promise.reject('操作失败')
+        return Promise.reject({ message: '请将必填项填写完整' })
       }
       this.formData.isDraft = isDraft ? true : false
       console.log(this.formData, 'formData', addOrder)
@@ -1310,8 +1310,7 @@ export default {
       let isValid = await this.checkData()
       console.log('submit', isValid, isDraft)
       if (!isValid) {
-        this.$message.error('请将必填项填写完整')
-        return Promise.reject('操作失败')
+        return Promise.reject({ message: '请将必填项填写完整' })
       }
       this.formData.isDraft = isDraft ? true : false
       console.log(this.formData, 'update formData')
@@ -1371,6 +1370,18 @@ export default {
 .order-wrapper {
   max-height: 600px;
   overflow-y: auto;
+  ::v-deep .el-input.is-disabled .el-input__inner {
+    background-color: #fff;
+    cursor: default;
+    color: #606266;
+    border-color: #DCDFE6;
+  }
+  ::v-deep .el-textarea.is-disabled .el-textarea__inner {
+    background-color: #fff;
+    cursor: default;
+    color: #606266;
+    border-color: #DCDFE6;
+  }
   &::-webkit-scrollbar {
     display: none;
   }

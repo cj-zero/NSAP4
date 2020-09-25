@@ -88,7 +88,9 @@
           :customerInfo="customerInfo">
         </order>
       </my-dialog>
-      <upload></upload>
+      <!-- <el-input style="width:100px;" size="mini" class="input-inner">
+        <i slot="suffix" style="text-align:center;">%</i>
+      </el-input> -->
   </div>
 </template>
 
@@ -101,11 +103,10 @@ import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
 import { tableMixin, categoryMixin } from './common/js/mixins'
 import { getOrder, withdraw } from '@/api/reimburse'
-import Upload from './upload'
 export default {
+  name: 'mySubmission',
   mixins: [tableMixin, categoryMixin],
   components: {
-    Upload,
     TabList,
     Search,
     Sticky,
@@ -238,12 +239,12 @@ export default {
           ? this.draftLoading = false
           : this.submitLoading = false
         this.dialogLoading = false
-      }).catch(() => {
+      }).catch(err => {
         isDraft
           ? this.draftLoading = false
           : this.submitLoading = false
         this.dialogLoading = false
-        this.$message.error('提交失败')
+        this.$message.error(err.message)
       })
     },
     submit () { // 提交

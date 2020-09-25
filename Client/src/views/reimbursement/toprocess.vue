@@ -100,6 +100,7 @@ import Order from './common/components/order'
 import { tableMixin, categoryMixin } from './common/js/mixins'
 
 export default {
+  name: 'toProcess',
   mixins: [tableMixin, categoryMixin],
   components: {
     Search,

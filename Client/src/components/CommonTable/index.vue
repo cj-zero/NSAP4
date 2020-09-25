@@ -98,6 +98,9 @@ export default {
     tableRowClassName ({ row, rowIndex }) {
       // 把每一行的index加到row中
       row.index = rowIndex
+    },
+    resetRadio () {
+      this.radio = ''
     }
   },
   created () {
