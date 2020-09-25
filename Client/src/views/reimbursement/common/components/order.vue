@@ -1304,6 +1304,9 @@ export default {
       this.mergeFileList(reimburseAccommodationSubsidies)
       this.mergeFileList(reimburseOtherCharges)
       this.mergeFileList(reimburseFares)
+      this.addSerialNumber(reimburseAccommodationSubsidies)
+      this.addSerialNumber(reimburseOtherCharges)
+      this.addSerialNumber(reimburseFares)
       let isValid = await this.checkData()
       console.log('submit', isValid, isDraft)
       if (!isValid) {
