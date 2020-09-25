@@ -27,7 +27,6 @@
           <el-form-item label="部门" required>
             <el-autocomplete
               v-model="formData.orgId"
-              :fetch-suggesstions="querySearchAsync"
               placeholder="请输入部门"
               @select="handleSelect"
             ></el-autocomplete>
@@ -98,7 +97,7 @@
           </el-form-item>
         </el-col>
         <el-col :span="11">
-          <el-form-item label="校准证书">
+          <el-form-item label="校准证书" required>
             <el-upload
               ref="assetJZCertificate"
               class="avatar-uploader"
@@ -319,7 +318,7 @@ export default {
       }
     },
     handleSuccessJZ (res, file) { // 校准证书图片
-      this.setImg('assetJZCertificate', file)
+      this.setImg('assetJZCertificate', file);
     },
     handleSuccessData1 (res, file) { // 数据1
       this.setImg('assetJZData1', file)
