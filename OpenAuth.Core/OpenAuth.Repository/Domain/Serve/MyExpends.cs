@@ -33,6 +33,7 @@ namespace OpenAuth.Repository.Domain
           this.Remark= string.Empty;
           this.CreateTime= DateTime.Now;
           this.ExpenseCategory= string.Empty;
+          this.ReimburseType = 0;
         }
 
 
@@ -41,6 +42,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("费用类型")]
         public string FeeType { get; set; }
+
+        /// <summary>
+        /// 报销单据类型(1 出差补贴， 2 交通费用， 3住宿补贴， 4 其他费用)
+        /// </summary>
+        [Description("报销单据类型")]
+        public int? ReimburseType { get; set; }
         /// <summary>
         /// 序号
         /// </summary>

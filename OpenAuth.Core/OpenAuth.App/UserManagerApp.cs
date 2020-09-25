@@ -390,8 +390,8 @@ namespace OpenAuth.App
             var userIds = _revelanceApp.Get(Define.USERORG, false, ids);
 
             var result = new TableData();
-            var objs = UnitWork.Find<User>(null);
-            objs = objs.WhereIf(!string.IsNullOrWhiteSpace(name),u => u.Name.Contains(name) && userIds.Contains(u.Id));
+            var objs = UnitWork.Find<User>(u=>userIds.Contains(u.Id));
+            objs = objs.WhereIf(!string.IsNullOrWhiteSpace(name),u => u.Name.Contains(name));
             result.Data = objs.Select(u => new { u.Name, u.Id }).ToList();
             return result;
         }

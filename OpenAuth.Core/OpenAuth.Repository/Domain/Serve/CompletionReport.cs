@@ -254,11 +254,17 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("解决方案")]
         public string ProcessDescription { get; set; }
+        /// <summary>
+        /// 是否报销过
+        /// </summary>
+        [Description("是否报销过")]
+        public int? IsReimburse { get; set; }
 
         /// <summary>
         /// 完工报告关联的图片
         /// </summary>
         [Ignore]
         public virtual List<CompletionReportPicture> CompletionReportPictures { get; set; }
+
     }
 }
