@@ -183,7 +183,6 @@
           show-summary
           max-height="300px"
           @cell-click="onTrafficCellClick"
-          @cell-mouse-enter="onTrafficCellMouseEnter"
         >
           <!-- <el-table-column label="交通费用" header-align="center"> -->
             <el-table-column
@@ -241,6 +240,7 @@
                     uploadType="file" 
                     ref="trafficUploadFile" 
                     :prop="item.prop" 
+                    :index="scope.$index"
                     @deleteFileList="deleteFileList"
                     :fileList="
                       formData.reimburseFares[scope.$index] 
@@ -289,7 +289,6 @@
           :summary-method="getSummaries"
           show-summary
           max-height="300px"
-          @cell-mouse-enter="onAccCellMouseEnter"
           @cell-click="onAccCellClick"
         >
           <!-- <el-table-column label="住房补贴" header-align="center"> -->
@@ -348,6 +347,7 @@
                     uploadType="file" 
                     ref="accUploadFile" 
                     :prop="item.prop" 
+                    :index="scope.$index"
                     @deleteFileList="deleteFileList"
                     :fileList="
                       formData.reimburseAccommodationSubsidies[scope.$index] 
@@ -398,7 +398,6 @@
           show-summary
           max-height="300px"
           @cell-click="onOtherCellClick"
-          @cell-mouse-enter="onOtherCellMouseEnter"
         >
           <!-- <el-table-column label="其他费用" header-align="center"> -->
             <el-table-column
@@ -456,6 +455,7 @@
                     uploadType="file" 
                     ref="otherUploadFile" 
                     :prop="item.prop"
+                    :index="scope.$index"
                     @deleteFileList="deleteFileList"
                     :fileList="
                       formData.reimburseOtherCharges[scope.$index] 
@@ -797,7 +797,6 @@ export default {
         case 'ifShowTravel':
           data.push({
             id: '',
-            serialNumber: 0,
             days: '',
             money: this.setTravelMoney(),
             remark: '',
@@ -806,7 +805,6 @@ export default {
         case 'ifShowTraffic':
           data.push({
             id: '',
-            serialNumber: 1,
             trafficType: '',
             transport: '',
             from: '',
@@ -823,7 +821,6 @@ export default {
         case 'ifShowAcc':
           data.push({
             id: '',
-            serialNumber: 1,
             days: '',
             money: '',
             totalMoney: '',
@@ -838,7 +835,6 @@ export default {
         case 'ifShowOther':
           data.push({
             id: '',
-            serialNumber: 1,
             expenseCategory: '',
             money: '',
             remark: '',
@@ -855,7 +851,7 @@ export default {
       return !(
         (icon === 'el-icon-top' && index === 0) ||
         (icon === 'el-icon-bottom' && index === data.length - 1) || 
-        (icon === 'el-icon-delete' && index === 0)
+        (icon === 'el-icon-delete' && index === 0) 
       )
     },
     async validate (ref ,data) {
@@ -929,64 +925,55 @@ export default {
         reimburseType: 0,
         attachmentType: 1
       })
-      console.log(resultArr, 'resultArr')
       this.formData.reimburseAttachments = resultArr
       console.log(this.formData.reimburseAttachments, 'fileList')
     },
-    getTrafficList (val, prop) {
+    getTrafficList (val, prop, index) {
       let data = this.formData.reimburseFares
       let resultArr = []
       resultArr = this.createFileList(val, {
         reimburseType: 2,
         attachmentType: prop === 'invoiceAttachment' ? 2 : 1
       })
-      this.$set(data[this.currentIndex], prop, resultArr)
+      this.$set(data[index], prop, resultArr)
     },
-    getAccList (val, prop) {
+    getAccList (val, prop, index) {
       let data = this.formData.reimburseAccommodationSubsidies
       let resultArr = []
       resultArr = this.createFileList(val, {
         reimburseType: 3,
         attachmentType:  prop === 'invoiceAttachment' ? 2 : 1
       })
-      console.log(data[this.currentIndex], prop, resultArr, 'getAccList')
-      this.$set(data[this.currentIndex],  prop, resultArr)
+      this.$set(data[index],  prop, resultArr)
     },
-    getOtherList (val, prop) {
+    getOtherList (val, prop, index) {
       let data = this.formData.reimburseOtherCharges
       let resultArr = []
       resultArr = this.createFileList(val, {
         reimburseType: 4,
         attachmentType: prop === 'invoiceAttachment' ? 2 : 1
       })
-      this.$set(data[this.currentIndex], prop, resultArr)
-      console.log(this.formData, 'formData', data[this.currentIndex], prop, resultArr, 'getOtherList')
+      this.$set(data[index], prop, resultArr)
     },
     setCurrentIndex (data, row) {
       this.currentRow = row
       this.currentIndex = findIndex(data, item => item === row)
+      console.log(this.currentIndex, 'currentIndex')
     },
     onTravelCellClick (row, column) {
       this.setCurrentProp(column, row)
-      // console.log(row, column, cell, event, 'cellChange')
     },
     onTrafficCellClick (row, column) {
-      this.setCurrentProp(column, row)
-      // console.log(row, column, cell, event, 'cellChange')
+      this.setCurrentProp(column, row)+
+      this.setCurrentIndex(this.formData.reimburseFares, row)
     },
     onAccCellClick (row, column) {
-      this.setCurrentProp(column, row)
+      console.log('cell click')
+      this.setCurrentProp(column, row)+
+      this.setCurrentIndex(this.formData.reimburseAccommodationSubsidies, row)
     },
     onOtherCellClick (row, column) {
       this.setCurrentProp(column, row)
-    },
-    onTrafficCellMouseEnter (row) {
-      this.setCurrentIndex(this.formData.reimburseFares, row)
-    },
-    onAccCellMouseEnter (row) {
-      this.setCurrentIndex(this.formData.reimburseAccommodationSubsidies, row)
-    },
-    onOtherCellMouseEnter (row) {
       this.setCurrentIndex(this.formData.reimburseOtherCharges, row)
     },
     setCurrentProp ({ label, property }) {
@@ -1011,12 +998,11 @@ export default {
     addAndCopy (scope, data, type, operationType) {
       if (!this.ifFormEdit) return
       console.log(scope.row, data, type, operationType, 'operationType') // 判断是新增还是复制
-      let { row, $index } = scope
+      let { row } = scope
       switch (type) {
         case 'traffic':
           data.push({
             id: '',
-            serialNumber: $index + 2,
             trafficType: operationType === 'add' ? '' : row.trafficType,
             transport: operationType === 'add' ? '' : row.transport,
             from: operationType === 'add' ? '' : row.from,
@@ -1033,7 +1019,6 @@ export default {
         case 'accommodation':
           data.push({
             id: '',
-            serialNumber: $index + 2,
             days: operationType === 'add' ? '' : row.days,
             money: operationType === 'add' ? '' : row.money,
             totalMoney: operationType === 'add' ? '' : row.totalMoney,
@@ -1048,7 +1033,6 @@ export default {
         case 'other':
           data.push({
             id: '',
-            serialNumber: $index + 2,
             expenseCategory: operationType === 'add' ? '' : row.expenseCategory,
             money: operationType === 'add' ? '' : row.money,
             remark: operationType === 'add' ? '' : row.remark,
@@ -1258,6 +1242,11 @@ export default {
         item.reimburseAttachments = [...invoiceAttachment, ...otherAttachment, ...invoiceFileList, ...otherFileList]
       })
     },
+    addSerialNumber (data) { // 为表格的数据添加序号
+      data.forEach((item, index) => {
+        item.serialNumber = index + 1
+      })
+    },
     async checkData () { // 校验表单数据是否通过
       let isFormValid = true, isTravelValid = true, isTrafficValid = true, isAccValid = true, isOtherValid = true
       isFormValid = await this.validate('form')
@@ -1288,6 +1277,9 @@ export default {
       this.mergeFileList(reimburseAccommodationSubsidies)
       this.mergeFileList(reimburseOtherCharges)
       this.mergeFileList(reimburseFares)
+      this.addSerialNumber(reimburseAccommodationSubsidies)
+      this.addSerialNumber(reimburseOtherCharges)
+      this.addSerialNumber(reimburseFares)
       let isValid = await this.checkData()
       console.log('submit', isValid, isDraft)
       if (!isValid) {
@@ -1300,6 +1292,7 @@ export default {
       return addOrder(this.formData)
     },
     async updateOrder (isDraft) { // 编辑
+      console.log(isDraft, 'isDraft')
       let { 
         reimburseAccommodationSubsidies, 
         reimburseOtherCharges, 

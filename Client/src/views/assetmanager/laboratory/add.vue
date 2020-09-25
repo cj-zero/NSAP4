@@ -188,9 +188,10 @@
 				</el-table-column>
 				<el-table-column label="类型" prop="categoryType" autosize>
 					<template slot-scope='scope'>
-						<el-select placeholder="请选择" v-model="scope.row.categoryType" @change='changeMeterDW'>
+						<!-- <el-select placeholder="请选择" v-model="scope.row.categoryType" @change='changeMeterDW'>
 							<el-option v-for="item in scope.row.categoryTypeList" :label="item" :value="item" :key="item"></el-option>
-						</el-select>
+						</el-select> -->
+						<Select :options="scope.row.categoryTypeList" :index="scope.$index" @change="changeMeterDW"></Select>
 					</template>
 				</el-table-column>
 				<el-table-column label="包含因子(k)" prop="categoryBHYZ" autosize>
@@ -219,9 +220,10 @@
 				</el-table-column>
 				<el-table-column label="类型" prop="categoryType" autosize>
 					<template slot-scope='scope'>
-						<el-select placeholder="请选择" v-model="scope.row.categoryType" @change='changeGzDW'>
-							<el-option v-for="item in scope.row.categoryArr" :label="item" :value="item" :key="item"></el-option>
-						</el-select>
+						<!-- <el-select placeholder="请选择" v-model="scope.row.categoryType" @change='changeGzDW'>
+							<el-option v-for="item in commonArr" :label="item.label" :value="item.value" :key="item.value"></el-option>
+						</el-select> -->
+						<Select :options="commonArr" :index="scope.$index" @change="changeGzDW"></Select>
 					</template>
 				</el-table-column>
 				<el-table-column label="包含因子(k)" prop="categoryBHYZ" autosize>
@@ -251,9 +253,11 @@
 				</el-table-column>
 				<el-table-column label="类型" prop="categoryType" autosize>
 					<template slot-scope='scope'>
-						<el-select placeholder="请选择" v-model="scope.row.categoryType" @change='changeFlqDW'>
-							<el-option v-for="item in scope.row.catergoryflqArr" :label="item" :value="item" :key="item"></el-option>
-						</el-select>
+						<!-- <el-select placeholder="请选择" v-model="scope.row.categoryType" @change='changeFlqDW'>
+							<el-option v-for="item in commonArr2" :label="item.label" :value="item.value" :key="item.value">
+							</el-option>
+						</el-select> -->
+						<Select :options="commonArr" :index="scope.$index" @change="changeFlqDW"></Select>
 					</template>
 				</el-table-column>
 				<el-table-column label="包含因子(k)" prop="categoryBHYZ" autosize>
@@ -307,8 +311,12 @@
 		add
 	} from '@/api/assetmanagement'
 	import assetMixin from './mixin/mixin'
+	import Select from './select'
 	export default {
 		mixins: [assetMixin],
+		components: {
+			Select
+		},
 		props: {
 			type: {
 				type: String,
@@ -317,6 +325,26 @@
 		},
 		data() {
 			return {
+				commonArr: [{
+					name: '绝对不确定度(Ω)',
+					value: '绝对不确定度(Ω)'
+				},{
+					name: '相对不确定度(ppm)',
+					value: '相对不确定度(ppm)'
+				},{
+					name: '相对不确定度(%)',
+					value: '相对不确定度(%)'
+				}],
+				commonArr2: [{
+					name: '绝对不确定度(Ω)',
+					value: '绝对不确定度(Ω)'
+				},{
+					name: '相对不确定度(ppm)',
+					value: '相对不确定度(ppm)'
+				},{
+					name: '相对不确定度(%)',
+					value: '相对不确定度(%)'
+				}],
 				config: {
 					name: ''
 				},
@@ -461,6 +489,9 @@
 			}
 		},
 		watch: {
+			'formData.listcategory' (val) {
+				console.log('listcategory change', val)
+			},
 			'formData.assetJZCertificate'(val) {
 				this.toggleInputDisabled('assetJZCertificate', val)
 			},
@@ -606,13 +637,16 @@
 			},
 			//转换万用表单位
 			changeMeterDW(type) {
-				if (type.indexOf('V') != -1) {
+				let { val, index } = type
+				console.log(type, 'val', index)
+				// val 就是选中的值 index 表格当前行的索引值
+				if (val.indexOf('V') != -1) {
 					this.changeDW(this.formData.listcategory, 'V');
-				} else if (type.indexOf('%') != -1) {
+				} else if (val.indexOf('%') != -1) {
 					this.changeDW(this.formData.listcategory, '%');
-				} else if (type.indexOf('A') != -1) {
+				} else if (val.indexOf('A') != -1) {
 					this.changeDW(this.formData.listcategory, 'A');
-				} else if (type.indexOf('Ω') != -1) {
+				} else if (val.indexOf('Ω') != -1) {
 					this.changeDW(this.formData.listcategory, 'Ω');
 				}
 			},
@@ -740,7 +774,8 @@
 				//console.log('当前为 '+this.currentIndex+'行');
 			},
 			onTypeChange(val) {
-				var comonArr=[['绝对不确定度(Ω)','相对不确定度(ppm)','相对不确定度(%)']];
+				// var comonArr=['绝对不确定度(Ω)','相对不确定度(ppm)','相对不确定度(%)'];
+				// let comonArr = ['绝对不确定度(Ω)','相对不确定度(ppm)','相对不确定度(%)']
 				switch (val) {
 					case '万用表':
 						this.isshowmeter = true;
@@ -750,6 +785,7 @@
 						var arrs=[['相对不确定度(%)','绝对不确定度(V)'],['相对不确定度(%)','绝对不确定度(V)'],['相对不确定度(%)','绝对不确定度(A)'],['相对不确定度(%)','绝对不确定度(A)'],['相对不确定度(%)','绝对不确定度(Ω)']];
 						this.formData.listcategory = [];
 						this.formData.assetSerial = '1';
+						this.formData.listcategory = []
 						for (let i = 0; i < 5; i++) {
 							this.formData.listcategory.push({
 								id: '', //类别ID
@@ -770,7 +806,8 @@
 						this.isshowgz = true;
 						this.isshowflq = false;
 						var arr = ['R1', 'R2', 'R3', 'R4'];
-						this.formData.listcategory = [];
+						console.log(this.commonArr, 'commonArr')
+						// this.formData.listcategory = [];
 						this.formData.assetSerial = '2';
 						for (let i = 0; i < 4; i++) {
 							this.formData.listcategory.push({
@@ -780,17 +817,19 @@
 								categoryOhms: '', //阻值
 								categoryNondeterminacy: '', //不确定度
 								categoryType: '', //不确定类型
-								categoryArr:comonArr[0],//不确定类型数组
+								// categoryArr: this.commonArr,//不确定类型数组
 								categoryBHYZ: '', //包含因子
 								categoryAort: '' //排序
 							})
 						}
+						console.log(this.formData.listcategory)
 						break;
 					case '分流器':
 						this.isshowmeter = false;
 						this.isshowgz = false;
 						this.isshowflq = true;
-						this.formData.listcategory = [];
+						console.log(this.commonArr2)
+						// this.formData.listcategory = [];
 						this.formData.assetSerial = '3';
 						this.formData.listcategory.push({
 							id: '', //类别ID
@@ -799,10 +838,11 @@
 							categoryOhms: '', //阻值
 							categoryNondeterminacy: '', //不确定度
 							categoryType: '', //不确定类型
-							catergoryflqArr:comonArr[0],//不确定类型数组
+							// catergoryflqArr: this.commonArr2,//不确定类型数组
 							categoryBHYZ: '', //包含因子
 							categoryAort: '' //排序
 						})
+						console.log(this.formData.listcategory)
 						break;
 					case '标准源':
 					this.isshowmeter = false;

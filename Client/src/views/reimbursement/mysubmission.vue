@@ -264,7 +264,7 @@ export default {
         ? this.draftLoading = true
         : this.editLoading = true
       this.dialogLoading = true
-      this.$refs.order.updateOrder().then(() => {
+      this.$refs.order.updateOrder(isDraft).then(() => {
         this.$message({
           type: 'success',
           message: '编辑成功'

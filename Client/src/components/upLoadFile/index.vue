@@ -180,7 +180,7 @@ export default {
       this.newPictureList.splice(findIndex, 1)
       this.pictures.splice(findIndex, 1)
       console.log(file, 'deleteFile')
-      // this.$emit('get-ImgList', this.pictures, this.prop, this.index)
+      this.$emit('get-ImgList', this.pictures, this.prop, this.index)
     },
     handlePictureCardPreview(file) {
       this.dialogImageUrl = file.url;
