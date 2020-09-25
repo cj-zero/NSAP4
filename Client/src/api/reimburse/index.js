@@ -56,3 +56,11 @@ export function withdraw (params) { // 撤销报销单
     params
   })
 }
+
+export function approve (data) {
+  return request({
+    url: '/serve/Reimburse/Accraditation',
+    method: 'post',
+    data
+  })
+}

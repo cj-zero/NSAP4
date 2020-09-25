@@ -107,3 +107,9 @@ export const RESPONSIBILITY_MAP = {
   6: '售前环节',
   7: '售后环节'
 }
+
+export const EXPENSE_LIST = [
+  { label: '请选择', value: '' },
+  { label: '公司承担', value: '1' },
+  { label: '部门承担', value: '2' },
+]

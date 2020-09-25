@@ -37,7 +37,7 @@
               >
                 <template slot-scope="scope" >
                   <div class="link-container" v-if="item.type === 'link'">
-                    <img :src="rightImg" @click="item.handleJump(scope.row)" class="pointer">
+                    <img :src="rightImg" @click="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
                     <span>{{ scope.row[item.prop] }}</span>
                   </div>
                   <template v-else-if="item.type === 'operation'">
@@ -70,13 +70,15 @@
           </div>
         </div>
       </div>
+      <!-- 审核弹窗 -->
       <my-dialog
         ref="myDialog"
         :center="true"
-        width="800px"
+        width="1000px"
         :btnList="btnList"
         :onClosed="closeDialog"
-        :title="textMap[title]"
+        title="审核"
+        :loading="dialogLoading"
       >
         <order 
           ref="order" 
@@ -96,7 +98,6 @@ import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
 import { tableMixin, categoryMixin } from './common/js/mixins'
-import { getList, getDetails } from '@/api/reimburse'
 
 export default {
   mixins: [tableMixin, categoryMixin],
@@ -113,7 +114,7 @@ export default {
       return [
         ...this.commonSearch,
         { type: 'search' },
-        { type: 'button', btnText: '审批', handleClick: this.approve }
+        { type: 'button', btnText: '审批', handleClick: this.getDetail, options:  { type: 'approve' } }
       ]
     } // 搜索配置
   },
@@ -128,35 +129,6 @@ export default {
     }
   },
   methods: {
-    _getList () {
-      this.tableLoading = true
-      console.log('before getList', this.formQuery, this.listQuery)
-      getList({
-        ...this.formQuery,
-        ...this.listQuery
-      }).then(res => {
-        let { data, count } = res
-        this.tableData = this._normalizeList(data).reverse()
-        this.total = count
-        console.log(res, 'res', this.tableData)
-        this.tableLoading = false
-      }).catch(() => {
-        this.tableLoading = false
-      })
-    },
-    _normalizeList (data) {
-      return data.map(item => {
-        let { reimburseResp } = item
-        delete item.reimburseResp
-        item = Object.assign({}, item, { ...reimburseResp })
-        return item
-      })
-    },
-    handleCurrentChange ({page, limit}) {
-      this.listQuery.page = page
-      this.listQuery.limit = limit
-      this._getList()
-    },
     onChangeForm (val) {
       this.currentFormQuery = val
       Object.assign(this.listQuery, val)
@@ -167,96 +139,25 @@ export default {
     openTree (row) { // 打开详情
       console.log(row, 'row')
     },
-    approve () {
-      if (!this.currentRow) {
-        return this.$message({
-          type: 'warning',
-          message: '请先选择报销单'
-        })
-      }
-      getDetails({
-        reimburseInfoId: this.currentRow.id
-      }).then(res => {
-        console.log(res, 'detail')
-        let { reimburseResp } = res.data
-        delete res.data.reimburseResp
-        this.detailData = Object.assign({}, res.data, { ...reimburseResp })
-        try {
-          this._normalizeDetail(this.detailData)
-        } catch (err) {
-          console.log(err, 'err')
-        }
-        this.title = 'approve'
-        console.log(this.detailData, 'detialData')
-        this.$refs.myDialog.open()
-      }).catch(() => {
-        this.$message.error('获取详情失败')
-      })
-    },
-    _normalizeDetail (data) {
-      let { 
-        reimburseAttachments,
-        // reimburseTravellingAllowances,
-        reimburseFares,
-        reimburseAccommodationSubsidies,
-        reimburseOtherCharges 
-      } = data
-      data.attachmentsFileList = reimburseAttachments
-        .map(item => {
-          item.name = item.attachmentName
-          item.url = `${this.baseURL}/${item.fileId}?X-Token=${this.tokenValue}`
-          return item
-        })
-      data.reimburseAttachments = []
-      // this._buildAttachment(reimburseTravellingAllowances)
-      this._buildAttachment(reimburseFares)
-      this._buildAttachment(reimburseAccommodationSubsidies)
-      this._buildAttachment(reimburseOtherCharges)
-    },
-    _buildAttachment (data) { // 为了回显，并且编辑 目标是为了保证跟order.vue的数据保持相同的逻辑
-      data.forEach(item => {
-        let { reimburseAttachments } = item
-        console.log(reimburseAttachments, 'foeEach', item)
-        item.invoiceFileList = this.getTargetAttachment(reimburseAttachments, 2)
-        item.otherFileList = this.getTargetAttachment(reimburseAttachments, 1)
-        item.invoiceAttachment = [],
-        item.otherAttachment = []
-        item.reimburseAttachments = []
-      })
-    },
-    getTargetAttachment (data, attachmentType) { // 用于el-upload 回显
-      return data.filter(item => item.attachmentType === attachmentType)
-        .map(item => {
-          item.name = item.attachmentName
-          item.url = `${this.baseURL}/${item.fileId}?X-Token=${this.tokenValue}`
-          return item
-        })
-    },
+    
     recall () { // 撤回操作
       console.log('recall')
     },
-    async agree () {
-      console.log('统一审批')
-      try {
-        await this.$refs.order.update()
-        this._getList()
-        this.$refs.order.resetInfo()
-        this.closeDialog()
-      } catch (err) {
-        this.$message.error('同意审批')
-      }
-    }, // 存为草稿
-    reject () {},// 驳回
-    reset () {
-      this.$confirm('确定重置?', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }).then(() => {
-          this.$refs.order.resetInfo()
-        })
-      // this.$refs.order.resetInfo()
-    }, // 重置
+    async agree () { //同意
+      this.$refs.order.openRemarkDialog('agree')
+    }, 
+    reject () { // 驳回
+      this.$refs.order.openRemarkDialog('reject')
+    },
+    openLoading () {
+      this.dialogLoading = true
+    },
+    closeLoading () {
+      this.dialogLoading = false
+    },
+    operate () { // 操作成功 驳回/同意
+      this.closeDialog()
+    },
     closeDialog () {
       this.$refs.order.resetInfo()
       this.$refs.myDialog.close()

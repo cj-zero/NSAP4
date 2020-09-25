@@ -38,7 +38,7 @@
               >
                 <template slot-scope="scope" >
                   <div class="link-container" v-if="item.type === 'link'">
-                    <img :src="rightImg" @click="item.handleJump(scope.row)" class="pointer">
+                    <img :src="rightImg" @click="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
                     <span>{{ scope.row[item.prop] }}</span>
                   </div>
                   <template v-else-if="item.type === 'operation'">
@@ -74,7 +74,7 @@
       <my-dialog
         ref="myDialog"
         :center="true"
-        width="800px"
+        width="1000px"
         :btnList="btnList"
         :onClosed="closeDialog"
         :title="textMap[title]"
@@ -100,7 +100,7 @@ import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
 import { tableMixin, categoryMixin } from './common/js/mixins'
-import { getOrder } from '@/api/reimburse'
+import { getOrder, withdraw } from '@/api/reimburse'
 import Upload from './upload'
 export default {
   mixins: [tableMixin, categoryMixin],
@@ -120,7 +120,7 @@ export default {
         ...this.commonSearch,
         { type: 'search' },
         { type: 'button', btnText: '新建', handleClick: this.addAccount },
-        { type: 'button', btnText: '编辑', handleClick: this.getDetail, options: { type: 'edit' } },
+        { type: 'button', btnText: '编辑', handleClick: this.getDetail, options: { type: 'edit', name: 'mySubmit' } },
         { type: 'button', btnText: '撤回', handleClick: this.recall }
       ]
     }, // 搜索配置
@@ -155,13 +155,11 @@ export default {
       submitLoading: false, 
       draftLoading: false,
       editLoading: false,
-      dialogLoading: false
     } 
   },
   methods: {
     onTabChange (name) {
       this.listQuery.remburseStatus = name
-      console.log(this.listQuery.remburseStatus, 'status')
       this.listQuery.page = 1
       this._getList()
     },
@@ -205,14 +203,29 @@ export default {
       })
     },
     recall () { // 撤回操作
-      console.log('recall')
+      if (!this.currentRow) { // 编辑审核等操作
+        return this.$message({
+          type: 'warning',
+          message: '请先选择报销单'
+        })
+      }
+      withdraw({
+        reimburseInfoId: this.currentRow.id
+      }).then(() => {
+       this.$message({
+         type: 'success',
+         message: '撤回成功'
+       })
+        this._getList()
+      }).catch(() => {
+        this.$message.error('撤回失败')
+      })
     },
     _addOrder (isDraft = false) {
       isDraft
         ? this.draftLoading = true
         : this.submitLoading = true
       this.dialogLoading = true
-      console.log(this.$refs.order, 'order', this.$refs)
       this.$refs.order.submit(isDraft).then(() => {
         this.$message({
           type: 'success',
@@ -239,7 +252,7 @@ export default {
         : this.edit()
     }, 
     saveAsDraft () { // 存为草稿
-      this.title === 'create' // 判断是新建的还是已经创建的
+      this.title === 'edit' // 判断是新建的还是已经创建的
         ? this._addOrder(true)
         : this.edit(true)
     }, 

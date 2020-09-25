@@ -7,7 +7,7 @@
       :disabled="disabled"
       :label-width="labelWidth"
       size="mini"
-      :label-position="labelposition"
+      :label-position="labelPosition"
       :show-message="false"
     >
       <!-- 普通控件 -->
@@ -64,7 +64,7 @@
               ></el-date-picker>
             </template>
             <template v-else-if="item.type === 'button'">
-              <el-button type="primary" style="width: 100px;" @click="item.handleClick(formData.serviceOrderId)">{{ item.btnText }}</el-button>
+              <el-button type="primary" style="width: 157px;" @click="item.handleClick(formData.serviceOrderId)">{{ item.btnText }}</el-button>
             </template>
           </el-form-item>
         </el-col>
@@ -73,7 +73,7 @@
     <el-row type="flex" class="upload-wrapper">
       <span class="upload-title">上传附件</span>
       <upLoadFile 
-        :disabled="ifFormEdit"
+        :disabled="!ifFormEdit"
         @get-ImgList="getFileList" 
         uploadType="file" 
         ref="uploadFile" 
@@ -90,7 +90,7 @@
         size="mini" 
         :show-message="false"
         class="form-wrapper"
-        :disabled="ifFormEdit"
+        :disabled="!ifFormEdit"
       >
         <p class="title-wrapper">出差补贴</p>
         <el-table 
@@ -173,7 +173,7 @@
         size="mini" 
         :show-message="false"
         class="form-wrapper"
-        :disabled="ifFormEdit"
+        :disabled="!ifFormEdit"
       >
         <p class="title-wrapper">交通费用</p>
         <el-table 
@@ -234,8 +234,8 @@
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'upload'">   
-                  {{ scope.$index }}
                   <upLoadFile  
+                    :disabled="!ifFormEdit"
                     @get-ImgList="getTrafficList" 
                     :limit="item.prop === 'invoiceAttachment' ? 1 : 100" 
                     uploadType="file" 
@@ -280,7 +280,7 @@
       size="mini" 
       :show-message="false"
       class="form-wrapper"
-      :disabled="ifFormEdit"
+      :disabled="!ifFormEdit"
       >
         <p class="title-wrapper">住房补贴</p>
         <el-table 
@@ -342,6 +342,7 @@
                 </template>
                 <template v-else-if="item.type === 'upload'">
                   <upLoadFile  
+                    :disabled="!ifFormEdit"
                     @get-ImgList="getAccList" 
                     :limit="item.prop === 'invoiceAttachment' ? 1 : 100" 
                     uploadType="file" 
@@ -387,7 +388,7 @@
         size="mini" 
         :show-message="false"
         class="form-wrapper"
-        :disabled="ifFormEdit"
+        :disabled="!ifFormEdit"
       >
         <p class="title-wrapper">其他费用</p>
         <el-table 
@@ -449,6 +450,7 @@
                 </template>
                 <template v-else-if="item.type === 'upload'">
                   <upLoadFile  
+                    :disabled="!ifFormEdit"
                     @get-ImgList="getOtherList" 
                     :limit="item.prop === 'invoiceAttachment' ? 1 : 100" 
                     uploadType="file" 
@@ -508,16 +510,29 @@
       @closed="resetReport">
       <Report :data="reportData" ref="report"/>
     </my-dialog>
+    <!-- 确认审批弹窗 -->
+    <my-dialog
+      ref="approve"
+      :title="remarkTitle"
+      :mAddToBody="true" 
+      :appendToBody="true"
+      :btnList="remarkBtnList"
+      :closed="onApproveClose"
+      v-loading="remarkLoading"
+      width="350px">
+      <remark ref="remark" @input="onInput"></remark>
+    </my-dialog>
   </div>
 </template>
 
 <script>
-import { addOrder, getOrder, updateOrder } from '@/api/reimburse'
+import { addOrder, getOrder, updateOrder, approve } from '@/api/reimburse'
 import upLoadFile from "@/components/upLoadFile";
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import CommonTable from '@/components/CommonTable'
 import Report from './report'
+import Remark from './remark'
 import { toThousands } from '@/utils/format'
 import { findIndex } from '@/utils/process'
 import { travelRules, trafficRules, accRules, otherRules } from '../js/customerRules'
@@ -525,26 +540,17 @@ import { travelRules, trafficRules, accRules, otherRules } from '../js/customerR
 import { customerColumns } from '../js/config'
 import { noop } from '@/utils/declaration'
 import { categoryMixin } from '../js/mixins'
-const REIMBURSE_TYPE_MAP = { // 用来对应各自的reimburseType
-  travel: 1,
-  traffic: 2,
-  accommodation: 3,
-  other: 4
-}
-const IF_SHOW_MAP = { // 用来对应是否展示表格
-  travel: 'ifShowTravel',
-  traffic: 'ifShowTraffic',
-  accommodation: 'ifShowAcc',
-  other: 'ifShowOther'
-}
+import { REIMBURSE_TYPE_MAP, IF_SHOW_MAP, REMARK_TEXT_MAP } from '../js/map'
 export default {
+  inject: ['parentVm'],
   mixins: [categoryMixin],
   components: {
     upLoadFile,
     Pagination,
     MyDialog,
     CommonTable,
-    Report
+    Report,
+    Remark
   },
   props: {
     title: {
@@ -624,18 +630,9 @@ export default {
         delteReimburse: [], // 需要删除的行数据
         fileId: [], // 需要删除的附件ID
       },
-      rules: {
-        // userName: [ { required: true, trigger: 'focus' } ],
-        serviceOrderSapId: [ { required: true } ],
-        reimburseType: [ { required: true, trigger: ['change', 'blur'] } ],
-        projectName: [ { required: true, trigger: ['change', 'blur'] } ],
-        // remburseType: [ { required: true, trigger: ['change', 'blur'] } ],
-        responsibility: [ { required: true, trigger: ['change', 'blur'] } ],
-        serviceRelations: [ { required: true, trigger: ['change', 'blur'] } ]
-      },
       labelWidth: '80px',
       disabled: false,
-      labelposition: 'left',
+      labelPosition: 'right',
       // formConfig,
       limit: 8,
       travelRules,
@@ -649,7 +646,14 @@ export default {
       listQuery: {
         page: 1,
         limit: 30
-      }
+      },
+      remarkBtnList: [
+        { btnText: '确认', handleClick: this.approve },
+        { btnText: '取消', handleClick: this.closeRemarkDialog }
+      ],
+      remarkType: '', // 
+      remarkText: '', // 弹窗备注
+      remarkLoading: false
     }
   },
   watch: {
@@ -702,12 +706,12 @@ export default {
       handler () {
         // console.log(this.formData, 'formData')
       }
-    },
-    
+    }
   },
   computed: {
     ifFormEdit () { // 
-      return this.title !== 'create' && this.title !== 'edit'
+      console.log(this)
+      return this.title === 'create' || this.title === 'edit'
     },
     totalMoney () {
       let result = 0
@@ -745,6 +749,20 @@ export default {
         }
       }
       return result
+    },
+    rules () { // 报销单上层表单规则
+      console.log('rules roleName', this.isCustomerSupervisor)
+      return {
+        serviceOrderSapId: [ { required: true } ],
+        reimburseType: [ { required: true, trigger: ['change', 'blur'] } ],
+        projectName: [ { required: true, trigger: ['change', 'blur'] } ],
+        bearToPay: [ { required: this.isCustomerSupervisor, trigger: ['change', 'blur']} ],
+        responsibility: [ { required: true, trigger: ['change', 'blur'] } ],
+        serviceRelations: [ { required: true, trigger: ['change', 'blur'] } ]
+      }
+    },
+    remarkTitle () {
+      return `确认${REMARK_TEXT_MAP[this.remarkType]}此次报销`
     }
   },
   methods: {
@@ -765,11 +783,16 @@ export default {
       }
       return result
     },
+    onRearmkChange (val) {
+      console.log(val, 'remark change')
+    },
     setTravelMoney () {
       // 以R或者M开头都是65
       return /^[R|M]/i.test(this.formData.orgName) ? '65' : '50'
     },
     showForm (data, type) { // 展示表格
+      console.log(this.ifFormEdit, 'ifFormEdit')
+      if (!this.ifFormEdit) return
       switch (type) {
         case 'ifShowTravel':
           data.push({
@@ -926,6 +949,7 @@ export default {
         reimburseType: 3,
         attachmentType:  prop === 'invoiceAttachment' ? 2 : 1
       })
+      console.log(data[this.currentIndex], prop, resultArr, 'getAccList')
       this.$set(data[this.currentIndex],  prop, resultArr)
     },
     getOtherList (val, prop) {
@@ -936,7 +960,7 @@ export default {
         attachmentType: prop === 'invoiceAttachment' ? 2 : 1
       })
       this.$set(data[this.currentIndex], prop, resultArr)
-      console.log(this.formData, 'formData')
+      console.log(this.formData, 'formData', data[this.currentIndex], prop, resultArr, 'getOtherList')
     },
     setCurrentIndex (data, row) {
       this.currentRow = row
@@ -985,6 +1009,7 @@ export default {
       }
     },
     addAndCopy (scope, data, type, operationType) {
+      if (!this.ifFormEdit) return
       console.log(scope.row, data, type, operationType, 'operationType') // 判断是新增还是复制
       let { row, $index } = scope
       switch (type) {
@@ -1036,6 +1061,7 @@ export default {
       }
     },
     delete (scope, data, type) {
+      if (!this.ifFormEdit) return
       if (scope.row.id) { // 说明已经新建过的
         this.formData.delteReimburse.push({
           deleteId: scope.row.id,
@@ -1166,6 +1192,22 @@ export default {
       }
       this.closeDialog()
     },
+    openRemarkDialog (type) { // 打开备注弹窗，二次确认
+      this.remarkType = type
+      this.$refs.approve.open()
+    },
+    closeRemarkDialog () {
+      this.remarkType = ''
+      this.$refs.remark.reset()
+      this.$refs.approve.close()
+    },
+    onInput (val) {
+      this.remarkText = val
+    },
+    onApproveClose () {
+      this.remarkType = ''
+      this.$refs.remark.reset()
+    },
     resetInfo () {
       this.$refs.form.resetFields()
       this.$refs.form.clearValidate()
@@ -1253,10 +1295,7 @@ export default {
         this.$message.error('请将必填项填写完整')
         return Promise.reject('操作失败')
       }
-      if (isDraft) {
-        this.formData.isDraft = true
-      }
-      
+      this.formData.isDraft = isDraft ? true : false
       console.log(this.formData, 'formData', addOrder)
       return addOrder(this.formData)
     },
@@ -1278,12 +1317,49 @@ export default {
         this.$message.error('请将必填项填写完整')
         return Promise.reject('操作失败')
       }
-      if (isDraft) {
-        this.formData.isDraft = true
-      }
-      
+      this.formData.isDraft = isDraft ? true : false
       console.log(this.formData, 'update formData')
       return updateOrder(this.formData)
+    },
+    approve () {
+      this._approve()
+    },
+    async _approve () {
+      console.log('exec approve')
+      this.$refs.form.validate(isValid => {
+        console.log(isValid, 'ISvALID')
+        if (!isValid) {
+          return this.$message.error('请将必选项填写')
+        } 
+        console.log(this.remarkType, 'remarkType')
+        let data = this.formData
+        let params = {
+          id: data.id, 
+          shortCustomerName: data.shortCustomerName, 
+          reimburseType: data.reimburseType, 
+          projectName: data.projectName, 
+          bearToPay: data.bearToPay, 
+          responsibility: data.responsibility,
+          remark: this.remarkText,
+          flowInstanceId: data.flowInstanceId, // 流程ID
+          isReject: this.remarkType === 'reject'
+        }
+        console.log(approve, params, this.parentVm, 'parentVm')
+        this.remarkLoading = true
+        approve(params).then(() => {
+          this.$message({
+            type: 'success',
+            message: this.remarkType === 'reject' ? '驳回成功' : '操作成功'
+          })
+          this.remarkLoading = false
+          this.closeRemarkDialog()
+          this.parentVm._getList()
+          this.parentVm.closeDialog()
+        }).catch(() => {
+          this.remarkLoading = false
+          this.$message.error('操作失败')
+        })
+      })       
     }
   },
     
@@ -1299,6 +1375,9 @@ export default {
 .order-wrapper {
   max-height: 600px;
   overflow-y: auto;
+  &::-webkit-scrollbar {
+    display: none;
+  }
   ::v-deep .el-form-item--mini.el-form-item, .el-form-item--small.el-form-item {
     margin-bottom: 5px;
   }
