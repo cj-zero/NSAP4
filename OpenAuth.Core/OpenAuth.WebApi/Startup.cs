@@ -8,6 +8,7 @@ using IdentityServer4.AccessTokenValidation;
 using Infrastructure;
 using Infrastructure.AutoMapper;
 using Infrastructure.Exceptions;
+using Infrastructure.TecentOCR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
@@ -186,6 +187,7 @@ namespace OpenAuth.WebApi
                 c.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json; charset=utf-8");
             });
             services.AddSingleton<HttpClienService>();
+            services.AddSingleton<TecentOCR>();
         }
 
         public void ConfigureContainer(ContainerBuilder builder)
