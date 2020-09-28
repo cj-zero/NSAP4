@@ -1,9 +1,9 @@
 <template>
   <div class="laboratory-wrapper">
     <div class="search-wrapper">
-      <sticky :className="'sub-navbar'">
-        <search @search="onSearch" :options="options"></search>
-      </sticky>
+    <sticky :className="'sub-navbar'">
+    <search @search="onSearch" :options="options"></search>
+    </sticky>
     </div>
     <div class="app-container" >
       <el-table
@@ -15,7 +15,7 @@
           label="序号"
           width="120">
           <template slot-scope="scope">
-            {{ scope.$index }}
+            {{ scope.$index+1 }}
           </template>
         </el-table-column>
         <el-table-column
@@ -53,6 +53,11 @@
             </el-row>
           </template>
         </el-table-column>
+		<el-table-column
+		prop="assetInspectType"
+		label="类型"
+		width="120">
+		</el-table-column>
         <el-table-column
           prop="assetJZDate"
           label="最近校准日期"
@@ -108,7 +113,7 @@
           label="校准数据"
           width="120">
           <template slot-scope="scope">
-            <template v-for="(item, index) in scope.row.assetJZDataList">
+           <template v-for="(item, index) in scope.row.assetJZDataList">
               <el-row type="flex" justify="space-around" :key="index">
                 <el-col :span="15">
                   <a :href="item" target="_blank" class="view">查看文件</a>
@@ -161,7 +166,7 @@
 </template>
 
 <script>
-import Sticky from "@/components/Sticky";
+import Sticky from "@/components/Sticky"
 import Pagination from '@/components/Pagination'
 import Search from './search'
 import Opertation from './operation'
@@ -185,6 +190,7 @@ export default {
     _getList (pageConfig) {
       getList(pageConfig).then(res => {
         this.tableData = this._normalizeData(res.data)
+		//console.log("获取到的数据为："+JSON.stringify(res.data))
       })
     },
     /** 格式化tabelData */
@@ -210,26 +216,31 @@ export default {
         // console.log(this.options, 'options')
       })
     },
-    onSearch () {
-
+    onSearch (info) 
+	{
+		getList(info).then(res => {
+		//console.log('发送的数据：'+JSON.stringify(info))
+		this.tableData = this._normalizeData(res.data)
+				//console.log("获取到的数据为："+JSON.stringify(res.data))
+		})
     },
     _initOptions (data) {
-      const target = {}
-      data.forEach(item => {
-        let { typeId, name } = item
-        // if (!target[typeId]) {
-        //   target[typeId] = []
-        //   target[typeId].push(name)
-        // } else {
-        //   target[typeId].push(name)
-        // }
-        let value = { label: name, value: name }
-        target[typeId] 
-          ? target[typeId].push(value)
-          : (target[typeId] = []).push(value)
-      })
-      return target
-    },
+          const target = {}
+          data.forEach(item => {
+            let { typeId, name } = item
+            // if (!target[typeId]) {
+            //   target[typeId] = []
+            //   target[typeId].push(name)
+            // } else {
+            //   target[typeId].push(name)
+            // }
+            let value = { label: name, value: name }
+            target[typeId] 
+              ? target[typeId].push(value)
+              : (target[typeId] = []).push(value)
+          })
+          return target
+        },
     // 点击操作按钮
     handleClick(row) {
       console.log(row);
@@ -250,7 +261,7 @@ export default {
     return {
       pageConfig: {
         page: 1, // 当前页数
-        limit: 20 // 每一页的个数
+        limit: 20// 每一页的个数
       },
       activeName: 'first',
       dialogFormVisible: false,

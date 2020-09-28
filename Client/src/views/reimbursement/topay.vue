@@ -5,13 +5,61 @@
         <Search 
           :listQuery="formQuery" 
           :config="searchConfig"
-        ></Search>
+          @changeForm="onChangeForm" 
+          @search="onSearch">
+        </Search>
       </div>
     </sticky>
       <div class="app-container">
         <div class="bg-white">
           <div class="content-wrapper">
-            <common-table :data="tableData" :columns="columns" :loading="tableLoading"></common-table>
+            <el-table 
+              ref="table"
+              :data="tableData" 
+              v-loading="tableLoading" 
+              size="mini"
+              border
+              fit
+              show-overflow-tooltip
+              height="100%"
+              style="width: 100%;"
+              @row-click="onRowClick"
+              highlight-current-row
+              >
+              <el-table-column
+                v-for="item in columns"
+                :key="item.prop"
+                :width="item.width"
+                :label="item.label"
+                :align="item.align || 'left'"
+                :sortable="item.isSort || false"
+                :type="item.originType || ''"
+              >
+                <template slot-scope="scope" >
+                  <div class="link-container" v-if="item.type === 'link'">
+                    <img :src="rightImg" @click="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
+                    <span>{{ scope.row[item.prop] }}</span>
+                  </div>
+                  <template v-else-if="item.type === 'operation'">
+                    <el-button 
+                      v-for="btnItem in item.actions"
+                      :key="btnItem.btnText"
+                      @click="btnItem.btnClick(scope.row)" 
+                      type="text" 
+                      :icon="item.icon || ''"
+                      :size="item.size || 'mini'"
+                    >{{ btnItem.btnText }}</el-button>
+                  </template>
+                  <template v-else-if="item.label === '服务报告'">
+                    <el-button @click="item.handleClick" size="mini" type="primary">{{ item.btnText }}</el-button>
+                  </template>
+                  <template v-else>
+                    {{ scope.row[item.prop] }}
+                  </template>
+                </template>    
+              </el-table-column>
+            </el-table>
+            <!-- <common-table :data="tableData" :columns="columns" :loading="tableLoading"></common-table> -->
             <pagination
               v-show="total>0"
               :total="total"
@@ -19,98 +67,88 @@
               :limit.sync="listQuery.limit"
               @pagination="handleCurrentChange"
             />
-            </div>
+          </div>
         </div>
-        <my-dialog
-          ref="myDialog"
-          :center="true"
-          width="800px"
-          :btnList="btnList"
-        >
-        </my-dialog>
       </div>
+      <!-- 审核弹窗 -->
+      <my-dialog
+        ref="myDialog"
+        :center="true"
+        width="1000px"
+        :onClosed="closeDialog"
+        title="待支付"
+        :btnList="btnList"
+        :loading="dialogLoading"
+      >
+        <order 
+          ref="order" 
+          :title="title"
+          :detailData="detailData"
+          :categoryList="categoryList"
+          :customerInfo="customerInfo">
+        </order>
+      </my-dialog>
   </div>
 </template>
 
 <script>
 import Search from '@/components/Search'
 import Sticky from '@/components/Sticky'
-import CommonTable from '@/components/CommonTable'
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
-import tableData from './mock'
-import { isSameObjectByValue } from '@/utils/validate'
-import { deepClone } from '@/utils'
-import { tableMixin } from './common/js/mixins' 
-import { commonSearch } from './common/js/search'
+import Order from './common/components/order'
+import { tableMixin, categoryMixin } from './common/js/mixins'
+
 export default {
-  mixins: [tableMixin],
+  name: 'toPay',
+  mixins: [tableMixin, categoryMixin],
   components: {
     Search,
     Sticky,
-    CommonTable,
+    // CommonTable,
     Pagination,
     MyDialog,
+    Order
+  },
+  computed: {
+    searchConfig () {
+      return [
+        ...this.commonSearch,
+        { type: 'search' },
+        { type: 'button', handleClick: this.getDetail, btnText: '支付', options:  { type: 'approve' } }
+      ]
+    } // 搜索配置
   },
   data () {
     return {
-      searchConfig: [ // 搜索配置
-        ...commonSearch,
-        { type: 'button', btnText: '查询', handleClick: this.search, icon: 'el-icon-search' },
-        { type: 'button', btnText: '支付', handleClick: this.pay },
-      ],
       btnList: [
-        { btnText: '确认支付', handleClick: this.confirmToPay },
+        { btnText: '确认支付', handleClick: this.toPay },
         { btnText: '关闭', handleClick: this.closeDialog }
-      ]
+      ],
+      customerInfo: {}, // 当前报销人的id， 名字
+      categoryList: [], // 字典数组
     }
   },
   methods: {
-    _getList (type) {
-      let { page, limit } = this.listQuery
-      this.totalTableData = tableData
-      if (type) {
-        if (this.isCurrentChange) {
-          this.tableData = tableData.slice((page - 1) * limit, limit * page - 1)
-          this.isCurrentChange = false // 将翻页标识置为false
-          console.log('current change')
-        } else if (this.currentFormQuery && !isSameObjectByValue(this.formQuery, this.currentFormQuery)) { // 判断
-          this.listQuery.page = 1
-          this.tableData = tableData.slice((page - 1) * limit, limit * page - 1)
-          this.formQuery = deepClone(this.currentFormQuery)
-        }
-      } else {
-        console.log('no search')
-        this.tableData = tableData.slice((page - 1) * limit, limit * page - 1)
-      }
-      console.log('getList')
+    onChangeForm (val) {
+      this.currentFormQuery = val
+      Object.assign(this.listQuery, val)
     },
-    handleCurrentChange ({page, limit}) {
-      this.listQuery.page = page
-      this.listQuery.limit = limit
-      this.isCurrentChange = true
-      this._getList('search')
+    onSearch () {
+      this._getList()
     },
-    openTree (row) { // 打开详情
-      console.log(row, 'row')
+    toPay () {
+      this.$refs.order.openRemarkDialog('pay')
     },
-    approval () { // 添加
-      this.$refs.myDialog.open()
-      console.log('add')
-    },
-    pay () {}, // 支付
-    confirmToPay () {}, // 确认支付
     closeDialog () {
+      this.$refs.order.resetInfo()
       this.$refs.myDialog.close()
     }
   },
-  computed: {
-    total () {
-      return this.totalTableData.length
-    }
-  },
   created () {
+    this.listQuery.pageType = 5
     this._getList()
+    this._getCategoryName()
   },
   mounted () {
 

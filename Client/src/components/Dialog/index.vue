@@ -1,6 +1,7 @@
 <template>
   <el-dialog
     v-el-drag-dialog
+    v-loading="loading"
     :center="center"
     :width="width"
     :title="title"
@@ -9,16 +10,21 @@
     :close-on-click-modal="closeByClickModal"
     :append-to-body="appendToBody"
     @closed="onClosed"
+    @close="onClosed"
   >
     <slot></slot>
     <span slot="footer" class="dialog-footer" v-if="isShowBtn">
-      <el-button
-        v-for="btnItem in btnList"
-        :key="btnItem.btnText"
-        :type="btnItem.type || 'primary'"
-        @click="btnItem.handleClick"
-        :size="btnItem.size || 'mini'"
-      >{{ btnItem.btnText }}</el-button>
+      <template v-for="btnItem in btnList">
+        <el-button
+          v-if="btnItem.isShow === undefined ? true : btnItem.isShow"
+          :key="btnItem.btnText"
+          :type="btnItem.type || 'primary'"
+          @click="btnItem.handleClick(btnItem.options)"
+          :size="btnItem.size || 'mini'"
+          :loading="btnItem.loading === undefined ? false: btnItem.loading"
+        >{{ btnItem.btnText }}</el-button>
+      </template>
+      
     </span>
   </el-dialog>
 </template>
@@ -67,6 +73,10 @@ export default {
     onClosed: {
       type: Function,
       default () { () => {} }
+    },
+    loading: {
+      type: Boolean,
+      default: false
     }
   },
   data () {

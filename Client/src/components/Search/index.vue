@@ -73,9 +73,10 @@
       </template>
       <template v-else-if="item.type === 'button'">
         <el-button
+          v-if="item.isShow === undefined ? true : item.isShow"
           :key="index"
           class="filter-item"
-          @click="item.handleClick(listSearchQuery)"
+          @click="item.handleClick({ listSearchQuery, ...(item.options || {}) })"
           :icon="item.icon || ''"
           :size="item.size || 'mini'">
           {{ item.btnText ? item.btnText : '查询' }}
