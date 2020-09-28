@@ -128,6 +128,35 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 _app.Delete(ids);
+                foreach (var id in ids)
+                {
+                    _revelanceManagerApp.UnAssign(new AssignReq()
+                    {
+                        type = Define.ROLEDATAPROPERTY,
+                        firstId = id
+                    });
+                    _revelanceManagerApp.UnAssign(new AssignReq()
+                    {
+                        type = Define.ROLEELEMENT,
+                        firstId = id
+                    });
+                    _revelanceManagerApp.UnAssign(new AssignReq()
+                    {
+                        type = Define.ROLEMODULE,
+                        firstId = id
+                    });
+                    _revelanceManagerApp.UnAssign(new AssignReq()
+                    {
+                        type = Define.ROLERESOURCE,
+                        firstId = id
+                    });
+                }
+                _revelanceManagerApp.UnAssign(new AssignReq()
+                {
+                    type = Define.USERROLE,
+                    secIds = ids
+                });
+
 
             }
             catch (Exception ex)

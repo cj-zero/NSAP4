@@ -1,27 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Infrastructure.TecentOCR;
-using Microsoft.AspNetCore.Http;
+﻿using Infrastructure.TecentOCR;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using OpenAuth.App.Response;
+using Microsoft.AspNetCore.StaticFiles;
+using OpenAuth.App;
+using OpenAuth.App.Request;
+using SharpDX.Direct3D11;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using TencentCloud.Ocr.V20181119.Models;
 
 namespace OpenAuth.WebApi.Controllers
 {
 
+    /// <summary>
+    /// 票据识别
+    /// </summary>
     [Route("api/ocr/[controller]/[action]")]
     [ApiController]
     public class TecentOCRController : ControllerBase
     {
         private readonly TecentOCR _tecentOCR;
+        private readonly FileApp _fileapp;
+        private ReimburseInfoApp _reimburseInfoApp;
 
-        public TecentOCRController(TecentOCR tecentOCR)
+        public TecentOCRController(TecentOCR tecentOCR, FileApp fileApp, ReimburseInfoApp reimburseInfoApp)
         {
             _tecentOCR = tecentOCR;
+            _fileapp = fileApp;
+            _reimburseInfoApp = reimburseInfoApp;
         }
         /// <summary>
         /// 纳税人识别号（新威）
@@ -29,84 +35,81 @@ namespace OpenAuth.WebApi.Controllers
         public List<string> TaxCodeList = new List<string> { "91441900MA4X07PQ5X", "91440300755681916J", "91440300697120386E" };
 
         /// <summary>
-        /// 增值税发票识别
+        /// 文件后缀名集合
         /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public Result VatInvoiceOCR(VatInvoiceOCRRequest request)
-        {
-            var result = new Result();
-            try
-            {
-                //InvoiceResponse invoiceresponse = new InvoiceResponse();
-                ////1.识别发票
-                //var r = _tecentOCR.VatInvoiceOCR(request);
-                //if (r.Code == 200 && r.Data != null)
-                //{
-                //    VatInvoiceOCRResponse data = JsonConvert.DeserializeObject<VatInvoiceOCRResponse>(r.Data);
-                //    var invoiceCode = data.VatInvoiceInfos.SingleOrDefault(s => s.Name == "发票代码").Value;
-                //    var invoiceNo = data.VatInvoiceInfos.SingleOrDefault(s => s.Name == "发票号码").Value;
-                //    var invoiceDate = data.VatInvoiceInfos.SingleOrDefault(s => s.Name == "开票日期").Value;
-                //    var checkCode = data.VatInvoiceInfos.SingleOrDefault(s => s.Name == "校验码").Value;
-                //    //2.判断发票是否已经使用
-
-                //    //3.核验发票
-                //    VatInvoiceVerifyRequest req = new VatInvoiceVerifyRequest
-                //    {
-                //        InvoiceCode = invoiceCode,
-                //        InvoiceNo = invoiceNo.Substring(invoiceNo.Length - 2),
-                //        InvoiceDate = GetDateFormat(invoiceDate),
-                //        Additional = checkCode.Substring(checkCode.Length - 6)
-                //    };
-                //    var response = _tecentOCR.VatInvoiceVerify(req);
-                //    //核验成功 返回核验结果
-                //    if (response.Code == 200 && response.Data != null)
-                //    {
-                //        //返回核验结果
-                //        VatInvoiceVerifyResponse validateData = JsonConvert.DeserializeObject<VatInvoiceVerifyResponse>(response.Data);
-                //        invoiceresponse.AmountWithTax = validateData.Invoice.AmountWithTax;
-                //        invoiceresponse.ComapnyTaxCode = validateData.Invoice.BuyerTaxCode;
-                //        invoiceresponse.CompanyName = validateData.Invoice.BuyerName;
-                //        invoiceresponse.InvoiceNo = validateData.Invoice.Number;
-                //        invoiceresponse.IsValidate = 1;
-                //    }
-                //    else
-                //    {
-                //        //核验失败 返回识别结果
-                //        invoiceresponse.AmountWithTax = data.VatInvoiceInfos.SingleOrDefault(s => s.Name == "小写金额").Value;
-                //        invoiceresponse.ComapnyTaxCode = data.VatInvoiceInfos.SingleOrDefault(s => s.Name == "购买方识别号").Value;
-                //        invoiceresponse.CompanyName = data.VatInvoiceInfos.SingleOrDefault(s => s.Name == "购买方名称").Value;
-                //        invoiceresponse.InvoiceNo = invoiceNo.Substring(invoiceNo.Length - 2);
-                //        invoiceresponse.IsValidate = 0;
-                //    }
-                //    result.Data = invoiceresponse;
-                //}
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.Message;
-            }
-            return result;
-        }
+        public List<string> FileExtensions = new List<string> { ".JPG", ".PNG", ".JPEG", ".PDF" };
 
         /// <summary>
-        /// 混贴票据识别
+        /// 票据识别
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost]
-        public Result MixedInvoiceOCR(MixedInvoiceOCRRequest request)
+        public async Task<Result> TecentInvoiceOCR(TecentOCRReq request)
         {
             List<object> outData = new List<object>();
             var result = new Result();
             try
             {
+                //获取文件详情
+                var file = await _fileapp.GetFileAsync(request.FileId);
+                if (file is null)
+                {
+                    result.Code = (int)ResultCode.FileNotFound;
+                    result.Message = $"fileId:{request.FileId} is not exists";
+                    return result;
+                }
+                //支持的图片格式：PNG、JPG、JPEG，暂不支持 GIF 格式。
+                if (!FileExtensions.Contains(file.Extension.ToUpper()))
+                {
+                    result.Code = 500;
+                    result.Message = "不支持的图片格式，支持的图片格式：PNG、JPG、JPEG，文件格式只支持PDF。";
+                    return result;
+                }
+                //获取文件格式转为base64
+                var f = new FileExtensionContentTypeProvider();
+                f.TryGetContentType(file.FileName, out string contentType);
+                var fileStream = await _fileapp.GetFileStreamAsync(file.BucketName, file.FilePath);
+                byte[] bt = new byte[fileStream.Length];
+                //调用read读取方法
+                fileStream.Read(bt, 0, bt.Length);
+                var base64Str = Convert.ToBase64String(bt);
+                //判断图片大小
+                double size = base64Str.Length;// 获取文本所占字节大小
+                //所下载图片经Base64编码后不超过 7M。图片下载时间不超过 3 秒。
+                if (size / 1048576 > 7)
+                {
+                    result.Code = 500;
+                    result.Message = $"fileId:{request.FileId} is more than 7M";
+                    return result;
+                }
                 //1.识别发票
-                var r = _tecentOCR.MixedInvoiceOCR(request);
+                var r = new Result();
+                //1.1判断是否为PDF文件 若为PDF文件则使用VatInvoiceOCR方法进行识别
+                if (".PDF".Equals(file.Extension, StringComparison.OrdinalIgnoreCase))
+                {
+                    var vatInvoiceOCRRequest = new VatInvoiceOCRRequest
+                    {
+                        ImageUrl = string.Empty,
+                        ImageBase64 = base64Str,
+                        IsPdf = true,
+                        PdfPageNumber = 1
+                    };
+                    r = _tecentOCR.VatInvoiceOCR(vatInvoiceOCRRequest);
+                }
+                else//图片格式文件识别使用混贴MixedInvoiceOCR进行识别
+                {
+                    var invoiceRequest = new MixedInvoiceOCRRequest
+                    {
+                        Types = request.Types,
+                        ImageUrl = string.Empty,
+                        ImageBase64 = base64Str
+                    };
+                    r = _tecentOCR.MixedInvoiceOCR(invoiceRequest);
+                }
                 if (r.Code == 200 && r.Data != null && r.Data.Count > 0)
                 {
+                    //识别成功返回识别信息集合
                     foreach (var item in r.Data)
                     {
                         InvoiceResponse invoiceresponse = new InvoiceResponse();
@@ -115,70 +118,56 @@ namespace OpenAuth.WebApi.Controllers
                         invoiceresponse.ComapnyTaxCode = item.ComapnyTaxCode;
                         invoiceresponse.CompanyName = item.CompanyName;
                         invoiceresponse.Type = item.Type;
-                        //2.判断发票是否已经使用
-
-                        int type = item.Type;
-                        //判断是否为当前公司的抬头且是增值税发票才进行验证
-                        if (type == 3)
+                        //2.判断发票是否已经使用 已使用不走验证
+                        if (!_reimburseInfoApp.IsSole(item.InvoiceNo))
                         {
-                            if (TaxCodeList.Contains(item.ComapnyTaxCode))
+                            invoiceresponse.IsUsed = 1;
+                            invoiceresponse.NotPassReason = "发票已被使用";
+                        }
+                        else
+                        {
+                            invoiceresponse.IsUsed = 0;
+                            int type = item.Type;
+                            //判断是否为当前公司的抬头且是增值税发票才进行验证
+                            if (type == 3)
                             {
-                                // 3.核验发票(增值税发票)
-                                VatInvoiceVerifyRequest req = new VatInvoiceVerifyRequest
+                                if (TaxCodeList.Contains(item.ComapnyTaxCode))
                                 {
-                                    InvoiceCode = item.InvoiceCode,
-                                    InvoiceNo = item.InvoiceNo,
-                                    InvoiceDate = item.InvoiceDate,
-                                    Additional = item.CheckCode.Length > 6 ? item.CheckCode.Substring(item.CheckCode.Length - 6) : string.Empty
-                                };
-                                var response = _tecentOCR.VatInvoiceVerify(req);
-                                //核验成功 返回核验结果
-                                if (response.Code == 200 && response.Data != null)
-                                {
-                                    invoiceresponse.IsValidate = 1;
+                                    // 3.核验发票(增值税发票)
+                                    VatInvoiceVerifyRequest req = new VatInvoiceVerifyRequest
+                                    {
+                                        InvoiceCode = item.InvoiceCode,
+                                        InvoiceNo = item.InvoiceNo,
+                                        InvoiceDate = item.InvoiceDate,
+                                        Additional = item.CheckCode.Length > 6 ? item.CheckCode.Substring(item.CheckCode.Length - 6) : string.Empty
+                                    };
+                                    var response = _tecentOCR.VatInvoiceVerify(req);
+                                    //核验成功 返回核验结果
+                                    if (response.Code == 200 && response.Data != null)
+                                    {
+                                        invoiceresponse.IsValidate = 1;
+                                    }
+                                    else
+                                    {
+                                        invoiceresponse.IsValidate = 0;
+                                        invoiceresponse.NotPassReason = response.Message;
+                                    }
                                 }
                                 else
                                 {
-                                    invoiceresponse.IsValidate = 0;
-                                    invoiceresponse.NotPassReason = response.Message;
+                                    invoiceresponse.NotPassReason = "发票抬头和系统维护的不一样，禁止报销";
                                 }
                             }
                             else
                             {
-                                invoiceresponse.NotPassReason = "发票抬头和系统维护的不一样，禁止报销";
+                                invoiceresponse.IsValidate = 1;
                             }
                         }
-                        else
-                        {
-                            invoiceresponse.IsValidate = 1;
-                        }
+                        invoiceresponse.IsCanExpense = invoiceresponse.IsUsed == 0 && invoiceresponse.IsValidate == 1 ? 1 : 0;
                         outData.Add(invoiceresponse);
                     }
                 }
                 result.Data = outData;
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.Message;
-            }
-            return result;
-        }
-
-        /// <summary>
-        /// 增值税发票核验
-        /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public Result VatInvoiceVerify(VatInvoiceVerifyRequest request)
-        {
-            var result = new Result();
-            try
-            {
-                var r = _tecentOCR.VatInvoiceVerify(request);
-
-                result.Data = r;
             }
             catch (Exception ex)
             {
