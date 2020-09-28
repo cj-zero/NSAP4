@@ -557,6 +557,17 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.b.ContactTel.Equals(req.ContactTel) || q.b.NewestContactTel.Equals(req.ContactTel))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), q => q.b.Supervisor.Contains(req.QrySupervisor))
                          .Where(q => q.b.U_SAP_ID != null && q.b.Status == 2 && q.a.FromType != 2);
+            if (!string.IsNullOrWhiteSpace(req.QryStatusBar.ToString())) 
+            {
+                if (req.QryStatusBar == 1)
+                {
+                    query = query.Where(q => q.a.Status >= 2 && q.a.Status<7);
+                }
+                else 
+                {
+                    query = query.Where(q => q.a.Status >= 7);
+                }
+            }
             if (req.QryState != "1")
             {
                 query = query.Where(q => q.a.Status > 1);
@@ -824,6 +835,18 @@ namespace OpenAuth.App
                          .WhereIf(req.QryMaterialTypes != null && req.QryMaterialTypes.Count > 0, q => req.QryMaterialTypes.Contains(q.a.MaterialCode == "其他设备" ? "其他设备" : q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), q => q.b.Supervisor.Contains(req.QrySupervisor))
                          .Where(q => q.b.U_SAP_ID != null && q.b.Status == 2 && q.a.FromType != 2);
+
+            if (!string.IsNullOrWhiteSpace(req.QryStatusBar.ToString()))
+            {
+                if (req.QryStatusBar == 1)
+                {
+                    query = query.Where(q => q.a.Status >= 2 && q.a.Status < 7);
+                }
+                else
+                {
+                    query = query.Where(q => q.a.Status >= 7);
+                }
+            }
             if (req.QryState != "1")
             {
                 query = query.Where(q => q.a.Status > 1);
