@@ -7,7 +7,8 @@
       :disabled="disabled"
       :label-width="labelWidth"
       size="mini"
-      :label-position="labelposition"
+      :label-position="labelPosition"
+      :show-message="false"
     >
       <!-- 普通控件 -->
       <el-row 
@@ -19,12 +20,20 @@
           v-for="item in config"
           :key="item.prop"
         >
-          <el-form-item :label="item.label">
-            <template v-if="!item.type">
+          <el-form-item :label="item.label" 
+            :prop="item.prop"
+            :rules="rules[item.prop] || { required: false }">
+            <template v-if="item.label === '总金额'">
+              ￥{{ totalMoney | toThousands }}
+            </template>
+            <template v-else-if="!item.type">
               <el-input 
                 v-model="formData[item.prop]" 
                 :style="{ width: item.width + 'px' }"
                 :maxlength="item.maxlength"
+                :disabled="item.disabled"
+                @focus="customerFocus(item.prop) || noop"
+                :readonly="item.readonly"
                 >
                 <i :class="item.icon" v-if="item.icon"></i>
               </el-input>
@@ -46,6 +55,7 @@
             </template>
             <template v-else-if="item.type === 'date'">
               <el-date-picker
+                :disabled="item.disabled"
                 :style="{ width: item.width + 'px' }"
                 :value-format="item.valueFormat || 'yyyy-MM-dd'"
                 :type="item.dateType || 'date'"
@@ -54,7 +64,7 @@
               ></el-date-picker>
             </template>
             <template v-else-if="item.type === 'button'">
-              <el-button @click="handleClick">{{ item.btnText }}</el-button>
+              <el-button type="primary" style="width: 157px;" @click="item.handleClick(formData.serviceOrderId)">{{ item.btnText }}</el-button>
             </template>
           </el-form-item>
         </el-col>
@@ -62,11 +72,17 @@
     </el-form>
     <el-row type="flex" class="upload-wrapper">
       <span class="upload-title">上传附件</span>
-      <upLoadFile @get-ImgList="getFileList" :limit="limit" uploadType="file" ref="uploadFile"></upLoadFile>
+      <upLoadFile 
+        :disabled="!ifFormEdit"
+        @get-ImgList="getFileList" 
+        uploadType="file" 
+        ref="uploadFile" 
+        :fileList="formData.attachmentsFileList || []"
+        @deleteFileList="deleteFileList"></upLoadFile>
     </el-row>
     <!-- 出差 -->
     <div class="form-item-wrapper">
-      <el-button v-if="ifShowTravel" @click="showForm('ifShowTravel')">添加出差补贴</el-button>
+      <el-button v-if="ifShowTravel" @click="showForm(formData.reimburseTravellingAllowances, 'ifShowTravel')">添加出差补贴</el-button>
       <el-form 
         v-else
         ref="travelForm" 
@@ -74,6 +90,7 @@
         size="mini" 
         :show-message="false"
         class="form-wrapper"
+        :disabled="!ifFormEdit"
       >
         <p class="title-wrapper">出差补贴</p>
         <el-table 
@@ -99,7 +116,7 @@
                     :prop="'reimburseTravellingAllowances.' + scope.$index + '.'+ item.prop"
                     :rules="travelRules[item.prop] || { required: false }"
                   >
-                    <el-input v-model="scope.row[item.prop]"></el-input>
+                    <el-input v-model="scope.row[item.prop]" :disabled="item.disabled"></el-input>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'number'">
@@ -107,7 +124,7 @@
                     :prop="'reimburseTravellingAllowances.' + scope.$index + '.'+ item.prop"
                     :rules="travelRules[item.prop] || { required: false }"
                   >
-                    <el-input v-model="scope.row[item.prop]" :type="item.type" :min="0"></el-input>
+                    <el-input v-model="scope.row[item.prop]" :type="item.type" :min="0" :disabled="item.disabled"></el-input>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'select'">
@@ -131,7 +148,6 @@
                 <template v-else-if="item.type === 'operation'">
                   <template v-for="iconItem in item.iconList">
                     <i 
-                      v-if="processIcon(iconItem.icon, scope.$index, formData.reimburseTravellingAllowances)"
                       :key="iconItem.icon"
                       :class="iconItem.icon" 
                       class="icon-item"
@@ -149,7 +165,7 @@
   <!-- 交通 -->
 
     <div class="form-item-wrapper">
-      <el-button v-if="ifShowTraffic" @click="showForm('ifShowTraffic')">添加交通费用</el-button>
+      <el-button v-if="ifShowTraffic" @click="showForm(formData.reimburseFares, 'ifShowTraffic')">添加交通费用</el-button>
       <el-form 
         v-else
         ref="trafficForm" 
@@ -157,6 +173,7 @@
         size="mini" 
         :show-message="false"
         class="form-wrapper"
+        :disabled="!ifFormEdit"
       >
         <p class="title-wrapper">交通费用</p>
         <el-table 
@@ -166,7 +183,6 @@
           show-summary
           max-height="300px"
           @cell-click="onTrafficCellClick"
-          @cell-mouse-enter="onTrafficCellMouseEnter"
         >
           <!-- <el-table-column label="交通费用" header-align="center"> -->
             <el-table-column
@@ -187,7 +203,7 @@
                     :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
                     :rules="trafficRules[item.prop] || { required: false }"
                   >
-                    <el-input v-model="scope.row[item.prop]"></el-input>
+                    <el-input v-model="scope.row[item.prop]" :disabled="item.disabled"></el-input>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'number'">
@@ -218,18 +234,28 @@
                 </template>
                 <template v-else-if="item.type === 'upload'">   
                   <upLoadFile  
-                  @get-ImgList="getTrafficList" 
-                  :limit="limit"
-                   uploadType="file" 
-                   ref="trafficUploadFile" 
-                   :prop="item.prop" 
-                   :fileList="scope.row[item.prop]">
+                    :disabled="!ifFormEdit"
+                    @get-ImgList="getTrafficList" 
+                    :limit="item.prop === 'invoiceAttachment' ? 1 : 100" 
+                    uploadType="file" 
+                    ref="trafficUploadFile" 
+                    :prop="item.prop" 
+                    :index="scope.$index"
+                    @deleteFileList="deleteFileList"
+                    :fileList="
+                      formData.reimburseFares[scope.$index] 
+                        ?
+                          (item.prop === 'invoiceAttachment' 
+                            ? formData.reimburseFares[scope.$index].invoiceFileList 
+                            : formData.reimburseFares[scope.$index].otherFileList
+                          )
+                        : []
+                  ">
                   </upLoadFile>
                 </template>
                 <template v-else-if="item.type === 'operation'">
                   <template v-for="iconItem in item.iconList">
                     <i 
-                      v-if="processIcon(iconItem.icon, scope.$index, formData.reimburseFares)"
                       :key="iconItem.icon"
                       :class="iconItem.icon" 
                       class="icon-item"
@@ -244,11 +270,9 @@
       </el-form>
     </div>
     
-
   <!-- 住宿 -->
-
     <div class="form-item-wrapper">
-      <el-button v-if="ifShowAcc" @click="showForm('ifShowAcc')">添加住宿补贴</el-button>
+      <el-button v-if="ifShowAcc" @click="showForm(formData.reimburseAccommodationSubsidies, 'ifShowAcc')">添加住宿补贴</el-button>
       <el-form 
       v-else
       ref="accForm" 
@@ -256,6 +280,7 @@
       size="mini" 
       :show-message="false"
       class="form-wrapper"
+      :disabled="!ifFormEdit"
       >
         <p class="title-wrapper">住房补贴</p>
         <el-table 
@@ -264,7 +289,6 @@
           :summary-method="getSummaries"
           show-summary
           max-height="300px"
-          @cell-mouse-enter="onAccCellMouseEnter"
           @cell-click="onAccCellClick"
         >
           <!-- <el-table-column label="住房补贴" header-align="center"> -->
@@ -317,18 +341,28 @@
                 </template>
                 <template v-else-if="item.type === 'upload'">
                   <upLoadFile  
+                    :disabled="!ifFormEdit"
                     @get-ImgList="getAccList" 
-                    :limit="limit" 
+                    :limit="item.prop === 'invoiceAttachment' ? 1 : 100" 
                     uploadType="file" 
                     ref="accUploadFile" 
                     :prop="item.prop" 
-                    :fileList="scope.row[item.prop]">
+                    :index="scope.$index"
+                    @deleteFileList="deleteFileList"
+                    :fileList="
+                      formData.reimburseAccommodationSubsidies[scope.$index] 
+                        ?
+                          (item.prop === 'invoiceAttachment' 
+                            ? formData.reimburseAccommodationSubsidies[scope.$index].invoiceFileList 
+                            : formData.reimburseAccommodationSubsidies[scope.$index].otherFileList
+                          )
+                        : []
+                    ">
                   </upLoadFile>
                 </template>
                 <template v-else-if="item.type === 'operation'">
                   <template v-for="iconItem in item.iconList">
                     <i 
-                      v-if="processIcon(iconItem.icon, scope.$index, formData.reimburseAccommodationSubsidies)"
                       :key="iconItem.icon"
                       :class="iconItem.icon" 
                       class="icon-item"
@@ -346,7 +380,7 @@
   <!-- 其它 -->
 
     <div class="form-item-wrapper">
-      <el-button v-if="ifShowOther" @click="showForm('ifShowOther')">添加其他费用</el-button>
+      <el-button v-if="ifShowOther" @click="showForm(formData.reimburseOtherCharges, 'ifShowOther')">添加其他费用</el-button>
       <el-form 
         v-else
         ref="otherForm" 
@@ -354,6 +388,7 @@
         size="mini" 
         :show-message="false"
         class="form-wrapper"
+        :disabled="!ifFormEdit"
       >
         <p class="title-wrapper">其他费用</p>
         <el-table 
@@ -363,7 +398,6 @@
           show-summary
           max-height="300px"
           @cell-click="onOtherCellClick"
-          @cell-mouse-enter="onOtherCellMouseEnter"
         >
           <!-- <el-table-column label="其他费用" header-align="center"> -->
             <el-table-column
@@ -414,12 +448,28 @@
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'upload'">
-                  <upLoadFile  @get-ImgList="getOtherList" :limit="limit" uploadType="file" ref="otherUploadFile" :prop="item.prop" :fileList="scope.row[item.prop]"></upLoadFile>                   
+                  <upLoadFile  
+                    :disabled="!ifFormEdit"
+                    @get-ImgList="getOtherList" 
+                    :limit="item.prop === 'invoiceAttachment' ? 1 : 100" 
+                    uploadType="file" 
+                    ref="otherUploadFile" 
+                    :prop="item.prop"
+                    :index="scope.$index"
+                    @deleteFileList="deleteFileList"
+                    :fileList="
+                      formData.reimburseOtherCharges[scope.$index] 
+                        ?
+                          (item.prop === 'invoiceAttachment' 
+                            ? formData.reimburseOtherCharges[scope.$index].invoiceFileList 
+                            : formData.reimburseOtherCharges[scope.$index].otherFileList
+                          )
+                        : []
+                  "></upLoadFile>                   
                 </template>
                 <template v-else-if="item.type === 'operation'">
                   <template v-for="iconItem in item.iconList">
                     <i 
-                      v-if="processIcon(iconItem.icon, scope.$index, formData.reimburseOtherCharges)"
                       :key="iconItem.icon"
                       :class="iconItem.icon" 
                       class="icon-item"
@@ -433,39 +483,116 @@
         </el-table>
       </el-form>
     </div> 
-    <el-button @click="validate">提交</el-button>
-    <el-button @click="validateTraffic">提交交通</el-button>
-    <el-button @click="validateAcc">提交住房</el-button>
-    <el-button @click="validateOther">提交其他</el-button>
+    <!-- 操作记录 -->
+    <template v-if="this.title !== 'create' && this.title !== 'edit'">
+      <el-table 
+        :data="formData.reimurseOperationHistories"
+        border
+        max-height="300px"
+      >
+        <el-table-column label="操作记录" prop="action"></el-table-column>
+        <el-table-column label="操作人" prop="createUser"></el-table-column>
+        <el-table-column label="操作时间" prop="createTime"></el-table-column>
+        <el-table-column label="审批时长" prop="intervalTime"></el-table-column>
+        <el-table-column label="审批结果" prop="approvalResult"></el-table-column>
+        <el-table-column label="备注" prop="remark"></el-table-column>
+      </el-table>
+    </template>
+    <!-- 客户选择列表 -->
+    <my-dialog 
+      ref="customerDialog" 
+      width="800px" 
+      :mAddToBody="true" 
+      :appendToBody="true"
+      :btnList="customerBtnList">
+      <common-table 
+        ref="customerTable"
+        maxHeight="500px"
+        :data="customerInfoList"
+        :columns="customerColumns"
+      ></common-table>
+      <pagination
+        v-show="customerTotal > 0"
+        :total="customerTotal"
+        :page.sync="listQuery.page"
+        :limit.sync="listQuery.limit"
+        @pagination="customerCurrentChange"
+      />
+    </my-dialog>
+    <!-- 完工报告 -->
+    <my-dialog
+      ref="reportDialog"
+      @closed="resetReport">
+      <Report :data="reportData" ref="report"/>
+    </my-dialog>
+    <!-- 确认审批弹窗 -->
+    <my-dialog
+      ref="approve"
+      :title="remarkTitle"
+      :mAddToBody="true" 
+      :appendToBody="true"
+      :btnList="remarkBtnList"
+      :closed="onApproveClose"
+      v-loading="remarkLoading"
+      width="350px">
+      <remark ref="remark" @input="onInput"></remark>
+    </my-dialog>
   </div>
 </template>
 
 <script>
-// import CommonForm from './CommonForm'
+import { addOrder, getOrder, updateOrder, approve } from '@/api/reimburse'
 import upLoadFile from "@/components/upLoadFile";
+import Pagination from '@/components/Pagination'
+import MyDialog from '@/components/Dialog'
+import CommonTable from '@/components/CommonTable'
+import Report from './report'
+import Remark from './remark'
 import { toThousands } from '@/utils/format'
 import { findIndex } from '@/utils/process'
 import { travelRules, trafficRules, accRules, otherRules } from '../js/customerRules'
-import { formConfig, travelConfig, trafficConfig, accommodationConfig, otherConfig } from '../js/config'
-const EXCLUDELIST = ['reimburseAttachments', 'reimburseTravellingAllowance', 'reimburseFares', 'reimburseAccommodationSubsidies', 'reimburseOtherCharges']
+// import { EXPENSE_CATEGORY, RESPONSIBILITY_TYPE, RELATION_TYPE } from '../js/type'
+import { customerColumns } from '../js/config'
+import { noop } from '@/utils/declaration'
+import { categoryMixin } from '../js/mixins'
+import { REIMBURSE_TYPE_MAP, IF_SHOW_MAP, REMARK_TEXT_MAP } from '../js/map'
 export default {
+  inject: ['parentVm'],
+  mixins: [categoryMixin],
   components: {
-    upLoadFile
+    upLoadFile,
+    Pagination,
+    MyDialog,
+    CommonTable,
+    Report,
+    Remark
   },
   props: {
-    operation: {
+    title: {
       type: String,
       default: 'create'
+    },
+    customerInfo: {
+      type: Object,
+      default () {
+        return {}
+      }
+    },
+    detailData: {
+      type: Object,
+      default () {
+        return {}
+      }
+    },
+    categoryList: {
+      type: Array,
+      default () {
+        return []
+      }
     }
   },
   data () {
-    let iconList = [ // 操作配置
-      { icon: 'el-icon-document-add', handleClick: this.addAndCopy, operationType: 'add' }, 
-      { icon: 'el-icon-document-copy', handleClick: this.addAndCopy, operationType: 'copy' }, 
-      { icon: 'el-icon-top', handleClick: this.up },
-      { icon: 'el-icon-bottom', handleClick: this.down },
-      { icon: 'el-icon-delete', handleClick: this.delete }
-    ]
+    // let that = this
     return {
       ifShowTraffic: true, // 是否展示交通补贴表格， 以下类似
       ifShowOther: true,
@@ -476,23 +603,30 @@ export default {
       currentLabel: '', // 当前选中的单元格的property, 对应table数据的label值
       currentRow: '', // 当前选中的
       maxSize: 1000,
+      customerBtnList: [
+        { btnText: '取消', handleClick: this.closeDialog },
+        { btnText: '确认', handleClick: this.confirm }
+      ],
       formData: { // 表单参数
         id: '',
-        people: '',
-        org: '',
+        userName: '',
+        createUserId: '',
+        orgName: '',
         position: '',
         serviceOrderId: '',
-        customerId: '',
-        customerName: '',
+        serviceOrderSapId: '',
+        terminalCustomerId: '',
+        terminalCustomer: '',
         shortCustomerName: '',
-        origin: '',
+        becity: '',
         destination: '',
-        originDate: '',
+        businessTripDate: '',
         endDate: '',
-        remburseType: '',
+        reimburseType: '',
+        reimburseTypeText: '',
         projectName: '',
         remburseStatus: '',
-        theme: '',
+        fromTheme: '',
         fillDate: '',
         report: '',
         bearToPay: '',
@@ -500,69 +634,83 @@ export default {
         serviceRelations: '',
         payTime: '',
         remark: '',
-        totalMoney: '',
+        totalMoney: 0,
+        attachmentsFileList: [],
         reimburseAttachments: [],
-        reimburseTravellingAllowances: [{
-          id: '',
-          days: '',
-          money: '',
-          remark: ''
-        }],
-        reimburseFares: [{
-          id: '',
-          trafficType: '',
-          transport: '',
-          from: '',
-          to: '',
-          money: '',
-          remark: '',
-          invoiceNumber: '1',
-          invoiceAttachment: [],
-          otherAttachment: [],
-          reimburseAttachments: []
-        }],
-        reimburseAccommodationSubsidies: [{
-          id: '',
-          days: '',
-          money: '',
-          totalMoney: '',
-          remark: '',
-          invoiceNumber: '1',
-          invoiceAttachment: [],
-          otherAttachment: [],
-          reimburseAttachments: []
-        }],
-        reimburseOtherCharges: [{
-          id: '',
-          expenseCategory: '',
-          money: '',
-          remark: '',
-          invoiceNumber: '1',
-          invoiceAttachment: [],
-          otherAttachment: [],
-          reimburseAttachments: []
-        }],
-        isDraft: false // 是否是草稿
+        reimburseTravellingAllowances: [],
+        reimburseFares: [],
+        reimburseAccommodationSubsidies: [],
+        reimburseOtherCharges: [],
+        reimurseOperationHistories: [], // 操作记录 我的提交不可见
+        isDraft: false, // 是否是草稿
+        delteReimburse: [], // 需要删除的行数据
+        fileId: [], // 需要删除的附件ID
       },
       labelWidth: '80px',
       disabled: false,
-      labelposition: 'left',
-      formConfig,
+      labelPosition: 'right',
+      // formConfig,
       limit: 8,
-      travelConfig: [...travelConfig, { label: '操作', type: 'operation', iconList, fixed: 'right' }],
-      trafficConfig: [...trafficConfig, { label: '操作', type: 'operation', iconList, fixed: 'right', width: 160 }],
-      accommodationConfig: [...accommodationConfig, { label: '操作', type: 'operation', iconList, fixed: 'right', width: 160 }],
-      otherConfig: [...otherConfig, { label: '操作', type: 'operation', iconList, fixed: 'right', width: 160 }],
       travelRules,
       trafficRules,
       accRules,
       otherRules,
-      deleteList: []
+      deleteList: [], // 删除表单列项
+      customerColumns,
+      customerInfoList: [], // 用户信息列表
+      customerTotal: 0, // 用户列表总数
+      listQuery: {
+        page: 1,
+        limit: 30
+      },
+      remarkBtnList: [
+        { btnText: '确认', handleClick: this.approve },
+        { btnText: '取消', handleClick: this.closeRemarkDialog }
+      ],
+      remarkType: '', // 
+      remarkText: '', // 弹窗备注
+      remarkLoading: false
     }
   },
   watch: {
-    data (val) {
-      Object.assign(this.formData, process(val))
+    customerInfo: {
+      immediate: true,
+      deep: true,
+      handler (val) {
+        this.formData.createUserId = val.createUserId
+        this.formData.userName = val.userName
+        this.formData.orgName = val.orgName
+        // this.formData.becity = val.becity
+        // this.formData.businessTripDate = val.businessTripDate
+        // this.formData.endDate = val.endDate
+        // this.formData.destination = val.destination
+        this._getCustomerInfo()    
+      }
+    },
+    detailData: {
+      immediate: true,
+      deep: true,
+      handler (val) {
+        let { 
+          reimburseTravellingAllowances: travel,
+          reimburseFares: traffic,
+          reimburseAccommodationSubsidies: acc,
+          reimburseOtherCharges: other 
+        } = val
+        if (travel && travel.length) {
+          this.ifShowTravel = false
+        }
+        if (traffic && traffic.length) {
+          this.ifShowTraffic = false
+        }
+        if (acc && acc.length) {
+          this.ifShowAcc = false
+        }
+        if (other && other.length) {
+          this.ifShowOther = false
+        }
+        Object.assign(this.formData, val)
+      }
     },
     totalMoney (val) {
       this.formData.totalMoney = val
@@ -570,13 +718,35 @@ export default {
     formData: {
       deep: true,
       handler () {
-        //
+        // console.log(this.formData, 'formData')
       }
     }
   },
   computed: {
+    ifFormEdit () { 
+      return this.title === 'create' || this.title === 'edit'
+    },
     totalMoney () {
-      return 1
+      let result = 0
+      let { 
+        reimburseTravellingAllowances, 
+        reimburseFares, 
+        reimburseAccommodationSubsidies,
+        reimburseOtherCharges 
+      } = this.formData
+      if (reimburseTravellingAllowances.length) {
+        result += this.getTotal(reimburseTravellingAllowances)
+      }
+      if (reimburseFares.length) {
+        result += this.getTotal(reimburseFares)
+      }
+      if (reimburseAccommodationSubsidies.length) {
+        result += this.getTotal(reimburseAccommodationSubsidies)
+      }
+      if (reimburseOtherCharges.length) {
+        result += this.getTotal(reimburseOtherCharges)
+      }
+      return result
     },
     normalConfig () {
       let noneSlotConfig = this.formConfig.filter(item => item.type !== 'slot')
@@ -592,50 +762,147 @@ export default {
         }
       }
       return result
+    },
+    rules () { // 报销单上层表单规则
+      // console.log('rules roleName', this.isCustomerSupervisor)
+      return {
+        serviceOrderSapId: [ { required: true } ],
+        reimburseType: [ { required: true, trigger: ['change', 'blur'] } ],
+        projectName: [ { required: true, trigger: ['change', 'blur'] } ],
+        bearToPay: [ { required: this.isCustomerSupervisor, trigger: ['change', 'blur']} ],
+        responsibility: [ { required: true, trigger: ['change', 'blur'] } ],
+        serviceRelations: [ { required: true, trigger: ['change', 'blur'] } ]
+      }
+    },
+    remarkTitle () {
+      return `确认${REMARK_TEXT_MAP[this.remarkType]}此次报销`
     }
   },
   methods: {
-    showForm (type) { // 展示表格
-      this[type] = false
+    noop () {
+      noop() 
     },
-    onDataChange (val) {
-      Object.assign(this.formData, this.process(val))
-      console.log(this.formData, 'formData')
-    },
-    process (val) {
-      let result = {}
-      for (let key in val) {
-        if (!EXCLUDELIST.includes(key)) {
-          result[key] = val[key]
-        }
+    getTotal (data) {
+      let result = 0
+      let isVliad = data.every(item => {
+        return item.totalMoney ? this.isValidaNumber(item.totalMoney) : this.isValidaNumber(item.money)
+      })
+      if (isVliad) {
+        result += data.reduce((prev, next) => {
+          return prev + Number(next.totalMoney || next.money)
+        }, 0)
+      } else {
+        result = 0
       }
       return result
+    },
+    setTravelMoney () {
+      // 以R或者M开头都是65
+      return /^[R|M]/i.test(this.formData.orgName) ? '65' : '50'
+    },
+    showForm (data, type) { // 展示表格
+      if (!this.ifFormEdit) return
+      switch (type) {
+        case 'ifShowTravel':
+          data.push({
+            id: '',
+            days: '',
+            money: this.setTravelMoney(),
+            remark: '',
+          })
+          break
+        case 'ifShowTraffic':
+          data.push({
+            id: '',
+            trafficType: '',
+            transport: '',
+            from: '',
+            to: '',
+            money: '',
+            remark: '',
+            invoiceNumber: '1',
+            invoiceAttachment: [],
+            otherAttachment: [],
+            invoiceFileList: [],
+            otherFileList: []
+          })
+          break
+        case 'ifShowAcc':
+          data.push({
+            id: '',
+            days: '',
+            money: '',
+            totalMoney: '',
+            remark: '',
+            invoiceNumber: '1',
+            invoiceAttachment: [],
+            otherAttachment: [],
+            invoiceFileList: [],
+            otherFileList: []
+          })
+          break
+        case 'ifShowOther':
+          data.push({
+            id: '',
+            expenseCategory: '',
+            money: '',
+            remark: '',
+            invoiceNumber: '1',
+            invoiceAttachment: [],
+            otherAttachment: [],
+            invoiceFileList: [],
+            otherFileList: []
+          })
+      }
+      this[type] = false
     },
     processIcon (icon, index, data) { // 处理上下移动图标的展示
       return !(
         (icon === 'el-icon-top' && index === 0) ||
         (icon === 'el-icon-bottom' && index === data.length - 1) || 
-        (icon === 'el-icon-delete' && index === 0)
+        (icon === 'el-icon-delete' && index === 0) 
       )
     },
-    async validate () {
-      let isValid = await this.$refs.travelForm.validate()
-      console.log(isValid, 'isValid', this.formData)
-    },
-    async validateTraffic () {
-      // let ifInvoiceAttachment = this.formData.reimburseFares.every(item => item.invoiceAttachment && item.invoiceAttachment.length)
-      let isValid = await this.$refs.trafficForm.validate()
-      console.log('trafficValid', isValid, this.formData)
-    },
-    async validateAcc () {
-      // let ifInvoiceAttachment = this.formData.reimburseAccommodationSubsidies.every(item => item.invoiceAttachment && item.invoiceAttachment.length)
-      let isValid = await this.$refs.accForm.validate()
-      console.log('AccValid', isValid, this.formData)
-    },
-    async validateOther () {
-      // let ifInvoiceAttachment = this.formData.reimburseOtherCharges.every(item => item.invoiceAttachment && item.invoiceAttachment.length)
-      let isValid = await this.$refs.otherForm.validate()
-      console.log('otherValid', isValid, this.formData)
+    async validate (ref ,data) {
+      let isValid = true
+      if (!data) {
+        isValid = await this.$refs[ref].validate()
+        return isValid
+      } else {
+        console.log(this.formData[data], 'formData')
+        let ifInvoiceAttachment
+        if (this.title === 'create') { // 创建的时候
+          ifInvoiceAttachment = this.formData[data].every(item => item.invoiceAttachment && item.invoiceAttachment.length)
+        } else {
+          // 编辑的时候
+          if (ref !== 'travelForm') {
+            for (let i = 0; i < this.formData[data].length; i++) {
+              ifInvoiceAttachment = true
+              let { invoiceAttachment, invoiceFileList } = this.formData[data][i]
+              console.log(invoiceAttachment, invoiceFileList, 'edit validate', data)
+              if (invoiceFileList.length) {
+                let ifDeleted = this.formData.fileId.includes(invoiceFileList[0].id) // 判断invoiceFileList是否已经删除
+                // 如果用于回显的附件给删除了，则需要判断的invoiceAttachment数组是否有值
+                if (ifDeleted) {
+                  console.log('has deleted')
+                  ifInvoiceAttachment = Boolean(invoiceAttachment && invoiceAttachment.length)
+                } else {
+                  console.log('no deleted')
+                  // m欸有删除回显的附件，则直接为true
+                  ifInvoiceAttachment = true 
+                }
+                // 只有有一个是false 就直接break
+                if (!ifInvoiceAttachment) break
+              } else {
+                ifInvoiceAttachment = Boolean(invoiceAttachment && invoiceAttachment.length)
+              }
+            }
+          }
+        }
+        let isValid = await this.$refs[ref].validate()
+        console.log('valid', isValid, this.formData[data], ifInvoiceAttachment)
+        return ref === 'travelForm' ? isValid : ifInvoiceAttachment && isValid
+      }
     },
     buildAttachment (fileId, reimburseType, attachmentType = 1, reimburseId = 0, id = 0) { // 构建附件的数据格式
       return {
@@ -656,75 +923,62 @@ export default {
       })
       return resultArr
     },
+    deleteFileList (id) {
+      this.formData.fileId.push(id)
+      console.log(this.delteReimburse, 'deleteFileList')
+    },
     getFileList (val) {
       let resultArr = this.createFileList(val, {
         reimburseType: 0,
         attachmentType: 1
       })
-      console.log(resultArr, 'resultArr')
       this.formData.reimburseAttachments = resultArr
-      console.log(this.formData.reimburseAttachments, 'fileList')
     },
-    getTrafficList (val, prop) {
+    getTrafficList (val, prop, index) {
       let data = this.formData.reimburseFares
       let resultArr = []
-      if (this.operation === 'create') {
-        resultArr = this.createFileList(val, {
-          reimburseType: 2,
-          attachmentType: prop === 'invoiceAttachment' ? 2 : 1
-        })
-      }
-      this.$set(data[this.currentIndex], prop, resultArr)
+      resultArr = this.createFileList(val, {
+        reimburseType: 2,
+        attachmentType: prop === 'invoiceAttachment' ? 2 : 1
+      })
+      this.$set(data[index], prop, resultArr)
     },
-    getAccList (val, prop) {
+    getAccList (val, prop, index) {
       let data = this.formData.reimburseAccommodationSubsidies
       let resultArr = []
-      if (this.operation === 'create') {
-        resultArr = this.createFileList(val, {
-          reimburseType: 3,
-          attachmentType:  prop === 'invoiceAttachment' ? 2 : 1
-        })
-      }
-      this.$set(data[this.currentIndex],  prop, resultArr)
+      resultArr = this.createFileList(val, {
+        reimburseType: 3,
+        attachmentType:  prop === 'invoiceAttachment' ? 2 : 1
+      })
+      this.$set(data[index],  prop, resultArr)
     },
-    getOtherList (val, prop) {
+    getOtherList (val, prop, index) {
       let data = this.formData.reimburseOtherCharges
       let resultArr = []
-      if (this.operation === 'create') {
-        resultArr = this.createFileList(val, {
-          reimburseType: 4,
-          attachmentType: prop === 'invoiceAttachment' ? 2 : 1
-        })
-      }
-      this.$set(data[this.currentIndex], prop, resultArr)
-      console.log(this.formData, 'formData')
+      resultArr = this.createFileList(val, {
+        reimburseType: 4,
+        attachmentType: prop === 'invoiceAttachment' ? 2 : 1
+      })
+      this.$set(data[index], prop, resultArr)
     },
     setCurrentIndex (data, row) {
       this.currentRow = row
       this.currentIndex = findIndex(data, item => item === row)
-      console.log(this.currentIndex, 'currentIndex')
     },
     onTravelCellClick (row, column) {
       this.setCurrentProp(column, row)
-      // console.log(row, column, cell, event, 'cellChange')
     },
     onTrafficCellClick (row, column) {
-      this.setCurrentProp(column, row)
-      // console.log(row, column, cell, event, 'cellChange')
+      this.setCurrentProp(column, row)+
+      this.setCurrentIndex(this.formData.reimburseFares, row)
     },
     onAccCellClick (row, column) {
-      this.setCurrentProp(column, row)
+      console.log('cell click')
+      this.setCurrentProp(column, row)+
+      this.setCurrentIndex(this.formData.reimburseAccommodationSubsidies, row)
     },
     onOtherCellClick (row, column) {
       this.setCurrentProp(column, row)
-    },
-    onTrafficCellMouseEnter (row) {
-      this.setCurrentIndex(this.formData.reimburseFares, row)
-    },
-    onAccCellMouseEnter (row) {
-      this.setCurrentIndex(this.formData.reimburseAccommodationSubsidies, row)
-    },
-    onOtherCellMouseEnter (row) {
       this.setCurrentIndex(this.formData.reimburseOtherCharges, row)
     },
     setCurrentProp ({ label, property }) {
@@ -732,7 +986,6 @@ export default {
       this.currentProp = property
     },
     onChange (value) { // 天数 总金额 计算
-      console.log(value, 'onchange')
       if (!this.isValidaNumber(value)) {
         return
       }
@@ -747,17 +1000,10 @@ export default {
       }
     },
     addAndCopy (scope, data, type, operationType) {
-      console.log(operationType, 'operationType') // 判断是新增还是复制
+      if (!this.ifFormEdit) return
+      console.log(scope.row, data, type, operationType, 'operationType') // 判断是新增还是复制
       let { row } = scope
       switch (type) {
-        case 'travel':
-          data.push({
-            id: '',
-            days: operationType === 'add' ? '' : row.days,
-            money: operationType === 'add' ? '' : row.money,
-            remark: operationType === 'add' ? '' : row.remark,
-          })
-          break
         case 'traffic':
           data.push({
             id: '',
@@ -767,9 +1013,11 @@ export default {
             to: operationType === 'add' ? '' : row.to,
             money: operationType === 'add' ? '' : row.money,
             remark: operationType === 'add' ? '' : row.remark,
-            invoiceNumber: '',
+            invoiceNumber: '1',
             invoiceAttachment: [],
-            otherAttachment: []
+            otherAttachment: [],
+            invoiceFileList: [], // 用于回显
+            otherFileList: [] // 用于回显
           })
           break
         case 'accommodation':
@@ -779,9 +1027,11 @@ export default {
             money: operationType === 'add' ? '' : row.money,
             totalMoney: operationType === 'add' ? '' : row.totalMoney,
             remark: operationType === 'add' ? '' : row.remark,
-            invoiceNumber: '',
+            invoiceNumber: '1',
             invoiceAttachment: [],
-            otherAttachment: []
+            otherAttachment: [],
+            invoiceFileList: [], // 用于回显
+            otherFileList: [] // 用于回显
           })
           break
         case 'other':
@@ -790,19 +1040,34 @@ export default {
             expenseCategory: operationType === 'add' ? '' : row.expenseCategory,
             money: operationType === 'add' ? '' : row.money,
             remark: operationType === 'add' ? '' : row.remark,
-            invoiceNumber: '',
+            invoiceNumber: '1',
             invoiceAttachment: [],
-            otherAttachment: []
+            otherAttachment: [],
+            invoiceFileList: [], // 用于回显
+            otherFileList: [] // 用于回显
           })
       }
     },
-    delete (scope, data) {
+    delete (scope, data, type) {
+      if (!this.ifFormEdit) return
+      if (scope.row.id) { // 说明已经新建过的
+        this.formData.delteReimburse.push({
+          deleteId: scope.row.id,
+          reimburseType: REIMBURSE_TYPE_MAP[type]
+        })
+        console.log(this.formData.delteReimburse, 'deleterei')
+      } 
       data.splice(scope.$index, 1)
+      if (!data.length) {
+        console.log(IF_SHOW_MAP[type], 'IF_SHOW_MAP[type]')
+        this[IF_SHOW_MAP[type]] = true
+      }
     },
     up (scope, data) {
       let { $index } = scope
       let prevIndex = $index - 1
       let currentItem = data[$index]
+      // let { invoiceFileList, otherFileList } = 
       this.$set(data, $index, data[prevIndex])
       this.$set(data, prevIndex, currentItem)
     },
@@ -829,7 +1094,6 @@ export default {
       return false
     },
     getSummaries ({ columns, data }) { // 金额合计
-      console.log(columns, data, 'getSum')
       const sums = []
       let hasTotalMoney = this.hasTotalMoneyKey(data)
       columns.forEach((column, index) => {
@@ -859,24 +1123,102 @@ export default {
     clearFile () { // 删除上传的文件
       this.$refs.uploadFile.clearFiles()
     },
+    customerFocus (prop) {
+      if (prop === 'serviceOrderSapId') {
+        this.$refs.customerDialog.open()
+      }
+    },
+    customerCurrentChange (val) {
+      Object.assign(this.listQuery, val)
+      this._getCustomerInfo()
+    },
+    _getCustomerInfo () {
+      getOrder(this.listQuery).then(res => {
+        let { data, count } = res
+        this.customerInfoList = data
+        this.customerInfoList.forEach(item => {
+          item.radioKey = 'id'
+        })
+        this.customerTotal = count
+      }).catch(() => {
+        this.$message.erro('获取用户信息失败')
+      })
+    },
+    closeDialog () {
+      this.$refs.customerDialog.close()
+    },
+    confirm () {
+      let currentRow = this.$refs.customerTable.getCurrentRow()
+      if (Object.keys(currentRow).length) {
+        let { 
+          terminalCustomerId, 
+          terminalCustomer, 
+          u_SAP_ID, 
+          fromTheme, 
+          id, 
+          userId,
+          becity,
+          businessTripDate,
+          endDate,
+          destination } = currentRow
+        console.log(currentRow, 'currentrOW')
+        let formData = this.formData
+        formData.terminalCustomerId = terminalCustomerId
+        formData.terminalCustomer = terminalCustomer
+        formData.serviceOrderId = id
+        formData.serviceOrderSapId = u_SAP_ID
+        formData.fromTheme = fromTheme
+        formData.CreateUserId = userId
+        formData.becity = becity
+        formData.businessTripDate = businessTripDate
+        formData.endDate = endDate
+        formData.destination = destination
+      }
+      this.$refs.customerTable.resetRadio()
+      this.currentRow = {}
+      this.closeDialog()
+    },
+    openRemarkDialog (type) { // 打开备注弹窗，二次确认
+      this.remarkType = type
+      this.$refs.approve.open()
+    },
+    closeRemarkDialog () {
+      this.remarkType = ''
+      this.$refs.remark.reset()
+      this.$refs.approve.close()
+    },
+    onInput (val) {
+      this.remarkText = val
+    },
+    onApproveClose () {
+      this.remarkType = ''
+      this.$refs.remark.reset()
+    },
     resetInfo () {
+      this.$refs.form.resetFields()
+      this.$refs.form.clearValidate()
+      this.clearFile()
+      this.ifShowTraffic = this.ifShowOther = this.ifShowAcc = this.ifShowTravel = true
       this.formData = { // 表单参数
         id: '',
-        people: '',
-        org: '',
+        userName: '',
+        createUserId: '',
+        orgName: '',
         position: '',
         serviceOrderId: '',
-        customerId: '',
-        customerName: '',
+        serviceOrderSapId: '',
+        terminalCustomerId: '',
+        terminalCustomer: '',
         shortCustomerName: '',
-        origin: '',
+        becity: '',
         destination: '',
-        originDate: '',
+        businessTripDate: '',
         endDate: '',
-        remburseType: '',
+        reimburseType: '',
+        reimburseTypeText: '',
         projectName: '',
         remburseStatus: '',
-        theme: '',
+        fromTheme: '',
         fillDate: '',
         report: '',
         bearToPay: '',
@@ -884,71 +1226,138 @@ export default {
         serviceRelations: '',
         payTime: '',
         remark: '',
-        totalMoney: '',
+        totalMoney: 0,
+        attachmentsFileList: [],
         reimburseAttachments: [],
-        reimburseTravellingAllowances: [{
-          id: '',
-          days: '',
-          money: '',
-          remark: ''
-        }],
-        reimburseFares: [{
-          id: '',
-          trafficType: '',
-          transport: '',
-          from: '',
-          to: '',
-          money: '',
-          remark: '',
-          invoiceNumber: '1',
-          invoiceAttachment: [],
-          otherAttachment: [],
-          reimburseAttachments: []
-        }],
-        reimburseAccommodationSubsidies: [{
-          id: '',
-          days: '',
-          money: '',
-          totalMoney: '',
-          remark: '',
-          invoiceNumber: '1',
-          invoiceAttachment: [],
-          otherAttachment: [],
-          reimburseAttachments: []
-        }],
-        reimburseOtherCharges: [{
-          id: '',
-          expenseCategory: '',
-          money: '',
-          remark: '',
-          invoiceNumber: '1',
-          invoiceAttachment: [],
-          otherAttachment: [],
-          reimburseAttachments: []
-        }]
+        reimburseTravellingAllowances: [],
+        reimburseFares: [],
+        reimburseAccommodationSubsidies: [],
+        reimburseOtherCharges: [],
+        isDraft: false, // 是否是草稿
+        delteReimburse: [], // 需要删除的行数据
+        fileId: [], // 需要删除的附件ID
+      }    
+    },
+    mergeFileList (data) {   
+      data.forEach(item => {
+        let { invoiceAttachment, otherAttachment, invoiceFileList, otherFileList } = item
+        item.reimburseAttachments = [...invoiceAttachment, ...otherAttachment, ...invoiceFileList, ...otherFileList]
+      })
+    },
+    addSerialNumber (data) { // 为表格的数据添加序号
+      data.forEach((item, index) => {
+        item.serialNumber = index + 1
+      })
+    },
+    async checkData () { // 校验表单数据是否通过
+      let isFormValid = true, isTravelValid = true, isTrafficValid = true, isAccValid = true, isOtherValid = true
+      isFormValid = await this.validate('form')
+      if (!this.ifShowTravel) {
+        isTravelValid = await this.validate('travelForm', 'reimburseTravellingAllowances')
       }
-      this.clearFile()
-      this.ifShowTraffic = this.ifShowOther = this.ifShowAcc = this.ifShowTravel = true
+      if (!this.ifShowTraffic) {
+        isTrafficValid = await this.validate('trafficForm', 'reimburseFares')
+      }
+      if (!this.ifShowAcc) {
+        isAccValid = await this.validate('accForm', 'reimburseAccommodationSubsidies')
+      }
+      if (!this.ifShowOther) {
+        isOtherValid = await this.validate('otherForm', 'reimburseOtherCharges')
+      }
+      console.log('checkData', isFormValid, isTravelValid, isTrafficValid, isAccValid, isOtherValid)
+      return isFormValid && isTrafficValid && isAccValid && isOtherValid && isTravelValid
+    },
+    async submit (isDraft) { // 提交
+      let { 
+        reimburseAccommodationSubsidies, 
+        reimburseOtherCharges, 
+        reimburseFares,
+        reimburseAttachments,
+        attachmentsFileList
+      } = this.formData
+      this.formData.reimburseAttachments = [...reimburseAttachments, ...attachmentsFileList]
+      this.mergeFileList(reimburseAccommodationSubsidies)
+      this.mergeFileList(reimburseOtherCharges)
+      this.mergeFileList(reimburseFares)
+      this.addSerialNumber(reimburseAccommodationSubsidies)
+      this.addSerialNumber(reimburseOtherCharges)
+      this.addSerialNumber(reimburseFares)
+      let isValid = await this.checkData()
+      console.log('submit', isValid, isDraft)
+      if (!isValid) {
+        return Promise.reject({ message: '请将必填项填写完整' })
+      }
+      this.formData.isDraft = isDraft ? true : false
+      console.log(this.formData, 'formData', addOrder)
+      return addOrder(this.formData)
+    },
+    async updateOrder (isDraft) { // 编辑
+      console.log(isDraft, 'isDraft')
+      let { 
+        reimburseAccommodationSubsidies, 
+        reimburseOtherCharges, 
+        reimburseFares,
+        reimburseAttachments,
+        attachmentsFileList
+      } = this.formData
+      this.formData.reimburseAttachments = [...reimburseAttachments, ...attachmentsFileList]
+      this.mergeFileList(reimburseAccommodationSubsidies)
+      this.mergeFileList(reimburseOtherCharges)
+      this.mergeFileList(reimburseFares)
+      this.addSerialNumber(reimburseAccommodationSubsidies)
+      this.addSerialNumber(reimburseOtherCharges)
+      this.addSerialNumber(reimburseFares)
+      let isValid = await this.checkData()
+      console.log('submit', isValid, isDraft)
+      if (!isValid) {
+        return Promise.reject({ message: '请将必填项填写完整' })
+      }
+      this.formData.isDraft = isDraft ? true : false
+      console.log(this.formData, 'update formData')
+      return updateOrder(this.formData)
+    },
+    approve () {
+      this._approve()
+    },
+    async _approve () {
+      console.log('exec approve')
+      this.$refs.form.validate(isValid => {
+        console.log(isValid, 'ISvALID')
+        if (!isValid) {
+          return this.$message.error('请将必选项填写')
+        } 
+        console.log(this.remarkType, 'remarkType')
+        let data = this.formData
+        let params = {
+          id: data.id, 
+          shortCustomerName: data.shortCustomerName, 
+          reimburseType: data.reimburseType, 
+          projectName: data.projectName, 
+          bearToPay: data.bearToPay, 
+          responsibility: data.responsibility,
+          remark: this.remarkText,
+          flowInstanceId: data.flowInstanceId, // 流程ID
+          isReject: this.remarkType === 'reject'
+        }
+        console.log(approve, params, this.parentVm, 'parentVm')
+        this.remarkLoading = true
+        approve(params).then(() => {
+          this.$message({
+            type: 'success',
+            message: this.remarkType === 'reject' ? '驳回成功' : '操作成功'
+          })
+          this.remarkLoading = false
+          this.closeRemarkDialog()
+          this.parentVm._getList()
+          this.parentVm.closeDialog()
+        }).catch(() => {
+          this.remarkLoading = false
+          this.$message.error('操作失败')
+        })
+      })       
     }
   },
-  mergeFileList (data) {   
-    data.forEach(item => {
-      let { invoiceAttachment, otherAttachment } = item
-      item.reimburseAttachments = [...invoiceAttachment, ...otherAttachment]
-    })
-  },
-  submit () { // 提交
-    let { 
-      reimburseTravellingAllowances, 
-      reimburseAccommodationSubsidies, 
-      reimburseOtherCharges, 
-      reimburseFares 
-    } = this.formData
-    this.mergeFileList(reimburseTravellingAllowances)
-    this.mergeFileList(reimburseAccommodationSubsidies)
-    this.mergeFileList(reimburseOtherCharges)
-    this.mergeFileList(reimburseFares)
-  },
+    
   created () {
 
   },
@@ -961,6 +1370,21 @@ export default {
 .order-wrapper {
   max-height: 600px;
   overflow-y: auto;
+  ::v-deep .el-input.is-disabled .el-input__inner {
+    background-color: #fff;
+    cursor: default;
+    color: #606266;
+    border-color: #DCDFE6;
+  }
+  ::v-deep .el-textarea.is-disabled .el-textarea__inner {
+    background-color: #fff;
+    cursor: default;
+    color: #606266;
+    border-color: #DCDFE6;
+  }
+  &::-webkit-scrollbar {
+    display: none;
+  }
   ::v-deep .el-form-item--mini.el-form-item, .el-form-item--small.el-form-item {
     margin-bottom: 5px;
   }
@@ -986,6 +1410,9 @@ export default {
   .form-wrapper {
     ::v-deep .el-form-item--mini {
       margin-bottom: 0;
+    }
+    ::v-deep .el-table__fixed-right, .el-table__fixed {
+      background-color: #fff;
     }
   }
   .icon-item {

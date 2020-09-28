@@ -4,7 +4,7 @@
       <img class="div" src="~@/assets/login/left.png" alt />
 
       <div class="login-img" v-if="dialogQ">
-        <h3 class="title">nSAP-V4.0</h3>
+        <h3 class="title">ERP4.0</h3>
         <p class="tips">管理系统</p>
         <p>请用新威智能App扫描此二维码</p>
         <el-image :src="url" placeholder="请稍等">

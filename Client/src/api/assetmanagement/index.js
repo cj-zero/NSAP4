@@ -17,11 +17,11 @@ export function  getSingleAsset (params) {
   })
 }
 
-export function add (params) {
+export function add (data) {
   return request({
     url: 'Asset/Add', // 增加
     method: 'post',
-    params
+    data
   })
 }
 

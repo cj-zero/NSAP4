@@ -50,3 +50,66 @@ export const EXPENSE_CATEGORY = [ // 报销类别
   { label: '软件项目测试', value: '10' },
   { label: '软件售后安装维护', value: '11' }
 ]
+
+export const RESPONSIBILITY_TYPE = [ // 责任承担
+  { label: '请选择', value: '' },
+  { label: '研发环节', value: '1' },
+  { label: '工程环节', value: '2' },
+  { label: '品质环节', value: '3' },
+  { label: '生厂环节', value: '4' },
+  { label: '物流环节', value: '5' },
+  { label: '售前环节', value: '6' },
+  { label: '售后环节', value: '7' }
+]
+
+
+export const RELATION_TYPE = [ // 劳务关系
+  { label: '请选择', value: '' },
+  { label: '东莞新威', value: '1' },
+  { label: '新威尔', value: '2' },
+  { label: '新威新能源', value: '3' }
+]
+
+export const REIMBURSE_STATUS_MAP = {
+  1: '撤回',
+  2: '驳回',
+  3: '未提交',
+  4: '客服主管审批',
+  5: '财务初审',
+  6: '财务复审',
+  7: '总经理审批',
+  8: '待支付',
+  9: '已支付'
+}
+
+export const PROJECT_NAME_MAP = {
+  1: 'ATL-MTW',
+  2: 'ATL-CC',
+  3: 'ATL-Mini',
+  4: 'ATL-DBC',
+  5: '江苏卫蓝',
+  6: '理士',
+  7: '万向'
+}
+
+export const RELATIONS_MAP = {
+  1: '新威尔',
+  2: '新威新新能源',
+  3: '东莞新威'
+}
+
+export const RESPONSIBILITY_MAP = {
+  1: '研发环节',
+  2: '工程环节',
+  3: '品质环节',
+  4: '生厂环节',
+  5: '物流环节',
+  6: '售前环节',
+  7: '售后环节'
+}
+
+export const EXPENSE_LIST = [
+  { label: '请选择', value: '' },
+  { label: '公司承担', value: '1' },
+  { label: '部门承担', value: '2' },
+]
