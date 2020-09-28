@@ -5,9 +5,11 @@ using System.Threading.Tasks;
 using Infrastructure;
 using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
+using Npoi.Mapper;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
+using OpenAuth.App.Serve.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 
@@ -28,35 +30,69 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var loginUserId = loginContext.User.Id;
-            if (!string.IsNullOrWhiteSpace(request.AppId.ToString()))
+            var user = loginContext.User;
+            if (loginContext.User.Account == "App")
             {
-                loginUserId = await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(request.AppId)).Select(u => u.UserID).FirstOrDefaultAsync();
-                //usermodel = await UnitWork.Find<User>(u => u.Id.Equals(loginUserId)).FirstOrDefaultAsync();
+                user = GetUserId(Convert.ToInt32(request.AppId));
             }
-            //var properties = loginContext.GetProperties("myexpends");
-
-            //if (properties == null || properties.Count == 0)
-            //{
-            //    throw new Exception("当前登录用户没有访问该模块字段的权限，请联系管理员配置");
-            //}
 
             var result = new TableData();
-            var objs = UnitWork.Find<MyExpends>(m=>m.CreateUserId== loginUserId);
+            var objs = UnitWork.Find<MyExpends>(m => m.CreateUserId == user.Id);
             objs = objs.WhereIf(request.StartTime != null && request.EndTime != null, m => m.CreateTime >= request.StartTime && m.CreateTime < Convert.ToDateTime(request.EndTime).AddMinutes(1440));
 
-
-            if (!string.IsNullOrEmpty(request.key))
+            var MyExpend = await objs.OrderBy(u => u.Id)
+               .Skip((request.page - 1) * request.limit)
+               .Take(request.limit).ToListAsync();
+            var MyExpendsDetails = objs.MapToList<AddOrUpdateMyExpendsReq>();
+            var file = await UnitWork.Find<UploadFile>(null).ToListAsync();
+            foreach (var item in MyExpend)
             {
-                objs = objs.Where(u => u.Id.Equals(request.key));
+                var ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId == item.Id && r.ReimburseType == 5).ToListAsync();
+                MyExpendsDetails.Where(m=>m.Id.Equals(item.Id)).ForEach(m=>m.ReimburseAttachments= ReimburseAttachments.Select(r => new ReimburseAttachmentResp
+                {
+                    Id = r.Id,
+                    FileId = r.FileId,
+                    AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault(),
+                    AttachmentType = r.AttachmentType,
+                    ReimburseId = r.ReimburseId,
+                    ReimburseType = r.ReimburseType
+                }).ToList());
             }
-
-            result.Data =await objs.OrderBy(u => u.Id)
-                .Skip((request.page - 1) * request.limit)
-                .Take(request.limit).ToListAsync();
+            result.Data = MyExpendsDetails;
             result.Count = objs.Count();
             return result;
         }
+
+        /// <summary>
+        /// 费用详情
+        /// </summary>
+        /// <param name="MyExpendsId"></param>
+        /// <returns></returns>
+        public async Task<TableData> Details(int MyExpendsId)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var obj = await UnitWork.Find<MyExpends>(m => m.Id == MyExpendsId).FirstOrDefaultAsync();
+            var result = new TableData();
+            var ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId == obj.Id && r.ReimburseType == 5).ToListAsync();
+            var file = await UnitWork.Find<UploadFile>(null).ToListAsync();
+            var MyExpendsDetails = obj.MapTo<AddOrUpdateMyExpendsReq>();
+            MyExpendsDetails.ReimburseAttachments = ReimburseAttachments.Select(r => new ReimburseAttachmentResp
+            {
+                Id = r.Id,
+                FileId = r.FileId,
+                AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault(),
+                AttachmentType = r.AttachmentType,
+                ReimburseId = r.ReimburseId,
+                ReimburseType = r.ReimburseType
+            }).ToList();
+            result.Data = MyExpendsDetails;
+            return result;
+        }
+
         /// <summary>
         /// 添加
         /// </summary>
@@ -68,17 +104,21 @@ namespace OpenAuth.App
             //todo:补充或调整自己需要的字段
             obj.CreateTime = DateTime.Now;
             var user = _auth.GetCurrentUser().User;
+            if (user.Account == "App")
+            {
+                user = GetUserId(Convert.ToInt32(req.AppId));
+            }
             obj.CreateUserId = user.Id;
             obj.CreateUserName = user.Name;
             obj = await UnitWork.AddAsync<MyExpends, int>(obj);
             await UnitWork.SaveAsync();
-            if (req.ReimburseAttachments.Count > 0)
+            if (req.ReimburseAttachments != null && req.ReimburseAttachments.Count > 0)
             {
                 var ReimburseAttachments = req.ReimburseAttachments.MapToList<ReimburseAttachment>();
-                ReimburseAttachments.ForEach(r => r.ReimburseId = obj.Id);
+                ReimburseAttachments.ForEach(r => { r.ReimburseId = obj.Id; r.Id = Guid.NewGuid().ToString(); });
                 await UnitWork.BatchAddAsync<ReimburseAttachment>(ReimburseAttachments.ToArray());
             }
-
+            await UnitWork.SaveAsync();
         }
 
         /// <summary>
@@ -88,13 +128,15 @@ namespace OpenAuth.App
         public async Task Update(AddOrUpdateMyExpendsReq obj)
         {
             var user = _auth.GetCurrentUser().User;
-
             if (obj.fileid != null && obj.fileid.Count > 0)
             {
                 var ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(a => obj.fileid.Contains(a.Id) && a.ReimburseType == 5).ToListAsync();
                 ReimburseAttachments.ForEach(a => UnitWork.DeleteAsync<ReimburseAttachment>(a));
             }
-
+            if (user.Account == "App")
+            {
+                user = GetUserId(Convert.ToInt32(obj.AppId));
+            }
             await UnitWork.UpdateAsync<MyExpends>(u => u.Id == obj.Id, u => new MyExpends
             {
                 FeeType = obj.FeeType,
@@ -126,7 +168,7 @@ namespace OpenAuth.App
                     await UnitWork.BatchAddAsync<ReimburseAttachment>(ReimburseAttachments.ToArray());
                 }
             }
-
+            await UnitWork.SaveAsync();
 
         }
         /// <summary>
@@ -150,6 +192,19 @@ namespace OpenAuth.App
             ReimburseAttachments.ForEach(a => UnitWork.DeleteAsync<ReimburseAttachment>(a));
 
         }
+
+        /// <summary>
+        /// 获取用户
+        /// </summary>
+        /// <param name="AppId"></param>
+        /// <returns></returns>
+        private User GetUserId(int AppId)
+        {
+            var userid = UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(AppId)).Select(u => u.UserID).FirstOrDefault();
+
+            return UnitWork.Find<User>(u => u.Id.Equals(userid)).FirstOrDefault();
+        }
+
         public MyExpendsApp(IUnitWork unitWork, RevelanceManagerApp app, IAuth auth) : base(unitWork, auth)
         {
             _revelanceApp = app;
