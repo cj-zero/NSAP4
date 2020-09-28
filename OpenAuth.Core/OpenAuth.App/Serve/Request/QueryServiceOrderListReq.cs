@@ -70,5 +70,10 @@ namespace OpenAuth.App.Request
         /// 主管名字
         /// </summary>
         public string QrySupervisor { get; set; }
+
+        /// <summary>
+        /// 状态栏 1 已派单 2 已解决 
+        /// </summary>
+        public int QryStatusBar { get; set; }
     }
 }

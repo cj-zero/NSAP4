@@ -47,6 +47,27 @@ namespace OpenAuth.WebApi.Controllers.Serve
             return result;
         }
 
+        /// <summary>
+        /// 获取详情
+        /// </summary>
+        /// <param name="MyExpendsId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> Details(int MyExpendsId)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.Details(MyExpendsId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
 
         /// <summary>
         /// 添加我的费用
