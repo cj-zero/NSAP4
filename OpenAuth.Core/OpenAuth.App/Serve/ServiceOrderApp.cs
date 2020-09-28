@@ -1055,7 +1055,7 @@ namespace OpenAuth.App
                 StatId = q.Key.SupervisorId,
                 StatName = q.Key.Supervisor,
                 ServiceCnt = q.Count()
-            }).Where(w => w.ServiceCnt > 10).OrderByDescending(s => s.ServiceCnt).ToListAsync();
+            }).Where(w => w.ServiceCnt > 10).OrderByDescending(s => s.ServiceCnt).Skip(0).Take(20).ToListAsync();
             resultlist.Add(new ServerOrderStatListResp { StatType = "Supervisor", StatList = list1 });
 
             var list2 = await query.GroupBy(g => new { g.SalesManId, g.SalesMan }).Select(q => new ServiceOrderReportResp
@@ -1063,7 +1063,7 @@ namespace OpenAuth.App
                 StatId = q.Key.SalesManId,
                 StatName = q.Key.SalesMan,
                 ServiceCnt = q.Count()
-            }).OrderByDescending(s => s.ServiceCnt).ToListAsync();
+            }).OrderByDescending(s => s.ServiceCnt).Skip(0).Take(20).ToListAsync();
             resultlist.Add(new ServerOrderStatListResp { StatType = "SalesMan", StatList = list2 });
 
             var list3 = await query.GroupBy(g => new { g.ProblemTypeId, g.ProblemTypeName }).Select(q => new ServiceOrderReportResp
@@ -1071,7 +1071,7 @@ namespace OpenAuth.App
                 StatId = q.Key.ProblemTypeId,
                 StatName = q.Key.ProblemTypeName,
                 ServiceCnt = q.Count()
-            }).OrderByDescending(s => s.ServiceCnt).ToListAsync();
+            }).OrderByDescending(s => s.ServiceCnt).Skip(0).Take(20).ToListAsync();
             resultlist.Add(new ServerOrderStatListResp { StatType = "ProblemType", StatList = list3 });
 
             var list4 = await query.GroupBy(g => new { g.RecepUserId, g.RecepUserName }).Select(q => new ServiceOrderReportResp
@@ -1079,7 +1079,7 @@ namespace OpenAuth.App
                 StatId = q.Key.RecepUserId,
                 StatName = q.Key.RecepUserName,
                 ServiceCnt = q.Count()
-            }).OrderByDescending(s => s.ServiceCnt).ToListAsync();
+            }).OrderByDescending(s => s.ServiceCnt).Skip(0).Take(20).ToListAsync();
             resultlist.Add(new ServerOrderStatListResp { StatType = "RecepUser", StatList = list4 });
             result.Data = resultlist;
             return result;
