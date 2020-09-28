@@ -180,7 +180,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// <summary>
         /// 审批
         /// </summary>
-        /// <param name="ReimburseInfoId"></param>
+        /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
         public async Task<TableData> Accraditation(AccraditationReimburseInfoReq req)

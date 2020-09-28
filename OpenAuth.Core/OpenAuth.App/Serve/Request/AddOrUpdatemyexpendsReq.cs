@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
+using OpenAuth.App.Serve.Response;
 using OpenAuth.Repository.Core;
 
 namespace OpenAuth.App.Request
@@ -26,7 +27,7 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 
         /// </summary>
-        public string Id { get; set; }
+        public int? Id { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -79,7 +80,18 @@ namespace OpenAuth.App.Request
         /// 
         /// </summary>
         public string ExpenseCategory { get; set; }
-        
-         //todo:添加自己的请求字段
+
+        /// <summary>
+        /// 附件表
+        /// </summary>
+        public virtual List<ReimburseAttachmentResp> ReimburseAttachments { get; set; }
+
+
+        /// <summary>
+        /// 删除附件
+        /// </summary>
+        public virtual List<string> fileid { get; set; }
+
+        //todo:添加自己的请求字段
     }
 }
