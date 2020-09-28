@@ -32,20 +32,46 @@ namespace Infrastructure.TecentOCR
             _client = new OcrClient(cred, "ap-guangzhou", clientProfile);
         }
 
+        /// <summary>
+        /// 日期格式转换
+        /// </summary>
+        /// <param name="date"></param>
+        /// <returns></returns>
         private string GetDateFormat(string date)
         {
             return date.Replace("年", "-").Replace("月", "-").Replace("日", string.Empty);
         }
+
         /// <summary>
         /// 增值税发票识别
         /// </summary>
         public Result VatInvoiceOCR(VatInvoiceOCRRequest req)
         {
             var result = new Result();
-            VatInvoiceOCRResponse resp = new VatInvoiceOCRResponse();
+            List<object> outData = new List<object>();
             try
             {
+                VatInvoiceOCRResponse resp = new VatInvoiceOCRResponse();
                 resp = _client.VatInvoiceOCRSync(req);
+                var invoiceNo = resp.VatInvoiceInfos.SingleOrDefault(s => s.Name == "发票号码").Value.ToString()[2..resp.VatInvoiceInfos.SingleOrDefault(s => s.Name == "发票号码").Value.Length];
+                var invoiceCode = resp.VatInvoiceInfos.SingleOrDefault(s => s.Name == "发票代码").Value;
+                var invoiceDate = GetDateFormat(resp.VatInvoiceInfos.SingleOrDefault(s => s.Name == "开票日期").Value);
+                var checkCode = resp.VatInvoiceInfos.SingleOrDefault(s => s.Name == "校验码").Value;
+                var companyName = resp.VatInvoiceInfos.SingleOrDefault(s => s.Name == "购买方名称").Value;
+                var comapnyTaxCode = resp.VatInvoiceInfos.SingleOrDefault(s => s.Name == "购买方识别号").Value;
+                var amountWithTax = decimal.Parse(resp.VatInvoiceInfos.SingleOrDefault(s => s.Name == "小写金额").Value.ToString()[1..resp.VatInvoiceInfos.SingleOrDefault(s => s.Name == "小写金额").Value.Length]);
+                TicketInfo ticketInfo = new TicketInfo
+                {
+                    InvoiceCode = invoiceCode,
+                    InvoiceNo = invoiceNo,
+                    InvoiceDate = invoiceDate,
+                    AmountWithTax = amountWithTax,
+                    CompanyName = companyName,
+                    ComapnyTaxCode = comapnyTaxCode,
+                    CheckCode = checkCode,
+                    Type = 3
+                };
+                outData.Add(ticketInfo);
             }
             catch (Exception e)
             {
@@ -53,7 +79,7 @@ namespace Infrastructure.TecentOCR
                 result.Message = e.ToString();
                 return result;
             }
-            result.Data = resp;
+            result.Data = outData;
             return result;
         }
 

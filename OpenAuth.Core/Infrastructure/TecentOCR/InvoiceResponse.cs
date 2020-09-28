@@ -43,6 +43,11 @@ namespace Infrastructure.TecentOCR
         public int Type { get; set; }
 
         /// <summary>
+        /// 是否可报销 0不可报销 1可报销
+        /// </summary>
+        public int IsCanExpense { get; set; }
+
+        /// <summary>
         /// 未通过原因
         /// </summary>
         public string NotPassReason { get; set; }
