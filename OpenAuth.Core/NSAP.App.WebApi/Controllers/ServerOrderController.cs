@@ -30,9 +30,10 @@ namespace NSAP.App.WebApi.Controllers
         private readonly CompletionReportApp _completionReportApp;
         private readonly SerialNumberApp _serialNumberApp;
         private readonly ProblemTypeApp _problemTypeApp;
+        private readonly AttendanceClockApp _attendanceClockApp;
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
 
-        public ServiceOrderController(ServiceOrderApp serviceOrderApp, AppServiceOrderLogApp appServiceOrderLogApp, ServiceEvaluateApp serviceEvaluateApp, SeviceTechnicianApplyOrdersApp seviceTechnicianApplyOrdersApp, CompletionReportApp completionReportApp, SerialNumberApp serialNumberApp, ProblemTypeApp problemTypeApp)
+        public ServiceOrderController(ServiceOrderApp serviceOrderApp, AppServiceOrderLogApp appServiceOrderLogApp, ServiceEvaluateApp serviceEvaluateApp, SeviceTechnicianApplyOrdersApp seviceTechnicianApplyOrdersApp, CompletionReportApp completionReportApp, SerialNumberApp serialNumberApp, ProblemTypeApp problemTypeApp, AttendanceClockApp attendanceClockApp)
         {
             _serviceOrderApp = serviceOrderApp;
             _appServiceOrderLogApp = appServiceOrderLogApp;
@@ -41,6 +42,7 @@ namespace NSAP.App.WebApi.Controllers
             _completionReportApp = completionReportApp;
             _serialNumberApp = serialNumberApp;
             _problemTypeApp = problemTypeApp;
+            _attendanceClockApp = attendanceClockApp;
         }
 
 
@@ -503,6 +505,72 @@ namespace NSAP.App.WebApi.Controllers
                 result.Code = 500;
                 result.Message = ex.Message;
             }
+            return result;
+        }
+
+        /// <summary>
+        /// 打卡
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> Clock(AddOrUpdateAttendanceClockReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _attendanceClockApp.Add(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// App技术员查询打卡记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> AppGetClockHistory([FromQuery] AppGetClockHistoryReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _attendanceClockApp.AppGetClockHistory(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取详情
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response<AttendanceClockDetailsResp>> GetAttendanceClockDetail(string id)
+        {
+            var result = new Response<AttendanceClockDetailsResp>();
+            try
+            {
+                result.Result = await _attendanceClockApp.GetDetails(id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
             return result;
         }
         #endregion
