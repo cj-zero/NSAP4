@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain
 	/// 
 	/// </summary>
     [Table("myexpends")]
-    public partial class MyExpends : Entity
+    public partial class MyExpends : BaseEntity<int>
     {
         public MyExpends()
         {
@@ -113,5 +113,15 @@ namespace OpenAuth.Repository.Domain
         public string UpdateUserName { get; set; }
         public string CreateUserId { get; set; }
         public string CreateUserName { get; set; }
+
+        public override void GenerateDefaultKeyVal()
+        {
+
+        }
+
+        public override bool KeyIsNull()
+        {
+            return Id == 0;
+        }
     }
 }

@@ -22,7 +22,7 @@ namespace OpenAuth.App.Serve.Response
         /// </summary>
         public int ReimburseId { get; set; }
         /// <summary>
-        /// 报销单据类型(1 出差补贴， 2 交通费用， 3住宿补贴， 4 其他费用)
+        /// 报销单据类型(1 出差补贴， 2 交通费用， 3住宿补贴， 4 其他费用 5其他费用)
         /// </summary>
         public int? ReimburseType { get; set; }
         /// <summary>
