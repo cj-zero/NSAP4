@@ -49,6 +49,29 @@ namespace OpenAuth.WebApi.Controllers.Serve
 
             return result;
         }
+
+        /// <summary>
+        /// App查看报销单列表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> AppLoad([FromQuery] QueryReimburseInfoListReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _reimburseinfoapp.AppLoad(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
         /// <summary>
         /// 获取未报销服务单列别
         /// </summary>

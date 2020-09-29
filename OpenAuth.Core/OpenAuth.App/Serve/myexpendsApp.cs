@@ -38,7 +38,8 @@ namespace OpenAuth.App
 
             var result = new TableData();
             var objs = UnitWork.Find<MyExpends>(m => m.CreateUserId == user.Id);
-            objs = objs.WhereIf(request.StartTime != null && request.EndTime != null, m => m.CreateTime >= request.StartTime && m.CreateTime < Convert.ToDateTime(request.EndTime).AddMinutes(1440));
+            objs = objs.WhereIf(request.StartTime != null , m => m.CreateTime >= request.StartTime);
+            objs = objs.WhereIf(request.EndTime != null, m => m.CreateTime < Convert.ToDateTime(request.EndTime).AddMinutes(1440));
 
             var MyExpend = await objs.OrderBy(u => u.Id)
                .Skip((request.page - 1) * request.limit)
@@ -160,7 +161,7 @@ namespace OpenAuth.App
 
             if (obj.ReimburseAttachments != null && obj.ReimburseAttachments.Count > 0)
             {
-                obj.ReimburseAttachments = obj.ReimburseAttachments.Where(a => string.IsNullOrWhiteSpace(a.Id)).ToList();
+                obj.ReimburseAttachments = obj.ReimburseAttachments.Where(a => string.IsNullOrWhiteSpace(a.Id) || a.Id=="0").ToList();
                 if (obj.ReimburseAttachments != null && obj.ReimburseAttachments.Count > 0)
                 {
                     var ReimburseAttachments = obj.ReimburseAttachments.MapToList<ReimburseAttachment>();
@@ -191,6 +192,7 @@ namespace OpenAuth.App
             var ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(a => ReimburseAttachmentsIds.Contains(a.ReimburseId) && a.ReimburseType == 5).ToListAsync();
             ReimburseAttachments.ForEach(a => UnitWork.DeleteAsync<ReimburseAttachment>(a));
 
+            await UnitWork.SaveAsync();
         }
 
         /// <summary>

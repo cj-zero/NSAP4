@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Infrastructure;
 using Infrastructure.Extensions;
@@ -25,6 +26,7 @@ namespace OpenAuth.App
         private RevelanceManagerApp _revelanceApp;
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
         private readonly FlowInstanceApp _flowInstanceApp;
+        static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
 
         //报销单据类型(0 报销单，1 出差补贴， 2 交通费用， 3住宿补贴， 4 其他费用)
 
@@ -37,13 +39,6 @@ namespace OpenAuth.App
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-            var loginUserId = loginContext.User.Id;
-            var usermodel = loginContext.User;
-            if (!string.IsNullOrWhiteSpace(request.AppId.ToString()))
-            {
-                loginUserId = await UnitWork.Find<AppUserMap>(u => u.AppUserId == request.AppId).Select(u => u.UserID).FirstOrDefaultAsync();
-                usermodel = await UnitWork.Find<User>(u => u.Id.Equals(loginUserId)).FirstOrDefaultAsync();
             }
 
             #region 查询条件
@@ -96,9 +91,9 @@ namespace OpenAuth.App
                         break;
                 }
             }
-            if (request.PageType == 1 && usermodel.Name != "lijianmei" && usermodel.Name != "NsapSystem")
+            if (request.PageType == 1 && loginContext.User.Account != "lijianmei" && loginContext.User.Account != "NsapSystem")
             {
-                ReimburseInfos = ReimburseInfos.Where(r => r.CreateUserId.Equals(loginUserId));
+                ReimburseInfos = ReimburseInfos.Where(r => r.CreateUserId.Equals(loginContext.User.Id));
             };
             #endregion
 
@@ -235,6 +230,73 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// App加载列表
+        /// </summary>
+        public async Task<TableData> AppLoad(QueryReimburseInfoListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            if (loginUser.Account=="App")
+            {
+                loginUser = GetUserId(Convert.ToInt32(request.AppId));
+            }
+
+            #region 查询条件
+            var result = new TableData();
+            var ReimburseInfos = UnitWork.Find<ReimburseInfo>(r => r.CreateUserId.Equals(loginUser.Id));
+
+            if (!string.IsNullOrWhiteSpace(request.RemburseStatus))
+            {
+                switch (request.RemburseStatus)
+                {
+                    case "1":
+                        ReimburseInfos = ReimburseInfos.Where(r => (r.RemburseStatus >= 2 || r.RemburseStatus <=9) && r.RemburseStatus!=3);
+                        break;
+                    case "3":
+                        ReimburseInfos = ReimburseInfos.Where(r =>  r.RemburseStatus == 3 || r.RemburseStatus == 1);
+                        break;
+                    case "9":
+                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 9);
+                        break;
+                }
+            }
+            #endregion
+
+            var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
+            var SelUserName = await UnitWork.Find<User>(null).Select(u => new { u.Id, u.Name }).ToListAsync();
+            var Relevances = await UnitWork.Find<Relevance>(r => r.Key == "UserOrg").Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
+            var rohs = await UnitWork.Find<ReimurseOperationHistory>(r=>r.ApprovalResult=="驳回").ToListAsync();
+
+            var datas = await ReimburseInfos.OrderByDescending(u => u.CreateTime)
+                .Skip((request.page - 1) * request.limit)
+                .Take(request.limit).ToListAsync();
+            var ServiceOrderIds = datas.Select(d => d.ServiceOrderId).ToList();
+            var CompletionReports = await UnitWork.Find<CompletionReport>(c => ServiceOrderIds.Contains((int)c.ServiceOrderId)).ToListAsync();
+            var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ServiceOrderIds.Contains(s.Id)).ToListAsync();
+            result.Data = datas.Select(d => new
+            {
+                ReimburseResp = d,
+                RejectRemark = rohs.Where(r=>r.ReimburseInfoId==d.Id).Select(r=>r.Remark).FirstOrDefault(),
+                OrgName = SelOrgName.Where(o => o.Id.Equals(Relevances.Where(r => r.FirstId.Equals(d.CreateUserId)).Select(r => r.SecondId).FirstOrDefault())).OrderBy(o => o.CascadeId).Select(o => o.Name).FirstOrDefault(),
+                UserName = SelUserName.Where(u => u.Id.Equals(d.CreateUserId)).Select(u => u.Name).FirstOrDefault(),
+                TerminalCustomerId = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.TerminalCustomerId).FirstOrDefault(),
+                TerminalCustomer = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.TerminalCustomer).FirstOrDefault(),
+                BusinessTripDate = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.BusinessTripDate).FirstOrDefault(),
+                EndDate = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.EndDate).FirstOrDefault(),
+                BusinessTripDays = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.BusinessTripDays).FirstOrDefault(),
+                FromTheme = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.FromTheme).FirstOrDefault(),
+                SalesMan = ServiceOrders.Where(s => s.Id == d.ServiceOrderId).Select(s => s.SalesMan).FirstOrDefault()
+            });
+
+            result.Count = ReimburseInfos.Count();
+            return result;
+        }
+
+        /// <summary>
         /// 获取未报销服务单列别
         /// </summary>
         /// <returns></returns>
@@ -245,26 +307,23 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var loginUserId = loginContext.User.Id;
-            var usermodel = loginContext.User;
-
-            if (!string.IsNullOrWhiteSpace(request.AppId.ToString()))
+            var loginUser = loginContext.User;
+            if (loginUser.Account == "App")
             {
-                loginUserId = await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(request.AppId)).Select(u => u.UserID).FirstOrDefaultAsync();
-                usermodel = await UnitWork.Find<User>(u => u.Id.Equals(loginUserId)).FirstOrDefaultAsync();
+                loginUser = GetUserId(Convert.ToInt32(request.AppId));
             }
 
-            var orgids = await UnitWork.Find<Relevance>(r => r.Key == "UserOrg" && r.FirstId == loginUserId).Select(r => r.SecondId).ToListAsync();
+            var orgids = await UnitWork.Find<Relevance>(r => r.Key == "UserOrg" && r.FirstId == loginUser.Id).Select(r => r.SecondId).ToListAsync();
             var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderBy(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync(); ;
 
-            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.CreateUserId.Equals(loginUserId) && c.IsReimburse < 2).OrderByDescending(c => c.CreateTime).ToListAsync();
+            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.CreateUserId.Equals(loginUser.Id) && c.IsReimburse < 2).OrderByDescending(c => c.CreateTime).ToListAsync();
             var ids = CompletionReports.Select(c => c.ServiceOrderId).Distinct().ToList();
             var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ids.Contains(s.Id)).ToListAsync();
 
             var objs = ServiceOrders.Select(s => new
             {
-                UserId = usermodel.Id,
-                UserName = usermodel.Name,
+                UserId = loginUser.Id,
+                UserName = loginUser.Name,
                 s.TerminalCustomer,
                 s.TerminalCustomerId,
                 s.Id,
@@ -402,6 +461,12 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
 
+            var loginUser = loginContext.User;
+            if (loginUser.Account == "App")
+            {
+                loginUser = GetUserId(Convert.ToInt32(req.AppId));
+            }
+
             #region 判断发票是否唯一
             if (req.ReimburseFares != null && req.ReimburseFares.Count > 0)
             {
@@ -435,19 +500,35 @@ namespace OpenAuth.App
             }
             #endregion
 
-
+            //用信号量代替锁
+            await semaphoreSlim.WaitAsync();
             var obj = req.MapTo<ReimburseInfo>();
-            obj.CreateTime = DateTime.Now;
-            obj.RemburseStatus = 3;
-            obj.IsRead = 1;
-            obj = await UnitWork.AddAsync<ReimburseInfo, int>(obj);
-            await UnitWork.SaveAsync();
-            //反写完工报告
-            //var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == obj.ServiceOrderId && c.CreateUserId == obj.CreateUserId).ToListAsync();
-            //CompletionReports.ForEach(c => c.IsReimburse = 2);
-            //UnitWork.BatchUpdate<CompletionReport>(CompletionReports.ToArray());
+            
+            try
+            {
+                if (!obj.IsDraft)
+                {
+                    var maxmainid = await UnitWork.Find<ReimburseInfo>(null).OrderByDescending(r => r.MainId).Select(r=>r.MainId).FirstOrDefaultAsync();
+                    obj.MainId = maxmainid + 1;
+                }
+                obj.CreateTime = DateTime.Now;
+                obj.RemburseStatus = 3;
+                obj.CreateUserId = loginUser.Id;
+                obj.IsRead = 1;
+                obj = await UnitWork.AddAsync<ReimburseInfo, int>(obj);
+                await UnitWork.SaveAsync();
+            }
+            finally
+            {
+                semaphoreSlim.Release();
+            }
 
-            var orgids = await UnitWork.Find<Relevance>(r => r.Key == "UserOrg" && r.FirstId == loginContext.User.Id).Select(r => r.SecondId).ToListAsync();
+            //反写完工报告
+            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == obj.ServiceOrderId && c.CreateUserId == obj.CreateUserId).ToListAsync();
+            CompletionReports.ForEach(c => c.IsReimburse = 2);
+            UnitWork.BatchUpdate<CompletionReport>(CompletionReports.ToArray());
+
+            var orgids = await UnitWork.Find<Relevance>(r => r.Key == "UserOrg" && r.FirstId == loginUser.Id).Select(r => r.SecondId).ToListAsync();
             var orgid = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderBy(o => o.CascadeId).Select(o => o.Id).FirstOrDefaultAsync();
 
             if (!obj.IsDraft)
@@ -468,8 +549,8 @@ namespace OpenAuth.App
                 await UnitWork.AddAsync<ReimurseOperationHistory>(new ReimurseOperationHistory
                 {
                     Action = "提交报销单",
-                    CreateUser = loginContext.User.Name,
-                    CreateUserId = loginContext.User.Id,
+                    CreateUser = loginUser.Name,
+                    CreateUserId = loginUser.Id,
                     CreateTime = DateTime.Now,
                     ReimburseInfoId = obj.Id
                 });
@@ -557,10 +638,24 @@ namespace OpenAuth.App
             }
             #endregion
 
-
+            await semaphoreSlim.WaitAsync();
             var obj = req.MapTo<ReimburseInfo>();
-            obj.RemburseStatus = 3;
-            await UnitWork.UpdateAsync<ReimburseInfo>(obj);
+
+            try
+            {
+                if (!obj.IsDraft && string.IsNullOrWhiteSpace(req.FlowInstanceId))
+                {
+                    var maxmainid = await UnitWork.Find<ReimburseInfo>(null).OrderByDescending(r => r.MainId).Select(r=>r.MainId).FirstOrDefaultAsync();
+                    obj.MainId = maxmainid+1;
+                }
+                obj.RemburseStatus = 3;
+                await UnitWork.UpdateAsync<ReimburseInfo>(obj);
+                await UnitWork.SaveAsync();
+            }
+            finally
+            {
+                semaphoreSlim.Release();
+            }
 
             if (!req.IsDraft && string.IsNullOrWhiteSpace(req.FlowInstanceId))
             {
@@ -905,6 +1000,19 @@ namespace OpenAuth.App
                 return false;
             }
             return true;
+        }
+
+
+        /// <summary>
+        /// 获取用户
+        /// </summary>
+        /// <param name="AppId"></param>
+        /// <returns></returns>
+        private User GetUserId(int AppId)
+        {
+            var userid = UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(AppId)).Select(u => u.UserID).FirstOrDefault();
+
+            return UnitWork.Find<User>(u => u.Id.Equals(userid)).FirstOrDefault();
         }
 
         public ReimburseInfoApp(IUnitWork unitWork,

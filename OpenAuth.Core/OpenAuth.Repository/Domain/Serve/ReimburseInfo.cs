@@ -36,8 +36,12 @@ namespace OpenAuth.Repository.Domain
           this.CreateTime= DateTime.Now;
           this.CreateUserId= string.Empty;
         }
-
-
+        /// <summary>
+        /// 报销单号
+        /// </summary>
+        [Description("报销单号")]
+        public int MainId { get; set; }
+        
         /// <summary>
         /// 服务单主键Id
         /// </summary>
