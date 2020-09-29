@@ -101,11 +101,11 @@ import Sticky from '@/components/Sticky'
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
-import { tableMixin, categoryMixin } from './common/js/mixins'
+import { tableMixin, categoryMixin, reportMixin } from './common/js/mixins'
 import { getOrder, withdraw } from '@/api/reimburse'
 export default {
   name: 'mySubmission',
-  mixins: [tableMixin, categoryMixin],
+  mixins: [tableMixin, categoryMixin, reportMixin],
   components: {
     TabList,
     Search,
@@ -127,10 +127,11 @@ export default {
     }, // 搜索配置
     btnList () {
       return [
-        { btnText: '提交', handleClick: this.submit, loading: this.submitLoading },
-        { btnText: '存为草稿', handleClick: this.saveAsDraft, loading: this.draftLoading },
+        { btnText: '导入费用', handleClick: this.importFee, isShow: this.title !== 'view' },
+        { btnText: '提交', handleClick: this.submit, loading: this.submitLoading, isShow: this.title !== 'view' },
+        { btnText: '存为草稿', handleClick: this.saveAsDraft, loading: this.draftLoading, isShow: this.title !== 'view' },
         { btnText: '重置', handleClick: this.reset, isShow: this.title === 'create' },
-        { btnText: '关闭', handleClick: this.closeDialog }
+        { btnText: '关闭', handleClick: this.closeDialog, isShow: this.title !== 'view' }
       ]
     }
   },
@@ -166,9 +167,6 @@ export default {
     },
     onChangeForm (val) {
       Object.assign(this.listQuery, val)
-    },
-    onSearch () {
-      this._getList()
     },
     openTree (row) { // 打开详情
       console.log(row, 'row')
@@ -246,6 +244,9 @@ export default {
         this.dialogLoading = false
         this.$message.error(err.message)
       })
+    },
+    importFee () {
+      this.$refs.order.openCostDialog()
     },
     submit () { // 提交
       this.title === 'create'

@@ -2,7 +2,8 @@ import rightImg from '@/assets/table/right.png'
 import { getReportDetail } from '@/api/serve/callservesure'
 import { getCategoryName } from '@/api/reimburse'
 import { accommodationConfig } from './config'
-import { REIMBURSE_STATUS_MAP, PROJECT_NAME_MAP, RESPONSIBILITY_MAP, RELATIONS_MAP, EXPENSE_LIST } from './type'
+import { REIMBURSE_STATUS_MAP, PROJECT_NAME_MAP, RESPONSIBILITY_MAP, RELATIONS_MAP } from './map'
+import { EXPENSE_LIST } from './type'
 import { toThousands } from '@/utils/format'
 import { getList, getDetails } from '@/api/reimburse'
 export let tableMixin = {
@@ -87,12 +88,21 @@ export let tableMixin = {
         ...this.listQuery
       }).then(res => {
         let { data, count } = res
+        if (!data.length) {
+          this.tableLoading = false
+          return this.$message.error('用户列表为空')
+        }
         this.tableData = this._normalizeList(data)
         this.total = count
         this.tableLoading = false
       }).catch(() => {
+        this.$message.error('获取列表失败')
         this.tableLoading = false
       })
+    },
+    onSearch () {
+      this.listQuery.page = 1
+      this._getList()
     },
     handleCurrentChange ({page, limit}) {
       this.listQuery.page = page
@@ -192,6 +202,7 @@ export let tableMixin = {
         .map(item => {
           item.name = item.attachmentName
           item.url = `${this.baseURL}/${item.fileId}?X-Token=${this.tokenValue}`
+          item.isAdd = true
           return item
         })
     },
@@ -205,52 +216,18 @@ export let searchMixin = {
     }
   }
 }
-
-const SYS_ReimburseType = 'SYS_ReimburseType' // 报销类别
-const SYS_RemburseStatus = 'SYS_RemburseStatus' // 报销状态
-const SYS_ProjectName = 'SYS_ProjectName' // 项目名称
-const SYS_Responsibility = 'SYS_Responsibility' // 责任承担
-const SYS_ServiceRelations = 'SYS_ServiceRelations' // 劳务关系
-const SYS_TravellingAllowance = 'SYS_TravellingAllowance' // 出差补贴
-const SYS_TransportationAllowance = 'SYS_TransportationAllowance' // 交通类型
-const SYS_Transportation = 'SYS_Transportation' // 交通方式
-const SYS_OtherExpenses = 'SYS_OtherExpenses' // 其它费用
-export let categoryMixin = {
+export const reportMixin = {
   data () {
     return {
-      iconList: [ // 操作配置
-        { icon: 'el-icon-document-add', handleClick: this.addAndCopy, operationType: 'add' }, 
-        { icon: 'el-icon-document-copy', handleClick: this.addAndCopy, operationType: 'copy' }, 
-        // { icon: 'el-icon-top', handleClick: this.up },
-        // { icon: 'el-icon-bottom', handleClick: this.down },
-        { icon: 'el-icon-delete', handleClick: this.delete }
-      ],
-      reimburseStatusMap: REIMBURSE_STATUS_MAP,
       reportData: [], // 完工报告数据
       serviceModeMap: {
         1: '电话服务',
         2: '上门服务',
         3: '返厂维修'
-      },
-      roleName: this.$store.state.user.name // 当前用户角色名字
+      }
     }
   },
   methods: {
-    _getCategoryName () {
-      getCategoryName().then(res => {
-        this.categoryList = res.data
-      }).catch(() => {
-        this.$message.error('获取字典分类失败')
-      })
-    },
-    buildSelectOptions (list) {
-      list.forEach(item => {
-        let { name, dtValue } = item
-        item.label = name
-        item.value = dtValue
-      })
-      return list
-    },
     openReport (serviceOrderId) {
       if (!serviceOrderId) {
         return this.$message.error('请先选择服务ID')
@@ -275,6 +252,46 @@ export let categoryMixin = {
         return item
       })
     }
+  }
+}
+
+const SYS_ReimburseType = 'SYS_ReimburseType' // 报销类别
+const SYS_RemburseStatus = 'SYS_RemburseStatus' // 报销状态
+const SYS_ProjectName = 'SYS_ProjectName' // 项目名称
+const SYS_Responsibility = 'SYS_Responsibility' // 责任承担
+const SYS_ServiceRelations = 'SYS_ServiceRelations' // 劳务关系
+const SYS_TravellingAllowance = 'SYS_TravellingAllowance' // 出差补贴
+const SYS_TransportationAllowance = 'SYS_TransportationAllowance' // 交通类型
+const SYS_Transportation = 'SYS_Transportation' // 交通方式
+const SYS_OtherExpenses = 'SYS_OtherExpenses' // 其它费用
+export let categoryMixin = {
+  data () {
+    return {
+      iconList: [ // 操作配置
+        { icon: 'el-icon-document-add', handleClick: this.addAndCopy, operationType: 'add' }, 
+        { icon: 'el-icon-document-copy', handleClick: this.addAndCopy, operationType: 'copy' }, 
+        { icon: 'el-icon-delete', handleClick: this.delete }
+      ],
+      reimburseStatusMap: REIMBURSE_STATUS_MAP,
+      roleName: this.$store.state.user.name // 当前用户角色名字
+    }
+  },
+  methods: {
+    _getCategoryName () {
+      getCategoryName().then(res => {
+        this.categoryList = res.data
+      }).catch(() => {
+        this.$message.error('获取字典分类失败')
+      })
+    },
+    buildSelectOptions (list) {
+      list.forEach(item => {
+        let { name, dtValue } = item
+        item.label = name
+        item.value = dtValue
+      })
+      return list
+    }
   },
   computed: {
     reimburseTypeList () {
@@ -298,7 +315,7 @@ export let categoryMixin = {
     transportTypeList () {
       return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_TransportationAllowance))
     },
-    TransportationList () {
+    transportationList () {
       return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_Transportation))
     },
     otherExpensesList () {
@@ -310,7 +327,7 @@ export let categoryMixin = {
     },
     formConfig () {
       return [
-        { label: '报销单号', prop: 'id', palceholder: '请输入内容', disabled: true, col: 6 },
+        { label: '报销单号', prop: 'mainId', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '报销人', prop: 'userName', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '部门', prop: 'orgName', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '职位', prop: 'position', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
@@ -348,7 +365,7 @@ export let categoryMixin = {
           col: 6, type: 'select', options: this.serviceRelationsList, disabled: this.title === 'view' 
         },
         { label: '支付时间', prop: 'payTime', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
-        { label: '备注', prop: 'remark', palceholder: '请输入内容', disabled: true, col: 18 },
+        { label: '备注', prop: 'remark', palceholder: '请输入内容', disabled: this.title !== 'create', col: 18 },
         { label: '总金额', prop: 'totalMoney', col: 6, isEnd: true, type: 'inline-slot', id: 'money' },
         { label: '附件', prop: 'reimburseAttachments', type: 'slot', id: 'attachment', showLabel: true },
         { label: '出差补贴', prop: 'reimburseTravellingAllowances', type: 'slot', id: 'travel' },
@@ -369,7 +386,7 @@ export let categoryMixin = {
       return [ // 交通配置
         { label: '序号', type: 'order', width: 60 },
         { label: '交通类型', prop: 'trafficType', type: 'select', options: this.transportTypeList, width: 120 },
-        { label: '交通工具', prop: 'transport', type: 'select', options: this.TransportationList, width: 120 },
+        { label: '交通工具', prop: 'transport', type: 'select', options: this.transportationList, width: 120 },
         { label: '出发地', prop: 'from', type: 'input', width: 100 },
         { label: '目的地', prop: 'to', type: 'input', width: 100 },
         { label: '金额', prop: 'money', type: 'number', align: 'right', width: 150 },
@@ -407,6 +424,65 @@ export let categoryMixin = {
         { placeholder: '填报起始时间', prop: 'staticDate', type: 'date', width: 150 },
         { placeholder: '填报结束事件', prop: 'endDate', type: 'date', width: 150 }
       ]
+    }
+  }
+}
+
+
+export const attachmentMixin = {
+  methods: {
+    _buildAttachment (data, isImport = false) { // 为了回显，并且编辑 目标是为了保证跟order.vue的数据保持相同的逻辑
+      data.forEach(item => {
+        let { reimburseAttachments } = item
+        // console.log(reimburseAttachments, 'foeEach', item)
+        item.invoiceFileList = this.getTargetAttachment(reimburseAttachments, 2, isImport)
+        item.otherFileList = this.getTargetAttachment(reimburseAttachments, 1, isImport)
+        item.invoiceAttachment = [],
+        item.otherAttachment = []
+        item.reimburseAttachments = []
+      })
+    },
+    getTargetAttachment (data, attachmentType, isImport) { // 用于el-upload 回显
+      return data.filter(item => item.attachmentType === attachmentType)
+        .map(item => {
+          item.name = item.attachmentName
+          item.url = `${this.baseURL}/${item.fileId}?X-Token=${this.tokenValue}`
+          item.isAdd = true
+          if (isImport) { // 如果是通过我的费用单引入的模板，则需要删除对应的ID,避免新建时出错
+            item.reimburseId = 0
+            item.id = 0
+          }
+          return item
+        })
+    },
+    buildAttachment (fileId, reimburseType, attachmentType = 1, reimburseId = 0, id = 0, isAdd = true) { // 构建附件的数据格式
+      return {
+        fileId,
+        reimburseType,
+        attachmentType,
+        reimburseId,
+        id,
+        isAdd
+      }
+    },
+    createFileIdArr (data) { // 附件ID列表
+      return data.map(item => item.pictureId)
+    },
+    createFileList (data, { reimburseType, attachmentType, reimburseId, id }) { // 附件列表
+      let fileIdList = this.createFileIdArr(data)
+      let resultArr = fileIdList.map(fileId => {
+        return this.buildAttachment(fileId, reimburseType, attachmentType, reimburseId, id)
+      })
+      return resultArr
+    },
+    mergeFileList (data) {   
+      data.forEach(item => {
+        let { invoiceAttachment, otherAttachment, invoiceFileList, otherFileList, isImport } = item
+        if (isImport) {
+          item.id = ''
+        }
+        item.reimburseAttachments = [...invoiceAttachment, ...otherAttachment, ...invoiceFileList, ...otherFileList]
+      })
     }
   }
 }

@@ -171,7 +171,7 @@ export default {
           // 因为会触发upload组件的fileList，引发图片错乱问题
           // 通过向外传递fileList中删除的图片id，父组件调用接口的时候进行相应的传参
           console.log(id, 'delete id')
-          return this.$emit('deleteFileList', id)
+          return this.$emit('deleteFileList', file)
         }
       }
       let findIndex = this.newPictureList.findIndex(item => {

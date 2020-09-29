@@ -97,11 +97,11 @@ import Sticky from '@/components/Sticky'
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
-import { tableMixin, categoryMixin } from './common/js/mixins'
+import { tableMixin, categoryMixin, reportMixin } from './common/js/mixins'
 
 export default {
   name: 'toPay',
-  mixins: [tableMixin, categoryMixin],
+  mixins: [tableMixin, categoryMixin, reportMixin],
   components: {
     Search,
     Sticky,
@@ -133,9 +133,6 @@ export default {
     onChangeForm (val) {
       this.currentFormQuery = val
       Object.assign(this.listQuery, val)
-    },
-    onSearch () {
-      this._getList()
     },
     toPay () {
       this.$refs.order.openRemarkDialog('pay')

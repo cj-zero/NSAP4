@@ -54,6 +54,7 @@
             :value-format="item.valueFormat || 'yyyy-MM-dd'"
             :type="item.dateType || 'date'"
             :placeholder="item.placeholder"
+            :picker-options="pickerOptions"
             v-model="listSearchQuery[item.prop]"
             :size="item.size || 'mini'"
           ></el-date-picker>
@@ -106,8 +107,11 @@ export default {
   },
   data () {
     return {
-      listSearchQuery: {}
+      listSearchQuery: {},
       // { placeholder, width, size, eventName: 'enter', type, prop }
+      pickerOptions: {
+        disabledDate: this.disabledDate
+      }
     }
   },
   watch: {
@@ -126,6 +130,9 @@ export default {
     }
   },
   methods: {
+    disabledDate (date) {
+      return date.getTime() > Date.now()
+    },
     onSearch (item) {
       console.log(this.listSearchQuery, 'search')
       let { btnText } = item
