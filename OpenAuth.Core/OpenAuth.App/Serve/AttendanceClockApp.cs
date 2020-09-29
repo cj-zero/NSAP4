@@ -117,10 +117,9 @@ namespace OpenAuth.App
             obj.UserId = user.Id;
             obj.Name = user.Name;
 
-            var orgId = _revelanceApp.Get(Define.USERORG, true, obj.UserId).FirstOrDefault();
-            obj.OrgId = orgId;
-
-            var org = await UnitWork.FindSingleAsync<OpenAuth.Repository.Domain.Org>(o => o.Id.Equals(orgId));
+            var orgIds = _revelanceApp.Get(Define.USERORG, true, obj.UserId).ToList();
+            var org = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgIds.Contains(o.Id)).OrderByDescending(o=>o.CascadeId).FirstOrDefaultAsync();
+            obj.OrgId = org.Id;
             obj.Org = org.Name;
             var o = await Repository.AddAsync(obj);
             var pistures = req.Pictures.MapToList<AttendanceClockPicture>();
