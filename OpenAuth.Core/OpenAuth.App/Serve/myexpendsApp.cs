@@ -141,6 +141,7 @@ namespace OpenAuth.App
             }
             await UnitWork.UpdateAsync<MyExpends>(u => u.Id == obj.Id, u => new MyExpends
             {
+                ReimburseType=obj.ReimburseType,
                 FeeType = obj.FeeType,
                 SerialNumber = obj.SerialNumber,
                 TrafficType = obj.TrafficType,
