@@ -34,5 +34,10 @@ namespace OpenAuth.App.Serve.Response
         /// 附件名称
         /// </summary>
         public string AttachmentName { get; set; }
+
+        /// <summary>
+        /// 是否新增
+        /// </summary>
+        public bool? IsAdd { get; set; }
     }
 }

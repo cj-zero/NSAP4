@@ -117,7 +117,7 @@ namespace OpenAuth.App
             if (req.ReimburseAttachments != null && req.ReimburseAttachments.Count > 0)
             {
                 var ReimburseAttachments = req.ReimburseAttachments.MapToList<ReimburseAttachment>();
-                ReimburseAttachments.ForEach(r => { r.ReimburseId = obj.Id; r.Id = Guid.NewGuid().ToString(); });
+                ReimburseAttachments.ForEach(r => { r.ReimburseId = obj.Id;r.ReimburseType = 5; r.Id = Guid.NewGuid().ToString(); });
                 await UnitWork.BatchAddAsync<ReimburseAttachment>(ReimburseAttachments.ToArray());
             }
             await UnitWork.SaveAsync();
@@ -166,7 +166,7 @@ namespace OpenAuth.App
                 if (obj.ReimburseAttachments != null && obj.ReimburseAttachments.Count > 0)
                 {
                     var ReimburseAttachments = obj.ReimburseAttachments.MapToList<ReimburseAttachment>();
-                    ReimburseAttachments.ForEach(r => {r.ReimburseId = Convert.ToInt32(obj.Id) ; r.Id = Guid.NewGuid().ToString(); });
+                    ReimburseAttachments.ForEach(r => {r.ReimburseId = Convert.ToInt32(obj.Id) ; r.ReimburseType = 5; r.Id = Guid.NewGuid().ToString(); });
                     await UnitWork.BatchAddAsync<ReimburseAttachment>(ReimburseAttachments.ToArray());
                 }
             }

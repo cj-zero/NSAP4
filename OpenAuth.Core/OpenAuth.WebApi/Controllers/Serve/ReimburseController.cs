@@ -181,15 +181,15 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// <summary>
         /// 撤回操作
         /// </summary>
-        /// <param name="ReimburseInfoId"></param>
+        /// <param name="req"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> Revocation(int ReimburseInfoId)
+        public async Task<TableData> Revocation([FromQuery]ReimburseRevocationReq req)
         {
             var result = new TableData();
             try
             {
-               return await _reimburseinfoapp.Revocation(ReimburseInfoId);
+               return await _reimburseinfoapp.Revocation(req);
             }
             catch (Exception ex)
             {
