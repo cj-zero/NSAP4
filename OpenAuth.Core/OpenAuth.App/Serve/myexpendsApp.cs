@@ -44,7 +44,7 @@ namespace OpenAuth.App
             var MyExpend = await objs.OrderBy(u => u.Id)
                .Skip((request.page - 1) * request.limit)
                .Take(request.limit).ToListAsync();
-            var MyExpendsDetails = objs.MapToList<AddOrUpdateMyExpendsReq>();
+            var MyExpendsDetails = objs.MapToList<MyExpendsResp>();
             var file = await UnitWork.Find<UploadFile>(null).ToListAsync();
             foreach (var item in MyExpend)
             {
@@ -59,6 +59,7 @@ namespace OpenAuth.App
                     ReimburseType = r.ReimburseType
                 }).ToList());
             }
+            MyExpendsDetails.ForEach(m => m.IsImport = 1);
             result.Data = MyExpendsDetails;
             result.Count = objs.Count();
             return result;
@@ -165,7 +166,7 @@ namespace OpenAuth.App
                 if (obj.ReimburseAttachments != null && obj.ReimburseAttachments.Count > 0)
                 {
                     var ReimburseAttachments = obj.ReimburseAttachments.MapToList<ReimburseAttachment>();
-                    ReimburseAttachments.ForEach(r => r.ReimburseId = Convert.ToInt32(obj.Id));
+                    ReimburseAttachments.ForEach(r => {r.ReimburseId = Convert.ToInt32(obj.Id) ; r.Id = Guid.NewGuid().ToString(); });
                     await UnitWork.BatchAddAsync<ReimburseAttachment>(ReimburseAttachments.ToArray());
                 }
             }
