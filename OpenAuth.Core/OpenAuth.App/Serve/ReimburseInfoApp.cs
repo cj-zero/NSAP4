@@ -662,12 +662,13 @@ namespace OpenAuth.App
 
             try
             {
-                if (!obj.IsDraft && string.IsNullOrWhiteSpace(req.FlowInstanceId))
+                if (!obj.IsDraft && string.IsNullOrWhiteSpace(req.FlowInstanceId) && string.IsNullOrWhiteSpace(obj.MainId.ToString()) && obj.MainId!=0)
                 {
                     var maxmainid = await UnitWork.Find<ReimburseInfo>(null).OrderByDescending(r => r.MainId).Select(r => r.MainId).FirstOrDefaultAsync();
                     obj.MainId = maxmainid + 1;
                 }
                 obj.RemburseStatus = 3;
+                obj.IsRead = 1;
                 await UnitWork.UpdateAsync<ReimburseInfo>(obj);
                 await UnitWork.SaveAsync();
             }
@@ -978,6 +979,7 @@ namespace OpenAuth.App
                 obj.RemburseStatus = 1;
                 obj.IsDraft = true;
                 obj.FlowInstanceId = null;
+                obj.IsRead = 1;
                 await UnitWork.UpdateAsync<ReimburseInfo>(obj);
                 await UnitWork.AddAsync<ReimurseOperationHistory>(new ReimurseOperationHistory
                 {
