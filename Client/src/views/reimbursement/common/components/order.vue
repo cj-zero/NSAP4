@@ -64,7 +64,11 @@
               ></el-date-picker>
             </template>
             <template v-else-if="item.type === 'button'">
-              <el-button type="primary" style="width: 157px;" @click="item.handleClick(formData.serviceOrderId)">{{ item.btnText }}</el-button>
+              <el-button 
+                type="primary" 
+                style="width: 157px;" 
+                @click="item.handleClick(formData.serviceOrderId)"
+                :loading="reportBtnLoading">{{ item.btnText }}</el-button>
             </template>
           </el-form-item>
         </el-col>
@@ -545,6 +549,8 @@
       width="983px"
       title="服务行为报告单"
       ref="reportDialog"
+      :mAddToBody="true" 
+      :appendToBody="true"
       @closed="resetReport">
       <Report :data="reportData" ref="report"/>
     </my-dialog>
@@ -861,7 +867,8 @@ export default {
       result += data.reduce((prev, next) => {
         return prev + parseFloat(String(next.totalMoney || next.money))
       }, 0)
-      return result
+      console.log(this.isValidNumber(result), result, 'result')
+      return this.isValidNumber(result) ? result : 0
     },
     setTravelMoney () {
       // 以R或者M开头都是65
@@ -1029,13 +1036,13 @@ export default {
       this.currentProp = property
     },
     onChange (value) { // 天数 总金额 计算
-      if (!this.isValidaNumber(value)) {
+      if (!this.isValidNumber(value)) {
         return
       }
       if (this.currentProp === 'totalMoney' || this.currentProp === 'days') {
         let data = this.formData.reimburseAccommodationSubsidies[this.currentIndex]
         let { days, totalMoney } = data
-        if (!days || !this.isValidaNumber(days) || !totalMoney || !this.isValidaNumber(totalMoney)) { // 如果天数没有填入,或者不符合规范则直接return
+        if (!days || !this.isValidNumber(days) || !totalMoney || !this.isValidNumber(totalMoney)) { // 如果天数没有填入,或者不符合规范则直接return
           return
         }
         this.$set(data, 'money', (totalMoney / days).toFixed(2))
@@ -1138,7 +1145,7 @@ export default {
         console.log(this.formData, 'import list')
       }
     },
-    isValidaNumber (val) { // 判断是否是有效的数字
+    isValidNumber (val) { // 判断是否是有效的数字
       val = Number(val)
       return !isNaN(val) && val >= 0
     },
@@ -1324,6 +1331,7 @@ export default {
       this.$refs.remark.reset()
     },
     resetInfo () {
+      let { createUserId, userName, orgName } = this.formData
       this.$refs.form.clearValidate()
       this.$refs.form.resetFields()
       this.clearFile()
@@ -1331,9 +1339,9 @@ export default {
       this.selectedList = []
       this.formData = { // 表单参数
         id: '',
-        userName: '',
-        createUserId: '',
-        orgName: '',
+        userName,
+        createUserId,
+        orgName,
         position: '',
         serviceOrderId: '',
         serviceOrderSapId: '',

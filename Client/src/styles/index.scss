@@ -353,6 +353,54 @@ table thead th {
     margin-bottom: 18px;
   }
 }
+
+.my-dialog-mini {
+  .el-dialog__header {
+    height: 35px;
+    line-height: 35px;
+    border-radius: 4px 4px 0 0;
+    border-bottom: 1px solid #eee;
+    overflow: hidden;
+    background-color: #f8f8f8;
+    padding: 0 20px !important;
+    .el-dialog__title {
+      line-height: 34px;
+      font-size: 14px;
+      color: #333;
+    }
+    .el-dialog__headerbtn {
+      color: #333;
+      top: 11.5px;
+      right: 11.5px;
+    }
+  }
+  .el-dialog__footer {
+    height: 50px;
+    width: 100%;
+    padding: 0px 10px !important;
+    border-top: 1px solid #eee;
+    border-radius: 0 0 4px 4px;
+    background-color: #f8f8f8;
+    line-height: 50px;
+  }
+  .el-dialog__body {
+    padding: 10px !important;
+    .el-form {
+      padding-right: 20px;
+      padding-top: 10px;
+    }
+  }
+  .el-form-item__label {
+    font-size: 12px !important;
+    font-weight: normal !important;
+  }
+  .el-form-item.el-form-item--small {
+    margin-bottom: 8px;
+  }
+  .el-form-item.is-error.is-required.el-form-item--small {
+    margin-bottom: 18px;
+  }
+}
 // .el-table--border{
 // 	border-color:#ebeef5;
 // }

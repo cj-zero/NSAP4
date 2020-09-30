@@ -223,7 +223,8 @@ export const reportMixin = {
         1: '电话服务',
         2: '上门服务',
         3: '返厂维修'
-      }
+      },
+      reportBtnLoading: false // 如果是报销单上点的
     }
   },
   methods: {
@@ -235,18 +236,18 @@ export const reportMixin = {
         this.tableLoading = true
       } else {
         // 如果是报销单上点的
-        this.dialogLoading = true
+        this.reportBtnLoading = true
       }
       getReportDetail({
         serviceOrderId
       }).then(res => {
         this.reportData = this._normalizeReportData(res.result.data)
         this.$refs.reportDialog.open()
-        this.dialogLoading = false
+        this.reportBtnLoading = false
         this.tableLoading = false
       }).catch((err) => {
         console.log(err, 'err')
-        this.dialogLoading = false
+        this.reportBtnLoading = false
         this.tableLoading = false
         this.$message.error('获取完工报告失败')
       })

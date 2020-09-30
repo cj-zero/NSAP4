@@ -40,6 +40,12 @@
                     <img :src="rightImg" @click="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
                     <span>{{ scope.$index + 1 }}</span>
                   </div>
+                  <template v-else-if="item.label === '发票附件'">
+                    <div class="link-container">
+                      <img :src="rightImg" @click="item.handleJump(scope.row.reimburseAttachments[0])" class="pointer">
+                      <span>查看</span>
+                    </div>
+                  </template>
                   <template v-else>
                     {{ scope.row[item.prop] }}
                   </template>
@@ -90,6 +96,7 @@ import { getCategoryName } from '@/api/reimburse'
 import { categoryMixin } from './common/js/mixins'
 import { getList, getDetail, deleteCost } from '@/api/reimburse/mycost'
 import { toThousands } from '@/utils/format'
+import { downloadFile } from '@/utils/file'
 const TRANSPORT_TYPE = 1 // 交通费用类型设为1
 const ACC_TYPE = 2 // 住宿费用类型设为2
 const OTHER_TYPE = 3 // 交通费用类型设为3
@@ -141,7 +148,7 @@ export default {
         { label: '费用类型', prop: 'feeType' },
         { label: '总金额', prop: 'moneyText' },
         { label: '发票号码', prop: 'invoiceNumber' },
-        { label: '发票附件', prop: 'invoiceAttachment' },
+        { label: '发票附件', prop: 'invoiceAttachment', handleJump: this.jumpToDetail },
         { label: '日期', prop: 'createTime', width: 140 },
         { label: '备注', prop: 'remark' }
       ],
@@ -149,7 +156,9 @@ export default {
       currentRow: null, // 当前选择行的数据
       detailData: {
         list: []
-      }
+      },
+      baseURL: process.env.VUE_APP_BASE_API + "/files/Download", // 图片基地址
+      tokenValue: this.$store.state.user.token
     } 
   },
   methods: {
@@ -208,6 +217,12 @@ export default {
         }
         return item
       })
+    },
+    jumpToDetail (detail) {
+      let { id, fileId } = detail
+      console.log(`${this.baseURL}/${id || fileId}?X-Token=${this.tokenValue}`, 'url')
+      downloadFile(`${this.baseURL}/${fileId}?X-Token=${this.tokenValue}`)
+      // window.location.href = `${this.baseURL}/${fileId}?X-Token=${this.tokenValue}`
     },
     getDetail (val) { // 获取详情
       let { type } = val
