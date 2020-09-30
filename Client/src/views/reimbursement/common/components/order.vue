@@ -96,8 +96,6 @@
         <el-table 
           border
           :data="formData.reimburseTravellingAllowances"
-          :summary-method="getSummaries"
-          show-summary
           @cell-click="onTravelCellClick"
           max-height="300px"
         >
@@ -159,6 +157,7 @@
             </el-table-column>
           <!-- </el-table-column> -->
         </el-table>
+        <p class="total-money">总金额: ￥{{ travelTotalMoney }}</p>
       </el-form>
     </div>
 
@@ -179,8 +178,6 @@
         <el-table 
           border
           :data="formData.reimburseFares"
-          :summary-method="getSummaries"
-          show-summary
           max-height="300px"
           @cell-click="onTrafficCellClick"
         >
@@ -267,6 +264,7 @@
             </el-table-column>
           <!-- </el-table-column> -->
         </el-table>
+        <p class="total-money">总金额: ￥{{ trafficTotalMoney }}</p>
       </el-form>
     </div>
     
@@ -286,8 +284,6 @@
         <el-table 
           border
           :data="formData.reimburseAccommodationSubsidies"
-          :summary-method="getSummaries"
-          show-summary
           max-height="300px"
           @cell-click="onAccCellClick"
         >
@@ -374,6 +370,7 @@
             </el-table-column>
           <!-- </el-table-column> -->
         </el-table>
+        <p class="total-money">总金额: ￥{{ accTotalMoney }}</p>
       </el-form>
     </div>
 
@@ -394,8 +391,6 @@
         <el-table 
          border
           :data="formData.reimburseOtherCharges"
-          :summary-method="getSummaries"
-          show-summary
           max-height="300px"
           @cell-click="onOtherCellClick"
         >
@@ -481,6 +476,7 @@
             </el-table-column>
           <!-- </el-table-column> -->
         </el-table>
+        <p class="total-money">总金额: ￥{{ otherTotalMoney }}</p>
       </el-form>
     </div> 
     <!-- 操作记录 -->
@@ -699,7 +695,6 @@ export default {
         page: 1,
         limit: 30
       },
-      importDelList: [], // 用来存放 删除导入后的附件Id
       remarkBtnList: [
         { btnText: '确认', handleClick: this.approve },
         { btnText: '取消', handleClick: this.closeRemarkDialog }
@@ -773,27 +768,56 @@ export default {
     ifFormEdit () { 
       return this.title === 'create' || this.title === 'edit'
     },
-    totalMoney () {
-      let result = 0
-      let { 
-        reimburseTravellingAllowances, 
-        reimburseFares, 
-        reimburseAccommodationSubsidies,
-        reimburseOtherCharges 
-      } = this.formData
+    travelTotalMoney () {
+      let { reimburseTravellingAllowances } = this.formData
       if (reimburseTravellingAllowances.length) {
-        result += this.getTotal(reimburseTravellingAllowances)
+        return this.getTotal(reimburseTravellingAllowances)
       }
+      return 0
+    },
+    trafficTotalMoney () {
+      let { reimburseFares } = this.formData
       if (reimburseFares.length) {
-        result += this.getTotal(reimburseFares)
+        return this.getTotal(reimburseFares)
       }
+      return 0
+    },
+    accTotalMoney () {
+      let { reimburseAccommodationSubsidies } = this.formData
       if (reimburseAccommodationSubsidies.length) {
-        result += this.getTotal(reimburseAccommodationSubsidies)
+        return this.getTotal(reimburseAccommodationSubsidies)
       }
+      return 0
+    },
+    otherTotalMoney () {
+      let { reimburseOtherCharges } = this.formData
       if (reimburseOtherCharges.length) {
-        result += this.getTotal(reimburseOtherCharges)
+        console.log(this)
+        return this.getTotal(reimburseOtherCharges)
       }
-      return result
+      return 0
+    },
+    totalMoney () {
+      // let result = 0
+      // let { 
+      //   reimburseTravellingAllowances, 
+      //   reimburseFares, 
+      //   reimburseAccommodationSubsidies,
+      //   reimburseOtherCharges 
+      // } = this.formData
+      // if (reimburseTravellingAllowances.length) {
+      //   result += this.getTotal(reimburseTravellingAllowances)
+      // }
+      // if (reimburseFares.length) {
+      //   result += this.getTotal(reimburseFares)
+      // }
+      // if (reimburseAccommodationSubsidies.length) {
+      //   result += this.getTotal(reimburseAccommodationSubsidies)
+      // }
+      // if (reimburseOtherCharges.length) {
+      //   result += this.getTotal(reimburseOtherCharges)
+      // }
+      return this.travelTotalMoney + this.trafficTotalMoney + this.accTotalMoney + this.otherTotalMoney
     },
     normalConfig () {
       let noneSlotConfig = this.formConfig.filter(item => item.type !== 'slot')
@@ -831,16 +855,9 @@ export default {
     },
     getTotal (data) { // 获取总金额
       let result = 0
-      let isVliad = data.every(item => {
-        return item.totalMoney ? this.isValidaNumber(item.totalMoney) : this.isValidaNumber(item.money)
-      })
-      if (isVliad) {
-        result += data.reduce((prev, next) => {
-          return prev + Number(next.totalMoney || next.money)
-        }, 0)
-      } else {
-        result = 0
-      }
+      result += data.reduce((prev, next) => {
+        return prev + parseInt(String(next.totalMoney || next.money))
+      }, 0)
       return result
     },
     setTravelMoney () {
@@ -1085,6 +1102,7 @@ export default {
           } else {
             let index = findIndex(this.selectedList, item => item.id === id) // 找到当前删除行 对应导入之后的数据列表的索引值
             if (index !== -1) {
+              console.log('删除 模板')
               this.selectedList.splice(index, 1) // 删除后，让导入的表格回复对应的可选状态
             }
           }
@@ -1307,6 +1325,7 @@ export default {
       this.$refs.form.resetFields()
       this.clearFile()
       this.ifShowTraffic = this.ifShowOther = this.ifShowAcc = this.ifShowTravel = true
+      this.selectedList = []
       this.formData = { // 表单参数
         id: '',
         userName: '',
@@ -1511,6 +1530,14 @@ export default {
       line-height: 30px;
       color: #606266;
       font-size: 16px;
+      background-color: #f5f7fa;
+    }
+    .total-money {
+      height: 30px;
+      line-height: 30px;
+      color: #606266;
+      text-indent: 10px;
+      font-size: 12px;
       background-color: #f5f7fa;
     }
   }

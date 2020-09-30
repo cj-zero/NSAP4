@@ -103,14 +103,18 @@ export default {
     MyDialog,
     CostTemplate
   },
+  computed: {
+    btnList () {
+      return [
+        { btnText: '保存', handleClick: this.toSave, isShow: this.type !== 'view' },
+        { btnText: '关闭', handleClick: this.closeDialog }
+      ]
+    }
+  },
   data () {
     return {
       type: '', // 判断当前操作是新增还是编辑
       rightImg,
-      btnList: [
-        { btnText: '保存', handleClick: this.toSave },
-        { btnText: '关闭', handleClick: this.closeDialog }
-      ],
       formQuery: { // 查询字段参数
         startTime: '',
         endTime: '',
@@ -299,28 +303,9 @@ export default {
           })  
         })
     },
-    addCost () {
+    toSave () {
       this.dialogLoading = true
-      this.$refs.cost._addCost().then(() => {
-        this.$message({
-          type: 'success',
-          message: '保存成功'
-        })
-        this.closeDialog()
-        this.dialogLoading = false
-        this._getList()
-      }).catch((err) => {
-        console.log(err, 'err')
-        if (!err) {
-          this.$message.error('请将必填项填写')
-        } else {
-          this.$message.error(err.message)
-        }
-        this.dialogLoading = false
-      })
-    },
-    updateCost () {
-      this.$refs.cost._updateCost().then(() => {
+      this.$refs.cost._operate().then(() => {
         this.$message({
           type: 'success',
           message: '保存成功'
@@ -336,12 +321,6 @@ export default {
         }
         this.dialogLoading = false
       })
-    },
-    toSave () {
-      console.log(this.type, 'type')
-      this.type === 'create'
-        ? this.addCost()
-        : this.updateCost()
     },
     closeDialog () {
       this.$refs.cost.resetInfo()

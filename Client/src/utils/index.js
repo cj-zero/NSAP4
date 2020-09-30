@@ -49,6 +49,8 @@ export function timeToFormat(format, date){
     result = year +'-'+ isZero(month) + '-' + isZero(day)
   } else if (format === 'yyyy-MM-dd HH-mm-ss') {
     return `${year}-${isZero(month)}-${isZero(day)} ${isZero(hours)}-${isZero(minute)}-${isZero(seconds)}`
+  } else if (format === 'yyyy-MM-dd HH:mm:ss') {
+    return `${year}-${isZero(month)}-${isZero(day)} ${isZero(hours)}:${isZero(minute)}:${isZero(seconds)}`
   }
 return result
 }

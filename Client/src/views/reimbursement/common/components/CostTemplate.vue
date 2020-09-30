@@ -17,7 +17,7 @@
         <el-date-picker
           disabled
           size="mini"
-          v-model="formData.list[0].createTime"
+          v-model="createTime"
           type="date"
           placeholder="选择日期">
         </el-date-picker>
@@ -132,6 +132,7 @@ import upLoadFile from "@/components/upLoadFile";
 import { trafficRules, accRules, otherRules } from '../js/customerRules'
 import { categoryMixin, attachmentMixin } from '../js/mixins'
 import { addCost, updateCost } from '@/api/reimburse/mycost'
+import { timeToFormat } from '@/utils'
 const RULES_MAP = {
   1: trafficRules,
   2: accRules,
@@ -176,10 +177,12 @@ export default {
       immediate: true,
       handler (val) {
         if (val.list && val.list.length) {
-          let { reimburseType } = val.list[0]
+          let { reimburseType, id, createTime } = val.list[0]
           console.log(val, val.list[0])
           if (reimburseType) {
             console.log(this.formData, 'formData')
+            this.id = id
+            this.createTime = createTime
             this.changeTable(reimburseType - 1)
             this.formData = Object.assign({}, this.formData, val)
           }
@@ -195,9 +198,11 @@ export default {
       date: '',
       ifShowSelect: false,
       currentProp: '', // 当前表格对应的字段
+      id: '', // 费用ID
+      createTime: '',
       formData: {
         list: [{
-          id: '',
+          // id: '',
           createUserId: '',
           feeType: '',
           reimburseType: '',
@@ -231,7 +236,7 @@ export default {
         : this.ifInvoicementListInEdit()
     },
     isDisabled () {
-      return this.title === 'view'
+      return this.operation === 'view'
     }
   },
   methods: {
@@ -355,7 +360,6 @@ export default {
       this.clearFile()
       this.formData = {
         list: [{
-          id: '',
           createUserId: '',
           feeType: '',
           reimburseType: '',
@@ -367,7 +371,6 @@ export default {
           money: '',
           invoiceNumber: '1',
           remark: '',
-          // createTime: '',
           days: '',
           totalMoney: '',
           expenseCategory: '',
@@ -386,31 +389,25 @@ export default {
       if (isClose) { // 关闭弹窗的时候
         this.ifShowSelect = false
         this.fileid = []
+        this.id = ''
+        this.createTime = ''
       }
     },
-    async _addCost () {
-      if (!this.rules) {
-        return Promise.reject({ message: '请先选择报销类别' })
-      }
-      this.mergeFileList(this.formData.list)
-      let isValid = await this.$refs.form.validate()
-      console.log(isValid, this.ifInvoicementList, 'addCost')
-      if (isValid && this.ifInvoicementList) {
-        this.formData.list[0].fileid = this.fileid
-        return addCost(this.formData.list[0])
-      } else {
-        return Promise.reject({ message: '请将必填项填写' })
-      }
-    },
-    async _updateCost () {
+    async _operate () {
       if (!this.rules) {
         return Promise.reject({ message: '请先选择报销类别' })
       }
       this.mergeFileList(this.formData.list)
       let isValid = await this.$refs.form.validate()
       if (isValid && this.ifInvoicementList) {
+        this.operation === 'create'
+          ? this.formData.list[0].createTime = timeToFormat('yyyy-MM-dd HH:mm:ss')
+          : this.formData.list[0].createTime = this.createTime
+        this.formData.list[0].id = this.id
         this.formData.list[0].fileid = this.fileid
-        return updateCost(this.formData.list[0])
+        return this.operation === 'create'
+          ? addCost(this.formData.list[0])
+          : updateCost(this.formData.list[0])
       } else {
         return Promise.reject({ message: '请将必填项填写' })
       }
