@@ -28,13 +28,13 @@ export let tableMixin = {
         { label: '报销状态', prop: 'remburseStatusText', width: 100 },
         { label: '总金额', prop: 'totalMoney', width: 100 },
         { label: '客户代码', prop: 'terminalCustomerId', width: 100 },
-        { label: '客户名称', prop: 'terminalCustomer', width: 100 },
+        { label: '客户名称', prop: 'terminalCustomer', width: 170 },
         { label: '客户简称', prop: 'shortCustomerName', width: 100 },
         { label: '业务员', prop: 'saleSMan', width: 100 },
         { label: '出发日期', prop: 'businessTripDate', width: 150 },
         { label: '结束日期', prop: 'endDate', width: 150 },
         { label: '总天数', prop: 'businessTripDays', width: 100 },
-        { label: '服务ID', prop: 'serviceOrderId', width: 100, type: 'link' },
+        { label: '服务ID', prop: 'serviceOrderSapId', width: 100, type: 'link' },
         { label: '呼叫主题', prop: 'theme', width: 100 },
         { label: '项目名称', prop: 'projectName', width: 100 },
         { label: '服务报告', width: 100, handleClick: this.openReport, btnText: '查看' },
@@ -88,13 +88,12 @@ export let tableMixin = {
         ...this.listQuery
       }).then(res => {
         let { data, count } = res
-        if (!data.length) {
-          this.tableLoading = false
-          return this.$message.error('用户列表为空')
-        }
         this.tableData = this._normalizeList(data)
         this.total = count
         this.tableLoading = false
+        // if (!data.length) {
+        //   this.$message.error('用户列表为空')
+        // }
       }).catch(() => {
         this.$message.error('获取列表失败')
         this.tableLoading = false
@@ -228,16 +227,27 @@ export const reportMixin = {
     }
   },
   methods: {
-    openReport (serviceOrderId) {
+    openReport (serviceOrderId, type) {
       if (!serviceOrderId) {
         return this.$message.error('请先选择服务ID')
+      }
+      if (type === 'table') { // 如果是在表格上点的
+        this.tableLoading = true
+      } else {
+        // 如果是报销单上点的
+        this.dialogLoading = true
       }
       getReportDetail({
         serviceOrderId
       }).then(res => {
         this.reportData = this._normalizeReportData(res.result.data)
         this.$refs.reportDialog.open()
-      }).catch(() => {
+        this.dialogLoading = false
+        this.tableLoading = false
+      }).catch((err) => {
+        console.log(err, 'err')
+        this.dialogLoading = false
+        this.tableLoading = false
         this.$message.error('获取完工报告失败')
       })
     },

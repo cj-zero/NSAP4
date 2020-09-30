@@ -154,14 +154,17 @@ export default {
   },
   methods: {
     _getList () {
+      this.tableLoading = true
       getList({
         ...this.listQuery
       }).then(res => {
         let { data, count } = res
         this.total = count
         this.tableData = this._normalizeList(data)
+        this.tableLoading = false
         console.log(this.total, this.toSavetableData, 'data')
       }).catch(() => {
+        this.tableLoading = false
         this.$message.error('加载列表失败')
       })
     },
@@ -263,6 +266,7 @@ export default {
     },
     onChangeForm (val) {
       Object.assign(this.listQuery, val)
+      this._getList()
     },
     handleCurrentChange (val) {
       Object.assign(this.listQuery, val)

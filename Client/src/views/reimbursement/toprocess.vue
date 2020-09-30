@@ -34,6 +34,7 @@
                 :align="item.align || 'left'"
                 :sortable="item.isSort || false"
                 :type="item.originType || ''"
+                show-overflow-tooltip
               >
                 <template slot-scope="scope" >
                   <div class="link-container" v-if="item.type === 'link'">
@@ -51,7 +52,7 @@
                     >{{ btnItem.btnText }}</el-button>
                   </template>
                   <template v-else-if="item.label === '服务报告'">
-                    <el-button @click="item.handleClick" size="mini" type="primary">{{ item.btnText }}</el-button>
+                    <el-button @click="item.handleClick(scope.row.serviceOrderId, 'table')" size="mini" type="primary">{{ item.btnText }}</el-button>
                   </template>
                   <template v-else>
                     {{ scope.row[item.prop] }}
@@ -88,6 +89,12 @@
           :customerInfo="customerInfo">
         </order>
       </my-dialog>
+      <!-- 完工报告 -->
+      <my-dialog
+        ref="reportDialog"
+        @closed="resetReport">
+        <Report :data="reportData" ref="report"/>
+      </my-dialog>
   </div>
 </template>
 
@@ -97,6 +104,7 @@ import Sticky from '@/components/Sticky'
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
+import Report from './common/components/report'
 import { tableMixin, categoryMixin, reportMixin } from './common/js/mixins'
 
 export default {
@@ -108,7 +116,8 @@ export default {
     // CommonTable,
     Pagination,
     MyDialog,
-    Order
+    Order,
+    Report
   },
   computed: {
     searchConfig () {

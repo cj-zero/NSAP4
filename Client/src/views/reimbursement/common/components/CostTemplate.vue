@@ -143,6 +143,9 @@ const CONFIG_MAP = {
   2: 'accommodationConfig',
   3: 'otherConfig'
 }
+// const TRANSPORT_TYPE = 1 // 交通费用类型设为1
+const ACC_TYPE = 2 // 住宿费用类型设为2
+// const OTHER_TYPE = 3 // 交通费用类型设为3
 export default {
   mixins: [categoryMixin, attachmentMixin],
   components: {
@@ -178,9 +181,7 @@ export default {
       handler (val) {
         if (val.list && val.list.length) {
           let { reimburseType, id, createTime } = val.list[0]
-          console.log(val, val.list[0])
           if (reimburseType) {
-            console.log(this.formData, 'formData')
             this.id = id
             this.createTime = createTime
             this.changeTable(reimburseType - 1)
@@ -225,7 +226,8 @@ export default {
           reimburseAttachments: [],
         }]
       },
-      fileid: [] // 删除的附件ID
+      fileid: [], // 删除的附件ID
+      // isFirstVisit: true // 是不是首次打开页面
     }
   },
   computed: {
@@ -258,16 +260,18 @@ export default {
         return
       }
       this.ifShowSelect = !this.ifShowSelect
-      console.log(this.ifShowSelect, 'toggle')
     },
     selectTag (tag) {
       // this.resetInfo()
       console.log(this.currentType, tag.type)
+      if (this.currentType === tag.type) {
+        return this.toggleSelect()
+      }
       if (this.currentType != tag.type) {
         if (this.operation === 'edit') {
           this._deleteFileId() // 删除附件Id
         }
-        this.resetInfo(false)
+        this.resetInfo(false, tag.type)
       }
       this.changeTable(tag.type)
       console.log(CONFIG_MAP)
@@ -282,6 +286,7 @@ export default {
       this.formData.list[0].reimburseType = tag.type + 1
       this.formData.list[0].feeType = tag.label
       this.toggleSelect()
+      // this.isFirstVisit = false
       console.log(this.formData.list[0], 'formData')
     },
     changeTable (type) {
@@ -298,7 +303,7 @@ export default {
       this.setCurrentProp(column, row)
       console.log(this.currentProp, 'currentPro')
     },
-    isValidaNumber (val) { // 判断是否是有效的数字
+    isValidNumber (val) { // 判断是否是有效的数字
       val = Number(val)
       return !isNaN(val) && val >= 0
     },
@@ -308,13 +313,18 @@ export default {
         this.formData.list[0].feeType = this.transportationList[value - 1].label
         console.log(this.formData.list[0].feeType, 'this.formData.list[0].feeType')
       } else { // 住房的 总金额和住宿关联
-         if (!this.isValidaNumber(value)) {
+         if (!this.isValidNumber(value)) {
           return
+        }
+        if (this.currentProp === 'money') {
+          this.formData.list[0].money = parseFloat(String(value))
         }
         if (this.currentProp === 'totalMoney' || this.currentProp === 'days') {
           let data = this.formData.list[0]
-          let { days, totalMoney } = data
-          if (!days || !this.isValidaNumber(days) || !totalMoney || !this.isValidaNumber(totalMoney)) { // 如果天数没有填入,或者不符合规范则直接return
+          let { days, totalMoney } = data   
+          this.formData.list[0].totalMoney = totalMoney = parseFloat(String(totalMoney))
+          this.formData.list[0].days = days = parseFloat(String(days))
+          if (!days || !this.isValidNumber(days) || !totalMoney || !this.isValidNumber(totalMoney)) { // 如果天数没有填入,或者不符合规范则直接return
             return
           }
           this.$set(data, 'money', (totalMoney / days).toFixed(2))
@@ -354,7 +364,10 @@ export default {
         }
       }
     },
-    resetInfo (isClose = true) {
+    resetInfo (isClose = true, type = '') {
+      let prevData = this.formData.list[0]
+      let { money, totalMoney, remark } = prevData
+      console.log(typeof type, 'type', remark, money, totalMoney)
       this.$refs.form.clearValidate()
       this.$refs.form.resetFields()
       this.clearFile()
@@ -368,11 +381,13 @@ export default {
           transport: '',
           from: '',
           to: '',
-          money: '',
+          money: !type 
+            ? '' 
+            : (this.currentType === ACC_TYPE ? totalMoney : money),
           invoiceNumber: '1',
-          remark: '',
+          remark: type ? remark : '',
           days: '',
-          totalMoney: '',
+          totalMoney: type === ACC_TYPE ? money : '',
           expenseCategory: '',
           invoiceAttachment: [],
           otherAttachment: [],
@@ -414,7 +429,7 @@ export default {
     },
     deleteFileList ({ id }) {
       this.fileid.push(id)
-      console.log(this.fileid, 'deleteFileList')
+      // console.log(this.fileid, 'deleteFileList')
     }
   },
   created () {

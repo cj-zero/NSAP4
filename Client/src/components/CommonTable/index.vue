@@ -21,6 +21,7 @@
       v-if="selectionColumns && selectionColumns.originType === 'selection'"
       reserve-selection
       :selectable="checkSelectable"
+      show-overflow-tooltip
     >
     </el-table-column>
     <el-table-column
@@ -30,6 +31,7 @@
       :label="item.label"
       :align="item.align || 'left'"
       :sortable="item.isSort || false"
+      show-overflow-tooltip
     >
       <template slot-scope="scope" >
         <div class="link-container" v-if="item.type === 'link'">

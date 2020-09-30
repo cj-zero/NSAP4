@@ -82,6 +82,7 @@
         :headers="headers"
         :on-success="successBack"
         :on-remove="handleRemove"
+        :before-upload="beforeFileUpload"
         multiple
         :limit="limit"
         :on-exceed="onExeed"
@@ -136,6 +137,9 @@ export default {
       default () {
         return []
       }
+    },
+    maxSize: {
+      type: [Number, String]
     }
   },
   data() {
@@ -200,6 +204,13 @@ export default {
       }
       // if (this.pictures.length >)
       return testmsg
+    },
+    beforeFileUpload (file) {
+      if (this.maxSize) {
+        console.log(this.maxSize, 'maxSize')
+        return file.size / 1024 / 1024 < this.maxSize
+      }
+      return true
     },
     onExeed () { 
       this.$message.error(`最多上传${this.limit}个文件`)

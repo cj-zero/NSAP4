@@ -77,6 +77,7 @@
         @get-ImgList="getFileList" 
         uploadType="file" 
         ref="uploadFile" 
+        :maxSize="maxSize"
         :fileList="formData.attachmentsFileList || []"
         @deleteFileList="deleteFileList"></upLoadFile>
     </el-row>
@@ -541,6 +542,8 @@
     </my-dialog>
     <!-- 完工报告 -->
     <my-dialog
+      width="983px"
+      title="服务行为报告单"
       ref="reportDialog"
       @closed="resetReport">
       <Report :data="reportData" ref="report"/>
@@ -623,7 +626,7 @@ export default {
       currentProp: '', // 当前选中的单元格的property, 对应table数据的key值
       currentLabel: '', // 当前选中的单元格的property, 对应table数据的label值
       currentRow: '', // 当前选中的
-      maxSize: 1000,
+      maxSize: 100, // 文件大小
       customerBtnList: [
         { btnText: '确认', handleClick: this.confirm },
         { btnText: '取消', handleClick: this.closeDialog }
@@ -856,7 +859,7 @@ export default {
     getTotal (data) { // 获取总金额
       let result = 0
       result += data.reduce((prev, next) => {
-        return prev + parseInt(String(next.totalMoney || next.money))
+        return prev + parseFloat(String(next.totalMoney || next.money))
       }, 0)
       return result
     },

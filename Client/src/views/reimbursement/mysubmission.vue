@@ -35,6 +35,7 @@
                 :align="item.align || 'left'"
                 :sortable="item.isSort || false"
                 :type="item.originType || ''"
+                show-overflow-tooltip
               >
                 <template slot-scope="scope" >
                   <div class="link-container" v-if="item.type === 'link'">
@@ -52,7 +53,7 @@
                     >{{ btnItem.btnText }}</el-button>
                   </template>
                   <template v-else-if="item.label === '服务报告'">
-                    <el-button @click="item.handleClick" size="mini" type="primary">{{ item.btnText }}</el-button>
+                    <el-button @click="item.handleClick(scope.row.serviceOrderId, 'table')" size="mini" type="primary">{{ item.btnText }}</el-button>
                   </template>
                   <template v-else>
                     {{ scope.row[item.prop] }}
@@ -88,6 +89,13 @@
           :customerInfo="customerInfo">
         </order>
       </my-dialog>
+      <my-dialog
+        ref="reportDialog"
+        width="983px"
+        title="服务行为报告单"
+        @closed="resetReport">
+        <Report :data="reportData" ref="report"/>
+      </my-dialog>
       <!-- <el-input style="width:100px;" size="mini" class="input-inner">
         <i slot="suffix" style="text-align:center;">%</i>
       </el-input> -->
@@ -101,6 +109,7 @@ import Sticky from '@/components/Sticky'
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
+import Report from './common/components/report'
 import { tableMixin, categoryMixin, reportMixin } from './common/js/mixins'
 import { getOrder, withdraw } from '@/api/reimburse'
 export default {
@@ -113,7 +122,8 @@ export default {
     // CommonTable,
     Pagination,
     MyDialog,
-    Order
+    Order,
+    Report
   },
   computed: {
     searchConfig () {
@@ -122,7 +132,7 @@ export default {
         { type: 'search' },
         { type: 'button', btnText: '新建', handleClick: this.addAccount },
         { type: 'button', btnText: '编辑', handleClick: this.getDetail, options: { type: 'edit', name: 'mySubmit' } },
-        { type: 'button', btnText: '撤回', handleClick: this.recall }
+        { type: 'button', btnText: '撤回', handleClick: this.recall, isShow: this.isCustomerSupervisor }
       ]
     }, // 搜索配置
     btnList () {
