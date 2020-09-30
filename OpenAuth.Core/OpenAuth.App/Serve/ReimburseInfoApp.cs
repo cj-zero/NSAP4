@@ -63,7 +63,7 @@ namespace OpenAuth.App
 
             var result = new TableData();
             var objs = UnitWork.Find<ReimburseInfo>(null);
-            var ReimburseInfos = objs.WhereIf(!string.IsNullOrWhiteSpace(request.Id), r => r.Id.ToString().Contains(request.Id))
+            var ReimburseInfos = objs.WhereIf(!string.IsNullOrWhiteSpace(request.MainId), r => r.MainId.ToString().Contains(request.MainId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId), r => r.ServiceOrderId.ToString().Contains(request.ServiceOrderId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.BearToPay), r => r.BearToPay.Contains(request.BearToPay))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.Responsibility), r => r.Responsibility.Contains(request.Responsibility))
@@ -318,7 +318,7 @@ namespace OpenAuth.App
 
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.CreateUserId.Equals(loginUser.Id) && c.IsReimburse < 2).OrderByDescending(c => c.CreateTime).ToListAsync();
             var ids = CompletionReports.Select(c => c.ServiceOrderId).Distinct().ToList();
-            var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ids.Contains(s.Id)).ToListAsync();
+            var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ids.Contains(s.Id)).Include(s=>s.ServiceWorkOrders).Where(s=>s.ServiceWorkOrders.Any(w=>w.CurrentUserNsapId== loginUser.Id) &&s.ServiceWorkOrders.Any(w=>w.Status>=6)).ToListAsync();
 
             var objs = ServiceOrders.Select(s => new
             {
@@ -468,36 +468,36 @@ namespace OpenAuth.App
             }
 
             #region 判断发票是否唯一
-            if (req.ReimburseFares != null && req.ReimburseFares.Count > 0)
-            {
-                foreach (var item in req.ReimburseFares)
-                {
-                    if (!IsSole(item.InvoiceNumber))
-                    {
-                        throw new Exception("添加报销单失败。发票存在已使用，不可二次使用！！！");
-                    }
-                }
-            }
-            if (req.ReimburseAccommodationSubsidies != null && req.ReimburseAccommodationSubsidies.Count > 0)
-            {
-                foreach (var item in req.ReimburseAccommodationSubsidies)
-                {
-                    if (!IsSole(item.InvoiceNumber))
-                    {
-                        throw new Exception("添加报销单失败。发票存在已使用，不可二次使用！！！");
-                    }
-                }
-            }
-            if (req.ReimburseOtherCharges != null && req.ReimburseOtherCharges.Count > 0)
-            {
-                foreach (var item in req.ReimburseOtherCharges)
-                {
-                    if (!IsSole(item.InvoiceNumber))
-                    {
-                        throw new Exception("添加报销单失败。发票存在已使用，不可二次使用！！！");
-                    }
-                }
-            }
+            //if (req.ReimburseFares != null && req.ReimburseFares.Count > 0)
+            //{
+            //    foreach (var item in req.ReimburseFares)
+            //    {
+            //        if (!IsSole(item.InvoiceNumber))
+            //        {
+            //            throw new Exception("添加报销单失败。发票存在已使用，不可二次使用！！！");
+            //        }
+            //    }
+            //}
+            //if (req.ReimburseAccommodationSubsidies != null && req.ReimburseAccommodationSubsidies.Count > 0)
+            //{
+            //    foreach (var item in req.ReimburseAccommodationSubsidies)
+            //    {
+            //        if (!IsSole(item.InvoiceNumber))
+            //        {
+            //            throw new Exception("添加报销单失败。发票存在已使用，不可二次使用！！！");
+            //        }
+            //    }
+            //}
+            //if (req.ReimburseOtherCharges != null && req.ReimburseOtherCharges.Count > 0)
+            //{
+            //    foreach (var item in req.ReimburseOtherCharges)
+            //    {
+            //        if (!IsSole(item.InvoiceNumber))
+            //        {
+            //            throw new Exception("添加报销单失败。发票存在已使用，不可二次使用！！！");
+            //        }
+            //    }
+            //}
             #endregion
 
             //用信号量代替锁
@@ -617,36 +617,36 @@ namespace OpenAuth.App
             }
 
             #region 判断发票是否唯一
-            if (req.ReimburseFares != null && req.ReimburseFares.Count > 0)
-            {
-                foreach (var item in req.ReimburseFares)
-                {
-                    if (!IsSole(item.InvoiceNumber))
-                    {
-                        throw new Exception("修改报销单失败。发票存在已使用，不可二次使用！！！");
-                    }
-                }
-            }
-            if (req.ReimburseAccommodationSubsidies != null && req.ReimburseAccommodationSubsidies.Count > 0)
-            {
-                foreach (var item in req.ReimburseAccommodationSubsidies)
-                {
-                    if (!IsSole(item.InvoiceNumber))
-                    {
-                        throw new Exception("修改报销单失败。发票存在已使用，不可二次使用！！！");
-                    }
-                }
-            }
-            if (req.ReimburseOtherCharges != null && req.ReimburseOtherCharges.Count > 0)
-            {
-                foreach (var item in req.ReimburseOtherCharges)
-                {
-                    if (!IsSole(item.InvoiceNumber))
-                    {
-                        throw new Exception("修改报销单失败。发票存在已使用，不可二次使用！！！");
-                    }
-                }
-            }
+            //if (req.ReimburseFares != null && req.ReimburseFares.Count > 0)
+            //{
+            //    foreach (var item in req.ReimburseFares)
+            //    {
+            //        if (!IsSole(item.InvoiceNumber))
+            //        {
+            //            throw new Exception("修改报销单失败。发票存在已使用，不可二次使用！！！");
+            //        }
+            //    }
+            //}
+            //if (req.ReimburseAccommodationSubsidies != null && req.ReimburseAccommodationSubsidies.Count > 0)
+            //{
+            //    foreach (var item in req.ReimburseAccommodationSubsidies)
+            //    {
+            //        if (!IsSole(item.InvoiceNumber))
+            //        {
+            //            throw new Exception("修改报销单失败。发票存在已使用，不可二次使用！！！");
+            //        }
+            //    }
+            //}
+            //if (req.ReimburseOtherCharges != null && req.ReimburseOtherCharges.Count > 0)
+            //{
+            //    foreach (var item in req.ReimburseOtherCharges)
+            //    {
+            //        if (!IsSole(item.InvoiceNumber))
+            //        {
+            //            throw new Exception("修改报销单失败。发票存在已使用，不可二次使用！！！");
+            //        }
+            //    }
+            //}
             #endregion
 
             await semaphoreSlim.WaitAsync();

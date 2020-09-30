@@ -5,9 +5,9 @@ namespace OpenAuth.App.Request
     public class QueryReimburseInfoListReq : PageReq
     {
         /// <summary>
-        /// 报销id
+        /// 报销单号
         /// </summary>
-        public string Id { get; set; }
+        public string MainId { get; set; }
 
         /// <summary>
         /// 报销状态

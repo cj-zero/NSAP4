@@ -44,9 +44,9 @@ namespace OpenAuth.App
             var MyExpend = await objs.OrderBy(u => u.Id)
                .Skip((request.page - 1) * request.limit)
                .Take(request.limit).ToListAsync();
-            var MyExpendsDetails = objs.MapToList<MyExpendsResp>();
+            var MyExpendsDetails = MyExpend.MapToList<MyExpendsResp>();
             var file = await UnitWork.Find<UploadFile>(null).ToListAsync();
-            foreach (var item in MyExpend)
+            foreach (var item in MyExpendsDetails)
             {
                 var ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId == item.Id && r.ReimburseType == 5).ToListAsync();
                 MyExpendsDetails.Where(m=>m.Id.Equals(item.Id)).ForEach(m=>m.ReimburseAttachments= ReimburseAttachments.Select(r => new ReimburseAttachmentResp
@@ -127,7 +127,7 @@ namespace OpenAuth.App
         /// 修改
         /// </summary>
         /// <param name="obj"></param>
-        public async Task Update(AddOrUpdateMyExpendsReq obj)
+        public async Task Update(AddOrUpdateMyExpendsReq obj)            
         {
             var user = _auth.GetCurrentUser().User;
             if (obj.fileid != null && obj.fileid.Count > 0)
