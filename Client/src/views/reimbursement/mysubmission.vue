@@ -53,7 +53,10 @@
                     >{{ btnItem.btnText }}</el-button>
                   </template>
                   <template v-else-if="item.label === '服务报告'">
-                    <el-button @click="item.handleClick(scope.row.serviceOrderId, 'table')" size="mini" type="primary">{{ item.btnText }}</el-button>
+                    <div class="link-container">
+                      <img :src="rightImg" @click="item.handleClick(scope.row.serviceOrderId, 'table')" class="pointer">
+                      <span>查看</span>
+                    </div>
                   </template>
                   <template v-else>
                     {{ scope.row[item.prop] }}
@@ -206,6 +209,8 @@ export default {
           }
           this.title = 'create'
           this.$refs.myDialog.open()
+        } else {
+          this.$message.error('用户列表为空')
         }
       }).catch(() => {
         this.$message.error('获取失败')

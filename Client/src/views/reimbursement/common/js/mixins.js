@@ -59,7 +59,7 @@ export let tableMixin = {
       },
       listQuery: { // 分页参数
         page: 1,
-        limit: 30,
+        limit: 50,
         remburseStatus: '',
         pageType: ''
       },

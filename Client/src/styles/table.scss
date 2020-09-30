@@ -2,6 +2,12 @@
 
 .el-table {
   font-size: 12px !important;
+  th, td {
+    padding: 0 !important;
+  }
+}
+.el-table th {
+  padding: 0 !important;
 }
 
 /* 图片箭头样式 */
