@@ -1,5 +1,5 @@
 import rightImg from '@/assets/table/right.png'
-import { getReportDetail } from '@/api/serve/callservesure'
+import { getReportDetail, GetDetails } from '@/api/serve/callservesure'
 import { getCategoryName } from '@/api/reimburse'
 import { accommodationConfig } from './config'
 import { REIMBURSE_STATUS_MAP, PROJECT_NAME_MAP, RESPONSIBILITY_MAP, RELATIONS_MAP } from './map'
@@ -34,7 +34,7 @@ export let tableMixin = {
         { label: '出发日期', prop: 'businessTripDate', width: 150 },
         { label: '结束日期', prop: 'endDate', width: 150 },
         { label: '总天数', prop: 'businessTripDays', width: 100 },
-        { label: '服务ID', prop: 'serviceOrderSapId', width: 100, type: 'link' },
+        { label: '服务ID', prop: 'serviceOrderSapId', width: 100, type: 'link', handleJump: this.openTree },
         { label: '呼叫主题', prop: 'theme', width: 100 },
         { label: '项目名称', prop: 'projectName', width: 100 },
         { label: '服务报告', width: 100, handleClick: this.openReport, btnText: '查看' },
@@ -439,7 +439,6 @@ export let categoryMixin = {
   }
 }
 
-
 export const attachmentMixin = {
   methods: {
     _buildAttachment (data, isImport = false) { // 为了回显，并且编辑 目标是为了保证跟order.vue的数据保持相同的逻辑
@@ -493,6 +492,44 @@ export const attachmentMixin = {
           item.id = ''
         }
         item.reimburseAttachments = [...invoiceAttachment, ...otherAttachment, ...invoiceFileList, ...otherFileList]
+      })
+    }
+  }
+}
+
+export const chatMixin = {
+  data () {
+    return {
+      serveId: '',
+      dataForm: {}, //传递的表单props
+      temp: {
+        id: "", // Id
+        sltCode: "", // SltCode
+        subject: "", // Subject
+        cause: "", // Cause
+        symptom: "", // Symptom
+        descriptio: "", // Descriptio
+        status: "", // Status
+        extendInfo: "" // 其他信息,防止最后加逗号，可以删除
+      }
+    }
+  },
+  methods: {
+    openTree(row) {
+      console.log(row, 'orderId')
+      let serviceOrderId = row.serviceOrderId
+      this.tableLoading = true
+      GetDetails(serviceOrderId).then(res => {
+        if (res.code == 200) {
+          this.dataForm = res.result;
+          this.serveId = serviceOrderId
+          this.$refs.serviceDetail.open()
+          this.tableLoading = false
+        }
+      }).catch((err) => {
+        console.error(err)
+        this.tableLoading = false
+        this.$message.error('获取服务单详情失败')
       })
     }
   }

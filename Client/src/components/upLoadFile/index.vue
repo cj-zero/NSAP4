@@ -98,6 +98,7 @@
 <script>
 // import Model from "@/components/Formcreated/components/Model";
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
+import { identifyInvoice } from '@/api/reimburse'
 export default {
   components: {
     // Model
@@ -140,6 +141,10 @@ export default {
     },
     maxSize: {
       type: [Number, String]
+    },
+    isReimburse: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -220,6 +225,9 @@ export default {
         pictureId:res.result[0].id,
         uid: file.uid
       })
+      if (this.isReimburse && this.prop === 'invoiceAttachment') { // 如果是报销功能的话，才进行识别，其他的文件上传不走这一步
+        this._identifyInvoice(res.result[0].id)
+      }
       let picConig = {
         pictureId: res.result[0].id
       }
@@ -233,6 +241,30 @@ export default {
       })
       console.log('beofore', this.index)
       this.$emit('get-ImgList', this.pictures, this.prop, this.index)
+    },
+    _identifyInvoice (fileId) {
+      identifyInvoice({
+        fileId
+      }).then(res => {
+        if (res.data && !res.data.length) {
+          this.$emit('identifyInvoice', '', 0, this.prop)
+          return this.$message.error('识别失败')
+        }
+        let { invoiceNo, amountWithTax, isValidate, isUsed, notPassReason } = res.data[0]
+        if (!isValidate || (isValidate && isUsed)) {
+          this.$emit('identifyInvoice', '', 0, this.prop)
+          return this.$message.error(notPassReason ? notPassReason : '识别失败')
+        }
+        this.$message({
+          type: 'success',
+          message: '识别成功'
+        })
+        this.$emit('identifyInvoice', invoiceNo, amountWithTax, this.prop)
+      }).catch((err) => {
+        console.error(err)
+        this.$emit('identifyInvoice', '', 0, this.prop)
+        this.$message.error('识别失败')
+      })
     },
     clearFiles () {
       this.uploadType === 'image'

@@ -127,7 +127,7 @@
                     :prop="'reimburseTravellingAllowances.' + scope.$index + '.'+ item.prop"
                     :rules="travelRules[item.prop] || { required: false }"
                   >
-                    <el-input v-model="scope.row[item.prop]" :type="item.type" :min="0" :disabled="item.disabled"></el-input>
+                    <el-input v-model="scope.row[item.prop]" :type="item.type" :min="0" :disabled="item.disabled" :max="100"></el-input>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'select'">
@@ -243,6 +243,8 @@
                     ref="trafficUploadFile" 
                     :prop="item.prop" 
                     :index="scope.$index"
+                    :isReimburse="true"
+                    @identifyInvoice="trafficIdentifyInvoice"
                     @deleteFileList="deleteFileList"
                     :fileList="
                       formData.reimburseFares[scope.$index] 
@@ -349,6 +351,8 @@
                     ref="accUploadFile" 
                     :prop="item.prop" 
                     :index="scope.$index"
+                    :isReimburse="true"
+                    @identifyInvoice="accIdentifyInvoice"
                     @deleteFileList="deleteFileList"
                     :fileList="
                       formData.reimburseAccommodationSubsidies[scope.$index] 
@@ -456,6 +460,8 @@
                     ref="otherUploadFile" 
                     :prop="item.prop"
                     :index="scope.$index"
+                    :isReimburse="isReimburse"
+                    @identifyInvoice="otherIdentifyInvoice"
                     @deleteFileList="deleteFileList"
                     :fileList="
                       formData.reimburseOtherCharges[scope.$index] 
@@ -867,7 +873,7 @@ export default {
       result += data.reduce((prev, next) => {
         return prev + parseFloat(String(next.totalMoney || next.money))
       }, 0)
-      console.log(this.isValidNumber(result), result, 'result')
+      // console.log(this.isValidNumber(result), result, 'result')
       return this.isValidNumber(result) ? result : 0
     },
     setTravelMoney () {
@@ -894,7 +900,7 @@ export default {
             to: '',
             money: '',
             remark: '',
-            invoiceNumber: '1',
+            invoiceNumber: '',
             invoiceAttachment: [],
             otherAttachment: [],
             invoiceFileList: [],
@@ -908,7 +914,7 @@ export default {
             money: '',
             totalMoney: '',
             remark: '',
-            invoiceNumber: '1',
+            invoiceNumber: '',
             invoiceAttachment: [],
             otherAttachment: [],
             invoiceFileList: [],
@@ -921,7 +927,7 @@ export default {
             expenseCategory: '',
             money: '',
             remark: '',
-            invoiceNumber: '1',
+            invoiceNumber: '',
             invoiceAttachment: [],
             otherAttachment: [],
             invoiceFileList: [],
@@ -1015,6 +1021,31 @@ export default {
       this.currentRow = row
       this.currentIndex = findIndex(data, item => item === row)
     },
+    trafficIdentifyInvoice (invoiceNo, money, prop) {
+      if (prop === 'invoiceAttachment') {
+        let data = this.formData.reimburseFaresu
+        this.$set(data[this.currentIndex], 'money', money)
+        this.$set(data[this.currentIndex], 'invoiceNumber', invoiceNo)
+        console.log(data[this.currentIndex], '识别 traffic')
+      }
+      
+    },
+    accIdentifyInvoice (invoiceNo, money, prop) {
+      if (prop === 'invoiceAttachment') {
+        let data = this.formData.reimburseAccommodationSubsidies
+        this.$set(data[this.currentIndex], 'totalMoney', money)
+        this.$set(data[this.currentIndex], 'invoiceNumber', invoiceNo)
+        console.log(data[this.currentIndex], '识别 acc')
+      }
+    },
+    otherIdentifyInvoice (invoiceNo, money, prop) {
+      if (prop === 'invoiceAttachment') {
+        let data = this.formData.reimburseOtherCharges
+        this.$set(data[this.currentIndex], 'money', money)
+        this.$set(data[this.currentIndex], 'invoiceNumber', invoiceNo)
+        console.log(data[this.currentIndex], '识别 other')
+      }
+    },
     onTravelCellClick (row, column) {
       this.setCurrentProp(column, row)
     },
@@ -1063,7 +1094,7 @@ export default {
             to: operationType === 'add' ? '' : row.to,
             money: operationType === 'add' ? '' : row.money,
             remark: operationType === 'add' ? '' : row.remark,
-            invoiceNumber: '1',
+            invoiceNumber: '',
             invoiceAttachment: [],
             otherAttachment: [],
             invoiceFileList: [], // 用于回显
@@ -1077,7 +1108,7 @@ export default {
             money: operationType === 'add' ? '' : row.money,
             totalMoney: operationType === 'add' ? '' : row.totalMoney,
             remark: operationType === 'add' ? '' : row.remark,
-            invoiceNumber: '1',
+            invoiceNumber: '',
             invoiceAttachment: [],
             otherAttachment: [],
             invoiceFileList: [], // 用于回显
@@ -1090,7 +1121,7 @@ export default {
             expenseCategory: operationType === 'add' ? '' : row.expenseCategory,
             money: operationType === 'add' ? '' : row.money,
             remark: operationType === 'add' ? '' : row.remark,
-            invoiceNumber: '1',
+            invoiceNumber: '',
             invoiceAttachment: [],
             otherAttachment: [],
             invoiceFileList: [], // 用于回显

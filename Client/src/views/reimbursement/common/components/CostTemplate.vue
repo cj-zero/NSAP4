@@ -72,6 +72,7 @@
                       :min="0" 
                       :disabled="item.disabled" 
                       @change="onChange"
+                      @input.native="onInput"
                     ></el-input>
                   </el-form-item>
                 </template>
@@ -104,6 +105,8 @@
                     ref="uploadFile" 
                     :prop="item.prop" 
                     :index="scope.$index"
+                    :isReimburse="true"
+                    @identifyInvoice="identifyInvoice"
                     @deleteFileList="deleteFileList"
                     :isDisabled="isDisabled"
                     :fileList="
@@ -180,10 +183,11 @@ export default {
       immediate: true,
       handler (val) {
         if (val.list && val.list.length) {
-          let { reimburseType, id, createTime } = val.list[0]
+          let { reimburseType, id, createTime, totalMoney, money } = val.list[0]
           if (reimburseType) {
             this.id = id
             this.createTime = createTime
+            this.maxMoney = totalMoney || money
             this.changeTable(reimburseType - 1)
             this.formData = Object.assign({}, this.formData, val)
           }
@@ -213,7 +217,7 @@ export default {
           from: '',
           to: '',
           money: '',
-          invoiceNumber: '1',
+          invoiceNumber: '',
           remark: '',
           // createTime: '',
           days: '',
@@ -226,6 +230,7 @@ export default {
           reimburseAttachments: [],
         }]
       },
+      maxMoney: 0, // 金钱的最大值，当识别了附件之后需要进行设置
       fileid: [], // 删除的附件ID
       // isFirstVisit: true // 是不是首次打开页面
     }
@@ -254,6 +259,15 @@ export default {
         return true
       }
       return invoiceAttachment.length !== 0
+    },
+    identifyInvoice (invoiceNo, money) {
+      if (this.currentProp === 'invoiceAttachment') {
+        this.formData.list[0].invoiceNumber = invoiceNo || 1
+        this.currentType === ACC_TYPE
+          ? this.formData.list[0].totalMoney = money || 100
+          : this.formData.list[0].money = money || 100
+        this.maxMoney = money || 100
+      }
     },
     toggleSelect () {
       if (this.operation === 'view') {
@@ -293,15 +307,13 @@ export default {
       this.currentType = type
       this.rules = RULES_MAP[type]
       this.config = this[CONFIG_MAP[type]].slice(0, -1)
-      console.log(this.config, 'config')
     },
     onRowClick () {
-      console.log('row-clcik')
+      // console.log('row-clcik')
     },
     onCellClick (row, column) {
-      console.log('cellClick')
       this.setCurrentProp(column, row)
-      console.log(this.currentProp, 'currentPro')
+      // console.log(this.currentProp, 'currentPro')
     },
     isValidNumber (val) { // 判断是否是有效的数字
       val = Number(val)
@@ -328,6 +340,25 @@ export default {
             return
           }
           this.$set(data, 'money', (totalMoney / days).toFixed(2))
+        }
+      }
+    },
+    onInput (e) {
+      let val = e.target.value
+      let { invoiceFileList, invoiceAttachment, invoiceNumber } = this.formData.list[0]
+      console.log(invoiceFileList, invoiceAttachment, invoiceNumber, this.currentProp, 'input')
+      if (
+        (invoiceFileList.length && !this.fileid.includes(invoiceFileList[0].id)) || // 编辑的时候，有回显的附件，并且没有删除
+        (invoiceAttachment.length && invoiceNumber)
+      ) {
+        console.log('enter')
+        if (this.currentProp !== 'days') {
+          console.log('enter inner')
+          if (this.currentType === ACC_TYPE) {
+            this.formData.list[0].totalMoney = Math.min(parseFloat(val), this.maxMoney)
+          } else{
+            this.formData.list[0].money = Math.min(parseFloat(val), this.maxMoney)
+          }
         }
       }
     },
@@ -384,7 +415,7 @@ export default {
           money: !type 
             ? '' 
             : (this.currentType === ACC_TYPE ? totalMoney : money),
-          invoiceNumber: '1',
+          invoiceNumber: '',
           remark: type ? remark : '',
           days: '',
           totalMoney: type === ACC_TYPE ? money : '',
@@ -401,6 +432,7 @@ export default {
       this.config = ''
       this.currentProp = ''
       this.currentType = ''
+      this.maxNumber = 0
       if (isClose) { // 关闭弹窗的时候
         this.ifShowSelect = false
         this.fileid = []

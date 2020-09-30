@@ -57,9 +57,17 @@ export function withdraw (params) { // 撤销报销单
   })
 }
 
-export function approve (data) {
+export function approve (data) { // 审核接口
   return request({
     url: '/serve/Reimburse/Accraditation',
+    method: 'post',
+    data
+  })
+}
+
+export function identifyInvoice (data) {
+  return request({
+    url: '/ocr/TecentOCR/TecentInvoiceOCR',
     method: 'post',
     data
   })
