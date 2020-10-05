@@ -127,7 +127,7 @@
                     :prop="'reimburseTravellingAllowances.' + scope.$index + '.'+ item.prop"
                     :rules="travelRules[item.prop] || { required: false }"
                   >
-                    <el-input v-model="scope.row[item.prop]" :type="item.type" :min="0" :disabled="item.disabled" @input.native="onInput"></el-input>
+                    <el-input v-model="scope.row[item.prop]" :type="item.type" :min="0" :disabled="item.disabled" @input="onInput"></el-input>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'select'">
@@ -213,7 +213,7 @@
                     :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
                     :rules="trafficRules[item.prop] || { required: false }"
                   >
-                    <el-input v-model="scope.row[item.prop]" :type="item.type" :disabled="item.disabled" :min="0"  @input.native="onInput"></el-input>
+                    <el-input v-model="scope.row[item.prop]" :type="item.type" :disabled="item.disabled" :min="0"  @input="onInput"></el-input>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'select'">
@@ -1119,6 +1119,7 @@ export default {
           (invoiceAttachment.length && invoiceNumber)
       ) {
         if (this.currentProp === 'totalMoney' || this.currentProp === 'money') { // 只算修改totalMoney或者money字段
+          console.log(maxMoney, value, 'enter ine')
           this.tableType === 'acc'
             ? currentRow.totalMoney = Math.min(value, maxMoney)
             : currentRow.money = Math.min(value, maxMoney)
