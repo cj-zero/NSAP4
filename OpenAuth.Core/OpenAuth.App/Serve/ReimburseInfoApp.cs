@@ -316,8 +316,15 @@ namespace OpenAuth.App
 
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == "UserOrg" && r.FirstId == loginUser.Id).Select(r => r.SecondId).ToListAsync();
             var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderBy(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
-
+            List<string> CompletionReportIds = new List<string>();
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.CreateUserId.Equals(loginUser.Id) && c.IsReimburse < 2).OrderByDescending(c => c.CreateTime).ToListAsync();
+            if (CompletionReports.Count > 0) CompletionReportIds = CompletionReports.Select(c=>c.Id).ToList();
+            CompletionReportIds = await UnitWork.Find<CompletionReport>(c=>!CompletionReportIds.Contains(c.Id)).Select(c => c.Id).ToListAsync();
+            var CompletionReportCount = await UnitWork.Find<ServiceWorkOrder>(s => CompletionReportIds.Contains(s.CompletionReportId) && s.CurrentUserNsapId.Equals(loginUser.Id)).Select(s => new { s.CurrentUserNsapId, s.CompletionReportId }).Distinct().ToListAsync();
+            CompletionReportIds = CompletionReportCount.Select(c => c.CompletionReportId).ToList();
+            CompletionReports.AddRange(await UnitWork.Find<CompletionReport>(c => CompletionReportIds.Contains(c.Id) && c.IsReimburse < 2).OrderByDescending(c => c.CreateTime).ToListAsync());
+
+
             var ids = CompletionReports.Select(c => c.ServiceOrderId).Distinct().ToList();
             var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ids.Contains(s.Id)).Include(s => s.ServiceWorkOrders).ToListAsync();
             List<ServiceOrder> ServiceOrderList = new List<ServiceOrder>();
@@ -1088,6 +1095,11 @@ namespace OpenAuth.App
                 await UnitWork.DeleteAsync<ReimburseInfo>(Reimburse);
                 await UnitWork.SaveAsync();
             }
+
+            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == Reimburse.ServiceOrderId && c.CreateUserId == Reimburse.CreateUserId).ToListAsync();
+            CompletionReports.ForEach(c => c.IsReimburse = 2);
+            UnitWork.BatchUpdate<CompletionReport>(CompletionReports.ToArray());
+            await UnitWork.SaveAsync();
         }
 
         /// <summary>

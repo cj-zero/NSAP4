@@ -227,8 +227,8 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// </summary>
         /// <param name="InvoiceNumber"></param>
         /// <returns></returns>
-        [HttpGet]
-        public Response IsSole(List<string> InvoiceNumber) 
+        [HttpPost]
+        public Response IsSole( List<string> InvoiceNumber) 
         {
             var result = new Response();
             try
