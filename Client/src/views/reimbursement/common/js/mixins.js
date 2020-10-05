@@ -180,20 +180,20 @@ export let tableMixin = {
           return item
         })
       data.reimburseAttachments = []
-      // this._buildAttachment(reimburseTravellingAllowances)
       this._buildAttachment(reimburseFares)
       this._buildAttachment(reimburseAccommodationSubsidies)
       this._buildAttachment(reimburseOtherCharges)
+      console.log(data, 'detail')
     },
     _buildAttachment (data) { // 为了回显，并且编辑 目标是为了保证跟order.vue的数据保持相同的逻辑
       data.forEach(item => {
         let { reimburseAttachments } = item
-        // console.log(reimburseAttachments, 'foeEach', item)
         item.invoiceFileList = this.getTargetAttachment(reimburseAttachments, 2)
         item.otherFileList = this.getTargetAttachment(reimburseAttachments, 1)
         item.invoiceAttachment = [],
         item.otherAttachment = []
         item.reimburseAttachments = []
+        item.maxMoney = item.totalMoney || item.money
       })
     },
     getTargetAttachment (data, attachmentType) { // 用于el-upload 回显
@@ -450,6 +450,7 @@ export const attachmentMixin = {
         item.invoiceAttachment = [],
         item.otherAttachment = []
         item.reimburseAttachments = []
+        item.maxMoney = item.totalMoney || item.money // 存在附件时，需要对金额进行限制
       })
     },
     getTargetAttachment (data, attachmentType, isImport) { // 用于el-upload 回显

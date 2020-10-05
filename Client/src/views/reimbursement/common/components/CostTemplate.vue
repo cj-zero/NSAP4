@@ -262,11 +262,11 @@ export default {
     },
     identifyInvoice (invoiceNo, money) {
       if (this.currentProp === 'invoiceAttachment') {
-        this.formData.list[0].invoiceNumber = invoiceNo || 1
+        this.formData.list[0].invoiceNumber = invoiceNo
         this.currentType === ACC_TYPE
-          ? this.formData.list[0].totalMoney = money || 100
-          : this.formData.list[0].money = money || 100
-        this.maxMoney = money || 100
+          ? this.formData.list[0].totalMoney = money
+          : this.formData.list[0].money = money
+        this.maxMoney = money
       }
     },
     toggleSelect () {

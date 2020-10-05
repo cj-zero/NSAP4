@@ -127,7 +127,7 @@
                     :prop="'reimburseTravellingAllowances.' + scope.$index + '.'+ item.prop"
                     :rules="travelRules[item.prop] || { required: false }"
                   >
-                    <el-input v-model="scope.row[item.prop]" :type="item.type" :min="0" :disabled="item.disabled" :max="100"></el-input>
+                    <el-input v-model="scope.row[item.prop]" :type="item.type" :min="0" :disabled="item.disabled" @input.native="onInput"></el-input>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'select'">
@@ -213,7 +213,7 @@
                     :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
                     :rules="trafficRules[item.prop] || { required: false }"
                   >
-                    <el-input v-model="scope.row[item.prop]" :type="item.type" :disabled="item.disabled" :min="0"></el-input>
+                    <el-input v-model="scope.row[item.prop]" :type="item.type" :disabled="item.disabled" :min="0"  @input.native="onInput"></el-input>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'select'">
@@ -321,7 +321,14 @@
                     :prop="'reimburseAccommodationSubsidies.' + scope.$index + '.'+ item.prop"
                     :rules="accRules[item.prop] || { required: false }"
                   >
-                    <el-input v-model="scope.row[item.prop]" :type="item.type" :disabled="item.disabled" :min="0" @change="onChange"></el-input>
+                    <el-input 
+                      v-model="scope.row[item.prop]" 
+                      :type="item.type" 
+                      :disabled="item.disabled" 
+                      :min="0" 
+                      @change="onChange"
+                      @blur="onBlur"
+                      @input="onInput"></el-input>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'select'">
@@ -460,7 +467,7 @@
                     ref="otherUploadFile" 
                     :prop="item.prop"
                     :index="scope.$index"
-                    :isReimburse="isReimburse"
+                    :isReimburse="true"
                     @identifyInvoice="otherIdentifyInvoice"
                     @deleteFileList="deleteFileList"
                     :fileList="
@@ -570,7 +577,7 @@
       :closed="onApproveClose"
       v-loading="remarkLoading"
       width="350px">
-      <remark ref="remark" @input="onInput"></remark>
+      <remark ref="remark" @input="onRemarkInput"></remark>
     </my-dialog>
   </div>
 </template>
@@ -638,6 +645,7 @@ export default {
       currentProp: '', // 当前选中的单元格的property, 对应table数据的key值
       currentLabel: '', // 当前选中的单元格的property, 对应table数据的label值
       currentRow: '', // 当前选中的
+      tableType: '', // 用来判断当前被点击的表格类型
       maxSize: 100, // 文件大小
       customerBtnList: [
         { btnText: '确认', handleClick: this.confirm },
@@ -899,6 +907,7 @@ export default {
             from: '',
             to: '',
             money: '',
+            maxMoney: '',
             remark: '',
             invoiceNumber: '',
             invoiceAttachment: [],
@@ -913,6 +922,7 @@ export default {
             days: '',
             money: '',
             totalMoney: '',
+            maxMoney: '',
             remark: '',
             invoiceNumber: '',
             invoiceAttachment: [],
@@ -926,6 +936,7 @@ export default {
             id: '',
             expenseCategory: '',
             money: '',
+            maxMoney: '',
             remark: '',
             invoiceNumber: '',
             invoiceAttachment: [],
@@ -1023,26 +1034,31 @@ export default {
     },
     trafficIdentifyInvoice (invoiceNo, money, prop) {
       if (prop === 'invoiceAttachment') {
-        let data = this.formData.reimburseFaresu
-        this.$set(data[this.currentIndex], 'money', money)
-        this.$set(data[this.currentIndex], 'invoiceNumber', invoiceNo)
+        let data = this.formData.reimburseFares
+        let currentRow = data[this.currentIndex]
+        currentRow.money = money
+        currentRow.maxMoney = money
+        currentRow.invoiceNumber = invoiceNo
         console.log(data[this.currentIndex], '识别 traffic')
       }
-      
     },
     accIdentifyInvoice (invoiceNo, money, prop) {
       if (prop === 'invoiceAttachment') {
         let data = this.formData.reimburseAccommodationSubsidies
-        this.$set(data[this.currentIndex], 'totalMoney', money)
-        this.$set(data[this.currentIndex], 'invoiceNumber', invoiceNo)
+        let currentRow = data[this.currentIndex]
+        currentRow.totalMoney = money
+        currentRow.maxMoney = money
+        currentRow.invoiceNumber = invoiceNo
         console.log(data[this.currentIndex], '识别 acc')
       }
     },
     otherIdentifyInvoice (invoiceNo, money, prop) {
       if (prop === 'invoiceAttachment') {
         let data = this.formData.reimburseOtherCharges
-        this.$set(data[this.currentIndex], 'money', money)
-        this.$set(data[this.currentIndex], 'invoiceNumber', invoiceNo)
+        let currentRow = data[this.currentIndex]
+        currentRow.money = money
+        currentRow.maxMoney = money
+        currentRow.invoiceNumber = invoiceNo
         console.log(data[this.currentIndex], '识别 other')
       }
     },
@@ -1050,15 +1066,18 @@ export default {
       this.setCurrentProp(column, row)
     },
     onTrafficCellClick (row, column) {
+      this.tableType = 'traffic' // 判断当前点击的是哪个表格
       this.setCurrentProp(column, row)
       this.setCurrentIndex(this.formData.reimburseFares, row)
     },
     onAccCellClick (row, column) {
+      this.tableType = 'acc' // 判断当前点击的是哪个表格
       console.log('cell click')
       this.setCurrentProp(column, row)
       this.setCurrentIndex(this.formData.reimburseAccommodationSubsidies, row)
     },
     onOtherCellClick (row, column) {
+      this.tableType = 'other' // 判断当前点击的是哪个表格
       this.setCurrentProp(column, row)
       this.setCurrentIndex(this.formData.reimburseOtherCharges, row)
     },
@@ -1067,6 +1086,15 @@ export default {
       this.currentProp = property
     },
     onChange (value) { // 天数 总金额 计算
+      console.log(value, 'on change')
+      this.changeMoneyByDaysOrTotalMoney(value)
+    },
+    onBlur (e) {
+      console.log('blur')
+      let value = e.target.value
+      this.changeMoneyByDaysOrTotalMoney(value)
+    },
+    changeMoneyByDaysOrTotalMoney (value) {
       if (!this.isValidNumber(value)) {
         return
       }
@@ -1079,6 +1107,30 @@ export default {
         this.$set(data, 'money', (totalMoney / days).toFixed(2))
         console.log(this.formData, 'formData')
       }
+    },
+    onInput (value) {
+      // let value = e.target.value
+      let data = this.selectTable() // 通过判断tableType来选择当前的表格数据
+      let currentRow = data[this.currentIndex]
+      let { invoiceFileList, invoiceAttachment, maxMoney, invoiceNumber } = currentRow
+      if (
+          (invoiceFileList.length && !this.formData.fileId.includes(invoiceFileList[0].id)) || // 存在回显的文件代表已经新增的，并且还没被删除过
+          (invoiceAttachment.length && invoiceNumber)
+      ) {
+        if (this.currentProp === 'totalMoney' || this.currentProp === 'money') { // 只算修改totalMoney或者money字段
+          this.tableType === 'acc'
+            ? currentRow.totalMoney = Math.min(value, maxMoney)
+            : currentRow.money = Math.min(value, maxMoney)
+        }
+      }
+    },
+    selectTable () {
+      let { reimburseFares, reimburseOtherCharges, reimburseAccommodationSubsidies } = this.formData
+      return this.tableType === 'traffic'
+        ? reimburseFares
+        : this.tableType === 'acc'
+          ? reimburseAccommodationSubsidies
+          : reimburseOtherCharges
     },
     addAndCopy (scope, data, type, operationType) {
       if (!this.ifFormEdit) return
@@ -1093,6 +1145,7 @@ export default {
             from: operationType === 'add' ? '' : row.from,
             to: operationType === 'add' ? '' : row.to,
             money: operationType === 'add' ? '' : row.money,
+            maxMoney: operationType === 'add' ? '' : row.maxMoney,
             remark: operationType === 'add' ? '' : row.remark,
             invoiceNumber: '',
             invoiceAttachment: [],
@@ -1107,6 +1160,7 @@ export default {
             days: operationType === 'add' ? '' : row.days,
             money: operationType === 'add' ? '' : row.money,
             totalMoney: operationType === 'add' ? '' : row.totalMoney,
+            maxMoney: operationType === 'add' ? '' : row.maxMoney,
             remark: operationType === 'add' ? '' : row.remark,
             invoiceNumber: '',
             invoiceAttachment: [],
@@ -1120,6 +1174,7 @@ export default {
             id: '',
             expenseCategory: operationType === 'add' ? '' : row.expenseCategory,
             money: operationType === 'add' ? '' : row.money,
+            maxMoney: operationType === 'add' ? '' : row.maxMoney,
             remark: operationType === 'add' ? '' : row.remark,
             invoiceNumber: '',
             invoiceAttachment: [],
@@ -1354,7 +1409,7 @@ export default {
       this.$refs.remark.reset()
       this.$refs.approve.close()
     },
-    onInput (val) {
+    onRemarkInput (val) {
       this.remarkText = val
     },
     onApproveClose () {
