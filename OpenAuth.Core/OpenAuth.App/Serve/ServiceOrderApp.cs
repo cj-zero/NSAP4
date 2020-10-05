@@ -1182,12 +1182,15 @@ namespace OpenAuth.App
                 var ids = query.Where(s => s.ServiceOrderId != 0).Select(s => s.ServiceOrderId).Distinct().ToList();
                 foreach (var item in ids)
                 {
-                    var ServiceOrder = UnitWork.Find<ServiceOrder>(s => s.Id.Equals(item)).AsNoTracking().FirstOrDefault();
-                    var ServiceWorkOrders = await UnitWork.Find<ServiceWorkOrder>(u => u.ServiceOrderId.Equals(item)).AsNoTracking().ToListAsync();
-                    int num = 0;
-                    ServiceWorkOrders.ForEach(u => u.WorkOrderNumber = ServiceOrder.U_SAP_ID + "-" + ++num);
-                    UnitWork.BatchUpdate<ServiceWorkOrder>(ServiceWorkOrders.ToArray());
-                    await UnitWork.SaveAsync();
+                    var ServiceOrder =await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(item)).AsNoTracking().FirstOrDefaultAsync();
+                    if (ServiceOrder != null) 
+                    {
+                        var ServiceWorkOrders = await UnitWork.Find<ServiceWorkOrder>(u => u.ServiceOrderId.Equals(item)).AsNoTracking().ToListAsync();
+                        int num = 0;
+                        ServiceWorkOrders.ForEach(u => u.WorkOrderNumber = ServiceOrder.U_SAP_ID + "-" + ++num);
+                        UnitWork.BatchUpdate<ServiceWorkOrder>(ServiceWorkOrders.ToArray());
+                        await UnitWork.SaveAsync();
+                    }
                 }
             }
         }
