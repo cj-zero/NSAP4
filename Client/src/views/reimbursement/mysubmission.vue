@@ -11,86 +11,146 @@
         </Search>
       </div>
     </sticky>
-      <div class="app-container">
-        <div class="bg-white">
-          <div class="content-wrapper">
-            <el-table 
-              ref="table"
-              :data="tableData" 
-              v-loading="tableLoading" 
-              size="mini"
-              border
-              fit
+    <div class="app-container">
+      <div class="bg-white">
+        <div class="content-wrapper">
+          <el-table 
+            ref="table"
+            :data="tableData" 
+            v-loading="tableLoading" 
+            size="mini"
+            border
+            fit
+            show-overflow-tooltip
+            height="100%"
+            style="width: 100%;"
+            @row-click="onRowClick"
+            highlight-current-row
+            >
+            <el-table-column
+              v-for="item in columns"
+              :key="item.prop"
+              :width="item.width"
+              :label="item.label"
+              :align="item.align || 'left'"
+              :sortable="item.isSort || false"
+              :type="item.originType || ''"
               show-overflow-tooltip
-              height="100%"
-              style="width: 100%;"
-              @row-click="onRowClick"
-              highlight-current-row
-              >
-              <el-table-column
-                v-for="item in columns"
-                :key="item.prop"
-                :width="item.width"
-                :label="item.label"
-                :align="item.align || 'left'"
-                :sortable="item.isSort || false"
-                :type="item.originType || ''"
-              >
-                <template slot-scope="scope" >
-                  <div class="link-container" v-if="item.type === 'link'">
-                    <img :src="rightImg" @click="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
-                    <span>{{ scope.row[item.prop] }}</span>
+            >
+              <template slot-scope="scope" >
+                <div class="link-container" v-if="item.type === 'link'">
+                  <img :src="rightImg" @click="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
+                  <span>{{ scope.row[item.prop] }}</span>
+                </div>
+                <template v-else-if="item.type === 'operation'">
+                  <el-button 
+                    v-for="btnItem in item.actions"
+                    :key="btnItem.btnText"
+                    @click="btnItem.btnClick(scope.row)" 
+                    type="text" 
+                    :icon="item.icon || ''"
+                    :size="item.size || 'mini'"
+                  >{{ btnItem.btnText }}</el-button>
+                </template>
+                <template v-else-if="item.label === '服务报告'">
+                  <div class="link-container">
+                    <img :src="rightImg" @click="item.handleClick(scope.row.serviceOrderId, 'table')" class="pointer">
+                    <span>查看</span>
                   </div>
-                  <template v-else-if="item.type === 'operation'">
-                    <el-button 
-                      v-for="btnItem in item.actions"
-                      :key="btnItem.btnText"
-                      @click="btnItem.btnClick(scope.row)" 
-                      type="text" 
-                      :icon="item.icon || ''"
-                      :size="item.size || 'mini'"
-                    >{{ btnItem.btnText }}</el-button>
-                  </template>
-                  <template v-else-if="item.label === '服务报告'">
-                    <el-button @click="item.handleClick" size="mini" type="primary">{{ item.btnText }}</el-button>
-                  </template>
-                  <template v-else>
-                    {{ scope.row[item.prop] }}
-                  </template>
-                </template>    
-              </el-table-column>
-            </el-table>
-            <!-- <common-table :data="tableData" :columns="columns" :loading="tableLoading"></common-table> -->
-            <pagination
-              v-show="total>0"
-              :total="total"
-              :page.sync="listQuery.page"
-              :limit.sync="listQuery.limit"
-              @pagination="handleCurrentChange"
-            />
-          </div>
+                </template>
+                <template v-else>
+                  {{ scope.row[item.prop] }}
+                </template>
+              </template>    
+            </el-table-column>
+          </el-table>
+          <!-- <common-table :data="tableData" :columns="columns" :loading="tableLoading"></common-table> -->
+          <pagination
+            v-show="total>0"
+            :total="total"
+            :page.sync="listQuery.page"
+            :limit.sync="listQuery.limit"
+            @pagination="handleCurrentChange"
+          />
         </div>
       </div>
-      <my-dialog
-        ref="myDialog"
-        :center="true"
-        width="1000px"
-        :btnList="btnList"
-        :onClosed="closeDialog"
-        :title="textMap[title]"
-        :loading="dialogLoading"
-      >
-        <order 
-          ref="order" 
-          :title="title"
-          :detailData="detailData"
-          :categoryList="categoryList"
-          :customerInfo="customerInfo">
-        </order>
-      </my-dialog>
-      <!-- <el-input style="width:100px;" size="mini" class="input-inner">
-        <i slot="suffix" style="text-align:center;">%</i>
-      </el-input> -->
+    </div>
+    <my-dialog
+      ref="myDialog"
+      :center="true"
+      width="1000px"
+      :btnList="btnList"
+      :onClosed="closeDialog"
+      :title="textMap[title]"
+      :loading="dialogLoading"
+    >
+      <order 
+        ref="order" 
+        :title="title"
+        :detailData="detailData"
+        :categoryList="categoryList"
+        :customerInfo="customerInfo">
+      </order>
+    </my-dialog>
+    <my-dialog
+      ref="reportDialog"
+      width="983px"
+      title="服务行为报告单"
+      @closed="resetReport">
+      <Report :data="reportData" ref="report"/>
+    </my-dialog>
+    <!-- 只能查看的表单 -->
+    <my-dialog
+      ref="serviceDetail"
+      width="1210px"
+      title="服务单详情"
+    >
+      <el-row :gutter="20" class="position-view">
+        <el-col :span="18" >
+          <zxform
+            :form="temp"
+            formName="查看"
+            labelposition="right"
+            labelwidth="100px"
+            max-width="800px"
+            :isCreate="false"
+            :refValue="dataForm"
+          ></zxform>
+        </el-col>
+        <el-col :span="6" class="lastWord">   
+          <zxchat :serveId='serveId' formName="查看"></zxchat>
+        </el-col>
+      </el-row>
+    </my-dialog>
+    <!-- <el-dialog
+      v-el-drag-dialog
+      width="1210px"
+      top="10vh"
+      title="服务单详情"
+      :close-on-click-modal="false"
+      destroy-on-close
+      :modal-append-to-body="false"
+      class="addClass1 dialog-mini"
+      @open="openDetail"
+      :visible.sync="dialogFormView"
+    >
+    <el-row :gutter="20" class="position-view">
+      <el-col :span="18" >
+        <zxform
+          :form="temp"
+          formName="查看"
+          labelposition="right"
+          labelwidth="100px"
+     
+          :isCreate="false"
+          :refValue="dataForm"
+        ></zxform>
+      </el-col>
+        <el-col :span="6" class="lastWord">   
+          <zxchat :serveId='serveId' formName="查看"></zxchat>
+        </el-col>
+      </el-row>
+    </el-dialog> -->
   </div>
 </template>
 
@@ -101,11 +161,14 @@ import Sticky from '@/components/Sticky'
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
-import { tableMixin, categoryMixin } from './common/js/mixins'
+import Report from './common/components/report'
+import zxform from "@/views/serve/callserve/form";
+import zxchat from '@/views/serve/callserve/chat/index'
+import { tableMixin, categoryMixin, reportMixin, chatMixin } from './common/js/mixins'
 import { getOrder, withdraw } from '@/api/reimburse'
 export default {
   name: 'mySubmission',
-  mixins: [tableMixin, categoryMixin],
+  mixins: [tableMixin, categoryMixin, reportMixin, chatMixin],
   components: {
     TabList,
     Search,
@@ -113,7 +176,10 @@ export default {
     // CommonTable,
     Pagination,
     MyDialog,
-    Order
+    Order,
+    Report,
+    zxform,
+    zxchat
   },
   computed: {
     searchConfig () {
@@ -122,15 +188,16 @@ export default {
         { type: 'search' },
         { type: 'button', btnText: '新建', handleClick: this.addAccount },
         { type: 'button', btnText: '编辑', handleClick: this.getDetail, options: { type: 'edit', name: 'mySubmit' } },
-        { type: 'button', btnText: '撤回', handleClick: this.recall }
+        { type: 'button', btnText: '撤回', handleClick: this.recall, isShow: this.isCustomerSupervisor }
       ]
     }, // 搜索配置
     btnList () {
       return [
-        { btnText: '提交', handleClick: this.submit, loading: this.submitLoading },
-        { btnText: '存为草稿', handleClick: this.saveAsDraft, loading: this.draftLoading },
+        { btnText: '导入费用', handleClick: this.importFee, isShow: this.title !== 'view' },
+        { btnText: '提交', handleClick: this.submit, loading: this.submitLoading, isShow: this.title !== 'view' },
+        { btnText: '存为草稿', handleClick: this.saveAsDraft, loading: this.draftLoading, isShow: this.title !== 'view' },
         { btnText: '重置', handleClick: this.reset, isShow: this.title === 'create' },
-        { btnText: '关闭', handleClick: this.closeDialog }
+        { btnText: '关闭', handleClick: this.closeDialog, isShow: this.title !== 'view' }
       ]
     }
   },
@@ -167,12 +234,9 @@ export default {
     onChangeForm (val) {
       Object.assign(this.listQuery, val)
     },
-    onSearch () {
-      this._getList()
-    },
-    openTree (row) { // 打开详情
-      console.log(row, 'row')
-    },
+    // openTree (row) { // 打开详情
+    //   console.log(row, 'row')
+    // },
     addAccount () { // 添加
       getOrder().then(res => {
         console.log(res, 'res')
@@ -198,6 +262,8 @@ export default {
           }
           this.title = 'create'
           this.$refs.myDialog.open()
+        } else {
+          this.$message.error('用户列表为空')
         }
       }).catch(() => {
         this.$message.error('获取失败')
@@ -246,6 +312,9 @@ export default {
         this.dialogLoading = false
         this.$message.error(err.message)
       })
+    },
+    importFee () {
+      this.$refs.order.openCostDialog()
     },
     submit () { // 提交
       this.title === 'create'

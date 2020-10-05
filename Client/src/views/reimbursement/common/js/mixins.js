@@ -1,8 +1,9 @@
 import rightImg from '@/assets/table/right.png'
-import { getReportDetail } from '@/api/serve/callservesure'
+import { getReportDetail, GetDetails } from '@/api/serve/callservesure'
 import { getCategoryName } from '@/api/reimburse'
 import { accommodationConfig } from './config'
-import { REIMBURSE_STATUS_MAP, PROJECT_NAME_MAP, RESPONSIBILITY_MAP, RELATIONS_MAP, EXPENSE_LIST } from './type'
+import { REIMBURSE_STATUS_MAP, PROJECT_NAME_MAP, RESPONSIBILITY_MAP, RELATIONS_MAP } from './map'
+import { EXPENSE_LIST } from './type'
 import { toThousands } from '@/utils/format'
 import { getList, getDetails } from '@/api/reimburse'
 export let tableMixin = {
@@ -27,13 +28,13 @@ export let tableMixin = {
         { label: '报销状态', prop: 'remburseStatusText', width: 100 },
         { label: '总金额', prop: 'totalMoney', width: 100 },
         { label: '客户代码', prop: 'terminalCustomerId', width: 100 },
-        { label: '客户名称', prop: 'terminalCustomer', width: 100 },
+        { label: '客户名称', prop: 'terminalCustomer', width: 170 },
         { label: '客户简称', prop: 'shortCustomerName', width: 100 },
         { label: '业务员', prop: 'saleSMan', width: 100 },
         { label: '出发日期', prop: 'businessTripDate', width: 150 },
         { label: '结束日期', prop: 'endDate', width: 150 },
         { label: '总天数', prop: 'businessTripDays', width: 100 },
-        { label: '服务ID', prop: 'serviceOrderId', width: 100, type: 'link' },
+        { label: '服务ID', prop: 'serviceOrderSapId', width: 100, type: 'link', handleJump: this.openTree },
         { label: '呼叫主题', prop: 'theme', width: 100 },
         { label: '项目名称', prop: 'projectName', width: 100 },
         { label: '服务报告', width: 100, handleClick: this.openReport, btnText: '查看' },
@@ -58,7 +59,7 @@ export let tableMixin = {
       },
       listQuery: { // 分页参数
         page: 1,
-        limit: 30,
+        limit: 50,
         remburseStatus: '',
         pageType: ''
       },
@@ -90,9 +91,17 @@ export let tableMixin = {
         this.tableData = this._normalizeList(data)
         this.total = count
         this.tableLoading = false
+        // if (!data.length) {
+        //   this.$message.error('用户列表为空')
+        // }
       }).catch(() => {
+        this.$message.error('获取列表失败')
         this.tableLoading = false
       })
+    },
+    onSearch () {
+      this.listQuery.page = 1
+      this._getList()
     },
     handleCurrentChange ({page, limit}) {
       this.listQuery.page = page
@@ -171,20 +180,20 @@ export let tableMixin = {
           return item
         })
       data.reimburseAttachments = []
-      // this._buildAttachment(reimburseTravellingAllowances)
       this._buildAttachment(reimburseFares)
       this._buildAttachment(reimburseAccommodationSubsidies)
       this._buildAttachment(reimburseOtherCharges)
+      console.log(data, 'detail')
     },
     _buildAttachment (data) { // 为了回显，并且编辑 目标是为了保证跟order.vue的数据保持相同的逻辑
       data.forEach(item => {
         let { reimburseAttachments } = item
-        // console.log(reimburseAttachments, 'foeEach', item)
         item.invoiceFileList = this.getTargetAttachment(reimburseAttachments, 2)
         item.otherFileList = this.getTargetAttachment(reimburseAttachments, 1)
         item.invoiceAttachment = [],
         item.otherAttachment = []
         item.reimburseAttachments = []
+        item.maxMoney = item.totalMoney || item.money
       })
     },
     getTargetAttachment (data, attachmentType) { // 用于el-upload 回显
@@ -192,6 +201,7 @@ export let tableMixin = {
         .map(item => {
           item.name = item.attachmentName
           item.url = `${this.baseURL}/${item.fileId}?X-Token=${this.tokenValue}`
+          item.isAdd = true
           return item
         })
     },
@@ -202,6 +212,56 @@ export let searchMixin = {
   data () {
     return {
       // TODO
+    }
+  }
+}
+export const reportMixin = {
+  data () {
+    return {
+      reportData: [], // 完工报告数据
+      serviceModeMap: {
+        1: '电话服务',
+        2: '上门服务',
+        3: '返厂维修'
+      },
+      reportBtnLoading: false // 如果是报销单上点的
+    }
+  },
+  methods: {
+    openReport (serviceOrderId, type) {
+      if (!serviceOrderId) {
+        return this.$message.error('请先选择服务ID')
+      }
+      if (type === 'table') { // 如果是在表格上点的
+        this.tableLoading = true
+      } else {
+        // 如果是报销单上点的
+        this.reportBtnLoading = true
+      }
+      getReportDetail({
+        serviceOrderId
+      }).then(res => {
+        this.reportData = this._normalizeReportData(res.result.data)
+        this.$refs.reportDialog.open()
+        this.reportBtnLoading = false
+        this.tableLoading = false
+      }).catch((err) => {
+        console.log(err, 'err')
+        this.reportBtnLoading = false
+        this.tableLoading = false
+        this.$message.error('获取完工报告失败')
+      })
+    },
+    resetReport () {
+      this.$refs.report.reset()
+    },
+    _normalizeReportData (data) {
+      return data.map(item => {
+        let { serviceMode } = item
+        item.serviceText = serviceMode ? this.serviceModeMap[serviceMode] : serviceMode
+        item.isPhoneService = Number(serviceMode) === 1
+        return item
+      })
     }
   }
 }
@@ -221,17 +281,9 @@ export let categoryMixin = {
       iconList: [ // 操作配置
         { icon: 'el-icon-document-add', handleClick: this.addAndCopy, operationType: 'add' }, 
         { icon: 'el-icon-document-copy', handleClick: this.addAndCopy, operationType: 'copy' }, 
-        // { icon: 'el-icon-top', handleClick: this.up },
-        // { icon: 'el-icon-bottom', handleClick: this.down },
         { icon: 'el-icon-delete', handleClick: this.delete }
       ],
       reimburseStatusMap: REIMBURSE_STATUS_MAP,
-      reportData: [], // 完工报告数据
-      serviceModeMap: {
-        1: '电话服务',
-        2: '上门服务',
-        3: '返厂维修'
-      },
       roleName: this.$store.state.user.name // 当前用户角色名字
     }
   },
@@ -250,30 +302,6 @@ export let categoryMixin = {
         item.value = dtValue
       })
       return list
-    },
-    openReport (serviceOrderId) {
-      if (!serviceOrderId) {
-        return this.$message.error('请先选择服务ID')
-      }
-      getReportDetail({
-        serviceOrderId
-      }).then(res => {
-        this.reportData = this._normalizeReportData(res.result.data)
-        this.$refs.reportDialog.open()
-      }).catch(() => {
-        this.$message.error('获取完工报告失败')
-      })
-    },
-    resetReport () {
-      this.$refs.report.reset()
-    },
-    _normalizeReportData (data) {
-      return data.map(item => {
-        let { serviceMode } = item
-        item.serviceText = serviceMode ? this.serviceModeMap[serviceMode] : serviceMode
-        item.isPhoneService = Number(serviceMode) === 1
-        return item
-      })
     }
   },
   computed: {
@@ -298,7 +326,7 @@ export let categoryMixin = {
     transportTypeList () {
       return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_TransportationAllowance))
     },
-    TransportationList () {
+    transportationList () {
       return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_Transportation))
     },
     otherExpensesList () {
@@ -310,7 +338,7 @@ export let categoryMixin = {
     },
     formConfig () {
       return [
-        { label: '报销单号', prop: 'id', palceholder: '请输入内容', disabled: true, col: 6 },
+        { label: '报销单号', prop: 'mainId', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '报销人', prop: 'userName', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '部门', prop: 'orgName', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '职位', prop: 'position', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
@@ -348,7 +376,7 @@ export let categoryMixin = {
           col: 6, type: 'select', options: this.serviceRelationsList, disabled: this.title === 'view' 
         },
         { label: '支付时间', prop: 'payTime', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
-        { label: '备注', prop: 'remark', palceholder: '请输入内容', disabled: true, col: 18 },
+        { label: '备注', prop: 'remark', palceholder: '请输入内容', disabled: this.title !== 'create', col: 18 },
         { label: '总金额', prop: 'totalMoney', col: 6, isEnd: true, type: 'inline-slot', id: 'money' },
         { label: '附件', prop: 'reimburseAttachments', type: 'slot', id: 'attachment', showLabel: true },
         { label: '出差补贴', prop: 'reimburseTravellingAllowances', type: 'slot', id: 'travel' },
@@ -369,7 +397,7 @@ export let categoryMixin = {
       return [ // 交通配置
         { label: '序号', type: 'order', width: 60 },
         { label: '交通类型', prop: 'trafficType', type: 'select', options: this.transportTypeList, width: 120 },
-        { label: '交通工具', prop: 'transport', type: 'select', options: this.TransportationList, width: 120 },
+        { label: '交通工具', prop: 'transport', type: 'select', options: this.transportationList, width: 120 },
         { label: '出发地', prop: 'from', type: 'input', width: 100 },
         { label: '目的地', prop: 'to', type: 'input', width: 100 },
         { label: '金额', prop: 'money', type: 'number', align: 'right', width: 150 },
@@ -407,6 +435,103 @@ export let categoryMixin = {
         { placeholder: '填报起始时间', prop: 'staticDate', type: 'date', width: 150 },
         { placeholder: '填报结束事件', prop: 'endDate', type: 'date', width: 150 }
       ]
+    }
+  }
+}
+
+export const attachmentMixin = {
+  methods: {
+    _buildAttachment (data, isImport = false) { // 为了回显，并且编辑 目标是为了保证跟order.vue的数据保持相同的逻辑
+      data.forEach(item => {
+        let { reimburseAttachments } = item
+        // console.log(reimburseAttachments, 'foeEach', item)
+        item.invoiceFileList = this.getTargetAttachment(reimburseAttachments, 2, isImport)
+        item.otherFileList = this.getTargetAttachment(reimburseAttachments, 1, isImport)
+        item.invoiceAttachment = [],
+        item.otherAttachment = []
+        item.reimburseAttachments = []
+        item.maxMoney = item.totalMoney || item.money // 存在附件时，需要对金额进行限制
+      })
+    },
+    getTargetAttachment (data, attachmentType, isImport) { // 用于el-upload 回显
+      return data.filter(item => item.attachmentType === attachmentType)
+        .map(item => {
+          item.name = item.attachmentName
+          item.url = `${this.baseURL}/${item.fileId}?X-Token=${this.tokenValue}`
+          item.isAdd = true
+          if (isImport) { // 如果是通过我的费用单引入的模板，则需要删除对应的ID,避免新建时出错
+            item.reimburseId = 0
+            item.id = 0
+          }
+          return item
+        })
+    },
+    buildAttachment (fileId, reimburseType, attachmentType = 1, reimburseId = 0, id = 0, isAdd = true) { // 构建附件的数据格式
+      return {
+        fileId,
+        reimburseType,
+        attachmentType,
+        reimburseId,
+        id,
+        isAdd
+      }
+    },
+    createFileIdArr (data) { // 附件ID列表
+      return data.map(item => item.pictureId)
+    },
+    createFileList (data, { reimburseType, attachmentType, reimburseId, id }) { // 附件列表
+      let fileIdList = this.createFileIdArr(data)
+      let resultArr = fileIdList.map(fileId => {
+        return this.buildAttachment(fileId, reimburseType, attachmentType, reimburseId, id)
+      })
+      return resultArr
+    },
+    mergeFileList (data) {   
+      data.forEach(item => {
+        let { invoiceAttachment, otherAttachment, invoiceFileList, otherFileList, isImport } = item
+        if (isImport) {
+          item.id = ''
+        }
+        item.reimburseAttachments = [...invoiceAttachment, ...otherAttachment, ...invoiceFileList, ...otherFileList]
+      })
+    }
+  }
+}
+
+export const chatMixin = {
+  data () {
+    return {
+      serveId: '',
+      dataForm: {}, //传递的表单props
+      temp: {
+        id: "", // Id
+        sltCode: "", // SltCode
+        subject: "", // Subject
+        cause: "", // Cause
+        symptom: "", // Symptom
+        descriptio: "", // Descriptio
+        status: "", // Status
+        extendInfo: "" // 其他信息,防止最后加逗号，可以删除
+      }
+    }
+  },
+  methods: {
+    openTree(row) {
+      console.log(row, 'orderId')
+      let serviceOrderId = row.serviceOrderId
+      this.tableLoading = true
+      GetDetails(serviceOrderId).then(res => {
+        if (res.code == 200) {
+          this.dataForm = res.result;
+          this.serveId = serviceOrderId
+          this.$refs.serviceDetail.open()
+          this.tableLoading = false
+        }
+      }).catch((err) => {
+        console.error(err)
+        this.tableLoading = false
+        this.$message.error('获取服务单详情失败')
+      })
     }
   }
 }

@@ -1,26 +1,37 @@
 <template>
   <el-table 
+    ref="commonTable"
     :data="data" 
     v-loading="loading" 
     size="mini"
     stripe
     border
     fit
+    row-key="id"
     height="100%"
     :max-height="maxHeight"
     style="width: 100%;"
     @current-change="onCurrentChange"
     @row-click="onRowClick"
+    @selection-change="onSelectChange"
     :row-class-name="tableRowClassName"
     >
+    <el-table-column 
+      type="selection" 
+      v-if="selectionColumns && selectionColumns.originType === 'selection'"
+      reserve-selection
+      :selectable="checkSelectable"
+      show-overflow-tooltip
+    >
+    </el-table-column>
     <el-table-column
-      v-for="item in columns"
+      v-for="item in normalColumns"
       :key="item.prop"
       :width="item.width"
       :label="item.label"
       :align="item.align || 'left'"
       :sortable="item.isSort || false"
-      :type="item.originType || ''"
+      show-overflow-tooltip
     >
       <template slot-scope="scope" >
         <div class="link-container" v-if="item.type === 'link'">
@@ -40,7 +51,7 @@
             :size="item.size || 'mini'"
           >{{ btnItem.btnText }}</el-button>
         </template>
-        <template v-else>
+        <template v-else-if="item.originType !== 'selectoin'">
           {{ scope.row[item.prop] }}
         </template>
       </template>    
@@ -71,13 +82,28 @@ export default {
     maxHeight: {
       type: [Number, String],
       default: 0
+    },
+    selectedList: { // 已经选中里的列表(多选中，用来判断是否可以点击)
+      type: Array,
+      default () {
+        return []
+      }
     }
   },
   data () {
     return {
       rightImg,
       radio: '',
-      currentRow: {}
+      currentRow: {},
+      selectionList: [] // 多选的数据
+    }
+  },
+  computed: {
+    normalColumns () {
+      return this.columns.filter(item => item.originType !== 'selection')
+    },
+    selectionColumns () {
+      return this.columns.filter(item => item.originType === 'selection')[0]
     }
   },
   methods: {
@@ -85,15 +111,18 @@ export default {
       console.log(val, 'val')
       // this.radio = val
     },
-    onRowClick (row, column) {
-      let { index } = row
+    onRowClick (row) {
+      // let { index } = row
       let radioKey = row.radioKey
       this.radio = row[radioKey]
       this.currentRow = row
-      console.log(index, column, 'row click', radioKey, this.radio, Object.keys(row))
+      // console.log(index, column, 'row click', radioKey, this.radio, Object.keys(row))
     },
     getCurrentRow () {
       return this.currentRow
+    },
+    getSelectionList () {
+      return this.selectionList
     },
     tableRowClassName ({ row, rowIndex }) {
       // 把每一行的index加到row中
@@ -101,6 +130,18 @@ export default {
     },
     resetRadio () {
       this.radio = ''
+    },
+    onSelectChange (val) {
+      this.selectionList = val
+      console.log(val, 'selection')
+    },
+    clearSelection () {
+      this.$refs.commonTable.clearSelection()
+    },
+    checkSelectable (row) {
+      return this.selectedList.length 
+        ? this.selectedList.every(item => item.id !== row.id)
+        : true
     }
   },
   created () {

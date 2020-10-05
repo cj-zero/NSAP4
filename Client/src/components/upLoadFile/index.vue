@@ -82,6 +82,7 @@
         :headers="headers"
         :on-success="successBack"
         :on-remove="handleRemove"
+        :before-upload="beforeFileUpload"
         multiple
         :limit="limit"
         :on-exceed="onExeed"
@@ -97,6 +98,7 @@
 <script>
 // import Model from "@/components/Formcreated/components/Model";
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
+import { identifyInvoice } from '@/api/reimburse'
 export default {
   components: {
     // Model
@@ -136,6 +138,13 @@ export default {
       default () {
         return []
       }
+    },
+    maxSize: {
+      type: [Number, String]
+    },
+    isReimburse: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -171,7 +180,7 @@ export default {
           // 因为会触发upload组件的fileList，引发图片错乱问题
           // 通过向外传递fileList中删除的图片id，父组件调用接口的时候进行相应的传参
           console.log(id, 'delete id')
-          return this.$emit('deleteFileList', id)
+          return this.$emit('deleteFileList', file)
         }
       }
       let findIndex = this.newPictureList.findIndex(item => {
@@ -201,6 +210,13 @@ export default {
       // if (this.pictures.length >)
       return testmsg
     },
+    beforeFileUpload (file) {
+      if (this.maxSize) {
+        console.log(this.maxSize, 'maxSize')
+        return file.size / 1024 / 1024 < this.maxSize
+      }
+      return true
+    },
     onExeed () { 
       this.$message.error(`最多上传${this.limit}个文件`)
     },
@@ -209,6 +225,9 @@ export default {
         pictureId:res.result[0].id,
         uid: file.uid
       })
+      if (this.isReimburse && this.prop === 'invoiceAttachment') { // 如果是报销功能的话，才进行识别，其他的文件上传不走这一步
+        this._identifyInvoice(res.result[0].id)
+      }
       let picConig = {
         pictureId: res.result[0].id
       }
@@ -222,6 +241,30 @@ export default {
       })
       console.log('beofore', this.index)
       this.$emit('get-ImgList', this.pictures, this.prop, this.index)
+    },
+    _identifyInvoice (fileId) {
+      identifyInvoice({
+        fileId
+      }).then(res => {
+        if (res.data && !res.data.length) {
+          this.$emit('identifyInvoice', Date.now(), 100, this.prop)
+          return this.$message.error('识别失败')
+        }
+        let { invoiceNo, amountWithTax, isValidate, isUsed, notPassReason } = res.data[0]
+        if (!isValidate || (isValidate && isUsed)) {
+          this.$emit('identifyInvoice', '', '', this.prop)
+          return this.$message.error(notPassReason ? notPassReason : '识别失败')
+        }
+        this.$message({
+          type: 'success',
+          message: '识别成功'
+        })
+        this.$emit('identifyInvoice', invoiceNo, amountWithTax, this.prop)
+      }).catch((err) => {
+        console.error(err)
+        this.$emit('identifyInvoice', Date.now(), 100, this.prop)
+        this.$message.error('识别失败')
+      })
     },
     clearFiles () {
       this.uploadType === 'image'

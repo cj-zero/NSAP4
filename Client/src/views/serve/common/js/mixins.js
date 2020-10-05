@@ -29,6 +29,8 @@ export let reportMixin = {
         }).then(res => {
           this.reportData = this._normalizeReportData(res.result.data)
           this.dialogReportVisible = true
+        }).catch(() => {
+          this.$message.error('获取完工报告失败')
         })
       } else {
         this.$message({

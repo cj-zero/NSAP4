@@ -25,7 +25,7 @@ export let trafficConfig = [ // 交通配置
 ]
 
 export let accommodationConfig = [ // 住房配置
-  { label: '序号', type: 'order', width: 60, fixed: true },
+  { label: '序号', type: 'order', width: 60 },
   { label: '天数', prop: 'days', type: 'number', width: 100 },
   { label: '金额', prop: 'money', type: 'number', width: 120, disabled: true, align: 'right' },
   { label: '总金额', prop: 'totalMoney', type: 'number', width: 120, align: 'right' },
@@ -56,4 +56,14 @@ export let customerColumns = [ // 用户信息表单配置
   { label: '到达地点', prop: 'destination' },
   { label: '出发日期', prop: 'businessTripDate' },
   { label: '结束日期', prop: 'endDate' },
+]
+
+export let costColumns = [ // 费用列表配置 
+  { originType: 'selection' },
+  { label: '费用类型', prop: 'feeType' },
+  { label: '总金额', prop: 'moneyText' },
+  { label: '发票号码', prop: 'invoiceNumber' },
+  { label: '发票附件', prop: 'invoiceAttachment' },
+  { label: '日期', prop: 'createTime', width: 140 },
+  { label: '备注', prop: 'remark' }
 ]

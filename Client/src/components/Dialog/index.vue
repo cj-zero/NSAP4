@@ -1,5 +1,6 @@
 <template>
   <el-dialog
+    class="my-dialog-wrapper my-dialog-mini"
     v-el-drag-dialog
     v-loading="loading"
     :center="center"
@@ -13,7 +14,7 @@
     @close="onClosed"
   >
     <slot></slot>
-    <span slot="footer" class="dialog-footer" v-if="isShowBtn">
+    <span slot="footer" class="dialog-footer" v-if="isShowBtn && btnList.length">
       <template v-for="btnItem in btnList">
         <el-button
           v-if="btnItem.isShow === undefined ? true : btnItem.isShow"
@@ -24,7 +25,6 @@
           :loading="btnItem.loading === undefined ? false: btnItem.loading"
         >{{ btnItem.btnText }}</el-button>
       </template>
-      
     </span>
   </el-dialog>
 </template>
@@ -101,4 +101,10 @@ export default {
 }
 </script>
 <style lang='scss' scoped>
+.my-dialog-wrapper {
+  &::v-deep .el-dialog__body {
+    padding: 10px !important;
+  }
+}
+
 </style>

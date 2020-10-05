@@ -64,7 +64,11 @@
               ></el-date-picker>
             </template>
             <template v-else-if="item.type === 'button'">
-              <el-button type="primary" style="width: 157px;" @click="item.handleClick(formData.serviceOrderId)">{{ item.btnText }}</el-button>
+              <el-button 
+                type="primary" 
+                style="width: 157px;" 
+                @click="item.handleClick(formData.serviceOrderId)"
+                :loading="reportBtnLoading">{{ item.btnText }}</el-button>
             </template>
           </el-form-item>
         </el-col>
@@ -77,6 +81,7 @@
         @get-ImgList="getFileList" 
         uploadType="file" 
         ref="uploadFile" 
+        :maxSize="maxSize"
         :fileList="formData.attachmentsFileList || []"
         @deleteFileList="deleteFileList"></upLoadFile>
     </el-row>
@@ -96,8 +101,6 @@
         <el-table 
           border
           :data="formData.reimburseTravellingAllowances"
-          :summary-method="getSummaries"
-          show-summary
           @cell-click="onTravelCellClick"
           max-height="300px"
         >
@@ -124,7 +127,7 @@
                     :prop="'reimburseTravellingAllowances.' + scope.$index + '.'+ item.prop"
                     :rules="travelRules[item.prop] || { required: false }"
                   >
-                    <el-input v-model="scope.row[item.prop]" :type="item.type" :min="0" :disabled="item.disabled"></el-input>
+                    <el-input v-model="scope.row[item.prop]" :type="item.type" :min="0" :disabled="item.disabled" @input.native="onInput"></el-input>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'select'">
@@ -159,6 +162,7 @@
             </el-table-column>
           <!-- </el-table-column> -->
         </el-table>
+        <p class="total-money">总金额: ￥{{ travelTotalMoney }}</p>
       </el-form>
     </div>
 
@@ -179,8 +183,6 @@
         <el-table 
           border
           :data="formData.reimburseFares"
-          :summary-method="getSummaries"
-          show-summary
           max-height="300px"
           @cell-click="onTrafficCellClick"
         >
@@ -211,7 +213,7 @@
                     :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
                     :rules="trafficRules[item.prop] || { required: false }"
                   >
-                    <el-input v-model="scope.row[item.prop]" :type="item.type" :disabled="item.disabled" :min="0"></el-input>
+                    <el-input v-model="scope.row[item.prop]" :type="item.type" :disabled="item.disabled" :min="0"  @input.native="onInput"></el-input>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'select'">
@@ -241,6 +243,8 @@
                     ref="trafficUploadFile" 
                     :prop="item.prop" 
                     :index="scope.$index"
+                    :isReimburse="true"
+                    @identifyInvoice="trafficIdentifyInvoice"
                     @deleteFileList="deleteFileList"
                     :fileList="
                       formData.reimburseFares[scope.$index] 
@@ -267,6 +271,7 @@
             </el-table-column>
           <!-- </el-table-column> -->
         </el-table>
+        <p class="total-money">总金额: ￥{{ trafficTotalMoney }}</p>
       </el-form>
     </div>
     
@@ -286,8 +291,6 @@
         <el-table 
           border
           :data="formData.reimburseAccommodationSubsidies"
-          :summary-method="getSummaries"
-          show-summary
           max-height="300px"
           @cell-click="onAccCellClick"
         >
@@ -318,7 +321,14 @@
                     :prop="'reimburseAccommodationSubsidies.' + scope.$index + '.'+ item.prop"
                     :rules="accRules[item.prop] || { required: false }"
                   >
-                    <el-input v-model="scope.row[item.prop]" :type="item.type" :disabled="item.disabled" :min="0" @change="onChange"></el-input>
+                    <el-input 
+                      v-model="scope.row[item.prop]" 
+                      :type="item.type" 
+                      :disabled="item.disabled" 
+                      :min="0" 
+                      @change="onChange"
+                      @blur="onBlur"
+                      @input="onInput"></el-input>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'select'">
@@ -348,6 +358,8 @@
                     ref="accUploadFile" 
                     :prop="item.prop" 
                     :index="scope.$index"
+                    :isReimburse="true"
+                    @identifyInvoice="accIdentifyInvoice"
                     @deleteFileList="deleteFileList"
                     :fileList="
                       formData.reimburseAccommodationSubsidies[scope.$index] 
@@ -374,6 +386,7 @@
             </el-table-column>
           <!-- </el-table-column> -->
         </el-table>
+        <p class="total-money">总金额: ￥{{ accTotalMoney }}</p>
       </el-form>
     </div>
 
@@ -394,8 +407,6 @@
         <el-table 
          border
           :data="formData.reimburseOtherCharges"
-          :summary-method="getSummaries"
-          show-summary
           max-height="300px"
           @cell-click="onOtherCellClick"
         >
@@ -456,6 +467,8 @@
                     ref="otherUploadFile" 
                     :prop="item.prop"
                     :index="scope.$index"
+                    :isReimburse="true"
+                    @identifyInvoice="otherIdentifyInvoice"
                     @deleteFileList="deleteFileList"
                     :fileList="
                       formData.reimburseOtherCharges[scope.$index] 
@@ -481,6 +494,7 @@
             </el-table-column>
           <!-- </el-table-column> -->
         </el-table>
+        <p class="total-money">总金额: ￥{{ otherTotalMoney }}</p>
       </el-form>
     </div> 
     <!-- 操作记录 -->
@@ -504,7 +518,8 @@
       width="800px" 
       :mAddToBody="true" 
       :appendToBody="true"
-      :btnList="customerBtnList">
+      :btnList="customerBtnList"
+      :onClosed="closeDialog">
       <common-table 
         ref="customerTable"
         maxHeight="500px"
@@ -519,9 +534,36 @@
         @pagination="customerCurrentChange"
       />
     </my-dialog>
+    <!-- 选择导入费用 -->
+    <my-dialog 
+      ref="costDialog" 
+      width="800px" 
+      :mAddToBody="true" 
+      :appendToBody="true"
+      :btnList="costBtnList"
+      :onClosed="closeCostDialog">
+      <common-table 
+        ref="costTable"
+        maxHeight="500px"
+        :data="costData"
+        :columns="costColumns"
+        :selectedList="selectedList"
+      ></common-table>
+      <pagination
+        v-show="costTotal > 0"
+        :total="costTotal"
+        :page.sync="listQueryCost.page"
+        :limit.sync="listQueryCost.limit"
+        @pagination="costCurrentChange"
+      />
+    </my-dialog>
     <!-- 完工报告 -->
     <my-dialog
+      width="983px"
+      title="服务行为报告单"
       ref="reportDialog"
+      :mAddToBody="true" 
+      :appendToBody="true"
       @closed="resetReport">
       <Report :data="reportData" ref="report"/>
     </my-dialog>
@@ -535,13 +577,14 @@
       :closed="onApproveClose"
       v-loading="remarkLoading"
       width="350px">
-      <remark ref="remark" @input="onInput"></remark>
+      <remark ref="remark" @input="onRemarkInput"></remark>
     </my-dialog>
   </div>
 </template>
 
 <script>
-import { addOrder, getOrder, updateOrder, approve } from '@/api/reimburse'
+import { addOrder, getOrder, updateOrder, approve, isSole } from '@/api/reimburse'
+import { getList } from '@/api/reimburse/mycost'
 import upLoadFile from "@/components/upLoadFile";
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
@@ -550,15 +593,16 @@ import Report from './report'
 import Remark from './remark'
 import { toThousands } from '@/utils/format'
 import { findIndex } from '@/utils/process'
+import { deepClone } from '@/utils'
 import { travelRules, trafficRules, accRules, otherRules } from '../js/customerRules'
 // import { EXPENSE_CATEGORY, RESPONSIBILITY_TYPE, RELATION_TYPE } from '../js/type'
-import { customerColumns } from '../js/config'
+import { customerColumns, costColumns } from '../js/config'
 import { noop } from '@/utils/declaration'
-import { categoryMixin } from '../js/mixins'
+import { categoryMixin, reportMixin, attachmentMixin } from '../js/mixins'
 import { REIMBURSE_TYPE_MAP, IF_SHOW_MAP, REMARK_TEXT_MAP } from '../js/map'
 export default {
   inject: ['parentVm'],
-  mixins: [categoryMixin],
+  mixins: [categoryMixin, reportMixin, attachmentMixin],
   components: {
     upLoadFile,
     Pagination,
@@ -570,7 +614,7 @@ export default {
   props: {
     title: {
       type: String,
-      default: 'create'
+      default: ''
     },
     customerInfo: {
       type: Object,
@@ -592,7 +636,6 @@ export default {
     }
   },
   data () {
-    // let that = this
     return {
       ifShowTraffic: true, // 是否展示交通补贴表格， 以下类似
       ifShowOther: true,
@@ -602,10 +645,15 @@ export default {
       currentProp: '', // 当前选中的单元格的property, 对应table数据的key值
       currentLabel: '', // 当前选中的单元格的property, 对应table数据的label值
       currentRow: '', // 当前选中的
-      maxSize: 1000,
+      tableType: '', // 用来判断当前被点击的表格类型
+      maxSize: 100, // 文件大小
       customerBtnList: [
-        { btnText: '取消', handleClick: this.closeDialog },
-        { btnText: '确认', handleClick: this.confirm }
+        { btnText: '确认', handleClick: this.confirm },
+        { btnText: '取消', handleClick: this.closeDialog }
+      ],
+      costBtnList: [
+        { btnText: '确认', handleClick: this.importConfirm },
+        { btnText: '取消', handleClick: this.closeCostDialog }
       ],
       formData: { // 表单参数
         id: '',
@@ -656,10 +704,17 @@ export default {
       accRules,
       otherRules,
       deleteList: [], // 删除表单列项
-      customerColumns,
+      customerColumns, // 用户列表表格配置
       customerInfoList: [], // 用户信息列表
       customerTotal: 0, // 用户列表总数
-      listQuery: {
+      listQuery: { // 用户列表的查询参数
+        page: 1,
+        limit: 30
+      },
+      costColumns,
+      costTotal: 0, // 费用列表总数
+      costData: [], // 费用列表信息
+      listQueryCost: {
         page: 1,
         limit: 30
       },
@@ -667,6 +722,7 @@ export default {
         { btnText: '确认', handleClick: this.approve },
         { btnText: '取消', handleClick: this.closeRemarkDialog }
       ],
+      selectedList: [], // 费用列表导出的数据，用来后续判断导出列表中是否可选
       remarkType: '', // 
       remarkText: '', // 弹窗备注
       remarkLoading: false
@@ -677,6 +733,7 @@ export default {
       immediate: true,
       deep: true,
       handler (val) {
+        console.log('immediate watch')
         this.formData.createUserId = val.createUserId
         this.formData.userName = val.userName
         this.formData.orgName = val.orgName
@@ -684,12 +741,17 @@ export default {
         // this.formData.businessTripDate = val.businessTripDate
         // this.formData.endDate = val.endDate
         // this.formData.destination = val.destination
-        this._getCustomerInfo()    
+        if (this.title === 'create') { // 只有才新建的时候才需要修改服务ID
+          this._getCustomerInfo()    
+        }
+        if (this.title === 'create' || this.title === 'edit') { // 只有在create或者edit的时候，才可以导入费用模板
+          this._getCostList() // 获取费用模板
+        }
       }
     },
     detailData: {
       immediate: true,
-      deep: true,
+      // deep: true,
       handler (val) {
         let { 
           reimburseTravellingAllowances: travel,
@@ -709,7 +771,7 @@ export default {
         if (other && other.length) {
           this.ifShowOther = false
         }
-        Object.assign(this.formData, val)
+        this.formData = Object.assign({}, this.formData, val)
       }
     },
     totalMoney (val) {
@@ -718,35 +780,67 @@ export default {
     formData: {
       deep: true,
       handler () {
-        // console.log(this.formData, 'formData')
+        console.log(this.formData, 'formData', this.formData.serviceRelations)
       }
+    },
+    'formData.serviceRelations' (val) {
+      console.log(val, 'serviceRelations')
     }
   },
   computed: {
     ifFormEdit () { 
       return this.title === 'create' || this.title === 'edit'
     },
-    totalMoney () {
-      let result = 0
-      let { 
-        reimburseTravellingAllowances, 
-        reimburseFares, 
-        reimburseAccommodationSubsidies,
-        reimburseOtherCharges 
-      } = this.formData
+    travelTotalMoney () {
+      let { reimburseTravellingAllowances } = this.formData
       if (reimburseTravellingAllowances.length) {
-        result += this.getTotal(reimburseTravellingAllowances)
+        return this.getTotal(reimburseTravellingAllowances)
       }
+      return 0
+    },
+    trafficTotalMoney () {
+      let { reimburseFares } = this.formData
       if (reimburseFares.length) {
-        result += this.getTotal(reimburseFares)
+        return this.getTotal(reimburseFares)
       }
+      return 0
+    },
+    accTotalMoney () {
+      let { reimburseAccommodationSubsidies } = this.formData
       if (reimburseAccommodationSubsidies.length) {
-        result += this.getTotal(reimburseAccommodationSubsidies)
+        return this.getTotal(reimburseAccommodationSubsidies)
       }
+      return 0
+    },
+    otherTotalMoney () {
+      let { reimburseOtherCharges } = this.formData
       if (reimburseOtherCharges.length) {
-        result += this.getTotal(reimburseOtherCharges)
+        console.log(this)
+        return this.getTotal(reimburseOtherCharges)
       }
-      return result
+      return 0
+    },
+    totalMoney () {
+      // let result = 0
+      // let { 
+      //   reimburseTravellingAllowances, 
+      //   reimburseFares, 
+      //   reimburseAccommodationSubsidies,
+      //   reimburseOtherCharges 
+      // } = this.formData
+      // if (reimburseTravellingAllowances.length) {
+      //   result += this.getTotal(reimburseTravellingAllowances)
+      // }
+      // if (reimburseFares.length) {
+      //   result += this.getTotal(reimburseFares)
+      // }
+      // if (reimburseAccommodationSubsidies.length) {
+      //   result += this.getTotal(reimburseAccommodationSubsidies)
+      // }
+      // if (reimburseOtherCharges.length) {
+      //   result += this.getTotal(reimburseOtherCharges)
+      // }
+      return this.travelTotalMoney + this.trafficTotalMoney + this.accTotalMoney + this.otherTotalMoney
     },
     normalConfig () {
       let noneSlotConfig = this.formConfig.filter(item => item.type !== 'slot')
@@ -782,19 +876,13 @@ export default {
     noop () {
       noop() 
     },
-    getTotal (data) {
+    getTotal (data) { // 获取总金额
       let result = 0
-      let isVliad = data.every(item => {
-        return item.totalMoney ? this.isValidaNumber(item.totalMoney) : this.isValidaNumber(item.money)
-      })
-      if (isVliad) {
-        result += data.reduce((prev, next) => {
-          return prev + Number(next.totalMoney || next.money)
-        }, 0)
-      } else {
-        result = 0
-      }
-      return result
+      result += data.reduce((prev, next) => {
+        return prev + parseFloat(String(next.totalMoney || next.money))
+      }, 0)
+      // console.log(this.isValidNumber(result), result, 'result')
+      return this.isValidNumber(result) ? result : 0
     },
     setTravelMoney () {
       // 以R或者M开头都是65
@@ -819,8 +907,9 @@ export default {
             from: '',
             to: '',
             money: '',
+            maxMoney: '',
             remark: '',
-            invoiceNumber: '1',
+            invoiceNumber: '',
             invoiceAttachment: [],
             otherAttachment: [],
             invoiceFileList: [],
@@ -833,8 +922,9 @@ export default {
             days: '',
             money: '',
             totalMoney: '',
+            maxMoney: '',
             remark: '',
-            invoiceNumber: '1',
+            invoiceNumber: '',
             invoiceAttachment: [],
             otherAttachment: [],
             invoiceFileList: [],
@@ -846,8 +936,9 @@ export default {
             id: '',
             expenseCategory: '',
             money: '',
+            maxMoney: '',
             remark: '',
-            invoiceNumber: '1',
+            invoiceNumber: '',
             invoiceAttachment: [],
             otherAttachment: [],
             invoiceFileList: [],
@@ -871,61 +962,37 @@ export default {
       } else {
         console.log(this.formData[data], 'formData')
         let ifInvoiceAttachment
-        if (this.title === 'create') { // 创建的时候
-          ifInvoiceAttachment = this.formData[data].every(item => item.invoiceAttachment && item.invoiceAttachment.length)
-        } else {
+        // if (this.title === 'create') { // 创建的时候
+        //   ifInvoiceAttachment = this.formData[data].every(item => item.invoiceAttachment && item.invoiceAttachment.length)
+        // } else {
           // 编辑的时候
-          if (ref !== 'travelForm') {
-            for (let i = 0; i < this.formData[data].length; i++) {
-              ifInvoiceAttachment = true
-              let { invoiceAttachment, invoiceFileList } = this.formData[data][i]
-              console.log(invoiceAttachment, invoiceFileList, 'edit validate', data)
-              if (invoiceFileList.length) {
-                let ifDeleted = this.formData.fileId.includes(invoiceFileList[0].id) // 判断invoiceFileList是否已经删除
-                // 如果用于回显的附件给删除了，则需要判断的invoiceAttachment数组是否有值
-                if (ifDeleted) {
-                  console.log('has deleted')
-                  ifInvoiceAttachment = Boolean(invoiceAttachment && invoiceAttachment.length)
-                } else {
-                  console.log('no deleted')
-                  // m欸有删除回显的附件，则直接为true
-                  ifInvoiceAttachment = true 
-                }
-                // 只有有一个是false 就直接break
-                if (!ifInvoiceAttachment) break
-              } else {
-                ifInvoiceAttachment = Boolean(invoiceAttachment && invoiceAttachment.length)
-              }
+        if (ref !== 'travelForm') {
+          for (let i = 0; i < this.formData[data].length; i++) {
+            ifInvoiceAttachment = true
+            let { invoiceAttachment, invoiceFileList } = this.formData[data][i]
+            console.log(invoiceAttachment, invoiceFileList, 'edit validate', data)
+            if (invoiceFileList.length) { // 有可能是导入进来的数据(这个是没有新增的数据，跟普通新增的数据同样)，也有可能是已经新增过的数据
+              // 新增过的数据reimburseId存在
+              let ifDeleted = invoiceFileList[0].reimburseId
+                ? this.formData.fileId.includes(invoiceFileList[0].id) // 判断invoiceFileList是否已经删除
+                : !(invoiceFileList[0].isAdd) // 判断当前文件的状态是不是删除(模板数据而言)
+  
+              // 如果用于回显的附件给删除了，则需要判断的invoiceAttachment数组是否有值
+              ifInvoiceAttachment = ifDeleted
+                ? Boolean(invoiceAttachment && invoiceAttachment.length)
+                : true
+              // 只有有一个是false 就直接break
+              if (!ifInvoiceAttachment) break
+            } else {
+              ifInvoiceAttachment = Boolean(invoiceAttachment && invoiceAttachment.length)
             }
           }
         }
+        // }
         let isValid = await this.$refs[ref].validate()
         console.log('valid', isValid, this.formData[data], ifInvoiceAttachment)
         return ref === 'travelForm' ? isValid : ifInvoiceAttachment && isValid
       }
-    },
-    buildAttachment (fileId, reimburseType, attachmentType = 1, reimburseId = 0, id = 0) { // 构建附件的数据格式
-      return {
-        fileId,
-        reimburseType,
-        attachmentType,
-        reimburseId,
-        id
-      }
-    },
-    createFileIdArr (data) { // 附件ID列表
-      return data.map(item => item.pictureId)
-    },
-    createFileList (data, { reimburseType, attachmentType, reimburseId, id }) { // 附件列表
-      let fileIdList = this.createFileIdArr(data)
-      let resultArr = fileIdList.map(fileId => {
-        return this.buildAttachment(fileId, reimburseType, attachmentType, reimburseId, id)
-      })
-      return resultArr
-    },
-    deleteFileList (id) {
-      this.formData.fileId.push(id)
-      console.log(this.delteReimburse, 'deleteFileList')
     },
     getFileList (val) {
       let resultArr = this.createFileList(val, {
@@ -965,19 +1032,53 @@ export default {
       this.currentRow = row
       this.currentIndex = findIndex(data, item => item === row)
     },
+    trafficIdentifyInvoice (invoiceNo, money, prop) { // 获取发票号码
+      if (prop === 'invoiceAttachment') {
+        let data = this.formData.reimburseFares
+        let currentRow = data[this.currentIndex]
+        currentRow.money = money
+        currentRow.maxMoney = money
+        currentRow.invoiceNumber = invoiceNo
+        console.log(data[this.currentIndex], '识别 traffic')
+      }
+    },
+    accIdentifyInvoice (invoiceNo, money, prop) {
+      if (prop === 'invoiceAttachment') {
+        let data = this.formData.reimburseAccommodationSubsidies
+        let currentRow = data[this.currentIndex]
+        currentRow.totalMoney = money
+        currentRow.maxMoney = money
+        currentRow.invoiceNumber = invoiceNo
+        currentRow.money = (currentRow.totalMoney / (currentRow.days || 1)).toFixed(2)
+        console.log(data[this.currentIndex], '识别 acc')
+      }
+    },
+    otherIdentifyInvoice (invoiceNo, money, prop) {
+      if (prop === 'invoiceAttachment') {
+        let data = this.formData.reimburseOtherCharges
+        let currentRow = data[this.currentIndex]
+        currentRow.money = money
+        currentRow.maxMoney = money
+        currentRow.invoiceNumber = invoiceNo
+        console.log(data[this.currentIndex], '识别 other')
+      }
+    },
     onTravelCellClick (row, column) {
       this.setCurrentProp(column, row)
     },
     onTrafficCellClick (row, column) {
-      this.setCurrentProp(column, row)+
+      this.tableType = 'traffic' // 判断当前点击的是哪个表格
+      this.setCurrentProp(column, row)
       this.setCurrentIndex(this.formData.reimburseFares, row)
     },
     onAccCellClick (row, column) {
+      this.tableType = 'acc' // 判断当前点击的是哪个表格
       console.log('cell click')
-      this.setCurrentProp(column, row)+
+      this.setCurrentProp(column, row)
       this.setCurrentIndex(this.formData.reimburseAccommodationSubsidies, row)
     },
     onOtherCellClick (row, column) {
+      this.tableType = 'other' // 判断当前点击的是哪个表格
       this.setCurrentProp(column, row)
       this.setCurrentIndex(this.formData.reimburseOtherCharges, row)
     },
@@ -986,18 +1087,51 @@ export default {
       this.currentProp = property
     },
     onChange (value) { // 天数 总金额 计算
-      if (!this.isValidaNumber(value)) {
+      console.log(value, 'on change')
+      this.changeMoneyByDaysOrTotalMoney(value)
+    },
+    onBlur (e) {
+      console.log('blur')
+      let value = e.target.value
+      this.changeMoneyByDaysOrTotalMoney(value)
+    },
+    changeMoneyByDaysOrTotalMoney (value) {
+      if (!this.isValidNumber(value)) {
         return
       }
       if (this.currentProp === 'totalMoney' || this.currentProp === 'days') {
         let data = this.formData.reimburseAccommodationSubsidies[this.currentIndex]
         let { days, totalMoney } = data
-        if (!days || !this.isValidaNumber(days) || !totalMoney || !this.isValidaNumber(totalMoney)) { // 如果天数没有填入,或者不符合规范则直接return
+        if (!days || !this.isValidNumber(days) || !totalMoney || !this.isValidNumber(totalMoney)) { // 如果天数没有填入,或者不符合规范则直接return
           return
         }
         this.$set(data, 'money', (totalMoney / days).toFixed(2))
         console.log(this.formData, 'formData')
       }
+    },
+    onInput (value) {
+      // let value = e.target.value
+      let data = this.selectTable() // 通过判断tableType来选择当前的表格数据
+      let currentRow = data[this.currentIndex]
+      let { invoiceFileList, invoiceAttachment, maxMoney, invoiceNumber } = currentRow
+      if (
+          (invoiceFileList.length && !this.formData.fileId.includes(invoiceFileList[0].id)) || // 存在回显的文件代表已经新增的，并且还没被删除过
+          (invoiceAttachment.length && invoiceNumber)
+      ) {
+        if (this.currentProp === 'totalMoney' || this.currentProp === 'money') { // 只算修改totalMoney或者money字段
+          this.tableType === 'acc'
+            ? currentRow.totalMoney = Math.min(value, maxMoney)
+            : currentRow.money = Math.min(value, maxMoney)
+        }
+      }
+    },
+    selectTable () {
+      let { reimburseFares, reimburseOtherCharges, reimburseAccommodationSubsidies } = this.formData
+      return this.tableType === 'traffic'
+        ? reimburseFares
+        : this.tableType === 'acc'
+          ? reimburseAccommodationSubsidies
+          : reimburseOtherCharges
     },
     addAndCopy (scope, data, type, operationType) {
       if (!this.ifFormEdit) return
@@ -1012,8 +1146,9 @@ export default {
             from: operationType === 'add' ? '' : row.from,
             to: operationType === 'add' ? '' : row.to,
             money: operationType === 'add' ? '' : row.money,
+            maxMoney: operationType === 'add' ? '' : row.maxMoney,
             remark: operationType === 'add' ? '' : row.remark,
-            invoiceNumber: '1',
+            invoiceNumber: '',
             invoiceAttachment: [],
             otherAttachment: [],
             invoiceFileList: [], // 用于回显
@@ -1026,8 +1161,9 @@ export default {
             days: operationType === 'add' ? '' : row.days,
             money: operationType === 'add' ? '' : row.money,
             totalMoney: operationType === 'add' ? '' : row.totalMoney,
+            maxMoney: operationType === 'add' ? '' : row.maxMoney,
             remark: operationType === 'add' ? '' : row.remark,
-            invoiceNumber: '1',
+            invoiceNumber: '',
             invoiceAttachment: [],
             otherAttachment: [],
             invoiceFileList: [], // 用于回显
@@ -1039,8 +1175,9 @@ export default {
             id: '',
             expenseCategory: operationType === 'add' ? '' : row.expenseCategory,
             money: operationType === 'add' ? '' : row.money,
+            maxMoney: operationType === 'add' ? '' : row.maxMoney,
             remark: operationType === 'add' ? '' : row.remark,
-            invoiceNumber: '1',
+            invoiceNumber: '',
             invoiceAttachment: [],
             otherAttachment: [],
             invoiceFileList: [], // 用于回显
@@ -1050,12 +1187,29 @@ export default {
     },
     delete (scope, data, type) {
       if (!this.ifFormEdit) return
-      if (scope.row.id) { // 说明已经新建过的
-        this.formData.delteReimburse.push({
-          deleteId: scope.row.id,
-          reimburseType: REIMBURSE_TYPE_MAP[type]
-        })
-        console.log(this.formData.delteReimburse, 'deleterei')
+      let { id, invoiceFileList } = scope.row
+      if (id) { // 说明已经新建过的,新建过的表格数据 invoceFileList 是一定存在的
+        if (invoiceFileList && invoiceFileList.length) {
+          if (invoiceFileList[0].reimburseId) { // 导入的数据reimburseId是为空的，所以不需要添加到delteReimburse中
+            this.formData.delteReimburse.push({
+              deleteId: id,
+              reimburseType: REIMBURSE_TYPE_MAP[type]
+            })
+            console.log(this.formData.delteReimburse, 'deleterei')
+          } else {
+            let index = findIndex(this.selectedList, item => item.id === id) // 找到当前删除行 对应导入之后的数据列表的索引值
+            if (index !== -1) {
+              console.log('删除 模板')
+              this.selectedList.splice(index, 1) // 删除后，让导入的表格回复对应的可选状态
+            }
+          }
+        } else {
+          this.formData.delteReimburse.push({
+            deleteId: id,
+            reimburseType: REIMBURSE_TYPE_MAP[type]
+          })
+          console.log(this.formData.delteReimburse, 'deleterei travel')
+        }
       } 
       data.splice(scope.$index, 1)
       if (!data.length) {
@@ -1063,23 +1217,22 @@ export default {
         this[IF_SHOW_MAP[type]] = true
       }
     },
-    up (scope, data) {
-      let { $index } = scope
-      let prevIndex = $index - 1
-      let currentItem = data[$index]
-      // let { invoiceFileList, otherFileList } = 
-      this.$set(data, $index, data[prevIndex])
-      this.$set(data, prevIndex, currentItem)
+    deleteFileList (file) {
+      let { reimburseId, id } = file
+      console.log(file, reimburseId, id, 'file')
+      // 在编辑的时候，(针对)删除已经新增过的附件, 如果是删除导入的附件，ID会为'' ,直接略过
+      console.log(id, 'deleteId')
+      if (reimburseId) { // 删除新增过的
+        this.formData.fileId.push(id)
+        console.log(this.delteReimburse, 'deleteFileList')
+      } else {
+        // 删除导入的模板
+        // this.importDelList.push(fileId)
+        file.isAdd = false
+        console.log(this.formData, 'import list')
+      }
     },
-    down (scope, data) {
-      let { $index } = scope
-      let lastIndex = $index + 1
-      let currentItem = data[$index]
-      this.$set(data, $index, data[lastIndex])
-      this.$set(data, lastIndex, currentItem)
-      // let 
-    },
-    isValidaNumber (val) { // 判断是否是有效的数字
+    isValidNumber (val) { // 判断是否是有效的数字
       val = Number(val)
       return !isNaN(val) && val >= 0
     },
@@ -1145,6 +1298,7 @@ export default {
       })
     },
     closeDialog () {
+      this.$refs.customerTable.resetRadio()
       this.$refs.customerDialog.close()
     },
     confirm () {
@@ -1162,7 +1316,7 @@ export default {
           endDate,
           destination } = currentRow
         console.log(currentRow, 'currentrOW')
-        let formData = this.formData
+        let formData = this.formData // 对报销人的信息进行赋值
         formData.terminalCustomerId = terminalCustomerId
         formData.terminalCustomer = terminalCustomer
         formData.serviceOrderId = id
@@ -1174,9 +1328,93 @@ export default {
         formData.endDate = endDate
         formData.destination = destination
       }
-      this.$refs.customerTable.resetRadio()
       this.currentRow = {}
       this.closeDialog()
+    },
+    _getCostList () {
+      console.log('getCOstlist')
+      getList({
+        ...this.listQueryCost
+      }).then(res => {
+        let { data, count } = res
+        this.costTotal = count
+        this.costData = data.map(item => {
+          item.moneyText = toThousands(item.money)
+          if (item.reimburseType === Number(3)) { // 住宿费
+            item.moneyText = toThousands(item.totalMoney)
+          }
+          return item
+        })
+        console.log(this.total, this.toSavetableData, 'data')
+      }).catch(() => {
+        this.$message.error('获取费用列表失败')
+      })
+    },
+    costCurrentChange (val) {
+      Object.assign(this.listQueryCost, val)
+      this._getCostList()
+    },
+    openCostDialog () { // 打开导入费用弹窗
+      this.$refs.costDialog.open()
+    },
+    closeCostDialog () {
+      this.$refs.costDialog.close()
+      this.$refs.costTable.clearSelection()
+    },
+    importConfirm () { // 确认导入
+      const selectList = this.$refs.costTable.getSelectionList()
+      if (!selectList.length) {
+        return this.$message({
+          type: 'warning',
+          message: '请选择费用模板'
+        })
+      }
+      let invoiceNumberList = selectList.map(item => {
+        console.log(typeof item.invoiceNumber)
+        return item.invoiceNumber
+      })
+      isSole(invoiceNumberList).then(() => {
+        this.selectedList.push(...selectList) // 将选择的数组push到selected中
+        const cloneSelectList = deepClone(selectList) // 避免引用造成影响
+        this._normalizeSelectList(cloneSelectList) // 因为这些导出的数据相当于新数据，所以需要将附件ID删除
+        this._addToTable(cloneSelectList) // 根据报销类型的不同插入到不同的表中
+        this.closeCostDialog()
+      }).catch(() => {
+        this.$message.error('发票号码验证失败')
+      })
+      console.log(isSole, 'isSole')
+      // this.selectedList.push(...selectList) // 将选择的数组push到selected中
+      // const cloneSelectList = deepClone(selectList) // 避免引用造成影响
+      // this._normalizeSelectList(cloneSelectList) // 因为这些导出的数据相当于新数据，所以需要将附件ID删除
+      // this._addToTable(cloneSelectList) // 根据报销类型的不同插入到不同的表中
+      // this.closeCostDialog()
+      // console.log(selectList, 'selectList', this.selectedList)
+    },
+    
+    _normalizeSelectList (selectList) {
+      console.log(deepClone(selectList), 'deepClone')
+      this._buildAttachment(selectList, true)
+    },
+    _addToTable (selectList) {
+      let trafficList = selectList.filter(item => item.reimburseType === Number(2))
+      let accList = selectList.filter(item => item.reimburseType === Number(3))
+      let otherList = selectList.filter(item => item.reimburseType === Number(4))
+      if (trafficList.length) {
+        this.ifShowTraffic = false
+        this.formData.reimburseFares.push(...trafficList)
+        console.log('traffic success', this.formData.reimburseFares)
+      }
+      if (accList.length) {
+        this.ifShowAcc = false
+        this.formData.reimburseAccommodationSubsidies.push(...accList)
+        console.log('acc success', this.formData.reimburseAccommodationSubsidies)
+      }
+      if (otherList.length) {
+        this.ifShowOther = false
+        this.formData.reimburseOtherCharges.push(...otherList)
+        console.log('otherList success', this.formData.reimburseOtherCharges)
+      }
+      console.log('addTable', selectList, trafficList, accList, otherList)
     },
     openRemarkDialog (type) { // 打开备注弹窗，二次确认
       this.remarkType = type
@@ -1187,7 +1425,7 @@ export default {
       this.$refs.remark.reset()
       this.$refs.approve.close()
     },
-    onInput (val) {
+    onRemarkInput (val) {
       this.remarkText = val
     },
     onApproveClose () {
@@ -1195,15 +1433,17 @@ export default {
       this.$refs.remark.reset()
     },
     resetInfo () {
-      this.$refs.form.resetFields()
+      let { createUserId, userName, orgName } = this.formData
       this.$refs.form.clearValidate()
+      this.$refs.form.resetFields()
       this.clearFile()
       this.ifShowTraffic = this.ifShowOther = this.ifShowAcc = this.ifShowTravel = true
+      this.selectedList = []
       this.formData = { // 表单参数
         id: '',
-        userName: '',
-        createUserId: '',
-        orgName: '',
+        userName,
+        createUserId,
+        orgName,
         position: '',
         serviceOrderId: '',
         serviceOrderSapId: '',
@@ -1238,12 +1478,6 @@ export default {
         fileId: [], // 需要删除的附件ID
       }    
     },
-    mergeFileList (data) {   
-      data.forEach(item => {
-        let { invoiceAttachment, otherAttachment, invoiceFileList, otherFileList } = item
-        item.reimburseAttachments = [...invoiceAttachment, ...otherAttachment, ...invoiceFileList, ...otherFileList]
-      })
-    },
     addSerialNumber (data) { // 为表格的数据添加序号
       data.forEach((item, index) => {
         item.serialNumber = index + 1
@@ -1251,21 +1485,26 @@ export default {
     },
     async checkData () { // 校验表单数据是否通过
       let isFormValid = true, isTravelValid = true, isTrafficValid = true, isAccValid = true, isOtherValid = true
-      isFormValid = await this.validate('form')
-      if (!this.ifShowTravel) {
-        isTravelValid = await this.validate('travelForm', 'reimburseTravellingAllowances')
-      }
-      if (!this.ifShowTraffic) {
-        isTrafficValid = await this.validate('trafficForm', 'reimburseFares')
-      }
-      if (!this.ifShowAcc) {
-        isAccValid = await this.validate('accForm', 'reimburseAccommodationSubsidies')
-      }
-      if (!this.ifShowOther) {
-        isOtherValid = await this.validate('otherForm', 'reimburseOtherCharges')
-      }
-      console.log('checkData', isFormValid, isTravelValid, isTrafficValid, isAccValid, isOtherValid)
-      return isFormValid && isTrafficValid && isAccValid && isOtherValid && isTravelValid
+      try {
+        isFormValid = await this.validate('form')
+        if (!this.ifShowTravel) {
+          isTravelValid = await this.validate('travelForm', 'reimburseTravellingAllowances')
+        }
+        if (!this.ifShowTraffic) {
+          isTrafficValid = await this.validate('trafficForm', 'reimburseFares')
+        }
+        if (!this.ifShowAcc) {
+          isAccValid = await this.validate('accForm', 'reimburseAccommodationSubsidies')
+        }
+        if (!this.ifShowOther) {
+          isOtherValid = await this.validate('otherForm', 'reimburseOtherCharges')
+        }
+        console.log('checkData', isFormValid, isTravelValid, isTrafficValid, isAccValid, isOtherValid)
+        return isFormValid && isTrafficValid && isAccValid && isOtherValid && isTravelValid
+      } catch (err) {
+        console.log(err)
+        // this.$message.error('请将必填项填写')
+      }      
     },
     async submit (isDraft) { // 提交
       let { 
@@ -1404,6 +1643,14 @@ export default {
       line-height: 30px;
       color: #606266;
       font-size: 16px;
+      background-color: #f5f7fa;
+    }
+    .total-money {
+      height: 30px;
+      line-height: 30px;
+      color: #606266;
+      text-indent: 10px;
+      font-size: 12px;
       background-color: #f5f7fa;
     }
   }

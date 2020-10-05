@@ -35,6 +35,7 @@
                 :align="item.align || 'left'"
                 :sortable="item.isSort || false"
                 :type="item.originType || ''"
+                show-overflow-tooltip
               >
                 <template slot-scope="scope" >
                   <div class="link-container" v-if="item.type === 'link'">
@@ -52,7 +53,10 @@
                     >{{ btnItem.btnText }}</el-button>
                   </template>
                   <template v-else-if="item.label === '服务报告'">
-                    <el-button @click="item.handleClick" size="mini" type="primary">{{ item.btnText }}</el-button>
+                    <div class="link-container">
+                      <img :src="rightImg" @click="item.handleClick(scope.row.serviceOrderId, 'table')" class="pointer">
+                      <span>查看</span>
+                    </div>
                   </template>
                   <template v-else>
                     {{ scope.row[item.prop] }}
@@ -88,6 +92,12 @@
           :customerInfo="customerInfo">
         </order>
       </my-dialog>
+      <!-- 完工报告 -->
+      <my-dialog
+        ref="reportDialog"
+        @closed="resetReport">
+        <Report :data="reportData" ref="report"/>
+      </my-dialog>
   </div>
 </template>
 
@@ -98,11 +108,12 @@ import Sticky from '@/components/Sticky'
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
-import { tableMixin, categoryMixin } from './common/js/mixins'
+import Report from './common/components/report'
+import { tableMixin, categoryMixin, reportMixin } from './common/js/mixins'
 
 export default {
   name: 'processed',
-  mixins: [tableMixin, categoryMixin],
+  mixins: [tableMixin, categoryMixin, reportMixin],
   components: {
     Search,
     Sticky,
@@ -110,7 +121,8 @@ export default {
     Pagination,
     MyDialog,
     Order,
-    TabList
+    TabList,
+    Report
   },
   computed: {
     searchConfig () {
@@ -140,9 +152,6 @@ export default {
     onChangeForm (val) {
       this.currentFormQuery = val
       Object.assign(this.listQuery, val)
-    },
-    onSearch () {
-      this._getList()
     },
     closeDialog () {
       this.$refs.order.resetInfo()
