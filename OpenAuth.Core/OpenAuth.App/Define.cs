@@ -16,6 +16,8 @@ namespace OpenAuth.App
 
         public const int INVALID_TOKEN = 50014;     //token无效
 
+        public const int INVALID_InvoiceNumber = 50015;   //发票号码不唯一
+
         public const string TOKEN_NAME = "X-Token";
 
 

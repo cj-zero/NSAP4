@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Infrastructure;
 using Infrastructure.Extensions;
+using log4net.Appender;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -476,34 +477,31 @@ namespace OpenAuth.App
             }
 
             #region 判断发票是否唯一
+            List<string> InvoiceNumbers = new List<string>();
             if (req.ReimburseFares != null && req.ReimburseFares.Count > 0)
             {
-                foreach (var item in req.ReimburseFares)
+                req.ReimburseFares.ForEach(r => InvoiceNumbers.Add(r.InvoiceNumber));
+                if (!IsSole(InvoiceNumbers))
                 {
-                    if (!IsSole(item.InvoiceNumber))
-                    {
-                        throw new Exception("添加报销单失败。发票存在已使用，不可二次使用！！！");
-                    }
+                    throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
                 }
             }
+            InvoiceNumbers = null;
             if (req.ReimburseAccommodationSubsidies != null && req.ReimburseAccommodationSubsidies.Count > 0)
             {
-                foreach (var item in req.ReimburseAccommodationSubsidies)
+                req.ReimburseAccommodationSubsidies.ForEach(r => InvoiceNumbers.Add(r.InvoiceNumber));
+                if (!IsSole(InvoiceNumbers))
                 {
-                    if (!IsSole(item.InvoiceNumber))
-                    {
-                        throw new Exception("添加报销单失败。发票存在已使用，不可二次使用！！！");
-                    }
+                    throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
                 }
             }
+            InvoiceNumbers = null;
             if (req.ReimburseOtherCharges != null && req.ReimburseOtherCharges.Count > 0)
             {
-                foreach (var item in req.ReimburseOtherCharges)
+                req.ReimburseOtherCharges.ForEach(r => InvoiceNumbers.Add(r.InvoiceNumber));
+                if (!IsSole(InvoiceNumbers))
                 {
-                    if (!IsSole(item.InvoiceNumber))
-                    {
-                        throw new Exception("添加报销单失败。发票存在已使用，不可二次使用！！！");
-                    }
+                    throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
                 }
             }
             #endregion
@@ -625,34 +623,49 @@ namespace OpenAuth.App
             }
 
             #region 判断发票是否唯一
+            List<string> InvoiceNumbers = new List<string>();
             if (req.ReimburseFares != null && req.ReimburseFares.Count > 0)
             {
                 foreach (var item in req.ReimburseFares)
                 {
-                    if (!IsSole(item.InvoiceNumber))
+                    if (string.IsNullOrWhiteSpace(item.Id.ToString()) && item.Id.ToString() == "0")
                     {
-                        throw new Exception("修改报销单失败。发票存在已使用，不可二次使用！！！");
+                        InvoiceNumbers.Add(item.InvoiceNumber);
                     }
                 }
+                if (!IsSole(InvoiceNumbers))
+                {
+                    throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                }
             }
+            InvoiceNumbers = null;
             if (req.ReimburseAccommodationSubsidies != null && req.ReimburseAccommodationSubsidies.Count > 0)
             {
                 foreach (var item in req.ReimburseAccommodationSubsidies)
                 {
-                    if (!IsSole(item.InvoiceNumber))
+                    if (string.IsNullOrWhiteSpace(item.Id.ToString()) && item.Id.ToString() == "0")
                     {
-                        throw new Exception("修改报销单失败。发票存在已使用，不可二次使用！！！");
+                        InvoiceNumbers.Add(item.InvoiceNumber);
                     }
                 }
+                if (!IsSole(InvoiceNumbers))
+                {
+                    throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                }
             }
+            InvoiceNumbers = null;
             if (req.ReimburseOtherCharges != null && req.ReimburseOtherCharges.Count > 0)
             {
                 foreach (var item in req.ReimburseOtherCharges)
                 {
-                    if (!IsSole(item.InvoiceNumber))
+                    if (string.IsNullOrWhiteSpace(item.Id.ToString()) && item.Id.ToString() == "0")
                     {
-                        throw new Exception("修改报销单失败。发票存在已使用，不可二次使用！！！");
+                        InvoiceNumbers.Add(item.InvoiceNumber);
                     }
+                }
+                if (!IsSole(InvoiceNumbers))
+                {
+                    throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
                 }
             }
             #endregion
@@ -662,7 +675,7 @@ namespace OpenAuth.App
 
             try
             {
-                if (!obj.IsDraft && string.IsNullOrWhiteSpace(req.FlowInstanceId) && string.IsNullOrWhiteSpace(obj.MainId.ToString()) && obj.MainId!=0)
+                if (!obj.IsDraft && string.IsNullOrWhiteSpace(req.FlowInstanceId) && string.IsNullOrWhiteSpace(obj.MainId.ToString()) && obj.MainId == 0)
                 {
                     var maxmainid = await UnitWork.Find<ReimburseInfo>(null).OrderByDescending(r => r.MainId).Select(r => r.MainId).FirstOrDefaultAsync();
                     obj.MainId = maxmainid + 1;
@@ -1007,20 +1020,20 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="InvoiceNumber"></param>
         /// <returns></returns>
-        public bool IsSole(string InvoiceNumber)
+        public bool IsSole(List<string> InvoiceNumber)
         {
-            var rta = UnitWork.Find<ReimburseFare>(r => r.InvoiceNumber.Equals(InvoiceNumber)).ToList();
+            var rta = UnitWork.Find<ReimburseFare>(r => InvoiceNumber.Contains(r.InvoiceNumber)).ToList();
             if (rta.Count > 0)
             {
                 return false;
             }
 
-            var ras = UnitWork.Find<ReimburseAccommodationSubsidy>(r => r.InvoiceNumber.Equals(InvoiceNumber)).ToList();
+            var ras = UnitWork.Find<ReimburseAccommodationSubsidy>(r => InvoiceNumber.Contains(r.InvoiceNumber)).ToList();
             if (ras.Count > 0)
             {
                 return false;
             }
-            var roc = UnitWork.Find<ReimburseOtherCharges>(r => r.InvoiceNumber.Equals(InvoiceNumber)).ToList();
+            var roc = UnitWork.Find<ReimburseOtherCharges>(r => InvoiceNumber.Contains(r.InvoiceNumber)).ToList();
             if (roc.Count > 0)
             {
                 return false;
@@ -1028,6 +1041,54 @@ namespace OpenAuth.App
             return true;
         }
 
+
+        /// <summary>
+        /// 修改报销单 
+        /// </summary>
+        public async Task Delete(int ReimburseInfoId)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var Reimburse = await UnitWork.Find<ReimburseInfo>(r => r.Id == ReimburseInfoId)
+                        //.Include(r => r.ReimburseAttachments)
+                        .Include(r => r.ReimburseTravellingAllowances)
+                        .Include(r => r.ReimburseFares)
+                        .Include(r => r.ReimburseAccommodationSubsidies)
+                        .Include(r => r.ReimburseOtherCharges)
+                        .Include(r => r.ReimurseOperationHistories)
+                        .FirstOrDefaultAsync();
+            if (Reimburse != null)
+            {
+                var files = await UnitWork.Find<ReimburseAttachment>(null).ToListAsync();
+                var delfiles = files.Where(f => f.ReimburseId.Equals(Reimburse.Id) && f.ReimburseType == 0).ToList();
+                delfiles.ForEach(d => UnitWork.Delete<ReimburseAttachment>(d));
+                foreach (var item in Reimburse.ReimburseFares)
+                {
+                    delfiles = files.Where(f => f.ReimburseId.Equals(item.Id) && f.ReimburseType == 2).ToList();
+                    delfiles.ForEach(d => UnitWork.Delete<ReimburseAttachment>(d));
+                    await UnitWork.DeleteAsync<ReimburseFare>(item);
+                }
+                foreach (var item in Reimburse.ReimburseAccommodationSubsidies)
+                {
+                    delfiles = files.Where(f => f.ReimburseId.Equals(item.Id) && f.ReimburseType == 3).ToList();
+                    delfiles.ForEach(d => UnitWork.Delete<ReimburseAttachment>(d));
+                    await UnitWork.DeleteAsync<ReimburseAccommodationSubsidy>(item);
+                }
+                foreach (var item in Reimburse.ReimburseOtherCharges)
+                {
+                    delfiles = files.Where(f => f.ReimburseId.Equals(item.Id) && f.ReimburseType == 4).ToList();
+                    delfiles.ForEach(d => UnitWork.Delete<ReimburseAttachment>(d));
+                    await UnitWork.DeleteAsync<ReimburseOtherCharges>(item);
+                }
+                Reimburse.ReimburseTravellingAllowances.ForEach(r => UnitWork.Delete<ReimburseTravellingAllowance>(r));
+                Reimburse.ReimurseOperationHistories.ForEach(r => UnitWork.Delete<ReimurseOperationHistory>(r));
+                await UnitWork.DeleteAsync<ReimburseInfo>(Reimburse);
+                await UnitWork.SaveAsync();
+            }
+        }
 
         /// <summary>
         /// 获取用户

@@ -221,7 +221,53 @@ namespace OpenAuth.WebApi.Controllers.Serve
 
             return result;
         }
-        
+
+        /// <summary>
+        /// 发票号码是否唯一
+        /// </summary>
+        /// <param name="InvoiceNumber"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public Response IsSole(List<string> InvoiceNumber) 
+        {
+            var result = new Response();
+            try
+            {
+                if (!_reimburseinfoapp.IsSole(InvoiceNumber)) 
+                {
+                    throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 删除报销单
+        /// </summary>
+        /// <param name="ReimburseInfoId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response> Delete(int ReimburseInfoId)
+        {
+            var result = new Response();
+            try
+            {
+                await _reimburseinfoapp.Delete(ReimburseInfoId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
     }
 
 }
