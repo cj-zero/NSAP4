@@ -502,7 +502,7 @@ namespace OpenAuth.App
                     throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
                 }
             }
-            InvoiceNumbers = null;
+            InvoiceNumbers = new List<string>();
             if (req.ReimburseAccommodationSubsidies != null && req.ReimburseAccommodationSubsidies.Count > 0)
             {
                 req.ReimburseAccommodationSubsidies.ForEach(r => InvoiceNumbers.Add(r.InvoiceNumber));
@@ -511,7 +511,7 @@ namespace OpenAuth.App
                     throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
                 }
             }
-            InvoiceNumbers = null;
+            InvoiceNumbers = new List<string>();
             if (req.ReimburseOtherCharges != null && req.ReimburseOtherCharges.Count > 0)
             {
                 req.ReimburseOtherCharges.ForEach(r => InvoiceNumbers.Add(r.InvoiceNumber));
@@ -660,7 +660,7 @@ namespace OpenAuth.App
                     throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
                 }
             }
-            InvoiceNumbers = null;
+            InvoiceNumbers = new List<string>();
             if (req.ReimburseAccommodationSubsidies != null && req.ReimburseAccommodationSubsidies.Count > 0)
             {
                 foreach (var item in req.ReimburseAccommodationSubsidies)
@@ -675,7 +675,7 @@ namespace OpenAuth.App
                     throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
                 }
             }
-            InvoiceNumbers = null;
+            InvoiceNumbers = new List<string>();
             if (req.ReimburseOtherCharges != null && req.ReimburseOtherCharges.Count > 0)
             {
                 foreach (var item in req.ReimburseOtherCharges)
@@ -697,7 +697,7 @@ namespace OpenAuth.App
 
             try
             {
-                if (!obj.IsDraft && string.IsNullOrWhiteSpace(req.FlowInstanceId) && string.IsNullOrWhiteSpace(obj.MainId.ToString()) && obj.MainId == 0)
+                if (!obj.IsDraft && string.IsNullOrWhiteSpace(req.FlowInstanceId) && (string.IsNullOrWhiteSpace(obj.MainId.ToString()) || obj.MainId == 0))
                 {
                     var maxmainid = await UnitWork.Find<ReimburseInfo>(null).OrderByDescending(r => r.MainId).Select(r => r.MainId).FirstOrDefaultAsync();
                     obj.MainId = maxmainid + 1;
