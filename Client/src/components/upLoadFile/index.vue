@@ -252,7 +252,7 @@ export default {
         }
         let { invoiceNo, amountWithTax, isValidate, isUsed, notPassReason } = res.data[0]
         if (!isValidate || (isValidate && isUsed)) {
-          this.$emit('identifyInvoice', '', 0, this.prop)
+          this.$emit('identifyInvoice', '', '', this.prop)
           return this.$message.error(notPassReason ? notPassReason : '识别失败')
         }
         this.$message({

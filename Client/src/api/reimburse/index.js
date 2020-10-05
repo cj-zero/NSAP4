@@ -72,3 +72,11 @@ export function identifyInvoice (data) {
     data
   })
 }
+
+export function isSole (data) {
+  return request({
+    url: 'serve/Reimburse/IsSole',
+    method: 'post',
+    data
+  })
+}

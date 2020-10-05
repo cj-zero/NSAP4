@@ -126,6 +126,59 @@
           </template>
         </el-table>
       </el-form>
+      <!-- <el-form 
+        ref="form" 
+        :model="formData" 
+        size="mini" 
+        :show-message="false"
+        class="form-wrapper"
+        :disabled="isDisabled"
+      >
+        <el-table 
+          border
+          :data="formData.list"
+          max-height="300px"
+          @cell-click="onCellClick"
+          @row-click="onRowClick"
+          v-if="currentType"
+        > 
+          <template v-for="item in upLoadConfig">
+            <el-table-column
+              :key="item.label"
+              :label="item.label"
+              :align="item.align || 'left'"
+              :prop="item.prop"
+              :fixed="item.fixed"
+              :width="item.width"
+            >
+              <template slot-scope="scope">
+                <upLoadFile  
+                  @get-ImgList="getImgList" 
+                  :limit="item.prop === 'invoiceAttachment' ? 1 : 100" 
+                  uploadType="file" 
+                  ref="uploadFile" 
+                  :prop="item.prop" 
+                  :index="scope.$index"
+                  :isReimburse="true"
+                  @identifyInvoice="identifyInvoice"
+                  @deleteFileList="deleteFileList"
+                  :isDisabled="isDisabled"
+                  :fileList="
+                    formData.list[0]
+                      ?
+                        (item.prop === 'invoiceAttachment' 
+                          ? formData.list[0].invoiceFileList 
+                          : formData.list[0].otherFileList
+                        )
+                      : []
+                "
+                  >
+                </upLoadFile>
+              </template>
+            </el-table-column>
+          </template>
+        </el-table>
+      </el-form> -->
     </el-row>
   </div>
 </template>
@@ -193,7 +246,16 @@ export default {
           }
         }
       }
-    }
+    },
+    // 'formData.list.0.totalMoney' (val) {
+    //   if (val) {
+    //     console.log('totalMoney', val)
+    //     let { days } = this.formData.list[0]
+    //     this.formData.list[0].money = days > 0 
+    //       ? (val / days).toFixed(2)
+    //       : 0
+    //   }
+    // }
   },
   data () {
     return {
@@ -233,6 +295,10 @@ export default {
       maxMoney: 0, // 金钱的最大值，当识别了附件之后需要进行设置
       fileid: [], // 删除的附件ID
       // isFirstVisit: true // 是不是首次打开页面
+      upLoadConfig: [
+        { label: '发票附件', type: 'upload', prop: 'invoiceAttachment' },
+        { label: '其他附件', type: 'upload', prop: 'otherAttachment' },
+      ]
     }
   },
   computed: {
@@ -266,6 +332,9 @@ export default {
         this.currentType === ACC_TYPE
           ? this.formData.list[0].totalMoney = money
           : this.formData.list[0].money = money
+        if (this.currentType === ACC_TYPE) {
+          this.formData.list[0].money = (money / (this.formData.list[0].days || 1)).toFixed(2)
+        }
         this.maxMoney = money
       }
     },

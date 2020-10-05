@@ -583,7 +583,7 @@
 </template>
 
 <script>
-import { addOrder, getOrder, updateOrder, approve } from '@/api/reimburse'
+import { addOrder, getOrder, updateOrder, approve, isSole } from '@/api/reimburse'
 import { getList } from '@/api/reimburse/mycost'
 import upLoadFile from "@/components/upLoadFile";
 import Pagination from '@/components/Pagination'
@@ -1032,7 +1032,7 @@ export default {
       this.currentRow = row
       this.currentIndex = findIndex(data, item => item === row)
     },
-    trafficIdentifyInvoice (invoiceNo, money, prop) {
+    trafficIdentifyInvoice (invoiceNo, money, prop) { // 获取发票号码
       if (prop === 'invoiceAttachment') {
         let data = this.formData.reimburseFares
         let currentRow = data[this.currentIndex]
@@ -1049,6 +1049,7 @@ export default {
         currentRow.totalMoney = money
         currentRow.maxMoney = money
         currentRow.invoiceNumber = invoiceNo
+        currentRow.money = (currentRow.totalMoney / (currentRow.days || 1)).toFixed(2)
         console.log(data[this.currentIndex], '识别 acc')
       }
     },
@@ -1368,13 +1369,28 @@ export default {
           message: '请选择费用模板'
         })
       }
-      this.selectedList.push(...selectList) // 将选择的数组push到selected中
-      const cloneSelectList = deepClone(selectList) // 避免引用造成影响
-      this._normalizeSelectList(cloneSelectList) // 因为这些导出的数据相当于新数据，所以需要将附件ID删除
-      this._addToTable(cloneSelectList) // 根据报销类型的不同插入到不同的表中
-      this.closeCostDialog()
+      let invoiceNumberList = selectList.map(item => {
+        console.log(typeof item.invoiceNumber)
+        return item.invoiceNumber
+      })
+      isSole(invoiceNumberList).then(() => {
+        this.selectedList.push(...selectList) // 将选择的数组push到selected中
+        const cloneSelectList = deepClone(selectList) // 避免引用造成影响
+        this._normalizeSelectList(cloneSelectList) // 因为这些导出的数据相当于新数据，所以需要将附件ID删除
+        this._addToTable(cloneSelectList) // 根据报销类型的不同插入到不同的表中
+        this.closeCostDialog()
+      }).catch(() => {
+        this.$message.error('发票号码验证失败')
+      })
+      console.log(isSole, 'isSole')
+      // this.selectedList.push(...selectList) // 将选择的数组push到selected中
+      // const cloneSelectList = deepClone(selectList) // 避免引用造成影响
+      // this._normalizeSelectList(cloneSelectList) // 因为这些导出的数据相当于新数据，所以需要将附件ID删除
+      // this._addToTable(cloneSelectList) // 根据报销类型的不同插入到不同的表中
+      // this.closeCostDialog()
       // console.log(selectList, 'selectList', this.selectedList)
     },
+    
     _normalizeSelectList (selectList) {
       console.log(deepClone(selectList), 'deepClone')
       this._buildAttachment(selectList, true)
