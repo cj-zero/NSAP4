@@ -1,4 +1,9 @@
 const path = require('path')
+const SpeedMeasurePlugin = require('speed-measure-webpack-plugin')
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+const smp = new SpeedMeasurePlugin({
+  outputFormat:"human",
+ });
 function resolve (dir) {
     return path.join(__dirname, '/', dir)
 }
@@ -12,7 +17,7 @@ module.exports = {
       errors: false
     }
   },
-  configureWebpack: {
+  configureWebpack: smp.wrap({
     externals: {
       "BMap": "BMap"
     },
@@ -20,8 +25,14 @@ module.exports = {
       unknownContextCritical : false,
       //解决the request of a dependency is an expression
       exprContextCritical: false,
-    }
-  },
+    },
+    devtool: process.env.NODE_ENV === 'development'
+      ? 'eval-source-map'
+      : 'source-map',
+    plugins: [
+      new BundleAnalyzerPlugin()
+    ]
+  }),
   // svg配置
   chainWebpack(config) {
     config.module

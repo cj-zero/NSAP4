@@ -275,10 +275,15 @@ export default {
         this.$refs.myDialog.open()
       }).catch(() => this.$message.error('获取详情失败'))
     },
-    confirm () {
-      this.dialogTitle === '新增' // 判断是编辑还是新增
-        ? this._addData()
-        : this._updateData()
+    async confirm () {
+      let isValid = await this.$refs.dataForm.validate()
+      console.log(isValid, 'isValid')
+      if (isValid) {
+        this.dialogTitle === '新增' // 判断是编辑还是新增
+          ? this._addData()
+          : this._updateData()
+      }
+      
     },
     _addData () {
       let { type, name, id } = this.multipleSelection
