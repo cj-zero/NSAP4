@@ -8,6 +8,7 @@ using IdentityServer4.AccessTokenValidation;
 using Infrastructure;
 using Infrastructure.AutoMapper;
 using Infrastructure.Exceptions;
+using Infrastructure.Extensions.AutofacManager;
 using Infrastructure.TecentOCR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
@@ -204,6 +205,8 @@ namespace OpenAuth.WebApi
             }
             // 配置静态autoMapper
             AutoMapperHelper.UseStateAutoMapper(app);
+            //配置ServiceProvider
+            AutofacContainerModule.ConfigServiceProvider(app.ApplicationServices);
             //可以访问根目录下面的静态文件
             var staticfile = new StaticFileOptions { FileProvider = new PhysicalFileProvider(AppContext.BaseDirectory) };
             app.UseStaticFiles(staticfile);

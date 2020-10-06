@@ -54,5 +54,7 @@ namespace OpenAuth.Repository
         #endregion
 
         public virtual DbSet<KnowledgeBase> KnowledgeBases { get; set; }
+        //非数据库表格
+        public virtual DbQuery<SysTableColumn> SysTableColumns { get; set; }
     }
 }

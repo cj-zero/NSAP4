@@ -98,6 +98,16 @@ namespace OpenAuth.App
             return UnitWork.Find<CategoryType>(null).ToList();
         }
 
+        /// <summary>
+        /// 加载一个分类类型里面的所有值，即字典的所有值
+        /// </summary>
+        /// <param name="typeId"></param>
+        /// <returns></returns>
+        public List<Category> LoadByTypeId(string typeId)
+        {
+            return Repository.Find(u => u.TypeId == typeId).ToList();
+        }
+
         public CategoryApp(IUnitWork unitWork, IRepository<Category> repository,IAuth auth) : base(unitWork, repository, auth)
         {
         }
