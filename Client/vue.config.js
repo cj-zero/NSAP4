@@ -1,14 +1,16 @@
 const path = require('path')
 const SpeedMeasurePlugin = require('speed-measure-webpack-plugin')
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+const merge = require("webpack-merge")
 const smp = new SpeedMeasurePlugin({
   outputFormat:"human",
- });
+ })
+
 function resolve (dir) {
     return path.join(__dirname, '/', dir)
 }
 
-module.exports = {
+const commonConfig = {
   lintOnSave: process.env.NODE_ENV !== 'production',
   devServer: {
     port: 1803,     // 端口
@@ -17,7 +19,7 @@ module.exports = {
       errors: false
     }
   },
-  configureWebpack: smp.wrap({
+  configureWebpack: {
     externals: {
       "BMap": "BMap"
     },
@@ -25,14 +27,8 @@ module.exports = {
       unknownContextCritical : false,
       //解决the request of a dependency is an expression
       exprContextCritical: false,
-    },
-    devtool: process.env.NODE_ENV === 'development'
-      ? 'eval-source-map'
-      : 'source-map',
-    plugins: [
-      new BundleAnalyzerPlugin()
-    ]
-  }),
+    }
+  },
   // svg配置
   chainWebpack(config) {
     config.module
@@ -52,3 +48,21 @@ module.exports = {
       .end()
   }
 }
+const developConfig = {
+  configureWebpack: smp.wrap({
+    externals: {
+      "BMap": "BMap"
+    },
+    module: {
+      unknownContextCritical : false,
+      //解决the request of a dependency is an expression
+      exprContextCritical: false,
+    },
+    plugins: [
+      new BundleAnalyzerPlugin()
+    ]
+  })
+}
+module.exports = process.env.NODE_ENV === 'development'
+  ? Object.assign(commonConfig, developConfig)
+  : commonConfig
