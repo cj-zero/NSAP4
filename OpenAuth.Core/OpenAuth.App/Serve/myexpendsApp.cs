@@ -102,6 +102,10 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task Add(AddOrUpdateMyExpendsReq req)
         {
+            if (!IsSole(req.InvoiceNumber)) 
+            {
+                throw new CommonException("添加费用失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+            }
             var obj = req.MapTo<MyExpends>();
             //todo:补充或调整自己需要的字段
             obj.CreateTime = DateTime.Now;
@@ -138,6 +142,11 @@ namespace OpenAuth.App
             if (user.Account == "App")
             {
                 user = GetUserId(Convert.ToInt32(obj.AppId));
+            }
+            var MyExpendsModel = await UnitWork.Find<MyExpends>(m => m.Id == obj.Id).FirstOrDefaultAsync();
+            if (MyExpendsModel != null && MyExpendsModel.InvoiceNumber != obj.InvoiceNumber && !IsSole(obj.InvoiceNumber))
+            {
+                throw new CommonException("添加费用失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
             }
             await UnitWork.UpdateAsync<MyExpends>(u => u.Id == obj.Id, u => new MyExpends
             {
@@ -207,6 +216,21 @@ namespace OpenAuth.App
             var userid = UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(AppId)).Select(u => u.UserID).FirstOrDefault();
 
             return UnitWork.Find<User>(u => u.Id.Equals(userid)).FirstOrDefault();
+        }
+
+        /// <summary>
+        /// 发票号个人唯一
+        /// </summary>
+        /// <param name="InvoiceNumber"></param>
+        /// <returns></returns>
+        public bool IsSole(string InvoiceNumber)
+        {
+            var rta = UnitWork.Find<MyExpends>(r => r.InvoiceNumber.Equals(InvoiceNumber)).ToList();
+            if (rta.Count > 0)
+            {
+                return false;
+            }
+            return true;
         }
 
         public MyExpendsApp(IUnitWork unitWork, RevelanceManagerApp app, IAuth auth) : base(unitWork, auth)

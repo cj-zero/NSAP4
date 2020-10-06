@@ -285,6 +285,12 @@ namespace OpenAuth.App
             var city = string.IsNullOrWhiteSpace(request.City) ? obj.City : request.City;
             var area = string.IsNullOrWhiteSpace(request.Area) ? obj.Area : request.Area;
             var addr = string.IsNullOrWhiteSpace(request.Addr) ? obj.Addr : request.Addr;
+            if (string.IsNullOrWhiteSpace(obj.TerminalCustomer) && string.IsNullOrWhiteSpace(obj.TerminalCustomerId)) 
+            {
+                obj.TerminalCustomer = obj.CustomerName;
+                obj.TerminalCustomerId = obj.CustomerId;
+            }
+
             await UnitWork.UpdateAsync<ServiceOrder>(o => o.Id.Equals(request.Id), s => new ServiceOrder
             {
                 Status = 2,
@@ -302,6 +308,7 @@ namespace OpenAuth.App
                 NewestContacter = obj.NewestContacter,
                 NewestContactTel = obj.NewestContactTel,
                 FromId = obj.FromId,
+                TerminalCustomerId = obj.TerminalCustomerId,
                 TerminalCustomer = obj.TerminalCustomer,
                 SalesMan = obj.SalesMan,
                 SalesManId = obj.SalesManId,
