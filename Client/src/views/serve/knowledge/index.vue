@@ -7,10 +7,13 @@
     </sticky>
     <el-card shadow="never" class="card-body-none fh" style="height:100%;overflow-y:auto;">
       <el-tree
+        default-expand-all
         :props="defualtProps"
         :data="modulesTree"
         node-key="id"
         :expand-on-click-node="false"
+        show-checkbox
+        @check-change="handleCheckChange"
         @node-click="handleNodeClick">
       </el-tree>
     </el-card>
@@ -95,6 +98,7 @@ export default {
   data() {
     return {
       multipleSelection: "", // 列表checkbox选中的值
+      multipleSelectList: [], // 选择列表
       modulesTree: [],
       total: 0,
       dialogTitle: '',
@@ -168,14 +172,14 @@ export default {
           this.handleUpdate(this.multipleSelection);
           break;
         case "btnDel":
-          if (this.multipleSelection.length < 1) {
+          if (this.multipleSelectList.length < 1) {
             this.$message({
               message: "至少删除一个",
               type: "error"
             });
             return;
           }
-          this.handleDelete(this.multipleSelection);
+          this.handleDelete(this.multipleSelectList);
           break;
         default:
           break;
@@ -198,7 +202,7 @@ export default {
     _normalizeList (data) {
       return data.map(dataItem => {
         let { item, children } = dataItem
-        dataItem = { ...item, children }
+        dataItem = { ...item, children, disabled: Number(item.type) <= 2 }
         if (children && children.length) {
           dataItem.children = this._normalizeList(children)
         }
@@ -208,6 +212,9 @@ export default {
     handleNodeClick (row, node, component) {
       console.log(row, node, component)
       this.multipleSelection = row;
+    },
+    handleCheckChange (row, isSelected, isChildrenSelected) {
+      console.log(row, isSelected, isChildrenSelected, 'checkChange')
     },
     closeDialog () {
       this.resetTemp()
@@ -266,10 +273,10 @@ export default {
         : this._updateData()
     },
     _addData () {
-      let { parentId, type, parentName } = this.multipleSelection
-      this.temp.parentId = parentId
+      let { type, name, id } = this.multipleSelection
+      this.temp.parentId = id
       this.temp.type = type + 1 // 新增就是新增下一级
-      this.temp.parentName = parentName
+      this.temp.parentName = name
       console.log(add, this.temp, 'this.temp')
       this.dialogLoading = true
       add(this.temp).then(() => {
