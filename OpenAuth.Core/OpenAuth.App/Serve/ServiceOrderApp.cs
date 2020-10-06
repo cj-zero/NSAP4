@@ -285,6 +285,12 @@ namespace OpenAuth.App
             var city = string.IsNullOrWhiteSpace(request.City) ? obj.City : request.City;
             var area = string.IsNullOrWhiteSpace(request.Area) ? obj.Area : request.Area;
             var addr = string.IsNullOrWhiteSpace(request.Addr) ? obj.Addr : request.Addr;
+            if (string.IsNullOrWhiteSpace(obj.TerminalCustomer) && string.IsNullOrWhiteSpace(obj.TerminalCustomerId)) 
+            {
+                obj.TerminalCustomer = obj.CustomerName;
+                obj.TerminalCustomerId = obj.CustomerId;
+            }
+
             await UnitWork.UpdateAsync<ServiceOrder>(o => o.Id.Equals(request.Id), s => new ServiceOrder
             {
                 Status = 2,
@@ -302,6 +308,7 @@ namespace OpenAuth.App
                 NewestContacter = obj.NewestContacter,
                 NewestContactTel = obj.NewestContactTel,
                 FromId = obj.FromId,
+                TerminalCustomerId = obj.TerminalCustomerId,
                 TerminalCustomer = obj.TerminalCustomer,
                 SalesMan = obj.SalesMan,
                 SalesManId = obj.SalesManId,
@@ -557,6 +564,17 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.b.ContactTel.Equals(req.ContactTel) || q.b.NewestContactTel.Equals(req.ContactTel))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), q => q.b.Supervisor.Contains(req.QrySupervisor))
                          .Where(q => q.b.U_SAP_ID != null && q.b.Status == 2 && q.a.FromType != 2);
+            if (!string.IsNullOrWhiteSpace(req.QryStatusBar.ToString()) && req.QryStatusBar!=0) 
+            {
+                if (req.QryStatusBar == 1)
+                {
+                    query = query.Where(q => q.a.Status >= 2 && q.a.Status<7);
+                }
+                else 
+                {
+                    query = query.Where(q => q.a.Status >= 7);
+                }
+            }
             if (req.QryState != "1")
             {
                 query = query.Where(q => q.a.Status > 1);
@@ -818,12 +836,24 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.a.ManufacturerSerialNumber.Contains(req.QryManufSN))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.b.RecepUserName.Contains(req.QryRecepUser))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.a.ProblemTypeId.Contains(req.QryProblemType))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryTechName),q=>q.a.CurrentUser.Contains(req.QryTechName))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryTechName), q => q.a.CurrentUser.Contains(req.QryTechName))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.b.ContactTel.Equals(req.ContactTel) || q.b.NewestContactTel.Equals(req.ContactTel))
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                          .WhereIf(req.QryMaterialTypes != null && req.QryMaterialTypes.Count > 0, q => req.QryMaterialTypes.Contains(q.a.MaterialCode == "其他设备" ? "其他设备" : q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), q => q.b.Supervisor.Contains(req.QrySupervisor))
                          .Where(q => q.b.U_SAP_ID != null && q.b.Status == 2 && q.a.FromType != 2);
+
+            if (!string.IsNullOrWhiteSpace(req.QryStatusBar.ToString()) && req.QryStatusBar != 0)
+            {
+                if (req.QryStatusBar == 1)
+                {
+                    query = query.Where(q => q.a.Status >= 2 && q.a.Status < 7);
+                }
+                else
+                {
+                    query = query.Where(q => q.a.Status >= 7);
+                }
+            }
             if (req.QryState != "1")
             {
                 query = query.Where(q => q.a.Status > 1);
@@ -1055,7 +1085,7 @@ namespace OpenAuth.App
                 StatId = q.Key.SupervisorId,
                 StatName = q.Key.Supervisor,
                 ServiceCnt = q.Count()
-            }).Where(w => w.ServiceCnt > 10).OrderByDescending(s => s.ServiceCnt).ToListAsync();
+            }).Where(w => w.ServiceCnt > 10).OrderByDescending(s => s.ServiceCnt).Skip(0).Take(20).ToListAsync();
             resultlist.Add(new ServerOrderStatListResp { StatType = "Supervisor", StatList = list1 });
 
             var list2 = await query.GroupBy(g => new { g.SalesManId, g.SalesMan }).Select(q => new ServiceOrderReportResp
@@ -1063,7 +1093,7 @@ namespace OpenAuth.App
                 StatId = q.Key.SalesManId,
                 StatName = q.Key.SalesMan,
                 ServiceCnt = q.Count()
-            }).OrderByDescending(s => s.ServiceCnt).ToListAsync();
+            }).OrderByDescending(s => s.ServiceCnt).Skip(0).Take(20).ToListAsync();
             resultlist.Add(new ServerOrderStatListResp { StatType = "SalesMan", StatList = list2 });
 
             var list3 = await query.GroupBy(g => new { g.ProblemTypeId, g.ProblemTypeName }).Select(q => new ServiceOrderReportResp
@@ -1071,7 +1101,7 @@ namespace OpenAuth.App
                 StatId = q.Key.ProblemTypeId,
                 StatName = q.Key.ProblemTypeName,
                 ServiceCnt = q.Count()
-            }).OrderByDescending(s => s.ServiceCnt).ToListAsync();
+            }).OrderByDescending(s => s.ServiceCnt).Skip(0).Take(20).ToListAsync();
             resultlist.Add(new ServerOrderStatListResp { StatType = "ProblemType", StatList = list3 });
 
             var list4 = await query.GroupBy(g => new { g.RecepUserId, g.RecepUserName }).Select(q => new ServiceOrderReportResp
@@ -1079,7 +1109,7 @@ namespace OpenAuth.App
                 StatId = q.Key.RecepUserId,
                 StatName = q.Key.RecepUserName,
                 ServiceCnt = q.Count()
-            }).OrderByDescending(s => s.ServiceCnt).ToListAsync();
+            }).OrderByDescending(s => s.ServiceCnt).Skip(0).Take(20).ToListAsync();
             resultlist.Add(new ServerOrderStatListResp { StatType = "RecepUser", StatList = list4 });
             result.Data = resultlist;
             return result;
@@ -1159,12 +1189,15 @@ namespace OpenAuth.App
                 var ids = query.Where(s => s.ServiceOrderId != 0).Select(s => s.ServiceOrderId).Distinct().ToList();
                 foreach (var item in ids)
                 {
-                    var ServiceOrder = UnitWork.Find<ServiceOrder>(s => s.Id.Equals(item)).AsNoTracking().FirstOrDefault();
-                    var ServiceWorkOrders = await UnitWork.Find<ServiceWorkOrder>(u => u.ServiceOrderId.Equals(item)).AsNoTracking().ToListAsync();
-                    int num = 0;
-                    ServiceWorkOrders.ForEach(u => u.WorkOrderNumber = ServiceOrder.U_SAP_ID + "-" + ++num);
-                    UnitWork.BatchUpdate<ServiceWorkOrder>(ServiceWorkOrders.ToArray());
-                    await UnitWork.SaveAsync();
+                    var ServiceOrder =await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(item)).AsNoTracking().FirstOrDefaultAsync();
+                    if (ServiceOrder != null) 
+                    {
+                        var ServiceWorkOrders = await UnitWork.Find<ServiceWorkOrder>(u => u.ServiceOrderId.Equals(item)).AsNoTracking().ToListAsync();
+                        int num = 0;
+                        ServiceWorkOrders.ForEach(u => u.WorkOrderNumber = ServiceOrder.U_SAP_ID + "-" + ++num);
+                        UnitWork.BatchUpdate<ServiceWorkOrder>(ServiceWorkOrders.ToArray());
+                        await UnitWork.SaveAsync();
+                    }
                 }
             }
         }
@@ -1186,7 +1219,7 @@ namespace OpenAuth.App
                 throw new CommonException("技术员接单已经达到上限", 60001);
             }
             var u = await UnitWork.Find<AppUserMap>(s => s.AppUserId == req.CurrentUserId).Include(s => s.User).FirstOrDefaultAsync();
-            var ServiceOrderModel = await UnitWork.Find<ServiceOrder>(s => s.Id==Convert.ToInt32(req.ServiceOrderId)).FirstOrDefaultAsync();
+            var ServiceOrderModel = await UnitWork.Find<ServiceOrder>(s => s.Id == Convert.ToInt32(req.ServiceOrderId)).FirstOrDefaultAsync();
 
             var Model = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.ToString() == req.ServiceOrderId && req.QryMaterialTypes.Contains(s.MaterialCode == "其他设备" ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")))).Select(s => s.Id);
             var ids = await Model.ToListAsync();
@@ -2128,7 +2161,6 @@ namespace OpenAuth.App
                             a.Supervisor,
                             a.SalesMan,
                             a.CustomerName,
-                            a.Services,
                             a.ProblemTypeId,
                             a.ProblemTypeName,
                             NewestContacter = string.IsNullOrEmpty(a.NewestContacter) ? a.Contacter : a.NewestContacter,
@@ -2168,7 +2200,7 @@ namespace OpenAuth.App
                     a.CustomerName,
                     ProblemTypeName = string.IsNullOrEmpty(a.ProblemTypeName) ? a.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Name : a.ProblemTypeName,
                     ProblemTypeId = string.IsNullOrEmpty(a.ProblemTypeId) ? a.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Id : a.ProblemTypeId,
-                    a.Services,
+                    Services = a.ServiceWorkOrders.FirstOrDefault()?.FromTheme,
                     Priority = a.ServiceWorkOrders.FirstOrDefault()?.Priority == 3 ? "高" : a.ServiceWorkOrders.FirstOrDefault()?.Priority == 2 ? "中" : "低",
                     ServiceWorkOrders = a.ServiceWorkOrders.GroupBy(o => o.MaterialType).Select(s => new
                     {
@@ -3181,9 +3213,9 @@ namespace OpenAuth.App
                 UserId = u.User.Id,
                 SapId = ServiceOrderModel.U_SAP_ID,
                 ReimburseType = 0,
-                CreateTime=DateTime.Now
-                
-            }) ;
+                CreateTime = DateTime.Now
+
+            });
             await UnitWork.SaveAsync();
             var WorkOrderNumbers = String.Join(',', await UnitWork.Find<ServiceWorkOrder>(s => ids.Contains(s.Id)).Select(s => s.WorkOrderNumber).ToArrayAsync());
 

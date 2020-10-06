@@ -12,17 +12,22 @@
 // <summary>IOC扩展</summary>
 // ***********************************************************************
 
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Loader;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Autofac.Extras.Quartz;
 using AutoMapper.Configuration;
 using Infrastructure.Cache;
+using Infrastructure.Extensions.AutofacManager;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyModel;
 using Minio;
 using OpenAuth.App.Files;
 using OpenAuth.App.Interface;
@@ -68,7 +73,9 @@ namespace OpenAuth.App
             {
                 services.AddScoped(typeof(IHttpContextAccessor), typeof(HttpContextAccessor));
             }
-            
+
+            InitDependency(builder);
+
             builder.RegisterModule(new QuartzAutofacFactoryModule());
 
             builder.Populate(services);
@@ -103,8 +110,43 @@ namespace OpenAuth.App
                 builder.RegisterType(typeof(RedisCacheContext)).As(typeof(ICacheContext));
 
             builder.RegisterType(typeof(HttpContextAccessor)).As(typeof(IHttpContextAccessor));
-            
+
+            InitDependency(builder);
+
             builder.RegisterModule(new QuartzAutofacFactoryModule());
+        }
+
+        /// <summary>
+        /// 注入所有继承了IDependency接口
+        /// </summary>
+        /// <param name="builder"></param>
+        private static void InitDependency(ContainerBuilder builder)
+        {
+            Type baseType = typeof(IDependency);
+            var compilationLibrary = DependencyContext.Default
+                .CompileLibraries
+                .Where(x => !x.Serviceable
+                            && x.Type == "project")
+                .ToList();
+            var count1 = compilationLibrary.Count;
+            List<Assembly> assemblyList = new List<Assembly>();
+
+            foreach (var _compilation in compilationLibrary)
+            {
+                try
+                {
+                    assemblyList.Add(AssemblyLoadContext.Default.LoadFromAssemblyName(new AssemblyName(_compilation.Name)));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(_compilation.Name + ex.Message);
+                }
+            }
+
+            builder.RegisterAssemblyTypes(assemblyList.ToArray())
+                .Where(type => baseType.IsAssignableFrom(type) && !type.IsAbstract)
+                .AsSelf().AsImplementedInterfaces()
+                .InstancePerLifetimeScope();
         }
     }
 }

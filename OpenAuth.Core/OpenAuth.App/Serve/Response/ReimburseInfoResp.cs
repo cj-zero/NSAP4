@@ -16,6 +16,11 @@ namespace OpenAuth.App.Serve.Response
         /// Id
         /// </summary>
         public int Id { get; set; }
+
+        /// <summary>
+        /// 报销单号
+        /// </summary>
+        public int MainId { get; set; }
         /// <summary>
         /// 服务单主键Id
         /// </summary>

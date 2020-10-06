@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -20,20 +22,23 @@ namespace OpenAuth.WebApi.Controllers
     public class AttendanceClockController : Controller
     {
         private readonly AttendanceClockApp _app;
-
-        public AttendanceClockController(AttendanceClockApp app)
+        private readonly HttpClienService _httpClienService;
+        public AttendanceClockController(AttendanceClockApp app, HttpClienService httpClienService)
         {
             _app = app;
+            _httpClienService = httpClienService;
         }
 
         /// <summary>
         /// 加载列表
         /// </summary>
         [HttpGet]
-        public TableData Load([FromQuery]QueryAttendanceClockListReq request)
+        public TableData Load([FromQuery] QueryAttendanceClockListReq request)
         {
             return _app.Load(request);
         }
+
+        #region 新威智能APP售后接口 若修改请告知！！！
         /// <summary>
         /// 获取详情
         /// </summary>
@@ -45,7 +50,12 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Response<AttendanceClockDetailsResp>();
             try
             {
-                result.Result = await _app.GetDetails(id);
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
+                parameters.Add("id", id);
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetAttendanceClockDetail");
+                JObject data = JsonConvert.DeserializeObject<JObject>(r);
+                result.Result = JsonConvert.DeserializeObject<AttendanceClockDetailsResp>(data.Property("result").Value.ToString());
+                //result.Result = await _app.GetDetails(id);
             }
             catch (Exception ex)
             {
@@ -55,6 +65,7 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
+
         /// <summary>
         /// 打卡
         /// </summary>
@@ -66,7 +77,9 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Response();
             try
             {
-                 await _app.Add(req);
+                var r = await _httpClienService.Post(req, "api/serve/ServiceOrder/Clock");
+                result = JsonConvert.DeserializeObject<Response>(r);
+                //await _app.Add(req);
             }
             catch (Exception ex)
             {
@@ -83,12 +96,19 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> AppGetClockHistory([FromQuery]AppGetClockHistoryReq req)
+        public async Task<TableData> AppGetClockHistory([FromQuery] AppGetClockHistoryReq req)
         {
             var result = new TableData();
             try
             {
-                result = await _app.AppGetClockHistory(req);
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
+                parameters.Add("AppUserId", req.AppUserId);
+                parameters.Add("limit", req.limit);
+                parameters.Add("page", req.page);
+                parameters.Add("key", req.key);
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/AppGetClockHistory");
+                result = JsonConvert.DeserializeObject<TableData>(r);
+                //result = await _app.AppGetClockHistory(req);
             }
             catch (Exception ex)
             {
@@ -98,5 +118,6 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
+        #endregion
     }
 }

@@ -22,7 +22,7 @@ namespace OpenAuth.App.Serve.Response
         /// </summary>
         public int ReimburseId { get; set; }
         /// <summary>
-        /// 报销单据类型(1 出差补贴， 2 交通费用， 3住宿补贴， 4 其他费用)
+        /// 报销单据类型(1 出差补贴， 2 交通费用， 3住宿补贴， 4 其他费用 5我的费用)
         /// </summary>
         public int? ReimburseType { get; set; }
         /// <summary>
@@ -34,5 +34,10 @@ namespace OpenAuth.App.Serve.Response
         /// 附件名称
         /// </summary>
         public string AttachmentName { get; set; }
+
+        /// <summary>
+        /// 是否新增
+        /// </summary>
+        public bool? IsAdd { get; set; }
     }
 }

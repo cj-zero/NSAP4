@@ -32,6 +32,16 @@ namespace OpenAuth.App.Request
         /// Id
         /// </summary>
         public int? Id { get; set; }
+
+        /// <summary>
+        /// AppId
+        /// </summary>
+        public int? AppId { get; set; }
+
+        /// <summary>
+        /// 报销单号
+        /// </summary>
+        public int MainId { get; set; }
         /// <summary>
         /// 服务单主键Id
         /// </summary>

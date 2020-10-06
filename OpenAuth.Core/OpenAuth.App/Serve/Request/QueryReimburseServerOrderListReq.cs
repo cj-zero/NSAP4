@@ -9,13 +9,14 @@ namespace OpenAuth.App.Serve.Request
     {
 
         /// <summary>
-        ///服务单号
+        ///服务单号或客户名称
         /// </summary>
         public string SapId { get; set; }
+
         /// <summary>
         ///appid
         /// </summary>
-        public string AppId { get; set; }
+        public int? AppId { get; set; }
         //todo:添加自己的请求字段
     }
 }

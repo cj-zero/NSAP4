@@ -72,6 +72,8 @@ namespace OpenAuth.App
             //获取当前登陆者的nsap用户Id
             var nsap_userId = (await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.CurrentUserId).FirstOrDefaultAsync())?.UserID;
             obj.CreateUserId = nsap_userId;
+            obj.IsReimburse = 1;
+            obj.TechnicianId = req.CurrentUserId.ToString();
             //obj.CreateUserName = user.Name;
             //todo:补充或调整自己需要的字段
             var o = await Repository.AddAsync(obj);
@@ -275,8 +277,9 @@ namespace OpenAuth.App
 
             if (!loginContext.Roles.Any(r => r.Name.Equals("售后主管")) && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
             {
-                var appuserid = await UnitWork.Find<AppUserMap>(u => u.UserID.Equals(loginContext.User.Id)).Select(u => u.AppUserId).FirstOrDefaultAsync();
-                CompletionReportModel = CompletionReportModel.Where(c => c.TechnicianId.Equals(appuserid.ToString())).ToList();
+                //var appuserid = await UnitWork.Find<AppUserMap>(u => u.UserID.Equals(loginContext.User.Id)).Select(u => u.AppUserId).FirstOrDefaultAsync();
+                //CompletionReportModel = CompletionReportModel.Where(c => c.TechnicianId.Equals(appuserid.ToString())).ToList();
+                CompletionReportModel = CompletionReportModel.Where(c => c.CreateUserId.Equals(loginContext.User.Id)).ToList();
             }
 
             var thisworkdetail = CompletionReportModel.MapToList<CompletionReportDetailsResp>();

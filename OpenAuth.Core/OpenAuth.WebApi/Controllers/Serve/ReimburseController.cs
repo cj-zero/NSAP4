@@ -49,6 +49,29 @@ namespace OpenAuth.WebApi.Controllers.Serve
 
             return result;
         }
+
+        /// <summary>
+        /// App查看报销单列表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> AppLoad([FromQuery] QueryReimburseInfoListReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _reimburseinfoapp.AppLoad(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
         /// <summary>
         /// 获取未报销服务单列别
         /// </summary>
@@ -98,7 +121,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
         public TableData GetListCategoryName()
         {
             var result = new TableData();
-            string ids = "SYS_OtherExpenses,SYS_Transportation,SYS_TransportationAllowance,SYS_TravellingAllowance,SYS_ServiceRelations,SYS_RemburseStatus,SYS_ReimburseType,SYS_Responsibility,SYS_ProjectName";
+            string ids = "SYS_OtherExpenses,SYS_Transportation,SYS_TransportationAllowance,SYS_TravellingAllowance,SYS_ServiceRelations,SYS_RemburseStatus,SYS_ReimburseType,SYS_Responsibility,SYS_ProjectName,SYS_Expense";
             try
             {
                 return  _categoryapp.GetListCategoryName(ids);
@@ -158,15 +181,15 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// <summary>
         /// 撤回操作
         /// </summary>
-        /// <param name="ReimburseInfoId"></param>
+        /// <param name="req"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> Revocation(int ReimburseInfoId)
+        public async Task<TableData> Revocation([FromQuery]ReimburseRevocationReq req)
         {
             var result = new TableData();
             try
             {
-               return await _reimburseinfoapp.Revocation(ReimburseInfoId);
+               return await _reimburseinfoapp.Revocation(req);
             }
             catch (Exception ex)
             {
@@ -180,7 +203,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// <summary>
         /// 审批
         /// </summary>
-        /// <param name="ReimburseInfoId"></param>
+        /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
         public async Task<TableData> Accraditation(AccraditationReimburseInfoReq req)
@@ -198,7 +221,53 @@ namespace OpenAuth.WebApi.Controllers.Serve
 
             return result;
         }
-        
+
+        /// <summary>
+        /// 发票号码是否唯一
+        /// </summary>
+        /// <param name="InvoiceNumber"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public Response IsSole( List<string> InvoiceNumber) 
+        {
+            var result = new Response();
+            try
+            {
+                if (!_reimburseinfoapp.IsSole(InvoiceNumber)) 
+                {
+                    throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 删除报销单
+        /// </summary>
+        /// <param name="ReimburseInfoId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response> Delete(int ReimburseInfoId)
+        {
+            var result = new Response();
+            try
+            {
+                await _reimburseinfoapp.Delete(ReimburseInfoId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
     }
 
 }

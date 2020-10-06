@@ -16,5 +16,7 @@ namespace OpenAuth.Repository
         }
         public virtual DbSet<MaterialType> Materialtypes { get; set; }
         public virtual DbSet<ServiceOins> ServiceOins { get; set; }
+        //非数据库表格
+        public virtual DbQuery<SysTableColumn> SysTableColumns { get; set; }
     }
 }
