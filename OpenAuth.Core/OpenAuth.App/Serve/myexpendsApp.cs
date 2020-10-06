@@ -33,7 +33,7 @@ namespace OpenAuth.App
             var user = loginContext.User;
             if (loginContext.User.Account == "App")
             {
-                user = GetUserId(Convert.ToInt32(request.AppId));
+                user = await GetUserId(Convert.ToInt32(request.AppId));
             }
 
             var result = new TableData();
@@ -102,7 +102,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task Add(AddOrUpdateMyExpendsReq req)
         {
-            if (!IsSole(req.InvoiceNumber)) 
+            if (!await IsSole(req.InvoiceNumber)) 
             {
                 throw new CommonException("添加费用失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
             }
@@ -112,7 +112,7 @@ namespace OpenAuth.App
             var user = _auth.GetCurrentUser().User;
             if (user.Account == "App")
             {
-                user = GetUserId(Convert.ToInt32(req.AppId));
+                user =await GetUserId(Convert.ToInt32(req.AppId));
             }
             obj.CreateUserId = user.Id;
             obj.CreateUserName = user.Name;
@@ -141,10 +141,10 @@ namespace OpenAuth.App
             }
             if (user.Account == "App")
             {
-                user = GetUserId(Convert.ToInt32(obj.AppId));
+                user =await GetUserId(Convert.ToInt32(obj.AppId));
             }
             var MyExpendsModel = await UnitWork.Find<MyExpends>(m => m.Id == obj.Id).FirstOrDefaultAsync();
-            if (MyExpendsModel != null && MyExpendsModel.InvoiceNumber != obj.InvoiceNumber && !IsSole(obj.InvoiceNumber))
+            if (MyExpendsModel != null && MyExpendsModel.InvoiceNumber != obj.InvoiceNumber && !await IsSole(obj.InvoiceNumber))
             {
                 throw new CommonException("添加费用失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
             }
@@ -211,11 +211,11 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="AppId"></param>
         /// <returns></returns>
-        private User GetUserId(int AppId)
+        private async Task<User> GetUserId(int AppId)
         {
             var userid = UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(AppId)).Select(u => u.UserID).FirstOrDefault();
 
-            return UnitWork.Find<User>(u => u.Id.Equals(userid)).FirstOrDefault();
+            return await UnitWork.Find<User>(u => u.Id.Equals(userid)).FirstOrDefaultAsync();
         }
 
         /// <summary>
@@ -223,10 +223,10 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="InvoiceNumber"></param>
         /// <returns></returns>
-        public bool IsSole(string InvoiceNumber)
+        public async Task<bool> IsSole(string InvoiceNumber)
         {
-            var rta = UnitWork.Find<MyExpends>(r => r.InvoiceNumber.Equals(InvoiceNumber)).ToList();
-            if (rta.Count > 0)
+            var rta =await UnitWork.Find<MyExpends>(r => r.InvoiceNumber.Equals(InvoiceNumber)).CountAsync();
+            if (rta > 0)
             {
                 return false;
             }

@@ -228,12 +228,12 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// <param name="InvoiceNumber"></param>
         /// <returns></returns>
         [HttpPost]
-        public Response IsSole( List<string> InvoiceNumber) 
+        public async Task<Response> IsSole( List<string> InvoiceNumber) 
         {
             var result = new Response();
             try
             {
-                if (!_reimburseinfoapp.IsSole(InvoiceNumber)) 
+                if (!await _reimburseinfoapp.IsSole(InvoiceNumber)) 
                 {
                     throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
                 }
