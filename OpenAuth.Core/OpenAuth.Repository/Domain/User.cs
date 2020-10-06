@@ -90,6 +90,16 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("手机")]
         public string Mobile { get; set; }
+        /// <summary>
+        /// 劳务关系
+        /// </summary>
+        [Description("劳务关系")]
+        public string ServiceRelations { get; set; }
+        /// <summary>
+        /// 所在办公地点
+        /// </summary>
+        [Description("所在办公地点")]
+        public string OfficeSpace { get; set; }
 
     }
 }
