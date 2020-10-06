@@ -213,7 +213,7 @@
                     :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
                     :rules="trafficRules[item.prop] || { required: false }"
                   >
-                    <el-input v-model="scope.row[item.prop]" :type="item.type" :disabled="item.disabled" :min="0"  @input="onInput"></el-input>
+                    <el-input v-model="scope.row[item.prop]" :type="item.type" :disabled="item.disabled" :min="0" @input="onInput" @focus="onFocus(item.prop)"></el-input>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'select'">
@@ -328,7 +328,8 @@
                       :min="0" 
                       @change="onChange"
                       @blur="onBlur"
-                      @input="onInput"></el-input>
+                      @input="onInput"
+                      @focus="onFocus(item.prop)"></el-input>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'select'">
@@ -437,7 +438,7 @@
                     :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
                     :rules="otherRules[item.prop] || { required: false }"
                   >
-                    <el-input v-model="scope.row[item.prop]" :type="item.type" :disabled="item.disabled" :min="0"></el-input>
+                    <el-input v-model="scope.row[item.prop]" :type="item.type" :disabled="item.disabled" :min="0" @focus="onFocus(item.prop)" @input="onInput"></el-input>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'select'">
@@ -1050,7 +1051,7 @@ export default {
         currentRow.maxMoney = money
         currentRow.invoiceNumber = invoiceNo
         currentRow.money = (currentRow.totalMoney / (currentRow.days || 1)).toFixed(2)
-        console.log(data[this.currentIndex], '识别 acc')
+        console.log(data[this.currentIndex], '识别 acc', currentRow.maxMoney, currentRow.money, currentRow.totalMoney)
       }
     },
     otherIdentifyInvoice (invoiceNo, money, prop) {
@@ -1067,6 +1068,7 @@ export default {
       this.setCurrentProp(column, row)
     },
     onTrafficCellClick (row, column) {
+      console.log('cell click traffic')
       this.tableType = 'traffic' // 判断当前点击的是哪个表格
       this.setCurrentProp(column, row)
       this.setCurrentIndex(this.formData.reimburseFares, row)
@@ -1121,10 +1123,14 @@ export default {
         if (this.currentProp === 'totalMoney' || this.currentProp === 'money') { // 只算修改totalMoney或者money字段
           console.log(maxMoney, value, 'enter ine')
           this.tableType === 'acc'
-            ? currentRow.totalMoney = Math.min(value, maxMoney)
-            : currentRow.money = Math.min(value, maxMoney)
+            ? currentRow.totalMoney = Math.min(parseFloat(value), maxMoney)
+            : currentRow.money = Math.min(parseFloat(value), maxMoney)
         }
       }
+    },
+    onFocus (val) {
+      this.currentProp = val
+      console.log('focus', val)
     },
     selectTable () {
       let { reimburseFares, reimburseOtherCharges, reimburseAccommodationSubsidies } = this.formData
