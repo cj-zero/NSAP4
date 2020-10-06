@@ -250,7 +250,7 @@ export const reportMixin = {
         serviceOrderId
       }).then(res => {
         this.reportData = this._normalizeReportData(res.result.data)
-        if (this.resetReport.length) {
+        if (this.reportData.length) {
           this.$refs.reportDialog.open()
         } else {
           this.$message.error('暂无完工报告数据')
