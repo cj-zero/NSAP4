@@ -7,13 +7,12 @@
     </sticky>
     <el-card shadow="never" class="card-body-none fh" style="height:100%;overflow-y:auto;">
       <el-tree
+        ref="tree"
         default-expand-all
         :props="defualtProps"
         :data="modulesTree"
         node-key="id"
         :expand-on-click-node="false"
-        show-checkbox
-        @check-change="handleCheckChange"
         @node-click="handleNodeClick">
       </el-tree>
     </el-card>
@@ -80,7 +79,7 @@
 </template>
 
 <script>
-import { getList, add, update, getDetail } from "@/api/serve/knowledge";
+import { getList, add, update, getDetail, deleteAll } from "@/api/serve/knowledge";
 import waves from "@/directive/waves"; // 水波纹指令
 // import Pagination from '@/components/Pagination'
 import Sticky from "@/components/Sticky";
@@ -172,9 +171,9 @@ export default {
           this.handleUpdate(this.multipleSelection);
           break;
         case "btnDel":
-          if (this.multipleSelectList.length < 1) {
+          if (!this.multipleSelection) {
             this.$message({
-              message: "至少删除一个",
+              message: "请选择删除项",
               type: "error"
             });
             return;
@@ -213,8 +212,16 @@ export default {
       console.log(row, node, component)
       this.multipleSelection = row;
     },
-    handleCheckChange (row, isSelected, isChildrenSelected) {
-      console.log(row, isSelected, isChildrenSelected, 'checkChange')
+    handleCheckChange (row, val) {
+      console.log(row, val, 'checkChange')
+      // if (isSelected) {
+      //   this.multipleSelectList.push(row)
+      // } else {
+      //   let index = this.multipleSelectList.findIndex(item => item === row)
+      //   this.multipleSelectList.splice(index, 1)
+      // }
+      console.log(val.checkedKeys, 'check keys')
+      this.multipleSelectList = val.checkedKeys
     },
     closeDialog () {
       this.resetTemp()
@@ -255,14 +262,15 @@ export default {
       let { id } = this.multipleSelection
       console.log(id, 'id')
       getDetail({ id }).then(res => {
-        let { parentId, type, name, content, cascadeId, parentName } = res.result
+        let { parentId, type, name, content, cascadeId, parentName, id } = res.result
         this.temp = {
           name,
           content,
           type,
           parentId,
           cascadeId,
-          parentName
+          parentName,
+          id
         }
         this.$refs.myDialog.open()
       }).catch(() => this.$message.error('获取详情失败'))
@@ -309,12 +317,33 @@ export default {
     },
     handleDelete() {
       // 多行删除
+      this.$confirm('确定删除?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.listLoading = true
+        deleteAll([this.multipleSelection.id]).then(() => {
+          this.$message({
+            type: 'success',
+            message: '删除成功!'
+          })
+          this.listLoading = false
+          this._getList()
+        }).catch(() => {
+          this.listLoading = false
+          this.$message.error('删除失败')
+        })
+      })
     }
   }
 };
 </script>
-<style>
+<style lang="scss" scoped>
 .dialog-mini .el-select {
   width: 100%;
+}
+::v-deep .el-tree-node__content {
+  border-top: 1px solid rgba(0, 0, 0, .15);
 }
 </style>

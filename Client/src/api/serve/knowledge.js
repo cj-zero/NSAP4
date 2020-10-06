@@ -30,7 +30,7 @@ export function update(data) {
 }
 export function deleteAll (data) {
   return request({
-    url: '/Serve/KnowledgeBases/Load',  // 加载知识库列表
+    url: '/Serve/KnowledgeBases/Delete',  // 加载知识库列表
     method: 'post',
     data
   })
