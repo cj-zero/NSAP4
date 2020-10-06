@@ -360,5 +360,18 @@ namespace OpenAuth.Repository
             }
         }
 
+        /// <summary>
+        /// 异步批量修改
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public Task BatchUpdateAsync<T>(T [] entity, CancellationToken cancellationToken = default) where T : class
+        {
+            BatchUpdate(entity);
+            return Task.CompletedTask;
+        }
+
     }
 }
