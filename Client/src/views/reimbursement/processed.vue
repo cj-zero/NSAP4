@@ -95,8 +95,33 @@
       <!-- 完工报告 -->
       <my-dialog
         ref="reportDialog"
+        width="983px"
+        title="服务行为报告单"
         @closed="resetReport">
         <Report :data="reportData" ref="report"/>
+      </my-dialog>
+       <!-- 只能查看的表单 -->
+      <my-dialog
+        ref="serviceDetail"
+        width="1210px"
+        title="服务单详情"
+      >
+        <el-row :gutter="20" class="position-view">
+          <el-col :span="18" >
+            <zxform
+              :form="temp"
+              formName="查看"
+              labelposition="right"
+              labelwidth="100px"
+              max-width="800px"
+              :isCreate="false"
+              :refValue="dataForm"
+            ></zxform>
+          </el-col>
+          <el-col :span="6" class="lastWord">   
+            <zxchat :serveId='serveId' formName="查看"></zxchat>
+          </el-col>
+        </el-row>
       </my-dialog>
   </div>
 </template>
@@ -109,11 +134,13 @@ import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
 import Report from './common/components/report'
-import { tableMixin, categoryMixin, reportMixin } from './common/js/mixins'
+import zxform from "@/views/serve/callserve/form";
+import zxchat from '@/views/serve/callserve/chat/index'
+import { tableMixin, categoryMixin, reportMixin, chatMixin } from './common/js/mixins'
 
 export default {
   name: 'processed',
-  mixins: [tableMixin, categoryMixin, reportMixin],
+  mixins: [tableMixin, categoryMixin, reportMixin, chatMixin],
   components: {
     Search,
     Sticky,
@@ -122,7 +149,9 @@ export default {
     MyDialog,
     Order,
     TabList,
-    Report
+    Report,
+    zxform,
+    zxchat
   },
   computed: {
     searchConfig () {
@@ -137,7 +166,7 @@ export default {
       initialName: '3', // 初始标签的值
       texts: [ // 标签数组
         { label: '同意', name: '3' },
-        { label: '撤回', name: '4' },
+        { label: '驳回', name: '4' },
       ],
       customerInfo: {}, // 当前报销人的id， 名字
       categoryList: [], // 字典数组

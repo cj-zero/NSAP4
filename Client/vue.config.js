@@ -21,7 +21,8 @@ const commonConfig = {
   },
   configureWebpack: {
     externals: {
-      "BMap": "BMap"
+      "BMap": "BMap",
+      "echarts": "echarts"
     },
     module: {
       unknownContextCritical : false,

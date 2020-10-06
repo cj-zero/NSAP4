@@ -188,7 +188,7 @@ export default {
         { type: 'search' },
         { type: 'button', btnText: '新建', handleClick: this.addAccount },
         { type: 'button', btnText: '编辑', handleClick: this.getDetail, options: { type: 'edit', name: 'mySubmit' } },
-        { type: 'button', btnText: '撤回', handleClick: this.recall, isShow: this.isCustomerSupervisor }
+        { type: 'button', btnText: '撤回', handleClick: this.recall }
       ]
     }, // 搜索配置
     btnList () {
