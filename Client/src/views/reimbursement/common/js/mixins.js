@@ -33,7 +33,7 @@ export let tableMixin = {
         { label: '客户代码', prop: 'terminalCustomerId', width: 100 },
         { label: '客户名称', prop: 'terminalCustomer', width: 170 },
         { label: '客户简称', prop: 'shortCustomerName', width: 100 },
-        { label: '业务员', prop: 'saleSMan', width: 100 },
+        { label: '业务员', prop: 'salesMan', width: 100 },
         { label: '出发日期', prop: 'businessTripDate', width: 150 },
         { label: '结束日期', prop: 'endDate', width: 150 },
         { label: '总天数', prop: 'businessTripDays', width: 100 },
