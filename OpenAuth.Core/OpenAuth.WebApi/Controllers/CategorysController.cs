@@ -17,7 +17,8 @@ namespace OpenAuth.WebApi.Controllers
     public class CategorysController : ControllerBase
     {
         private readonly CategoryApp _app;
-        
+        private readonly CategoryTypeApp _categoryTypeApp;
+
         /// <summary>
         /// 获取分类详情
         /// </summary>
@@ -113,10 +114,15 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
-
-        public CategorysController(CategoryApp app) 
+        public string AllTypes()
+        {
+            var data = _categoryTypeApp.AllTypes();
+            return JsonHelper.Instance.Serialize(data);
+        }
+        public CategorysController(CategoryApp app, CategoryTypeApp categoryTypeApp)
         {
             _app = app;
+            _categoryTypeApp = categoryTypeApp;
         }
     }
 }
