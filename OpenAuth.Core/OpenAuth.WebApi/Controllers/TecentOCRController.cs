@@ -119,7 +119,9 @@ namespace OpenAuth.WebApi.Controllers
                         invoiceresponse.CompanyName = item.CompanyName;
                         invoiceresponse.Type = item.Type;
                         //2.判断发票是否已经使用 已使用不走验证
-                        if (!_reimburseInfoApp.IsSole(item.InvoiceNo))
+                        List<string> InvoiceNo = new List<string>();
+                        InvoiceNo.Add(item.InvoiceNo);
+                        if (!_reimburseInfoApp.IsSole(InvoiceNo))
                         {
                             invoiceresponse.IsUsed = 1;
                             invoiceresponse.NotPassReason = "发票已被使用";
