@@ -1,5 +1,6 @@
 ﻿using Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.Sap;
 using System;
 using System.Collections.Generic;
@@ -37,6 +38,8 @@ namespace OpenAuth.Repository
             #endregion
 
         }
+        //非数据库表格
+        public virtual DbQuery<SysTableColumn> SysTableColumns { get; set; }
         //public virtual DbSet<AAC1> Aac1s { get; set; }
         //public virtual DbSet<AACP> Aacps { get; set; }
         //public virtual DbSet<AACS> Aacs { get; set; }

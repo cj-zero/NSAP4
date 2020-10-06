@@ -30,7 +30,7 @@ namespace OpenAuth.App.Response
         /// <summary>
         /// 数据内容
         /// </summary>
-        public List<T> data;
+        public List<T> Data;
 
         public TableResp()
         {
