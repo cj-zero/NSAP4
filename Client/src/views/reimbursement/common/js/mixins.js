@@ -3,7 +3,7 @@ import { getReportDetail, GetDetails } from '@/api/serve/callservesure'
 import { getCategoryName } from '@/api/reimburse'
 import { accommodationConfig } from './config'
 import { REIMBURSE_STATUS_MAP, PROJECT_NAME_MAP, RESPONSIBILITY_MAP, RELATIONS_MAP } from './map'
-import { EXPENSE_LIST } from './type'
+// import { EXPENSE_LIST } from './type'
 import { toThousands } from '@/utils/format'
 import { getList, getDetails } from '@/api/reimburse'
 export let tableMixin = {
@@ -18,10 +18,13 @@ export let tableMixin = {
       textMap: {
         create: '新建',
         edit: '编辑',
-        view: '查看'
+        view: '查看',
+        approve: '审核',
+        toPay: '支付',
+        paid: '已支付'
       },
       columns: [ // 表格配置
-        { label: '报销单号', prop: 'id', type: 'link', width: 100, handleJump: this.getDetail },
+        { label: '报销单号', prop: 'mainId', type: 'link', width: 100, handleJump: this.getDetail },
         { label: '填报日期', prop: 'createTime', width: 150 },
         { label: '报销部门', prop: 'orgName', width: 100 },
         { label: '报销人', prop: 'userName', width: 100 },
@@ -43,10 +46,10 @@ export let tableMixin = {
         { label: '备注', prop: 'remark', width: 100 }
       ],
       tableData: [],
-      total: 0, // 表格总数量
+      total: 0, // 表格数据的总数量
       dialogLoading: false, 
       formQuery: { // 查询字段参数
-        id: '', // 报销单ID
+        mainId: '', // 报销单ID
         createUserName: '',
         terminalCustomer: '',
         serviceOrderId: '',
@@ -123,8 +126,10 @@ export let tableMixin = {
     },
     getDetail (val) { // 获取服务单详情
       let id
-      if (val.type === 'view') { // 如果是点击底部表格里的查看详情
+      let tableClick = false
+      if (val.type === 'view') { // 如果是点击底部表格里的箭头查看详情
         id = val.id
+        tableClick = true
       } else {
         if (!this.currentRow) { // 编辑审核等操作
           return this.$message({
@@ -156,7 +161,10 @@ export let tableMixin = {
           console.log(err, 'err')
         }
         // 如果是审核流程、则判断当前用户是不是客服主管
-        this.title = val.type === 'approve' ? (this.isCustomerSupervisor ? 'approve' : 'view') : val.type
+        console.log(val.type, 'before title')
+        this.title = tableClick
+          ? 'view'
+          : val.type
         console.log(this.title, 'title')
         this.$refs.myDialog.open()
       }).catch(() => {
@@ -242,7 +250,12 @@ export const reportMixin = {
         serviceOrderId
       }).then(res => {
         this.reportData = this._normalizeReportData(res.result.data)
-        this.$refs.reportDialog.open()
+        if (this.resetReport.length) {
+          this.$refs.reportDialog.open()
+        } else {
+          this.$message.error('暂无完工报告数据')
+        }
+        // this.$refs.reportDialog.open()
         this.reportBtnLoading = false
         this.tableLoading = false
       }).catch((err) => {
@@ -269,12 +282,14 @@ export const reportMixin = {
 const SYS_ReimburseType = 'SYS_ReimburseType' // 报销类别
 const SYS_RemburseStatus = 'SYS_RemburseStatus' // 报销状态
 const SYS_ProjectName = 'SYS_ProjectName' // 项目名称
+const SYS_EXPENSE = 'SYS_Expense' // 费用承担
 const SYS_Responsibility = 'SYS_Responsibility' // 责任承担
 const SYS_ServiceRelations = 'SYS_ServiceRelations' // 劳务关系
 const SYS_TravellingAllowance = 'SYS_TravellingAllowance' // 出差补贴
 const SYS_TransportationAllowance = 'SYS_TransportationAllowance' // 交通类型
 const SYS_Transportation = 'SYS_Transportation' // 交通方式
 const SYS_OtherExpenses = 'SYS_OtherExpenses' // 其它费用
+
 export let categoryMixin = {
   data () {
     return {
@@ -310,6 +325,9 @@ export let categoryMixin = {
     },
     reimburseStatusList () {
       return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_RemburseStatus))
+    },
+    expenseList () {
+      return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_EXPENSE))
     },
     projectNameList () {
       return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_ProjectName))
@@ -367,7 +385,7 @@ export let categoryMixin = {
         // { label: '设备类型', prop: 'materialType', palceholder: '请输入内容', disabled: true, col: 6 },
         // { label: '解决方案', prop: 'solution', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '费用承担', prop: 'bearToPay', palceholder: '请输入内容', disabled: (!this.isCustomerSupervisor && this.title !== 'approve') || this.title === 'view', 
-          col: 6, type: 'select', options: EXPENSE_LIST
+          col: 6, type: 'select', options: this.expenseList
         },
         { label: '责任承担', prop: 'responsibility', palceholder: '请输入内容', 
           col: 6, type: 'select', options: this.responsibilityList, disabled: this.title === 'view' 
@@ -425,13 +443,13 @@ export let categoryMixin = {
     },
     commonSearch () { // 搜索配置
       return [
-        { placeholder: '报销单号', prop: 'id', width: 100 },
+        { placeholder: '报销单号', prop: 'mainId', width: 100 },
         { placeholder: '报销人', prop: 'createUserName', width: 100 },
         { placeholder: '客户代码/名称', prop: 'terminalCustomer', width: 150 },
         { placeholder: '服务ID', prop: 'serviceOrderId', width: 100 },
         { placeholder: '报销部门', prop: 'orgName', width: 100 },
-        { placeholder: '费用承担', prop: 'bearToPay', width: 100, type: 'select', options: this.responsibilityList },
-        { placeholder: '责任承担', prop: 'responsibility', width: 100, type: 'select', options: this.serviceRelationsList },
+        { placeholder: '费用承担', prop: 'bearToPay', width: 100, type: 'select', options: this.expenseList },
+        { placeholder: '责任承担', prop: 'responsibility', width: 100, type: 'select', options: this.responsibilityList },
         { placeholder: '填报起始时间', prop: 'staticDate', type: 'date', width: 150 },
         { placeholder: '填报结束事件', prop: 'endDate', type: 'date', width: 150 }
       ]

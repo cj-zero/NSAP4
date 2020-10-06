@@ -790,7 +790,9 @@ export default {
   },
   computed: {
     ifFormEdit () { 
-      return this.title === 'create' || this.title === 'edit'
+      return this.title === 'view'
+        ? false
+        : this.title === 'create' || this.title === 'edit' || this.isCustomerSupervisor
     },
     travelTotalMoney () {
       let { reimburseTravellingAllowances } = this.formData

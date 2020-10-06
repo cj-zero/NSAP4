@@ -80,8 +80,7 @@
         :center="true"
         width="1000px"
         :onClosed="closeDialog"
-        title="待支付"
-        :btnList="btnList"
+        :title="textMap[title]"
         :loading="dialogLoading"
       >
         <order 
@@ -95,8 +94,33 @@
       <!-- 完工报告 -->
       <my-dialog
         ref="reportDialog"
+        width="983px"
+        title="服务行为报告单"
         @closed="resetReport">
         <Report :data="reportData" ref="report"/>
+      </my-dialog>
+       <!-- 只能查看的表单 -->
+      <my-dialog
+        ref="serviceDetail"
+        width="1210px"
+        title="服务单详情"
+      >
+        <el-row :gutter="20" class="position-view">
+          <el-col :span="18" >
+            <zxform
+              :form="temp"
+              formName="查看"
+              labelposition="right"
+              labelwidth="100px"
+              max-width="800px"
+              :isCreate="false"
+              :refValue="dataForm"
+            ></zxform>
+          </el-col>
+          <el-col :span="6" class="lastWord">   
+            <zxchat :serveId='serveId' formName="查看"></zxchat>
+          </el-col>
+        </el-row>
       </my-dialog>
   </div>
 </template>
@@ -108,11 +132,13 @@ import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
 import Report from './common/components/report'
-import { tableMixin, categoryMixin, reportMixin } from './common/js/mixins'
+import zxform from "@/views/serve/callserve/form";
+import zxchat from '@/views/serve/callserve/chat/index'
+import { tableMixin, categoryMixin, reportMixin, chatMixin } from './common/js/mixins'
 
 export default {
   name: 'paid',
-  mixins: [tableMixin, categoryMixin, reportMixin],
+  mixins: [tableMixin, categoryMixin, reportMixin, chatMixin],
   components: {
     Search,
     Sticky,
@@ -120,7 +146,9 @@ export default {
     Pagination,
     MyDialog,
     Order,
-    Report
+    Report,
+    zxform,
+    zxchat
   },
   computed: {
     searchConfig () {
@@ -132,10 +160,6 @@ export default {
   },
   data () {
     return {
-      btnList: [
-        { btnText: '同意', handleClick: this.agree },
-        { btnText: '驳回到发起人', handleClick: this.reject }
-      ],
       customerInfo: {}, // 当前报销人的id， 名字
       categoryList: [], // 字典数组
     }
