@@ -14,7 +14,8 @@ module.exports = {
   },
   configureWebpack: {
     externals: {
-      "BMap": "BMap"
+      "BMap": "BMap",
+      "echarts": "echarts"
     },
     module: {
       unknownContextCritical : false,
