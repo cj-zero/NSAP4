@@ -374,7 +374,7 @@ namespace OpenAuth.App
         /// <summary>
         /// 按名称模糊查询人员 by zlg 2020.7.31
         /// </summary>
-        public TableData GetListUser(string name, string Orgid)
+        public async Task<TableData> GetListUser(string name, string Orgid)
         {
             var loginUser = _auth.GetCurrentUser();
 
@@ -392,7 +392,7 @@ namespace OpenAuth.App
             var result = new TableData();
             var objs = UnitWork.Find<User>(u=>userIds.Contains(u.Id));
             objs = objs.WhereIf(!string.IsNullOrWhiteSpace(name),u => u.Name.Contains(name));
-            result.Data = objs.Select(u => new { u.Name, u.Id }).ToList();
+            result.Data = await objs.Select(u => new { u.Name, u.Id }).ToListAsync();
             return result;
         }
 
