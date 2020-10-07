@@ -174,7 +174,7 @@ export let tableMixin = {
     _normalizeDetail (data) {
       let { 
         reimburseAttachments,
-        // reimburseTravellingAllowances,
+        reimburseTravellingAllowances,
         reimburseFares,
         reimburseAccommodationSubsidies,
         reimburseOtherCharges,
@@ -188,6 +188,9 @@ export let tableMixin = {
           return item
         })
       data.reimburseAttachments = []
+      if (reimburseTravellingAllowances && reimburseTravellingAllowances.length) {
+        reimburseTravellingAllowances[0].isAdd = true
+      }
       this._buildAttachment(reimburseFares)
       this._buildAttachment(reimburseAccommodationSubsidies)
       this._buildAttachment(reimburseOtherCharges)
@@ -202,6 +205,7 @@ export let tableMixin = {
         item.otherAttachment = []
         item.reimburseAttachments = []
         item.maxMoney = item.totalMoney || item.money
+        item.isAdd = true
       })
     },
     getTargetAttachment (data, attachmentType) { // 用于el-upload 回显
@@ -354,6 +358,9 @@ export let categoryMixin = {
       console.log(this.roleName, 'roleN')
       return this.roleName === '客服主管'
     },
+    isEditItem () {
+      return (this.title === 'view' || (this.title === 'approve' && !this.isCustomerSupervisor) || this.title === 'toPay')
+    },
     formConfig () {
       return [
         { label: '报销单号', prop: 'mainId', palceholder: '请输入内容', disabled: true, col: 6 },
@@ -363,18 +370,20 @@ export let categoryMixin = {
         { label: '服务ID', prop: 'serviceOrderSapId', palceholder: '请选择', col: 6, disabled: this.title !== 'create' },
         { label: '客户代码', prop: 'terminalCustomerId', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '客户名称', prop: 'terminalCustomer', palceholder: '请输入内容', disabled: true, col: 6 },
-        { label: '客户简称', prop: 'shortCustomerName', palceholder: '最长5个字', col: 6, maxlength: 5, isEnd: true, disabled: this.title === 'view' },
+        { label: '客户简称', prop: 'shortCustomerName', palceholder: '最长5个字', col: 6, maxlength: 5, isEnd: true, disabled: this.isEditItem },
         { label: '出发地点', prop: 'becity', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '到达地点', prop: 'destination', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '出发日期', prop: 'businessTripDate', palceholder: '请输入内容', disabled: true, col: 6, type: 'date', width: 157 },
         { label: '结束日期', prop: 'endDate', palceholder: '请输入内容', disabled: true, col: 6, type: 'date', isEnd: true, width: 157 },
         { 
           label: '报销类别', prop: 'reimburseType', palceholder: '请输入内容', 
-          col: 6, type: 'select', options: this.reimburseTypeList, disabled: this.title === 'view' 
+          col: 6, type: 'select', options: this.reimburseTypeList, 
+          disabled: this.isEditItem
         },
         { 
           label: '项目名称', prop: 'projectName', palceholder: '请输入内容',  
-          col: 6, type: 'select', options: this.projectNameList, disabled: this.title === 'view'
+          col: 6, type: 'select', options: this.projectNameList, 
+          disabled: this.isEditItem
         },
         { label: '服务报告', prop: 'report',  disabled: true, col: 6, 
           type: 'button', btnText: '服务报告', handleClick: this.openReport
@@ -384,14 +393,16 @@ export let categoryMixin = {
         { label: '填报时间', prop: 'fillDate', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
         // { label: '设备类型', prop: 'materialType', palceholder: '请输入内容', disabled: true, col: 6 },
         // { label: '解决方案', prop: 'solution', palceholder: '请输入内容', disabled: true, col: 6 },
-        { label: '费用承担', prop: 'bearToPay', palceholder: '请输入内容', disabled: (!this.isCustomerSupervisor && this.title !== 'approve') || this.title === 'view', 
+        { label: '费用承担', prop: 'bearToPay', palceholder: '请输入内容', disabled: this.title === 'view' || !(this.isCustomerSupervisor && this.title === 'approve'), 
           col: 6, type: 'select', options: this.expenseList
         },
         { label: '责任承担', prop: 'responsibility', palceholder: '请输入内容', 
-          col: 6, type: 'select', options: this.responsibilityList, disabled: this.title === 'view' 
+          col: 6, type: 'select', options: this.responsibilityList, 
+          disabled: this.isEditItem 
         },
         { label: '劳务关系', prop: 'serviceRelations', palceholder: '请输入内容',  
-          col: 6, type: 'select', options: this.serviceRelationsList, disabled: this.title === 'view' 
+          col: 6, type: 'select', options: this.serviceRelationsList, 
+          disabled: this.isEditItem 
         },
         { label: '支付时间', prop: 'payTime', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
         { label: '备注', prop: 'remark', palceholder: '请输入内容', disabled: this.title !== 'create', col: 18 },
@@ -469,6 +480,7 @@ export const attachmentMixin = {
         item.otherAttachment = []
         item.reimburseAttachments = []
         item.maxMoney = item.totalMoney || item.money // 存在附件时，需要对金额进行限制
+        item.isAdd = true
       })
     },
     getTargetAttachment (data, attachmentType, isImport) { // 用于el-upload 回显

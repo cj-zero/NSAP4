@@ -327,7 +327,7 @@ export default {
       }
       return invoiceAttachment.length !== 0
     },
-    identifyInvoice (invoiceNo, money) {
+    identifyInvoice ({ invoiceNo, money }) {
       if (this.currentProp === 'invoiceAttachment') {
         this.formData.list[0].invoiceNumber = invoiceNo
         this.currentType === ACC_TYPE

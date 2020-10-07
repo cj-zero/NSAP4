@@ -181,6 +181,7 @@
       >
         <p class="title-wrapper">交通费用</p>
         <el-table 
+          :row-style="rowStyle"
           border
           :data="formData.reimburseFares"
           max-height="300px"
@@ -203,7 +204,7 @@
                 <template v-else-if="item.type === 'input'">
                   <el-form-item
                     :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
-                    :rules="trafficRules[item.prop] || { required: false }"
+                    :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }"
                   >
                     <el-input v-model="scope.row[item.prop]" :disabled="item.disabled"></el-input>
                   </el-form-item>
@@ -211,7 +212,7 @@
                 <template v-else-if="item.type === 'number'">
                   <el-form-item
                     :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
-                    :rules="trafficRules[item.prop] || { required: false }"
+                    :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }"
                   >
                     <el-input v-model="scope.row[item.prop]" :type="item.type" :disabled="item.disabled" :min="0" @input="onInput" @focus="onFocus(item.prop)"></el-input>
                   </el-form-item>
@@ -219,7 +220,7 @@
                 <template v-else-if="item.type === 'select'">
                   <el-form-item
                     :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
-                    :rules="trafficRules[item.prop] || { required: false }"
+                    :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }"
                   >
                     <el-select
                       v-model="scope.row[item.prop]"
@@ -247,13 +248,10 @@
                     @identifyInvoice="trafficIdentifyInvoice"
                     @deleteFileList="deleteFileList"
                     :fileList="
-                      formData.reimburseFares[scope.$index] 
-                        ?
-                          (item.prop === 'invoiceAttachment' 
-                            ? formData.reimburseFares[scope.$index].invoiceFileList 
-                            : formData.reimburseFares[scope.$index].otherFileList
-                          )
-                        : []
+                      (item.prop === 'invoiceAttachment' 
+                        ? formData.reimburseFares[scope.$index].invoiceFileList 
+                        : formData.reimburseFares[scope.$index].otherFileList
+                      ) 
                   ">
                   </upLoadFile>
                 </template>
@@ -289,6 +287,7 @@
       >
         <p class="title-wrapper">住房补贴</p>
         <el-table 
+          :row-style="rowStyle"
           border
           :data="formData.reimburseAccommodationSubsidies"
           max-height="300px"
@@ -311,7 +310,7 @@
                 <template v-else-if="item.type === 'input'">
                   <el-form-item
                     :prop="'reimburseAccommodationSubsidies.' + scope.$index + '.'+ item.prop"
-                    :rules="accRules[item.prop] || { required: false }"
+                    :rules="scope.row.isAdd ? (accRules[item.prop] || { required: false }) : { required: false }"
                   >
                     <el-input v-model="scope.row[item.prop]" :disabled="item.disabled" @change="onChange"></el-input>
                   </el-form-item>
@@ -319,7 +318,7 @@
                 <template v-else-if="item.type === 'number'">
                   <el-form-item
                     :prop="'reimburseAccommodationSubsidies.' + scope.$index + '.'+ item.prop"
-                    :rules="accRules[item.prop] || { required: false }"
+                    :rules="scope.row.isAdd ? (accRules[item.prop] || { required: false }) : { required: false }"
                   >
                     <el-input 
                       v-model="scope.row[item.prop]" 
@@ -335,7 +334,7 @@
                 <template v-else-if="item.type === 'select'">
                   <el-form-item
                     :prop="'reimburseAccommodationSubsidies.' + scope.$index + '.'+ item.prop"
-                    :rules="accRules[item.prop] || { required: false }"
+                    :rules="scope.row.isAdd ? (accRules[item.prop] || { required: false }) : { required: false }"
                   >
                     <el-select
                       v-model="scope.row[item.prop]"
@@ -363,13 +362,10 @@
                     @identifyInvoice="accIdentifyInvoice"
                     @deleteFileList="deleteFileList"
                     :fileList="
-                      formData.reimburseAccommodationSubsidies[scope.$index] 
-                        ?
-                          (item.prop === 'invoiceAttachment' 
-                            ? formData.reimburseAccommodationSubsidies[scope.$index].invoiceFileList 
-                            : formData.reimburseAccommodationSubsidies[scope.$index].otherFileList
-                          )
-                        : []
+                      (item.prop === 'invoiceAttachment' 
+                        ? formData.reimburseAccommodationSubsidies[scope.$index].invoiceFileList 
+                        : formData.reimburseAccommodationSubsidies[scope.$index].otherFileList
+                      )
                     ">
                   </upLoadFile>
                 </template>
@@ -406,7 +402,8 @@
       >
         <p class="title-wrapper">其他费用</p>
         <el-table 
-         border
+          :row-style="rowStyle"
+          border
           :data="formData.reimburseOtherCharges"
           max-height="300px"
           @cell-click="onOtherCellClick"
@@ -428,7 +425,7 @@
                 <template v-else-if="item.type === 'input'">
                   <el-form-item
                     :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
-                    :rules="otherRules[item.prop] || { required: false }"
+                    :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }"
                   >
                     <el-input v-model="scope.row[item.prop]" :disabled="item.disabled"></el-input>
                   </el-form-item>
@@ -436,7 +433,7 @@
                 <template v-else-if="item.type === 'number'">
                   <el-form-item
                     :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
-                    :rules="otherRules[item.prop] || { required: false }"
+                    :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }"
                   >
                     <el-input v-model="scope.row[item.prop]" :type="item.type" :disabled="item.disabled" :min="0" @focus="onFocus(item.prop)" @input="onInput"></el-input>
                   </el-form-item>
@@ -444,7 +441,7 @@
                 <template v-else-if="item.type === 'select'">
                   <el-form-item
                     :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
-                    :rules="otherRules[item.prop] || { required: false }"
+                    :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }"
                   >
                     <el-select
                       v-model="scope.row[item.prop]"
@@ -472,14 +469,11 @@
                     @identifyInvoice="otherIdentifyInvoice"
                     @deleteFileList="deleteFileList"
                     :fileList="
-                      formData.reimburseOtherCharges[scope.$index] 
-                        ?
-                          (item.prop === 'invoiceAttachment' 
-                            ? formData.reimburseOtherCharges[scope.$index].invoiceFileList 
-                            : formData.reimburseOtherCharges[scope.$index].otherFileList
-                          )
-                        : []
-                  "></upLoadFile>                   
+                      (item.prop === 'invoiceAttachment' 
+                        ? formData.reimburseOtherCharges[scope.$index].invoiceFileList 
+                        : formData.reimburseOtherCharges[scope.$index].otherFileList
+                      )
+                  "></upLoadFile>
                 </template>
                 <template v-else-if="item.type === 'operation'">
                   <template v-for="iconItem in item.iconList">
@@ -694,6 +688,7 @@ export default {
         isDraft: false, // 是否是草稿
         delteReimburse: [], // 需要删除的行数据
         fileId: [], // 需要删除的附件ID
+        myExpendsIds: [] // 需要删除的导入数据（我的费用ID）
       },
       labelWidth: '80px',
       disabled: false,
@@ -773,6 +768,9 @@ export default {
           this.ifShowOther = false
         }
         this.formData = Object.assign({}, this.formData, val)
+        if (this.title === 'create' || this.title === 'edit') { // 只有在create或者edit的时候，才可以导入费用模板
+          this._getCostList() // 获取费用模板
+        }
       }
     },
     totalMoney (val) {
@@ -792,12 +790,12 @@ export default {
     ifFormEdit () { 
       return this.title === 'view'
         ? false
-        : this.title === 'create' || this.title === 'edit' || this.isCustomerSupervisor
+        : this.title === 'create' || this.title === 'edit'
     },
     travelTotalMoney () {
       let { reimburseTravellingAllowances } = this.formData
       if (reimburseTravellingAllowances.length) {
-        return this.getTotal(reimburseTravellingAllowances)
+        return this.getTotal(reimburseTravellingAllowances) * (reimburseTravellingAllowances[0].days || 0)
       }
       return 0
     },
@@ -876,13 +874,23 @@ export default {
     }
   },
   methods: {
+    rowStyle ({ row, rowIndex }) {
+      console.log(rowIndex, 'rowIndex')
+      if (!row.isAdd) {
+        return {
+          display: 'none'
+        }
+      }
+    },
     noop () {
       noop() 
     },
     getTotal (data) { // 获取总金额
       let result = 0
       result += data.reduce((prev, next) => {
-        return prev + parseFloat(String(next.totalMoney || next.money))
+        return next.isAdd 
+          ? prev + parseFloat(String(next.totalMoney || next.money || 0)) 
+          : prev + 0
       }, 0)
       // console.log(this.isValidNumber(result), result, 'result')
       return this.isValidNumber(result) ? result : 0
@@ -897,6 +905,7 @@ export default {
         case 'ifShowTravel':
           data.push({
             id: '',
+            isAdd: true,
             days: '',
             money: this.setTravelMoney(),
             remark: '',
@@ -905,6 +914,7 @@ export default {
         case 'ifShowTraffic':
           data.push({
             id: '',
+            isAdd: true,
             trafficType: '',
             transport: '',
             from: '',
@@ -922,6 +932,7 @@ export default {
         case 'ifShowAcc':
           data.push({
             id: '',
+            isAdd: true,
             days: '',
             money: '',
             totalMoney: '',
@@ -937,6 +948,7 @@ export default {
         case 'ifShowOther':
           data.push({
             id: '',
+            isAdd: true,
             expenseCategory: '',
             money: '',
             maxMoney: '',
@@ -965,33 +977,30 @@ export default {
       } else {
         console.log(this.formData[data], 'formData')
         let ifInvoiceAttachment
-        // if (this.title === 'create') { // 创建的时候
-        //   ifInvoiceAttachment = this.formData[data].every(item => item.invoiceAttachment && item.invoiceAttachment.length)
-        // } else {
-          // 编辑的时候
         if (ref !== 'travelForm') {
           for (let i = 0; i < this.formData[data].length; i++) {
             ifInvoiceAttachment = true
-            let { invoiceAttachment, invoiceFileList } = this.formData[data][i]
-            console.log(invoiceAttachment, invoiceFileList, 'edit validate', data)
-            if (invoiceFileList.length) { // 有可能是导入进来的数据(这个是没有新增的数据，跟普通新增的数据同样)，也有可能是已经新增过的数据
-              // 新增过的数据reimburseId存在
-              let ifDeleted = invoiceFileList[0].reimburseId
-                ? this.formData.fileId.includes(invoiceFileList[0].id) // 判断invoiceFileList是否已经删除
-                : !(invoiceFileList[0].isAdd) // 判断当前文件的状态是不是删除(模板数据而言)
-  
-              // 如果用于回显的附件给删除了，则需要判断的invoiceAttachment数组是否有值
-              ifInvoiceAttachment = ifDeleted
-                ? Boolean(invoiceAttachment && invoiceAttachment.length)
-                : true
-              // 只有有一个是false 就直接break
-              if (!ifInvoiceAttachment) break
-            } else {
-              ifInvoiceAttachment = Boolean(invoiceAttachment && invoiceAttachment.length)
+            let { invoiceAttachment, invoiceFileList, isAdd } = this.formData[data][i]
+            if (isAdd) { // 被删除的就不做校验判断
+              console.log(invoiceAttachment, invoiceFileList, 'edit validate', data)
+              if (invoiceFileList.length) { // 有可能是导入进来的数据(这个是没有新增的数据，跟普通新增的数据同样)，也有可能是已经新增过的数据
+                // 新增过的数据reimburseId存在
+                let ifDeleted = invoiceFileList[0].reimburseId
+                  ? this.formData.fileId.includes(invoiceFileList[0].id) // 判断invoiceFileList是否已经删除
+                  : !(invoiceFileList[0].isAdd) // 判断当前文件的状态是不是删除(模板数据而言)
+    
+                // 如果用于回显的附件给删除了，则需要判断的invoiceAttachment数组是否有值
+                ifInvoiceAttachment = ifDeleted
+                  ? Boolean(invoiceAttachment && invoiceAttachment.length)
+                  : true
+                // 只有有一个是false 就直接break
+                if (!ifInvoiceAttachment) break
+              } else {
+                ifInvoiceAttachment = Boolean(invoiceAttachment && invoiceAttachment.length)
+              }
             }
           }
         }
-        // }
         let isValid = await this.$refs[ref].validate()
         console.log('valid', isValid, this.formData[data], ifInvoiceAttachment)
         return ref === 'travelForm' ? isValid : ifInvoiceAttachment && isValid
@@ -1035,38 +1044,39 @@ export default {
       this.currentRow = row
       this.currentIndex = findIndex(data, item => item === row)
     },
-    trafficIdentifyInvoice (invoiceNo, money, prop) { // 获取发票号码
+    trafficIdentifyInvoice ({ invoiceNo, money, prop, index }) { // 获取发票号码
       if (prop === 'invoiceAttachment') {
         let data = this.formData.reimburseFares
-        let currentRow = data[this.currentIndex]
+        let currentRow = data[index]
         currentRow.money = money
         currentRow.maxMoney = money
         currentRow.invoiceNumber = invoiceNo
-        console.log(data[this.currentIndex], '识别 traffic')
+        console.log(data[index], '识别 traffic', index)
       }
     },
-    accIdentifyInvoice (invoiceNo, money, prop) {
+    accIdentifyInvoice ({ invoiceNo, money, prop, index }) {
       if (prop === 'invoiceAttachment') {
         let data = this.formData.reimburseAccommodationSubsidies
-        let currentRow = data[this.currentIndex]
+        let currentRow = data[index]
         currentRow.totalMoney = money
         currentRow.maxMoney = money
         currentRow.invoiceNumber = invoiceNo
         currentRow.money = (currentRow.totalMoney / (currentRow.days || 1)).toFixed(2)
-        console.log(data[this.currentIndex], '识别 acc', currentRow.maxMoney, currentRow.money, currentRow.totalMoney)
+        console.log(data[index], '识别 acc', index)
       }
     },
-    otherIdentifyInvoice (invoiceNo, money, prop) {
+    otherIdentifyInvoice ({ invoiceNo, money, prop, index }) {
       if (prop === 'invoiceAttachment') {
         let data = this.formData.reimburseOtherCharges
-        let currentRow = data[this.currentIndex]
+        let currentRow = data[index]
         currentRow.money = money
         currentRow.maxMoney = money
         currentRow.invoiceNumber = invoiceNo
-        console.log(data[this.currentIndex], '识别 other')
+        console.log(data[index], '识别 other')
       }
     },
     onTravelCellClick (row, column) {
+      this.tableType = 'travel'
       this.setCurrentProp(column, row)
     },
     onTrafficCellClick (row, column) {
@@ -1115,6 +1125,7 @@ export default {
     },
     onInput (value) {
       // let value = e.target.value
+      if (this.tableType === 'travel') return
       let data = this.selectTable() // 通过判断tableType来选择当前的表格数据
       let currentRow = data[this.currentIndex]
       let { invoiceFileList, invoiceAttachment, maxMoney, invoiceNumber } = currentRow
@@ -1150,12 +1161,13 @@ export default {
         case 'traffic':
           data.push({
             id: '',
+            isAdd: true,
             trafficType: operationType === 'add' ? '' : row.trafficType,
             transport: operationType === 'add' ? '' : row.transport,
             from: operationType === 'add' ? '' : row.from,
             to: operationType === 'add' ? '' : row.to,
-            money: operationType === 'add' ? '' : row.money,
-            maxMoney: operationType === 'add' ? '' : row.maxMoney,
+            money: '',
+            maxMoney: '',
             remark: operationType === 'add' ? '' : row.remark,
             invoiceNumber: '',
             invoiceAttachment: [],
@@ -1167,10 +1179,11 @@ export default {
         case 'accommodation':
           data.push({
             id: '',
+            isAdd: true,
             days: operationType === 'add' ? '' : row.days,
-            money: operationType === 'add' ? '' : row.money,
-            totalMoney: operationType === 'add' ? '' : row.totalMoney,
-            maxMoney: operationType === 'add' ? '' : row.maxMoney,
+            money: '',
+            totalMoney: '',
+            maxMoney: '',
             remark: operationType === 'add' ? '' : row.remark,
             invoiceNumber: '',
             invoiceAttachment: [],
@@ -1182,9 +1195,10 @@ export default {
         case 'other':
           data.push({
             id: '',
+            isAdd: true,
             expenseCategory: operationType === 'add' ? '' : row.expenseCategory,
-            money: operationType === 'add' ? '' : row.money,
-            maxMoney: operationType === 'add' ? '' : row.maxMoney,
+            money: '',
+            maxMoney: '',
             remark: operationType === 'add' ? '' : row.remark,
             invoiceNumber: '',
             invoiceAttachment: [],
@@ -1220,10 +1234,31 @@ export default {
           console.log(this.formData.delteReimburse, 'deleterei travel')
         }
       } 
-      data.splice(scope.$index, 1)
-      if (!data.length) {
+      scope.row.isAdd = false
+      // data.splice(scope.$index, 1)
+      let ifAllDeleted = data.every(item => item.isAdd === false)
+      console.log(ifAllDeleted, 'ifAllDeleted', data)
+      if (ifAllDeleted) {
         console.log(IF_SHOW_MAP[type], 'IF_SHOW_MAP[type]')
         this[IF_SHOW_MAP[type]] = true
+        this.deleteTableList(type)
+      }
+      console.log(this.formData, 'after ifAllDeleted')
+    },
+    deleteTableList (type) { // 当删除完之后清空数组，因为直接删除会导致回显
+      switch (type) {
+        case 'travel':
+          this.formData.reimburseTravellingAllowances = []
+          break
+        case 'traffic':
+          this.formData.reimburseFares = []
+          break
+        case 'accommodation':
+          this.formData.reimburseAccommodationSubsidies = []
+          break
+        case 'other':
+          this.formData.reimburseOtherCharges = []
+          break
       }
     },
     deleteFileList (file) {
@@ -1403,6 +1438,7 @@ export default {
     _normalizeSelectList (selectList) {
       console.log(deepClone(selectList), 'deepClone')
       this._buildAttachment(selectList, true)
+      console.log(selectList, 'select normalize After')
     },
     _addToTable (selectList) {
       let trafficList = selectList.filter(item => item.reimburseType === Number(2))
@@ -1530,6 +1566,7 @@ export default {
       this.addSerialNumber(reimburseAccommodationSubsidies)
       this.addSerialNumber(reimburseOtherCharges)
       this.addSerialNumber(reimburseFares)
+      this.formData.myExpendsIds = this.selectedList.map(item => item.id)
       let isValid = await this.checkData()
       console.log('submit', isValid, isDraft)
       if (!isValid) {
@@ -1555,6 +1592,7 @@ export default {
       this.addSerialNumber(reimburseAccommodationSubsidies)
       this.addSerialNumber(reimburseOtherCharges)
       this.addSerialNumber(reimburseFares)
+      this.formData.myExpendsIds = this.selectedList.map(item => item.id)
       let isValid = await this.checkData()
       console.log('submit', isValid, isDraft)
       if (!isValid) {

@@ -247,22 +247,42 @@ export default {
         fileId
       }).then(res => {
         if (res.data && !res.data.length) {
-          this.$emit('identifyInvoice', Date.now(), 100, this.prop)
+          this.$emit('identifyInvoice', {
+            invoiceNo: Date.now(),
+            money: 100,
+            prop: this.prop,
+            index: this.index
+          })
           return this.$message.error('识别失败')
         }
         let { invoiceNo, amountWithTax, isValidate, isUsed, notPassReason } = res.data[0]
         if (!isValidate || (isValidate && isUsed)) {
-          this.$emit('identifyInvoice', '', '', this.prop)
+          this.$emit('identifyInvoice', {
+            invoiceNo:'',
+            money: '',
+            prop: this.prop,
+            index: this.index
+          })
           return this.$message.error(notPassReason ? notPassReason : '识别失败')
         }
         this.$message({
           type: 'success',
           message: '识别成功'
         })
-        this.$emit('identifyInvoice', invoiceNo, amountWithTax, this.prop)
+        this.$emit('identifyInvoice', {
+          invoiceNo,
+          money: amountWithTax,
+          prop: this.prop,
+          index: this.index
+        })
       }).catch((err) => {
         console.error(err)
-        this.$emit('identifyInvoice', Date.now(), 100, this.prop)
+        this.$emit('identifyInvoice', {
+          invoiceNo:'',
+          money: '',
+          prop: this.prop,
+          index: this.index
+        })
         this.$message.error('识别失败')
       })
     },
