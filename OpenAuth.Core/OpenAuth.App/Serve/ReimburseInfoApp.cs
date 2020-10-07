@@ -347,7 +347,7 @@ namespace OpenAuth.App
             {
                 UserId = loginUser.Id,
                 UserName = loginUser.Name,
-                ServiceRelations= loginUser.ServiceRelations,
+                ServiceRelations= loginUser.ServiceRelations ==null?"未录入":loginUser.ServiceRelations,
                 s.TerminalCustomer,
                 s.TerminalCustomerId,
                 s.Id,
