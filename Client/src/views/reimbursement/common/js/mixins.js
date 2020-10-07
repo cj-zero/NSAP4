@@ -423,7 +423,7 @@ export let categoryMixin = {
     },
     trafficConfig () {
       return [ // 交通配置
-        { label: '序号', type: 'order', width: 60 },
+        // { label: '序号', type: 'order', width: 60 },
         { label: '交通类型', prop: 'trafficType', type: 'select', options: this.transportTypeList, width: 120 },
         { label: '交通工具', prop: 'transport', type: 'select', options: this.transportationList, width: 120 },
         { label: '出发地', prop: 'from', type: 'input', width: 100 },
@@ -441,7 +441,7 @@ export let categoryMixin = {
     }, 
     otherConfig () {
       return [ // 其他配置
-        { label: '序号', type: 'order', width: 60 },
+        // { label: '序号', type: 'order', width: 60 },
         { label: '费用类别', prop: 'expenseCategory', type: 'select', width: 150, options: this.otherExpensesList },
         { label: '其他费用', prop: 'money', type: 'number', width: 120, align: 'right' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
