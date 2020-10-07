@@ -82,6 +82,7 @@
         :headers="headers"
         :on-success="successBack"
         :on-remove="handleRemove"
+        :on-preview="handlePreview"
         :before-upload="beforeFileUpload"
         multiple
         :limit="limit"
@@ -99,6 +100,7 @@
 // import Model from "@/components/Formcreated/components/Model";
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import { identifyInvoice } from '@/api/reimburse'
+import { downloadFile } from '@/utils/file'
 export default {
   components: {
     // Model
@@ -194,6 +196,11 @@ export default {
     handlePictureCardPreview(file) {
       this.dialogImageUrl = file.url;
       this.dialogVisible = true;
+    },
+    handlePreview (file) { // 打开文件
+      if (file.url) {
+        downloadFile(file.url)
+      }
     },
     handleDownload() {
       let a = document.createElement('a')
