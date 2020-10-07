@@ -118,13 +118,13 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public TableData GetListCategoryName()
+        public async Task<TableData> GetListCategoryName()
         {
             var result = new TableData();
             string ids = "SYS_OtherExpenses,SYS_Transportation,SYS_TransportationAllowance,SYS_TravellingAllowance,SYS_ServiceRelations,SYS_RemburseStatus,SYS_ReimburseType,SYS_Responsibility,SYS_ProjectName,SYS_Expense";
             try
             {
-                return  _categoryapp.GetListCategoryName(ids);
+                return await _categoryapp.GetListCategoryName(ids);
             }
             catch (Exception ex)
             {

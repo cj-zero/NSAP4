@@ -10,6 +10,7 @@ using log4net.Appender;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Npoi.Mapper;
 using NStandard;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
@@ -494,6 +495,22 @@ namespace OpenAuth.App
                 loginUser = await GetUserId(Convert.ToInt32(req.AppId));
             }
 
+            #region 删除我的费用
+
+            req.ReimburseFares= req.ReimburseFares.Where(r=>r.IsAdd==null || r.IsAdd==true).ToList();
+            req.ReimburseAccommodationSubsidies= req.ReimburseAccommodationSubsidies.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
+            req.ReimburseOtherCharges= req.ReimburseOtherCharges.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
+            if (req.MyexpendsIds != null && req.MyexpendsIds.Count > 0) 
+            {
+                var myexpends = await UnitWork.Find<MyExpends>(m => req.MyexpendsIds.Contains(m.Id)).ToListAsync();
+                foreach (var item in myexpends)
+                {
+                    await UnitWork.DeleteAsync<MyExpends>(item);
+                }
+            }
+
+            #endregion
+
             #region 判断发票是否唯一
             List<string> InvoiceNumbers = new List<string>();
             if (req.ReimburseFares != null && req.ReimburseFares.Count > 0)
@@ -646,6 +663,23 @@ namespace OpenAuth.App
             {
                 loginUser =await  GetUserId(Convert.ToInt32(req.AppId));
             }
+
+            #region 删除我的费用
+
+            req.ReimburseFares = req.ReimburseFares.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
+            req.ReimburseAccommodationSubsidies = req.ReimburseAccommodationSubsidies.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
+            req.ReimburseOtherCharges = req.ReimburseOtherCharges.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
+            if (req.MyexpendsIds != null && req.MyexpendsIds.Count > 0)
+            {
+                var myexpends = await UnitWork.Find<MyExpends>(m => req.MyexpendsIds.Contains(m.Id)).ToListAsync();
+                foreach (var item in myexpends)
+                {
+                    await UnitWork.DeleteAsync<MyExpends>(item);
+                }
+            }
+
+            #endregion
+
             #region 判断发票是否唯一
             List<string> InvoiceNumbers = new List<string>();
             if (req.ReimburseFares != null && req.ReimburseFares.Count > 0)
@@ -694,6 +728,7 @@ namespace OpenAuth.App
             }
             #endregion
 
+            
             await semaphoreSlim.WaitAsync();
             var obj = req.MapTo<ReimburseInfo>();
 

@@ -60,6 +60,11 @@ namespace OpenAuth.App.Serve.Response
         public DateTime? CreateTime { get; set; }
 
         /// <summary>
+        /// 是否添加
+        /// </summary>
+        public bool? IsAdd { get; set; }
+
+        /// <summary>
         /// 附件
         /// </summary>
         public List<ReimburseAttachmentResp> ReimburseAttachments { get; set; }

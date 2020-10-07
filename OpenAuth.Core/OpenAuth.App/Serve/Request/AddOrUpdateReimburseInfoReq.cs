@@ -140,16 +140,19 @@ namespace OpenAuth.App.Request
         public virtual List<ReimburseAttachmentResp> ReimburseAttachments { get; set; }
 
         /// <summary>
-        /// 差旅报销单附件表
+        /// 差旅报销单附件表(删除)
         /// </summary>
         public virtual List<DeleteReimburseReq> DelteReimburse { get; set; }
 
         /// <summary>
-        /// 附件表
+        /// 附件表(删除)
         /// </summary>
         public virtual List<string> FileId { get; set; }
 
-
+        /// <summary>
+        /// 我的费用(删除)
+        /// </summary>
+        public virtual List<int> MyexpendsIds { get; set; }
 
         //todo:添加自己的请求字段
     }
