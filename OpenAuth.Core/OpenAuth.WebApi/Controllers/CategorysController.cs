@@ -114,6 +114,12 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
+
+        /// <summary>
+        /// 得到所有的字典定义
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
         public string AllTypes()
         {
             var data = _categoryTypeApp.AllTypes();
