@@ -96,7 +96,7 @@ namespace OpenAuth.App
                         break;
                 }
             }
-            if (request.PageType == 1 && loginContext.User.Account != "lijianmei" && loginContext.User.Account != "NsapSystem")
+            if (request.PageType == 1 && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && loginContext.User.Account != "NsapSystem")
             {
                 ReimburseInfos = ReimburseInfos.Where(r => r.CreateUserId.Equals(loginContext.User.Id));
             };
