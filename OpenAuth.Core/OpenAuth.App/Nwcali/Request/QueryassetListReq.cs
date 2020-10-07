@@ -5,7 +5,7 @@
         /// <summary>
         /// 资产ID
         /// </summary>
-        public string Id { get; set; }
+        public int? Id { get; set; }
         /// <summary>
         /// 类别
         /// </summary>
