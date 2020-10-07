@@ -144,6 +144,9 @@ export default {
     maxSize: {
       type: [Number, String]
     },
+    onAccept: {
+      type: Function
+    },
     isReimburse: {
       type: Boolean,
       default: false
@@ -218,9 +221,15 @@ export default {
       return testmsg
     },
     beforeFileUpload (file) {
-      if (this.maxSize) {
-        console.log(this.maxSize, 'maxSize')
-        return file.size / 1024 / 1024 < this.maxSize
+      if (this.maxSize) { // 控制文件的大小
+        let isLt100M = (file.size / 1024 / 1024) <= this.maxSize
+        if (!isLt100M) {
+          this.$message.error(`文件超出${this.maxSize}M!`)
+          return false
+        }
+      }
+      if (this.onAccept) { // 自定义上传之前的回调函数
+        return this.onAccept(file, { prop: this.prop })
       }
       return true
     },
@@ -238,7 +247,7 @@ export default {
       let picConig = {
         pictureId: res.result[0].id
       }
-      if (this.uploadType === 'file') {
+      if (this.uploadType === 'file') { // 这里其实仅针对服务模块的服务单的附件设置的，后续将这块抽出
         picConig.pictureType = 3
       }
       this.pictures.push(picConig) 
@@ -246,7 +255,6 @@ export default {
         type:'success',
         message:'上传成功'
       })
-      console.log('beofore', this.index)
       this.$emit('get-ImgList', this.pictures, this.prop, this.index)
     },
     _identifyInvoice (fileId) {

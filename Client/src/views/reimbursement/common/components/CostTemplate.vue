@@ -110,6 +110,7 @@
                     @identifyInvoice="identifyInvoice"
                     @deleteFileList="deleteFileList"
                     :isDisabled="isDisabled"
+                    :onAccept="onAccept"
                     :fileList="
                       formData.list[0]
                         ?

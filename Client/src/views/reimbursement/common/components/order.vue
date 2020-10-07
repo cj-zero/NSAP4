@@ -258,6 +258,7 @@
                     :isReimburse="true"
                     @identifyInvoice="trafficIdentifyInvoice"
                     @deleteFileList="deleteFileList"
+                    :onAccept="onAccept"
                     :fileList="
                       (item.prop === 'invoiceAttachment' 
                         ? formData.reimburseFares[scope.$index].invoiceFileList 
@@ -378,6 +379,7 @@
                     :isReimburse="true"
                     @identifyInvoice="accIdentifyInvoice"
                     @deleteFileList="deleteFileList"
+                    :onAccept="onAccept"
                     :fileList="
                       (item.prop === 'invoiceAttachment' 
                         ? formData.reimburseAccommodationSubsidies[scope.$index].invoiceFileList 
@@ -491,6 +493,7 @@
                     :isReimburse="true"
                     @identifyInvoice="otherIdentifyInvoice"
                     @deleteFileList="deleteFileList"
+                    :onAccept="onAccept"
                     :fileList="
                       (item.prop === 'invoiceAttachment' 
                         ? formData.reimburseOtherCharges[scope.$index].invoiceFileList 

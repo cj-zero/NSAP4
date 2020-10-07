@@ -469,6 +469,19 @@ export let categoryMixin = {
 
 export const attachmentMixin = {
   methods: {
+    onAccept (file, { prop }) { // 限制发票文件上传的格式
+      if (prop === 'invoiceAttachment') {
+        let { type } = file
+        let imgReg = /^image\/\w+/i
+        console.log(imgReg.test(type), type === 'application/pdf')
+        let isFitType = imgReg.test(type) || type === 'application/pdf'    
+        if (!isFitType) {
+          this.$message.error('文件格式只能为图片或者PDF')
+        }
+        return isFitType
+      }
+      return true
+    },
     _buildAttachment (data, isImport = false) { // 为了回显，并且编辑 目标是为了保证跟order.vue的数据保持相同的逻辑
       data.forEach(item => {
         let { reimburseAttachments } = item
