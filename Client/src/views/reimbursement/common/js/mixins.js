@@ -2,7 +2,7 @@ import rightImg from '@/assets/table/right.png'
 import { getReportDetail, GetDetails } from '@/api/serve/callservesure'
 import { getCategoryName } from '@/api/reimburse'
 import { accommodationConfig } from './config'
-import { REIMBURSE_STATUS_MAP, PROJECT_NAME_MAP, RESPONSIBILITY_MAP, RELATIONS_MAP } from './map'
+import { REIMBURSE_STATUS_MAP, PROJECT_NAME_MAP, RESPONSIBILITY_MAP } from './map'
 // import { EXPENSE_LIST } from './type'
 import { toThousands } from '@/utils/format'
 import { getList, getDetails } from '@/api/reimburse'
@@ -119,7 +119,7 @@ export let tableMixin = {
         item.projectName = PROJECT_NAME_MAP[item.projectName]
         item.remburseStatusText = REIMBURSE_STATUS_MAP[item.remburseStatus]
         item.responsibility = RESPONSIBILITY_MAP[item.responsibility]
-        item.serviceRelations = RELATIONS_MAP[item.serviceRelations]
+        // item.serviceRelations = RELATIONS_MAP[item.serviceRelations]
         item.totalMoney = toThousands(item.totalMoney)
         return item
       })
@@ -401,8 +401,7 @@ export let categoryMixin = {
           disabled: this.isEditItem 
         },
         { label: '劳务关系', prop: 'serviceRelations', palceholder: '请输入内容',  
-          col: 6, type: 'select', options: this.serviceRelationsList, 
-          disabled: this.isEditItem 
+          col: 6, disabled: true
         },
         { label: '支付时间', prop: 'payTime', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
         { label: '备注', prop: 'remark', palceholder: '请输入内容', disabled: this.title !== 'create', col: 18 },

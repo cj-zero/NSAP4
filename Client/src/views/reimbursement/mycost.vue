@@ -69,7 +69,7 @@
         :center="true"
         width="850px"
         :onClosed="closeDialog"
-        title="添加费用模板"
+        :title="`${textMap[type]}费用模板`"
         :btnList="btnList"
         :loading="dialogLoading"
       >
@@ -130,6 +130,11 @@ export default {
         page: 1,
         limit: 30
       },
+      textMap: {
+        create: '新建',
+        edit: '编辑',
+        view: '查看'
+      },
       tableData: [],
       total: 0,
       tableLoading: false,
@@ -139,7 +144,7 @@ export default {
         { placeholder: '填报起始时间', prop: 'startTime', type: 'date', width: 150 },
         { placeholder: '填报结束事件', prop: 'endTime', type: 'date', width: 150 },
         { type: 'search' },
-        { type: 'button', handleClick: this.create, btnText: '新建' },
+        { type: 'button', handleClick: this.create, btnText: '新建', options: { type: 'create' } },
         { type: 'button', handleClick: this.getDetail, btnText: '编辑', options: { type: 'edit' } },
         { type: 'button', handleClick: this.delete, btnText: '删除' },
       ],

@@ -74,7 +74,7 @@
         </el-col>
       </el-row>
     </el-form>
-    <el-row type="flex" class="upload-wrapper">
+    <el-row type="flex" class="upload-wrapper" v-if="ifCOrE || formData.attachmentsFileList.length">
       <span class="upload-title">上传附件</span>
       <upLoadFile 
         :disabled="!ifFormEdit"
@@ -86,7 +86,7 @@
         @deleteFileList="deleteFileList"></upLoadFile>
     </el-row>
     <!-- 出差 -->
-    <div class="form-item-wrapper">
+    <div class="form-item-wrapper" v-if="ifCOrE || formData.reimburseTravellingAllowances.length">
       <el-button v-if="ifShowTravel" @click="showForm(formData.reimburseTravellingAllowances, 'ifShowTravel')">添加出差补贴</el-button>
       <el-form 
         v-else
@@ -97,7 +97,13 @@
         class="form-wrapper"
         :disabled="!ifFormEdit"
       >
-        <p class="title-wrapper">出差补贴</p>
+        <div class="title-wrapper">
+          <div class="number-count">总数量:{{ travelCount }}个</div>
+          <div class="title">
+            <span>出差补贴</span>
+            <p class="total-money">总金额: ￥{{ travelTotalMoney | toThousands }}</p>
+          </div>
+        </div>
         <el-table 
           border
           :data="formData.reimburseTravellingAllowances"
@@ -162,13 +168,12 @@
             </el-table-column>
           <!-- </el-table-column> -->
         </el-table>
-        <p class="total-money">总金额: ￥{{ travelTotalMoney }}</p>
       </el-form>
     </div>
 
   <!-- 交通 -->
 
-    <div class="form-item-wrapper">
+    <div class="form-item-wrapper" v-if="ifCOrE || formData.reimburseFares.length">
       <el-button v-if="ifShowTraffic" @click="showForm(formData.reimburseFares, 'ifShowTraffic')">添加交通费用</el-button>
       <el-form 
         v-else
@@ -179,7 +184,13 @@
         class="form-wrapper"
         :disabled="!ifFormEdit"
       >
-        <p class="title-wrapper">交通费用</p>
+        <div class="title-wrapper">
+          <div class="number-count">总数量:{{ trafficCount }}个</div>
+          <div class="title">
+            <span>交通费用</span>
+            <p class="total-money">总金额: ￥{{ trafficTotalMoney | toThousands }}</p>
+          </div>
+        </div>
         <el-table 
           :row-style="rowStyle"
           border
@@ -269,12 +280,12 @@
             </el-table-column>
           <!-- </el-table-column> -->
         </el-table>
-        <p class="total-money">总金额: ￥{{ trafficTotalMoney }}</p>
+        <!-- <p class="total-money">总金额: ￥{{ trafficTotalMoney }}</p> -->
       </el-form>
     </div>
     
   <!-- 住宿 -->
-    <div class="form-item-wrapper">
+    <div class="form-item-wrapper" v-if="ifCOrE || formData.reimburseAccommodationSubsidies.length">
       <el-button v-if="ifShowAcc" @click="showForm(formData.reimburseAccommodationSubsidies, 'ifShowAcc')">添加住宿补贴</el-button>
       <el-form 
       v-else
@@ -285,7 +296,13 @@
       class="form-wrapper"
       :disabled="!ifFormEdit"
       >
-        <p class="title-wrapper">住房补贴</p>
+        <div class="title-wrapper">
+          <div class="number-count">总数量:{{ accCount }}个</div>
+          <div class="title">
+            <span>住房补贴</span>
+            <p class="total-money">总金额: ￥{{ accTotalMoney | toThousands }}</p>
+          </div>
+        </div>
         <el-table 
           :row-style="rowStyle"
           border
@@ -383,13 +400,13 @@
             </el-table-column>
           <!-- </el-table-column> -->
         </el-table>
-        <p class="total-money">总金额: ￥{{ accTotalMoney }}</p>
+        <!-- <p class="total-money">总金额: ￥{{ accTotalMoney }}</p> -->
       </el-form>
     </div>
 
   <!-- 其它 -->
 
-    <div class="form-item-wrapper">
+    <div class="form-item-wrapper" v-if="ifCOrE || formData.reimburseOtherCharges.length">
       <el-button v-if="ifShowOther" @click="showForm(formData.reimburseOtherCharges, 'ifShowOther')">添加其他费用</el-button>
       <el-form 
         v-else
@@ -400,7 +417,13 @@
         class="form-wrapper"
         :disabled="!ifFormEdit"
       >
-        <p class="title-wrapper">其他费用</p>
+        <div class="title-wrapper">
+          <div class="number-count">总数量:{{ otherCount }}个</div>
+          <div class="title">
+            <span>其他费用</span>
+            <p class="total-money">总金额: ￥{{ otherTotalMoney | toThousands }}</p>
+          </div>
+        </div>
         <el-table 
           :row-style="rowStyle"
           border
@@ -489,7 +512,7 @@
             </el-table-column>
           <!-- </el-table-column> -->
         </el-table>
-        <p class="total-money">总金额: ￥{{ otherTotalMoney }}</p>
+        <!-- <p class="total-money">总金额: ￥{{ otherTotalMoney }}</p> -->
       </el-form>
     </div> 
     <!-- 操作记录 -->
@@ -733,6 +756,7 @@ export default {
         this.formData.createUserId = val.createUserId
         this.formData.userName = val.userName
         this.formData.orgName = val.orgName
+        this.formData.serviceRelations = val.serviceRelations
         // this.formData.becity = val.becity
         // this.formData.businessTripDate = val.businessTripDate
         // this.formData.endDate = val.endDate
@@ -774,7 +798,7 @@ export default {
       }
     },
     totalMoney (val) {
-      this.formData.totalMoney = val
+      this.formData.totalMoney = val.toFixed(2)
     },
     formData: {
       deep: true,
@@ -787,10 +811,25 @@ export default {
     }
   },
   computed: {
-    ifFormEdit () { 
+    ifFormEdit () { // 是否可以编辑
       return this.title === 'view'
         ? false
         : this.title === 'create' || this.title === 'edit'
+    },
+    ifCOrE () { // 审核的时候如果没有值就不显示 在新增或者编辑的时候一定会展示
+      return (this.title === 'create' || this.title === 'edit')
+    },
+    travelCount () { // 出差表格的总行数
+      return this.formData.reimburseTravellingAllowances.length
+    },
+    trafficCount () { // 交通表格的总行数
+      return this.formData.reimburseFares.filter(item => item.isAdd).length
+    },
+    accCount () { // 住房表格的总行数
+      return this.formData.reimburseAccommodationSubsidies.filter(item => item.isAdd).length
+    },
+    otherCount () { // 其他表格的总行数
+      return this.formData.reimburseOtherCharges.filter(item => item.isAdd).length
     },
     travelTotalMoney () {
       let { reimburseTravellingAllowances } = this.formData
@@ -1318,7 +1357,9 @@ export default {
       return sums
     },
     clearFile () { // 删除上传的文件
-      this.$refs.uploadFile.clearFiles()
+      if (this.$refs.uploadFile) {
+        this.$refs.uploadFile.clearFiles()
+      }
     },
     customerFocus (prop) {
       if (prop === 'serviceOrderSapId') {
@@ -1684,21 +1725,38 @@ export default {
   .form-item-wrapper {
     margin-bottom: 20px;
     .title-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
       width: 100%;
-      text-align: center;
       height: 30px;
       line-height: 30px;
       color: #606266;
       font-size: 16px;
       background-color: #f5f7fa;
-    }
-    .total-money {
-      height: 30px;
-      line-height: 30px;
-      color: #606266;
-      text-indent: 10px;
-      font-size: 12px;
-      background-color: #f5f7fa;
+      .number-count {
+        position: absolute;
+        bottom: 0;
+        top: 0;
+        left: 10px;
+        height: 100%;
+        margin: auto 0;
+        font-size: 12px;
+      }
+      .title {
+        position: relative;
+        font-size: 16px;
+        .total-money {
+          position: absolute;
+          overflow: visible;
+          top: 0;
+          right: -12px;
+          width: 400px;
+          transform: translate3d(100%, 0, 0);
+          font-size: 12px;
+        }
+      }
     }
   }
   .form-wrapper {

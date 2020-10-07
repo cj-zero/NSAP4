@@ -515,6 +515,7 @@ export default {
       }
       this.mergeFileList(this.formData.list)
       let isValid = await this.$refs.form.validate()
+      console.log(isValid, this.ifInvoicementList, 'VALIDA')
       if (isValid && this.ifInvoicementList) {
         this.operation === 'create'
           ? this.formData.list[0].createTime = timeToFormat('yyyy-MM-dd HH:mm:ss')
