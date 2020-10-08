@@ -7,6 +7,7 @@ import { REIMBURSE_STATUS_MAP, PROJECT_NAME_MAP, RESPONSIBILITY_MAP } from './ma
 import { toThousands } from '@/utils/format'
 import { getList, getDetails } from '@/api/reimburse'
 import { identifyInvoice } from '@/api/reimburse' // 票据识别
+// import imageConversion from 'image-conversion'
 export let tableMixin = {
   provide () {
     return {
@@ -471,17 +472,57 @@ export let categoryMixin = {
 export const attachmentMixin = {
   methods: {
     onAccept (file, { prop }) { // 限制发票文件上传的格式
+      let _this = this
       if (prop === 'invoiceAttachment') {
-        let { type } = file
+        let { type, size } = file
+        console.log(size, 'file size')
         let imgReg = /^image\/\w+/i
         console.log(imgReg.test(type), type === 'application/pdf')
         let isFitType = imgReg.test(type) || type === 'application/pdf'    
-        if (!isFitType) {
-          this.$message.error('文件格式只能为图片或者PDF')
-        }
-        return isFitType
+        return new Promise((resolve, reject) => {
+          if (!isFitType) {
+            this.$message.error('文件格式只能为图片或者PDF')
+            reject(false)
+          }
+          if (type !== 'application/pdf') { // 图片文件先进行压缩，再上传
+            const reader = new FileReader()
+            const image = new Image()
+            reader.onload = (e => { 
+              image.src = e.target.result
+            });
+            reader.readAsDataURL(file)
+            // image.src = URL.createObjectURL(file)
+            image.onload = function() {
+              console.log(_this.compressUpload(image, file.type), 'after compress', image)
+              resolve(_this.compressUpload(image, file.type))
+            }
+          } else {
+            resolve() // pdf文件直接resolve
+          }
+        })
       }
       return true
+    },
+    compressUpload(image, type) {
+      let canvas = document.createElement("canvas") //创建画布元素
+      let ctx = canvas.getContext("2d")
+      let { width, height } = image
+      canvas.width = width
+      canvas.height = height
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.drawImage(image, 0, 0, width, height)
+      let compressData = canvas.toDataURL(type, 0.8) //等比压缩
+      let blobImg = this.dataURItoBlob(compressData, type)//base64转Blob
+      return blobImg
+    },
+    dataURItoBlob(dataURI, type) {
+      var binary = atob(dataURI.split(',')[1])
+      var array = []
+      for(var i = 0; i < binary.length; i++) {
+        array.push(binary.charCodeAt(i))
+      }
+      console.log(type, 'type URI')
+      return new Blob([new Uint8Array(array)], { type })
     },
     _setCurrentRow (currentRow, data) { // 识别发票凭据后，对表格行进行赋值
       let { invoiceNo, money, isAcc } = data
@@ -501,8 +542,8 @@ export const attachmentMixin = {
       }).then(res => {
         if (res.data && !res.data.length) {
           this._setCurrentRow(currentRow, {
-            invoiceNo: Date.now(),
-            money: 100,
+            invoiceNo: '',
+            money: '',
             isAcc
           })
           return this.$message.error('识别失败')
