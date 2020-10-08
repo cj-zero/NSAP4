@@ -1,15 +1,9 @@
 const path = require('path')
-const SpeedMeasurePlugin = require('speed-measure-webpack-plugin')
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
-const smp = new SpeedMeasurePlugin({
-  outputFormat:"human",
- })
-
 function resolve (dir) {
     return path.join(__dirname, '/', dir)
 }
 
-const commonConfig = {
+module.exports = {
   lintOnSave: process.env.NODE_ENV !== 'production',
   devServer: {
     port: 1803,     // 端口
@@ -20,8 +14,7 @@ const commonConfig = {
   },
   configureWebpack: {
     externals: {
-      "BMap": "BMap",
-      "echarts": "echarts"
+      "BMap": "BMap"
     },
     module: {
       unknownContextCritical : false,
@@ -48,23 +41,3 @@ const commonConfig = {
       .end()
   }
 }
-const developConfig = {
-  configureWebpack: smp.wrap({
-    externals: {
-      "BMap": "BMap",
-      "echarts": "echarts"
-    },
-    module: {
-      unknownContextCritical : false,
-      //解决the request of a dependency is an expression
-      exprContextCritical: false,
-    },
-    plugins: [
-      new BundleAnalyzerPlugin()
-    ]
-  })
-}
-// module.exports = process.env.NODE_ENV === 'development'
-//   ? Object.assign(commonConfig, developConfig)
-//   : commonConfig
-module.exports = commonConfig
