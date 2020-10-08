@@ -47,7 +47,7 @@ export default {
       let charts = document.getElementsByClassName('chart-item')
       console.log(charts, 'charts')
       for (let i = 0; i < charts.length; i++) {
-        let myChart = window.echarts.init(charts[i])
+        let myChart = global.echarts.init(charts[i])
         let data = this.data[i]
         let xAxisData = data.statList.map(item => item.statName)
         let yAxisData = data.statList.map(item => item.serviceCnt)

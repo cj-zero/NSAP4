@@ -188,7 +188,7 @@ export default {
         { type: 'search' },
         { type: 'button', btnText: '新建', handleClick: this.addAccount },
         { type: 'button', btnText: '编辑', handleClick: this.getDetail, options: { type: 'edit', name: 'mySubmit' } },
-        { type: 'button', btnText: '撤回', handleClick: this.recall, isShow: this.isCustomerSupervisor }
+        { type: 'button', btnText: '撤回', handleClick: this.recall }
       ]
     }, // 搜索配置
     btnList () {
@@ -249,7 +249,8 @@ export default {
             becity, 
             businessTripDate, 
             destination, 
-            endDate 
+            endDate,
+            serviceRelations 
           } = data[0]
           this.customerInfo = {
             createUserId: userId,
@@ -258,7 +259,8 @@ export default {
             becity,
             businessTripDate,
             endDate,
-            destination
+            destination,
+            serviceRelations 
           }
           this.title = 'create'
           this.$refs.myDialog.open()
@@ -276,6 +278,12 @@ export default {
           message: '请先选择报销单'
         })
       }
+      if (this.currentRow.remburseStatus !== 4) {
+        return this.$message({
+          type: 'warning',
+          message: '当前状态不可撤回'
+        })
+      }
       withdraw({
         reimburseInfoId: this.currentRow.id
       }).then(() => {
@@ -284,8 +292,8 @@ export default {
          message: '撤回成功'
        })
         this._getList()
-      }).catch(() => {
-        this.$message.error('撤回失败')
+      }).catch(err => {
+        this.$message.error(err.message || '撤回失败')
       })
     },
     _addOrder (isDraft = false) {

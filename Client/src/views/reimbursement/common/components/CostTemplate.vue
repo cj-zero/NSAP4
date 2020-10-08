@@ -73,6 +73,7 @@
                       :disabled="item.disabled" 
                       @change="onChange"
                       @input.native="onInput"
+                      @focus="onFocus(item.prop)"
                     ></el-input>
                   </el-form-item>
                 </template>
@@ -109,6 +110,7 @@
                     @identifyInvoice="identifyInvoice"
                     @deleteFileList="deleteFileList"
                     :isDisabled="isDisabled"
+                    :onAccept="onAccept"
                     :fileList="
                       formData.list[0]
                         ?
@@ -326,7 +328,7 @@ export default {
       }
       return invoiceAttachment.length !== 0
     },
-    identifyInvoice (invoiceNo, money) {
+    identifyInvoice ({ invoiceNo, money }) {
       if (this.currentProp === 'invoiceAttachment') {
         this.formData.list[0].invoiceNumber = invoiceNo
         this.currentType === ACC_TYPE
@@ -420,16 +422,15 @@ export default {
         (invoiceFileList.length && !this.fileid.includes(invoiceFileList[0].id)) || // 编辑的时候，有回显的附件，并且没有删除
         (invoiceAttachment.length && invoiceNumber)
       ) {
-        console.log('enter')
-        if (this.currentProp !== 'days') {
-          console.log('enter inner')
-          if (this.currentType === ACC_TYPE) {
-            this.formData.list[0].totalMoney = Math.min(parseFloat(val), this.maxMoney)
-          } else{
-            this.formData.list[0].money = Math.min(parseFloat(val), this.maxMoney)
-          }
+        if (this.currentProp === 'money' || this.currentProp === 'totalMoney') {
+          this.currentType === ACC_TYPE
+            ? this.formData.list[0].totalMoney = Math.min(parseFloat(val), this.maxMoney)
+            : this.formData.list[0].money = Math.min(parseFloat(val), this.maxMoney)
         }
       }
+    },
+    onFocus (val) {
+      this.currentProp = val
     },
     onSelectClick (val) {
       this.currentProp = val.prop
@@ -515,6 +516,7 @@ export default {
       }
       this.mergeFileList(this.formData.list)
       let isValid = await this.$refs.form.validate()
+      console.log(isValid, this.ifInvoicementList, 'VALIDA')
       if (isValid && this.ifInvoicementList) {
         this.operation === 'create'
           ? this.formData.list[0].createTime = timeToFormat('yyyy-MM-dd HH:mm:ss')

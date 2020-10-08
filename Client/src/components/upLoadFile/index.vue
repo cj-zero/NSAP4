@@ -82,6 +82,7 @@
         :headers="headers"
         :on-success="successBack"
         :on-remove="handleRemove"
+        :on-preview="handlePreview"
         :before-upload="beforeFileUpload"
         multiple
         :limit="limit"
@@ -99,6 +100,7 @@
 // import Model from "@/components/Formcreated/components/Model";
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import { identifyInvoice } from '@/api/reimburse'
+import { downloadFile } from '@/utils/file'
 export default {
   components: {
     // Model
@@ -141,6 +143,9 @@ export default {
     },
     maxSize: {
       type: [Number, String]
+    },
+    onAccept: {
+      type: Function
     },
     isReimburse: {
       type: Boolean,
@@ -195,6 +200,11 @@ export default {
       this.dialogImageUrl = file.url;
       this.dialogVisible = true;
     },
+    handlePreview (file) { // 打开文件
+      if (file.url) {
+        downloadFile(file.url)
+      }
+    },
     handleDownload() {
       let a = document.createElement('a')
       a.download = this.dialogImageUrl
@@ -211,9 +221,15 @@ export default {
       return testmsg
     },
     beforeFileUpload (file) {
-      if (this.maxSize) {
-        console.log(this.maxSize, 'maxSize')
-        return file.size / 1024 / 1024 < this.maxSize
+      if (this.maxSize) { // 控制文件的大小
+        let isLt100M = (file.size / 1024 / 1024) <= this.maxSize
+        if (!isLt100M) {
+          this.$message.error(`文件超出${this.maxSize}M!`)
+          return false
+        }
+      }
+      if (this.onAccept) { // 自定义上传之前的回调函数
+        return this.onAccept(file, { prop: this.prop })
       }
       return true
     },
@@ -231,7 +247,7 @@ export default {
       let picConig = {
         pictureId: res.result[0].id
       }
-      if (this.uploadType === 'file') {
+      if (this.uploadType === 'file') { // 这里其实仅针对服务模块的服务单的附件设置的，后续将这块抽出
         picConig.pictureType = 3
       }
       this.pictures.push(picConig) 
@@ -239,7 +255,6 @@ export default {
         type:'success',
         message:'上传成功'
       })
-      console.log('beofore', this.index)
       this.$emit('get-ImgList', this.pictures, this.prop, this.index)
     },
     _identifyInvoice (fileId) {
@@ -247,22 +262,42 @@ export default {
         fileId
       }).then(res => {
         if (res.data && !res.data.length) {
-          this.$emit('identifyInvoice', Date.now(), 100, this.prop)
+          this.$emit('identifyInvoice', {
+            invoiceNo: Date.now(),
+            money: 100,
+            prop: this.prop,
+            index: this.index
+          })
           return this.$message.error('识别失败')
         }
         let { invoiceNo, amountWithTax, isValidate, isUsed, notPassReason } = res.data[0]
         if (!isValidate || (isValidate && isUsed)) {
-          this.$emit('identifyInvoice', '', '', this.prop)
+          this.$emit('identifyInvoice', {
+            invoiceNo:'',
+            money: '',
+            prop: this.prop,
+            index: this.index
+          })
           return this.$message.error(notPassReason ? notPassReason : '识别失败')
         }
         this.$message({
           type: 'success',
           message: '识别成功'
         })
-        this.$emit('identifyInvoice', invoiceNo, amountWithTax, this.prop)
+        this.$emit('identifyInvoice', {
+          invoiceNo,
+          money: amountWithTax,
+          prop: this.prop,
+          index: this.index
+        })
       }).catch((err) => {
         console.error(err)
-        this.$emit('identifyInvoice', Date.now(), 100, this.prop)
+        this.$emit('identifyInvoice', {
+          invoiceNo:'',
+          money: '',
+          prop: this.prop,
+          index: this.index
+        })
         this.$message.error('识别失败')
       })
     },
