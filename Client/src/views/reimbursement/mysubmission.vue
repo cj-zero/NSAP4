@@ -360,7 +360,7 @@ export default {
           ? this.draftLoading = false
           : this.editLoading = false
         this.dialogLoading = false
-        this.$message.error('编辑失败')
+        this.$message.error(err.message)
       })
     },
     reset () {

@@ -104,10 +104,8 @@
                     :limit="item.prop === 'invoiceAttachment' ? 1 : 100" 
                     uploadType="file" 
                     ref="uploadFile" 
-                    :prop="item.prop" 
-                    :index="scope.$index"
+                    :options="{ prop: item.prop, index: scope.$index }"
                     :isReimburse="true"
-                    @identifyInvoice="identifyInvoice"
                     @deleteFileList="deleteFileList"
                     :isDisabled="isDisabled"
                     :onAccept="onAccept"
@@ -238,11 +236,10 @@ export default {
       immediate: true,
       handler (val) {
         if (val.list && val.list.length) {
-          let { reimburseType, id, createTime, totalMoney, money } = val.list[0]
+          let { reimburseType, id, createTime } = val.list[0]
           if (reimburseType) {
             this.id = id
             this.createTime = createTime
-            this.maxMoney = totalMoney || money
             this.changeTable(reimburseType - 1)
             this.formData = Object.assign({}, this.formData, val)
           }
@@ -281,6 +278,7 @@ export default {
           from: '',
           to: '',
           money: '',
+          maxMoney: '',
           invoiceNumber: '',
           remark: '',
           // createTime: '',
@@ -337,7 +335,7 @@ export default {
         if (this.currentType === ACC_TYPE) {
           this.formData.list[0].money = (money / (this.formData.list[0].days || 1)).toFixed(2)
         }
-        this.maxMoney = money
+        this.formData.list[0].maxMoney = money
       }
     },
     toggleSelect () {
@@ -395,6 +393,9 @@ export default {
       if (this.currentProp === 'transport') { // 如果改变的是交通方式，则对feeType进行相应的赋值
         this.formData.list[0].feeType = this.transportationList[value - 1].label
         console.log(this.formData.list[0].feeType, 'this.formData.list[0].feeType')
+      } else if (this.currentProp === 'expenseCategory') {
+        this.formData.list[0].feeType = this.otherExpensesList[value - 1].label
+        console.log(this.formData.list[0].feeType, 'this.formData.list[0].feeType')
       } else { // 住房的 总金额和住宿关联
          if (!this.isValidNumber(value)) {
           return
@@ -416,7 +417,7 @@ export default {
     },
     onInput (e) {
       let val = e.target.value
-      let { invoiceFileList, invoiceAttachment, invoiceNumber } = this.formData.list[0]
+      let { invoiceFileList, invoiceAttachment, invoiceNumber, maxMoney } = this.formData.list[0]
       console.log(invoiceFileList, invoiceAttachment, invoiceNumber, this.currentProp, 'input')
       if (
         (invoiceFileList.length && !this.fileid.includes(invoiceFileList[0].id)) || // 编辑的时候，有回显的附件，并且没有删除
@@ -424,8 +425,8 @@ export default {
       ) {
         if (this.currentProp === 'money' || this.currentProp === 'totalMoney') {
           this.currentType === ACC_TYPE
-            ? this.formData.list[0].totalMoney = Math.min(parseFloat(val), this.maxMoney)
-            : this.formData.list[0].money = Math.min(parseFloat(val), this.maxMoney)
+            ? this.formData.list[0].totalMoney = Math.min(parseFloat(val), maxMoney)
+            : this.formData.list[0].money = Math.min(parseFloat(val), maxMoney)
         }
       }
     },
@@ -438,14 +439,19 @@ export default {
     setCurrentProp ({ property }) {
       this.currentProp = property
     },
-    getImgList (val, prop) {
+    getImgList (val, { prop, fileId }) {
+      console.log(prop, 'prop')
       let data = this.formData.list[0]
       let resultArr = []
       resultArr = this.createFileList(val, {
         reimburseType: 5,
         attachmentType: prop === 'invoiceAttachment' ? 2 : 1
       })
-      this.$set(data, prop, resultArr)
+      // this.$set(data, prop, resultArr)
+      data[prop] = resultArr
+      if (fileId && prop === 'invoiceAttachment') { // 图片上传成功会返回当前的pictureId, 并且只识别发票附件 
+        this._identifyInvoice(fileId, data, this.currentType === ACC_TYPE)
+      }
       console.log(this.formData.list, 'formData.list')
     },
     _deleteFileId () {
@@ -467,7 +473,7 @@ export default {
     },
     resetInfo (isClose = true, type = '') {
       let prevData = this.formData.list[0]
-      let { money, totalMoney, remark } = prevData
+      let { money, totalMoney, remark, maxMoney } = prevData
       console.log(typeof type, 'type', remark, money, totalMoney)
       this.$refs.form.clearValidate()
       this.$refs.form.resetFields()
@@ -485,6 +491,7 @@ export default {
           money: !type 
             ? '' 
             : (this.currentType === ACC_TYPE ? totalMoney : money),
+          maxMoney: type ? maxMoney : '',
           invoiceNumber: '',
           remark: type ? remark : '',
           days: '',

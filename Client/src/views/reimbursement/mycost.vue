@@ -271,6 +271,7 @@ export default {
         item.invoiceAttachment = [],
         item.otherAttachment = []
         item.reimburseAttachments = []
+        item.maxMoney = item.totalMoney || item.money
       })
     },
     getTargetAttachment (data, attachmentType) { // 用于el-upload 回显

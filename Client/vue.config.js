@@ -1,7 +1,6 @@
 const path = require('path')
 const SpeedMeasurePlugin = require('speed-measure-webpack-plugin')
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
-const merge = require("webpack-merge")
 const smp = new SpeedMeasurePlugin({
   outputFormat:"human",
  })
@@ -52,7 +51,8 @@ const commonConfig = {
 const developConfig = {
   configureWebpack: smp.wrap({
     externals: {
-      "BMap": "BMap"
+      "BMap": "BMap",
+      "echarts": "echarts"
     },
     module: {
       unknownContextCritical : false,
@@ -64,6 +64,7 @@ const developConfig = {
     ]
   })
 }
-module.exports = process.env.NODE_ENV === 'development'
-  ? Object.assign(commonConfig, developConfig)
-  : commonConfig
+// module.exports = process.env.NODE_ENV === 'development'
+//   ? Object.assign(commonConfig, developConfig)
+//   : commonConfig
+module.exports = commonConfig

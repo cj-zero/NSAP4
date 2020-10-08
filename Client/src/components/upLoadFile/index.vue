@@ -99,7 +99,6 @@
 <script>
 // import Model from "@/components/Formcreated/components/Model";
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
-import { identifyInvoice } from '@/api/reimburse'
 import { downloadFile } from '@/utils/file'
 export default {
   components: {
@@ -126,6 +125,12 @@ export default {
     disabled: {
       type: Boolean,
       default: false
+    },
+    options: { // 需要向外传递的额外数据
+      type: Object,
+      default () {
+        return {}
+      }
     },
     prop: { // 在组件用于数组遍历的时候
       type: String,
@@ -194,7 +199,7 @@ export default {
       this.newPictureList.splice(findIndex, 1)
       this.pictures.splice(findIndex, 1)
       console.log(file, 'deleteFile')
-      this.$emit('get-ImgList', this.pictures, this.prop, this.index)
+      this.$emit('get-ImgList', this.pictures, this.options)
     },
     handlePictureCardPreview(file) {
       this.dialogImageUrl = file.url;
@@ -229,7 +234,7 @@ export default {
         }
       }
       if (this.onAccept) { // 自定义上传之前的回调函数
-        return this.onAccept(file, { prop: this.prop })
+        return this.onAccept(file, { prop: this.options.prop })
       }
       return true
     },
@@ -241,9 +246,6 @@ export default {
         pictureId:res.result[0].id,
         uid: file.uid
       })
-      if (this.isReimburse && this.prop === 'invoiceAttachment') { // 如果是报销功能的话，才进行识别，其他的文件上传不走这一步
-        this._identifyInvoice(res.result[0].id)
-      }
       let picConig = {
         pictureId: res.result[0].id
       }
@@ -255,50 +257,9 @@ export default {
         type:'success',
         message:'上传成功'
       })
-      this.$emit('get-ImgList', this.pictures, this.prop, this.index)
-    },
-    _identifyInvoice (fileId) {
-      identifyInvoice({
-        fileId
-      }).then(res => {
-        if (res.data && !res.data.length) {
-          this.$emit('identifyInvoice', {
-            invoiceNo: Date.now(),
-            money: 100,
-            prop: this.prop,
-            index: this.index
-          })
-          return this.$message.error('识别失败')
-        }
-        let { invoiceNo, amountWithTax, isValidate, isUsed, notPassReason } = res.data[0]
-        if (!isValidate || (isValidate && isUsed)) {
-          this.$emit('identifyInvoice', {
-            invoiceNo:'',
-            money: '',
-            prop: this.prop,
-            index: this.index
-          })
-          return this.$message.error(notPassReason ? notPassReason : '识别失败')
-        }
-        this.$message({
-          type: 'success',
-          message: '识别成功'
-        })
-        this.$emit('identifyInvoice', {
-          invoiceNo,
-          money: amountWithTax,
-          prop: this.prop,
-          index: this.index
-        })
-      }).catch((err) => {
-        console.error(err)
-        this.$emit('identifyInvoice', {
-          invoiceNo:'',
-          money: '',
-          prop: this.prop,
-          index: this.index
-        })
-        this.$message.error('识别失败')
+      this.$emit('get-ImgList', this.pictures, {
+        fileId: res.result[0].id, // 当前上传成功的ID
+        ...this.options
       })
     },
     clearFiles () {

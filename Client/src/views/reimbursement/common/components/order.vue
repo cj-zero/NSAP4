@@ -252,16 +252,14 @@
                     @get-ImgList="getTrafficList" 
                     :limit="item.prop === 'invoiceAttachment' ? 1 : 100" 
                     uploadType="file" 
-                    ref="trafficUploadFile" 
-                    :prop="item.prop" 
-                    :index="scope.$index"
+                    ref="trafficUploadFile"
+                    :options="{ prop: item.prop, index: scope.$index }" 
                     :isReimburse="true"
-                    @identifyInvoice="trafficIdentifyInvoice"
                     @deleteFileList="deleteFileList"
                     :onAccept="onAccept"
                     :fileList="
                       (item.prop === 'invoiceAttachment' 
-                        ? formData.reimburseFares[scope.$index].invoiceFileList 
+                        ? formData.reimburseFares[scope.$index].invoiceFileList
                         : formData.reimburseFares[scope.$index].otherFileList
                       ) 
                   ">
@@ -374,10 +372,8 @@
                     :limit="item.prop === 'invoiceAttachment' ? 1 : 100" 
                     uploadType="file" 
                     ref="accUploadFile" 
-                    :prop="item.prop" 
-                    :index="scope.$index"
+                    :options="{ prop: item.prop, index: scope.$index }"
                     :isReimburse="true"
-                    @identifyInvoice="accIdentifyInvoice"
                     @deleteFileList="deleteFileList"
                     :onAccept="onAccept"
                     :fileList="
@@ -488,10 +484,8 @@
                     :limit="item.prop === 'invoiceAttachment' ? 1 : 100" 
                     uploadType="file" 
                     ref="otherUploadFile" 
-                    :prop="item.prop"
-                    :index="scope.$index"
+                    :options="{ prop: item.prop, index: scope.$index }"
                     :isReimburse="true"
-                    @identifyInvoice="otherIdentifyInvoice"
                     @deleteFileList="deleteFileList"
                     :onAccept="onAccept"
                     :fileList="
@@ -605,6 +599,7 @@
 
 <script>
 import { addOrder, getOrder, updateOrder, approve, isSole } from '@/api/reimburse'
+// import { identifyInvoice } from '@/api/reimburse' // 票据识别
 import { getList } from '@/api/reimburse/mycost'
 import upLoadFile from "@/components/upLoadFile";
 import Pagination from '@/components/Pagination'
@@ -905,7 +900,7 @@ export default {
       return {
         serviceOrderSapId: [ { required: true } ],
         reimburseType: [ { required: true, trigger: ['change', 'blur'] } ],
-        projectName: [ { required: true, trigger: ['change', 'blur'] } ],
+        // projectName: [ { required: true, trigger: ['change', 'blur'] } ],
         bearToPay: [ { required: this.isCustomerSupervisor, trigger: ['change', 'blur']} ],
         responsibility: [ { required: true, trigger: ['change', 'blur'] } ],
         serviceRelations: [ { required: true, trigger: ['change', 'blur'] } ]
@@ -1055,67 +1050,48 @@ export default {
       })
       this.formData.reimburseAttachments = resultArr
     },
-    getTrafficList (val, prop, index) {
+    getTrafficList (val, { prop, index, fileId }) {
       let data = this.formData.reimburseFares
       let resultArr = []
       resultArr = this.createFileList(val, {
         reimburseType: 2,
         attachmentType: prop === 'invoiceAttachment' ? 2 : 1
       })
-      this.$set(data[index], prop, resultArr)
+      let currentRow = data[index]
+      currentRow[prop] = resultArr
+      if (fileId && prop === 'invoiceAttachment') { // 图片上传成功会返回当前的pictureId, 并且只识别发票附件 
+        this._identifyInvoice(fileId, currentRow)
+      }
     },
-    getAccList (val, prop, index) {
+    getAccList (val, { prop, index, fileId }) {
       let data = this.formData.reimburseAccommodationSubsidies
       let resultArr = []
       resultArr = this.createFileList(val, {
         reimburseType: 3,
         attachmentType:  prop === 'invoiceAttachment' ? 2 : 1
       })
-      this.$set(data[index],  prop, resultArr)
+      let currentRow = data[index]
+      currentRow[prop] = resultArr
+      if (fileId && prop === 'invoiceAttachment') { // 图片上传成功会返回当前的pictureId, 并且只识别发票附件 
+        this._identifyInvoice(fileId, currentRow, true)
+      }
     },
-    getOtherList (val, prop, index) {
+    getOtherList (val, { prop, index, fileId }) {
       let data = this.formData.reimburseOtherCharges
       let resultArr = []
       resultArr = this.createFileList(val, {
         reimburseType: 4,
         attachmentType: prop === 'invoiceAttachment' ? 2 : 1
       })
-      this.$set(data[index], prop, resultArr)
+      let currentRow = data[index]
+      currentRow[prop] = resultArr
+      if (fileId && prop === 'invoiceAttachment') { // 图片上传成功会返回当前的pictureId, 并且只识别发票附件 
+        this._identifyInvoice(fileId, currentRow)
+      }
     },
     setCurrentIndex (data, row) {
       this.currentRow = row
       this.currentIndex = findIndex(data, item => item === row)
-    },
-    trafficIdentifyInvoice ({ invoiceNo, money, prop, index }) { // 获取发票号码
-      if (prop === 'invoiceAttachment') {
-        let data = this.formData.reimburseFares
-        let currentRow = data[index]
-        currentRow.money = money
-        currentRow.maxMoney = money
-        currentRow.invoiceNumber = invoiceNo
-        console.log(data[index], '识别 traffic', index)
-      }
-    },
-    accIdentifyInvoice ({ invoiceNo, money, prop, index }) {
-      if (prop === 'invoiceAttachment') {
-        let data = this.formData.reimburseAccommodationSubsidies
-        let currentRow = data[index]
-        currentRow.totalMoney = money
-        currentRow.maxMoney = money
-        currentRow.invoiceNumber = invoiceNo
-        currentRow.money = (currentRow.totalMoney / (currentRow.days || 1)).toFixed(2)
-        console.log(data[index], '识别 acc', index)
-      }
-    },
-    otherIdentifyInvoice ({ invoiceNo, money, prop, index }) {
-      if (prop === 'invoiceAttachment') {
-        let data = this.formData.reimburseOtherCharges
-        let currentRow = data[index]
-        currentRow.money = money
-        currentRow.maxMoney = money
-        currentRow.invoiceNumber = invoiceNo
-        console.log(data[index], '识别 other')
-      }
     },
     onTravelCellClick (row, column) {
       this.tableType = 'travel'
@@ -1574,6 +1550,7 @@ export default {
     },
     async checkData () { // 校验表单数据是否通过
       let isFormValid = true, isTravelValid = true, isTrafficValid = true, isAccValid = true, isOtherValid = true
+
       try {
         isFormValid = await this.validate('form')
         if (!this.ifShowTravel) {
@@ -1601,8 +1578,12 @@ export default {
         reimburseOtherCharges, 
         reimburseFares,
         reimburseAttachments,
-        attachmentsFileList
+        attachmentsFileList,
+        totalMoney
       } = this.formData
+      if (parseFloat(totalMoney) <= 0) {
+        return Promise.reject({ message: '总金额不能为零' })
+      }
       this.formData.reimburseAttachments = [...reimburseAttachments, ...attachmentsFileList]
       this.mergeFileList(reimburseAccommodationSubsidies)
       this.mergeFileList(reimburseOtherCharges)
@@ -1627,8 +1608,12 @@ export default {
         reimburseOtherCharges, 
         reimburseFares,
         reimburseAttachments,
-        attachmentsFileList
+        attachmentsFileList,
+        totalMoney
       } = this.formData
+      if (parseFloat(totalMoney) <= 0) {
+        return Promise.reject({ message: '总金额不能为零' })
+      }
       this.formData.reimburseAttachments = [...reimburseAttachments, ...attachmentsFileList]
       this.mergeFileList(reimburseAccommodationSubsidies)
       this.mergeFileList(reimburseOtherCharges)

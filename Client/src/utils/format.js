@@ -16,5 +16,19 @@ export function toThousands (val, range =  3, separator = ',', decimalNumber = 2
     }
     j++
   }
-  return result + (decimal ? '.' + decimal.slice(0, decimalNumber) : '.00')
+  return result + (decimal ? '.' + addZero(decimal, decimalNumber) : '.00')
+}
+
+/**
+ * 
+ * @param {*} str 值
+ * @param {*} number 保留多少位数,不够则补零
+ */
+function addZero (str, number) {
+  let result = ''
+  let arr = str.split('')
+  for (let i = 0; i < number; i++) {
+    result += arr[i] || 0
+  }
+  return result
 }

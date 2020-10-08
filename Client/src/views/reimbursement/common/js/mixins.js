@@ -6,6 +6,7 @@ import { REIMBURSE_STATUS_MAP, PROJECT_NAME_MAP, RESPONSIBILITY_MAP } from './ma
 // import { EXPENSE_LIST } from './type'
 import { toThousands } from '@/utils/format'
 import { getList, getDetails } from '@/api/reimburse'
+import { identifyInvoice } from '@/api/reimburse' // 票据识别
 export let tableMixin = {
   provide () {
     return {
@@ -481,6 +482,58 @@ export const attachmentMixin = {
         return isFitType
       }
       return true
+    },
+    _setCurrentRow (currentRow, data) { // 识别发票凭据后，对表格行进行赋值
+      let { invoiceNo, money, isAcc } = data
+      if (isAcc) { // 住宿表格行数据
+        currentRow.totalMoney = money
+        currentRow.money = (currentRow.totalMoney / (currentRow.days || 1)).toFixed(2)
+      } else {
+        currentRow.money = money
+      }
+      currentRow.maxMoney = money
+      currentRow.invoiceNumber = invoiceNo
+      console.log(this.formData, '识别新的')
+    },
+    _identifyInvoice (fileId, currentRow, isAcc = false) { // 票据识别
+      identifyInvoice({
+        fileId
+      }).then(res => {
+        if (res.data && !res.data.length) {
+          this._setCurrentRow(currentRow, {
+            invoiceNo: Date.now(),
+            money: 100,
+            isAcc
+          })
+          return this.$message.error('识别失败')
+        }
+        let { invoiceNo, amountWithTax, isValidate, isUsed, notPassReason } = res.data[0]
+        if (!isValidate || (isValidate && isUsed)) {
+          this._setCurrentRow(currentRow, {
+            invoiceNo: '',
+            money: '',
+            isAcc
+          })
+          return this.$message.error(notPassReason ? notPassReason : '识别失败')
+        }
+        this.$message({
+          type: 'success',
+          message: '识别成功'
+        })
+        this._setCurrentRow(currentRow, {
+          invoiceNo,
+          money: amountWithTax,
+          isAcc
+        })
+      }).catch((err) => {
+        console.error(err)
+        this._setCurrentRow(currentRow, {
+          invoiceNo:'',
+          money: '',
+          isAcc
+        })
+        this.$message.error('识别失败')
+      })
     },
     _buildAttachment (data, isImport = false) { // 为了回显，并且编辑 目标是为了保证跟order.vue的数据保持相同的逻辑
       data.forEach(item => {
