@@ -219,12 +219,13 @@ namespace OpenAuth.App
             result.Data = datas.Select(d => new
             {
                 ReimburseResp = d,
+                FillTime=d.CreateTime.ToString("yyyy-MM-dd"),
                 OrgName = SelOrgName.Where(o => o.Id.Equals(Relevances.Where(r => r.FirstId.Equals(d.CreateUserId)).Select(r => r.SecondId).FirstOrDefault())).OrderBy(o => o.CascadeId).Select(o => o.Name).FirstOrDefault(),
                 UserName = SelUserName.Where(u => u.Id.Equals(d.CreateUserId)).Select(u => u.Name).FirstOrDefault(),
                 TerminalCustomerId = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.TerminalCustomerId).FirstOrDefault(),
                 TerminalCustomer = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.TerminalCustomer).FirstOrDefault(),
-                BusinessTripDate = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.BusinessTripDate).FirstOrDefault(),
-                EndDate = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.EndDate).FirstOrDefault(),
+                BusinessTripDate = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.BusinessTripDate).FirstOrDefault().ToDateTime().ToString("yyyy-MM-dd"),
+                EndDate = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.EndDate).FirstOrDefault().ToDateTime().ToString("yyyy-MM-dd"),
                 BusinessTripDays = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.BusinessTripDays).FirstOrDefault(),
                 FromTheme = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.FromTheme).FirstOrDefault(),
                 SalesMan = ServiceOrders.Where(s => s.Id == d.ServiceOrderId).Select(s => s.SalesMan).FirstOrDefault()
