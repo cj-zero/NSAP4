@@ -24,25 +24,25 @@ export let tableMixin = {
         paid: '已支付'
       },
       columns: [ // 表格配置
-        { label: '报销单号', prop: 'mainId', type: 'link', width: 100, handleJump: this.getDetail },
-        { label: '填报日期', prop: 'createTime', width: 150 },
-        { label: '报销部门', prop: 'orgName', width: 100 },
-        { label: '报销人', prop: 'userName', width: 100 },
+        { label: '报销单号', prop: 'mainId', type: 'link', width: 70, handleJump: this.getDetail },
+        { label: '填报日期', prop: 'fillTime', width: 85 },
+        { label: '报销部门', prop: 'orgName', width: 70 },
+        { label: '报销人', prop: 'userName', width: 70 },
         { label: '报销状态', prop: 'remburseStatusText', width: 100 },
         { label: '总金额', prop: 'totalMoney', width: 100 },
-        { label: '客户代码', prop: 'terminalCustomerId', width: 100 },
+        { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
         { label: '客户名称', prop: 'terminalCustomer', width: 170 },
-        { label: '客户简称', prop: 'shortCustomerName', width: 100 },
+        { label: '客户简称', prop: 'shortCustomerName', width: 85 },
         { label: '业务员', prop: 'salesMan', width: 100 },
-        { label: '出发日期', prop: 'businessTripDate', width: 150 },
-        { label: '结束日期', prop: 'endDate', width: 150 },
-        { label: '总天数', prop: 'businessTripDays', width: 100 },
-        { label: '服务ID', prop: 'serviceOrderSapId', width: 100, type: 'link', handleJump: this.openTree },
+        { label: '出发日期', prop: 'businessTripDate', width: 85 },
+        { label: '结束日期', prop: 'endDate', width: 85 },
+        { label: '总天数', prop: 'businessTripDays', width: 60 },
+        { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleJump: this.openTree },
         { label: '呼叫主题', prop: 'theme', width: 100 },
-        { label: '项目名称', prop: 'projectName', width: 100 },
-        { label: '服务报告', width: 100, handleClick: this.openReport, btnText: '查看' },
-        { label: '责任承担', prop: 'responsibility', width: 100 },
-        { label: '劳务关系', prop: 'serviceRelations', width: 100 },
+        { label: '项目名称', prop: 'projectName', width: 80 },
+        { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
+        { label: '责任承担', prop: 'responsibility', width: 75 },
+        { label: '劳务关系', prop: 'serviceRelations', width: 80 },
         { label: '备注', prop: 'remark', width: 100 }
       ],
       tableData: [],
@@ -119,8 +119,10 @@ export let tableMixin = {
         item.projectName = PROJECT_NAME_MAP[item.projectName]
         item.remburseStatusText = REIMBURSE_STATUS_MAP[item.remburseStatus]
         item.responsibility = RESPONSIBILITY_MAP[item.responsibility]
-        // item.serviceRelations = RELATIONS_MAP[item.serviceRelations]
         item.totalMoney = toThousands(item.totalMoney)
+        // item.createTime = item.createTime.split(' ')[0]
+        // item.businessTripDate = item.businessTripDate.split(' ')[0].replace('/', '.')
+        // item.endDate = item.endDate.split(' ')[0].replace('/', '.')
         return item
       })
     },
@@ -391,8 +393,6 @@ export let categoryMixin = {
         { label: '报销状态', prop: 'reimburseTypeText', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
         { label: '呼叫主题', prop: 'fromTheme', palceholder: '请输入内容', disabled: true, col: 18 },
         { label: '填报时间', prop: 'fillDate', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
-        // { label: '设备类型', prop: 'materialType', palceholder: '请输入内容', disabled: true, col: 6 },
-        // { label: '解决方案', prop: 'solution', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '费用承担', prop: 'bearToPay', palceholder: '请输入内容', disabled: this.title === 'view' || !(this.isCustomerSupervisor && this.title === 'approve'), 
           col: 6, type: 'select', options: this.expenseList
         },
@@ -430,7 +430,7 @@ export let categoryMixin = {
         { label: '目的地', prop: 'to', type: 'input', width: 100 },
         { label: '金额', prop: 'money', type: 'number', align: 'right', width: 150 },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', disabled: true, type: 'input', prop: 'invoiceNumber', width: 100 },
+        { label: '发票号码', disabled: true, type: 'input', prop: 'invoiceNumber', width: 120 },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 },
         { label: '操作', type: 'operation', iconList: this.iconList, width: 160 }
@@ -445,10 +445,10 @@ export let categoryMixin = {
         { label: '费用类别', prop: 'expenseCategory', type: 'select', width: 150, options: this.otherExpensesList },
         { label: '其他费用', prop: 'money', type: 'number', width: 120, align: 'right' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', disabled: true, type: 'input', prop: 'invoiceNumber', width: 100 },
+        { label: '发票号码', disabled: true, type: 'input', prop: 'invoiceNumber', width: 120 },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 },
-        { label: '操作', type: 'operation', iconList: this.iconList, width: 160 }
+        { label: '操作', type: 'operation', iconList: this.iconList, width: 168 }
       ]
     },
     commonSearch () { // 搜索配置
@@ -532,7 +532,7 @@ export const attachmentMixin = {
       data.forEach(item => {
         let { invoiceAttachment, otherAttachment, invoiceFileList, otherFileList, isImport } = item
         if (isImport) {
-          item.id = ''
+          item.id = '' // 如果是导入费用的话， 要把id变成空, 这些数据是没有新增和修改的
         }
         item.reimburseAttachments = [...invoiceAttachment, ...otherAttachment, ...invoiceFileList, ...otherFileList]
       })
