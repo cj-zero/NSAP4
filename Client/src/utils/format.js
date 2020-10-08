@@ -4,7 +4,7 @@
  * @param {*} range 多少位数进行分割
  * @param {*} split 分隔符
  */
-export function toThousands (val, range =  3, separator = ',') { // 千分位化
+export function toThousands (val, range =  3, separator = ',', decimalNumber = 2) { // 千分位化
   let [integer, decimal] = String(val).split('.')
   let result = '', j = 1
   for (let i = integer.length - 1; i >= 0; i--) {
@@ -16,5 +16,5 @@ export function toThousands (val, range =  3, separator = ',') { // 千分位化
     }
     j++
   }
-  return result + (decimal ? '.' + decimal : '')
+  return result + (decimal ? '.' + decimal.slice(0, decimalNumber) : '.00')
 }

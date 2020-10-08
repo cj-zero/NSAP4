@@ -110,6 +110,7 @@
                     @identifyInvoice="identifyInvoice"
                     @deleteFileList="deleteFileList"
                     :isDisabled="isDisabled"
+                    :onAccept="onAccept"
                     :fileList="
                       formData.list[0]
                         ?
@@ -327,7 +328,7 @@ export default {
       }
       return invoiceAttachment.length !== 0
     },
-    identifyInvoice (invoiceNo, money) {
+    identifyInvoice ({ invoiceNo, money }) {
       if (this.currentProp === 'invoiceAttachment') {
         this.formData.list[0].invoiceNumber = invoiceNo
         this.currentType === ACC_TYPE
@@ -515,6 +516,7 @@ export default {
       }
       this.mergeFileList(this.formData.list)
       let isValid = await this.$refs.form.validate()
+      console.log(isValid, this.ifInvoicementList, 'VALIDA')
       if (isValid && this.ifInvoicementList) {
         this.operation === 'create'
           ? this.formData.list[0].createTime = timeToFormat('yyyy-MM-dd HH:mm:ss')
