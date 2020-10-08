@@ -21,35 +21,35 @@ namespace OpenAuth.Repository.Domain
 	/// 资产表
 	/// </summary>
     [Table("Asset")]
-    public partial class Asset : Entity
+    public partial class Asset : BaseEntity<int>
     {
         public Asset()
         {
-          this.AssetStatus= string.Empty;
-          this.AssetCategory= string.Empty;
-          this.OrgName= string.Empty;
-          this.AssetType= string.Empty;
-          this.AssetHolder= string.Empty;
-          this.AssetStockNumber= string.Empty;
-          this.AssetAdmin= string.Empty;
-          this.AssetNumber= string.Empty;
-          this.AssetFactory= string.Empty;
-          this.AssetInspectType= string.Empty;
-          this.AssetInspectWay= string.Empty;
-          this.AssetStartDate= DateTime.Now;
-          this.AssetCalibrationCertificate= string.Empty;
-          this.AssetEndDate= DateTime.Now;
-          this.AssetInspectDataOne= string.Empty;
-          this.AssetInspectDataTwo= string.Empty;
-          this.AssetTCF= string.Empty;
-          this.AssetDescribe= string.Empty;
-          this.AssetRemarks= string.Empty;
-          this.AssetImage= string.Empty;
-          this.AssetCreateTime= DateTime.Now;
-          this.AssetCreateUser= string.Empty;
+            this.AssetStatus = string.Empty;
+            this.AssetCategory = string.Empty;
+            this.OrgName = string.Empty;
+            this.AssetType = string.Empty;
+            this.AssetHolder = string.Empty;
+            this.AssetStockNumber = string.Empty;
+            this.AssetAdmin = string.Empty;
+            this.AssetNumber = string.Empty;
+            this.AssetFactory = string.Empty;
+            this.AssetInspectType = string.Empty;
+            this.AssetInspectWay = string.Empty;
+            this.AssetStartDate = DateTime.Now;
+            this.AssetCalibrationCertificate = string.Empty;
+            this.AssetEndDate = DateTime.Now;
+            this.AssetInspectDataOne = string.Empty;
+            this.AssetInspectDataTwo = string.Empty;
+            this.AssetTCF = string.Empty;
+            this.AssetDescribe = string.Empty;
+            this.AssetRemarks = string.Empty;
+            this.AssetImage = string.Empty;
+            this.AssetCreateTime = DateTime.Now;
+            this.AssetCreateUser = string.Empty;
         }
 
-        
+
         /// <summary>
         /// 状态
         /// </summary>
@@ -165,9 +165,29 @@ namespace OpenAuth.Repository.Domain
         /// 类型详情表
         /// </summary>
         [Description("类型详情表")]
-        [Ignore]
-        public List<AssetCategory> AssetCategorys { get; set; }
 
-        
+        public virtual List<AssetCategory> AssetCategorys { get; set; }
+
+        /// <summary>
+        /// 类型详情表
+        /// </summary>
+        [Description("资产送检表")]
+        public virtual List<AssetInspect> AssetInspects { get; set; }
+
+        /// <summary>
+        /// 类型详情表
+        /// </summary>
+        [Description("资产操作表")]
+        public virtual List<AssetOperation> AssetOperations { get; set; }
+
+        public override void GenerateDefaultKeyVal()
+        {
+
+        }
+
+        public override bool KeyIsNull()
+        {
+            return Id == 0;
+        }
     }
 }

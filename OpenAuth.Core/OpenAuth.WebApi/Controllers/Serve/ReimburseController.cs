@@ -118,13 +118,13 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public TableData GetListCategoryName()
+        public async Task<TableData> GetListCategoryName()
         {
             var result = new TableData();
             string ids = "SYS_OtherExpenses,SYS_Transportation,SYS_TransportationAllowance,SYS_TravellingAllowance,SYS_ServiceRelations,SYS_RemburseStatus,SYS_ReimburseType,SYS_Responsibility,SYS_ProjectName,SYS_Expense";
             try
             {
-                return  _categoryapp.GetListCategoryName(ids);
+                return await _categoryapp.GetListCategoryName(ids);
             }
             catch (Exception ex)
             {
@@ -228,12 +228,12 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// <param name="InvoiceNumber"></param>
         /// <returns></returns>
         [HttpPost]
-        public Response IsSole( List<string> InvoiceNumber) 
+        public async Task<Response> IsSole( List<string> InvoiceNumber) 
         {
             var result = new Response();
             try
             {
-                if (!_reimburseinfoapp.IsSole(InvoiceNumber)) 
+                if (!await _reimburseinfoapp.IsSole(InvoiceNumber)) 
                 {
                     throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
                 }

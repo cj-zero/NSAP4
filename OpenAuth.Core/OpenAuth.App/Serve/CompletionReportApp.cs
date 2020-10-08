@@ -275,7 +275,7 @@ namespace OpenAuth.App
             var loginContext = _auth.GetCurrentUser();
             var CompletionReportModel = await UnitWork.Find<CompletionReport>(u => u.ServiceOrderId == ServiceOrderId).ToListAsync();
 
-            if (!loginContext.Roles.Any(r => r.Name.Equals("售后主管")) && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
+            if (!loginContext.Roles.Any(r => r.Name.Equals("售后主管")) && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")) && !loginContext.Roles.Any(r => r.Name.Equals("财务初审")) && !loginContext.Roles.Any(r => r.Name.Equals("财务复审")) && !loginContext.Roles.Any(r => r.Name.Equals("出纳")) && !loginContext.Roles.Any(r => r.Name.Equals("总经理")))
             {
                 //var appuserid = await UnitWork.Find<AppUserMap>(u => u.UserID.Equals(loginContext.User.Id)).Select(u => u.AppUserId).FirstOrDefaultAsync();
                 //CompletionReportModel = CompletionReportModel.Where(c => c.TechnicianId.Equals(appuserid.ToString())).ToList();

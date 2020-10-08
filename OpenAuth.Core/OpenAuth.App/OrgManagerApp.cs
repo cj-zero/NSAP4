@@ -1,7 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Infrastructure;
 using Infrastructure.Extensions;
+using Microsoft.EntityFrameworkCore;
+using NetOffice.WordApi;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -90,12 +93,12 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="name">部门名称</param>
         /// <returns></returns>
-        public TableData GetListOrg(string name)
+        public async Task<TableData> GetListOrg(string name)
         {
             var result = new TableData();
             var objs = UnitWork.Find<OpenAuth.Repository.Domain.Org>(null);
             objs = objs.WhereIf(!string.IsNullOrWhiteSpace(name),u => u.Name.Contains(name.ToUpper()));
-            result.Data = objs.Select(u => new { u.Name, u.Id }).ToList();
+            result.Data = await objs.Select(u => new { u.Name, u.Id }).ToListAsync();
             return result;
         }
 

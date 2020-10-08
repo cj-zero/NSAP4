@@ -30,7 +30,7 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 资产ID
         /// </summary>
-        public string AssetId { get; set; }
+        public int? AssetId { get; set; }
         /// <summary>
         /// 校准日期
         /// </summary>

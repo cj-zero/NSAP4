@@ -6,6 +6,7 @@ using Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App.nwcali;
+using OpenAuth.App.Nwcali.Response;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
@@ -33,12 +34,12 @@ namespace OpenAuth.WebApi.Controllers
         /// 加载资产列表
         /// </summary>
         [HttpGet]
-        public TableData Load([FromQuery]QueryassetListReq request)
+        public async Task<TableData> Load([FromQuery]QueryassetListReq request)
         {
             var result = new TableData();
             try
             {
-                return _app.Load(request);
+                return await _app.Load(request);
             }
             catch (Exception ex)
             {
@@ -49,19 +50,19 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
-        #region 获取单个自资产详情
+
         /// <summary>
         /// 获取单个自资产详情
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<Response<Asset>> GetAsset(string id)
+        public async Task<TableData> GetAsset(int id)
         {
-            var result = new Response<Asset>();
+            var result = new TableData();
             try
             {
-                result.Result = await _app.GetAsset(id);
+                return await  _app.GetAsset(id);
             }
             catch (Exception ex)
             {
@@ -71,19 +72,20 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
-        #endregion
+
+
         /// <summary>
         /// 添加资产
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
         [HttpPost]
-        public Response Add(AddOrUpdateassetReq obj)
+        public async Task<Response> Add(AddOrUpdateassetReq obj)
         {
             var result = new Response();
             try
             {
-                _app.Add(obj);
+                await _app.Add(obj);
             }
             catch (Exception ex)
             {
@@ -100,12 +102,12 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="obj"></param>
         /// <returns></returns>
         [HttpPost]
-        public Response Update(AddOrUpdateassetReq obj)
+        public async Task<Response> Update(AddOrUpdateassetReq obj)
         {
             var result = new Response();
             try
             {
-                _app.Update(obj);
+                await _app.Update(obj);
             }
             catch (Exception ex)
             {
@@ -121,13 +123,13 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public TableData GetListCategoryName()
+        public async Task<TableData> GetListCategoryName()
         {
             var result = new TableData();
             try
             {
                 string ids = "SYS_AssetStatus,SYS_AssetCategory,SYS_AssetSJType,SYS_CategoryNondeterminacy,SYS_AssetSJWay";
-                return _app.GetListCategoryName(ids);
+                return await _app.GetListCategoryName(ids);
             }
             catch (Exception ex)
             {
@@ -144,12 +146,12 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="name"></param>
         /// <returns></returns>
         [HttpGet]
-        public TableData GetListOrg(string name)
+        public async Task<TableData> GetListOrg(string name)
         {
             var result = new TableData();
             try
             {
-                return _app.GetListOrg(name);
+                return await _app.GetListOrg(name);
             }
             catch (Exception ex)
             {
@@ -167,12 +169,12 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="Orgid"></param>
         /// <returns></returns>
         [HttpGet]
-        public TableData GetListUser(string name,string Orgid)
+        public async Task<TableData> GetListUser(string name,string Orgid)
         {
             var result = new TableData();
             try
             {
-                return _app.GetListUser(name, Orgid);
+                return await _app.GetListUser(name, Orgid);
             }
             catch (Exception ex)
             {
@@ -188,43 +190,43 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 加载送检列表
         /// </summary>
-        [HttpGet]
-        public TableData AssetInspectsLoad(string AssetId)
-        {
-            var result = new TableData();
-            try
-            {
-                return _app.AssetInspectsLoad(AssetId);
-            }
-            catch (Exception ex)
-            {
+        //[HttpGet]
+        //public TableData AssetInspectsLoad(string AssetId)
+        //{
+        //    var result = new TableData();
+        //    try
+        //    {
+        //        return _app.AssetInspectsLoad(AssetId);
+        //    }
+        //    catch (Exception ex)
+        //    {
 
-                result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
-            }
-            return result;
-        }
+        //        result.Code = 500;
+        //        result.Message = ex.InnerException?.Message ?? ex.Message;
+        //    }
+        //    return result;
+        //}
 
         /// <summary>
         /// 加载操作列表
         /// </summary>
-        [HttpGet]
-        public async Task<TableData> AssetOperationsLoad(string AssetId)
-        {
-            var result = new TableData();
-            try
-            {
-                return await _app.AssetOperationsLoad(AssetId);
-            }
-            catch (Exception ex)
-            {
+        //[HttpGet]
+        //public async Task<TableData> AssetOperationsLoad(string AssetId)
+        //{
+        //    var result = new TableData();
+        //    try
+        //    {
+        //        return await _app.AssetOperationsLoad(AssetId);
+        //    }
+        //    catch (Exception ex)
+        //    {
 
-                result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
-            }
-            return result;
+        //        result.Code = 500;
+        //        result.Message = ex.InnerException?.Message ?? ex.Message;
+        //    }
+        //    return result;
             
-        }
+        //}
 
     }
 }

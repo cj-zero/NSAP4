@@ -27,36 +27,39 @@ namespace OpenAuth.Repository.Interface
     /// </summary>
     public interface IUnitWork
     {
-        T FindSingle<T>(Expression<Func<T, bool>> exp = null) where T:class;
-        Task<T> FindSingleAsync<T>(Expression<Func<T, bool>> exp = null, CancellationToken cancellationToken = default) where T:class;
-        bool IsExist<T>(Expression<Func<T, bool>> exp) where T:class;
-        Task<bool> IsExistAsync<T>(Expression<Func<T, bool>> exp, CancellationToken cancellationToken = default) where T:class;
-        IQueryable<T> Find<T>(Expression<Func<T, bool>> exp = null) where T:class;
+        T FindSingle<T>(Expression<Func<T, bool>> exp = null) where T : class;
+        Task<T> FindSingleAsync<T>(Expression<Func<T, bool>> exp = null, CancellationToken cancellationToken = default) where T : class;
+        bool IsExist<T>(Expression<Func<T, bool>> exp) where T : class;
+        Task<bool> IsExistAsync<T>(Expression<Func<T, bool>> exp, CancellationToken cancellationToken = default) where T : class;
+        IQueryable<T> Find<T>(Expression<Func<T, bool>> exp = null) where T : class;
 
         IQueryable<T> Find<T>(int pageindex = 1, int pagesize = 10, string orderby = "",
-            Expression<Func<T, bool>> exp = null) where T:class;
+            Expression<Func<T, bool>> exp = null) where T : class;
 
-        int GetCount<T>(Expression<Func<T, bool>> exp = null) where T:class;
-        Task<int> GetCountAsync<T>(Expression<Func<T, bool>> exp = null, CancellationToken cancellationToken = default) where T:class;
+        int GetCount<T>(Expression<Func<T, bool>> exp = null) where T : class;
+        Task<int> GetCountAsync<T>(Expression<Func<T, bool>> exp = null, CancellationToken cancellationToken = default) where T : class;
 
         void Add<T>(T entity) where T : BaseEntity;
-        Task<T> AddAsync<T>(T entity, CancellationToken cancellationToken = default) where T: BaseEntity;
-        Task<T> AddAsync<T,Tkey>(T entity, CancellationToken cancellationToken = default) where T : class;
+        Task<T> AddAsync<T>(T entity, CancellationToken cancellationToken = default) where T : BaseEntity;
+        Task<T> AddAsync<T, Tkey>(T entity, CancellationToken cancellationToken = default) where T : class;
 
-        void BatchAdd<T>(T[] entities) where T: BaseEntity;
-        Task BatchAddAsync<T>(T[] entities, CancellationToken cancellationToken = default) where T: BaseEntity;
-        Task BatchAddAsync<T, TKey>(T[] entities, CancellationToken cancellationToken = default) where T: class;
+        void BatchAdd<T>(T[] entities) where T : BaseEntity;
+        Task BatchAddAsync<T>(T[] entities, CancellationToken cancellationToken = default) where T : BaseEntity;
+        Task BatchAddAsync<T, TKey>(T[] entities, CancellationToken cancellationToken = default) where T : class;
 
         /// <summary>
         /// 更新一个实体的所有属性
         /// </summary>
-        void Update<T>(T entity) where T:class;
-        Task UpdateAsync<T>(T entity, CancellationToken cancellationToken = default) where T:class;
+        void Update<T>(T entity) where T : class;
+        Task UpdateAsync<T>(T entity, CancellationToken cancellationToken = default) where T : class;
 
         void BatchUpdate<T>(T[] entity) where T : class;
 
-        void Delete<T>(T entity) where T:class;
-        Task DeleteAsync<T>(T entity, CancellationToken cancellationToken = default) where T:class;
+        Task BatchUpdateAsync<T>(T[] entity, CancellationToken cancellationToken = default) where T : class;
+
+
+        void Delete<T>(T entity) where T : class;
+        Task DeleteAsync<T>(T entity, CancellationToken cancellationToken = default) where T : class;
 
         /// <summary>
         /// 实现按需要只更新部分更新
@@ -64,26 +67,26 @@ namespace OpenAuth.Repository.Interface
         /// </summary>
         /// <param name="where">更新条件</param>
         /// <param name="entity">更新后的实体</param>
-        void Update<T>(Expression<Func<T, bool>> where, Expression<Func<T, T>> entity) where T:class;
-        Task UpdateAsync<T>(Expression<Func<T, bool>> where, Expression<Func<T, T>> entity, CancellationToken cancellationToken = default) where T:class;
+        void Update<T>(Expression<Func<T, bool>> where, Expression<Func<T, T>> entity) where T : class;
+        Task UpdateAsync<T>(Expression<Func<T, bool>> where, Expression<Func<T, T>> entity, CancellationToken cancellationToken = default) where T : class;
         /// <summary>
         /// 批量删除
         /// </summary>
-        void Delete<T>(Expression<Func<T, bool>> exp) where T:class;
-        Task DeleteAsync<T>(Expression<Func<T, bool>> exp, CancellationToken cancellationToken = default) where T:class;
+        void Delete<T>(Expression<Func<T, bool>> exp) where T : class;
+        Task DeleteAsync<T>(Expression<Func<T, bool>> exp, CancellationToken cancellationToken = default) where T : class;
 
         void Save();
         Task SaveAsync(CancellationToken cancellationToken = default);
 
         int ExecuteSql(string sql, Type contextType);
         Task<int> ExecuteSqlAsync(string sql, Type contextType, CancellationToken cancellationToken = default);
-        
+
         /// <summary>
         /// 使用SQL脚本查询
         /// </summary>
         /// <typeparam name="T"> T为数据库实体</typeparam>
         /// <returns></returns>
-        IQueryable<T> FromSql<T>(string sql, params object[] parameters) where T:class;
+        IQueryable<T> FromSql<T>(string sql, params object[] parameters) where T : class;
         /// <summary>
         /// 使用SQL脚本查询
         /// </summary>
