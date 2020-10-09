@@ -318,33 +318,46 @@ namespace OpenAuth.App
                 RecepUserId = loginContext.User.Id
             });
             //获取"其他"问题类型及其子类
-            var otherProblemType = await UnitWork.Find<ProblemType>(o => o.Name.Equals("其他")).FirstOrDefaultAsync();
+            var otherProblemType = await UnitWork.Find<ProblemType>(o => o.Name.Equals("其他") && string.IsNullOrWhiteSpace(o.ParentId)).FirstOrDefaultAsync();
             var ChildTypes = new List<ProblemType>();
             if (otherProblemType != null && !string.IsNullOrEmpty(otherProblemType.Id))
             {
                 ChildTypes = await UnitWork.Find<ProblemType>(null).Where(o1 => o1.ParentId.Equals(otherProblemType.Id)).ToListAsync();
             }
-            var u = await UnitWork.Find<AppUserMap>(s => s.UserID == obj.SupervisorId).Include(s => s.User).FirstOrDefaultAsync();
+            var AppUser = await UnitWork.Find<AppUserMap>(s => s.UserID == obj.SupervisorId).Include(s => s.User).FirstOrDefaultAsync();
+            var AppUserId = await UnitWork.Find<AppUserMap>(s => s.UserID == loginContext.User.Id).Select(s=>s.AppUserId).FirstOrDefaultAsync();
             //工单赋值
             obj.ServiceWorkOrders.ForEach(s =>
             {
                 s.ServiceOrderId = obj.Id; s.SubmitDate = DateTime.Now; s.SubmitUserId = loginContext.User.Id; s.AppUserId = obj.AppUserId; s.Status = 1;
                 s.SubmitDate = DateTime.Now;
                 s.SubmitUserId = loginContext.User.Id;
-                if (s.FromType == 2)
-                    s.Status = 7;
+                
                 #region 问题类型是其他的子类型直接分配给售后主管
                 if (!string.IsNullOrEmpty(s.ProblemTypeId))
                 {
                     if (ChildTypes.Count() > 0 && ChildTypes.Where(p => p.Id.Equals(s.ProblemTypeId)).ToList().Count() > 0)
                     {
-                        s.CurrentUser = d.TechName;
-                        s.CurrentUserId = u?.AppUserId;
-                        s.CurrentUserNsapId = obj.SupervisorId;
-                        s.Status = 2;
+                        if (AppUser != null) 
+                        {
+                            s.CurrentUser = AppUser.User.Name;
+                            s.CurrentUserId = AppUser?.AppUserId;
+                            s.CurrentUserNsapId = obj.SupervisorId;
+                            s.Status = 2;
+                        }
                     }
                 }
                 #endregion
+                if (s.FromType == 2)
+                {
+                    if (AppUser != null)
+                    {
+                        s.CurrentUser = loginContext.User.Name;
+                        s.CurrentUserId = AppUserId;
+                        s.CurrentUserNsapId = loginContext.User.Id;
+                        s.Status = 7;
+                    }
+                }
             });
             await UnitWork.BatchAddAsync<ServiceWorkOrder, int>(obj.ServiceWorkOrders.ToArray());
 
@@ -427,6 +440,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task AddWorkOrder(AddServiceWorkOrderReq request)
         {
+            var loginContext = _auth.GetCurrentUser();
             //用信号量代替锁
             await semaphoreSlim.WaitAsync();
             try
@@ -441,19 +455,30 @@ namespace OpenAuth.App
                 var theservice = await UnitWork.Find<ServiceOrder>(o => o.Id.Equals(obj.ServiceOrderId)).FirstOrDefaultAsync();
                 if (!string.IsNullOrEmpty(obj.ProblemTypeId))
                 {
-                    var otherProblemType = await UnitWork.Find<ProblemType>(o => o.Name.Equals("其他")).FirstOrDefaultAsync();
+                    var otherProblemType = await UnitWork.Find<ProblemType>(o => o.Name.Equals("其他")&& string.IsNullOrWhiteSpace(o.ParentId)).FirstOrDefaultAsync();
                     var ChildTypes = new List<ProblemType>();
                     if (otherProblemType != null && !string.IsNullOrEmpty(otherProblemType.Id))
                     {
                         ChildTypes = await UnitWork.Find<ProblemType>(null).Where(o1 => o1.ParentId.Equals(otherProblemType.Id)).ToListAsync();
                     }
+                    var AppUser = await UnitWork.Find<AppUserMap>(s => s.UserID == theservice.SupervisorId).Include(s => s.User).FirstOrDefaultAsync();
                     if (ChildTypes.Count() > 0 && ChildTypes.Where(p => p.Id.Equals(obj.ProblemTypeId)).ToList().Count() > 0)
                     {
-                        var u = await UnitWork.Find<AppUserMap>(s => s.UserID == theservice.SupervisorId).Include(s => s.User).FirstOrDefaultAsync();
-                        obj.CurrentUser = theservice.Supervisor;
-                        obj.CurrentUserNsapId = theservice.SupervisorId;
-                        obj.CurrentUserId = u.AppUserId;
-                        obj.Status = 2;
+                        if (AppUser != null) 
+                        {
+                            obj.CurrentUser = theservice.Supervisor;
+                            obj.CurrentUserNsapId = theservice.SupervisorId;
+                            obj.CurrentUserId = AppUser.AppUserId;
+                            obj.Status = 2;
+                        }
+                    }
+                    if (obj.FromTheme == "2") 
+                    {
+                        AppUser= await UnitWork.Find<AppUserMap>(s => s.UserID == loginContext.User.Id).Include(s => s.User).FirstOrDefaultAsync();
+                        obj.CurrentUser = loginContext.User.Name;
+                        obj.CurrentUserNsapId = loginContext.User.Id;
+                        obj.CurrentUserId = AppUser.AppUserId;
+                        obj.Status = 7;
                     }
                 }
                 #endregion
@@ -463,7 +488,6 @@ namespace OpenAuth.App
                 //log日志与发送消息
 
                 var typename = "其他设备".Equals(obj.MaterialCode) ? "其他设备" : obj.MaterialCode.Substring(0, obj.MaterialCode.IndexOf("-"));
-                var loginContext = _auth.GetCurrentUser();
                 await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"客服:{loginContext.User.Name}创建工单{obj.WorkOrderNumber}", ActionType = "创建工单", ServiceOrderId = request.ServiceOrderId, MaterialType = typename });
 
 
@@ -675,14 +699,14 @@ namespace OpenAuth.App
             //obj.Supervisor = d.TechName;
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(req.Supervisor)))?.Id;
             //获取"其他"问题类型及其子类
-            var otherProblemType = await UnitWork.Find<ProblemType>(o => o.Name.Equals("其他")).FirstOrDefaultAsync();
+            var otherProblemType = await UnitWork.Find<ProblemType>(o => o.Name.Equals("其他") && string.IsNullOrWhiteSpace(o.ParentId)).FirstOrDefaultAsync();
             var ChildTypes = new List<ProblemType>();
             if (otherProblemType != null && !string.IsNullOrEmpty(otherProblemType.Id))
             {
                 ChildTypes = await UnitWork.Find<ProblemType>(null).Where(o1 => o1.ParentId.Equals(otherProblemType.Id)).ToListAsync();
             }
-            var u = await UnitWork.Find<AppUserMap>(s => s.UserID == obj.SupervisorId).Include(s => s.User).FirstOrDefaultAsync();
-
+            var AppUser = await UnitWork.Find<AppUserMap>(s => s.UserID == obj.SupervisorId).Include(s => s.User).FirstOrDefaultAsync();
+            var AppUserId = await UnitWork.Find<AppUserMap>(s => s.UserID == loginContext.User.Id).Select(s=>s.AppUserId).FirstOrDefaultAsync();
             obj.ServiceWorkOrders.ForEach(s =>
             {
                 s.SubmitDate = DateTime.Now;
@@ -692,14 +716,25 @@ namespace OpenAuth.App
                 {
                     if (ChildTypes.Count() > 0 && ChildTypes.Where(p => p.Id.Equals(s.ProblemTypeId)).ToList().Count() > 0)
                     {
-                        s.CurrentUser = d.TechName;
-                        s.CurrentUserId = u?.AppUserId;
-                        s.CurrentUserNsapId = obj.SupervisorId;
-                        s.Status = 2;
+                        if (AppUser != null) 
+                        {
+                            s.CurrentUser = AppUser.User.Name;
+                            s.CurrentUserId = AppUser?.AppUserId;
+                            s.CurrentUserNsapId = obj.SupervisorId;
+                            s.Status = 2;
+                        }
                     }
                 }
                 if (s.FromType == 2)
-                    s.Status = 7;
+                {
+                    if (AppUser != null) 
+                    {
+                        s.CurrentUser = loginContext.User.Name;
+                        s.CurrentUserId = AppUserId;
+                        s.CurrentUserNsapId = loginContext.User.Id;
+                        s.Status = 7;
+                    }
+                }
                 #endregion
             });
             var e = await UnitWork.AddAsync<ServiceOrder, int>(obj);
