@@ -169,6 +169,11 @@ namespace OpenAuth.WebApi.Controllers
                         outData.Add(invoiceresponse);
                     }
                 }
+                else
+                {
+                    result.Code = 500;
+                    result.Message = "识别失败";
+                }
                 result.Data = outData;
             }
             catch (Exception ex)

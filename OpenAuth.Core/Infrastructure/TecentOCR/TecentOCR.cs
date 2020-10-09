@@ -25,6 +25,7 @@ namespace Infrastructure.TecentOCR
             };
             // 实例化一个 client 选项，
             ClientProfile clientProfile = new ClientProfile();
+            clientProfile.SignMethod = ClientProfile.SIGN_TC3SHA256;
             HttpProfile httpProfile = new HttpProfile();
             httpProfile.Endpoint = ("ocr.tencentcloudapi.com");
             clientProfile.HttpProfile = httpProfile;

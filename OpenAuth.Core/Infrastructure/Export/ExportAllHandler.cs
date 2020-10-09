@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Magicodes.ExporterAndImporter.Word;
 using Magicodes.ExporterAndImporter.Core.Models;
 using Microsoft.Extensions.Logging;
+using DinkToPdf;
 
 namespace Infrastructure.Export
 {
@@ -30,7 +31,15 @@ namespace Infrastructure.Export
         {
             try
             {
-                if (tplPath == null) tplPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "default.cshtml");
+                if (tplPath == null)
+                {
+                    tplPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "default.cshtml");
+                }
+                else 
+                {
+                    tplPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", tplPath);
+                }
+
                 var tpl = System.IO.File.ReadAllText(tplPath);
                 int num = 0;
                 var Model = new List<T>();
@@ -62,19 +71,32 @@ namespace Infrastructure.Export
         /// <param name="data"></param>
         /// <param name="tplPath"></param>
         /// <returns></returns>
-        public static async Task<ExportFileInfo> Exporterpdf<T>(string filePath, T data, string tplPath = null) where T : class
+        public static async Task Exporterpdf<T>(string filePath, T data, string tplPath = null) where T : class
         {
             try
             {
-                if (tplPath == null) tplPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "default.cshtml");
+                if (tplPath == null)
+                {
+                    tplPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "default.cshtml");
+                }
+                else
+                {
+                    tplPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", tplPath);
+                }
                 var tpl = System.IO.File.ReadAllText(tplPath);
                 var exporter = new PdfExporter();
-                return await exporter.ExportByTemplate(filePath, data, tpl);
+                PdfExporterAttribute pdf = new PdfExporterAttribute();
+                pdf.IsWriteHtml = true;
+                pdf.Orientation = Orientation.Portrait;
+                var result = await exporter.ExportBytesByTemplate(data, pdf, tpl);
+                using (FileStream xlsfile = new FileStream(filePath, FileMode.OpenOrCreate))
+                {
+                    xlsfile.Write(result, 0, result.Length);
+                }
             }
             catch (Exception e)
             {
                 _logger.LogError(e, e.ToString());
-                return null;
             }
 
         }
