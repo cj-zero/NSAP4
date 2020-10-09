@@ -93,7 +93,7 @@ export default {
     }
   },
   created () {
-
+    console.log('dialog created')
   },
   mounted () {
 

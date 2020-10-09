@@ -377,17 +377,17 @@ export let categoryMixin = {
         { label: '客户简称', prop: 'shortCustomerName', palceholder: '最长5个字', col: 6, maxlength: 5, isEnd: true, disabled: this.isEditItem },
         { label: '出发地点', prop: 'becity', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '到达地点', prop: 'destination', palceholder: '请输入内容', disabled: true, col: 6 },
-        { label: '出发日期', prop: 'businessTripDate', palceholder: '请输入内容', disabled: true, col: 6, type: 'date', width: 157 },
-        { label: '结束日期', prop: 'endDate', palceholder: '请输入内容', disabled: true, col: 6, type: 'date', isEnd: true, width: 157 },
+        { label: '出发日期', prop: 'businessTripDate', palceholder: '请输入内容', disabled: true, col: 6, width: '100%' },
+        { label: '结束日期', prop: 'endDate', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true, width: '100%' },
         { 
           label: '报销类别', prop: 'reimburseType', palceholder: '请输入内容', 
           col: 6, type: 'select', options: this.reimburseTypeList, 
-          disabled: this.isEditItem
+          disabled: this.isEditItem, width: '100%'
         },
         { 
           label: '项目名称', prop: 'projectName', palceholder: '请输入内容',  
           col: 6, type: 'select', options: this.projectNameList, 
-          disabled: this.isEditItem
+          disabled: this.isEditItem, width: '100%'
         },
         { label: '服务报告', prop: 'report',  disabled: true, col: 6, 
           type: 'button', btnText: '服务报告', handleClick: this.openReport
@@ -396,11 +396,11 @@ export let categoryMixin = {
         { label: '呼叫主题', prop: 'fromTheme', palceholder: '请输入内容', disabled: true, col: 18 },
         { label: '填报时间', prop: 'fillDate', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
         { label: '费用承担', prop: 'bearToPay', palceholder: '请输入内容', disabled: this.title === 'view' || !(this.isCustomerSupervisor && this.title === 'approve'), 
-          col: 6, type: 'select', options: this.expenseList
+          col: 6, type: 'select', options: this.expenseList, width: '100%'
         },
         { label: '责任承担', prop: 'responsibility', palceholder: '请输入内容', 
           col: 6, type: 'select', options: this.responsibilityList, 
-          disabled: this.isEditItem 
+          disabled: this.isEditItem, width: '100%' 
         },
         { label: '劳务关系', prop: 'serviceRelations', palceholder: '请输入内容',  
           col: 6, disabled: true
@@ -417,25 +417,25 @@ export let categoryMixin = {
     },    
     travelConfig () {
       return [ // 出差配置
-        { label: '天数', prop: 'days', type: 'number' },
-        { label: '金额', align: 'right', prop: 'money', type: 'input', disabled: true },
-        { label: '备注', prop: 'remark', type: 'input' },
-        { label: '操作', type: 'operation', iconList: [{ icon: 'el-icon-delete', handleClick: this.delete }] }
+        { label: '天数', prop: 'days', type: 'number', width: 150 },
+        { label: '金额', align: 'right', prop: 'money', type: 'input', disabled: true, width: 150 },
+        { label: '备注', prop: 'remark', type: 'input', width: 150 },
+        { label: '操作', type: 'operation', iconList: [{ icon: 'el-icon-delete', handleClick: this.delete }], width: 150 }
       ]
     },
     trafficConfig () {
       return [ // 交通配置
         // { label: '序号', type: 'order', width: 60 },
         { label: '交通类型', prop: 'trafficType', type: 'select', options: this.transportTypeList, width: 120 },
-        { label: '交通工具', prop: 'transport', type: 'select', options: this.transportationList, width: 120 },
-        { label: '出发地', prop: 'from', type: 'input', width: 100 },
-        { label: '目的地', prop: 'to', type: 'input', width: 100 },
+        { label: '交通工具', prop: 'transport', type: 'select', options: this.transportationList, width: 135 },
+        { label: '出发地', prop: 'from', type: 'input', width: 125, readonly: true },
+        { label: '目的地', prop: 'to', type: 'input', width: 125, readonly: true },
         { label: '金额', prop: 'money', type: 'number', align: 'right', width: 150 },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', disabled: true, type: 'input', prop: 'invoiceNumber', width: 120 },
+        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 120 },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 },
-        { label: '操作', type: 'operation', iconList: this.iconList, width: 160 }
+        { label: '操作', type: 'operation', iconList: this.iconList, width: 110 }
       ]
     },
     accommodationConfig () {
@@ -447,7 +447,7 @@ export let categoryMixin = {
         { label: '费用类别', prop: 'expenseCategory', type: 'select', width: 150, options: this.otherExpensesList },
         { label: '其他费用', prop: 'money', type: 'number', width: 120, align: 'right' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', disabled: true, type: 'input', prop: 'invoiceNumber', width: 120 },
+        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 120 },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 },
         { label: '操作', type: 'operation', iconList: this.iconList, width: 168 }
@@ -525,7 +525,7 @@ export const attachmentMixin = {
       return new Blob([new Uint8Array(array)], { type })
     },
     _setCurrentRow (currentRow, data) { // 识别发票凭据后，对表格行进行赋值
-      let { invoiceNo, money, isAcc } = data
+      let { invoiceNo, money, isAcc, isTrue } = data
       if (isAcc) { // 住宿表格行数据
         currentRow.totalMoney = money
         currentRow.money = (currentRow.totalMoney / (currentRow.days || 1)).toFixed(2)
@@ -534,6 +534,7 @@ export const attachmentMixin = {
       }
       currentRow.maxMoney = money
       currentRow.invoiceNumber = invoiceNo
+      this.$set(currentRow, 'isTrue', isTrue)
       console.log(this.formData, '识别新的')
     },
     _identifyInvoice (fileId, currentRow, isAcc = false) { // 票据识别
@@ -544,6 +545,7 @@ export const attachmentMixin = {
           this._setCurrentRow(currentRow, {
             invoiceNo: '',
             money: '',
+            isTrue: false,
             isAcc
           })
           return this.$message.error('识别失败')
@@ -553,6 +555,7 @@ export const attachmentMixin = {
           this._setCurrentRow(currentRow, {
             invoiceNo: '',
             money: '',
+            isTrue: false,
             isAcc
           })
           return this.$message.error(notPassReason ? notPassReason : '识别失败')
@@ -564,16 +567,18 @@ export const attachmentMixin = {
         this._setCurrentRow(currentRow, {
           invoiceNo,
           money: amountWithTax,
+          isTrue: true,
           isAcc
         })
-      }).catch((err) => {
+      }).catch(err => {
         console.error(err)
         this._setCurrentRow(currentRow, {
           invoiceNo:'',
           money: '',
+          isTrue: false,
           isAcc
         })
-        this.$message.error('识别失败')
+        this.$message.error(err.message || '识别失败')
       })
     },
     _buildAttachment (data, isImport = false) { // 为了回显，并且编辑 目标是为了保证跟order.vue的数据保持相同的逻辑

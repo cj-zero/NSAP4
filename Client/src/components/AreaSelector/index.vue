@@ -25,7 +25,14 @@
 // import addressList from './address'
 import { getAreaList } from '@/api/serve/area'
 export default {
-  components: {},
+  props: {
+    options: {
+      type: Object,
+      default () {
+        return {}
+      }
+    }
+  },
   data () {
     return {
       addressList: [],
@@ -48,18 +55,10 @@ export default {
   methods: {
     selectTab (item, index) {
       let { pid } = item
-      // if (areaName === '请选择') {
-      //   return
-      // }
       console.log(item, 'item')
       this.activeIndex = index
       this.currentIndex = index
-      // if (index === 0) {
-      //   this._normalizeAddressList()
-      // } else {
-      //   // this.handleSelect(areaName, 'parent')
       this._normalizeAddressList(pid)
-      // }
       console.log(item)
     },
     selectItem (item) { 
@@ -74,7 +73,8 @@ export default {
         this.$emit('change', {
           province: this.province || '',
           city: this.city || '',
-          district: this.district || ''
+          district: this.district || '',
+          ...this.options
         })
         return this.closeSelector()
       }
@@ -101,7 +101,7 @@ export default {
       return [province, city, district].includes(name)
     },
     closeSelector () {
-      this.$emit("close")
+      this.$emit("close", this.options)
     },
     _normalizeAddressList (id, isReset) { // id: 根据id查询省市区 isRest: 根据省市区是否发生变化
       getAreaList({
@@ -123,7 +123,6 @@ export default {
   },
   watch: {
     province () {
-      console.log('province')
       let { id, areaLevel } = this.currentItem
       if (Number(areaLevel) !== 3) {
         if (this.tabList.length >= 2) {
@@ -157,6 +156,7 @@ export default {
     }
   },
   created () {
+    console.log('1111', 'created')
     this._normalizeAddressList()
   },
   mounted () {
@@ -166,6 +166,7 @@ export default {
 </script>
 <style lang='scss' scoped>
 .area-selector-wrap {
+  position: relative;
   box-sizing: border-box;
   overflow: hidden;
   width: 640px;
@@ -217,6 +218,7 @@ export default {
     & > li {
       width: 25%;
       white-space: nowrap;
+      line-height: 25px;
       &:hover {
         color: rgba(205, 49, 40, 1);
         cursor: pointer;

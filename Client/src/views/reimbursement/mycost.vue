@@ -63,11 +63,11 @@
           </div>
         </div>
       </div>
-      <!-- 审核弹窗 -->
+      <!-- 模板弹窗 -->
       <my-dialog
         ref="myDialog"
         :center="true"
-        width="850px"
+        width="1216px"
         :onClosed="closeDialog"
         :title="`${textMap[type]}费用模板`"
         :btnList="btnList"
@@ -339,8 +339,8 @@ export default {
         this.dialogLoading = false
         this._getList()
       }).catch(err => {
-          if (!err) {
-          this.$message.error('请将必填项填写')
+        if (!err) {
+          this.$message.error('格式错误或必填项未填写')
         } else {
           this.$message.error(err.message)
         }

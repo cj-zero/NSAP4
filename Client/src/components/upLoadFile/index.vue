@@ -241,7 +241,8 @@ export default {
     onExeed () { 
       this.$message.error(`最多上传${this.limit}个文件`)
     },
-    successBack(res, file){
+    successBack(res, file, fileList){
+      let _this = this
       this.newPictureList.push({
         pictureId:res.result[0].id,
         uid: file.uid
@@ -259,6 +260,8 @@ export default {
       })
       this.$emit('get-ImgList', this.pictures, {
         fileId: res.result[0].id, // 当前上传成功的ID
+        fileList,
+        vm: _this,
         ...this.options
       })
     },
@@ -269,6 +272,9 @@ export default {
       this.pictures = []
       this.newPictureList = []
     }
+  },
+  created () {
+    console.log('upload created')
   }
 };
 </script>

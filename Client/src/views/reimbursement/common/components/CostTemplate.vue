@@ -30,6 +30,7 @@
         size="mini" 
         :show-message="false"
         class="form-wrapper"
+        :class="{ other: currentType === 3, acc: currentType === 2 }"
         :disabled="isDisabled"
       >
         <el-table 
@@ -58,7 +59,20 @@
                     :prop="'list.' + scope.$index + '.'+ item.prop"
                     :rules="rules[item.prop] || { required: false }"
                   >
-                    <el-input v-model="scope.row[item.prop]" :disabled="item.disabled"></el-input>
+                    <div class="area-wrapper">
+                      <el-input 
+                        v-model="scope.row[item.prop]" 
+                        :disabled="item.disabled" 
+                        :readonly="item.readonly || false"
+                        @focus="onAreaFocus({ prop: item.prop, index: scope.$index })">
+                      </el-input>
+                      <template v-if="operation !== 'view'">
+                        <div class="selector-wrapper" 
+                          v-show="(scope.row.ifFromShow && item.prop === 'from') || (scope.row.ifToShow && item.prop === 'to')">
+                          <AreaSelector @close="onCloseArea" @change="onAreaChange" :options="{ prop: item.prop, index: scope.$index }"/>
+                        </div>
+                      </template>
+                    </div>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'number'">
@@ -189,6 +203,7 @@ import { trafficRules, accRules, otherRules } from '../js/customerRules'
 import { categoryMixin, attachmentMixin } from '../js/mixins'
 import { addCost, updateCost } from '@/api/reimburse/mycost'
 import { timeToFormat } from '@/utils'
+import AreaSelector from '@/components/AreaSelector'
 const RULES_MAP = {
   1: trafficRules,
   2: accRules,
@@ -199,13 +214,14 @@ const CONFIG_MAP = {
   2: 'accommodationConfig',
   3: 'otherConfig'
 }
-// const TRANSPORT_TYPE = 1 // 交通费用类型设为1
+const TRANSPORT_TYPE = 1 // 交通费用类型设为1
 const ACC_TYPE = 2 // 住宿费用类型设为2
 // const OTHER_TYPE = 3 // 交通费用类型设为3
 export default {
   mixins: [categoryMixin, attachmentMixin],
   components: {
-    upLoadFile
+    upLoadFile,
+    AreaSelector
   },
   props: {
     detailData: {
@@ -290,6 +306,8 @@ export default {
           invoiceFileList: [], // 用于回显
           otherFileList: [], // 用于回显
           reimburseAttachments: [],
+          ifFromShow: false, // 是否显示出发地地址选择器
+          ifToShow: false // 是否显示目的地的地址选择器
         }]
       },
       maxMoney: 0, // 金钱的最大值，当识别了附件之后需要进行设置
@@ -298,7 +316,8 @@ export default {
       upLoadConfig: [
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment' },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment' },
-      ]
+      ],
+      prevAreaData: null
     }
   },
   computed: {
@@ -347,18 +366,6 @@ export default {
     selectTag (tag) {
       // this.resetInfo()
       console.log(this.currentType, tag.type)
-      if (this.currentType === tag.type) {
-        return this.toggleSelect()
-      }
-      if (this.currentType != tag.type) {
-        if (this.operation === 'edit') {
-          this._deleteFileId() // 删除附件Id
-        }
-        this.resetInfo(false, tag.type)
-      }
-      this.changeTable(tag.type)
-      console.log(CONFIG_MAP)
-      // 去除操作标题
       if (tag.type == 1) { // 交通类型
         console.log('traffic')
         this.formData.list[0].transport = tag.value
@@ -366,6 +373,20 @@ export default {
       if (tag.type == 3) { // 其他类别
         this.formData.list[0].expenseCategory = tag.value
       }
+      if (this.currentType === tag.type) {
+        return this.toggleSelect()
+      }
+      if (this.currentType != tag.type) { // 当前选择的类型和上次选择的类型不同
+        if (this.operation === 'edit') {
+          this._deleteFileId() // 删除附件Id
+        }
+        if (this.currentType) { // 已经有选择之后，下次再选择需要清空
+          this.resetInfo(false, tag.type)
+        }
+      }
+      this.changeTable(tag.type)
+      console.log(CONFIG_MAP)
+      // 去除操作标题
       this.formData.list[0].reimburseType = tag.type + 1
       this.formData.list[0].feeType = tag.label
       this.toggleSelect()
@@ -420,8 +441,10 @@ export default {
       let { invoiceFileList, invoiceAttachment, invoiceNumber, maxMoney } = this.formData.list[0]
       console.log(invoiceFileList, invoiceAttachment, invoiceNumber, this.currentProp, 'input')
       if (
-        (invoiceFileList.length && !this.fileid.includes(invoiceFileList[0].id)) || // 编辑的时候，有回显的附件，并且没有删除
-        (invoiceAttachment.length && invoiceNumber)
+        (
+          (invoiceFileList.length && !this.fileid.includes(invoiceFileList[0].id)) || // 编辑的时候，有回显的附件，并且没有删除
+          (invoiceAttachment.length && invoiceNumber)
+        ) && maxMoney
       ) {
         if (this.currentProp === 'money' || this.currentProp === 'totalMoney') {
           this.currentType === ACC_TYPE
@@ -432,6 +455,38 @@ export default {
     },
     onFocus (val) {
       this.currentProp = val
+    },
+    onAreaFocus ({ prop, index }) { // 打开地址选择
+      if (this.prevAreaData) {
+        this.prevAreaData.ifFromShow = false
+        this.prevAreaData.ifToShow = false
+      }
+      if (prop === 'from' || prop === 'to') {
+        let currentRow = this.formData.list[index]
+        prop === 'from'
+          ? this.$set(currentRow, 'ifFromShow', true)
+          : this.$set(currentRow, 'ifToShow', true)
+        this.prevAreaData = currentRow
+      }
+    },
+    onCloseArea (options) { // 关闭地址选择器
+      let { prop, index } = options
+      let currentRow = this.formData.list[index]
+      prop === 'from'
+          ? this.$set(currentRow, 'ifFromShow', false)
+          : this.$set(currentRow, 'ifToShow', false)
+      this.prevAreaData = null
+    },
+    onAreaChange (val) {
+      let { province, city, district, prop, index } = val
+      let currentRow = this.formData.list[index]
+      const countryList = ['北京市', '天津市', '上海市', '重庆市']
+      let result = ''
+      result = countryList.includes(province)
+        ? province + district
+        : city + district
+      currentRow[prop] = result
+      this.prevAreaData = null
     },
     onSelectClick (val) {
       this.currentProp = val.prop
@@ -473,7 +528,7 @@ export default {
     },
     resetInfo (isClose = true, type = '') {
       let prevData = this.formData.list[0]
-      let { money, totalMoney, remark, maxMoney } = prevData
+      let { money, totalMoney, remark, maxMoney, from, to } = prevData
       console.log(typeof type, 'type', remark, money, totalMoney)
       this.$refs.form.clearValidate()
       this.$refs.form.resetFields()
@@ -486,8 +541,8 @@ export default {
           serialNumber: 1,
           trafficType: '',
           transport: '',
-          from: '',
-          to: '',
+          from: this.currentType === TRANSPORT_TYPE ? from : '',
+          to: this.currentType === TRANSPORT_TYPE ? to : '',
           money: !type 
             ? '' 
             : (this.currentType === ACC_TYPE ? totalMoney : money),
@@ -501,7 +556,9 @@ export default {
           otherAttachment: [],
           invoiceFileList: [], // 用于回显
           otherFileList: [], // 用于回显
-          reimburseAttachments: []
+          reimburseAttachments: [],
+          ifFromShow: false, // 是否显示出发地地址选择器
+          ifToShow: false
         }]
       }
       console.log(this.formData, 'change after')
@@ -510,6 +567,7 @@ export default {
       this.currentProp = ''
       this.currentType = ''
       this.maxNumber = 0
+      this.prevAreaData = null
       if (isClose) { // 关闭弹窗的时候
         this.ifShowSelect = false
         this.fileid = []
@@ -534,25 +592,19 @@ export default {
           ? addCost(this.formData.list[0])
           : updateCost(this.formData.list[0])
       } else {
-        return Promise.reject({ message: '请将必填项填写' })
+        return Promise.reject({ message: '格式错误或必填项未填写' })
       }
     },
     deleteFileList ({ id }) {
       this.fileid.push(id)
       // console.log(this.fileid, 'deleteFileList')
     }
-  },
-  created () {
-
-  },
-  mounted () {
-
-  },
+  }
 }
 </script>
 <style lang='scss' scoped>
 .template-wrapper {
-  height: 400px;
+  min-height: 122px;
   ::v-deep .el-form-item--mini.el-form-item {
     margin-bottom: 0;
   }
@@ -606,6 +658,33 @@ export default {
   }
   .template-content-wrapper {
     margin-top: 15px;
+    ::v-deep .el-table  {
+      overflow: visible;
+      .el-table__body-wrapper {
+        overflow: visible;
+      }
+      .cell {
+        overflow: visible;
+      }
+    }
+    .form-wrapper {
+      &.acc {
+        width: 881px;
+      }
+      &.other {
+        width: 811px;
+      }
+      .area-wrapper {
+        position: relative;
+        .selector-wrapper {
+          position: absolute;
+          top: 40px;
+          left: 0;
+          z-index: 100;
+          // transform: translate3d(0, -100%, 0);
+        }
+      }
+    }
   }
 }
 </style>
