@@ -250,8 +250,8 @@ namespace OpenAuth.App
                 q.c.CompleteAddress,
                 q.c.TechnicianId,
                 q.c.TechnicianName,
-                q.c.TroubleDescription,
-                q.c.ProcessDescription
+                q.a.TroubleDescription,
+                q.a.ProcessDescription
             }).FirstOrDefaultAsync();
             var thisworkdetail = query.MapTo<CompletionReportDetailsResp>();
             thisworkdetail.Files = new List<UploadFileResp>();
