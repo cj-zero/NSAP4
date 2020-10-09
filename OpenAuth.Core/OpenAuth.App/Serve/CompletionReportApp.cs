@@ -284,6 +284,8 @@ namespace OpenAuth.App
 
             var thisworkdetail = CompletionReportModel.MapToList<CompletionReportDetailsResp>();
             var workmodel = await UnitWork.Find<ServiceWorkOrder>(w => w.ServiceOrderId.Equals(ServiceOrderId)).ToListAsync();
+
+            var U_SAP_ID = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(ServiceOrderId)).Select(s => s.U_SAP_ID).FirstOrDefaultAsync();
             foreach (var item in thisworkdetail)
             {
                 item.Files = new List<UploadFileResp>();
@@ -298,7 +300,7 @@ namespace OpenAuth.App
                     item.ServiceMode = worklist.Select(s => s.ServiceMode).FirstOrDefault();
                     item.ProcessDescription = worklist.Select(s => s.ProcessDescription).FirstOrDefault();
                     item.TroubleDescription = worklist.Select(s => s.TroubleDescription).FirstOrDefault();
-                    item.U_SAP_ID = worklist.Select(s => s.WorkOrderNumber).FirstOrDefault().Substring(0, worklist.Select(s => s.WorkOrderNumber).FirstOrDefault().IndexOf("-"));
+                    item.U_SAP_ID = U_SAP_ID.ToString();
                 }
                 item.MaterialCodeTypeName = item.MaterialCode == "其他设备" ? "其他设备" : await UnitWork.Find<MaterialType>(m => m.TypeAlias.Equals(item.MaterialCode.Substring(0, item.MaterialCode.IndexOf("-")))).Select(m => m.TypeName).FirstOrDefaultAsync();
             }

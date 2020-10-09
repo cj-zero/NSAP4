@@ -5,7 +5,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Infrastructure;
+using Infrastructure.Export;
 using Infrastructure.Extensions;
+using Infrastructure.GeneralAnalytical;
 using log4net.Appender;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +21,7 @@ using OpenAuth.App.Serve.Request;
 using OpenAuth.App.Serve.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
-
+using static Infrastructure.GeneralAnalytical.ConvertTheType;
 
 namespace OpenAuth.App
 {
@@ -219,7 +221,7 @@ namespace OpenAuth.App
             result.Data = datas.Select(d => new
             {
                 ReimburseResp = d,
-                FillTime=d.CreateTime.ToString("yyyy-MM-dd"),
+                FillTime = d.CreateTime.ToString("yyyy-MM-dd"),
                 OrgName = SelOrgName.Where(o => o.Id.Equals(Relevances.Where(r => r.FirstId.Equals(d.CreateUserId)).Select(r => r.SecondId).FirstOrDefault())).OrderBy(o => o.CascadeId).Select(o => o.Name).FirstOrDefault(),
                 UserName = SelUserName.Where(u => u.Id.Equals(d.CreateUserId)).Select(u => u.Name).FirstOrDefault(),
                 TerminalCustomerId = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.TerminalCustomerId).FirstOrDefault(),
@@ -250,7 +252,7 @@ namespace OpenAuth.App
             var loginUser = loginContext.User;
             if (loginUser.Account == "App")
             {
-                loginUser =await GetUserId(Convert.ToInt32(request.AppId));
+                loginUser = await GetUserId(Convert.ToInt32(request.AppId));
             }
 
             #region 查询条件
@@ -348,7 +350,7 @@ namespace OpenAuth.App
             {
                 UserId = loginUser.Id,
                 UserName = loginUser.Name,
-                ServiceRelations= loginUser.ServiceRelations ==null?"未录入":loginUser.ServiceRelations,
+                ServiceRelations = loginUser.ServiceRelations == null ? "未录入" : loginUser.ServiceRelations,
                 s.TerminalCustomer,
                 s.TerminalCustomerId,
                 s.Id,
@@ -498,10 +500,10 @@ namespace OpenAuth.App
 
             #region 删除我的费用
 
-            req.ReimburseFares= req.ReimburseFares.Where(r=>r.IsAdd==null || r.IsAdd==true).ToList();
-            req.ReimburseAccommodationSubsidies= req.ReimburseAccommodationSubsidies.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
-            req.ReimburseOtherCharges= req.ReimburseOtherCharges.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
-            if (req.MyexpendsIds != null && req.MyexpendsIds.Count > 0) 
+            req.ReimburseFares = req.ReimburseFares.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
+            req.ReimburseAccommodationSubsidies = req.ReimburseAccommodationSubsidies.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
+            req.ReimburseOtherCharges = req.ReimburseOtherCharges.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
+            if (req.MyexpendsIds != null && req.MyexpendsIds.Count > 0)
             {
                 var myexpends = await UnitWork.Find<MyExpends>(m => req.MyexpendsIds.Contains(m.Id)).ToListAsync();
                 foreach (var item in myexpends)
@@ -662,7 +664,7 @@ namespace OpenAuth.App
             var loginUser = loginContext.User;
             if (loginUser.Account == "App")
             {
-                loginUser =await  GetUserId(Convert.ToInt32(req.AppId));
+                loginUser = await GetUserId(Convert.ToInt32(req.AppId));
             }
 
             #region 删除我的费用
@@ -687,7 +689,7 @@ namespace OpenAuth.App
             {
                 foreach (var item in req.ReimburseFares)
                 {
-                    if (string.IsNullOrWhiteSpace(item.Id.ToString()) && item.Id.ToString() == "0")
+                    if (string.IsNullOrWhiteSpace(item.Id.ToString()) || item.Id.ToString() == "0")
                     {
                         InvoiceNumbers.Add(item.InvoiceNumber);
                     }
@@ -702,7 +704,7 @@ namespace OpenAuth.App
             {
                 foreach (var item in req.ReimburseAccommodationSubsidies)
                 {
-                    if (string.IsNullOrWhiteSpace(item.Id.ToString()) && item.Id.ToString() == "0")
+                    if (string.IsNullOrWhiteSpace(item.Id.ToString()) || item.Id.ToString() == "0")
                     {
                         InvoiceNumbers.Add(item.InvoiceNumber);
                     }
@@ -717,7 +719,7 @@ namespace OpenAuth.App
             {
                 foreach (var item in req.ReimburseOtherCharges)
                 {
-                    if (string.IsNullOrWhiteSpace(item.Id.ToString()) && item.Id.ToString() == "0")
+                    if (string.IsNullOrWhiteSpace(item.Id.ToString()) || item.Id.ToString() == "0")
                     {
                         InvoiceNumbers.Add(item.InvoiceNumber);
                     }
@@ -729,7 +731,7 @@ namespace OpenAuth.App
             }
             #endregion
 
-            
+
             await semaphoreSlim.WaitAsync();
             var obj = req.MapTo<ReimburseInfo>();
 
@@ -1180,12 +1182,61 @@ namespace OpenAuth.App
                         .Include(r => r.ReimburseOtherCharges)
                         .Include(r => r.ReimurseOperationHistories)
                         .FirstOrDefaultAsync();
-            if (Reimburse != null)
+
+            var user = await UnitWork.Find<User>(u => u.Id.Equals(Reimburse.CreateUserId)).FirstOrDefaultAsync();
+            var orgids = await UnitWork.Find<Relevance>(r => r.Key == "UserOrg" && r.FirstId == Reimburse.CreateUserId).Select(r => r.SecondId).ToListAsync();
+            var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderBy(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
+            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == Reimburse.ServiceOrderId && c.CreateUserId.Equals(Reimburse.CreateUserId)).OrderByDescending(c => c.CreateTime).FirstOrDefaultAsync();
+            decimal? money = 0;
+            if (Reimburse.ReimburseTravellingAllowances != null && Reimburse.ReimburseTravellingAllowances.Count > 0)
             {
-
+                var rta = Reimburse.ReimburseTravellingAllowances.FirstOrDefault();
+                money = rta.Money * rta.Days;
             }
-        }
+            var Subsidy = money;
+            if (Reimburse.ReimburseAccommodationSubsidies != null && Reimburse.ReimburseAccommodationSubsidies.Count > 0)
+            {
+                money = 0;
+                Reimburse.ReimburseAccommodationSubsidies.ForEach(r => money += r.TotalMoney);
+            }
+            var PutUp = money;
+            if (Reimburse.ReimburseOtherCharges != null && Reimburse.ReimburseOtherCharges.Count > 0)
+            {
+                money = 0;
+                Reimburse.ReimburseOtherCharges.ForEach(r => money += r.Money);
+            }
+            var Else = money;
+            decimal? Aircraft = 0, Train = 0, Coach = 0, Transport = 0;
+            if (Reimburse.ReimburseFares != null && Reimburse.ReimburseFares.Count > 0)
+            {
+                Reimburse.ReimburseFares.Where(r => r.Transport == "1").ForEach(r => Aircraft += r.Money);
+                Reimburse.ReimburseFares.Where(r => r.Transport == "2").ForEach(r => Train += r.Money);
+                Reimburse.ReimburseFares.Where(r => r.Transport == "3").ForEach(r => Coach += r.Money);
+                Reimburse.ReimburseFares.Where(r => r.Transport == "4").ForEach(r => Transport += r.Money);
+            }
 
+            var PrintReimburse = new PrintReimburseResp
+            {
+                StartTime = CompletionReports.BusinessTripDate,
+                EndTime = CompletionReports.EndDate,
+                Day = CompletionReports.BusinessTripDays,
+                ReimburseId = Reimburse.MainId,
+                OrgName = orgname,
+                UserName = user.Name,
+                Position = "",
+                TerminalCustomer = CompletionReports.TerminalCustomer,
+                FromTheme = CompletionReports.FromTheme,
+                Subsidy = Subsidy,
+                Else = Else,
+                PutUp = PutUp,
+                Aircraft = Aircraft,
+                Train = Train,
+                Coach = Coach,
+                Transport = Transport,
+                Total = TransformCharOrNumber.SumConvert(null, Convert.ToDecimal(Reimburse.TotalMoney), ConvertType.MonetaryCapital),
+            };
+            await ExportAllHandler.Exporterpdf(@"D:\工作\程序\前端\aaa.pdf", PrintReimburse, "PrintReimburse.cshtml");
+        }
 
         /// <summary>
         /// 获取用户
