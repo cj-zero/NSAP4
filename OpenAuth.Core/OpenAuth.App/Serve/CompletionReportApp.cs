@@ -269,17 +269,21 @@ namespace OpenAuth.App
         /// <param name="CompletionReportId"></param>
         /// <param name="ServiceWorkOrderId"></param>
         /// <returns></returns>
-        public async Task<TableData> GetCompletionReportDetailsWeb(int ServiceOrderId)
+        public async Task<TableData> GetCompletionReportDetailsWeb(int ServiceOrderId,string UserId=null)
         {
             var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
             var CompletionReportModel = await UnitWork.Find<CompletionReport>(u => u.ServiceOrderId == ServiceOrderId).ToListAsync();
 
-            if (!loginContext.Roles.Any(r => r.Name.Equals("售后主管")) && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")) && !loginContext.Roles.Any(r => r.Name.Equals("财务初审")) && !loginContext.Roles.Any(r => r.Name.Equals("财务复审")) && !loginContext.Roles.Any(r => r.Name.Equals("出纳")) && !loginContext.Roles.Any(r => r.Name.Equals("总经理")))
+            if (!loginContext.Roles.Any(r => r.Name.Equals("售后主管")) && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
             {
                 //var appuserid = await UnitWork.Find<AppUserMap>(u => u.UserID.Equals(loginContext.User.Id)).Select(u => u.AppUserId).FirstOrDefaultAsync();
                 //CompletionReportModel = CompletionReportModel.Where(c => c.TechnicianId.Equals(appuserid.ToString())).ToList();
                 CompletionReportModel = CompletionReportModel.Where(c => c.CreateUserId.Equals(loginContext.User.Id)).ToList();
+            }
+            if (UserId != null)
+            {
+                CompletionReportModel = CompletionReportModel.Where(c => c.CreateUserId.Equals(UserId)).ToList();
             }
 
             var thisworkdetail = CompletionReportModel.MapToList<CompletionReportDetailsResp>();
