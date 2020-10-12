@@ -49,7 +49,7 @@ namespace OpenAuth.App
             var ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => ReimburseAttachmentIds.Contains(r.ReimburseId) && r.ReimburseType == 5).ToListAsync();
             var fileids = ReimburseAttachments.Select(r => r.FileId).ToList();
             var file = await UnitWork.Find<UploadFile>(f=> fileids.Contains(f.Id)).ToListAsync();
-            MyExpendsDetails.ForEach(m => m.ReimburseAttachments = ReimburseAttachments.Where(r=>r.ReimburseId.Equals(r.Id)).Select(r => new ReimburseAttachmentResp
+            MyExpendsDetails.ForEach(m => m.ReimburseAttachments = ReimburseAttachments.Where(r=>r.ReimburseId.Equals(m.Id)).Select(r => new ReimburseAttachmentResp
             {
                 Id = r.Id,
                 FileId = r.FileId,
