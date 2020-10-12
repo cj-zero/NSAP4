@@ -115,7 +115,7 @@ namespace OpenAuth.WebApi.Controllers
                         InvoiceResponse invoiceresponse = new InvoiceResponse();
                         invoiceresponse.InvoiceNo = item.InvoiceNo;
                         invoiceresponse.AmountWithTax = item.AmountWithTax;
-                        invoiceresponse.ComapnyTaxCode = item.ComapnyTaxCode;
+                        invoiceresponse.CompanyTaxCode = item.CompanyTaxCode;
                         invoiceresponse.CompanyName = item.CompanyName;
                         invoiceresponse.Type = item.Type;
                         //2.判断发票是否已经使用 已使用不走验证
@@ -133,7 +133,7 @@ namespace OpenAuth.WebApi.Controllers
                             //判断是否为当前公司的抬头且是增值税发票才进行验证
                             if (type == 3)
                             {
-                                if (TaxCodeList.Contains(item.ComapnyTaxCode))
+                                if (TaxCodeList.Contains(item.CompanyTaxCode))
                                 {
                                     // 3.核验发票(增值税发票)
                                     VatInvoiceVerifyRequest req = new VatInvoiceVerifyRequest

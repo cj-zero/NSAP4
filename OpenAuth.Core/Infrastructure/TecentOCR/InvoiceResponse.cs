@@ -25,7 +25,7 @@ namespace Infrastructure.TecentOCR
         /// <summary>
         /// 纳税人识别号
         /// </summary>
-        public string ComapnyTaxCode { get; set; }
+        public string CompanyTaxCode { get; set; }
 
         /// <summary>
         /// 是否核验通过
@@ -120,7 +120,7 @@ namespace Infrastructure.TecentOCR
         /// <summary>
         /// 纳税人识别号
         /// </summary>
-        public string ComapnyTaxCode { get; set; }
+        public string CompanyTaxCode { get; set; }
 
         /// <summary>
         /// 发票校验码

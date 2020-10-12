@@ -59,7 +59,7 @@ namespace Infrastructure.TecentOCR
                 var invoiceDate = GetDateFormat(resp.VatInvoiceInfos.SingleOrDefault(s => s.Name == "开票日期").Value);
                 var checkCode = resp.VatInvoiceInfos.SingleOrDefault(s => s.Name == "校验码").Value;
                 var companyName = resp.VatInvoiceInfos.SingleOrDefault(s => s.Name == "购买方名称").Value;
-                var comapnyTaxCode = resp.VatInvoiceInfos.SingleOrDefault(s => s.Name == "购买方识别号").Value;
+                var companyTaxCode = resp.VatInvoiceInfos.SingleOrDefault(s => s.Name == "购买方识别号").Value;
                 var amountWithTax = decimal.Parse(resp.VatInvoiceInfos.SingleOrDefault(s => s.Name == "小写金额").Value.ToString()[1..resp.VatInvoiceInfos.SingleOrDefault(s => s.Name == "小写金额").Value.Length]);
                 TicketInfo ticketInfo = new TicketInfo
                 {
@@ -68,7 +68,7 @@ namespace Infrastructure.TecentOCR
                     InvoiceDate = invoiceDate,
                     AmountWithTax = amountWithTax,
                     CompanyName = companyName,
-                    ComapnyTaxCode = comapnyTaxCode,
+                    CompanyTaxCode = companyTaxCode,
                     CheckCode = checkCode,
                     Type = 3
                 };
@@ -110,7 +110,7 @@ namespace Infrastructure.TecentOCR
                         decimal amountWithTax = decimal.Zero;
                         string checkCode = string.Empty;
                         string companyName = string.Empty;
-                        string comapnyTaxCode = string.Empty;
+                        string companyTaxCode = string.Empty;
                         switch (ticketType)
                         {
                             case 0:
@@ -139,7 +139,7 @@ namespace Infrastructure.TecentOCR
                                 invoiceDate = GetDateFormat(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "开票日期").Value);
                                 checkCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "校验码").Value;
                                 companyName = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "购买方名称").Value;
-                                comapnyTaxCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "购买方识别号").Value;
+                                companyTaxCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "购买方识别号").Value;
                                 amountWithTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "小写金额").Value.ToString()[1..SingleInvoiceInfos.SingleOrDefault(s => s.Name == "小写金额").Value.Length]);
                                 break;
                             case 5://飞机行程单没有发票代码和发票号码 分别取行程单上的印刷序号和电子客票号码
@@ -176,7 +176,7 @@ namespace Infrastructure.TecentOCR
                             InvoiceDate = invoiceDate,
                             AmountWithTax = amountWithTax,
                             CompanyName = companyName,
-                            ComapnyTaxCode = comapnyTaxCode,
+                            CompanyTaxCode = companyTaxCode,
                             CheckCode = checkCode,
                             Type = (int)item.Type,
                             Extend = extend
