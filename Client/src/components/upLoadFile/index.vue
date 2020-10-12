@@ -90,7 +90,12 @@
         :disabled="disabled"
         :file-list="fileList"
         >
-        <el-button size="mini" type="primary">点击上传</el-button>
+        <!-- <el-button size="mini" type="primary">点击上传</el-button>
+         -->
+         <template v-if="isShowTip">
+           <i class="el-icon-upload"></i>
+          <span class="upload-text" style="font-size: 12px; margin-left: 5px;">上传</span>
+         </template>
       </el-upload>
     </template>
   </div>
@@ -177,11 +182,17 @@ export default {
       }
     }
   },
+  computed: {
+    isShowTip () {
+      return true
+    }
+  },
   methods: {
     closeViewer () {
       this.dialogVisible = false
     },
-    handleRemove(file) {
+    handleRemove(file, fileList) {
+      console.log(fileList, 'remove fileList')
       let { uid, id } = file
       if (this.fileList && this.fileList.length) { // 如果是fileList列表则直接通过id来判断，将id值传出去，用于删除附件
         let findIndex = this.fileList.findIndex(item => item.id === id)
@@ -199,7 +210,10 @@ export default {
       this.newPictureList.splice(findIndex, 1)
       this.pictures.splice(findIndex, 1)
       console.log(file, 'deleteFile')
-      this.$emit('get-ImgList', this.pictures, this.options)
+      this.$emit('get-ImgList', this.pictures, {
+        ...this.options,
+        operation: 'delete' // 删除操作
+      })
     },
     handlePictureCardPreview(file) {
       this.dialogImageUrl = file.url;
@@ -242,6 +256,7 @@ export default {
       this.$message.error(`最多上传${this.limit}个文件`)
     },
     successBack(res, file, fileList){
+      console.log(fileList, 'success FileList')
       let _this = this
       this.newPictureList.push({
         pictureId:res.result[0].id,
@@ -261,7 +276,7 @@ export default {
       this.$emit('get-ImgList', this.pictures, {
         fileId: res.result[0].id, // 当前上传成功的ID
         fileList,
-        vm: _this,
+        uploadVm: _this,
         ...this.options
       })
     },
@@ -285,6 +300,10 @@ export default {
     width: 70px !important;
     height: 70px !important;
     line-height: 70px !important;
+    .upload-text {
+      margin-left: 5px;
+      font-size: 14px;
+    }
   }
   ::v-deep .el-upload-list__item {
     width: 70px;
@@ -298,6 +317,7 @@ export default {
     position: absolute;
     right: 14px;
   }
+  
 }
 
 

@@ -432,7 +432,7 @@ export let categoryMixin = {
         { label: '目的地', prop: 'to', type: 'input', width: 125, readonly: true },
         { label: '金额', prop: 'money', type: 'number', align: 'right', width: 150 },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 120 },
+        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 130 },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 },
         { label: '操作', type: 'operation', iconList: this.iconList, width: 110 }
@@ -493,7 +493,7 @@ export const attachmentMixin = {
             reader.readAsDataURL(file)
             // image.src = URL.createObjectURL(file)
             image.onload = function() {
-              console.log(_this.compressUpload(image, file.type), 'after compress', image)
+              // console.log(_this.compressUpload(image, file.type), 'after compress', image)
               resolve(_this.compressUpload(image, file.type))
             }
           } else {
@@ -525,7 +525,7 @@ export const attachmentMixin = {
       return new Blob([new Uint8Array(array)], { type })
     },
     _setCurrentRow (currentRow, data) { // 识别发票凭据后，对表格行进行赋值
-      let { invoiceNo, money, isAcc, isTrue } = data
+      let { invoiceNo, money, isAcc } = data
       if (isAcc) { // 住宿表格行数据
         currentRow.totalMoney = money
         currentRow.money = (currentRow.totalMoney / (currentRow.days || 1)).toFixed(2)
@@ -534,51 +534,63 @@ export const attachmentMixin = {
       }
       currentRow.maxMoney = money
       currentRow.invoiceNumber = invoiceNo
-      this.$set(currentRow, 'isTrue', isTrue)
+      // this.
       console.log(this.formData, '识别新的')
     },
-    _identifyInvoice (fileId, currentRow, isAcc = false) { // 票据识别
-      identifyInvoice({
-        fileId
-      }).then(res => {
-        if (res.data && !res.data.length) {
+    _identifyInvoice (data, isAcc = false) { // 票据识别
+      let { fileId, currentRow, uploadVm } = data
+      return new Promise(resolve => {
+        identifyInvoice({
+          fileId
+        }).then(res => {
+          if (res.data && !res.data.length) {
+            this._setCurrentRow(currentRow, {
+              invoiceNo: '',
+              money: '',
+              isAcc,
+              isTrue: false
+            })
+            uploadVm.clearFiles()
+            this.$message.error('识别失败')
+            resolve(false)
+          } else {
+            let { invoiceNo, amountWithTax, isValidate, isUsed, notPassReason } = res.data[0]
+            if (!isValidate || (isValidate && isUsed)) {
+              this._setCurrentRow(currentRow, {
+                invoiceNo: '',
+                money: '',
+                isAcc,
+                isTrue: false
+              })
+              uploadVm.clearFiles()
+              this.$message.error(notPassReason ? notPassReason : '识别失败')
+              resolve(false)
+            } else {
+              this.$message({
+                type: 'success',
+                message: '识别成功'
+              })
+              this._setCurrentRow(currentRow, {
+                invoiceNo,
+                money: amountWithTax,
+                isAcc,
+                isTrue: true
+              })
+              resolve(true)
+            }
+          }
+        }).catch(err => {
+          console.error(err, 'err')
           this._setCurrentRow(currentRow, {
-            invoiceNo: '',
+            invoiceNo:'',
             money: '',
-            isTrue: false,
-            isAcc
+            isAcc,
+            isTrue: false
           })
-          return this.$message.error('识别失败')
-        }
-        let { invoiceNo, amountWithTax, isValidate, isUsed, notPassReason } = res.data[0]
-        if (!isValidate || (isValidate && isUsed)) {
-          this._setCurrentRow(currentRow, {
-            invoiceNo: '',
-            money: '',
-            isTrue: false,
-            isAcc
-          })
-          return this.$message.error(notPassReason ? notPassReason : '识别失败')
-        }
-        this.$message({
-          type: 'success',
-          message: '识别成功'
+          uploadVm.clearFiles()
+          this.$message.error(err.message || '识别失败')
+          resolve(false)
         })
-        this._setCurrentRow(currentRow, {
-          invoiceNo,
-          money: amountWithTax,
-          isTrue: true,
-          isAcc
-        })
-      }).catch(err => {
-        console.error(err)
-        this._setCurrentRow(currentRow, {
-          invoiceNo:'',
-          money: '',
-          isTrue: false,
-          isAcc
-        })
-        this.$message.error(err.message || '识别失败')
       })
     },
     _buildAttachment (data, isImport = false) { // 为了回显，并且编辑 目标是为了保证跟order.vue的数据保持相同的逻辑
@@ -602,7 +614,7 @@ export const attachmentMixin = {
           item.isAdd = true
           if (isImport) { // 如果是通过我的费用单引入的模板，则需要删除对应的ID,避免新建时出错
             item.reimburseId = 0
-            item.id = 0
+            // item.id = 0
           }
           return item
         })
@@ -631,9 +643,25 @@ export const attachmentMixin = {
       data.forEach(item => {
         let { invoiceAttachment, otherAttachment, invoiceFileList, otherFileList, isImport } = item
         if (isImport) {
-          item.id = '' // 如果是导入费用的话， 要把id变成空, 这些数据是没有新增和修改的
+          item.id = '' // 如果是导入费用的话， 要把id变成空, 这些数据是没有新增和修改的 行数据
         }
+        this._setAttachmentId(invoiceAttachment, isImport)
+        this._setAttachmentId(otherAttachment, isImport)
+        this._setAttachmentId(invoiceFileList, isImport)
+        this._setAttachmentId(otherFileList, isImport)
+        console.log(invoiceAttachment, otherAttachment, invoiceFileList, otherFileList, 'setID')
         item.reimburseAttachments = [...invoiceAttachment, ...otherAttachment, ...invoiceFileList, ...otherFileList]
+        // delete item.invoiceAttachment
+        // delete item.otherAttachment
+        // delete item.invoiceFileList
+        // delete item.otherFileList
+      })
+    },
+    _setAttachmentId (data, isImport) { // 如果是导入的数据需要将附件ID变成零
+      data.forEach(item => {
+        if (isImport) {
+          item.id = 0
+        }
       })
     }
   }
