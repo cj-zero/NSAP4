@@ -152,11 +152,12 @@ namespace OpenAuth.WebApi.Controllers
                                     else
                                     {
                                         invoiceresponse.IsValidate = 0;
-                                        invoiceresponse.NotPassReason = response.Message;
+                                        invoiceresponse.NotPassReason = "核验失败：" + response.Message;
                                     }
                                 }
                                 else
                                 {
+                                    invoiceresponse.IsValidate = 0;
                                     invoiceresponse.NotPassReason = "发票抬头和系统维护的不一样，禁止报销";
                                 }
                             }
