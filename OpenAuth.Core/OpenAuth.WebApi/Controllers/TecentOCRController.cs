@@ -22,12 +22,14 @@ namespace OpenAuth.WebApi.Controllers
         private readonly TecentOCR _tecentOCR;
         private readonly FileApp _fileapp;
         private ReimburseInfoApp _reimburseInfoApp;
+        private MyExpendsApp _myExpendsApp;
 
-        public TecentOCRController(TecentOCR tecentOCR, FileApp fileApp, ReimburseInfoApp reimburseInfoApp)
+        public TecentOCRController(TecentOCR tecentOCR, FileApp fileApp, ReimburseInfoApp reimburseInfoApp, MyExpendsApp myExpendsApp)
         {
             _tecentOCR = tecentOCR;
             _fileapp = fileApp;
             _reimburseInfoApp = reimburseInfoApp;
+            _myExpendsApp = myExpendsApp;
         }
         /// <summary>
         /// 纳税人识别号（新威）
@@ -119,10 +121,9 @@ namespace OpenAuth.WebApi.Controllers
                         invoiceresponse.CompanyName = item.CompanyName;
                         invoiceresponse.Type = item.Type;
                         invoiceresponse.ExtendInfo = item.Extend;
-                        //2.判断发票是否已经使用 已使用不走验证
-                        List<string> InvoiceNo = new List<string>();
-                        InvoiceNo.Add(item.InvoiceNo);
-                        if (!await _reimburseInfoApp.IsSole(InvoiceNo))
+                        //2.判断发票是否已经使用且不在我的费用中 已使用或已在我的费用中不走验证
+                        List<string> InvoiceNo = new List<string> { item.InvoiceNo };
+                        if (!await _reimburseInfoApp.IsSole(InvoiceNo) || !await _myExpendsApp.IsSole(request.AppUserId, item.InvoiceNo))
                         {
                             invoiceresponse.IsUsed = 1;
                             invoiceresponse.NotPassReason = "发票已被使用";
