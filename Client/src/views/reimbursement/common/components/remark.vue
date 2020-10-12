@@ -25,7 +25,6 @@ export default {
   },
   methods: {
     onInput (value) {
-      console.log(value, 'e')
       this.$emit('input', value)
     },
     reset () {

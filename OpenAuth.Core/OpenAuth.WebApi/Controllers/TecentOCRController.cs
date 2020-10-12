@@ -115,9 +115,10 @@ namespace OpenAuth.WebApi.Controllers
                         InvoiceResponse invoiceresponse = new InvoiceResponse();
                         invoiceresponse.InvoiceNo = item.InvoiceNo;
                         invoiceresponse.AmountWithTax = item.AmountWithTax;
-                        invoiceresponse.ComapnyTaxCode = item.ComapnyTaxCode;
+                        invoiceresponse.CompanyTaxCode = item.CompanyTaxCode;
                         invoiceresponse.CompanyName = item.CompanyName;
                         invoiceresponse.Type = item.Type;
+                        invoiceresponse.ExtendInfo = item.Extend;
                         //2.判断发票是否已经使用 已使用不走验证
                         List<string> InvoiceNo = new List<string>();
                         InvoiceNo.Add(item.InvoiceNo);
@@ -133,15 +134,15 @@ namespace OpenAuth.WebApi.Controllers
                             //判断是否为当前公司的抬头且是增值税发票才进行验证
                             if (type == 3)
                             {
-                                if (TaxCodeList.Contains(item.ComapnyTaxCode))
+                                if (TaxCodeList.Contains(item.CompanyTaxCode))
                                 {
-                                    // 3.核验发票(增值税发票)
+                                    // 3.核验发票(增值税发票) 校验码大于等于6位取后六位 小于6位则格式为 不含税金额 +  /  +五位校验码
                                     VatInvoiceVerifyRequest req = new VatInvoiceVerifyRequest
                                     {
                                         InvoiceCode = item.InvoiceCode,
                                         InvoiceNo = item.InvoiceNo,
                                         InvoiceDate = item.InvoiceDate,
-                                        Additional = item.CheckCode.Length > 6 ? item.CheckCode.Substring(item.CheckCode.Length - 6) : string.Empty
+                                        Additional = item.CheckCode.Length > 6 ? item.CheckCode.Substring(item.CheckCode.Length - 6) : item.AmountWithTax + "/" + item.CheckCode
                                     };
                                     var response = _tecentOCR.VatInvoiceVerify(req);
                                     //核验成功 返回核验结果
@@ -152,11 +153,12 @@ namespace OpenAuth.WebApi.Controllers
                                     else
                                     {
                                         invoiceresponse.IsValidate = 0;
-                                        invoiceresponse.NotPassReason = response.Message;
+                                        invoiceresponse.NotPassReason = "核验失败：" + response.Message;
                                     }
                                 }
                                 else
                                 {
+                                    invoiceresponse.IsValidate = 0;
                                     invoiceresponse.NotPassReason = "发票抬头和系统维护的不一样，禁止报销";
                                 }
                             }

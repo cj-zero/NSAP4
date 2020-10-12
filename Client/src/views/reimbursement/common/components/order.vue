@@ -41,7 +41,7 @@
             <template v-else-if="item.type === 'select'">
               <el-select 
                 clearable
-                :style="{ width: item.width + 'px' }"
+                :style="{ width: item.width }"
                 v-model="formData[item.prop]" 
                 :placeholder="item.placeholder"
                 :disabled="item.disabled">
@@ -66,7 +66,7 @@
             <template v-else-if="item.type === 'button'">
               <el-button 
                 type="primary" 
-                style="width: 157px;" 
+                style="width: 100%;" 
                 @click="item.handleClick(formData.serviceOrderId)"
                 :loading="reportBtnLoading">{{ item.btnText }}</el-button>
             </template>
@@ -86,7 +86,7 @@
         @deleteFileList="deleteFileList"></upLoadFile>
     </el-row>
     <!-- 出差 -->
-    <div class="form-item-wrapper" v-if="ifCOrE || formData.reimburseTravellingAllowances.length">
+    <div class="form-item-wrapper" style="width: 622px;" v-if="ifCOrE || formData.reimburseTravellingAllowances.length">
       <el-button v-if="ifShowTravel" @click="showForm(formData.reimburseTravellingAllowances, 'ifShowTravel')">添加出差补贴</el-button>
       <el-form 
         v-else
@@ -115,6 +115,7 @@
               v-for="item in travelConfig"
               :key="item.label"
               :label="item.label"
+              :width="item.width"
               :align="item.align || 'left'"
               :prop="item.prop"
               :fixed="item.fixed"
@@ -217,7 +218,21 @@
                     :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
                     :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }"
                   >
-                    <el-input v-model="scope.row[item.prop]" :disabled="item.disabled"></el-input>
+                    <div class="area-wrapper">
+                      <el-input 
+                        v-model="scope.row[item.prop]" 
+                        :disabled="item.disabled" 
+                        :readonly="item.readonly || false"
+                        @focus="onAreaFocus({ prop: item.prop, index: scope.$index })">
+                      </el-input>
+                      <template v-if="ifFormEdit">  
+                        <!-- <my-dialog v-show="false"></my-dialog> -->
+                        <div class="selector-wrapper" 
+                          v-show="(scope.row.ifFromShow && item.prop === 'from') || (scope.row.ifToShow && item.prop === 'to')">
+                          <AreaSelector @close="onCloseArea" @change="onAreaChange" :options="{ prop: item.prop, index: scope.$index }"/>
+                        </div>
+                      </template>
+                    </div>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'number'">
@@ -284,7 +299,7 @@
     </div>
     
   <!-- 住宿 -->
-    <div class="form-item-wrapper" v-if="ifCOrE || formData.reimburseAccommodationSubsidies.length">
+    <div class="form-item-wrapper" style="width: 1042px;" v-if="ifCOrE || formData.reimburseAccommodationSubsidies.length">
       <el-button v-if="ifShowAcc" @click="showForm(formData.reimburseAccommodationSubsidies, 'ifShowAcc')">添加住宿补贴</el-button>
       <el-form 
       v-else
@@ -404,7 +419,7 @@
 
   <!-- 其它 -->
 
-    <div class="form-item-wrapper" v-if="ifCOrE || formData.reimburseOtherCharges.length">
+    <div class="form-item-wrapper" style="width: 979px;" v-if="ifCOrE || formData.reimburseOtherCharges.length">
       <el-button v-if="ifShowOther" @click="showForm(formData.reimburseOtherCharges, 'ifShowOther')">添加其他费用</el-button>
       <el-form 
         v-else
@@ -514,18 +529,22 @@
     </div> 
     <!-- 操作记录 -->
     <template v-if="this.title !== 'create' && this.title !== 'edit'">
-      <el-table 
-        :data="formData.reimurseOperationHistories"
-        border
-        max-height="300px"
-      >
-        <el-table-column label="操作记录" prop="action"></el-table-column>
-        <el-table-column label="操作人" prop="createUser"></el-table-column>
-        <el-table-column label="操作时间" prop="createTime"></el-table-column>
-        <el-table-column label="审批时长" prop="intervalTime"></el-table-column>
-        <el-table-column label="审批结果" prop="approvalResult"></el-table-column>
-        <el-table-column label="备注" prop="remark"></el-table-column>
-      </el-table>
+      <div style="width: 898px;">
+        <el-table 
+          show-overflow-tooltip
+          style="width: 989px;"
+          :data="formData.reimurseOperationHistories"
+          border
+          max-height="300px"
+        >
+          <el-table-column label="操作记录" prop="action" width="150px"></el-table-column>
+          <el-table-column label="操作人" prop="createUser" width="150px"></el-table-column>
+          <el-table-column label="操作时间" prop="createTime" width="150px"></el-table-column>
+          <el-table-column label="审批时长" prop="intervalTime" width="150px"></el-table-column>
+          <el-table-column label="审批结果" prop="approvalResult" width="150px"></el-table-column>
+          <el-table-column label="备注" prop="remark" width="147px"></el-table-column>
+        </el-table>
+      </div>
     </template>
     <!-- 客户选择列表 -->
     <my-dialog 
@@ -607,6 +626,7 @@ import MyDialog from '@/components/Dialog'
 import CommonTable from '@/components/CommonTable'
 import Report from './report'
 import Remark from './remark'
+import AreaSelector from '@/components/AreaSelector'
 import { toThousands } from '@/utils/format'
 import { findIndex } from '@/utils/process'
 import { deepClone } from '@/utils'
@@ -625,7 +645,8 @@ export default {
     MyDialog,
     CommonTable,
     Report,
-    Remark
+    Remark,
+    AreaSelector
   },
   props: {
     title: {
@@ -742,7 +763,8 @@ export default {
       selectedList: [], // 费用列表导出的数据，用来后续判断导出列表中是否可选
       remarkType: '', // 
       remarkText: '', // 弹窗备注
-      remarkLoading: false
+      remarkLoading: false,
+      prevAreaData: null // 上一次点击地址框的是时候，交通表格的行数据
     }
   },
   watch: {
@@ -911,8 +933,8 @@ export default {
     }
   },
   methods: {
-    rowStyle ({ row, rowIndex }) {
-      console.log(rowIndex, 'rowIndex')
+    rowStyle ({ row }) {
+      // console.log(rowIndex, 'rowIndex')
       if (!row.isAdd) {
         return {
           display: 'none'
@@ -1148,8 +1170,10 @@ export default {
       let currentRow = data[this.currentIndex]
       let { invoiceFileList, invoiceAttachment, maxMoney, invoiceNumber } = currentRow
       if (
+        (
           (invoiceFileList.length && !this.formData.fileId.includes(invoiceFileList[0].id)) || // 存在回显的文件代表已经新增的，并且还没被删除过
           (invoiceAttachment.length && invoiceNumber)
+        ) && maxMoney
       ) {
         if (this.currentProp === 'totalMoney' || this.currentProp === 'money') { // 只算修改totalMoney或者money字段
           console.log(maxMoney, value, 'enter ine')
@@ -1162,6 +1186,40 @@ export default {
     onFocus (val) {
       this.currentProp = val
       console.log('focus', val)
+    },
+    onAreaFocus ({ prop, index }) { // 打开地址选择
+      if (this.prevAreaData) {
+        this.prevAreaData.ifFromShow = false
+        this.prevAreaData.ifToShow = false
+      }
+      if (prop === 'from' || prop === 'to') {
+        let currentRow = this.formData.reimburseFares[index]
+        prop === 'from'
+          ? this.$set(currentRow, 'ifFromShow', true)
+          : this.$set(currentRow, 'ifToShow', true)
+        this.prevAreaData = currentRow
+      }
+    },
+    onCloseArea (options) { // 关闭地址选择器
+      let { prop, index } = options
+      let currentRow = this.formData.reimburseFares[index]
+      console.log(prop, index, 'closeArea', currentRow)
+      prop === 'from'
+          ? this.$set(currentRow, 'ifFromShow', false)
+          : this.$set(currentRow, 'ifToShow', false)
+      this.prevAreaData = null
+    },
+    onAreaChange (val) {
+      let { province, city, district, prop, index } = val
+      console.log(val, 'val')
+      let currentRow = this.formData.reimburseFares[index]
+      const countryList = ['北京市', '天津市', '上海市', '重庆市']
+      let result = ''
+      result = countryList.includes(province)
+        ? province + district
+        : city + district
+      currentRow[prop] = result
+      this.prevAreaData = null
     },
     selectTable () {
       let { reimburseFares, reimburseOtherCharges, reimburseAccommodationSubsidies } = this.formData
@@ -1504,6 +1562,7 @@ export default {
       this.clearFile()
       this.ifShowTraffic = this.ifShowOther = this.ifShowAcc = this.ifShowTravel = true
       this.selectedList = []
+      this.prevAreaData = null
       this.formData = { // 表单参数
         id: '',
         userName,
@@ -1595,7 +1654,7 @@ export default {
       let isValid = await this.checkData()
       console.log('submit', isValid, isDraft)
       if (!isValid) {
-        return Promise.reject({ message: '请将必填项填写完整' })
+        return Promise.reject({ message: '格式错误或必填项未填写' })
       }
       this.formData.isDraft = isDraft ? true : false
       console.log(this.formData, 'formData', addOrder)
@@ -1625,7 +1684,7 @@ export default {
       let isValid = await this.checkData()
       console.log('submit', isValid, isDraft)
       if (!isValid) {
-        return Promise.reject({ message: '请将必填项填写完整' })
+        return Promise.reject({ message: '格式错误或必填项未填写' })
       }
       this.formData.isDraft = isDraft ? true : false
       console.log(this.formData, 'update formData')
@@ -1639,7 +1698,7 @@ export default {
       this.$refs.form.validate(isValid => {
         console.log(isValid, 'ISvALID')
         if (!isValid) {
-          return this.$message.error('请将必选项填写')
+          return this.$message.error('格式错误或必填项未填写')
         } 
         console.log(this.remarkType, 'remarkType')
         let data = this.formData
@@ -1671,14 +1730,7 @@ export default {
         })
       })       
     }
-  },
-    
-  created () {
-
-  },
-  mounted () {
-
-  },
+  }
 }
 </script>
 <style lang='scss' scoped>
@@ -1712,6 +1764,16 @@ export default {
   }
   .form-item-wrapper {
     margin-bottom: 20px;
+    ::v-deep .el-table  {
+      overflow: visible;
+      .el-table__body-wrapper {
+        overflow: visible;
+      }
+      .cell {
+        overflow: visible;
+      }
+    }
+
     .title-wrapper {
       display: flex;
       justify-content: center;
@@ -1744,6 +1806,16 @@ export default {
           transform: translate3d(100%, 0, 0);
           font-size: 12px;
         }
+      }
+    }
+    .area-wrapper {
+      position: relative;
+      .selector-wrapper {
+        position: absolute;
+        top: 5px;
+        left: 0;
+        z-index: 100;
+        transform: translate3d(0, -100%, 0);
       }
     }
   }

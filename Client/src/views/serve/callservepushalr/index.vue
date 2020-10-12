@@ -412,6 +412,7 @@ export default {
         appId: undefined,
         Name: "", //	Description
         // u_SAP_ID: "", //- 查询服务ID查询条件
+        qryStatusBar: 1, // 默认取已派单 1: 已派单 2: 已解决
         u_SAP_ID: "",
         QryU_SAP_ID: "", // 查询服务ID
         QryState: "", //- 呼叫状态查询条件
@@ -487,6 +488,7 @@ export default {
       },
       downloadLoading: false,
       listQueryServer: {
+        qryStatusBar: 1, // 默认取已派单 1: 已派单 2: 已解决
         QryState: "", // 客户状态
         QryU_SAP_ID: '', // 查询服务ID
         limit: 30, // 条数
@@ -680,6 +682,8 @@ export default {
       this.listQueryServer = Object.assign(this.listQueryServer, val)
       this.listQueryServer.page = 1
       this.listQuery.page = 1
+      this.listQuery.qryStatusBar = this.activeName === 'first' ? 1 : 2
+      this.listQueryServer.qryStatusBar = this.activeName === 'first' ? 1 : 2
       this.afterLeft()
     },
     // openTree(res) {
@@ -836,7 +840,7 @@ export default {
         }
       } else {
         //第一次点击
-        console.log('初次起飞')
+        // console.log('初次起飞')
         this.listQuery.QryMaterialTypes = [];
         this.listQuery.page = 1
         if (!a.children) {
