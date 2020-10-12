@@ -118,6 +118,7 @@ namespace OpenAuth.WebApi.Controllers
                         invoiceresponse.CompanyTaxCode = item.CompanyTaxCode;
                         invoiceresponse.CompanyName = item.CompanyName;
                         invoiceresponse.Type = item.Type;
+                        invoiceresponse.ExtendInfo = item.Extend;
                         //2.判断发票是否已经使用 已使用不走验证
                         List<string> InvoiceNo = new List<string>();
                         InvoiceNo.Add(item.InvoiceNo);
@@ -135,13 +136,13 @@ namespace OpenAuth.WebApi.Controllers
                             {
                                 if (TaxCodeList.Contains(item.CompanyTaxCode))
                                 {
-                                    // 3.核验发票(增值税发票)
+                                    // 3.核验发票(增值税发票) 校验码大于等于6位取后六位 小于6位则格式为 不含税金额 +  /  +五位校验码
                                     VatInvoiceVerifyRequest req = new VatInvoiceVerifyRequest
                                     {
                                         InvoiceCode = item.InvoiceCode,
                                         InvoiceNo = item.InvoiceNo,
                                         InvoiceDate = item.InvoiceDate,
-                                        Additional = item.CheckCode.Length > 6 ? item.CheckCode.Substring(item.CheckCode.Length - 6) : string.Empty
+                                        Additional = item.CheckCode.Length > 6 ? item.CheckCode.Substring(item.CheckCode.Length - 6) : item.AmountWithTax + "/" + item.CheckCode
                                     };
                                     var response = _tecentOCR.VatInvoiceVerify(req);
                                     //核验成功 返回核验结果
