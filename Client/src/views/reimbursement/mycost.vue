@@ -42,7 +42,7 @@
                 </div>
                 <template v-else-if="item.label === '发票附件'">
                   <div class="link-container">
-                    <img :src="rightImg" @click="item.handleJump(scope.row.reimburseAttachments[0])" class="pointer">
+                    <img :src="rightImg" @click="item.handleJump(scope.row.reimburseAttachments)" class="pointer">
                     <span>查看</span>
                   </div>
                 </template>
@@ -237,9 +237,10 @@ export default {
         return item
       })
     },
-    jumpToDetail (detail) {
-      if (detail) {
-        let { fileId, fileType } = detail
+    jumpToDetail (attachmentList) {
+      let invoiceList = attachmentList.filter(item => item.attachmentType === 2) // 发票附件
+      if (invoiceList && invoiceList.length) {
+        let { fileId, fileType } = invoiceList[0]
         let url = `${this.baseURL}/${fileId}?X-Token=${this.tokenValue}`
         if (fileType) { // 文件类型 后台返回的
           if (/^image\/\w+/i.test(fileType)) {
@@ -249,8 +250,12 @@ export default {
             downloadFile(url)
           }
         } 
-      } 
-      // window.location.href = `${this.baseURL}/${fileId}?X-Token=${this.tokenValue}`
+      } else {
+        this.$message({
+          type: 'warning',
+          message: '无发票附件'
+        })
+      }
     },
     getDetail (val) { // 获取详情
       let { type } = val

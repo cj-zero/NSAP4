@@ -194,7 +194,6 @@ export default {
     }
   },
   updated () {
-    console.log(this.data, 'updated')
   },
   methods: {
     handleClick (val) {

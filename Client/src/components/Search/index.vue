@@ -65,7 +65,7 @@
       <template v-else-if="item.type === 'search'">
         <el-button
           :key="index"
-          class="filter-item"
+          class="filter-item customer-btn-class"
           @click="onSearch(item)"
           icon="el-icon-search"
           :size="item.size || 'mini'">
@@ -76,7 +76,7 @@
         <el-button
           v-if="item.isShow === undefined ? true : item.isShow"
           :key="index"
-          class="filter-item"
+          class="filter-item customer-btn-class"
           @click="item.handleClick({ listSearchQuery, ...(item.options || {}) })"
           :icon="item.icon || ''"
           :size="item.size || 'mini'">

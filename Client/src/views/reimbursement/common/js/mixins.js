@@ -282,7 +282,7 @@ export const reportMixin = {
       this.$refs.report.reset()
     },
     _normalizeReportData (data) {
-      return data.map(item => {
+      return data.filter(item => item.id).map(item => {
         let { serviceMode } = item
         item.serviceText = serviceMode ? this.serviceModeMap[serviceMode] : serviceMode
         item.isPhoneService = Number(serviceMode) === 1
@@ -639,6 +639,9 @@ export const attachmentMixin = {
         item.maxMoney = item.totalMoney || item.money // 存在附件时，需要对金额进行限制
         item.isAdd = true
         item.isTrue = Boolean(item.invoiceFileList.length)
+        if (isImport) {
+          item.myExpendsId = item.id // 吧当前的费用id赋值到myExpendsId
+        }
       })
     },
     getTargetAttachment (data, attachmentType, isImport) { // 用于el-upload 回显

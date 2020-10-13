@@ -40,6 +40,7 @@
           max-height="300px"
           @cell-click="onCellClick"
           @row-click="onRowClick"
+          :resizable="false"
           v-if="currentType"
         > 
           <template v-for="item in config">
@@ -72,7 +73,7 @@
                           class="el-input__icon"
                           :class="{
                             'el-icon-success success': scope.row.isTrue,
-                            'el-icon-error error': !scope.row.isTrue
+                            'el-icon-warning warning': !scope.row.isTrue
                           }">
                         </i>
                       </el-input>
@@ -637,10 +638,10 @@ export default {
   }
   ::v-deep .el-input__icon {
     &.success {
-      color: green;
+      color: rgba(0, 128, 0, 1);
     }
-    &.error {
-      color: red;
+    &.warning {
+      color: rgba(255, 165, 0, 1);
     }
   }
   ::v-deep .el-input.is-disabled .el-input__inner {
