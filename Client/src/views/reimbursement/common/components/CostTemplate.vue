@@ -705,10 +705,10 @@ export default {
     }
     .form-wrapper {
       &.acc {
-        width: 891px;
+        width: 916px;
       }
       &.other {
-        width: 821px;
+        width: 846px;
       }
       .area-wrapper {
         position: relative;
@@ -720,6 +720,18 @@ export default {
           // transform: translate3d(0, -100%, 0);
         }
       }
+    }
+  }
+  ::v-deep .el-form-item__content {
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        appearance: none; 
+        margin: 0; 
+    }
+    /* 火狐 */
+    input{
+      -moz-appearance: textfield;
     }
   }
 }

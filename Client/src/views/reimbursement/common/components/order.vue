@@ -5,6 +5,7 @@
       :model="formData"
       ref="form"
       class="my-form-wrapper"
+      :class="{ 'uneditable': !this.ifFormEdit }"
       :disabled="disabled"
       :label-width="labelWidth"
       size="mini"
@@ -99,6 +100,7 @@
         :show-message="false"
         class="form-wrapper"
         :disabled="!ifFormEdit"
+        :class="{ 'uneditable': !this.ifFormEdit }"
       >
         <div class="title-wrapper">
           <div class="number-count">总数量:{{ travelCount }}个</div>
@@ -184,6 +186,7 @@
         :show-message="false"
         class="form-wrapper"
         :disabled="!ifFormEdit"
+        :class="{ 'uneditable': !this.ifFormEdit }"
       >
         <div class="title-wrapper">
           <div class="number-count">总数量:{{ trafficCount }}个</div>
@@ -306,7 +309,7 @@
       </el-form>
     </div>
   <!-- 住宿 -->
-    <div class="form-item-wrapper" style="width: 1052px;" v-if="ifCOrE || formData.reimburseAccommodationSubsidies.length">
+    <div class="form-item-wrapper" style="width: 1077px;" v-if="ifCOrE || formData.reimburseAccommodationSubsidies.length">
       <el-button v-if="ifShowAcc" @click="showForm(formData.reimburseAccommodationSubsidies, 'ifShowAcc')">添加住宿补贴</el-button>
       <el-form 
       v-else
@@ -316,6 +319,7 @@
       :show-message="false"
       class="form-wrapper"
       :disabled="!ifFormEdit"
+      :class="{ 'uneditable': !this.ifFormEdit }"
       >
         <div class="title-wrapper">
           <div class="number-count">总数量:{{ accCount }}个</div>
@@ -434,7 +438,7 @@
       </el-form>
     </div>
   <!-- 其它 -->
-    <div class="form-item-wrapper" style="width: 989px;" v-if="ifCOrE || formData.reimburseOtherCharges.length">
+    <div class="form-item-wrapper" style="width: 1014px;" v-if="ifCOrE || formData.reimburseOtherCharges.length">
       <el-button v-if="ifShowOther" @click="showForm(formData.reimburseOtherCharges, 'ifShowOther')">添加其他费用</el-button>
       <el-form 
         v-else
@@ -444,6 +448,7 @@
         :show-message="false"
         class="form-wrapper"
         :disabled="!ifFormEdit"
+        :class="{ 'uneditable': !this.ifFormEdit }"
       >
         <div class="title-wrapper">
           <div class="number-count">总数量:{{ otherCount }}个</div>
@@ -944,6 +949,7 @@ export default {
       return {
         serviceOrderSapId: [ { required: true } ],
         reimburseType: [ { required: true, trigger: ['change', 'blur'] } ],
+        shortCustomerName: [{ required: true, trigger: 'blur' }],
         // projectName: [ { required: true, trigger: ['change', 'blur'] } ],
         bearToPay: [ { required: this.isCustomerSupervisor, trigger: ['change', 'blur']} ],
         responsibility: [ { required: true, trigger: ['change', 'blur'] } ],
@@ -1735,6 +1741,7 @@ export default {
     },
     async submit (isDraft) { // 提交
       let { 
+        reimburseTravellingAllowances,
         reimburseAccommodationSubsidies, 
         reimburseOtherCharges, 
         reimburseFares,
@@ -1749,6 +1756,7 @@ export default {
       this.mergeFileList(reimburseAccommodationSubsidies)
       this.mergeFileList(reimburseOtherCharges)
       this.mergeFileList(reimburseFares)
+      this.addSerialNumber(reimburseTravellingAllowances)
       this.addSerialNumber(reimburseAccommodationSubsidies)
       this.addSerialNumber(reimburseOtherCharges)
       this.addSerialNumber(reimburseFares)
@@ -1765,6 +1773,7 @@ export default {
     async updateOrder (isDraft) { // 编辑
       console.log(isDraft, 'isDraft')
       let { 
+        reimburseTravellingAllowances,
         reimburseAccommodationSubsidies, 
         reimburseOtherCharges, 
         reimburseFares,
@@ -1779,6 +1788,7 @@ export default {
       this.mergeFileList(reimburseAccommodationSubsidies)
       this.mergeFileList(reimburseOtherCharges)
       this.mergeFileList(reimburseFares)
+      this.addSerialNumber(reimburseTravellingAllowances)
       this.addSerialNumber(reimburseAccommodationSubsidies)
       this.addSerialNumber(reimburseOtherCharges)
       this.addSerialNumber(reimburseFares)
@@ -1839,17 +1849,19 @@ export default {
 .order-wrapper {
   max-height: 600px;
   overflow-y: auto;
-  ::v-deep .el-input.is-disabled .el-input__inner {
-    background-color: #fff;
-    cursor: default;
-    color: #606266;
-    border-color: #DCDFE6;
-  }
-  ::v-deep .el-textarea.is-disabled .el-textarea__inner {
-    background-color: #fff;
-    cursor: default;
-    color: #606266;
-    border-color: #DCDFE6;
+  .uneditable {
+    ::v-deep .el-input.is-disabled .el-input__inner {
+      background-color: #fff;
+      cursor: default;
+      color: #606266;
+      border-color: #DCDFE6;
+    }
+    ::v-deep .el-textarea.is-disabled .el-textarea__inner {
+      background-color: #fff;
+      cursor: default;
+      color: #606266;
+      border-color: #DCDFE6;
+    }
   }
   &::-webkit-scrollbar {
     display: none;
@@ -1941,6 +1953,18 @@ export default {
     font-size: 17px;
     margin: 5px;
     cursor: pointer;
+  }
+  ::v-deep .el-form-item__content {
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        appearance: none; 
+        margin: 0; 
+    }
+    /* 火狐 */
+    input{
+      -moz-appearance: textfield;
+    }
   }
 }
 </style>

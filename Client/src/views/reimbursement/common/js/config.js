@@ -4,7 +4,7 @@ export let accommodationConfig = [ // 住房配置
   { label: '金额', prop: 'money', type: 'number', width: 120, disabled: true, align: 'right' },
   { label: '总金额', prop: 'totalMoney', type: 'number', width: 120, align: 'right' },
   { label: '备注', prop: 'remark', type: 'input', width: 100 },
-  { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 130 },
+  { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155 },
   { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
   { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 },
 ]

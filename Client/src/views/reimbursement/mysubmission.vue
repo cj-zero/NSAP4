@@ -78,7 +78,7 @@
     <my-dialog
       ref="myDialog"
       :center="true"
-      width="1336px"
+      width="1316px"
       :btnList="btnList"
       :onClosed="closeDialog"
       :title="textMap[title]"
@@ -96,7 +96,7 @@
       ref="reportDialog"
       width="983px"
       title="服务行为报告单"
-      @closed="resetReport">
+      :onClosed="resetReport">
       <Report :data="reportData" ref="report"/>
     </my-dialog>
     <!-- 只能查看的表单 -->
@@ -122,35 +122,6 @@
         </el-col>
       </el-row>
     </my-dialog>
-    <!-- <el-dialog
-      v-el-drag-dialog
-      width="1210px"
-      top="10vh"
-      title="服务单详情"
-      :close-on-click-modal="false"
-      destroy-on-close
-      :modal-append-to-body="false"
-      class="addClass1 dialog-mini"
-      @open="openDetail"
-      :visible.sync="dialogFormView"
-    >
-    <el-row :gutter="20" class="position-view">
-      <el-col :span="18" >
-        <zxform
-          :form="temp"
-          formName="查看"
-          labelposition="right"
-          labelwidth="100px"
-     
-          :isCreate="false"
-          :refValue="dataForm"
-        ></zxform>
-      </el-col>
-        <el-col :span="6" class="lastWord">   
-          <zxchat :serveId='serveId' formName="查看"></zxchat>
-        </el-col>
-      </el-row>
-    </el-dialog> -->
   </div>
 </template>
 
@@ -374,6 +345,7 @@ export default {
       // this.$refs.order.resetInfo()
     }, // 重置
     closeDialog () {
+      console.log('close Dialog')
       this.$refs.order.resetInfo()
       this.$refs.myDialog.close()
     }

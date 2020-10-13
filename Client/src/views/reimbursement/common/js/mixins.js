@@ -279,6 +279,7 @@ export const reportMixin = {
       })
     },
     resetReport () {
+      console.log('reset Report')
       this.$refs.report.reset()
     },
     _normalizeReportData (data) {
@@ -379,7 +380,7 @@ export let categoryMixin = {
         { label: '服务ID', prop: 'serviceOrderSapId', palceholder: '请选择', col: 6, disabled: this.title !== 'create' },
         { label: '客户代码', prop: 'terminalCustomerId', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '客户名称', prop: 'terminalCustomer', palceholder: '请输入内容', disabled: true, col: 6 },
-        { label: '客户简称', prop: 'shortCustomerName', palceholder: '最长5个字', col: 6, maxlength: 5, isEnd: true, disabled: this.isEditItem },
+        { label: '客户简称', prop: 'shortCustomerName', palceholder: '最长5个字', col: 6, maxlength: 5, isEnd: true, disabled: this.isEditItem, required: true },
         { label: '出发地点', prop: 'becity', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '到达地点', prop: 'destination', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '出发日期', prop: 'businessTripDate', palceholder: '请输入内容', disabled: true, col: 6, width: '100%' },
@@ -399,7 +400,7 @@ export let categoryMixin = {
         },
         { label: '报销状态', prop: 'reimburseTypeText', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
         { label: '呼叫主题', prop: 'fromTheme', palceholder: '请输入内容', disabled: true, col: 18 },
-        { label: '填报时间', prop: 'fillDate', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
+        { label: '填报时间', prop: 'createTime', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
         { label: '费用承担', prop: 'bearToPay', palceholder: '请输入内容', disabled: this.title === 'view' || !(this.isCustomerSupervisor && this.title === 'approve'), 
           col: 6, type: 'select', options: this.expenseList, width: '100%'
         },
@@ -431,13 +432,13 @@ export let categoryMixin = {
     trafficConfig () {
       return [ // 交通配置
         // { label: '序号', type: 'order', width: 60 },
-        { label: '交通类型', prop: 'trafficType', type: 'select', options: this.transportTypeList, width: 120 },
+        { label: '交通类型', prop: 'trafficType', type: 'select', options: this.transportTypeList, width: 105 },
         { label: '交通工具', prop: 'transport', type: 'select', options: this.transportationList, width: 135 },
         { label: '出发地', prop: 'from', type: 'input', width: 125, readonly: true },
         { label: '目的地', prop: 'to', type: 'input', width: 125, readonly: true },
-        { label: '金额', prop: 'money', type: 'number', align: 'right', width: 150 },
+        { label: '金额', prop: 'money', type: 'number', align: 'right', width: 120 },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 130 },
+        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155 },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 },
         { label: '操作', type: 'operation', iconList: this.iconList, width: 110 }
@@ -452,7 +453,7 @@ export let categoryMixin = {
         { label: '费用类别', prop: 'expenseCategory', type: 'select', width: 150, options: this.otherExpensesList },
         { label: '其他费用', prop: 'money', type: 'number', width: 120, align: 'right' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 130 },
+        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155 },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 },
         { label: '操作', type: 'operation', iconList: this.iconList, width: 168 }

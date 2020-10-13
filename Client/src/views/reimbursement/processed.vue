@@ -79,7 +79,7 @@
       <my-dialog
         ref="myDialog"
         :center="true"
-        width="1336px"
+        width="1316px"
         :onClosed="closeDialog"
         :title="textMap[title]"
         :loading="dialogLoading"
@@ -97,7 +97,7 @@
         ref="reportDialog"
         width="983px"
         title="服务行为报告单"
-        @closed="resetReport">
+        :onClosed="resetReport">
         <Report :data="reportData" ref="report"/>
       </my-dialog>
        <!-- 只能查看的表单 -->
