@@ -525,11 +525,10 @@ namespace OpenAuth.App
             req.ReimburseOtherCharges = req.ReimburseOtherCharges.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
             if (req.MyexpendsIds != null && req.MyexpendsIds.Count > 0)
             {
+                
                 var myexpends = await UnitWork.Find<MyExpends>(m => req.MyexpendsIds.Contains(m.Id)).ToListAsync();
-                foreach (var item in myexpends)
-                {
-                    await UnitWork.DeleteAsync<MyExpends>(item);
-                }
+                myexpends.ForEach(m => m.IsDelete = true);
+                await UnitWork.BatchUpdateAsync(myexpends.ToArray());
             }
 
             #endregion
@@ -684,10 +683,8 @@ namespace OpenAuth.App
             if (req.MyexpendsIds != null && req.MyexpendsIds.Count > 0)
             {
                 var myexpends = await UnitWork.Find<MyExpends>(m => req.MyexpendsIds.Contains(m.Id)).ToListAsync();
-                foreach (var item in myexpends)
-                {
-                    await UnitWork.DeleteAsync<MyExpends>(item);
-                }
+                myexpends.ForEach(m => m.IsDelete = true);
+                await UnitWork.BatchUpdateAsync(myexpends.ToArray());
             }
 
             #endregion
@@ -731,7 +728,6 @@ namespace OpenAuth.App
                     ProjectName = obj.ProjectName,
                     RemburseStatus = obj.RemburseStatus,
                     IsRead = obj.IsRead,
-                    ServiceRelations = obj.ServiceRelations,
                     TotalMoney = obj.TotalMoney,
                     Remark = obj.Remark,
                     BearToPay = obj.BearToPay,
@@ -779,7 +775,6 @@ namespace OpenAuth.App
                     ProjectName = obj.ProjectName,
                     RemburseStatus = obj.RemburseStatus,
                     IsRead = obj.IsRead,
-                    ServiceRelations = obj.ServiceRelations,
                     TotalMoney = obj.TotalMoney,
                     Remark = obj.Remark,
                     BearToPay = obj.BearToPay,

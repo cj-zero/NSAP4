@@ -37,7 +37,7 @@ namespace OpenAuth.App
             }
 
             var result = new TableData();
-            var objs = UnitWork.Find<MyExpends>(m => m.CreateUserId == user.Id);
+            var objs = UnitWork.Find<MyExpends>(m => m.CreateUserId == user.Id && m.IsDelete==false);
             objs = objs.WhereIf(request.StartTime != null, m => m.CreateTime >= request.StartTime);
             objs = objs.WhereIf(request.EndTime != null, m => m.CreateTime < Convert.ToDateTime(request.EndTime).AddMinutes(1440));
 
@@ -119,6 +119,7 @@ namespace OpenAuth.App
             obj.CreateTime = DateTime.Now;
             obj.CreateUserId = user.Id;
             obj.CreateUserName = user.Name;
+            obj.IsDelete = false;
             obj = await UnitWork.AddAsync<MyExpends, int>(obj);
             await UnitWork.SaveAsync();
             if (req.ReimburseAttachments != null && req.ReimburseAttachments.Count > 0)

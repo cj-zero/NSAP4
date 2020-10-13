@@ -92,6 +92,11 @@ namespace OpenAuth.App.Request
         public string ExpenseCategory { get; set; }
 
         /// <summary>
+        /// 是否删除
+        /// </summary>
+        public bool IsDelete { get; set; }
+
+        /// <summary>
         /// 附件表
         /// </summary>
         public virtual List<ReimburseAttachmentResp> ReimburseAttachments { get; set; }

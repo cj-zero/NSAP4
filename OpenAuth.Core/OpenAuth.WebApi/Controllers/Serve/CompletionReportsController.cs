@@ -182,12 +182,12 @@ namespace OpenAuth.WebApi.Controllers
         /// <returns></returns>
 
         [HttpGet]
-        public async Task<Response<TableData>> GetCompletionReportDetailsWeb(int ServiceOrderId,string UserId = null)
+        public async Task<Response<TableData>> GetCompletionReportDetailsWeb(int ServiceOrderId,string UserId)
         {
             var result = new Response<TableData>();
             try
             {
-                result.Result = await _app.GetCompletionReportDetailsWeb(ServiceOrderId);
+                result.Result = await _app.GetCompletionReportDetailsWeb(ServiceOrderId, UserId);
             }
             catch (Exception ex)
             {
