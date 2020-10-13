@@ -281,10 +281,12 @@
                   @deleteFileList="deleteFileList"
                   :onAccept="onAccept"
                   :fileList="
-                    (item.prop === 'invoiceAttachment' 
-                      ? formData.reimburseFares[scope.$index].invoiceFileList
-                      : formData.reimburseFares[scope.$index].otherFileList
-                    ) 
+                    formData.reimburseFares[scope.$index] 
+                      ? (item.prop === 'invoiceAttachment' 
+                        ? formData.reimburseFares[scope.$index].invoiceFileList
+                        : formData.reimburseFares[scope.$index].otherFileList
+                      ) 
+                    : []
                 ">
                 </upLoadFile>
               </template>
@@ -304,7 +306,7 @@
       </el-form>
     </div>
   <!-- 住宿 -->
-    <div class="form-item-wrapper" style="width: 1042px;" v-if="ifCOrE || formData.reimburseAccommodationSubsidies.length">
+    <div class="form-item-wrapper" style="width: 1052px;" v-if="ifCOrE || formData.reimburseAccommodationSubsidies.length">
       <el-button v-if="ifShowAcc" @click="showForm(formData.reimburseAccommodationSubsidies, 'ifShowAcc')">添加住宿补贴</el-button>
       <el-form 
       v-else
@@ -355,7 +357,7 @@
                       class="el-input__icon"
                       :class="{
                         'el-icon-success success': scope.row.isTrue,
-                        'el-icon-error error': !scope.row.isTrue
+                        'el-icon-warning warning': !scope.row.isTrue
                       }">
                     </i>
                   </el-input>
@@ -407,10 +409,12 @@
                   @deleteFileList="deleteFileList"
                   :onAccept="onAccept"
                   :fileList="
-                    (item.prop === 'invoiceAttachment' 
-                      ? formData.reimburseAccommodationSubsidies[scope.$index].invoiceFileList 
-                      : formData.reimburseAccommodationSubsidies[scope.$index].otherFileList
-                    )
+                    formData.reimburseAccommodationSubsidies[scope.$index] 
+                      ? (item.prop === 'invoiceAttachment' 
+                        ? formData.reimburseAccommodationSubsidies[scope.$index].invoiceFileList
+                        : formData.reimburseAccommodationSubsidies[scope.$index].otherFileList
+                      ) 
+                    : []
                   ">
                 </upLoadFile>
               </template>
@@ -430,7 +434,7 @@
       </el-form>
     </div>
   <!-- 其它 -->
-    <div class="form-item-wrapper" style="width: 979px;" v-if="ifCOrE || formData.reimburseOtherCharges.length">
+    <div class="form-item-wrapper" style="width: 989px;" v-if="ifCOrE || formData.reimburseOtherCharges.length">
       <el-button v-if="ifShowOther" @click="showForm(formData.reimburseOtherCharges, 'ifShowOther')">添加其他费用</el-button>
       <el-form 
         v-else
@@ -481,7 +485,7 @@
                       class="el-input__icon"
                       :class="{
                         'el-icon-success success': scope.row.isTrue,
-                        'el-icon-error error': !scope.row.isTrue
+                        'el-icon-warning warning': !scope.row.isTrue
                       }">
                     </i>
                   </el-input>
@@ -525,10 +529,12 @@
                   @deleteFileList="deleteFileList"
                   :onAccept="onAccept"
                   :fileList="
-                    (item.prop === 'invoiceAttachment' 
-                      ? formData.reimburseOtherCharges[scope.$index].invoiceFileList 
-                      : formData.reimburseOtherCharges[scope.$index].otherFileList
-                    )
+                    formData.reimburseOtherCharges[scope.$index] 
+                      ? (item.prop === 'invoiceAttachment' 
+                        ? formData.reimburseOtherCharges[scope.$index].invoiceFileList
+                        : formData.reimburseOtherCharges[scope.$index].otherFileList
+                      ) 
+                    : []
                 "></upLoadFile>
               </template>
               <template v-else-if="item.type === 'operation'">
@@ -861,11 +867,8 @@ export default {
     formData: {
       deep: true,
       handler () {
-        console.log(this.formData, 'formData', this.formData.serviceRelations)
+        // console.log(this.formData, 'formData', this.formData.serviceRelations)
       }
-    },
-    'formData.serviceRelations' (val) {
-      console.log(val, 'serviceRelations')
     }
   },
   computed: {
@@ -1450,9 +1453,6 @@ export default {
     hasAttachment (data) { // 判断是否存在附件发票   
       let { invoiceFileList, invoiceAttachment, id } = data
       let selectedIdList = this.selectedList.map(item => item.id)
-      console.log(invoiceFileList.length && !selectedIdList.includes(id) && !this.formData.fileId.includes(invoiceFileList[0].id), 'invoiceList')
-      console.log((invoiceFileList.length && invoiceFileList[0].isAdd && selectedIdList.includes(id)), 'daoru')
-      console.log(invoiceAttachment.length)
       return (invoiceFileList.length && !selectedIdList.includes(id) && !this.formData.fileId.includes(invoiceFileList[0].id)) || // 存在回显的文件代表已经新增的，并且还没被删除过
         (invoiceFileList.length && invoiceFileList[0].isAdd && selectedIdList.includes(id)) ||// 导入的数据
         invoiceAttachment.length
@@ -1698,6 +1698,7 @@ export default {
         reimburseFares: [],
         reimburseAccommodationSubsidies: [],
         reimburseOtherCharges: [],
+        reimurseOperationHistories: [],
         isDraft: false, // 是否是草稿
         delteReimburse: [], // 需要删除的行数据
         fileId: [], // 需要删除的附件ID

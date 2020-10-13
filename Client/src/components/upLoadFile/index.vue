@@ -169,9 +169,15 @@ export default {
   },
   watch:{
     fileList:{
-      deep:true,
-      handler(val){
-          console.log(val, 'fileList')
+      immediate: true,
+      deep: true,
+      handler (val) {
+        console.log(this.limit, 'limit')
+        if (this.ifShowTip && this.limit) { 
+          // 如果是再编辑状态下,需要判断当前的文件数量是否小于等于限制数量，从而控制tip是否展示
+          this.isShowTip = val.length < this.limit
+        }
+        console.log(val, 'fileList')
       }
     }
   },

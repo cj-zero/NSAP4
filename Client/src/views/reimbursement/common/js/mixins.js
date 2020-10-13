@@ -452,7 +452,7 @@ export let categoryMixin = {
         { label: '费用类别', prop: 'expenseCategory', type: 'select', width: 150, options: this.otherExpensesList },
         { label: '其他费用', prop: 'money', type: 'number', width: 120, align: 'right' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 120 },
+        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 130 },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 },
         { label: '操作', type: 'operation', iconList: this.iconList, width: 168 }
@@ -536,10 +536,12 @@ export const attachmentMixin = {
       return new Blob([new Uint8Array(array)], { type })
     },
     getClass (data) { // 设置发票号码样式
-      let hasAttachment = this.hasAttachment(data)
-      hasAttachment 
-        ? this.$set(data, 'isTrue', true)
-        : this.$set(data, 'isTrue', false)
+      if (data) {
+        let hasAttachment = this.hasAttachment(data)
+        hasAttachment
+          ? this.$set(data, 'isTrue', true)
+          : this.$set(data, 'isTrue', false)
+      }
     },
     _setCurrentRow (currentRow, data) { // 识别发票凭据后，对表格行进行赋值
       let { invoiceNo, money, isAcc } = data

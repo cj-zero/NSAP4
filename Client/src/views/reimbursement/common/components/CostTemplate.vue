@@ -3,7 +3,7 @@
     <!-- 选择列表 -->
     <el-row type="flex" justify="space-between" align="middle">
       <div class="select-list-wrapper">
-        <el-button type="primary" size="small" @click="toggleSelect">{{ btnText }}</el-button>
+        <el-button class="customer-btn-class" type="primary" size="small" @click="toggleSelect">{{ btnText }}</el-button>
         <div class="select-list" v-show="selectList && selectList.length && ifShowSelect">
           <div class="select-item" v-for="item in selectList" :key="item.title">
             <div class="title">{{ item.title }}</div>
@@ -77,7 +77,7 @@
                           }">
                         </i>
                       </el-input>
-                      <template v-if="operation !== 'view'">
+                      <template v-if="operation !== 'view' && (item.prop === 'from' || item.prop === 'to')">
                         <div class="selector-wrapper" 
                           v-show="(scope.row.ifFromShow && item.prop === 'from') || (scope.row.ifToShow && item.prop === 'to')">
                           <AreaSelector @close="onCloseArea" @change="onAreaChange" :options="{ prop: item.prop, index: scope.$index }"/>
@@ -665,7 +665,7 @@ export default {
       top: 35px;
       left: 0;
       width: 325px;
-      height: 400px;
+      min-height: 400px;
       // overflow: hidden;
       overflow-y: auto;
       background: #fff;
@@ -705,10 +705,10 @@ export default {
     }
     .form-wrapper {
       &.acc {
-        width: 881px;
+        width: 891px;
       }
       &.other {
-        width: 811px;
+        width: 821px;
       }
       .area-wrapper {
         position: relative;

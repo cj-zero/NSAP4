@@ -67,7 +67,7 @@
     <my-dialog
       ref="myDialog"
       :center="true"
-      width="1216px"
+      width="1226px"
       :onClosed="closeDialog"
       :title="`${textMap[type]}费用模板`"
       :btnList="btnList"
