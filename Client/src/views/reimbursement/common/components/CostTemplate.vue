@@ -3,7 +3,7 @@
     <!-- 选择列表 -->
     <el-row type="flex" justify="space-between" align="middle">
       <div class="select-list-wrapper">
-        <el-button type="primary" size="small" @click="toggleSelect">费用类型</el-button>
+        <el-button type="primary" size="small" @click="toggleSelect">{{ btnText }}</el-button>
         <div class="select-list" v-show="selectList && selectList.length && ifShowSelect">
           <div class="select-item" v-for="item in selectList" :key="item.title">
             <div class="title">{{ item.title }}</div>
@@ -19,6 +19,7 @@
           size="mini"
           v-model="createTime"
           type="date"
+          format="yyyy-MM-dd HH:mm"
           placeholder="选择日期">
         </el-date-picker>
       </div>
@@ -65,6 +66,15 @@
                         :disabled="item.disabled" 
                         :readonly="item.readonly || false"
                         @focus="onAreaFocus({ prop: item.prop, index: scope.$index })">
+                        <i 
+                          v-if="item.prop === 'invoiceNumber'"
+                          slot="suffix" 
+                          class="el-input__icon"
+                          :class="{
+                            'el-icon-success success': scope.row.isTrue,
+                            'el-icon-error error': !scope.row.isTrue
+                          }">
+                        </i>
                       </el-input>
                       <template v-if="operation !== 'view'">
                         <div class="selector-wrapper" 
@@ -119,9 +129,9 @@
                     uploadType="file" 
                     ref="uploadFile" 
                     :options="{ prop: item.prop, index: scope.$index }"
-                    :isReimburse="true"
                     @deleteFileList="deleteFileList"
                     :isDisabled="isDisabled"
+                    :ifShowTip="!isDisabled"
                     :onAccept="onAccept"
                     :fileList="
                       formData.list[0]
@@ -321,41 +331,43 @@ export default {
     }
   },
   computed: {
-    ifInvoicementList () { // 是否有上传发票附件
-      let { invoiceAttachment } = this.formData.list[0]
-      return this.operation === 'create'
-        ? invoiceAttachment.length // 如果是新建则只需要判断invoiceAttachment是否值即可
-        : this.ifInvoicementListInEdit()
-    },
     isDisabled () {
       return this.operation === 'view'
+    },
+    btnText () {
+      return this.formData.list[0].feeType ? this.formData.list[0].feeType : '费用类型'
     }
   },
   methods: {
-    ifInvoicementListInEdit () { // 判断编辑状态下，是否有传附件信息
-      let { invoiceFileList, invoiceAttachment } = this.formData.list[0]
-      if (invoiceFileList.length) {
-        console.log('enter')
-        if (this.fileid.includes(invoiceFileList[0].id)) {
-          console.log('has delete')
-          // 如何删除了之前上传过的附件,则需要判断invocementList 即手动上传附件的数组是否为空
-          return invoiceAttachment.length !== 0
-        }
-        return true
-      }
-      return invoiceAttachment.length !== 0
+    hasAttachment (data) { // 判断是否存在附件发票   
+      let { invoiceFileList, invoiceAttachment } = data
+      return (invoiceFileList.length && !this.fileid.includes(invoiceFileList[0].id)) || invoiceAttachment.length // 存在回显的文件代表已经新增的，并且还没被删除过
     },
-    identifyInvoice ({ invoiceNo, money }) {
-      if (this.currentProp === 'invoiceAttachment') {
-        this.formData.list[0].invoiceNumber = invoiceNo
-        this.currentType === ACC_TYPE
-          ? this.formData.list[0].totalMoney = money
-          : this.formData.list[0].money = money
-        if (this.currentType === ACC_TYPE) {
-          this.formData.list[0].money = (money / (this.formData.list[0].days || 1)).toFixed(2)
+    ifInvoicementListInEdit () { // 判断编辑状态下，是否有传附件信息
+      let { otherFileList, otherAttachment } = this.formData.list[0]
+      let hasAttachment = this.hasAttachment(this.formData.list[0])
+      let isValid = true
+      console.log(hasAttachment, 'hasAttachment')
+      if (!hasAttachment) { // 如果是假发票号则需要判断其它附件的数量，真的说明有发票附件了，直接可以通过
+        if (otherFileList.length) {
+          let ifDeleted = false
+          for (let i = 0; i < this.fileid.length; i++) {
+            let fileId = this.fileid[i]
+            if (!otherFileList.some(item => item.id === fileId)) {
+              ifDeleted = false
+              break
+            } else {
+              ifDeleted = true
+            }
+          }
+          isValid = ifDeleted
+            ? Boolean(otherAttachment && otherAttachment.length)
+            : true
+        } else {
+          isValid = Boolean(otherAttachment && otherAttachment.length)
         }
-        this.formData.list[0].maxMoney = money
       }
+      return isValid
     },
     toggleSelect () {
       if (this.operation === 'view') {
@@ -364,16 +376,8 @@ export default {
       this.ifShowSelect = !this.ifShowSelect
     },
     selectTag (tag) {
-      // this.resetInfo()
-      console.log(this.currentType, tag.type)
-      if (tag.type == 1) { // 交通类型
-        console.log('traffic')
-        this.formData.list[0].transport = tag.value
-      }
-      if (tag.type == 3) { // 其他类别
-        this.formData.list[0].expenseCategory = tag.value
-      }
       if (this.currentType === tag.type) {
+        this._setRowData(tag)
         return this.toggleSelect()
       }
       if (this.currentType != tag.type) { // 当前选择的类型和上次选择的类型不同
@@ -384,19 +388,26 @@ export default {
           this.resetInfo(false, tag.type)
         }
       }
+      this._setRowData (tag)
       this.changeTable(tag.type)
-      console.log(CONFIG_MAP)
-      // 去除操作标题
-      this.formData.list[0].reimburseType = tag.type + 1
-      this.formData.list[0].feeType = tag.label
       this.toggleSelect()
-      // this.isFirstVisit = false
       console.log(this.formData.list[0], 'formData')
+    },
+    _setRowData (tag) { // 根据选择的标签设置响应的字段
+      if (tag.type == 1) { // 交通类型
+        console.log('traffic')
+        this.formData.list[0].transport = tag.value
+      }
+      if (tag.type == 3) { // 其他类别
+        this.formData.list[0].expenseCategory = tag.value
+      }
+      this.formData.list[0].feeType = tag.label
     },
     changeTable (type) {
       this.currentType = type
       this.rules = RULES_MAP[type]
       this.config = this[CONFIG_MAP[type]].slice(0, -1)
+      this.formData.list[0].reimburseType = type + 1
     },
     onRowClick () {
       // console.log('row-clcik')
@@ -494,19 +505,35 @@ export default {
     setCurrentProp ({ property }) {
       this.currentProp = property
     },
-    getImgList (val, { prop, fileId }) {
-      console.log(prop, 'prop')
-      let data = this.formData.list[0]
-      let resultArr = []
-      resultArr = this.createFileList(val, {
-        reimburseType: 5,
-        attachmentType: prop === 'invoiceAttachment' ? 2 : 1
-      })
-      // this.$set(data, prop, resultArr)
-      data[prop] = resultArr
-      if (fileId && prop === 'invoiceAttachment') { // 图片上传成功会返回当前的pictureId, 并且只识别发票附件 
-        this._identifyInvoice(fileId, data, this.currentType === ACC_TYPE)
+    getImgList (val, { prop, index, fileId, uploadVm, operation }) {
+      console.log(index, 'getImgINDEX')
+      let data = this.formData.list
+      let currentRow = data[index]
+      let attachmentConfig = {
+        data,
+        index,
+        prop,
+        val,
+        reimburseType: 5
       }
+      // 删除操作也不进行识别
+      if (fileId && prop === 'invoiceAttachment' && !operation) { // 图片上传成功会返回当前的pictureId, 并且只识别发票附件 
+        this._identifyInvoice({ // 先进行识别再进行赋值
+          fileId, 
+          currentRow, 
+          uploadVm,
+        }).then(isValid => {
+          console.log(isValid, 'isValid invoiceNumber')
+          isValid 
+            ? this._setAttachmentList(attachmentConfig) 
+            : this._setAttachmentList({ ...attachmentConfig, ...{ val: [] }})
+        })
+      } else {
+        console.log('ordinary invoice')
+        this._setAttachmentList(attachmentConfig)
+      }
+      console.log(prop, 'prop')
+      
       console.log(this.formData.list, 'formData.list')
     },
     _deleteFileId () {
@@ -581,8 +608,8 @@ export default {
       }
       this.mergeFileList(this.formData.list)
       let isValid = await this.$refs.form.validate()
-      console.log(isValid, this.ifInvoicementList, 'VALIDA')
-      if (isValid && this.ifInvoicementList) {
+      console.log(isValid, this.ifInvoicementListInEdit(), 'VALIDA')
+      if (isValid && this.ifInvoicementListInEdit()) {
         this.operation === 'create'
           ? this.formData.list[0].createTime = timeToFormat('yyyy-MM-dd HH:mm:ss')
           : this.formData.list[0].createTime = this.createTime
@@ -607,6 +634,14 @@ export default {
   min-height: 122px;
   ::v-deep .el-form-item--mini.el-form-item {
     margin-bottom: 0;
+  }
+  ::v-deep .el-input__icon {
+    &.success {
+      color: green;
+    }
+    &.error {
+      color: red;
+    }
   }
   ::v-deep .el-input.is-disabled .el-input__inner {
     background-color: #fff;

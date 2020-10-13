@@ -67,7 +67,7 @@
               <el-button 
                 type="primary" 
                 style="width: 100%;" 
-                @click="item.handleClick(formData.serviceOrderId)"
+                @click="item.handleClick(formData)"
                 :loading="reportBtnLoading">{{ item.btnText }}</el-button>
             </template>
           </el-form-item>
@@ -82,6 +82,7 @@
         uploadType="file" 
         ref="uploadFile" 
         :maxSize="maxSize"
+        :ifShowTip="ifFormEdit"
         :fileList="formData.attachmentsFileList || []"
         @deleteFileList="deleteFileList"></upLoadFile>
     </el-row>
@@ -228,7 +229,10 @@
                           v-if="item.prop === 'invoiceNumber'"
                           slot="suffix" 
                           class="el-input__icon"
-                          :class="getClass(scope.row)">
+                          :class="{
+                            'el-icon-success success': scope.row.isTrue,
+                            'el-icon-error error': !scope.row.isTrue
+                          }">
                         </i>
                       </el-input>
                       <template v-if="ifFormEdit">  
@@ -275,7 +279,7 @@
                     uploadType="file" 
                     ref="trafficUploadFile"
                     :options="{ prop: item.prop, index: scope.$index }" 
-                    :isReimburse="true"
+                    :ifShowTip="ifFormEdit"
                     @deleteFileList="deleteFileList"
                     :onAccept="onAccept"
                     :fileList="
@@ -354,7 +358,10 @@
                         v-if="item.prop === 'invoiceNumber'"
                         slot="suffix" 
                         class="el-input__icon"
-                        :class="getClass(scope.row)">
+                        :class="{
+                          'el-icon-success success': scope.row.isTrue,
+                          'el-icon-error error': !scope.row.isTrue
+                        }">
                       </i>
                     </el-input>
                   </el-form-item>
@@ -401,7 +408,7 @@
                     uploadType="file" 
                     ref="accUploadFile" 
                     :options="{ prop: item.prop, index: scope.$index }"
-                    :isReimburse="true"
+                    :ifShowTip="ifFormEdit"
                     @deleteFileList="deleteFileList"
                     :onAccept="onAccept"
                     :fileList="
@@ -481,7 +488,10 @@
                         v-if="item.prop === 'invoiceNumber'"
                         slot="suffix" 
                         class="el-input__icon"
-                        :class="getClass(scope.row)">
+                        :class="{
+                          'el-icon-success success': scope.row.isTrue,
+                          'el-icon-error error': !scope.row.isTrue
+                        }">
                       </i>
                     </el-input>
                   </el-form-item>
@@ -520,7 +530,7 @@
                     uploadType="file" 
                     ref="otherUploadFile" 
                     :options="{ prop: item.prop, index: scope.$index }"
-                    :isReimburse="true"
+                    :ifShowTip="ifFormEdit"
                     @deleteFileList="deleteFileList"
                     :onAccept="onAccept"
                     :fileList="
@@ -1066,20 +1076,22 @@ export default {
               console.log(invoiceAttachment, invoiceFileList, 'edit validate', data)
               // 新增的时候
               if (hasAttachment) { // 说明一定要有附件发票
-                if (invoiceFileList.length) { // 有可能是导入进来的数据(这个是没有新增的数据，跟普通新增的数据同样)，也有可能是已经新增过的数据
-                // 新增过的数据reimburseId存在
-                  let ifDeleted = invoiceFileList[0].reimburseId
-                    ? this.formData.fileId.includes(invoiceFileList[0].id) // 判断invoiceFileList是否已经删除
-                    : !(invoiceFileList[0].isAdd) // 判断当前文件的状态是不是删除(模板数据而言)
-                  // 如果用于回显的附件给删除了，则需要判断的invoiceAttachment数组是否有值
-                  ifInvoiceAttachment = ifDeleted
-                    ? Boolean(invoiceAttachment && invoiceAttachment.length) 
-                    : true
-                } else {
-                  ifInvoiceAttachment = Boolean(invoiceAttachment && invoiceAttachment.length) 
-                }
-                if (!ifInvoiceAttachment) break
-              } else { // 一定不能有附件发票，但必须至少有一个其它发票
+                // if (invoiceFileList.length) { // 有可能是导入进来的数据(这个是没有新增的数据，跟普通新增的数据同样)，也有可能是已经新增过的数据
+                // // 新增过的数据reimburseId存在
+                //   let ifDeleted = invoiceFileList[0].reimburseId
+                //     ? this.formData.fileId.includes(invoiceFileList[0].id) // 判断invoiceFileList是否已经删除
+                //     : !(invoiceFileList[0].isAdd) // 判断当前文件的状态是不是删除(模板数据而言)
+                //   // 如果用于回显的附件给删除了，则需要判断的invoiceAttachment数组是否有值
+                //   ifInvoiceAttachment = ifDeleted
+                //     ? Boolean(invoiceAttachment && invoiceAttachment.length) 
+                //     : true
+                // } else {
+                //   ifInvoiceAttachment = Boolean(invoiceAttachment && invoiceAttachment.length) 
+                // }
+                // if (!ifInvoiceAttachment) break
+                ifInvoiceAttachment = true
+              } else { 
+                // 一定不能有附件发票，但必须至少有一个其它发票
                 if (otherFileList.length) {
                   let fileListDeleted = true
                   for (let i = 0; i < this.formData.fileId.length; i++) {
@@ -1117,24 +1129,6 @@ export default {
       })
       this.formData.reimburseAttachments = resultArr
     },
-    _setAttachmentList ({ data, index, prop, reimburseType, val,  }) { // 设置通过上传获取到的附件列表
-      let resultArr = []
-      resultArr = this.createFileList(val, {
-        reimburseType,
-        attachmentType: prop === 'invoiceAttachment' ? 2 : 1
-      })
-      let currentRow = data[index]
-      currentRow[prop] = resultArr
-      if (currentRow[prop] && !currentRow[prop].length && prop === 'invoiceAttachment') { // 删除发票附件的时候把金额跟发票号码删除
-        if (currentRow.totalMoney) {
-          currentRow.totalMoney = ''
-        }
-        currentRow.money = ''
-        currentRow.invoiceNumber = ''
-      }
-      console.log(data, 'after change data')
-    },
-
     getTrafficList (val, { prop, index, fileId, uploadVm, operation }) {
       let data = this.formData.reimburseFares
       let currentRow = data[index]
@@ -1394,10 +1388,14 @@ export default {
     },
     delete (scope, data, type) {
       if (!this.ifFormEdit) return
-      let { id, invoiceFileList } = scope.row
-      if (id) { // 说明已经新建过的,新建过的表格数据 invoceFileList 是一定存在的
-        if (invoiceFileList && invoiceFileList.length) {
-          if (invoiceFileList[0].reimburseId) { // 导入的数据reimburseId是为空的，所以不需要添加到delteReimburse中
+      let { id, invoiceFileList, otherFileList } = scope.row
+      if (id) { // 说明已经新建过的,新建过的表格数据 invoceFileList 或者otherFileList 是一定存在的
+        if (
+          (invoiceFileList && invoiceFileList.length) ||
+          (otherFileList && otherFileList.length)  
+        ) {
+          let data = invoiceFileList.length ? invoiceFileList : otherFileList
+          if (data[0].reimburseId) { // 导入的数据reimburseId是为空的，所以不需要添加到delteReimburse中
             this.formData.delteReimburse.push({
               deleteId: id,
               reimburseType: REIMBURSE_TYPE_MAP[type]
@@ -1463,17 +1461,13 @@ export default {
     hasAttachment (data) { // 判断是否存在附件发票   
       let { invoiceFileList, invoiceAttachment, id } = data
       let selectedIdList = this.selectedList.map(item => item.id)
-      console.log(invoiceFileList.length && !this.formData.fileId.includes(invoiceFileList[0].id), 'invoiceList')
+      console.log(invoiceFileList.length && !selectedIdList.includes(id) && !this.formData.fileId.includes(invoiceFileList[0].id), 'invoiceList')
+      console.log((invoiceFileList.length && invoiceFileList[0].isAdd && selectedIdList.includes(id)), 'daoru')
+      console.log(invoiceAttachment.length)
       return (invoiceFileList.length && !selectedIdList.includes(id) && !this.formData.fileId.includes(invoiceFileList[0].id)) || // 存在回显的文件代表已经新增的，并且还没被删除过
         (invoiceFileList.length && invoiceFileList[0].isAdd && selectedIdList.includes(id)) ||// 导入的数据
         invoiceAttachment.length
     },
-    getClass (data) { // 设置发票号码样式
-      let hasAttachment = this.hasAttachment(data)
-      return hasAttachment 
-        ? ['el-icon-success', 'success']
-        : ['el-icon-error', 'error' ]
-    }, 
     isValidNumber (val) { // 判断是否是有效的数字
       val = Number(val)
       return !isNaN(val) && val >= 0
@@ -1628,7 +1622,6 @@ export default {
       })
       console.log(isSole, 'isSole')
     },
-    
     _normalizeSelectList (selectList) {
       console.log(deepClone(selectList), 'deepClone')
       this._buildAttachment(selectList, true)

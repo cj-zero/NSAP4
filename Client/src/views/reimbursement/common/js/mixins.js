@@ -210,6 +210,7 @@ export let tableMixin = {
         item.reimburseAttachments = []
         item.maxMoney = item.totalMoney || item.money
         item.isAdd = true
+        item.isTrue = Boolean(item.invoiceFileList.length)
       })
     },
     getTargetAttachment (data, attachmentType) { // 用于el-upload 回显
@@ -244,7 +245,10 @@ export const reportMixin = {
     }
   },
   methods: {
-    openReport (serviceOrderId, type) {
+    openReport (data, type) {
+      console.log(data, 'data')
+      let { serviceOrderId, createUserId } = data
+      console.log(serviceOrderId, 'serviceOrderId')
       if (!serviceOrderId) {
         return this.$message.error('请先选择服务ID')
       }
@@ -255,7 +259,8 @@ export const reportMixin = {
         this.reportBtnLoading = true
       }
       getReportDetail({
-        serviceOrderId
+        serviceOrderId,
+        userId: createUserId
       }).then(res => {
         this.reportData = this._normalizeReportData(res.result.data)
         if (this.reportData.length) {
@@ -470,6 +475,12 @@ export let categoryMixin = {
 }
 
 export const attachmentMixin = {
+  data () {
+    return {
+      baseURL: process.env.VUE_APP_BASE_API + "/files/Download", // 图片基地址
+      tokenValue: this.$store.state.user.token,
+    }
+  },
   methods: {
     onAccept (file, { prop }) { // 限制发票文件上传的格式
       let _this = this
@@ -524,6 +535,12 @@ export const attachmentMixin = {
       console.log(type, 'type URI')
       return new Blob([new Uint8Array(array)], { type })
     },
+    getClass (data) { // 设置发票号码样式
+      let hasAttachment = this.hasAttachment(data)
+      hasAttachment 
+        ? this.$set(data, 'isTrue', true)
+        : this.$set(data, 'isTrue', false)
+    },
     _setCurrentRow (currentRow, data) { // 识别发票凭据后，对表格行进行赋值
       let { invoiceNo, money, isAcc } = data
       if (isAcc) { // 住宿表格行数据
@@ -534,8 +551,25 @@ export const attachmentMixin = {
       }
       currentRow.maxMoney = money
       currentRow.invoiceNumber = invoiceNo
-      // this.
       console.log(this.formData, '识别新的')
+    },
+    _setAttachmentList ({ data, index, prop, reimburseType, val }) { // 设置通过上传获取到的附件列表
+      let resultArr = []
+      resultArr = this.createFileList(val, {
+        reimburseType,
+        attachmentType: prop === 'invoiceAttachment' ? 2 : 1
+      })
+      let currentRow = data[index]
+      currentRow[prop] = resultArr
+      this.getClass(currentRow)
+      if (currentRow[prop] && !currentRow[prop].length && prop === 'invoiceAttachment') { // 删除发票附件的时候把金额跟发票号码删除
+        if (currentRow.totalMoney) {
+          currentRow.totalMoney = ''
+        }
+        currentRow.money = ''
+        currentRow.invoiceNumber = ''
+      }
+      console.log(data, 'after change data')
     },
     _identifyInvoice (data, isAcc = false) { // 票据识别
       let { fileId, currentRow, uploadVm } = data
@@ -604,6 +638,7 @@ export const attachmentMixin = {
         item.reimburseAttachments = []
         item.maxMoney = item.totalMoney || item.money // 存在附件时，需要对金额进行限制
         item.isAdd = true
+        item.isTrue = Boolean(item.invoiceFileList.length)
       })
     },
     getTargetAttachment (data, attachmentType, isImport) { // 用于el-upload 回显

@@ -54,7 +54,7 @@
                   </template>
                   <template v-else-if="item.label === '服务报告'">
                     <div class="link-container">
-                      <img :src="rightImg" @click="item.handleClick(scope.row.serviceOrderId, 'table')" class="pointer">
+                      <img :src="rightImg" @click="item.handleClick(scope.row, 'table')" class="pointer">
                       <span>查看</span>
                     </div>
                   </template>

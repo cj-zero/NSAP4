@@ -66,17 +66,12 @@
           <el-button size="mini" @click="dialogVisible = false">关闭</el-button>
         </template>
       </Model> -->
-      <el-image-viewer
-        v-if="dialogVisible"
-        :url-list="[dialogImageUrl]"
-        :on-close="closeViewer"
-      >
-      </el-image-viewer>
     </template>
     <template v-else>
       <el-upload
         ref="file"
         class="upload-demo"
+        :class="{ 'hidden-tip': !canShowTip }"
         :action="action"
         name="files"
         :headers="headers"
@@ -92,12 +87,18 @@
         >
         <!-- <el-button size="mini" type="primary">点击上传</el-button>
          -->
-         <template v-if="isShowTip">
+         <template v-if="canShowTip">
            <i class="el-icon-upload"></i>
-          <span class="upload-text" style="font-size: 12px; margin-left: 5px;">上传</span>
+          <span class="upload-text">上传</span>
          </template>
       </el-upload>
     </template>
+    <el-image-viewer
+      v-if="dialogVisible"
+      :url-list="[dialogImageUrl]"
+      :on-close="closeViewer"
+    >
+    </el-image-viewer>
   </div>
 </template>
 
@@ -120,8 +121,7 @@ export default {
       default: ''
     },
     limit: {
-      type: Number,
-      default: 0
+      type: Number
     },
     fit: {
       type: String,
@@ -137,13 +137,9 @@ export default {
         return {}
       }
     },
-    prop: { // 在组件用于数组遍历的时候
-      type: String,
-      default: ''
-    },
-    index: { // 在组件用于数组遍历的时候
-      type: Number,
-      default: 0
+    ifShowTip: {
+      type: Boolean,
+      default: true
     },
     fileList: {
       type: Array,
@@ -156,13 +152,9 @@ export default {
     },
     onAccept: {
       type: Function
-    },
-    isReimburse: {
-      type: Boolean,
-      default: false
     }
   },
-  data() {
+  data () {
     return {
       dialogImageUrl: "",
       dialogVisible: false,
@@ -171,7 +163,8 @@ export default {
         "X-Token":this.$store.state.user.token
       },
       pictures:[],
-      newPictureList: []
+      newPictureList: [],
+      isShowTip: true // 是否展示tip
     }
   },
   watch:{
@@ -183,8 +176,11 @@ export default {
     }
   },
   computed: {
-    isShowTip () {
-      return true
+    canShowTip () {
+      console.log(this.ifShowTip, 'ifShowTip')
+      return !this.ifShowTip
+      ? this.ifShowTip
+      : this.isShowTip
     }
   },
   methods: {
@@ -193,6 +189,9 @@ export default {
     },
     handleRemove(file, fileList) {
       console.log(fileList, 'remove fileList')
+      if (this.limit && fileList.length < this.limit) {
+        this.isShowTip = true
+      }
       let { uid, id } = file
       if (this.fileList && this.fileList.length) { // 如果是fileList列表则直接通过id来判断，将id值传出去，用于删除附件
         let findIndex = this.fileList.findIndex(item => item.id === id)
@@ -220,8 +219,17 @@ export default {
       this.dialogVisible = true;
     },
     handlePreview (file) { // 打开文件
-      if (file.url) {
-        downloadFile(file.url)
+      console.log(file, 'file')
+      let { url, fileType } = file
+      if (url) {
+        if (fileType) { // 文件类型 后台返回的
+          if (/^image\/\w+/i.test(fileType)) {
+            this.dialogImageUrl = file.url
+            this.dialogVisible = true
+          } else {
+            downloadFile(file.url)
+          }
+        }
       }
     },
     handleDownload() {
@@ -257,6 +265,9 @@ export default {
     },
     successBack(res, file, fileList){
       console.log(fileList, 'success FileList')
+      if (this.limit && fileList.length >= this.limit) { // 如果当前的已经上传文件的数量大于等于最大上传数量，隐藏Tip
+        this.isShowTip = false
+      }
       let _this = this
       this.newPictureList.push({
         pictureId:res.result[0].id,
@@ -286,6 +297,7 @@ export default {
         : this.$refs.file.clearFiles()
       this.pictures = []
       this.newPictureList = []
+      this.isShowTip = true
     }
   },
   created () {
@@ -295,15 +307,23 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.upload-demo {
+  display: block;
+  &.hidden-tip {
+    ::v-deep .el-upload {
+      display: none;
+    }
+  }
+  .upload-text {
+    font-size: 12px; 
+    margin-left: 5px;
+  }
+}
 .img{
   ::v-deep .el-upload--picture-card {
     width: 70px !important;
     height: 70px !important;
     line-height: 70px !important;
-    .upload-text {
-      margin-left: 5px;
-      font-size: 14px;
-    }
   }
   ::v-deep .el-upload-list__item {
     width: 70px;
