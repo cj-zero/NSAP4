@@ -70,7 +70,7 @@ namespace OpenAuth.App
             var result = new TableData();
             var objs = UnitWork.Find<ReimburseInfo>(null);
             var ReimburseInfos = objs.WhereIf(!string.IsNullOrWhiteSpace(request.MainId), r => r.MainId.ToString().Contains(request.MainId))
-                      .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId), r => r.ServiceOrderId.ToString().Contains(request.ServiceOrderId))
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId), r => r.ServiceOrderSapId.ToString().Contains(request.ServiceOrderId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.BearToPay), r => r.BearToPay.Contains(request.BearToPay))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.Responsibility), r => r.Responsibility.Contains(request.Responsibility))
                       .WhereIf(request.StaticDate != null && request.EndDate != null, r => r.CreateTime > request.StaticDate && r.CreateTime < Convert.ToDateTime(request.EndDate).AddMinutes(1440))
