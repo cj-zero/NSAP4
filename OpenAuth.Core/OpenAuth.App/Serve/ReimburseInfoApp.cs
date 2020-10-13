@@ -555,7 +555,10 @@ namespace OpenAuth.App
             //用信号量代替锁
             await semaphoreSlim.WaitAsync();
             var obj = req.MapTo<ReimburseInfo>();
-
+            obj.ReimburseTravellingAllowances.ForEach(r => r.CreateTime = DateTime.Now);
+            obj.ReimburseOtherCharges.ForEach(r => r.CreateTime = DateTime.Now);
+            obj.ReimburseFares.ForEach(r => r.CreateTime = DateTime.Now);
+            obj.ReimburseAccommodationSubsidies.ForEach(r => r.CreateTime = DateTime.Now);
             try
             {
                 if (!obj.IsDraft)
