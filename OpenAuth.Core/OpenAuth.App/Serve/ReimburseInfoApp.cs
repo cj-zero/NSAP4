@@ -340,7 +340,7 @@ namespace OpenAuth.App
             List<ServiceOrder> ServiceOrderList = new List<ServiceOrder>();
             foreach (var item in ServiceOrders)
             {
-                var WorkOrders = item.ServiceWorkOrders.Where(s => s.CurrentUserNsapId == loginUser.Id && s.Status < 6).ToList();
+                var WorkOrders = item.ServiceWorkOrders.Where(s => s.CurrentUserNsapId == loginUser.Id && s.Status <= 6).ToList();
                 if (WorkOrders.Count == 0)
                 {
                     ServiceOrderList.Add(item);
@@ -408,49 +408,69 @@ namespace OpenAuth.App
                         .Include(r => r.ReimurseOperationHistories)
                         .FirstOrDefaultAsync();
             #region 获取附件
-            var file = await UnitWork.Find<UploadFile>(null).ToListAsync();
             Reimburse.ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId == ReimburseInfoId && r.ReimburseType == 0).ToListAsync();
             var ReimburseResp = Reimburse.MapTo<ReimburseInfoResp>();
-            ReimburseResp.ReimburseAttachments.ForEach(r => r.AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault());
-
-            foreach (var item in ReimburseResp.ReimburseFares)
+            List<string> fileids = Reimburse.ReimburseAttachments.Select(r => r.FileId).ToList();
+            List<ReimburseAttachment> rffilemodel = new List<ReimburseAttachment>();
+            if (ReimburseResp.ReimburseFares != null && ReimburseResp.ReimburseFares.Count > 0) 
             {
-                var filemodel = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId == item.Id && r.ReimburseType == 2).ToListAsync();
-                ReimburseResp.ReimburseFares.Where(r => r.Id == item.Id).FirstOrDefault().ReimburseAttachments = filemodel.Select(r => new ReimburseAttachmentResp
+                var rfids = ReimburseResp.ReimburseFares.Select(r => r.Id).ToList();
+                rffilemodel = await UnitWork.Find<ReimburseAttachment>(r => rfids.Contains(r.ReimburseId) && r.ReimburseType == 2).ToListAsync();
+            }
+            if (ReimburseResp.ReimburseAccommodationSubsidies != null && ReimburseResp.ReimburseAccommodationSubsidies.Count > 0)
+            {
+                var rasids = ReimburseResp.ReimburseAccommodationSubsidies.Select(r => r.Id).ToList();
+                rffilemodel.AddRange(await UnitWork.Find<ReimburseAttachment>(r => rasids.Contains(r.ReimburseId) && r.ReimburseType == 3).ToListAsync());
+            }
+            if (ReimburseResp.ReimburseOtherCharges != null && ReimburseResp.ReimburseOtherCharges.Count > 0) 
+            {
+                var rocids = ReimburseResp.ReimburseOtherCharges.Select(r => r.Id).ToList();
+                rffilemodel.AddRange(await UnitWork.Find<ReimburseAttachment>(r => rocids.Contains(r.ReimburseId) && r.ReimburseType == 4).ToListAsync());
+            }
+            fileids.AddRange(rffilemodel.Select(f => f.FileId).ToList());
+
+            var file = await UnitWork.Find<UploadFile>(f=> fileids.Contains(f.Id)).ToListAsync();
+           
+            ReimburseResp.ReimburseAttachments.ForEach(r => { r.AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault();r.FileType = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileType).FirstOrDefault(); });
+            //List<ReimburseAttachment> filemodel = new List<ReimburseAttachment>();
+            if (ReimburseResp.ReimburseFares != null && ReimburseResp.ReimburseFares.Count > 0) 
+            {
+                ReimburseResp.ReimburseFares.ForEach(r => r.ReimburseAttachments = rffilemodel.Where(f => f.ReimburseId.Equals(r.Id) && f.ReimburseType==2).Select(r => new ReimburseAttachmentResp
                 {
                     Id = r.Id,
                     FileId = r.FileId,
                     AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault(),
+                    FileType= file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileType).FirstOrDefault(),
                     ReimburseId = r.ReimburseId,
                     ReimburseType = r.ReimburseType,
                     AttachmentType = r.AttachmentType
-                }).ToList();
+                }).ToList());
             }
             foreach (var item in ReimburseResp.ReimburseAccommodationSubsidies)
             {
-                var filemodel = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId == item.Id && r.ReimburseType == 3).ToListAsync();
-                ReimburseResp.ReimburseAccommodationSubsidies.Where(r => r.Id == item.Id).FirstOrDefault().ReimburseAttachments = filemodel.Select(r => new ReimburseAttachmentResp
+                ReimburseResp.ReimburseAccommodationSubsidies.ForEach(r=>r.ReimburseAttachments = rffilemodel.Where(f => f.ReimburseId.Equals(r.Id) && f.ReimburseType == 3).Select(r => new ReimburseAttachmentResp
                 {
                     Id = r.Id,
                     FileId = r.FileId,
                     AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault(),
+                    FileType = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileType).FirstOrDefault(),
                     ReimburseId = r.ReimburseId,
                     ReimburseType = r.ReimburseType,
                     AttachmentType = r.AttachmentType
-                }).ToList();
+                }).ToList());
             }
             foreach (var item in ReimburseResp.ReimburseOtherCharges)
             {
-                var filemodel = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId == item.Id && r.ReimburseType == 4).ToListAsync();
-                ReimburseResp.ReimburseOtherCharges.Where(r => r.Id == item.Id).FirstOrDefault().ReimburseAttachments = filemodel.Select(r => new ReimburseAttachmentResp
+                ReimburseResp.ReimburseOtherCharges.ForEach(r=>r.ReimburseAttachments = rffilemodel.Where(f => f.ReimburseId.Equals(r.Id) && f.ReimburseType == 4).Select(r => new ReimburseAttachmentResp
                 {
                     Id = r.Id,
                     FileId = r.FileId,
                     AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault(),
+                    FileType = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileType).FirstOrDefault(),
                     ReimburseId = r.ReimburseId,
                     ReimburseType = r.ReimburseType,
                     AttachmentType = r.AttachmentType
-                }).ToList();
+                }).ToList());
             }
             ReimburseResp.ReimurseOperationHistories = ReimburseResp.ReimurseOperationHistories.OrderBy(r => r.CreateTime).ToList();
             #endregion
@@ -986,6 +1006,7 @@ namespace OpenAuth.App
             }
             else
             {
+                eoh.ApprovalResult = "同意";
                 if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")))
                 {
                     obj.RemburseStatus = 5;
@@ -1004,10 +1025,11 @@ namespace OpenAuth.App
                 }
                 else if (loginContext.Roles.Any(r => r.Name.Equals("出纳")))
                 {
+                    eoh.ApprovalResult = "已支付";
                     obj.RemburseStatus = 9;
                     obj.PayTime = DateTime.Now;
                 }
-                eoh.ApprovalResult = "同意";
+                
                 _flowInstanceApp.Verification(new VerificationReq
                 {
                     NodeRejectStep = "",

@@ -81,13 +81,15 @@ namespace OpenAuth.App
             var obj = await UnitWork.Find<MyExpends>(m => m.Id == MyExpendsId).FirstOrDefaultAsync();
             var result = new TableData();
             var ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId == obj.Id && r.ReimburseType == 5).ToListAsync();
-            var file = await UnitWork.Find<UploadFile>(null).ToListAsync();
+            var fileids = ReimburseAttachments.Select(r => r.FileId).ToList();
+            var file = await UnitWork.Find<UploadFile>(f=> fileids.Contains(f.Id)).ToListAsync();
             var MyExpendsDetails = obj.MapTo<AddOrUpdateMyExpendsReq>();
             MyExpendsDetails.ReimburseAttachments = ReimburseAttachments.Select(r => new ReimburseAttachmentResp
             {
                 Id = r.Id,
                 FileId = r.FileId,
                 AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault(),
+                FileType= file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileType).FirstOrDefault(),
                 AttachmentType = r.AttachmentType,
                 ReimburseId = r.ReimburseId,
                 ReimburseType = r.ReimburseType
@@ -108,7 +110,7 @@ namespace OpenAuth.App
             {
                 user = await GetUserId(Convert.ToInt32(req.AppId));
             }
-            if (!await IsSole(user.Id,req.InvoiceNumber))
+            if (!await IsSole(req.AppId.ToString(), req.InvoiceNumber))
             {
                 throw new CommonException("添加费用失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
             }
@@ -222,6 +224,7 @@ namespace OpenAuth.App
         /// 发票号个人唯一
         /// </summary>
         /// <param name="InvoiceNumber"></param>
+        /// <param name="UserId"></param>
         /// <returns></returns>
         public async Task<bool> IsSole(string UserId,string InvoiceNumber)
         {
