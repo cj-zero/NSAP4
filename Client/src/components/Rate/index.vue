@@ -62,6 +62,7 @@ export default {
     },
     clearScore () {
       this.realScore = 0
+      console.log('clearScore', this.realScore)
     } 
   },
   created () {

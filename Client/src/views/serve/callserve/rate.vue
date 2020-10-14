@@ -58,6 +58,15 @@
           </el-row>
         </el-row>
       </div>
+      <el-row type="flex" class="comment-wrapper">
+        <span class="comment-title">评价</span>
+        <el-input 
+          type="textarea"
+          v-model="textarea"
+          @input="onInput"
+          :autosize="{ minRows: 2, maxRows: 4}"
+          placeholder="请输入内容"></el-input>
+      </el-row>
     </div>
   </div>
 </template>
@@ -82,6 +91,7 @@ export default {
   },
   data () {
     return {
+      textarea: ''
     }
   },
   computed: {
@@ -98,7 +108,17 @@ export default {
         this.$set(this.newData, type, val)
       }
       this.$emit('changeComment', this.newData)
-      console.log(val, 'after', this.newData, this.data)
+    },
+    onInput (value) {
+      Object.assign(this.newData, { comment: value.trim() })
+      this.$emit('changeComment', this.newData)
+    },
+    resetInfo () {
+      let { rate, rateProduct, ratePrice } = this.$refs
+      rateProduct.clearScore()
+      ratePrice.clearScore()
+      rate.forEach(item => item.clearScore())
+      this.textarea = '' // 清空评论信息
     }
   },
   created () {
@@ -158,6 +178,7 @@ export default {
         }
         .name {
           margin-top: 10px;
+          font-weight: bold;
         }
       }
       .rate-item {
@@ -166,6 +187,14 @@ export default {
         border: 1px solid silver;
       } 
     }
-  }
+    .comment-wrapper {
+      .comment-title {
+        width: 104px;
+        margin-right: 30px;
+        text-align: center;
+        font-weight: bold;
+      }
+    }
+  } 
 }
 </style>
