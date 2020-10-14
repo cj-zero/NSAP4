@@ -336,12 +336,12 @@ export default {
     },
     reset () {
       this.$confirm('确定重置?', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }).then(() => {
-          this.$refs.order.resetInfo()
-        })
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.$refs.order.resetInfo()
+      })
       // this.$refs.order.resetInfo()
     }, // 重置
     closeDialog () {

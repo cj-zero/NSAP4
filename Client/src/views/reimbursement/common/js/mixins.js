@@ -210,7 +210,7 @@ export let tableMixin = {
         item.reimburseAttachments = []
         item.maxMoney = item.totalMoney || item.money
         item.isAdd = true
-        item.isTrue = Boolean(item.invoiceFileList.length)
+        item.isValidInvoice = Boolean(item.invoiceFileList.length)
       })
     },
     getTargetAttachment (data, attachmentType) { // 用于el-upload 回显
@@ -380,7 +380,7 @@ export let categoryMixin = {
         { label: '服务ID', prop: 'serviceOrderSapId', palceholder: '请选择', col: 6, disabled: this.title !== 'create' },
         { label: '客户代码', prop: 'terminalCustomerId', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '客户名称', prop: 'terminalCustomer', palceholder: '请输入内容', disabled: true, col: 6 },
-        { label: '客户简称', prop: 'shortCustomerName', palceholder: '最长5个字', col: 6, maxlength: 5, isEnd: true, disabled: this.isEditItem, required: true },
+        { label: '客户简称', prop: 'shortCustomerName', palceholder: '最长5个字', col: 6, maxlength: 6, isEnd: true, disabled: this.isEditItem, required: true },
         { label: '出发地点', prop: 'becity', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '到达地点', prop: 'destination', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '出发日期', prop: 'businessTripDate', palceholder: '请输入内容', disabled: true, col: 6, width: '100%' },
@@ -484,7 +484,6 @@ export const attachmentMixin = {
   },
   methods: {
     onAccept (file, { prop }) { // 限制发票文件上传的格式
-      let _this = this
       if (prop === 'invoiceAttachment') {
         let { type, size } = file
         console.log(size, 'file size')
@@ -495,22 +494,22 @@ export const attachmentMixin = {
           if (!isFitType) {
             this.$message.error('文件格式只能为图片或者PDF')
             reject(false)
-          }
-          if (type !== 'application/pdf') { // 图片文件先进行压缩，再上传
-            const reader = new FileReader()
-            const image = new Image()
-            reader.onload = (e => { 
-              image.src = e.target.result
-            });
-            reader.readAsDataURL(file)
-            // image.src = URL.createObjectURL(file)
-            image.onload = function() {
-              // console.log(_this.compressUpload(image, file.type), 'after compress', image)
-              resolve(_this.compressUpload(image, file.type))
-            }
           } else {
-            resolve() // pdf文件直接resolve
+            resolve()
           }
+          // if (type !== 'application/pdf') { // 图片文件先进行压缩，再上传
+          //   const reader = new FileReader()
+          //   const image = new Image()
+          //   reader.onload = (e => { 
+          //     image.src = e.target.result
+          //   });
+          //   reader.readAsDataURL(file)
+          //   image.onload = function() {
+          //     resolve(_this.compressUpload(image, file.type))
+          //   }
+          // } else {
+          //   resolve() // pdf文件直接resolve
+          // }
         })
       }
       return true
@@ -536,22 +535,27 @@ export const attachmentMixin = {
       console.log(type, 'type URI')
       return new Blob([new Uint8Array(array)], { type })
     },
-    getClass (data) { // 设置发票号码样式
-      if (data) {
-        let hasAttachment = this.hasAttachment(data)
-        hasAttachment
-          ? this.$set(data, 'isTrue', true)
-          : this.$set(data, 'isTrue', false)
-      }
-    },
+    // getClass (data) { // 设置发票号码样式
+    //   console.log(data, 'getClass', this.currentRow === data, 'is TRUE')
+    //   if (data) {
+    //     let hasAttachment = Boolean(this.hasAttachment(data))
+    //     if (data.isTrue !== undefined) {
+    //       data.isTrue = hasAttachment
+    //     } else {
+    //       this.$set(data, 'isTrue', hasAttachment)
+    //     }
+    //     console.log(this.formData, 'getClass formData')
+    //   }
+    // },
     _setCurrentRow (currentRow, data) { // 识别发票凭据后，对表格行进行赋值
-      let { invoiceNo, money, isAcc } = data
+      let { invoiceNo, money, isAcc, isValidInvoice } = data
       if (isAcc) { // 住宿表格行数据
         currentRow.totalMoney = money
         currentRow.money = (currentRow.totalMoney / (currentRow.days || 1)).toFixed(2)
       } else {
         currentRow.money = money
       }
+      this.$set(currentRow, 'isValidInvoice', isValidInvoice) // 判断发票是否正确，如果是正确的话就不给修改，不正确就给修改
       currentRow.maxMoney = money
       currentRow.invoiceNumber = invoiceNo
       console.log(this.formData, '识别新的')
@@ -564,13 +568,13 @@ export const attachmentMixin = {
       })
       let currentRow = data[index]
       currentRow[prop] = resultArr
-      this.getClass(currentRow)
       if (currentRow[prop] && !currentRow[prop].length && prop === 'invoiceAttachment') { // 删除发票附件的时候把金额跟发票号码删除
         if (currentRow.totalMoney) {
           currentRow.totalMoney = ''
         }
         currentRow.money = ''
         currentRow.invoiceNumber = ''
+        currentRow.isValidInvoice = false
       }
       console.log(data, 'after change data')
     },
@@ -585,7 +589,7 @@ export const attachmentMixin = {
               invoiceNo: '',
               money: '',
               isAcc,
-              isTrue: false
+              isValidInvoice: false
             })
             uploadVm.clearFiles()
             this.$message.error('识别失败')
@@ -597,7 +601,7 @@ export const attachmentMixin = {
                 invoiceNo: '',
                 money: '',
                 isAcc,
-                isTrue: false
+                isValidInvoice: false
               })
               uploadVm.clearFiles()
               this.$message.error(notPassReason ? notPassReason : '识别失败')
@@ -611,7 +615,7 @@ export const attachmentMixin = {
                 invoiceNo,
                 money: amountWithTax,
                 isAcc,
-                isTrue: true
+                isValidInvoice: true
               })
               resolve(true)
             }
@@ -622,7 +626,7 @@ export const attachmentMixin = {
             invoiceNo:'',
             money: '',
             isAcc,
-            isTrue: false
+            isValidInvoice: false
           })
           uploadVm.clearFiles()
           this.$message.error(err.message || '识别失败')
@@ -641,7 +645,7 @@ export const attachmentMixin = {
         item.reimburseAttachments = []
         item.maxMoney = item.totalMoney || item.money // 存在附件时，需要对金额进行限制
         item.isAdd = true
-        item.isTrue = Boolean(item.invoiceFileList.length)
+        item.isValidInvoice = Boolean(item.invoiceFileList.length)
         if (isImport) {
           item.myExpendsId = item.id // 吧当前的费用id赋值到myExpendsId
         }

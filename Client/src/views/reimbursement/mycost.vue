@@ -300,7 +300,7 @@ export default {
         item.otherAttachment = []
         item.reimburseAttachments = []
         item.maxMoney = item.totalMoney || item.money
-        item.isTrue = Boolean(item.invoiceFileList.length)
+        item.isValidInvoice = Boolean(item.invoiceFileList.length)
       })
     },
     getTargetAttachment (data, attachmentType) { // 用于el-upload 回显

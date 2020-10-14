@@ -64,7 +64,7 @@
                     <div class="area-wrapper">
                       <el-input 
                         v-model="scope.row[item.prop]" 
-                        :disabled="item.disabled" 
+                        :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)" 
                         :readonly="item.readonly || false"
                         @focus="onAreaFocus({ prop: item.prop, index: scope.$index })">
                         <i 
@@ -72,8 +72,8 @@
                           slot="suffix" 
                           class="el-input__icon"
                           :class="{
-                            'el-icon-success success': scope.row.isTrue,
-                            'el-icon-warning warning': !scope.row.isTrue
+                            'el-icon-success success': scope.row.isValidInvoice,
+                            'el-icon-warning warning': !scope.row.isValidInvoice
                           }">
                         </i>
                       </el-input>
@@ -519,23 +519,24 @@ export default {
       }
       // 删除操作也不进行识别
       if (fileId && prop === 'invoiceAttachment' && !operation) { // 图片上传成功会返回当前的pictureId, 并且只识别发票附件 
+        this.identifyLoading = this.$loading({
+          lock: true,
+          text: 'Loading'
+        })
         this._identifyInvoice({ // 先进行识别再进行赋值
           fileId, 
           currentRow, 
           uploadVm,
-        }).then(isValid => {
-          console.log(isValid, 'isValid invoiceNumber')
+        }, this.currentType === ACC_TYPE).then(isValid => {
           isValid 
             ? this._setAttachmentList(attachmentConfig) 
             : this._setAttachmentList({ ...attachmentConfig, ...{ val: [] }})
+          this.identifyLoading.close()
         })
       } else {
-        console.log('ordinary invoice')
+        this.identifyLoading.close()
         this._setAttachmentList(attachmentConfig)
       }
-      console.log(prop, 'prop')
-      
-      console.log(this.formData.list, 'formData.list')
     },
     _deleteFileId () {
       let { invoiceFileList, otherFileList } = this.formData.list[0]
@@ -625,6 +626,13 @@ export default {
     },
     deleteFileList ({ id }) {
       this.fileid.push(id)
+      let currentRow = this.formData.list[0]
+      this._setCurrentRow(currentRow, {
+        invoiceNo: '',
+        money: '',
+        isAcc: this.currentType === ACC_TYPE,
+        isValidInvoice: false
+      })
       // console.log(this.fileid, 'deleteFileList')
     }
   }

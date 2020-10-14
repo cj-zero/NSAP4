@@ -167,23 +167,22 @@ export default {
       isShowTip: true // 是否展示tip
     }
   },
-  watch:{
-    fileList:{
+  watch: {
+    fileList: {
       immediate: true,
-      deep: true,
       handler (val) {
-        console.log(this.limit, 'limit')
         if (this.ifShowTip && this.limit) { 
           // 如果是再编辑状态下,需要判断当前的文件数量是否小于等于限制数量，从而控制tip是否展示
           this.isShowTip = val.length < this.limit
         }
-        console.log(val, 'fileList')
       }
+    },
+    isShowTip (val) {
+      console.log(val, 'isShowTip')
     }
   },
   computed: {
     canShowTip () {
-      console.log(this.ifShowTip, 'ifShowTip')
       return !this.ifShowTip
       ? this.ifShowTip
       : this.isShowTip
@@ -194,7 +193,6 @@ export default {
       this.dialogVisible = false
     },
     handleRemove(file, fileList) {
-      console.log(fileList, 'remove fileList')
       if (this.limit && fileList.length < this.limit) {
         this.isShowTip = true
       }
@@ -206,7 +204,7 @@ export default {
           // 因为会触发upload组件的fileList，引发图片错乱问题
           // 通过向外传递fileList中删除的图片id，父组件调用接口的时候进行相应的传参
           console.log(id, 'delete id')
-          return this.$emit('deleteFileList', file)
+          return this.$emit('deleteFileList', file, this.options)
         }
       }
       let findIndex = this.newPictureList.findIndex(item => {
@@ -219,6 +217,7 @@ export default {
         ...this.options,
         operation: 'delete' // 删除操作
       })
+      
     },
     handlePictureCardPreview(file) {
       this.dialogImageUrl = file.url;
