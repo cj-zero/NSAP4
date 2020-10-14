@@ -351,8 +351,8 @@ namespace OpenAuth.App
                 UserId = loginUser.Id,
                 UserName = loginUser.Name,
                 ServiceRelations = loginUser.ServiceRelations == null ? "未录入" : loginUser.ServiceRelations,
-                s.TerminalCustomer,
-                s.TerminalCustomerId,
+                TerminalCustomer = CompletionReports.Where(c => c.ServiceOrderId == s.Id).Select(c => c.TerminalCustomer).FirstOrDefault(),
+                TerminalCustomerId = CompletionReports.Where(c => c.ServiceOrderId == s.Id).Select(c => c.TerminalCustomerId).FirstOrDefault(),
                 s.Id,
                 s.U_SAP_ID,
                 OrgName = orgname,
@@ -1186,7 +1186,7 @@ namespace OpenAuth.App
             }
 
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == Reimburse.ServiceOrderId && c.CreateUserId == Reimburse.CreateUserId).ToListAsync();
-            CompletionReports.ForEach(c => c.IsReimburse = 2);
+            CompletionReports.ForEach(c => c.IsReimburse = 1);
             await UnitWork.BatchUpdateAsync<CompletionReport>(CompletionReports.ToArray());
             await UnitWork.SaveAsync();
         }

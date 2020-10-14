@@ -234,7 +234,7 @@ namespace OpenAuth.App
             {
                 user = await GetUserId(Convert.ToInt32(UserId));
             }
-            var rta = await UnitWork.Find<MyExpends>(r =>r.CreateUserId== user.Id && r.InvoiceNumber.Equals(InvoiceNumber)).CountAsync();
+            var rta = await UnitWork.Find<MyExpends>(r =>r.CreateUserId== user.Id && r.InvoiceNumber.Equals(InvoiceNumber) && r.IsDelete!=true).CountAsync();
             if (rta > 0)
             {
                 return false;
