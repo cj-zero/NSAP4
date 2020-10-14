@@ -797,6 +797,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ProblemTypeId.Equals(req.QryProblemType))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromType), q => q.FromType.Equals(Convert.ToInt32(req.QryFromType)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryTechName), q => q.CurrentUser.Contains(req.QryTechName))
+                .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                 .OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
 
             var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceWorkOrders)
@@ -806,11 +807,12 @@ namespace OpenAuth.App
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.ContactTel.Contains(req.ContactTel) || q.NewestContactTel.Contains(req.ContactTel))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), q => q.Supervisor.Contains(req.QrySupervisor))
-                .WhereIf(true, q => ids.Contains(q.Id) && q.Status == 2);
+                .Where(q => ids.Contains(q.Id) && q.Status == 2);
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.User.Account.Equals("wanghaitao") && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
             {
-                query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id));
+                var sIds = await UnitWork.Find<ServiceWorkOrder>(q => q.CurrentUser.Contains(loginContext.User.Name)).OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+                query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id) || sIds.Contains(q.Id));
             }
             var resultsql = query.OrderByDescending(q => q.CreateTime).Select(q => new
             {
