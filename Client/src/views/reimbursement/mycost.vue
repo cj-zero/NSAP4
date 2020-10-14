@@ -20,7 +20,6 @@
             size="mini"
             border
             fit
-            show-overflow-tooltip
             height="100%"
             style="width: 100%;"
             @row-click="onRowClick"
@@ -34,6 +33,7 @@
               :align="item.align || 'left'"
               :sortable="item.isSort || false"
               :type="item.originType || ''"
+              show-overflow-tooltip
             >
               <template slot-scope="scope" >
                 <div class="link-container" v-if="item.type === 'link'">
@@ -189,7 +189,6 @@ export default {
         this.total = count
         this.tableData = this._normalizeList(data)
         this.tableLoading = false
-        console.log(this.total, this.toSavetableData, 'data')
       }).catch(() => {
         this.tableLoading = false
         this.$message.error('加载列表失败')
@@ -199,14 +198,12 @@ export default {
       getCategoryName().then(res => {
         this.categoryList = res.data
         this._normalizeSelectList()
-        console.log(this.selectList, 'selectList')
       }).catch((err) => {
         console.log(err, 'err')
         this.$message.error('获取字典分类失败')
       })
     },
     _normalizeSelectList () {
-      console.log(this.transportationList, 'sele', this)
       this.selectList.push({
         title: '交通费用',
         options: this.transportationList.map(item => {
@@ -221,7 +218,6 @@ export default {
       this.selectList.push({
         title: '其他费用',
         options: this.otherExpensesList.map(item => {
-          console.log('其他费用')
           item.type = OTHER_TYPE
           return item
         })
@@ -259,9 +255,7 @@ export default {
     },
     getDetail (val) { // 获取详情
       let { type } = val
-      console.log(val, 'val')
       let myExpendsId = ''
-      console.log(type === 'view', 'boolean')
       if (type === 'view') {
         myExpendsId = val.id
       } else {
@@ -277,14 +271,12 @@ export default {
         myExpendsId
       }).then(res => {
         let data = res.data
-        console.log(data)
         this._buildAttachment([data])
         this.detailData = {
           list: [data]
         }
         this.type = type
         this.$refs.myDialog.open()
-        console.log(this.detailData.list, 'res')
       }).catch((err) => {
         console.error(err)
         this.$message.error('获取详情失败')

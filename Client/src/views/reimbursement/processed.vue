@@ -21,7 +21,6 @@
               size="mini"
               border
               fit
-              show-overflow-tooltip
               height="100%"
               style="width: 100%;"
               @row-click="onRowClick"

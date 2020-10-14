@@ -392,11 +392,9 @@ export default {
       this._setRowData (tag)
       this.changeTable(tag.type)
       this.toggleSelect()
-      console.log(this.formData.list[0], 'formData')
     },
     _setRowData (tag) { // 根据选择的标签设置响应的字段
       if (tag.type == 1) { // 交通类型
-        console.log('traffic')
         this.formData.list[0].transport = tag.value
       }
       if (tag.type == 3) { // 其他类别
@@ -425,10 +423,8 @@ export default {
       console.log(this.currentProp, 'prop change')
       if (this.currentProp === 'transport') { // 如果改变的是交通方式，则对feeType进行相应的赋值
         this.formData.list[0].feeType = this.transportationList[value - 1].label
-        console.log(this.formData.list[0].feeType, 'this.formData.list[0].feeType')
       } else if (this.currentProp === 'expenseCategory') {
         this.formData.list[0].feeType = this.otherExpensesList[value - 1].label
-        console.log(this.formData.list[0].feeType, 'this.formData.list[0].feeType')
       } else { // 住房的 总金额和住宿关联
          if (!this.isValidNumber(value)) {
           return
@@ -451,7 +447,7 @@ export default {
     onInput (e) {
       let val = e.target.value
       let { invoiceFileList, invoiceAttachment, invoiceNumber, maxMoney } = this.formData.list[0]
-      console.log(invoiceFileList, invoiceAttachment, invoiceNumber, this.currentProp, 'input')
+      // console.log(invoiceFileList, invoiceAttachment, invoiceNumber, this.currentProp, 'input')
       if (
         (
           (invoiceFileList.length && !this.fileid.includes(invoiceFileList[0].id)) || // 编辑的时候，有回显的附件，并且没有删除
@@ -507,7 +503,6 @@ export default {
       this.currentProp = property
     },
     getImgList (val, { prop, index, fileId, uploadVm, operation }) {
-      console.log(index, 'getImgINDEX')
       let data = this.formData.list
       let currentRow = data[index]
       let attachmentConfig = {
@@ -557,7 +552,6 @@ export default {
     resetInfo (isClose = true, type = '') {
       let prevData = this.formData.list[0]
       let { money, totalMoney, remark, maxMoney, from, to } = prevData
-      console.log(typeof type, 'type', remark, money, totalMoney)
       this.$refs.form.clearValidate()
       this.$refs.form.resetFields()
       this.clearFile()
@@ -589,7 +583,6 @@ export default {
           ifToShow: false
         }]
       }
-      console.log(this.formData, 'change after')
       this.rules = ''
       this.config = ''
       this.currentProp = ''
@@ -609,7 +602,7 @@ export default {
       }
       this.mergeFileList(this.formData.list)
       let isValid = await this.$refs.form.validate()
-      console.log(isValid, this.ifInvoicementListInEdit(), 'VALIDA')
+      // console.log(isValid, this.ifInvoicementListInEdit(), 'VALIDA')
       if (isValid && this.ifInvoicementListInEdit()) {
         this.operation === 'create'
           ? this.formData.list[0].createTime = timeToFormat('yyyy-MM-dd HH:mm:ss')
@@ -632,7 +625,6 @@ export default {
         isAcc: this.currentType === ACC_TYPE,
         isValidInvoice: false
       })
-      // console.log(this.fileid, 'deleteFileList')
     }
   }
 }

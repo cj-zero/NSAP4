@@ -21,7 +21,6 @@
             size="mini"
             border
             fit
-            show-overflow-tooltip
             height="100%"
             style="width: 100%;"
             @row-click="onRowClick"
@@ -210,7 +209,6 @@ export default {
     // },
     addAccount () { // 添加
       getOrder().then(res => {
-        console.log(res, 'res')
         let data = res.data
         if (data && data.length) {
           let { 
@@ -301,14 +299,12 @@ export default {
         : this.edit()
     }, 
     saveAsDraft () { // 存为草稿
-      console.log(this.title, 'title')
       this.title === 'create' // 判断是新建的还是已经创建的
         ? this._addOrder(true)
         : this.edit(true)
     }, 
     edit (isDraft) {
       // 编辑
-      console.log('草稿')
       isDraft
         ? this.draftLoading = true
         : this.editLoading = true
@@ -345,7 +341,6 @@ export default {
       // this.$refs.order.resetInfo()
     }, // 重置
     closeDialog () {
-      console.log('close Dialog')
       this.$refs.order.resetInfo()
       this.$refs.myDialog.close()
     }

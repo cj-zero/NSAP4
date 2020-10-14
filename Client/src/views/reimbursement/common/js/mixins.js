@@ -141,7 +141,6 @@ export let tableMixin = {
             message: '请先选择报销单'
           })
         }
-        console.log(val, 'val')
         if (val.name === 'mySubmit') { // 我的提交模块判断
           if (this.currentRow.remburseStatus > 3) {
             return this.$message({
@@ -152,7 +151,7 @@ export let tableMixin = {
         }
         id = this.currentRow.id
       }
-      console.log(this.currentRow, 'currentRow')
+      this.tableLoading = true
       getDetails({
         reimburseInfoId: id
       }).then(res => {
@@ -165,13 +164,13 @@ export let tableMixin = {
           console.log(err, 'err')
         }
         // 如果是审核流程、则判断当前用户是不是客服主管
-        console.log(val.type, 'before title')
         this.title = tableClick
           ? 'view'
           : val.type
-        console.log(this.title, 'title')
+        this.tableLoading = false
         this.$refs.myDialog.open()
       }).catch(() => {
+        this.tableLoading = false
         this.$message.error('获取详情失败')
       })
     },
@@ -198,7 +197,6 @@ export let tableMixin = {
       this._buildAttachment(reimburseFares)
       this._buildAttachment(reimburseAccommodationSubsidies)
       this._buildAttachment(reimburseOtherCharges)
-      console.log(data, 'detail')
     },
     _buildAttachment (data) { // 为了回显，并且编辑 目标是为了保证跟order.vue的数据保持相同的逻辑
       data.forEach(item => {
@@ -246,9 +244,7 @@ export const reportMixin = {
   },
   methods: {
     openReport (data, type) {
-      console.log(data, 'data')
       let { serviceOrderId, createUserId } = data
-      console.log(serviceOrderId, 'serviceOrderId')
       if (!serviceOrderId) {
         return this.$message.error('请先选择服务ID')
       }
@@ -279,7 +275,6 @@ export const reportMixin = {
       })
     },
     resetReport () {
-      console.log('reset Report')
       this.$refs.report.reset()
     },
     _normalizeReportData (data) {
@@ -488,7 +483,6 @@ export const attachmentMixin = {
         let { type, size } = file
         console.log(size, 'file size')
         let imgReg = /^image\/\w+/i
-        console.log(imgReg.test(type), type === 'application/pdf')
         let isFitType = imgReg.test(type) || type === 'application/pdf'    
         return new Promise((resolve, reject) => {
           if (!isFitType) {
@@ -535,18 +529,6 @@ export const attachmentMixin = {
       console.log(type, 'type URI')
       return new Blob([new Uint8Array(array)], { type })
     },
-    // getClass (data) { // 设置发票号码样式
-    //   console.log(data, 'getClass', this.currentRow === data, 'is TRUE')
-    //   if (data) {
-    //     let hasAttachment = Boolean(this.hasAttachment(data))
-    //     if (data.isTrue !== undefined) {
-    //       data.isTrue = hasAttachment
-    //     } else {
-    //       this.$set(data, 'isTrue', hasAttachment)
-    //     }
-    //     console.log(this.formData, 'getClass formData')
-    //   }
-    // },
     _setCurrentRow (currentRow, data) { // 识别发票凭据后，对表格行进行赋值
       let { invoiceNo, money, isAcc, isValidInvoice } = data
       if (isAcc) { // 住宿表格行数据
@@ -558,7 +540,6 @@ export const attachmentMixin = {
       this.$set(currentRow, 'isValidInvoice', isValidInvoice) // 判断发票是否正确，如果是正确的话就不给修改，不正确就给修改
       currentRow.maxMoney = money
       currentRow.invoiceNumber = invoiceNo
-      console.log(this.formData, '识别新的')
     },
     _setAttachmentList ({ data, index, prop, reimburseType, val }) { // 设置通过上传获取到的附件列表
       let resultArr = []
@@ -576,7 +557,6 @@ export const attachmentMixin = {
         currentRow.invoiceNumber = ''
         currentRow.isValidInvoice = false
       }
-      console.log(data, 'after change data')
     },
     _identifyInvoice (data, isAcc = false) { // 票据识别
       let { fileId, currentRow, uploadVm } = data
@@ -592,7 +572,7 @@ export const attachmentMixin = {
               isValidInvoice: false
             })
             uploadVm.clearFiles()
-            this.$message.error('识别失败')
+            this.$message.error('识别失败,请上传至其它附件列表')
             resolve(false)
           } else {
             let { invoiceNo, amountWithTax, isValidate, isUsed, notPassReason } = res.data[0]
@@ -604,7 +584,7 @@ export const attachmentMixin = {
                 isValidInvoice: false
               })
               uploadVm.clearFiles()
-              this.$message.error(notPassReason ? notPassReason : '识别失败')
+              this.$message.error(notPassReason ? notPassReason : '识别失败,请上传至其它附件列表')
               resolve(false)
             } else {
               this.$message({
@@ -629,7 +609,7 @@ export const attachmentMixin = {
             isValidInvoice: false
           })
           uploadVm.clearFiles()
-          this.$message.error(err.message || '识别失败')
+          this.$message.error(err.message || '识别失败,请上传至其它附件列表')
           resolve(false)
         })
       })
@@ -694,12 +674,8 @@ export const attachmentMixin = {
         this._setAttachmentId(otherAttachment, isImport)
         this._setAttachmentId(invoiceFileList, isImport)
         this._setAttachmentId(otherFileList, isImport)
-        console.log(invoiceAttachment, otherAttachment, invoiceFileList, otherFileList, 'setID')
+        // console.log(invoiceAttachment, otherAttachment, invoiceFileList, otherFileList, 'setID')
         item.reimburseAttachments = [...invoiceAttachment, ...otherAttachment, ...invoiceFileList, ...otherFileList]
-        // delete item.invoiceAttachment
-        // delete item.otherAttachment
-        // delete item.invoiceFileList
-        // delete item.otherFileList
       })
     },
     _setAttachmentId (data, isImport) { // 如果是导入的数据需要将附件ID变成零
@@ -731,7 +707,6 @@ export const chatMixin = {
   },
   methods: {
     openTree(row) {
-      console.log(row, 'orderId')
       let serviceOrderId = row.serviceOrderId
       this.tableLoading = true
       GetDetails(serviceOrderId).then(res => {
