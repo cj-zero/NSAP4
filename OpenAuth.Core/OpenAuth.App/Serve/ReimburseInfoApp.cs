@@ -548,13 +548,15 @@ namespace OpenAuth.App
             bool IsInvoiceNumber = InvoiceNumbers.GroupBy(i => i).Where(g => g.Count() > 1).Count() >= 1;
             if (IsInvoiceNumber)
             {
-                throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                string msg = "";
+                InvoiceNumbers.GroupBy(i => i).Where(g => g.Count() > 1).Select(i => i.Key).ToList().ForEach(i => msg += i+",");
+                throw new CommonException($"添加报销单失败。发票号：{msg}重复！", Define.INVALID_InvoiceNumber);
             }
             else if (InvoiceNumbers.Count() > 0)
             {
                 if (!await IsSole(InvoiceNumbers))
                 {
-                    throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                    throw new CommonException("添加报销单失败。发票已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
                 }
             }
             #endregion
@@ -708,13 +710,15 @@ namespace OpenAuth.App
             bool IsInvoiceNumber = InvoiceNumbers.GroupBy(i => i).Where(g => g.Count() > 1).Count() >= 1;
             if (IsInvoiceNumber)
             {
-                throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                string msg = "";
+                InvoiceNumbers.GroupBy(i => i).Where(g => g.Count() > 1).Select(i=>i.Key).ToList().ForEach(i=> msg+=i+",");
+                throw new CommonException($"添加报销单失败。发票号：{msg}重复！", Define.INVALID_InvoiceNumber);
             }
             else if (InvoiceNumbers.Count() > 0)
             {
                 if (!await IsSole(InvoiceNumbers))
                 {
-                    throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                    throw new CommonException("添加报销单失败。发票已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
                 }
             }
             #endregion

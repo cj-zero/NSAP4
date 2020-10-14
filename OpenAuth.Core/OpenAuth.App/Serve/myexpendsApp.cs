@@ -114,7 +114,7 @@ namespace OpenAuth.App
             List<string> InvoiceNumbers = new List<string> { req.InvoiceNumber };
             if (!await IsSole(req.AppId.ToString(), req.InvoiceNumber) || !await _reimburseinfoApp.IsSole(InvoiceNumbers))
             {
-                throw new CommonException("添加费用失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                throw new CommonException("添加费用失败。发票已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
             }
             var obj = req.MapTo<MyExpends>();
             //todo:补充或调整自己需要的字段
@@ -153,7 +153,7 @@ namespace OpenAuth.App
             List<string> InvoiceNumbers = new List<string> { obj.InvoiceNumber };
             if ((MyExpendsModel != null && MyExpendsModel.InvoiceNumber != obj.InvoiceNumber && !await IsSole(user.Id,obj.InvoiceNumber)) || !await _reimburseinfoApp.IsSole(InvoiceNumbers))
             {
-                throw new CommonException("添加费用失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                throw new CommonException("添加费用失败。发票已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
             }
             await UnitWork.UpdateAsync<MyExpends>(u => u.Id == obj.Id, u => new MyExpends
             {
