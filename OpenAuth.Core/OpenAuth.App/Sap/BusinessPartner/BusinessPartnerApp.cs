@@ -45,6 +45,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
                 q.b.SlpName,
                 q.a.Currency,
                 q.a.Balance,
+                q.a.U_Name,
                 Address = $"{ q.a.ZipCode ?? "" }{ q.c.Name ?? "" }{ q.d.Name ?? "" }{ q.a.City ?? ""}{ q.a.Building ?? "" }",
                 Address2 = $"{ q.a.MailZipCod ?? "" }{ q.e.Name ?? "" }{ q.d.Name ?? "" }{ q.a.MailCity ?? "" }{ q.a.MailBuildi ?? "" }",
                 q.a.U_FPLB,
@@ -123,6 +124,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
                 q.a.Free_Text,
                 q.a.U_FPLB,
                 q.a.SlpCode
+                q.a.U_Name,
             }).ToListAsync();
 
             if (!string.IsNullOrWhiteSpace(req.Technician)) query2 = query2.Where(q => q.Technician.Contains(req.Technician)).ToList();
@@ -195,6 +197,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
                 q.c.GroupName,
                 q.a.Free_Text,
                 q.a.U_FPLB,
+                q.a.U_Name,
                 q.a.SlpCode
             }).FirstOrDefaultAsync();
             result.Data = BusinessAssociate;
@@ -235,6 +238,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
                 q.a.Phone1,
                 q.a.SlpCode,
                 q.b.SlpName,
+                q.a.U_Name,
                 TechID = q.a.DfTcnician,
                 TechName = $"{q.e.lastName ?? ""}{q.e.firstName}",
                 CntctPrsnList = UnitWork.Find<OCPR>(null).Where(o => o.CardCode.Equals(q.a.CardCode)).ToList(),
