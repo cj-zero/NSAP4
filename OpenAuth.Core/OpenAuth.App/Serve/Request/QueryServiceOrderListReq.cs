@@ -74,6 +74,18 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 状态栏 1 已派单 2 已解决 
         /// </summary>
-        public int QryStatusBar { get; set; }
+        public int? QryStatusBar { get; set; }
+
+        /// <summary>
+        /// 呼叫主题
+        /// </summary>
+        public string QryFromTheme { get; set; }
+
+
+        /// <summary>
+        /// 物料编码
+        /// </summary>
+        public string QryMaterialCode { get; set; }
+
     }
 }
