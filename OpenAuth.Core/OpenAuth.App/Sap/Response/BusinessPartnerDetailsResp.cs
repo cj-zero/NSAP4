@@ -43,6 +43,12 @@ namespace OpenAuth.App.Response
         /// </summary>
         public string Phone1 { get; set; }
 
+        /// <summary>
+        /// 客户简称
+        /// </summary>
+        public string U_Name { get; set; }
+        
+
         public List<OCPR> CntctPrsnList { get; set; }
 
         public List<CRD1> AddressList { get; set; }
