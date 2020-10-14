@@ -1166,7 +1166,6 @@ export default {
             : this._setAttachmentList({ ...attachmentConfig, ...{ val: [] }})
         })
       } else {
-        this.identifyLoading.close()
         this._setAttachmentList(attachmentConfig)
       }
     },
@@ -1197,7 +1196,6 @@ export default {
             : this._setAttachmentList({ ...attachmentConfig, ...{ val: [] }})
         })
       } else {
-        this.identifyLoading.close()
         this._setAttachmentList(attachmentConfig)
       }
     },
@@ -1228,7 +1226,6 @@ export default {
             : this._setAttachmentList({ ...attachmentConfig, ...{ val: [] }})
         })
       } else {
-        this.identifyLoading.close()
         this._setAttachmentList(attachmentConfig)
       }
     },

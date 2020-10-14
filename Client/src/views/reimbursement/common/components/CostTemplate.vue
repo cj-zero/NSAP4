@@ -534,7 +534,6 @@ export default {
           this.identifyLoading.close()
         })
       } else {
-        this.identifyLoading.close()
         this._setAttachmentList(attachmentConfig)
       }
     },
