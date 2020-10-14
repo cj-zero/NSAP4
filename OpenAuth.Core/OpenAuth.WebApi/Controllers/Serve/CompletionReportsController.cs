@@ -178,15 +178,16 @@ namespace OpenAuth.WebApi.Controllers
         /// 获取完工报告详情Web
         /// </summary>
         /// <param name="ServiceOrderId"></param>
+        /// <param name="UserId"></param>
         /// <returns></returns>
 
         [HttpGet]
-        public async Task<Response<TableData>> GetCompletionReportDetailsWeb(int ServiceOrderId)
+        public async Task<Response<TableData>> GetCompletionReportDetailsWeb(int ServiceOrderId,string UserId)
         {
             var result = new Response<TableData>();
             try
             {
-                result.Result = await _app.GetCompletionReportDetailsWeb(ServiceOrderId);
+                result.Result = await _app.GetCompletionReportDetailsWeb(ServiceOrderId, UserId);
             }
             catch (Exception ex)
             {

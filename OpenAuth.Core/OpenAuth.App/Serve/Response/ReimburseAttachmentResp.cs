@@ -39,5 +39,9 @@ namespace OpenAuth.App.Serve.Response
         /// 是否新增
         /// </summary>
         public bool? IsAdd { get; set; }
+        /// <summary>
+        /// 文件类型
+        /// </summary>
+        public string FileType { get; set; }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Org.BouncyCastle.Asn1.Mozilla;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using Org.BouncyCastle.Asn1.Mozilla;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -25,7 +26,7 @@ namespace Infrastructure.TecentOCR
         /// <summary>
         /// 纳税人识别号
         /// </summary>
-        public string ComapnyTaxCode { get; set; }
+        public string CompanyTaxCode { get; set; }
 
         /// <summary>
         /// 是否核验通过
@@ -51,6 +52,11 @@ namespace Infrastructure.TecentOCR
         /// 未通过原因
         /// </summary>
         public string NotPassReason { get; set; }
+
+        /// <summary>
+        /// 扩展信息
+        /// </summary>
+        public ExtendInfo ExtendInfo { get; set; }
     }
 
 
@@ -120,7 +126,7 @@ namespace Infrastructure.TecentOCR
         /// <summary>
         /// 纳税人识别号
         /// </summary>
-        public string ComapnyTaxCode { get; set; }
+        public string CompanyTaxCode { get; set; }
 
         /// <summary>
         /// 发票校验码
@@ -142,5 +148,10 @@ namespace Infrastructure.TecentOCR
         /// 到达站
         /// </summary>
         public string ArrivalStation { get; set; }
+
+        /// <summary>
+        /// 服务名称
+        /// </summary>
+        public string ServiceName { get; set; }
     }
 }
