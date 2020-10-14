@@ -123,7 +123,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
                 q.c.GroupName,
                 q.a.Free_Text,
                 q.a.U_FPLB,
-                q.a.SlpCode
+                q.a.SlpCode,
                 q.a.U_Name,
             }).ToListAsync();
 
