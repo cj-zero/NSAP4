@@ -517,6 +517,13 @@ namespace OpenAuth.App
             {
                 loginUser = await GetUserId(Convert.ToInt32(req.AppId));
             }
+            #region 报销单唯一
+            var ReimburseCount=await UnitWork.Find<ReimburseInfo>(r => r.ServiceOrderId.Equals(req.ServiceOrderId) && r.CreateUserId.Equals(loginUser.Id)).CountAsync();
+            if (ReimburseCount > 0) 
+            {
+                throw new CommonException("该服务单已提交报销单，不可二次使用！", Define.INVALID_ReimburseAgain);
+            }
+            #endregion
 
             #region 删除我的费用
 
@@ -552,13 +559,14 @@ namespace OpenAuth.App
             }
             #endregion
 
-            //用信号量代替锁
-            await semaphoreSlim.WaitAsync();
             var obj = req.MapTo<ReimburseInfo>();
             obj.ReimburseTravellingAllowances.ForEach(r => r.CreateTime = DateTime.Now);
             obj.ReimburseOtherCharges.ForEach(r => r.CreateTime = DateTime.Now);
             obj.ReimburseFares.ForEach(r => r.CreateTime = DateTime.Now);
             obj.ReimburseAccommodationSubsidies.ForEach(r => r.CreateTime = DateTime.Now);
+
+            //用信号量代替锁
+            await semaphoreSlim.WaitAsync();
             try
             {
                 if (!obj.IsDraft)
@@ -577,11 +585,6 @@ namespace OpenAuth.App
             {
                 semaphoreSlim.Release();
             }
-
-            //反写完工报告
-            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == obj.ServiceOrderId && c.CreateUserId == obj.CreateUserId).ToListAsync();
-            CompletionReports.ForEach(c => c.IsReimburse = 2);
-            await UnitWork.BatchUpdateAsync<CompletionReport>(CompletionReports.ToArray());
 
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == "UserOrg" && r.FirstId == loginUser.Id).Select(r => r.SecondId).ToListAsync();
             var orgid = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderBy(o => o.CascadeId).Select(o => o.Id).FirstOrDefaultAsync();
@@ -610,6 +613,11 @@ namespace OpenAuth.App
                     ReimburseInfoId = obj.Id
                 });
             }
+            //反写完工报告
+            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == obj.ServiceOrderId && c.CreateUserId == obj.CreateUserId).ToListAsync();
+            CompletionReports.ForEach(c => c.IsReimburse = 2);
+            await UnitWork.BatchUpdateAsync<CompletionReport>(CompletionReports.ToArray());
+
             await UnitWork.SaveAsync();
             #region 保存附件
             List<ReimburseAttachment> filemodel = new List<ReimburseAttachment>();
@@ -1254,7 +1262,7 @@ namespace OpenAuth.App
                 Train = Train,
                 Coach = Coach,
                 Transport = Transport,
-                Total = TransformCharOrNumber.SumConvert(null, Convert.ToDecimal(Reimburse.TotalMoney), ConvertType.MonetaryCapital),
+                Total = TransformCharOrNumber.SumConvert(null, Convert.ToDecimal(Reimburse.TotalMoney)),
             };
             await ExportAllHandler.Exporterpdf(@"D:\工作\程序\前端\aaa.pdf", PrintReimburse, "PrintReimburse.cshtml");
         }
