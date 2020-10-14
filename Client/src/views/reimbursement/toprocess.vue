@@ -53,7 +53,7 @@
                   </template>
                   <template v-else-if="item.label === '服务报告'">
                     <div class="link-container">
-                      <img :src="rightImg" @click="item.handleClick(scope.row.serviceOrderId, 'table')" class="pointer">
+                      <img :src="rightImg" @click="item.handleClick(scope.row, 'table')" class="pointer">
                       <span>查看</span>
                     </div>
                   </template>
@@ -78,7 +78,7 @@
       <my-dialog
         ref="myDialog"
         :center="true"
-        width="1326px"
+        width="1316px"
         :btnList="btnList"
         :onClosed="closeDialog"
         :title="textMap[title]"
@@ -97,7 +97,7 @@
         ref="reportDialog"
         width="983px"
         title="服务行为报告单"
-        @closed="resetReport">
+        :onClosed="resetReport">
         <Report :data="reportData" ref="report"/>
       </my-dialog>
        <!-- 只能查看的表单 -->
