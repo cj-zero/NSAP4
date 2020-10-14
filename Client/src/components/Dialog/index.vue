@@ -17,6 +17,7 @@
     <span slot="footer" class="dialog-footer" v-if="isShowBtn && btnList.length">
       <template v-for="btnItem in btnList">
         <el-button
+          class="customer-btn-class"
           v-if="btnItem.isShow === undefined ? true : btnItem.isShow"
           :key="btnItem.btnText"
           :type="btnItem.type || 'primary'"
