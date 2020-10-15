@@ -114,6 +114,7 @@
           border
           :data="formData.reimburseTravellingAllowances"
           @cell-click="onTravelCellClick"
+          @cell-mouse-enter="onTravelCellEnter"
           max-height="300px"
         >
           <el-table-column
@@ -202,6 +203,7 @@
           :data="formData.reimburseFares"
           max-height="300px"
           @cell-click="onTrafficCellClick"
+          @cell-mouse-enter="onTrafficCellEnter"
         >
           <el-table-column
             v-for="item in trafficConfig"
@@ -335,6 +337,7 @@
           :data="formData.reimburseAccommodationSubsidies"
           max-height="300px"
           @cell-click="onAccCellClick"
+          @cell-mouse-enter="onAccCellEnter"
         >
           <el-table-column
             v-for="item in accommodationConfig"
@@ -467,6 +470,7 @@
           :data="formData.reimburseOtherCharges"
           max-height="300px"
           @cell-click="onOtherCellClick"
+          @cell-mouse-enter="onOtherCellEnter"
         >
           <el-table-column
             v-for="item in otherConfig"
@@ -1231,6 +1235,18 @@ export default {
     onTravelCellClick (row, column) {
       this.tableType = 'travel'
       this.setCurrentProp(column, row)
+    },
+    onTravelCellEnter () {
+      this.tableType = 'travel'
+    },
+    onTrafficCellEnter () {
+      this.tableType = 'traffic'
+    },
+    onAccCellEnter () {
+      this.tableType = 'acc'
+    },
+    onOtherCellEnter () {
+      this.tableType = 'other'
     },
     onTrafficCellClick (row, column) {
       // console.log('cell click traffic')
