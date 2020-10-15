@@ -8,5 +8,5 @@ export let commonSearch = [
   { placeholder: '费用承担', prop: 'expense', width: 100 },
   { placeholder: '责任承担', prop: 'responsibility', width: 100 },
   { placeholder: '填报起始时间', prop: 'dateFrom', type: 'date', width: 150 },
-  { placeholder: '填报结束事件', prop: 'dateTo', type: 'date', width: 150 }
+  { placeholder: '填报结束时间', prop: 'dateTo', type: 'date', width: 150 }
 ]

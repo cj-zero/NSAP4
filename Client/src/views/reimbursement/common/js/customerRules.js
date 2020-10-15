@@ -13,7 +13,7 @@ let validateInvoiceNumber = (rule, value, callback) => { // 校验发票号码8�
     callback()
   } else {
     // console.error('发票号码错误')
-    callback(new Error('8-11位字母或数字'))
+    callback(new Error())
   }
 }
 

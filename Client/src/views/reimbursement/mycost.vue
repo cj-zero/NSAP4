@@ -150,7 +150,7 @@ export default {
       categoryList: [], // 字典分类列表
       searchConfig: [ // 搜索配置
         { placeholder: '填报起始时间', prop: 'startTime', type: 'date', width: 150 },
-        { placeholder: '填报结束事件', prop: 'endTime', type: 'date', width: 150 },
+        { placeholder: '填报结束时间', prop: 'endTime', type: 'date', width: 150 },
         { type: 'search' },
         { type: 'button', handleClick: this.create, btnText: '新建', options: { type: 'create' } },
         { type: 'button', handleClick: this.getDetail, btnText: '编辑', options: { type: 'edit' } },

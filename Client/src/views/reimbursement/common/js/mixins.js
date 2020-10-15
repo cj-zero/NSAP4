@@ -464,7 +464,7 @@ export let categoryMixin = {
         { placeholder: '费用承担', prop: 'bearToPay', width: 100, type: 'select', options: this.expenseList },
         { placeholder: '责任承担', prop: 'responsibility', width: 100, type: 'select', options: this.responsibilityList },
         { placeholder: '填报起始时间', prop: 'staticDate', type: 'date', width: 150 },
-        { placeholder: '填报结束事件', prop: 'endDate', type: 'date', width: 150 }
+        { placeholder: '填报结束时间', prop: 'endDate', type: 'date', width: 150 }
       ]
     }
   }
