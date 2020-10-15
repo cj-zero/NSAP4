@@ -308,7 +308,8 @@ export let categoryMixin = {
         { icon: 'el-icon-delete', handleClick: this.delete }
       ],
       reimburseStatusMap: REIMBURSE_STATUS_MAP,
-      roleName: this.$store.state.user.name // 当前用户角色名字
+      // roleName: this.$store.state.user.name // 当前用户角色名字
+      rolesList: this.$store.state.user.roles
     }
   },
   methods: {
@@ -360,8 +361,9 @@ export let categoryMixin = {
       return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_OtherExpenses))
     },
     isCustomerSupervisor () { // 判断是不是客服主管
-      console.log(this.roleName, 'roleN')
-      return this.roleName === '客服主管'
+      return this.rolesList && this.rolesList.length
+        ? this.rolesList.some(item => item.name === '客服主管')
+        : false
     },
     isEditItem () {
       return (this.title === 'view' || (this.title === 'approve' && !this.isCustomerSupervisor) || this.title === 'toPay')

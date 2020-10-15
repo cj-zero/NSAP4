@@ -7,7 +7,6 @@ import { getToken } from '@/utils/auth' // 验权
 const whiteList = ['/login', '/oidc-callback', '/swagger', '/usermanager/profile'] // 不重定向白名单
 router.beforeEach((to, from, next) => {
   NProgress.start()
-
   store.dispatch('GetIdentityAuth').then(isIdentity => {
     if (isIdentity) { // 采用Identity认证
       // 如果是oidcRedirect必须进入授权
@@ -22,7 +21,7 @@ router.beforeEach((to, from, next) => {
           return
         }
       }
-
+      store.dispatch('GetRoles')
       store.dispatch('oidcCheckAccess', to).then(function(hasAccess) {
         if (!hasAccess) {
           return
@@ -46,6 +45,7 @@ router.beforeEach((to, from, next) => {
         })
       })
     } else { // 普通登录方式
+      store.dispatch('GetRoles')
       if (getToken()) {
         if (to.path === '/login') { // 登录后login自动跳转
           next({ path: '/' })
@@ -57,7 +57,6 @@ router.beforeEach((to, from, next) => {
           // initSignalR(getToken())
           return
         }
-
         store.dispatch('GetInfo').then(() => { // 拉取用户信息
           store.dispatch('GetModulesTree').then(modules => { // 获取用户可访问的模块
             store.dispatch('GenerateRoutes', { modules }).then(() => { // 根据权限生成可访问的路由表
