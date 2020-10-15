@@ -612,7 +612,7 @@
     <!-- 客户选择列表 -->
     <my-dialog 
       ref="customerDialog" 
-      width="800px" 
+      width="621px" 
       :mAddToBody="true" 
       :appendToBody="true"
       :btnList="customerBtnList"

@@ -9,7 +9,7 @@
     </div>
     <!-- <template v-show="currentName === 'message'"> -->
     <!-- 留言 -->
-    <div class="content-wrapper">
+    <div class="content-wrapper" :class="{ reimburse: this.formName === '报销' }">
       <Message :serveId="serveId" v-show="currentName === 'message'"></Message>
       <!-- </template> -->
       <!-- 服务进度 -->
@@ -59,23 +59,38 @@ export default {
       initialName: 'message'
     }
   },
+  watch: {
+    formName: {
+      immediate: true,
+      handler (val) {
+        if (val === '报销') { // 报销模块
+          this.currentName = 'progress'
+          this.initialName = 'progress'
+        }
+      }
+    }
+  },
   computed: {
     tabList () {
+      let tabList = []
       if (this.formName) {
         console.log('success')
-        let tabList = [
-          { label: '消息', name: 'message' },
-          { label: '服务进度', name: 'progress' }
-        ]
+        if (this.formName === '报销') { // 报销模块只有服务进度
+          tabList = [{ label: '服务进度', name: 'progress' }]
+        } else {
+          tabList = [
+            { label: '消息', name: 'message' },
+            { label: '服务进度', name: 'progress' }
+          ]
+        }
         if (this.formName === '编辑') {
           tabList.push({
             label: '核对',
             name: 'check'
           })
         }
-        return tabList
       }
-      return []
+      return tabList
     }
   },
   methods: {
@@ -104,6 +119,9 @@ export default {
   .content-wrapper {
     overflow: hidden;
     flex: 1;
+    &.reimburse {
+      margin-top: 10px;
+    }
   }
 }
 </style>
