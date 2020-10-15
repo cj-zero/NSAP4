@@ -66,6 +66,7 @@
                         v-model="scope.row[item.prop]" 
                         :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)" 
                         :readonly="item.readonly || false"
+                        :placeholder="item.placeholder"
                         @focus="onAreaFocus({ prop: item.prop, index: scope.$index })">
                         <i 
                           v-if="item.prop === 'invoiceNumber'"
@@ -99,6 +100,7 @@
                       @change="onChange"
                       @input.native="onInput"
                       @focus="onFocus(item.prop)"
+                      :placeholder="item.placeholder"
                     ></el-input>
                   </el-form-item>
                 </template>

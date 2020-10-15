@@ -93,9 +93,7 @@ export default {
       this.dialogVisible = false
     }
   },
-  created () {
-    console.log('dialog created')
-  },
+  created () {},
   mounted () {
 
   },

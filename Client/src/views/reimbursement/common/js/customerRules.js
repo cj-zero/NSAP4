@@ -12,7 +12,8 @@ let validateInvoiceNumber = (rule, value, callback) => { // 校验发票号码8�
   if (/^[\d|a-z|A-Z]{8,11}$/.test(value))  {
     callback()
   } else {
-    callback(new Error())
+    // console.error('发票号码错误')
+    callback(new Error('8-11位字母或数字'))
   }
 }
 

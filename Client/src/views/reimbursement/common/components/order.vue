@@ -133,7 +133,7 @@
                   :prop="'reimburseTravellingAllowances.' + scope.$index + '.'+ item.prop"
                   :rules="travelRules[item.prop] || { required: false }"
                 >
-                  <el-input v-model="scope.row[item.prop]" :disabled="item.disabled"></el-input>
+                  <el-input v-model="scope.row[item.prop]" :disabled="item.disabled" :placeholder="item.placeholder"></el-input>
                 </el-form-item>
               </template>
               <template v-else-if="item.type === 'number'">
@@ -185,7 +185,6 @@
         ref="trafficForm" 
         :model="formData" 
         size="mini" 
-        :show-message="false"
         class="form-wrapper"
         :disabled="!ifFormEdit"
         :class="{ 'uneditable': !this.ifFormEdit }"
@@ -214,6 +213,7 @@
             :width="item.width"
             :fixed="item.fixed"
             :resizable="false"
+            
           >
             <template slot-scope="scope">
               <template v-if="item.type === 'order'">
@@ -229,6 +229,7 @@
                       v-model="scope.row[item.prop]" 
                       :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)" 
                       :readonly="item.readonly || false"
+                      :placeholder="item.placeholder"
                       @focus="onAreaFocus({ prop: item.prop, index: scope.$index })">
                       <i 
                         v-if="item.prop === 'invoiceNumber'"
@@ -254,7 +255,14 @@
                   :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
                   :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }"
                 >
-                  <el-input v-model="scope.row[item.prop]" :type="item.type" :disabled="item.disabled" :min="0" @input="onInput" @focus="onFocus({ prop: item.prop, index: scope.$index })"></el-input>
+                  <el-input 
+                    v-model="scope.row[item.prop]" 
+                    :type="item.type" 
+                    :disabled="item.disabled" 
+                    :min="0"
+                    @input="onInput" 
+                    @focus="onFocus({ prop: item.prop, index: scope.$index })"
+                    :placeholder="item.placeholder"></el-input>
                 </el-form-item>
               </template>
               <template v-else-if="item.type === 'select'">
@@ -360,6 +368,7 @@
                 >
                   <el-input 
                     v-model="scope.row[item.prop]" 
+                    :placeholder="item.placeholder"
                     :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)" 
                     @change="onChange">
                     <i 
@@ -387,7 +396,8 @@
                     @change="onChange"
                     @blur="onBlur"
                     @input="onInput"
-                    @focus="onFocus({ prop: item.prop, index: scope.$index })"></el-input>
+                    @focus="onFocus({ prop: item.prop, index: scope.$index })"
+                    :placeholder="item.placeholder"></el-input>
                 </el-form-item>
               </template>
               <template v-else-if="item.type === 'select'">
@@ -492,6 +502,7 @@
                   :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }"
                 >
                   <el-input 
+                    :placeholder="item.placeholder"
                     v-model="scope.row[item.prop]" 
                     :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)"
                   >
@@ -512,7 +523,14 @@
                   :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
                   :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }"
                 >
-                  <el-input v-model="scope.row[item.prop]" :type="item.type" :disabled="item.disabled" :min="0" @focus="onFocus({ prop: item.prop, index: scope.$index })" @input="onInput"></el-input>
+                  <el-input 
+                    v-model="scope.row[item.prop]" 
+                    :type="item.type" 
+                    :disabled="item.disabled" 
+                    :min="0" 
+                    @focus="onFocus({ prop: item.prop, index: scope.$index })" 
+                    @input="onInput"
+                    :placeholder="item.placeholder"></el-input>
                 </el-form-item>
               </template>
               <template v-else-if="item.type === 'select'">
@@ -570,9 +588,8 @@
     </div> 
     <!-- 操作记录 -->
     <template v-if="this.title !== 'create' && this.title !== 'edit' && this.formData.reimurseOperationHistories.length">
-      <div style="width: 898px;">
+      <div style="width: 898px;" class="history-wrapper">
         <el-table 
-          
           style="width: 989px;"
           :data="formData.reimurseOperationHistories"
           border
@@ -1913,10 +1930,24 @@ export default {
       text-align: left;
     }
   }
+  .history-wrapper {
+    ::v-deep .el-table {
+      &::before {
+        height: 0;
+      }
+    }
+  }
   .form-item-wrapper {
+    overflow-y: auto;
     margin-bottom: 20px;
+    &::-webkit-scrollbar {
+      display: none;
+    }
     ::v-deep .el-table  {
       overflow: visible;
+      &::before {
+        height: 0;
+      }
       .el-table__body-wrapper {
         overflow: visible;
       }

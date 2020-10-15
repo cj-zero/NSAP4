@@ -305,9 +305,7 @@ export default {
       this.isShowTip = true
     }
   },
-  created () {
-    console.log('upload created')
-  }
+  created () {}
 };
 </script>
 

@@ -431,9 +431,9 @@ export let categoryMixin = {
         { label: '交通工具', prop: 'transport', type: 'select', options: this.transportationList, width: 135 },
         { label: '出发地', prop: 'from', type: 'input', width: 125, readonly: true },
         { label: '目的地', prop: 'to', type: 'input', width: 125, readonly: true },
-        { label: '金额', prop: 'money', type: 'number', align: 'right', width: 120 },
+        { label: '金额', prop: 'money', type: 'number', align: 'right', width: 120, placeholder: '大于0' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155 },
+        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '8-11位字母数字' },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 },
         { label: '操作', type: 'operation', iconList: this.iconList, width: 110 }
@@ -446,9 +446,9 @@ export let categoryMixin = {
       return [ // 其他配置
         // { label: '序号', type: 'order', width: 60 },
         { label: '费用类别', prop: 'expenseCategory', type: 'select', width: 150, options: this.otherExpensesList },
-        { label: '其他费用', prop: 'money', type: 'number', width: 120, align: 'right' },
+        { label: '其他费用', prop: 'money', type: 'number', width: 120, align: 'right', placeholder: '大于0' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155 },
+        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '8-11位字母数字' },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 },
         { label: '操作', type: 'operation', iconList: this.iconList, width: 168 }
