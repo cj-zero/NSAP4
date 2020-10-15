@@ -70,7 +70,7 @@ namespace OpenAuth.App
             var result = new TableData();
             var objs = UnitWork.Find<ReimburseInfo>(null);
             var ReimburseInfos = objs.WhereIf(!string.IsNullOrWhiteSpace(request.MainId), r => r.MainId.ToString().Contains(request.MainId))
-                      .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId), r => r.ServiceOrderId.ToString().Contains(request.ServiceOrderId))
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId), r => r.ServiceOrderSapId.ToString().Contains(request.ServiceOrderId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.BearToPay), r => r.BearToPay.Contains(request.BearToPay))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.Responsibility), r => r.Responsibility.Contains(request.Responsibility))
                       .WhereIf(request.StaticDate != null && request.EndDate != null, r => r.CreateTime > request.StaticDate && r.CreateTime < Convert.ToDateTime(request.EndDate).AddMinutes(1440))
@@ -340,7 +340,7 @@ namespace OpenAuth.App
             List<ServiceOrder> ServiceOrderList = new List<ServiceOrder>();
             foreach (var item in ServiceOrders)
             {
-                var WorkOrders = item.ServiceWorkOrders.Where(s => s.CurrentUserNsapId == loginUser.Id && s.Status < 6).ToList();
+                var WorkOrders = item.ServiceWorkOrders.Where(s => s.CurrentUserNsapId == loginUser.Id && s.Status <= 6).ToList();
                 if (WorkOrders.Count == 0)
                 {
                     ServiceOrderList.Add(item);
@@ -351,8 +351,8 @@ namespace OpenAuth.App
                 UserId = loginUser.Id,
                 UserName = loginUser.Name,
                 ServiceRelations = loginUser.ServiceRelations == null ? "未录入" : loginUser.ServiceRelations,
-                s.TerminalCustomer,
-                s.TerminalCustomerId,
+                TerminalCustomer = CompletionReports.Where(c => c.ServiceOrderId == s.Id).Select(c => c.TerminalCustomer).FirstOrDefault(),
+                TerminalCustomerId = CompletionReports.Where(c => c.ServiceOrderId == s.Id).Select(c => c.TerminalCustomerId).FirstOrDefault(),
                 s.Id,
                 s.U_SAP_ID,
                 OrgName = orgname,
@@ -408,49 +408,69 @@ namespace OpenAuth.App
                         .Include(r => r.ReimurseOperationHistories)
                         .FirstOrDefaultAsync();
             #region 获取附件
-            var file = await UnitWork.Find<UploadFile>(null).ToListAsync();
             Reimburse.ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId == ReimburseInfoId && r.ReimburseType == 0).ToListAsync();
             var ReimburseResp = Reimburse.MapTo<ReimburseInfoResp>();
-            ReimburseResp.ReimburseAttachments.ForEach(r => r.AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault());
-
-            foreach (var item in ReimburseResp.ReimburseFares)
+            List<string> fileids = Reimburse.ReimburseAttachments.Select(r => r.FileId).ToList();
+            List<ReimburseAttachment> rffilemodel = new List<ReimburseAttachment>();
+            if (ReimburseResp.ReimburseFares != null && ReimburseResp.ReimburseFares.Count > 0) 
             {
-                var filemodel = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId == item.Id && r.ReimburseType == 2).ToListAsync();
-                ReimburseResp.ReimburseFares.Where(r => r.Id == item.Id).FirstOrDefault().ReimburseAttachments = filemodel.Select(r => new ReimburseAttachmentResp
+                var rfids = ReimburseResp.ReimburseFares.Select(r => r.Id).ToList();
+                rffilemodel = await UnitWork.Find<ReimburseAttachment>(r => rfids.Contains(r.ReimburseId) && r.ReimburseType == 2).ToListAsync();
+            }
+            if (ReimburseResp.ReimburseAccommodationSubsidies != null && ReimburseResp.ReimburseAccommodationSubsidies.Count > 0)
+            {
+                var rasids = ReimburseResp.ReimburseAccommodationSubsidies.Select(r => r.Id).ToList();
+                rffilemodel.AddRange(await UnitWork.Find<ReimburseAttachment>(r => rasids.Contains(r.ReimburseId) && r.ReimburseType == 3).ToListAsync());
+            }
+            if (ReimburseResp.ReimburseOtherCharges != null && ReimburseResp.ReimburseOtherCharges.Count > 0) 
+            {
+                var rocids = ReimburseResp.ReimburseOtherCharges.Select(r => r.Id).ToList();
+                rffilemodel.AddRange(await UnitWork.Find<ReimburseAttachment>(r => rocids.Contains(r.ReimburseId) && r.ReimburseType == 4).ToListAsync());
+            }
+            fileids.AddRange(rffilemodel.Select(f => f.FileId).ToList());
+
+            var file = await UnitWork.Find<UploadFile>(f=> fileids.Contains(f.Id)).ToListAsync();
+           
+            ReimburseResp.ReimburseAttachments.ForEach(r => { r.AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault();r.FileType = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileType).FirstOrDefault(); });
+            //List<ReimburseAttachment> filemodel = new List<ReimburseAttachment>();
+            if (ReimburseResp.ReimburseFares != null && ReimburseResp.ReimburseFares.Count > 0) 
+            {
+                ReimburseResp.ReimburseFares.ForEach(r => r.ReimburseAttachments = rffilemodel.Where(f => f.ReimburseId.Equals(r.Id) && f.ReimburseType==2).Select(r => new ReimburseAttachmentResp
                 {
                     Id = r.Id,
                     FileId = r.FileId,
                     AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault(),
+                    FileType= file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileType).FirstOrDefault(),
                     ReimburseId = r.ReimburseId,
                     ReimburseType = r.ReimburseType,
                     AttachmentType = r.AttachmentType
-                }).ToList();
+                }).ToList());
             }
             foreach (var item in ReimburseResp.ReimburseAccommodationSubsidies)
             {
-                var filemodel = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId == item.Id && r.ReimburseType == 3).ToListAsync();
-                ReimburseResp.ReimburseAccommodationSubsidies.Where(r => r.Id == item.Id).FirstOrDefault().ReimburseAttachments = filemodel.Select(r => new ReimburseAttachmentResp
+                ReimburseResp.ReimburseAccommodationSubsidies.ForEach(r=>r.ReimburseAttachments = rffilemodel.Where(f => f.ReimburseId.Equals(r.Id) && f.ReimburseType == 3).Select(r => new ReimburseAttachmentResp
                 {
                     Id = r.Id,
                     FileId = r.FileId,
                     AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault(),
+                    FileType = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileType).FirstOrDefault(),
                     ReimburseId = r.ReimburseId,
                     ReimburseType = r.ReimburseType,
                     AttachmentType = r.AttachmentType
-                }).ToList();
+                }).ToList());
             }
             foreach (var item in ReimburseResp.ReimburseOtherCharges)
             {
-                var filemodel = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId == item.Id && r.ReimburseType == 4).ToListAsync();
-                ReimburseResp.ReimburseOtherCharges.Where(r => r.Id == item.Id).FirstOrDefault().ReimburseAttachments = filemodel.Select(r => new ReimburseAttachmentResp
+                ReimburseResp.ReimburseOtherCharges.ForEach(r=>r.ReimburseAttachments = rffilemodel.Where(f => f.ReimburseId.Equals(r.Id) && f.ReimburseType == 4).Select(r => new ReimburseAttachmentResp
                 {
                     Id = r.Id,
                     FileId = r.FileId,
                     AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault(),
+                    FileType = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileType).FirstOrDefault(),
                     ReimburseId = r.ReimburseId,
                     ReimburseType = r.ReimburseType,
                     AttachmentType = r.AttachmentType
-                }).ToList();
+                }).ToList());
             }
             ReimburseResp.ReimurseOperationHistories = ReimburseResp.ReimurseOperationHistories.OrderBy(r => r.CreateTime).ToList();
             #endregion
@@ -497,6 +517,13 @@ namespace OpenAuth.App
             {
                 loginUser = await GetUserId(Convert.ToInt32(req.AppId));
             }
+            #region 报销单唯一
+            var ReimburseCount=await UnitWork.Find<ReimburseInfo>(r => r.ServiceOrderId.Equals(req.ServiceOrderId) && r.CreateUserId.Equals(loginUser.Id)).CountAsync();
+            if (ReimburseCount > 0) 
+            {
+                throw new CommonException("该服务单已提交报销单，不可二次使用！", Define.INVALID_ReimburseAgain);
+            }
+            #endregion
 
             #region 删除我的费用
 
@@ -505,11 +532,10 @@ namespace OpenAuth.App
             req.ReimburseOtherCharges = req.ReimburseOtherCharges.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
             if (req.MyexpendsIds != null && req.MyexpendsIds.Count > 0)
             {
+                
                 var myexpends = await UnitWork.Find<MyExpends>(m => req.MyexpendsIds.Contains(m.Id)).ToListAsync();
-                foreach (var item in myexpends)
-                {
-                    await UnitWork.DeleteAsync<MyExpends>(item);
-                }
+                myexpends.ForEach(m => m.IsDelete = true);
+                await UnitWork.BatchUpdateAsync(myexpends.ToArray());
             }
 
             #endregion
@@ -522,21 +548,27 @@ namespace OpenAuth.App
             bool IsInvoiceNumber = InvoiceNumbers.GroupBy(i => i).Where(g => g.Count() > 1).Count() >= 1;
             if (IsInvoiceNumber)
             {
-                throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                string msg = "";
+                InvoiceNumbers.GroupBy(i => i).Where(g => g.Count() > 1).Select(i => i.Key).ToList().ForEach(i => msg += i+",");
+                throw new CommonException($"添加报销单失败。发票号：{msg}重复！", Define.INVALID_InvoiceNumber);
             }
             else if (InvoiceNumbers.Count() > 0)
             {
                 if (!await IsSole(InvoiceNumbers))
                 {
-                    throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                    throw new CommonException("添加报销单失败。发票已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
                 }
             }
             #endregion
 
+            var obj = req.MapTo<ReimburseInfo>();
+            obj.ReimburseTravellingAllowances.ForEach(r => r.CreateTime = DateTime.Now);
+            obj.ReimburseOtherCharges.ForEach(r => r.CreateTime = DateTime.Now);
+            obj.ReimburseFares.ForEach(r => r.CreateTime = DateTime.Now);
+            obj.ReimburseAccommodationSubsidies.ForEach(r => r.CreateTime = DateTime.Now);
+
             //用信号量代替锁
             await semaphoreSlim.WaitAsync();
-            var obj = req.MapTo<ReimburseInfo>();
-
             try
             {
                 if (!obj.IsDraft)
@@ -555,11 +587,6 @@ namespace OpenAuth.App
             {
                 semaphoreSlim.Release();
             }
-
-            //反写完工报告
-            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == obj.ServiceOrderId && c.CreateUserId == obj.CreateUserId).ToListAsync();
-            CompletionReports.ForEach(c => c.IsReimburse = 2);
-            await UnitWork.BatchUpdateAsync<CompletionReport>(CompletionReports.ToArray());
 
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == "UserOrg" && r.FirstId == loginUser.Id).Select(r => r.SecondId).ToListAsync();
             var orgid = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderBy(o => o.CascadeId).Select(o => o.Id).FirstOrDefaultAsync();
@@ -588,6 +615,11 @@ namespace OpenAuth.App
                     ReimburseInfoId = obj.Id
                 });
             }
+            //反写完工报告
+            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == obj.ServiceOrderId && c.CreateUserId == obj.CreateUserId).ToListAsync();
+            CompletionReports.ForEach(c => c.IsReimburse = 2);
+            await UnitWork.BatchUpdateAsync<CompletionReport>(CompletionReports.ToArray());
+
             await UnitWork.SaveAsync();
             #region 保存附件
             List<ReimburseAttachment> filemodel = new List<ReimburseAttachment>();
@@ -664,10 +696,8 @@ namespace OpenAuth.App
             if (req.MyexpendsIds != null && req.MyexpendsIds.Count > 0)
             {
                 var myexpends = await UnitWork.Find<MyExpends>(m => req.MyexpendsIds.Contains(m.Id)).ToListAsync();
-                foreach (var item in myexpends)
-                {
-                    await UnitWork.DeleteAsync<MyExpends>(item);
-                }
+                myexpends.ForEach(m => m.IsDelete = true);
+                await UnitWork.BatchUpdateAsync(myexpends.ToArray());
             }
 
             #endregion
@@ -680,13 +710,15 @@ namespace OpenAuth.App
             bool IsInvoiceNumber = InvoiceNumbers.GroupBy(i => i).Where(g => g.Count() > 1).Count() >= 1;
             if (IsInvoiceNumber)
             {
-                throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                string msg = "";
+                InvoiceNumbers.GroupBy(i => i).Where(g => g.Count() > 1).Select(i=>i.Key).ToList().ForEach(i=> msg+=i+",");
+                throw new CommonException($"添加报销单失败。发票号：{msg}重复！", Define.INVALID_InvoiceNumber);
             }
             else if (InvoiceNumbers.Count() > 0)
             {
                 if (!await IsSole(InvoiceNumbers))
                 {
-                    throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                    throw new CommonException("添加报销单失败。发票已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
                 }
             }
             #endregion
@@ -711,7 +743,6 @@ namespace OpenAuth.App
                     ProjectName = obj.ProjectName,
                     RemburseStatus = obj.RemburseStatus,
                     IsRead = obj.IsRead,
-                    ServiceRelations = obj.ServiceRelations,
                     TotalMoney = obj.TotalMoney,
                     Remark = obj.Remark,
                     BearToPay = obj.BearToPay,
@@ -759,7 +790,6 @@ namespace OpenAuth.App
                     ProjectName = obj.ProjectName,
                     RemburseStatus = obj.RemburseStatus,
                     IsRead = obj.IsRead,
-                    ServiceRelations = obj.ServiceRelations,
                     TotalMoney = obj.TotalMoney,
                     Remark = obj.Remark,
                     BearToPay = obj.BearToPay,
@@ -986,6 +1016,7 @@ namespace OpenAuth.App
             }
             else
             {
+                eoh.ApprovalResult = "同意";
                 if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")))
                 {
                     obj.RemburseStatus = 5;
@@ -1004,10 +1035,11 @@ namespace OpenAuth.App
                 }
                 else if (loginContext.Roles.Any(r => r.Name.Equals("出纳")))
                 {
+                    eoh.ApprovalResult = "已支付";
                     obj.RemburseStatus = 9;
                     obj.PayTime = DateTime.Now;
                 }
-                eoh.ApprovalResult = "同意";
+                
                 _flowInstanceApp.Verification(new VerificationReq
                 {
                     NodeRejectStep = "",
@@ -1158,7 +1190,7 @@ namespace OpenAuth.App
             }
 
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == Reimburse.ServiceOrderId && c.CreateUserId == Reimburse.CreateUserId).ToListAsync();
-            CompletionReports.ForEach(c => c.IsReimburse = 2);
+            CompletionReports.ForEach(c => c.IsReimburse = 1);
             await UnitWork.BatchUpdateAsync<CompletionReport>(CompletionReports.ToArray());
             await UnitWork.SaveAsync();
         }
@@ -1234,7 +1266,7 @@ namespace OpenAuth.App
                 Train = Train,
                 Coach = Coach,
                 Transport = Transport,
-                Total = TransformCharOrNumber.SumConvert(null, Convert.ToDecimal(Reimburse.TotalMoney), ConvertType.MonetaryCapital),
+                Total = TransformCharOrNumber.SumConvert(null, Convert.ToDecimal(Reimburse.TotalMoney)),
             };
             await ExportAllHandler.Exporterpdf(@"D:\工作\程序\前端\aaa.pdf", PrintReimburse, "PrintReimburse.cshtml");
         }

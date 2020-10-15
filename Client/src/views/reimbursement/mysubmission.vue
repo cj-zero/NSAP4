@@ -21,7 +21,6 @@
             size="mini"
             border
             fit
-            show-overflow-tooltip
             height="100%"
             style="width: 100%;"
             @row-click="onRowClick"
@@ -54,7 +53,7 @@
                 </template>
                 <template v-else-if="item.label === '服务报告'">
                   <div class="link-container">
-                    <img :src="rightImg" @click="item.handleClick(scope.row.serviceOrderId, 'table')" class="pointer">
+                    <img :src="rightImg" @click="item.handleClick(scope.row, 'table')" class="pointer">
                     <span>查看</span>
                   </div>
                 </template>
@@ -78,7 +77,7 @@
     <my-dialog
       ref="myDialog"
       :center="true"
-      width="1326px"
+      width="1316px"
       :btnList="btnList"
       :onClosed="closeDialog"
       :title="textMap[title]"
@@ -96,7 +95,7 @@
       ref="reportDialog"
       width="983px"
       title="服务行为报告单"
-      @closed="resetReport">
+      :onClosed="resetReport">
       <Report :data="reportData" ref="report"/>
     </my-dialog>
     <!-- 只能查看的表单 -->
@@ -118,39 +117,10 @@
           ></zxform>
         </el-col>
         <el-col :span="6" class="lastWord">   
-          <zxchat :serveId='serveId' formName="查看"></zxchat>
+          <zxchat :serveId='serveId' formName="报销"></zxchat>
         </el-col>
       </el-row>
     </my-dialog>
-    <!-- <el-dialog
-      v-el-drag-dialog
-      width="1210px"
-      top="10vh"
-      title="服务单详情"
-      :close-on-click-modal="false"
-      destroy-on-close
-      :modal-append-to-body="false"
-      class="addClass1 dialog-mini"
-      @open="openDetail"
-      :visible.sync="dialogFormView"
-    >
-    <el-row :gutter="20" class="position-view">
-      <el-col :span="18" >
-        <zxform
-          :form="temp"
-          formName="查看"
-          labelposition="right"
-          labelwidth="100px"
-     
-          :isCreate="false"
-          :refValue="dataForm"
-        ></zxform>
-      </el-col>
-        <el-col :span="6" class="lastWord">   
-          <zxchat :serveId='serveId' formName="查看"></zxchat>
-        </el-col>
-      </el-row>
-    </el-dialog> -->
   </div>
 </template>
 
@@ -239,7 +209,6 @@ export default {
     // },
     addAccount () { // 添加
       getOrder().then(res => {
-        console.log(res, 'res')
         let data = res.data
         if (data && data.length) {
           let { 
@@ -330,14 +299,12 @@ export default {
         : this.edit()
     }, 
     saveAsDraft () { // 存为草稿
-      console.log(this.title, 'title')
       this.title === 'create' // 判断是新建的还是已经创建的
         ? this._addOrder(true)
         : this.edit(true)
     }, 
     edit (isDraft) {
       // 编辑
-      console.log('草稿')
       isDraft
         ? this.draftLoading = true
         : this.editLoading = true
@@ -365,12 +332,12 @@ export default {
     },
     reset () {
       this.$confirm('确定重置?', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }).then(() => {
-          this.$refs.order.resetInfo()
-        })
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.$refs.order.resetInfo()
+      })
       // this.$refs.order.resetInfo()
     }, // 重置
     closeDialog () {

@@ -141,7 +141,6 @@ export let tableMixin = {
             message: '请先选择报销单'
           })
         }
-        console.log(val, 'val')
         if (val.name === 'mySubmit') { // 我的提交模块判断
           if (this.currentRow.remburseStatus > 3) {
             return this.$message({
@@ -152,7 +151,7 @@ export let tableMixin = {
         }
         id = this.currentRow.id
       }
-      console.log(this.currentRow, 'currentRow')
+      this.tableLoading = true
       getDetails({
         reimburseInfoId: id
       }).then(res => {
@@ -165,13 +164,13 @@ export let tableMixin = {
           console.log(err, 'err')
         }
         // 如果是审核流程、则判断当前用户是不是客服主管
-        console.log(val.type, 'before title')
         this.title = tableClick
           ? 'view'
           : val.type
-        console.log(this.title, 'title')
+        this.tableLoading = false
         this.$refs.myDialog.open()
       }).catch(() => {
+        this.tableLoading = false
         this.$message.error('获取详情失败')
       })
     },
@@ -198,7 +197,6 @@ export let tableMixin = {
       this._buildAttachment(reimburseFares)
       this._buildAttachment(reimburseAccommodationSubsidies)
       this._buildAttachment(reimburseOtherCharges)
-      console.log(data, 'detail')
     },
     _buildAttachment (data) { // 为了回显，并且编辑 目标是为了保证跟order.vue的数据保持相同的逻辑
       data.forEach(item => {
@@ -210,6 +208,7 @@ export let tableMixin = {
         item.reimburseAttachments = []
         item.maxMoney = item.totalMoney || item.money
         item.isAdd = true
+        item.isValidInvoice = Boolean(item.invoiceFileList.length)
       })
     },
     getTargetAttachment (data, attachmentType) { // 用于el-upload 回显
@@ -244,7 +243,8 @@ export const reportMixin = {
     }
   },
   methods: {
-    openReport (serviceOrderId, type) {
+    openReport (data, type) {
+      let { serviceOrderId, createUserId } = data
       if (!serviceOrderId) {
         return this.$message.error('请先选择服务ID')
       }
@@ -255,7 +255,8 @@ export const reportMixin = {
         this.reportBtnLoading = true
       }
       getReportDetail({
-        serviceOrderId
+        serviceOrderId,
+        userId: createUserId
       }).then(res => {
         this.reportData = this._normalizeReportData(res.result.data)
         if (this.reportData.length) {
@@ -277,7 +278,7 @@ export const reportMixin = {
       this.$refs.report.reset()
     },
     _normalizeReportData (data) {
-      return data.map(item => {
+      return data.filter(item => item.id).map(item => {
         let { serviceMode } = item
         item.serviceText = serviceMode ? this.serviceModeMap[serviceMode] : serviceMode
         item.isPhoneService = Number(serviceMode) === 1
@@ -374,7 +375,7 @@ export let categoryMixin = {
         { label: '服务ID', prop: 'serviceOrderSapId', palceholder: '请选择', col: 6, disabled: this.title !== 'create' },
         { label: '客户代码', prop: 'terminalCustomerId', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '客户名称', prop: 'terminalCustomer', palceholder: '请输入内容', disabled: true, col: 6 },
-        { label: '客户简称', prop: 'shortCustomerName', palceholder: '最长5个字', col: 6, maxlength: 5, isEnd: true, disabled: this.isEditItem },
+        { label: '客户简称', prop: 'shortCustomerName', palceholder: '最长5个字', col: 6, maxlength: 6, isEnd: true, disabled: this.isEditItem, required: true },
         { label: '出发地点', prop: 'becity', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '到达地点', prop: 'destination', palceholder: '请输入内容', disabled: true, col: 6 },
         { label: '出发日期', prop: 'businessTripDate', palceholder: '请输入内容', disabled: true, col: 6, width: '100%' },
@@ -394,7 +395,7 @@ export let categoryMixin = {
         },
         { label: '报销状态', prop: 'reimburseTypeText', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
         { label: '呼叫主题', prop: 'fromTheme', palceholder: '请输入内容', disabled: true, col: 18 },
-        { label: '填报时间', prop: 'fillDate', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
+        { label: '填报时间', prop: 'createTime', palceholder: '请输入内容', disabled: true, col: 6, isEnd: true },
         { label: '费用承担', prop: 'bearToPay', palceholder: '请输入内容', disabled: this.title === 'view' || !(this.isCustomerSupervisor && this.title === 'approve'), 
           col: 6, type: 'select', options: this.expenseList, width: '100%'
         },
@@ -426,13 +427,13 @@ export let categoryMixin = {
     trafficConfig () {
       return [ // 交通配置
         // { label: '序号', type: 'order', width: 60 },
-        { label: '交通类型', prop: 'trafficType', type: 'select', options: this.transportTypeList, width: 120 },
+        { label: '交通类型', prop: 'trafficType', type: 'select', options: this.transportTypeList, width: 105 },
         { label: '交通工具', prop: 'transport', type: 'select', options: this.transportationList, width: 135 },
         { label: '出发地', prop: 'from', type: 'input', width: 125, readonly: true },
         { label: '目的地', prop: 'to', type: 'input', width: 125, readonly: true },
-        { label: '金额', prop: 'money', type: 'number', align: 'right', width: 150 },
+        { label: '金额', prop: 'money', type: 'number', align: 'right', width: 120, placeholder: '大于0' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 120 },
+        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '8-11位字母数字' },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 },
         { label: '操作', type: 'operation', iconList: this.iconList, width: 110 }
@@ -445,9 +446,9 @@ export let categoryMixin = {
       return [ // 其他配置
         // { label: '序号', type: 'order', width: 60 },
         { label: '费用类别', prop: 'expenseCategory', type: 'select', width: 150, options: this.otherExpensesList },
-        { label: '其他费用', prop: 'money', type: 'number', width: 120, align: 'right' },
+        { label: '其他费用', prop: 'money', type: 'number', width: 120, align: 'right', placeholder: '大于0' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 120 },
+        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '8-11位字母数字' },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 },
         { label: '操作', type: 'operation', iconList: this.iconList, width: 168 }
@@ -463,42 +464,46 @@ export let categoryMixin = {
         { placeholder: '费用承担', prop: 'bearToPay', width: 100, type: 'select', options: this.expenseList },
         { placeholder: '责任承担', prop: 'responsibility', width: 100, type: 'select', options: this.responsibilityList },
         { placeholder: '填报起始时间', prop: 'staticDate', type: 'date', width: 150 },
-        { placeholder: '填报结束事件', prop: 'endDate', type: 'date', width: 150 }
+        { placeholder: '填报结束时间', prop: 'endDate', type: 'date', width: 150 }
       ]
     }
   }
 }
 
 export const attachmentMixin = {
+  data () {
+    return {
+      baseURL: process.env.VUE_APP_BASE_API + "/files/Download", // 图片基地址
+      tokenValue: this.$store.state.user.token,
+    }
+  },
   methods: {
     onAccept (file, { prop }) { // 限制发票文件上传的格式
-      let _this = this
       if (prop === 'invoiceAttachment') {
         let { type, size } = file
         console.log(size, 'file size')
         let imgReg = /^image\/\w+/i
-        console.log(imgReg.test(type), type === 'application/pdf')
         let isFitType = imgReg.test(type) || type === 'application/pdf'    
         return new Promise((resolve, reject) => {
           if (!isFitType) {
             this.$message.error('文件格式只能为图片或者PDF')
             reject(false)
-          }
-          if (type !== 'application/pdf') { // 图片文件先进行压缩，再上传
-            const reader = new FileReader()
-            const image = new Image()
-            reader.onload = (e => { 
-              image.src = e.target.result
-            });
-            reader.readAsDataURL(file)
-            // image.src = URL.createObjectURL(file)
-            image.onload = function() {
-              console.log(_this.compressUpload(image, file.type), 'after compress', image)
-              resolve(_this.compressUpload(image, file.type))
-            }
           } else {
-            resolve() // pdf文件直接resolve
+            resolve()
           }
+          // if (type !== 'application/pdf') { // 图片文件先进行压缩，再上传
+          //   const reader = new FileReader()
+          //   const image = new Image()
+          //   reader.onload = (e => { 
+          //     image.src = e.target.result
+          //   });
+          //   reader.readAsDataURL(file)
+          //   image.onload = function() {
+          //     resolve(_this.compressUpload(image, file.type))
+          //   }
+          // } else {
+          //   resolve() // pdf文件直接resolve
+          // }
         })
       }
       return true
@@ -525,60 +530,88 @@ export const attachmentMixin = {
       return new Blob([new Uint8Array(array)], { type })
     },
     _setCurrentRow (currentRow, data) { // 识别发票凭据后，对表格行进行赋值
-      let { invoiceNo, money, isAcc, isTrue } = data
+      let { invoiceNo, money, isAcc, isValidInvoice } = data
       if (isAcc) { // 住宿表格行数据
         currentRow.totalMoney = money
         currentRow.money = (currentRow.totalMoney / (currentRow.days || 1)).toFixed(2)
       } else {
         currentRow.money = money
       }
+      this.$set(currentRow, 'isValidInvoice', isValidInvoice) // 判断发票是否正确，如果是正确的话就不给修改，不正确就给修改
       currentRow.maxMoney = money
       currentRow.invoiceNumber = invoiceNo
-      this.$set(currentRow, 'isTrue', isTrue)
-      console.log(this.formData, '识别新的')
     },
-    _identifyInvoice (fileId, currentRow, isAcc = false) { // 票据识别
-      identifyInvoice({
-        fileId
-      }).then(res => {
-        if (res.data && !res.data.length) {
-          this._setCurrentRow(currentRow, {
-            invoiceNo: '',
-            money: '',
-            isTrue: false,
-            isAcc
-          })
-          return this.$message.error('识别失败')
+    _setAttachmentList ({ data, index, prop, reimburseType, val }) { // 设置通过上传获取到的附件列表
+      let resultArr = []
+      resultArr = this.createFileList(val, {
+        reimburseType,
+        attachmentType: prop === 'invoiceAttachment' ? 2 : 1
+      })
+      let currentRow = data[index]
+      currentRow[prop] = resultArr
+      if (currentRow[prop] && !currentRow[prop].length && prop === 'invoiceAttachment') { // 删除发票附件的时候把金额跟发票号码删除
+        if (currentRow.totalMoney) {
+          currentRow.totalMoney = ''
         }
-        let { invoiceNo, amountWithTax, isValidate, isUsed, notPassReason } = res.data[0]
-        if (!isValidate || (isValidate && isUsed)) {
+        currentRow.money = ''
+        currentRow.invoiceNumber = ''
+        currentRow.isValidInvoice = false
+      }
+    },
+    _identifyInvoice (data, isAcc = false) { // 票据识别
+      let { fileId, currentRow, uploadVm } = data
+      return new Promise(resolve => {
+        identifyInvoice({
+          fileId
+        }).then(res => {
+          if (res.data && !res.data.length) {
+            this._setCurrentRow(currentRow, {
+              invoiceNo: '',
+              money: '',
+              isAcc,
+              isValidInvoice: false
+            })
+            uploadVm.clearFiles()
+            this.$message.error('识别失败,请上传至其它附件列表')
+            resolve(false)
+          } else {
+            let { invoiceNo, amountWithTax, isValidate, isUsed, notPassReason } = res.data[0]
+            if (!isValidate || (isValidate && isUsed)) {
+              this._setCurrentRow(currentRow, {
+                invoiceNo: '',
+                money: '',
+                isAcc,
+                isValidInvoice: false
+              })
+              uploadVm.clearFiles()
+              this.$message.error(notPassReason ? notPassReason : '识别失败,请上传至其它附件列表')
+              resolve(false)
+            } else {
+              this.$message({
+                type: 'success',
+                message: '识别成功'
+              })
+              this._setCurrentRow(currentRow, {
+                invoiceNo,
+                money: amountWithTax,
+                isAcc,
+                isValidInvoice: true
+              })
+              resolve(true)
+            }
+          }
+        }).catch(err => {
+          console.error(err, 'err')
           this._setCurrentRow(currentRow, {
-            invoiceNo: '',
+            invoiceNo:'',
             money: '',
-            isTrue: false,
-            isAcc
+            isAcc,
+            isValidInvoice: false
           })
-          return this.$message.error(notPassReason ? notPassReason : '识别失败')
-        }
-        this.$message({
-          type: 'success',
-          message: '识别成功'
+          uploadVm.clearFiles()
+          this.$message.error(err.message || '识别失败,请上传至其它附件列表')
+          resolve(false)
         })
-        this._setCurrentRow(currentRow, {
-          invoiceNo,
-          money: amountWithTax,
-          isTrue: true,
-          isAcc
-        })
-      }).catch(err => {
-        console.error(err)
-        this._setCurrentRow(currentRow, {
-          invoiceNo:'',
-          money: '',
-          isTrue: false,
-          isAcc
-        })
-        this.$message.error(err.message || '识别失败')
       })
     },
     _buildAttachment (data, isImport = false) { // 为了回显，并且编辑 目标是为了保证跟order.vue的数据保持相同的逻辑
@@ -592,6 +625,10 @@ export const attachmentMixin = {
         item.reimburseAttachments = []
         item.maxMoney = item.totalMoney || item.money // 存在附件时，需要对金额进行限制
         item.isAdd = true
+        item.isValidInvoice = Boolean(item.invoiceFileList.length)
+        if (isImport) {
+          item.myExpendsId = item.id // 吧当前的费用id赋值到myExpendsId
+        }
       })
     },
     getTargetAttachment (data, attachmentType, isImport) { // 用于el-upload 回显
@@ -602,7 +639,7 @@ export const attachmentMixin = {
           item.isAdd = true
           if (isImport) { // 如果是通过我的费用单引入的模板，则需要删除对应的ID,避免新建时出错
             item.reimburseId = 0
-            item.id = 0
+            // item.id = 0
           }
           return item
         })
@@ -631,9 +668,21 @@ export const attachmentMixin = {
       data.forEach(item => {
         let { invoiceAttachment, otherAttachment, invoiceFileList, otherFileList, isImport } = item
         if (isImport) {
-          item.id = '' // 如果是导入费用的话， 要把id变成空, 这些数据是没有新增和修改的
+          item.id = '' // 如果是导入费用的话， 要把id变成空, 这些数据是没有新增和修改的 行数据
         }
+        this._setAttachmentId(invoiceAttachment, isImport)
+        this._setAttachmentId(otherAttachment, isImport)
+        this._setAttachmentId(invoiceFileList, isImport)
+        this._setAttachmentId(otherFileList, isImport)
+        // console.log(invoiceAttachment, otherAttachment, invoiceFileList, otherFileList, 'setID')
         item.reimburseAttachments = [...invoiceAttachment, ...otherAttachment, ...invoiceFileList, ...otherFileList]
+      })
+    },
+    _setAttachmentId (data, isImport) { // 如果是导入的数据需要将附件ID变成零
+      data.forEach(item => {
+        if (isImport) {
+          item.id = 0
+        }
       })
     }
   }
@@ -658,7 +707,6 @@ export const chatMixin = {
   },
   methods: {
     openTree(row) {
-      console.log(row, 'orderId')
       let serviceOrderId = row.serviceOrderId
       this.tableLoading = true
       GetDetails(serviceOrderId).then(res => {

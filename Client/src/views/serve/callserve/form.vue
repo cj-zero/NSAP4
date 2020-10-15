@@ -1027,6 +1027,7 @@ export default {
       this.form.latitude = ''
     },
     async setForm(val) {
+      console.log('setForm')
       val = JSON.parse(JSON.stringify(val));
       // console.log(val, 'json.stringify')
       if (val) {
@@ -1501,10 +1502,10 @@ export default {
         if (this.formName === '新建') {
           callformPartner.getTableList({ code: cardCode }).then(res => {
             this.CallList = res.result;
-            this.dialogCallId = true
-            // this.newestNotCloseOrder=res.reault.newestNotCloseOrder
-            // this.newestOrder=res.reault.newestNotCloseOrder
-          });
+            if (this.CallList && this.CallList.length) {
+              this.dialogCallId = true
+            }
+          }).catch(() => this.$message.error('获取用户最近10个服务单失败'))
         }
       }
     },

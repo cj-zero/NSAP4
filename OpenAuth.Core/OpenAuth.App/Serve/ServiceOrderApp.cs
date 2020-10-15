@@ -587,6 +587,7 @@ namespace OpenAuth.App
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.b.CreateTime >= req.QryCreateTimeFrom && q.b.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.b.ContactTel.Equals(req.ContactTel) || q.b.NewestContactTel.Equals(req.ContactTel))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), q => q.b.Supervisor.Contains(req.QrySupervisor))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryMaterialCode),q=>q.a.MaterialCode.Contains(req.QryMaterialCode))
                          .Where(q => q.b.U_SAP_ID != null && q.b.Status == 2 && q.a.FromType != 2);
             if (!string.IsNullOrWhiteSpace(req.QryStatusBar.ToString()) && req.QryStatusBar!=0) 
             {
@@ -797,6 +798,8 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ProblemTypeId.Equals(req.QryProblemType))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromType), q => q.FromType.Equals(Convert.ToInt32(req.QryFromType)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryTechName), q => q.CurrentUser.Contains(req.QryTechName))
+                .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromTheme),q=>q.FromTheme.Contains(req.QryFromTheme))
                 .OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
 
             var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceWorkOrders)
@@ -806,11 +809,12 @@ namespace OpenAuth.App
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.ContactTel.Contains(req.ContactTel) || q.NewestContactTel.Contains(req.ContactTel))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), q => q.Supervisor.Contains(req.QrySupervisor))
-                .WhereIf(true, q => ids.Contains(q.Id) && q.Status == 2);
+                .Where(q => ids.Contains(q.Id) && q.Status == 2);
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.User.Account.Equals("wanghaitao") && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
             {
-                query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id));
+                var sIds = await UnitWork.Find<ServiceWorkOrder>(q => q.CurrentUser.Contains(loginContext.User.Name)).OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+                query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id) || sIds.Contains(q.Id));
             }
             var resultsql = query.OrderByDescending(q => q.CreateTime).Select(q => new
             {
@@ -835,8 +839,9 @@ namespace OpenAuth.App
                 && (string.IsNullOrWhiteSpace(req.QryManufSN) || a.ManufacturerSerialNumber.Contains(req.QryManufSN))
                 //&& ((req.QryCreateTimeFrom == null || req.QryCreateTimeTo == null) || (a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
                 && (string.IsNullOrWhiteSpace(req.QryFromType) || a.FromType.Equals(Convert.ToInt32(req.QryFromType)))
-                && (string.IsNullOrWhiteSpace(req.QryTechName) || a.CurrentUser.Equals(req.QryTechName))
-                && (string.IsNullOrWhiteSpace(req.QryProblemType) || a.ProblemTypeId.Equals(req.QryProblemType))).ToList()
+                && (string.IsNullOrWhiteSpace(req.QryTechName) || a.CurrentUser.Contains(req.QryTechName))
+                && (string.IsNullOrWhiteSpace(req.QryProblemType) || a.ProblemTypeId.Equals(req.QryProblemType))
+                && (string.IsNullOrWhiteSpace(req.QryFromTheme) || a.FromTheme.Contains(req.QryFromTheme))).ToList()
             });
 
             result.Data = await resultsql.Skip((req.page - 1) * req.limit)
@@ -876,6 +881,7 @@ namespace OpenAuth.App
                          .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.a.CreateTime >= req.QryCreateTimeFrom && q.a.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                          .WhereIf(req.QryMaterialTypes != null && req.QryMaterialTypes.Count > 0, q => req.QryMaterialTypes.Contains(q.a.MaterialCode == "其他设备" ? "其他设备" : q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), q => q.b.Supervisor.Contains(req.QrySupervisor))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QryMaterialCode), q => q.a.MaterialCode.Contains(req.QryMaterialCode))
                          .Where(q => q.b.U_SAP_ID != null && q.b.Status == 2 && q.a.FromType != 2);
 
             if (!string.IsNullOrWhiteSpace(req.QryStatusBar.ToString()) && req.QryStatusBar != 0)

@@ -10,76 +10,82 @@
         </Search>
       </div>
     </sticky>
-      <div class="app-container">
-        <div class="bg-white">
-          <div class="content-wrapper">
-            <el-table 
-              ref="table"
-              :data="tableData" 
-              v-loading="tableLoading" 
-              size="mini"
-              border
-              fit
+    <div class="app-container">
+      <div class="bg-white">
+        <div class="content-wrapper">
+          <el-table 
+            ref="table"
+            :data="tableData" 
+            v-loading="tableLoading" 
+            size="mini"
+            border
+            fit
+            height="100%"
+            style="width: 100%;"
+            @row-click="onRowClick"
+            highlight-current-row
+            >
+            <el-table-column
+              v-for="item in columns"
+              :key="item.prop"
+              :width="item.width"
+              :label="item.label"
+              :align="item.align || 'left'"
+              :sortable="item.isSort || false"
+              :type="item.originType || ''"
               show-overflow-tooltip
-              height="100%"
-              style="width: 100%;"
-              @row-click="onRowClick"
-              highlight-current-row
-              >
-              <el-table-column
-                v-for="item in columns"
-                :key="item.prop"
-                :width="item.width"
-                :label="item.label"
-                :align="item.align || 'left'"
-                :sortable="item.isSort || false"
-                :type="item.originType || ''"
-              >
-                <template slot-scope="scope" >
-                  <div class="link-container" v-if="item.type === 'link'">
-                    <img :src="rightImg" @click="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
-                    <span>{{ scope.$index + 1 }}</span>
+            >
+              <template slot-scope="scope" >
+                <div class="link-container" v-if="item.type === 'link'">
+                  <img :src="rightImg" @click="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
+                  <span>{{ scope.$index + 1 }}</span>
+                </div>
+                <template v-else-if="item.label === '发票附件'">
+                  <div class="link-container">
+                    <img :src="rightImg" @click="item.handleJump(scope.row.reimburseAttachments)" class="pointer">
+                    <span>查看</span>
                   </div>
-                  <template v-else-if="item.label === '发票附件'">
-                    <div class="link-container">
-                      <img :src="rightImg" @click="item.handleJump(scope.row.reimburseAttachments[0])" class="pointer">
-                      <span>查看</span>
-                    </div>
-                  </template>
-                  <template v-else>
-                    {{ scope.row[item.prop] }}
-                  </template>
-                </template>    
-              </el-table-column>
-            </el-table>
-            <!-- <common-table :data="tableData" :columns="columns" :loading="tableLoading"></common-table> -->
-            <pagination
-              v-show="total>0"
-              :total="total"
-              :page.sync="listQuery.page"
-              :limit.sync="listQuery.limit"
-              @pagination="handleCurrentChange"
-            />
-          </div>
+                </template>
+                <template v-else>
+                  {{ scope.row[item.prop] }}
+                </template>
+              </template>    
+            </el-table-column>
+          </el-table>
+          <!-- <common-table :data="tableData" :columns="columns" :loading="tableLoading"></common-table> -->
+          <pagination
+            v-show="total>0"
+            :total="total"
+            :page.sync="listQuery.page"
+            :limit.sync="listQuery.limit"
+            @pagination="handleCurrentChange"
+          />
         </div>
       </div>
-      <!-- 模板弹窗 -->
-      <my-dialog
-        ref="myDialog"
-        :center="true"
-        width="1216px"
-        :onClosed="closeDialog"
-        :title="`${textMap[type]}费用模板`"
-        :btnList="btnList"
-        :loading="dialogLoading"
-      >
-        <cost-template 
-          ref="cost"
-          :operation="type"
-          :selectList="selectList" 
-          :categoryList="categoryList"
-          :detailData="detailData"></cost-template>
-      </my-dialog>
+    </div>
+    <!-- 模板弹窗 -->
+    <my-dialog
+      ref="myDialog"
+      :center="true"
+      width="1206px"
+      :onClosed="closeDialog"
+      :title="`${textMap[type]}费用模板`"
+      :btnList="btnList"
+      :loading="dialogLoading"
+    >
+      <cost-template 
+        ref="cost"
+        :operation="type"
+        :selectList="selectList" 
+        :categoryList="categoryList"
+        :detailData="detailData"></cost-template>
+    </my-dialog>
+    <el-image-viewer
+      v-if="dialogVisible"
+      :url-list="[dialogImageUrl]"
+      :on-close="closeViewer"
+    >
+    </el-image-viewer>
   </div>
 </template>
 
@@ -89,6 +95,7 @@ import Sticky from '@/components/Sticky'
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import CostTemplate from './common/components/CostTemplate'
+import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 // import tableData from './mock'
 import rightImg from '@/assets/table/right.png'
 import { getCategoryName } from '@/api/reimburse'
@@ -108,7 +115,8 @@ export default {
     // CommonTable,
     Pagination,
     MyDialog,
-    CostTemplate
+    CostTemplate,
+    ElImageViewer
   },
   computed: {
     btnList () {
@@ -142,7 +150,7 @@ export default {
       categoryList: [], // 字典分类列表
       searchConfig: [ // 搜索配置
         { placeholder: '填报起始时间', prop: 'startTime', type: 'date', width: 150 },
-        { placeholder: '填报结束事件', prop: 'endTime', type: 'date', width: 150 },
+        { placeholder: '填报结束时间', prop: 'endTime', type: 'date', width: 150 },
         { type: 'search' },
         { type: 'button', handleClick: this.create, btnText: '新建', options: { type: 'create' } },
         { type: 'button', handleClick: this.getDetail, btnText: '编辑', options: { type: 'edit' } },
@@ -154,7 +162,7 @@ export default {
         { label: '总金额', prop: 'moneyText' },
         { label: '发票号码', prop: 'invoiceNumber' },
         { label: '发票附件', prop: 'invoiceAttachment', handleJump: this.jumpToDetail },
-        { label: '日期', prop: 'createTime', width: 140 },
+        { label: '日期', prop: 'createTime', width: 90 },
         { label: '备注', prop: 'remark' }
       ],
       selectList: [], // 选择列表
@@ -163,10 +171,15 @@ export default {
         list: []
       },
       baseURL: process.env.VUE_APP_BASE_API + "/files/Download", // 图片基地址
-      tokenValue: this.$store.state.user.token
+      tokenValue: this.$store.state.user.token,
+      dialogImageUrl: "",
+      dialogVisible: false,
     } 
   },
   methods: {
+    closeViewer () {
+      this.dialogVisible = false
+    },
     _getList () {
       this.tableLoading = true
       getList({
@@ -176,7 +189,6 @@ export default {
         this.total = count
         this.tableData = this._normalizeList(data)
         this.tableLoading = false
-        console.log(this.total, this.toSavetableData, 'data')
       }).catch(() => {
         this.tableLoading = false
         this.$message.error('加载列表失败')
@@ -186,14 +198,12 @@ export default {
       getCategoryName().then(res => {
         this.categoryList = res.data
         this._normalizeSelectList()
-        console.log(this.selectList, 'selectList')
       }).catch((err) => {
         console.log(err, 'err')
         this.$message.error('获取字典分类失败')
       })
     },
     _normalizeSelectList () {
-      console.log(this.transportationList, 'sele', this)
       this.selectList.push({
         title: '交通费用',
         options: this.transportationList.map(item => {
@@ -208,7 +218,6 @@ export default {
       this.selectList.push({
         title: '其他费用',
         options: this.otherExpensesList.map(item => {
-          console.log('其他费用')
           item.type = OTHER_TYPE
           return item
         })
@@ -216,6 +225,7 @@ export default {
     },
     _normalizeList (data) {
       return data.map(item => {
+        item.createTime = item.createTime.split(' ')[0]
         item.moneyText = toThousands(item.money)
         if (item.reimburseType === Number(3)) { // 住宿费
           item.moneyText = toThousands(item.totalMoney)
@@ -223,17 +233,29 @@ export default {
         return item
       })
     },
-    jumpToDetail (detail) {
-      let { id, fileId } = detail
-      console.log(`${this.baseURL}/${id || fileId}?X-Token=${this.tokenValue}`, 'url')
-      downloadFile(`${this.baseURL}/${fileId}?X-Token=${this.tokenValue}`)
-      // window.location.href = `${this.baseURL}/${fileId}?X-Token=${this.tokenValue}`
+    jumpToDetail (attachmentList) {
+      let invoiceList = attachmentList.filter(item => item.attachmentType === 2) // 发票附件
+      if (invoiceList && invoiceList.length) {
+        let { fileId, fileType } = invoiceList[0]
+        let url = `${this.baseURL}/${fileId}?X-Token=${this.tokenValue}`
+        if (fileType) { // 文件类型 后台返回的
+          if (/^image\/\w+/i.test(fileType)) {
+            this.dialogImageUrl = url
+            this.dialogVisible = true
+          } else {
+            downloadFile(url)
+          }
+        } 
+      } else {
+        this.$message({
+          type: 'warning',
+          message: '无发票附件'
+        })
+      }
     },
     getDetail (val) { // 获取详情
       let { type } = val
-      console.log(val, 'val')
       let myExpendsId = ''
-      console.log(type === 'view', 'boolean')
       if (type === 'view') {
         myExpendsId = val.id
       } else {
@@ -249,14 +271,12 @@ export default {
         myExpendsId
       }).then(res => {
         let data = res.data
-        console.log(data)
         this._buildAttachment([data])
         this.detailData = {
           list: [data]
         }
         this.type = type
         this.$refs.myDialog.open()
-        console.log(this.detailData.list, 'res')
       }).catch((err) => {
         console.error(err)
         this.$message.error('获取详情失败')
@@ -272,6 +292,7 @@ export default {
         item.otherAttachment = []
         item.reimburseAttachments = []
         item.maxMoney = item.totalMoney || item.money
+        item.isValidInvoice = Boolean(item.invoiceFileList.length)
       })
     },
     getTargetAttachment (data, attachmentType) { // 用于el-upload 回显

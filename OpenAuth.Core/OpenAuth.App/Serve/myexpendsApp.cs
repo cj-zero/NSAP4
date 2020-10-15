@@ -18,7 +18,8 @@ namespace OpenAuth.App
 {
     public class MyExpendsApp : OnlyUnitWorkBaeApp
     {
-        private RevelanceManagerApp _revelanceApp;
+        private readonly RevelanceManagerApp _revelanceApp;
+        private readonly ReimburseInfoApp _reimburseinfoApp;
 
         /// <summary>
         /// 加载列表
@@ -37,7 +38,7 @@ namespace OpenAuth.App
             }
 
             var result = new TableData();
-            var objs = UnitWork.Find<MyExpends>(m => m.CreateUserId == user.Id);
+            var objs = UnitWork.Find<MyExpends>(m => m.CreateUserId == user.Id && m.IsDelete==false);
             objs = objs.WhereIf(request.StartTime != null, m => m.CreateTime >= request.StartTime);
             objs = objs.WhereIf(request.EndTime != null, m => m.CreateTime < Convert.ToDateTime(request.EndTime).AddMinutes(1440));
 
@@ -49,7 +50,7 @@ namespace OpenAuth.App
             var ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => ReimburseAttachmentIds.Contains(r.ReimburseId) && r.ReimburseType == 5).ToListAsync();
             var fileids = ReimburseAttachments.Select(r => r.FileId).ToList();
             var file = await UnitWork.Find<UploadFile>(f=> fileids.Contains(f.Id)).ToListAsync();
-            MyExpendsDetails.ForEach(m => m.ReimburseAttachments = ReimburseAttachments.Where(r=>r.ReimburseId.Equals(r.Id)).Select(r => new ReimburseAttachmentResp
+            MyExpendsDetails.ForEach(m => m.ReimburseAttachments = ReimburseAttachments.Where(r=>r.ReimburseId.Equals(m.Id)).Select(r => new ReimburseAttachmentResp
             {
                 Id = r.Id,
                 FileId = r.FileId,
@@ -81,13 +82,15 @@ namespace OpenAuth.App
             var obj = await UnitWork.Find<MyExpends>(m => m.Id == MyExpendsId).FirstOrDefaultAsync();
             var result = new TableData();
             var ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId == obj.Id && r.ReimburseType == 5).ToListAsync();
-            var file = await UnitWork.Find<UploadFile>(null).ToListAsync();
+            var fileids = ReimburseAttachments.Select(r => r.FileId).ToList();
+            var file = await UnitWork.Find<UploadFile>(f=> fileids.Contains(f.Id)).ToListAsync();
             var MyExpendsDetails = obj.MapTo<AddOrUpdateMyExpendsReq>();
             MyExpendsDetails.ReimburseAttachments = ReimburseAttachments.Select(r => new ReimburseAttachmentResp
             {
                 Id = r.Id,
                 FileId = r.FileId,
                 AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault(),
+                FileType= file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileType).FirstOrDefault(),
                 AttachmentType = r.AttachmentType,
                 ReimburseId = r.ReimburseId,
                 ReimburseType = r.ReimburseType
@@ -108,15 +111,17 @@ namespace OpenAuth.App
             {
                 user = await GetUserId(Convert.ToInt32(req.AppId));
             }
-            if (!await IsSole(user.Id,req.InvoiceNumber))
+            List<string> InvoiceNumbers = new List<string> { req.InvoiceNumber };
+            if (!await IsSole(req.AppId.ToString(), req.InvoiceNumber) || !await _reimburseinfoApp.IsSole(InvoiceNumbers))
             {
-                throw new CommonException("添加费用失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                throw new CommonException("添加费用失败。发票已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
             }
             var obj = req.MapTo<MyExpends>();
             //todo:补充或调整自己需要的字段
             obj.CreateTime = DateTime.Now;
             obj.CreateUserId = user.Id;
             obj.CreateUserName = user.Name;
+            obj.IsDelete = false;
             obj = await UnitWork.AddAsync<MyExpends, int>(obj);
             await UnitWork.SaveAsync();
             if (req.ReimburseAttachments != null && req.ReimburseAttachments.Count > 0)
@@ -145,9 +150,10 @@ namespace OpenAuth.App
                 user = await GetUserId(Convert.ToInt32(obj.AppId));
             }
             var MyExpendsModel = await UnitWork.Find<MyExpends>(m => m.Id == obj.Id).FirstOrDefaultAsync();
-            if (MyExpendsModel != null && MyExpendsModel.InvoiceNumber != obj.InvoiceNumber && !await IsSole(user.Id,obj.InvoiceNumber))
+            List<string> InvoiceNumbers = new List<string> { obj.InvoiceNumber };
+            if ((MyExpendsModel != null && MyExpendsModel.InvoiceNumber != obj.InvoiceNumber && !await IsSole(user.Id,obj.InvoiceNumber)) || !await _reimburseinfoApp.IsSole(InvoiceNumbers))
             {
-                throw new CommonException("添加费用失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                throw new CommonException("添加费用失败。发票已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
             }
             await UnitWork.UpdateAsync<MyExpends>(u => u.Id == obj.Id, u => new MyExpends
             {
@@ -222,6 +228,7 @@ namespace OpenAuth.App
         /// 发票号个人唯一
         /// </summary>
         /// <param name="InvoiceNumber"></param>
+        /// <param name="UserId"></param>
         /// <returns></returns>
         public async Task<bool> IsSole(string UserId,string InvoiceNumber)
         {
@@ -230,7 +237,7 @@ namespace OpenAuth.App
             {
                 user = await GetUserId(Convert.ToInt32(UserId));
             }
-            var rta = await UnitWork.Find<MyExpends>(r =>r.CreateUserId== user.Id && r.InvoiceNumber.Equals(InvoiceNumber)).CountAsync();
+            var rta = await UnitWork.Find<MyExpends>(r =>r.CreateUserId== user.Id && r.InvoiceNumber.Equals(InvoiceNumber) && r.IsDelete!=true).CountAsync();
             if (rta > 0)
             {
                 return false;
@@ -238,9 +245,10 @@ namespace OpenAuth.App
             return true;
         }
 
-        public MyExpendsApp(IUnitWork unitWork, RevelanceManagerApp app, IAuth auth) : base(unitWork, auth)
+        public MyExpendsApp(IUnitWork unitWork, RevelanceManagerApp app, ReimburseInfoApp reimburseinfoApp, IAuth auth) : base(unitWork, auth)
         {
             _revelanceApp = app;
+            _reimburseinfoApp = reimburseinfoApp;
         }
     }
 }

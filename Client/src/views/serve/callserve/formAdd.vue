@@ -802,6 +802,7 @@ import { mapMutations } from 'vuex'
 import Report from '../common/components/report'
 import { reportMixin } from '../common/js/mixins'
 import elDragDialog from '@/directive/el-dragDialog'
+import { isCustomerCode } from '@/utils/validate'
 export default {
   components: { fromfSN, problemtype, solution, Pagination, fromfSNC, Report },
   mixins: [reportMixin],
@@ -1079,19 +1080,21 @@ export default {
     "form.customerId": {
       deep: true,
       handler(val) {
-        // console.log(this.form, val, 'customerId change')
-        this.listQuery.CardCode = String(val).toUpperCase()
-        getSerialNumber(this.listQuery)
-          .then((res) => {
-            this.SerialNumberList = res.data;
-            this.filterSerialNumberList = this.SerialNumberList;
-            this.SerialCount = res.count;
-            this.serLoad = false;
-            this.listLoading = false;
-          })
-          .catch((error) => {
-            console.log(error);
-          });
+        // console.log(this.form, val, 'customerId change')\
+        if (isCustomerCode(val)) {
+          this.listQuery.CardCode = String(val).toUpperCase()
+          getSerialNumber(this.listQuery)
+            .then((res) => {
+              this.SerialNumberList = res.data;
+              this.filterSerialNumberList = this.SerialNumberList;
+              this.SerialCount = res.count;
+              this.serLoad = false;
+              this.listLoading = false;
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        }
       },
     },
     // 'form.customerId': {

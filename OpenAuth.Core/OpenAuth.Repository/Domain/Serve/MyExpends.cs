@@ -114,6 +114,11 @@ namespace OpenAuth.Repository.Domain
         public string CreateUserId { get; set; }
         public string CreateUserName { get; set; }
 
+        /// <summary>
+        /// 是否删除
+        /// </summary>
+        [Description("是否删除")]
+        public bool IsDelete { get; set; }
         public override void GenerateDefaultKeyVal()
         {
 

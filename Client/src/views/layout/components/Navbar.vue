@@ -1,9 +1,9 @@
 <template>
   <el-menu class="navbar" mode="horizontal">
+    <hamburger class="hamburger-container" :toggleClick="toggleSideBar" :isActive="sidebar.opened"></hamburger>
 		<div class="logo">
 			<img class="user-avatar" :src="logo">
 		</div>
-    <hamburger class="hamburger-container" :toggleClick="toggleSideBar" :isActive="sidebar.opened"></hamburger>
     <el-dropdown class="avatar-container" @command="handleCommand" trigger="click">
       <div class="avatar-wrapper">
 				欢迎您，{{name}}

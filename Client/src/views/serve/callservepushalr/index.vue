@@ -424,6 +424,7 @@ export default {
         QryTechName: "", // - 工单技术员
         QryProblemType: "", // - 问题类型
         QryMaterialTypes: [], //物料类型
+        QryMaterialCode: "" // 物料代码
       },
       listQuery1: {
         // 查询条件
@@ -835,12 +836,10 @@ export default {
               this.listQuery.QryMaterialTypes.push(item.id);
             });
           }
-          console.log('再次起飞')
           this.getRightList();
         }
       } else {
         //第一次点击
-        // console.log('初次起飞')
         this.listQuery.QryMaterialTypes = [];
         this.listQuery.page = 1
         if (!a.children) {

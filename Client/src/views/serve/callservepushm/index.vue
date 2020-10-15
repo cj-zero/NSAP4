@@ -375,6 +375,7 @@ export default {
         QryTechName: "", // - 工单技术员
         QryProblemType: "", // - 问题类型
         QryMaterialTypes: [], //物料类型
+        QryMaterialCode: "" // 物料代码
       },
       total2: 0,
       totalCount: 0, // 左侧树形数据的数量
@@ -533,7 +534,7 @@ export default {
       if (this.modulesTree.length) {
         this.$refs.treeForm.setCheckedKeys([this.modulesTree[0].key]);
         this.checkGroupNode(this.modulesTree[0]);
-        this.getRightList();
+        // this.getRightList();
       } else {
         this.list = []
         this.total = 0

@@ -55,6 +55,14 @@
       class="filter-item"
       placeholder="技术员">
     </el-input>
+    <el-input 
+      v-model="listQuery.QryMaterialCode" 
+      size="mini"
+      @keyup.enter.native="onSubmit" 
+      style="width: 150px;"
+      class="filter-item"
+      placeholder="物料代码">
+    </el-input>
     <el-cascader 
       style="width: 180px;"
       palceholder="问题类型"
@@ -146,7 +154,8 @@ export default {
         QryCreateTimeTo: "", //- 创建日期至查询条件
         QryRecepUser: "", //- 接单员
         QryTechName: "", // - 工单技术员
-        QryProblemType: "" // - 问题类型
+        QryProblemType: "", // - 问题类型
+        QryMaterialCode: "" // 物料代码
       },
       // 1.待处理-呼叫中心处理（不可选）
       // 2.已排配-技术员接单

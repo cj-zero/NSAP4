@@ -382,6 +382,7 @@ export default {
       return [
         { width: 140, placeholder: '问题类型', prop: 'QryProblemType', options: this.problemOptions, type: 'tree' },
         { width: 100, placeholder: '呼叫类型', prop: 'QryFromType', options: this.options_type, type: 'select' },
+        { width: 180, placeholder: '呼叫主题', prop: 'QryFromTheme' },
         { width: 140, placeholder: '联系电话', prop: 'ContactTel' },
         { width: 150, placeholder: '创建日期', prop: 'QryCreateTimeFrom', type: 'date', showText: true },
         { width: 150, placeholder: '结束日期', prop: 'QryCreateTimeTo', type: 'date' },
@@ -1079,26 +1080,37 @@ export default {
     onRateClose () {
       this.dialogRateVisible = false
       if (!this.isView) { // 关闭弹窗时，清空数据
-        let { rate, rateProduct, ratePrice } = this.$refs.rateRoot.$refs
-        rate.forEach(rateItem => {
-          rateItem.clearScore()
-        })
-        rateProduct.clearScore()
-        ratePrice.clearScore()
+        this.$refs.rateRoot.resetInfo()
       }
     },
     onCommentSubmit () { // 提交评价
       if (this.isView) { // 如果是查看操作，则直接关闭弹窗
         return this.dialogRateVisible = false
       }
-      this.commentList = this.newCommentList 
-      this.loadingBtn = true
+      // this.commentList = this.newCommentList 
+      console.log(this.commentList, 'commentList')
+      let { productQuality, servicePrice, technicianEvaluates, comment } = this.commentList
+      console.log(productQuality, servicePrice, comment)
+      let isValid = true
+      for (let i = 0; i < technicianEvaluates.length; i++) {
+        let { responseSpeed, schemeEffectiveness, serviceAttitude } = technicianEvaluates[i]
+        console.log(responseSpeed, schemeEffectiveness, serviceAttitude)
+        isValid = responseSpeed && schemeEffectiveness && serviceAttitude
+        if (!isValid) {
+          break
+        }
+      }
+      if (!(isValid && productQuality && servicePrice)) {
+        return this.$message.error('评分不能为零！')
+      }
+      console.log(this.commentList, 'commentList')
       afterEvaluation.addComment(this.commentList)
         .then(() => {
           this.$message({
             message: '评价成功',
             type: 'success'
           })
+          this.$refs.rateRoot.resetInfo()
           this.loadingBtn = false
           this.dialogRateVisible = false
           this.getList()
@@ -1114,7 +1126,8 @@ export default {
       // console.log(`${baseURL}?X-Token=${this.$store.state.user.token}&${params}`)
     },
     onChangeComment (val) {
-      this.newCommentList = val
+      Object.assign(this.commentList, val)
+      // this.newCommentList = val
     },
     serializeParams (params) {
       let result = []
