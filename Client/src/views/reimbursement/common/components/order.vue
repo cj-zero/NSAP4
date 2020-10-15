@@ -115,7 +115,7 @@
           :data="formData.reimburseTravellingAllowances"
           @cell-click="onTravelCellClick"
           @cell-mouse-enter="onTravelCellEnter"
-          max-height="300px"
+          max-height="10000px"
         >
           <el-table-column
             v-for="item in travelConfig"
@@ -185,6 +185,7 @@
         ref="trafficForm" 
         :model="formData" 
         size="mini" 
+        :show-message="false"
         class="form-wrapper"
         :disabled="!ifFormEdit"
         :class="{ 'uneditable': !this.ifFormEdit }"
@@ -200,7 +201,7 @@
           :row-style="rowStyle"
           border
           :data="formData.reimburseFares"
-          max-height="300px"
+          max-height="10000px"
           @cell-click="onTrafficCellClick"
           @cell-mouse-enter="onTrafficCellEnter"
         >
@@ -343,7 +344,7 @@
           :row-style="rowStyle"
           border
           :data="formData.reimburseAccommodationSubsidies"
-          max-height="300px"
+          max-height="10000px"
           @cell-click="onAccCellClick"
           @cell-mouse-enter="onAccCellEnter"
         >
@@ -478,7 +479,7 @@
           :row-style="rowStyle"
           border
           :data="formData.reimburseOtherCharges"
-          max-height="300px"
+          max-height="10000px"
           @cell-click="onOtherCellClick"
           @cell-mouse-enter="onOtherCellEnter"
         >
@@ -593,7 +594,7 @@
           style="width: 989px;"
           :data="formData.reimurseOperationHistories"
           border
-          max-height="300px"
+          max-height="10000px"
         >
           <el-table-column label="操作记录" prop="action" width="150px" show-overflow-tooltip></el-table-column>
           <el-table-column label="操作人" prop="createUser" width="150px" show-overflow-tooltip></el-table-column>
@@ -602,7 +603,6 @@
             <template slot-scope="scope">
               {{ scope.row.intervalTime | timeFormat }}
             </template>
-            
           </el-table-column>
           <el-table-column label="审批结果" prop="approvalResult" width="150px" show-overflow-tooltip></el-table-column>
           <el-table-column label="备注" prop="remark" width="147px" show-overflow-tooltip></el-table-column>
@@ -1938,7 +1938,7 @@ export default {
     }
   }
   .form-item-wrapper {
-    overflow-y: auto;
+    // overflow-y: auto;
     margin-bottom: 20px;
     &::-webkit-scrollbar {
       display: none;
