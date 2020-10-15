@@ -254,7 +254,7 @@
                   :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
                   :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }"
                 >
-                  <el-input v-model="scope.row[item.prop]" :type="item.type" :disabled="item.disabled" :min="0" @input="onInput" @focus="onFocus(item.prop)"></el-input>
+                  <el-input v-model="scope.row[item.prop]" :type="item.type" :disabled="item.disabled" :min="0" @input="onInput" @focus="onFocus({ prop: item.prop, index: scope.$index })"></el-input>
                 </el-form-item>
               </template>
               <template v-else-if="item.type === 'select'">
@@ -387,7 +387,7 @@
                     @change="onChange"
                     @blur="onBlur"
                     @input="onInput"
-                    @focus="onFocus(item.prop)"></el-input>
+                    @focus="onFocus({ prop: item.prop, index: scope.$index })"></el-input>
                 </el-form-item>
               </template>
               <template v-else-if="item.type === 'select'">
@@ -512,7 +512,7 @@
                   :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
                   :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }"
                 >
-                  <el-input v-model="scope.row[item.prop]" :type="item.type" :disabled="item.disabled" :min="0" @focus="onFocus(item.prop)" @input="onInput"></el-input>
+                  <el-input v-model="scope.row[item.prop]" :type="item.type" :disabled="item.disabled" :min="0" @focus="onFocus({ prop: item.prop, index: scope.$index })" @input="onInput"></el-input>
                 </el-form-item>
               </template>
               <template v-else-if="item.type === 'select'">
@@ -1312,8 +1312,10 @@ export default {
         }
       }
     },
-    onFocus (val) {
-      this.currentProp = val
+    onFocus ({ prop, index }) {
+      console.log(prop, index, 'focus')
+      this.currentProp = prop
+      this.currentIndex = index
     },
     onAreaFocus ({ prop, index }) { // 打开地址选择
       if (this.prevAreaData) {
