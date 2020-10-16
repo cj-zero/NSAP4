@@ -815,7 +815,7 @@ export default {
   directives: {
     elDragDialog
   },
-  props: ["isCreate", "ifEdit", "serviceOrderId", "propForm", "formName", "form"],
+  props: ["isCreate", "ifEdit", "serviceOrderId", "propForm", "formName", "form", "inputSerial", "businessType"],
   // ##propForm编辑或者查看详情传过来的数据
   data() {
     return {
@@ -1080,9 +1080,11 @@ export default {
     "form.customerId": {
       deep: true,
       handler(val) {
-        // console.log(this.form, val, 'customerId change')\
+        // console.log(this.form, val, 'customerId change')
+        let { inputSerial: manufSN, businessType } = this
         if (isCustomerCode(val)) {
           this.listQuery.CardCode = String(val).toUpperCase()
+          this.listQuery.ManufSN = businessType === 'search' ? manufSN : ''
           getSerialNumber(this.listQuery)
             .then((res) => {
               this.SerialNumberList = res.data;
@@ -1090,6 +1092,23 @@ export default {
               this.SerialCount = res.count;
               this.serLoad = false;
               this.listLoading = false;
+              if ( // 当搜索出来的结果有数据，并且manufSN不为空且工单的第一个数据没被填写过，才对第一个工单进行填写
+                this.filterSerialNumberList &&
+                this.filterSerialNumberList.length &&
+                !this.formList[0].manufacturerSerialNumber &&
+                manufSN
+              ) {
+                let data = this.filterSerialNumberList[0]
+                this.formList[0].manufacturerSerialNumber = data.manufSN
+                this.formList[0].internalSerialNumber = data.internalSN
+                this.formList[0].materialCode = data.itemCode
+                this.formList[0].materialDescription = data.itemName
+                this.formList[0].feeType = 1
+                this.formList[0].editTrue = true
+                this.formList[0].fromType =  this.formList[0].fromType || ""
+                this.formList[0].priority =  this.formList[0].priority || 1
+                this.formList[0].status = 1
+              }
             })
             .catch((error) => {
               console.log(error);

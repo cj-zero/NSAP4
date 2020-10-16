@@ -1,14 +1,19 @@
 
 import request from '@/utils/request'
 
-export function getPartner(params) {
+export function getPartner(params, _this, type) {
   return request({
     url: '/Sap/BusinessPartner/Load',  //加载业务伙伴
     method: 'get',
-    params 
+    params,
+    cancelToken: new request.cancelToken(function executor(c) {
+      if (type) {
+        _this.cancelBusinessRequestFn = c
+      }
+    })
   })
 }
-
+ 
 export function getSerialNumber(params) {
   return request({
     url: '/Sap/SerialNumber/Get',  //加载序列号列表

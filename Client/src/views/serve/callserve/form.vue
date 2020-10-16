@@ -333,6 +333,8 @@
             ref="formAdd"
             :formName="formName"
             :form="form"
+            :inputSerial="inputSerial"
+            :businessType="businessType"
           ></formAdd>
         </el-col>
       </el-row>
@@ -520,7 +522,7 @@ export default {
       baseURL: process.env.VUE_APP_BASE_API + "/files/Download",
       tokenValue: this.$store.state.user.token,
       previewUrl: "", //预览图片的定义
-
+      cancelBusinessRequestFn: null, // 用于取消获取业务伙伴的请求
       partnerList: [],
       previewVisible: false, //图片预览的dia
       setImage: "50px",
@@ -631,6 +633,7 @@ export default {
       upLoadImgList: [], // 图片列表
       currentItem: {}, // 当前选中的数据
       selectType: '', // 改变客户/终端客户代码的方式
+      businessType: '' // input： 通过点击客户代码获取 search: 通过搜索获取 业务伙伴
     };
   },
   computed: {
@@ -1003,6 +1006,7 @@ export default {
       this.allAddress = res;
     }, 
     resetInfo () { // 清空终端客户相关的数据
+      console.log(this.handleSelectType, 'resetInfo')
       if (this.handleSelectType === 'customer') {
         this.form.customerName = ''
         this.form.salesMan = ''
@@ -1278,12 +1282,6 @@ export default {
           if (!res.result) {
             return
           }
-          // console.log(res, "售后主管", this.handleSelectType, isCustomerCode(this.form.terminalCustomerId));
-          // if (this.handleSelectType === 'customer') { // 如果点击客户代码的时候
-          //   if (this.form.terminalCustomerId) { // 如果终端客户存在，则不进行值的覆盖
-          //     return 
-          //   }
-          // }
           if (this.handleSelectType === 'customer') {
             this.form.salesMan = res.result.slpName
             this.form.customerName = res.result.cardName
@@ -1397,30 +1395,19 @@ export default {
     }, 400),
     async querySearch(queryString, cb) {
       this.listQuery.CardCodeOrCardName = queryString;
-      // this.inputSearch = queryString;
       await this.getPartnerList(this.listQuery);
       console.log(this.partnerList, 'partnerList')
-      // var results = queryString
-      //   ? partnerList.filter(this.createFilter(queryString))
-      //   : partnerList;
       // 调用 callback 返回建议列表的数据
       cb(this.partnerList);
     },
-    // createFilter(queryString) {
-    //   return (partnerList) => {
-    //     return (
-    //       partnerList.cardCode
-    //         .toLowerCase()
-    //         .indexOf(queryString.toLowerCase()) === 0
-    //     );
-    //   };
-    // },
-    getPartnerList(listQuery, type) {
+    async getPartnerList(listQuery, type) {
+      if (typeof this.cancelBusinessRequestFn === 'function') {
+        this.cancelBusinessRequestFn('用户取消请求')
+      }
       this.parentLoad = true;
-      return getPartner(listQuery)
+      console.log(this.parentLoad, 'parentLoad')
+      return getPartner(listQuery, this, type)
         .then((res) => {
-          // this.partnerList = res.data;
-          // console.log(res.data, '返回')
           let list = res.data
           if (type === 'first') {
             this.filterPartnerList = list
@@ -1435,8 +1422,11 @@ export default {
           // this.parentCount = res.count;
           this.parentLoad = false;
         })
-        .catch(() => {
-          this.parentLoad = false
+        .catch((err) => {
+          console.log(err.message, 'errorMessage')
+          if (err.message !== '用户取消请求') {
+            this.parentLoad = false
+          }          
         });
     },
     handleSelectCustomer(item) {
@@ -1451,6 +1441,7 @@ export default {
       // }
       // this.inputSearch = item.customerId;
       this.selectType = 'click' // 通过什么方式来填写客户/终端客户代码
+      this.businessType = 'input'
       this.handleSelectType = type // 选择的类型
       this.currentItem = item
       if (type === 'customer') { // 客户代码
@@ -1473,6 +1464,7 @@ export default {
         return
       }
       this.selectType = 'click'
+      this.businessType = 'search'
       this.handleSelectType = type // 选择的类型
       this.currentItem = item
       if (type === 'customer') { // 客户代码
@@ -1502,7 +1494,8 @@ export default {
         if (this.formName === '新建') {
           callformPartner.getTableList({ code: cardCode }).then(res => {
             this.CallList = res.result;
-            if (this.CallList && this.CallList.length) {
+            let { newestOrder } = this.CallList
+            if (newestOrder && newestOrder.length) {
               this.dialogCallId = true
             }
           }).catch(() => this.$message.error('获取用户最近10个服务单失败'))
