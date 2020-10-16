@@ -23,7 +23,7 @@ namespace OpenAuth.WebApi.Controllers.Sap
     {
         private readonly BusinessPartnerApp _businessPartnerApp;
         private readonly HttpClienService _httpClienService;
-        public BusinessPartnerController(BusinessPartnerApp businessPartnerApp,HttpClienService httpClienService)
+        public BusinessPartnerController(BusinessPartnerApp businessPartnerApp, HttpClienService httpClienService)
         {
             _businessPartnerApp = businessPartnerApp;
             _httpClienService = httpClienService;
@@ -97,10 +97,12 @@ namespace OpenAuth.WebApi.Controllers.Sap
         /// 验证是否存在客户（新威智能App）
         /// </summary>
         /// <param name="cardCode">客户编号</param>
-        /// /// <param name="custName">客户名称</param>
+        /// <param name="custName">客户名称</param>
+        /// <param name="userName">帐户</param>
+        /// <param name="passWord">密码</param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> AppGetCustomerCode(string cardCode, string custName)
+        public async Task<TableData> AppGetCustomerCode(string cardCode, string custName, string userName, string passWord)
         {
             var result = new TableData();
             try
@@ -108,6 +110,8 @@ namespace OpenAuth.WebApi.Controllers.Sap
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("cardCode", cardCode);
                 parameters.Add("custName", custName);
+                parameters.Add("userName", userName);
+                parameters.Add("passWord", passWord);
                 var r = await _httpClienService.Get(parameters, "api/user/UserManage/AppGetCustomerCode");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _businessPartnerApp.AppGetCustomerCode(cardCode, custName);

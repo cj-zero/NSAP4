@@ -295,7 +295,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
             {
                 throw new CommonException("当前客户不存在", 90016);
             }
-            result.Data = rltList.CardCode;
+            result.Data = rltList;
             return result;
         }
     }
