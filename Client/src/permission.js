@@ -45,8 +45,8 @@ router.beforeEach((to, from, next) => {
         })
       })
     } else { // 普通登录方式
-      store.dispatch('GetRoles')
       if (getToken()) {
+        store.dispatch('GetRoles')
         if (to.path === '/login') { // 登录后login自动跳转
           next({ path: '/' })
           // initSignalR(getToken())

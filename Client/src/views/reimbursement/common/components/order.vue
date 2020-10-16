@@ -115,7 +115,6 @@
           :data="formData.reimburseTravellingAllowances"
           @cell-click="onTravelCellClick"
           @cell-mouse-enter="onTravelCellEnter"
-          max-height="10000px"
         >
           <el-table-column
             v-for="item in travelConfig"
@@ -141,7 +140,13 @@
                   :prop="'reimburseTravellingAllowances.' + scope.$index + '.'+ item.prop"
                   :rules="travelRules[item.prop] || { required: false }"
                 >
-                  <el-input v-model="scope.row[item.prop]" :type="item.type" :min="0" :disabled="item.disabled" @input="onInput"></el-input>
+                  <el-input 
+                    v-model="scope.row[item.prop]" 
+                    :type="item.type" :min="0" 
+                    :disabled="item.disabled" 
+                    @input="onInput"
+                    :class="{ 'money-class': item.prop === 'money'}"
+                  ></el-input>
                 </el-form-item>
               </template>
               <template v-else-if="item.type === 'select'">
@@ -261,6 +266,7 @@
                     :type="item.type" 
                     :disabled="item.disabled" 
                     :min="0"
+                    :class="{ 'money-class': item.prop === 'money'}"
                     @input="onInput" 
                     @focus="onFocus({ prop: item.prop, index: scope.$index })"
                     :placeholder="item.placeholder"></el-input>
@@ -390,6 +396,7 @@
                   :rules="scope.row.isAdd ? (accRules[item.prop] || { required: false }) : { required: false }"
                 >
                   <el-input 
+                    :class="{ 'money-class': item.prop === 'money' || item.prop === 'totalMoney' }"
                     v-model="scope.row[item.prop]" 
                     :type="item.type" 
                     :disabled="item.disabled" 
@@ -525,6 +532,7 @@
                   :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }"
                 >
                   <el-input 
+                    :class="{ 'money-class': item.prop === 'money'}"
                     v-model="scope.row[item.prop]" 
                     :type="item.type" 
                     :disabled="item.disabled" 
@@ -594,7 +602,7 @@
           style="width: 989px;"
           :data="formData.reimurseOperationHistories"
           border
-          max-height="10000px"
+          max-height="200px"
         >
           <el-table-column label="操作记录" prop="action" width="150px" show-overflow-tooltip></el-table-column>
           <el-table-column label="操作人" prop="createUser" width="150px" show-overflow-tooltip></el-table-column>
@@ -1618,9 +1626,12 @@ export default {
         formData.destination = destination
         this.customerLoading = true
         forServe(terminalCustomerId).then(res => {
-          formData.shortCustomerName = res.result.u_Name.slice(0, 6)
+          formData.shortCustomerName = res.result.u_Name ? res.result.u_Name.slice(0, 6) : ''
           this.customerLoading = false
-        }).catch(() => this.customerLoading = false)
+        }).catch(() => {
+          formData.shortCustomerName = ''
+          this.customerLoading = false
+        })
       }
       this.closeDialog()
     },
@@ -1893,7 +1904,7 @@ export default {
 </script>
 <style lang='scss' scoped>
 .order-wrapper {
-  max-height: 600px;
+  max-height: 700px;
   overflow-y: auto;
   .uneditable {
     ::v-deep .el-input.is-disabled .el-input__inner {
@@ -1924,7 +1935,7 @@ export default {
     }
   }
   .upload-wrapper {
-    margin: 20px 0;
+    margin: 5px 0;
     .upload-title {
       width: 80px;
       text-align: left;
@@ -1939,7 +1950,7 @@ export default {
   }
   .form-item-wrapper {
     // overflow-y: auto;
-    margin-bottom: 20px;
+    margin-bottom: 5px;
     &::-webkit-scrollbar {
       display: none;
     }
@@ -1955,7 +1966,11 @@ export default {
         overflow: visible;
       }
     }
-
+    .money-class {
+      ::v-deep input {
+        text-align: right;
+      }
+    }
     .title-wrapper {
       display: flex;
       justify-content: center;
