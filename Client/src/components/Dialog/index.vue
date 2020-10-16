@@ -101,6 +101,7 @@ export default {
 </script>
 <style lang='scss' scoped>
 .my-dialog-wrapper {
+  overflow: hidden;
   &::v-deep .el-dialog__body {
     padding: 10px !important;
   }

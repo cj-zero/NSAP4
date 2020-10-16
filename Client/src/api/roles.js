@@ -48,3 +48,11 @@ export function AssignRoleUsers(data) {
   })
 }
 
+// 获取用户角色
+export function getRoles (params) {
+  return request({
+    url: '/Check/GetRoles',
+    method: 'get',
+    params
+  })
+}

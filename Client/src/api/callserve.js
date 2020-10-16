@@ -5,7 +5,7 @@ export function getPartner(params) {
   return request({
     url: '/Sap/BusinessPartner/Load',  //加载业务伙伴
     method: 'get',
-    params
+    params 
   })
 }
 

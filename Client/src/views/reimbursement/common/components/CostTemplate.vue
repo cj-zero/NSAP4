@@ -31,7 +31,7 @@
         size="mini" 
         :show-message="false"
         class="form-wrapper"
-        :class="{ other: currentType === 3, acc: currentType === 2 }"
+        :class="{ other: currentType === 3, acc: currentType === 2, uneditable: this.operation === 'view' }"
         :disabled="isDisabled"
       >
         <el-table 
@@ -40,7 +40,6 @@
           max-height="300px"
           @cell-click="onCellClick"
           @row-click="onRowClick"
-          :resizable="false"
           v-if="currentType"
         > 
           <template v-for="item in config">
@@ -51,6 +50,7 @@
               :prop="item.prop"
               :fixed="item.fixed"
               :width="item.width"
+              :resizable="false"
             >
               <template slot-scope="scope">
                 <template v-if="item.type === 'order'">
@@ -101,6 +101,7 @@
                       @input.native="onInput"
                       @focus="onFocus(item.prop)"
                       :placeholder="item.placeholder"
+                      :class="{ 'money-class': item.prop === 'money' || item.prop === 'totalMoney' }"
                     ></el-input>
                   </el-form-item>
                 </template>
@@ -518,7 +519,7 @@ export default {
       if (fileId && prop === 'invoiceAttachment' && !operation) { // 图片上传成功会返回当前的pictureId, 并且只识别发票附件 
         this.identifyLoading = this.$loading({
           lock: true,
-          text: 'Loading'
+          text: '发票识别中'
         })
         this._identifyInvoice({ // 先进行识别再进行赋值
           fileId, 
@@ -645,18 +646,6 @@ export default {
       color: rgba(255, 165, 0, 1);
     }
   }
-  ::v-deep .el-input.is-disabled .el-input__inner {
-    background-color: #fff;
-    cursor: default;
-    color: #606266;
-    border-color: #DCDFE6;
-  }
-  ::v-deep .el-textarea.is-disabled .el-textarea__inner {
-    background-color: #fff;
-    cursor: default;
-    color: #606266;
-    border-color: #DCDFE6;
-  }
   .select-list-wrapper {
     position: relative;
     
@@ -705,11 +694,30 @@ export default {
       }
     }
     .form-wrapper {
+      &.uneditable {
+        ::v-deep .el-input.is-disabled .el-input__inner {
+          background-color: #fff;
+          cursor: default;
+          color: #606266;
+          border-color: #DCDFE6;
+        }
+        ::v-deep .el-textarea.is-disabled .el-textarea__inner {
+          background-color: #fff;
+          cursor: default;
+          color: #606266;
+          border-color: #DCDFE6;
+        }
+      }
       &.acc {
         width: 916px;
       }
       &.other {
         width: 846px;
+      }
+      .money-class {
+        ::v-deep input {
+          text-align: right;
+        }
       }
       .area-wrapper {
         position: relative;
@@ -726,9 +734,9 @@ export default {
   ::v-deep .el-form-item__content {
     input::-webkit-outer-spin-button,
     input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        appearance: none; 
-        margin: 0; 
+      -webkit-appearance: none;
+      appearance: none; 
+      margin: 0; 
     }
     /* 火狐 */
     input{

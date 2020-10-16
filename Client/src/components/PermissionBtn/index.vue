@@ -11,7 +11,7 @@
         :name = "excelInfo.excelName">
         <el-button :type="btn.class || 'primary'" size="mini" style="margin-left: 10px;" :loading="excelLoading">导出EXCEL</el-button>
       </json-excel>
-      <el-button v-else :type="btn.class" :size="size" v-bind:key="btn.Id" class="filter-item" @click="$emit('btn-event',btn.domId)"><i :class="`iconfont icon-${btn.icon}`"></i>{{btn.name}}</el-button>
+      <el-button v-else :type="btn.class" :size="size" :class="[btn.class]" v-bind:key="btn.Id" class="filter-item" @click="$emit('btn-event',btn.domId)"><i :class="`iconfont icon-${btn.icon}`"></i>{{btn.name}}</el-button>
     </template>
 	</div>
 </template>
@@ -74,4 +74,25 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.add-btn {
+  background-color: #F8B500;
+  border-color: #fff;
+  color: #fff;
+  &:hover {
+    background-color: #F8B500;
+    border-color: #fff;
+    color: #fff;
+  }
+  &:focus {
+    background-color: #F8B500;
+    border-color: #fff;
+    color: #fff;
+  }
+  &:active {
+    background-color: #F8B500;
+    border-color: #fff;
+    color: #fff;
+    outline: 0;
+  }
+}
 </style>

@@ -99,7 +99,6 @@ import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 // import tableData from './mock'
 import rightImg from '@/assets/table/right.png'
 import { getCategoryName } from '@/api/reimburse'
-// import { EXPENSE_CATEGORY_MAP } from './common/js/map'
 import { categoryMixin } from './common/js/mixins'
 import { getList, getDetail, deleteCost } from '@/api/reimburse/mycost'
 import { toThousands } from '@/utils/format'
@@ -152,7 +151,7 @@ export default {
         { placeholder: '填报起始时间', prop: 'startTime', type: 'date', width: 150 },
         { placeholder: '填报结束时间', prop: 'endTime', type: 'date', width: 150 },
         { type: 'search' },
-        { type: 'button', handleClick: this.create, btnText: '新建', options: { type: 'create' } },
+        { type: 'button', handleClick: this.create, btnText: '新建', isSpecial: true, options: { type: 'create' } },
         { type: 'button', handleClick: this.getDetail, btnText: '编辑', options: { type: 'edit' } },
         { type: 'button', handleClick: this.delete, btnText: '删除' },
       ],
