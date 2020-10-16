@@ -195,7 +195,8 @@ namespace OpenAuth.App
                 ProblemDescription = "故障描述：" + q.a.TroubleDescription + "；解决方案：" + q.a.ProcessDescription,
                 q.a.TroubleDescription,
                 q.a.ProcessDescription,
-                q.b.TerminalCustomerId
+                q.b.TerminalCustomerId,
+                q.a.ServiceMode
             }).FirstOrDefaultAsync();
             var thisworkdetail = query.MapTo<CompletionReportDetailsResp>();
             if (thisworkdetail.CurrentUserId != null)
@@ -269,7 +270,7 @@ namespace OpenAuth.App
         /// <param name="ServiceOrderId"></param>
         /// <param name="UserId"></param>
         /// <returns></returns>
-        public async Task<TableData> GetCompletionReportDetailsWeb(int ServiceOrderId,string UserId)
+        public async Task<TableData> GetCompletionReportDetailsWeb(int ServiceOrderId, string UserId)
         {
             var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
@@ -279,7 +280,7 @@ namespace OpenAuth.App
             {
                 //var appuserid = await UnitWork.Find<AppUserMap>(u => u.UserID.Equals(loginContext.User.Id)).Select(u => u.AppUserId).FirstOrDefaultAsync();
                 //CompletionReportModel = CompletionReportModel.Where(c => c.TechnicianId.Equals(appuserid.ToString())).ToList();
-                if(UserId==null) CompletionReportModel = CompletionReportModel.Where(c => c.CreateUserId.Equals(loginContext.User.Id)).ToList();
+                if (UserId == null) CompletionReportModel = CompletionReportModel.Where(c => c.CreateUserId.Equals(loginContext.User.Id)).ToList();
             }
             if (UserId != null)
             {
