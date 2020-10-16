@@ -76,12 +76,12 @@ namespace NSAP.App.WebApi.Controllers
         /// /// <param name="custName">客户名称</param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> AppGetCustomerCode(string cardCode, string custName)
+        public async Task<TableData> AppGetCustomerCode(string cardCode, string custName, string userName, string passWord)
         {
             var result = new TableData();
             try
             {
-                result = await _businessPartnerApp.AppGetCustomerCode(cardCode, custName);
+                result = await _businessPartnerApp.AppGetCustomerCode(cardCode, custName, userName, passWord);
             }
             catch (Exception ex)
             {

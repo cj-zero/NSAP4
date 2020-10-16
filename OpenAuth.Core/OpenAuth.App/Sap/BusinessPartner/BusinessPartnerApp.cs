@@ -82,10 +82,11 @@ namespace OpenAuth.App.Sap.BusinessPartner
             if (!string.IsNullOrWhiteSpace(req.ManufSN))
             {
                 carCode = await UnitWork.Find<OINS>(null).Where(o => o.manufSN.Contains(req.ManufSN)).Select(o => o.customer).ToListAsync();
-                if (carCode.Count==0) {
-                    carCode = await UnitWork.Find<ServiceOins>(s => s.manufSN.Contains(req.ManufSN)).Select(s => s.customer).ToListAsync() ;
+                if (carCode.Count == 0)
+                {
+                    carCode = await UnitWork.Find<ServiceOins>(s => s.manufSN.Contains(req.ManufSN)).Select(s => s.customer).ToListAsync();
                 }
-            } 
+            }
 
             query = query.WhereIf(!string.IsNullOrWhiteSpace(req.CardCodeOrCardName), q => q.a.CardCode.Contains(req.CardCodeOrCardName) || q.a.CardName.Contains(req.CardCodeOrCardName))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), q => carCode.Contains(q.a.CardCode))
@@ -137,7 +138,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
                 .Skip((req.page - 1) * req.limit)
                 .Take(req.limit);
             result.Count = query2.Count();
-           
+
             return result;
         }
 
@@ -255,14 +256,27 @@ namespace OpenAuth.App.Sap.BusinessPartner
         /// </summary>
         /// <param name="cardCode">客户编码</param>
         /// <param name="customerName">客户编码</param>
+        /// <param name="userName">帐户</param>
+        /// <param name="passWord">密码</param>
         /// <returns></returns>
-        public async Task<TableData> AppGetCustomerCode(string cardCode, string customerName)
+        public async Task<TableData> AppGetCustomerCode(string cardCode, string customerName, string userName, string passWord)
         {
             var result = new TableData();
+            string nsapId = string.Empty;
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //判断账户密码是否正确
+            if (!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(passWord))
+            {
+                var User = await UnitWork.Find<User>(u => u.Account == userName && u.Password == Encryption.Encrypt(passWord)).FirstOrDefaultAsync();
+                if (User == null)
+                {
+                    throw new CommonException("帐户或密码不正确", 90017);
+                }
+                nsapId = User.Id;
             }
             var obj = from a in UnitWork.Find<OCRD>(null)
                       join b in UnitWork.Find<OSLP>(null) on a.SlpCode equals b.SlpCode into ab
@@ -275,6 +289,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
             var rltList = await obj.Select(q => new
             {
                 q.a.CardCode,
+                nsapId
             }).FirstOrDefaultAsync();
             if (rltList == null)
             {
