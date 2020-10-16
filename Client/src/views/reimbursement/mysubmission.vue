@@ -156,7 +156,7 @@ export default {
       return [
         ...this.commonSearch,
         { type: 'search' },
-        { type: 'button', btnText: '新建', handleClick: this.addAccount },
+        { type: 'button', btnText: '新建', isSpecial: true, handleClick: this.addAccount },
         { type: 'button', btnText: '编辑', handleClick: this.getDetail, options: { type: 'edit', name: 'mySubmit' } },
         { type: 'button', btnText: '撤回', handleClick: this.recall }
       ]

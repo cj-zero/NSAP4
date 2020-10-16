@@ -151,7 +151,7 @@ export default {
         { placeholder: '填报起始时间', prop: 'startTime', type: 'date', width: 150 },
         { placeholder: '填报结束时间', prop: 'endTime', type: 'date', width: 150 },
         { type: 'search' },
-        { type: 'button', handleClick: this.create, btnText: '新建', options: { type: 'create' } },
+        { type: 'button', handleClick: this.create, btnText: '新建', isSpecial: true, options: { type: 'create' } },
         { type: 'button', handleClick: this.getDetail, btnText: '编辑', options: { type: 'edit' } },
         { type: 'button', handleClick: this.delete, btnText: '删除' },
       ],

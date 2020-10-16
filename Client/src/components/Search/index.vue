@@ -58,14 +58,14 @@
             v-model="listSearchQuery[item.prop]"
             :size="item.size || 'mini'"
           ></el-date-picker>
-          <!-- <span class="filter-item" v-if="item.showText">至</span> -->
         </div>
       </template>
       <!-- 查询按钮 -->
       <template v-else-if="item.type === 'search'">
         <el-button
           :key="index"
-          class="filter-item customer-btn-class"
+          class="filter-item"
+          :class="{ 'customer-btn-class': item.isSpecial }"
           @click="onSearch(item)"
           icon="el-icon-search"
           :size="item.size || 'mini'">
@@ -76,7 +76,8 @@
         <el-button
           v-if="item.isShow === undefined ? true : item.isShow"
           :key="index"
-          class="filter-item customer-btn-class"
+          class="filter-item"
+          :class="{ 'customer-btn-class': item.isSpecial }"
           @click="item.handleClick({ listSearchQuery, ...(item.options || {}) })"
           :icon="item.icon || ''"
           :size="item.size || 'mini'">

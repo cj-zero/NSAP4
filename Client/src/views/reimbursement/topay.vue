@@ -155,7 +155,7 @@ export default {
       return [
         ...this.commonSearch,
         { type: 'search' },
-        { type: 'button', handleClick: this.getDetail, btnText: '支付', options:  { type: 'toPay' } }
+        { type: 'button', handleClick: this.getDetail, btnText: '支付', isSpecial: true, options:  { type: 'toPay' } }
       ]
     }, // 搜索配置
     btnList () {
