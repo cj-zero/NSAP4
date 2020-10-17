@@ -265,6 +265,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
         {
             var result = new TableData();
             string nsapId = string.Empty;
+            int clearUserId = 0;
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
@@ -290,8 +291,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
 
             var rltList = await obj.Select(q => new
             {
-                q.a.CardCode,
-                nsapId
+                q.a.CardCode
             }).FirstOrDefaultAsync();
             if (rltList == null)
             {
@@ -311,13 +311,21 @@ namespace OpenAuth.App.Sap.BusinessPartner
             }
             else
             {
+                clearUserId = (int)userMap.AppUserId;
                 await UnitWork.UpdateAsync<AppUserMap>(s => s.UserID == nsapId, o => new AppUserMap
                 {
-                    AppUserId = appUserId
+                    AppUserId = appUserId,
+                    AppUserRole = 1
                 });
             }
             await UnitWork.SaveAsync();
-            result.Data = rltList;
+            var data = new
+            {
+                rltList.CardCode,
+                nsapId,
+                clearUserId
+            };
+            result.Data = data;
             return result;
         }
     }
