@@ -102,7 +102,7 @@ namespace OpenAuth.WebApi.Controllers.Sap
         /// <param name="passWord">密码</param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> AppGetCustomerCode(string cardCode, string custName, string userName, string passWord)
+        public async Task<TableData> AppGetCustomerCode(string cardCode, string custName, string userName, string passWord,int appUserId)
         {
             var result = new TableData();
             try
@@ -112,6 +112,7 @@ namespace OpenAuth.WebApi.Controllers.Sap
                 parameters.Add("custName", custName);
                 parameters.Add("userName", userName);
                 parameters.Add("passWord", passWord);
+                parameters.Add("appUserId", appUserId);
                 var r = await _httpClienService.Get(parameters, "api/user/UserManage/AppGetCustomerCode");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _businessPartnerApp.AppGetCustomerCode(cardCode, custName);

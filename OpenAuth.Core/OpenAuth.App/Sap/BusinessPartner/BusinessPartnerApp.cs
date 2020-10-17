@@ -21,6 +21,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
 
         public BusinessPartnerApp(IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
         {
+
         }
 
         public async Task<TableData> Load(QueryBusinessPartnerListReq req)
@@ -258,8 +259,9 @@ namespace OpenAuth.App.Sap.BusinessPartner
         /// <param name="customerName">客户编码</param>
         /// <param name="userName">帐户</param>
         /// <param name="passWord">密码</param>
+        /// <param name="appUserId">密码</param>
         /// <returns></returns>
-        public async Task<TableData> AppGetCustomerCode(string cardCode, string customerName, string userName, string passWord)
+        public async Task<TableData> AppGetCustomerCode(string cardCode, string customerName, string userName, string passWord, int appUserId)
         {
             var result = new TableData();
             string nsapId = string.Empty;
@@ -295,6 +297,26 @@ namespace OpenAuth.App.Sap.BusinessPartner
             {
                 throw new CommonException("当前客户不存在", 90016);
             }
+            //添加app与erp绑定关系
+            var userMap = await UnitWork.Find<AppUserMap>(a => a.UserID == nsapId).FirstOrDefaultAsync();
+            if (userMap == null)
+            {
+                var map = new AppUserMap
+                {
+                    UserID = nsapId,
+                    AppUserId = appUserId,
+                    AppUserRole = 1
+                };
+                await UnitWork.AddAsync(map);
+            }
+            else
+            {
+                await UnitWork.UpdateAsync<AppUserMap>(s => s.UserID == nsapId, o => new AppUserMap
+                {
+                    AppUserId = appUserId
+                });
+            }
+            await UnitWork.SaveAsync();
             result.Data = rltList;
             return result;
         }
