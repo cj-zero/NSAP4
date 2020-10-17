@@ -46,7 +46,6 @@ router.beforeEach((to, from, next) => {
       })
     } else { // 普通登录方式
       if (getToken()) {
-        store.dispatch('GetRoles')
         if (to.path === '/login') { // 登录后login自动跳转
           next({ path: '/' })
           // initSignalR(getToken())
@@ -57,6 +56,7 @@ router.beforeEach((to, from, next) => {
           // initSignalR(getToken())
           return
         }
+        store.dispatch('GetRoles')
         store.dispatch('GetInfo').then(() => { // 拉取用户信息
           store.dispatch('GetModulesTree').then(modules => { // 获取用户可访问的模块
             store.dispatch('GenerateRoutes', { modules }).then(() => { // 根据权限生成可访问的路由表
