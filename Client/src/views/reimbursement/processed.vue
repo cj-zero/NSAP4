@@ -156,7 +156,8 @@ export default {
     searchConfig () {
       return [
         ...this.commonSearch,
-        { type: 'search' }
+        { type: 'search' },
+        { type: 'button', btnText: '打印', handleClick: this.print }
       ]
     } // 搜索配置
   },

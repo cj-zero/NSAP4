@@ -647,6 +647,7 @@ export default {
     },
     onChangeForm (val) {
       Object.assign(this.listQuery, val)
+      console.log(this.listQuery, val, 'val')
       // this.listQuery.page = 1
     },
     onAdvanced () {
@@ -824,6 +825,7 @@ export default {
       this.list = resultArr
     },
     getList() {
+      console.log(this.listQuery, 'getList before')
       this.listLoading = true;
       callservesure.rightList(this.listQuery).then(response => {
         let result = response.data.data;

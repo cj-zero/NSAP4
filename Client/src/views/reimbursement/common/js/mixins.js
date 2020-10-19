@@ -84,6 +84,16 @@ export let tableMixin = {
     onRowClick (row) {
       this.currentRow = row
     },
+    print () {
+      if (!this.currentRow) {
+        return this.$message({
+          type: 'warning',
+          message: '请先选择报销单号'
+        })
+      }
+      // console.log([printOrder, 'printOrder'])
+      window.open(`${process.env.VUE_APP_BASE_API}/serve/Reimburse/Print?ReimburseInfoId=${this.currentRow.id}&X-Token=${this.tokenValue}`)
+    },
     _getList () {
       this.tableLoading = true
       getList({

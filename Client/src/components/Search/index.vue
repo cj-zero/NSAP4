@@ -121,11 +121,12 @@ export default {
       handler (val) {
         this.listSearchQuery = deepClone(val)
       },
-      deep: true
+      // deep: true
     },
     listSearchQuery: {
       deep: true,
       handler (val) {
+        console.log(val, 'val')
         this.$emit('changeForm', val)
       }
     }

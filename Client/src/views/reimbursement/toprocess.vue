@@ -155,7 +155,8 @@ export default {
       return [
         ...this.commonSearch,
         { type: 'search' },
-        { type: 'button', btnText: '审批', isSpecial: true, handleClick: this.getDetail, options: { type: 'approve' } }
+        { type: 'button', btnText: '审批', isSpecial: true, handleClick: this.getDetail, options: { type: 'approve' } },
+        { type: 'button', btnText: '打印', handleClick: this.print }
       ]
     }, // 搜索配置
     btnList () {

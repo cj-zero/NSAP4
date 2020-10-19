@@ -66,7 +66,7 @@ export default {
             left: 'center',
             bottom: 0,
             tooltip: {
-                show: true
+              show: true
             }
           },
           tooltip: {

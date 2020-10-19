@@ -16,7 +16,7 @@
         <div class="content-wrapper">
           <el-table 
             ref="table"
-            :data="tableData" 
+            :data="tableData"
             v-loading="tableLoading" 
             size="mini"
             border
@@ -73,7 +73,7 @@
           />
         </div>
       </div>
-    </div>
+    </div>    
     <my-dialog
       ref="myDialog"
       :center="true"
@@ -158,7 +158,8 @@ export default {
         { type: 'search' },
         { type: 'button', btnText: '新建', isSpecial: true, handleClick: this.addAccount },
         { type: 'button', btnText: '编辑', handleClick: this.getDetail, options: { type: 'edit', name: 'mySubmit' } },
-        { type: 'button', btnText: '撤回', handleClick: this.recall }
+        { type: 'button', btnText: '撤回', handleClick: this.recall },
+        { type: 'button', btnText: '打印', handleClick: this.print }
       ]
     }, // 搜索配置
     btnList () {
