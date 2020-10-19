@@ -297,26 +297,49 @@ namespace OpenAuth.App.Sap.BusinessPartner
             {
                 throw new CommonException("当前客户不存在", 90016);
             }
-            //添加app与erp绑定关系
-            var userMap = await UnitWork.Find<AppUserMap>(a => a.UserID == nsapId).FirstOrDefaultAsync();
-            if (userMap == null)
+            //判断若绑定的不是新威尔电子有限公司 解除绑定关系
+            if (!"C00550".Equals(rltList.CardCode, StringComparison.OrdinalIgnoreCase))
             {
-                var map = new AppUserMap
+                var map = await UnitWork.Find<AppUserMap>(a => a.AppUserId == appUserId).FirstOrDefaultAsync();
+                if (map != null)
                 {
-                    UserID = nsapId,
-                    AppUserId = appUserId,
-                    AppUserRole = 1
-                };
-                await UnitWork.AddAsync(map);
+                    //判断技术员和管理员角色不允许修改绑定关系
+                    if (map.AppUserRole > 1)
+                    {
+                        throw new CommonException("当前帐号无法绑定", 90019);
+                    }
+                    clearUserId = appUserId;
+                    await UnitWork.DeleteAsync(map);
+                }
             }
             else
             {
-                clearUserId = (int)userMap.AppUserId;
-                await UnitWork.UpdateAsync<AppUserMap>(s => s.UserID == nsapId, o => new AppUserMap
+                //添加app与erp绑定关系
+                var userMap = await UnitWork.Find<AppUserMap>(a => a.UserID == nsapId).FirstOrDefaultAsync();
+                if (userMap == null)
                 {
-                    AppUserId = appUserId,
-                    AppUserRole = 1
-                });
+                    var map = new AppUserMap
+                    {
+                        UserID = nsapId,
+                        AppUserId = appUserId,
+                        AppUserRole = 1
+                    };
+                    await UnitWork.AddAsync(map);
+                }
+                else
+                {
+                    //判断技术员和管理员角色不允许修改绑定关系
+                    if (userMap.AppUserRole > 1)
+                    {
+                        throw new CommonException("当前Erp帐号不可绑定", 90018);
+                    }
+                    clearUserId = (int)userMap.AppUserId;
+                    await UnitWork.UpdateAsync<AppUserMap>(s => s.UserID == nsapId, o => new AppUserMap
+                    {
+                        AppUserId = appUserId,
+                        AppUserRole = 1
+                    });
+                }
             }
             await UnitWork.SaveAsync();
             var data = new
