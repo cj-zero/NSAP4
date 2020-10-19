@@ -311,6 +311,25 @@ const SYS_OtherExpenses = 'SYS_OtherExpenses' // 其它费用
 
 export let categoryMixin = {
   data () {
+    let validateMoney = (rule, value, callback) => {
+      value = Number(value)
+      if (value === '' || isNaN(value) || typeof value !== 'number' || value <= 0) {
+        callback(new Error())
+      } else {
+        callback();
+      }
+    }
+    let validateInvoiceNumber = (rule, value, callback) => { // 校验发票号码8位数字
+      console.log('validaInvo', /^[\d|a-z|A-Z]{8,11}$/.test(value), value)
+      if (/^[\d|a-z|A-Z]{8,11}$/.test(value)) {
+        callback()
+      } else {
+        // console.error('发票号码错误')
+        console.log(this.$message.error)
+        this.$message.error('8-11位字母或数字')
+        callback(new Error())
+      }
+    }
     return {
       iconList: [ // 操作配置
         { icon: 'el-icon-document-add', handleClick: this.addAndCopy, operationType: 'add' }, 
