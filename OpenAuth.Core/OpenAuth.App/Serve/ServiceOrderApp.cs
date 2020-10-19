@@ -29,6 +29,7 @@ using NPOI.SS.Formula.Functions;
 using Infrastructure.Test;
 using NetOffice.Extensions.Conversion;
 using OpenAuth.App.Serve.Response;
+using RazorEngine.Compilation.ImpromptuInterface.InvokeExt;
 
 namespace OpenAuth.App
 {
@@ -1121,7 +1122,7 @@ namespace OpenAuth.App
                 query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id));
             }
             var resultlist = new List<ServerOrderStatListResp>();
-            var list1 = await query.GroupBy(g => new { g.SupervisorId, g.Supervisor }).Select(q => new ServiceOrderReportResp
+            var list1 = await query.Where(g => !string.IsNullOrWhiteSpace(g.Supervisor)).GroupBy(g => new { g.SupervisorId, g.Supervisor }).Select(q => new ServiceOrderReportResp
             {
                 StatId = q.Key.SupervisorId,
                 StatName = q.Key.Supervisor,
@@ -1129,7 +1130,7 @@ namespace OpenAuth.App
             }).Where(w => w.ServiceCnt > 10).OrderByDescending(s => s.ServiceCnt).Skip(0).Take(20).ToListAsync();
             resultlist.Add(new ServerOrderStatListResp { StatType = "Supervisor", StatList = list1 });
 
-            var list2 = await query.GroupBy(g => new { g.SalesManId, g.SalesMan }).Select(q => new ServiceOrderReportResp
+            var list2 = await query.Where(g => !string.IsNullOrWhiteSpace(g.SalesMan)).GroupBy(g => new { g.SalesManId, g.SalesMan }).Select(q => new ServiceOrderReportResp
             {
                 StatId = q.Key.SalesManId,
                 StatName = q.Key.SalesMan,
@@ -1137,15 +1138,21 @@ namespace OpenAuth.App
             }).OrderByDescending(s => s.ServiceCnt).Skip(0).Take(20).ToListAsync();
             resultlist.Add(new ServerOrderStatListResp { StatType = "SalesMan", StatList = list2 });
 
-            var list3 = await query.GroupBy(g => new { g.ProblemTypeId, g.ProblemTypeName }).Select(q => new ServiceOrderReportResp
+            var problemTypes = await query.Select(s=>s.ServiceWorkOrders.Select(s=>s.ProblemType).ToList()).ToListAsync();
+            var l3 = new List<ProblemType>();
+            foreach (var problemType in problemTypes)
             {
-                StatId = q.Key.ProblemTypeId,
-                StatName = q.Key.ProblemTypeName,
+                l3.AddRange(problemType);
+            }
+            var list3 = l3.Where(g=>g != null).GroupBy(g => new { g.Id, g.Name }).Select(q => new ServiceOrderReportResp
+            {
+                StatId = q.Key.Id,
+                StatName = q.Key.Name,
                 ServiceCnt = q.Count()
-            }).OrderByDescending(s => s.ServiceCnt).Skip(0).Take(20).ToListAsync();
+            }).OrderByDescending(s => s.ServiceCnt).Skip(0).Take(20).ToList();
             resultlist.Add(new ServerOrderStatListResp { StatType = "ProblemType", StatList = list3 });
 
-            var list4 = await query.GroupBy(g => new { g.RecepUserId, g.RecepUserName }).Select(q => new ServiceOrderReportResp
+            var list4 = await query.Where(g=> !string.IsNullOrWhiteSpace(g.RecepUserName)).GroupBy(g => new { g.RecepUserId, g.RecepUserName }).Select(q => new ServiceOrderReportResp
             {
                 StatId = q.Key.RecepUserId,
                 StatName = q.Key.RecepUserName,
