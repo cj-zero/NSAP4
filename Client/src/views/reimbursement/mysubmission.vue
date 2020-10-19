@@ -125,6 +125,7 @@
 </template>
 
 <script>
+// import CommonTable from '@/components/CommonTable'
 import TabList from '@/components/TabList'
 import Search from '@/components/Search'
 import Sticky from '@/components/Sticky'

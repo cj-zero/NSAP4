@@ -12,14 +12,8 @@ export let accommodationConfig = [ // 住房配置
 export let customerColumns = [ // 用户信息表单配置
   { type: 'radio', prop: 'id', width: '50px' },
   { label: '服务Id', prop: 'u_SAP_ID', width: '70px' },
-  // { label: '报销人', prop: 'userName' },
-  // { label: '客户代码', prop: 'terminalCustomerId' },
   { label: '客户名称', prop: 'terminalCustomer', width: '180px' },
-  { label: '呼叫主题', prop: 'fromTheme', width: '300px' },
-  // { label: '出发地点', prop: 'becity' },
-  // { label: '到达地点', prop: 'destination' },
-  // { label: '出发日期', prop: 'businessTripDate' },
-  // { label: '结束日期', prop: 'endDate' },
+  { label: '呼叫主题', prop: 'fromTheme', width: '300px' }
 ]
 
 export let costColumns = [ // 费用列表配置 

@@ -673,7 +673,7 @@
       ref="reportDialog"
       :mAddToBody="true" 
       :appendToBody="true"
-      @closed="resetReport">
+      :onClosed="resetReport">
       <Report :data="reportData" ref="report"/>
     </my-dialog>
     <!-- 确认审批弹窗 -->
@@ -707,7 +707,6 @@ import { toThousands } from '@/utils/format'
 import { findIndex } from '@/utils/process'
 import { deepClone } from '@/utils'
 import { travelRules, trafficRules, accRules, otherRules } from '../js/customerRules'
-// import { EXPENSE_CATEGORY, RESPONSIBILITY_TYPE, RELATION_TYPE } from '../js/type'
 import { customerColumns, costColumns } from '../js/config'
 import { noop } from '@/utils/declaration'
 import { categoryMixin, reportMixin, attachmentMixin } from '../js/mixins'

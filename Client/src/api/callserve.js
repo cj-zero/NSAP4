@@ -8,7 +8,7 @@ export function getPartner(params, _this, type) {
     params,
     cancelToken: new request.cancelToken(function executor(c) {
       if (type) {
-        _this.cancelBusinessRequestFn = c
+        _this.cancelBusinessRequestFn = c // 用于取消上一次未响应的请求,已经响应的请求无法取消
       }
     })
   })

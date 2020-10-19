@@ -311,25 +311,6 @@ const SYS_OtherExpenses = 'SYS_OtherExpenses' // 其它费用
 
 export let categoryMixin = {
   data () {
-    let validateMoney = (rule, value, callback) => {
-      value = Number(value)
-      if (value === '' || isNaN(value) || typeof value !== 'number' || value <= 0) {
-        callback(new Error())
-      } else {
-        callback();
-      }
-    }
-    let validateInvoiceNumber = (rule, value, callback) => { // 校验发票号码8位数字
-      console.log('validaInvo', /^[\d|a-z|A-Z]{8,11}$/.test(value), value)
-      if (/^[\d|a-z|A-Z]{8,11}$/.test(value)) {
-        callback()
-      } else {
-        // console.error('发票号码错误')
-        console.log(this.$message.error)
-        this.$message.error('8-11位字母或数字')
-        callback(new Error())
-      }
-    }
     return {
       iconList: [ // 操作配置
         { icon: 'el-icon-document-add', handleClick: this.addAndCopy, operationType: 'add' }, 
@@ -685,7 +666,6 @@ export const attachmentMixin = {
           item.isAdd = true
           if (isImport) { // 如果是通过我的费用单引入的模板，则需要删除对应的ID,避免新建时出错
             item.reimburseId = 0
-            // item.id = 0
           }
           return item
         })
@@ -720,7 +700,6 @@ export const attachmentMixin = {
         this._setAttachmentId(otherAttachment, isImport)
         this._setAttachmentId(invoiceFileList, isImport)
         this._setAttachmentId(otherFileList, isImport)
-        // console.log(invoiceAttachment, otherAttachment, invoiceFileList, otherFileList, 'setID')
         item.reimburseAttachments = [...invoiceAttachment, ...otherAttachment, ...invoiceFileList, ...otherFileList]
       })
     },

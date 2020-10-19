@@ -1405,7 +1405,6 @@ export default {
         this.cancelBusinessRequestFn('用户取消请求')
       }
       this.parentLoad = true;
-      console.log(this.parentLoad, 'parentLoad')
       return getPartner(listQuery, this, type)
         .then((res) => {
           let list = res.data
@@ -1423,7 +1422,6 @@ export default {
           this.parentLoad = false;
         })
         .catch((err) => {
-          console.log(err.message, 'errorMessage')
           if (err.message !== '用户取消请求') {
             this.parentLoad = false
           }          
