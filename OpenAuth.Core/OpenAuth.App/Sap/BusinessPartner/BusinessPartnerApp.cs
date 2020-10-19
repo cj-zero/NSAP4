@@ -303,6 +303,11 @@ namespace OpenAuth.App.Sap.BusinessPartner
                 var map = await UnitWork.Find<AppUserMap>(a => a.AppUserId == appUserId).FirstOrDefaultAsync();
                 if (map != null)
                 {
+                    //判断技术员和管理员角色不允许修改绑定关系
+                    if (map.AppUserRole > 1)
+                    {
+                        throw new CommonException("当前帐号无法绑定", 90019);
+                    }
                     clearUserId = appUserId;
                     await UnitWork.DeleteAsync(map);
                 }
