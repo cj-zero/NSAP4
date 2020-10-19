@@ -76,14 +76,15 @@ namespace NSAP.App.WebApi.Controllers
         /// <param name="custName">客户名称</param>
         /// <param name="userName">帐户</param>
         /// <param name="passWord">密码</param>
+        /// <param name="appUserId">App用户Id</param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> AppGetCustomerCode(string cardCode, string custName, string userName, string passWord)
+        public async Task<TableData> AppGetCustomerCode(string cardCode, string custName, string userName, string passWord, int appUserId)
         {
             var result = new TableData();
             try
             {
-                result = await _businessPartnerApp.AppGetCustomerCode(cardCode, custName, userName, passWord);
+                result = await _businessPartnerApp.AppGetCustomerCode(cardCode, custName, userName, passWord, appUserId);
             }
             catch (Exception ex)
             {

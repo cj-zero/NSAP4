@@ -21,6 +21,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
 
         public BusinessPartnerApp(IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
         {
+
         }
 
         public async Task<TableData> Load(QueryBusinessPartnerListReq req)
@@ -258,11 +259,13 @@ namespace OpenAuth.App.Sap.BusinessPartner
         /// <param name="customerName">客户编码</param>
         /// <param name="userName">帐户</param>
         /// <param name="passWord">密码</param>
+        /// <param name="appUserId">密码</param>
         /// <returns></returns>
-        public async Task<TableData> AppGetCustomerCode(string cardCode, string customerName, string userName, string passWord)
+        public async Task<TableData> AppGetCustomerCode(string cardCode, string customerName, string userName, string passWord, int appUserId)
         {
             var result = new TableData();
             string nsapId = string.Empty;
+            int clearUserId = 0;
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
@@ -288,14 +291,41 @@ namespace OpenAuth.App.Sap.BusinessPartner
 
             var rltList = await obj.Select(q => new
             {
-                q.a.CardCode,
-                nsapId
+                q.a.CardCode
             }).FirstOrDefaultAsync();
             if (rltList == null)
             {
                 throw new CommonException("当前客户不存在", 90016);
             }
-            result.Data = rltList;
+            //添加app与erp绑定关系
+            var userMap = await UnitWork.Find<AppUserMap>(a => a.UserID == nsapId).FirstOrDefaultAsync();
+            if (userMap == null)
+            {
+                var map = new AppUserMap
+                {
+                    UserID = nsapId,
+                    AppUserId = appUserId,
+                    AppUserRole = 1
+                };
+                await UnitWork.AddAsync(map);
+            }
+            else
+            {
+                clearUserId = (int)userMap.AppUserId;
+                await UnitWork.UpdateAsync<AppUserMap>(s => s.UserID == nsapId, o => new AppUserMap
+                {
+                    AppUserId = appUserId,
+                    AppUserRole = 1
+                });
+            }
+            await UnitWork.SaveAsync();
+            var data = new
+            {
+                rltList.CardCode,
+                nsapId,
+                clearUserId
+            };
+            result.Data = data;
             return result;
         }
     }
