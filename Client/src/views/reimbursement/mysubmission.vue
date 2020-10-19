@@ -204,9 +204,6 @@ export default {
     onChangeForm (val) {
       Object.assign(this.listQuery, val)
     },
-    // openTree (row) { // 打开详情
-    //   console.log(row, 'row')
-    // },
     addAccount () { // 添加
       getOrder().then(res => {
         let data = res.data
@@ -234,10 +231,10 @@ export default {
           this.title = 'create'
           this.$refs.myDialog.open()
         } else {
-          this.$message.error('用户列表为空')
+          this.$message.error('暂无可报销服务单号，请凭借已完成服务单号进行报销')
         }
       }).catch(() => {
-        this.$message.error('获取失败')
+        this.$message.error('获取服务单列表失败')
       })
     },
     recall () { // 撤回操作

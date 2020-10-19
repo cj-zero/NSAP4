@@ -24,7 +24,7 @@ export let tableMixin = {
         paid: '已支付'
       },
       columns: [ // 表格配置
-        { label: '报销单号', prop: 'mainId', type: 'link', width: 70, handleJump: this.getDetail },
+        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleJump: this.getDetail },
         { label: '填报日期', prop: 'fillTime', width: 85 },
         { label: '报销部门', prop: 'orgName', width: 70 },
         { label: '报销人', prop: 'userName', width: 70 },
@@ -38,7 +38,7 @@ export let tableMixin = {
         { label: '结束日期', prop: 'endDate', width: 85 },
         { label: '总天数', prop: 'businessTripDays', width: 60 },
         { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleJump: this.openTree },
-        { label: '呼叫主题', prop: 'theme', width: 100 },
+        { label: '呼叫主题', prop: 'fromTheme', width: 100 },
         { label: '项目名称', prop: 'projectName', width: 80 },
         { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
         { label: '责任承担', prop: 'responsibility', width: 75 },
@@ -117,6 +117,7 @@ export let tableMixin = {
         let { reimburseResp } = item
         delete item.reimburseResp
         item = Object.assign({}, item, { ...reimburseResp })
+        item.mainIdText = item.mainId || ''
         item.projectName = this.projectNameMap[item.projectName]
         item.remburseStatusText = this.reimburseStatusMap[item.remburseStatus]
         item.responsibility = this.responsibilityMap[item.responsibility]

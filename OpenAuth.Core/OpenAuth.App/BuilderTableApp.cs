@@ -443,7 +443,7 @@ namespace OpenAuth.App
             ,{"double", typeof(double)}
             ,{"DateTime", typeof(DateTime)}
         };
-        string? GetDefault(string type)
+        string GetDefault(string type)
         {
             Type t = PrimitiveTypes[type];
             if (t == null)
