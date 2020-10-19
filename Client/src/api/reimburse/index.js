@@ -80,3 +80,11 @@ export function isSole (data) {
     data
   })
 }
+
+export function printOrder (params) { // 打印报销单
+  return request({
+    url: '/serve/Reimburse/Print',
+    method: 'get',
+    params
+  })
+}

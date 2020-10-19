@@ -9,7 +9,6 @@
     fit
     row-key="id"
     height="100%"
-    :max-height="maxHeight"
     style="width: 100%;"
     @current-change="onCurrentChange"
     @row-click="onRowClick"

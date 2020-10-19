@@ -31,7 +31,7 @@
         size="mini" 
         :show-message="false"
         class="form-wrapper"
-        :class="{ other: currentType === 3, acc: currentType === 2 }"
+        :class="{ other: currentType === 3, acc: currentType === 2, uneditable: this.operation === 'view' }"
         :disabled="isDisabled"
       >
         <el-table 
@@ -40,7 +40,6 @@
           max-height="300px"
           @cell-click="onCellClick"
           @row-click="onRowClick"
-          :resizable="false"
           v-if="currentType"
         > 
           <template v-for="item in config">
@@ -51,6 +50,7 @@
               :prop="item.prop"
               :fixed="item.fixed"
               :width="item.width"
+              :resizable="false"
             >
               <template slot-scope="scope">
                 <template v-if="item.type === 'order'">
@@ -66,6 +66,7 @@
                         v-model="scope.row[item.prop]" 
                         :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)" 
                         :readonly="item.readonly || false"
+                        :placeholder="item.placeholder"
                         @focus="onAreaFocus({ prop: item.prop, index: scope.$index })">
                         <i 
                           v-if="item.prop === 'invoiceNumber'"
@@ -99,6 +100,8 @@
                       @change="onChange"
                       @input.native="onInput"
                       @focus="onFocus(item.prop)"
+                      :placeholder="item.placeholder"
+                      :class="{ 'money-class': item.prop === 'money' || item.prop === 'totalMoney' }"
                     ></el-input>
                   </el-form-item>
                 </template>
@@ -392,11 +395,9 @@ export default {
       this._setRowData (tag)
       this.changeTable(tag.type)
       this.toggleSelect()
-      console.log(this.formData.list[0], 'formData')
     },
     _setRowData (tag) { // 根据选择的标签设置响应的字段
       if (tag.type == 1) { // 交通类型
-        console.log('traffic')
         this.formData.list[0].transport = tag.value
       }
       if (tag.type == 3) { // 其他类别
@@ -425,10 +426,8 @@ export default {
       console.log(this.currentProp, 'prop change')
       if (this.currentProp === 'transport') { // 如果改变的是交通方式，则对feeType进行相应的赋值
         this.formData.list[0].feeType = this.transportationList[value - 1].label
-        console.log(this.formData.list[0].feeType, 'this.formData.list[0].feeType')
       } else if (this.currentProp === 'expenseCategory') {
         this.formData.list[0].feeType = this.otherExpensesList[value - 1].label
-        console.log(this.formData.list[0].feeType, 'this.formData.list[0].feeType')
       } else { // 住房的 总金额和住宿关联
          if (!this.isValidNumber(value)) {
           return
@@ -451,7 +450,7 @@ export default {
     onInput (e) {
       let val = e.target.value
       let { invoiceFileList, invoiceAttachment, invoiceNumber, maxMoney } = this.formData.list[0]
-      console.log(invoiceFileList, invoiceAttachment, invoiceNumber, this.currentProp, 'input')
+      // console.log(invoiceFileList, invoiceAttachment, invoiceNumber, this.currentProp, 'input')
       if (
         (
           (invoiceFileList.length && !this.fileid.includes(invoiceFileList[0].id)) || // 编辑的时候，有回显的附件，并且没有删除
@@ -507,7 +506,6 @@ export default {
       this.currentProp = property
     },
     getImgList (val, { prop, index, fileId, uploadVm, operation }) {
-      console.log(index, 'getImgINDEX')
       let data = this.formData.list
       let currentRow = data[index]
       let attachmentConfig = {
@@ -521,7 +519,7 @@ export default {
       if (fileId && prop === 'invoiceAttachment' && !operation) { // 图片上传成功会返回当前的pictureId, 并且只识别发票附件 
         this.identifyLoading = this.$loading({
           lock: true,
-          text: 'Loading'
+          text: '发票识别中'
         })
         this._identifyInvoice({ // 先进行识别再进行赋值
           fileId, 
@@ -534,7 +532,6 @@ export default {
           this.identifyLoading.close()
         })
       } else {
-        this.identifyLoading.close()
         this._setAttachmentList(attachmentConfig)
       }
     },
@@ -558,7 +555,6 @@ export default {
     resetInfo (isClose = true, type = '') {
       let prevData = this.formData.list[0]
       let { money, totalMoney, remark, maxMoney, from, to } = prevData
-      console.log(typeof type, 'type', remark, money, totalMoney)
       this.$refs.form.clearValidate()
       this.$refs.form.resetFields()
       this.clearFile()
@@ -590,7 +586,6 @@ export default {
           ifToShow: false
         }]
       }
-      console.log(this.formData, 'change after')
       this.rules = ''
       this.config = ''
       this.currentProp = ''
@@ -610,7 +605,7 @@ export default {
       }
       this.mergeFileList(this.formData.list)
       let isValid = await this.$refs.form.validate()
-      console.log(isValid, this.ifInvoicementListInEdit(), 'VALIDA')
+      // console.log(isValid, this.ifInvoicementListInEdit(), 'VALIDA')
       if (isValid && this.ifInvoicementListInEdit()) {
         this.operation === 'create'
           ? this.formData.list[0].createTime = timeToFormat('yyyy-MM-dd HH:mm:ss')
@@ -633,7 +628,6 @@ export default {
         isAcc: this.currentType === ACC_TYPE,
         isValidInvoice: false
       })
-      // console.log(this.fileid, 'deleteFileList')
     }
   }
 }
@@ -651,18 +645,6 @@ export default {
     &.warning {
       color: rgba(255, 165, 0, 1);
     }
-  }
-  ::v-deep .el-input.is-disabled .el-input__inner {
-    background-color: #fff;
-    cursor: default;
-    color: #606266;
-    border-color: #DCDFE6;
-  }
-  ::v-deep .el-textarea.is-disabled .el-textarea__inner {
-    background-color: #fff;
-    cursor: default;
-    color: #606266;
-    border-color: #DCDFE6;
   }
   .select-list-wrapper {
     position: relative;
@@ -712,11 +694,30 @@ export default {
       }
     }
     .form-wrapper {
+      &.uneditable {
+        ::v-deep .el-input.is-disabled .el-input__inner {
+          background-color: #fff;
+          cursor: default;
+          color: #606266;
+          border-color: #DCDFE6;
+        }
+        ::v-deep .el-textarea.is-disabled .el-textarea__inner {
+          background-color: #fff;
+          cursor: default;
+          color: #606266;
+          border-color: #DCDFE6;
+        }
+      }
       &.acc {
         width: 916px;
       }
       &.other {
         width: 846px;
+      }
+      .money-class {
+        ::v-deep input {
+          text-align: right;
+        }
       }
       .area-wrapper {
         position: relative;
@@ -733,9 +734,9 @@ export default {
   ::v-deep .el-form-item__content {
     input::-webkit-outer-spin-button,
     input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        appearance: none; 
-        margin: 0; 
+      -webkit-appearance: none;
+      appearance: none; 
+      margin: 0; 
     }
     /* 火狐 */
     input{

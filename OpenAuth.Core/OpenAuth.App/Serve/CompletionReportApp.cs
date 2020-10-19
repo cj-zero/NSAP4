@@ -195,7 +195,8 @@ namespace OpenAuth.App
                 ProblemDescription = "故障描述：" + q.a.TroubleDescription + "；解决方案：" + q.a.ProcessDescription,
                 q.a.TroubleDescription,
                 q.a.ProcessDescription,
-                q.b.TerminalCustomerId
+                q.b.TerminalCustomerId,
+                q.a.ServiceMode
             }).FirstOrDefaultAsync();
             var thisworkdetail = query.MapTo<CompletionReportDetailsResp>();
             if (thisworkdetail.CurrentUserId != null)

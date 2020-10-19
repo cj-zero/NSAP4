@@ -8,9 +8,10 @@ const service = axios.create({
   baseURL: process.env.VUE_APP_BASE_API, // api的base_url
   timeout: 50000 ,// 请求超时时间
 })
-
+service.cancelToken = axios.CancelToken // 取消请求
 // request拦截器
 service.interceptors.request.use(config => {
+  // console.log(config, 'before request config')
   if (store.getters.token) {
     config.headers['X-Token'] = getToken() // 让每个请求携带自定义token 请根据实际情况自行修改
     // config.headers['Access-Control-Allow-Origin']='*'

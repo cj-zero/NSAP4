@@ -20,7 +20,6 @@
               size="mini"
               border
               fit
-              show-overflow-tooltip
               height="100%"
               style="width: 100%;"
               @row-click="onRowClick"
@@ -119,7 +118,7 @@
             ></zxform>
           </el-col>
           <el-col :span="6" class="lastWord">   
-            <zxchat :serveId='serveId' formName="查看"></zxchat>
+            <zxchat :serveId='serveId' formName="报销"></zxchat>
           </el-col>
         </el-row>
       </my-dialog>
@@ -156,7 +155,7 @@ export default {
       return [
         ...this.commonSearch,
         { type: 'search' },
-        { type: 'button', handleClick: this.getDetail, btnText: '支付', options:  { type: 'toPay' } }
+        { type: 'button', handleClick: this.getDetail, btnText: '支付', isSpecial: true, options:  { type: 'toPay' } }
       ]
     }, // 搜索配置
     btnList () {

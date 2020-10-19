@@ -20,7 +20,6 @@
               size="mini"
               border
               fit
-              show-overflow-tooltip
               height="100%"
               style="width: 100%;"
               @row-click="onRowClick"
@@ -118,7 +117,7 @@
             ></zxform>
           </el-col>
           <el-col :span="6" class="lastWord">   
-            <zxchat :serveId='serveId' formName="查看"></zxchat>
+            <zxchat :serveId='serveId' formName="报销"></zxchat>
           </el-col>
         </el-row>
       </my-dialog>

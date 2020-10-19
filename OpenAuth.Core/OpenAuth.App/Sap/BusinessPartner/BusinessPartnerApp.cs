@@ -21,6 +21,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
 
         public BusinessPartnerApp(IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
         {
+
         }
 
         public async Task<TableData> Load(QueryBusinessPartnerListReq req)
@@ -82,10 +83,11 @@ namespace OpenAuth.App.Sap.BusinessPartner
             if (!string.IsNullOrWhiteSpace(req.ManufSN))
             {
                 carCode = await UnitWork.Find<OINS>(null).Where(o => o.manufSN.Contains(req.ManufSN)).Select(o => o.customer).ToListAsync();
-                if (carCode.Count==0) {
-                    carCode = await UnitWork.Find<ServiceOins>(s => s.manufSN.Contains(req.ManufSN)).Select(s => s.customer).ToListAsync() ;
+                if (carCode.Count == 0)
+                {
+                    carCode = await UnitWork.Find<ServiceOins>(s => s.manufSN.Contains(req.ManufSN)).Select(s => s.customer).ToListAsync();
                 }
-            } 
+            }
 
             query = query.WhereIf(!string.IsNullOrWhiteSpace(req.CardCodeOrCardName), q => q.a.CardCode.Contains(req.CardCodeOrCardName) || q.a.CardName.Contains(req.CardCodeOrCardName))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), q => carCode.Contains(q.a.CardCode))
@@ -137,7 +139,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
                 .Skip((req.page - 1) * req.limit)
                 .Take(req.limit);
             result.Count = query2.Count();
-           
+
             return result;
         }
 
@@ -255,14 +257,29 @@ namespace OpenAuth.App.Sap.BusinessPartner
         /// </summary>
         /// <param name="cardCode">客户编码</param>
         /// <param name="customerName">客户编码</param>
+        /// <param name="userName">帐户</param>
+        /// <param name="passWord">密码</param>
+        /// <param name="appUserId">密码</param>
         /// <returns></returns>
-        public async Task<TableData> AppGetCustomerCode(string cardCode, string customerName)
+        public async Task<TableData> AppGetCustomerCode(string cardCode, string customerName, string userName, string passWord, int appUserId)
         {
             var result = new TableData();
+            string nsapId = string.Empty;
+            int clearUserId = 0;
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //判断账户密码是否正确
+            if (!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(passWord))
+            {
+                var User = await UnitWork.Find<User>(u => u.Account == userName && u.Password == Encryption.Encrypt(passWord)).FirstOrDefaultAsync();
+                if (User == null)
+                {
+                    throw new CommonException("帐户或密码不正确", 90017);
+                }
+                nsapId = User.Id;
             }
             var obj = from a in UnitWork.Find<OCRD>(null)
                       join b in UnitWork.Find<OSLP>(null) on a.SlpCode equals b.SlpCode into ab
@@ -274,13 +291,64 @@ namespace OpenAuth.App.Sap.BusinessPartner
 
             var rltList = await obj.Select(q => new
             {
-                q.a.CardCode,
+                q.a.CardCode
             }).FirstOrDefaultAsync();
             if (rltList == null)
             {
                 throw new CommonException("当前客户不存在", 90016);
             }
-            result.Data = rltList.CardCode;
+            //判断若绑定的不是新威尔电子有限公司 解除绑定关系
+            if (!"C00550".Equals(rltList.CardCode, StringComparison.OrdinalIgnoreCase))
+            {
+                var map = await UnitWork.Find<AppUserMap>(a => a.AppUserId == appUserId).FirstOrDefaultAsync();
+                if (map != null)
+                {
+                    //判断技术员和管理员角色不允许修改绑定关系
+                    if (map.AppUserRole > 1)
+                    {
+                        throw new CommonException("当前帐号无法绑定", 90019);
+                    }
+                    clearUserId = appUserId;
+                    await UnitWork.DeleteAsync(map);
+                }
+            }
+            else
+            {
+                //添加app与erp绑定关系
+                var userMap = await UnitWork.Find<AppUserMap>(a => a.UserID == nsapId).FirstOrDefaultAsync();
+                if (userMap == null)
+                {
+                    var map = new AppUserMap
+                    {
+                        UserID = nsapId,
+                        AppUserId = appUserId,
+                        AppUserRole = 1
+                    };
+                    await UnitWork.AddAsync(map);
+                }
+                else
+                {
+                    //判断技术员和管理员角色不允许修改绑定关系
+                    if (userMap.AppUserRole > 1)
+                    {
+                        throw new CommonException("当前Erp帐号不可绑定", 90018);
+                    }
+                    clearUserId = (int)userMap.AppUserId;
+                    await UnitWork.UpdateAsync<AppUserMap>(s => s.UserID == nsapId, o => new AppUserMap
+                    {
+                        AppUserId = appUserId,
+                        AppUserRole = 1
+                    });
+                }
+            }
+            await UnitWork.SaveAsync();
+            var data = new
+            {
+                rltList.CardCode,
+                nsapId,
+                clearUserId
+            };
+            result.Data = data;
             return result;
         }
     }

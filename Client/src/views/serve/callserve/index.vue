@@ -382,6 +382,7 @@ export default {
       return [
         { width: 140, placeholder: '问题类型', prop: 'QryProblemType', options: this.problemOptions, type: 'tree' },
         { width: 100, placeholder: '呼叫类型', prop: 'QryFromType', options: this.options_type, type: 'select' },
+        { width: 180, placeholder: '呼叫主题', prop: 'QryFromTheme' },
         { width: 140, placeholder: '联系电话', prop: 'ContactTel' },
         { width: 150, placeholder: '创建日期', prop: 'QryCreateTimeFrom', type: 'date', showText: true },
         { width: 150, placeholder: '结束日期', prop: 'QryCreateTimeTo', type: 'date' },
@@ -646,6 +647,7 @@ export default {
     },
     onChangeForm (val) {
       Object.assign(this.listQuery, val)
+      console.log(this.listQuery, val, 'val')
       // this.listQuery.page = 1
     },
     onAdvanced () {
@@ -823,6 +825,7 @@ export default {
       this.list = resultArr
     },
     getList() {
+      console.log(this.listQuery, 'getList before')
       this.listLoading = true;
       callservesure.rightList(this.listQuery).then(response => {
         let result = response.data.data;

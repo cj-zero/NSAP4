@@ -16,12 +16,11 @@
         <div class="content-wrapper">
           <el-table 
             ref="table"
-            :data="tableData" 
+            :data="tableData"
             v-loading="tableLoading" 
             size="mini"
             border
             fit
-            show-overflow-tooltip
             height="100%"
             style="width: 100%;"
             @row-click="onRowClick"
@@ -74,7 +73,7 @@
           />
         </div>
       </div>
-    </div>
+    </div>    
     <my-dialog
       ref="myDialog"
       :center="true"
@@ -118,7 +117,7 @@
           ></zxform>
         </el-col>
         <el-col :span="6" class="lastWord">   
-          <zxchat :serveId='serveId' formName="查看"></zxchat>
+          <zxchat :serveId='serveId' formName="报销"></zxchat>
         </el-col>
       </el-row>
     </my-dialog>
@@ -126,6 +125,7 @@
 </template>
 
 <script>
+// import CommonTable from '@/components/CommonTable'
 import TabList from '@/components/TabList'
 import Search from '@/components/Search'
 import Sticky from '@/components/Sticky'
@@ -157,9 +157,10 @@ export default {
       return [
         ...this.commonSearch,
         { type: 'search' },
-        { type: 'button', btnText: '新建', handleClick: this.addAccount },
+        { type: 'button', btnText: '新建', isSpecial: true, handleClick: this.addAccount },
         { type: 'button', btnText: '编辑', handleClick: this.getDetail, options: { type: 'edit', name: 'mySubmit' } },
-        { type: 'button', btnText: '撤回', handleClick: this.recall }
+        { type: 'button', btnText: '撤回', handleClick: this.recall },
+        { type: 'button', btnText: '打印', handleClick: this.print }
       ]
     }, // 搜索配置
     btnList () {
@@ -205,12 +206,8 @@ export default {
     onChangeForm (val) {
       Object.assign(this.listQuery, val)
     },
-    // openTree (row) { // 打开详情
-    //   console.log(row, 'row')
-    // },
     addAccount () { // 添加
       getOrder().then(res => {
-        console.log(res, 'res')
         let data = res.data
         if (data && data.length) {
           let { 
@@ -236,10 +233,10 @@ export default {
           this.title = 'create'
           this.$refs.myDialog.open()
         } else {
-          this.$message.error('用户列表为空')
+          this.$message.error('暂无可报销服务单号，请凭借已完成服务单号进行报销')
         }
       }).catch(() => {
-        this.$message.error('获取失败')
+        this.$message.error('获取服务单列表失败')
       })
     },
     recall () { // 撤回操作
@@ -301,14 +298,12 @@ export default {
         : this.edit()
     }, 
     saveAsDraft () { // 存为草稿
-      console.log(this.title, 'title')
       this.title === 'create' // 判断是新建的还是已经创建的
         ? this._addOrder(true)
         : this.edit(true)
     }, 
     edit (isDraft) {
       // 编辑
-      console.log('草稿')
       isDraft
         ? this.draftLoading = true
         : this.editLoading = true
@@ -345,7 +340,6 @@ export default {
       // this.$refs.order.resetInfo()
     }, // 重置
     closeDialog () {
-      console.log('close Dialog')
       this.$refs.order.resetInfo()
       this.$refs.myDialog.close()
     }

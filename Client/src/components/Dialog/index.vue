@@ -93,9 +93,7 @@ export default {
       this.dialogVisible = false
     }
   },
-  created () {
-    console.log('dialog created')
-  },
+  created () {},
   mounted () {
 
   },
@@ -103,9 +101,9 @@ export default {
 </script>
 <style lang='scss' scoped>
 .my-dialog-wrapper {
+  overflow: hidden;
   &::v-deep .el-dialog__body {
     padding: 10px !important;
   }
 }
-
 </style>
