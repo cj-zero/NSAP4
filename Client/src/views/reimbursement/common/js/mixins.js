@@ -24,7 +24,7 @@ export let tableMixin = {
         paid: '已支付'
       },
       columns: [ // 表格配置
-        { label: '报销单号', prop: 'mainId', type: 'link', width: 70, handleJump: this.getDetail },
+        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleJump: this.getDetail },
         { label: '填报日期', prop: 'fillTime', width: 85 },
         { label: '报销部门', prop: 'orgName', width: 70 },
         { label: '报销人', prop: 'userName', width: 70 },
@@ -117,6 +117,7 @@ export let tableMixin = {
         let { reimburseResp } = item
         delete item.reimburseResp
         item = Object.assign({}, item, { ...reimburseResp })
+        item.mainIdText = item.mainId || ''
         item.projectName = this.projectNameMap[item.projectName]
         item.remburseStatusText = this.reimburseStatusMap[item.remburseStatus]
         item.responsibility = this.responsibilityMap[item.responsibility]
