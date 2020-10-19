@@ -38,7 +38,7 @@ export let tableMixin = {
         { label: '结束日期', prop: 'endDate', width: 85 },
         { label: '总天数', prop: 'businessTripDays', width: 60 },
         { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleJump: this.openTree },
-        { label: '呼叫主题', prop: 'theme', width: 100 },
+        { label: '呼叫主题', prop: 'fromTheme', width: 100 },
         { label: '项目名称', prop: 'projectName', width: 80 },
         { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
         { label: '责任承担', prop: 'responsibility', width: 75 },
