@@ -208,6 +208,8 @@ namespace OpenAuth.App
             }
             #endregion
 
+            result.Count = ReimburseInfos.Count();
+
             var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
             var SelUserName = await UnitWork.Find<User>(null).Select(u => new { u.Id, u.Name }).ToListAsync();
             var Relevances = await UnitWork.Find<Relevance>(r => r.Key == "UserOrg").Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
@@ -218,22 +220,32 @@ namespace OpenAuth.App
             ServiceOrderIds = datas.Select(d => d.ServiceOrderId).ToList();
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => ServiceOrderIds.Contains((int)c.ServiceOrderId)).ToListAsync();
             var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ServiceOrderIds.Contains(s.Id)).ToListAsync();
-            result.Data = datas.Select(d => new
-            {
-                ReimburseResp = d,
-                FillTime = d.CreateTime.ToString("yyyy-MM-dd"),
-                OrgName = SelOrgName.Where(o => o.Id.Equals(Relevances.Where(r => r.FirstId.Equals(d.CreateUserId)).Select(r => r.SecondId).FirstOrDefault())).OrderBy(o => o.CascadeId).Select(o => o.Name).FirstOrDefault(),
-                UserName = SelUserName.Where(u => u.Id.Equals(d.CreateUserId)).Select(u => u.Name).FirstOrDefault(),
-                TerminalCustomerId = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.TerminalCustomerId).FirstOrDefault(),
-                TerminalCustomer = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.TerminalCustomer).FirstOrDefault(),
-                BusinessTripDate = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.BusinessTripDate).FirstOrDefault().ToDateTime().ToString("yyyy-MM-dd"),
-                EndDate = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.EndDate).FirstOrDefault().ToDateTime().ToString("yyyy-MM-dd"),
-                BusinessTripDays = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.BusinessTripDays).FirstOrDefault(),
-                FromTheme = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.FromTheme).FirstOrDefault(),
-                SalesMan = ServiceOrders.Where(s => s.Id == d.ServiceOrderId).Select(s => s.SalesMan).FirstOrDefault()
-            });
+            var ReimburseResps = from a in datas
+                                 join b in CompletionReports on a.ServiceOrderId equals b.ServiceOrderId
+                                 join c in ServiceOrders on a.ServiceOrderId equals c.Id 
+                                 join d in SelUserName on a.CreateUserId equals d.Id
+                                 join e in Relevances on a.CreateUserId equals e.FirstId
+                                 join f in SelOrgName on e.SecondId equals f.Id
+                                 select new { a,b, c, d,f};
 
-            result.Count = ReimburseInfos.Count();
+            ReimburseResps = ReimburseResps.OrderByDescending(r => r.f.CascadeId).ToList();
+            ReimburseResps =ReimburseResps.GroupBy(r => r.a.Id).Select(r => r.First()).ToList();
+
+            result.Data = ReimburseResps.Select(r => new
+            {
+                ReimburseResp = r.a,
+                fillTime = r.a.CreateTime.ToString("yyyy-MM-dd"),
+                r.b.TerminalCustomerId,
+                r.b.TerminalCustomer,
+                BusinessTripDate=r.b.BusinessTripDate.ToString("yyyy-MM-dd"),
+                EndDate =r.b.EndDate.ToString("yyyy-MM-dd"),
+                r.b.BusinessTripDays,
+                r.b.FromTheme,
+                r.c.SalesMan,
+                UserName = r.d.Name,
+                OrgName = r.f.Name
+            }).ToList();
+
             return result;
         }
 
@@ -276,6 +288,8 @@ namespace OpenAuth.App
             }
             #endregion
 
+            result.Count = ReimburseInfos.Count();
+
             var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
             var SelUserName = await UnitWork.Find<User>(null).Select(u => new { u.Id, u.Name }).ToListAsync();
             var Relevances = await UnitWork.Find<Relevance>(r => r.Key == "UserOrg").Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
@@ -287,22 +301,34 @@ namespace OpenAuth.App
             var ServiceOrderIds = datas.Select(d => d.ServiceOrderId).ToList();
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => ServiceOrderIds.Contains((int)c.ServiceOrderId)).ToListAsync();
             var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ServiceOrderIds.Contains(s.Id)).ToListAsync();
-            result.Data = datas.Select(d => new
-            {
-                ReimburseResp = d,
-                RejectRemark = rohs.Where(r => r.ReimburseInfoId == d.Id).Select(r => r.Remark).FirstOrDefault(),
-                OrgName = SelOrgName.Where(o => o.Id.Equals(Relevances.Where(r => r.FirstId.Equals(d.CreateUserId)).Select(r => r.SecondId).FirstOrDefault())).OrderBy(o => o.CascadeId).Select(o => o.Name).FirstOrDefault(),
-                UserName = SelUserName.Where(u => u.Id.Equals(d.CreateUserId)).Select(u => u.Name).FirstOrDefault(),
-                TerminalCustomerId = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.TerminalCustomerId).FirstOrDefault(),
-                TerminalCustomer = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.TerminalCustomer).FirstOrDefault(),
-                BusinessTripDate = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.BusinessTripDate).FirstOrDefault(),
-                EndDate = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.EndDate).FirstOrDefault(),
-                BusinessTripDays = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.BusinessTripDays).FirstOrDefault(),
-                FromTheme = CompletionReports.Where(c => c.ServiceOrderId == d.ServiceOrderId && c.CreateUserId.Equals(d.CreateUserId)).Select(c => c.FromTheme).FirstOrDefault(),
-                SalesMan = ServiceOrders.Where(s => s.Id == d.ServiceOrderId).Select(s => s.SalesMan).FirstOrDefault()
-            });
 
-            result.Count = ReimburseInfos.Count();
+            var ReimburseResps = from a in datas
+                                 join b in CompletionReports on a.ServiceOrderId equals b.ServiceOrderId
+                                 join c in ServiceOrders on a.ServiceOrderId equals c.Id
+                                 join d in SelUserName on a.CreateUserId equals d.Id
+                                 join e in Relevances on a.CreateUserId equals e.FirstId
+                                 join f in SelOrgName on e.SecondId equals f.Id
+                                 join g in rohs on a.Id equals g.ReimburseInfoId
+                                 select new { a, b, c, d, f ,g};
+
+            ReimburseResps = ReimburseResps.OrderByDescending(r => r.f.CascadeId).ToList();
+            ReimburseResps = ReimburseResps.GroupBy(r => r.a.Id).Select(r => r.First()).ToList();
+
+            result.Data = ReimburseResps.Select(r => new
+            {
+                ReimburseResp = r.a,
+                RejectRemark = r.g.Remark,
+                r.b.TerminalCustomerId,
+                r.b.TerminalCustomer,
+                r.b.BusinessTripDate,
+                r.b.EndDate,
+                r.b.BusinessTripDays,
+                r.b.FromTheme,
+                r.c.SalesMan,
+                UserName = r.d.Name,
+                OrgName = r.f.Name
+            }).ToList();
+
             return result;
         }
 
@@ -327,41 +353,40 @@ namespace OpenAuth.App
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == "UserOrg" && r.FirstId == loginUser.Id).Select(r => r.SecondId).ToListAsync();
             var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderBy(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.CreateUserId.Equals(loginUser.Id) && c.IsReimburse < 2).OrderByDescending(c => c.CreateTime).ToListAsync();
-            //List<string> CompletionReportIds = new List<string>();
-            //if (CompletionReports.Count > 0) CompletionReportIds = CompletionReports.Select(c=>c.Id).ToList();
-            //CompletionReportIds = await UnitWork.Find<CompletionReport>(c=>!CompletionReportIds.Contains(c.Id)).Select(c => c.Id).ToListAsync();
-            //var CompletionReportCount = await UnitWork.Find<ServiceWorkOrder>(s => CompletionReportIds.Contains(s.CompletionReportId) && s.CurrentUserNsapId.Equals(loginUser.Id)).Select(s => new { s.CurrentUserNsapId, s.CompletionReportId }).Distinct().ToListAsync();
-            //CompletionReportIds = CompletionReportCount.Select(c => c.CompletionReportId).ToList();
-            //CompletionReports.AddRange(await UnitWork.Find<CompletionReport>(c => CompletionReportIds.Contains(c.Id) && c.IsReimburse < 2).OrderByDescending(c => c.CreateTime).ToListAsync());
-
-
-            var ids = CompletionReports.Select(c => c.ServiceOrderId).Distinct().ToList();
-            var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ids.Contains(s.Id)).Include(s => s.ServiceWorkOrders).ToListAsync();
+           
+            var ServiceOrderids = CompletionReports.Select(c => c.ServiceOrderId).Distinct().ToList();
+            var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ServiceOrderids.Contains(s.Id)).Include(s => s.ServiceWorkOrders).ToListAsync();
             List<ServiceOrder> ServiceOrderList = new List<ServiceOrder>();
             foreach (var item in ServiceOrders)
             {
-                var WorkOrders = item.ServiceWorkOrders.Where(s => s.CurrentUserNsapId == loginUser.Id && s.Status <= 6).ToList();
+                var WorkOrders = item.ServiceWorkOrders.Where(s => s.CurrentUserNsapId == loginUser.Id && (s.Status <= 6 || s.ServiceMode==2)).ToList();
                 if (WorkOrders.Count == 0)
                 {
                     ServiceOrderList.Add(item);
                 }
             }
-            var objs = ServiceOrderList.Select(s => new
+
+            var ServiceOrderLists = from a in ServiceOrderList
+                                    join b in CompletionReports on a.Id equals b.ServiceOrderId
+                                    select new { a, b };
+
+            ServiceOrderLists = ServiceOrderLists.GroupBy(r => r.a.Id).Select(g => g.First()).ToList();
+            var objs = ServiceOrderLists.Select(s => new
             {
                 UserId = loginUser.Id,
                 UserName = loginUser.Name,
-                ServiceRelations = loginUser.ServiceRelations == null ? "未录入" : loginUser.ServiceRelations,
-                TerminalCustomer = CompletionReports.Where(c => c.ServiceOrderId == s.Id).Select(c => c.TerminalCustomer).FirstOrDefault(),
-                TerminalCustomerId = CompletionReports.Where(c => c.ServiceOrderId == s.Id).Select(c => c.TerminalCustomerId).FirstOrDefault(),
-                s.Id,
-                s.U_SAP_ID,
                 OrgName = orgname,
-                FromTheme = CompletionReports.Where(c => c.ServiceOrderId == s.Id).Select(c => c.FromTheme).FirstOrDefault(),
-                Becity = CompletionReports.Where(c => c.ServiceOrderId == s.Id).Select(c => c.Becity).FirstOrDefault(),
-                Destination = CompletionReports.Where(c => c.ServiceOrderId == s.Id).Select(c => c.Destination).FirstOrDefault(),
-                BusinessTripDate = CompletionReports.Where(c => c.ServiceOrderId == s.Id).Select(c => c.BusinessTripDate).FirstOrDefault(),
-                EndDate = CompletionReports.Where(c => c.ServiceOrderId == s.Id).Select(c => c.EndDate).FirstOrDefault(),
-                MaterialCode = CompletionReports.Where(c => c.ServiceOrderId == s.Id).Select(c => c.MaterialCode).FirstOrDefault() == "其他设备" ? "其他设备" : CompletionReports.Where(c => c.ServiceOrderId == s.Id).Select(c => c.MaterialCode).FirstOrDefault().Substring(0, CompletionReports.Where(c => c.ServiceOrderId == s.Id).Select(c => c.MaterialCode).FirstOrDefault().IndexOf("-"))
+                ServiceRelations = loginUser.ServiceRelations == null ? "未录入" : loginUser.ServiceRelations,
+                s.b.TerminalCustomer,
+                s.b.TerminalCustomerId,
+                s.a.Id,
+                s.a.U_SAP_ID,
+                s.b.FromTheme,
+                s.b.Becity,
+                s.b.Destination ,
+                s.b.BusinessTripDate,
+                s.b.EndDate ,
+                MaterialCode = s.b.MaterialCode == "其他设备" ? "其他设备" : s.b.MaterialCode.Substring(0, s.b.MaterialCode.IndexOf("-"))
             }).ToList();
 
             if (!string.IsNullOrWhiteSpace(request.SapId))
@@ -439,8 +464,8 @@ namespace OpenAuth.App
                 {
                     Id = r.Id,
                     FileId = r.FileId,
-                    AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault(),
-                    FileType= file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileType).FirstOrDefault(),
+                    AttachmentName = file.FirstOrDefault(f => f.Id.Equals(r.FileId)).FileName,
+                    FileType= file.FirstOrDefault(f => f.Id.Equals(r.FileId)).FileType,
                     ReimburseId = r.ReimburseId,
                     ReimburseType = r.ReimburseType,
                     AttachmentType = r.AttachmentType
@@ -452,8 +477,8 @@ namespace OpenAuth.App
                 {
                     Id = r.Id,
                     FileId = r.FileId,
-                    AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault(),
-                    FileType = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileType).FirstOrDefault(),
+                    AttachmentName = file.FirstOrDefault(f => f.Id.Equals(r.FileId)).FileName,
+                    FileType = file.FirstOrDefault(f => f.Id.Equals(r.FileId)).FileType,
                     ReimburseId = r.ReimburseId,
                     ReimburseType = r.ReimburseType,
                     AttachmentType = r.AttachmentType
@@ -465,8 +490,8 @@ namespace OpenAuth.App
                 {
                     Id = r.Id,
                     FileId = r.FileId,
-                    AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault(),
-                    FileType = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileType).FirstOrDefault(),
+                    AttachmentName = file.FirstOrDefault(f => f.Id.Equals(r.FileId)).FileName,
+                    FileType = file.FirstOrDefault(f => f.Id.Equals(r.FileId)).FileType,
                     ReimburseId = r.ReimburseId,
                     ReimburseType = r.ReimburseType,
                     AttachmentType = r.AttachmentType
@@ -485,8 +510,8 @@ namespace OpenAuth.App
                 ReimburseResp = ReimburseResp,
                 UserName = await UnitWork.Find<User>(u => u.Id.Equals(ReimburseResp.CreateUserId)).Select(u => u.Name).FirstOrDefaultAsync(),
                 OrgName = orgname,
-                TerminalCustomer = ServiceOrders.TerminalCustomer,
-                TerminalCustomerId = ServiceOrders.TerminalCustomerId,
+                TerminalCustomer = CompletionReports.TerminalCustomer,
+                TerminalCustomerId = CompletionReports.TerminalCustomerId,
                 FromTheme = CompletionReports.FromTheme,
                 Becity = CompletionReports.Becity,
                 Destination = CompletionReports.Destination,
@@ -517,11 +542,20 @@ namespace OpenAuth.App
             {
                 loginUser = await GetUserId(Convert.ToInt32(req.AppId));
             }
-            #region 报销单唯一
+
+            #region 报销单唯一 or 必须存在附件
             var ReimburseCount=await UnitWork.Find<ReimburseInfo>(r => r.ServiceOrderId.Equals(req.ServiceOrderId) && r.CreateUserId.Equals(loginUser.Id)).CountAsync();
             if (ReimburseCount > 0) 
             {
                 throw new CommonException("该服务单已提交报销单，不可二次使用！", Define.INVALID_ReimburseAgain);
+            }
+            int racount = 0;
+            req.ReimburseOtherCharges.ForEach(r => racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0);
+            req.ReimburseFares.ForEach(r => racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0);
+            req.ReimburseAccommodationSubsidies.ForEach(r => racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0);
+            if (racount > 0) 
+            {
+                throw new CommonException("请上传附件！", Define.INVALID_ReimburseAgain);
             }
             #endregion
 
@@ -532,7 +566,6 @@ namespace OpenAuth.App
             req.ReimburseOtherCharges = req.ReimburseOtherCharges.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
             if (req.MyexpendsIds != null && req.MyexpendsIds.Count > 0)
             {
-                
                 var myexpends = await UnitWork.Find<MyExpends>(m => req.MyexpendsIds.Contains(m.Id)).ToListAsync();
                 myexpends.ForEach(m => m.IsDelete = true);
                 await UnitWork.BatchUpdateAsync(myexpends.ToArray());
@@ -1002,14 +1035,6 @@ namespace OpenAuth.App
                 List<string> ids = new List<string>();
                 ids.Add(obj.FlowInstanceId);
                 await _flowInstanceApp.DeleteAsync(ids.ToArray());
-                //_flowInstanceApp.Verification(new VerificationReq
-                //{
-                //    NodeRejectStep = "",
-                //    NodeRejectType = "0",
-                //    FlowInstanceId = req.FlowInstanceId,
-                //    VerificationFinally = "3",
-                //    VerificationOpinion = "驳回",
-                //});
                 obj.RemburseStatus = 2;
                 obj.FlowInstanceId = "";
                 eoh.ApprovalResult = "驳回";
@@ -1020,21 +1045,26 @@ namespace OpenAuth.App
                 if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")))
                 {
                     obj.RemburseStatus = 5;
+                    eoh.Action = "客服主管审批";
                 }
                 else if (loginContext.Roles.Any(r => r.Name.Equals("财务初审")))
                 {
                     obj.RemburseStatus = 6;
+                    eoh.Action = "财务初审审批";
                 }
                 else if (loginContext.Roles.Any(r => r.Name.Equals("财务复审")))
                 {
                     obj.RemburseStatus = 7;
+                    eoh.Action = "财务复审审批";
                 }
                 else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
                 {
                     obj.RemburseStatus = 8;
+                    eoh.Action = "总经理审批";
                 }
                 else if (loginContext.Roles.Any(r => r.Name.Equals("出纳")))
                 {
+                    eoh.Action = "出纳支付";
                     eoh.ApprovalResult = "已支付";
                     obj.RemburseStatus = 9;
                     obj.PayTime = DateTime.Now;
@@ -1052,7 +1082,6 @@ namespace OpenAuth.App
 
             await UnitWork.UpdateAsync<ReimburseInfo>(obj);
             var seleoh = await UnitWork.Find<ReimurseOperationHistory>(null).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
-            eoh.Action = "审批";
             eoh.CreateUser = loginContext.User.Name;
             eoh.CreateUserId = loginContext.User.Id;
             eoh.CreateTime = DateTime.Now;
@@ -1200,7 +1229,7 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="ReimburseInfoId"></param>
         /// <returns></returns>
-        public async Task Print(int ReimburseInfoId)
+        public async Task<byte[]> Print(int ReimburseInfoId)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -1220,25 +1249,22 @@ namespace OpenAuth.App
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == "UserOrg" && r.FirstId == Reimburse.CreateUserId).Select(r => r.SecondId).ToListAsync();
             var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderBy(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == Reimburse.ServiceOrderId && c.CreateUserId.Equals(Reimburse.CreateUserId)).OrderByDescending(c => c.CreateTime).FirstOrDefaultAsync();
-            decimal? money = 0;
+            decimal Subsidy = 0;
             if (Reimburse.ReimburseTravellingAllowances != null && Reimburse.ReimburseTravellingAllowances.Count > 0)
             {
                 var rta = Reimburse.ReimburseTravellingAllowances.FirstOrDefault();
-                money = rta.Money * rta.Days;
+                Subsidy =Convert.ToDecimal(rta.Money * rta.Days);
             }
-            var Subsidy = money;
+            decimal PutUp = 0;
             if (Reimburse.ReimburseAccommodationSubsidies != null && Reimburse.ReimburseAccommodationSubsidies.Count > 0)
             {
-                money = 0;
-                Reimburse.ReimburseAccommodationSubsidies.ForEach(r => money += r.TotalMoney);
+                Reimburse.ReimburseAccommodationSubsidies.ForEach(r => PutUp +=Convert.ToDecimal(r.TotalMoney));
             }
-            var PutUp = money;
+            decimal Else = 0;
             if (Reimburse.ReimburseOtherCharges != null && Reimburse.ReimburseOtherCharges.Count > 0)
             {
-                money = 0;
-                Reimburse.ReimburseOtherCharges.ForEach(r => money += r.Money);
+                Reimburse.ReimburseOtherCharges.ForEach(r => Else += Convert.ToDecimal(r.Money));
             }
-            var Else = money;
             decimal? Aircraft = 0, Train = 0, Coach = 0, Transport = 0;
             if (Reimburse.ReimburseFares != null && Reimburse.ReimburseFares.Count > 0)
             {
@@ -1268,7 +1294,9 @@ namespace OpenAuth.App
                 Transport = Transport,
                 Total = TransformCharOrNumber.SumConvert(null, Convert.ToDecimal(Reimburse.TotalMoney)),
             };
-            await ExportAllHandler.Exporterpdf(@"D:\工作\程序\前端\aaa.pdf", PrintReimburse, "PrintReimburse.cshtml");
+            var result = new TableData();
+
+            return await ExportAllHandler.Exporterpdf(null, PrintReimburse, "PrintReimburse.cshtml");
         }
 
         /// <summary>

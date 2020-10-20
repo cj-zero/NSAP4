@@ -71,7 +71,7 @@ namespace Infrastructure.Export
         /// <param name="data"></param>
         /// <param name="tplPath"></param>
         /// <returns></returns>
-        public static async Task Exporterpdf<T>(string filePath, T data, string tplPath = null) where T : class
+        public static async Task<byte[]> Exporterpdf<T>(T data, string tplPath = null) where T : class
         {
             try
             {
@@ -89,16 +89,13 @@ namespace Infrastructure.Export
                 pdf.IsWriteHtml = true;
                 pdf.Orientation = Orientation.Portrait;
                 var result = await exporter.ExportBytesByTemplate(data, pdf, tpl);
-                using (FileStream xlsfile = new FileStream(filePath, FileMode.OpenOrCreate))
-                {
-                    xlsfile.Write(result, 0, result.Length);
-                }
+                return result;
             }
             catch (Exception e)
             {
                 _logger.LogError(e, e.ToString());
             }
-
+            return null;
         }
         #endregion
 
