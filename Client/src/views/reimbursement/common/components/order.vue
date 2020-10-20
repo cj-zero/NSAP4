@@ -1,7 +1,7 @@
 <template>
   <div class="order-wrapper">
     <!-- 主表单 -->
-    <el-scrollbar>
+    <el-scrollbar class="scroll-bar">
       <el-form
         :model="formData"
         ref="form"
@@ -26,10 +26,10 @@
             <el-form-item :label="item.label" 
               :prop="item.prop"
               :rules="rules[item.prop] || { required: false }">
-              <template v-if="item.label === '总金额'">
+              <!-- <template v-if="item.label === '总金额'">
                 ￥{{ totalMoney | toThousands }}
-              </template>
-              <template v-else-if="!item.type">
+              </template> -->
+              <template v-if="!item.type">
                 <el-input 
                   v-model="formData[item.prop]" 
                   :style="{ width: item.width + 'px' }"
@@ -79,18 +79,29 @@
         </el-row>
       </el-form>
       <!-- 附件上传 -->
-      <el-row type="flex" class="upload-wrapper" v-if="ifCOrE || formData.attachmentsFileList.length">
-        <span class="upload-title">上传附件</span>
-        <upLoadFile 
-          :disabled="!ifFormEdit"
-          @get-ImgList="getFileList" 
-          uploadType="file" 
-          ref="uploadFile" 
-          :maxSize="maxSize"
-          :ifShowTip="ifFormEdit"
-          :fileList="formData.attachmentsFileList || []"
-          @deleteFileList="deleteFileList"></upLoadFile>
+      <el-row type="flex" class="upload-wrapper">
+        <el-col :span="15">
+          <el-row type="flex" v-if="ifCOrE || formData.attachmentsFileList.length">
+            <span class="upload-title">上传附件</span>
+            <upLoadFile 
+              :disabled="!ifFormEdit"
+              @get-ImgList="getFileList" 
+              uploadType="file" 
+              ref="uploadFile" 
+              :maxSize="maxSize"
+              :ifShowTip="ifFormEdit"
+              :fileList="formData.attachmentsFileList || []"
+              @deleteFileList="deleteFileList"></upLoadFile>
+          </el-row>
+        </el-col>
+        <el-col :span="9">
+          <el-row type="flex" align="middle">
+            <span class="upload-title money">总金额</span>
+            <span class="money-text">￥{{ totalMoney | toThousands }}</span>
+          </el-row>
+        </el-col>
       </el-row>
+      
       <!-- 出差 -->
       <div class="form-item-wrapper" style="width: 622px;" v-if="ifCOrE || formData.reimburseTravellingAllowances.length">
         <el-button v-if="ifShowTravel" @click="showForm(formData.reimburseTravellingAllowances, 'ifShowTravel')">添加出差补贴</el-button>
@@ -343,7 +354,7 @@
           <div class="title-wrapper">
             <div class="number-count">总数量:{{ accCount }}个</div>
             <div class="title">
-              <span>住房补贴</span>
+              <span>住宿补贴</span>
               <p class="total-money">总金额: ￥{{ accTotalMoney | toThousands }}</p>
             </div>
           </div>
@@ -1185,6 +1196,7 @@ export default {
           fileId, 
           currentRow, 
           uploadVm,
+          tableType: 'traffic'
         }).then(isValid => {
           this.identifyLoading.close()
           isValid 
@@ -1215,6 +1227,7 @@ export default {
           fileId, 
           currentRow, 
           uploadVm,
+          tableType: 'acc'
         }, true).then(isValid => {
           this.identifyLoading.close()
           isValid 
@@ -1245,6 +1258,7 @@ export default {
           fileId, 
           currentRow, 
           uploadVm,
+          tableType: 'other'
         }).then(isValid => {
           this.identifyLoading.close()
           isValid 
@@ -1908,13 +1922,18 @@ export default {
 .order-wrapper {
   // max-height: 700px;
   // overflow-y: auto;
-  ::v-deep .el-scrollbar {
-    .el-scrollbar__wrap {
-      max-height: 700px; // 最大高度
-      overflow-x: hidden; // 隐藏横向滚动栏
-      margin-bottom: 0 !important;
+  .scroll-bar {
+    &.el-scrollbar {
+       ::v-deep {
+        .el-scrollbar__wrap {
+          max-height: 700px; // 最大高度
+          overflow-x: hidden; // 隐藏横向滚动栏
+          margin-bottom: 0 !important;
+        }
+      }
     }
   }
+  
   .uneditable {
     ::v-deep .el-input.is-disabled .el-input__inner {
       background-color: #fff;
@@ -1946,8 +1965,19 @@ export default {
   .upload-wrapper {
     margin: 5px 0;
     .upload-title {
+      box-sizing: border-box;
       width: 80px;
-      text-align: left;
+      height: 18px;
+      line-height: 18px;
+      padding-right: 12px;
+      font-size: 12px;
+      text-align: right;
+      &.money {
+        padding-right: 24px;
+      }
+    }
+    .money-text {
+      margin-left: -12px;;
     }
   }
   .history-wrapper {
