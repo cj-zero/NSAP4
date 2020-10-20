@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Request;
@@ -245,6 +243,24 @@ namespace OpenAuth.WebApi.Controllers.Serve
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// 打印报销单
+        /// </summary>
+        /// <param name="ReimburseInfoId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<FileResult> Print(int ReimburseInfoId) 
+        {
+            try
+            {
+                return File(await _reimburseinfoapp.Print(ReimburseInfoId), "application/pdf");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("导出失败！");
+            }
         }
 
         /// <summary>
