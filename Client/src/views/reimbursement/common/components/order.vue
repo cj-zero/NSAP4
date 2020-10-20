@@ -1104,22 +1104,8 @@ export default {
             let { isAdd, otherFileList, otherAttachment } = dataItem
             let hasAttachment = this.hasAttachment(dataItem)
             if (isAdd) { // 被删除的就不做校验判断
-              // console.log(invoiceAttachment, invoiceFileList, 'edit validate', data)
               // 新增的时候
               if (hasAttachment) { // 说明一定要有附件发票,并且有了发票
-                // if (invoiceFileList.length) { // 有可能是导入进来的数据(这个是没有新增的数据，跟普通新增的数据同样)，也有可能是已经新增过的数据
-                // // 新增过的数据reimburseId存在
-                //   let ifDeleted = invoiceFileList[0].reimburseId
-                //     ? this.formData.fileId.includes(invoiceFileList[0].id) // 判断invoiceFileList是否已经删除
-                //     : !(invoiceFileList[0].isAdd) // 判断当前文件的状态是不是删除(模板数据而言)
-                //   // 如果用于回显的附件给删除了，则需要判断的invoiceAttachment数组是否有值
-                //   ifInvoiceAttachment = ifDeleted
-                //     ? Boolean(invoiceAttachment && invoiceAttachment.length) 
-                //     : true
-                // } else {
-                //   ifInvoiceAttachment = Boolean(invoiceAttachment && invoiceAttachment.length) 
-                // }
-                // if (!ifInvoiceAttachment) break
                 ifInvoiceAttachment = true
               } else { 
                 // 一定不能有附件发票，但必须至少有一个其它发票
