@@ -1247,7 +1247,7 @@ namespace OpenAuth.App
 
             var user = await UnitWork.Find<User>(u => u.Id.Equals(Reimburse.CreateUserId)).FirstOrDefaultAsync();
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == "UserOrg" && r.FirstId == Reimburse.CreateUserId).Select(r => r.SecondId).ToListAsync();
-            var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderBy(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
+            var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == Reimburse.ServiceOrderId && c.CreateUserId.Equals(Reimburse.CreateUserId)).OrderByDescending(c => c.CreateTime).FirstOrDefaultAsync();
             decimal Subsidy = 0;
             if (Reimburse.ReimburseTravellingAllowances != null && Reimburse.ReimburseTravellingAllowances.Count > 0)
@@ -1282,8 +1282,8 @@ namespace OpenAuth.App
                 ReimburseId = Reimburse.MainId,
                 OrgName = orgname,
                 UserName = user.Name,
-                Position = "",
-                TerminalCustomer = CompletionReports.TerminalCustomer,
+                //Position = "",
+                TerminalCustomer = Reimburse.ShortCustomerName,
                 FromTheme = CompletionReports.FromTheme,
                 Subsidy = Subsidy,
                 Else = Else,
