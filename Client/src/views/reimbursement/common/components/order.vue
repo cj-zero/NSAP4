@@ -156,27 +156,9 @@
                       v-model="scope.row[item.prop]" 
                       :type="item.type" :min="0" 
                       :disabled="item.disabled" 
-                      @input="onInput"
+                      @change="onTravelChange"
                       :class="{ 'money-class': item.prop === 'money'}"
                     ></el-input>
-                  </el-form-item>
-                </template>
-                <template v-else-if="item.type === 'select'">
-                  <el-form-item
-                    :prop="'reimburseTravellingAllowances.' + scope.$index + '.'+ item.prop"
-                    :rules="travelRules[item.prop] || { required: false }"
-                  >
-                    <el-select
-                      v-model="scope.row[item.prop]"
-                    >
-                      <el-option
-                        v-for="optionItem in item.options"
-                        :key="optionItem.label"
-                        :value="optionItem.value"
-                        :label="optionItem.label"
-                      >
-                      </el-option>
-                    </el-select>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'operation'">
@@ -1040,12 +1022,13 @@ export default {
     },
     showForm (data, type) { // 展示表格
       if (!this.ifFormEdit) return
+      let { businessTripDate, endDate } = this.formData
       switch (type) {
         case 'ifShowTravel':
           data.push({
             id: '',
             isAdd: true,
-            days: '',
+            days: this.calculateDays(businessTripDate, endDate),
             money: this.setTravelMoney(),
             remark: '',
           })
@@ -1310,6 +1293,17 @@ export default {
       this.currentLabel = label
       this.currentProp = property
     },
+    onTravelChange (value) { // 如果填写的出差天数大于实际的出差时间，进行提示
+      console.log('on travel change')
+      let { businessTripDate, endDate } = this.formData
+      let actDays = this.calculateDays(businessTripDate, endDate)
+      if (actDays && value > actDays) {
+        this.$message({
+          type: 'warning',
+          message: '所填天数超过出差天数'
+        })
+      }
+    },
     onChange (value) { // 天数 总金额 计算
       this.changeMoneyByDaysOrTotalMoney(value)
     },
@@ -1398,6 +1392,15 @@ export default {
         : this.tableType === 'acc'
           ? reimburseAccommodationSubsidies
           : reimburseOtherCharges
+    },
+    changeAddr (scope) { // 交通表格 交换出发地和目的地
+      console.log('changeAddr')
+      let { row, $index: index } = scope
+      let { from, to } = row
+      let data = this.formData.reimburseFares[index]
+      data.from = to
+      data.to = from
+      console.log(row, index)
     },
     addAndCopy (scope, data, type, operationType) {
       if (!this.ifFormEdit) return
@@ -1615,6 +1618,16 @@ export default {
       this.$refs.customerTable.resetRadio()
       this.$refs.customerDialog.close()
     },
+    calculateDays (start, end) {
+      if (start && end) {
+        start = +new Date(start.split(' ')[0])
+        end = +new Date(end.split(' ')[0])
+        console.log('has days')
+        return Math.floor((end - start) / 1000 / 60 / 60 / 24) + 1
+      }
+      console.log('no days')
+      return ''
+    },
     confirm () {
       let currentRow = this.$refs.customerTable.getCurrentRow()
       if (Object.keys(currentRow).length) {
@@ -1641,6 +1654,9 @@ export default {
         formData.endDate = endDate
         formData.destination = destination
         this.customerLoading = true
+        if (!this.ifShowTravel) {
+          this.formData.reimburseTravellingAllowances[0].days = this.calculateDays(businessTripDate, endDate)
+        }
         forServe(terminalCustomerId).then(res => {
           formData.shortCustomerName = res.result.u_Name ? res.result.u_Name.slice(0, 6) : ''
           this.customerLoading = false
@@ -2067,6 +2083,9 @@ export default {
     font-size: 17px;
     margin: 5px;
     cursor: pointer;
+    &.rotate {
+      transform: rotate(-90deg);
+    }
   }
   ::v-deep .el-form-item__content {
     input::-webkit-outer-spin-button,

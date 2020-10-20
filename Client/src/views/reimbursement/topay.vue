@@ -77,7 +77,7 @@
       <my-dialog
         ref="myDialog"
         :center="true"
-        width="1316px"
+        width="1336px"
         :onClosed="closeDialog"
         :title="textMap[title]"
         :btnList="btnList"

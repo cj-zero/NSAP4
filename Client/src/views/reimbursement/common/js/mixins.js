@@ -465,7 +465,7 @@ export let categoryMixin = {
         { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '8-11位字母数字' },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 },
-        { label: '操作', type: 'operation', iconList: this.iconList, width: 110 }
+        { label: '操作', type: 'operation', iconList: [{ icon: 'el-icon-refresh rotate', handleClick: this.changeAddr }, ...this.iconList], width: 130 }
       ]
     },
     accommodationConfig () {
