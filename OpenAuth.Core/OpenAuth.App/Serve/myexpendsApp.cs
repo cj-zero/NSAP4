@@ -54,8 +54,8 @@ namespace OpenAuth.App
             {
                 Id = r.Id,
                 FileId = r.FileId,
-                AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault(),
-                FileType= file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileType).FirstOrDefault(),
+                AttachmentName = file.FirstOrDefault(f => f.Id.Equals(r.FileId)).FileName,
+                FileType = file.FirstOrDefault(f => f.Id.Equals(r.FileId)).FileType,
                 AttachmentType = r.AttachmentType,
                 ReimburseId = r.ReimburseId,
                 ReimburseType = r.ReimburseType
@@ -89,8 +89,8 @@ namespace OpenAuth.App
             {
                 Id = r.Id,
                 FileId = r.FileId,
-                AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault(),
-                FileType= file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileType).FirstOrDefault(),
+                AttachmentName = file.FirstOrDefault(f => f.Id.Equals(r.FileId)).FileName,
+                FileType = file.FirstOrDefault(f => f.Id.Equals(r.FileId)).FileType,
                 AttachmentType = r.AttachmentType,
                 ReimburseId = r.ReimburseId,
                 ReimburseType = r.ReimburseType

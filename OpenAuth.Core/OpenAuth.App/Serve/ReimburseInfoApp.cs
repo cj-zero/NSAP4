@@ -1050,12 +1050,12 @@ namespace OpenAuth.App
                 else if (loginContext.Roles.Any(r => r.Name.Equals("财务初审")))
                 {
                     obj.RemburseStatus = 6;
-                    eoh.Action = "财务初审审批";
+                    eoh.Action = "财务初审";
                 }
                 else if (loginContext.Roles.Any(r => r.Name.Equals("财务复审")))
                 {
                     obj.RemburseStatus = 7;
-                    eoh.Action = "财务复审审批";
+                    eoh.Action = "财务复审";
                 }
                 else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
                 {
@@ -1064,7 +1064,7 @@ namespace OpenAuth.App
                 }
                 else if (loginContext.Roles.Any(r => r.Name.Equals("出纳")))
                 {
-                    eoh.Action = "出纳支付";
+                    eoh.Action = "已支付";
                     eoh.ApprovalResult = "已支付";
                     obj.RemburseStatus = 9;
                     obj.PayTime = DateTime.Now;
@@ -1296,7 +1296,7 @@ namespace OpenAuth.App
             };
             var result = new TableData();
 
-            return await ExportAllHandler.Exporterpdf(null, PrintReimburse, "PrintReimburse.cshtml");
+            return await ExportAllHandler.Exporterpdf(PrintReimburse, "PrintReimburse.cshtml");
         }
 
         /// <summary>
