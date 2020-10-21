@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -20,11 +21,13 @@ namespace OpenAuth.WebApi.Controllers.Serve
         private readonly ReimburseInfoApp _reimburseinfoapp;
 
         private readonly CategoryApp _categoryapp;
+        private readonly ILogger Logger;
 
-        public ReimburseController(ReimburseInfoApp reimburseinfoapp,CategoryApp categoryapp)
+        public ReimburseController(ReimburseInfoApp reimburseinfoapp, CategoryApp categoryapp, ILoggerFactory loggerFactory)
         {
             _reimburseinfoapp = reimburseinfoapp;
             _categoryapp = categoryapp;
+            Logger = loggerFactory.CreateLogger<ReimburseController>();
         }
         /// <summary>
         /// 查看报销单列表
@@ -259,6 +262,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             }
             catch (Exception ex)
             {
+                Logger.LogError(ex, "导出失败");
                 throw new Exception("导出失败！");
             }
         }
