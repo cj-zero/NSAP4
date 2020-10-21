@@ -21,7 +21,6 @@ using OpenAuth.App.Serve.Request;
 using OpenAuth.App.Serve.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
-using static Infrastructure.GeneralAnalytical.ConvertTheType;
 
 namespace OpenAuth.App
 {
