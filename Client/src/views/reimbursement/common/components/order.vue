@@ -1,7 +1,7 @@
 <template>
   <div class="order-wrapper">
     <!-- 主表单 -->
-    <el-scrollbar>
+    <el-scrollbar class="scroll-bar">
       <el-form
         :model="formData"
         ref="form"
@@ -26,10 +26,10 @@
             <el-form-item :label="item.label" 
               :prop="item.prop"
               :rules="rules[item.prop] || { required: false }">
-              <template v-if="item.label === '总金额'">
+              <!-- <template v-if="item.label === '总金额'">
                 ￥{{ totalMoney | toThousands }}
-              </template>
-              <template v-else-if="!item.type">
+              </template> -->
+              <template v-if="!item.type">
                 <el-input 
                   v-model="formData[item.prop]" 
                   :style="{ width: item.width + 'px' }"
@@ -79,18 +79,29 @@
         </el-row>
       </el-form>
       <!-- 附件上传 -->
-      <el-row type="flex" class="upload-wrapper" v-if="ifCOrE || formData.attachmentsFileList.length">
-        <span class="upload-title">上传附件</span>
-        <upLoadFile 
-          :disabled="!ifFormEdit"
-          @get-ImgList="getFileList" 
-          uploadType="file" 
-          ref="uploadFile" 
-          :maxSize="maxSize"
-          :ifShowTip="ifFormEdit"
-          :fileList="formData.attachmentsFileList || []"
-          @deleteFileList="deleteFileList"></upLoadFile>
+      <el-row type="flex" class="upload-wrapper">
+        <el-col :span="15">
+          <el-row type="flex" v-if="ifCOrE || formData.attachmentsFileList.length">
+            <span class="upload-title">上传附件</span>
+            <upLoadFile 
+              :disabled="!ifFormEdit"
+              @get-ImgList="getFileList" 
+              uploadType="file" 
+              ref="uploadFile" 
+              :maxSize="maxSize"
+              :ifShowTip="ifFormEdit"
+              :fileList="formData.attachmentsFileList || []"
+              @deleteFileList="deleteFileList"></upLoadFile>
+          </el-row>
+        </el-col>
+        <el-col :span="9">
+          <el-row type="flex" align="middle">
+            <span class="upload-title money">总金额</span>
+            <span class="money-text">￥{{ totalMoney | toThousands }}</span>
+          </el-row>
+        </el-col>
       </el-row>
+      
       <!-- 出差 -->
       <div class="form-item-wrapper" style="width: 622px;" v-if="ifCOrE || formData.reimburseTravellingAllowances.length">
         <el-button v-if="ifShowTravel" @click="showForm(formData.reimburseTravellingAllowances, 'ifShowTravel')">添加出差补贴</el-button>
@@ -145,27 +156,9 @@
                       v-model="scope.row[item.prop]" 
                       :type="item.type" :min="0" 
                       :disabled="item.disabled" 
-                      @input="onInput"
+                      @change="onTravelChange"
                       :class="{ 'money-class': item.prop === 'money'}"
                     ></el-input>
-                  </el-form-item>
-                </template>
-                <template v-else-if="item.type === 'select'">
-                  <el-form-item
-                    :prop="'reimburseTravellingAllowances.' + scope.$index + '.'+ item.prop"
-                    :rules="travelRules[item.prop] || { required: false }"
-                  >
-                    <el-select
-                      v-model="scope.row[item.prop]"
-                    >
-                      <el-option
-                        v-for="optionItem in item.options"
-                        :key="optionItem.label"
-                        :value="optionItem.value"
-                        :label="optionItem.label"
-                      >
-                      </el-option>
-                    </el-select>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'operation'">
@@ -343,7 +336,7 @@
           <div class="title-wrapper">
             <div class="number-count">总数量:{{ accCount }}个</div>
             <div class="title">
-              <span>住房补贴</span>
+              <span>住宿补贴</span>
               <p class="total-money">总金额: ￥{{ accTotalMoney | toThousands }}</p>
             </div>
           </div>
@@ -1029,12 +1022,13 @@ export default {
     },
     showForm (data, type) { // 展示表格
       if (!this.ifFormEdit) return
+      let { businessTripDate, endDate } = this.formData
       switch (type) {
         case 'ifShowTravel':
           data.push({
             id: '',
             isAdd: true,
-            days: '',
+            days: this.calculateDays(businessTripDate, endDate),
             money: this.setTravelMoney(),
             remark: '',
           })
@@ -1110,22 +1104,8 @@ export default {
             let { isAdd, otherFileList, otherAttachment } = dataItem
             let hasAttachment = this.hasAttachment(dataItem)
             if (isAdd) { // 被删除的就不做校验判断
-              // console.log(invoiceAttachment, invoiceFileList, 'edit validate', data)
               // 新增的时候
               if (hasAttachment) { // 说明一定要有附件发票,并且有了发票
-                // if (invoiceFileList.length) { // 有可能是导入进来的数据(这个是没有新增的数据，跟普通新增的数据同样)，也有可能是已经新增过的数据
-                // // 新增过的数据reimburseId存在
-                //   let ifDeleted = invoiceFileList[0].reimburseId
-                //     ? this.formData.fileId.includes(invoiceFileList[0].id) // 判断invoiceFileList是否已经删除
-                //     : !(invoiceFileList[0].isAdd) // 判断当前文件的状态是不是删除(模板数据而言)
-                //   // 如果用于回显的附件给删除了，则需要判断的invoiceAttachment数组是否有值
-                //   ifInvoiceAttachment = ifDeleted
-                //     ? Boolean(invoiceAttachment && invoiceAttachment.length) 
-                //     : true
-                // } else {
-                //   ifInvoiceAttachment = Boolean(invoiceAttachment && invoiceAttachment.length) 
-                // }
-                // if (!ifInvoiceAttachment) break
                 ifInvoiceAttachment = true
               } else { 
                 // 一定不能有附件发票，但必须至少有一个其它发票
@@ -1185,6 +1165,7 @@ export default {
           fileId, 
           currentRow, 
           uploadVm,
+          tableType: 'traffic'
         }).then(isValid => {
           this.identifyLoading.close()
           isValid 
@@ -1215,6 +1196,7 @@ export default {
           fileId, 
           currentRow, 
           uploadVm,
+          tableType: 'acc'
         }, true).then(isValid => {
           this.identifyLoading.close()
           isValid 
@@ -1245,6 +1227,7 @@ export default {
           fileId, 
           currentRow, 
           uploadVm,
+          tableType: 'other'
         }).then(isValid => {
           this.identifyLoading.close()
           isValid 
@@ -1295,6 +1278,17 @@ export default {
     setCurrentProp ({ label, property }) {
       this.currentLabel = label
       this.currentProp = property
+    },
+    onTravelChange (value) { // 如果填写的出差天数大于实际的出差时间，进行提示
+      console.log('on travel change')
+      let { businessTripDate, endDate } = this.formData
+      let actDays = this.calculateDays(businessTripDate, endDate)
+      if (actDays && value > actDays) {
+        this.$message({
+          type: 'warning',
+          message: '所填天数超过出差天数'
+        })
+      }
     },
     onChange (value) { // 天数 总金额 计算
       this.changeMoneyByDaysOrTotalMoney(value)
@@ -1384,6 +1378,15 @@ export default {
         : this.tableType === 'acc'
           ? reimburseAccommodationSubsidies
           : reimburseOtherCharges
+    },
+    changeAddr (scope) { // 交通表格 交换出发地和目的地
+      console.log('changeAddr')
+      let { row, $index: index } = scope
+      let { from, to } = row
+      let data = this.formData.reimburseFares[index]
+      data.from = to
+      data.to = from
+      console.log(row, index)
     },
     addAndCopy (scope, data, type, operationType) {
       if (!this.ifFormEdit) return
@@ -1601,6 +1604,16 @@ export default {
       this.$refs.customerTable.resetRadio()
       this.$refs.customerDialog.close()
     },
+    calculateDays (start, end) {
+      if (start && end) {
+        start = +new Date(start.split(' ')[0])
+        end = +new Date(end.split(' ')[0])
+        console.log('has days')
+        return Math.floor((end - start) / 1000 / 60 / 60 / 24) + 1
+      }
+      console.log('no days')
+      return ''
+    },
     confirm () {
       let currentRow = this.$refs.customerTable.getCurrentRow()
       if (Object.keys(currentRow).length) {
@@ -1627,6 +1640,9 @@ export default {
         formData.endDate = endDate
         formData.destination = destination
         this.customerLoading = true
+        if (!this.ifShowTravel) {
+          this.formData.reimburseTravellingAllowances[0].days = this.calculateDays(businessTripDate, endDate)
+        }
         forServe(terminalCustomerId).then(res => {
           formData.shortCustomerName = res.result.u_Name ? res.result.u_Name.slice(0, 6) : ''
           this.customerLoading = false
@@ -1908,13 +1924,18 @@ export default {
 .order-wrapper {
   // max-height: 700px;
   // overflow-y: auto;
-  ::v-deep .el-scrollbar {
-    .el-scrollbar__wrap {
-      max-height: 700px; // 最大高度
-      overflow-x: hidden; // 隐藏横向滚动栏
-      margin-bottom: 0 !important;
+  .scroll-bar {
+    &.el-scrollbar {
+       ::v-deep {
+        .el-scrollbar__wrap {
+          max-height: 700px; // 最大高度
+          overflow-x: hidden; // 隐藏横向滚动栏
+          margin-bottom: 0 !important;
+        }
+      }
     }
   }
+  
   .uneditable {
     ::v-deep .el-input.is-disabled .el-input__inner {
       background-color: #fff;
@@ -1946,8 +1967,19 @@ export default {
   .upload-wrapper {
     margin: 5px 0;
     .upload-title {
+      box-sizing: border-box;
       width: 80px;
-      text-align: left;
+      height: 18px;
+      line-height: 18px;
+      padding-right: 12px;
+      font-size: 12px;
+      text-align: right;
+      &.money {
+        padding-right: 24px;
+      }
+    }
+    .money-text {
+      margin-left: -12px;;
     }
   }
   .history-wrapper {
@@ -2037,6 +2069,9 @@ export default {
     font-size: 17px;
     margin: 5px;
     cursor: pointer;
+    &.rotate {
+      transform: rotate(-90deg);
+    }
   }
   ::v-deep .el-form-item__content {
     input::-webkit-outer-spin-button,

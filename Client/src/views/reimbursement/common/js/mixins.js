@@ -423,7 +423,9 @@ export let categoryMixin = {
         { label: '报销状态', prop: 'reimburseTypeText', palceholder: '请输入内容', disabled: true, col: 5, isEnd: true },
         { label: '呼叫主题', prop: 'fromTheme', palceholder: '请输入内容', disabled: true, col: 15 },
         { label: '填报时间', prop: 'createTime', palceholder: '请输入内容', disabled: true, col: 5, isEnd: true },
-        { label: '费用承担', prop: 'bearToPay', palceholder: '请输入内容', disabled: this.title === 'view' || !(this.isCustomerSupervisor && this.title === 'approve'), 
+        { label: '费用承担', prop: 'bearToPay', palceholder: '请输入内容', 
+          disabled: this.title === 'view' || !(this.isCustomerSupervisor && (this.title === 'create' || this.title === 'edit' || this.title === 'approve'))
+          , 
           col: 5, type: 'select', options: this.expenseList, width: '100%'
         },
         { label: '责任承担', prop: 'responsibility', palceholder: '请输入内容', 
@@ -435,7 +437,7 @@ export let categoryMixin = {
         },
         { label: '支付时间', prop: 'payTime', palceholder: '请输入内容', disabled: true, col: 5, isEnd: true },
         { label: '备注', prop: 'remark', palceholder: '请输入内容', disabled: this.title !== 'create', col: 15 },
-        { label: '总金额', prop: 'totalMoney', col: 5, isEnd: true, type: 'inline-slot', id: 'money' },
+        // { label: '总金额', prop: 'totalMoney', col: 5, isEnd: true, type: 'inline-slot', id: 'money' },
         { label: '附件', prop: 'reimburseAttachments', type: 'slot', id: 'attachment', showLabel: true },
         { label: '出差补贴', prop: 'reimburseTravellingAllowances', type: 'slot', id: 'travel' },
         { label: '交通费用', prop: 'reimburseFares', type: 'slot', id: 'traffic' },
@@ -463,7 +465,7 @@ export let categoryMixin = {
         { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '8-11位字母数字' },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 },
-        { label: '操作', type: 'operation', iconList: this.iconList, width: 110 }
+        { label: '操作', type: 'operation', iconList: [{ icon: 'el-icon-refresh rotate', handleClick: this.changeAddr }, ...this.iconList], width: 130 }
       ]
     },
     accommodationConfig () {
@@ -496,6 +498,11 @@ export let categoryMixin = {
     }
   }
 }
+
+// 0：出租车发票 1：定额发票 2：火车票 3：增值税发票 5：机票行程单 8：通用机打发票 
+// 9：汽车票 10：轮船票 11：增值税发票（卷票 ）12：购车发票 13：过路过桥费发票
+const TRAFFIC_TYPE_LIST = [0, 2, 5, 8, 9, 10, 13] // 交通类型发票
+const ACC_TYPE = 3
 
 export const attachmentMixin = {
   data () {
@@ -585,8 +592,20 @@ export const attachmentMixin = {
         currentRow.isValidInvoice = false
       }
     },
+    _isValidInvoiceType ({ tableType, type, extendInfo }) { // 判断表格对应的发票类型跟上传的发票类型是否一直
+      console.log(tableType, type, extendInfo, 'check')
+      if (tableType === 'traffic') { // 交通发票
+        return TRAFFIC_TYPE_LIST.includes(type) || (type === ACC_TYPE && /运输/g.test(extendInfo.serviceName))
+      }
+      if (tableType === 'acc') { // 住宿发票
+        return type === ACC_TYPE 
+          ? /住宿/g.test(extendInfo.serviceName)
+          : false
+      }
+      return true
+    },
     _identifyInvoice (data, isAcc = false) { // 票据识别
-      let { fileId, currentRow, uploadVm } = data
+      let { fileId, currentRow, uploadVm, tableType } = data
       return new Promise(resolve => {
         identifyInvoice({
           fileId
@@ -602,8 +621,8 @@ export const attachmentMixin = {
             this.$message.error('识别失败,请上传至其它附件列表')
             resolve(false)
           } else {
-            let { invoiceNo, amountWithTax, isValidate, isUsed, notPassReason } = res.data[0]
-            if (!isValidate || (isValidate && isUsed)) {
+            let { invoiceNo, amountWithTax, isValidate, isUsed, notPassReason, type, extendInfo } = res.data[0]
+            if (!isValidate || (isValidate && isUsed)) { // 识别失败
               this._setCurrentRow(currentRow, {
                 invoiceNo: '',
                 money: '',
@@ -614,10 +633,16 @@ export const attachmentMixin = {
               this.$message.error(notPassReason ? notPassReason : '识别失败,请上传至其它附件列表')
               resolve(false)
             } else {
-              this.$message({
+              // 识别成功，但是需要判断当前的发票类型是否跟表格的发票类型是否一致
+              let isValidInvoice = this._isValidInvoiceType({ tableType, type, extendInfo })
+              isValidInvoice ? this.$message({
                 type: 'success',
                 message: '识别成功'
+              }) : this.$message({
+                type: 'warning',
+                message: '发票归类错误!'
               })
+                
               this._setCurrentRow(currentRow, {
                 invoiceNo,
                 money: amountWithTax,
@@ -625,6 +650,7 @@ export const attachmentMixin = {
                 isValidInvoice: true
               })
               resolve(true)
+              
             }
           }
         }).catch(err => {
