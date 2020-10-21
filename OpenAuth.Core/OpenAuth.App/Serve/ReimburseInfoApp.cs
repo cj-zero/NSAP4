@@ -549,9 +549,9 @@ namespace OpenAuth.App
                 throw new CommonException("该服务单已提交报销单，不可二次使用！", Define.INVALID_ReimburseAgain);
             }
             int racount = 0;
-            req.ReimburseOtherCharges.ForEach(r => racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0);
-            req.ReimburseFares.ForEach(r => racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0);
-            req.ReimburseAccommodationSubsidies.ForEach(r => racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0);
+            req.ReimburseOtherCharges.Where(r=>r.IsAdd==null || r.IsAdd==true).ForEach(r => racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0);
+            req.ReimburseFares.Where(r => r.IsAdd == null || r.IsAdd == true).ForEach(r => racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0);
+            req.ReimburseAccommodationSubsidies.Where(r => r.IsAdd == null || r.IsAdd == true).ForEach(r => racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0);
             if (racount > 0) 
             {
                 throw new CommonException("请上传附件！", Define.INVALID_ReimburseAgain);
@@ -719,6 +719,16 @@ namespace OpenAuth.App
             {
                 loginUser = await GetUserId(Convert.ToInt32(req.AppId));
             }
+            #region 必须存在附件
+            int racount = 0;
+            req.ReimburseOtherCharges.Where(r => r.IsAdd == null || r.IsAdd == true).ForEach(r => racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0);
+            req.ReimburseFares.Where(r => r.IsAdd == null || r.IsAdd == true).ForEach(r => racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0);
+            req.ReimburseAccommodationSubsidies.Where(r => r.IsAdd == null || r.IsAdd == true).ForEach(r => racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0);
+            if (racount > 0)
+            {
+                throw new CommonException("请上传附件！", Define.INVALID_ReimburseAgain);
+            }
+            #endregion
 
             #region 删除我的费用
 
