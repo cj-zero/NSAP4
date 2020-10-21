@@ -17,7 +17,6 @@ namespace Infrastructure.Export
 {
     public class ExportAllHandler
     {
-        private static ILogger<AliPhoneNumberProtect> _logger;
         #region pdf
         /// <summary>
         /// pdf按模板导出
@@ -29,38 +28,29 @@ namespace Infrastructure.Export
         /// <returns></returns>
         public static async Task ExporterpdfBatch<T>(string filePath, List<T> data, string tplPath = null) where T : class
         {
-            try
+            if (tplPath == null)
             {
-                if (tplPath == null)
-                {
-                    tplPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "default.cshtml");
-                }
-                else 
-                {
-                    tplPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", tplPath);
-                }
-
-                var tpl = System.IO.File.ReadAllText(tplPath);
-                int num = 0;
-                var Model = new List<T>();
-                string directory = Path.GetDirectoryName(filePath);
-                string extension = Path.GetExtension(filePath);
-                string fileName = Path.GetFileNameWithoutExtension(filePath);
-                foreach (var item in data)
-                {
-                    Model.Add(item);
-                    var FilePathName = Path.Combine(directory, fileName + "(" + ++num + ")" + extension);
-                    var exporter = new PdfExporter();
-                    await exporter.ExportListByTemplate(FilePathName, Model, tpl);
-                    Model.Remove(item);
-                }
-
+                tplPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "default.cshtml");
             }
-            catch (Exception e)
+            else 
             {
-                _logger.LogError(e, e.ToString());
+                tplPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", tplPath);
             }
 
+            var tpl = System.IO.File.ReadAllText(tplPath);
+            int num = 0;
+            var Model = new List<T>();
+            string directory = Path.GetDirectoryName(filePath);
+            string extension = Path.GetExtension(filePath);
+            string fileName = Path.GetFileNameWithoutExtension(filePath);
+            foreach (var item in data)
+            {
+                Model.Add(item);
+                var FilePathName = Path.Combine(directory, fileName + "(" + ++num + ")" + extension);
+                var exporter = new PdfExporter();
+                await exporter.ExportListByTemplate(FilePathName, Model, tpl);
+                Model.Remove(item);
+            }
         }
 
         /// <summary>
@@ -73,29 +63,21 @@ namespace Infrastructure.Export
         /// <returns></returns>
         public static async Task<byte[]> Exporterpdf<T>(T data, string tplPath = null) where T : class
         {
-            try
+            if (tplPath == null)
             {
-                if (tplPath == null)
-                {
-                    tplPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "default.cshtml");
-                }
-                else
-                {
-                    tplPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", tplPath);
-                }
-                var tpl = System.IO.File.ReadAllText(tplPath);
-                var exporter = new PdfExporter();
-                PdfExporterAttribute pdf = new PdfExporterAttribute();
-                pdf.IsWriteHtml = true;
-                pdf.Orientation = Orientation.Portrait;
-                var result = await exporter.ExportBytesByTemplate(data, pdf, tpl);
-                return result;
+                tplPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "default.cshtml");
             }
-            catch (Exception e)
+            else
             {
-                _logger.LogError(e, e.ToString());
+                tplPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", tplPath);
             }
-            return null;
+            var tpl = System.IO.File.ReadAllText(tplPath);
+            var exporter = new PdfExporter();
+            PdfExporterAttribute pdf = new PdfExporterAttribute();
+            pdf.IsWriteHtml = true;
+            pdf.Orientation = Orientation.Portrait;
+            var result = await exporter.ExportBytesByTemplate(data, pdf, tpl);
+            return result;
         }
         #endregion
 

@@ -11,18 +11,21 @@
       >{{ item.areaName }}</li>
     </ul>
     <!-- 选择列表 -->
-    <ul class="select-list">
-      <li 
-        v-for="item in selectList" 
-        :key="item.areaName" 
-        @click="selectItem(item)"
-        :class="{ active: includesName(item.areaName) }">{{ item.areaName }}</li>
-    </ul>
+    <el-scrollbar>
+      <ul class="select-list">
+        <li 
+          v-for="item in selectList" 
+          :key="item.areaName" 
+          @click="selectItem(item)"
+          :class="{ active: includesName(item.areaName) }">{{ item.areaName }}</li>
+      </ul>
+    </el-scrollbar>
   </div>
 </template>
 
 <script>
 // import addressList from './address'
+import { setLocalStorage, hasLocalStorage, setObject, getObject } from  '@/utils/storage'
 import { getAreaList } from '@/api/serve/area'
 export default {
   props: {
@@ -104,11 +107,8 @@ export default {
       this.$emit("close", this.options)
     },
     _normalizeAddressList (id, isReset) { // id: 根据id查询省市区 isRest: 根据省市区是否发生变化
-      getAreaList({
-        ReqId: id
-      }).then(res => {
-        this.selectList = res.data
-        // console.log(this.selectList, 'selectList')
+      if (getObject('addressInfo', id)) { // 如果数据已经缓存则直接取缓存的数据
+        this.selectList = getObject('addressInfo', id)
         if (isReset && Number(this.currentItem.areaLevel) !== 3) {
           this.tabList.push({
             areaName: '请选择',
@@ -117,8 +117,23 @@ export default {
           this.activeIndex++
           this.currentIndex++ 
         }
-        this.isFirst = false
-      })
+      } else {
+        getAreaList({
+          ReqId: id
+        }).then(res => {
+          this.selectList = res.data
+          setObject('addressInfo', id, this.selectList)
+          if (isReset && Number(this.currentItem.areaLevel) !== 3) {
+            this.tabList.push({
+              areaName: '请选择',
+              pid: id
+            })
+            this.activeIndex++
+            this.currentIndex++ 
+          }
+          this.isFirst = false
+        })
+      }
     }
   },
   watch: {
@@ -156,8 +171,10 @@ export default {
     }
   },
   created () {
-    console.log('1111', 'created')
-    this._normalizeAddressList()
+    if (!hasLocalStorage('addressInfo')) { // 缓存地址信息
+      setLocalStorage('addressInfo', {})
+    }
+    this._normalizeAddressList('')
   },
   mounted () {
     
@@ -202,19 +219,23 @@ export default {
         cursor: pointer;
       }
       &.active {
-        // border: 1px solid #dcdfe6;
-        // border-left: 1px solid #dcdfe6;
         color: rgba(0, 90, 160, 1);
         border-bottom: 1px solid transparent;
       }
     }
   }
+  ::v-deep .el-scrollbar {
+    .el-scrollbar__wrap {
+      max-height: 300px !important; // 最大高度
+      overflow-x: hidden; // 隐藏横向滚动栏
+      margin-bottom: 0 !important;
+    }
+  }
   .select-list {
     display: flex;
     flex-wrap: wrap;
-    overflow-y: auto;
-    max-height: 300px;
-    
+    // overflow-y: auto;
+    // max-height: 300px;
     & > li {
       width: 25%;
       white-space: nowrap;

@@ -525,6 +525,11 @@ export default {
           fileId, 
           currentRow, 
           uploadVm,
+          tableType: this.currentType === TRANSPORT_TYPE
+            ? 'traffic' 
+            : this.currentType === ACC_TYPE 
+              ? 'acc'
+              : 'other'
         }, this.currentType === ACC_TYPE).then(isValid => {
           isValid 
             ? this._setAttachmentList(attachmentConfig) 
