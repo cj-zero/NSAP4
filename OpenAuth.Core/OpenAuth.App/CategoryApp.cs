@@ -89,7 +89,7 @@ namespace OpenAuth.App
             var result = new TableData();
             var objs = UnitWork.Find<Category>(null);
             objs = objs.Where(u => ids.Contains(u.TypeId)).OrderBy(u => u.CreateTime);
-            result.Data = await objs.Select(u => new { u.Name, u.TypeId,u.DtValue}).ToListAsync();
+            result.Data = await objs.Select(u => new { u.Name, u.TypeId,u.DtValue,u.Description}).ToListAsync();
             return result;
         }
 
