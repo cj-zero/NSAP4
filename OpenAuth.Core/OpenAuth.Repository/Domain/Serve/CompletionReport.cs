@@ -209,7 +209,7 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("服务方式")]
         public int? ServiceMode { get; set; }
-        
+
         /// 出发省
         /// </summary>
         [Description("出发省")]
@@ -260,6 +260,11 @@ namespace OpenAuth.Repository.Domain
         [Description("是否报销过")]
         public int? IsReimburse { get; set; }
 
+        /// <summary>
+        /// 责任承担
+        /// </summary>
+        [Description("责任承担")]
+        public string Responsibility { get; set; }
         /// <summary>
         /// 完工报告关联的图片
         /// </summary>
