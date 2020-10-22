@@ -218,7 +218,7 @@ namespace OpenAuth.App
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
             ServiceOrderIds = datas.Select(d => d.ServiceOrderId).ToList();
-            var CompletionReports = await UnitWork.Find<CompletionReport>(c => ServiceOrderIds.Contains((int)c.ServiceOrderId)).ToListAsync();
+            var CompletionReports = await UnitWork.Find<CompletionReport>(c => ServiceOrderIds.Contains((int)c.ServiceOrderId) && c.ServiceMode == 1).ToListAsync();
             var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ServiceOrderIds.Contains(s.Id)).ToListAsync();
             var ReimburseResps = from a in datas
                                  join b in CompletionReports on a.ServiceOrderId equals b.ServiceOrderId
@@ -237,8 +237,8 @@ namespace OpenAuth.App
                 fillTime = r.a.CreateTime.ToString("yyyy-MM-dd"),
                 r.b.TerminalCustomerId,
                 r.b.TerminalCustomer,
-                BusinessTripDate=r.b.BusinessTripDate.ToString("yyyy-MM-dd"),
-                EndDate =r.b.EndDate.ToString("yyyy-MM-dd"),
+                BusinessTripDate = Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Min(c=>c.BusinessTripDate)).ToString("yyyy-MM-dd"),
+                EndDate =Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.EndDate)).ToString("yyyy-MM-dd"),
                 r.b.BusinessTripDays,
                 r.b.FromTheme,
                 r.c.SalesMan,
@@ -308,8 +308,7 @@ namespace OpenAuth.App
                                  join d in SelUserName on a.CreateUserId equals d.Id
                                  join e in Relevances on a.CreateUserId equals e.FirstId
                                  join f in SelOrgName on e.SecondId equals f.Id
-                                 join g in rohs on a.Id equals g.ReimburseInfoId
-                                 select new { a, b, c, d, f ,g};
+                                 select new { a, b, c, d, f };
 
             ReimburseResps = ReimburseResps.OrderByDescending(r => r.f.CascadeId).ToList();
             ReimburseResps = ReimburseResps.GroupBy(r => r.a.Id).Select(r => r.First()).ToList();
@@ -317,7 +316,7 @@ namespace OpenAuth.App
             result.Data = ReimburseResps.Select(r => new
             {
                 ReimburseResp = r.a,
-                RejectRemark = r.g.Remark,
+                RejectRemark = rohs.Where(o=>o.ReimburseInfoId.Equals(r.a.Id)).OrderByDescending(o=>o.CreateTime).Select(o=>o.Remark).FirstOrDefault(),
                 r.b.TerminalCustomerId,
                 r.b.TerminalCustomer,
                 r.b.BusinessTripDate,
@@ -396,8 +395,8 @@ namespace OpenAuth.App
                 s.b.FromTheme,
                 s.b.Becity,
                 s.b.Destination,
-                BusinessTripDate = CompletionReports.Where(c => c.ServiceOrderId.Equals(s.a.Id) && c.ServiceMode == 1).OrderBy(c => c.BusinessTripDate).FirstOrDefault().BusinessTripDate,
-                EndDate = CompletionReports.Where(c => c.ServiceOrderId.Equals(s.a.Id) && c.ServiceMode == 1).OrderByDescending(c => c.EndDate).FirstOrDefault().EndDate,
+                BusinessTripDate = CompletionReports.Where(c => c.ServiceOrderId.Equals(s.a.Id) && c.ServiceMode == 1).Min(c=>c.BusinessTripDate),
+                EndDate = CompletionReports.Where(c => c.ServiceOrderId.Equals(s.a.Id) && c.ServiceMode == 1).Min(c => c.EndDate),
                 MaterialCode = s.b.MaterialCode == "其他设备" ? "其他设备" : s.b.MaterialCode.Substring(0, s.b.MaterialCode.IndexOf("-"))
             }).ToList();
             result.Count = ServiceOrderLists.Count();
@@ -506,21 +505,22 @@ namespace OpenAuth.App
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == "UserOrg" && r.FirstId == ReimburseResp.CreateUserId).Select(r => r.SecondId).ToListAsync();
             var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
             var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id == ReimburseResp.ServiceOrderId).FirstOrDefaultAsync();
-            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == ReimburseResp.ServiceOrderId && c.CreateUserId.Equals(ReimburseResp.CreateUserId)).FirstOrDefaultAsync();
+            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == ReimburseResp.ServiceOrderId && c.CreateUserId.Equals(ReimburseResp.CreateUserId) && c.ServiceMode == 1).ToListAsync() ;
+            var completionreport = CompletionReports.FirstOrDefault();
 
             result.Data = new
             {
                 ReimburseResp = ReimburseResp,
                 UserName = await UnitWork.Find<User>(u => u.Id.Equals(ReimburseResp.CreateUserId)).Select(u => u.Name).FirstOrDefaultAsync(),
                 OrgName = orgname,
-                TerminalCustomer = CompletionReports.TerminalCustomer,
-                TerminalCustomerId = CompletionReports.TerminalCustomerId,
-                FromTheme = CompletionReports.FromTheme,
-                Becity = CompletionReports.Becity,
-                Destination = CompletionReports.Destination,
-                BusinessTripDate = CompletionReports.BusinessTripDate,
-                EndDate = CompletionReports.EndDate,
-                MaterialCode = CompletionReports.MaterialCode == "其他设备" ? "其他设备" : CompletionReports.MaterialCode.Substring(0, CompletionReports.MaterialCode.IndexOf("-"))
+                TerminalCustomer = completionreport.TerminalCustomer,
+                TerminalCustomerId = completionreport.TerminalCustomerId,
+                FromTheme = completionreport.FromTheme,
+                Becity = completionreport.Becity,
+                Destination = completionreport.Destination,
+                BusinessTripDate = CompletionReports.Min(c=>c.BusinessTripDate),
+                EndDate = CompletionReports.Max(c =>c.EndDate),
+                MaterialCode = completionreport.MaterialCode == "其他设备" ? "其他设备" : completionreport.MaterialCode.Substring(0, completionreport.MaterialCode.IndexOf("-"))
 
             };
 
@@ -1323,6 +1323,26 @@ namespace OpenAuth.App
             var userid = UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(AppId)).Select(u => u.UserID).FirstOrDefault();
 
             return await UnitWork.Find<User>(u => u.Id.Equals(userid)).FirstOrDefaultAsync();
+        }
+
+        /// <summary>
+        /// 判断劳务关系是否正确
+        /// </summary>
+        /// <param name="AppId"></param>
+        /// <param name="ServiceRelations"></param>
+        /// <returns></returns>
+        private async Task<bool> IsServiceRelations(int AppId, string ServiceRelations)
+        {
+            var user = _auth.GetCurrentUser().User;
+            if (user.Account == "App")
+            {
+                user = await GetUserId(Convert.ToInt32(AppId));
+            }
+            if (!ServiceRelations.Contains(user.ServiceRelations))
+            {
+                return false;
+            }
+            return true;
         }
 
         public ReimburseInfoApp(IUnitWork unitWork,

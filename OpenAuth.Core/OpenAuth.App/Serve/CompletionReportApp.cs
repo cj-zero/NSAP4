@@ -307,7 +307,6 @@ namespace OpenAuth.App
                 if (worklist != null && worklist.Count>0) 
                 {
                     c.ServiceWorkOrders = worklist.MapToList<WorkCompletionReportResp>();
-                    c.ServiceMode = worklist.FirstOrDefault().ServiceMode;
                     c.ProcessDescription = worklist.FirstOrDefault().ProcessDescription;
                     c.TroubleDescription = worklist.FirstOrDefault().TroubleDescription;
                     c.U_SAP_ID = U_SAP_ID.ToString();
