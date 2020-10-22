@@ -350,16 +350,17 @@ namespace OpenAuth.App
             }
 
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == "UserOrg" && r.FirstId == loginUser.Id).Select(r => r.SecondId).ToListAsync();
-            var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderBy(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
+            var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.CreateUserId.Equals(loginUser.Id) && c.IsReimburse < 2).OrderByDescending(c => c.CreateTime).ToListAsync();
-           
+
             var ServiceOrderids = CompletionReports.Select(c => c.ServiceOrderId).Distinct().ToList();
             var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ServiceOrderids.Contains(s.Id)).Include(s => s.ServiceWorkOrders).ToListAsync();
             List<ServiceOrder> ServiceOrderList = new List<ServiceOrder>();
             foreach (var item in ServiceOrders)
             {
-                var WorkOrders = item.ServiceWorkOrders.Where(s => s.CurrentUserNsapId == loginUser.Id && (s.Status <= 6 || s.ServiceMode==2)).ToList();
-                if (WorkOrders.Count == 0)
+                var WorkOrders = item.ServiceWorkOrders.Where(s => s.CurrentUserNsapId == loginUser.Id && s.ServiceMode == 1 && s.Status > 6).Count();
+                var WorkOrderCount = item.ServiceWorkOrders.Where(s => s.CurrentUserNsapId == loginUser.Id && s.Status <= 6).Count();
+                if (WorkOrders > 0 && WorkOrderCount<=0)
                 {
                     ServiceOrderList.Add(item);
                 }
@@ -1047,6 +1048,7 @@ namespace OpenAuth.App
                 obj.RemburseStatus = 2;
                 obj.FlowInstanceId = "";
                 eoh.ApprovalResult = "驳回";
+                eoh.Action = "驳回报销单";
             }
             else
             {
@@ -1090,13 +1092,13 @@ namespace OpenAuth.App
             }
 
             await UnitWork.UpdateAsync<ReimburseInfo>(obj);
-            var seleoh = await UnitWork.Find<ReimurseOperationHistory>(null).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
+            var seleoh = await UnitWork.Find<ReimurseOperationHistory>(r=>r.ReimburseInfoId.Equals(obj.Id)).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
             eoh.CreateUser = loginContext.User.Name;
             eoh.CreateUserId = loginContext.User.Id;
             eoh.CreateTime = DateTime.Now;
             eoh.ReimburseInfoId = obj.Id;
             eoh.Remark = req.Remark;
-            eoh.IntervalTime = DateTime.Now.Subtract(Convert.ToDateTime(seleoh.CreateTime)).Minutes;
+            eoh.IntervalTime =Convert.ToInt32((DateTime.Now-Convert.ToDateTime(seleoh.CreateTime)).TotalMinutes);
             await UnitWork.AddAsync<ReimurseOperationHistory>(eoh);
             await UnitWork.SaveAsync();
 
