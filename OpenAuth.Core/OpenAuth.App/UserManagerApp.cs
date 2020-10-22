@@ -372,16 +372,16 @@ namespace OpenAuth.App
         }
 
         /// <summary>
-        /// 按名称模糊查询人员 by zlg 2020.7.31
+        /// 按名称模糊查询人员
         /// </summary>
         public async Task<TableData> GetListUser(string name, string Orgid)
         {
             var loginUser = _auth.GetCurrentUser();
 
             string cascadeId = ".0.";
-            if (!string.IsNullOrEmpty(Orgid))
+            if (!string.IsNullOrWhiteSpace(Orgid))
             {
-                var org = loginUser.Orgs.SingleOrDefault(u => u.Id == Orgid);
+                var org = loginUser.Orgs.FirstOrDefault(u => u.Id == Orgid);
                 cascadeId = org.CascadeId;
             }
 
@@ -396,6 +396,32 @@ namespace OpenAuth.App
             return result;
         }
 
+        /// <summary>
+        /// 获取用户全部信息
+        /// </summary>
+        /// <returns></returns>
+        public TableData GetUserAll()
+        {
+            var loginUser = _auth.GetCurrentUser();
+            //获取级别最低部门
+            var Relevances = _revelanceApp.Get(Define.USERORG, true, loginUser.User.Id);
+            var Orgs = loginUser.Orgs.Where(o => Relevances.Contains(o.Id)).ToList();
+            var OrgName = Orgs.OrderByDescending(o => o.CascadeId).FirstOrDefault().Name;
+            //获取角色权限
+            Relevances = _revelanceApp.Get(Define.USERROLE, true, loginUser.User.Id);
+            var Roles = loginUser.Roles.Where(o => Relevances.Contains(o.Id)).Select(r=>r.Name).ToList();
+
+            var result = new TableData();
+            result.Data = new
+            {
+                UserName= loginUser.User.Name,
+                ServiceRelations = string.IsNullOrWhiteSpace(loginUser.User.ServiceRelations)?"未录入": loginUser.User.ServiceRelations,
+                OfficeSpace= string.IsNullOrWhiteSpace(loginUser.User.OfficeSpace) ? "未录入" : loginUser.User.ServiceRelations,
+                OrgName= OrgName,
+                Roles= Roles
+            };
+            return result;
+        }
         /// <summary>
         /// 根据App用户Id获取用户信息
         /// </summary>

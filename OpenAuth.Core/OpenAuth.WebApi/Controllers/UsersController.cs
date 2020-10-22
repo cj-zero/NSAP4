@@ -203,8 +203,25 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
-
-
+        /// <summary>
+        /// 获取用户全部信息
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public TableData GetUserAll() 
+        {
+            var result = new TableData();
+            try
+            {
+                result =  _app.GetUserAll();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
         public UsersController(UserManagerApp app)
         {
             _app = app;
