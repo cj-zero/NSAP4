@@ -3,6 +3,9 @@
     class="my-dialog-wrapper my-dialog-mini"
     v-el-drag-dialog
     v-loading="loading"
+    :element-loading-text="loadingText"
+    element-loading-spinner="el-icon-loading"
+    element-loading-background="rgba(0, 0, 0, 0.8)"
     :center="center"
     :width="width"
     :title="title"
@@ -41,6 +44,10 @@ export default {
     width: {
       type: String,
       default: '50%'
+    },
+    loadingText: {
+      type: String,
+      defualt: '拼命加载中'
     },
     title: {
       type: String,

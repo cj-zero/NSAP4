@@ -82,6 +82,7 @@
         :onClosed="closeDialog"
         :title="textMap[title]"
         :loading="dialogLoading"
+        :btnList="btnList"
       >
         <order 
           ref="order" 
@@ -159,7 +160,12 @@ export default {
         { type: 'search' },
         { type: 'button', btnText: '打印', handleClick: this.print }
       ]
-    } // 搜索配置
+    }, // 搜索配置
+    btnList () {
+      return [
+        { btnText: '关闭', handleClick: this.closeDialog, className: 'close' }
+      ]
+    } 
   },
   data () {
     return {

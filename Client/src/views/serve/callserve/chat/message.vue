@@ -107,23 +107,19 @@ export default {
         .GetServiceOrderMessages({ serviceOrderId: this.serveId })
         .then((res) => {
           this.wordList = this._normalizeWordList(res.result);
-          console.log(this.wordList, "wordList");
         }).catch(() => {
           this.$message.error('加载留言列表失败')
         })
     },
     getInfo() {
-      // return new Promise((resolve,reject)=>{
       callserve
         .GetUserProfile(this.tokenValue)
         .then((res) => {
           this.userType = res.result.name;
-          console.log(res, "res info");
         })
         .catch((error) => {
           console.log(error);
         });
-      // })
     },
     _normalizeWordList (wordList) {
       return wordList.map(item => {

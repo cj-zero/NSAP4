@@ -278,7 +278,7 @@ export default {
       this.$refs.order.submit(isDraft).then(() => {
         this.$message({
           type: 'success',
-          message: '提交成功'
+          message: isDraft ? '存为草稿成功' : '提交成功'
         })
         this._getList()
         this.$refs.order.resetInfo()
@@ -317,7 +317,7 @@ export default {
       this.$refs.order.updateOrder(isDraft).then(() => {
         this.$message({
           type: 'success',
-          message: '编辑成功'
+          message: isDraft ? '存为草稿成功' : '提交成功'
         })
         this._getList()
         this.$refs.order.resetInfo()
