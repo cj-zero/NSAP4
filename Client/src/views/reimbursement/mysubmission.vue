@@ -77,7 +77,7 @@
     <my-dialog
       ref="myDialog"
       :center="true"
-      width="1336px"
+      :width="this.title === 'view' ? '1206px' : '1336px'"
       :btnList="btnList"
       :onClosed="closeDialog"
       :title="textMap[title]"
@@ -168,8 +168,8 @@ export default {
         { btnText: '导入费用', handleClick: this.importFee, isShow: this.title !== 'view' },
         { btnText: '提交', handleClick: this.submit, loading: this.submitLoading, isShow: this.title !== 'view' },
         { btnText: '存为草稿', handleClick: this.saveAsDraft, loading: this.draftLoading, isShow: this.title !== 'view' },
-        { btnText: '重置', handleClick: this.reset, isShow: this.title === 'create' },
-        { btnText: '关闭', handleClick: this.closeDialog, isShow: this.title !== 'view' }
+        { btnText: '重置', handleClick: this.reset, isShow: this.title === 'create', className: 'danger' },
+        { btnText: '关闭', handleClick: this.closeDialog, className: 'close' }
       ]
     }
   },
@@ -252,17 +252,23 @@ export default {
           message: '当前状态不可撤回'
         })
       }
-      withdraw({
-        reimburseInfoId: this.currentRow.id
-      }).then(() => {
-       this.$message({
-         type: 'success',
-         message: '撤回成功'
-       })
-        this._getList()
-      }).catch(err => {
-        this.$message.error(err.message || '撤回失败')
-      })
+      this.$confirm('确定撤回?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          withdraw({
+            reimburseInfoId: this.currentRow.id
+          }).then(() => {
+            this.$message({
+              type: 'success',
+              message: '撤回成功'
+            })
+            this._getList()
+          }).catch(err => {
+            this.$message.error(err.message || '撤回失败')
+          })
+        })
     },
     _addOrder (isDraft = false) {
       isDraft

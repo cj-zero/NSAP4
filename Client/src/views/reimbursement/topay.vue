@@ -77,7 +77,7 @@
       <my-dialog
         ref="myDialog"
         :center="true"
-        width="1336px"
+        width="1206px"
         :onClosed="closeDialog"
         :title="textMap[title]"
         :btnList="btnList"
@@ -161,7 +161,7 @@ export default {
     btnList () {
       return [
         { btnText: '确认支付', handleClick: this.toPay, isShow: this.title !== 'view' },
-        { btnText: '关闭', handleClick: this.closeDialog, isShow: this.title !== 'view' }
+        { btnText: '关闭', handleClick: this.closeDialog, className: 'close' }
       ]
     }
   },

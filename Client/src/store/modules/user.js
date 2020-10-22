@@ -1,6 +1,7 @@
 import { login, logout, getInfo, getModules, getModulesTree, getOrgs } from '@/api/login'
 import { getToken, setToken, removeToken } from '@/utils/auth'
-import { getRoles } from '@/api/roles'
+import { getUserInfoAll } from '@/api/users'
+// import { getRoles } from '@/api/roles'
 const user = {
   state: {
     token: getToken(),
@@ -9,6 +10,7 @@ const user = {
     modules: null,
     defaultorg: null, // 登录后默认的操作机构
     roles: [], // 用户角色
+    userInfoAll: {} // 用户的所有信息
   },
 
   mutations: {
@@ -26,6 +28,9 @@ const user = {
     },
     SET_ROLES: (state, roles) => {
       state.roles = roles
+    },
+    SET_USER_INFO: (state, userInfoAll) => {
+      state.userInfoAll = userInfoAll
     }
   },
 
@@ -44,17 +49,28 @@ const user = {
         })
       })
     },
-    // 获取用户的角色信息
-    GetRoles({ commit }) {
+    // 获取当前用户的名字、部门、角色列表、劳务关系
+    GetUserInfoAll ({ commit }) {
       return new Promise((resolve, reject) => {
-        getRoles().then(response => {
-          commit('SET_ROLES', response.result)
-          resolve(response.result)
+        getUserInfoAll().then(response => {
+          commit('SET_USER_INFO', response.data)
+          resolve(response.data)
         }).catch(error => {
           reject(error)
         })
       })
     },
+    // 获取用户的角色信息
+    // GetRoles({ commit }) {
+    //   return new Promise((resolve, reject) => {
+    //     getRoles().then(response => {
+    //       commit('SET_ROLES', response.result)
+    //       resolve(response.result)
+    //     }).catch(error => {
+    //       reject(error)
+    //     })
+    //   })
+    // },
     // 获取用户信息
     GetInfo({ commit, state }) {
       return new Promise((resolve, reject) => {

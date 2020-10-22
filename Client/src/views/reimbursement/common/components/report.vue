@@ -122,17 +122,22 @@
       label-position="left"
     >
       <el-row type="flex" justify="space-around">
-        <el-col :span="8">
+        <el-col :span="6">
           <el-form-item label="售后问题类型">
             <el-input readonly v-model="showData.troubleDescription"></el-input>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="6">
           <el-form-item label="售后解决方法">
             <el-input readonly v-model="showData.processDescription"></el-input>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="6">
+          <el-form-item label="责任环节">
+            <el-input readonly v-model="showData.responsibility"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
           <el-form-item label="服务方式">
             <el-input readonly v-model="showData.serviceText"></el-input>
           </el-form-item>

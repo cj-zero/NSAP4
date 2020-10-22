@@ -78,3 +78,11 @@ export function blockUp (data) { // 停用
     data
   })
 }
+
+export function getUserInfoAll(params) { // 获取用户的所有信息
+  return request({
+    url: '/Users/GetUserAll', 
+    method: 'get',
+    params
+  })
+}

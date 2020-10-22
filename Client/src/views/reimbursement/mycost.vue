@@ -340,11 +340,6 @@ export default {
           }).catch(() => {
             this.$message.error('删除失败')
           })
-        }).catch(() => {
-          this.$message({
-            type: 'info',
-            message: '已取消删除'
-          })  
         })
     },
     toSave () {

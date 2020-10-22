@@ -1,7 +1,18 @@
 <template>
   <div class="remark-wrapper">
-    <span class="title">备注：</span>
-    <el-input type="textarea" v-model="text" :placeholder="placeholder" @input="onInput"></el-input>
+    <span class="title">驳回原因：</span>
+    <div class="right-wrapper">
+      <el-input type="textarea" v-model="text" :placeholder="placeholder" @input="onInput"></el-input>
+      <el-tag
+        class="tag-item"
+        size="mini"
+        v-for="item in tagList" 
+        :key="item.value"
+        :type="item.value"
+        @click="selectTag(item)">
+        {{ item.label }}
+      </el-tag>
+    </div>
   </div>
 </template>
 
@@ -16,6 +27,12 @@ export default {
     placeholder: {
       type: String,
       default: '请输入活动名称'
+    },
+    tagList: { // 标签按钮
+      type: Array,
+      default () {
+        return []
+      }
     }
   },
   data () {
@@ -29,6 +46,9 @@ export default {
     },
     reset () {
       this.text = ''
+    },
+    selectTag (item) {
+      this.text = item.label
     }
   },
   created () {
@@ -43,11 +63,14 @@ export default {
 .remark-wrapper {
   display: flex;
   .title {
-    width: 60px;
+    width: 80px;
     font-size: 12px;
   }
-  .textarea-wrapper {
-    width: 100px;
+  .right-wrapper {
+    .tag-item {
+      margin: 5px 5px 0 0;
+      cursor: pointer;
+    }
   }
 }
 </style>

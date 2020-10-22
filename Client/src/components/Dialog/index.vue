@@ -17,7 +17,8 @@
     <span slot="footer" class="dialog-footer" v-if="isShowBtn && btnList.length">
       <template v-for="btnItem in btnList">
         <el-button
-          class="customer-btn-class"
+          class="btn-item customer-btn-class"
+          :class="btnItem.className"
           v-if="btnItem.isShow === undefined ? true : btnItem.isShow"
           :key="btnItem.btnText"
           :type="btnItem.type || 'primary'"
@@ -101,9 +102,19 @@ export default {
 </script>
 <style lang='scss' scoped>
 .my-dialog-wrapper {
-  overflow: hidden;
+  overflow-y: hidden;
   &::v-deep .el-dialog__body {
     padding: 10px !important;
+  }
+  .btn-item {
+    border: 1px solid #DCDFE6;
+    &.danger {
+      background-color: rgba(245, 108, 108, 1);
+    }
+    &.close {
+      background-color: #fff;
+      color: black;
+    }
   }
 }
 </style>

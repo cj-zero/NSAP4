@@ -56,7 +56,8 @@ router.beforeEach((to, from, next) => {
           // initSignalR(getToken())
           return
         }
-        store.dispatch('GetRoles')
+        // store.dispatch('GetRoles')
+        store.dispatch('GetUserInfoAll')
         store.dispatch('GetInfo').then(() => { // 拉取用户信息
           store.dispatch('GetModulesTree').then(modules => { // 获取用户可访问的模块
             store.dispatch('GenerateRoutes', { modules }).then(() => { // 根据权限生成可访问的路由表
