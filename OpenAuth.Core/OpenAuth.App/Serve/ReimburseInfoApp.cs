@@ -72,7 +72,8 @@ namespace OpenAuth.App
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId), r => r.ServiceOrderSapId.ToString().Contains(request.ServiceOrderId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.BearToPay), r => r.BearToPay.Contains(request.BearToPay))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.Responsibility), r => r.Responsibility.Contains(request.Responsibility))
-                      .WhereIf(request.StaticDate != null && request.EndDate != null, r => r.CreateTime > request.StaticDate && r.CreateTime < Convert.ToDateTime(request.EndDate).AddMinutes(1440))
+                      .WhereIf(request.StaticDate != null, r => r.CreateTime > request.StaticDate)
+                      .WhereIf(request.EndDate != null, r => r.CreateTime < Convert.ToDateTime(request.EndDate).AddMinutes(1440))
                       //.WhereIf(!string.IsNullOrWhiteSpace(request.IsDraft.ToString()), r => r.IsDraft == request.IsDraft)
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ReimburseType), r => r.ReimburseType.Equals(request.ReimburseType))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId))
@@ -368,10 +369,21 @@ namespace OpenAuth.App
 
             var ServiceOrderLists = from a in ServiceOrderList
                                     join b in CompletionReports on a.Id equals b.ServiceOrderId
+                                    where b.ServiceMode==1
                                     select new { a, b };
 
+            
             ServiceOrderLists = ServiceOrderLists.GroupBy(r => r.a.Id).Select(g => g.First()).ToList();
-            var objs = ServiceOrderLists.Select(s => new
+
+            if (!string.IsNullOrWhiteSpace(request.SapId))
+            {
+                ServiceOrderLists = ServiceOrderLists.Where(s => s.a.U_SAP_ID.ToString().Contains(request.SapId) || s.b.TerminalCustomer.Contains(request.SapId)).ToList();
+            }
+            var result = new TableData();
+            var objs = ServiceOrderLists.OrderBy(u => u.a.U_SAP_ID)
+                .Skip((request.page - 1) * request.limit)
+                .Take(request.limit).ToList();
+            result.Data = objs.Select(s => new
             {
                 UserId = loginUser.Id,
                 UserName = loginUser.Name,
@@ -383,21 +395,12 @@ namespace OpenAuth.App
                 s.a.U_SAP_ID,
                 s.b.FromTheme,
                 s.b.Becity,
-                s.b.Destination ,
-                s.b.BusinessTripDate,
-                s.b.EndDate ,
+                s.b.Destination,
+                BusinessTripDate = CompletionReports.Where(c => c.ServiceOrderId.Equals(s.a.Id) && c.ServiceMode == 1).OrderBy(c => c.BusinessTripDate).FirstOrDefault().BusinessTripDate,
+                EndDate = CompletionReports.Where(c => c.ServiceOrderId.Equals(s.a.Id) && c.ServiceMode == 1).OrderByDescending(c => c.EndDate).FirstOrDefault().EndDate,
                 MaterialCode = s.b.MaterialCode == "其他设备" ? "其他设备" : s.b.MaterialCode.Substring(0, s.b.MaterialCode.IndexOf("-"))
             }).ToList();
-
-            if (!string.IsNullOrWhiteSpace(request.SapId))
-            {
-                objs = objs.Where(s => s.U_SAP_ID.ToString().Contains(request.SapId) || s.TerminalCustomer.Contains(request.SapId)).ToList();
-            }
-            var result = new TableData();
-            result.Data = objs.OrderBy(u => u.U_SAP_ID)
-                .Skip((request.page - 1) * request.limit)
-                .Take(request.limit).ToList();
-            result.Count = objs.Count;
+            result.Count = ServiceOrderLists.Count();
             return result;
         }
 
@@ -501,7 +504,7 @@ namespace OpenAuth.App
             #endregion
 
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == "UserOrg" && r.FirstId == ReimburseResp.CreateUserId).Select(r => r.SecondId).ToListAsync();
-            var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderBy(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
+            var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
             var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id == ReimburseResp.ServiceOrderId).FirstOrDefaultAsync();
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == ReimburseResp.ServiceOrderId && c.CreateUserId.Equals(ReimburseResp.CreateUserId)).FirstOrDefaultAsync();
 

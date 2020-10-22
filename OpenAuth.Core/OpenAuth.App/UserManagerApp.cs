@@ -405,8 +405,12 @@ namespace OpenAuth.App
             var loginUser = _auth.GetCurrentUser();
             //获取级别最低部门
             var Relevances = _revelanceApp.Get(Define.USERORG, true, loginUser.User.Id);
-            var Orgs = loginUser.Orgs.Where(o => Relevances.Contains(o.Id)).ToList();
-            var OrgName = Orgs.OrderByDescending(o => o.CascadeId).FirstOrDefault().Name;
+            string OrgName = "";
+            if (Relevances != null && Relevances.Count > 0) 
+            {
+                var Orgs = loginUser.Orgs.Where(o => Relevances.Contains(o.Id)).ToList();
+                OrgName = Orgs.OrderByDescending(o => o.CascadeId).FirstOrDefault().Name;
+            }
             //获取角色权限
             Relevances = _revelanceApp.Get(Define.USERROLE, true, loginUser.User.Id);
             var Roles = loginUser.Roles.Where(o => Relevances.Contains(o.Id)).Select(r=>r.Name).ToList();
