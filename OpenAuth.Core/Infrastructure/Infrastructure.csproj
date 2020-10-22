@@ -16,7 +16,7 @@
     <PackageReference Include="AutoMapper" Version="9.0.0" />
     <PackageReference Include="BarcodeLib" Version="2.2.5" />
     <PackageReference Include="Caching.CSRedis" Version="3.6.5" />
-    <PackageReference Include="Chinese" Version="0.2.5" />
+    <PackageReference Include="Chinese" Version="0.3.5" />
     <PackageReference Include="CSRedisCore" Version="3.6.5" />
     <PackageReference Include="EnyimMemcachedCore" Version="2.1.5" />
     <PackageReference Include="log4net" Version="2.0.8" />
@@ -29,6 +29,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="NPOI" Version="2.5.1" />
     <PackageReference Include="Npoi.Mapper" Version="3.4.1" />
+    <PackageReference Include="NStandard" Version="0.5.20" />
     <PackageReference Include="NUnit" Version="3.12.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.16.0" />

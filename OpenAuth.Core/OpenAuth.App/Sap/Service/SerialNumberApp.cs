@@ -43,7 +43,7 @@ namespace OpenAuth.App.Sap.Service
                  .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), q => q.a.customer.Contains(req.CardCode))
                  .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), q => q.a.itemCode.Contains(req.ItemCode))
                  .WhereIf(!string.IsNullOrWhiteSpace(req.ItemName), q => q.a.itemCode.Contains(req.ItemName))
-                 .WhereIf(!string.IsNullOrEmpty(req.ManufSNOrItemCode), q => q.a.itemCode.Contains(req.ManufSNOrItemCode) || q.a.manufSN.Contains(req.ManufSNOrItemCode))
+                 .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSNOrItemCode), q => q.a.itemCode.Contains(req.ManufSNOrItemCode) || q.a.manufSN.Contains(req.ManufSNOrItemCode))
                  ;
 
             var query2 = query.Select(q => new 
@@ -80,10 +80,10 @@ namespace OpenAuth.App.Sap.Service
                 var data1 = await query2.ToListAsync();
                 var data2 = await qqq.ToListAsync();
                 data1.AddRange(data2);
-                data1 = data1.Distinct().ToList();
-                result.Data = data1.Skip((req.page - 1) * req.limit)
+                var SerialNumbers = data1.GroupBy(d => new{ d.ManufSN,d.ItemCode}).Select(g => g.First()).ToList();
+                result.Data = SerialNumbers.Skip((req.page - 1) * req.limit)
                 .Take(req.limit).ToList();
-                result.Count = data1.Count();
+                result.Count = SerialNumbers.Count();
                 return result;
             }
 
@@ -262,7 +262,7 @@ namespace OpenAuth.App.Sap.Service
                 .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), q => q.a.customer.Contains(req.CardCode))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), q => q.a.itemCode.Contains(req.ItemCode))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ItemName), q => q.a.itemName.Contains(req.ItemName))
-                .WhereIf(!string.IsNullOrEmpty(req.ManufSNOrItemCode), q => q.a.itemCode.Contains(req.ManufSNOrItemCode) || q.a.manufSN.Contains(req.ManufSNOrItemCode))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSNOrItemCode), q => q.a.itemCode.Contains(req.ManufSNOrItemCode) || q.a.manufSN.Contains(req.ManufSNOrItemCode))
                 ;
             var query2 = query.Select(q => new SerialNumberResp
             {
@@ -322,7 +322,7 @@ namespace OpenAuth.App.Sap.Service
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ItemName), q => q.ItemName.Contains(req.ItemName));
 
                 var MergeModels = query2.ToList().Union(ServiceOinsModels.ToList());
-               
+
                 //var data1 = await query2.ToListAsync();
                 //var data2 = await qqq.ToListAsync();
                 //data2.ForEach(o =>
@@ -331,12 +331,14 @@ namespace OpenAuth.App.Sap.Service
                 //});
                 //data1.AddRange(data2);
 
+                MergeModels = MergeModels.GroupBy(d => new { d.ManufSN, d.ItemCode,d.DeliveryNo }).Select(g => g.First()).ToList();
+
                 var DataList = MergeModels.OrderBy(o => o.Customer).ThenBy(o=>o.ManufSN).Skip((req.page - 1) * req.limit)
                 .Take(req.limit).ToList();
                 DataList.ForEach(o =>
                 {
                     o.ServiceFee = GetServiceMoney(o.ServiceFee);
-                    o.SlpName = slpList.Where(s => s.CardCode.Equals(o.Customer)).FirstOrDefault().SlpName;
+                    o.SlpName = slpList.FirstOrDefault(s => s.CardCode.Equals(o.Customer)).SlpName;
                 });
                 result.Data = DataList;
                 result.Count = MergeModels.Count();
@@ -406,5 +408,6 @@ namespace OpenAuth.App.Sap.Service
             return sMoney;
         }
 
+        
     }
 }

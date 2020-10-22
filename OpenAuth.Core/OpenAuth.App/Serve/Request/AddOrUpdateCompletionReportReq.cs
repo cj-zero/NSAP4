@@ -154,5 +154,53 @@ namespace OpenAuth.App.Request
         /// 设备类型
         /// </summary>
         public string MaterialType { get; set; }
+
+        /// <summary>
+        /// 服务方式
+        /// </summary>
+        public int? ServiceMode { get; set; }
+
+        /// 出发省
+        /// </summary>
+        public int? StartProvinceId { get; set; }
+
+        /// <summary>
+        /// 出发市
+        /// </summary>
+        public int? StartCityId { get; set; }
+
+        /// <summary>
+        /// 出发 区/县
+        /// </summary>
+        public int? StartAreaId { get; set; }
+
+        /// <summary>
+        /// 到达省
+        /// </summary>
+        public int? ArriveProvinceId { get; set; }
+
+        /// <summary>
+        /// 到达省
+        /// </summary>
+        public int? ArriveCityId { get; set; }
+        /// <summary>
+        /// 到达省
+        /// </summary>
+        public int? ArriveAreaId { get; set; }
+
+        // <summary>
+        /// 问题描述
+        /// </summary>
+        public string TroubleDescription { get; set; }
+
+        /// <summary>
+        /// 解决方案
+        /// </summary>
+        public string ProcessDescription { get; set; }
+
+        /// <summary>
+        /// 责任承担
+        /// </summary>
+        public string Responsibility { get; set; }
     }
 }

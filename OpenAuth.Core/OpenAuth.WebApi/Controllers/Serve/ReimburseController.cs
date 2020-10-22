@@ -21,7 +21,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
 
         private readonly CategoryApp _categoryapp;
 
-        public ReimburseController(ReimburseInfoApp reimburseinfoapp,CategoryApp categoryapp)
+        public ReimburseController(ReimburseInfoApp reimburseinfoapp, CategoryApp categoryapp)
         {
             _reimburseinfoapp = reimburseinfoapp;
             _categoryapp = categoryapp;
@@ -32,7 +32,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> Load([FromQuery]QueryReimburseInfoListReq request) 
+        public async Task<TableData> Load([FromQuery] QueryReimburseInfoListReq request)
         {
             var result = new TableData();
             try
@@ -75,7 +75,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetServiceOrder([FromQuery]QueryReimburseServerOrderListReq request)
+        public async Task<TableData> GetServiceOrder([FromQuery] QueryReimburseServerOrderListReq request)
         {
             var result = new TableData();
             try
@@ -119,7 +119,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
         public async Task<TableData> GetListCategoryName()
         {
             var result = new TableData();
-            string ids = "SYS_OtherExpenses,SYS_Transportation,SYS_TransportationAllowance,SYS_TravellingAllowance,SYS_ServiceRelations,SYS_RemburseStatus,SYS_ReimburseType,SYS_Responsibility,SYS_ProjectName,SYS_Expense";
+            string ids = "SYS_ReimburseAccraditation,SYS_ReimburseAccommodation,SYS_OtherExpenses,SYS_Transportation,SYS_TransportationAllowance,SYS_TravellingAllowance,SYS_ServiceRelations,SYS_RemburseStatus,SYS_ReimburseType,SYS_Responsibility,SYS_ProjectName,SYS_Expense";
             try
             {
                 return await _categoryapp.GetListCategoryName(ids);
@@ -182,12 +182,12 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> Revocation([FromQuery]ReimburseRevocationReq req)
+        public async Task<TableData> Revocation([FromQuery] ReimburseRevocationReq req)
         {
             var result = new TableData();
             try
             {
-               return await _reimburseinfoapp.Revocation(req);
+                return await _reimburseinfoapp.Revocation(req);
             }
             catch (Exception ex)
             {
@@ -209,7 +209,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             var result = new TableData();
             try
             {
-                 await _reimburseinfoapp.Accraditation(req);
+                await _reimburseinfoapp.Accraditation(req);
             }
             catch (Exception ex)
             {
@@ -226,12 +226,12 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// <param name="InvoiceNumber"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> IsSole( List<string> InvoiceNumber) 
+        public async Task<Response> IsSole(List<string> InvoiceNumber)
         {
             var result = new Response();
             try
             {
-                if (!await _reimburseinfoapp.IsSole(InvoiceNumber)) 
+                if (!await _reimburseinfoapp.IsSole(InvoiceNumber))
                 {
                     throw new CommonException("添加报销单失败。发票存在已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
                 }
@@ -251,7 +251,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// <param name="ReimburseInfoId"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<FileResult> Print(int ReimburseInfoId) 
+        public async Task<FileResult> Print(int ReimburseInfoId)
         {
             try
             {
@@ -259,7 +259,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             }
             catch (Exception ex)
             {
-                throw new Exception("导出失败！");
+                throw new Exception("导出失败！" + ex.ToString());
             }
         }
 
