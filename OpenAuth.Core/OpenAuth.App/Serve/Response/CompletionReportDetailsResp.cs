@@ -163,9 +163,42 @@ namespace OpenAuth.App.Response
         /// </summary>
         public string MaterialCodeTypeName { get; set; }
 
+        /// 出发省
+        /// </summary>
+        public int? StartProvinceId { get; set; }
+
+        /// <summary>
+        /// 出发市
+        /// </summary>
+        public int? StartCityId { get; set; }
+
+        /// <summary>
+        /// 出发 区/县
+        /// </summary>
+        public int? StartAreaId { get; set; }
+
+        /// <summary>
+        /// 到达省
+        /// </summary>
+        public int? ArriveProvinceId { get; set; }
+
+        /// <summary>
+        /// 到达市
+        /// </summary>
+        public int? ArriveCityId { get; set; }
+        /// <summary>
+        /// 到达 区/县
+        /// </summary>
+        public int? ArriveAreaId { get; set; }
+
         /// <summary>
         /// U_SAP_ID
         /// </summary>
         public string U_SAP_ID { get; set; }
+
+        /// <summary>
+        /// 责任环节
+        /// </summary>
+        public string Responsibility { get; set; }
     }
 }

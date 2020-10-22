@@ -199,7 +199,7 @@ namespace OpenAuth.App.Request
         public string ProcessDescription { get; set; }
 
         /// <summary>
-        /// 责任承担
+        /// 责任环节
         /// </summary>
         public string Responsibility { get; set; }
     }

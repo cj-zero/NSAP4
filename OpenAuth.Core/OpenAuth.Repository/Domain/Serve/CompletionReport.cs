@@ -234,12 +234,12 @@ namespace OpenAuth.Repository.Domain
         public int? ArriveProvinceId { get; set; }
 
         /// <summary>
-        /// 到达省
+        /// 到达市
         /// </summary>
         [Description("到达市")]
         public int? ArriveCityId { get; set; }
         /// <summary>
-        /// 到达省
+        /// 到达区/县
         /// </summary>
         [Description("到达区/县")]
         public int? ArriveAreaId { get; set; }
@@ -261,9 +261,9 @@ namespace OpenAuth.Repository.Domain
         public int? IsReimburse { get; set; }
 
         /// <summary>
-        /// 责任承担
+        /// 责任环节
         /// </summary>
-        [Description("责任承担")]
+        [Description("责任环节")]
         public string Responsibility { get; set; }
         /// <summary>
         /// 完工报告关联的图片

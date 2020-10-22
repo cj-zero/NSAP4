@@ -274,35 +274,34 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
-            var CompletionReportModel = await UnitWork.Find<CompletionReport>(u => u.ServiceOrderId == ServiceOrderId).Include(u => u.CompletionReportPictures).ToListAsync();
+            var CompletionReports = await UnitWork.Find<CompletionReport>(u => u.ServiceOrderId == ServiceOrderId).Include(u => u.CompletionReportPictures).ToListAsync();
             var ServiceWorkOrders = await UnitWork.Find<ServiceWorkOrder>(w => w.ServiceOrderId.Equals(ServiceOrderId)).ToListAsync();
             var U_SAP_ID = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(ServiceOrderId)).Select(s => s.U_SAP_ID).FirstOrDefaultAsync();
             if (!loginContext.Roles.Any(r => r.Name.Equals("售后主管")) && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
             {
                 if (UserId == null)
                 {
-                    CompletionReportModel = CompletionReportModel.Where(c => c.CreateUserId.Equals(loginContext.User.Id)).ToList();
+                    CompletionReports = CompletionReports.Where(c => c.CreateUserId.Equals(loginContext.User.Id)).ToList();
                     ServiceWorkOrders = ServiceWorkOrders.Where(c => c.CurrentUserNsapId.Equal(loginContext.User.Id)).ToList();
                 }
             }
             if (UserId != null)
             {
-                CompletionReportModel = CompletionReportModel.Where(c => c.CreateUserId.Equals(UserId)).ToList();
+                CompletionReports = CompletionReports.Where(c => c.CreateUserId.Equals(UserId)).ToList();
             }
 
-            var CompletionReportResps = CompletionReportModel.MapToList<CompletionReportDetailsResp>();
-            var Materialworkmodel = ServiceWorkOrders.Select(w => w.MaterialCode).ToList();
-            List<string> MaterialTypeName = new List<string>();
-            Materialworkmodel.ForEach(m => MaterialTypeName.Add(m == "其他设备" ? "其他设备" : m.Substring(0, m.IndexOf("-"))));
-            MaterialTypeName = MaterialTypeName.Distinct().ToList();
-            var MaterialTypes = await UnitWork.Find<MaterialType>(m => MaterialTypeName.Contains(m.TypeAlias)).ToListAsync();
+            var CompletionReportResps = CompletionReports.MapToList<CompletionReportDetailsResp>();
+            var Materialworks = ServiceWorkOrders.Select(w => w.MaterialCode == "其他设备" ? "其他设备" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-"))).ToList();
+            
+            Materialworks = Materialworks.Distinct().ToList();
+            var MaterialTypes = await UnitWork.Find<MaterialType>(m => Materialworks.Contains(m.TypeAlias)).ToListAsync();
             List<string> fileids = new List<string>();
-            CompletionReportModel.ForEach(c => fileids.AddRange(c.CompletionReportPictures.Select(p => p.PictureId).ToArray()));
+            CompletionReports.ForEach(c => fileids.AddRange(c.CompletionReportPictures.Select(p => p.PictureId).ToArray()));
             var picfiles = await UnitWork.Find<UploadFile>(f=> fileids.Contains(f.Id)).ToListAsync();
 
             CompletionReportResps.ForEach(c =>
             {
-                var fileids=CompletionReportModel.FirstOrDefault(m => m.Id.Equals(c.Id)).CompletionReportPictures.Select(p => p.PictureId).ToArray();
+                var fileids= CompletionReports.FirstOrDefault(m => m.Id.Equals(c.Id)).CompletionReportPictures.Select(p => p.PictureId).ToArray();
                 c.Files=picfiles.Where(p=>fileids.Contains(p.Id)).MapToList<UploadFileResp>();
                 var worklist = ServiceWorkOrders.Where(w => w.CompletionReportId == c.Id).ToList();
                 if (worklist != null && worklist.Count>0) 
@@ -316,12 +315,14 @@ namespace OpenAuth.App
                 c.MaterialCodeTypeName = c.MaterialCode == "其他设备" ? "其他设备" : MaterialTypes.FirstOrDefault(m => m.TypeAlias.Equal(c.MaterialCode.Substring(0, c.MaterialCode.IndexOf("-")))).TypeName;
             });
 
-            Materialworkmodel = ServiceWorkOrders.Where(s=>string.IsNullOrWhiteSpace(s.CompletionReportId)).Select(w => w.MaterialCode).ToList();
-            foreach (var item in Materialworkmodel)
+            Materialworks = ServiceWorkOrders.Where(s=>string.IsNullOrWhiteSpace(s.CompletionReportId)).Select(w => w.MaterialCode == "其他设备" ? "其他设备" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-"))).ToList();
+           
+            Materialworks = Materialworks.Distinct().ToList();
+            foreach (var item in Materialworks)
             {
                 CompletionReportResps.Add(new CompletionReportDetailsResp
                 {
-                    MaterialCodeTypeName = item == "其他设备" ? "其他设备" : MaterialTypes.FirstOrDefault(m => m.TypeAlias.Equal(item.Substring(0, item.IndexOf("-")))).TypeName
+                    MaterialCodeTypeName = item == "其他设备" ? "其他设备" : MaterialTypes.FirstOrDefault(m => m.TypeAlias.Equal(item)).TypeName
                 });
             }
             result.Data = CompletionReportResps;
