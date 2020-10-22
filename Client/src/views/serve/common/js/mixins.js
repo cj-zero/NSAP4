@@ -7,10 +7,10 @@ export let reportMixin = {
       dialogReportVisible: false, // 完工报告弹窗标识
       reportData: [], // 完工报告数据
       serviceModeMap: {
-        1: '电话服务',
-        2: '上门服务',
+        1: '上门服务',
+        2: '电话服务',
         3: '返厂维修'
-      }
+      },
     }
   },
   methods: {
@@ -43,7 +43,7 @@ export let reportMixin = {
       return data.map(item => {
         let { serviceMode } = item
         item.serviceText = serviceMode ? this.serviceModeMap[serviceMode] : serviceMode
-        item.isPhoneService = Number(serviceMode) === 1
+        item.isPhoneService = Number(serviceMode) === 2
         return item
       })
     }

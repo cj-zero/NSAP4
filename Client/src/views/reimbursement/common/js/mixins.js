@@ -251,8 +251,8 @@ export const reportMixin = {
     return {
       reportData: [], // 完工报告数据
       serviceModeMap: {
-        1: '电话服务',
-        2: '上门服务',
+        1: '上门服务',
+        2: '电话服务',
         3: '返厂维修'
       },
       reportBtnLoading: false // 如果是报销单上点的
@@ -297,7 +297,7 @@ export const reportMixin = {
       return data.filter(item => item.id).map(item => {
         let { serviceMode } = item
         item.serviceText = serviceMode ? this.serviceModeMap[serviceMode] : serviceMode
-        item.isPhoneService = Number(serviceMode) === 1
+        item.isPhoneService = Number(serviceMode) === 2
         return item
       })
     }

@@ -37,8 +37,8 @@
                 class="radio-item right"
                 v-model="formList[0].serviceMode"
               >
-                <el-radio :label="1">电话服务</el-radio>
-                <el-radio :label="2">上门服务</el-radio>
+                <el-radio :label="1">上门服务</el-radio>
+                <el-radio :label="2">电话服务</el-radio>
                 <el-radio :label="3">返厂维修</el-radio>
               </el-radio-group>
             </el-form-item>
@@ -371,8 +371,8 @@
                     class="radio-item right"
                     v-model="item.serviceMode"
                   >
-                    <el-radio :label="1">电话服务</el-radio>
-                    <el-radio :label="2">上门服务</el-radio>
+                    <el-radio :label="1">上门服务</el-radio>
+                    <el-radio :label="2">电话服务</el-radio>
                     <el-radio :label="3">返厂维修</el-radio>
                   </el-radio-group>
                 </el-form-item>
