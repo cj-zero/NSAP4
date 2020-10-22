@@ -81,6 +81,12 @@ export let tableMixin = {
     }
   },
   methods: {
+    openLoading () {
+      this.dialogLoading = true
+    },
+    closeLoading () {
+      this.dialogLoading = false
+    },
     onRowClick (row) {
       this.currentRow = row
     },
@@ -308,7 +314,8 @@ const SYS_TravellingAllowance = 'SYS_TravellingAllowance' // 出差补贴
 const SYS_TransportationAllowance = 'SYS_TransportationAllowance' // 交通类型
 const SYS_Transportation = 'SYS_Transportation' // 交通方式
 const SYS_OtherExpenses = 'SYS_OtherExpenses' // 其它费用
-
+const SYS_ReimburseAccraditation = 'SYS_ReimburseAccraditation' // 备注弹窗的标签按钮 报销审批常用语
+const SYS_ReimburseAccommodation = 'SYS_ReimburseAccommodation' // 报销住宿标准
 export let categoryMixin = {
   data () {
     return {
@@ -317,7 +324,9 @@ export let categoryMixin = {
         { icon: 'el-icon-document-copy', handleClick: this.addAndCopy, operationType: 'copy' }, 
         { icon: 'el-icon-delete', handleClick: this.delete }
       ],
-      rolesList: this.$store.state.user.roles // 当前用户的角色列表
+      rolesList: this.$store.state.user.userInfoAll.roles, // 当前用户的角色列表
+      userOrgName: this.$store.state.user.userInfoAll.orgName, // 部门名称
+      serviceRelations: this.$store.state.user.userInfoAll.serviceRelations // 劳务关系
     }
   },
   methods: {
@@ -341,6 +350,14 @@ export let categoryMixin = {
       list.forEach(item => {
         let { name, dtValue } = item
         result[dtValue] = name
+      })
+      return result
+    },
+    buildReimburseAcc (list) { // 住宿标准费用格式 { cityName: { dtValue:.. , description: ..} }
+      let result = {}
+      list.forEach(item => {
+        let { name, description, dtValue } = item
+        result[name] = { description, dtValue }
       })
       return result
     }
@@ -385,77 +402,67 @@ export let categoryMixin = {
     otherExpensesList () {
       return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_OtherExpenses))
     },
+    reimburseTagList () {
+      return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_ReimburseAccraditation))
+    },
+    reimburseAccCityList () { // 住宿标准
+      return this.buildReimburseAcc(this.categoryList.filter(item => item.typeId === SYS_ReimburseAccommodation))
+    },
     isCustomerSupervisor () { // 判断是不是客服主管
       return this.rolesList && this.rolesList.length
-        ? this.rolesList.some(item => item.name === '客服主管')
+        ? this.rolesList.some(item => item === '客服主管')
         : false
     },
-    isEditItem () {
+    isEditItem () { // 审批的时候只有客服主管可以改 新增编辑都可以修改
       return (this.title === 'view' || (this.title === 'approve' && !this.isCustomerSupervisor) || this.title === 'toPay')
     },
     formConfig () {
       return [
-        { label: '报销单号', prop: 'mainId', palceholder: '请输入内容', disabled: true, col: 5 },
-        { label: '报销人', prop: 'userName', palceholder: '请输入内容', disabled: true, col: 5 },
-        { label: '部门', prop: 'orgName', palceholder: '请输入内容', disabled: true, col: 5 },
-        { label: '职位', prop: 'position', palceholder: '请输入内容', disabled: true, col: 5, isEnd: true },
-        { label: '服务ID', prop: 'serviceOrderSapId', palceholder: '请选择', col: 5, disabled: this.title !== 'create', readonly: true },
-        { label: '客户代码', prop: 'terminalCustomerId', palceholder: '请输入内容', disabled: true, col: 5 },
-        { label: '客户名称', prop: 'terminalCustomer', palceholder: '请输入内容', disabled: true, col: 5 },
-        { label: '客户简称', prop: 'shortCustomerName', palceholder: '最长5个字', col: 5, maxlength: 5, isEnd: true, disabled: this.isEditItem, required: true },
-        { label: '出发地点', prop: 'becity', palceholder: '请输入内容', disabled: true, col: 5 },
-        { label: '到达地点', prop: 'destination', palceholder: '请输入内容', disabled: true, col: 5 },
-        { label: '出发日期', prop: 'businessTripDate', palceholder: '请输入内容', disabled: true, col: 5, width: '100%' },
-        { label: '结束日期', prop: 'endDate', palceholder: '请输入内容', disabled: true, col: 5, isEnd: true, width: '100%' },
+        { label: '服务ID', prop: 'serviceOrderSapId', palceholder: '请选择', col: this.ifFormEdit ? 5 : 6, disabled: this.title !== 'create', readonly: true },
         { 
           label: '报销类别', prop: 'reimburseType', palceholder: '请输入内容', 
-          col: 5, type: 'select', options: this.reimburseTypeList, 
+          col: this.ifFormEdit ? 5 : 6, type: 'select', options: this.reimburseTypeList, 
           disabled: this.isEditItem, width: '100%'
         },
-        { 
-          label: '项目名称', prop: 'projectName', palceholder: '请输入内容',  
-          col: 5, type: 'select', options: this.projectNameList, 
-          disabled: this.isEditItem, width: '100%'
-        },
-        { label: '服务报告', prop: 'report',  disabled: true, col: 5, 
-          type: 'button', btnText: '服务报告', handleClick: this.openReport
-        },
-        { label: '报销状态', prop: 'reimburseTypeText', palceholder: '请输入内容', disabled: true, col: 5, isEnd: true },
-        { label: '呼叫主题', prop: 'fromTheme', palceholder: '请输入内容', disabled: true, col: 15 },
-        { label: '填报时间', prop: 'createTime', palceholder: '请输入内容', disabled: true, col: 5, isEnd: true },
+        { label: '客户简称', prop: 'shortCustomerName', palceholder: '最长6个字', col: this.ifFormEdit ? 5 : 6, maxlength: 6, disabled: this.isEditItem, required: true },
         { label: '费用承担', prop: 'bearToPay', palceholder: '请输入内容', 
-          disabled: this.title === 'view' || !(this.isCustomerSupervisor && (this.title === 'create' || this.title === 'edit' || this.title === 'approve'))
-          , 
-          col: 5, type: 'select', options: this.expenseList, width: '100%'
+          disabled: this.title === 'view' || !(this.isCustomerSupervisor && (this.title === 'create' || this.title === 'edit' || this.title === 'approve')), 
+          col: this.ifFormEdit ? 5 : 6, type: 'select', options: this.expenseList, width: '100%', isEnd: true
         },
-        { label: '责任承担', prop: 'responsibility', palceholder: '请输入内容', 
-          col: 5, type: 'select', options: this.responsibilityList, 
-          disabled: this.isEditItem, width: '100%' 
-        },
+        { label: '报销单号', prop: 'mainId', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '客户代码', prop: 'terminalCustomerId', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '客户名称', prop: 'terminalCustomer', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '填报时间', prop: 'createTime', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
+        { label: '报销人', prop: 'userName', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '部门', prop: 'orgName', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
         { label: '劳务关系', prop: 'serviceRelations', palceholder: '请输入内容',  
-          col: 5, disabled: true
+          col: this.ifFormEdit ? 5 : 6, disabled: true
         },
-        { label: '支付时间', prop: 'payTime', palceholder: '请输入内容', disabled: true, col: 5, isEnd: true },
-        { label: '备注', prop: 'remark', palceholder: '请输入内容', disabled: this.title !== 'create', col: 15 },
-        // { label: '总金额', prop: 'totalMoney', col: 5, isEnd: true, type: 'inline-slot', id: 'money' },
-        { label: '附件', prop: 'reimburseAttachments', type: 'slot', id: 'attachment', showLabel: true },
-        { label: '出差补贴', prop: 'reimburseTravellingAllowances', type: 'slot', id: 'travel' },
-        { label: '交通费用', prop: 'reimburseFares', type: 'slot', id: 'traffic' },
-        { label: '住宿补贴', prop: 'reimburseAccommodationSubsidies', type: 'slot', id: 'accommodation' },
-        { label: '其他费用', prop: 'reimburseOtherCharges', type: 'slot', id: 'other' }
+        { label: '支付时间', prop: 'payTime', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
+        { label: '出发地点', prop: 'becity', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '到达地点', prop: 'destination', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '出发日期', prop: 'businessTripDate', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, width: '100%' },
+        { label: '结束日期', prop: 'endDate', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true, width: '100%' },
+        { label: '呼叫主题', prop: 'fromTheme', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 15 : 18 },
+        { label: '服务报告', prop: 'report',  disabled: true, col: this.ifFormEdit ? 5 : 6, 
+          type: 'button', btnText: '服务报告', handleClick: this.openReport, isEnd: true
+        },
+        { label: '备注', prop: 'remark', palceholder: '请输入内容', disabled: this.title !== 'create', col: this.ifFormEdit ? 15 : 18 },
+        { label: '报销状态', prop: 'reimburseTypeText', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true }
       ]
     },    
     travelConfig () {
-      return [ // 出差配置
+      let config = [
         { label: '天数', prop: 'days', type: 'number', width: 150 },
         { label: '金额', align: 'right', prop: 'money', type: 'number', disabled: true, width: 150 },
-        { label: '备注', prop: 'remark', type: 'input', width: 150 },
-        { label: '操作', type: 'operation', iconList: [{ icon: 'el-icon-delete', handleClick: this.delete }], width: 150 }
+        { label: '备注', prop: 'remark', type: 'input', width: 150 }
       ]
+      return (this.ifFormEdit !== undefined && !this.ifFormEdit) || this.ifFormEdit === undefined
+        ? config
+        : [...config, { label: '操作', type: 'operation', iconList: [{ icon: 'el-icon-delete', handleClick: this.delete }], width: 150 }]
     },
     trafficConfig () {
-      return [ // 交通配置
-        // { label: '序号', type: 'order', width: 60 },
+      let config = [ // 交通配置
         { label: '交通类型', prop: 'trafficType', type: 'select', options: this.transportTypeList, width: 105 },
         { label: '交通工具', prop: 'transport', type: 'select', options: this.transportationList, width: 135 },
         { label: '出发地', prop: 'from', type: 'input', width: 125, readonly: true },
@@ -464,24 +471,29 @@ export let categoryMixin = {
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
         { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '8-11位字母数字' },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
-        { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 },
-        { label: '操作', type: 'operation', iconList: [{ icon: 'el-icon-refresh rotate', handleClick: this.changeAddr }, ...this.iconList], width: 130 }
+        { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 }
       ]
+      return (this.ifFormEdit !== undefined && !this.ifFormEdit) || this.ifFormEdit === undefined // 不可编辑状态并且是报销单页面(不影响我的费用配置)
+        ? config 
+        : [...config, { label: '操作', type: 'operation', iconList: [{ icon: 'el-icon-sort rotate', handleClick: this.changeAddr }, ...this.iconList], width: 130 }] // 交通配置        
     },
     accommodationConfig () {
-      return [...accommodationConfig, { label: '操作', type: 'operation', iconList: this.iconList, width: 160 }]
+      return (this.ifFormEdit !== undefined && !this.ifFormEdit) || this.ifFormEdit === undefined
+        ? accommodationConfig
+        : [...accommodationConfig, { label: '操作', type: 'operation', iconList: this.iconList, width: 160 }]
     }, 
-    otherConfig () {
-      return [ // 其他配置
-        // { label: '序号', type: 'order', width: 60 },
+    otherConfig () { // 其他配置  
+      let config = [
         { label: '费用类别', prop: 'expenseCategory', type: 'select', width: 150, options: this.otherExpensesList },
         { label: '其他费用', prop: 'money', type: 'number', width: 120, align: 'right', placeholder: '大于0' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
         { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '8-11位字母数字' },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
-        { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 },
-        { label: '操作', type: 'operation', iconList: this.iconList, width: 168 }
+        { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 }
       ]
+      return (this.ifFormEdit !== undefined && !this.ifFormEdit) || this.ifFormEdit === undefined
+        ? config
+        : [...config, { label: '操作', type: 'operation', iconList: this.iconList, width: 168 }]
     },
     commonSearch () { // 搜索配置
       return [
@@ -568,6 +580,12 @@ export const attachmentMixin = {
       if (isAcc) { // 住宿表格行数据
         currentRow.totalMoney = money
         currentRow.money = (currentRow.totalMoney / (currentRow.days || 1)).toFixed(2)
+        if (this.accMaxMoney && Number(currentRow.money) > Number(this.accMaxMoney)) {
+          this.$message({
+            type: 'warning',
+            message: `所填金额大于住宿补贴标准(${this.accMaxMoney}元)`
+          })
+        }
       } else {
         currentRow.money = money
       }
@@ -576,6 +594,7 @@ export const attachmentMixin = {
       currentRow.invoiceNumber = invoiceNo
     },
     _setAttachmentList ({ data, index, prop, reimburseType, val }) { // 设置通过上传获取到的附件列表
+      console.log('setAttachmentList')
       let resultArr = []
       resultArr = this.createFileList(val, {
         reimburseType,
@@ -611,24 +630,28 @@ export const attachmentMixin = {
           fileId
         }).then(res => {
           if (res.data && !res.data.length) {
-            this._setCurrentRow(currentRow, {
-              invoiceNo: '',
-              money: '',
-              isAcc,
-              isValidInvoice: false
-            })
-            uploadVm.clearFiles()
-            this.$message.error('识别失败,请上传至其它附件列表')
-            resolve(false)
-          } else {
-            let { invoiceNo, amountWithTax, isValidate, isUsed, notPassReason, type, extendInfo } = res.data[0]
-            if (!isValidate || (isValidate && isUsed)) { // 识别失败
+            setTimeout(() => {
               this._setCurrentRow(currentRow, {
                 invoiceNo: '',
                 money: '',
                 isAcc,
                 isValidInvoice: false
               })
+            }, 0)
+            uploadVm.clearFiles()
+            this.$message.error('识别失败,请上传至其它附件列表')
+            resolve(false)
+          } else {
+            let { invoiceNo, amountWithTax, isValidate, isUsed, notPassReason, type, extendInfo } = res.data[0]
+            if (!isValidate || (isValidate && isUsed)) { // 识别失败
+              setTimeout(() => {
+                this._setCurrentRow(currentRow, {
+                  invoiceNo: '',
+                  money: '',
+                  isAcc,
+                  isValidInvoice: false
+                })
+              }, 0)
               uploadVm.clearFiles()
               this.$message.error(notPassReason ? notPassReason : '识别失败,请上传至其它附件列表')
               resolve(false)
@@ -642,25 +665,27 @@ export const attachmentMixin = {
                 type: 'warning',
                 message: '发票归类错误!'
               })
-                
-              this._setCurrentRow(currentRow, {
-                invoiceNo,
-                money: amountWithTax,
-                isAcc,
-                isValidInvoice: true
-              })
+              setTimeout(() => {
+                this._setCurrentRow(currentRow, {
+                  invoiceNo,
+                  money: amountWithTax,
+                  isAcc,
+                  isValidInvoice: true
+                })
+              }, 0)
               resolve(true)
-              
             }
           }
         }).catch(err => {
           console.error(err, 'err')
-          this._setCurrentRow(currentRow, {
-            invoiceNo:'',
-            money: '',
-            isAcc,
-            isValidInvoice: false
-          })
+          setTimeout(() => {
+            this._setCurrentRow(currentRow, {
+              invoiceNo:'',
+              money: '',
+              isAcc,
+              isValidInvoice: false
+            })
+          }, 0)
           uploadVm.clearFiles()
           this.$message.error(err.message || '识别失败,请上传至其它附件列表')
           resolve(false)

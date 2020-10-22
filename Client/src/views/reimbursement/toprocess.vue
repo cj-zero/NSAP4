@@ -77,7 +77,7 @@
       <my-dialog
         ref="myDialog"
         :center="true"
-        width="1336px"
+        width="1206px"
         :btnList="btnList"
         :onClosed="closeDialog"
         :title="textMap[title]"
@@ -162,7 +162,8 @@ export default {
     btnList () {
       return [
         { btnText: '同意', handleClick: this.agree, isShow: this.title !== 'view' },
-        { btnText: '驳回到发起人', handleClick: this.reject, isShow: this.title !== 'view' }
+        { btnText: '驳回到发起人', handleClick: this.reject, isShow: this.title !== 'view', className: 'danger' },
+        { btnText: '关闭', handleClick: this.closeDialog, className: 'close' }
       ]
     }
   },
@@ -186,12 +187,6 @@ export default {
     }, 
     reject () { // 驳回
       this.$refs.order.openRemarkDialog('reject')
-    },
-    openLoading () {
-      this.dialogLoading = true
-    },
-    closeLoading () {
-      this.dialogLoading = false
     },
     operate () { // 操作成功 驳回/同意
       this.closeDialog()

@@ -39,3 +39,12 @@
     outline: 0;
   }
 }
+.btn-item {
+  &.danger {
+    background-color: rgba(245, 108, 108, 1);
+  }
+  &.close {
+    background-color: #fff;
+    color: #000;
+  }
+}

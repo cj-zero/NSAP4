@@ -80,7 +80,7 @@
       </el-form>
       <!-- 附件上传 -->
       <el-row type="flex" class="upload-wrapper">
-        <el-col :span="15">
+        <el-col :span="this.ifFormEdit ? 15 : 18">
           <el-row type="flex" v-if="ifCOrE || formData.attachmentsFileList.length">
             <span class="upload-title">上传附件</span>
             <upLoadFile 
@@ -94,7 +94,7 @@
               @deleteFileList="deleteFileList"></upLoadFile>
           </el-row>
         </el-col>
-        <el-col :span="9">
+        <el-col :span="this.ifFormEdit ? 9: 6">
           <el-row type="flex" align="middle">
             <span class="upload-title money">总金额</span>
             <span class="money-text">￥{{ totalMoney | toThousands }}</span>
@@ -103,7 +103,7 @@
       </el-row>
       
       <!-- 出差 -->
-      <div class="form-item-wrapper" style="width: 622px;" v-if="ifCOrE || formData.reimburseTravellingAllowances.length">
+      <div class="form-item-wrapper travel" :class="{ uneditable: !this.ifFormEdit }" v-if="ifCOrE || formData.reimburseTravellingAllowances.length">
         <el-button v-if="ifShowTravel" @click="showForm(formData.reimburseTravellingAllowances, 'ifShowTravel')">添加出差补贴</el-button>
         <el-form 
           v-else
@@ -126,7 +126,6 @@
             border
             :data="formData.reimburseTravellingAllowances"
             @cell-click="onTravelCellClick"
-            @cell-mouse-enter="onTravelCellEnter"
           >
             <el-table-column
               v-for="item in travelConfig"
@@ -156,7 +155,7 @@
                       v-model="scope.row[item.prop]" 
                       :type="item.type" :min="0" 
                       :disabled="item.disabled" 
-                      @change="onTravelChange"
+                      @input="onTravelInput"
                       :class="{ 'money-class': item.prop === 'money'}"
                     ></el-input>
                   </el-form-item>
@@ -202,7 +201,6 @@
             :data="formData.reimburseFares"
             max-height="10000px"
             @cell-click="onTrafficCellClick"
-            @cell-mouse-enter="onTrafficCellEnter"
           >
             <el-table-column
               v-for="item in trafficConfig"
@@ -231,15 +229,21 @@
                         :readonly="item.readonly || false"
                         :placeholder="item.placeholder"
                         @focus="onAreaFocus({ prop: item.prop, index: scope.$index })">
-                        <i 
+                        <el-tooltip
                           v-if="item.prop === 'invoiceNumber'"
-                          slot="suffix" 
-                          class="el-input__icon"
-                          :class="{
-                            'el-icon-success success': scope.row.isValidInvoice,
-                            'el-icon-warning warning': !scope.row.isValidInvoice
-                          }">
-                        </i>
+                          :disabled="scope.row.isValidInvoice"
+                          slot="suffix"
+                          effect="dark"
+                          placement="top-start"
+                          :content="`${scope.row.isValidInvoice ? '' : '无发票附件'}`">
+                          <i 
+                            class="el-input__icon"
+                            :class="{
+                              'el-icon-success success': scope.row.isValidInvoice,
+                              'el-icon-warning warning': !scope.row.isValidInvoice
+                            }">
+                          </i>
+                        </el-tooltip>
                       </el-input>
                       <template v-if="ifFormEdit && (item.prop === 'from' || item.prop === 'to')">  
                         <div class="selector-wrapper" 
@@ -261,7 +265,7 @@
                       :disabled="item.disabled" 
                       :min="0"
                       :class="{ 'money-class': item.prop === 'money'}"
-                      @input="onInput" 
+                      @input="onTrafficInput" 
                       @focus="onFocus({ prop: item.prop, index: scope.$index })"
                       :placeholder="item.placeholder"></el-input>
                   </el-form-item>
@@ -321,7 +325,7 @@
         </el-form>
       </div>
       <!-- 住宿 -->
-      <div class="form-item-wrapper" style="width: 1077px;" v-if="ifCOrE || formData.reimburseAccommodationSubsidies.length">
+      <div class="form-item-wrapper acc" :class="{ uneditable: !this.ifFormEdit }" v-if="ifCOrE || formData.reimburseAccommodationSubsidies.length">
         <el-button v-if="ifShowAcc" @click="showForm(formData.reimburseAccommodationSubsidies, 'ifShowAcc')">添加住宿补贴</el-button>
         <el-form 
         v-else
@@ -346,7 +350,6 @@
             :data="formData.reimburseAccommodationSubsidies"
             max-height="10000px"
             @cell-click="onAccCellClick"
-            @cell-mouse-enter="onAccCellEnter"
           >
             <el-table-column
               v-for="item in accommodationConfig"
@@ -372,15 +375,21 @@
                       :placeholder="item.placeholder"
                       :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)" 
                       @change="onChange">
-                      <i 
+                      <el-tooltip
                         v-if="item.prop === 'invoiceNumber'"
-                        slot="suffix" 
-                        class="el-input__icon"
-                        :class="{
-                          'el-icon-success success': scope.row.isValidInvoice,
-                          'el-icon-warning warning': !scope.row.isValidInvoice
-                        }">
-                      </i>
+                        :disabled="scope.row.isValidInvoice"
+                        slot="suffix"
+                        effect="dark"
+                        placement="top-start"
+                        :content="`${scope.row.isValidInvoice ? '' : '无发票附件'}`">
+                        <i 
+                          class="el-input__icon"
+                          :class="{
+                            'el-icon-success success': scope.row.isValidInvoice,
+                            'el-icon-warning warning': !scope.row.isValidInvoice
+                          }">
+                        </i>
+                      </el-tooltip>
                     </el-input>
                   </el-form-item>
                 </template>
@@ -397,7 +406,7 @@
                       :min="0" 
                       @change="onChange"
                       @blur="onBlur"
-                      @input="onInput"
+                      @input="onAccInput"
                       @focus="onFocus({ prop: item.prop, index: scope.$index })"
                       :placeholder="item.placeholder"></el-input>
                   </el-form-item>
@@ -457,7 +466,7 @@
         </el-form>
       </div>
       <!-- 其它 -->
-      <div class="form-item-wrapper" style="width: 1014px;" v-if="ifCOrE || formData.reimburseOtherCharges.length">
+      <div class="form-item-wrapper other" :class="{ uneditable:!this.ifFormEdit }" v-if="ifCOrE || formData.reimburseOtherCharges.length">
         <el-button v-if="ifShowOther" @click="showForm(formData.reimburseOtherCharges, 'ifShowOther')">添加其他费用</el-button>
         <el-form 
           v-else
@@ -482,7 +491,6 @@
             :data="formData.reimburseOtherCharges"
             max-height="10000px"
             @cell-click="onOtherCellClick"
-            @cell-mouse-enter="onOtherCellEnter"
           >
             <el-table-column
               v-for="item in otherConfig"
@@ -508,15 +516,21 @@
                       v-model="scope.row[item.prop]" 
                       :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)"
                     >
-                      <i 
+                      <el-tooltip
                         v-if="item.prop === 'invoiceNumber'"
-                        slot="suffix" 
-                        class="el-input__icon"
-                        :class="{
-                          'el-icon-success success': scope.row.isValidInvoice,
-                          'el-icon-warning warning': !scope.row.isValidInvoice
-                        }">
-                      </i>
+                        :disabled="scope.row.isValidInvoice"
+                        slot="suffix"
+                        effect="dark"
+                        placement="top-start"
+                        :content="`${scope.row.isValidInvoice ? '' : '无发票附件'}`">
+                        <i 
+                          class="el-input__icon"
+                          :class="{
+                            'el-icon-success success': scope.row.isValidInvoice,
+                            'el-icon-warning warning': !scope.row.isValidInvoice
+                          }">
+                        </i>
+                      </el-tooltip>
                     </el-input>
                   </el-form-item>
                 </template>
@@ -532,7 +546,7 @@
                       :disabled="item.disabled" 
                       :min="0" 
                       @focus="onFocus({ prop: item.prop, index: scope.$index })" 
-                      @input="onInput"
+                      @input="onOtherInput"
                       :placeholder="item.placeholder"></el-input>
                   </el-form-item>
                 </template>
@@ -672,6 +686,7 @@
     <!-- 确认审批弹窗 -->
     <my-dialog
       ref="approve"
+      :center="true"
       :title="remarkTitle"
       :mAddToBody="true" 
       :appendToBody="true"
@@ -679,7 +694,7 @@
       :closed="onApproveClose"
       v-loading="remarkLoading"
       width="350px">
-      <remark ref="remark" @input="onRemarkInput"></remark>
+      <remark ref="remark" @input="onRemarkInput" :tagList="reimburseTagList" :title="title"></remark>
     </my-dialog>
   </div>
 </template>
@@ -839,8 +854,8 @@ export default {
         limit: 30
       },
       remarkBtnList: [
-        { btnText: '确认', handleClick: this.approve },
-        { btnText: '取消', handleClick: this.closeRemarkDialog }
+        { btnText: '取消', handleClick: this.closeRemarkDialog },
+        { btnText: '确认', handleClick: this.approve }
       ],
       selectedList: [], // 费用列表导出的数据，用来后续判断导出列表中是否可选
       remarkType: '', // 
@@ -890,6 +905,10 @@ export default {
           this.ifShowOther = false
         }
         this.formData = Object.assign({}, this.formData, val)
+        if (this.title === 'approve') { // 审批的时候要告诉审批人 住宿金额补贴是否符合标准
+          this._checkAccMoney()
+        }
+        console.log('accMax', this.accMaxMoney)
         if (this.title === 'create' || this.title === 'edit') { // 只有在create或者edit的时候，才可以导入费用模板
           this._getCostList() // 获取费用模板
         }
@@ -980,7 +999,7 @@ export default {
         shortCustomerName: [{ required: true, trigger: 'blur' }],
         // projectName: [ { required: true, trigger: ['change', 'blur'] } ],
         bearToPay: [ { required: this.isCustomerSupervisor, trigger: ['change', 'blur']} ],
-        responsibility: [ { required: true, trigger: ['change', 'blur'] } ],
+        // responsibility: [ { required: true, trigger: ['change', 'blur'] } ],
         serviceRelations: [ { required: true, trigger: ['change', 'blur'] } ]
       }
     },
@@ -992,11 +1011,39 @@ export default {
         { btnText: '确认', handleClick: this.confirm, loading: this.customerLoading },
         { btnText: '取消', handleClick: this.closeDialog }
       ]
+    },
+    travelMoney () {
+      // 以R或者M开头都是65
+      console.log(this.isROrM, 'ROrM')
+      return  this.isROrM ? '65' : '50'
+    },
+    isROrM () { // 判断报销人部门是不是R/M
+      console.log(this.orgName, 'orgName')
+      return /^[R|M]/i.test(this.userOrgName)
+    },
+    accMaxMoney () { // 住宿补贴的最大值
+      // R、M部人员
+      let isMatched = false
+      if (this.formData.destination) {
+        for (let key in this.reimburseAccCityList) {
+          // key 城市名称
+          let reg = new RegExp(key)
+          let { dtValue, description } = this.reimburseAccCityList[key]
+          if (reg.test(this.formData.destination)) { // 如果能匹配到对应的城市
+            isMatched = true
+            return this.isROrM ? dtValue : description
+          }
+        }
+        if (!isMatched) {
+          let { dtValue, description } = this.reimburseAccCityList['其他城市']
+          return this.isROrM ? dtValue : description
+        }
+      }
+      return 0
     }
   },
   methods: {
     rowStyle ({ row }) {
-      // console.log(rowIndex, 'rowIndex')
       if (!row.isAdd) {
         return {
           display: 'none'
@@ -1013,12 +1060,7 @@ export default {
           ? prev + parseFloat(String(next.totalMoney || next.money || 0)) 
           : prev + 0
       }, 0)
-      // console.log(this.isValidNumber(result), result, 'result')
       return this.isValidNumber(result) ? result : 0
-    },
-    setTravelMoney () {
-      // 以R或者M开头都是65
-      return /^[R|M]/i.test(this.formData.orgName) ? '65' : '50'
     },
     showForm (data, type) { // 展示表格
       if (!this.ifFormEdit) return
@@ -1029,7 +1071,7 @@ export default {
             id: '',
             isAdd: true,
             days: this.calculateDays(businessTripDate, endDate),
-            money: this.setTravelMoney(),
+            money: this.travelMoney,
             remark: '',
           })
           break
@@ -1246,27 +1288,13 @@ export default {
       this.tableType = 'travel'
       this.setCurrentProp(column, row)
     },
-    onTravelCellEnter () {
-      this.tableType = 'travel'
-    },
-    onTrafficCellEnter () {
-      this.tableType = 'traffic'
-    },
-    onAccCellEnter () {
-      this.tableType = 'acc'
-    },
-    onOtherCellEnter () {
-      this.tableType = 'other'
-    },
     onTrafficCellClick (row, column) {
-      // console.log('cell click traffic')
       this.tableType = 'traffic' // 判断当前点击的是哪个表格
       this.setCurrentProp(column, row)
       this.setCurrentIndex(this.formData.reimburseFares, row)
     },
     onAccCellClick (row, column) {
       this.tableType = 'acc' // 判断当前点击的是哪个表格
-      // console.log('cell click')
       this.setCurrentProp(column, row)
       this.setCurrentIndex(this.formData.reimburseAccommodationSubsidies, row)
     },
@@ -1279,15 +1307,12 @@ export default {
       this.currentLabel = label
       this.currentProp = property
     },
-    onTravelChange (value) { // 如果填写的出差天数大于实际的出差时间，进行提示
-      console.log('on travel change')
+    onTravelInput (value) {
       let { businessTripDate, endDate } = this.formData
       let actDays = this.calculateDays(businessTripDate, endDate)
-      if (actDays && value > actDays) {
-        this.$message({
-          type: 'warning',
-          message: '所填天数超过出差天数'
-        })
+      if (actDays && value > actDays) { // 限制最大的天数
+        console.log('large', value > actDays)
+        this.formData.reimburseTravellingAllowances[0].days = actDays
       }
     },
     onChange (value) { // 天数 总金额 计算
@@ -1295,7 +1320,8 @@ export default {
     },
     onBlur (e) {
       let value = e.target.value
-      this.changeMoneyByDaysOrTotalMoney(value)
+      console.log(value)
+      // this.changeMoneyByDaysOrTotalMoney(value)
     },
     changeMoneyByDaysOrTotalMoney (value) {
       if (!this.isValidNumber(value)) {
@@ -1307,17 +1333,31 @@ export default {
         if (!days || !this.isValidNumber(days) || !totalMoney || !this.isValidNumber(totalMoney)) { // 如果天数没有填入,或者不符合规范则直接return
           return
         }
+        if (Number((totalMoney / days).toFixed(2)) > Number(this.accMaxMoney)) {
+          this.$message({
+            type: 'warning',
+            message: `所填金额大于住宿补贴标准(${this.accMaxMoney}元)`
+          })
+        }
         this.$set(data, 'money', (totalMoney / days).toFixed(2))
       }
     },
-    onInput (value) {
-      // let value = e.target.value
-      if (this.tableType === 'travel') return
-      let data = this.selectTable() // 通过判断tableType来选择当前的表格数据
+    onTrafficInput (value) {
+      let data = this.formData.reimburseFares
+      this.onInput(data, value)
+    },
+    onAccInput (value) {
+      let data = this.formData.reimburseAccommodationSubsidies
+      this.onInput(data, value, 'acc')
+    },
+    onOtherInput (value) {
+      let data = this.formData.reimburseOtherCharges
+      this.onInput(data, value)
+    },
+    onInput (data, value, type) {
       let currentRow = data[this.currentIndex]
       let { invoiceFileList, invoiceAttachment, maxMoney, invoiceNumber, id } = currentRow
       let selectedIdList = this.selectedList.map(item => item.id)
-      // console.log(invoiceFileList.length && !selectedIdList.includes(invoiceFileList[0].id) && !this.formData.fileId.includes(invoiceFileList[0].id), 'input change')
       if (
         (
           (invoiceFileList.length && !selectedIdList.includes(id) && !this.formData.fileId.includes(invoiceFileList[0].id)) || // 存在回显的文件代表已经新增的，并且还没被删除过
@@ -1326,8 +1366,8 @@ export default {
         ) && maxMoney
       ) {
         if (this.currentProp === 'totalMoney' || this.currentProp === 'money') { // 只算修改totalMoney或者money字段
-          console.log(maxMoney, value, 'enter ine')
-          this.tableType === 'acc'
+          console.log(maxMoney, value, 'enter ine', type === 'acc')
+          type === 'acc'
             ? currentRow.totalMoney = Math.min(parseFloat(value), maxMoney)
             : currentRow.money = Math.min(parseFloat(value), maxMoney)
         }
@@ -1371,16 +1411,8 @@ export default {
       currentRow[prop] = result
       this.prevAreaData = null
     },
-    selectTable () {
-      let { reimburseFares, reimburseOtherCharges, reimburseAccommodationSubsidies } = this.formData
-      return this.tableType === 'traffic'
-        ? reimburseFares
-        : this.tableType === 'acc'
-          ? reimburseAccommodationSubsidies
-          : reimburseOtherCharges
-    },
     changeAddr (scope) { // 交通表格 交换出发地和目的地
-      console.log('changeAddr')
+      if (!this.ifFormEdit) return
       let { row, $index: index } = scope
       let { from, to } = row
       let data = this.formData.reimburseFares[index]
@@ -1481,7 +1513,7 @@ export default {
         this.deleteTableList(type)
       }
     },
-    deleteTableList (type) { // 当删除完之后清空数组，因为直接删除会导致回显
+    deleteTableList (type) { // 当删除完之后需要清空数组，因为直接删除会导致回显
       switch (type) {
         case 'travel':
           this.formData.reimburseTravellingAllowances = []
@@ -1537,43 +1569,6 @@ export default {
       val = Number(val)
       return !isNaN(val) && val >= 0
     },
-    hasTotalMoneyKey (data) { // 用来判断是不是住宿表格
-      for (let i = 0; i < data.length; i++) {
-        for (let key in data[i]) {
-          if (key === 'totalMoney') {
-            return true
-          }
-        }
-      }
-      return false
-    },
-    getSummaries ({ columns, data }) { // 金额合计
-      const sums = []
-      let hasTotalMoney = this.hasTotalMoneyKey(data)
-      columns.forEach((column, index) => {
-        if (index === 0) {
-          sums[index] = '总金额'
-          return
-        }
-        if ((column.property === 'money' && !hasTotalMoney) || column.property === 'totalMoney') {
-          const values = data.map(item => Number(item[column.property]))
-          if (values.every(value => {
-            return !isNaN(value) && value >= 0
-          })) {
-            sums[index] = values.reduce((prev, curr) => {
-              const value = Number(curr);
-              if (!isNaN(value)) {
-                return prev + curr;
-              } else {
-                return prev;
-              }
-            }, 0);
-            sums[index] = '￥' + toThousands(sums[index]);
-          }
-        }
-      })
-      return sums
-    },
     clearFile () { // 删除上传的文件
       if (this.$refs.uploadFile) {
         this.$refs.uploadFile.clearFiles()
@@ -1604,14 +1599,12 @@ export default {
       this.$refs.customerTable.resetRadio()
       this.$refs.customerDialog.close()
     },
-    calculateDays (start, end) {
+    calculateDays (start, end) { // 计算出发日期和结束日期的时间间隔 按日计算
       if (start && end) {
         start = +new Date(start.split(' ')[0])
         end = +new Date(end.split(' ')[0])
-        console.log('has days')
         return Math.floor((end - start) / 1000 / 60 / 60 / 24) + 1
       }
-      console.log('no days')
       return ''
     },
     confirm () {
@@ -1640,9 +1633,8 @@ export default {
         formData.endDate = endDate
         formData.destination = destination
         this.customerLoading = true
-        if (!this.ifShowTravel) {
-          this.formData.reimburseTravellingAllowances[0].days = this.calculateDays(businessTripDate, endDate)
-        }
+        this._checkTravelDays(currentRow)
+        this._checkAccMoney()
         forServe(terminalCustomerId).then(res => {
           formData.shortCustomerName = res.result.u_Name ? res.result.u_Name.slice(0, 6) : ''
           this.customerLoading = false
@@ -1652,6 +1644,36 @@ export default {
         })
       }
       this.closeDialog()
+    },
+    _checkTravelDays (currentRow) {
+      let { businessTripDate, endDate } = currentRow
+      if (!this.ifShowTravel) { // 如果出差表格出现了并且所填天数大于实际的天数
+        let actDays = this.calculateDays(businessTripDate, endDate)
+        let days = this.formData.reimburseTravellingAllowances[0].days
+        if (days > actDays) {
+          this.$message({
+            type: 'warning',
+            message: '所填天数超过出差天数'
+          })
+          this.formData.reimburseTravellingAllowances[0].days = actDays
+        }
+      }
+    },
+    _checkAccMoney () { // 出差表格和住宿表格的提示信息
+      if (!this.ifShowAcc) { // 如果存在住宿表格，则遍历表格中所有未被删除的项，对totalmoney进行判断
+        let accTableList = this.formData.reimburseAccommodationSubsidies
+        for (let i = 0; i < accTableList.length; i++) {
+          let item = accTableList[i]
+          let { money, isAdd } = item
+          if (money && Number(money) > Number(this.accMaxMoney) && this.accMaxMoney && isAdd) {
+            this.$message({
+              type: 'warning',
+              message: `所填金额大于住宿补贴标准(${this.accMaxMoney}元)`
+            })
+            break
+          }
+        }
+      }
     },
     _getCostList () {
       getList({
@@ -1720,6 +1742,7 @@ export default {
       if (accList.length) {
         this.ifShowAcc = false
         this.formData.reimburseAccommodationSubsidies.push(...accList)
+        this._checkAccMoney()
       }
       if (otherList.length) {
         this.ifShowOther = false
@@ -1728,7 +1751,17 @@ export default {
     },
     openRemarkDialog (type) { // 打开备注弹窗，二次确认
       this.remarkType = type
-      this.$refs.approve.open()
+      if (type !== 'reject') {
+         this.$confirm(`${type === 'pay' ? '支付' : '同意'}此次报销?`, '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+            this.approve()
+          })
+      } else {
+        this.$refs.approve.open()
+      }
     },
     closeRemarkDialog () {
       this.remarkType = ''
@@ -1743,7 +1776,7 @@ export default {
       this.$refs.remark.reset()
     },
     resetInfo () {
-      let { createUserId, userName, orgName } = this.formData
+      // let { createUserId, userName, orgName } = this.formData
       this.$refs.form.clearValidate()
       this.$refs.form.resetFields()
       this.clearFile()
@@ -1752,9 +1785,9 @@ export default {
       this.prevAreaData = null
       this.formData = { // 表单参数
         id: '',
-        userName,
-        createUserId,
-        orgName,
+        userName: '',
+        createUserId: '',
+        orgName: '',
         position: '',
         serviceOrderId: '',
         serviceOrderSapId: '',
@@ -1798,6 +1831,7 @@ export default {
     },
     async checkData () { // 校验表单数据是否通过
       let isFormValid = true, isTravelValid = true, isTrafficValid = true, isAccValid = true, isOtherValid = true
+      this.errMessage = '格式错误或必填项未填写'
       try {
         isFormValid = await this.validate('form')
         if (!this.ifShowTravel) {
@@ -1844,7 +1878,7 @@ export default {
       let isValid = await this.checkData()
       console.log('submit', isValid, isDraft)
       if (!isValid) {
-        return Promise.reject({ message: '格式错误或必填项未填写' })
+        return Promise.reject({ message: this.errMessage })
       }
       this.formData.isDraft = isDraft ? true : false
       return addOrder(this.formData)
@@ -1874,7 +1908,7 @@ export default {
       let isValid = await this.checkData()
       console.log('submit', isValid, isDraft)
       if (!isValid) {
-        return Promise.reject({ message: '格式错误或必填项未填写' })
+        return Promise.reject({ message: this.errMessage })
       }
       this.formData.isDraft = isDraft ? true : false
       return updateOrder(this.formData)
@@ -1901,18 +1935,26 @@ export default {
           isReject: this.remarkType === 'reject'
         }
         console.log(approve, params, this.parentVm, 'parentVm')
-        this.remarkLoading = true
+        this.remarkType === 'reject'
+          ? this.remarkLoading = true
+          : this.parentVm.openLoading()
         approve(params).then(() => {
           this.$message({
             type: 'success',
             message: this.remarkType === 'reject' ? '驳回成功' : '操作成功'
           })
-          this.remarkLoading = false
-          this.closeRemarkDialog()
           this.parentVm._getList()
           this.parentVm.closeDialog()
+          if (this.remarkType === 'reject') {
+            this.remarkLoading = false
+            this.closeRemarkDialog()
+          } else {
+            this.parentVm.closeLoading()
+          }
         }).catch(() => {
-          this.remarkLoading = false
+          this.remarkType === 'reject'
+            ? this.remarkLoading = false
+            : this.parentVm.closeLoading()
           this.$message.error('操作失败')
         })
       })       
@@ -1935,7 +1977,6 @@ export default {
       }
     }
   }
-  
   .uneditable {
     ::v-deep .el-input.is-disabled .el-input__inner {
       background-color: #fff;
@@ -1974,12 +2015,17 @@ export default {
       padding-right: 12px;
       font-size: 12px;
       text-align: right;
+      white-space: nowrap;
       &.money {
         padding-right: 24px;
+        font-size: 18px;
+        font-weight: bold;
       }
     }
     .money-text {
       margin-left: -12px;;
+      font-size: 18px;
+      font-weight: bold;
     }
   }
   .history-wrapper {
@@ -1989,8 +2035,26 @@ export default {
       }
     }
   }
+  /* 各个表格的样式 */
   .form-item-wrapper {
-    // overflow-y: auto;
+    &.travel {
+      width: 622px;
+      &.uneditable {
+        width: 471px;
+      }
+    }
+    &.acc {
+      width: 1077px;
+      &.uneditable {
+        width: 916px;
+      }
+    }
+    &.other {
+      width: 1014px;
+      &.uneditable {
+        width: 846px;
+      }
+    }
     margin-bottom: 5px;
     &::-webkit-scrollbar {
       display: none;
@@ -2040,7 +2104,8 @@ export default {
           overflow: visible;
           top: 0;
           right: -12px;
-          width: 400px;
+          // width: 400px;
+          white-space: nowrap;
           transform: translate3d(100%, 0, 0);
           font-size: 12px;
         }

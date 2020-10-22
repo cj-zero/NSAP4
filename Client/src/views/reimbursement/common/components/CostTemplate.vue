@@ -68,15 +68,22 @@
                         :readonly="item.readonly || false"
                         :placeholder="item.placeholder"
                         @focus="onAreaFocus({ prop: item.prop, index: scope.$index })">
-                        <i 
+                        <el-tooltip
                           v-if="item.prop === 'invoiceNumber'"
-                          slot="suffix" 
-                          class="el-input__icon"
-                          :class="{
-                            'el-icon-success success': scope.row.isValidInvoice,
-                            'el-icon-warning warning': !scope.row.isValidInvoice
-                          }">
-                        </i>
+                          :disabled="scope.row.isValidInvoice"
+                          slot="suffix"
+                          effect="dark"
+                          placement="top-start"
+                          :content="`${scope.row.isValidInvoice ? '' : '无发票附件'}`">
+                          <i 
+                           
+                            class="el-input__icon"
+                            :class="{
+                              'el-icon-success success': scope.row.isValidInvoice,
+                              'el-icon-warning warning': !scope.row.isValidInvoice
+                            }">
+                          </i>
+                        </el-tooltip>
                       </el-input>
                       <template v-if="operation !== 'view' && (item.prop === 'from' || item.prop === 'to')">
                         <div class="selector-wrapper" 
@@ -408,7 +415,7 @@ export default {
     changeTable (type) {
       this.currentType = type
       this.rules = RULES_MAP[type]
-      this.config = this[CONFIG_MAP[type]].slice(0, -1)
+      this.config = this[CONFIG_MAP[type]]
       this.formData.list[0].reimburseType = type + 1
     },
     onRowClick () {
