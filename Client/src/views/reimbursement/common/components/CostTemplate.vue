@@ -79,8 +79,8 @@
                            
                             class="el-input__icon"
                             :class="{
-                              'el-icon-success success': scope.row.isValidInvoice,
-                              'el-icon-warning warning': !scope.row.isValidInvoice
+                              'el-icon-upload-success el-icon-circle-check success': scope.row.isValidInvoice,
+                              'el-icon-warning-outline warning': !scope.row.isValidInvoice
                             }">
                           </i>
                         </el-tooltip>
