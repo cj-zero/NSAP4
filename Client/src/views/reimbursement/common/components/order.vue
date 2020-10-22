@@ -1201,7 +1201,8 @@ export default {
       if (fileId && prop === 'invoiceAttachment' && !operation) { // 图片上传成功会返回当前的pictureId, 并且只识别发票附件 
         this.identifyLoading = this.$loading({
           lock: true,
-          text: 'Loading'
+          text: '发票识别中',
+          background: 'rgba(0, 0, 0, 0.7)'
         })
         this._identifyInvoice({ // 先进行识别再进行赋值
           fileId, 
@@ -1232,7 +1233,8 @@ export default {
       if (fileId && prop === 'invoiceAttachment' && !operation) { // 图片上传成功会返回当前的pictureId, 并且只识别发票附件 
         this.identifyLoading = this.$loading({
           lock: true,
-          text: 'Loading'
+          text: '发票识别中',
+          background: 'rgba(0, 0, 0, 0.7)'
         })
         this._identifyInvoice({ // 先进行识别再进行赋值
           fileId, 
@@ -1263,7 +1265,8 @@ export default {
       if (fileId && prop === 'invoiceAttachment' && !operation) { // 图片上传成功会返回当前的pictureId, 并且只识别发票附件 
         this.identifyLoading = this.$loading({
           lock: true,
-          text: 'Loading'
+          text: '发票识别中',
+          background: 'rgba(0, 0, 0, 0.7)'
         })
         this._identifyInvoice({ // 先进行识别再进行赋值
           fileId, 

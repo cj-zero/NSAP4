@@ -39,11 +39,11 @@ export let tableMixin = {
         { label: '总天数', prop: 'businessTripDays', width: 60 },
         { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleJump: this.openTree },
         { label: '呼叫主题', prop: 'fromTheme', width: 100 },
-        { label: '项目名称', prop: 'projectName', width: 80 },
+        // { label: '项目名称', prop: 'projectName', width: 80 },
         { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
-        { label: '责任承担', prop: 'responsibility', width: 75 },
+        // { label: '责任承担', prop: 'responsibility', width: 75 },
         { label: '劳务关系', prop: 'serviceRelations', width: 80 },
-        { label: '备注', prop: 'remark', width: 100 }
+        { label: '备注', prop: 'remark' }
       ],
       tableData: [],
       total: 0, // 表格数据的总数量
@@ -513,7 +513,7 @@ export let categoryMixin = {
 
 // 0：出租车发票 1：定额发票 2：火车票 3：增值税发票 5：机票行程单 8：通用机打发票 
 // 9：汽车票 10：轮船票 11：增值税发票（卷票 ）12：购车发票 13：过路过桥费发票
-const TRAFFIC_TYPE_LIST = [0, 2, 5, 8, 9, 10, 13] // 交通类型发票
+const TRAFFIC_TYPE_LIST = [0, 2, 5, 9, 10, 13] // 交通类型发票
 const ACC_TYPE = 3
 
 export const attachmentMixin = {
