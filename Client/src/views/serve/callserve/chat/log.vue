@@ -81,7 +81,6 @@ export default {
       getServiceOrderLogs({
         serviceOrderId: this.serveId
       }).then(res => {
-        console.log(res, 'res')
         this.serviceLogsList = res.data
       }).catch(() => {
         this.serviceLogsList = []

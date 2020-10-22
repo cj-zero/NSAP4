@@ -447,7 +447,7 @@ export let categoryMixin = {
         { label: '服务报告', prop: 'report',  disabled: true, col: this.ifFormEdit ? 5 : 6, 
           type: 'button', btnText: '服务报告', handleClick: this.openReport, isEnd: true
         },
-        { label: '备注', prop: 'remark', palceholder: '请输入内容', disabled: this.title !== 'create', col: this.ifFormEdit ? 15 : 18 },
+        { label: '备注', prop: 'remark', palceholder: '请输入内容', disabled: !this.ifFormEdit, col: this.ifFormEdit ? 15 : 18 },
         { label: '报销状态', prop: 'reimburseTypeText', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true }
       ]
     },    

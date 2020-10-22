@@ -1611,6 +1611,9 @@ export default {
       let currentRow = this.$refs.customerTable.getCurrentRow()
       if (Object.keys(currentRow).length) {
         let { 
+          userName,
+          serviceRelations,
+          orgName,
           terminalCustomerId, 
           terminalCustomer, 
           u_SAP_ID, 
@@ -1622,12 +1625,15 @@ export default {
           endDate,
           destination } = currentRow
         let formData = this.formData // 对报销人的信息进行赋值
+        formData.userName = userName
+        formData.orgName = orgName
+        formData.serviceRelations = serviceRelations
         formData.terminalCustomerId = terminalCustomerId
         formData.terminalCustomer = terminalCustomer
         formData.serviceOrderId = id
         formData.serviceOrderSapId = u_SAP_ID
         formData.fromTheme = fromTheme
-        formData.CreateUserId = userId
+        formData.createUserId = userId
         formData.becity = becity
         formData.businessTripDate = businessTripDate
         formData.endDate = endDate
@@ -1941,7 +1947,9 @@ export default {
         approve(params).then(() => {
           this.$message({
             type: 'success',
-            message: this.remarkType === 'reject' ? '驳回成功' : '操作成功'
+            message: this.remarkType === 'reject' 
+              ? '驳回成功' 
+              : (this.remarkType === 'agree' ? '审核成功' : '支付成功')
           })
           this.parentVm._getList()
           this.parentVm.closeDialog()

@@ -81,6 +81,7 @@
         :onClosed="closeDialog"
         :title="textMap[title]"
         :loading="dialogLoading"
+        :btnList="btnList"
       >
         <order 
           ref="order" 
@@ -155,7 +156,12 @@ export default {
         ...this.commonSearch,
         { type: 'search' }
       ]
-    } // 搜索配置
+    }, // 搜索配置
+    btnList () {
+      return [
+        { btnText: '关闭', handleClick: this.closeDialog, className: 'close' }
+      ]
+    } 
   },
   data () {
     return {

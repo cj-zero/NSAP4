@@ -29,7 +29,7 @@
         <Search 
           :listQuery="listQuery" 
           :config="searchConfigAdv"
-          @changeForm="onChangeForm" 
+          @changeForm="onAdvChangeForm" 
           @search="onSearch"
           v-show="advancedVisible"></Search>
       </div>
@@ -648,7 +648,10 @@ export default {
     onChangeForm (val) {
       Object.assign(this.listQuery, val)
       console.log(this.listQuery, val, 'val')
-      // this.listQuery.page = 1
+    },
+    onAdvChangeForm (val) {
+      delete val.QryState
+      Object.assign(this.listQuery, val)
     },
     onAdvanced () {
       this.advancedVisible = !this.advancedVisible

@@ -133,12 +133,12 @@
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="责任环节">
+          <el-form-item label="责任环节" label-width="70px">
             <el-input readonly v-model="showData.responsibility"></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="服务方式">
+          <el-form-item label="服务方式" label-width="70px">
             <el-input readonly v-model="showData.serviceText"></el-input>
           </el-form-item>
         </el-col>
