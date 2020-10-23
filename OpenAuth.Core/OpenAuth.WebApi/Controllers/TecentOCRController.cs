@@ -121,18 +121,21 @@ namespace OpenAuth.WebApi.Controllers
                         invoiceresponse.CompanyName = item.CompanyName;
                         invoiceresponse.Type = item.Type;
                         invoiceresponse.ExtendInfo = item.Extend;
+                        //判断劳务关系是否正确(增值税发票)
+                        if (item.Type == 3)
+                        {
+                            if (!await _reimburseInfoApp.IsServiceRelations(request.AppUserId, item.CompanyName))
+                            {
+                                invoiceresponse.IsValidate = 0;
+                                invoiceresponse.NotPassReason = "劳务关系不正确";
+                            }
+                        }
                         //2.判断发票是否已经使用且不在我的费用中 已使用或已在我的费用中不走验证
                         List<string> InvoiceNo = new List<string> { item.InvoiceNo };
                         if (!await _reimburseInfoApp.IsSole(InvoiceNo) || !await _myExpendsApp.IsSole(request.AppUserId, item.InvoiceNo))
                         {
                             invoiceresponse.IsUsed = 1;
                             invoiceresponse.NotPassReason = "发票已被使用";
-                        }
-                        //判断劳务关系是否正确
-                        else if (!await _reimburseInfoApp.IsServiceRelations(request.AppUserId, item.CompanyName))
-                        {
-                            invoiceresponse.IsValidate = 0;
-                            invoiceresponse.NotPassReason = "劳务关系不正确";
                         }
                         else
                         {
