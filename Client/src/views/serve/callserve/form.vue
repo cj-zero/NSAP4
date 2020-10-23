@@ -666,16 +666,10 @@ export default {
     }
   },
   watch: {
-    // ifEdit: {
-    //   handler(val) {
-    //     console.log(val);
-    //   },
-    // },
     customer: {
       handler(val) {
         this.getPartnerInfo(String(val.customerId).toUpperCase())
         this.setForm(val);
-        // console.log(this.$refs.uploadImg, 'uploadImg')
       },
     },
     sure: {
@@ -686,31 +680,8 @@ export default {
         }
       },
     },
-    // "form.addr": {
-    //   //现地址详细地址
-    //   handler(val) {
-    //     if (val && this.formName === '新建') {
-    //       if (!this.ifFirstLook) {
-    //         this.needPos = true;
-    //       } else {
-    //         if (this.customer.addr != val) {
-    //           this.needPos = true;
-    //         } else {
-    //           this.needPos = false;
-    //         }
-    //       }
-    //       let addre =
-    //         this.form.province +
-    //         this.form.city +
-    //         this.form.area +
-    //         this.form.addr;
-    //       if (this.needPos) this.getPosition(addre);
-    //     }
-    //   },
-    // },
     "form.address": {
       //地图标识地址
-
       handler(val, oldVal) {
         if (val && this.formName === '新建') {
           if (this.ifFirstLook) {
@@ -783,7 +754,6 @@ export default {
                 item.problemType && item.problemType.name;
             });
           }
-          // console.log(val, 'refValueChange', this.form)
           this.propForm = this.form.serviceWorkOrders
         }
         // this.propForm = this.refValue.serviceWorkOrders
@@ -807,13 +777,7 @@ export default {
     }
     this.isCreateAdd = this.isCreate;
   },
-  updated () {
-    // if (this.formName === '确认') {
-    //   // 确认页面的话，直接调用
-    //   console.log('look')
-    //   this.getPartnerInfo(this.customer.customerId)
-    // }
-  },
+  updated () { },
   destroyed() {
     window.removeEventListener("resize", this.resizeWin);
   },
@@ -847,7 +811,6 @@ export default {
     },
     onDateChange(val) {
       this.form.createTime = timeToFormat("yyyy-MM-dd HH-mm-ss", val);
-      // console.log("date", this.form.createTime);
     },
     downloadFile(url) {
       download(url);
@@ -904,24 +867,6 @@ export default {
         this._transformPosition(lat, lng)
       }
     },
-    // _getPosition () {
-    //   // address=北京市海淀区上地十街10号&output=json&ak=您的ak&callback=showLocation
-    //   let params = `address=${encodeURIComponent(this.allArea.replace('海外', ''))}&output=json&ak=${this.bMapkey}`
-    //   jsonp(`${this.parasePositionURL}${params}`).then(res => {
-    //     let { status, result } = res
-    //     console.log(res, status, result, 'status', status == 0)
-    //     if (status == 0) {
-    //       let { lat, lng } = result.location
-    //       console.log(res, lat, lng, 'lng')
-    //     } else {
-    //       console.log('错误')
-    //       this.$message.error('地址解析错误')
-    //     }
-    //   }).catch((err) => {
-    //     console.log(err, 'err')
-    //     this.$message.error('地址解析错误')
-    //   })
-    // },
     _transformPosition (lng, lat) {
       let queryParams = `locations=${lng},${lat}&coordsys=baidu&output=json&key=${this.gdKey}`
       http.get(`${this.positionTransformURL}${queryParams}`, (err, res) => {
@@ -936,7 +881,6 @@ export default {
         let [lat, lng] = res.locations.split(',')
         this.form.longitude = lng
         this.form.latitude = lat
-        // console.log(this.form, 'form', lng, lat)
       })
     },
     onAreaClose () {
@@ -1006,7 +950,6 @@ export default {
       this.allAddress = res;
     }, 
     resetInfo () { // 清空终端客户相关的数据
-      console.log(this.handleSelectType, 'resetInfo')
       if (this.handleSelectType === 'customer') {
         this.form.customerName = ''
         this.form.salesMan = ''
@@ -1031,9 +974,7 @@ export default {
       this.form.latitude = ''
     },
     async setForm(val) {
-      console.log('setForm')
       val = JSON.parse(JSON.stringify(val));
-      // console.log(val, 'json.stringify')
       if (val) {
         val.files = await this.getServeImg(val.id);
         this.form.files = val.files
@@ -1184,7 +1125,6 @@ export default {
           this.$message.error('请输入正确的终端代码格式')
           return this.$emit('close-Dia', 'closeLoading')
         }
-        // console.log(chec, this.isValid, "isValid", this.$router.path);
         if (chec && this.isValid) {
           if (this.$route.path === "/serve/callserve") {
             if (this.formName === '新建') {
@@ -1361,7 +1301,6 @@ export default {
     },
     handleClose() {
       //  ##地图关闭之前执行的操作
-      console.log(22);
       //  this.drawerMap=false
     },
     openMap() {
@@ -1378,15 +1317,7 @@ export default {
       this.listQuerySearch.slpName = this.inputName
       this.listQuerySearch.Technician = this.inputTech
       this.listQuerySearch.Address = this.inputAddress
-      this.getPartnerList(this.listQuerySearch, 'search');
-      // if (!res) {
-      //   this.filterPartnerList = this.partnerList;
-      // } else {
-      //   let list = this.partnerList.filter(item => {
-      //     return item.cardCode.toLowerCase().indexOf(res.toLowerCase()) === 0;
-      //   });
-      //   this.filterPartnerList = list;
-      // }
+      this.getPartnerList(this.listQuerySearch, 'search')
     }, 400),
     searSerial: debounce(function() {
       // SerialList
@@ -1396,7 +1327,6 @@ export default {
     async querySearch(queryString, cb) {
       this.listQuery.CardCodeOrCardName = queryString;
       await this.getPartnerList(this.listQuery);
-      console.log(this.partnerList, 'partnerList')
       // 调用 callback 返回建议列表的数据
       cb(this.partnerList);
     },
@@ -1473,7 +1403,6 @@ export default {
           this.form.contactTel = item.cellular;
         }
       } else { // 终端客户代码
-        console.log('terminal')
         this.form.terminalCustomerId = item.cardCode
         this.form.terminalCustomer = item.cardName
         this.handleCurrentChange(item)
@@ -1527,9 +1456,6 @@ export default {
       this.temp = Object.assign({}, row); // copy obj
       this.dialogStatus = "update";
       this.dialogFormVisible = true;
-      // this.$nextTick(() => {
-      //   this.$refs["form"].clearValidate();
-      // });
     },
   },
   handleCreate() {

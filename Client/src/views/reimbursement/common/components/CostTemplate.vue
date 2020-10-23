@@ -282,16 +282,7 @@ export default {
           }
         }
       }
-    },
-    // 'formData.list.0.totalMoney' (val) {
-    //   if (val) {
-    //     console.log('totalMoney', val)
-    //     let { days } = this.formData.list[0]
-    //     this.formData.list[0].money = days > 0 
-    //       ? (val / days).toFixed(2)
-    //       : 0
-    //   }
-    // }
+    }
   },
   data () {
     return {
@@ -358,7 +349,7 @@ export default {
       let { otherFileList, otherAttachment } = this.formData.list[0]
       let hasAttachment = this.hasAttachment(this.formData.list[0])
       let isValid = true
-      console.log(hasAttachment, 'hasAttachment')
+      // console.log(hasAttachment, 'hasAttachment')
       if (!hasAttachment) { // 如果是假发票号则需要判断其它附件的数量，真的说明有发票附件了，直接可以通过
         if (otherFileList.length) {
           let ifDeleted = false
@@ -430,7 +421,6 @@ export default {
       return !isNaN(val) && val >= 0
     },
     onChange (value) {
-      console.log(this.currentProp, 'prop change')
       if (this.currentProp === 'transport') { // 如果改变的是交通方式，则对feeType进行相应的赋值
         this.formData.list[0].feeType = this.transportationList[value - 1].label
       } else if (this.currentProp === 'expenseCategory') {
@@ -457,7 +447,6 @@ export default {
     onInput (e) {
       let val = e.target.value
       let { invoiceFileList, invoiceAttachment, invoiceNumber, maxMoney } = this.formData.list[0]
-      // console.log(invoiceFileList, invoiceAttachment, invoiceNumber, this.currentProp, 'input')
       if (
         (
           (invoiceFileList.length && !this.fileid.includes(invoiceFileList[0].id)) || // 编辑的时候，有回显的附件，并且没有删除

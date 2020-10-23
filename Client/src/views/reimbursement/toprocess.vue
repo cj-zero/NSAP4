@@ -179,9 +179,6 @@ export default {
       this.currentFormQuery = val
       Object.assign(this.listQuery, val)
     },
-    recall () { // 撤回操作
-      console.log('recall')
-    },
     async agree () { //同意
       this.$refs.order.openRemarkDialog('agree')
     }, 

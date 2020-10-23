@@ -95,7 +95,6 @@ export default {
   },
   watch: {
     visible () {
-      console.log(this.ifEdit, 'ifEdit')
       let { manufacturerSerialNumber } = this.currentTarget
       manufacturerSerialNumber ? 
         (this.radio = manufacturerSerialNumber) : 
@@ -105,7 +104,6 @@ export default {
   computed: {
   },
   mounted() {
-    //   console.log(this.SerialNumberList)
   },
   methods: {
     checkIsSelectAble (row) {
@@ -122,7 +120,6 @@ export default {
       this.$emit("change-Form", val);
     },
     onRowClick (row) {
-      // console.log(row, 'rowClick')
       if (!this.ifEdit && row.isSelectAble) {
         const { index } = row
         // 创建多选

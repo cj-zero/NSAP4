@@ -12,7 +12,6 @@
 </template>
 
 <script>
-// import echarts from 'echarts'
 const titleList = {
   'Supervisor': { title: '售后部门呼叫量情况', legend: '售后部门排行' },
   'SalesMan': { title: '销售员呼叫量分布图', legend: '销售员排行' },
@@ -45,7 +44,6 @@ export default {
     _initCharts () {
       // todo
       let charts = document.getElementsByClassName('chart-item')
-      console.log(charts, 'charts')
       for (let i = 0; i < charts.length; i++) {
         let myChart = global.echarts.init(charts[i])
         let data = this.data[i]
@@ -108,7 +106,6 @@ export default {
             }
           }]
         }
-        console.log('setOptoins', option)
         myChart.setOption(option)
       }
     }
@@ -117,7 +114,6 @@ export default {
 
   },
   mounted () {
-    console.log(titleList)
     this._initCharts()
   },
 }

@@ -24,14 +24,10 @@ export default {
     }
   },
   watch: {
-    texts (val) {
-      console.log('texts', val)
-    },
     initialName: {
       immediate: true,
       handler (val) {
         this.activeName = val
-        console.log(this.activeName, 'activeName')
       }
     }  
   },
