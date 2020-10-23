@@ -131,11 +131,6 @@ export default {
     getImgList(val) {
       //获取图片列表
       this.serviceOrderMessagePictures = val;
-      console.log(val, "val");
-      // this.formValue.serviceOrderMessagePictures = val.map((item) => {
-      //   item.id = item.pictureId;
-      //   return item;
-      // });
     },
     submitForm() {
       if (!this.content.trim()) {

@@ -179,7 +179,6 @@ export default {
       this.$emit("change-Search", 1);
     },
     toggleMoreSearch () {
-      console.log(this.isVisible, 'isVisible')
       this.isVisible = !this.isVisible
     },
     handleChange (val) {

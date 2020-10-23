@@ -136,8 +136,6 @@ export default {
           }).then(res => {
             this.formData = res.data[0]
             this.dialogFormVisible = true
-            console.log(this.formData, 'check')
-            console.log(res, 'res')
           }).catch(() => {
             this.$message.error('获取工单详情失败!')
           })
@@ -172,7 +170,6 @@ export default {
           this.dialogFormVisible = true
         }
       }
-      console.log(item)
     },
     changeType (status) {
       return status !== 0 ? 'info' : 'primary'
@@ -205,7 +202,6 @@ export default {
           this.filterSerialNumberList = res.data;
           this.serialCount = res.count;
           this.serLoad = false
-          console.log(res, 'res')
         })
         .catch((error) => {
           this.serLoad = false
@@ -214,7 +210,6 @@ export default {
     },
     _getTechnicianApplyDevices () {
       getTechnicianApplyDevices({ sapOrderId: this.sapOrderId }).then(res => {
-        console.log(res, 'devices')
         this.checkList = res.data
       })
     },

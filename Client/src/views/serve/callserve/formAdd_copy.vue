@@ -870,7 +870,6 @@ export default {
                   let sliceList = this.formList.slice(index);
                   if (this.formList[index].editTrue) {
                     //如果可以修改
-                    //  console.log(thisForm[item1],newValChild[item1],item1)
                     if (item1 == "editTrue") {
                       return;
                     } else if (item1 == "problemTypeId") {
@@ -903,20 +902,8 @@ export default {
         }
       this.$emit("change-form", newVal);
       },
-
-      deep: true,
-      // immediate: true
+      deep: true
     },
-    // propForm: {
-    //   deep: true,
-    //   immediate: true,
-    //   handler(val) {
-    //     if (val && val.length) {
-    //       this.formList = val;
-    //       console.log(this.formList);
-    //     }
-    //   },
-    // },
     "form.customerId": {
       deep: true,
       handler(val) {
@@ -943,12 +930,6 @@ export default {
       },
     },
   },
-  // updated(){
-
-  //     this.listQuery.customerId=this.form.customerId
-  //   // }
-  //   // console.log(this.form.customerId)
-  // },
   inject: ["form"],
   methods: {
     getSerialNumberList() {
@@ -1002,18 +983,14 @@ export default {
       });
     },
     NodeClick(res) {
-      // console.log(this.formList, this.sortForm - 1);
       this.formList[this.sortForm - 1].problemTypeName = res.name;
       this.formList[this.sortForm - 1].problemTypeId = res.id;
       this.problemLabel = res.name;
       this.proplemTree = false;
     },
     solutionClick(res) {
-       console.log(this.formList)
       this.formList[this.sortForm - 1].solutionsubject = res.subject;
       this.formList[this.sortForm - 1].solutionId = res.id;
-      // this.problemLabel = res.name;
-      // console.log(this.formList[this.sortForm - 1], res, this.sortForm - 1);
       this.solutionOpen = false;
     },
     switchType(val) {
