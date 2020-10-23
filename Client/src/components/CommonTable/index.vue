@@ -87,6 +87,10 @@ export default {
       default () {
         return []
       }
+    },
+    selectedKey: { // 用来判断多选是否可以点击的key(selectedList数组中对象的唯一key值)
+      type: String,
+      default: 'id'
     }
   },
   data () {
@@ -139,7 +143,7 @@ export default {
     },
     checkSelectable (row) {
       return this.selectedList.length 
-        ? this.selectedList.every(item => item.id !== row.id)
+        ? this.selectedList.every(item => item[this.selectedKey] !== row[this.selectedKey])
         : true
     }
   },
