@@ -1331,7 +1331,7 @@ namespace OpenAuth.App
         /// <param name="AppId"></param>
         /// <param name="ServiceRelations"></param>
         /// <returns></returns>
-        private async Task<bool> IsServiceRelations(int AppId, string ServiceRelations)
+        public async Task<bool> IsServiceRelations(string AppId, string ServiceRelations)
         {
             var user = _auth.GetCurrentUser().User;
             if (user.Account == "App")
