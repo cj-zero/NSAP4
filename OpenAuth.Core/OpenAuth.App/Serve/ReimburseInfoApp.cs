@@ -204,7 +204,13 @@ namespace OpenAuth.App
             }
             #endregion
 
-            var ReimburseInfolist = await ReimburseInfos.ToListAsync();
+            ReimburseInfos = ReimburseInfos.OrderByDescending(r => r.CreateTime);
+            if (request.PageType == 2 || request.PageType == 5)
+            {
+                ReimburseInfos = ReimburseInfos.OrderBy(r => r.CreateTime);
+            }
+            var ReimburseInfolist = await ReimburseInfos.Skip((request.page - 1) * request.limit)
+                .Take(request.limit).ToListAsync();
             ServiceOrderIds = ReimburseInfolist.Select(d => d.ServiceOrderId).ToList();
             var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
             var SelUserName = await UnitWork.Find<User>(null).Select(u => new { u.Id, u.Name }).ToListAsync();
@@ -212,27 +218,23 @@ namespace OpenAuth.App
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => ServiceOrderIds.Contains((int)c.ServiceOrderId) && c.ServiceMode == 1).ToListAsync();
             var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ServiceOrderIds.Contains(s.Id)).ToListAsync();
             var ReimburseResps = from a in ReimburseInfolist
-                                 join b in CompletionReports on a.ServiceOrderId equals b.ServiceOrderId
-                                 join c in ServiceOrders on a.ServiceOrderId equals c.Id
-                                 join d in SelUserName on a.CreateUserId equals d.Id
-                                 join e in Relevances on a.CreateUserId equals e.FirstId
-                                 join f in SelOrgName on e.SecondId equals f.Id
+                                 join b in CompletionReports on a.ServiceOrderId equals b.ServiceOrderId into ab
+                                 from b in ab.DefaultIfEmpty()
+                                 join c in ServiceOrders on a.ServiceOrderId equals c.Id into ac
+                                 from c in ac.DefaultIfEmpty()
+                                 join d in SelUserName on a.CreateUserId equals d.Id into ad
+                                 from d in ad.DefaultIfEmpty()
+                                 join e in Relevances on a.CreateUserId equals e.FirstId into ae
+                                 from e in ae.DefaultIfEmpty()
+                                 join f in SelOrgName on e.SecondId equals f.Id  into ef
+                                 from f in ef.DefaultIfEmpty()
                                  select new { a, b, c, d, f };
-
-
 
             ReimburseResps = ReimburseResps.OrderByDescending(r => r.f.CascadeId).ToList();
             ReimburseResps = ReimburseResps.GroupBy(r => r.a.Id).Select(r => r.First()).ToList();
 
-            ReimburseResps = ReimburseResps.OrderByDescending(r => r.a.CreateTime);
-            if (request.PageType == 2 || request.PageType == 5)
-            {
-                ReimburseResps = ReimburseResps.OrderBy(r => r.a.CreateTime);
-            }
-            result.Count = ReimburseResps.Count();
-            result.Data = ReimburseResps
-                .Skip((request.page - 1) * request.limit)
-                .Take(request.limit).Select(r => new
+            result.Count = ReimburseInfos.Count();
+            result.Data = ReimburseResps.Select(r => new
                 {
                     ReimburseResp = r.a,
                     fillTime = r.a.CreateTime.ToString("yyyy-MM-dd"),
@@ -291,32 +293,34 @@ namespace OpenAuth.App
             #endregion
 
 
-
+            var ReimburseInfolist = await ReimburseInfos.OrderByDescending(r => r.CreateTime).Skip((request.page - 1) * request.limit)
+                .Take(request.limit).ToListAsync();
             var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
             var SelUserName = await UnitWork.Find<User>(null).Select(u => new { u.Id, u.Name }).ToListAsync();
             var Relevances = await UnitWork.Find<Relevance>(r => r.Key == "UserOrg").Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
             var rohs = await UnitWork.Find<ReimurseOperationHistory>(r => r.ApprovalResult == "驳回").ToListAsync();
-
-            var ReimburseInfolist = await ReimburseInfos.ToListAsync();
             var ServiceOrderIds = ReimburseInfolist.Select(d => d.ServiceOrderId).ToList();
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => ServiceOrderIds.Contains((int)c.ServiceOrderId)).ToListAsync();
             var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ServiceOrderIds.Contains(s.Id)).ToListAsync();
 
             var ReimburseResps = from a in ReimburseInfolist
-                                 join b in CompletionReports on a.ServiceOrderId equals b.ServiceOrderId
-                                 join c in ServiceOrders on a.ServiceOrderId equals c.Id
-                                 join d in SelUserName on a.CreateUserId equals d.Id
-                                 join e in Relevances on a.CreateUserId equals e.FirstId
-                                 join f in SelOrgName on e.SecondId equals f.Id
+                                 join b in CompletionReports on a.ServiceOrderId equals b.ServiceOrderId into ab
+                                 from b in ab.DefaultIfEmpty()
+                                 join c in ServiceOrders on a.ServiceOrderId equals c.Id into ac
+                                 from c in ac.DefaultIfEmpty()
+                                 join d in SelUserName on a.CreateUserId equals d.Id into ad
+                                 from d in ad.DefaultIfEmpty()
+                                 join e in Relevances on a.CreateUserId equals e.FirstId into ae
+                                 from e in ae.DefaultIfEmpty()
+                                 join f in SelOrgName on e.SecondId equals f.Id into ef
+                                 from f in ef.DefaultIfEmpty()
                                  select new { a, b, c, d, f };
 
             ReimburseResps = ReimburseResps.OrderByDescending(r => r.f.CascadeId).ToList();
             ReimburseResps = ReimburseResps.GroupBy(r => r.a.Id).Select(r => r.First()).ToList();
 
-            result.Count = ReimburseResps.Count();
-            result.Data = ReimburseResps.OrderByDescending(r => r.a.CreateTime)
-                .Skip((request.page - 1) * request.limit)
-                .Take(request.limit).Select(r => new
+            result.Count = ReimburseInfos.Count();
+            result.Data = ReimburseResps.Take(request.limit).Select(r => new
                 {
                     ReimburseResp = r.a,
                     RejectRemark = rohs.Where(o => o.ReimburseInfoId.Equals(r.a.Id)).OrderByDescending(o => o.CreateTime).Select(o => o.Remark).FirstOrDefault(),
@@ -726,6 +730,8 @@ namespace OpenAuth.App
             {
                 loginUser = await GetUserId(Convert.ToInt32(req.AppId));
             }
+            #region 条件
+            
             #region 必须存在附件
             int racount = 0;
             req.ReimburseOtherCharges.Where(r => r.IsAdd == null || r.IsAdd == true).ForEach(r => racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0);
@@ -737,7 +743,7 @@ namespace OpenAuth.App
             }
             #endregion
 
-            #region 删除我的费用
+            #region 删除我的费用（假删除）
 
             req.ReimburseFares = req.ReimburseFares.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
             req.ReimburseAccommodationSubsidies = req.ReimburseAccommodationSubsidies.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
@@ -770,6 +776,7 @@ namespace OpenAuth.App
                     throw new CommonException("添加报销单失败。发票已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
                 }
             }
+            #endregion
             #endregion
 
 
@@ -970,8 +977,6 @@ namespace OpenAuth.App
             }
             await UnitWork.SaveAsync();
             #endregion
-
-
 
             #region 保存新附件
             List<ReimburseAttachment> filemodel = new List<ReimburseAttachment>();
