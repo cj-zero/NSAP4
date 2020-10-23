@@ -28,12 +28,10 @@ router.beforeEach((to, from, next) => {
         }
         if (to.path === '/login') { // 登录后login自动跳转
           next({ path: '/' })
-          // initSignalR(getToken())
           return
         }
         if (store.getters.modules != null) {
           next()
-          // initSignalR(getToken())
           return
         }
         store.dispatch('GetModulesTree').then(modules => { // 获取用户可访问的模块
@@ -48,12 +46,10 @@ router.beforeEach((to, from, next) => {
       if (getToken()) {
         if (to.path === '/login') { // 登录后login自动跳转
           next({ path: '/' })
-          // initSignalR(getToken())
           return
         }
         if (store.getters.modules != null) {
           next()
-          // initSignalR(getToken())
           return
         }
         // store.dispatch('GetRoles')

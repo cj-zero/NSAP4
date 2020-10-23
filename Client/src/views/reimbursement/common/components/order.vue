@@ -1736,23 +1736,25 @@ export default {
         this.formData.reimburseOtherCharges.push(...otherList)
       }
     },
-    openRemarkDialog (type) { // 打开备注弹窗，二次确认
+    async openRemarkDialog (type) { // 打开备注弹窗，二次确认
       this.remarkType = type
-      if (type !== 'reject') {
-         this.$confirm(`${type === 'pay' ? '支付' : '同意'}此次报销?`, '提示', {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning'
-          }).then(() => {
-            this.approve()
-          })
-      } else {
-        this.$refs.form.validate(isValid => { // 如果必填项都填写了才进行驳回的备注弹窗
-          isValid 
-            ? this.$refs.approve.open() 
-            : this.$message.error('格式错误或必填项未填写')
-        })
-      }
+      this.$refs.form.validate(isValid => {
+        if (isValid) {
+          if (type !== 'reject') {
+          this.$confirm(`${type === 'pay' ? '支付' : '同意'}此次报销?`, '提示', {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning'
+            }).then(() => {
+              this.approve()
+            })
+          } else {
+            this.$refs.approve.open() 
+          }
+        } else {
+          this.$message.error('格式错误或必填项未填写')
+        }
+      })
     },
     closeRemarkDialog () {
       this.remarkType = ''
