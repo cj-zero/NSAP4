@@ -942,7 +942,6 @@ export default {
     };
   },
   created() {
-    // console.log(this.isCreate, 'isCreated')
     this.setFormList(this.formList)
   },
 
@@ -966,16 +965,9 @@ export default {
       limit: 20
     }).then((response) => {
       this.datasolution = response.data;
-      // console.log(this.datasolution, 'solution')
       this.solutionCount = response.count;
       this.listLoading = false;
     });
-    // if (this.propForm && this.propForm.length) {
-    //   this.formList = JSON.parse(JSON.stringify(this.propForm))
-    //   this.formInitailList = JSON.parse(JSON.stringify(this.propForm)) // 保存已经新建的表单项，用于后续判断后续是否能够编辑
-    //   this.setFormList(this.formList)
-    //   console.log('mounted')
-    // }
   },
   computed: {
     newValue() {
@@ -1009,7 +1001,6 @@ export default {
                     let sliceList = this.formList.slice(index);
                     if (this.formList[index].editTrue) {
                       //如果可以修改
-                      //  console.log(thisForm[item1],newValChild[item1],item1)
                       if (
                         item1 == "editTrue" ||
                         item1 == "manufacturerSerialNumber"
@@ -1073,14 +1064,12 @@ export default {
           this.formList = JSON.parse(JSON.stringify(val))
           this.formInitailList = JSON.parse(JSON.stringify(val))
           this.setFormList(this.formList)
-          console.log(this.formList, 'formInitailList');
         }
       },
     },
     "form.customerId": {
       deep: true,
       handler(val) {
-        // console.log(this.form, val, 'customerId change')
         let { inputSerial: manufSN, businessType } = this
         if (isCustomerCode(val)) {
           this.listQuery.CardCode = String(val).toUpperCase()
@@ -1116,30 +1105,9 @@ export default {
         }
       },
     },
-    // 'form.customerId': {
-    //   handler(val) {
-    //     console.log(this.form, val, 'customerId change')
-    //     // this.$nextTick(() => {
-
-    //     // })
-    //     // this.listQuery.CardCode = val.customerId;
-    //     getSerialNumber(this.listQuery)
-    //       .then((res) => {
-    //         this.SerialNumberList = res.data;
-    //         this.filterSerialNumberList = this.SerialNumberList;
-    //         this.SerialCount = res.count;
-    //         this.serLoad = false;
-    //         this.listLoading = false;
-    //       })
-    //       .catch((error) => {
-    //         console.log(error);
-    //       });
-    //   },
-    // },
     formList: {
       deep: true,
       handler (val) {
-        console.log(val, 'val')
         this.setFormList(val)
       }
     },
@@ -1147,12 +1115,6 @@ export default {
       this.dialogChange = !this.dialogChange;
     },
   },
-  // updated(){
-
-  //     this.listQuery.customerId=this.form.customerId
-  //   // }
-  //   // console.log(this.form.customerId)
-  // },f
   // inject: ["form"],
   methods: {
     isChangeStatus (val) { // 是否可以改变状态
@@ -1194,9 +1156,7 @@ export default {
           this.filterSerialNumberList = this.SerialNumberList;
           this.SerialCount = res.count;
           this.serLoad = false;
-          this.listLoading = false;
-          console.log(1111,'succes')
-          // 
+          this.listLoading = false; 
         })
         .catch((error) => {
           console.log(error);
@@ -1204,7 +1164,6 @@ export default {
     },
     handleCollapseChange (val) {
       this.collapseTitle = val.length ? '折叠' : '展开更多订单'
-      console.log(val, 'val change')
     },
     handleChange(val) {
       this.listQuery.page = val.page;
@@ -1236,25 +1195,18 @@ export default {
         });
     },
     NodeClick(res) {
-      console.log(res, 'res', this.sortForm - 1)
       this.copyForm.problemTypeName = res.name;
       this.copyForm.problemTypeId = res.id;
-      // this.$set(this.formList[this.sortForm - 1], 'problemTypeName', res.name)
-      console.log(this.formList === this.form, 'nodeClick')
       this.formList[this.sortForm - 1].problemTypeName = res.name;
-      // // console.log(this.formList[this.sortForm - 1].problemTypeName, 'name')
       this.formList[this.sortForm - 1].problemTypeId = res.id;
       this.problemLabel = res.name;
       this.proplemTree = false;
-      // console.log(this.formList, 'nodeClick', this.problemLabel)
     },
     solutionClick(res) {
       this.copyForm.solutionsubject = res.subject;
       this.copyForm.solutionId = res.id;
       this.formList[this.sortForm - 1].solutionsubject = res.subject;
       this.formList[this.sortForm - 1].solutionId = res.id;
-      // this.problemLabel = res.name;
-      console.log(this.formList[this.sortForm - 1], res, this.sortForm - 1);
       this.solutionOpen = false;
     },
     switchType(val) {
@@ -1284,9 +1236,7 @@ export default {
     changeForm(res) {
       this.formListStart = res;
       this.$emit('change-Form', res)
-      // console.log(res, this.formListStart, 'changeForm')
     },
-
     pushForm() {
         if (!this.formList.length) {
           this.dialogfSN = false;
@@ -1468,10 +1418,6 @@ export default {
         this.isEditOperation = index !== undefined
           ? Boolean(value.manufacturerSerialNumber) 
           : false
-        console.log(this.isEditOperation, 'ISEDIT', index)
-        // this.isEditOperation = value
-        //   ? Boolean(value.manufacturerSerialNumber)
-        //   : false;
         this.dialogfSN = true;
       });
     },
@@ -1500,30 +1446,19 @@ export default {
     searchList() {
       this.listQuery.ManufSN = this.inputSearch;
       this.listQuery.ItemCode = this.inputItemCode;
-      // this.listQuery.CardName = this.inputname;
       this.getSerialNumberList();
-      // if (!res) {
-      //   this.filterSerialNumberList = this.SerialNumberList;
-      // } else {
-      //   let list = this.SerialNumberList.filter(item => {
-      //     return item.manufSN.indexOf(res) > 0;
-      //   });
-      //   this.filterSerialNumberList = list;
-      // }
     },
     searchSelect(res) {
       if (res.count) {
         this.filterSerialNumberList = this.filterSerialNumberList.filter(
           (item) => item.manufSN === res.manufSN
         );
-        // this.filterSerialNumberList = newList;
       }
       this.formList[this.thisPage].manufacturerSerialNumber = res.manufSN;
       this.formList[this.thisPage].internalSerialNumber = res.internalSN;
       this.formList[this.thisPage].contractId = res.contractID;
       this.formList[this.thisPage].materialCode = res.itemCode;
       this.formList[this.thisPage].materialDescription = res.itemName;
-      // this.inputSearch = res.manufSN;
     },
     // async querySearch(queryString, cb) {
     //   this.listQuery.ManufSN = queryString;
@@ -1550,34 +1485,6 @@ export default {
     handleSelect(item) {
       console.log(item);
     },
-    // deleteForm(res) {
-    //   this.$confirm(
-    //     `此操作将删除序列商序列号为${res.manufacturerSerialNumber}的表单, 是否继续?`,
-    //     "提示",
-    //     {
-    //       confirmButtonText: "确定",
-    //       cancelButtonText: "取消",
-    //       type: "warning",
-    //     }
-    //   )
-    //     .then(() => {
-    //       this.formList = this.formList.filter((item) => {
-    //         return (
-    //           item.manufacturerSerialNumber != res.manufacturerSerialNumber
-    //         );
-    //       });
-    //       this.$message({
-    //         type: "success",
-    //         message: "删除成功!",
-    //       });
-    //     })
-    //     .catch(() => {
-    //       this.$message({
-    //         type: "info",
-    //         message: "已取消删除",
-    //       });
-    //     });
-    // },
     deleteForm(res, index, isOrderDisabled) {
       if (this.formList.length <= 1) {
         this.$message.error('至少有一个工单')

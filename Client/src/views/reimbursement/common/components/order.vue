@@ -701,7 +701,6 @@
 
 <script>
 import { addOrder, getOrder, updateOrder, approve, isSole } from '@/api/reimburse'
-// import { identifyInvoice } from '@/api/reimburse' // 票据识别
 import { getList } from '@/api/reimburse/mycost'
 import { forServe } from '@/api/serve/callservesure'
 import upLoadFile from "@/components/upLoadFile";
@@ -826,7 +825,6 @@ export default {
       labelWidth: '80px',
       disabled: false,
       labelPosition: 'right',
-      // formConfig,
       limit: 8,
       travelRules,
       trafficRules,
@@ -869,7 +867,6 @@ export default {
       immediate: true,
       deep: true,
       handler (val) {
-        console.log('immediate watch')
         this.formData.createUserId = val.createUserId
         this.formData.userName = val.userName
         this.formData.orgName = val.orgName
@@ -908,7 +905,6 @@ export default {
         if (this.title === 'approve') { // 审批的时候要告诉审批人 住宿金额补贴是否符合标准
           this._checkAccMoney()
         }
-        console.log('accMax', this.accMaxMoney)
         if (this.title === 'create' || this.title === 'edit') { // 只有在create或者edit的时候，才可以导入费用模板
           this._getCostList() // 获取费用模板
         }
@@ -991,8 +987,7 @@ export default {
       }
       return result
     },
-    rules () { // 报销单上层表单规则
-      // console.log('rules roleName', this.isCustomerSupervisor)
+    rules () { // 报销单上面的表单规则
       return {
         serviceOrderSapId: [ { required: true } ],
         reimburseType: [ { required: true, trigger: ['change', 'blur'] } ],
@@ -1014,11 +1009,9 @@ export default {
     },
     travelMoney () {
       // 以R或者M开头都是65
-      console.log(this.isROrM, 'ROrM')
       return  this.isROrM ? '65' : '50'
     },
     isROrM () { // 判断报销人部门是不是R/M
-      console.log(this.orgName, 'orgName')
       return /^[R|M]/i.test(this.userOrgName)
     },
     accMaxMoney () { // 住宿补贴的最大值
@@ -1163,7 +1156,6 @@ export default {
                   let ifDeleted = otherFileList[0].reimburseId // 判断是导入数据还是编辑的数据
                     ? this.formData.fileId.length && fileListDeleted
                     : otherFileList.every(item => !item.isAdd)
-                  console.log(ifDeleted, 'ifDeleted', this.formData.fileId.length)
                   ifInvoiceAttachment = ifDeleted
                     ? Boolean(otherAttachment && otherAttachment.length) 
                     : true
@@ -1176,7 +1168,7 @@ export default {
           }
         }
         let isValid = await this.$refs[ref].validate()
-        console.log('valid', isValid, this.formData[data], ifInvoiceAttachment)
+        // console.log('valid', isValid, this.formData[data], ifInvoiceAttachment)
         return ref === 'travelForm' ? isValid : ifInvoiceAttachment && isValid
       }
     },
@@ -1314,16 +1306,14 @@ export default {
       let { businessTripDate, endDate } = this.formData
       let actDays = this.calculateDays(businessTripDate, endDate)
       if (actDays && value > actDays) { // 限制最大的天数
-        console.log('large', value > actDays)
         this.formData.reimburseTravellingAllowances[0].days = actDays
       }
     },
     onChange (value) { // 天数 总金额 计算
       this.changeMoneyByDaysOrTotalMoney(value)
     },
-    onBlur (e) {
-      let value = e.target.value
-      console.log(value)
+    onBlur () {
+      // let value = e.target.value
       // this.changeMoneyByDaysOrTotalMoney(value)
     },
     changeMoneyByDaysOrTotalMoney (value) {
@@ -1369,7 +1359,6 @@ export default {
         ) && maxMoney
       ) {
         if (this.currentProp === 'totalMoney' || this.currentProp === 'money') { // 只算修改totalMoney或者money字段
-          console.log(maxMoney, value, 'enter ine', type === 'acc')
           type === 'acc'
             ? currentRow.totalMoney = Math.min(parseFloat(value), maxMoney)
             : currentRow.money = Math.min(parseFloat(value), maxMoney)
@@ -1377,7 +1366,6 @@ export default {
       }
     },
     onFocus ({ prop, index }) {
-      console.log(prop, index, 'focus')
       this.currentProp = prop
       this.currentIndex = index
     },
@@ -1397,7 +1385,6 @@ export default {
     onCloseArea (options) { // 关闭地址选择器
       let { prop, index } = options
       let currentRow = this.formData.reimburseFares[index]
-      console.log(prop, index, 'closeArea', currentRow)
       prop === 'from'
           ? this.$set(currentRow, 'ifFromShow', false)
           : this.$set(currentRow, 'ifToShow', false)
@@ -1421,11 +1408,10 @@ export default {
       let data = this.formData.reimburseFares[index]
       data.from = to
       data.to = from
-      console.log(row, index)
     },
     addAndCopy (scope, data, type, operationType) {
       if (!this.ifFormEdit) return
-      console.log(scope.row, data, type, operationType, 'operationType') // 判断是新增还是复制
+      // console.log(scope.row, data, type, operationType, 'operationType') // 判断是新增还是复制
       let { row } = scope
       switch (type) {
         case 'traffic':
@@ -1492,11 +1478,9 @@ export default {
               deleteId: id,
               reimburseType: REIMBURSE_TYPE_MAP[type]
             })
-            console.log(this.formData.delteReimburse, 'deleterei')
           } else {
             let index = findIndex(this.selectedList, item => item.id === id) // 找到当前删除行 对应导入之后的数据列表的索引值
             if (index !== -1) {
-              console.log('删除 模板')
               this.selectedList.splice(index, 1) // 删除后，让导入的表格回复对应的可选状态
             }
           }
@@ -1510,7 +1494,6 @@ export default {
       scope.row.isAdd = false // 将行数据设置display: none
       // data.splice(scope.$index, 1)
       let ifAllDeleted = data.every(item => item.isAdd === false)
-      console.log(ifAllDeleted, 'ifAllDeleted', data)
       if (ifAllDeleted) {
         this[IF_SHOW_MAP[type]] = true
         this.deleteTableList(type)
@@ -1534,16 +1517,12 @@ export default {
     },
     deleteFileList (file, { index, prop, isAcc, type }) {
       let { reimburseId, id } = file
-      console.log(file, reimburseId, id, 'file')
       // 在编辑的时候，(针对)删除已经新增过的附件, 如果是删除导入的附件，ID会为'' ,直接略过
-      console.log(id, 'deleteId')
       if (reimburseId) { // 删除新增过的
         this.formData.fileId.push(id)
-        console.log(this.delteReimburse, 'deleteFileList')
       } else {
         // 删除导入的模板
         file.isAdd = false
-        console.log(this.formData, 'import list')
       }
       if (prop === 'invoiceAttachment') {
         let { reimburseFares, reimburseOtherCharges, reimburseAccommodationSubsidies } = this.formData
@@ -1735,7 +1714,6 @@ export default {
         this.costLoading = false
         this.$message.error('发票号码验证失败')
       })
-      console.log(isSole, 'isSole')
     },
     _normalizeSelectList (selectList) {
       this._buildAttachment(selectList, true)
@@ -1769,7 +1747,11 @@ export default {
             this.approve()
           })
       } else {
-        this.$refs.approve.open()
+        this.$refs.form.validate(isValid => { // 如果必填项都填写了才进行驳回的备注弹窗
+          isValid 
+            ? this.$refs.approve.open() 
+            : this.$message.error('格式错误或必填项未填写')
+        })
       }
     },
     closeRemarkDialog () {
@@ -1855,11 +1837,10 @@ export default {
         if (!this.ifShowOther) {
           isOtherValid = await this.validate('otherForm', 'reimburseOtherCharges')
         }
-        console.log('checkData', isFormValid, isTravelValid, isTrafficValid, isAccValid, isOtherValid)
+        // console.log('checkData', isFormValid, isTravelValid, isTrafficValid, isAccValid, isOtherValid)
         return isFormValid && isTrafficValid && isAccValid && isOtherValid && isTravelValid
       } catch (err) {
         console.log(err)
-        // this.$message.error('请将必填项填写')
       }      
     },
     async submit (isDraft) { // 提交
@@ -1885,7 +1866,6 @@ export default {
       this.addSerialNumber(reimburseFares)
       this.formData.myExpendsIds = this.selectedList.map(item => item.id)
       let isValid = await this.checkData()
-      console.log('submit', isValid, isDraft)
       if (!isValid) {
         return Promise.reject({ message: this.errMessage })
       }
@@ -1915,7 +1895,6 @@ export default {
       this.addSerialNumber(reimburseFares)
       this.formData.myExpendsIds = this.selectedList.map(item => item.id) // 导入的数据ID
       let isValid = await this.checkData()
-      console.log('submit', isValid, isDraft)
       if (!isValid) {
         return Promise.reject({ message: this.errMessage })
       }
@@ -1927,7 +1906,6 @@ export default {
     },
     async _approve () {
       this.$refs.form.validate(isValid => {
-        console.log(isValid, 'ISvALID')
         if (!isValid) {
           return this.$message.error('格式错误或必填项未填写')
         } 
@@ -1943,7 +1921,6 @@ export default {
           flowInstanceId: data.flowInstanceId, // 流程ID
           isReject: this.remarkType === 'reject'
         }
-        console.log(approve, params, this.parentVm, 'parentVm')
         this.remarkType === 'reject'
           ? this.remarkLoading = true
           : this.parentVm.openLoading()

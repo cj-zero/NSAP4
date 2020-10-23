@@ -49,6 +49,7 @@ export default {
     },
     selectTag (item) {
       this.text = item.label
+      this.$emit('input', this.text)
     }
   },
   created () {

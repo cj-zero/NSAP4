@@ -415,9 +415,7 @@ export default {
     formData: {
       immediate: true,
       handler (val) {
-        console.log('formData change')
         this.form = Object.assign({}, this.form, val);
-        console.log(val, "new FormData");
       }
     }
   },
@@ -513,7 +511,6 @@ export default {
     },
     onSingleSelect (val) {
       this.formDataSelect = val
-      console.log(val, 'single')
     },
     onSearch(params) {
       this.listLoading = false;
@@ -529,12 +526,10 @@ export default {
         });
     },
     NodeClick(res) {
-      console.log(res, 'res', this.sortForm - 1)
       this.form.problemTypeName = res.name;
       this.form.problemTypeId = res.id;
       this.problemLabel = res.name;
       this.proplemTree = false;
-      // console.log(this.formList, 'nodeClick', this.problemLabel)
     },
     onClose () {
       this.dialogfSN = false
@@ -546,7 +541,6 @@ export default {
       this.solutionOpen = false;
     },
     checkForm () {
-      console.log(this.form, 'form')
       return this.form.fromTheme !== "" &&
         this.form.fromType !== "" &&
         this.form.problemTypeId !== "" &&
@@ -568,13 +562,11 @@ export default {
         this._solve(config, type)
       } else {
         let isValid = this.checkForm()
-        console.log(isValid, 'valid')
         isValid ? this._solve(config, type) : this.$message.error('请将必填项填写')
       }
     },
     _solve (config, type) {
-      solveTechApplyDevices(config).then(res => {
-        console.log(res, 'res')
+      solveTechApplyDevices(config).then(() => {
         this.$message({
           type: 'success',
           message: '操作成功'
@@ -628,7 +620,6 @@ export default {
       })
       .then((response) => {
         this.datasolution = response.data;
-        console.log(this.datasolution, "solution");
         this.solutionCount = response.count;
         this.listLoading = false;
       });

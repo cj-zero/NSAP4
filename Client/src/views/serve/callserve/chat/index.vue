@@ -74,7 +74,6 @@ export default {
     tabList () {
       let tabList = []
       if (this.formName) {
-        console.log('success')
         if (this.formName === '报销') { // 报销模块只有服务进度
           tabList = [{ label: '服务进度', name: 'progress' }]
         } else {
@@ -95,7 +94,6 @@ export default {
   },
   methods: {
     onTabChange (val) {
-      console.log(val, 'val')
       this.currentName = val
     },
     clearTabStore () {

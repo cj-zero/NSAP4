@@ -72,12 +72,7 @@ export let tableMixin = {
       detailData: {}, // 报销单详情
       baseURL: process.env.VUE_APP_BASE_API + "/files/Download", // 图片基地址
       tokenValue: this.$store.state.user.token,
-      roleName: this.$store.state.user.name // 当前用户角色名字
-    }
-  },
-  computed: {
-    isCustomerSupervisor () { // 判断是不是客服主管
-      return this.roleName === '客服主管'
+      originUserId: this.$store.state.user.userInfoAll.userId // 当前用户的ID
     }
   },
   methods: {
@@ -158,6 +153,12 @@ export let tableMixin = {
           })
         }
         if (val.name === 'mySubmit') { // 我的提交模块判断
+          if (this.currentRow.createUserId !== this.originUserId) {
+            return this.$message({
+              type: 'warning',
+              message: '当前用户与报销人不符，不可编辑'
+            })
+          }
           if (this.currentRow.remburseStatus > 3) {
             return this.$message({
               type: 'warning',
@@ -526,8 +527,8 @@ export const attachmentMixin = {
   methods: {
     onAccept (file, { prop }) { // 限制发票文件上传的格式
       if (prop === 'invoiceAttachment') {
-        let { type, size } = file
-        console.log(size, 'file size')
+        let { type } = file
+        // console.log(size, 'file size')
         let imgReg = /^image\/\w+/i
         let isFitType = imgReg.test(type) || type === 'application/pdf'    
         return new Promise((resolve, reject) => {
@@ -572,7 +573,6 @@ export const attachmentMixin = {
       for(var i = 0; i < binary.length; i++) {
         array.push(binary.charCodeAt(i))
       }
-      console.log(type, 'type URI')
       return new Blob([new Uint8Array(array)], { type })
     },
     _setCurrentRow (currentRow, data) { // 识别发票凭据后，对表格行进行赋值
@@ -594,7 +594,6 @@ export const attachmentMixin = {
       currentRow.invoiceNumber = invoiceNo
     },
     _setAttachmentList ({ data, index, prop, reimburseType, val }) { // 设置通过上传获取到的附件列表
-      console.log('setAttachmentList')
       let resultArr = []
       resultArr = this.createFileList(val, {
         reimburseType,
@@ -612,7 +611,6 @@ export const attachmentMixin = {
       }
     },
     _isValidInvoiceType ({ tableType, type, extendInfo }) { // 判断表格对应的发票类型跟上传的发票类型是否一直
-      console.log(tableType, type, extendInfo, 'check')
       if (tableType === 'traffic') { // 交通发票
         return TRAFFIC_TYPE_LIST.includes(type) || (type === ACC_TYPE && /运输/g.test(extendInfo.serviceName))
       }

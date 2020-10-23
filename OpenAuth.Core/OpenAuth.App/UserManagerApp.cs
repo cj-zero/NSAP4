@@ -418,7 +418,8 @@ namespace OpenAuth.App
             var result = new TableData();
             result.Data = new
             {
-                UserName= loginUser.User.Name,
+                UserId = loginUser.User.Id,
+                UserName = loginUser.User.Name,
                 ServiceRelations = string.IsNullOrWhiteSpace(loginUser.User.ServiceRelations)?"未录入": loginUser.User.ServiceRelations,
                 OfficeSpace= string.IsNullOrWhiteSpace(loginUser.User.OfficeSpace) ? "未录入" : loginUser.User.ServiceRelations,
                 OrgName= OrgName,

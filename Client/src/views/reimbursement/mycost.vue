@@ -196,8 +196,7 @@ export default {
       getCategoryName().then(res => {
         this.categoryList = res.data
         this._normalizeSelectList()
-      }).catch((err) => {
-        console.log(err, 'err')
+      }).catch(() => {
         this.$message.error('获取字典分类失败')
       })
     },

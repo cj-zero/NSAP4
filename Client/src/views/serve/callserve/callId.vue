@@ -124,8 +124,6 @@ export default {
   mounted() {},
   methods:{
     _openTree (id) {
-      console.log(this.instance, 'instance', this.openTree)
-      // this.instance.openTree(id)
       this.openTree(id)
     }
   }

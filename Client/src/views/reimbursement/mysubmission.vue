@@ -246,6 +246,12 @@ export default {
           message: '请先选择报销单'
         })
       }
+      if (this.currentRow.createUserId !== this.originUserId) {
+        return this.$message({
+          type: 'warning',
+          message: '当前用户与报销人不符，不可编辑'
+        })
+      }
       if (this.currentRow.remburseStatus !== 4) {
         return this.$message({
           type: 'warning',
@@ -327,7 +333,6 @@ export default {
           : this.editLoading = false
         this.dialogLoading = false
       }).catch((err) => {
-        console.log(err, 'err')
         isDraft
           ? this.draftLoading = false
           : this.editLoading = false

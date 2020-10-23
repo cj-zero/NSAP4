@@ -381,18 +381,15 @@ export default {
   },
   created() {},
   mounted() {
-    //   console.log(callserve)
     this.getList();
     this.getLeftList();
   },
   methods: {
     checkServeId(res) {
       if (res.children) {
-        // console.log()
         this.listQuery.QryServiceOrderId = res.label.split("服务单号：")[1];
       }
       if (res === true) {
-        // console.log()
         this.radio = "";
         this.listQuery.QryServiceOrderId = "";
       }
@@ -480,36 +477,26 @@ export default {
       let arr = [];
       // let arr1 = []
       callservesure.rightList(this.listQuery).then(response => {
-            let resul = response.data.data;
+        let resul = response.data.data;
         for (let i = 0; i < resul.length; i++) {
-          // arr[i] = resul[i];
           arr[i]={}
           arr[i].serviceWorkOrders =[]
           arr[i].serviceOrderId =[]
-          // console.log()
           arr[i].label = `服务${resul[i].serviceOrderId}`;
           arr[i].serviceOrderId = resul[i].serviceOrderId;
           let {contactTel,contacter,customerId,customerName,recepUserName,salesMan,serviceCreateTime,serviceStatus,supervisor,techName,terminalCustomer}={...resul[i]}
           let newobj=Object.assign({contactTel,contacter,customerId,customerName,recepUserName,salesMan,serviceCreateTime,serviceStatus,supervisor,techName,terminalCustomer})
           resul[i].serviceWorkOrders.map((item1,index) => {
-            // arr[i] = resul[i];
             arr[i].serviceWorkOrders[index] =[]
             let arrnewobj= resul[i].serviceWorkOrders[index]
-         Object.assign(arrnewobj,newobj)
-        arr[i].serviceWorkOrders[index]= arrnewobj
+            Object.assign(arrnewobj,newobj)
+            arr[i].serviceWorkOrders[index]= arrnewobj
             arr[i].serviceWorkOrders[index].label= `工单${item1.id}` ;
           });
         }
-
-         this.total = arr.length;
-         console.log(arr)
+        this.total = arr.length;
         this.list =arr;
-        // console.log(this.list)
         this.listLoading = false;
-
-
-       
-     
       });
     },
     getLeftList() {

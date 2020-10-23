@@ -105,7 +105,6 @@ export default {
   computed: {
   },
   mounted() {
-    //   console.log(this.SerialNumberList)
   },
   methods: {
     checkIsSelectAble (row) {
@@ -122,7 +121,6 @@ export default {
       this.$emit("change-Form", val);
     },
     onRowClick (row) {
-      // console.log(row, 'rowClick')
       if (!this.ifEdit && row.isSelectAble) {
         const { index } = row
         // 创建多选
@@ -133,13 +131,10 @@ export default {
       if (this.ifEdit) {
         this.radio = val.manufSN;
         if (!this.checkIsSelectAble(val) && val.manufSN !== this.currentTarget.manufacturerSerialNumber) {
-          // if (val.manufSN !== this.currentTarget.manufacturerSerialNumber) {
-            this.$message.error('重复项不可选,请重新选择')
-            this.$emit('toggleDisabledClick', true)
-            return
-          // }
+          this.$message.error('重复项不可选,请重新选择')
+          this.$emit('toggleDisabledClick', true)
+          return
         } else {
-          // console.log('false')
           this.$emit('singleSelect', val)
           this.$emit('toggleDisabledClick', false)
         } 

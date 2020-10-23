@@ -592,36 +592,11 @@ export default {
     }
   },
   watch: {
-    // listQuery: {
-    //   // deep: true,
-    //   handler(val) {
-    //        let arr = [];
-    //   callservesure.rightList(val).then(response => {
-    //         let resul = response.data.data;
-    //     for (let i = 0; i < resul.length; i++) {
-    //       arr[i] = resul[i];
-    //       arr[i].label = `服务${resul[i].serviceOrderId}`;
-    //       resul[i].serviceWorkOrders.map((item1,index) => {
-    //         arr[i].serviceWorkOrders[index].label= `工单${item1.id}` ;
-    //         arr[i].serviceWorkOrders[index].recepUserName = arr[i].recepUserName
-    //       })
-    //     }
-    //     this.total = response.data.count;
-    //     this.list =arr ;
-    //   }).catch(()=>{
-    //     this.$message({
-    //       type:'warning',
-    //       message:`请输入正确的搜索值`
-    //     })
-    //   })
-    //   }
-    // },
     formValue: {
       deep: true,
       handler() {
         if (this.formValue && this.formValue.customerId) {
           this.customer = this.formValue;
-          // console.log(this.customer)
           //编辑获得的数据
         } else {
           if (!this.dialogFormVisible) {
@@ -647,7 +622,6 @@ export default {
     },
     onChangeForm (val) {
       Object.assign(this.listQuery, val)
-      console.log(this.listQuery, val, 'val')
     },
     onAdvChangeForm (val) {
       delete val.QryState
@@ -694,11 +668,9 @@ export default {
     //   });
     // },
     getCustomerInfo (customerId) { // 打开用户信息弹窗
-      // console.log('客户信息')
       if (!customerId) {
         return this.$message.error('客户代码不能为空!')
       }
-      // this.listQuery.CardCodeOrCardName = customerId
       businesspartner.getCustomerInfo({ CardCode: customerId })
         .then((response) => {
           let { cellular, phone1 } = response.data
@@ -828,7 +800,6 @@ export default {
       this.list = resultArr
     },
     getList() {
-      console.log(this.listQuery, 'getList before')
       this.listLoading = true;
       callservesure.rightList(this.listQuery).then(response => {
         let result = response.data.data;
@@ -858,7 +829,6 @@ export default {
       .getList()
       .then((res) => {
         this.problemOptions = this._normalizeProblemType(res.data);
-        // console.log(this.problemOptions, 'options')
       })
       .catch((error) => {
         console.log(error);
@@ -877,9 +847,6 @@ export default {
         typeList.push(item)
       })
       return typeList
-    },
-    handleNodeClick(res) {
-      console.log(res);
     },
     open() {
       this.$confirm("确认已完成回访?", "提示", {
@@ -978,18 +945,11 @@ export default {
           this.sapOrderId = u_SAP_ID
           this.customerId = customerId 
           this.serviceOrderId = serviceOrderId // 服务单ID
-          // console.log(this.dataForm1, 'dateForm1')
           this.dialogStatus = "update";
           this.FormUpdate = true;
         }
         this.listLoading = false;
       });
-
-      // callservesure.getForm(row.serviceOrderId).then(response => {
-      //   this.formValue = response.result;
-      //   this.dialogStatus = "update";
-      //   this.FormUpdate = true;
-      // });
     },
     handleRecall (row) { // 撤回功能
       let { serviceOrderId } = row
@@ -1015,13 +975,11 @@ export default {
     handleAnalysis () {
       getReport(this.listQuery).then(res => {
         let isEmpty = res.data.every(item => item.statList.length === 0)
-        console.log(isEmpty, 'isEmpty')
         if (isEmpty) {
           return this.$message.error('暂无数据')
         }
         this.analysisData = res.data
         this.dialogAnalysisVisible = true
-        console.log(res, 'Analysis')
       }).catch(() => {
         this.$message.error('暂无数据')
       })
@@ -1092,14 +1050,10 @@ export default {
       if (this.isView) { // 如果是查看操作，则直接关闭弹窗
         return this.dialogRateVisible = false
       }
-      // this.commentList = this.newCommentList 
-      console.log(this.commentList, 'commentList')
-      let { productQuality, servicePrice, technicianEvaluates, comment } = this.commentList
-      console.log(productQuality, servicePrice, comment)
+      let { productQuality, servicePrice, technicianEvaluates } = this.commentList
       let isValid = true
       for (let i = 0; i < technicianEvaluates.length; i++) {
         let { responseSpeed, schemeEffectiveness, serviceAttitude } = technicianEvaluates[i]
-        console.log(responseSpeed, schemeEffectiveness, serviceAttitude)
         isValid = responseSpeed && schemeEffectiveness && serviceAttitude
         if (!isValid) {
           break
@@ -1108,7 +1062,6 @@ export default {
       if (!(isValid && productQuality && servicePrice)) {
         return this.$message.error('评分不能为零！')
       }
-      console.log(this.commentList, 'commentList')
       afterEvaluation.addComment(this.commentList)
         .then(() => {
           this.$message({
@@ -1128,7 +1081,6 @@ export default {
       let baseURL = `${process.env.VUE_APP_BASE_API}${this.exportExcelUrl}`
       let params = this.serializeParams(this.listQuery)
       window.location.href = `${baseURL}?X-Token=${this.$store.state.user.token}&${params}`
-      // console.log(`${baseURL}?X-Token=${this.$store.state.user.token}&${params}`)
     },
     onChangeComment (val) {
       Object.assign(this.commentList, val)
