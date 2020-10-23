@@ -291,7 +291,11 @@ namespace OpenAuth.App
                 obj.TerminalCustomer = obj.CustomerName;
                 obj.TerminalCustomerId = obj.CustomerId;
             }
-
+            if (string.IsNullOrWhiteSpace(obj.NewestContacter) && string.IsNullOrWhiteSpace(obj.NewestContactTel))
+            {
+                obj.NewestContacter = obj.Contacter;
+                obj.NewestContactTel = obj.ContactTel;
+            }
             await UnitWork.UpdateAsync<ServiceOrder>(o => o.Id.Equals(request.Id), s => new ServiceOrder
             {
                 Status = 2,
@@ -700,6 +704,12 @@ namespace OpenAuth.App
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
             //obj.Supervisor = d.TechName;
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(req.Supervisor)))?.Id;
+
+            if (string.IsNullOrWhiteSpace(obj.NewestContacter)&& string.IsNullOrWhiteSpace(obj.NewestContactTel)) 
+            {
+                obj.NewestContacter = obj.Contacter;
+                obj.NewestContactTel = obj.ContactTel;
+            }
             //获取"其他"问题类型及其子类
             var otherProblemType = await UnitWork.Find<ProblemType>(o => o.Name.Equals("其他") && string.IsNullOrWhiteSpace(o.ParentId)).FirstOrDefaultAsync();
             var ChildTypes = new List<ProblemType>();

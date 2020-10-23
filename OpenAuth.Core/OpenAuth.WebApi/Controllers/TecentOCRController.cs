@@ -128,6 +128,12 @@ namespace OpenAuth.WebApi.Controllers
                             invoiceresponse.IsUsed = 1;
                             invoiceresponse.NotPassReason = "发票已被使用";
                         }
+                        //判断劳务关系是否正确
+                        else if (!await _reimburseInfoApp.IsServiceRelations(request.AppUserId, item.CompanyName))
+                        {
+                            invoiceresponse.IsValidate = 0;
+                            invoiceresponse.NotPassReason = "劳务关系不正确";
+                        }
                         else
                         {
                             invoiceresponse.IsUsed = 0;
