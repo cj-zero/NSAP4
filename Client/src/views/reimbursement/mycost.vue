@@ -106,6 +106,7 @@ const TRANSPORT_TYPE = 1 // 交通费用类型设为1
 const ACC_TYPE = 2 // 住宿费用类型设为2
 const OTHER_TYPE = 3 // 交通费用类型设为3
 export default {
+  name: 'myCost',
   mixins: [categoryMixin],
   components: {
     Search,
