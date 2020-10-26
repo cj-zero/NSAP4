@@ -155,10 +155,19 @@ export function add(data) {
     data
   })
 }
-export function getReportDetail (params) {
+export function getReportDetail (params) { // 获取完工报告详情
   return request({
     url: '/serve/CompletionReports/GetCompletionReportDetailsWeb',
     method: 'get',
     params
   })
 }
+
+export function getSMServiceWorkOrderList (params) { // 获取销售呼叫服务列表
+  return request({
+    url: '/serve/ServiceOrder/SalesManServiceWorkOrderList',
+    method: 'get',
+    params
+  })
+}
+
