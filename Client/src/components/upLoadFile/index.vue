@@ -103,12 +103,10 @@
 </template>
 
 <script>
-// import Model from "@/components/Formcreated/components/Model";
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import { downloadFile } from '@/utils/file'
 export default {
   components: {
-    // Model
     ElImageViewer
   },
   props: {
@@ -158,10 +156,12 @@ export default {
     return {
       dialogImageUrl: "",
       dialogVisible: false,
-      action: `${process.env.VUE_APP_BASE_API}/Files/Upload`,
+      action: `${process.env.VUE_APP_BASE_API}/Files/Upload`, // 图片上传基地址
       headers:{
         "X-Token":this.$store.state.user.token
       },
+      baseURL: process.env.VUE_APP_BASE_API + "/files/Download", // 图片下载基地址
+      tokenValue: this.$store.state.user.token,
       pictures:[],
       newPictureList: [],
       isShowTip: true // 是否展示tip
@@ -183,7 +183,7 @@ export default {
   },
   computed: {
     canShowTip () {
-      return !this.ifShowTip
+      return !this.ifShowTip // 如果是页面处于不可编辑状态ifShowTip: false
       ? this.ifShowTip
       : this.isShowTip
     }
@@ -275,9 +275,11 @@ export default {
       }
       let _this = this
       this.newPictureList.push({
-        pictureId:res.result[0].id,
+        pictureId: res.result[0].id,
         uid: file.uid
       })
+      file.url = `${this.baseURL}/${res.result[0].id}?X-Token=${this.tokenValue}`
+      file.fileType = file.raw.type
       let picConig = {
         pictureId: res.result[0].id
       }
