@@ -269,7 +269,7 @@
                 disabled
                 type="date"
                 placeholder="选择日期"
-                v-model="formList[0].startTime"
+                v-model="formList[0].completeDate"
                 style="width: 100%;"
               ></el-date-picker>
             </el-form-item>
@@ -601,7 +601,7 @@
                     disabled
                     type="date"
                     placeholder="选择日期"
-                    v-model="item.startTime"
+                    v-model="item.completeDate"
                     style="width: 100%;"
                   ></el-date-picker>
                 </el-form-item>
@@ -874,6 +874,7 @@ export default {
           bookingDate: "", //预约时间
           visitTime: "", //上门时间
           liquidationDate: "", //清算日期
+          completeDate: "", // 结束时间
           contractId: "", //服务合同
           solutionId: "", //解决方案
           troubleDescription: "",

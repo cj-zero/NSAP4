@@ -26,7 +26,7 @@
               highlight-current-row
               >
               <el-table-column
-                v-for="item in columns"
+                v-for="item in processedColumns"
                 :key="item.prop"
                 :width="item.width"
                 :label="item.label"
