@@ -1,30 +1,37 @@
 <template>
-  <div style="width:100%;">
+  <div style="width:100%;" class="message-wrapper">
     <template v-if="wordList && wordList.length">
       <el-form label-position="top" label-width="80px" class="chatForm">
         <el-form-item label="留言">
-          <ul max-height="200px">
-            <li v-for="tValue in wordList" :key="tValue.id">
-              <div v-if="userType!==tValue.replier" class="otherWord">
-                <p>
-                  {{tValue.replier?tValue.replier:'未知发送者'}}
-                  <span>{{tValue.createTime}}</span>
-                </p>
-                <template v-for="(content, index) in tValue.content">
-                  <p class="text" v-if="content" :key="index">{{ content }}</p>
+          <el-scrollbar class="scroll-bar">
+            <ul>
+              <li v-for="tValue in wordList" :key="tValue.id">
+                <div v-if="userType!==tValue.replier" class="otherWord">
+                  <p>
+                    {{tValue.replier?tValue.replier:'未知发送者'}}
+                    <span>{{tValue.createTime}}</span>
+                  </p>
+                  <template v-for="(content, index) in tValue.content">
+                    <p class="text" v-if="content" :key="index">{{ content }}</p>
+                  </template>
+                </div>
+                <div v-else class="ownWord">
+                  <p style="text-align:right;">
+                    <span>{{tValue.createTime}}</span>
+                    {{tValue.replier}}
+                  </p>
+                  <template v-for="(content, index) in tValue.content">
+                    <p class="text" v-if="content" :key="index">{{ content }}</p>
+                  </template>
+                </div>
+                <!-- 图片列表 -->
+                <template v-if="tValue.serviceOrderMessagePictures && tValue.serviceOrderMessagePictures.length">
+                  <img-list :imgList="tValue.serviceOrderMessagePictures"></img-list>
                 </template>
-              </div>
-              <div v-else class="ownWord">
-                <p style="text-align:right;">
-                  <span>{{tValue.createTime}}</span>
-                  {{tValue.replier}}
-                </p>
-                <template v-for="(content, index) in tValue.content">
-                  <p class="text" v-if="content" :key="index">{{ content }}</p>
-                </template>
-              </div>
-            </li>
-          </ul>
+              </li>
+            </ul>
+          </el-scrollbar>
+          
         </el-form-item>
       </el-form>
     </template>
@@ -57,15 +64,15 @@
 <script>
 import * as callserve from "@/api/callserve";
 import upLoadImage from "@/components/upLoadFile";
-
+import ImgList from '@/components/imgList'
 export default {
   props: ["serveId"],
-  components: { upLoadImage },
+  components: { upLoadImage, ImgList },
   data() {
     return {
       wordList: [],
       content: "", // 输入内容
-      baseURL: process.env.VUE_APP_BASE_API,
+      baseURL: process.env.VUE_APP_BASE_API + "/files/Download",
       tokenValue: this.$store.state.user.token,
       previewUrl: "", //预览图片的定义
       serviceOrderMessagePictures: [],
@@ -125,6 +132,9 @@ export default {
       return wordList.map(item => {
         item.content = item.content.replace(/\n/g, '<br>')
         item.content = item.content.split('<br>')
+        // item.serviceOrderMessagePictures = item.serviceOrderMessagePictures.map(item => {
+        //   item.url = `${this.baseURL}/${item.id || item.fileId}?X-Token=${this.tokenValue}`
+        // })
         return item
       })
     },
@@ -175,6 +185,18 @@ export default {
 
 <style lang="scss" scoped>
 .chatForm {
+  padding-right: 13px !important;
+  .scroll-bar {
+    &.el-scrollbar {
+       ::v-deep {
+        .el-scrollbar__wrap {
+          max-height: 400px; // 最大高度
+          overflow-x: hidden; // 隐藏横向滚动栏
+          margin-bottom: 0 !important;
+        }
+      }
+    }
+  }
   ::v-deep .el-form-item {
     margin-bottom: 6px;
     .el-form-item__label {
@@ -203,8 +225,6 @@ ul {
   border: 1px solid white;
   border-radius: 5px;
   padding: 5px;
-  max-height: 400px;
-  overflow-y: auto;
   li {
     width: 100%;
     p {
