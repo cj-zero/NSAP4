@@ -138,10 +138,12 @@ namespace OpenAuth.App.nwcali
             obj.AssetCreateTime = DateTime.Now;
             obj.AssetCreateUser = user.Name;
             int num = 0;
-            obj.AssetCategorys.ForEach(a => a.CategoryAort = ++num);
-
+            if (obj.AssetCategorys != null) 
+            {
+                obj.AssetCategorys.ForEach(a => a.CategoryAort = ++num);
+            }
             obj=await UnitWork.AddAsync<Asset,int>(obj);
-
+            await UnitWork.SaveAsync();
             //if (req.Listcategory != null && req.Listcategory.Count > 0)
             //{
             //    var CategoryModel = req.Listcategory.MapToList<AssetCategory>();
@@ -165,7 +167,6 @@ namespace OpenAuth.App.nwcali
             var InspectModel = eassetinspectReq.MapTo<AssetInspect>();
             InspectModel.InspectCreatTime = DateTime.Now;
             await UnitWork.AddAsync<AssetInspect>(InspectModel);
-
             //保存第一次操作记录
             var eassetoperationReq = new AddOrUpdateassetoperationReq();
             eassetoperationReq.AssetId = obj.Id;
@@ -175,15 +176,7 @@ namespace OpenAuth.App.nwcali
             OperationModel.OperationCreateTime = DateTime.Now;
             OperationModel.OperationUser = user.Name;
             await UnitWork.AddAsync<AssetOperation>(OperationModel);
-            try
-            {
-                await UnitWork.SaveAsync();
-            }
-            catch (Exception)
-            {
-                throw new Exception("添加失败，请检查后重试");
-            }
-
+            await UnitWork.SaveAsync();
         }
 
         /// <summary>
