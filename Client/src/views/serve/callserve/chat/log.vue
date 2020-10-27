@@ -1,49 +1,25 @@
 <template>
-  <div style="width:100%;max-height:600px;overflow-y:auto;">
-    <template v-if="serviceLogsList.length">
-      <!-- <el-collapse accordion>
-        <div class="item"
-          v-for="item in serviceLogsList"
-          :title="item.materialType"
-          :key="item.id"
-          :name="item.id"
-        >
-          <el-collapse-item>
-            <el-timeline>
-              <el-timeline-item
-              v-for="(activity, index) in item.materialType"
-              :key="index"
-              :timestamp="activity.timestamp">
-              <el-row type="flex" justify="space-between">
-                <span class="operator">{{ item.createuserName }}</span>
-                <span class="create-time">{{ item.createTime }}</span>
-              </el-row>
-              <el-row>
-                {{ item.action }}
-              </el-row>
-              </el-timeline-item>
-            </el-timeline>
-          </el-collapse-item>
-          <span class="user">{{ item.createuserName }}</span>
-        </div>
-      </el-collapse> -->
-      <el-timeline>
-        <el-timeline-item
-        v-for="(item, index) in serviceLogsList"
-        :key="index"
-        :timestamp="item.createTime">
-        <el-row type="flex" justify="space-between">
-          <span class="operator">{{ item.createuserName }}</span>
-        </el-row>
-        <el-row>
-          {{ item.action }}
-        </el-row>
-        </el-timeline-item>
-      </el-timeline>
-    </template>
-    <template v-else>
-      暂无数据~~
-    </template>
+  <div style="width:100%">
+    <el-scrollbar class="scroll-bar">
+      <template v-if="serviceLogsList.length">
+        <el-timeline>
+          <el-timeline-item
+          v-for="(item, index) in serviceLogsList"
+          :key="index"
+          :timestamp="item.createTime">
+          <el-row type="flex" justify="space-between">
+            <span class="operator">{{ item.createuserName }}</span>
+          </el-row>
+          <el-row>
+            {{ item.action }}
+          </el-row>
+          </el-timeline-item>
+        </el-timeline>
+      </template>
+      <template v-else>
+        暂无数据~~
+      </template>
+    </el-scrollbar>
   </div>
 </template>
 
@@ -58,6 +34,7 @@ export default {
   },
   data() {
     return {
+      wrapClass: 'wrapClass',
       serviceLogsList: [],
       activities: [{
           content: '活动按期开始',
@@ -95,4 +72,13 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.scroll-bar {
+  &.el-scrollbar {
+    ::v-deep .el-scrollbar__wrap {
+      max-height: 600px; // 最大高度
+      overflow-x: hidden; // 隐藏横向滚动栏
+      margin-bottom: 0 !important;
+    }
+  }
+}
 </style>

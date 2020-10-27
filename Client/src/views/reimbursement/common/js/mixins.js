@@ -790,19 +790,23 @@ export const chatMixin = {
     }
   },
   methods: {
-    openTree(row) {
+    openTree(row, isOpenInTable = true) {
+       // 判断服务单详情是否在表格页面打开,否则就是在报销单查看页面打开  isOpenInTable
       let serviceOrderId = row.serviceOrderId
-      this.tableLoading = true
+      if (!serviceOrderId) {
+        return this.$message.error('无服务单ID')
+      }
+      isOpenInTable ? this.tableLoading = true : this.orderLoading = true
       GetDetails(serviceOrderId).then(res => {
         if (res.code == 200) {
           this.dataForm = res.result;
           this.serveId = serviceOrderId
           this.$refs.serviceDetail.open()
-          this.tableLoading = false
+          isOpenInTable ? this.tableLoading = false : this.orderLoading = false
         }
       }).catch((err) => {
         console.error(err)
-        this.tableLoading = false
+        isOpenInTable ? this.tableLoading = false : this.orderLoading = false
         this.$message.error('获取服务单详情失败')
       })
     }

@@ -1,5 +1,5 @@
 <template>
-  <div class="order-wrapper">
+  <div class="order-wrapper" v-loading="orderLoading">
     <!-- 主表单 -->
     <el-scrollbar class="scroll-bar">
       <el-form
@@ -23,12 +23,18 @@
             v-for="item in config"
             :key="item.prop"
           >
-            <el-form-item :label="item.label" 
+            <el-form-item
               :prop="item.prop"
               :rules="rules[item.prop] || { required: false }">
-              <!-- <template v-if="item.label === '总金额'">
-                ￥{{ totalMoney | toThousands }}
-              </template> -->
+              <span slot="label">
+                <template v-if="item.prop === 'serviceOrderSapId' && title !== 'create'">
+                  <div class="link-container" style="display: inline-block">
+                    <span>{{ item.label }}</span>
+                    <img :src="rightImg" @click="openTree(formData, false)" class="pointer">
+                  </div>
+                </template>
+                <template v-else>{{ item.label }}</template>
+              </span>
               <template v-if="!item.type">
                 <el-input 
                   v-model="formData[item.prop]" 
@@ -696,6 +702,31 @@
       width="350px">
       <remark ref="remark" @input="onRemarkInput" :tagList="reimburseTagList" :title="title"></remark>
     </my-dialog>
+    <!-- 只能查看的表单 -->
+    <my-dialog
+      ref="serviceDetail"
+      width="1210px"
+      title="服务单详情"
+      :mAddToBody="true" 
+      :appendToBody="true"
+    >
+      <el-row :gutter="20" class="position-view">
+        <el-col :span="18" >
+          <zxform
+            :form="temp"
+            formName="查看"
+            labelposition="right"
+            labelwidth="100px"
+            max-width="800px"
+            :isCreate="false"
+            :refValue="dataForm"
+          ></zxform>
+        </el-col>
+        <el-col :span="6" class="lastWord">   
+          <zxchat :serveId='serveId' formName="报销"></zxchat>
+        </el-col>
+      </el-row>
+    </my-dialog>
   </div>
 </template>
 
@@ -707,6 +738,8 @@ import upLoadFile from "@/components/upLoadFile";
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import CommonTable from '@/components/CommonTable'
+import zxform from "@/views/serve/callserve/form";
+import zxchat from '@/views/serve/callserve/chat/index'
 import Report from './report'
 import Remark from './remark'
 import AreaSelector from '@/components/AreaSelector'
@@ -716,11 +749,12 @@ import { deepClone } from '@/utils'
 import { travelRules, trafficRules, accRules, otherRules } from '../js/customerRules'
 import { customerColumns, costColumns } from '../js/config'
 import { noop } from '@/utils/declaration'
-import { categoryMixin, reportMixin, attachmentMixin } from '../js/mixins'
+import { categoryMixin, reportMixin, attachmentMixin, chatMixin } from '../js/mixins'
 import { REIMBURSE_TYPE_MAP, IF_SHOW_MAP, REMARK_TEXT_MAP } from '../js/map'
+import rightImg from '@/assets/table/right.png'
 export default {
   inject: ['parentVm'],
-  mixins: [categoryMixin, reportMixin, attachmentMixin],
+  mixins: [categoryMixin, reportMixin, attachmentMixin, chatMixin],
   components: {
     upLoadFile,
     Pagination,
@@ -728,7 +762,9 @@ export default {
     CommonTable,
     Report,
     Remark,
-    AreaSelector
+    AreaSelector,
+    zxform,
+    zxchat
   },
   props: {
     title: {
@@ -772,6 +808,8 @@ export default {
   },
   data () {
     return {
+      orderLoading: false, // orderWrapper loading
+      rightImg, // 箭头图标
       ifShowTraffic: true, // 是否展示交通补贴表格， 以下类似
       ifShowOther: true,
       ifShowAcc: true,
