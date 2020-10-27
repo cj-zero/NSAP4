@@ -570,6 +570,28 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// 呼叫服务(销售员)
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> SalesManServiceWorkOrderList([FromQuery] QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _serviceOrderApp.SalesManServiceWorkOrderList(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+        
         #endregion
 
         #region App售后接口 如无特殊情况勿动，修改请告知！！！

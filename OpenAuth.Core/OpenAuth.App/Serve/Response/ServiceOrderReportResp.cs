@@ -33,5 +33,9 @@ namespace OpenAuth.App.Response
         /// 服务数量
         /// </summary>
         public int ServiceCnt { get; set; }
+        /// <summary>
+        /// 分层数据
+        /// </summary>
+        public List<ServiceOrderReportResp> ReportList { get; set; }
     }
 }
