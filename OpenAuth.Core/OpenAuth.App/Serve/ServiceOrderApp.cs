@@ -824,8 +824,18 @@ namespace OpenAuth.App
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.User.Account.Equals("wanghaitao") && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
             {
-                var sIds = await UnitWork.Find<ServiceWorkOrder>(q => q.CurrentUser.Contains(loginContext.User.Name)).OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
-                query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id) || sIds.Contains(q.Id));
+                if(loginContext.Roles.Any(r => r.Name.Equals("售后文员")))
+                {
+                    var orgs = loginContext.Orgs.Select(o=>o.Id).ToArray();
+                    var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
+                    var sIds = await UnitWork.Find<ServiceWorkOrder>(q => userIds.Contains(q.CurrentUserNsapId)).OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+                    query = query.Where(q => userIds.Contains(q.SupervisorId) || sIds.Contains(q.Id));
+                }
+                else
+                {
+                    var sIds = await UnitWork.Find<ServiceWorkOrder>(q => q.CurrentUser.Contains(loginContext.User.Name)).OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+                    query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id) || sIds.Contains(q.Id));
+                }
             }
             var resultsql = query.OrderByDescending(q => q.CreateTime).Select(q => new
             {
