@@ -24,7 +24,6 @@ namespace OpenAuth.Repository.Domain
     {
         public AssetCategory()
         {
-          this.AssetId= string.Empty;
           this.CategoryNumber= string.Empty;
           this.CategoryType= string.Empty;
         }
@@ -34,7 +33,7 @@ namespace OpenAuth.Repository.Domain
         /// 资产ID
         /// </summary>
         [Description("资产ID")]
-        public string AssetId { get; set; }
+        public int AssetId { get; set; }
         /// <summary>
         /// 序号
         /// </summary>

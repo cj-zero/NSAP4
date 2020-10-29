@@ -91,7 +91,7 @@ namespace OpenAuth.App.nwcali
                     AssetRemarks = L.AssetRemarks,
                     AssetImage = L.AssetImage,
                     AssetCreateTime = L.AssetCreateTime,
-                    AssetCategorys = CalculateMetrological(L.AssetCategorys, L.AssetCategory)
+                    AssetCategorys =L.AssetCategorys!=null && L.AssetCategorys.Count>0? CalculateMetrological(L.AssetCategorys, L.AssetCategory):""
                 });
 
             result.Count = Assets.Count();
@@ -101,7 +101,7 @@ namespace OpenAuth.App.nwcali
         /// <summary>
         /// 获取单个资产
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="assetid"></param>
         /// <returns></returns>
         public async Task<TableData> GetAsset(int assetid)
         {
@@ -138,10 +138,12 @@ namespace OpenAuth.App.nwcali
             obj.AssetCreateTime = DateTime.Now;
             obj.AssetCreateUser = user.Name;
             int num = 0;
-            if (obj.AssetCategorys != null) 
+            if (obj.AssetCategorys != null)
             {
                 obj.AssetCategorys.ForEach(a => a.CategoryAort = ++num);
             }
+            obj.AssetInspects = null;
+            obj.AssetOperations = null;
             obj=await UnitWork.AddAsync<Asset,int>(obj);
             await UnitWork.SaveAsync();
             //if (req.Listcategory != null && req.Listcategory.Count > 0)
@@ -254,14 +256,7 @@ namespace OpenAuth.App.nwcali
                 OperationModel.OperationUser = user.Name;
                 await UnitWork.AddAsync<AssetOperation>(OperationModel);
             }
-            try
-            {
-                await UnitWork.SaveAsync();
-            }
-            catch (Exception)
-            {
-                throw new Exception("修改失败，请检查后重试");
-            }
+            await UnitWork.SaveAsync();
         }
 
         /// <summary>
