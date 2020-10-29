@@ -1365,10 +1365,7 @@ export default {
           return
         }
         if (Number((totalMoney / days).toFixed(2)) > Number(this.accMaxMoney)) {
-          this.$message({
-            type: 'warning',
-            message: `所填金额大于住宿补贴标准(${this.accMaxMoney}元)`
-          })
+          this.$message.warning(`所填金额大于住宿补贴标准(${this.accMaxMoney}元)`)
         }
         this.$set(data, 'money', (totalMoney / days).toFixed(2))
       }
@@ -1612,7 +1609,7 @@ export default {
         })
         this.customerTotal = count
       }).catch(() => {
-        this.$message.erro('获取用户信息失败')
+        this.$message.error('获取用户信息失败')
       })
     },
     closeDialog () {
@@ -1677,10 +1674,7 @@ export default {
         let actDays = this.calculateDays(businessTripDate, endDate)
         let days = this.formData.reimburseTravellingAllowances[0].days
         if (days > actDays) {
-          this.$message({
-            type: 'warning',
-            message: '所填天数超过出差天数'
-          })
+          this.$message.warning('所填天数超过出差天数')
           this.formData.reimburseTravellingAllowances[0].days = actDays
         }
       }
@@ -1692,10 +1686,7 @@ export default {
           let item = accTableList[i]
           let { money, isAdd } = item
           if (money && Number(money) > Number(this.accMaxMoney) && this.accMaxMoney && isAdd) {
-            this.$message({
-              type: 'warning',
-              message: `所填金额大于住宿补贴标准(${this.accMaxMoney}元)`
-            })
+            this.$message.warning(`所填金额大于住宿补贴标准(${this.accMaxMoney}元)`)
             break
           }
         }
@@ -1732,10 +1723,7 @@ export default {
     importConfirm () { // 确认导入
       const selectList = this.$refs.costTable.getSelectionList()
       if (!selectList.length) {
-        return this.$message({
-          type: 'warning',
-          message: '请选择费用模板'
-        })
+        return this.$message.warning('请选择费用模板')
       }
       let invoiceNumberList = selectList.map(item => {
         return item.invoiceNumber

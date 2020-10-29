@@ -990,19 +990,13 @@ export default {
         return Number(item.status) === 8
       })
       if (hasVisit) {
-        this.$message({
-          type: 'warning',
-          message: '该服务单已评价'
-        })
+        this.$message.warning('该服务单已评价')
       } else {
         afterEvaluation.getTechnicianName({
           serviceOrderId
         }).then(res => {
           if (!res.data) {
-            return this.$message({
-              type: 'warning',
-              message: '工单未解决或在线解答方式不可回访'
-            })
+            return this.$message.warning('工单未解决或在线解答方式不可回访')
           }
           this.isView = false
           this.commentList = this._normalizeCommentList(res, row)
@@ -1062,12 +1056,10 @@ export default {
       if (!(isValid && productQuality && servicePrice)) {
         return this.$message.error('评分不能为零！')
       }
+      this.loadingBtn = true
       afterEvaluation.addComment(this.commentList)
         .then(() => {
-          this.$message({
-            message: '评价成功',
-            type: 'success'
-          })
+          this.$message.success('评价成功')
           this.$refs.rateRoot.resetInfo()
           this.loadingBtn = false
           this.dialogRateVisible = false

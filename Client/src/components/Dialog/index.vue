@@ -31,7 +31,7 @@
         >{{ btnItem.btnText }}</el-button>
       </template>
     </span>
-  </el-dialog>
+  </el-dialog>  
 </template>
 
 <script>

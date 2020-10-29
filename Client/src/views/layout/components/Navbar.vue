@@ -21,6 +21,9 @@
         </el-dropdown-item>
       </el-dropdown-menu>
     </el-dropdown>
+    <!-- <div class="notify-message">
+      <el-icon class="el-icon-close-notification"></el-icon>
+    </div> -->
   </el-menu>
 </template>
 

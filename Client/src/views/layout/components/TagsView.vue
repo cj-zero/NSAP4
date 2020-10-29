@@ -65,23 +65,27 @@ export default {
     //页面挂载执行
   },
   methods: {
-    generateRoute() {
+    generateRoute(isCopy = false) {
       // console.log(this.$route)
       let times = new Date().getTime();
       if (this.$route.name) {
         // return this.$route;
         let newRoute = {
-          fullPath: `${this.$route.path}?page=${times}`,
+          fullPath: `${this.$route.path}`,
           hash: this.$route.hash,
           matched: this.$route.matched,
           meta: this.$route.meta,
           name: this.$route.name,
           params: this.$route.params,
           path: this.$route.path,
-          query: {
-            page: times
-          }
+          // query: {
+          //   page: times
+          // }
         };
+        if (isCopy) {
+          newRoute.query = { page: times }
+          newRoute.fullPath += `?page=${times}`
+        }
         return newRoute;
       }
       return false;
@@ -113,7 +117,7 @@ export default {
       this.$store.dispatch("addVisitedViews", route);
     },
     async addViewTags_copy(page) {
-      const route = await this.generateRoute();
+      const route = await this.generateRoute(true);
       await this.$store.dispatch("copyVisitedViews", route);
       await this.$router.push({
         path: page.fullPath,

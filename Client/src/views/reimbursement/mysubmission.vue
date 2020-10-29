@@ -125,7 +125,7 @@
 </template>
 
 <script>
-// import CommonTable from '@/components/CommonTable'
+// 报销状态 1: '撤回' 2: '驳回' 3: '未提交' 4: '客服主管审批' 5: '财务初审' 6: '财务复审' 7: '总经理审批' 8: '待支付' 9: '已支付'
 import TabList from '@/components/TabList'
 import Search from '@/components/Search'
 import Sticky from '@/components/Sticky'
@@ -136,7 +136,7 @@ import Report from './common/components/report'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import { tableMixin, categoryMixin, reportMixin, chatMixin } from './common/js/mixins'
-import { getOrder, withdraw } from '@/api/reimburse'
+import { getOrder, withdraw, deleteOrder } from '@/api/reimburse'
 export default {
   name: 'mySubmission',
   mixins: [tableMixin, categoryMixin, reportMixin, chatMixin],
@@ -160,6 +160,7 @@ export default {
         { type: 'button', btnText: '新建', isSpecial: true, handleClick: this.addAccount },
         { type: 'button', btnText: '编辑', handleClick: this.getDetail, options: { type: 'edit', name: 'mySubmit' } },
         { type: 'button', btnText: '撤回', handleClick: this.recall },
+        { type: 'button', btnText: '删除', handleClick: this.deleteOrder },
         { type: 'button', btnText: '打印', handleClick: this.print }
       ]
     }, // 搜索配置
@@ -194,7 +195,7 @@ export default {
       categoryList: [], // 字典数组
       submitLoading: false, 
       draftLoading: false,
-      editLoading: false,
+      editLoading: false
     } 
   },
   methods: {
@@ -241,40 +242,53 @@ export default {
     },
     recall () { // 撤回操作
       if (!this.currentRow) { // 编辑审核等操作
-        return this.$message({
-          type: 'warning',
-          message: '请先选择报销单'
-        })
+        return this.$message.warning('请先选择报销单')
       }
       if (this.currentRow.createUserId !== this.originUserId) {
-        return this.$message({
-          type: 'warning',
-          message: '当前用户与报销人不符，不可编辑'
-        })
+        return this.$message.warning('当前用户与报销人不符，不可编辑')
       }
-      if (this.currentRow.remburseStatus !== 4) {
-        return this.$message({
-          type: 'warning',
-          message: '当前状态不可撤回'
-        })
+      if (this.currentRow.remburseStatus !== 4) { // 只有到客服主管审批的时候才可以撤回，且未读
+        return this.$message.warning('当前状态不可撤回')
       }
       this.$confirm('确定撤回?', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        withdraw({
+          reimburseInfoId: this.currentRow.id
         }).then(() => {
-          withdraw({
-            reimburseInfoId: this.currentRow.id
-          }).then(() => {
-            this.$message({
-              type: 'success',
-              message: '撤回成功'
-            })
-            this._getList()
-          }).catch(err => {
-            this.$message.error(err.message || '撤回失败')
-          })
+          this.$message.success('撤回成功')
+          this._getList()
+        }).catch(err => {
+          this.$message.error(err.message || '撤回失败')
         })
+      })
+    },
+    deleteOrder () { // 删除报销单
+      if (!this.currentRow) { // 编辑审核等操作
+        return this.$message.warning('请先选择报销单')
+      }
+      if (this.currentRow.createUserId !== this.originUserId) {
+        return this.$message.warning('当前用户与报销人不符，不可编辑')
+      }
+      if (this.currentRow.remburseStatus !== 3) { // 只有草稿状态，即未提交才可以删除
+        return this.$message.warning('当前状态不可删除')
+      }
+      this.$confirm('确定删除?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        deleteOrder({
+          reimburseInfoId: this.currentRow.id
+        }).then(() => {
+          this.$message.success('删除成功')
+          this._getList()
+        }).catch(err => {
+          this.$message.error(err.message || '删除失败')
+        })
+      })
     },
     _addOrder (isDraft = false) {
       isDraft
@@ -282,10 +296,7 @@ export default {
         : this.submitLoading = true
       this.dialogLoading = true
       this.$refs.order.submit(isDraft).then(() => {
-        this.$message({
-          type: 'success',
-          message: isDraft ? '存为草稿成功' : '提交成功'
-        })
+        this.$message.success(isDraft ? '存为草稿成功' : '提交成功')
         this._getList()
         this.$refs.order.resetInfo()
         this.closeDialog()
@@ -321,10 +332,7 @@ export default {
         : this.editLoading = true
       this.dialogLoading = true
       this.$refs.order.updateOrder(isDraft).then(() => {
-        this.$message({
-          type: 'success',
-          message: isDraft ? '存为草稿成功' : '提交成功'
-        })
+        this.$message.success(isDraft ? '存为草稿成功' : '提交成功')
         this._getList()
         this.$refs.order.resetInfo()
         this.closeDialog()
@@ -361,7 +369,7 @@ export default {
     this._getCategoryName()
   },
   mounted () {
-
+  
   },
 }
 </script>

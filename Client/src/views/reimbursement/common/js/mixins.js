@@ -27,7 +27,7 @@ export let tableMixin = {
         { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleJump: this.getDetail },
         { label: '报销状态', prop: 'remburseStatusText', width: 100 },
         { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleJump: this.openTree },
-        { label: '呼叫主题', prop: 'fromTheme', width: 100 },
+        { label: '呼叫主题', prop: 'fromTheme', width: 250 },
         { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
         { label: '客户名称', prop: 'terminalCustomer', width: 170 },
         { label: '总金额', prop: 'totalMoney', width: 100 },
@@ -36,9 +36,10 @@ export let tableMixin = {
         { label: '结束日期', prop: 'endDate', width: 85 },
         { label: '报销部门', prop: 'orgName', width: 70 },
         { label: '报销人', prop: 'userName', width: 70 },
-        { label: '业务员', prop: 'salesMan', width: 100 },
+        { label: '业务员', prop: 'salesMan', width: 80 },
         { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
-        { label: '填报日期', prop: 'fillTime' },
+        { label: '填报日期', prop: 'fillTime', width: 85 },
+        { label: '备注', prop: 'remark' }
       ],
       processedColumns: [ // 不同的表格配置(我的提交除外的其它模块表格)
         { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleJump: this.getDetail },
@@ -51,9 +52,9 @@ export let tableMixin = {
         { label: '结束日期', prop: 'endDate', width: 85 },
         { label: '报销部门', prop: 'orgName', width: 70 },
         { label: '报销人', prop: 'userName', width: 70 },
-        { label: '业务员', prop: 'salesMan', width: 100 },
+        { label: '业务员', prop: 'salesMan', width: 80 },
         { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
-        { label: '填报日期', prop: 'fillTime' },
+        { label: '填报日期', prop: 'fillTime', width: 85 }
       ],
       tableData: [],
       total: 0, // 表格数据的总数量
@@ -97,10 +98,7 @@ export let tableMixin = {
     },
     print () {
       if (!this.currentRow) {
-        return this.$message({
-          type: 'warning',
-          message: '请先选择报销单号'
-        })
+        return this.$message.warning('请先选择报销单号')
       }
       // console.log([printOrder, 'printOrder'])
       window.open(`${process.env.VUE_APP_BASE_API}/serve/Reimburse/Print?ReimburseInfoId=${this.currentRow.id}&X-Token=${this.tokenValue}`)
@@ -115,9 +113,6 @@ export let tableMixin = {
         this.tableData = this._normalizeList(data)
         this.total = count
         this.tableLoading = false
-        // if (!data.length) {
-        //   this.$message.error('用户列表为空')
-        // }
       }).catch((err) => {
         console.log(err, 'err')
         this.$message.error('获取列表失败')
@@ -157,23 +152,14 @@ export let tableMixin = {
         tableClick = true
       } else {
         if (!this.currentRow) { // 编辑审核等操作
-          return this.$message({
-            type: 'warning',
-            message: '请先选择报销单'
-          })
+          return this.$message.warning('请先选择报销单')
         }
         if (val.name === 'mySubmit') { // 我的提交模块判断
           if (this.currentRow.createUserId !== this.originUserId) {
-            return this.$message({
-              type: 'warning',
-              message: '当前用户与报销人不符，不可编辑'
-            })
+            return this.$message.warning('当前用户与报销人不符，不可编辑')
           }
           if (this.currentRow.remburseStatus > 3) {
-            return this.$message({
-              type: 'warning',
-              message: '当前状态不可编辑'
-            })
+            return this.$message.warning('当前状态不可编辑')
           }
         }
         id = this.currentRow.id
@@ -591,10 +577,7 @@ export const attachmentMixin = {
         currentRow.totalMoney = money
         currentRow.money = (currentRow.totalMoney / (currentRow.days || 1)).toFixed(2)
         if (this.accMaxMoney && Number(currentRow.money) > Number(this.accMaxMoney)) {
-          this.$message({
-            type: 'warning',
-            message: `所填金额大于住宿补贴标准(${this.accMaxMoney}元)`
-          })
+          this.$message.warning(`所填金额大于住宿补贴标准(${this.accMaxMoney}元)`)
         }
       } else {
         currentRow.money = money
@@ -638,62 +621,56 @@ export const attachmentMixin = {
           fileId
         }).then(res => {
           if (res.data && !res.data.length) {
-            setTimeout(() => {
+            this.$nextTick(() => {
               this._setCurrentRow(currentRow, {
                 invoiceNo: '',
                 money: '',
                 isAcc,
                 isValidInvoice: false
               })
-            }, 0)
+            })
             uploadVm.clearFiles()
             this.$message.error('识别失败,请上传至其它附件列表')
             resolve(false)
           } else {
             let { invoiceNo, amountWithTax, isValidate, isUsed, notPassReason, type, extendInfo } = res.data[0]
             if (!isValidate || (isValidate && isUsed)) { // 识别失败
-              setTimeout(() => {
+              this.$nextTick(() => {
                 this._setCurrentRow(currentRow, {
                   invoiceNo: '',
                   money: '',
                   isAcc,
                   isValidInvoice: false
                 })
-              }, 0)
+              })
               uploadVm.clearFiles()
               this.$message.error(notPassReason ? notPassReason : '识别失败,请上传至其它附件列表')
               resolve(false)
             } else {
               // 识别成功，但是需要判断当前的发票类型是否跟表格的发票类型是否一致
               let isValidInvoice = this._isValidInvoiceType({ tableType, type, extendInfo })
-              isValidInvoice ? this.$message({
-                type: 'success',
-                message: '识别成功'
-              }) : this.$message({
-                type: 'warning',
-                message: '发票归类错误!'
-              })
-              setTimeout(() => {
+              isValidInvoice ? this.$message.success('识别成功') : this.$message.warning('发票归类错误!')
+              this.$nextTick(() => {
                 this._setCurrentRow(currentRow, {
                   invoiceNo,
                   money: amountWithTax,
                   isAcc,
                   isValidInvoice: true
                 })
-              }, 0)
+              })
               resolve(true)
             }
           }
         }).catch(err => {
           console.error(err, 'err')
-          setTimeout(() => {
+          this.$nextTick(() => {
             this._setCurrentRow(currentRow, {
               invoiceNo:'',
               money: '',
               isAcc,
               isValidInvoice: false
             })
-          }, 0)
+          })
           uploadVm.clearFiles()
           this.$message.error(err.message || '识别失败,请上传至其它附件列表')
           resolve(false)
