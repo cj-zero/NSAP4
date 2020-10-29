@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Infrastructure;
@@ -1194,56 +1195,87 @@ namespace OpenAuth.App
         /// <summary>
         /// 删除报销单 
         /// </summary>
-        /// <param name="ReimburseInfoId"></param>
+        /// <param name="req"></param>
         /// <returns></returns>
-        public async Task Delete(int ReimburseInfoId)
+        public async Task Delete(ReimburseRevocationReq req)
         {
             var loginContext = _auth.GetCurrentUser();
+            var loginUser = loginContext.User;
+            string UserId = "";
+            StringBuilder Remark = new StringBuilder();
+
+            #region 判断
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var Reimburse = await UnitWork.Find<ReimburseInfo>(r => r.Id == ReimburseInfoId)
+            if (loginUser.Account == "APP") 
+            {
+                loginUser = await GetUserId(Convert.ToInt32(req.AppId));
+            }
+            if (!loginContext.Roles.Any(r => r.Name.Equals("客服主管"))) 
+            {
+                UserId = loginContext.User.Id;
+            }
+            #endregion
+
+            var Reimburse = await UnitWork.Find<ReimburseInfo>(r => r.Id == req.ReimburseInfoId && r.RemburseStatus==3)
                         //.Include(r => r.ReimburseAttachments)
                         .Include(r => r.ReimburseTravellingAllowances)
                         .Include(r => r.ReimburseFares)
                         .Include(r => r.ReimburseAccommodationSubsidies)
                         .Include(r => r.ReimburseOtherCharges)
                         .Include(r => r.ReimurseOperationHistories)
+                        .WhereIf(!string.IsNullOrWhiteSpace(UserId),r=>r.CreateUserId.Equals(UserId))
                         .FirstOrDefaultAsync();
             if (Reimburse != null)
             {
                 var files = await UnitWork.Find<ReimburseAttachment>(null).ToListAsync();
                 var delfiles = files.Where(f => f.ReimburseId.Equals(Reimburse.Id) && f.ReimburseType == 0).ToList();
-                delfiles.ForEach(d => UnitWork.Delete<ReimburseAttachment>(d));
+                await UnitWork.BatchDeleteAsync<ReimburseAttachment>(delfiles.ToArray());
                 foreach (var item in Reimburse.ReimburseFares)
                 {
                     delfiles = files.Where(f => f.ReimburseId.Equals(item.Id) && f.ReimburseType == 2).ToList();
-                    delfiles.ForEach(d => UnitWork.Delete<ReimburseAttachment>(d));
+                    await UnitWork.BatchDeleteAsync<ReimburseAttachment>(delfiles.ToArray());
+                    Remark.Append(item.InvoiceNumber + ",");
                     await UnitWork.DeleteAsync<ReimburseFare>(item);
                 }
                 foreach (var item in Reimburse.ReimburseAccommodationSubsidies)
                 {
                     delfiles = files.Where(f => f.ReimburseId.Equals(item.Id) && f.ReimburseType == 3).ToList();
-                    delfiles.ForEach(d => UnitWork.Delete<ReimburseAttachment>(d));
+                    await UnitWork.BatchDeleteAsync<ReimburseAttachment>(delfiles.ToArray());
+                    Remark.Append(item.InvoiceNumber + ",");
                     await UnitWork.DeleteAsync<ReimburseAccommodationSubsidy>(item);
                 }
                 foreach (var item in Reimburse.ReimburseOtherCharges)
                 {
                     delfiles = files.Where(f => f.ReimburseId.Equals(item.Id) && f.ReimburseType == 4).ToList();
-                    delfiles.ForEach(d => UnitWork.Delete<ReimburseAttachment>(d));
+                    await UnitWork.BatchDeleteAsync<ReimburseAttachment>(delfiles.ToArray());
+                    Remark.Append(item.InvoiceNumber + ",");
                     await UnitWork.DeleteAsync<ReimburseOtherCharges>(item);
                 }
-                Reimburse.ReimburseTravellingAllowances.ForEach(r => UnitWork.Delete<ReimburseTravellingAllowance>(r));
-                Reimburse.ReimurseOperationHistories.ForEach(r => UnitWork.Delete<ReimurseOperationHistory>(r));
+                await UnitWork.BatchDeleteAsync<ReimburseTravellingAllowance>(Reimburse.ReimburseTravellingAllowances.ToArray());
+                await UnitWork.BatchDeleteAsync<ReimurseOperationHistory>(Reimburse.ReimurseOperationHistories.ToArray());
                 await UnitWork.DeleteAsync<ReimburseInfo>(Reimburse);
+                var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == Reimburse.ServiceOrderId && c.CreateUserId == Reimburse.CreateUserId).ToListAsync();
+                CompletionReports.ForEach(c => c.IsReimburse = 1);
+                await UnitWork.BatchUpdateAsync<CompletionReport>(CompletionReports.ToArray());
+                Remark.Append("删除服务单为" + Reimburse.ServiceOrderSapId + "的报销单,发票号:" + Remark);
+                await UnitWork.AddAsync<ReimurseOperationHistory>(new ReimurseOperationHistory
+                {
+                    Action = "删除报销单",
+                    CreateUser = loginUser.Name,
+                    CreateUserId = loginUser.Id,
+                    CreateTime = DateTime.Now,
+                    ReimburseInfoId =req.ReimburseInfoId,
+                    Remark = Remark.ToString()
+                });
                 await UnitWork.SaveAsync();
             }
-
-            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == Reimburse.ServiceOrderId && c.CreateUserId == Reimburse.CreateUserId).ToListAsync();
-            CompletionReports.ForEach(c => c.IsReimburse = 1);
-            await UnitWork.BatchUpdateAsync<CompletionReport>(CompletionReports.ToArray());
-            await UnitWork.SaveAsync();
+            else 
+            {
+                throw new CommonException("只能删除未提交的报销单！", Define.INVALID_InvoiceNumber);
+            }
         }
 
         /// <summary>

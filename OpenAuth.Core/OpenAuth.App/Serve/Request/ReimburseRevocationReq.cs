@@ -9,7 +9,7 @@ namespace OpenAuth.App.Serve.Request
         /// <summary>
         /// 报销单id
         /// </summary>
-        public int? ReimburseInfoId { get; set; }
+        public int ReimburseInfoId { get; set; }
 
         /// <summary>
         /// AppId
