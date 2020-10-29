@@ -824,9 +824,9 @@ namespace OpenAuth.App
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.User.Account.Equals("wanghaitao") && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
             {
-                if(loginContext.Roles.Any(r => r.Name.Equals("售后文员")))
+                if (loginContext.Roles.Any(r => r.Name.Equals("售后文员")))
                 {
-                    var orgs = loginContext.Orgs.Select(o=>o.Id).ToArray();
+                    var orgs = loginContext.Orgs.Select(o => o.Id).ToArray();
                     var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
                     var sIds = await UnitWork.Find<ServiceWorkOrder>(q => userIds.Contains(q.CurrentUserNsapId)).OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
                     query = query.Where(q => userIds.Contains(q.SupervisorId) || sIds.Contains(q.Id));
@@ -1181,15 +1181,9 @@ namespace OpenAuth.App
             resultlist.Add(new ServerOrderStatListResp { StatType = "RecepUser", StatList = list4 });
 
 
-            var Supervisorlist = from a in await query.Where(g => !string.IsNullOrWhiteSpace(g.Supervisor)).ToListAsync()
-                                 group  a by new { a.Supervisor,a.SupervisorId } into a
-                                 select new
-                                 {
-                                     a.Key,
-                                     ServiceWorkOrders =
-                                         from b in a
-                                         select b
-                                 };
+
+            var Supervisorlist=(await query.Where(g => !string.IsNullOrWhiteSpace(g.Supervisor)).ToListAsync()).GroupBy(g => new { g.Supervisor, g.SupervisorId }).Select(s => new { s.Key, a = s.ToList() });
+            
             var RecepStart = new List<ServiceOrderReportResp>();
             foreach (var item in Supervisorlist)
             {
@@ -1197,7 +1191,7 @@ namespace OpenAuth.App
                 sor.StatId = item.Key.SupervisorId;
                 sor.StatName = item.Key.Supervisor;
                 List<int> StatusCount = new List<int>();
-                var ServiceWorkOrders = item.ServiceWorkOrders.Where(q =>(q.SupervisorId==null || q.SupervisorId.Equals(item.Key.SupervisorId)) && q.Supervisor.Equals(item.Key.Supervisor)).Select(q => q.ServiceWorkOrders).ToList();
+                var ServiceWorkOrders = item.a.Where(q => (q.SupervisorId == null || q.SupervisorId.Equals(item.Key.SupervisorId)) && q.Supervisor.Equals(item.Key.Supervisor)).Select(q => q.ServiceWorkOrders).ToList();
                 ServiceWorkOrders.ForEach(s => StatusCount.AddRange(s.Select(q => Convert.ToInt32(q.Status)).ToList()));
                 var Status = StatusCount.GroupBy(s => s).ToList();
                 List<ServiceOrderReportResp> ReportResp = new List<ServiceOrderReportResp>();
