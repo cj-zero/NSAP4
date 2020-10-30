@@ -1,9 +1,5 @@
-﻿using Infrastructure;
-using NUnit.Framework.Constraints;
-using OpenAuth.App.Serve;
+﻿using OpenAuth.App.Serve;
 using OpenAuth.App.SignalR;
-using OpenAuth.App.SignalR.Request;
-using OpenAuth.Repository;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -12,12 +8,12 @@ using System.Threading.Tasks;
 
 namespace OpenAuth.App.Jobs
 {
-    public class PendingNumberJob : IJob
+    public class MessageJob : IJob
     {
-
         private readonly ServiceOrderPushNotification _serviceorderpushnotification;
+        private readonly ServiceOrderApp _serviceOrderApp;
         private readonly OpenJobApp _openJobApp;
-        public PendingNumberJob(OpenJobApp openJobApp, ServiceOrderPushNotification serviceorderpushnotification)
+        public MessageJob(OpenJobApp openJobApp, ServiceOrderPushNotification serviceorderpushnotification)
         {
             _openJobApp = openJobApp;
             _serviceorderpushnotification = serviceorderpushnotification;
@@ -31,8 +27,8 @@ namespace OpenAuth.App.Jobs
         {
             var jobId = context.MergedJobDataMap.GetString(Define.JOBMAPKEY);
             //todo:这里可以加入自己的自动任务逻辑
-                
-            await _serviceorderpushnotification.SendPendingNumber();
+
+            await _serviceorderpushnotification.GetMessageWeb();
 
             _openJobApp.RecordRun(jobId);
         }

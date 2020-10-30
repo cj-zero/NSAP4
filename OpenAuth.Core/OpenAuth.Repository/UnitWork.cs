@@ -147,8 +147,18 @@ namespace OpenAuth.Repository
             }
 
         }
-       
-
+        /// <summary>
+        /// 批量删除
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        public void BatchDelete<T>(T [] entity) where T : class
+        {
+            foreach (var item in entity)
+            {
+                GetDbContext<T>().Set<T>().Remove(item);
+            }
+        }
         public void Delete<T>(T entity) where T : class
         {
             GetDbContext<T>().Set<T>().Remove(entity);
@@ -279,6 +289,18 @@ namespace OpenAuth.Repository
         public Task DeleteAsync<T>(T entity, CancellationToken cancellationToken = default) where T : class
         {
             Delete(entity);
+            return Task.CompletedTask;
+        }
+        /// <summary>
+        /// 批量删除（异步）
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public Task BatchDeleteAsync<T>(T[] entity, CancellationToken cancellationToken = default) where T : class
+        {
+            BatchDelete(entity);
             return Task.CompletedTask;
         }
 

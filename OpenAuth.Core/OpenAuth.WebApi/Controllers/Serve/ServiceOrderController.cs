@@ -570,6 +570,50 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// 呼叫服务(销售员)
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> SalesManServiceWorkOrderList([FromQuery] QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _serviceOrderApp.SalesManServiceWorkOrderList(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 消息已读
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> ReadMsg(ReadMsgReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.ReadMsg(req.currentUserId, req.serviceOrderId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+
         #endregion
 
         #region App售后接口 如无特殊情况勿动，修改请告知！！！
@@ -704,6 +748,7 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        
         #endregion
 
         #region<<Customer>>

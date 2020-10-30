@@ -181,8 +181,8 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<TableData> Revocation([FromQuery] ReimburseRevocationReq req)
+        [HttpPost]
+        public async Task<TableData> Revocation(ReimburseRevocationReq req)
         {
             var result = new TableData();
             try
@@ -267,14 +267,15 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// 删除报销单
         /// </summary>
         /// <param name="ReimburseInfoId"></param>
+        /// <param name="AppId"></param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<Response> Delete(int ReimburseInfoId)
+        [HttpPost]
+        public async Task<Response> Delete(ReimburseRevocationReq req)
         {
             var result = new Response();
             try
             {
-                await _reimburseinfoapp.Delete(ReimburseInfoId);
+                await _reimburseinfoapp.Delete(req);
             }
             catch (Exception ex)
             {

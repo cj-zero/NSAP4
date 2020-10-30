@@ -12,25 +12,27 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
+using Infrastructure.AutoMapper;
 using OpenAuth.Repository.Core;
+using OpenAuth.Repository.Domain;
 
 namespace OpenAuth.App.Request
 {
     /// <summary>
-	/// 
 	/// </summary>
+    [AutoMapTo(typeof(AssetCategory))]
     [Table("assetcategory")]
     public partial class AddOrUpdateassetcategoryReq 
     {
-
         /// <summary>
-        /// 类别ID
+        /// ID
         /// </summary>
-        public string Id { get; set; }
+        public int? Id { get; set; }
+
         /// <summary>
         /// 资产ID
         /// </summary>
-        public string AssetId { get; set; }
+        public int? AssetId { get; set; }
         /// <summary>
         /// 序号
         /// </summary>
@@ -51,7 +53,6 @@ namespace OpenAuth.App.Request
         /// 包含因子K
         /// </summary>
         public decimal? CategoryBHYZ { get; set; }
-
         /// <summary>
         /// 排序
         /// </summary>

@@ -26,17 +26,23 @@ namespace OpenAuth.App.Serve
 
         public async Task<dynamic> GetServiceOrderMessages(int serviceOrderId)
         {
-            var list = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == serviceOrderId).OrderByDescending(s => s.CreateTime).ToListAsync();
+            var list = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == serviceOrderId && s.FroTechnicianName!="系统").Include(s=>s.ServiceOrderMessagePictures).OrderByDescending(s => s.CreateTime).ToListAsync();
 
             //var groupList = list.GroupBy(s => s.FroTechnicianName).ToList().Select(s => new { s.Key, Data = s.ToList() });
+
             return list;
         }
 
         public async Task SendMessageToTechnician(SendMessageToTechnicianReq req)
         {
             var loginContext = _auth.GetCurrentUser();
+            var userMap = await UnitWork.Find<AppUserMap>(u => u.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync();
+            if (userMap == null)
+            {
+                throw new CommonException("需要绑定App账户后才可发消息", Define.INVALID_APPUser);
+            }
             var obj = req.MapTo<ServiceOrderMessage>();
-            obj.AppUserId = 0;
+            req.AppUserId = Convert.ToInt32(userMap.AppUserId);
             obj.Replier = loginContext.User.Name;
             obj.ReplierId = loginContext.User.Id;
             obj.CreateTime = DateTime.Now;
@@ -51,7 +57,7 @@ namespace OpenAuth.App.Serve
                 await UnitWork.SaveAsync();
             }
             //发送消息给相关人员
-            await _serviceOrderApp.SendMessageToRelatedUsers(req.Content, (int)req.ServiceOrderId, 0, obj.Id);
+            await _serviceOrderApp.SendMessageToRelatedUsers(req.Content, (int)req.ServiceOrderId, Convert.ToInt32(userMap.AppUserId), obj.Id);
             await PushMessageToApp(req.AppUserId, "服务单消息", $"{obj.Replier}给你发送消息：{obj.Content}");
         }
 

@@ -4,16 +4,15 @@ using System.Text;
 
 namespace OpenAuth.App.Serve.Request
 {
-    public class ReimburseRevocationReq
+    public class ReadMsgReq
     {
         /// <summary>
-        /// 报销单id
+        /// 用户appid
         /// </summary>
-        public int ReimburseInfoId { get; set; }
-
+        public int currentUserId { get; set; }
         /// <summary>
-        /// AppId
+        /// 服务单id
         /// </summary>
-        public int? AppId { get; set; }
+        public  int serviceOrderId { get; set; }
     }
 }

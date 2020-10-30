@@ -24,7 +24,6 @@ namespace OpenAuth.Repository.Domain
     {
         public AssetOperation()
         {
-          this.AssetId= string.Empty;
           this.InspectId= string.Empty;
           this.OperationContent= string.Empty;
           this.OperationCreateTime= DateTime.Now;
@@ -36,7 +35,7 @@ namespace OpenAuth.Repository.Domain
         /// 资产ID
         /// </summary>
         [Description("资产ID")]
-        public string AssetId { get; set; }
+        public int AssetId { get; set; }
         /// <summary>
         /// 送检ID
         /// </summary>

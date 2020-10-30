@@ -24,7 +24,6 @@ namespace OpenAuth.Repository.Domain
     {
         public AssetInspect()
         {
-          this.AssetId= string.Empty;
           this.InspectStartDate= DateTime.Now;
           this.InspectEndDate= DateTime.Now;
           this.InspectCertificate= string.Empty;
@@ -38,7 +37,7 @@ namespace OpenAuth.Repository.Domain
         /// 资产ID
         /// </summary>
         [Description("资产ID")]
-        public string AssetId { get; set; }
+        public int AssetId { get; set; }
         /// <summary>
         /// 校准日期
         /// </summary>

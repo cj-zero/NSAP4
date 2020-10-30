@@ -164,20 +164,17 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 类型详情表
         /// </summary>
-        [Description("类型详情表")]
 
         public virtual List<AssetCategory> AssetCategorys { get; set; }
 
         /// <summary>
-        /// 类型详情表
+        /// 送检记录
         /// </summary>
-        [Description("资产送检表")]
         public virtual List<AssetInspect> AssetInspects { get; set; }
 
         /// <summary>
-        /// 类型详情表
+        /// 操作记录
         /// </summary>
-        [Description("资产操作表")]
         public virtual List<AssetOperation> AssetOperations { get; set; }
 
         public override void GenerateDefaultKeyVal()

@@ -54,7 +54,7 @@ namespace OpenAuth.App.nwcali
 
             var result = new TableData();
             var objs = UnitWork.Find<Asset>(null);
-            var Assets = await objs.WhereIf(!string.IsNullOrWhiteSpace(request.Id.ToString()), u => u.Id==request.Id).
+            var Assets =  objs.WhereIf(!string.IsNullOrWhiteSpace(request.Id.ToString()), u => u.Id==request.Id).
                 WhereIf(!string.IsNullOrWhiteSpace(request.AssetCategory), u => u.AssetCategory.Contains(request.AssetCategory)).
                 WhereIf(!string.IsNullOrWhiteSpace(request.AssetStockNumber), u => u.AssetStockNumber.Contains(request.AssetStockNumber)).
                 WhereIf(!string.IsNullOrWhiteSpace(request.AssetInspectType), u => u.AssetInspectType.Contains(request.AssetInspectType)).
@@ -62,10 +62,10 @@ namespace OpenAuth.App.nwcali
                 WhereIf(!string.IsNullOrWhiteSpace(request.AssetType), u => u.AssetType.Contains(request.AssetType)).
                 WhereIf(!string.IsNullOrWhiteSpace(request.AssetNumber), u => u.AssetNumber.Contains(request.AssetNumber)).
                 WhereIf(!string.IsNullOrWhiteSpace(request.OrgName), u => u.OrgName.Contains(request.OrgName)).
-                WhereIf(request.AssetStartDate != null && request.AssetEndDate != null, u => u.AssetStartDate >= request.AssetStartDate && u.AssetEndDate < Convert.ToDateTime(request.AssetEndDate).AddMinutes(1440)).ToListAsync();
+                WhereIf(request.AssetStartDate != null && request.AssetEndDate != null, u => u.AssetStartDate >= request.AssetStartDate && u.AssetEndDate < Convert.ToDateTime(request.AssetEndDate).AddMinutes(1440));
 
             result.columnHeaders = properties;
-            result.Data = Assets.OrderByDescending(u => u.AssetCreateTime)
+            result.Data = await Assets.OrderByDescending(u => u.AssetCreateTime)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).Select(L => new
                 {
@@ -91,8 +91,8 @@ namespace OpenAuth.App.nwcali
                     AssetRemarks = L.AssetRemarks,
                     AssetImage = L.AssetImage,
                     AssetCreateTime = L.AssetCreateTime,
-                    AssetCategorys = CalculateMetrological(L.AssetCategorys, L.AssetCategory)
-                });
+                    AssetCategorys =L.AssetCategorys!=null && L.AssetCategorys.Count>0? CalculateMetrological(L.AssetCategorys, L.AssetCategory):""
+                }).ToListAsync();
 
             result.Count = Assets.Count();
             return result;
@@ -101,7 +101,7 @@ namespace OpenAuth.App.nwcali
         /// <summary>
         /// 获取单个资产
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="assetid"></param>
         /// <returns></returns>
         public async Task<TableData> GetAsset(int assetid)
         {
@@ -138,10 +138,12 @@ namespace OpenAuth.App.nwcali
             obj.AssetCreateTime = DateTime.Now;
             obj.AssetCreateUser = user.Name;
             int num = 0;
-            obj.AssetCategorys.ForEach(a => a.CategoryAort = ++num);
-
+            if (obj.AssetCategorys != null)
+            {
+                obj.AssetCategorys.ForEach(a => a.CategoryAort = ++num);
+            }
             obj=await UnitWork.AddAsync<Asset,int>(obj);
-
+            await UnitWork.SaveAsync();
             //if (req.Listcategory != null && req.Listcategory.Count > 0)
             //{
             //    var CategoryModel = req.Listcategory.MapToList<AssetCategory>();
@@ -165,7 +167,6 @@ namespace OpenAuth.App.nwcali
             var InspectModel = eassetinspectReq.MapTo<AssetInspect>();
             InspectModel.InspectCreatTime = DateTime.Now;
             await UnitWork.AddAsync<AssetInspect>(InspectModel);
-
             //保存第一次操作记录
             var eassetoperationReq = new AddOrUpdateassetoperationReq();
             eassetoperationReq.AssetId = obj.Id;
@@ -175,15 +176,7 @@ namespace OpenAuth.App.nwcali
             OperationModel.OperationCreateTime = DateTime.Now;
             OperationModel.OperationUser = user.Name;
             await UnitWork.AddAsync<AssetOperation>(OperationModel);
-            try
-            {
-                await UnitWork.SaveAsync();
-            }
-            catch (Exception)
-            {
-                throw new Exception("添加失败，请检查后重试");
-            }
-
+            await UnitWork.SaveAsync();
         }
 
         /// <summary>
@@ -229,9 +222,9 @@ namespace OpenAuth.App.nwcali
                 OrgName = obj.OrgName,
                 AssetInspectWay = obj.AssetInspectWay
             });
-            if (obj.Listcategory != null && obj.Listcategory.Count > 0)
+            if (obj.AssetCategorys != null && obj.AssetCategorys.Count > 0)
             {
-                await UnitWork.BatchUpdateAsync<AssetCategory>(obj.Listcategory.MapToList<AssetCategory>().ToArray());
+                await UnitWork.BatchUpdateAsync<AssetCategory>(obj.AssetCategorys.MapToList<AssetCategory>().ToArray());
             }
             //添加一条送检记录
             if (inspect)
@@ -261,14 +254,7 @@ namespace OpenAuth.App.nwcali
                 OperationModel.OperationUser = user.Name;
                 await UnitWork.AddAsync<AssetOperation>(OperationModel);
             }
-            try
-            {
-                await UnitWork.SaveAsync();
-            }
-            catch (Exception)
-            {
-                throw new Exception("修改失败，请检查后重试");
-            }
+            await UnitWork.SaveAsync();
         }
 
         /// <summary>
