@@ -26,7 +26,7 @@ namespace OpenAuth.App.Serve
 
         public async Task<dynamic> GetServiceOrderMessages(int serviceOrderId)
         {
-            var list = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == serviceOrderId).Include(s=>s.ServiceOrderMessagePictures).OrderByDescending(s => s.CreateTime).ToListAsync();
+            var list = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == serviceOrderId && s.FroTechnicianName!="系统").Include(s=>s.ServiceOrderMessagePictures).OrderByDescending(s => s.CreateTime).ToListAsync();
 
             //var groupList = list.GroupBy(s => s.FroTechnicianName).ToList().Select(s => new { s.Key, Data = s.ToList() });
 
@@ -57,7 +57,7 @@ namespace OpenAuth.App.Serve
                 await UnitWork.SaveAsync();
             }
             //发送消息给相关人员
-            await _serviceOrderApp.SendMessageToRelatedUsers(req.Content, (int)req.ServiceOrderId, 0, obj.Id);
+            await _serviceOrderApp.SendMessageToRelatedUsers(req.Content, (int)req.ServiceOrderId, Convert.ToInt32(userMap.AppUserId), obj.Id);
             await PushMessageToApp(req.AppUserId, "服务单消息", $"{obj.Replier}给你发送消息：{obj.Content}");
         }
 
