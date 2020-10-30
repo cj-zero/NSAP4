@@ -36,8 +36,13 @@ namespace OpenAuth.App.Serve
         public async Task SendMessageToTechnician(SendMessageToTechnicianReq req)
         {
             var loginContext = _auth.GetCurrentUser();
+            var userMap = await UnitWork.Find<AppUserMap>(u => u.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync();
+            if (userMap == null)
+            {
+                throw new CommonException("需要绑定App账户后才可发消息", Define.INVALID_APPUser);
+            }
             var obj = req.MapTo<ServiceOrderMessage>();
-            obj.AppUserId = 0;
+            req.AppUserId = Convert.ToInt32(userMap.AppUserId);
             obj.Replier = loginContext.User.Name;
             obj.ReplierId = loginContext.User.Id;
             obj.CreateTime = DateTime.Now;

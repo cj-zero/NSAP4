@@ -54,7 +54,7 @@ namespace OpenAuth.App.nwcali
 
             var result = new TableData();
             var objs = UnitWork.Find<Asset>(null);
-            var Assets = await objs.WhereIf(!string.IsNullOrWhiteSpace(request.Id.ToString()), u => u.Id==request.Id).
+            var Assets =  objs.WhereIf(!string.IsNullOrWhiteSpace(request.Id.ToString()), u => u.Id==request.Id).
                 WhereIf(!string.IsNullOrWhiteSpace(request.AssetCategory), u => u.AssetCategory.Contains(request.AssetCategory)).
                 WhereIf(!string.IsNullOrWhiteSpace(request.AssetStockNumber), u => u.AssetStockNumber.Contains(request.AssetStockNumber)).
                 WhereIf(!string.IsNullOrWhiteSpace(request.AssetInspectType), u => u.AssetInspectType.Contains(request.AssetInspectType)).
@@ -62,10 +62,10 @@ namespace OpenAuth.App.nwcali
                 WhereIf(!string.IsNullOrWhiteSpace(request.AssetType), u => u.AssetType.Contains(request.AssetType)).
                 WhereIf(!string.IsNullOrWhiteSpace(request.AssetNumber), u => u.AssetNumber.Contains(request.AssetNumber)).
                 WhereIf(!string.IsNullOrWhiteSpace(request.OrgName), u => u.OrgName.Contains(request.OrgName)).
-                WhereIf(request.AssetStartDate != null && request.AssetEndDate != null, u => u.AssetStartDate >= request.AssetStartDate && u.AssetEndDate < Convert.ToDateTime(request.AssetEndDate).AddMinutes(1440)).ToListAsync();
+                WhereIf(request.AssetStartDate != null && request.AssetEndDate != null, u => u.AssetStartDate >= request.AssetStartDate && u.AssetEndDate < Convert.ToDateTime(request.AssetEndDate).AddMinutes(1440));
 
             result.columnHeaders = properties;
-            result.Data = Assets.OrderByDescending(u => u.AssetCreateTime)
+            result.Data = await Assets.OrderByDescending(u => u.AssetCreateTime)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).Select(L => new
                 {
@@ -92,7 +92,7 @@ namespace OpenAuth.App.nwcali
                     AssetImage = L.AssetImage,
                     AssetCreateTime = L.AssetCreateTime,
                     AssetCategorys =L.AssetCategorys!=null && L.AssetCategorys.Count>0? CalculateMetrological(L.AssetCategorys, L.AssetCategory):""
-                });
+                }).ToListAsync();
 
             result.Count = Assets.Count();
             return result;
@@ -142,8 +142,6 @@ namespace OpenAuth.App.nwcali
             {
                 obj.AssetCategorys.ForEach(a => a.CategoryAort = ++num);
             }
-            obj.AssetInspects = null;
-            obj.AssetOperations = null;
             obj=await UnitWork.AddAsync<Asset,int>(obj);
             await UnitWork.SaveAsync();
             //if (req.Listcategory != null && req.Listcategory.Count > 0)
@@ -224,9 +222,9 @@ namespace OpenAuth.App.nwcali
                 OrgName = obj.OrgName,
                 AssetInspectWay = obj.AssetInspectWay
             });
-            if (obj.Listcategory != null && obj.Listcategory.Count > 0)
+            if (obj.AssetCategorys != null && obj.AssetCategorys.Count > 0)
             {
-                await UnitWork.BatchUpdateAsync<AssetCategory>(obj.Listcategory.MapToList<AssetCategory>().ToArray());
+                await UnitWork.BatchUpdateAsync<AssetCategory>(obj.AssetCategorys.MapToList<AssetCategory>().ToArray());
             }
             //添加一条送检记录
             if (inspect)

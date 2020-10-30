@@ -1182,8 +1182,8 @@ namespace OpenAuth.App
 
 
 
-            var Supervisorlist=(await query.Where(g => !string.IsNullOrWhiteSpace(g.Supervisor)).ToListAsync()).GroupBy(g => new { g.Supervisor, g.SupervisorId }).Select(s => new { s.Key, a = s.ToList() });
-            
+            var Supervisorlist = (await query.Where(g => !string.IsNullOrWhiteSpace(g.Supervisor)).ToListAsync()).GroupBy(g => new { g.Supervisor, g.SupervisorId }).Select(s => new { s.Key, a = s.ToList() });
+
             var RecepStart = new List<ServiceOrderReportResp>();
             foreach (var item in Supervisorlist)
             {
@@ -1898,7 +1898,7 @@ namespace OpenAuth.App
         /// <param name="currentUserId"></param>
         /// <param name="serviceOrderId"></param>
         /// <returns></returns>
-        private async Task ReadMsg(int currentUserId, int serviceOrderId)
+        public async Task ReadMsg(int currentUserId, int serviceOrderId)
         {
             var msgList = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == serviceOrderId).ToListAsync();
             if (msgList != null)
@@ -1968,6 +1968,7 @@ namespace OpenAuth.App
             return result;
         }
 
+       
         /// <summary>
         /// 推送消息至新威智能app
         /// </summary>
@@ -1984,6 +1985,7 @@ namespace OpenAuth.App
                 Content = content
             }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "BbsCommunity/AppPushMsg");
         }
+
         #endregion
 
         #region<<Customer>>
