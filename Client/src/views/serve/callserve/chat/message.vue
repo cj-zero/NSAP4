@@ -165,18 +165,12 @@ export default {
             this.getList();
           } else {
             this.loadingBtn = false
-            this.$message({
-              type: "warning",
-              message: `${res}`,
-            });
+            this.$message.error( `${res.message}`);
           }
         })
         .catch((res) => {
           this.loadingBtn = false
-          this.$message({
-            type: "error",
-            message: `${res}`,
-          });
+          this.$message.error( `${res.message}`);
         });
     },
   },
