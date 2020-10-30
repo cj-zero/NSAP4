@@ -12,7 +12,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
+using Infrastructure.AutoMapper;
+using OpenAuth.App.Nwcali.Response;
 using OpenAuth.Repository.Core;
+using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.Sap;
 
 namespace OpenAuth.App.Request
@@ -20,6 +23,7 @@ namespace OpenAuth.App.Request
     /// <summary>
 	/// 资产表
 	/// </summary>
+    [AutoMapTo(typeof(Asset))]
     [Table("asset")]
     public partial class AddOrUpdateassetReq 
     {
@@ -127,6 +131,6 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 
         /// </summary>
-        public List<AddOrUpdateassetcategoryReq> Listcategory { get; set; }
+        public virtual List<AddOrUpdateassetcategoryReq> AssetCategorys { get; set; }
     }
 }

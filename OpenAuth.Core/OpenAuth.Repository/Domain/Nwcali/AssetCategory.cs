@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain
 	/// 资产类别详细数据表
 	/// </summary>
     [Table("AssetCategory")]
-    public partial class AssetCategory : Entity
+    public partial class AssetCategory : BaseEntity<int>
     {
         public AssetCategory()
         {
@@ -33,7 +33,7 @@ namespace OpenAuth.Repository.Domain
         /// 资产ID
         /// </summary>
         [Description("资产ID")]
-        public int AssetId { get; set; }
+        public int? AssetId { get; set; }
         /// <summary>
         /// 序号
         /// </summary>
@@ -64,5 +64,15 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("排序")]
         public int? CategoryAort { get; set; }
+
+        public override void GenerateDefaultKeyVal()
+        {
+
+        }
+
+        public override bool KeyIsNull()
+        {
+            return Id == 0;
+        }
     }
 }
