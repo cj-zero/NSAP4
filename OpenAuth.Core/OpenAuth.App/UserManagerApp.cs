@@ -39,7 +39,7 @@ namespace OpenAuth.App
             }
 
             var userOrgs = from user in query
-                           join relevance in UnitWork.Find<Relevance>(u => u.Key == "UserOrg")
+                           join relevance in UnitWork.Find<Relevance>(u => u.Key == Define.USERORG)
                                on user.Id equals relevance.FirstId into temp
                            from r in temp.DefaultIfEmpty()
                            join org in UnitWork.Find<Repository.Domain.Org>(null)
