@@ -134,7 +134,7 @@ namespace OpenAuth.WebApi.Controllers
                             if (!await _reimburseInfoApp.IsServiceRelations(request.AppUserId, item.CompanyName))
                             {
                                 invoiceresponse.IsValidate = 0;
-                                invoiceresponse.NotPassReason = "系统无劳务关系记录，请联系客服主管添加后再进行报销";
+                                invoiceresponse.NotPassReason = "发票抬头与本人劳务关系不一致，禁止报销";
                                 outData.Add(invoiceresponse);
                                 result.Data = outData;
                                 return result;
