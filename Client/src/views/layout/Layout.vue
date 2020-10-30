@@ -2,7 +2,7 @@
 	<div class="app-wrapper" :class="classObj">
 		<el-container class="flex-column">
 			<el-header height="45px">
-				<navbar></navbar>
+				<navbar :messageList="message.messageList"></navbar>
 			</el-header>
 			<el-container class="flex-row flex-item">
 				<sidebar class="sidebar-container"></sidebar>
@@ -20,7 +20,7 @@ import { Navbar, Sidebar, AppMain, TagsView } from './components'
 import ResizeMixin from './mixin/ResizeHandler'
 import { getToken } from '@/utils/auth' // 验权
 import initSignalR from '@/utils/signalR'
-import { sendPendingNumber } from '@/api/message'
+import { sendPendingNumber, getMessageWeb } from '@/api/message'
 export default {
   name: 'layout',
   components: {
@@ -55,13 +55,15 @@ export default {
     return {
       message: {
         serviceOrderCount: 0,
-        serviceWorkOrderCount: 0
+        serviceWorkOrderCount: 0,
+        messageList: []
       }
     }
   },
   mounted () {
     initSignalR.call(this, getToken(), () => {
       sendPendingNumber()
+      getMessageWeb()
     })
   },
   methods: {

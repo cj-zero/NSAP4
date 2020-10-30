@@ -209,9 +209,11 @@ export default {
         });
     },
     _getTechnicianApplyDevices () {
-      getTechnicianApplyDevices({ sapOrderId: this.sapOrderId }).then(res => {
-        this.checkList = res.data
-      })
+      if (this.sapOrderId) {
+        getTechnicianApplyDevices({ sapOrderId: this.sapOrderId }).then(res => {
+          this.checkList = res.data
+        })
+      }
     },
     onClosed () {
       this.$refs.formAdd.reset()

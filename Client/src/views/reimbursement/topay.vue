@@ -76,7 +76,6 @@
       <!-- 审核弹窗 -->
       <my-dialog
         ref="myDialog"
-        :center="true"
         width="1206px"
         :onClosed="closeDialog"
         :title="textMap[title]"
@@ -111,7 +110,7 @@
               :form="temp"
               formName="查看"
               labelposition="right"
-              labelwidth="100px"
+              labelwidth="72px"
               max-width="800px"
               :isCreate="false"
               :refValue="dataForm"

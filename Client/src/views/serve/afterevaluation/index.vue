@@ -86,7 +86,7 @@
               :form="temp"
               formName="查看"
               labelposition="right"
-              labelwidth="100px"
+              labelwidth="72px"
               :isCreate="false"
               :refValue="dataForm"
             ></zxform>

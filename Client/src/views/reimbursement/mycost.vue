@@ -121,7 +121,7 @@ export default {
     btnList () {
       return [
         { btnText: '保存', handleClick: this.toSave, isShow: this.type !== 'view' },
-        { btnText: '关闭', handleClick: this.closeDialog }
+        { btnText: '关闭', handleClick: this.closeDialog, className: 'close' }
       ]
     }
   },

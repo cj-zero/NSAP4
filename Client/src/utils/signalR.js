@@ -48,7 +48,11 @@ function initSignalR (token = '', callBack) {
       duration: 0
     })
   })
-
+  // ServiceOrderMessage
+  connection.on('ServiceOrderMessage', (user, message) => {
+    console.log('ServiceOrderMessage', user, message)
+    this.message.messageList = message
+  })
   // 工单数量 (服务呼叫模块)
   // connection.on('PendingNumber', (user, message) => {
   //   if (typeof message === 'string') {
@@ -62,9 +66,11 @@ function initSignalR (token = '', callBack) {
   //   this.message = message
   // })
   connection.on('ServiceOrderCount', (user, message) => {
+    console.log('ServiceOrderCount')
     this.message.serviceOrderCount = message
   })
   connection.on('ServiceWordOrderCount', (user, message) => {
+    console.log('ServiceWordOrderCount')
     this.message.serviceWorkOrderCount = message
   })
   // 连接完成

@@ -17,9 +17,13 @@
             size="mini"
             :label-position="labelposition"
           >
-            <!-- <div
-              style="font-size:22px;color:#67C23A;text-align:center;height:40px;line-height:35px;border-bottom:1px solid silver;margin-bottom:10px;"
-            >{{formName}}呼叫服务单</div> -->
+            <el-row class="info-wrapper" type="flex">
+              <div>服务ID: <span>{{ form.u_SAP_ID}}</span></div>
+              <div>接单员: <span>{{ form.recepUserName }}</span></div>
+              <div>创建时间: <span>{{ form.createTime }}</span></div>
+              <div class="approve">售后审核: <span>{{ form.supervisor }}</span></div>
+              <div class="approve">销售审核: <span>{{  form.salesMan }}</span></div>
+            </el-row>
             <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="6">
                 <el-form-item label="客户代码" prop="customerId">
@@ -46,50 +50,9 @@
                   </el-autocomplete>
                 </el-form-item>
               </el-col>
-              <el-col :span="6">
+              <el-col :span="12">
                 <el-form-item label="客户名称" prop="customerName">
-                  <el-input size="mini" v-model="form.customerName" disabled style="width: 140px;"></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="6">
-                <el-form-item label="服务ID">
-                  <el-input size="mini" v-model="form.u_SAP_ID" disabled placeholder="请选择">
-                  </el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="6">
-                <!-- <el-form-item label="服务合同">
-                <el-input v-model="form.contractId" disabled></el-input>
-                </el-form-item>-->
-                <el-form-item label="接单员">
-                  <el-input size="mini" v-model="form.recepUserName" disabled></el-input>
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <el-row type="flex" class="row-bg" justify="space-around">
-              <el-col :span="6">
-                <el-form-item label="终端客户代码">
-                  <el-input
-                    v-model="form.terminalCustomerId"
-                    readonly
-                    @focus="handleIconClick('terminalCustomer')"
-                  >
-                    <!-- <i class="el-icon-circle-close" slot="suffix" @click="clearTerminalCode"></i> -->
-                    <template slot-scope="{ item }">
-                      <div class="name">
-                        <p style="height:20px;margin:2px;">{{ item.cardCode }}</p>
-                        <p
-                          style="font-size:12px;height:20px;margin:2px;color:silver;"
-                        >{{ item.cardName }}</p>
-                      </div>
-                      <!-- <span class="addr">{{ item.cardName }}</span> -->
-                    </template>
-                  </el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="6">
-                <el-form-item label="终端客户名称">
-                  <el-input size="mini" v-model="form.terminalCustomer" disabled style="width: 140px;"></el-input>
+                  <el-input size="mini" v-model="form.customerName" disabled style="width: 100%"></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="6">
@@ -109,21 +72,56 @@
                   </el-select>
                 </el-form-item>
               </el-col>
+              <!-- <el-col :span="6">
+                <el-form-item label="服务ID">
+                  <el-input size="mini" v-model="form.u_SAP_ID" disabled placeholder="请选择">
+                  </el-input>
+                </el-form-item>
+              </el-col> -->
+              <!-- <el-col :span="6">
+                <el-form-item label="接单员">
+                  <el-input size="mini" v-model="form.recepUserName" disabled></el-input>
+                </el-form-item>
+              </el-col> -->
+            </el-row>
+            <el-row type="flex" class="row-bg" justify="space-around">
               <el-col :span="6">
+                <el-form-item label="终端代码">
+                  <el-input
+                    v-model="form.terminalCustomerId"
+                    readonly
+                    @focus="handleIconClick('terminalCustomer')"
+                  >
+                    <!-- <i class="el-icon-circle-close" slot="suffix" @click="clearTerminalCode"></i> -->
+                    <template slot-scope="{ item }">
+                      <div class="name">
+                        <p style="height:20px;margin:2px;">{{ item.cardCode }}</p>
+                        <p
+                          style="font-size:12px;height:20px;margin:2px;color:silver;"
+                        >{{ item.cardName }}</p>
+                      </div>
+                      <!-- <span class="addr">{{ item.cardName }}</span> -->
+                    </template>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="终端客户">
+                  <el-input size="mini" v-model="form.terminalCustomer" disabled style="width: 100%"></el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="6">
+                <el-form-item label="联系方式">
+                  <el-input size="mini" v-model.number="form.contactTel" disabled></el-input>
+                </el-form-item>
+              </el-col>
+              <!-- <el-col :span="6">
                 <el-form-item label="最近联系人">
                   <el-input size="mini" v-model="form.newestContacter"></el-input>
                 </el-form-item>
-              </el-col>
+              </el-col> -->
             </el-row>
-            <!-- <el-row type="flex" class="row-bg" justify="space-around">
-              <el-col :span="8">
-                <el-form-item label="终端客户">
-                  <el-input size="mini" v-model="form.terminalCustomer"></el-input>
-                </el-form-item>
-              </el-col>
-              
-            </el-row> -->
-            <el-row>
+            <!-- <el-row>
               <el-col :span="6">
                 <el-form-item label="呼叫来源" prop="fromId">
                   <el-select
@@ -165,21 +163,16 @@
                   ></el-date-picker>
                 </el-form-item>
               </el-col>
-              <el-col :span="6">
-                <el-form-item label="电话号码">
-                  <el-input size="mini" v-model.number="form.contactTel" disabled></el-input>
-                </el-form-item>
-              </el-col>
+              
               <el-col :span="6">
                 <el-form-item label="最新电话号码" prop="newestContactTel">
                   <el-input size="mini" v-model="form.newestContactTel"></el-input>
                 </el-form-item>
               </el-col>
-            </el-row>
-            <el-row :gutter="10" type="flex" class="row-bg">
+            </el-row> -->
+            <!-- <el-row :gutter="10" type="flex" class="row-bg">
               <el-col :span="6">
                 <el-form-item label="地址标识">
-                  <!-- <el-input v-model="form.addressDesignator"></el-input> -->
                   <el-select
                     size="mini"
                     style="width: 110px;"
@@ -204,14 +197,27 @@
                   v-model="form.address"
                 ></el-input>
               </el-col>
-              <el-col :span="2">
-                <el-form-item label label-width="0">
-                  <el-radio style="color:red;" disabled>售后审核:{{form.supervisor}}</el-radio>
+              
+            </el-row> -->
+            <el-row type="flex" align="top">
+              <el-col :span="6" style="padding: 0;">
+                <el-form-item label="呼叫来源" prop="fromId">
+                  <el-select
+                    size="mini"
+                    style="width: 100%;"
+                    v-model="form.fromId"
+                    placeholder="请选择"
+                  >
+                    <el-option
+                      v-for="item in callSourse"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    ></el-option>
+                  </el-select>
                 </el-form-item>
               </el-col>
-            </el-row>
-            <el-row :gutter="10" type="flex" align="top">
-              <el-col :span="10">
+              <el-col :span="8" class="append-address">
                 <el-form-item label="现地址">
                   <el-input size="mini" v-model="allArea" readonly @focus="onAreaClick">
                     <el-button size="mini" slot="append" icon="el-icon-position" @click="onAreaClick"></el-button>
@@ -233,12 +239,17 @@
                   <!-- <el-button size="mini" slot="append" icon="el-icon-position" @click="openMap"></el-button> -->
                 </el-input>
               </el-col>
-              <el-col :span="2">
+              <!-- <el-col :span="3" class="name-class">
                 <el-form-item label label-width="0">
-                  <el-radio style="color:red;" disabled>销售审核:{{form.salesMan}}</el-radio>
+                  <el-radio style="color:red;" disabled>售后:{{form.supervisor}}</el-radio>
                 </el-form-item>
               </el-col>
-            </el-row>
+              <el-col :span="3" class="name-class">
+                <el-form-item label label-width="0">
+                  <el-radio style="color:red;" disabled>销售:{{form.salesMan}}</el-radio>
+                </el-form-item>
+              </el-col> -->
+            </el-row> 
             <bmap @mapInitail="onMapInitail" v-if="formName === '新建'"></bmap> 
           </el-form>
           <!-- //上传图片组件暂时放在这里 -->
@@ -251,7 +262,7 @@
               class="row-bg"
             >
               <el-col class="upload-text">
-                客户上传图片
+                客户上传
               </el-col>
               <el-col :span="22" >
                 <img-list :imgList="customerList"></img-list>
@@ -280,7 +291,7 @@
               class="row-bg"
             >
               <el-col class="upload-text">
-                客服上传图片
+                客服上传
               </el-col>
               <el-col :span="22" >
                 <img-list :imgList="serviceList"></img-list>
@@ -294,7 +305,7 @@
               v-if="formName === '新建' || formName === '确认'"
             >
               <el-col class="upload-text">
-                上传附件
+                附件
               </el-col>
               <el-col :span="22">
                 <upLoadImage  @get-ImgList="getFileList" :limit="limit" uploadType="file" ref="uploadFile"></upLoadImage>
@@ -308,7 +319,7 @@
               class="row-bg"
             >
               <el-col class="upload-text">
-                已上传附件
+                附件
               </el-col>
               <el-col :span="22">
                 <img-list :imgList="attachmentList" listType="file"></img-list>
@@ -572,8 +583,8 @@ export default {
         recepUserId: "", //接单人用户ID
         address: "", //详细地址
         // createTime: timeToFormat("yyyy-MM-dd HH-mm-ss"),
-        createTimeNow: new Date(),
-        createTime: timeToFormat("yyyy-MM-dd HH-mm-ss", this.createTimeNow),
+        createTime: timeToFormat('yyyy-MM-dd HH:mm'),
+        // createTime: timeToFormat("yyyy-MM-dd HH-mm-ss", this.createTimeNow),
         id: "", //服务单id
         province: "", //省
         city: "", //市
@@ -604,7 +615,7 @@ export default {
         contacter: [
           { required: true, message: "请选择联系人", trigger: "change" },
         ],
-        createTimeNow: [
+        createTime: [
           { required: true, message: "请选择创建时间", trigger: "change" },
         ]
         // newestContactTel: [{ validator: checkTelF, trigger: "blur" }],
@@ -742,7 +753,7 @@ export default {
         if (val) {
           this.form.serviceWorkOrders = []; // 清空数组
           this.form = Object.assign({}, this.form, val);
-          this.form.createTimeNow = this.form.createTime
+          this.form.createTime = this.form.createTime.slice(0, -3)
           if (val.serviceWorkOrders.length > 0) {
             val.serviceWorkOrders.map((item, index) => {
               if (item.orderTakeType !== undefined) {
@@ -833,12 +844,14 @@ export default {
         onSearchComplete: onSearchComplete.bind(this)
       })
       address = address.replace(/^中国/i, '') // 如果以中国开头会直接搜索北京市
+      console.log(address, 'address')
       local.search(address)
       function onSearchComplete () {
         if (!local.getResults().getPoi(0)) {
           this.resetPositionInfo()
           return this.$message.error('无法获取地址，请手动进行选择')
         }
+        console.log(local.getResults().getPoi(0), 'position')
         let { point, address, city, province } = local.getResults().getPoi(0) //获取第一个智能搜索的结果
         if (auto) { // 如果是通过客户代码或者终端代码进行选择的
           this.form.province = province
@@ -986,21 +999,11 @@ export default {
         this.needPos = true;
       }
       let { newestContactTel, newestContacter, problemTypeName, problemTypeId } = val;
-      // let newVal = Object.create(null);
-      // for (let key in val) {
-      //   if (key == "contactTel" || key !== "contacter") {
-      //     newVal[key] = val[key];
-      //   }
-      // }
       Object.assign(this.form, val);
       this.form.newestContacter = newestContacter; //最新联系人,
       this.form.newestContactTel = newestContactTel;
-      // this.form.createTimeNow = createTime
-      // let that =  this
-      //  let addre = val.province + val.city + val.area +val.addr
-      // setTimeout(function(){
-      //  that.getPosition(addre)
-      // },800)
+      this.form.createTime = this.form.createTime.slice(0, -3)
+
       this.form.recepUserName = this.$store.state.user.name;
       let listQuery = {
         page: 1,
@@ -1104,12 +1107,14 @@ export default {
       }
       if (this.form.serviceWorkOrders.length >= 0) {
         let chec = this.form.serviceWorkOrders.every(
-          (item) =>
-            item.fromTheme !== "" &&
+          (item) => {
+            console.log(item, 'item')
+            return (item.fromTheme !== "" &&
             item.fromType !== "" &&
             item.problemTypeId !== "" &&
             item.manufacturerSerialNumber !== "" &&
-            (item.fromType === 2 ? item.solutionId !== "" : true)
+            (item.fromType === 2 ? item.solutionId !== "" : true))
+          }
         );
         // this.form.serviceWorkOrders = this.form.serviceWorkOrders.map(item => {
         //   item.problemTypeId = item.problemTypeName;
@@ -1125,6 +1130,7 @@ export default {
           this.$message.error('请输入正确的终端代码格式')
           return this.$emit('close-Dia', 'closeLoading')
         }
+        console.log(chec, this.isValid, 'chec')
         if (chec && this.isValid) {
           if (this.$route.path === "/serve/callserve") {
             if (this.formName === '新建') {
@@ -1331,7 +1337,7 @@ export default {
       cb(this.partnerList);
     },
     async getPartnerList(listQuery, type) {
-      if (typeof this.cancelBusinessRequestFn === 'function') {
+      if (typeof this.cancelBusinessRequestFn === 'function' && type) {
         this.cancelBusinessRequestFn('用户取消请求')
       }
       this.parentLoad = true;
@@ -1364,10 +1370,6 @@ export default {
       this.handleSelect(item, 'terminalCustomer')
     },
     handleSelect (item, type) {
-      // if (!this.form.customerId && type === 'terminalCustomer') {
-      //   return this.$message.error('请先选择客户代码')
-      // }
-      // this.inputSearch = item.customerId;
       this.selectType = 'click' // 通过什么方式来填写客户/终端客户代码
       this.businessType = 'input'
       this.handleSelectType = type // 选择的类型
@@ -1380,11 +1382,6 @@ export default {
           this.form.contactTel = item.cellular;
         }
       } 
-      // else { // 终端客户代码
-      //   this.form.terminalCustomerId = item.cardCode
-      //   this.form.terminalCustomer = item.cardName
-      // }
-      // this.handleCurrentChange(item)
     },
     sureVal(item, type) {
       this.dialogPartner = false;
@@ -1488,7 +1485,13 @@ export default {
   ::v-deep .el-radio {
     margin-left: 0 !important;
   }
+  .name-class {
+    ::v-deep .el-radio__label {
+      padding: 0;
+    }
+  }
   ::v-deep .el-input__inner {
+    padding-left: 10px;
     padding-right: 5px;
     // padding-left:25px;
   }
@@ -1498,17 +1501,23 @@ export default {
     }
   }
   .upload-text {
-    width: 95px;
+    width: 72px;
     line-height: 40px; 
     text-align: right;
     font-size: 12px;
     color: #606266;
+    padding-right: 10px !important;
   }
   .area-content-wrapper {
     position: absolute;
     top: 28px;
     z-index: 2;
     // background-color: red;
+  }
+  .append-address {
+    ::v-deep .el-input-group__append {
+      padding: 0 13px;
+    }
   }
 }
 .addClass1 {
@@ -1530,9 +1539,33 @@ export default {
   // }
 }
 .rowStyle1 {
+  position: relative;
+  .info-wrapper {
+      position: absolute;
+      top: -36px;
+      left: 108px;
+      font-size: 12px;
+      font-weight: bold;
+      line-height: normal;
+      & > div {
+        margin-right: 15px;
+        &.approve {
+          color: red;
+          span {
+            color: #000;
+          }
+        }
+        // min-width: 100px;
+        span {
+          font-weight: normal;
+          min-width: 30px;
+        }
+      }
+    }
   ::v-deep .el-form {
     padding: 5px;
     // margin-bottom: 2px;
+    
   }
   &.form-disabled {
     ::v-deep .el-input.is-disabled .el-input__inner {

@@ -1,5 +1,12 @@
 <template>
   <div class="order-wrapper" v-loading="orderLoading">
+    <el-row type="flex" class="head-title-wrapper">
+      <p>报销单号: <span>{{ formData.mainId }}</span></p>
+      <p>报销人: <span>{{ formData.userName }}</span></p>
+      <p>部门: <span>{{ formData.orgName }}</span></p>
+      <p>劳务关系: <span>{{ formData.serviceRelations }}</span></p>
+      <p>创建时间: <span>{{ formData.createTime }}</span></p>
+    </el-row>
     <!-- 主表单 -->
     <el-scrollbar class="scroll-bar">
       <el-form
@@ -33,7 +40,9 @@
                     <img :src="rightImg" @click="openTree(formData, false)" class="pointer">
                   </div>
                 </template>
-                <template v-else>{{ item.label }}</template>
+                <template v-else>
+                  <span :class="{ 'upload-title money': item.label === '总金额'}">{{ item.label }}</span>
+                </template>
               </span>
               <template v-if="!item.type">
                 <el-input 
@@ -80,6 +89,9 @@
                   @click="item.handleClick(formData)"
                   :loading="reportBtnLoading">{{ item.btnText }}</el-button>
               </template>
+              <template v-else-if="item.type === 'money'">
+                <span class="money-text">￥{{ totalMoney | toThousands }}</span>
+              </template>
             </el-form-item>
           </el-col>
         </el-row>
@@ -100,14 +112,13 @@
               @deleteFileList="deleteFileList"></upLoadFile>
           </el-row>
         </el-col>
-        <el-col :span="this.ifFormEdit ? 9: 6">
-          <el-row type="flex" align="middle">
+        <!-- <el-col :span="this.ifFormEdit ? 9: 6" style="position: relative;top: -35px;">
+          <el-row type="flex" >
             <span class="upload-title money">总金额</span>
             <span class="money-text">￥{{ totalMoney | toThousands }}</span>
           </el-row>
-        </el-col>
+        </el-col> -->
       </el-row>
-      
       <!-- 出差 -->
       <div class="form-item-wrapper travel" :class="{ uneditable: !this.ifFormEdit }" v-if="ifCOrE || formData.reimburseTravellingAllowances.length">
         <el-button v-if="ifShowTravel" @click="showForm(formData.reimburseTravellingAllowances, 'ifShowTravel')">添加出差补贴</el-button>
@@ -716,7 +727,7 @@
             :form="temp"
             formName="查看"
             labelposition="right"
-            labelwidth="100px"
+            labelwidth="72px"
             max-width="800px"
             :isCreate="false"
             :refValue="dataForm"
@@ -890,8 +901,8 @@ export default {
         limit: 30
       },
       remarkBtnList: [
-        { btnText: '取消', handleClick: this.closeRemarkDialog },
-        { btnText: '确认', handleClick: this.approve }
+        { btnText: '确认', handleClick: this.approve },
+        { btnText: '取消', handleClick: this.closeRemarkDialog, className: 'close' }
       ],
       selectedList: [], // 费用列表导出的数据，用来后续判断导出列表中是否可选
       remarkType: '', // 
@@ -1980,8 +1991,43 @@ export default {
 </script>
 <style lang='scss' scoped>
 .order-wrapper {
+  position: relative;
   // max-height: 700px;
   // overflow-y: auto;
+  /* 头部 */
+  .head-title-wrapper {
+    position: absolute;
+    top: -34px;
+    left: 51px;
+    p {
+      min-width: 65px;
+      margin-right: 10px;
+      font-size: 12px;
+      font-weight: bold;
+      span {
+        font-weight: normal;
+      }
+    }
+  }
+  .my-form-wrapper {
+    .upload-title {
+      box-sizing: border-box;
+      width: 80px;
+      height: 18px;
+      line-height: 18px;
+      font-size: 12px;
+      text-align: right;
+      white-space: nowrap;
+      &.money {
+        font-size: 18px;
+        font-weight: bold;
+      }
+    }
+    .money-text {
+      font-size: 18px;
+      font-weight: bold;
+    }
+  }
   .scroll-bar {
     &.el-scrollbar {
        ::v-deep {
@@ -2032,16 +2078,6 @@ export default {
       font-size: 12px;
       text-align: right;
       white-space: nowrap;
-      &.money {
-        padding-right: 24px;
-        font-size: 18px;
-        font-weight: bold;
-      }
-    }
-    .money-text {
-      margin-left: -12px;;
-      font-size: 18px;
-      font-weight: bold;
     }
   }
   .history-wrapper {
@@ -2114,7 +2150,7 @@ export default {
       }
       .title {
         position: relative;
-        font-size: 16px;
+        font-size: 12px;
         .total-money {
           position: absolute;
           overflow: visible;
@@ -2123,7 +2159,8 @@ export default {
           // width: 400px;
           white-space: nowrap;
           transform: translate3d(100%, 0, 0);
-          font-size: 12px;
+          font-size: 16px;
+          font-weight: bold;
         }
       }
     }

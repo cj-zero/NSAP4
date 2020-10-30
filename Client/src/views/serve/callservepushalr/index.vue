@@ -123,53 +123,6 @@
           </div>
         </el-col>
       </el-row>
-      <!--   v-el-drag-dialog
-      width="1000px"  新建呼叫服务单-->
-      <el-dialog
-        width="800px"
-        class="dialog-mini"
-        :destroy-on-close="true"
-        :close-on-click-modal="false"
-        :title="textMap[dialogStatus]"
-        :visible.sync="dialogFormVisible"
-      >
-        <zxform
-          :form="temp"
-          formName="编辑"
-          labelposition="right"
-          labelwidth="100px"
-          :isCreate="true"
-          refValue="dataForm"
-        ></zxform>
-        <div slot="footer">
-          <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
-          <el-button size="mini" v-if="dialogStatus=='create'" type="primary" @click="createData">确认</el-button>
-          <el-button size="mini" v-else type="primary" @click="updateData">确认</el-button>
-        </div>
-      </el-dialog>
-      <!-- 只能查看的表单 -->
-      <!-- <el-dialog
-        width="800px"
-        class="dialog-mini"
-        title="服务单详情"
-        :destroy-on-close="true"
-        :close-on-click-modal="false"
-        :visible.sync="dialogFormView"
-      >
-        <zxform
-          :form="temp"
-          formName="查看"
-          labelposition="right"
-          labelwidth="100px"
-          :isCreate="false"
-          :refValue="dataForm"
-        ></zxform>
-
-        <div slot="footer">
-          <el-button size="mini" @click="dialogFormView = false">取消</el-button>
-          <el-button size="mini" type="primary" @click="dialogFormView = false">确认</el-button>
-        </div>
-      </el-dialog> -->
       <!-- 只能查看的表单 -->
       <el-dialog
         width="1210px"
@@ -187,7 +140,7 @@
           :form="temp"
           formName="查看"
           labelposition="right"
-          labelwidth="100px"
+          labelwidth="72px"
           max-width="800px"
           :isCreate="false"
           :refValue="dataForm"

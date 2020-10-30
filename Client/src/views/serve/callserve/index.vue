@@ -192,7 +192,7 @@
           :form="temp"
           formName="新建"
           labelposition="right"
-          labelwidth="100px"
+          labelwidth="72px"
           :isCreate="true"
           :sure="sure"
           @close-Dia="closeDia"
@@ -223,7 +223,7 @@
             :form="temp"
             formName="编辑"
             labelposition="right"
-            labelwidth="100px"
+            labelwidth="72px"
             ifEdit="true"
             :isCreate="false"
             :sure="sure"
@@ -262,7 +262,7 @@
             :form="temp"
             formName="查看"
             labelposition="right"
-            labelwidth="100px"
+            labelwidth="72px"
             max-width="800px"
             :isCreate="false"
             :refValue="dataForm"
@@ -650,23 +650,6 @@ export default {
     closeCustoner() {
       // this.getList();
     },
-    _getDetails () {
-      let serviceOrderId = this.serveId
-      callservesure.GetDetails(serviceOrderId).then(res => {
-        if (res.code == 200) {
-          this.dataForm = this.dataForm1 = res.result;
-        }
-      })
-    },
-    // openTree(serviceOrderId) {
-    //   callservesure.GetDetails(serviceOrderId).then(res => {
-    //     if (res.code == 200) {
-    //       this.dataForm1 = res.result;
-    //       this.serveId = serviceOrderId
-    //       this.dialogFormView = true;
-    //     }
-    //   });
-    // },
     getCustomerInfo (customerId) { // 打开用户信息弹窗
       if (!customerId) {
         return this.$message.error('客户代码不能为空!')
@@ -939,7 +922,7 @@ export default {
         this.listLoading = true;
       callservesure.GetDetails(row.serviceOrderId).then(res => {
         if (res.code == 200) {
-          this.dataForm1 = res.result;
+          this.dataForm1 = this._normalizeOrderDetail(res.result);
           let { serviceOrderId, u_SAP_ID, customerId } = row
           this.serveId = serviceOrderId
           this.sapOrderId = u_SAP_ID

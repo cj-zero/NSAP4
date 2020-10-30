@@ -48,3 +48,28 @@
     color: #000;
   }
 }
+
+/* 提示气泡信息 */
+.mw-200 {
+  max-width: 200px;
+}
+
+/* 消息提示的样式 */
+.drop-scrollbar {
+  color: #000;
+  font-size: 12px;
+  .el-scrollbar__wrap {
+    max-height: 200px; // 最大高度
+    overflow-x: hidden; // 隐藏横向滚动栏
+    margin-bottom: 0 !important;
+  }
+}
+.hidden-dropdown {
+  display: none;
+}
+
+.notify-message-dropdown {
+  > li:hover {
+    background-color: #fff !important;
+  }
+}

@@ -426,26 +426,27 @@ export let categoryMixin = {
           disabled: this.title === 'view' || !(this.isCustomerSupervisor && (this.title === 'create' || this.title === 'edit' || this.title === 'approve')), 
           col: this.ifFormEdit ? 5 : 6, type: 'select', options: this.expenseList, width: '100%', isEnd: true
         },
-        { label: '报销单号', prop: 'mainId', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        // { label: '报销单号', prop: 'mainId', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '报销状态', prop: 'reimburseTypeText', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
         { label: '客户代码', prop: 'terminalCustomerId', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
         { label: '客户名称', prop: 'terminalCustomer', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        { label: '填报时间', prop: 'createTime', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
-        { label: '报销人', prop: 'userName', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        { label: '部门', prop: 'orgName', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        { label: '劳务关系', prop: 'serviceRelations', palceholder: '请输入内容',  
-          col: this.ifFormEdit ? 5 : 6, disabled: true
-        },
         { label: '支付时间', prop: 'payTime', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
-        { label: '出发地点', prop: 'becity', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        { label: '到达地点', prop: 'destination', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        { label: '出发日期', prop: 'businessTripDate', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, width: '100%' },
-        { label: '结束日期', prop: 'endDate', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true, width: '100%' },
+        // { label: '填报时间', prop: 'createTime', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
+        // { label: '报销人', prop: 'userName', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        // { label: '部门', prop: 'orgName', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        // { label: '劳务关系', prop: 'serviceRelations', palceholder: '请输入内容',  
+        //   col: this.ifFormEdit ? 5 : 6, disabled: true
+        // },
         { label: '呼叫主题', prop: 'fromTheme', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 15 : 18 },
         { label: '服务报告', prop: 'report',  disabled: true, col: this.ifFormEdit ? 5 : 6, 
           type: 'button', btnText: '服务报告', handleClick: this.openReport, isEnd: true
         },
-        { label: '备注', prop: 'remark', palceholder: '请输入内容', disabled: !this.ifFormEdit, col: this.ifFormEdit ? 15 : 18 },
-        { label: '报销状态', prop: 'reimburseTypeText', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true }
+        { label: '出发地点', prop: 'becity', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '到达地点', prop: 'destination', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '开始时间', prop: 'businessTripDate', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, width: '100%' },
+        { label: '结束时间', prop: 'endDate', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true, width: '100%' },
+        { label: '备注', prop: 'remark', palceholder: '请输入内容', disabled: !this.ifFormEdit, col: this.ifFormEdit ? 15 : 18 }, 
+        { label: '总金额', type: 'money', col: this.ifFormEdit ? 5 : 6 }
       ]
     },    
     travelConfig () {
@@ -466,7 +467,7 @@ export let categoryMixin = {
         { label: '目的地', prop: 'to', type: 'input', width: 125, readonly: true },
         { label: '金额', prop: 'money', type: 'number', align: 'right', width: 120, placeholder: '大于0' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '8-11位字母数字' },
+        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '7-11位字母数字' },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 }
       ]
@@ -484,7 +485,7 @@ export let categoryMixin = {
         { label: '费用类别', prop: 'expenseCategory', type: 'select', width: 150, options: this.otherExpensesList },
         { label: '其他费用', prop: 'money', type: 'number', width: 120, align: 'right', placeholder: '大于0' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '8-11位字母数字' },
+        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '7-11位字母数字' },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 }
       ]
@@ -776,7 +777,7 @@ export const chatMixin = {
       isOpenInTable ? this.tableLoading = true : this.orderLoading = true
       GetDetails(serviceOrderId).then(res => {
         if (res.code == 200) {
-          this.dataForm = res.result;
+          this.dataForm = this._normalizeOrderDetail(res.result);
           this.serveId = serviceOrderId
           this.$refs.serviceDetail.open()
           isOpenInTable ? this.tableLoading = false : this.orderLoading = false
@@ -786,6 +787,23 @@ export const chatMixin = {
         isOpenInTable ? this.tableLoading = false : this.orderLoading = false
         this.$message.error('获取服务单详情失败')
       })
-    }
+    },
+    deleteSeconds (date) { // yyyy-MM-dd HH:mm:ss 删除秒
+      return date ? date.slice(0, -3) : date
+    },
+    _normalizeOrderDetail (data) {
+      let { serviceWorkOrders } = data
+      if (serviceWorkOrders && serviceWorkOrders.length) {
+        serviceWorkOrders.forEach(serviceOrder => {
+          let { warrantyEndDate, bookingDate, visitTime, liquidationDate, completeDate } = serviceOrder
+          serviceOrder.warrantyEndDate = this.deleteSeconds(warrantyEndDate)
+          serviceOrder.bookingDate = this.deleteSeconds(bookingDate)
+          serviceOrder.visitTime = this.deleteSeconds(visitTime)
+          serviceOrder.liquidationDate = this.deleteSeconds(liquidationDate)
+          serviceOrder.completeDate = this.deleteSeconds(completeDate)
+        })
+      }
+      return data
+    },
   }
 }

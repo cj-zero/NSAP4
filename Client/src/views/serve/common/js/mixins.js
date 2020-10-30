@@ -28,7 +28,11 @@ export let reportMixin = {
           serviceOrderId
         }).then(res => {
           this.reportData = this._normalizeReportData(res.result.data)
-          this.dialogReportVisible = true
+          if (this.reportData.length) {
+            this.dialogReportVisible = true
+          } else {
+            this.$message.error('暂无完工报告数据')
+          } 
         }).catch(() => {
           this.$message.error('获取完工报告失败')
         })
@@ -40,7 +44,7 @@ export let reportMixin = {
       }
     },
     _normalizeReportData (data) {
-      return data.map(item => {
+      return  data.filter(item => item.id).map(item => {
         let { serviceMode } = item
         item.serviceText = serviceMode ? this.serviceModeMap[serviceMode] : serviceMode
         item.isPhoneService = Number(serviceMode) === 2
@@ -104,11 +108,28 @@ export let chatMixin = { // 查看、编辑服务单时 右侧出现的聊天记
     openTree(serviceOrderId) {
       GetDetails(serviceOrderId).then(res => {
         if (res.code == 200) {
-          this.dataForm1 = res.result;
+          this.dataForm1 = this._normalizeOrderDetail(res.result);
           this.serveId = serviceOrderId
           this.dialogFormView = true;
         }
       })
+    },
+    deleteSeconds (date) { // yyyy-MM-dd HH:mm:ss 删除秒
+      return date ? date.slice(0, -3) : date
+    },
+    _normalizeOrderDetail (data) {
+      let { serviceWorkOrders } = data
+      if (serviceWorkOrders && serviceWorkOrders.length) {
+        serviceWorkOrders.forEach(serviceOrder => {
+          let { warrantyEndDate, bookingDate, visitTime, liquidationDate, completeDate } = serviceOrder
+          serviceOrder.warrantyEndDate = this.deleteSeconds(warrantyEndDate)
+          serviceOrder.bookingDate = this.deleteSeconds(bookingDate)
+          serviceOrder.visitTime = this.deleteSeconds(visitTime)
+          serviceOrder.liquidationDate = this.deleteSeconds(liquidationDate)
+          serviceOrder.completeDate = this.deleteSeconds(completeDate)
+        })
+      }
+      return data
     },
     openDetail() {
       this.dataForm = this.dataForm1;
