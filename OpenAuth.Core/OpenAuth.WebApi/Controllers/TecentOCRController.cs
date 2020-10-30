@@ -121,13 +121,23 @@ namespace OpenAuth.WebApi.Controllers
                         invoiceresponse.CompanyName = item.CompanyName;
                         invoiceresponse.Type = item.Type;
                         invoiceresponse.ExtendInfo = item.Extend;
+                        //判断若未识别出发票号码则直接返回
+                        if (string.IsNullOrEmpty(item.InvoiceNo))
+                        {
+                            result.Code = 500;
+                            result.Message = "识别失败,未识别出正确的发票号";
+                            return result;
+                        }
                         //判断劳务关系是否正确(增值税发票)
                         if (item.Type == 3)
                         {
                             if (!await _reimburseInfoApp.IsServiceRelations(request.AppUserId, item.CompanyName))
                             {
                                 invoiceresponse.IsValidate = 0;
-                                invoiceresponse.NotPassReason = "劳务关系不正确";
+                                invoiceresponse.NotPassReason = "系统无劳务关系记录，请联系客服主管添加后再进行报销";
+                                outData.Add(invoiceresponse);
+                                result.Data = outData;
+                                return result;
                             }
                         }
                         //2.判断发票是否已经使用且不在我的费用中 已使用或已在我的费用中不走验证
