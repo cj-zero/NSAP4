@@ -56,8 +56,21 @@
                 </el-form-item>
               </el-col>
               <el-col :span="6">
-                <el-form-item label="联系人" prop="contacter">
-                  <el-select
+                <el-form-item label="联系人" prop="newestContacter">
+                  <el-autocomplete
+                    popper-class="my-autocomplete"
+                    v-model.trim="form.newestContacter"
+                    :fetch-suggestions="queryCntctPrsnList"
+                    placeholder="请输入内容"
+                    class="myAuto"
+                    @select="handleSelectCntct"
+                    clearable
+                  >
+                    <template slot-scope="{ item }">
+                      <p class="name" style="height: 20px;line-height: 20px;text-align: center;">{{ item.name }}</p>                      
+                    </template>
+                  </el-autocomplete>
+                  <!-- <el-select
                     size="mini"
                     @change="choosePeople"
                     v-model="form.contacter"
@@ -69,7 +82,7 @@
                       :label="item.name"
                       :value="item.name"
                     ></el-option>
-                  </el-select>
+                  </el-select> -->
                 </el-form-item>
               </el-col>
               <!-- <el-col :span="6">
@@ -111,8 +124,8 @@
                 </el-form-item>
               </el-col>
               <el-col :span="6">
-                <el-form-item label="联系方式">
-                  <el-input size="mini" v-model.number="form.contactTel" disabled></el-input>
+                <el-form-item label="联系方式" prop="newestContactTel">
+                  <el-input size="mini" v-model.number="form.newestContactTel" :disabled="formName !== '新建'"></el-input>
                 </el-form-item>
               </el-col>
               <!-- <el-col :span="6">
@@ -615,6 +628,12 @@ export default {
         contacter: [
           { required: true, message: "请选择联系人", trigger: "change" },
         ],
+        newestContacter: [
+          { required: true, message: "请选择联系人", trigger: "change" },
+        ],
+        newestContactTel: [
+          { required: true, message: "请选择联系人", trigger: "change" },
+        ],
         createTime: [
           { required: true, message: "请选择创建时间", trigger: "change" },
         ]
@@ -969,11 +988,12 @@ export default {
       }
       this.addressList = [];
       this.cntctPrsnList = [];
-      this.form.contactTel = ''
       this.form.terminalCustomer = ''
       this.form.supervisor = '';
       this.form.contacter = ''
       this.form.contactTel = ''
+      this.form.newestContacter = ''
+      this.form.newestContactTel = ''
       this.form.addressDesignator = '';
       this.form.address = '';
       
@@ -1108,7 +1128,6 @@ export default {
       if (this.form.serviceWorkOrders.length >= 0) {
         let chec = this.form.serviceWorkOrders.every(
           (item) => {
-            console.log(item, 'item')
             return (item.fromTheme !== "" &&
             item.fromType !== "" &&
             item.problemTypeId !== "" &&
@@ -1116,12 +1135,11 @@ export default {
             (item.fromType === 2 ? item.solutionId !== "" : true))
           }
         );
-        // this.form.serviceWorkOrders = this.form.serviceWorkOrders.map(item => {
-        //   item.problemTypeId = item.problemTypeName;
-        //   item.solutionId = item.solution;
-        //   return item;
-        // });
-        this.isValid = await this.$refs.form.validate();
+        try {
+          this.isValid = await this.$refs.form.validate()
+        } catch (err) {
+          this.isValid = err
+        }
         if (!isCustomerCode(this.form.customerId)) {
           this.$message('请填入正确的客户代码格式')
           return this.$emit('close-Dia', 'closeLoading')
@@ -1248,8 +1266,8 @@ export default {
             if (this.cntctPrsnList && this.cntctPrsnList.length) {
             let firstValue = res.result.cntctPrsnList[0]
               let { tel1, tel2, cellolar, name } = firstValue
-              this.form.contacter = name
-              this.form.contactTel = tel1 || tel2 || cellolar
+              this.form.newestContacter = name
+              this.form.newestContactTel = tel1 || tel2 || cellolar
             }
             if (this.addressList.length) {
               let { address, building } = this.addressList[0];
@@ -1335,6 +1353,15 @@ export default {
       await this.getPartnerList(this.listQuery);
       // 调用 callback 返回建议列表的数据
       cb(this.partnerList);
+    },
+    queryCntctPrsnList (queryString, cb) {
+      console.log('queryCtctP', this.cntctPrsnList)
+      cb(this.cntctPrsnList)
+    },
+    handleSelectCntct (item) {
+      console.log(item, 'cntct')
+      this.form.newestContacter = item.name
+      console.log(this.form.contacter, item.name)
     },
     async getPartnerList(listQuery, type) {
       if (typeof this.cancelBusinessRequestFn === 'function' && type) {
