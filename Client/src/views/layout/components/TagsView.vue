@@ -103,9 +103,7 @@ export default {
     isActive(route) {
        return route.path === this.$route.path;
       // if(!route.query){return route.path === this.$route.path}else{
-      // return route.fullPath === this.$route.fullPath;
-
-        
+      // return route.fullPath === this.$route.fullPath;     
     },
     addViewTags() {
       //获取store储存的tag，

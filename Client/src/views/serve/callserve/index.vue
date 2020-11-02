@@ -109,6 +109,9 @@
               :width="fruit.width"
             >
               <template slot-scope="scope">
+                <span v-if="fruit.name === 'order'">
+                  {{ scope.$index + 1 }}
+                </span>
                 <div v-if="fruit.name === 'u_SAP_ID'" class="link-container" >
                   <img :src="rightImg" @click="openTree(scope.row.serviceOrderId)" class="pointer" />
                   <span>{{ scope.row.u_SAP_ID }}</span>
@@ -416,6 +419,7 @@ export default {
       sure: 0,
       rightImg,
       ParentHeadOptions: [
+        { name: 'order', label: '序号', width: '50' },
         { name: "u_SAP_ID", label: "服务单号", align:'left', sortable:true, width: '80' },
         { name: "status", label: "工单状态", align: 'left', width: '70' },
         { name: "customerId", label: "客户代码", align:'left', width: '90' },

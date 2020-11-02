@@ -45,13 +45,6 @@ namespace OpenAuth.App.nwcali
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
 
-            var properties = loginContext.GetProperties("Asset");
-
-            if (properties == null || properties.Count == 0)
-            {
-                throw new Exception("当前登录用户没有访问该模块字段的权限，请联系管理员配置");
-            }
-
             var result = new TableData();
             var objs = UnitWork.Find<Asset>(null);
             var Assets =  objs.WhereIf(!string.IsNullOrWhiteSpace(request.Id.ToString()), u => u.Id==request.Id).
@@ -64,7 +57,7 @@ namespace OpenAuth.App.nwcali
                 WhereIf(!string.IsNullOrWhiteSpace(request.OrgName), u => u.OrgName.Contains(request.OrgName)).
                 WhereIf(request.AssetStartDate != null && request.AssetEndDate != null, u => u.AssetStartDate >= request.AssetStartDate && u.AssetEndDate < Convert.ToDateTime(request.AssetEndDate).AddMinutes(1440));
 
-            result.columnHeaders = properties;
+            
             result.Data = await Assets.OrderByDescending(u => u.AssetCreateTime)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).Select(L => new
@@ -81,9 +74,9 @@ namespace OpenAuth.App.nwcali
                     AssetFactory = L.AssetFactory,
                     AssetInspectType = L.AssetInspectType,
                     AssetInspectWay = L.AssetInspectWay,
-                    AssetStartDate = L.AssetStartDate,
+                    AssetStartDate =Convert.ToDateTime(L.AssetStartDate).ToString("yyyy-MM-dd"),
                     AssetCalibrationCertificate = L.AssetCalibrationCertificate,
-                    AssetEndDate = L.AssetEndDate,
+                    AssetEndDate = Convert.ToDateTime(L.AssetEndDate).ToString("yyyy-MM-dd"),
                     AssetInspectDataOne = L.AssetInspectDataOne,
                     AssetInspectDataTwo = L.AssetInspectDataTwo,
                     AssetTCF = L.AssetTCF,
@@ -124,7 +117,7 @@ namespace OpenAuth.App.nwcali
             var obj = req.MapTo<Asset>();
             var user = _auth.GetCurrentUser().User;
             var ZCNumber = "JZ" + Convert.ToInt32(req.AssetSerial).ToString("00") + DateTime.Today.ToString("yy") + DateTime.Today.ToString("MM");
-            var Listasset = UnitWork.Find<Asset>(u => u.AssetNumber.Contains(ZCNumber)).OrderByDescending(u => u.AssetCreateTime).FirstOrDefault();
+            var Listasset = UnitWork.Find<Asset>(u => u.AssetNumber.Contains(ZCNumber)).OrderByDescending(u => u.AssetNumber).FirstOrDefault();
             if (Listasset == null)
             {
                 ZCNumber += "0001";
@@ -198,13 +191,14 @@ namespace OpenAuth.App.nwcali
             if (model.AssetInspectType != obj.AssetInspectType) ModifyModel.Append("送检类型修改为：" + obj.AssetInspectType + @"\r\n");
             if (model.AssetStatus != obj.AssetStatus) ModifyModel.Append("状态修改为：" + obj.AssetStatus + @"\r\n");
             if (model.OrgName != obj.OrgName) ModifyModel.Append("部门修改为：" + obj.OrgName + @"\r\n");
-            if (model.AssetInspectDataTwo != obj.AssetInspectDataTwo) ModifyModel.Append("校准数据修改为：" + obj.AssetInspectDataTwo + @"\r\n");
+            if (model.AssetInspectDataTwo != obj.AssetInspectDataTwo) ModifyModel.Append("修改校准数据" +@"\r\n");
             if (model.AssetStartDate != obj.AssetStartDate) ModifyModel.Append("校准日期修改为：" + obj.AssetStartDate + @"\r\n");
             if (model.AssetEndDate != obj.AssetEndDate) ModifyModel.Append("失效日期修改为：" + obj.AssetEndDate + @"\r\n");
             if (model.AssetInspectWay != obj.AssetInspectWay) ModifyModel.Append("送检方式修改为：" + obj.AssetInspectWay + @"\r\n");
+            if (model.AssetImage != obj.AssetImage) ModifyModel.Append("修改图片" + @"\r\n");
             if (model.AssetCalibrationCertificate != obj.AssetCalibrationCertificate)
             {
-                ModifyModel.Append("校准证书修改为：" + obj.AssetCalibrationCertificate + @"\r\n");
+                ModifyModel.Append("修改校准证书" + @"\r\n");
                 inspect = true;
             }
             await UnitWork.UpdateAsync<Asset>(u => u.Id == obj.Id, u => new Asset
@@ -220,7 +214,8 @@ namespace OpenAuth.App.nwcali
                 AssetInspectType = obj.AssetInspectType,
                 AssetStatus = obj.AssetStatus,
                 OrgName = obj.OrgName,
-                AssetInspectWay = obj.AssetInspectWay
+                AssetInspectWay = obj.AssetInspectWay,
+                AssetImage =obj.AssetImage
             });
             if (obj.AssetCategorys != null && obj.AssetCategorys.Count > 0)
             {

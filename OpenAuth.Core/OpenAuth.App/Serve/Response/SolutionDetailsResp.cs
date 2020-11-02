@@ -10,6 +10,10 @@ namespace OpenAuth.App.Response
     public class SolutionDetailsResp
     {
         /// <summary>
+        ///id
+        /// </summary>
+        public string Id { get; set; }
+        /// <summary>
         /// 编号
         /// </summary>
         public int SltCode { get; set; }
