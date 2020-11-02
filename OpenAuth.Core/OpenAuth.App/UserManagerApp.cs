@@ -378,17 +378,16 @@ namespace OpenAuth.App
         {
             var loginUser = _auth.GetCurrentUser();
 
-            string cascadeId = ".0.";
-            if (!string.IsNullOrWhiteSpace(Orgid))
+            List<string> userIds = new List<string>();
+            if (string.IsNullOrWhiteSpace(Orgid))
             {
-                var org = loginUser.Orgs.FirstOrDefault(u => u.Id == Orgid);
-                cascadeId = org.CascadeId;
+                var ids = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => o.Id).ToArrayAsync();
+                userIds = _revelanceApp.Get(Define.USERORG, false, ids);
             }
-
-            var ids = loginUser.Orgs.Where(u => u.CascadeId.Contains(cascadeId)).Select(u => u.Id).ToArray();
-
-            var userIds = _revelanceApp.Get(Define.USERORG, false, ids);
-
+            else 
+            {
+                userIds = _revelanceApp.Get(Define.USERORG, false, Orgid);
+            }
             var result = new TableData();
             var objs = UnitWork.Find<User>(u=>userIds.Contains(u.Id));
             objs = objs.WhereIf(!string.IsNullOrWhiteSpace(name),u => u.Name.Contains(name));
