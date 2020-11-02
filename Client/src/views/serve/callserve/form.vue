@@ -780,6 +780,8 @@ export default {
               }
               this.form.serviceWorkOrders[index].solutionsubject =
                 item.solution && item.solution.subject;
+              this.form.serviceWorkOrders[index].solutionId =
+                item.solution && item.solution.id;
               this.form.serviceWorkOrders[index].problemTypeName =
                 item.problemType && item.problemType.name;
             });
