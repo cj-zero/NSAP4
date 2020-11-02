@@ -51,6 +51,8 @@ export function timeToFormat(format, date){
     return `${year}-${isZero(month)}-${isZero(day)} ${isZero(hours)}-${isZero(minute)}-${isZero(seconds)}`
   } else if (format === 'yyyy-MM-dd HH:mm:ss') {
     return `${year}-${isZero(month)}-${isZero(day)} ${isZero(hours)}:${isZero(minute)}:${isZero(seconds)}`
+  } else if (format === 'yyyy-MM-dd HH:mm') {
+    return `${year}-${isZero(month)}-${isZero(day)} ${isZero(hours)}:${isZero(minute)}`
   }
 return result
 }

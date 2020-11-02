@@ -15,9 +15,10 @@
     :append-to-body="appendToBody"
     @closed="onClosed"
     @close="onClosed"
+    @click.native.stop
   >
     <slot></slot>
-    <span slot="footer" class="dialog-footer" v-if="isShowBtn && btnList.length">
+    <div slot="footer" class="dialog-footer" style="text-align: center;" v-if="isShowBtn && btnList.length">
       <template v-for="btnItem in btnList">
         <el-button
           class="btn-item customer-btn-class"
@@ -30,8 +31,8 @@
           :loading="btnItem.loading === undefined ? false: btnItem.loading"
         >{{ btnItem.btnText }}</el-button>
       </template>
-    </span>
-  </el-dialog>
+    </div>
+  </el-dialog>  
 </template>
 
 <script>
@@ -109,7 +110,7 @@ export default {
 </script>
 <style lang='scss' scoped>
 .my-dialog-wrapper {
-  overflow-y: hidden;
+  // overflow-y: hidden;
   &::v-deep .el-dialog__body {
     padding: 10px !important;
   }

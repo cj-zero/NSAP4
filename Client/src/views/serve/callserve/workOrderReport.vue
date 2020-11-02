@@ -1,13 +1,15 @@
 <template>
   <div class="report-wrapper">
-    <div 
-      class="chart-item" 
-      style="width:100%;height:350px;"
-      ref="chart-item"
-      v-for="i in data.length"
-      :key="i"
-      >
-    </div>
+    <el-scrollbar style="height: 100%;">
+      <div 
+        class="chart-item" 
+        style="width:100%;height:350px;"
+        ref="chart-item"
+        v-for="i in data.length"
+        :key="i"
+        >
+      </div>
+    </el-scrollbar>
   </div>
 </template>
 
@@ -16,8 +18,26 @@ const titleList = {
   'Supervisor': { title: '售后部门呼叫量情况', legend: '售后部门排行' },
   'SalesMan': { title: '销售员呼叫量分布图', legend: '销售员排行' },
   'ProblemType': { title: '问题类型分析', legend: '问题类型排行' },
-  'RecepUser': { title: '接单员分布图', legend: '接单员排行' }
+  'RecepUser': { title: '接单员分布图', legend: '接单员排行' },
+  'RecepStart': { title: '工单状态分析图', legend: '工单状态' }
 }
+const callStatus = [
+  "待处理" ,
+  "已排配" ,
+  "已预约" ,
+  "已外出" ,
+  "已挂起" ,
+  "已接收" ,
+  "已解决" ,
+  "已回访" 
+]
+const colorMap = {
+  1: '#da0721',
+  5: '#da0721',
+  7: '#74c74b',
+  8: '#cbcbcb'
+}
+// 其它呼叫状态 #f7b868
 export default {
   props: {
     data: {
@@ -48,8 +68,6 @@ export default {
         let myChart = global.echarts.init(charts[i])
         let data = this.data[i]
         let xAxisData = data.statList.map(item => item.statName)
-        let yAxisData = data.statList.map(item => item.serviceCnt)
-      
         let option = {
           title: {
             text: titleList[data.statType].title,
@@ -96,18 +114,62 @@ export default {
             axisTick: {
               show: false
             }
-          },
-          series: [{
-            data: yAxisData,
-            type: 'bar',
-            name: titleList[data.statType].legend,
-            itemStyle: {
-              color: '#88c7ff'
-            }
-          }]
+          } 
         }
+        let { series, tooltip } = this._normalizeSerias(data)
+        option.series = series
+        option.tooltip = tooltip
+        // console.log(series)
         myChart.setOption(option)
       }
+    },
+    _normalizeSerias (data) {
+      let yAxisData = [], series = [], tooltip = {}
+      if (data.statType === 'RecepStart') {
+        for (let i = 0; i < data.statList.length; i++) { // 格式化柱状图数据
+          let { reportList } = data.statList[i]
+          for (let j = 0; j < reportList.length; j++) {
+            let { statId, serviceCnt } = reportList[j]
+            if (yAxisData[statId - 1]) {
+              yAxisData[statId - 1].push(serviceCnt)
+            } else {
+              yAxisData[statId - 1] = []
+              yAxisData[statId - 1].push(serviceCnt)
+            }
+          }
+        }
+        for (let i = 0; i < yAxisData.length; i++) {
+          series.push({
+            data: yAxisData[i],
+            type: 'bar',
+            name: callStatus[i],
+            stack: 1,
+            itemStyle: {
+              color: colorMap[i + 1] || '#f7b868'
+            }
+          })
+        }
+        tooltip = {
+          trigger: 'axis',
+          axisPointer: {            // 坐标轴指示器，坐标轴触发有效
+            type: 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+          }
+        }
+      } else {
+        yAxisData = data.statList.map(item => item.serviceCnt)
+        series = [{
+          data: yAxisData,
+          type: 'bar',
+          name: titleList[data.statType].legend,
+          itemStyle: {
+            color: '#88c7ff'
+          }
+        }]
+        tooltip = {
+          show: true
+        }
+      }
+      return { series, tooltip }
     }
   },
   created () {
@@ -121,7 +183,11 @@ export default {
 <style lang='scss' scoped>
 .report-wrapper {
   height: 600px;
-  overflow: auto;
+  // overflow: auto;
+  overflow: hidden;
+  ::v-deep .el-scrollbar__wrap {
+    overflow-x: hidden;
+  }
   .chart-item {
     margin-bottom: 10px;
   }

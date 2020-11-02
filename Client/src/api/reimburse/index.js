@@ -49,11 +49,19 @@ export function getCategoryName (params) { // 获取字典类别
 }
 
 
-export function withdraw (params) { // 撤销报销单
+export function withdraw (data) { // 撤销报销单
   return request({
     url: '/serve/Reimburse/Revocation',
-    method: 'get',
-    params
+    method: 'post',
+    data
+  })
+}
+
+export function deleteOrder (data) { // 删除报销单
+  return request({
+    url: '/serve/Reimburse/Delete',
+    method: 'post',
+    data
   })
 }
 
@@ -65,7 +73,7 @@ export function approve (data) { // 审核接口
   })
 }
 
-export function identifyInvoice (data) {
+export function identifyInvoice (data) { // 识别发票
   return request({
     url: '/ocr/TecentOCR/TecentInvoiceOCR',
     method: 'post',
@@ -73,7 +81,7 @@ export function identifyInvoice (data) {
   })
 }
 
-export function isSole (data) {
+export function isSole (data) { // 判断发票是否唯一
   return request({
     url: 'serve/Reimburse/IsSole',
     method: 'post',

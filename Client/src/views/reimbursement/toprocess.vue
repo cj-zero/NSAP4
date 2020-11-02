@@ -26,7 +26,7 @@
               highlight-current-row
               >
               <el-table-column
-                v-for="item in columns"
+                v-for="item in processedColumns"
                 :key="item.prop"
                 :width="item.width"
                 :label="item.label"
@@ -76,7 +76,6 @@
       <!-- 审核弹窗 -->
       <my-dialog
         ref="myDialog"
-        :center="true"
         width="1206px"
         :btnList="btnList"
         :onClosed="closeDialog"
@@ -111,7 +110,7 @@
               :form="temp"
               formName="查看"
               labelposition="right"
-              labelwidth="100px"
+              labelwidth="72px"
               max-width="800px"
               :isCreate="false"
               :refValue="dataForm"

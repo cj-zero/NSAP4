@@ -140,7 +140,7 @@ export default {
       listQuery: {
         // 查询条件
         page: 1,
-        limit: 20,
+        limit: 50,
         key: undefined,
         appId: undefined
       },

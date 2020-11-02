@@ -147,7 +147,7 @@
               :form="temp"
               formName="确认"
               labelposition="right"
-              labelwidth="100px"
+              labelwidth="72px"
               :isCreate="true"
               :sure="sure"
               :ifFirstLook="true"

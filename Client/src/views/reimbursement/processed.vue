@@ -11,118 +11,117 @@
         </Search>
       </div>
     </sticky>
-      <div class="app-container">
-        <div class="bg-white">
-          <div class="content-wrapper">
-            <el-table 
-              ref="table"
-              :data="tableData" 
-              v-loading="tableLoading" 
-              size="mini"
-              border
-              fit
-              height="100%"
-              style="width: 100%;"
-              @row-click="onRowClick"
-              highlight-current-row
-              >
-              <el-table-column
-                v-for="item in columns"
-                :key="item.prop"
-                :width="item.width"
-                :label="item.label"
-                :align="item.align || 'left'"
-                :sortable="item.isSort || false"
-                :type="item.originType || ''"
-                show-overflow-tooltip
-              >
-                <template slot-scope="scope" >
-                  <div class="link-container" v-if="item.type === 'link'">
-                    <img :src="rightImg" @click="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
-                    <span>{{ scope.row[item.prop] }}</span>
+    <div class="app-container">
+      <div class="bg-white">
+        <div class="content-wrapper">
+          <el-table 
+            ref="table"
+            :data="tableData" 
+            v-loading="tableLoading" 
+            size="mini"
+            border
+            fit
+            height="100%"
+            style="width: 100%;"
+            @row-click="onRowClick"
+            highlight-current-row
+            >
+            <el-table-column
+              v-for="item in processedColumns"
+              :key="item.prop"
+              :width="item.width"
+              :label="item.label"
+              :align="item.align || 'left'"
+              :sortable="item.isSort || false"
+              :type="item.originType || ''"
+              show-overflow-tooltip
+            >
+              <template slot-scope="scope" >
+                <div class="link-container" v-if="item.type === 'link'">
+                  <img :src="rightImg" @click="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
+                  <span>{{ scope.row[item.prop] }}</span>
+                </div>
+                <template v-else-if="item.type === 'operation'">
+                  <el-button 
+                    v-for="btnItem in item.actions"
+                    :key="btnItem.btnText"
+                    @click="btnItem.btnClick(scope.row)" 
+                    type="text" 
+                    :icon="item.icon || ''"
+                    :size="item.size || 'mini'"
+                  >{{ btnItem.btnText }}</el-button>
+                </template>
+                <template v-else-if="item.label === '服务报告'">
+                  <div class="link-container">
+                    <img :src="rightImg" @click="item.handleClick(scope.row, 'table')" class="pointer">
+                    <span>查看</span>
                   </div>
-                  <template v-else-if="item.type === 'operation'">
-                    <el-button 
-                      v-for="btnItem in item.actions"
-                      :key="btnItem.btnText"
-                      @click="btnItem.btnClick(scope.row)" 
-                      type="text" 
-                      :icon="item.icon || ''"
-                      :size="item.size || 'mini'"
-                    >{{ btnItem.btnText }}</el-button>
-                  </template>
-                  <template v-else-if="item.label === '服务报告'">
-                    <div class="link-container">
-                      <img :src="rightImg" @click="item.handleClick(scope.row, 'table')" class="pointer">
-                      <span>查看</span>
-                    </div>
-                  </template>
-                  <template v-else>
-                    {{ scope.row[item.prop] }}
-                  </template>
-                </template>    
-              </el-table-column>
-            </el-table>
-            <!-- <common-table :data="tableData" :columns="columns" :loading="tableLoading"></common-table> -->
-            <pagination
-              v-show="total>0"
-              :total="total"
-              :page.sync="listQuery.page"
-              :limit.sync="listQuery.limit"
-              @pagination="handleCurrentChange"
-            />
-          </div>
+                </template>
+                <template v-else>
+                  {{ scope.row[item.prop] }}
+                </template>
+              </template>    
+            </el-table-column>
+          </el-table>
+          <!-- <common-table :data="tableData" :columns="columns" :loading="tableLoading"></common-table> -->
+          <pagination
+            v-show="total>0"
+            :total="total"
+            :page.sync="listQuery.page"
+            :limit.sync="listQuery.limit"
+            @pagination="handleCurrentChange"
+          />
         </div>
       </div>
-      <!-- 审核弹窗 -->
-      <my-dialog
-        ref="myDialog"
-        :center="true"
-        width="1206px"
-        :onClosed="closeDialog"
-        :title="textMap[title]"
-        :loading="dialogLoading"
-        :btnList="btnList"
-      >
-        <order 
-          ref="order" 
-          :title="title"
-          :detailData="detailData"
-          :categoryList="categoryList"
-          :customerInfo="customerInfo">
-        </order>
-      </my-dialog>
-      <!-- 完工报告 -->
-      <my-dialog
-        ref="reportDialog"
-        width="983px"
-        title="服务行为报告单"
-        :onClosed="resetReport">
-        <Report :data="reportData" ref="report"/>
-      </my-dialog>
-       <!-- 只能查看的表单 -->
-      <my-dialog
-        ref="serviceDetail"
-        width="1210px"
-        title="服务单详情"
-      >
-        <el-row :gutter="20" class="position-view">
-          <el-col :span="18" >
-            <zxform
-              :form="temp"
-              formName="查看"
-              labelposition="right"
-              labelwidth="100px"
-              max-width="800px"
-              :isCreate="false"
-              :refValue="dataForm"
-            ></zxform>
-          </el-col>
-          <el-col :span="6" class="lastWord">   
-            <zxchat :serveId='serveId' formName="报销"></zxchat>
-          </el-col>
-        </el-row>
-      </my-dialog>
+    </div>
+    <!-- 审核弹窗 -->
+    <my-dialog
+      ref="myDialog"
+      width="1206px"
+      :onClosed="closeDialog"
+      :title="textMap[title]"
+      :loading="dialogLoading"
+      :btnList="btnList"
+    >
+      <order 
+        ref="order" 
+        :title="title"
+        :detailData="detailData"
+        :categoryList="categoryList"
+        :customerInfo="customerInfo">
+      </order>
+    </my-dialog>
+    <!-- 完工报告 -->
+    <my-dialog
+      ref="reportDialog"
+      width="983px"
+      title="服务行为报告单"
+      :onClosed="resetReport">
+      <Report :data="reportData" ref="report"/>
+    </my-dialog>
+    <!-- 只能查看的表单 -->
+    <my-dialog
+      ref="serviceDetail"
+      width="1210px"
+      title="服务单详情"
+    >
+      <el-row :gutter="20" class="position-view">
+        <el-col :span="18" >
+          <zxform
+            :form="temp"
+            formName="查看"
+            labelposition="right"
+            labelwidth="72px"
+            max-width="800px"
+            :isCreate="false"
+            :refValue="dataForm"
+          ></zxform>
+        </el-col>
+        <el-col :span="6" class="lastWord">   
+          <zxchat :serveId='serveId' formName="报销"></zxchat>
+        </el-col>
+      </el-row>
+    </my-dialog>
   </div>
 </template>
 

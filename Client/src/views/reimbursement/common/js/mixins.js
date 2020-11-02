@@ -23,27 +23,38 @@ export let tableMixin = {
         toPay: '支付',
         paid: '已支付'
       },
-      columns: [ // 表格配置
+      submissionColumns: [ // 表格配置(我的提交)
         { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleJump: this.getDetail },
-        { label: '填报日期', prop: 'fillTime', width: 85 },
-        { label: '报销部门', prop: 'orgName', width: 70 },
-        { label: '报销人', prop: 'userName', width: 70 },
         { label: '报销状态', prop: 'remburseStatusText', width: 100 },
-        { label: '总金额', prop: 'totalMoney', width: 100 },
+        { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleJump: this.openTree },
+        { label: '呼叫主题', prop: 'fromTheme', width: 250 },
         { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
         { label: '客户名称', prop: 'terminalCustomer', width: 170 },
-        { label: '客户简称', prop: 'shortCustomerName', width: 85 },
-        { label: '业务员', prop: 'salesMan', width: 100 },
+        { label: '总金额', prop: 'totalMoney', width: 100 },
+        { label: '总天数', prop: 'businessTripDays', width: 60 },
         { label: '出发日期', prop: 'businessTripDate', width: 85 },
         { label: '结束日期', prop: 'endDate', width: 85 },
-        { label: '总天数', prop: 'businessTripDays', width: 60 },
-        { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleJump: this.openTree },
-        { label: '呼叫主题', prop: 'fromTheme', width: 100 },
-        // { label: '项目名称', prop: 'projectName', width: 80 },
+        { label: '报销部门', prop: 'orgName', width: 70 },
+        { label: '报销人', prop: 'userName', width: 70 },
+        { label: '业务员', prop: 'salesMan', width: 80 },
         { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
-        // { label: '责任承担', prop: 'responsibility', width: 75 },
-        { label: '劳务关系', prop: 'serviceRelations', width: 80 },
+        { label: '填报日期', prop: 'fillTime', width: 85 },
         { label: '备注', prop: 'remark' }
+      ],
+      processedColumns: [ // 不同的表格配置(我的提交除外的其它模块表格)
+        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleJump: this.getDetail },
+        { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleJump: this.openTree },
+        { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
+        { label: '客户名称', prop: 'terminalCustomer', width: 170 },
+        { label: '总金额', prop: 'totalMoney', width: 100 },
+        { label: '总天数', prop: 'businessTripDays', width: 60 },
+        { label: '出发日期', prop: 'businessTripDate', width: 85 },
+        { label: '结束日期', prop: 'endDate', width: 85 },
+        { label: '报销部门', prop: 'orgName', width: 70 },
+        { label: '报销人', prop: 'userName', width: 70 },
+        { label: '业务员', prop: 'salesMan', width: 80 },
+        { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
+        { label: '填报日期', prop: 'fillTime', width: 85 }
       ],
       tableData: [],
       total: 0, // 表格数据的总数量
@@ -87,10 +98,7 @@ export let tableMixin = {
     },
     print () {
       if (!this.currentRow) {
-        return this.$message({
-          type: 'warning',
-          message: '请先选择报销单号'
-        })
+        return this.$message.warning('请先选择报销单号')
       }
       // console.log([printOrder, 'printOrder'])
       window.open(`${process.env.VUE_APP_BASE_API}/serve/Reimburse/Print?ReimburseInfoId=${this.currentRow.id}&X-Token=${this.tokenValue}`)
@@ -105,9 +113,6 @@ export let tableMixin = {
         this.tableData = this._normalizeList(data)
         this.total = count
         this.tableLoading = false
-        // if (!data.length) {
-        //   this.$message.error('用户列表为空')
-        // }
       }).catch((err) => {
         console.log(err, 'err')
         this.$message.error('获取列表失败')
@@ -147,23 +152,14 @@ export let tableMixin = {
         tableClick = true
       } else {
         if (!this.currentRow) { // 编辑审核等操作
-          return this.$message({
-            type: 'warning',
-            message: '请先选择报销单'
-          })
+          return this.$message.warning('请先选择报销单')
         }
         if (val.name === 'mySubmit') { // 我的提交模块判断
           if (this.currentRow.createUserId !== this.originUserId) {
-            return this.$message({
-              type: 'warning',
-              message: '当前用户与报销人不符，不可编辑'
-            })
+            return this.$message.warning('当前用户与报销人不符，不可编辑')
           }
           if (this.currentRow.remburseStatus > 3) {
-            return this.$message({
-              type: 'warning',
-              message: '当前状态不可编辑'
-            })
+            return this.$message.warning('当前状态不可编辑')
           }
         }
         id = this.currentRow.id
@@ -430,26 +426,27 @@ export let categoryMixin = {
           disabled: this.title === 'view' || !(this.isCustomerSupervisor && (this.title === 'create' || this.title === 'edit' || this.title === 'approve')), 
           col: this.ifFormEdit ? 5 : 6, type: 'select', options: this.expenseList, width: '100%', isEnd: true
         },
-        { label: '报销单号', prop: 'mainId', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        // { label: '报销单号', prop: 'mainId', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '报销状态', prop: 'reimburseTypeText', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
         { label: '客户代码', prop: 'terminalCustomerId', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
         { label: '客户名称', prop: 'terminalCustomer', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        { label: '填报时间', prop: 'createTime', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
-        { label: '报销人', prop: 'userName', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        { label: '部门', prop: 'orgName', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        { label: '劳务关系', prop: 'serviceRelations', palceholder: '请输入内容',  
-          col: this.ifFormEdit ? 5 : 6, disabled: true
-        },
         { label: '支付时间', prop: 'payTime', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
-        { label: '出发地点', prop: 'becity', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        { label: '到达地点', prop: 'destination', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        { label: '出发日期', prop: 'businessTripDate', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, width: '100%' },
-        { label: '结束日期', prop: 'endDate', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true, width: '100%' },
+        // { label: '填报时间', prop: 'createTime', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
+        // { label: '报销人', prop: 'userName', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        // { label: '部门', prop: 'orgName', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        // { label: '劳务关系', prop: 'serviceRelations', palceholder: '请输入内容',  
+        //   col: this.ifFormEdit ? 5 : 6, disabled: true
+        // },
         { label: '呼叫主题', prop: 'fromTheme', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 15 : 18 },
         { label: '服务报告', prop: 'report',  disabled: true, col: this.ifFormEdit ? 5 : 6, 
           type: 'button', btnText: '服务报告', handleClick: this.openReport, isEnd: true
         },
-        { label: '备注', prop: 'remark', palceholder: '请输入内容', disabled: !this.ifFormEdit, col: this.ifFormEdit ? 15 : 18 },
-        { label: '报销状态', prop: 'reimburseTypeText', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true }
+        { label: '出发地点', prop: 'becity', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '到达地点', prop: 'destination', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '开始时间', prop: 'businessTripDate', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, width: '100%' },
+        { label: '结束时间', prop: 'endDate', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true, width: '100%' },
+        { label: '备注', prop: 'remark', palceholder: '请输入内容', disabled: !this.ifFormEdit, col: this.ifFormEdit ? 15 : 18 }, 
+        { label: '总金额', type: 'money', col: this.ifFormEdit ? 5 : 6 }
       ]
     },    
     travelConfig () {
@@ -470,7 +467,7 @@ export let categoryMixin = {
         { label: '目的地', prop: 'to', type: 'input', width: 125, readonly: true },
         { label: '金额', prop: 'money', type: 'number', align: 'right', width: 120, placeholder: '大于0' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '8-11位字母数字' },
+        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '7-11位字母数字' },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 }
       ]
@@ -488,7 +485,7 @@ export let categoryMixin = {
         { label: '费用类别', prop: 'expenseCategory', type: 'select', width: 150, options: this.otherExpensesList },
         { label: '其他费用', prop: 'money', type: 'number', width: 120, align: 'right', placeholder: '大于0' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '8-11位字母数字' },
+        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '7-11位字母数字' },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 }
       ]
@@ -581,10 +578,7 @@ export const attachmentMixin = {
         currentRow.totalMoney = money
         currentRow.money = (currentRow.totalMoney / (currentRow.days || 1)).toFixed(2)
         if (this.accMaxMoney && Number(currentRow.money) > Number(this.accMaxMoney)) {
-          this.$message({
-            type: 'warning',
-            message: `所填金额大于住宿补贴标准(${this.accMaxMoney}元)`
-          })
+          this.$message.warning(`所填金额大于住宿补贴标准(${this.accMaxMoney}元)`)
         }
       } else {
         currentRow.money = money
@@ -628,62 +622,56 @@ export const attachmentMixin = {
           fileId
         }).then(res => {
           if (res.data && !res.data.length) {
-            setTimeout(() => {
+            this.$nextTick(() => {
               this._setCurrentRow(currentRow, {
                 invoiceNo: '',
                 money: '',
                 isAcc,
                 isValidInvoice: false
               })
-            }, 0)
+            })
             uploadVm.clearFiles()
             this.$message.error('识别失败,请上传至其它附件列表')
             resolve(false)
           } else {
             let { invoiceNo, amountWithTax, isValidate, isUsed, notPassReason, type, extendInfo } = res.data[0]
             if (!isValidate || (isValidate && isUsed)) { // 识别失败
-              setTimeout(() => {
+              this.$nextTick(() => {
                 this._setCurrentRow(currentRow, {
                   invoiceNo: '',
                   money: '',
                   isAcc,
                   isValidInvoice: false
                 })
-              }, 0)
+              })
               uploadVm.clearFiles()
               this.$message.error(notPassReason ? notPassReason : '识别失败,请上传至其它附件列表')
               resolve(false)
             } else {
               // 识别成功，但是需要判断当前的发票类型是否跟表格的发票类型是否一致
               let isValidInvoice = this._isValidInvoiceType({ tableType, type, extendInfo })
-              isValidInvoice ? this.$message({
-                type: 'success',
-                message: '识别成功'
-              }) : this.$message({
-                type: 'warning',
-                message: '发票归类错误!'
-              })
-              setTimeout(() => {
+              isValidInvoice ? this.$message.success('识别成功') : this.$message.warning('发票归类错误!')
+              this.$nextTick(() => {
                 this._setCurrentRow(currentRow, {
                   invoiceNo,
                   money: amountWithTax,
                   isAcc,
                   isValidInvoice: true
                 })
-              }, 0)
+              })
               resolve(true)
             }
           }
         }).catch(err => {
           console.error(err, 'err')
-          setTimeout(() => {
+          this.$nextTick(() => {
             this._setCurrentRow(currentRow, {
               invoiceNo:'',
               money: '',
               isAcc,
               isValidInvoice: false
             })
-          }, 0)
+          })
           uploadVm.clearFiles()
           this.$message.error(err.message || '识别失败,请上传至其它附件列表')
           resolve(false)
@@ -780,21 +768,42 @@ export const chatMixin = {
     }
   },
   methods: {
-    openTree(row) {
+    openTree(row, isOpenInTable = true) {
+       // 判断服务单详情是否在表格页面打开,否则就是在报销单查看页面打开  isOpenInTable
       let serviceOrderId = row.serviceOrderId
-      this.tableLoading = true
+      if (!serviceOrderId) {
+        return this.$message.error('无服务单ID')
+      }
+      isOpenInTable ? this.tableLoading = true : this.orderLoading = true
       GetDetails(serviceOrderId).then(res => {
         if (res.code == 200) {
-          this.dataForm = res.result;
+          this.dataForm = this._normalizeOrderDetail(res.result);
           this.serveId = serviceOrderId
           this.$refs.serviceDetail.open()
-          this.tableLoading = false
+          isOpenInTable ? this.tableLoading = false : this.orderLoading = false
         }
       }).catch((err) => {
         console.error(err)
-        this.tableLoading = false
+        isOpenInTable ? this.tableLoading = false : this.orderLoading = false
         this.$message.error('获取服务单详情失败')
       })
-    }
+    },
+    deleteSeconds (date) { // yyyy-MM-dd HH:mm:ss 删除秒
+      return date ? date.slice(0, -3) : date
+    },
+    _normalizeOrderDetail (data) {
+      let { serviceWorkOrders } = data
+      if (serviceWorkOrders && serviceWorkOrders.length) {
+        serviceWorkOrders.forEach(serviceOrder => {
+          let { warrantyEndDate, bookingDate, visitTime, liquidationDate, completeDate } = serviceOrder
+          serviceOrder.warrantyEndDate = this.deleteSeconds(warrantyEndDate)
+          serviceOrder.bookingDate = this.deleteSeconds(bookingDate)
+          serviceOrder.visitTime = this.deleteSeconds(visitTime)
+          serviceOrder.liquidationDate = this.deleteSeconds(liquidationDate)
+          serviceOrder.completeDate = this.deleteSeconds(completeDate)
+        })
+      }
+      return data
+    },
   }
 }

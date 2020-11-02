@@ -1,7 +1,7 @@
 <template>
   <div class="template-wrapper">
     <!-- 选择列表 -->
-    <el-row type="flex" justify="space-between" align="middle">
+    <el-row type="flex" align="middle">
       <div class="select-list-wrapper">
         <el-button class="customer-btn-class" type="primary" size="small" @click="toggleSelect">{{ btnText }}</el-button>
         <div class="select-list" v-show="selectList && selectList.length && ifShowSelect">
@@ -683,6 +683,9 @@ export default {
         }
       }
     }
+  }
+  .date-wrapper {
+    margin-left: 20px;
   }
   .template-content-wrapper {
     margin-top: 15px;

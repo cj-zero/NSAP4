@@ -109,9 +109,6 @@
               :width="fruit.width"
             >
               <template slot-scope="scope">
-                <span v-if="fruit.name === 'order'">
-                  {{ scope.$index + 1 }}
-                </span>
                 <div v-if="fruit.name === 'u_SAP_ID'" class="link-container" >
                   <img :src="rightImg" @click="openTree(scope.row.serviceOrderId)" class="pointer" />
                   <span>{{ scope.row.u_SAP_ID }}</span>
@@ -346,16 +343,16 @@ import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
 import Pagination from "@/components/Pagination";
 import elDragDialog from "@/directive/el-dragDialog";
-import zxform from "./form";
+import zxform from "../callserve/form";
 import Search from '@/components/Search'
 // import zxsearch from "./search";
-import zxchat from './chat/index'
-import treeList from "./treeList";
-import CustomerInfo from './customerInfo'
+import zxchat from '../callserve/chat/index'
+import treeList from "../callserve/treeList";
+import CustomerInfo from '../callserve/customerInfo'
 import rightImg from '@/assets/table/right.png'
-import Rate from './rate'
+import Rate from '../callserve/rate'
 import Report from '../common/components/report'
-import Analysis from './workOrderReport'
+import Analysis from '../callserve/workOrderReport'
 import { chatMixin, reportMixin, tableMixin } from '../common/js/mixins'
 export default {
   provide () {
@@ -363,7 +360,7 @@ export default {
       instance: this
     }
   },
-  name: "callServer",
+  name: "salesCallServe",
   computed: {
     ...mapGetters([
       'formList'
@@ -419,7 +416,6 @@ export default {
       sure: 0,
       rightImg,
       ParentHeadOptions: [
-        { name: 'order', label: '序号', width: '50' },
         { name: "u_SAP_ID", label: "服务单号", align:'left', sortable:true, width: '80' },
         { name: "status", label: "工单状态", align: 'left', width: '70' },
         { name: "customerId", label: "客户代码", align:'left', width: '90' },
@@ -654,6 +650,23 @@ export default {
     closeCustoner() {
       // this.getList();
     },
+    _getDetails () {
+      let serviceOrderId = this.serveId
+      callservesure.GetDetails(serviceOrderId).then(res => {
+        if (res.code == 200) {
+          this.dataForm = this.dataForm1 = res.result;
+        }
+      })
+    },
+    // openTree(serviceOrderId) {
+    //   callservesure.GetDetails(serviceOrderId).then(res => {
+    //     if (res.code == 200) {
+    //       this.dataForm1 = res.result;
+    //       this.serveId = serviceOrderId
+    //       this.dialogFormView = true;
+    //     }
+    //   });
+    // },
     getCustomerInfo (customerId) { // 打开用户信息弹窗
       if (!customerId) {
         return this.$message.error('客户代码不能为空!')
@@ -788,8 +801,8 @@ export default {
     },
     getList() {
       this.listLoading = true;
-      callservesure.rightList(this.listQuery).then(response => {
-        let result = response.data.data;
+      callservesure.getSMServiceWorkOrderList(this.listQuery).then(response => {
+        let result = response.data;
         this.total = response.count;
         this._normalize(result)
         this.listLoading = false;
@@ -926,7 +939,7 @@ export default {
         this.listLoading = true;
       callservesure.GetDetails(row.serviceOrderId).then(res => {
         if (res.code == 200) {
-          this.dataForm1 = this._normalizeOrderDetail(res.result);
+          this.dataForm1 = res.result;
           let { serviceOrderId, u_SAP_ID, customerId } = row
           this.serveId = serviceOrderId
           this.sapOrderId = u_SAP_ID
@@ -977,13 +990,19 @@ export default {
         return Number(item.status) === 8
       })
       if (hasVisit) {
-        this.$message.warning('该服务单已评价')
+        this.$message({
+          type: 'warning',
+          message: '该服务单已评价'
+        })
       } else {
         afterEvaluation.getTechnicianName({
           serviceOrderId
         }).then(res => {
           if (!res.data) {
-            return this.$message.warning('工单未解决或在线解答方式不可回访')
+            return this.$message({
+              type: 'warning',
+              message: '工单未解决或在线解答方式不可回访'
+            })
           }
           this.isView = false
           this.commentList = this._normalizeCommentList(res, row)
@@ -1043,10 +1062,12 @@ export default {
       if (!(isValid && productQuality && servicePrice)) {
         return this.$message.error('评分不能为零！')
       }
-      this.loadingBtn = true
       afterEvaluation.addComment(this.commentList)
         .then(() => {
-          this.$message.success('评价成功')
+          this.$message({
+            message: '评价成功',
+            type: 'success'
+          })
           this.$refs.rateRoot.resetInfo()
           this.loadingBtn = false
           this.dialogRateVisible = false

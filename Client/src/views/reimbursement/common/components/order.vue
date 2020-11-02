@@ -1,5 +1,12 @@
 <template>
-  <div class="order-wrapper">
+  <div class="order-wrapper" v-loading="orderLoading">
+    <el-row type="flex" class="head-title-wrapper">
+      <p>报销单号: <span>{{ formData.mainId }}</span></p>
+      <p>报销人: <span>{{ formData.userName }}</span></p>
+      <p>部门: <span>{{ formData.orgName }}</span></p>
+      <p>劳务关系: <span>{{ formData.serviceRelations }}</span></p>
+      <p>创建时间: <span>{{ formData.createTime }}</span></p>
+    </el-row>
     <!-- 主表单 -->
     <el-scrollbar class="scroll-bar">
       <el-form
@@ -23,12 +30,20 @@
             v-for="item in config"
             :key="item.prop"
           >
-            <el-form-item :label="item.label" 
+            <el-form-item
               :prop="item.prop"
               :rules="rules[item.prop] || { required: false }">
-              <!-- <template v-if="item.label === '总金额'">
-                ￥{{ totalMoney | toThousands }}
-              </template> -->
+              <span slot="label">
+                <template v-if="item.prop === 'serviceOrderSapId' && title !== 'create'">
+                  <div class="link-container" style="display: inline-block">
+                    <span>{{ item.label }}</span>
+                    <img :src="rightImg" @click="openTree(formData, false)" class="pointer">
+                  </div>
+                </template>
+                <template v-else>
+                  <span :class="{ 'upload-title money': item.label === '总金额'}">{{ item.label }}</span>
+                </template>
+              </span>
               <template v-if="!item.type">
                 <el-input 
                   v-model="formData[item.prop]" 
@@ -74,6 +89,9 @@
                   @click="item.handleClick(formData)"
                   :loading="reportBtnLoading">{{ item.btnText }}</el-button>
               </template>
+              <template v-else-if="item.type === 'money'">
+                <span class="money-text">￥{{ totalMoney | toThousands }}</span>
+              </template>
             </el-form-item>
           </el-col>
         </el-row>
@@ -94,14 +112,13 @@
               @deleteFileList="deleteFileList"></upLoadFile>
           </el-row>
         </el-col>
-        <el-col :span="this.ifFormEdit ? 9: 6">
-          <el-row type="flex" align="middle">
+        <!-- <el-col :span="this.ifFormEdit ? 9: 6" style="position: relative;top: -35px;">
+          <el-row type="flex" >
             <span class="upload-title money">总金额</span>
             <span class="money-text">￥{{ totalMoney | toThousands }}</span>
           </el-row>
-        </el-col>
+        </el-col> -->
       </el-row>
-      
       <!-- 出差 -->
       <div class="form-item-wrapper travel" :class="{ uneditable: !this.ifFormEdit }" v-if="ifCOrE || formData.reimburseTravellingAllowances.length">
         <el-button v-if="ifShowTravel" @click="showForm(formData.reimburseTravellingAllowances, 'ifShowTravel')">添加出差补贴</el-button>
@@ -696,6 +713,31 @@
       width="350px">
       <remark ref="remark" @input="onRemarkInput" :tagList="reimburseTagList" :title="title"></remark>
     </my-dialog>
+    <!-- 只能查看的表单 -->
+    <my-dialog
+      ref="serviceDetail"
+      width="1210px"
+      title="服务单详情"
+      :mAddToBody="true" 
+      :appendToBody="true"
+    >
+      <el-row :gutter="20" class="position-view">
+        <el-col :span="18" >
+          <zxform
+            :form="temp"
+            formName="查看"
+            labelposition="right"
+            labelwidth="72px"
+            max-width="800px"
+            :isCreate="false"
+            :refValue="dataForm"
+          ></zxform>
+        </el-col>
+        <el-col :span="6" class="lastWord">   
+          <zxchat :serveId='serveId' formName="报销"></zxchat>
+        </el-col>
+      </el-row>
+    </my-dialog>
   </div>
 </template>
 
@@ -707,6 +749,8 @@ import upLoadFile from "@/components/upLoadFile";
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import CommonTable from '@/components/CommonTable'
+import zxform from "@/views/serve/callserve/form";
+import zxchat from '@/views/serve/callserve/chat/index'
 import Report from './report'
 import Remark from './remark'
 import AreaSelector from '@/components/AreaSelector'
@@ -716,11 +760,12 @@ import { deepClone } from '@/utils'
 import { travelRules, trafficRules, accRules, otherRules } from '../js/customerRules'
 import { customerColumns, costColumns } from '../js/config'
 import { noop } from '@/utils/declaration'
-import { categoryMixin, reportMixin, attachmentMixin } from '../js/mixins'
+import { categoryMixin, reportMixin, attachmentMixin, chatMixin } from '../js/mixins'
 import { REIMBURSE_TYPE_MAP, IF_SHOW_MAP, REMARK_TEXT_MAP } from '../js/map'
+import rightImg from '@/assets/table/right.png'
 export default {
   inject: ['parentVm'],
-  mixins: [categoryMixin, reportMixin, attachmentMixin],
+  mixins: [categoryMixin, reportMixin, attachmentMixin, chatMixin],
   components: {
     upLoadFile,
     Pagination,
@@ -728,7 +773,9 @@ export default {
     CommonTable,
     Report,
     Remark,
-    AreaSelector
+    AreaSelector,
+    zxform,
+    zxchat
   },
   props: {
     title: {
@@ -772,6 +819,8 @@ export default {
   },
   data () {
     return {
+      orderLoading: false, // orderWrapper loading
+      rightImg, // 箭头图标
       ifShowTraffic: true, // 是否展示交通补贴表格， 以下类似
       ifShowOther: true,
       ifShowAcc: true,
@@ -852,8 +901,8 @@ export default {
         limit: 30
       },
       remarkBtnList: [
-        { btnText: '取消', handleClick: this.closeRemarkDialog },
-        { btnText: '确认', handleClick: this.approve }
+        { btnText: '确认', handleClick: this.approve },
+        { btnText: '取消', handleClick: this.closeRemarkDialog, className: 'close' }
       ],
       selectedList: [], // 费用列表导出的数据，用来后续判断导出列表中是否可选
       remarkType: '', // 
@@ -1327,10 +1376,7 @@ export default {
           return
         }
         if (Number((totalMoney / days).toFixed(2)) > Number(this.accMaxMoney)) {
-          this.$message({
-            type: 'warning',
-            message: `所填金额大于住宿补贴标准(${this.accMaxMoney}元)`
-          })
+          this.$message.warning(`所填金额大于住宿补贴标准(${this.accMaxMoney}元)`)
         }
         this.$set(data, 'money', (totalMoney / days).toFixed(2))
       }
@@ -1574,7 +1620,7 @@ export default {
         })
         this.customerTotal = count
       }).catch(() => {
-        this.$message.erro('获取用户信息失败')
+        this.$message.error('获取用户信息失败')
       })
     },
     closeDialog () {
@@ -1639,10 +1685,7 @@ export default {
         let actDays = this.calculateDays(businessTripDate, endDate)
         let days = this.formData.reimburseTravellingAllowances[0].days
         if (days > actDays) {
-          this.$message({
-            type: 'warning',
-            message: '所填天数超过出差天数'
-          })
+          this.$message.warning('所填天数超过出差天数')
           this.formData.reimburseTravellingAllowances[0].days = actDays
         }
       }
@@ -1654,10 +1697,7 @@ export default {
           let item = accTableList[i]
           let { money, isAdd } = item
           if (money && Number(money) > Number(this.accMaxMoney) && this.accMaxMoney && isAdd) {
-            this.$message({
-              type: 'warning',
-              message: `所填金额大于住宿补贴标准(${this.accMaxMoney}元)`
-            })
+            this.$message.warning(`所填金额大于住宿补贴标准(${this.accMaxMoney}元)`)
             break
           }
         }
@@ -1694,10 +1734,7 @@ export default {
     importConfirm () { // 确认导入
       const selectList = this.$refs.costTable.getSelectionList()
       if (!selectList.length) {
-        return this.$message({
-          type: 'warning',
-          message: '请选择费用模板'
-        })
+        return this.$message.warning('请选择费用模板')
       }
       let invoiceNumberList = selectList.map(item => {
         return item.invoiceNumber
@@ -1954,8 +1991,43 @@ export default {
 </script>
 <style lang='scss' scoped>
 .order-wrapper {
+  position: relative;
   // max-height: 700px;
   // overflow-y: auto;
+  /* 头部 */
+  .head-title-wrapper {
+    position: absolute;
+    top: -34px;
+    left: 51px;
+    p {
+      min-width: 65px;
+      margin-right: 10px;
+      font-size: 12px;
+      font-weight: bold;
+      span {
+        font-weight: normal;
+      }
+    }
+  }
+  .my-form-wrapper {
+    .upload-title {
+      box-sizing: border-box;
+      width: 80px;
+      height: 18px;
+      line-height: 18px;
+      font-size: 12px;
+      text-align: right;
+      white-space: nowrap;
+      &.money {
+        font-size: 18px;
+        font-weight: bold;
+      }
+    }
+    .money-text {
+      font-size: 18px;
+      font-weight: bold;
+    }
+  }
   .scroll-bar {
     &.el-scrollbar {
        ::v-deep {
@@ -2006,16 +2078,6 @@ export default {
       font-size: 12px;
       text-align: right;
       white-space: nowrap;
-      &.money {
-        padding-right: 24px;
-        font-size: 18px;
-        font-weight: bold;
-      }
-    }
-    .money-text {
-      margin-left: -12px;;
-      font-size: 18px;
-      font-weight: bold;
     }
   }
   .history-wrapper {
@@ -2088,7 +2150,7 @@ export default {
       }
       .title {
         position: relative;
-        font-size: 16px;
+        font-size: 12px;
         .total-money {
           position: absolute;
           overflow: visible;
@@ -2097,7 +2159,8 @@ export default {
           // width: 400px;
           white-space: nowrap;
           transform: translate3d(100%, 0, 0);
-          font-size: 12px;
+          font-size: 16px;
+          font-weight: bold;
         }
       }
     }
