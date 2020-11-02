@@ -1022,6 +1022,7 @@ export default {
       }
       let { newestContactTel, newestContacter, problemTypeName, problemTypeId } = val;
       Object.assign(this.form, val);
+      console.log(newestContacter, newestContactTel)
       this.form.newestContacter = newestContacter; //最新联系人,
       this.form.newestContactTel = newestContactTel;
       this.form.createTime = this.form.createTime.slice(0, -3)
@@ -1268,8 +1269,10 @@ export default {
             if (this.cntctPrsnList && this.cntctPrsnList.length) {
             let firstValue = res.result.cntctPrsnList[0]
               let { tel1, tel2, cellolar, name } = firstValue
-              this.form.newestContacter = name
-              this.form.newestContactTel = tel1 || tel2 || cellolar
+              if (this.formName !== '确认') {
+                this.form.newestContacter = name
+                this.form.newestContactTel = tel1 || tel2 || cellolar
+              }
             }
             if (this.addressList.length) {
               let { address, building } = this.addressList[0];
