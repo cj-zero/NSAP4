@@ -1,137 +1,158 @@
 <template>
   <div class="laboratory-wrapper">
     <div class="search-wrapper">
-    <sticky :className="'sub-navbar'">
-    <search @search="onSearch" :options="options"></search>
-    </sticky>
+      <sticky :className="'sub-navbar'">
+        <search @search="onSearch" :options="options"></search>
+      </sticky>
     </div>
-    <div class="app-container" >
+    <div class="app-container">
       <el-table
+        v-loading="loading"
         :data="tableData"
         border
-        style="width: 100%; 100%">
-        <el-table-column
-          fixed
-          label="序号"
-          width="120">
+        style="width: 100%;"
+      >
+        <el-table-column fixed label="序号" width="120">
           <template slot-scope="scope">
-            {{ scope.$index+1 }}
+            {{ scope.$index + 1 }}
           </template>
         </el-table-column>
-        <el-table-column
-          prop="id"
-          label="资产ID"
-          width="120">
+        <el-table-column prop="id" label="资产ID" width="120">
+        </el-table-column>
+        <el-table-column prop="assetCategory" label="类别" width="120">
+        </el-table-column>
+        <el-table-column prop="assetType" label="型号" width="120">
         </el-table-column>
         <el-table-column
-          prop="assetCategory"
-          label="类别"
-          width="120">
-        </el-table-column>
-        <el-table-column
-          prop="assetCCNumber"
+          prop="assetStockNumber"
           label="出厂编号S/N"
-          width="120">
+          width="120"
+        >
+        </el-table-column>
+        <el-table-column prop="assetNumber" label="资产编号" width="120">
+        </el-table-column>
+        <el-table-column prop="orgName" label="部门" width="120">
+        </el-table-column>
+        <el-table-column prop="assetCategorys" label="计量特性" width="370">
+        </el-table-column>
+        <el-table-column prop="assetInspectType" label="送检类型" width="120">
+        </el-table-column>
+        <el-table-column prop="assetStartDate" label="最近校准日期" width="140">
+        </el-table-column>
+        <el-table-column prop="assetEndDate" label="失效日期" width="140">
+        </el-table-column>
+        <el-table-column prop="assetStatus" label="状态" width="120">
+        </el-table-column>
+        <el-table-column prop="assetRemarks" label="备注" width="120">
         </el-table-column>
         <el-table-column
-          prop="assetZCNumber"
-          label="资产编号"
-          width="120">
-        </el-table-column>
-        <el-table-column
-          prop="orgName"
-          label="部门"
-          width="120">
-        </el-table-column>
-        <el-table-column 
-          label="计量特性"
-          width="370"
+          prop="assetCalibrationCertificate"
+          label="校准证书"
+          width="120"
         >
           <template slot-scope="scope">
-            <el-row v-for="(item, index) in scope.row.metrologicalList" :key="index">
-              {{ item }}
-            </el-row>
-          </template>
-        </el-table-column>
-		<el-table-column
-		prop="assetInspectType"
-		label="类型"
-		width="120">
-		</el-table-column>
-        <el-table-column
-          prop="assetJZDate"
-          label="最近校准日期"
-          width="120">
-        </el-table-column>
-        <el-table-column
-          prop="assetSXDate"
-          label="失效日期"
-          width="120">
-        </el-table-column>
-        <el-table-column
-          prop="assetStatus"
-          label="状态"
-          width="120">
-        </el-table-column>
-        <el-table-column
-          prop="assetRemarks"
-          label="备注"
-          width="120">
-        </el-table-column>
-        <el-table-column
-          prop="assetJZCertificate"
-          label="校准证书"
-          width="120">
-          <template slot-scope="scope">
-            <el-row type="flex" justify="space-around">
+            <el-row
+              v-if="scope.row.assetCalibrationCertificate"
+              type="flex"
+              justify="space-around"
+            >
               <el-col :span="15">
-                <a :href="scope.row.assetJZCertificate" target="_blank" class="view">查看文件</a>
+                <a
+                  :href="getImgUrl(scope.row.assetCalibrationCertificate)"
+                  target="_blank"
+                  class="view"
+                  >查看文件</a
+                >
               </el-col>
               <el-col :span="9">
-                <a :href="scope.row.assetJZCertificate" download>下载</a>
+                <span
+                  class="download"
+                  @click="_download(scope.row.assetCalibrationCertificate)"
+                  >下载</span
+                >
               </el-col>
             </el-row>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="assetJSFile"
-          label="技术文件"
-          width="120">
+        <el-table-column prop="assetTCF" label="技术文件" width="120">
           <template slot-scope="scope">
-            <el-row type="flex" justify="space-around">
+            <el-row
+              v-if="scope.row.assetTCF"
+              type="flex"
+              justify="space-around"
+            >
               <el-col :span="15">
-                <a :href="scope.row.assetJSFile" target="_blank" class="view">查看文件</a>
+                <a
+                  :href="getImgUrl(scope.row.assetTCF)"
+                  target="_blank"
+                  class="view"
+                  >查看文件</a
+                >
               </el-col>
               <el-col :span="9">
-                <a :href="scope.row.assetJSFile" download>下载</a>
+                <span class="download" @click="_download(scope.row.assetTCF)"
+                  >下载</span
+                >
               </el-col>
             </el-row>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="assetJZDataList"
-          label="校准数据"
-          width="120">
+        <el-table-column label="校准数据" width="120">
           <template slot-scope="scope">
-           <template v-for="(item, index) in scope.row.assetJZDataList">
-              <el-row type="flex" justify="space-around" :key="index">
+            <template>
+              <el-row
+                v-if="scope.row.assetInspectDataOne"
+                type="flex"
+                justify="space-around"
+              >
                 <el-col :span="15">
-                  <a :href="item" target="_blank" class="view">查看文件</a>
+                  <a
+                    :href="getImgUrl(scope.row.assetInspectDataOne)"
+                    target="_blank"
+                    class="view"
+                    >查看文件1</a
+                  >
                 </el-col>
                 <el-col :span="9">
-                  <a :href="item" download>下载</a>
+                  <span
+                    class="download"
+                    @click="_download(scope.row.assetInspectDataOne)"
+                    >下载</span
+                  >
+                </el-col>
+              </el-row>
+              <el-row
+                v-if="scope.row.assetInspectDataTwo"
+                type="flex"
+                justify="space-around"
+              >
+                <el-col :span="15">
+                  <a
+                    :href="getImgUrl(scope.row.assetInspectDataTwo)"
+                    target="_blank"
+                    class="view"
+                    >查看文件2</a
+                  >
+                </el-col>
+                <el-col :span="9">
+                  <span
+                    class="download"
+                    @click="_download(scope.row.assetInspectDataTwo)"
+                    >下载</span
+                  >
                 </el-col>
               </el-row>
             </template>
           </template>
         </el-table-column>
-        <el-table-column
-          fixed="right"
-          label="操作"
-          width="100">
+        <el-table-column fixed="right" label="操作" width="100">
           <template slot-scope="scope">
-            <el-button @click="handleClick(scope.row, 'view')" type="text" size="small">查看</el-button>
-            <el-button type="text" size="small" @click="handleClick(scope.row, 'edit')">编辑</el-button>
+            <el-button @click="handleClick(scope.row)" type="text" size="small"
+              >查看</el-button
+            >
+            <el-button type="text" size="small" @click="handleClick(scope.row)"
+              >编辑</el-button
+            >
           </template>
         </el-table-column>
       </el-table>
@@ -144,152 +165,156 @@
         @pagination="handleChange"
       />
       <!-- 弹窗 -->
-      <el-dialog :visible.sync="dialogFormVisible" width="60%">
-        <el-tabs v-model="activeName" type="card" @tab-click="handleClick">
-          <el-tab-pane label="详情" name="first">
-            <detail :options="options"></detail>
-          </el-tab-pane>
-          <el-tab-pane label="送检记录" name="second">
-            <inspection></inspection>
-          </el-tab-pane>
-          <el-tab-pane label="操作记录" name="third">
-            <opertation></opertation>
-          </el-tab-pane>
-        </el-tabs>
-        <div slot="footer" class="dialog-footer">
-          <el-button @click="dialogFormVisible = false" size="mini">取 消</el-button>
-          <el-button type="primary" @click="dialogFormVisible = false" size="mini">确 定</el-button>
-        </div>
-      </el-dialog>
+      <detail ref="detail" :options="options"></detail>
     </div>
   </div>
 </template>
 
 <script>
-import Sticky from "@/components/Sticky"
-import Pagination from '@/components/Pagination'
-import Search from './search'
-import Opertation from './operation'
-import Inspection from './inspection'
-import Detail from './detail'
-import { getList, getListCategoryName } from '@/api/assetmanagement'
+import Sticky from "@/components/Sticky";
+import Pagination from "@/components/Pagination";
+import Search from "./search";
+import Detail from "./detail";
+import { getList, getListCategoryName } from "@/api/assetmanagement";
+import { download } from "@/utils/file";
 export default {
   components: {
     Sticky,
     Pagination,
-    Opertation,
-    Inspection,
     Detail,
-    Search
+    Search,
   },
-  created () {
-    this._getList(this.pageConfig)
-    this._getListCategoryName()
+  created() {
+    this._getList(this.pageConfig);
+    this._getListCategoryName();
   },
   methods: {
-    _getList (pageConfig) {
-      getList(pageConfig).then(res => {
-        this.tableData = this._normalizeData(res.data)
-		//console.log("获取到的数据为："+JSON.stringify(res.data))
-      })
+    _getList(pageConfig) {
+      this.loading = true;
+      getList(pageConfig)
+        .then((res) => {
+          this.loading = false;
+          this.tableData = this._normalizeData(res.data);
+          this.totalCount = res.count;
+        })
+        .catch((err) => {
+          this.loading = false;
+          this.$message.error(err.message);
+        });
     },
     /** 格式化tabelData */
-    _normalizeData (data) {
-      let newList = data.map(item => {
-        let { assetJZData1, assetJZData2, metrological } = item
-        let dataList = [], metrologicalList = []
-        assetJZData1 && dataList.push(assetJZData1)
-        assetJZData2 && dataList.push(assetJZData2)
-        item.assetJZDataList = dataList
+    _normalizeData(data) {
+      let newList = data.map((item) => {
+        let { assetJZData1, assetJZData2, metrological } = item;
+        let dataList = [],
+          metrologicalList = [];
+        assetJZData1 && dataList.push(assetJZData1);
+        assetJZData2 && dataList.push(assetJZData2);
+        item.assetJZDataList = dataList;
         if (metrological) {
-          metrologicalList = metrological.split('\\r\\n')
+          metrologicalList = metrological.split("\\r\\n");
         }
-        item.metrologicalList = metrologicalList
-        return item
-      })
-      // console.log(newList, 'newList')
-      return newList
+        item.metrologicalList = metrologicalList;
+        return item;
+      });
+      return newList;
     },
-    _getListCategoryName () {
-      getListCategoryName().then(res => {
-        this.options = this._initOptions(res.data)
-        // console.log(this.options, 'options')
-      })
+    _getListCategoryName() {
+      getListCategoryName().then((res) => {
+        this.options = this._initOptions(res.data);
+      });
     },
-    onSearch (info) 
-	{
-		getList(info).then(res => {
-		//console.log('发送的数据：'+JSON.stringify(info))
-		this.tableData = this._normalizeData(res.data)
-				//console.log("获取到的数据为："+JSON.stringify(res.data))
-		})
+    onSearch(info) {
+      if (info.date) {
+        info.assetStartDate = info.date[0];
+        info.assetEndDate = info.date[1];
+      } else {
+        info.assetStartDate = "";
+        info.assetEndDate = "";
+      }
+      this.loading = true;
+      getList(info)
+        .then((res) => {
+          this.loading = false;
+          this.tableData = this._normalizeData(res.data);
+          this.totalCount = res.count;
+        })
+        .catch((err) => {
+          this.loading = false;
+          this.$message.error(err.message);
+        });
     },
-    _initOptions (data) {
-          const target = {}
-          data.forEach(item => {
-            let { typeId, name } = item
-            // if (!target[typeId]) {
-            //   target[typeId] = []
-            //   target[typeId].push(name)
-            // } else {
-            //   target[typeId].push(name)
-            // }
-            let value = { label: name, value: name }
-            target[typeId] 
-              ? target[typeId].push(value)
-              : (target[typeId] = []).push(value)
-          })
-          return target
-        },
+    _initOptions(data) {
+      const target = {};
+      data.forEach((item) => {
+        let { typeId, name } = item;
+        let value = { label: name, value: name };
+        target[typeId]
+          ? target[typeId].push(value)
+          : (target[typeId] = []).push(value);
+      });
+      return target;
+    },
     // 点击操作按钮
     handleClick(row) {
-      console.log(row);
-      this.dialogFormVisible = true
+      this.$refs.detail.open(row.id);
     },
-    handleChange (pageConfig) {
+    handleChange(pageConfig) {
       this._getList({
-        ...pageConfig
-      })
-    }
-  },
-  computed: {
-    totalCount () {
-      return this.tableData.length
-    }
+        ...pageConfig,
+      });
+    },
+    getImgUrl(id) {
+      if (!id) return "";
+      return `${this.baseURL}/files/Download/${id}?X-Token=${this.tokenValue}`;
+    },
+    _download(id) {
+      const src = this.getImgUrl(id);
+      if (src) {
+        download(src);
+      }
+    },
   },
   data() {
     return {
+      baseURL: process.env.VUE_APP_BASE_API,
+      tokenValue: this.$store.state.user.token,
       pageConfig: {
         page: 1, // 当前页数
-        limit: 20// 每一页的个数
+        limit: 20, // 每一页的个数
       },
-      activeName: 'first',
+      totalCount: 0,
+      activeName: "first",
       dialogFormVisible: false,
       form: {
-        name: '',
-        region: '',
-        date1: '',
-        date2: '',
+        name: "",
+        region: "",
+        date1: "",
+        date2: "",
         delivery: false,
         type: [],
-        resource: '',
-        desc: ''
+        resource: "",
+        desc: "",
       },
-      formLabelWidth: '120px',
+      formLabelWidth: "120px",
       tableData: [],
-      options: {}
-    }
-  }
-}
+      options: {},
+      loading: false,
+    };
+  },
+};
 </script>
-<style lang='scss' scoped>
+<style lang="scss" scoped>
 .laboratory-wrapper {
   .view {
-    color: rgba(181, 217, 255, 1);
+    color: #409eff;
     text-decoration: underline;
   }
   .search-wrapper {
     padding: 10px;
   }
+}
+.download {
+  cursor: pointer;
 }
 </style>
