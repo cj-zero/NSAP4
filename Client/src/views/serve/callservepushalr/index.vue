@@ -147,7 +147,7 @@
         ></zxform>
         </el-col>
           <el-col :span="6" class="lastWord">   
-            <zxchat :serveId="serveId"></zxchat>
+            <zxchat :serveId="serveId" formName="查看"></zxchat>
           </el-col>
         </el-row>
 
