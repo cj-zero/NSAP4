@@ -1802,10 +1802,10 @@ namespace OpenAuth.App
             var serviceInfo = await UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId).FirstOrDefaultAsync();
             //客服Id
             string RecepUserId = serviceInfo.RecepUserId;
-            if (!string.IsNullOrEmpty(RecepUserId) && RecepUserId.Equals(FromUserId))
+            if (!string.IsNullOrEmpty(RecepUserId) )
             {
                 var recepUserInfo = await UnitWork.Find<AppUserMap>(a => a.UserID == RecepUserId).FirstOrDefaultAsync();
-                if (recepUserInfo != null && recepUserInfo.AppUserId > 0)
+                if (recepUserInfo != null && recepUserInfo.AppUserId > 0 && !recepUserInfo.AppUserId.Equals(FromUserId))
                 {
                     var msgObj = new ServiceOrderMessageUser
                     {
@@ -1820,10 +1820,10 @@ namespace OpenAuth.App
             }
             //主管Id
             string SupervisorId = serviceInfo.SupervisorId;
-            if (!string.IsNullOrEmpty(SupervisorId) && SupervisorId.Equals(FromUserId))
+            if (!string.IsNullOrEmpty(SupervisorId))
             {
                 var superUserInfo = await UnitWork.Find<AppUserMap>(a => a.UserID == SupervisorId).FirstOrDefaultAsync();
-                if (superUserInfo != null && superUserInfo.AppUserId > 0)
+                if (superUserInfo != null && superUserInfo.AppUserId > 0 && !superUserInfo.AppUserId.Equals(FromUserId))
                 {
                     var msgObj = new ServiceOrderMessageUser
                     {
