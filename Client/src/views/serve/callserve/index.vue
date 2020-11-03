@@ -173,6 +173,7 @@
       <el-dialog
         v-el-drag-dialog
         width="800px"
+        :modal="false"
         :close-on-click-modal="false"
         :visible.sync="dialogInfoVisible"
         title="客户信息"
@@ -185,6 +186,8 @@
         width="900px"
         top="10vh"
         class="dialog-mini"
+        :modal="false"
+        :modal-append-to-body="false"
         @close="closeCustoner"
         :close-on-click-modal="false"
         :destroy-on-close="true"
@@ -212,6 +215,8 @@
         v-el-drag-dialog
         width="1210px"
         top="10vh"
+        :modal="false"
+        :modal-append-to-body="false"
         class="dialog-mini"
         @open="openDetail"
         @close="closeCustoner"
@@ -249,12 +254,13 @@
       <!-- 只能查看的表单 -->
       <el-dialog
         v-el-drag-dialog
+        :modal="false"
+        :modal-append-to-body="false"
         width="1210px"
         top="10vh"
         title="服务单详情"
         :close-on-click-modal="false"
         destroy-on-close
-        :modal-append-to-body="false"
         class="addClass1 dialog-mini"
         @open="openDetail"
         :visible.sync="dialogFormView"
@@ -277,7 +283,7 @@
         </el-row>
 
         <div slot="footer">
-          <el-button size="mini" @click="handlePhone(multipleSelection)" v-if="isCallCenter">回访</el-button>
+          <el-button size="mini" @click="handlePhone(multipleSelection, true)" v-if="isCallCenter">回访</el-button>
           <el-button size="mini" @click="dialogFormView = false">取消</el-button>
           <el-button size="mini" type="primary" @click="dialogFormView = false">确认</el-button>
         </div>
@@ -297,7 +303,8 @@
         width="1015px"
         center
         v-el-drag-dialog
-        :append-to-body="true"
+        :modal="false"
+        :append-to-body="isRateAToBody"
       >
         <Rate :data="commentList" @changeComment="onChangeComment" :isView="isView" ref="rateRoot" />
         <div slot="footer">
@@ -310,6 +317,8 @@
         v-el-drag-dialog
         width="983px"
         class="dialog-mini"
+        :modal="false"
+        :modal-append-to-body="false"
         :close-on-click-modal="false"
         title="服务行为报告单"
         :visible.sync="dialogReportVisible"
@@ -324,8 +333,10 @@
         v-el-drag-dialog
         width="983px"
         class="dialog-mini"
+        :modal="false"
         :close-on-click-modal="false"
         title="分析报表"
+        :modal-append-to-body="false"
         :visible.sync="dialogAnalysisVisible"
       >
         <Analysis
@@ -333,6 +344,31 @@
           :data="analysisData"
         ></Analysis>
       </el-dialog>
+      <!-- <el-dialog
+        v-el-drag-dialog
+        width="983px"
+        class="dialog-mini"
+        :close-on-click-modal="false"
+        title="分析报表"
+        :modal-append-to-body="false"
+        :visible.sync="dialog123"
+      >
+        12312313
+        <el-button @click="dialog1234 = true">点击点击</el-button>
+        <el-dialog
+          v-el-drag-dialog
+          width="300px"
+          class="dialog-mini"
+          :append-to-body="true" 
+          :close-on-click-modal="false"
+          title="分析"
+          :modal-append-to-body="false"
+          :visible.sync="dialog1234" 
+          >
+          1234123456
+        </el-dialog>
+      </el-dialog>
+      <el-button @click="dialog123 = true">按钮</el-button> -->
     </div>
   </div>
 </template>
@@ -419,6 +455,8 @@ export default {
   },
   data() {
     return {
+      dialog123: true,
+      dialog1234: false,
       radio: "", //单选
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
@@ -572,6 +610,7 @@ export default {
       serviceOrderId: '', // 服务单ID 用于后续工单的创建和修改
       exportExcelUrl: '/serve/ServiceOrder/ExportExcel', // 表格导出地址
       dialogRateVisible: false,
+      isRateAToBody: false, // 是否将回访弹窗插入到body中
       commentList: {}, // 评价内容 (新增评价或者查看评价 都要用到)
       newCommentList: {}, // 用于存放修改后的评分列表
       isView: false, // 评分标识(是否是查看)
@@ -977,7 +1016,7 @@ export default {
         this.$message.error('暂无数据')
       })
     },
-    handlePhone (row) { // 电话回访
+    handlePhone (row, isInTable) { // 电话回访
       let { serviceOrderId, serviceWorkOrders } = row // 8 代表已回访
       let hasVisit = serviceWorkOrders.every(item => { // 是否已经回访
         return Number(item.status) === 8
@@ -994,6 +1033,7 @@ export default {
           this.isView = false
           this.commentList = this._normalizeCommentList(res, row)
           this.dialogRateVisible = true
+          this.isRateAToBody = Boolean(isInTable) // 判断是否将dialog插入到body中
         }).catch(err => {
           this.$message.error(err.message)
         })

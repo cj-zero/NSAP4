@@ -74,10 +74,12 @@
           top="5vh"
           width="1210px"
           class="dialog-mini"
+          :modal-append-to-body="false"
           title="服务单详情"
           :destroy-on-close="true"
           :close-on-click-modal="false"
           :visible.sync="dialogFormView"
+          :modal="false"
           @open="openDetail"
         >
         <el-row :gutter="20" class="position-view">

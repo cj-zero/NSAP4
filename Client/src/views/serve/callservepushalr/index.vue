@@ -127,6 +127,7 @@
       <el-dialog
         width="1210px"
         top="10vh"
+        :modal="false"
         title="服务单详情"
         :close-on-click-modal="false"
         destroy-on-close
@@ -161,6 +162,7 @@
         :visible.sync="dialogTable"
         :destroy-on-close="true"
         center
+        :modal="false"
         width="800px"
       >
         <DynamicTable
@@ -178,6 +180,7 @@
         :visible.sync="dialogTree"
         :destroy-on-close="true"
         center
+        :modal="false"
         width="300px"
       >
         <treeList @close="dialogTree=false"></treeList>
@@ -188,6 +191,7 @@
       </el-dialog>
       <el-dialog
         v-el-drag-dialog
+        :modal="false"
         :visible.sync="dialogOrder"
         :destroy-on-close="true"
         title="选择转派对象"
@@ -229,6 +233,7 @@
       <el-dialog
         width="983px"
         class="dialog-mini"
+        :modal="false"
         :close-on-click-modal="false"
         title="服务行为报告单"
         :visible.sync="dialogReportVisible"

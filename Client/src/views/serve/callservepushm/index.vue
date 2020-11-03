@@ -108,6 +108,7 @@
       <el-dialog
         width="1210px"
         top="10vh"
+        :modal="false"
         title="服务单详情"
         :close-on-click-modal="false"
         destroy-on-close
@@ -142,6 +143,7 @@
         :visible.sync="dialogTable"
         :destroy-on-close="true"
         center
+        :modal="false"
         width="800px"
       >
         <DynamicTable
@@ -155,6 +157,7 @@
         </span>
       </el-dialog>
       <el-dialog
+        :modal="false"
         v-el-drag-dialog
         :visible.sync="dialogTree"
         :destroy-on-close="true"
@@ -173,6 +176,7 @@
         :destroy-on-close="true"
         title="选择派单对象"
         center
+        :modal="false"
         :modal-append-to-body="false"
         width="550px"
         @closed="onClosed"

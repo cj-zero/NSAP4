@@ -73,3 +73,9 @@
     background-color: #fff !important;
   }
 }
+
+/* 弹窗外层样式 */
+.el-dialog__wrapper, .v-modal {
+  position: absolute;
+  // position: fixed;
+}

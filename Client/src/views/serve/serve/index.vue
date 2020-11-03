@@ -89,6 +89,7 @@
         v-el-drag-dialog
         :destroy-on-close="true"
         class="dialog-mini"
+        :modal="false"
         width="500px"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"

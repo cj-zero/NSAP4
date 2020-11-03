@@ -640,6 +640,7 @@
       class="addClass1"
       :title="`第${sortForm}工单`"
       center
+      :modal="false"
       :destroy-on-close="true"
       :visible.sync="proplemTree"
       width="250px"
@@ -654,6 +655,7 @@
       :append-to-body="true"
       class="addClass1"
       loading
+      :modal="false"
       :visible.sync="solutionOpen"
       width="1000px"
       :close-on-click-modal="false"
@@ -676,6 +678,7 @@
       :append-to-body="true"
       :destroy-on-close="true"
       :modal-append-to-body="false"
+      :modal="false"
       class="addClass1"
       title="选择制造商序列号"
       @open="openDialog"
@@ -743,6 +746,8 @@
       width="983px"
       class="dialog-mini"
       :append-to-body="true"
+      :modal-append-to-body="false"
+      :modal="false"
       :close-on-click-modal="false"
       title="服务行为报告单"
       :visible.sync="dialogReportVisible"
