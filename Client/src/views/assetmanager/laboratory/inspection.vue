@@ -3,15 +3,15 @@
     <el-table-column label="校准日期" prop="inspectStartDate" :formatter="formatter"> </el-table-column>
     <el-table-column label="失效日期" prop="inspectEndDate" :formatter="formatter"> </el-table-column>
     <el-table-column label="校准证书">
-      <template v-if="scope.row.inspectCertificate" slot-scope="scope">
+      <template slot-scope="scope">
         <a :href="getFileUrl(scope.row.inspectCertificate)" class="item" target="_blank">查看文件</a>
-        <span class="item" @click="_download(scope.row.inspectCertificate)">下载</span>
+        <a :href="getFileUrl(scope.row.inspectCertificate)" class="item" target="_blank" download>下载</a>
       </template>
     </el-table-column>
     <el-table-column label="校准数据">
-      <template v-if="scope.row.inspectDataTwo" slot-scope="scope">
-        <a v-if="scope.row.inspectDataTwo" :href="getFileUrl(scope.row.inspectDataTwo)" class="item" target="_blank">查看文件</a>
-        <span class="item" @click="_download(scope.row.inspectDataTwo)">下载</span>
+      <template slot-scope="scope">
+        <a :href="getFileUrl(scope.row.inspectDataTwo)" class="item" target="_blank">查看文件</a>
+        <a :href="getFileUrl(scope.row.inspectDataTwo)" class="item" target="_blank" download>下载</a>
       </template>
     </el-table-column>
   </el-table>

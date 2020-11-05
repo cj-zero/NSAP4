@@ -78,7 +78,7 @@
                 <a :href="getImgUrl(scope.row.assetCalibrationCertificate)" target="_blank" class="view">查看文件</a>
               </el-col>
               <el-col :span="9">
-                <span class="download" @click="_download(scope.row.assetCalibrationCertificate)">下载</span>
+                <a :href="getImgUrl(scope.row.assetCalibrationCertificate)" target="_blank" class="view" download>下载</a>
               </el-col>
             </el-row>
           </template>
@@ -90,7 +90,7 @@
                 <a :href="getImgUrl(scope.row.assetInspectDataOne)" target="_blank" class="view">查看文件</a>
               </el-col>
               <el-col :span="9">
-                <span class="download" @click="_download(scope.row.assetInspectDataOne)">下载</span>
+                <a :href="getImgUrl(scope.row.assetInspectDataOne)" target="_blank" class="view" download>下载</a>
               </el-col>
             </el-row>
           </template>
@@ -103,7 +103,7 @@
                   <a :href="getImgUrl(scope.row.assetInspectDataTwo)" target="_blank" class="view">查看文件</a>
                 </el-col>
                 <el-col :span="9">
-                  <span class="download" @click="_download(scope.row.assetInspectDataTwo)">下载</span>
+                  <a :href="getImgUrl(scope.row.assetInspectDataTwo)" target="_blank" class="view" download>下载</a>
                 </el-col>
               </el-row>
             </template>
@@ -116,7 +116,7 @@
                 <a :href="getImgUrl(scope.row.assetTCF)" target="_blank" class="view">查看文件</a>
               </el-col>
               <el-col :span="9">
-                <span class="download" @click="_download(scope.row.assetTCF)">下载</span>
+                <a :href="getImgUrl(scope.row.assetTCF)" target="_blank" class="view" download>下载</a>
               </el-col>
             </el-row>
           </template>
@@ -276,17 +276,14 @@ export default {
   }
 }
 
-.view {
-  color: #409eff;
-  border-bottom: 1px solid currentColor;
-}
-.search-wrapper {
-  padding: 10px;
-}
+.view,
 .download {
   color: #409eff;
   border-bottom: 1px solid currentColor;
   cursor: pointer;
+}
+.search-wrapper {
+  padding: 10px;
 }
 .table-btns {
   display: flex;
