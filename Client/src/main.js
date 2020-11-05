@@ -28,8 +28,15 @@ import FrmLeaveReqDetail from '@/views/forms/userDefine/frmLeaveReq/detail'
 
 // 全局过滤器
 import { toThousands } from '@/utils/format'
-
 Vue.filter('toThousands', toThousands)
+
+// 全局指令
+import elDragDialog from '@/directive/el-dragDialog'
+Vue.directive('elDragDialog', elDragDialog)
+
+// 全局组件
+import MyDialog from '@/components/Dialog'
+Vue.component('MyDialog', MyDialog)
 // 引入PDFJS
 Vue.use(ElementUI, { locale })
 Vue.use(VueContextMenu)
@@ -41,10 +48,7 @@ VueAMap.initAMapApiLoader({
   v: '1.4.4'
 });
 
-// vm.$on('pendingNumber', val => {
-//   console.log(val, 'message')
-//   Vue.prototype.$pendingNumber = val
-// })
+
 Vue.config.productionTip = false
 Vue.prototype.$layer = layer(Vue, {
   msgtime: 3

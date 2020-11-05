@@ -637,8 +637,8 @@
       :modal-append-to-body="false"
       :append-to-body="true"
       :close-on-click-modal="false"
-      class="addClass1"
-      :title="`第${sortForm}工单`"
+      class="dialog-mini"
+      title="问题类型"
       center
       :modal="false"
       :destroy-on-close="true"
@@ -649,11 +649,11 @@
     </el-dialog>
     <el-dialog
       v-el-drag-dialog
-      :title="`第${sortForm}个工单的解决方案`"
+      title="解决方案"
       center
       :modal-append-to-body="false"
       :append-to-body="true"
-      class="addClass1"
+      class="dialog-mini"
       loading
       :modal="false"
       :visible.sync="solutionOpen"
@@ -679,7 +679,7 @@
       :destroy-on-close="true"
       :modal-append-to-body="false"
       :modal="false"
-      class="addClass1"
+      class="dialog-mini"
       title="选择制造商序列号"
       @open="openDialog"
       width="1196px"
@@ -1580,19 +1580,6 @@ export default {
   }
   ::v-deep .el-radio {
     margin-left: 0 !important;
-  }
-  ::v-deep .el-dialog__header {
-    .el-dialog__title {
-      color: white;
-    }
-    .el-dialog__close {
-      color: white;
-    }
-
-    background: lightslategrey;
-  }
-  ::v-deep .el-dialog__body {
-    padding: 10px 20px;
   }
   ::v-deep .el-button--mini {
     padding: 7px 8px;

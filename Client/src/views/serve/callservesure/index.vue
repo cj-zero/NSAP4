@@ -127,11 +127,11 @@
         width="1655px"
         top="2vh"
         class="dialog-mini"
+        :close-on-click-modal="false"
         :modal-append-to-body="false"
         :modal="false"
         @open="openCustoner"
         @close="closeCustoner"
-        :close-on-click-modal="false"
         :destroy-on-close="false"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
@@ -180,8 +180,8 @@
         class="dialog-mini"
         title="服务单详情"
         :destroy-on-close="true"
-        :modal="false"
         @open="openDetail"
+        :modal="false"
         :close-on-click-modal="false"
         :modal-append-to-body="false"
         :visible.sync="dialogFormView"
@@ -196,10 +196,12 @@
         v-el-drag-dialog
         :visible.sync="dialogTree"
         :modal-append-to-body="false"
+        :modal="false"
         :destroy-on-close="true"
         center
-        :modal="false"
+        :close-on-click-modal="false"
         width="300px"
+        class="dialog-mini"
       >
         <treeList @close="dialogTree=false"></treeList>
         <span slot="footer" class="dialog-footer">

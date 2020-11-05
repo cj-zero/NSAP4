@@ -170,10 +170,12 @@
       <el-dialog
         v-el-drag-dialog
         width="800px"
+        :modal="false"
+        class="dialog-mini"
         :close-on-click-modal="false"
         :visible.sync="dialogInfoVisible"
         title="客户信息"
-        :modal="false"
+        :modal-append-to-body="false"
       >
         <CustomerInfo :formData="customerInfo" />
       </el-dialog>
@@ -184,8 +186,9 @@
         top="10vh"
         class="dialog-mini"
         :modal="false"
-        @close="closeCustoner"
         :close-on-click-modal="false"
+        :modal-append-to-body="false"
+        @close="closeCustoner"
         :destroy-on-close="true"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
@@ -216,6 +219,7 @@
         @close="closeCustoner"
         :modal="false"
         :close-on-click-modal="false"
+        :modal-append-to-body="false"
         :destroy-on-close="true"
         :title="textMap[dialogStatus]"
         :visible.sync="FormUpdate"
@@ -297,6 +301,9 @@
         center
         v-el-drag-dialog
         :modal="false"
+        class="dialog-mini"
+        :close-on-click-modal="false"
+        :modal-append-to-body="false"
       >
         <Rate :data="commentList" @changeComment="onChangeComment" :isView="isView" ref="rateRoot" />
         <div slot="footer">
@@ -309,9 +316,10 @@
         v-el-drag-dialog
         width="983px"
         class="dialog-mini"
+        :modal="false"
         :close-on-click-modal="false"
         title="服务行为报告单"
-        :modal="false"
+        :modal-append-to-body="false"
         :visible.sync="dialogReportVisible"
         @closed="onReportClosed"
       >
@@ -324,6 +332,7 @@
         v-el-drag-dialog
         width="983px"
         :modal="false"
+        :modal-append-to-body="false"
         class="dialog-mini"
         :close-on-click-modal="false"
         title="分析报表"

@@ -89,7 +89,19 @@ const permission = {
         code && (code = code.replace(code[0],code[0].toLowerCase()))
         code && code !== undefined && state.keepAliveData.push(code)
       })
-    }
+    },
+    DELETE_KEEP_ALIVE_DATA: (state, { code: componentName, callback }) => {
+      console.log(componentName, callback)
+      let deleteIndex = state.keepAliveData.findIndex(name => name === componentName)
+      
+      if (deleteIndex > - 1) {
+        state.keepAliveData.splice(deleteIndex, 1)
+        callback()
+      }
+    },
+    ADD_KEEP_ALIVE_DATA: (state, componentName) => {
+      state.keepAliveData.push(componentName)
+    },
   },
   actions: {
     GenerateRoutes({ commit, dispatch }, data) {

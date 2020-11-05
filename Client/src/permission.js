@@ -4,6 +4,9 @@ import NProgress from 'nprogress' // Progress 进度条
 import 'nprogress/nprogress.css'// Progress 进度条样式
 import { Message } from 'element-ui'
 import { getToken } from '@/utils/auth' // 验权
+import { getSessionStorage } from '@/utils/storage'
+import { setSessionStorage } from './utils/storage'
+const hasPageRep = /page=.*/
 const whiteList = ['/login', '/oidc-callback', '/swagger', '/usermanager/profile'] // 不重定向白名单
 router.beforeEach((to, from, next) => {
   NProgress.start()
@@ -48,8 +51,17 @@ router.beforeEach((to, from, next) => {
           next({ path: '/' })
           return
         }
-        if (store.getters.modules != null) {
-          next()
+        console.log(store.getters.modules, 'modules', getSessionStorage('isUnloadRefresh'))
+        if (store.getters.modules != null) { // 登录之后并且已经加载了模块
+          
+          if (getSessionStorage('isUnloadRefresh') && hasPageRep.test(to.fullPath)) {
+            setSessionStorage('isUnloadRefresh', false)
+            let query = JSON.parse(JSON.stringify(to.query))
+            delete query.page
+            next({ ...to, replace: true, query })
+          } else {
+            next()
+          }
           return
         }
         // store.dispatch('GetRoles')
@@ -71,6 +83,7 @@ router.beforeEach((to, from, next) => {
 
         return
       }
+      setSessionStorage('isUnloadRefresh', false)
       if (whiteList.indexOf(to.path) !== -1) { // 没登录情况下过滤白名单
         next()
       } else {

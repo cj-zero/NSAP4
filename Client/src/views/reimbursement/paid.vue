@@ -1,5 +1,5 @@
 <template>
-  <div class="my-submission-wrapper">
+  <div class="my-paid-wrapper">
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
@@ -188,7 +188,7 @@ export default {
 }
 </script>
 <style lang='scss' scoped>
-.my-submission-wrapper {
+.my-paid-wrapper {
   ::v-deep .el-tabs__header {
     background-color: #fff;
     margin-bottom: 0;

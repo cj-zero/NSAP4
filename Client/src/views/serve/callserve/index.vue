@@ -50,6 +50,7 @@
             style="width: 100%;"
             highlight-current-row
             @row-click="rowClick"
+            :row-class-name="rowClassName"
           >
             <div class="mr48">
               <el-table-column type="expand">
@@ -109,6 +110,9 @@
               :width="fruit.width"
             >
               <template slot-scope="scope">
+                <div v-if="fruit.name === 'radio'">
+                  <el-radio v-model="radio" :label="scope.row.serviceOrderId"></el-radio>
+                </div>
                 <span v-if="fruit.name === 'order'">
                   {{ scope.$index + 1 }}
                 </span>
@@ -173,10 +177,11 @@
       <el-dialog
         v-el-drag-dialog
         width="800px"
-        :modal="false"
         :close-on-click-modal="false"
+        :modal-append-to-body="false"
         :visible.sync="dialogInfoVisible"
         title="客户信息"
+        :modal="false"
       >
         <CustomerInfo :formData="customerInfo" />
       </el-dialog>
@@ -185,8 +190,8 @@
         v-el-drag-dialog
         width="900px"
         top="10vh"
-        class="dialog-mini"
         :modal="false"
+        class="dialog-mini"
         :modal-append-to-body="false"
         @close="closeCustoner"
         :close-on-click-modal="false"
@@ -254,10 +259,10 @@
       <!-- 只能查看的表单 -->
       <el-dialog
         v-el-drag-dialog
-        :modal="false"
         :modal-append-to-body="false"
         width="1210px"
         top="10vh"
+        :modal="false"
         title="服务单详情"
         :close-on-click-modal="false"
         destroy-on-close
@@ -304,6 +309,7 @@
         center
         v-el-drag-dialog
         :modal="false"
+        :modal-append-to-body="false"
         :append-to-body="isRateAToBody"
       >
         <Rate :data="commentList" @changeComment="onChangeComment" :isView="isView" ref="rateRoot" />
@@ -317,10 +323,10 @@
         v-el-drag-dialog
         width="983px"
         class="dialog-mini"
-        :modal="false"
         :modal-append-to-body="false"
         :close-on-click-modal="false"
         title="服务行为报告单"
+        :modal="false"
         :visible.sync="dialogReportVisible"
         @closed="onReportClosed"
       >
@@ -333,9 +339,9 @@
         v-el-drag-dialog
         width="983px"
         class="dialog-mini"
-        :modal="false"
         :close-on-click-modal="false"
         title="分析报表"
+        :modal="false"
         :modal-append-to-body="false"
         :visible.sync="dialogAnalysisVisible"
       >
@@ -455,14 +461,13 @@ export default {
   },
   data() {
     return {
-      dialog123: true,
-      dialog1234: false,
       radio: "", //单选
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
       sure: 0,
       rightImg,
       ParentHeadOptions: [
+        { name: 'radio', width: 30 },
         { name: 'order', label: '序号', width: '50' },
         { name: "u_SAP_ID", label: "服务单号", align:'left', sortable:true, width: '80' },
         { name: "status", label: "工单状态", align: 'left', width: '70' },
@@ -714,9 +719,14 @@ export default {
           this.$message.error('查询客户信息失败')
         })
     },
+    rowClassName ({ row, rowIndex }) {
+      row.index = rowIndex
+    },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.multipleSelection = row;
+      this.radio = row.serviceOrderId
+      console.log(this.radio, 'radio')
       this.$refs.mainTable.toggleRowSelection(row);
     },
     rowClickChild(row) {
@@ -910,6 +920,7 @@ export default {
     handleCurrentChange(val) {
       this.listQuery.page = val.page;
       this.listQuery.limit = val.limit;
+      this.radio = ''
       this.getList();
     },
     handleModifyStatus(row, disable) {
@@ -1185,7 +1196,7 @@ export default {
 }
 .table_label {
   ::v-deep.el-radio {
-    margin-left: 6px;
+    // margin-left: 6px;
   }
   ::v-deep.el-radio__label {
     display: none;

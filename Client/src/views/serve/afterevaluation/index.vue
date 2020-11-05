@@ -79,7 +79,6 @@
           :destroy-on-close="true"
           :close-on-click-modal="false"
           :visible.sync="dialogFormView"
-          :modal="false"
           @open="openDetail"
         >
         <el-row :gutter="20" class="position-view">
