@@ -30,3 +30,11 @@ export function getObject (obj, key) {
   return getLocalStorage(obj)[key]
 }
 
+
+export function getSessionStorage (key) {
+  return storage.session.get(key)
+}
+
+export function setSessionStorage (key, value) {
+  storage.session.set(key, value)
+}

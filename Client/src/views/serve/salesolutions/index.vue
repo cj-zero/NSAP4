@@ -75,7 +75,10 @@
         v-el-drag-dialog
         class="dialog-mini"
         width="500px"
+        :modal="false"
         :destroy-on-close="true"
+        :close-on-click-modal="false"
+        :modal-append-to-body="false"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
       >
@@ -128,17 +131,6 @@
           <el-button size="mini" v-else type="primary" @click="updateData">确认</el-button>
         </div>
       </el-dialog>
-      <el-dialog v-el-drag-dialog :destroy-on-close="true" :visible.sync="dialogTable" center width="800px">
-        <DynamicTable
-          :formThead.sync="formTheadOptions"
-          :defaultForm.sync="defaultFormThead"
-          @close="dialogTable=false"
-        ></DynamicTable>
-          <span slot="footer" class="dialog-footer">
-    <el-button @click="dialogTable = false">取 消</el-button>
-    <el-button type="primary" @click="dialogTable = false">确 定</el-button>
-  </span>
-      </el-dialog>
     </div>
   </div>
 </template>
@@ -149,11 +141,11 @@ import waves from "@/directive/waves"; // 水波纹指令
 import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
 import Pagination from "@/components/Pagination";
-import DynamicTable from "@/components/DynamicTable";
+// import DynamicTable from "@/components/DynamicTable";
 import elDragDialog from "@/directive/el-dragDialog";
 export default {
   name: "saleSolution",
-  components: { Sticky, permissionBtn, Pagination, DynamicTable },
+  components: { Sticky, permissionBtn, Pagination },
   directives: {
     waves,
     elDragDialog

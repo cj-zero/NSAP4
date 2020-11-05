@@ -74,6 +74,7 @@
           top="5vh"
           width="1210px"
           class="dialog-mini"
+          :modal-append-to-body="false"
           title="服务单详情"
           :destroy-on-close="true"
           :close-on-click-modal="false"

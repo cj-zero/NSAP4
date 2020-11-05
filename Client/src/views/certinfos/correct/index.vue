@@ -77,6 +77,8 @@
       <el-dialog
         v-el-drag-dialog
         class="dialog-mini"
+        :modal="false"
+        :modal-append-to-body="false"
         width="500px"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
