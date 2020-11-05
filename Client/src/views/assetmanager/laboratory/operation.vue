@@ -1,13 +1,18 @@
 <template>
-  <el-timeline>
-    <el-timeline-item
-      v-for="(activity, index) in activities"
-      :key="index"
-      :timestamp="activity.timestamp"
-      color="#0bbd87"
-      >{{ activity.content }}
-    </el-timeline-item>
-  </el-timeline>
+  <div class="timeline">
+    <el-timeline>
+      <el-timeline-item
+        v-for="(activity, index) in activities"
+        :key="index"
+        :timestamp="activity.operationCreateTime"
+        color="#0bbd87"
+        @click.native="timelineClick(activity.inspectId)"
+      >
+        <el-tag effect="dark" size="small">{{ activity.operationUser }}</el-tag>
+        <div class="content" v-html="activity.operationContent"></div>
+      </el-timeline-item>
+    </el-timeline>
+  </div>
 </template>
 
 <script>
@@ -15,20 +20,31 @@ export default {
   props: {
     list: {
       type: Array,
-      default: () => [],
-    },
+      default: () => []
+    }
   },
   computed: {
     activities() {
-      return this.list
-        .map((i) => {
-          return {
-            content: i.operationContent,
-            timestamp: i.operationCreateTime,
-          };
-        })
-        .reverse();
-    },
+      const list = this.list
+      return list.reverse()
+    }
   },
-};
+  methods: {
+    timelineClick(inspectId) {
+      if (inspectId) {
+        this.$emit('timeline-click', inspectId)
+      }
+    }
+  }
+}
 </script>
+
+<style lang="scss" scoped>
+.timeline {
+  padding: 10px;
+  .content {
+    margin-top: 10px;
+    font-size: 12px;
+  }
+}
+</style>

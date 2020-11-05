@@ -6,6 +6,7 @@
     class="form-wrapper"
     v-loading="isLoading"
     :row-style="rowStyle"
+    height="100%"
   >
     <el-table-column   
       v-for="item in headOptions"
