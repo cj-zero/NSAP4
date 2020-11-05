@@ -32,8 +32,9 @@ Vue.filter('toThousands', toThousands)
 
 // 全局指令
 import elDragDialog from '@/directive/el-dragDialog'
+import debounce from '@/directive/utils/debounce'
 Vue.directive('elDragDialog', elDragDialog)
-
+Vue.directive('debounce', debounce)
 // 全局组件
 import MyDialog from '@/components/Dialog'
 Vue.component('MyDialog', MyDialog)
