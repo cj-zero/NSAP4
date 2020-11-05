@@ -6,30 +6,23 @@
     <meta charset="utf-8" />
     <title></title>
     <style>
-        .Page {
-            width: 800px;
-            height: 1130px;
-            margin: 0 auto;
+        html {
+            font-size: 16px;
         }
-
         table {
-            width: 800px;
-            height: 300px;
-            /* 表边框合并  两个单元格之间的边框进行合并 */
             margin: 0 auto;
             border-width: 1px;
             border-style: solid;
             border-color: black;
         }
-
-            table td {
-                background-color: white;
-                height: 20px;
-                width: 100px;
-                border-width: 1px;
-                border-style: dotted none none dotted;
-                border-color: black;
-            }
+        table td {
+            background-color: white;
+            height: 20px;
+            width: 120px;
+            border-width: 1px;
+            border-style: dotted none none dotted;
+            border-color: black;
+        }    
 
         .borderTop td {
             border-top-style: none;
@@ -38,59 +31,54 @@
         .borderleft {
             border-left-style: none;
         }
-
-        .typeface {
-            font-size: 16px;
-            font-weight: 888;
-        }
     </style>
 
 </head>
 
 <body>
     <div class="Page">
-        <h3 style="margin-top: 2rem; text-align: center;">差旅报销单</h3>
+        <h3 style="margin-top: 2rem; text-align: center; font-size:30px;">差旅报销单</h3>
         <table>
             <tr class="borderTop">
-                <td class="borderleft typeface">
-                    &nbsp开始日期
+                <td class="borderleft">
+                    &nbsp <b>开始日期</b>
                 </td>
                 <td style="width:140px">
                     @Model.Data.StartTime.ToString("yyyy年MM月dd日")
                 </td>
-                <td class="typeface">
-                    &nbsp结束日期
+                <td class=" ">
+                    &nbsp <b>结束日期</b>
                 </td>
                 <td style="width:140px">
                     @Model.Data.EndTime.ToString("yyyy年MM月dd日")
                 </td>
-                <td class="typeface">
-                    &nbsp总天数
+                <td class=" ">
+                    &nbsp <b>总天数</b>
                 </td>
                 <td>
                     @Model.Data.Day
                 </td>
-                <td class="typeface" style="width:50px">
-                    &nbsp单号
+                <td class=" " style="width:50px">
+                    &nbsp <b>单号</b>
                 </td>
                 <td style="width:50px">
                     @Model.Data.ReimburseId
                 </td>
             </tr>
             <tr>
-                <td class="borderleft typeface">
-                    &nbsp部门
+                <td class="borderleft">
+                    &nbsp <b>部门</b>
                 </td>
                 <td style="width:140px">
                     @Model.Data.OrgName
                 </td>
-                <td class="typeface">
-                    &nbsp姓名
+                <td class=" ">
+                    &nbsp <b>姓名</b>
                 </td>
                 <td style="width:140px">
                     @Model.Data.UserName
                 </td>
-                <td >
+                <td>
                 </td>
                 <td>
                 </td>
@@ -98,45 +86,45 @@
                 <td></td>
             </tr>
             <tr>
-                <td class="borderleft typeface">
-                    &nbsp客户名称
+                <td class="borderleft  ">
+                    &nbsp <b>客户名称</b>
                 </td>
                 <td>
                     @Model.Data.TerminalCustomer
                 </td>
-                <td class="typeface">
-                    &nbsp出差事由
+                <td class=" ">
+                    &nbsp  <b>出差事由</b>
                 </td>
                 <td colspan="5">
                     @Model.Data.FromTheme
                 </td>
             </tr>
             <tr>
-                <td class="borderleft typeface">
-                    &nbsp费用类型
+                <td class="borderleft  ">
+                    &nbsp <b>费用类型</b>
                 </td>
-                <td class="typeface" style="text-align: right;  ">
-                    金额 &nbsp
+                <td class=" " style="text-align: right;  ">
+                    <b>金额</b> &nbsp
                 </td>
-                <td class="typeface" style="text-align: right;">
-                    交通费 &nbsp
+                <td class=" " style="text-align: right;">
+                    <b>交通费</b> &nbsp
                 </td>
-                <td class="typeface" style="text-align: right;">
-                    住宿费 &nbsp
+                <td class=" " style="text-align: right;">
+                    <b>住宿费</b> &nbsp
                 </td>
-                <td class="typeface" style="text-align: right; ">
-                    其他费 &nbsp
+                <td class=" " style="text-align: right; ">
+                    <b>其他费</b> &nbsp
                 </td>
-                <td class="typeface" style="text-align: right; ">
-                    补助 &nbsp
+                <td class=" " style="text-align: right; ">
+                    <b>补助</b> &nbsp
                 </td>
-                <td class="typeface" style="text-align: right;" colspan="2">
-                    合计 &nbsp
+                <td class=" " style="text-align: right;" colspan="2">
+                    <b>合计</b> &nbsp
                 </td>
             </tr>
             <tr>
                 <td class="borderleft">
-                    &nbsp飞机
+                    &nbsp 飞机
                 </td>
                 <td style="text-align: right; ">
                     @Model.Data.Aircraft
@@ -162,14 +150,14 @@
                 </td>
                 <td rowspan="7" colspan="2" style="text-align: right; ">
                     @{ money = Model.Data.Aircraft + Model.Data.Train + Model.Data.Coach + Model.Data.Transport +
-                     Model.Data.PutUp + Model.Data.Else + Model.Data.Subsidy; }
+                       Model.Data.PutUp + Model.Data.Else + Model.Data.Subsidy; }
                     @money
                     &nbsp
                 </td>
             </tr>
             <tr>
                 <td class="borderleft">
-                    &nbsp火车
+                    &nbsp 火车
                 </td>
                 <td style="text-align: right; ">
                     @Model.Data.Train
@@ -178,7 +166,7 @@
             </tr>
             <tr>
                 <td class="borderleft">
-                    &nbsp长途汽车
+                    &nbsp 长途汽车
                 </td>
                 <td style="text-align: right; ">
                     @Model.Data.Coach
@@ -187,7 +175,7 @@
             </tr>
             <tr>
                 <td class="borderleft">
-                    &nbsp市内交通
+                    &nbsp 市内交通
                 </td>
                 <td style="text-align: right; ">
                     @Model.Data.Transport
@@ -196,7 +184,7 @@
             </tr>
             <tr>
                 <td class="borderleft">
-                    &nbsp住宿
+                    &nbsp 住宿
                 </td>
                 <td style="text-align: right; ">
                     @Model.Data.PutUp
@@ -205,7 +193,7 @@
             </tr>
             <tr>
                 <td class="borderleft">
-                    &nbsp其他
+                    &nbsp 其他
                 </td>
                 <td style="text-align: right; ">
                     @Model.Data.Else
@@ -214,7 +202,7 @@
             </tr>
             <tr>
                 <td class="borderleft">
-                    &nbsp补助
+                    &nbsp 补助
                 </td>
                 <td style="text-align: right; ">
                     @Model.Data.Subsidy
@@ -222,8 +210,8 @@
                 </td>
             </tr>
             <tr>
-                <td class="borderleft typeface">
-                    &nbsp合计(大写)
+                <td class="borderleft  ">
+                    &nbsp <b>合计(大写)</b>
                 </td>
                 <td colspan="7">
                     &nbsp
@@ -231,30 +219,30 @@
                 </td>
             </tr>
             <tr>
-                <td class="borderleft typeface">
-                    &nbsp客服主管：
+                <td class="borderleft  ">
+                    &nbsp <b>客服主管：</b>
                 </td>
                 <td class="borderleft">
                 </td>
-                <td class="borderleft typeface">
-                    &nbsp审核：
+                <td class="borderleft  ">
+                    &nbsp <b>审核：</b>
                 </td>
                 <td class="borderleft">
                 </td>
-                <td class="borderleft typeface">
-                    &nbsp复审：
+                <td class="borderleft  ">
+                    &nbsp <b>复审：</b>
                 </td>
-                <td class="borderleft typeface">
+                <td class="borderleft  ">
                 </td>
-                <td class="borderleft typeface">
-                    &nbsp出纳：
+                <td class="borderleft  ">
+                    &nbsp <b>出纳：</b>
                 </td>
-                <td class="borderleft typeface">
+                <td class="borderleft  ">
                 </td>
             </tr>
         </table>
         <div class="bill" style="width: 800px; height: 830px;">
-            <div align="center" style="line-height:830px; font-size: 18px;">票据张贴处</div>
+            <div align="center" style="line-height:830px; font-size: 20px;">票据张贴处</div>
         </div>
     </div>
 </body>

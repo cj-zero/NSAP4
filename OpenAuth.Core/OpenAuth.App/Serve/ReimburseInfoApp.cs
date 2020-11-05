@@ -232,8 +232,12 @@ namespace OpenAuth.App
                                  select new { a, b, c, d, f };
 
             ReimburseResps = ReimburseResps.OrderByDescending(r => r.f.CascadeId).ToList();
-            ReimburseResps = ReimburseResps.GroupBy(r => r.a.Id).Select(r => r.First()).ToList();
+            ReimburseResps = ReimburseResps.GroupBy(r => r.a.Id).Select(r => r.First()).OrderByDescending(r => r.a.CreateTime).ToList();
 
+            if (request.PageType == 2 || request.PageType == 5)
+            {
+                ReimburseResps = ReimburseResps.OrderBy(r => r.a.CreateTime);
+            }
             result.Count = ReimburseInfos.Count();
             result.Data = ReimburseResps.Select(r => new
                 {
@@ -605,12 +609,14 @@ namespace OpenAuth.App
             }
             #endregion
 
+            int SerialNumber = 0;
+            req.ReimburseTravellingAllowances.ForEach(r => r.CreateTime = DateTime.Now);
+            req.ReimburseOtherCharges.ForEach(r => { r.CreateTime = DateTime.Now; r.SerialNumber = ++SerialNumber; });
+            SerialNumber = 0;
+            req.ReimburseFares.ForEach(r => { r.CreateTime = DateTime.Now; r.SerialNumber = ++SerialNumber; });
+            SerialNumber = 0;
+            req.ReimburseAccommodationSubsidies.ForEach(r => { r.CreateTime = DateTime.Now; r.SerialNumber = ++SerialNumber; });
             var obj = req.MapTo<ReimburseInfo>();
-            obj.ReimburseTravellingAllowances.ForEach(r => r.CreateTime = DateTime.Now);
-            obj.ReimburseOtherCharges.ForEach(r => r.CreateTime = DateTime.Now);
-            obj.ReimburseFares.ForEach(r => r.CreateTime = DateTime.Now);
-            obj.ReimburseAccommodationSubsidies.ForEach(r => r.CreateTime = DateTime.Now);
-
             //用信号量代替锁
             await semaphoreSlim.WaitAsync();
             try
@@ -782,8 +788,13 @@ namespace OpenAuth.App
 
 
             await semaphoreSlim.WaitAsync();
+            int SerialNumber = 0;
+            req.ReimburseOtherCharges.ForEach(r => r.SerialNumber = ++SerialNumber);
+            SerialNumber = 0;
+            req.ReimburseFares.ForEach(r => r.SerialNumber = ++SerialNumber);
+            SerialNumber = 0;
+            req.ReimburseAccommodationSubsidies.ForEach(r => r.SerialNumber = ++SerialNumber);
             var obj = req.MapTo<ReimburseInfo>();
-
             try
             {
                 if (!obj.IsDraft && string.IsNullOrWhiteSpace(req.FlowInstanceId) && (string.IsNullOrWhiteSpace(obj.MainId.ToString()) || obj.MainId == 0))
@@ -1302,7 +1313,7 @@ namespace OpenAuth.App
             var user = await UnitWork.Find<User>(u => u.Id.Equals(Reimburse.CreateUserId)).FirstOrDefaultAsync();
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == Reimburse.CreateUserId).Select(r => r.SecondId).ToListAsync();
             var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
-            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == Reimburse.ServiceOrderId && c.CreateUserId.Equals(Reimburse.CreateUserId)).OrderByDescending(c => c.CreateTime).FirstOrDefaultAsync();
+            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == Reimburse.ServiceOrderId && c.CreateUserId.Equals(Reimburse.CreateUserId) && c.ServiceMode==1).OrderByDescending(c => c.CreateTime).FirstOrDefaultAsync();
             decimal Subsidy = 0;
             if (Reimburse.ReimburseTravellingAllowances != null && Reimburse.ReimburseTravellingAllowances.Count > 0)
             {
