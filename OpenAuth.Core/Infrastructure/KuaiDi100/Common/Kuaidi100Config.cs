@@ -9,11 +9,11 @@ namespace Common{
         /// <summary>
         /// 授权key
         /// </summary>
-        public string key { get; set; }
+        public string key { get; set; } = "xfEWlpDL3993";
         /// <summary>
         /// customer
         /// </summary>
-        public string customer { get; set; }
+        public string customer { get; set; } = "5A22443B478B450D1E7488E3EF0BDF02";
         /// <summary>
         /// secret
         /// </summary>
