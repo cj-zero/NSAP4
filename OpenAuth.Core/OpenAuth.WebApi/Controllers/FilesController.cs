@@ -129,8 +129,10 @@ namespace OpenAuth.WebApi.Controllers
                 return NotFound($"fileName:{fileName} is not exists");
             var f = new FileExtensionContentTypeProvider();
             f.TryGetContentType(filePath, out string contentType);
+            if (string.IsNullOrWhiteSpace(contentType))
+                contentType = "application/octet-stream";
             var fileStream = new FileStream(filePath, FileMode.Open);
-            return File(fileStream, contentType);
+            return File(fileStream, contentType, fileName);
         }
 
         [HttpGet("{fileId}")]
@@ -147,8 +149,10 @@ namespace OpenAuth.WebApi.Controllers
 
             var f = new FileExtensionContentTypeProvider();
             f.TryGetContentType(file.FileName, out string contentType);
+            if (string.IsNullOrWhiteSpace(contentType))
+                contentType = "application/octet-stream";
             var fileStream = await _app.GetFileStreamAsync(file.BucketName, file.FilePath);
-            return File(fileStream, contentType);
+            return File(fileStream, contentType, file.FileName);
         }
     }
 }
