@@ -49,6 +49,7 @@ export let commonMixin = {
   data () {
     return {
       tableData: [], // 表格数据
+      totalCount: 0,
       pageConfig: { // 分页配置
         page: 1,
         limit: 20
@@ -91,10 +92,5 @@ export let commonMixin = {
       return date.split(' ')[0]
     },
     handleClick () {}
-  },
-  computed: {
-    totalCount () {
-      return this.tableData.length
-    }
-  }
+  }  
 }
