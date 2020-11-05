@@ -1,4 +1,4 @@
-namespace  Common.Request.Sms
+namespace KuaiDi100.Common.Request.Sms
 {
     public class SendSmsReq
     {

@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace Common.Request.Electronic.Image
+namespace KuaiDi100.Common.Request.Electronic.Image
 {
     public class PrintImgParam {
         /**

@@ -1,7 +1,8 @@
 using System;
 
 
-namespace Common{
+namespace KuaiDi100.Common
+{
 public class ApiInfoConstant{
      /**
      * 查询url

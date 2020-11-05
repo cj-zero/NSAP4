@@ -1,4 +1,4 @@
-namespace Common.Request.Subscribe
+namespace KuaiDi100.Common.Request.Subscribe
 {
     public class SubscribeReq
     {

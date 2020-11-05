@@ -1,5 +1,6 @@
 
-namespace Common{
+namespace KuaiDi100.Common
+{
     /// <summary>
     /// 快递100的基础账号信息，可以在这里获取 
     /// https://poll.kuaidi100.com/manager/page/myinfo/enterprise

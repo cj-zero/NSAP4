@@ -1,7 +1,7 @@
 
 using Utils;
-using Common;
-using Common.Request.Electronic.Image;
+using KuaiDi100.Common;
+using KuaiDi100.Common.Request.Electronic.Image;
 
 public class PrintImg{
 

@@ -1,4 +1,4 @@
-namespace  Common.Request.Electronic.Html
+namespace KuaiDi100.Common.Request.Electronic.Html
 {
     public class PrintHtmlReq
     {

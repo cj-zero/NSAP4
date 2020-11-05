@@ -1,5 +1,5 @@
 using System ;
-namespace Common.Request
+namespace KuaiDi100.Common.Request
 {
     public class QueryTrackReq
     {

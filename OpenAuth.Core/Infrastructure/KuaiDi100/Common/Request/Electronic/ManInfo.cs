@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace Common.Request.Electronic
+namespace KuaiDi100.Common.Request.Electronic
 {
     public class ManInfo
     {

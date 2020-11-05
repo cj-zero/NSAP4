@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace  Common.Request.Electronic.Print
+namespace KuaiDi100.Common.Request.Electronic.Print
 {
     public class PrintCloudParam
     {

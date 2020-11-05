@@ -1,7 +1,7 @@
 
 using Newtonsoft.Json;
 
-namespace Common.Request
+namespace KuaiDi100.Common.Request
 {
     public class QueryTrackParam
     {

@@ -3,8 +3,8 @@ using System.Collections;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using Utils;
-using Common;
-using Common.Request.Subscribe;
+using KuaiDi100.Common;
+using KuaiDi100.Common.Request.Subscribe;
 
 public class Subscribe{
 

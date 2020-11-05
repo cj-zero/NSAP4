@@ -1,4 +1,4 @@
-using Common;
+using KuaiDi100.Common;
 using Utils;
 
 public static class AutoNum

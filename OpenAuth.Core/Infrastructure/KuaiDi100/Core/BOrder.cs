@@ -1,6 +1,6 @@
-using Common.Request.Border;
+using KuaiDi100.Common.Request.Border;
 using Utils;
-using Common;
+using KuaiDi100.Common;
 public static class Border
 {
     /// <summary>

@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace Common.Request.Border
+namespace KuaiDi100.Common.Request.Border
 {
     public class BOrderParam {
 

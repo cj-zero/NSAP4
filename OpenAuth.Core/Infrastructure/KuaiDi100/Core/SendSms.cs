@@ -1,8 +1,8 @@
 
 using Utils;
-using Common;
-using Common.Request;
-using Common.Request.Sms;
+using KuaiDi100.Common;
+using KuaiDi100.Common.Request;
+using KuaiDi100.Common.Request.Sms;
 
 public class SendSms{
 
