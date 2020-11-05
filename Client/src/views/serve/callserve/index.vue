@@ -277,6 +277,7 @@
         </el-row>
 
         <div slot="footer">
+          <el-button size="mini" @click="handlePhone(multipleSelection)" v-if="isCallCenter">回访</el-button>
           <el-button size="mini" @click="dialogFormView = false">取消</el-button>
           <el-button size="mini" type="primary" @click="dialogFormView = false">确认</el-button>
         </div>
@@ -292,9 +293,11 @@
       <!-- 电话回访评价 -->
       <el-dialog
         :visible.sync="dialogRateVisible"
+        :close-on-click-modal="false"
         width="1015px"
         center
         v-el-drag-dialog
+        :append-to-body="true"
       >
         <Rate :data="commentList" @changeComment="onChangeComment" :isView="isView" ref="rateRoot" />
         <div slot="footer">
@@ -368,6 +371,9 @@ export default {
     ...mapGetters([
       'formList'
     ]),
+    isCallCenter () { // 是否是呼叫中心
+      return this.$store.state.user.userInfoAll.roles.some(item => item === '呼叫中心')
+    },
     searchConfig () {
       return [
         { width: 100, placeholder: '服务ID', prop: 'QryU_SAP_ID' },
@@ -1050,6 +1056,7 @@ export default {
           this.$refs.rateRoot.resetInfo()
           this.loadingBtn = false
           this.dialogRateVisible = false
+          this.dialogFormView = false
           this.getList()
         }).catch(() => {
           this.loadingBtn = false

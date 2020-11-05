@@ -83,6 +83,7 @@ export default {
           item.calibrationDate = this.formatDate(item.calibrationDate)
           return item
         })
+        this.totalCount = res.count
         this.isLoading = false
       }).catch(() => {
         this.isLoading = false

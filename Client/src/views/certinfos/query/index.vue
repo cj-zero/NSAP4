@@ -89,6 +89,7 @@ export default {
   methods: {
     _getQueryList () { // 获取表格列表
       queryLoad(this.pageConfig).then(res => {
+        this.totalCount = res.count
         this.tableData = res.data.map(item => {
           item.calibrationDate = this.formatDate(item.calibrationDate)
           return item

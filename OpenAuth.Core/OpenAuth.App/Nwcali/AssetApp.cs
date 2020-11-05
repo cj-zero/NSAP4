@@ -103,6 +103,8 @@ namespace OpenAuth.App.nwcali
                 .Include(u=>u.AssetCategorys)
                 .Include(u=>u.AssetOperations)
                 .Include(u=>u.AssetInspects).FirstOrDefaultAsync();
+            AssetModel.AssetInspects=AssetModel.AssetInspects.OrderByDescending(a => a.InspectCreatTime).ToList();
+            AssetModel.AssetOperations = AssetModel.AssetOperations.OrderBy(a => a.OperationCreateTime).ToList();
             result.Data = AssetModel;
             return result;
         }

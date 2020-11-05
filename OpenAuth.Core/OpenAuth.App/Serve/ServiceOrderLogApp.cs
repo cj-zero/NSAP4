@@ -125,17 +125,14 @@ namespace OpenAuth.App
             }
             var result = new TableData();
             var ids = await UnitWork.Find<ServiceWorkOrder>(s=>s.ServiceOrderId.Equals(ServiceOrderId)).Select(s => s.Id).ToListAsync();
-
-            var objs = UnitWork.Find<ServiceOrderLog>(s => s.ServiceOrderId.Equals(ServiceOrderId) || ids.Contains((int)s.ServiceWorkOrderId));
-            var ActionList = await objs.Select(s =>s.Action).Distinct().ToListAsync();
-            var loglist = new List<ServiceOrderLogResp>();
-            foreach (var item in ActionList)
+            var ServiceOrderLogs = await UnitWork.Find<ServiceOrderLog>(s => s.ServiceOrderId.Equals(ServiceOrderId) || ids.Contains((int)s.ServiceWorkOrderId)).ToListAsync();
+            ServiceOrderLogs = ServiceOrderLogs.GroupBy(o=>new { o.Action,o.CreateTime}).Select(o=>o.First()).ToList();
+            var loglist = ServiceOrderLogs.Select(s => new ServiceOrderLogResp
             {
-               loglist.Add(await objs.Where(s => s.Action.Equals(item)).Select(s=>new ServiceOrderLogResp {
-                   CreateTime=s.CreateTime, 
-                   CreateUserName=s.CreateUserName, 
-                   Action=s.Action}).FirstOrDefaultAsync());
-            }
+                CreateTime = s.CreateTime,
+                CreateUserName = s.CreateUserName,
+                Action = s.Action
+            });
             result.Data = loglist.OrderByDescending(u => u.CreateTime).ToList();
             return result;
         }
