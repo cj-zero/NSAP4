@@ -155,7 +155,11 @@ namespace OpenAuth.Repository.Domain.Sap
           this.U_RelDoc= string.Empty;
         }
 
-        
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? DocEntry { get; set; }
         /// <summary>
         /// 
         /// </summary>

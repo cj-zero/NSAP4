@@ -18,5 +18,20 @@ namespace OpenAuth.Repository
         public virtual DbSet<ServiceOins> ServiceOins { get; set; }
         //非数据库表格
         public virtual DbQuery<SysTableColumn> SysTableColumns { get; set; }
+
+        #region 物料
+        public virtual DbSet<Expressage> Expressages { get; set; }
+
+        public virtual DbSet<ExpressagePicture> ExpressagePictures { get; set; }
+
+        public virtual DbSet<Quotation> Quotations { get; set; }
+
+        public virtual DbSet<QuotationMaterial> QuotationMaterials { get; set; }
+
+        public virtual DbSet<Returnnote> Returnnotes { get; set; }
+
+        public virtual DbSet<ReturnnoteMaterial> ReturnnoteMaterials { get; set; }
+
+        #endregion
     }
 }
