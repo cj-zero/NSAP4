@@ -155,6 +155,7 @@ export let tableMixin = {
           return this.$message.warning('请先选择报销单')
         }
         if (val.name === 'mySubmit') { // 我的提交模块判断
+          console.log(this.originUserId, this.currentRow.createUserId)
           if (this.currentRow.createUserId !== this.originUserId) {
             return this.$message.warning('当前用户与报销人不符，不可编辑')
           }

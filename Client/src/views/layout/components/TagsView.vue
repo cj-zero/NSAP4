@@ -9,7 +9,7 @@
         v-for="(tag, index) in Array.from(visitedViews)"
         :to="tag"
         :key="`${index}_${tag.path}`"
-        @contextmenu.prevent.native="openMenu(tag,$event)"
+        @contextmenu.prevent.native="openMenu({ tag, index }, $event)"
       >
         {{tag.title}}
         <span class="el-icon-close" @click.prevent.stop="closeSelectedTag(tag)"></span>
@@ -28,6 +28,8 @@
 <script>
 import ScrollPane from "@/components/ScrollPane";
 import { mapGetters } from 'vuex'
+import { setSessionStorage } from '@/utils/storage'
+const hasPageRep = /page=.*/
 export default {
   components: { ScrollPane },
   data() {
@@ -40,7 +42,7 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(['iframeViews']),
+    ...mapGetters(['iframeViews', 'keepAliveData']),
     visitedViews() {
       // console.log(this.$store.state.tagsView.visitedViews);
       //页面加载mounted前执行
@@ -48,9 +50,24 @@ export default {
     }
   },
   watch: {
-    $route() {
-      this.addViewTags();
-      this.moveToCurrentTag();
+    $route(to) {
+      if (!hasPageRep.test(to.fullPath)) { // 点击侧边栏是不带query参数的，如果这个时候已经有对应模块的标签，则自行跳转到模块对应的第一个标签页
+        let index = this.visitedViews.findIndex(item => item.path === to.path)
+        if (index !== -1) {
+          const targetRoute = this.visitedViews[index]
+          const query = targetRoute.query ? targetRoute.query : {}
+          this.$router.push({
+            path: targetRoute.fullPath,
+            query
+          })
+        } else {
+          this.addViewTags();
+          this.moveToCurrentTag();
+        }
+      } else {
+        this.addViewTags();
+        this.moveToCurrentTag();
+      }
     },
     visible(value) {
       if (value) {
@@ -63,6 +80,12 @@ export default {
   mounted() {
     this.addViewTags();
     //页面挂载执行
+    window.addEventListener("beforeunload",() => {
+      if (hasPageRep.test(this.$route.fullPath)) {
+        console.log('beforeunlaod')
+        setSessionStorage('isUnloadRefresh', true)
+      }
+    })
   },
   methods: {
     generateRoute(isCopy = false) {
@@ -71,39 +94,42 @@ export default {
       if (this.$route.name) {
         // return this.$route;
         let newRoute = {
-          fullPath: `${this.$route.path}`,
+          fullPath: `${this.$route.fullPath}`,
           hash: this.$route.hash,
           matched: this.$route.matched,
           meta: this.$route.meta,
           name: this.$route.name,
           params: this.$route.params,
           path: this.$route.path,
+          query: this.$route.query
           // query: {
           //   page: times
           // }
         };
         if (isCopy) {
-          newRoute.query = { page: times }
-          newRoute.fullPath += `?page=${times}`
+          newRoute.query = { ...(this.$route.query || {}), page: times }
+          let queryStr = ''
+          for (let key in newRoute.query) {
+            queryStr += `${key}=${newRoute.query[key]}`
+          }
+          newRoute.fullPath = newRoute.path + `?${queryStr}`
         }
         return newRoute;
       }
       return false;
     },
-    refreshSelectedTag(view) {
-      this.$store.dispatch("delCachedView", view).then(() => {
-        const { fullPath } = view;
-        this.$nextTick(() => {
-          this.$router.replace({
-            path: "/redirect" + fullPath
-          });
-        });
-      });
+    async refreshSelectedTag(view) {
+      const route = await this.generateRoute(true);
+      // 判断是不是通过侧边栏生成的原始页面
+      console.log(route, 'route refresh')
+      await this.$store.dispatch("refreshVisitedViews", { originRoute: view, newRoute: route, index: this.currentIndex })
+      await this.$router.push({
+        path: route.fullPath,
+        query: route.query
+      })
     },
     isActive(route) {
-       return route.path === this.$route.path;
-      // if(!route.query){return route.path === this.$route.path}else{
-      // return route.fullPath === this.$route.fullPath;     
+      return route.fullPath === this.$route.fullPath;     
     },
     addViewTags() {
       //获取store储存的tag，
@@ -116,12 +142,11 @@ export default {
     },
     async addViewTags_copy(page) {
       const route = await this.generateRoute(true);
-      await this.$store.dispatch("copyVisitedViews", route);
+      await this.$store.dispatch("copyVisitedViews", { view: route, index: this.currentIndex });
       await this.$router.push({
         path: page.fullPath,
-        query: { page: route.query.page }
+        query: route.query
       });
-
       if (!route) {
         return false;
       }
@@ -130,7 +155,7 @@ export default {
       const tags = this.$refs.tag;
       this.$nextTick(() => {
         for (const tag of tags) {
-          if (tag.to.path === this.$route.path) {
+          if (tag.to.fullPath === this.$route.fullPath) {
             this.$refs.scrollPane.moveToTarget(tag.$el);
             break;
           }
@@ -139,6 +164,7 @@ export default {
     },
     closeSelectedTag(view) {
       this.$store.dispatch("delVisitedViews", view).then(views => {
+        console.log(views, 'views')
         if (this.isActive(view)) {
           const latestView = views.slice(-1)[0];
           if (latestView) {
@@ -159,9 +185,10 @@ export default {
       this.$store.dispatch("delAllViews");
       this.$router.push("/");
     },
-    openMenu(tag, e) {
+    openMenu({ tag, index }, e) {
       this.visible = true;
       this.selectedTag = tag;
+      this.currentIndex = index
       const offsetLeft = this.$el.getBoundingClientRect().left; // container margin left
       this.left = e.clientX - offsetLeft - 35; // 15: margin right
       this.top = e.clientY - 15;
@@ -169,6 +196,9 @@ export default {
     closeMenu() {
       this.visible = false;
     }
+  },
+  created () {
+    this.currentIndex = -1 // 记录当前标签页的索引值
   }
 };
 </script>

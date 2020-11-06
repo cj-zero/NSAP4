@@ -33,6 +33,7 @@
           highlight-current-row
           style="width: 100%;"
           @row-click="rowClick"
+          height="100%"
           @selection-change="handleSelectionChange"
         >
           <el-table-column type="expand">

@@ -391,6 +391,7 @@
         :close-on-click-modal="false"
         :append-to-body="true"
         :destroy-on-close="true"
+        :modal="false"
         :visible.sync="dialogPartner"
       >
         <el-form :inline="true" class="demo-form-inline" size="mini">
@@ -433,6 +434,7 @@
         v-el-drag-dialog
         :modal-append-to-body='false'
         :append-to-body="true" 
+        :modal="false"
         title="最近服务单情况" 
         width="450px" 
         @open="openDialog" 
@@ -1275,9 +1277,9 @@ export default {
               }
             }
             if (this.addressList.length) {
-              let { address, building } = this.addressList[0];
+              let { address, building, city } = this.addressList[0];
               this.form.addressDesignator = address;
-              this.form.address = building
+              this.form.address = city + building
             }
           }
         })
@@ -1347,11 +1349,6 @@ export default {
       this.listQuerySearch.Technician = this.inputTech
       this.listQuerySearch.Address = this.inputAddress
       this.getPartnerList(this.listQuerySearch, 'search')
-    }, 400),
-    searSerial: debounce(function() {
-      // SerialList
-      this.listQuery.ManufSN = this.inputSerial;
-      this.getPartnerList();
     }, 400),
     async querySearch(queryString, cb) {
       this.listQuery.CardCodeOrCardName = queryString;

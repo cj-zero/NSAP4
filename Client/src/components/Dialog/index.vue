@@ -9,6 +9,8 @@
     :center="center"
     :width="width"
     :title="title"
+    :modal="modal"
+    :top="top"
     :visible.sync="dialogVisible"
     :modal-append-to-body="mAddToBody"
     :close-on-click-modal="closeByClickModal"
@@ -45,6 +47,14 @@ export default {
     width: {
       type: String,
       default: '50%'
+    },
+    modal: {
+      type: Boolean,
+      default: false
+    },
+    top: {
+      type: String,
+      default: '76px'
     },
     loadingText: {
       type: String,

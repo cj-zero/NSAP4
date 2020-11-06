@@ -73,3 +73,13 @@
     background-color: #fff !important;
   }
 }
+
+/* 弹窗外层样式 */
+.el-dialog__wrapper, .v-modal {
+  position: absolute;
+  // position: fixed;
+}
+.v-modal {
+  background-color: #fff;
+  opacity: 0;
+}

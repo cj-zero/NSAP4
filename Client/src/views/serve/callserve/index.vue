@@ -50,6 +50,7 @@
             style="width: 100%;"
             highlight-current-row
             @row-click="rowClick"
+            :row-class-name="rowClassName"
           >
             <div class="mr48">
               <el-table-column type="expand">
@@ -109,6 +110,9 @@
               :width="fruit.width"
             >
               <template slot-scope="scope">
+                <div v-if="fruit.name === 'radio'">
+                  <el-radio v-model="radio" :label="scope.row.serviceOrderId"></el-radio>
+                </div>
                 <span v-if="fruit.name === 'order'">
                   {{ scope.$index + 1 }}
                 </span>
@@ -174,8 +178,10 @@
         v-el-drag-dialog
         width="800px"
         :close-on-click-modal="false"
+        :modal-append-to-body="false"
         :visible.sync="dialogInfoVisible"
         title="客户信息"
+        :modal="false"
       >
         <CustomerInfo :formData="customerInfo" />
       </el-dialog>
@@ -184,7 +190,9 @@
         v-el-drag-dialog
         width="900px"
         top="10vh"
+        :modal="false"
         class="dialog-mini"
+        :modal-append-to-body="false"
         @close="closeCustoner"
         :close-on-click-modal="false"
         :destroy-on-close="true"
@@ -212,6 +220,8 @@
         v-el-drag-dialog
         width="1210px"
         top="10vh"
+        :modal="false"
+        :modal-append-to-body="false"
         class="dialog-mini"
         @open="openDetail"
         @close="closeCustoner"
@@ -249,12 +259,13 @@
       <!-- 只能查看的表单 -->
       <el-dialog
         v-el-drag-dialog
+        :modal-append-to-body="false"
         width="1210px"
         top="10vh"
+        :modal="false"
         title="服务单详情"
         :close-on-click-modal="false"
         destroy-on-close
-        :modal-append-to-body="false"
         class="addClass1 dialog-mini"
         @open="openDetail"
         :visible.sync="dialogFormView"
@@ -277,7 +288,7 @@
         </el-row>
 
         <div slot="footer">
-          <el-button size="mini" @click="handlePhone(multipleSelection)" v-if="isCallCenter">回访</el-button>
+          <el-button size="mini" @click="handlePhone(multipleSelection, true)" v-if="isCallCenter">回访</el-button>
           <el-button size="mini" @click="dialogFormView = false">取消</el-button>
           <el-button size="mini" type="primary" @click="dialogFormView = false">确认</el-button>
         </div>
@@ -297,7 +308,9 @@
         width="1015px"
         center
         v-el-drag-dialog
-        :append-to-body="true"
+        :modal="false"
+        :modal-append-to-body="false"
+        :append-to-body="isRateAToBody"
       >
         <Rate :data="commentList" @changeComment="onChangeComment" :isView="isView" ref="rateRoot" />
         <div slot="footer">
@@ -310,8 +323,10 @@
         v-el-drag-dialog
         width="983px"
         class="dialog-mini"
+        :modal-append-to-body="false"
         :close-on-click-modal="false"
         title="服务行为报告单"
+        :modal="false"
         :visible.sync="dialogReportVisible"
         @closed="onReportClosed"
       >
@@ -326,6 +341,8 @@
         class="dialog-mini"
         :close-on-click-modal="false"
         title="分析报表"
+        :modal="false"
+        :modal-append-to-body="false"
         :visible.sync="dialogAnalysisVisible"
       >
         <Analysis
@@ -333,6 +350,31 @@
           :data="analysisData"
         ></Analysis>
       </el-dialog>
+      <!-- <el-dialog
+        v-el-drag-dialog
+        width="983px"
+        class="dialog-mini"
+        :close-on-click-modal="false"
+        title="分析报表"
+        :modal-append-to-body="false"
+        :visible.sync="dialog123"
+      >
+        12312313
+        <el-button @click="dialog1234 = true">点击点击</el-button>
+        <el-dialog
+          v-el-drag-dialog
+          width="300px"
+          class="dialog-mini"
+          :append-to-body="true" 
+          :close-on-click-modal="false"
+          title="分析"
+          :modal-append-to-body="false"
+          :visible.sync="dialog1234" 
+          >
+          1234123456
+        </el-dialog>
+      </el-dialog>
+      <el-button @click="dialog123 = true">按钮</el-button> -->
     </div>
   </div>
 </template>
@@ -425,6 +467,7 @@ export default {
       sure: 0,
       rightImg,
       ParentHeadOptions: [
+        { name: 'radio', width: 30 },
         { name: 'order', label: '序号', width: '50' },
         { name: "u_SAP_ID", label: "服务单号", align:'left', sortable:true, width: '80' },
         { name: "status", label: "工单状态", align: 'left', width: '70' },
@@ -572,6 +615,7 @@ export default {
       serviceOrderId: '', // 服务单ID 用于后续工单的创建和修改
       exportExcelUrl: '/serve/ServiceOrder/ExportExcel', // 表格导出地址
       dialogRateVisible: false,
+      isRateAToBody: false, // 是否将回访弹窗插入到body中
       commentList: {}, // 评价内容 (新增评价或者查看评价 都要用到)
       newCommentList: {}, // 用于存放修改后的评分列表
       isView: false, // 评分标识(是否是查看)
@@ -675,9 +719,14 @@ export default {
           this.$message.error('查询客户信息失败')
         })
     },
+    rowClassName ({ row, rowIndex }) {
+      row.index = rowIndex
+    },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.multipleSelection = row;
+      this.radio = row.serviceOrderId
+      console.log(this.radio, 'radio')
       this.$refs.mainTable.toggleRowSelection(row);
     },
     rowClickChild(row) {
@@ -871,6 +920,7 @@ export default {
     handleCurrentChange(val) {
       this.listQuery.page = val.page;
       this.listQuery.limit = val.limit;
+      this.radio = ''
       this.getList();
     },
     handleModifyStatus(row, disable) {
@@ -977,7 +1027,7 @@ export default {
         this.$message.error('暂无数据')
       })
     },
-    handlePhone (row) { // 电话回访
+    handlePhone (row, isInTable) { // 电话回访
       let { serviceOrderId, serviceWorkOrders } = row // 8 代表已回访
       let hasVisit = serviceWorkOrders.every(item => { // 是否已经回访
         return Number(item.status) === 8
@@ -994,6 +1044,7 @@ export default {
           this.isView = false
           this.commentList = this._normalizeCommentList(res, row)
           this.dialogRateVisible = true
+          this.isRateAToBody = Boolean(isInTable) // 判断是否将dialog插入到body中
         }).catch(err => {
           this.$message.error(err.message)
         })
@@ -1145,7 +1196,7 @@ export default {
 }
 .table_label {
   ::v-deep.el-radio {
-    margin-left: 6px;
+    // margin-left: 6px;
   }
   ::v-deep.el-radio__label {
     display: none;

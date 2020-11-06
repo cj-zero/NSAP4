@@ -1,5 +1,5 @@
 export default{
-  bind(el, binding, vnode) {
+  update (el, binding, vnode) {
     const dialogHeaderEl = el.querySelector('.el-dialog__header')
     const dragDom = el.querySelector('.el-dialog')
     dialogHeaderEl.style.cssText += ';cursor:move;'
@@ -15,6 +15,7 @@ export default{
     })()
 
     dialogHeaderEl.onmousedown = (e) => {
+      console.log(e, 'mousedown')
       // 鼠标按下，计算当前元素距离可视区的距离
       const disX = e.clientX - dialogHeaderEl.offsetLeft
       const disY = e.clientY - dialogHeaderEl.offsetTop

@@ -17,6 +17,12 @@
     <div id="app"></div>
     <!-- built files will be auto injected -->
     <script>
+      window.onload = function () {
+        console.log('onload')
+      }
+      window.onhashchange = function () {
+        console.log(location.hash, 'hash')
+      }
     var _hmt = _hmt || [];
     (function() {
       var hm = document.createElement('script')

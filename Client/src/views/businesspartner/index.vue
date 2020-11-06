@@ -62,60 +62,64 @@
     </sticky>
     <div class="app-container">
       <div class="bg-white">
-        <el-table
-          ref="mainTable"
-          :key="tableKey"
-          :data="list"
-          v-loading="listLoading"
-          border
-          fit
-          highlight-current-row
-          align="left"
-          style="width: 100%;"
-          @row-click="rowClick"
-          @selection-change="handleSelectionChange"
-        >
-          <!-- <el-table-column type="selection" align="center" width="55"></el-table-column> -->
-          <el-table-column prop="cardCode" label="客户代码" align="left" show-overflow-tooltip></el-table-column>
-          <el-table-column
-            prop="cardName"
-            label="客户名称"
-            min-width="120"
+        <div class="content-wrapper">
+          <el-table
+            ref="mainTable"
+            :key="tableKey"
+            :data="list"
+            v-loading="listLoading"
+            border
+            fit
+            highlight-current-row
             align="left"
-            show-overflow-tooltip
-          ></el-table-column>
-          <el-table-column prop="address" label="客户地址" align="left" show-overflow-tooltip></el-table-column>
-     <el-table-column align="left" label="状态冻结" width="120">
-        <template slot-scope="scope">
-          <span
-            :class="[scope.row.frozenFor=='N'?'greenColro':'redColor']"
-          >{{scope.row.frozenFor=="N"?"正常":'冻结'}}</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="cntctPrsn" label="客户联系人" align="left" show-overflow-tooltip width="100"></el-table-column>
-      <el-table-column label="客户电话" align="left" show-overflow-tooltip>
-        <template slot-scope="scope">
-          {{ scope.row.cellular ? scope.row.cellular : scope.row.phone1 }}
-        </template>
-      </el-table-column>
-      <!-- <el-table-column prop="slpName" label="业务员" align="left" show-overflow-tooltip></el-table-column> -->
-      <el-table-column prop="slpName" label="销售员" align="left" show-overflow-tooltip></el-table-column>
-      <el-table-column prop="technician" label="售后技术员" align="left" show-overflow-tooltip width="100"></el-table-column>
-       <el-table-column align="right" label="科目余额" width="120">
-        <template slot-scope="scope">
-          <!-- <span :class="[scope.row.balance>=0?'redColor':'greenColro']">{{scope.row.balance}}0000</span> -->
-          <span :class="[ scope.row.balance >= 0 ? '' : 'redColor' ]">{{scope.row.balance}}</span> 
-        </template>
-      </el-table-column>
-          <el-table-column prop="updateDate" label="更新时间" show-overflow-tooltip></el-table-column>
-        </el-table>
-        <pagination
-          v-show="total>0"
-          :total="total"
-          :page.sync="listQuery.page"
-          :limit.sync="listQuery.limit"
-          @pagination="handleCurrentChange"
-        />
+            height="100%"
+            style="width: 100%;"
+            @row-click="rowClick"
+            @selection-change="handleSelectionChange"
+          >
+            <!-- <el-table-column type="selection" align="center" width="55"></el-table-column> -->
+            <el-table-column prop="cardCode" label="客户代码" align="left" show-overflow-tooltip></el-table-column>
+            <el-table-column
+              prop="cardName"
+              label="客户名称"
+              min-width="120"
+              align="left"
+              show-overflow-tooltip
+            ></el-table-column>
+            <el-table-column prop="address" label="客户地址" align="left" show-overflow-tooltip></el-table-column>
+      <el-table-column align="left" label="状态冻结" width="120">
+          <template slot-scope="scope">
+            <span
+              :class="[scope.row.frozenFor=='N'?'greenColro':'redColor']"
+            >{{scope.row.frozenFor=="N"?"正常":'冻结'}}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="cntctPrsn" label="客户联系人" align="left" show-overflow-tooltip width="100"></el-table-column>
+        <el-table-column label="客户电话" align="left" show-overflow-tooltip>
+          <template slot-scope="scope">
+            {{ scope.row.cellular ? scope.row.cellular : scope.row.phone1 }}
+          </template>
+        </el-table-column>
+        <!-- <el-table-column prop="slpName" label="业务员" align="left" show-overflow-tooltip></el-table-column> -->
+        <el-table-column prop="slpName" label="销售员" align="left" show-overflow-tooltip></el-table-column>
+        <el-table-column prop="technician" label="售后技术员" align="left" show-overflow-tooltip width="100"></el-table-column>
+        <el-table-column align="right" label="科目余额" width="120">
+          <template slot-scope="scope">
+            <!-- <span :class="[scope.row.balance>=0?'redColor':'greenColro']">{{scope.row.balance}}0000</span> -->
+            <span :class="[ scope.row.balance >= 0 ? '' : 'redColor' ]">{{scope.row.balance}}</span> 
+          </template>
+        </el-table-column>
+            <el-table-column prop="updateDate" label="更新时间" show-overflow-tooltip></el-table-column>
+          </el-table>
+          <pagination
+            v-show="total>0"
+            :total="total"
+            :page.sync="listQuery.page"
+            :limit.sync="listQuery.limit"
+            @pagination="handleCurrentChange"
+          />
+        </div>
+        
       </div>
       <el-dialog
         v-el-drag-dialog

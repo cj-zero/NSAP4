@@ -106,8 +106,11 @@
       
       <!-- 只能查看的表单 -->
       <el-dialog
+        v-el-drag-dialog
         width="1210px"
         top="10vh"
+        :modal-append-to-body="false"
+        :modal="false"
         title="服务单详情"
         :close-on-click-modal="false"
         destroy-on-close
@@ -142,6 +145,9 @@
         :visible.sync="dialogTable"
         :destroy-on-close="true"
         center
+        :close-on-click-modal="false"
+        :modal-append-to-body="false"
+        :modal="false"
         width="800px"
       >
         <DynamicTable
@@ -155,11 +161,15 @@
         </span>
       </el-dialog>
       <el-dialog
+        :close-on-click-modal="false"
+        :modal-append-to-body="false"
+        :modal="false"
         v-el-drag-dialog
         :visible.sync="dialogTree"
         :destroy-on-close="true"
         center
         width="300px"
+        class="dialog-mini"
       >
         <treeList @close="dialogTree=false"></treeList>
         <span slot="footer" class="dialog-footer">
@@ -171,10 +181,13 @@
         v-el-drag-dialog
         :visible.sync="dialogOrder"
         :destroy-on-close="true"
+        :modal="false"
         title="选择派单对象"
         center
+        :close-on-click-modal="false"
         :modal-append-to-body="false"
         width="550px"
+        class="dialog-mini"
         @closed="onClosed"
       >
         <el-row type="flex" justify="end" style="margin-bottom: 10px;">
