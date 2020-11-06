@@ -1350,11 +1350,6 @@ export default {
       this.listQuerySearch.Address = this.inputAddress
       this.getPartnerList(this.listQuerySearch, 'search')
     }, 400),
-    searSerial: debounce(function() {
-      // SerialList
-      this.listQuery.ManufSN = this.inputSerial;
-      this.getPartnerList();
-    }, 400),
     async querySearch(queryString, cb) {
       this.listQuery.CardCodeOrCardName = queryString;
       await this.getPartnerList(this.listQuery);
