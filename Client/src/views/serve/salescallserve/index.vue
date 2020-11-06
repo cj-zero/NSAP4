@@ -170,9 +170,12 @@
       <el-dialog
         v-el-drag-dialog
         width="800px"
+        :modal="false"
+        class="dialog-mini"
         :close-on-click-modal="false"
         :visible.sync="dialogInfoVisible"
         title="客户信息"
+        :modal-append-to-body="false"
       >
         <CustomerInfo :formData="customerInfo" />
       </el-dialog>
@@ -182,8 +185,10 @@
         width="900px"
         top="10vh"
         class="dialog-mini"
-        @close="closeCustoner"
+        :modal="false"
         :close-on-click-modal="false"
+        :modal-append-to-body="false"
+        @close="closeCustoner"
         :destroy-on-close="true"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
@@ -212,7 +217,9 @@
         class="dialog-mini"
         @open="openDetail"
         @close="closeCustoner"
+        :modal="false"
         :close-on-click-modal="false"
+        :modal-append-to-body="false"
         :destroy-on-close="true"
         :title="textMap[dialogStatus]"
         :visible.sync="FormUpdate"
@@ -249,6 +256,7 @@
         width="1210px"
         top="10vh"
         title="服务单详情"
+        :modal="false"
         :close-on-click-modal="false"
         destroy-on-close
         :modal-append-to-body="false"
@@ -292,6 +300,10 @@
         width="1015px"
         center
         v-el-drag-dialog
+        :modal="false"
+        class="dialog-mini"
+        :close-on-click-modal="false"
+        :modal-append-to-body="false"
       >
         <Rate :data="commentList" @changeComment="onChangeComment" :isView="isView" ref="rateRoot" />
         <div slot="footer">
@@ -304,8 +316,10 @@
         v-el-drag-dialog
         width="983px"
         class="dialog-mini"
+        :modal="false"
         :close-on-click-modal="false"
         title="服务行为报告单"
+        :modal-append-to-body="false"
         :visible.sync="dialogReportVisible"
         @closed="onReportClosed"
       >
@@ -317,6 +331,8 @@
       <el-dialog
         v-el-drag-dialog
         width="983px"
+        :modal="false"
+        :modal-append-to-body="false"
         class="dialog-mini"
         :close-on-click-modal="false"
         title="分析报表"

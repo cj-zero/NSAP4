@@ -9,15 +9,15 @@ export function getList(params) {
   })
 }
 
-export function  getSingleAsset (params) {
+export function getSingleAsset(params) {
   return request({
-    url: 'Asset/Get', // 获取单个资产详情
+    url: 'Asset/GetAsset', // 获取单个资产详情
     method: 'get',
     params
   })
 }
 
-export function add (data) {
+export function add(data) {
   return request({
     url: 'Asset/Add', // 增加
     method: 'post',
@@ -25,15 +25,15 @@ export function add (data) {
   })
 }
 
-export function update (params) {
+export function update(data) {
   return request({
     url: 'Asset/Update', // 修改
     method: 'post',
-    params
+    data
   })
 }
 
-export function getListCategoryName (params) {
+export function getListCategoryName(params) {
   return request({
     url: 'Asset/GetListCategoryName', // 字典模糊查询
     method: 'get',
@@ -41,7 +41,7 @@ export function getListCategoryName (params) {
   })
 }
 
-export function getListOrg (params) {
+export function getListOrg(params) {
   return request({
     url: 'Asset/GetListOrg', // 模糊查询部门
     method: 'get',
@@ -49,7 +49,7 @@ export function getListOrg (params) {
   })
 }
 
-export function getListUser (params) {
+export function getListUser(params) {
   return request({
     url: 'Asset/GetListUser', // 模糊查询人员
     method: 'get',

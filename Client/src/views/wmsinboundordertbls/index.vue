@@ -10,7 +10,7 @@
       </div>
     </sticky>
     <div class="app-container flex-item flex-column">
-      <div class="flex-item">
+      <div class="flex-item app-container" style="padding: 10px 0;">
         <el-card shadow="nerver" class="demo-card fh">
           <el-table ref="multipleTable" id="firstCard" :key='tableKey' :data="mainList" v-loading="listLoading" border
             tooltip-effect="dark" style="width: 100%;" height="calc(100% - 52px)" @row-click="rowClickFirstTable">

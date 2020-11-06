@@ -125,7 +125,7 @@
               </el-col>
               <el-col :span="6">
                 <el-form-item label="联系方式" prop="newestContactTel">
-                  <el-input size="mini" v-model.number="form.newestContactTel" :disabled="formName !== '新建'"></el-input>
+                  <el-input size="mini" v-model.trim="form.newestContactTel" :disabled="formName !== '新建'"></el-input>
                 </el-form-item>
               </el-col>
               <!-- <el-col :span="6">
@@ -391,6 +391,7 @@
         :close-on-click-modal="false"
         :append-to-body="true"
         :destroy-on-close="true"
+        :modal="false"
         :visible.sync="dialogPartner"
       >
         <el-form :inline="true" class="demo-form-inline" size="mini">
@@ -433,6 +434,7 @@
         v-el-drag-dialog
         :modal-append-to-body='false'
         :append-to-body="true" 
+        :modal="false"
         title="最近服务单情况" 
         width="450px" 
         @open="openDialog" 
@@ -1267,17 +1269,17 @@ export default {
             this.cntctPrsnList = res.result.cntctPrsnList;
             this.form.supervisor = res.result.techName;
             if (this.cntctPrsnList && this.cntctPrsnList.length) {
-            let firstValue = res.result.cntctPrsnList[0]
-              let { tel1, tel2, cellolar, name } = firstValue
+            // let firstValue = res.result.cntctPrsnList[0]
+              // let { tel1, tel2, cellolar, name } = firstValue
               if (this.formName !== '确认') {
-                this.form.newestContacter = name
-                this.form.newestContactTel = tel1 || tel2 || cellolar
+                // this.form.newestContacter = name
+                // this.form.newestContactTel = tel1 || tel2 || cellolar
               }
             }
             if (this.addressList.length) {
-              let { address, building } = this.addressList[0];
+              let { address, building, city } = this.addressList[0];
               this.form.addressDesignator = address;
-              this.form.address = building
+              this.form.address = city + building
             }
           }
         })
@@ -1348,11 +1350,6 @@ export default {
       this.listQuerySearch.Address = this.inputAddress
       this.getPartnerList(this.listQuerySearch, 'search')
     }, 400),
-    searSerial: debounce(function() {
-      // SerialList
-      this.listQuery.ManufSN = this.inputSerial;
-      this.getPartnerList();
-    }, 400),
     async querySearch(queryString, cb) {
       this.listQuery.CardCodeOrCardName = queryString;
       await this.getPartnerList(this.listQuery);
@@ -1365,8 +1362,10 @@ export default {
     },
     handleSelectCntct (item) {
       console.log(item, 'cntct')
-      this.form.newestContacter = item.name
-      console.log(this.form.contacter, item.name)
+      let { tel1, tel2, cellolar, name } = item
+      this.form.newestContacter = name
+      this.form.newestContactTel = tel1 || tel2 || cellolar
+      console.log(this.form.contacter, this.form.newestContactTel)
     },
     async getPartnerList(listQuery, type) {
       if (typeof this.cancelBusinessRequestFn === 'function' && type) {

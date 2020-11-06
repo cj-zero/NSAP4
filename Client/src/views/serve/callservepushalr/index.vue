@@ -125,12 +125,15 @@
       </el-row>
       <!-- 只能查看的表单 -->
       <el-dialog
+        v-el-drag-dialog
         width="1210px"
         top="10vh"
         title="服务单详情"
         :close-on-click-modal="false"
         destroy-on-close
         class="addClass1 dialog-mini"
+        :modal-append-to-body="false"
+        :modal="false"
         :visible.sync="dialogFormView"
         @open="openDetail"
       >
@@ -147,7 +150,7 @@
         ></zxform>
         </el-col>
           <el-col :span="6" class="lastWord">   
-            <zxchat :serveId="serveId"></zxchat>
+            <zxchat :serveId="serveId" formName="查看"></zxchat>
           </el-col>
         </el-row>
 
@@ -161,7 +164,10 @@
         :visible.sync="dialogTable"
         :destroy-on-close="true"
         center
+        :close-on-click-modal="false"
+        :modal-append-to-body="false"
         width="800px"
+        :modal="false"
       >
         <DynamicTable
           :formThead.sync="formTheadOptions"
@@ -174,10 +180,14 @@
         </span>
       </el-dialog>
       <el-dialog
+        class="dialog-mini"
         v-el-drag-dialog
         :visible.sync="dialogTree"
         :destroy-on-close="true"
         center
+        :close-on-click-modal="false"
+        :modal-append-to-body="false"
+        :modal="false"
         width="300px"
       >
         <treeList @close="dialogTree=false"></treeList>
@@ -188,11 +198,15 @@
       </el-dialog>
       <el-dialog
         v-el-drag-dialog
+        :close-on-click-modal="false"
+        :modal-append-to-body="false"
         :visible.sync="dialogOrder"
         :destroy-on-close="true"
+        :modal="false"
         title="选择转派对象"
         center
         width="500px"
+        class="dialog-mini"
         @closed="onClosed"
       >
         <el-row type="flex" justify="end" style="margin-bottom: 10px;">
@@ -227,9 +241,12 @@
       </el-dialog>
       <!-- 完工报告  -->
       <el-dialog
+        v-el-drag-dialog
         width="983px"
         class="dialog-mini"
+        :modal="false"
         :close-on-click-modal="false"
+        :modal-append-to-body="false"
         title="服务行为报告单"
         :visible.sync="dialogReportVisible"
         @closed="onReportClosed"

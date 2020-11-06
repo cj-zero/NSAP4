@@ -146,9 +146,23 @@ export default {
             stack: 1,
             itemStyle: {
               color: colorMap[i + 1] || '#f7b868'
+            },
+            label: { 
+              color: '#000',
+              position: 'top'
             }
           })
         }
+        const calcFn = function (params) {
+          let result = 0
+          for (let i = 0; i < series.length; i++) {
+            result += series[i].data[params.dataIndex]
+          }
+          return result
+        }
+        // 给最后一项添加总量
+        series[series.length - 1]['label']['formatter'] = calcFn 
+        series[series.length - 1]['label']['show'] = true
         tooltip = {
           trigger: 'axis',
           axisPointer: {            // 坐标轴指示器，坐标轴触发有效
@@ -163,6 +177,11 @@ export default {
           name: titleList[data.statType].legend,
           itemStyle: {
             color: '#88c7ff'
+          },
+          label: { 
+            color: '#000',
+            position: 'top',
+            show: true
           }
         }]
         tooltip = {

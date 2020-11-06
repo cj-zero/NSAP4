@@ -361,6 +361,7 @@ namespace OpenAuth.App
                         s.CurrentUserId = AppUserId;
                         s.CurrentUserNsapId = loginContext.User.Id;
                         s.Status = 7;
+                        s.CompleteDate = DateTime.Now;
                     }
                 }
             });
@@ -477,13 +478,14 @@ namespace OpenAuth.App
                             obj.Status = 2;
                         }
                     }
-                    if (obj.FromTheme == "2")
+                    if (obj.FromType == 2)
                     {
                         AppUser = await UnitWork.Find<AppUserMap>(s => s.UserID == loginContext.User.Id).Include(s => s.User).FirstOrDefaultAsync();
                         obj.CurrentUser = loginContext.User.Name;
                         obj.CurrentUserNsapId = loginContext.User.Id;
-                        obj.CurrentUserId = AppUser.AppUserId;
+                        obj.CurrentUserId = AppUser?.AppUserId;
                         obj.Status = 7;
+                        obj.CompleteDate = DateTime.Now;
                     }
                 }
                 #endregion
@@ -739,13 +741,11 @@ namespace OpenAuth.App
                 }
                 if (s.FromType == 2)
                 {
-                    if (AppUser != null)
-                    {
-                        s.CurrentUser = loginContext.User.Name;
-                        s.CurrentUserId = AppUserId;
-                        s.CurrentUserNsapId = loginContext.User.Id;
-                        s.Status = 7;
-                    }
+                   s.CurrentUser = loginContext.User.Name;
+                   s.CurrentUserId = AppUserId;
+                   s.CurrentUserNsapId = loginContext.User.Id;
+                   s.Status = 7;
+                   s.CompleteDate = DateTime.Now;
                 }
                 #endregion
             });
@@ -1802,10 +1802,10 @@ namespace OpenAuth.App
             var serviceInfo = await UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId).FirstOrDefaultAsync();
             //客服Id
             string RecepUserId = serviceInfo.RecepUserId;
-            if (!string.IsNullOrEmpty(RecepUserId))
+            if (!string.IsNullOrEmpty(RecepUserId) )
             {
                 var recepUserInfo = await UnitWork.Find<AppUserMap>(a => a.UserID == RecepUserId).FirstOrDefaultAsync();
-                if (recepUserInfo != null && recepUserInfo.AppUserId > 0)
+                if (recepUserInfo != null && recepUserInfo.AppUserId > 0 && !recepUserInfo.AppUserId.Equals(FromUserId))
                 {
                     var msgObj = new ServiceOrderMessageUser
                     {
@@ -1823,7 +1823,7 @@ namespace OpenAuth.App
             if (!string.IsNullOrEmpty(SupervisorId))
             {
                 var superUserInfo = await UnitWork.Find<AppUserMap>(a => a.UserID == SupervisorId).FirstOrDefaultAsync();
-                if (superUserInfo != null && superUserInfo.AppUserId > 0)
+                if (superUserInfo != null && superUserInfo.AppUserId > 0 && !superUserInfo.AppUserId.Equals(FromUserId))
                 {
                     var msgObj = new ServiceOrderMessageUser
                     {

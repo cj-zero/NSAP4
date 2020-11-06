@@ -123,12 +123,15 @@
       <!--   v-el-drag-dialog
       width="1000px"  新建呼叫服务单-->
       <el-dialog
+        v-el-drag-dialog
         width="1655px"
         top="2vh"
         class="dialog-mini"
+        :close-on-click-modal="false"
+        :modal-append-to-body="false"
+        :modal="false"
         @open="openCustoner"
         @close="closeCustoner"
-        :close-on-click-modal="false"
         :destroy-on-close="false"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
@@ -172,12 +175,15 @@
       </el-dialog>
       <!-- 只能查看的表单 -->
       <el-dialog
+        v-el-drag-dialog
         width="800px"
         class="dialog-mini"
         title="服务单详情"
         :destroy-on-close="true"
         @open="openDetail"
+        :modal="false"
         :close-on-click-modal="false"
+        :modal-append-to-body="false"
         :visible.sync="dialogFormView"
       >
         <customerupload style="position:sticky;top:0;" :form="formValue"></customerupload>
@@ -189,9 +195,13 @@
       <el-dialog
         v-el-drag-dialog
         :visible.sync="dialogTree"
+        :modal-append-to-body="false"
+        :modal="false"
         :destroy-on-close="true"
         center
+        :close-on-click-modal="false"
         width="300px"
+        class="dialog-mini"
       >
         <treeList @close="dialogTree=false"></treeList>
         <span slot="footer" class="dialog-footer">

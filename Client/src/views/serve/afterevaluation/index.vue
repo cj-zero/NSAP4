@@ -74,6 +74,7 @@
           top="5vh"
           width="1210px"
           class="dialog-mini"
+          :modal-append-to-body="false"
           title="服务单详情"
           :destroy-on-close="true"
           :close-on-click-modal="false"
@@ -159,7 +160,7 @@ export default {
         { name: "serviceAttitude", label: "服务态度" },
         { name: "productQuality", label: "产品质量" },
         { name: "servicePrice", label: "服务价格" },
-        { name: "comment", label: "客户建议或意见" },
+        { name: "comment", label: "客户建议或意见", width: 108 },
         { name: "visitPeople", label: "回访人" },
         { name: "commentDate", label: "评价日期" },
       ],

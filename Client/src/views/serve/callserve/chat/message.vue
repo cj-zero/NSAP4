@@ -6,16 +6,16 @@
           <el-scrollbar class="scroll-bar">
             <ul>
               <li v-for="tValue in wordList" :key="tValue.id">
-                <div v-if="userType!==tValue.replier" class="otherWord">
-                  <p>
+                <div class="otherWord">
+                  <p class="content">
                     {{tValue.replier?tValue.replier:'未知发送者'}}
-                    <span>{{tValue.createTime}}</span>
+                    <span class="content">{{tValue.createTime}}</span>
                   </p>
                   <template v-for="(content, index) in tValue.content">
                     <p class="text" v-if="content" :key="index">{{ content }}</p>
                   </template>
                 </div>
-                <div v-else class="ownWord">
+                <!-- <div v-else class="ownWord">
                   <p style="text-align:right;">
                     <span>{{tValue.createTime}}</span>
                     {{tValue.replier}}
@@ -23,7 +23,7 @@
                   <template v-for="(content, index) in tValue.content">
                     <p class="text" v-if="content" :key="index">{{ content }}</p>
                   </template>
-                </div>
+                </div> -->
                 <!-- 图片列表 -->
                 <template v-if="tValue.serviceOrderMessagePictures && tValue.serviceOrderMessagePictures.length">
                   <img-list :imgList="tValue.serviceOrderMessagePictures"></img-list>
@@ -236,12 +236,16 @@ ul {
       border: 2px solid white;
       border-radius: 5px;
       padding: 5px;
+      .content {
+        font-size: 13px;
+      }
       p:nth-child(2) {
         border-radius: 5px;
         padding: 2px;
         // color: #409eff;
       }
       .text {
+        font-size: 12px;
         color: #409eff;
       }
     }

@@ -1,5 +1,5 @@
 <template>
-  <div class="my-submission-wrapper">
+  <div class="my-processed-wrapper">
     <tab-list :initialName="initialName" :texts="texts" @tabChange="onTabChange"></tab-list>
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
@@ -203,7 +203,7 @@ export default {
 }
 </script>
 <style lang='scss' scoped>
-.my-submission-wrapper {
+.my-processed-wrapper {
   ::v-deep .el-tabs__header {
     background-color: #fff;
     margin-bottom: 0;

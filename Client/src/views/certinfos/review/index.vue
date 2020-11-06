@@ -18,10 +18,14 @@
         @pagination="handleChange"
       />
       <el-dialog
-        class="certifiate-dialog"
+        v-el-drag-dialog
+        class="certifiate-dialog dialog-mini"
         :visible.sync="visible"
         width="800px"
         :show-close="false"
+        :modal="false"
+        :modal-append-to-body="false"
+        :top="'76px'"
       >
         <certifiate
           :type="type"
@@ -83,6 +87,7 @@ export default {
           item.calibrationDate = this.formatDate(item.calibrationDate)
           return item
         })
+        this.totalCount = res.count
         this.isLoading = false
       }).catch(() => {
         this.isLoading = false

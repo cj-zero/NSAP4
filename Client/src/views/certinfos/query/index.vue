@@ -17,10 +17,14 @@
         @pagination="handleChange"
       />
       <el-dialog 
-        class="certifiate-dialog"
+        v-el-drag-dialog
+        class="certifiate-dialog dialog-mini"
         :visible.sync="visible"
         width="800px"
         :show-close="false"
+        :modal="false"
+        :modal-append-to-body="false"
+        :top="'76px'"
         @closed="onClosed">
         <el-tabs v-model="activeName" type="card" @tab-click="handleClick">
           <el-tab-pane label="校准证书" name="first">
@@ -89,6 +93,7 @@ export default {
   methods: {
     _getQueryList () { // 获取表格列表
       queryLoad(this.pageConfig).then(res => {
+        this.totalCount = res.count
         this.tableData = res.data.map(item => {
           item.calibrationDate = this.formatDate(item.calibrationDate)
           return item

@@ -1,45 +1,50 @@
 <template>
-  <div>
-    操作记录
-    <el-timeline :reverse="reverse">
+  <div class="timeline">
+    <el-timeline>
       <el-timeline-item
         v-for="(activity, index) in activities"
         :key="index"
-        :timestamp="activity.timestamp">
-        {{activity.content}}
+        :timestamp="activity.operationCreateTime"
+        color="#0bbd87"
+        @click.native="timelineClick(activity.inspectId)"
+      >
+        <el-tag effect="dark" size="small">{{ activity.operationUser }}</el-tag>
+        <div class="content" v-html="activity.operationContent"></div>
       </el-timeline-item>
-  </el-timeline>
+    </el-timeline>
   </div>
 </template>
 
 <script>
-
 export default {
-  components: {},
-  data () {
-    return {
-      activities: [{
-        content: '活动按期开始',
-        timestamp: '2018-04-15'
-      }, {
-        content: '通过审核',
-        timestamp: '2018-04-13'
-      }, {
-        content: '创建成功',
-        timestamp: '2018-04-11'
-      }]
+  props: {
+    list: {
+      type: Array,
+      default: () => []
+    }
+  },
+  computed: {
+    activities() {
+      const list = this.list
+      return list.reverse()
     }
   },
   methods: {
-
-  },
-  created () {
-
-  },
-  mounted () {
-
-  },
+    timelineClick(inspectId) {
+      if (inspectId) {
+        this.$emit('timeline-click', inspectId)
+      }
+    }
+  }
 }
 </script>
-<style lang='scss' scoped>
+
+<style lang="scss" scoped>
+.timeline {
+  padding: 10px;
+  .content {
+    margin-top: 10px;
+    font-size: 12px;
+  }
+}
 </style>
