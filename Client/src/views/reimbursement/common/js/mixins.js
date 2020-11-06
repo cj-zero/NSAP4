@@ -113,6 +113,7 @@ export let tableMixin = {
         this.tableData = this._normalizeList(data)
         this.total = count
         this.tableLoading = false
+        this.currentRow = null
       }).catch((err) => {
         console.log(err, 'err')
         this.$message.error('获取列表失败')
