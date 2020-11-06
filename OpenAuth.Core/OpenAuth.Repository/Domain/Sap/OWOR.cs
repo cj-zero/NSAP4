@@ -69,8 +69,12 @@ namespace OpenAuth.Repository.Domain.Sap
           this.U_job_id= string.Empty;
           this.U_SC_LB= string.Empty;
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? DocEntry { get; set; }
 
-        
         /// <summary>
         /// 
         /// </summary>

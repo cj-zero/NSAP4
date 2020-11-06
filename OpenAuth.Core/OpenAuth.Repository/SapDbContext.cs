@@ -587,7 +587,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<DGP3> Dgp3s { get; set; }
         //public virtual DbSet<DGP4> Dgp4s { get; set; }
         //public virtual DbSet<DGP5> Dgp5s { get; set; }
-        //public virtual DbSet<DLN1> Dln1s { get; set; }
+        public virtual DbSet<DLN1> Dln1s { get; set; }
         //public virtual DbSet<DLN10> Dln10s { get; set; }
         //public virtual DbSet<DLN11> Dln11s { get; set; }
         //public virtual DbSet<DLN12> Dln12s { get; set; }
@@ -969,7 +969,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<ITM8> Itm8s { get; set; }
         //public virtual DbSet<ITM9> Itm9s { get; set; }
         //public virtual DbSet<ITR1> Itr1s { get; set; }
-        //public virtual DbSet<ITT1> Itt1s { get; set; }
+        public virtual DbSet<ITT1> Itt1s { get; set; }
         //public virtual DbSet<ITT2> Itt2s { get; set; }
         //public virtual DbSet<ITW1> Itw1s { get; set; }
         //public virtual DbSet<IVL1> Ivl1s { get; set; }
@@ -1358,7 +1358,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<OITM> Oitms { get; set; }
         //public virtual DbSet<OITR> Oitrs { get; set; }
         //public virtual DbSet<OITT> Oitts { get; set; }
-        //public virtual DbSet<OITW> Oitws { get; set; }
+        public virtual DbSet<OITW> Oitws { get; set; }
         //public virtual DbSet<OIVE> Oives { get; set; }
         //public virtual DbSet<OIVK> Oivks { get; set; }
         //public virtual DbSet<OIVL> Oivls { get; set; }
@@ -1656,7 +1656,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<OWKO> Owkos { get; set; }
         //public virtual DbSet<OWLS> Owls { get; set; }
         //public virtual DbSet<OWMG> Owmgs { get; set; }
-        //public virtual DbSet<OWOR> Owors { get; set; }
+        public virtual DbSet<OWOR> Owors { get; set; }
         //public virtual DbSet<OWPK> Owpks { get; set; }
         //public virtual DbSet<OWST> Owsts { get; set; }
         //public virtual DbSet<OWTA> Owtas { get; set; }
@@ -2344,7 +2344,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<WLS3> Wls3s { get; set; }
         //public virtual DbSet<WLS4> Wls4s { get; set; }
         //public virtual DbSet<WLS5> Wls5s { get; set; }
-        //public virtual DbSet<WOR1> Wor1s { get; set; }
+        public virtual DbSet<WOR1> Wor1s { get; set; }
         //public virtual DbSet<WOR2> Wor2s { get; set; }
         //public virtual DbSet<WOR2V> Wor2vs { get; set; }
         //public virtual DbSet<WOR3> Wor3s { get; set; }

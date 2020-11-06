@@ -48,7 +48,6 @@ namespace OpenAuth.Repository.Domain.Sap
           this.U_MLKC= string.Empty;
         }
 
-        
         /// <summary>
         /// 
         /// </summary>

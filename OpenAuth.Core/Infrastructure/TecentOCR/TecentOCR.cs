@@ -117,6 +117,7 @@ namespace Infrastructure.TecentOCR
                             string checkCode = string.Empty;
                             string companyName = string.Empty;
                             string companyTaxCode = string.Empty;
+                            decimal amountWithOutTax = decimal.Zero;
                             switch (ticketType)
                             {
                                 case 0:
@@ -149,6 +150,7 @@ namespace Infrastructure.TecentOCR
                                     companyName = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "购买方名称").Value;
                                     companyTaxCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "购买方识别号").Value;
                                     amountWithTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "小写金额").Value.ToString()[1..SingleInvoiceInfos.SingleOrDefault(s => s.Name == "小写金额").Value.Length]);
+                                    amountWithOutTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "合计金额").Value.ToString()[1..SingleInvoiceInfos.SingleOrDefault(s => s.Name == "合计金额").Value.Length]);
                                     extend.ServiceName = SingleInvoiceInfos.FirstOrDefault(s => s.Name.Contains("服务名称")).Value;
                                     break;
                                 case 5://飞机行程单没有发票代码和发票号码 分别取行程单上的印刷序号和电子客票号码
@@ -189,7 +191,8 @@ namespace Infrastructure.TecentOCR
                                 CompanyTaxCode = companyTaxCode,
                                 CheckCode = checkCode,
                                 Type = (int)item.Type,
-                                Extend = extend
+                                Extend = extend,
+                                AmountWithOutTax = amountWithOutTax
                             };
                             outData.Add(ticketInfo);
                         }
