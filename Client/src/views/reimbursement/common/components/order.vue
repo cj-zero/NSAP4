@@ -1,5 +1,5 @@
 <template>
-  <div class="order-wrapper" v-loading="orderLoading">
+  <div class="order-wrapper" v-loading.fullscreen="orderLoading">
     <el-row type="flex" class="head-title-wrapper">
       <p>报销单号: <span>{{ formData.mainId }}</span></p>
       <p>报销人: <span>{{ formData.userName }}</span></p>

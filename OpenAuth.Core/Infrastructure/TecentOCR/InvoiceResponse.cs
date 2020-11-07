@@ -114,6 +114,11 @@ namespace Infrastructure.TecentOCR
         public decimal AmountWithTax { get; set; }
 
         /// <summary>
+        /// 合计金额（不含税）
+        /// </summary>
+        public decimal AmountWithOutTax { get; set; }
+
+        /// <summary>
         /// 开票时间
         /// </summary>
         public string InvoiceDate { get; set; }

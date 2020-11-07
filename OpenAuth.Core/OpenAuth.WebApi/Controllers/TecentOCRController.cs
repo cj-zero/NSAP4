@@ -162,7 +162,7 @@ namespace OpenAuth.WebApi.Controllers
                                         InvoiceCode = item.InvoiceCode,
                                         InvoiceNo = item.InvoiceNo,
                                         InvoiceDate = item.InvoiceDate,
-                                        Additional = item.CheckCode.Length > 6 ? item.CheckCode.Substring(item.CheckCode.Length - 6) : item.AmountWithTax + "/" + item.CheckCode
+                                        Additional = item.CheckCode.Length > 6 ? item.CheckCode.Substring(item.CheckCode.Length - 6) : item.AmountWithOutTax + "/" + item.CheckCode
                                     };
                                     var response = _tecentOCR.VatInvoiceVerify(req);
                                     //核验成功 返回核验结果
