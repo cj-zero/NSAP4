@@ -188,6 +188,7 @@ export default {
         this.total = count
         this.tableData = this._normalizeList(data)
         this.tableLoading = false
+        this.currentRow = null
       }).catch(() => {
         this.tableLoading = false
         this.$message.error('加载列表失败')
