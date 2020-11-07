@@ -1,6 +1,6 @@
 import { getReportDetail, GetDetails } from '@/api/serve/callservesure'
 import { AllowSendOrderUser } from "@/api/serve/callservepushm"
-import { STATUS_COLOR_MAP } from '@/utils/declaration'
+import { STATUS_COLOR_MAP, PRIORITY_COLOR_MAP } from './map'
 export let reportMixin = {
   data () {
     return {
@@ -145,6 +145,13 @@ export let tableMixin = {
       }
       let { status } = val
       return STATUS_COLOR_MAP[status]
+    },
+    processPriorityStatus (val) {
+      if (!val) {
+        return
+      }
+      let { priority } = val
+      return PRIORITY_COLOR_MAP[priority]
     }
   }
 }
