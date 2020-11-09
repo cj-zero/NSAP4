@@ -30,8 +30,8 @@ export let tableMixin = {
         { label: '呼叫主题', prop: 'fromTheme', width: 250 },
         { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
         { label: '客户名称', prop: 'terminalCustomer', width: 170 },
-        { label: '总金额', prop: 'totalMoney', width: 100 },
-        { label: '总天数', prop: 'businessTripDays', width: 60 },
+        { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
+        { label: '总天数', prop: 'businessTripDays', width: 60, align: 'right' },
         { label: '出发日期', prop: 'businessTripDate', width: 85 },
         { label: '结束日期', prop: 'endDate', width: 85 },
         { label: '报销部门', prop: 'orgName', width: 70 },
@@ -46,8 +46,8 @@ export let tableMixin = {
         { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleJump: this.openTree },
         { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
         { label: '客户名称', prop: 'terminalCustomer', width: 170 },
-        { label: '总金额', prop: 'totalMoney', width: 100 },
-        { label: '总天数', prop: 'businessTripDays', width: 60 },
+        { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
+        { label: '总天数', prop: 'businessTripDays', width: 60, align: 'right' },
         { label: '出发日期', prop: 'businessTripDate', width: 85 },
         { label: '结束日期', prop: 'endDate', width: 85 },
         { label: '报销部门', prop: 'orgName', width: 70 },
@@ -453,8 +453,8 @@ export let categoryMixin = {
     },    
     travelConfig () {
       let config = [
-        { label: '天数', prop: 'days', type: 'number', width: 150 },
-        { label: '金额', align: 'right', prop: 'money', type: 'number', disabled: true, width: 150 },
+        { label: '天数', prop: 'days', type: 'number', width: 100, align: 'right' },
+        { label: '金额', prop: 'money', type: 'number', disabled: true, width: 150, align: 'right' },
         { label: '备注', prop: 'remark', type: 'input', width: 150 }
       ]
       return (this.ifFormEdit !== undefined && !this.ifFormEdit) || this.ifFormEdit === undefined

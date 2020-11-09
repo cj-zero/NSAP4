@@ -1,7 +1,7 @@
 <template>
   <div class="order-wrapper" v-loading.fullscreen="orderLoading">
     <el-row type="flex" class="head-title-wrapper">
-      <p>报销单号: <span>{{ formData.mainId }}</span></p>
+      <p style="color: red;">报销单号: <span>{{ formData.mainId }}</span></p>
       <p>报销人: <span>{{ formData.userName }}</span></p>
       <p>部门: <span>{{ formData.orgName }}</span></p>
       <p>劳务关系: <span>{{ formData.serviceRelations }}</span></p>
@@ -41,7 +41,7 @@
                   </div>
                 </template>
                 <template v-else>
-                  <span :class="{ 'upload-title money': item.label === '总金额'}">{{ item.label }}</span>
+                  <span :class="{ 'upload-title money': item.label === '总金额'}">{{ item.label }}{{ item.label === '总金额' ? ':' : '' }}</span>
                 </template>
               </span>
               <template v-if="!item.type">
@@ -112,12 +112,6 @@
               @deleteFileList="deleteFileList"></upLoadFile>
           </el-row>
         </el-col>
-        <!-- <el-col :span="this.ifFormEdit ? 9: 6" style="position: relative;top: -35px;">
-          <el-row type="flex" >
-            <span class="upload-title money">总金额</span>
-            <span class="money-text">￥{{ totalMoney | toThousands }}</span>
-          </el-row>
-        </el-col> -->
       </el-row>
       <!-- 出差 -->
       <div class="form-item-wrapper travel" :class="{ uneditable: !this.ifFormEdit }" v-if="ifCOrE || formData.reimburseTravellingAllowances.length">
@@ -173,7 +167,7 @@
                       :type="item.type" :min="0" 
                       :disabled="item.disabled" 
                       @input="onTravelInput"
-                      :class="{ 'money-class': item.prop === 'money'}"
+                      :class="{ 'money-class': item.prop === 'money' || item.prop === 'days' }"
                     ></el-input>
                   </el-form-item>
                 </template>
@@ -416,7 +410,7 @@
                     :rules="scope.row.isAdd ? (accRules[item.prop] || { required: false }) : { required: false }"
                   >
                     <el-input 
-                      :class="{ 'money-class': item.prop === 'money' || item.prop === 'totalMoney' }"
+                      :class="{ 'money-class': item.prop === 'money' || item.prop === 'totalMoney' || item.prop === 'days' }"
                       v-model="scope.row[item.prop]" 
                       :type="item.type" 
                       :disabled="item.disabled" 
@@ -2159,7 +2153,7 @@ export default {
           // width: 400px;
           white-space: nowrap;
           transform: translate3d(100%, 0, 0);
-          font-size: 16px;
+          font-size: 12px;
           font-weight: bold;
         }
       }
