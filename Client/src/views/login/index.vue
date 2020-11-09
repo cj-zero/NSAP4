@@ -165,7 +165,7 @@ export default {
       }
     },
     checkStatus() {
-      this.timer = setInterval(() => {
+      this.timer = setTimeout(() => {
         login
           .ValidateLogin({ rd: this.randomNum })
           .then(res => {
@@ -188,7 +188,7 @@ export default {
           });
       }, 1000);
       this.$once("hook:beforeDestroy", () => {
-        clearInterval(this.timer);
+        clearTimeout(this.timer);
       });
     },
     openQCCode() {
@@ -199,7 +199,7 @@ export default {
         this.dialogQ = true;
         this.checkStatus();
       }else{
-      clearInterval(this.timer);
+        clearTimeout(this.timer);
       }
     },
     handleLogin() {
