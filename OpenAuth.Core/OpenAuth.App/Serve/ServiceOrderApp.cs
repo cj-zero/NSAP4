@@ -2554,7 +2554,7 @@ namespace OpenAuth.App
             var workOrderInfo = await UnitWork.Find<ServiceWorkOrder>(s => workOrderIds.Contains(s.Id)).FirstOrDefaultAsync();
             if (workOrderInfo != null)
             {
-                servicemode = (int)workOrderInfo.ServiceMode;
+                servicemode = workOrderInfo.ServiceMode == null ? 0 : (int)workOrderInfo.ServiceMode;
             }
             int status = 2;
             //拨打完电话 工单状态变为已预约
@@ -2563,6 +2563,10 @@ namespace OpenAuth.App
                 status = 3;
                 servicemode = 2;
                 await UnitWork.UpdateAsync<ServiceWorkOrder>(s => workOrderIds.Contains(s.Id) && s.BookingDate == null, e => new ServiceWorkOrder { BookingDate = DateTime.Now });
+            }
+            else if (request.Type == 2)
+            {
+                servicemode = 1;
             }
             else if (request.Type > 4)
             {
@@ -3020,6 +3024,8 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<TableData> GetTechnicianServiceOrder(TechnicianServiceWorkOrderReq req)
         {
+            //20201109 前台不显示暂时放开显示限制
+            req.limit = 1000;
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
