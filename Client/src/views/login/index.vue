@@ -165,7 +165,7 @@ export default {
       }
     },
     checkStatus() {
-      this.timer = setInterval(() => {
+      this.timer = setTimeout(() => {
         login
           .ValidateLogin({ rd: this.randomNum })
           .then(res => {
@@ -176,7 +176,7 @@ export default {
               setToken(token);
               this.$message({
                 type: "success",
-                message: "登陆成功"
+                message: "登录成功"
               });
               this.$router.push({
                 path: "/"
@@ -188,7 +188,7 @@ export default {
           });
       }, 1000);
       this.$once("hook:beforeDestroy", () => {
-        clearInterval(this.timer);
+        clearTimeout(this.timer);
       });
     },
     openQCCode() {

@@ -54,7 +54,7 @@
               label="序列号"
               prop="manufacturerSerialNumber"
               :rules="{
-              required: true, message: '制造商序列号不能为空', trigger: 'blur'
+              required: true, message: '', trigger: 'blur'
             }"
             >
               <el-input
@@ -124,12 +124,22 @@
           <el-col :span="18">
             <el-form-item
               label="呼叫主题"
-              prop="fromTheme"
-              :rules="{
-              required: true, message: '呼叫主题不能为空', trigger: 'blur'
-            }"
+              required
             >
-              <el-input v-model="formList[0].fromTheme" type="textarea" maxlength="255" autosize></el-input>
+              <!-- <el-input v-model="formList[0].fromTheme" type="textarea" maxlength="255" autosize style="display: none;"></el-input> -->
+              <div class="form-theme-content" @click="openFormThemeDialog($event, 0)">
+                <div class="form-theme-mask" v-if="isOrderDisabled(formList[0]) || formName === '查看'"></div>
+                <el-scrollbar wrapClass="scroll-wrap-class">
+                  <div class="form-theme-list">
+                    <transition-group name="list" tag="ul">
+                      <li class="form-theme-item" v-for="(item, themeIndex) in formList[0].themeList" :key="item.id" >
+                        <p class="text">{{ item.description }}</p>
+                        <i class="delete el-icon-error" @click.stop="deleteTheme(0, themeIndex)"></i>
+                      </li>
+                    </transition-group>
+                  </div>
+                </el-scrollbar>
+              </div>
             </el-form-item>
           </el-col>
           <el-col :span="6">
@@ -372,7 +382,7 @@
                   label="序列号"
                   prop="manufacturerSerialNumber"
                   :rules="{
-                  required: true, message: '制造商序列号不能为空', trigger: 'blur'
+                  required: true, message: '', trigger: 'blur'
                 }"
                 >
                   <el-input
@@ -441,12 +451,21 @@
               <el-col :span="18">
                 <el-form-item
                   label="呼叫主题"
-                  prop="fromTheme"
-                  :rules="{
-                  required: true, message: '呼叫主题不能为空', trigger: 'blur'
-                }"
+                  required
                 >
-                  <el-input type="textarea" maxlength="255" v-model="item.fromTheme" autosize></el-input>
+                  <!-- <el-input type="textarea" maxlength="255" v-model="item.fromTheme" autosize></el-input> -->
+                  <div class="form-theme-content" @click="openFormThemeDialog($event, index + 1)">
+                    <el-scrollbar wrapClass="scroll-wrap-class">
+                      <div class="form-theme-list">
+                        <transition-group name="list" tag="ul">
+                          <li class="form-theme-item" v-for="(item, themeIndex) in item.themeList" :key="item.id">
+                            <p class="text">{{ item.description }}</p>
+                            <i class="delete el-icon-error" @click.stop="deleteTheme(index + 1, themeIndex)"></i>
+                          </li>
+                        </transition-group>
+                      </div>
+                    </el-scrollbar>
+                  </div>
                 </el-form-item>
               </el-col>
               <el-col :span="6">
@@ -758,6 +777,15 @@
         :data="reportData"
       ></Report>
     </el-dialog>
+    <my-dialog 
+      ref="formTheme"
+      width="500px"
+      :btnList="themeBtnList"
+      :appendToBody="true"
+      @onClose="closeFormTheme"
+    >
+      <common-table ref="formThemeTable" :data="formThemeData" :columns="columns" :selectedList="selectedList"></common-table>
+    </my-dialog>
   </div>
 </template>
 
@@ -776,8 +804,10 @@ import Report from '../common/components/report'
 import { reportMixin } from '../common/js/mixins'
 import elDragDialog from '@/directive/el-dragDialog'
 import { isCustomerCode } from '@/utils/validate'
+import MyDialog from '@/components/Dialog'
+import CommonTable from '@/components/CommonTable'
 export default {
-  components: { fromfSN, problemtype, solution, Pagination, fromfSNC, Report },
+  components: { fromfSN, problemtype, solution, Pagination, fromfSNC, Report, MyDialog, CommonTable },
   mixins: [reportMixin],
   provide() {
     let that = this;
@@ -912,7 +942,13 @@ export default {
       },
       isDisalbed: false,
       collapseTitle: '展开更多订单',
-      dialogReportVisible: false
+      dialogReportVisible: false,
+      formThemeData: [],
+      columns: [
+        { originType: 'selection' },
+        { label: '呼叫主题', prop: 'description' }
+      ],
+      selectedList: [] // 当前呼叫主题框存在的数组
     };
   },
   created() {
@@ -942,8 +978,38 @@ export default {
       this.solutionCount = response.count;
       this.listLoading = false;
     });
+    const list = [
+      '客户咨询如何设置工步？',
+      '如何设置18650电池的工步？',
+      '如何设置动力电池的工步',
+      'R部工程师新需求沟通，出差报备',
+      '寄出物料至客户现场',
+      '联机异常',
+      '新购工装需上门指导使用',
+      '通道保护，需上门检修。',
+      '设备需返修处理。',
+      '采购下位机板，询价/报价',
+      '登录用户时提示未知的错误，原因？',
+      '安装BTS8.0软件提示未注册，原因？',
+      '不会联机，需要指导。',
+      '8512分容柜无法联机'
+    ]
+    if (this.formName !== '查看') {
+      for (let i = 0; i < list.length; i++) {
+        this.formThemeData.push({
+          id: i + 1,
+          description: list[i]
+        })
+      }
+    }
   },
   computed: {
+    themeBtnList () {
+      return [
+        { btnText: '确认', handleClick: this.confirmTheme },
+        { btnText: '取消', handleClick: this.closeFormTheme }
+      ]
+    },
     newValue() {
       return JSON.stringify(this.formList);
     },
@@ -969,7 +1035,7 @@ export default {
               let newValChild = newVal[index]; //新值的每一项
               let oldValChild = oldVal[index];
               if (newVal.length == oldVal.length) {
-                for (let item1 in oldValChild) {
+                for (let item1 in newValChild) {
                   if (newValChild[item1] !== oldValChild[item1]) {
                     //如果新值和旧值不一样
                     let sliceList = this.formList.slice(index);
@@ -992,6 +1058,12 @@ export default {
                           if (ind !== 0) {
                             itemF.solutionId = newValChild.solutionId;
                             itemF.solutionsubject = newValChild.solutionsubject;
+                          }
+                        });
+                      } else if (item1 === 'themeList') {
+                        sliceList.map((itemF, ind) => {
+                          if (ind !== 0) {
+                            this.$set(itemF, 'themeList', newValChild.themeList)
                           }
                         });
                       } else {
@@ -1091,6 +1163,52 @@ export default {
   },
   // inject: ["form"],
   methods: {
+    confirmTheme () {
+      let selectList = this.$refs.formThemeTable.getSelectionList()
+      if (!selectList.length) {
+        return this.$message.warning('请先选择数据')
+      }
+      let data = this.formList[this.currentFormIndex] // 当前选中的呼叫主题对应formList的第几项
+      let newList = (data.themeList || []).concat(selectList)
+      console.log(newList.length)
+      if (newList && newList.length > 10) {
+        return this.$message.warning('最多选择十条数据!')
+      }
+      this.$set(data, 'themeList', newList)
+      this.closeFormTheme()
+    },
+    closeFormTheme () {
+      this.$refs.formThemeTable.clearSelection() // 清空多选
+      this.$refs.formTheme.close()
+    },
+    openFormThemeDialog (e, formIndex) {
+      if (this.formName === '查看') {
+        return
+      }
+      if (!this.form.customerId) {
+        return this.$message.error('客户代码不能为空!')
+      }
+      let data = this.formList[formIndex]
+      if (this.isOrderDisabled(data)) {
+        return
+      }
+      if (data.themeList && data.themeList.length > 10) {
+        return this.$message.warning('最多选择十条数据!')
+      }
+      this.currentFormIndex = formIndex // 记录当前选中数据对应的索引值
+      this.selectedList = data.themeList || []
+      this.$refs.formTheme.open()
+    },
+    deleteTheme (formIndex, themeIndex) { // formIndex 是formList的索引 themeIndex主题呼叫中标签的索引
+      if (this.formName === '查看') {
+        return
+      }
+      let data = this.formList[formIndex]
+      if (this.isOrderDisabled(data)) {
+        return
+      }
+      data.themeList.splice(themeIndex, 1)
+    },
     isChangeStatus (val) { // 是否可以改变状态
       return (this.formName === '编辑' && !this.formInitailList.every(item => item.id === val.id)) 
       || this.formName === '新建' 
@@ -1410,6 +1528,7 @@ export default {
       const targetForm = index !== undefined ? itemFormList[index] : itemForm;
       targetForm.validate((valid) => {
         if (valid) {
+          console.log('新增工单陈工')
           callservesure
             .addWorkOrder(result)
             .then(() => {
@@ -1567,6 +1686,70 @@ export default {
   .radio-item {
     display: flex;
     flex-direction: column;
+  }
+  .form-theme-content {
+    position: relative;
+    box-sizing: border-box;
+    min-height: 30px;
+    padding: 5px 15px;
+    color: #606266;
+    font-size: 12px;
+    line-height: 1.5;
+    border-radius: 4px;
+    border: 1px solid #DCDFE6;
+    background-color: #fff;
+    outline: none;
+    transition: border-color .2s cubic-bezier(.645, .045, .355, 1);
+    cursor: pointer;
+    &:focus {
+      border-color: #409EFF;
+    }
+    .form-theme-mask {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 10;
+    }
+    ::v-deep .el-scrollbar {
+      .scroll-wrap-class {
+        max-height: 100px; // 最大高度
+        overflow-x: hidden; // 隐藏横向滚动栏
+        margin-bottom: 0 !important;
+      }
+    }
+    .form-theme-list {
+      .form-theme-item {
+        display: inline-block;
+        margin-right: 4px;
+        padding: 5px;
+        background-color: rgba(239, 239, 239, 1);
+        &.list-enter-active, &.list-leave-acitve {
+          transition: all .4s;
+        }
+        &.list-enter, &.list-leave-to {
+          opacity: 0;
+        }
+        &.list-enter-to, &.list-leave {
+          opacity: 1;
+        }
+        .text {
+          display: inline-block;
+          overflow: hidden;
+          max-width: 475px;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          vertical-align: middle;
+        }
+        .delete {
+          margin-left: 5px;
+          font-size: 12px;
+          vertical-align: middle;
+          cursor: pointer;
+        }
+      }
+    }
   }
   .confirm-add-btn {
     position: absolute;

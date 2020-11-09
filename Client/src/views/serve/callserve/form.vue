@@ -1131,15 +1131,6 @@ export default {
         return;
       }
       if (this.form.serviceWorkOrders.length >= 0) {
-        let chec = this.form.serviceWorkOrders.every(
-          (item) => {
-            return (item.fromTheme !== "" &&
-            item.fromType !== "" &&
-            item.problemTypeId !== "" &&
-            item.manufacturerSerialNumber !== "" &&
-            (item.fromType === 2 ? item.solutionId !== "" : true))
-          }
-        );
         try {
           this.isValid = await this.$refs.form.validate()
         } catch (err) {
@@ -1153,6 +1144,17 @@ export default {
           this.$message.error('请输入正确的终端代码格式')
           return this.$emit('close-Dia', 'closeLoading')
         }
+        let chec = this.form.serviceWorkOrders.every(
+          (item) => {
+            return ( item.themeList && 
+            item.themeList.length &&
+            item.fromType !== "" &&
+            item.problemTypeId !== "" &&
+            item.manufacturerSerialNumber !== "" &&
+            (item.fromType === 2 ? item.solutionId !== "" : true))
+          }
+        );
+        
         console.log(chec, this.isValid, 'chec')
         if (chec && this.isValid) {
           if (this.$route.path === "/serve/callserve") {
@@ -1165,6 +1167,9 @@ export default {
                 this.form.city = ""
               }
               this.form.pictures = [...this.upLoadImgList, ...this.upLoadFileList]
+              this.form.serviceWorkOrders.forEach(workOrder => {
+                workOrder.fromTheme = JSON.stringify(workOrder.themeList)
+              })
               callservesure
                 .CreateOrder(this.form)
                 .then(() => {
@@ -1279,7 +1284,7 @@ export default {
             if (this.addressList.length) {
               let { address, building, city } = this.addressList[0];
               this.form.addressDesignator = address;
-              this.form.address = city + building
+              this.form.address = city ? city : '' + building
             }
           }
         })

@@ -127,6 +127,8 @@ export let chatMixin = { // 查看、编辑服务单时 右侧出现的聊天记
           serviceOrder.visitTime = this.deleteSeconds(visitTime)
           serviceOrder.liquidationDate = this.deleteSeconds(liquidationDate)
           serviceOrder.completeDate = this.deleteSeconds(completeDate)
+          console.log(typeof serviceOrder.fromTheme)
+          serviceOrder.themeList = JSON.parse(serviceOrder.fromTheme)
         })
       }
       return data

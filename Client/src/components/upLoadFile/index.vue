@@ -148,7 +148,7 @@ export default {
     maxSize: {
       type: [Number, String]
     },
-    onAccept: {
+    onAccept: { // 文件上传之前的校验函数
       type: Function
     }
   },
