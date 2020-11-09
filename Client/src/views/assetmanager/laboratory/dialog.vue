@@ -7,7 +7,7 @@
             <el-row type="flex" justify="space-around">
               <el-col :span="12">
                 <el-form-item label="资产ID">
-                  <el-input disabled style="width: 200px" v-model="formData.id"></el-input>
+                  <el-input :disabled="openDialogType != '查看'" :readonly="openDialogType === '查看'" style="width: 200px" v-model="formData.id"></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
@@ -89,7 +89,7 @@
             <el-row type="flex" justify="space-around">
               <el-col :span="12">
                 <el-form-item label="资产编号">
-                  <el-input style="width: 200px" :readonly="openDialogType === '查看'" v-model="formData.assetNumber" disabled></el-input>
+                  <el-input style="width: 200px" v-model="formData.assetNumber" :disabled="openDialogType != '查看'" :readonly="openDialogType === '查看'"></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
@@ -351,18 +351,19 @@
                 <el-row type="flex">
                   <el-image
                     class="asset-image"
+                    fit="contain"
                     v-if="formData.assetImage"
                     :src="getImgUrl(formData.assetImage)"
                     :preview-src-list="[getImgUrl(formData.assetImage)]"
                     alt
                   ></el-image>
                   <el-upload
+                    v-if="openDialogType === '新增'"
                     name="files"
                     list-type="picture-card"
                     accept="image/*"
                     :action="action"
                     :headers="headers"
-                    :limit="1"
                     :show-file-list="false"
                     :disabled="openDialogType === '编辑' || openDialogType === '查看'"
                     :on-success="handleSuccessAssetImage"
@@ -377,7 +378,8 @@
           </el-form>
           <el-row type="flex" justify="end" v-show="openDialogType != '查看'">
             <el-button size="mini" @click="closeDialog">取消</el-button>
-            <el-button size="mini" type="primary" @click="onsubmit">确认</el-button>
+            <el-button size="mini" type="primary" v-show="openDialogType === '新增' && !isPreviewed" @click="onPreview">预览</el-button>
+            <el-button size="mini" type="primary" v-show="isPreviewed || openDialogType != '新增'" @click="onsubmit">确认</el-button>
           </el-row>
         </el-tab-pane>
         <el-tab-pane label="送检记录" name="送检记录" v-if="openDialogType != '新增'">
@@ -616,7 +618,9 @@ export default {
       activeTab: '详情',
 
       imgDialogVisible: false,
-      imgDialogImageUrl: ''
+      imgDialogImageUrl: '',
+
+      isPreviewed: false
     }
   },
   created() {
@@ -653,6 +657,7 @@ export default {
         this.isshowmeter = false
         this.isshowgz = false
         this.isshowflq = false
+        this.isPreviewed = false
       } else {
         this._getSingleAsset(id)
       }
@@ -766,6 +771,13 @@ export default {
       return state => {
         return state.value.toLowerCase().indexOf(queryString.toLowerCase()) === 0
       }
+    },
+    onPreview() {
+      this.$refs.form.validate(valid => {
+        if (valid) {
+          this.isPreviewed = true
+        }
+      })
     },
     onsubmit() {
       this.$refs.form.validate(valid => {
