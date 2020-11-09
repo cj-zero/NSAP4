@@ -2,16 +2,30 @@ export const quotationOrderMixin = {
   computed: {
     formConfig () { // 头部表单配置
       return [
-          { label: '服务ID', prop: 'serviceOrderSapId', palceholder: '请选择', col: this.ifFormEdit ? 5 : 6, disabled: false, readonly: true },
-          { label: '客户代码', prop: 'serviceOrderSapId', palceholder: '请选择', col: this.ifFormEdit ? 5 : 6, disabled: false },
-          { label: '客户名称', prop: 'serviceOrderSapId', palceholder: '请选择', col: this.ifFormEdit ? 5 : 6, disabled: false },
-          { label: '销售员', prop: 'serviceOrderSapId', palceholder: '请选择', col: this.ifFormEdit ? 5 : 6, disabled: false },
-          { label: '发货方式', prop: 'serviceOrderSapId', palceholder: '请选择', col: this.ifFormEdit ? 5 : 6, disabled: false },
-          { label: '开票单位', prop: 'serviceOrderSapId', palceholder: '请选择', col: this.ifFormEdit ? 5 : 6, disabled: false, type: 'select', options: [] },
-          { label: '收款地址', prop: 'serviceOrderSapId', palceholder: '请选择', col: this.ifFormEdit ? 5 : 6, disabled: false },
-          { label: '收货地址', prop: 'serviceOrderSapId', palceholder: '请选择', col: this.ifFormEdit ? 5 : 6, disabled: false },
-          { label: '备注', prop: 'serviceOrderSapId', palceholder: '请选择', col: this.ifFormEdit ? 5 : 6, disabled: false },
+        { label: '服务ID', prop: 'serviceOrderSapId', palceholder: '请选择', col: 6, readonly: true },
+        { label: '客户代码', prop: 'serviceOrderSapId', palceholder: '请选择', col: 6 },
+        { label: '客户名称', prop: 'serviceOrderSapId', palceholder: '请选择', col: 6 },
+        { label: '销售员', prop: 'serviceOrderSapId', palceholder: '请选择', col: 6, isEnd: true },
+        { label: '发货方式', prop: 'serviceOrderSapId', palceholder: '请选择', col: 6 },
+        { label: '开票单位', prop: 'serviceOrderSapId', palceholder: '请选择', col: 6, type: 'select', options: [], isEnd: true },
+        { label: '收款地址', prop: 'serviceOrderSapId', palceholder: '请选择', col: 18, isEnd: true },
+        { label: '收货地址', prop: 'serviceOrderSapId', palceholder: '请选择', col: 18, isEnd: true  },
+        { label: '备注', prop: 'serviceOrderSapId', palceholder: '请选择', col: 18 }
       ]
+    },
+    formatFormConfig () {
+      let noneSlotConfig = this.formConfig
+      let result = [], j = 0
+      for (let i = 0; i < noneSlotConfig.length; i++) {
+        if (!result[j]) {
+          result[j] = []
+        }
+        result[j].push(noneSlotConfig[i])
+        if (noneSlotConfig[i].isEnd) {
+          j++
+        }
+      }
+      return result
     },
     materialConfig () {
       let config = [ // 交通配置

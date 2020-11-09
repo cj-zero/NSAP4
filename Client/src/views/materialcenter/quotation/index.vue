@@ -26,9 +26,11 @@
       </div>
     </div>    
     <my-dialog 
-      ref="myDialog"
-      :btnList="btnList">
-      <quotation-order ref="quotationOrder"></quotation-order>
+      ref="quotationDialog"
+      width="800px"
+      :btnList="btnList"
+    >
+      <quotation-order ref="quotationOrder" :customerList="customerList"></quotation-order>
     </my-dialog>
   </div>
 </template>
@@ -41,6 +43,7 @@ import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import CommonTable from '@/components/CommonTable'
 import QuotationOrder from '../common/components/quotationOrder'
+import { getQuotationList, getServiceOrderList } from '@/api/material/quotation'
 const tableData = []
 for (let i = 0; i < 100; i++) {
   tableData.push({
@@ -77,7 +80,7 @@ export default {
         { prop: 'startDate', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endDate', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
-        { type: 'button', btnText: '新建', isSpecial: true, handleClick: this.addAccount },
+        { type: 'button', btnText: '新建', isSpecial: true, handleClick: this.openMaterialOrder },
         { type: 'button', btnText: '编辑', handleClick: this.getDetail, options: { type: 'edit', name: 'mySubmit' } },
         { type: 'button', btnText: '打印', handleClick: this.print },     
         { type: 'button', btnText: '删除', handleClick: this.deleteOrder },
@@ -102,13 +105,14 @@ export default {
         { label: '已驳回', name: '5' }
       ],
       formQuery: {
-        pickNO: '',
-        customerName: '',
-        serviceOrderId: '',
-        startDate: '',
-        endDate: ''
+        quotationId: '', // 领料单号
+        cardCode: '', // 客户
+        serviceOrderSapId: '',
+        startCraeteTime: '',
+        endCreateTime: ''
       },
       listQuery: {
+        startType: '',
         page: 1,
         limit: 50,
       },
@@ -116,7 +120,7 @@ export default {
       tableData,
       total: 100,
       quotationColumns: [
-        { label: '领料单号', prop: 'pickNO', handleClick: this.getDetail, options: { type: 'view' }, type: 'link'},
+        { label: '领料单号', prop: 'quotationId', handleClick: this.getDetail, options: { type: 'view' }, type: 'link'},
         { label: '服务ID', prop: 'serviceOrderId', handleClick: this.getDetail, type: 'link' },
         { label: '客户代码', prop: 'customerId' },
         { label: '客户名称', prop: 'customerName' },
@@ -126,10 +130,26 @@ export default {
         { label: '备注', prop: 'remark' },
         { label: '创建时间', prop: 'createTime' },
         { label: '状态', prop: 'status' }
-      ]
+      ],
+      customerList: [] // 用户服务单列表
     } 
   },
   methods: {
+    _getList () {
+      getQuotationList(this.listQuery)
+    },
+    openMaterialOrder () {
+      getServiceOrderList({ page: 1, limit: 1 }).then((res) => {
+        this.customerList = res.data
+        if (this.customerList && this.customerList.length) {
+          return this.$refs.quotationDialog.open()
+        } 
+        this.$message.warning('无服务单数据')
+      }).catch(err => {
+        this.$message.error(err.message)
+      })
+      
+    },
     onTabChange () {},
     submit () {},
     saveAsDraft () {},
@@ -140,6 +160,9 @@ export default {
     onChangeForm () {},
     onSearch () {},
     handleCurrentChange () {}
+  },
+  created () {
+    this._getList()
   }
 }
 </script>

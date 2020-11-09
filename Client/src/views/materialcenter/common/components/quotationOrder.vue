@@ -1,25 +1,23 @@
 <template>
   <div class="quotation-wrapper">
-    <div class="title-wrapper">
+    <!-- <div class="title-wrapper">
       <p>报价单号: <span></span></p>
       <p>申请人: <span></span></p>
       <p>创建时间: <span></span></p>
-    </div>
+    </div> -->
     <el-form
       :model="formData"
       ref="form"
       class="my-form-wrapper"
-      :class="{ 'uneditable': !this.ifFormEdit }"
-      :disabled="disabled"
-      :label-width="labelWidth"
+      label-width="80px"
       size="mini"
-      :label-position="labelPosition"
+      label-position="right"
       :show-message="false"
     >
       <!-- 普通控件 -->
       <el-row 
         type="flex" 
-        v-for="(config, index) in normalConfig"
+        v-for="(config, index) in formatFormConfig"
         :key="index">
         <el-col 
           :span="item.col"
@@ -30,14 +28,14 @@
             :prop="item.prop"
             :rules="rules[item.prop] || { required: false }">
             <span slot="label">
-              <template v-if="item.prop === 'serviceOrderSapId' && title !== 'create'">
+              <template v-if="item.prop === 'serviceOrderSapId'">
                 <div class="link-container" style="display: inline-block">
                   <span>{{ item.label }}</span>
                   <img :src="rightImg" @click="openTree(formData, false)" class="pointer">
                 </div>
               </template>
               <template v-else>
-                <span :class="{ 'upload-title money': item.label === '总金额'}">{{ item.label }}</span>
+                <span>{{ item.label }}</span>
               </template>
             </span>
             <template v-if="!item.type">
@@ -46,8 +44,8 @@
                 :style="{ width: item.width + 'px' }"
                 :maxlength="item.maxlength"
                 :disabled="item.disabled"
-                @focus="customerFocus(item.prop) || noop"
                 :readonly="item.readonly"
+                @focus="onServiceIdFocus"
                 >
                 <i :class="item.icon" v-if="item.icon"></i>
               </el-input>
@@ -93,7 +91,7 @@
       </el-row>
     </el-form>
     <!-- 物料添加 -->
-    <div class="material-wrapper">
+    <!-- <div class="material-wrapper">
       <el-button class="add-btn" @click="addMaterial">添加</el-button>
       <el-form 
           ref="materialForm" 
@@ -186,7 +184,7 @@
             </el-table-column>
           </el-table>
         </el-form>
-    </div>
+    </div> -->
     <!-- 操作记录 -->
     <div class="record-wrapper">
       <!-- <el-table 
@@ -208,42 +206,109 @@
       </el-table> -->
       <common-table :data="recordData" :columns="recordColumns"></common-table>
     </div>
+    <!-- 客户弹窗 -->
+    <my-dialog
+      ref="customerDialog"
+      :btnList="customerBtnList"
+    >
+      <common-table ref="customerTable" :data="customerTableData"></common-table>
+      <pagination
+        v-show="customerTotal > 0"
+        :total="tcustomerTotal"
+        :page.sync="listQuery.page"
+        :limit.sync="listQuery.limit"
+        @pagination="handleCurrentChange"
+      />
+    </my-dialog>
+    <!-- 物料编码弹窗 -->
     <my-dialog 
       ref="materialDialog"
       title="物料编码"
       :btnList="materialBtnList"
     >
-      <common-table ref="materialSelectTable" :data="materialTableData"></common-table>
+      <common-table ref="materialTable" :data="materialTableData"></common-table>
     </my-dialog>
   </div>
 </template>
 
 <script>
+import { getServiceOrderList } from '@/api/material/quotation'
 import CommonTable from '@/components/CommonTable' // 对于不可编辑的表格
 import MyDialog from '@/components/Dialog'
+
+import { quotationOrderMixin } from '../js/mixins'
+import rightImg from '@/assets/table/right.png'
 export default {
+  mixins: [quotationOrderMixin],
   components: {
     CommonTable,
     MyDialog
   },
+  props: {
+    customerList: {
+      type: Array,
+      default () { () => [] }
+    }
+  },
+  watch: {
+    customerList: {
+      immediate: true,
+      deep: true,
+      handler (val) {
+        console.log(val, 'val')
+        if (this.title === 'creat') { // 新建时才需要去获取客户信息列表
+          this._getServiceOrderList()
+        }
+      }
+    }
+  },
   data () {
     return {
+      rightImg,
+      formData: {}, // 表单数据
+      rules: {}, // 上表单校验规则
       recordColumns: [],
       recordData: [],
+      materialTableData: [],
       materialBtnList: [
-        { btnText: '确定', handleClick: this.selectMaterialItem },
+        { btnText: '确定', handleClick: this.selectMaterial },
         { btnText: '取消', handleClick: this.closeMaterialDialog }
+      ],
+      customerBtnList: [
+        { btnText: '确定', handleClick: this.selectCustomer },
+        { btnText: '取消', handleClick: this.closeCustomerDialog }
       ]
     }
   },
   methods: {
+    onServiceIdFocus (prop) {
+      if (prop === 'serviceOrderSapId') {
+        this.$refs.customerDialog.open()
+      }
+    },
     addMaterial () {}, // 添加物料
     deleteMaterialItem () {}, // 删除物料
     selectMaterialItem () {}, // 选择弹窗物料
     materialDialog () { // 关闭弹窗
-      this.$refs.materialSelectTable.clearSelection()
+      this.$refs.materialTable.clearSelection()
       this.$refs.materialDialog.close()
+    },
+    selectCustomer () {},
+    closeCustomerDialog () {
+      this.$refs.customerTable.clearSelection()
+      this.$refs.customerDialog.close()
+    },
+    openTree () {},
+    _getServiceOrderList () {
+      getServiceOrderList(this.listQueryService).then(res => {
+        let { count, data } = res
+        this.customerData = data
+        this.customerTotal = count
+      }).catch(err => {
+        this.$message.error(err.message)
+      })
     }
+    
   },
   created () {
 

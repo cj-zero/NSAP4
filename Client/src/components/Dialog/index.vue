@@ -17,6 +17,7 @@
     :append-to-body="appendToBody"
     @closed="onClosed"
     @close="onClosed"
+    @open="onOpen"
     @click.native.stop
   >
     <slot></slot>
@@ -90,7 +91,11 @@ export default {
         return []
       }
     },
-    onClosed: {
+    onClosed: { // 弹窗关闭
+      type: Function,
+      default () { () => {} }
+    },
+    onOpen: { // 弹窗打开
       type: Function,
       default () { () => {} }
     },
