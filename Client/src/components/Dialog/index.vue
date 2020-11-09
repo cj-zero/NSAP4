@@ -2,7 +2,7 @@
   <el-dialog
     class="my-dialog-wrapper my-dialog-mini"
     v-el-drag-dialog
-    v-loading="loading"
+    v-loading.fullscreen="loading"
     :element-loading-text="loadingText"
     element-loading-spinner="el-icon-loading"
     element-loading-background="rgba(0, 0, 0, 0.8)"

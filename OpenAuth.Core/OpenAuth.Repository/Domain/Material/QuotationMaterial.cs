@@ -30,6 +30,19 @@ namespace OpenAuth.Repository.Domain
             this.Count = 0;
 
         }
+
+        /// <summary>
+        ///物料报价单Id
+        /// </summary>
+        [Description("物料报价单Id")]
+        public string QuotationId { get; set; }
+        
+        /// <summary>
+        ///报价单产品Id
+        /// </summary>
+        [Description("报价单产品Id")]
+        public string QuotationProductId { get; set; }
+        
         /// <summary>
         ///物料描述
         /// </summary>
