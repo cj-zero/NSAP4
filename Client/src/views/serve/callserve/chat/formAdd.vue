@@ -275,8 +275,10 @@
         <el-button class="item" size="mini" type="info" @click="process('fail')">不通过</el-button>
         <el-button class="item" size="mini" type="info" @click="close" plain>关闭</el-button>
       </el-row>
+      <div class="other-wrapper"></div>
     </div>
     <el-dialog
+      v-el-drag-dialog
       :modal-append-to-body="false"
       :append-to-body="true"
       :close-on-click-modal="false"
@@ -289,6 +291,7 @@
       <problemtype @node-click="NodeClick" :dataTree="dataTree"></problemtype>
     </el-dialog>
     <el-dialog
+      v-el-drag-dialog
       center
       :modal-append-to-body="false"
       :append-to-body="true"
@@ -308,6 +311,7 @@
       ></solution>
     </el-dialog>
     <el-dialog
+      v-el-drag-dialog
       :append-to-body="true"
       :destroy-on-close="true"
       :modal-append-to-body="false"
@@ -558,6 +562,7 @@ export default {
           serviceOrderId: this.instance.serveId
         }
       }
+      console.log(config, this.instance, 'instance')
       if (type === 'fail') {
         this._solve(config, type)
       } else {
@@ -645,12 +650,17 @@ export default {
     flex-direction: column;
   }
   .operation-wrapper {
+    display: flex;
+    flex-direction: column;
     position: absolute;
     right: -10px;
     top: -10px;
+    bottom: -10px;
     padding: 10px;
     transform: translate3d(100%, 0, 0);
     background-color: rgba(242, 242, 242, 1);
+    border: 1px solid rgba(192, 192, 192,1);
+    border-radius: 4px;
     .info-wrapper {
       padding: 5px;
       background-color: #fff;
@@ -671,6 +681,10 @@ export default {
       .item {
         margin: 0 5px
       }
+    }
+    .other-wrapper {
+      flex: 1;
+      background-color: #fff;
     }
   }
 }

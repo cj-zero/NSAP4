@@ -809,7 +809,7 @@
 
 <script>
 import { getSerialNumber } from "@/api/callserve";
-import { getList } from '@/api/serve/knowledge'
+import { getListByType } from '@/api/serve/knowledge'
 import Pagination from "@/components/Pagination";
 import * as callservesure from "@/api/serve/callservesure";
 import fromfSN from "./fromfSN";
@@ -968,8 +968,8 @@ export default {
       listQueryTheme: {
         page: 1,
         limit: 20,
-        formTheme: '',
-        type: 7 // 呼叫主题
+        type: 7, // 呼叫主题
+        key: '' // 搜搜呼叫主题
       },
       formThemeData: [],
       columns: [
@@ -1195,7 +1195,7 @@ export default {
   methods: {
     _getFormThemeList () {
       this.themeLoading = true
-      getList(this.listQueryTheme).then(res => {
+      getListByType(this.listQueryTheme).then(res => {
         let { data, count } = res
         this.themeList = data
         this.themeTotal = count

@@ -83,3 +83,12 @@
   background-color: #fff;
   opacity: 0;
 }
+
+/* image-viewer组件 删除按钮样式 */
+.el-image-viewer__wrapper {
+  .el-image-viewer__close {
+    i {
+      color: #fff;
+    }
+  }
+}

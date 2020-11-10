@@ -49,27 +49,27 @@
       </li>
     </ul>
     <div class="app-container">
-      <el-table v-loading="loading" :data="tableData" border>
-        <el-table-column fixed label="序号" width="120">
+      <el-table v-loading="loading" :data="tableData" stripe border>
+        <el-table-column fixed label="序号" align="center" width="50">
           <template slot-scope="scope">
             {{ scope.$index + 1 }}
           </template>
         </el-table-column>
-        <el-table-column prop="id" label="资产ID" width="120"></el-table-column>
-        <el-table-column prop="assetCategory" label="类别" width="120"></el-table-column>
-        <el-table-column prop="assetType" label="型号" width="120"></el-table-column>
-        <el-table-column prop="assetStockNumber" label="出厂编号S/N" width="120"></el-table-column>
-        <el-table-column prop="assetNumber" label="资产编号" width="120"></el-table-column>
+        <el-table-column prop="id" label="资产ID" align="center" width="60"></el-table-column>
+        <el-table-column prop="assetCategory" label="类别" align="center" width="60"></el-table-column>
+        <el-table-column prop="assetType" label="型号" align="center" width="100"></el-table-column>
+        <el-table-column prop="assetStockNumber" label="出厂编号S/N" align="center" width="100"></el-table-column>
+        <el-table-column prop="assetNumber" label="资产编号" align="center" width="120"></el-table-column>
         <el-table-column prop="orgName" label="部门" width="120"></el-table-column>
-        <el-table-column prop="assetCategorys" label="计量特性" width="370">
+        <el-table-column prop="assetCategorys" label="计量特性" width="250">
           <template slot-scope="scope">
             <span v-html="scope.row.assetCategorys"></span>
           </template>
         </el-table-column>
-        <el-table-column prop="assetInspectType" label="送检类型" width="120"></el-table-column>
-        <el-table-column prop="assetStartDate" label="最近校准日期" width="140" :formatter="formatterTime"></el-table-column>
-        <el-table-column prop="assetEndDate" label="失效日期" width="140" :formatter="formatterTime"></el-table-column>
-        <el-table-column prop="assetStatus" label="状态" width="120"></el-table-column>
+        <el-table-column prop="assetInspectType" label="送检类型" align="center" width="70"></el-table-column>
+        <el-table-column prop="assetStartDate" label="最近校准日期" align="center" width="100" :formatter="formatterTime"></el-table-column>
+        <el-table-column prop="assetEndDate" label="失效日期" align="center" width="100" :formatter="formatterTime"></el-table-column>
+        <el-table-column prop="assetStatus" label="状态" align="center" width="60"></el-table-column>
         <el-table-column prop="assetRemarks" label="备注" width="120"></el-table-column>
         <el-table-column prop="assetCalibrationCertificate" label="校准证书" width="120">
           <template slot-scope="scope">

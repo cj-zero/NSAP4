@@ -741,11 +741,11 @@ namespace OpenAuth.App
                 }
                 if (s.FromType == 2)
                 {
-                   s.CurrentUser = loginContext.User.Name;
-                   s.CurrentUserId = AppUserId;
-                   s.CurrentUserNsapId = loginContext.User.Id;
-                   s.Status = 7;
-                   s.CompleteDate = DateTime.Now;
+                    s.CurrentUser = loginContext.User.Name;
+                    s.CurrentUserId = AppUserId;
+                    s.CurrentUserNsapId = loginContext.User.Id;
+                    s.Status = 7;
+                    s.CompleteDate = DateTime.Now;
                 }
                 #endregion
             });
@@ -1802,7 +1802,7 @@ namespace OpenAuth.App
             var serviceInfo = await UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId).FirstOrDefaultAsync();
             //客服Id
             string RecepUserId = serviceInfo.RecepUserId;
-            if (!string.IsNullOrEmpty(RecepUserId) )
+            if (!string.IsNullOrEmpty(RecepUserId))
             {
                 var recepUserInfo = await UnitWork.Find<AppUserMap>(a => a.UserID == RecepUserId).FirstOrDefaultAsync();
                 if (recepUserInfo != null && recepUserInfo.AppUserId > 0 && !recepUserInfo.AppUserId.Equals(FromUserId))
@@ -1968,7 +1968,7 @@ namespace OpenAuth.App
             return result;
         }
 
-       
+
         /// <summary>
         /// 推送消息至新威智能app
         /// </summary>
@@ -2414,9 +2414,9 @@ namespace OpenAuth.App
             }
             var ServiceOrderId = (await UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == SapOrderId).FirstOrDefaultAsync()).Id;
             //获取当前服务单的设备类型接单状态进度
-            var orderTakeType = (await UnitWork.Find<ServiceWorkOrder>(null).Where(s => s.CurrentUserId == CurrentUserId && s.ServiceOrderId == ServiceOrderId)
+            var workOrderInfo = await UnitWork.Find<ServiceWorkOrder>(null).Where(s => s.CurrentUserId == CurrentUserId && s.ServiceOrderId == ServiceOrderId)
                 .WhereIf("其他设备".Equals(MaterialType), a => a.MaterialCode == "其他设备")
-                .WhereIf(!"其他设备".Equals(MaterialType), o => o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")) == MaterialType).OrderBy(o => o.OrderTakeType).FirstOrDefaultAsync())?.OrderTakeType;
+                .WhereIf(!"其他设备".Equals(MaterialType), o => o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")) == MaterialType).OrderBy(o => o.OrderTakeType).FirstOrDefaultAsync();
             //获取客户号码 做隐私处理
             string custMobile = (await GetProtectPhone(ServiceOrderId, MaterialType, 1)).Data;
             var query = UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == SapOrderId)
@@ -2444,8 +2444,9 @@ namespace OpenAuth.App
                              NewestContacter = string.IsNullOrEmpty(s.NewestContacter) ? s.Contacter : s.NewestContacter,
                              NewestContactTel = string.IsNullOrEmpty(s.NewestContactTel) ? s.ContactTel : s.NewestContactTel,
                              custMobile,
-                             orderTakeType,
-                             s.CustomerId
+                             workOrderInfo.OrderTakeType,
+                             s.CustomerId,
+                             workOrderInfo.ServiceMode
                          }).ToList();
             result.Data = list;
             return result;
@@ -2539,6 +2540,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task SaveOrderTakeType(SaveWorkOrderTakeTypeReq request)
         {
+            var servicemode = 0;
             var orderIds = await UnitWork.Find<ServiceWorkOrder>(null).Where(s => s.ServiceOrderId == request.ServiceOrderId && s.CurrentUserId == request.CurrentUserId)
     .WhereIf("其他设备".Equals(request.MaterialType), a => a.MaterialCode == "其他设备")
     .WhereIf(!"其他设备".Equals(request.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == request.MaterialType).Select(s => s.Id)
@@ -2548,14 +2550,23 @@ namespace OpenAuth.App
             {
                 workOrderIds.Add(id);
             }
-            var servicemode = (await UnitWork.Find<ServiceWorkOrder>(s => workOrderIds.Contains(s.Id)).FirstOrDefaultAsync()).ServiceMode;
+            //判断是再次拨打电话 则标记为电话服务 若不是则取当前工单设备类型的服务方式
+            var workOrderInfo = await UnitWork.Find<ServiceWorkOrder>(s => workOrderIds.Contains(s.Id)).FirstOrDefaultAsync();
+            if (workOrderInfo != null)
+            {
+                servicemode = workOrderInfo.ServiceMode == null ? 0 : (int)workOrderInfo.ServiceMode;
+            }
             int status = 2;
             //拨打完电话 工单状态变为已预约
-            if (request.Type == 3)
+            if (request.Type == 3 || request.Type == 1)
             {
                 status = 3;
                 servicemode = 2;
                 await UnitWork.UpdateAsync<ServiceWorkOrder>(s => workOrderIds.Contains(s.Id) && s.BookingDate == null, e => new ServiceWorkOrder { BookingDate = DateTime.Now });
+            }
+            else if (request.Type == 2)
+            {
+                servicemode = 1;
             }
             else if (request.Type > 4)
             {
@@ -3013,6 +3024,8 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<TableData> GetTechnicianServiceOrder(TechnicianServiceWorkOrderReq req)
         {
+            //20201109 前台不显示暂时放开显示限制
+            req.limit = 1000;
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
@@ -3044,6 +3057,8 @@ namespace OpenAuth.App
                     s.CreateTime,
                     s.U_SAP_ID,
                     s.CustomerId,
+                    s.CustomerName,
+                    s.TerminalCustomer,
                     Count = s.ServiceWorkOrders.Where(w => w.ServiceOrderId == s.Id && w.CurrentUserId == req.TechnicianId).Count(),
                     MaterialInfo = s.ServiceWorkOrders.Where(w => w.CurrentUserId == req.TechnicianId).Select(o => new
                     {
@@ -3078,6 +3093,8 @@ namespace OpenAuth.App
                 CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
                 s.U_SAP_ID,
                 s.CustomerId,
+                s.CustomerName,
+                s.TerminalCustomer,
                 Distance = (req.Latitude == 0 || s.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
                 s.Count,
                 ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.ProblemType.Name : s.ProblemTypeName,

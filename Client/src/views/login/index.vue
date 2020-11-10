@@ -199,7 +199,7 @@ export default {
         this.dialogQ = true;
         this.checkStatus();
       }else{
-      clearInterval(this.timer);
+        clearTimeout(this.timer);
       }
     },
     handleLogin() {

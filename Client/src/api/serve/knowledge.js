@@ -2,11 +2,20 @@ import request from '@/utils/request'
 
 export function getList(params) {
   return request({
-    url: '/Serve/KnowledgeBases/LoadTree',  // 加载知识库列表
+    url: '/Serve/KnowledgeBases/LoadTree',  // 加载知识库树形列表
     method: 'get',
     params
   })
 }
+
+export function getListByType(params) {
+  return request({
+    url: '/Serve/KnowledgeBases/Load',  // 加载知识库列表
+    method: 'get',
+    params
+  })
+}
+
 export function getDetail(params) { // 
   return request({
     url: '/Serve/KnowledgeBases/Get',  // 获取单个知识库详情
