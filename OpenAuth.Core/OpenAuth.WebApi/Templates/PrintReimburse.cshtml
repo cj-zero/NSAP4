@@ -9,20 +9,22 @@
         html {
             font-size: 16px;
         }
+
         table {
-            margin: 0 auto;
+            width: 800px;
+            float: right;
             border-width: 1px;
             border-style: solid;
             border-color: black;
         }
-        table td {
-            background-color: white;
-            height: 20px;
-            width: 120px;
-            border-width: 1px;
-            border-style: dotted none none dotted;
-            border-color: black;
-        }    
+
+            table td {
+                background-color: white;
+                height: 25px;
+                border-width: 1px;
+                border-style: dotted none none dotted;
+                border-color: black;
+            }
 
         .borderTop td {
             border-top-style: none;
@@ -40,86 +42,82 @@
         <h3 style="margin-top: 2rem; text-align: center; font-size:30px;">差旅报销单</h3>
         <table>
             <tr class="borderTop">
-                <td class="borderleft">
+                <td class="borderleft" style="width:90px">
                     &nbsp <b>开始日期</b>
                 </td>
-                <td style="width:140px">
-                    @Model.Data.StartTime.ToString("yyyy年MM月dd日")
+                <td style="width:120px">
+                    &nbsp @Model.Data.StartTime.ToString("yyyy年MM月dd日")
                 </td>
-                <td class=" ">
+                <td style="width:90px">
                     &nbsp <b>结束日期</b>
                 </td>
-                <td style="width:140px">
-                    @Model.Data.EndTime.ToString("yyyy年MM月dd日")
+                <td style="width:120px">
+                    &nbsp @Model.Data.EndTime.ToString("yyyy年MM月dd日")
                 </td>
-                <td class=" ">
-                    &nbsp <b>总天数</b>
-                </td>
-                <td>
-                    @Model.Data.Day
-                </td>
-                <td class=" " style="width:50px">
+                <td style="width:90px">
                     &nbsp <b>单号</b>
                 </td>
-                <td style="width:50px">
-                    @Model.Data.ReimburseId
+                <td style="width:90px">
+                    &nbsp @Model.Data.ReimburseId
                 </td>
+                <td style="width:90px">
+                    &nbsp <b>总天数</b>
+                </td>
+                <td style="width:60px">
+                    &nbsp @Model.Data.Day
+                </td>
+
             </tr>
             <tr>
                 <td class="borderleft">
                     &nbsp <b>部门</b>
                 </td>
-                <td style="width:140px">
-                    @Model.Data.OrgName
-                </td>
-                <td class=" ">
-                    &nbsp <b>姓名</b>
-                </td>
-                <td style="width:140px">
-                    @Model.Data.UserName
-                </td>
                 <td>
+                    &nbsp @Model.Data.OrgName
                 </td>
+
                 <td>
+                    &nbsp <b>客户名称</b>
                 </td>
-                <td></td>
-                <td></td>
+                <td colspan="5">
+                    &nbsp @Model.Data.TerminalCustomer.Substring(0, 26)
+                </td>
             </tr>
             <tr>
                 <td class="borderleft  ">
-                    &nbsp <b>客户名称</b>
+                    &nbsp <b>姓名</b>
                 </td>
                 <td>
-                    @Model.Data.TerminalCustomer
+                    &nbsp @Model.Data.UserName
                 </td>
                 <td class=" ">
                     &nbsp  <b>出差事由</b>
                 </td>
                 <td colspan="5">
-                    @Model.Data.FromTheme
+                    &nbsp @Model.Data.FromTheme
                 </td>
             </tr>
             <tr>
                 <td class="borderleft  ">
                     &nbsp <b>费用类型</b>
                 </td>
-                <td class=" " style="text-align: right;  ">
-                    <b>金额</b> &nbsp
+                <td>
+                    &nbsp <b>金额</b>
                 </td>
-                <td class=" " style="text-align: right;">
-                    <b>交通费</b> &nbsp
+                <td>
+                    &nbsp <b>交通费</b>
                 </td>
-                <td class=" " style="text-align: right;">
-                    <b>住宿费</b> &nbsp
+                <td>
+                    &nbsp <b>住宿费</b>
                 </td>
-                <td class=" " style="text-align: right; ">
-                    <b>其他费</b> &nbsp
+                <td>
+                    &nbsp <b>其他费</b>
                 </td>
-                <td class=" " style="text-align: right; ">
-                    <b>补助</b> &nbsp
+                <td>
+                    &nbsp <b>补助</b>
                 </td>
-                <td class=" " style="text-align: right;" colspan="2">
-                    <b>合计</b> &nbsp
+                <td colspan="2">
+                    &nbsp <b>合计</b>
                 </td>
             </tr>
             <tr>
@@ -127,31 +125,31 @@
                     &nbsp 飞机
                 </td>
                 <td style="text-align: right; ">
-                    @Model.Data.Aircraft
+                    @Model.Data.Aircraft.ToString("#0.00")
                     &nbsp
                 </td>
                 <td rowspan="7" style="text-align: right; ">
                     @{ var money = Model.Data.Aircraft + Model.Data.Train + Model.Data.Coach + Model.Data.Transport; }
-                    @money
+                    @money.ToString("#0.00")
                     &nbsp
 
                 </td>
                 <td rowspan="7" style="text-align: right; ">
-                    @Model.Data.PutUp
+                    @Model.Data.PutUp.ToString("#0.00")
                     &nbsp
                 </td>
                 <td rowspan="7" style="text-align: right; ">
-                    @Model.Data.Else
+                    @Model.Data.Else.ToString("#0.00")
                     &nbsp
                 </td>
                 <td rowspan="7" style="text-align: right; ">
-                    @Model.Data.Subsidy
+                    @Model.Data.Subsidy.ToString("#0.00")
                     &nbsp
                 </td>
                 <td rowspan="7" colspan="2" style="text-align: right; ">
                     @{ money = Model.Data.Aircraft + Model.Data.Train + Model.Data.Coach + Model.Data.Transport +
-                       Model.Data.PutUp + Model.Data.Else + Model.Data.Subsidy; }
-                    @money
+                        Model.Data.PutUp + Model.Data.Else + Model.Data.Subsidy; }
+                    @money.ToString("#0.00")
                     &nbsp
                 </td>
             </tr>
@@ -160,7 +158,7 @@
                     &nbsp 火车
                 </td>
                 <td style="text-align: right; ">
-                    @Model.Data.Train
+                    @Model.Data.Train.ToString("#0.00")
                     &nbsp
                 </td>
             </tr>
@@ -169,7 +167,7 @@
                     &nbsp 长途汽车
                 </td>
                 <td style="text-align: right; ">
-                    @Model.Data.Coach
+                    @Model.Data.Coach.ToString("#0.00")
                     &nbsp
                 </td>
             </tr>
@@ -178,7 +176,7 @@
                     &nbsp 市内交通
                 </td>
                 <td style="text-align: right; ">
-                    @Model.Data.Transport
+                    @Model.Data.Transport.ToString("#0.00")
                     &nbsp
                 </td>
             </tr>
@@ -187,7 +185,7 @@
                     &nbsp 住宿
                 </td>
                 <td style="text-align: right; ">
-                    @Model.Data.PutUp
+                    @Model.Data.PutUp.ToString("#0.00")
                     &nbsp
                 </td>
             </tr>
@@ -196,7 +194,7 @@
                     &nbsp 其他
                 </td>
                 <td style="text-align: right; ">
-                    @Model.Data.Else
+                    @Model.Data.Else.ToString("#0.00")
                     &nbsp
                 </td>
             </tr>
@@ -205,7 +203,7 @@
                     &nbsp 补助
                 </td>
                 <td style="text-align: right; ">
-                    @Model.Data.Subsidy
+                    @Model.Data.Subsidy.ToString("#0.00")
                     &nbsp
                 </td>
             </tr>
@@ -220,29 +218,23 @@
             </tr>
             <tr>
                 <td class="borderleft  ">
-                    &nbsp <b>客服主管：</b>
+                    &nbsp <b>客服主管:</b>
                 </td>
-                <td class="borderleft">
-                </td>
-                <td class="borderleft  ">
-                    &nbsp <b>审核：</b>
-                </td>
-                <td class="borderleft">
+                <td class="borderleft  " colspan="2">
+                    &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp <b>审核:</b>
                 </td>
                 <td class="borderleft  ">
-                    &nbsp <b>复审：</b>
+                    &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp <b>复审:</b>
                 </td>
                 <td class="borderleft  ">
                 </td>
-                <td class="borderleft  ">
-                    &nbsp <b>出纳：</b>
-                </td>
-                <td class="borderleft  ">
+                <td class="borderleft  " colspan="3">
+                    &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<b>出纳:</b>
                 </td>
             </tr>
         </table>
-        <div class="bill" style="width: 800px; height: 830px;">
-            <div align="center" style="line-height:830px; font-size: 20px;">票据张贴处</div>
+        <div class="bill" style=" float:right; width: 800px; height: 600;">
+            <div align="center" style="line-height:600px; font-size: 20px;">票据张贴处</div>
         </div>
     </div>
 </body>
