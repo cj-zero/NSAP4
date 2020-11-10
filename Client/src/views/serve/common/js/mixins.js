@@ -128,13 +128,14 @@ export let chatMixin = { // 查看、编辑服务单时 右侧出现的聊天记
           serviceOrder.liquidationDate = this.deleteSeconds(liquidationDate)
           serviceOrder.completeDate = this.deleteSeconds(completeDate)
           console.log(typeof serviceOrder.fromTheme)
-          serviceOrder.themeList = 
-          [{ id: '-1', description: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' }]
+          // serviceOrder.themeList = 
+          // [{ id: '-1', description: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' }]
           // try {
           //   serviceOrder.themeList = JSON.parse(serviceOrder.fromTheme)
           // } catch (err) {
           //   serviceOrder.themeList = [{ id: '-1', description: serviceOrder.fromTheme }]
           // }
+          serviceOrder.themeList = JSON.parse(serviceOrder.fromTheme)
           console.log(serviceOrder.themeList)
         })
       }

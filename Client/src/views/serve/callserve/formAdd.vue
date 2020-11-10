@@ -132,11 +132,11 @@
                 <el-scrollbar wrapClass="scroll-wrap-class">
                   <div class="form-theme-list">
                     <transition-group name="list" tag="ul">
-                      <li class="form-theme-item" v-for="(item, themeIndex) in formList[0].themeList" :key="item.id" >
-                        <el-tooltip popper-class="form-theme-toolip" effect="dark" :content="item.description" placement="top">
-                          <p class="text">{{ item.description }}</p>
+                      <li class="form-theme-item" v-for="(themeItem, themeIndex) in formList[0].themeList" :key="themeItem.id" >
+                        <el-tooltip popper-class="form-theme-toolip" effect="dark" :content="themeItem.description" placement="top">
+                          <p class="text">{{ themeItem.description }}</p>
                         </el-tooltip>
-                        <i class="delete el-icon-error" @click.stop="deleteTheme(0, themeIndex)"></i>
+                        <i class="delete el-icon-error" @click.stop="deleteTheme(formList[0], themeIndex)"></i>
                       </li>
                     </transition-group>
                   </div>
@@ -460,12 +460,12 @@
                     <el-scrollbar wrapClass="scroll-wrap-class">
                       <div class="form-theme-list">
                         <transition-group name="list" tag="ul">
-                          <li class="form-theme-item" v-for="(item, themeIndex) in item.themeList" :key="item.id">
+                          <li class="form-theme-item" v-for="(themeItem, themeIndex) in item.themeList" :key="themeItem.id">
                             <el-tooltip popper-class="form-theme-toolip" effect="dark" placement="top">
-                              <div slot="content">{{ item.description }}</div>
-                              <p class="text">{{ item.description }}</p>
+                              <div slot="content">{{ themeItem.description }}</div>
+                              <p class="text">{{ themeItem.description }}</p>
                             </el-tooltip>
-                            <i class="delete el-icon-error" @click.stop="deleteTheme(index + 1, themeIndex)"></i>
+                            <i class="delete el-icon-error" @click.stop="deleteTheme(item, themeIndex)"></i>
                           </li>
                         </transition-group>
                       </div>
@@ -1245,11 +1245,10 @@ export default {
       this.selectedList = data.themeList || []
       this.$refs.formTheme.open()
     },
-    deleteTheme (formIndex, themeIndex) { // formIndex 是formList的索引 themeIndex主题呼叫中标签的索引
+    deleteTheme (data, themeIndex) { // formIndex 是formList的索引 themeIndex主题呼叫中标签的索引
       if (this.formName === '查看') {
         return
       }
-      let data = this.formList[formIndex]
       if (this.isOrderDisabled(data)) {
         return
       }
