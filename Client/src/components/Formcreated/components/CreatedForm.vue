@@ -129,6 +129,7 @@ export default {
     data: {
       deep: true,
       handler(val) {
+        this.models = {}
         this.generateModle(val.list)
       }
     },
