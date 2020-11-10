@@ -829,7 +829,8 @@ export default {
     // },
     _normalize (data) {
       let resultArr = data.map(item => {
-        let { recepUserName, 
+        let { 
+          recepUserName, 
           serviceWorkOrders, 
           customerId,
           customerName,
@@ -839,6 +840,9 @@ export default {
         item.customerName = terminalCustomer ? terminalCustomer : customerName
         serviceWorkOrders.forEach(workItem => {
           workItem.recepUserName = recepUserName
+          workItem.fromTheme = JSON.parse(workItem.fromTheme).map(item => {
+            return item.description
+          }).join(',')
         })
         return item
       })
@@ -851,7 +855,8 @@ export default {
         this.total = response.count;
         this._normalize(result)
         this.listLoading = false;
-      }).catch(() => {
+      }).catch((err) => {
+        console.log(err, 'err')
         this.listLoading = false;
         this.$message({
           type: "error",

@@ -128,12 +128,14 @@
             >
               <!-- <el-input v-model="formList[0].fromTheme" type="textarea" maxlength="255" autosize style="display: none;"></el-input> -->
               <div class="form-theme-content" @click="openFormThemeDialog($event, 0)">
-                <div class="form-theme-mask" v-if="isOrderDisabled(formList[0]) || formName === '查看'"></div>
+                <!-- <div class="form-theme-mask" v-if="isOrderDisabled(formList[0]) || formName === '查看'"></div> -->
                 <el-scrollbar wrapClass="scroll-wrap-class">
                   <div class="form-theme-list">
                     <transition-group name="list" tag="ul">
                       <li class="form-theme-item" v-for="(item, themeIndex) in formList[0].themeList" :key="item.id" >
-                        <p class="text">{{ item.description }}</p>
+                        <el-tooltip popper-class="form-theme-toolip" effect="dark" :content="item.description" placement="top">
+                          <p class="text">{{ item.description }}</p>
+                        </el-tooltip>
                         <i class="delete el-icon-error" @click.stop="deleteTheme(0, themeIndex)"></i>
                       </li>
                     </transition-group>
@@ -459,7 +461,10 @@
                       <div class="form-theme-list">
                         <transition-group name="list" tag="ul">
                           <li class="form-theme-item" v-for="(item, themeIndex) in item.themeList" :key="item.id">
-                            <p class="text">{{ item.description }}</p>
+                            <el-tooltip popper-class="form-theme-toolip" effect="dark" placement="top">
+                              <div slot="content">{{ item.description }}</div>
+                              <p class="text">{{ item.description }}</p>
+                            </el-tooltip>
                             <i class="delete el-icon-error" @click.stop="deleteTheme(index + 1, themeIndex)"></i>
                           </li>
                         </transition-group>
@@ -784,13 +789,27 @@
       :appendToBody="true"
       @onClose="closeFormTheme"
     >
-      <common-table ref="formThemeTable" :data="formThemeData" :columns="columns" :selectedList="selectedList"></common-table>
+      <common-table 
+        :loading="themeLoading"
+        ref="formThemeTable" 
+        :data="formThemeData" 
+        :columns="columns" 
+        :selectedList="selectedList"
+      ></common-table>
+      <pagination
+        v-show="themeTotal > 0"
+        :total="themeTotal"
+        :page.sync="listQueryTheme.page"
+        :limit.sync="listQueryTheme.limit"
+        @pagination="handleChangeTheme"
+      /> 
     </my-dialog>
   </div>
 </template>
 
 <script>
 import { getSerialNumber } from "@/api/callserve";
+import { getList } from '@/api/serve/knowledge'
 import Pagination from "@/components/Pagination";
 import * as callservesure from "@/api/serve/callservesure";
 import fromfSN from "./fromfSN";
@@ -943,6 +962,15 @@ export default {
       isDisalbed: false,
       collapseTitle: '展开更多订单',
       dialogReportVisible: false,
+      themeList: [], // 呼叫主题列表
+      themeTotal: 0, // 呼叫主题总数
+      themeLoading: false, // 表格loading
+      listQueryTheme: {
+        page: 1,
+        limit: 20,
+        formTheme: '',
+        type: 7 // 呼叫主题
+      },
       formThemeData: [],
       columns: [
         { originType: 'selection' },
@@ -978,6 +1006,7 @@ export default {
       this.solutionCount = response.count;
       this.listLoading = false;
     });
+
     const list = [
       '客户咨询如何设置工步？',
       '如何设置18650电池的工步？',
@@ -1001,6 +1030,7 @@ export default {
           description: list[i]
         })
       }
+      this._getFormThemeList()
     }
   },
   computed: {
@@ -1163,6 +1193,23 @@ export default {
   },
   // inject: ["form"],
   methods: {
+    _getFormThemeList () {
+      this.themeLoading = true
+      getList(this.listQueryTheme).then(res => {
+        let { data, count } = res
+        this.themeList = data
+        this.themeTotal = count
+        this.themeLoading = false
+      }).catch(err => {
+        this.$message.error(err.message)
+        this.themeLoading = false
+      })
+    },
+    handleChangeTheme (val) {
+      this.listQueryTheme.page = val.page
+      this.listQueryTheme.limit = val.limit
+      this._getFormThemeList()
+    },
     confirmTheme () {
       let selectList = this.$refs.formThemeTable.getSelectionList()
       if (!selectList.length) {
@@ -1170,7 +1217,6 @@ export default {
       }
       let data = this.formList[this.currentFormIndex] // 当前选中的呼叫主题对应formList的第几项
       let newList = (data.themeList || []).concat(selectList)
-      console.log(newList.length)
       if (newList && newList.length > 10) {
         return this.$message.warning('最多选择十条数据!')
       }
@@ -1723,8 +1769,12 @@ export default {
       .form-theme-item {
         display: inline-block;
         margin-right: 4px;
+        margin-bottom: 4px;
         padding: 5px;
         background-color: rgba(239, 239, 239, 1);
+        .text-content {
+          max-width: 480px;
+        }
         &.list-enter-active, &.list-leave-acitve {
           transition: all .4s;
         }
@@ -1737,7 +1787,7 @@ export default {
         .text {
           display: inline-block;
           overflow: hidden;
-          max-width: 475px;
+          max-width: 480px;
           text-overflow: ellipsis;
           white-space: nowrap;
           vertical-align: middle;
@@ -1817,6 +1867,16 @@ export default {
   width: 130px;
   line-height: 30px;
   font-size: 24px;
+}
+</style>
+<style lang="scss">
+/* 设置呼叫主题文字提示的最大宽度 */
+body {
+  .el-tooltip__popper  {
+    &.form-theme-toolip {
+      max-width: 480px;
+    }
+  }
 }
 </style>
 
