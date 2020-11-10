@@ -33,11 +33,8 @@ namespace OpenAuth.App
             var result = new TableData();
             var objs = UnitWork.Find<KnowledgeBase>(null)
                 .WhereIf(request.Type.HasValue, k => k.Type == request.Type.Value)
-                .WhereIf(string.IsNullOrWhiteSpace(request.ParentId), k => k.ParentId.Equal(request.ParentId));
-            if (!string.IsNullOrEmpty(request.key))
-            {
-                objs = objs.Where(u => u.Id.Contains(request.key));
-            }
+                .WhereIf(!string.IsNullOrWhiteSpace(request.ParentId), k => k.ParentId.Equal(request.ParentId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.key), k => k.Name.Contains(request.key) || k.Content.Contains(request.key) || k.Code.Contains(request.key));
 
             result.Data = await objs.OrderBy(u => u.Id)
                 .Skip((request.page - 1) * request.limit)
