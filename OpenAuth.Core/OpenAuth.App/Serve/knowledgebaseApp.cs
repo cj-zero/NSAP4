@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
+using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
@@ -30,7 +31,9 @@ namespace OpenAuth.App
 
 
             var result = new TableData();
-            var objs = UnitWork.Find<KnowledgeBase>(null);
+            var objs = UnitWork.Find<KnowledgeBase>(null)
+                .WhereIf(request.Type.HasValue, k => k.Type == request.Type.Value)
+                .WhereIf(string.IsNullOrWhiteSpace(request.ParentId), k => k.ParentId.Equal(request.ParentId));
             if (!string.IsNullOrEmpty(request.key))
             {
                 objs = objs.Where(u => u.Id.Contains(request.key));

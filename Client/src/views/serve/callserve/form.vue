@@ -18,7 +18,7 @@
             :label-position="labelposition"
           >
             <el-row class="info-wrapper" type="flex">
-              <div>服务ID: <span>{{ form.u_SAP_ID}}</span></div>
+              <div style="color: red;">服务ID: <span>{{ form.u_SAP_ID}}</span></div>
               <div>接单员: <span>{{ form.recepUserName }}</span></div>
               <div>创建时间: <span>{{ form.createTime }}</span></div>
               <div class="approve">售后审核: <span>{{ form.supervisor }}</span></div>

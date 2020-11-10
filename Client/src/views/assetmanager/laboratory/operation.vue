@@ -6,6 +6,7 @@
         :key="index"
         :timestamp="activity.operationCreateTime"
         color="#0bbd87"
+        :class="{ highlight: !!activity.inspectId }"
         @click.native="timelineClick(activity.inspectId)"
       >
         <el-tag effect="dark" size="small">{{ activity.operationUser }}</el-tag>
@@ -46,5 +47,8 @@ export default {
     margin-top: 10px;
     font-size: 12px;
   }
+}
+.highlight {
+  background-color: rgba(#409eff, 0.1);
 }
 </style>
