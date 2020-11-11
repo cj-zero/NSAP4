@@ -718,8 +718,6 @@ export default {
     },
     rowClassName ({ row, rowIndex }) {
       row.index = rowIndex
-      console.log(row === this.multipleSelection, 'row class')
-      return row === this.multipleSelection ? 'clicked' : ''
     },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
@@ -1228,14 +1226,6 @@ export default {
   }
   ::v-deep.el-table__expanded-cell {
     padding: 0 0 0 50px;
-  }
-  ::v-deep tr {
-    &.clicked {
-      background-color: #fffded;
-    }
-    > td {
-      background: transparent !important;
-    }
   }
 }
 .bg-head {

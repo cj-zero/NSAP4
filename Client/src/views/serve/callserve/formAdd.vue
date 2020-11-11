@@ -1229,7 +1229,7 @@ export default {
     },
     queryTheme () {
       this.listQueryTheme.page = 1
-      this.$refs.formThemeTable.clearSelection()
+      // this.$refs.formThemeTable.clearSelection()
       this._getFormThemeList()
     },
     handleChangeTheme (val) {

@@ -877,11 +877,11 @@ export default {
         console.log(local.getResults().getPoi(0), 'position')
         let { point, address, city, province } = local.getResults().getPoi(0) //获取第一个智能搜索的结果
         if (auto) { // 如果是通过客户代码或者终端代码进行选择的
-          this.form.province = province
+          this.form.province = province || ''
           if (province === city) { // 如果省和市名字一样则直接取省
             this.form.city = ''
           } else {
-            this.form.city = city
+            this.form.city = city || ''
           }
           let district = address
             .replace(province, '')
