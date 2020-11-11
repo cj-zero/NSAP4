@@ -1847,7 +1847,7 @@ export default {
         fileId: [], // 需要删除的附件ID
         myExpendsIds: [] // 需要删除的导入数据（我的费用ID）
       }
-      this.listQuery = { page: 1, limit: 30 },
+      this.listQuery = { page: 1, limit: 30 }
       this.listQueryCost = { page: 1, limit: 30 }   
     },
     addSerialNumber (data) { // 为表格的数据添加序号
