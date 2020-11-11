@@ -1122,13 +1122,13 @@ export default {
         this.$emit("close-Dia", "N");
         return;
       }
+      console.log('创建工单')
       if (!this.form.longitude) {
-        this.$message({
+        this.$emit("close-Dia", "N");
+        return this.$message({
           message: `请手动选择地址`,
           type: "error",
         });
-        this.$emit("close-Dia", "N");
-        return;
       }
       if (this.form.serviceWorkOrders.length >= 0) {
         try {
@@ -1202,6 +1202,7 @@ export default {
                 let promise = callservesure.addWorkOrder({
                   serviceOrderId: this.serviceOrderId,
                   ...item,
+                  fromTheme: JSON.stringify(item.themeList)
                 });
                 promiseList.push(promise);
               }
@@ -1223,6 +1224,9 @@ export default {
             }
           } else {
             this.form.pictures = [...this.upLoadImgList, ...this.upLoadFileList]
+            this.form.serviceWorkOrders.forEach(workOrder => {
+              workOrder.fromTheme = JSON.stringify(workOrder.themeList)
+            })
             callservesure
               .CreateWorkOrder(this.form)
               .then(() => {

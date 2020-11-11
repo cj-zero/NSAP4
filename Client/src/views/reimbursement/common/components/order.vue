@@ -13,7 +13,7 @@
         :model="formData"
         ref="form"
         class="my-form-wrapper"
-        :class="{ 'uneditable': !this.ifFormEdit }"
+        :class="{ 'uneditable': !ifFormEdit }"
         :disabled="disabled"
         :label-width="labelWidth"
         size="mini"
@@ -44,7 +44,23 @@
                   <span :class="{ 'upload-title money': item.label === '总金额'}">{{ item.label }}{{ item.label === '总金额' ? ':' : '' }}</span>
                 </template>
               </span>
-              <template v-if="!item.type">
+              <!-- 呼叫主题 -->
+              <template v-if="item.label === '呼叫主题'">
+                <div class="form-theme-content" :class="{ 'uneditable': !ifFormEdit }">
+                  <el-scrollbar wrapClass="scroll-wrap-class">
+                    <div class="form-theme-list">
+                      <transition-group name="list" tag="ul">
+                        <li class="form-theme-item" v-for="themeItem in formData.themeList" :key="themeItem.id" >
+                          <el-tooltip popper-class="form-theme-toolip" effect="dark" :content="themeItem.description" placement="top">
+                            <p class="text">{{ themeItem.description }}</p>
+                          </el-tooltip>
+                        </li>
+                      </transition-group>
+                    </div>
+                  </el-scrollbar>
+                </div>
+              </template>
+              <template v-else-if="!item.type">
                 <el-input 
                   v-model="formData[item.prop]" 
                   :style="{ width: item.width + 'px' }"
@@ -114,7 +130,7 @@
         </el-col>
       </el-row>
       <!-- 出差 -->
-      <div class="form-item-wrapper travel" :class="{ uneditable: !this.ifFormEdit }" v-if="ifCOrE || formData.reimburseTravellingAllowances.length">
+      <div class="form-item-wrapper travel" :class="{ uneditable: !ifFormEdit }" v-if="ifCOrE || formData.reimburseTravellingAllowances.length">
         <el-button v-if="ifShowTravel" @click="showForm(formData.reimburseTravellingAllowances, 'ifShowTravel')">添加出差补贴</el-button>
         <el-form 
           v-else
@@ -124,7 +140,7 @@
           :show-message="false"
           class="form-wrapper"
           :disabled="!ifFormEdit"
-          :class="{ 'uneditable': !this.ifFormEdit }"
+          :class="{ 'uneditable': !ifFormEdit }"
         >
           <div class="title-wrapper">
             <div class="number-count">总数量:{{ travelCount }}个</div>
@@ -197,7 +213,7 @@
           :show-message="false"
           class="form-wrapper"
           :disabled="!ifFormEdit"
-          :class="{ 'uneditable': !this.ifFormEdit }"
+          :class="{ 'uneditable': !ifFormEdit }"
         >
           <div class="title-wrapper">
             <div class="number-count">总数量:{{ trafficCount }}个</div>
@@ -336,7 +352,7 @@
         </el-form>
       </div>
       <!-- 住宿 -->
-      <div class="form-item-wrapper acc" :class="{ uneditable: !this.ifFormEdit }" v-if="ifCOrE || formData.reimburseAccommodationSubsidies.length">
+      <div class="form-item-wrapper acc" :class="{ uneditable: !ifFormEdit }" v-if="ifCOrE || formData.reimburseAccommodationSubsidies.length">
         <el-button v-if="ifShowAcc" @click="showForm(formData.reimburseAccommodationSubsidies, 'ifShowAcc')">添加住宿补贴</el-button>
         <el-form 
         v-else
@@ -346,7 +362,7 @@
         :show-message="false"
         class="form-wrapper"
         :disabled="!ifFormEdit"
-        :class="{ 'uneditable': !this.ifFormEdit }"
+        :class="{ 'uneditable': !ifFormEdit }"
         >
           <div class="title-wrapper">
             <div class="number-count">总数量:{{ accCount }}个</div>
@@ -477,7 +493,7 @@
         </el-form>
       </div>
       <!-- 其它 -->
-      <div class="form-item-wrapper other" :class="{ uneditable:!this.ifFormEdit }" v-if="ifCOrE || formData.reimburseOtherCharges.length">
+      <div class="form-item-wrapper other" :class="{ uneditable:!ifFormEdit }" v-if="ifCOrE || formData.reimburseOtherCharges.length">
         <el-button v-if="ifShowOther" @click="showForm(formData.reimburseOtherCharges, 'ifShowOther')">添加其他费用</el-button>
         <el-form 
           v-else
@@ -487,7 +503,7 @@
           :show-message="false"
           class="form-wrapper"
           :disabled="!ifFormEdit"
-          :class="{ 'uneditable': !this.ifFormEdit }"
+          :class="{ 'uneditable': !ifFormEdit }"
         >
           <div class="title-wrapper">
             <div class="number-count">总数量:{{ otherCount }}个</div>
@@ -646,12 +662,14 @@
       :appendToBody="true"
       :btnList="customerBtnList"
       :onClosed="closeDialog">
-      <common-table 
-        ref="customerTable"
-        maxHeight="500px"
-        :data="customerInfoList"
-        :columns="customerColumns"
-      ></common-table>
+      <div style="height: 400px;">
+        <common-table 
+          ref="customerTable"
+          maxHeight="500px"
+          :data="customerInfoList"
+          :columns="customerColumns"
+        ></common-table>
+      </div>
       <pagination
         v-show="customerTotal > 0"
         :total="customerTotal"
@@ -669,13 +687,15 @@
       :btnList="costBtnList"
       :loading="costLoading"
       :onClosed="closeCostDialog">
-      <common-table 
-        ref="costTable"
-        maxHeight="500px"
-        :data="costData"
-        :columns="costColumns"
-        :selectedList="selectedList"
-      ></common-table>
+      <div style="height: 400px;">
+        <common-table 
+          ref="costTable"
+          maxHeight="500px"
+          :data="costData"
+          :columns="costColumns"
+          :selectedList="selectedList"
+        ></common-table>
+      </div>
       <pagination
         v-show="costTotal > 0"
         :total="costTotal"
@@ -738,7 +758,7 @@
 <script>
 import { addOrder, getOrder, updateOrder, approve, isSole } from '@/api/reimburse'
 import { getList } from '@/api/reimburse/mycost'
-import { forServe } from '@/api/serve/callservesure'
+// import { forServe } from '@/api/serve/callservesure'
 import upLoadFile from "@/components/upLoadFile";
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
@@ -845,6 +865,7 @@ export default {
         projectName: '',
         remburseStatus: '',
         fromTheme: '',
+        themeList: [],
         fillDate: '',
         report: '',
         bearToPay: '',
@@ -877,7 +898,7 @@ export default {
       customerColumns, // 用户列表表格配置
       customerInfoList: [], // 用户信息列表
       customerTotal: 0, // 用户列表总数
-      customerLoading: false, // 用户选择按钮的loading
+      // customerLoading: false, // 用户选择按钮的loading
       listQuery: { // 用户列表的查询参数
         page: 1,
         limit: 30
@@ -1034,7 +1055,7 @@ export default {
       return {
         serviceOrderSapId: [ { required: true } ],
         reimburseType: [ { required: true, trigger: ['change', 'blur'] } ],
-        shortCustomerName: [{ required: true, trigger: 'blur' }],
+        // shortCustomerName: [{ required: true, trigger: 'blur' }],
         // projectName: [ { required: true, trigger: ['change', 'blur'] } ],
         bearToPay: [ { required: this.isCustomerSupervisor, trigger: ['change', 'blur']} ],
         // responsibility: [ { required: true, trigger: ['change', 'blur'] } ],
@@ -1046,7 +1067,7 @@ export default {
     },
     customerBtnList () {
       return [
-        { btnText: '确认', handleClick: this.confirm, loading: this.customerLoading },
+        { btnText: '确认', handleClick: this.confirm },
         { btnText: '取消', handleClick: this.closeDialog }
       ]
     },
@@ -1655,21 +1676,23 @@ export default {
         formData.serviceOrderId = id
         formData.serviceOrderSapId = u_SAP_ID
         formData.fromTheme = fromTheme
+        formData.themeList = JSON.parse(formData.fromTheme)
         formData.createUserId = userId
         formData.becity = becity
         formData.businessTripDate = businessTripDate
         formData.endDate = endDate
         formData.destination = destination
-        this.customerLoading = true
         this._checkTravelDays(currentRow)
         this._checkAccMoney()
-        forServe(terminalCustomerId).then(res => {
-          formData.shortCustomerName = res.result.u_Name ? res.result.u_Name.slice(0, 6) : ''
-          this.customerLoading = false
-        }).catch(() => {
-          formData.shortCustomerName = ''
-          this.customerLoading = false
-        })
+        // forServe(terminalCustomerId).then(res => {
+        //   formData.shortCustomerName = res.result.u_Name 
+        //     ? res.result.u_Name.slice(0, 6) 
+        //     : ''
+        //   this.customerLoading = false
+        // }).catch(() => {
+        //   formData.shortCustomerName = ''
+        //   this.customerLoading = false
+        // })
       }
       this.closeDialog()
     },
@@ -1827,6 +1850,7 @@ export default {
         projectName: '',
         remburseStatus: '',
         fromTheme: '',
+        themeList: [],
         fillDate: '',
         report: '',
         bearToPay: '',
@@ -2020,6 +2044,61 @@ export default {
     .money-text {
       font-size: 18px;
       font-weight: bold;
+    }
+    .form-theme-content {
+      position: relative;
+      box-sizing: border-box;
+      min-height: 30px;
+      padding: 5px 15px;
+      color: #606266;
+      font-size: 12px;
+      line-height: 1.5;
+      border-radius: 4px;
+      border: 1px solid #E4E7ED;
+      background-color: #F5F7FA;
+      outline: none;
+      transition: border-color .2s cubic-bezier(.645, .045, .355, 1);
+      cursor: not-allowed;
+      &.uneditable {
+        border: 1px solid #DCDFE6;
+        background-color: #fff;
+      }
+      ::v-deep .el-scrollbar {
+        .scroll-wrap-class {
+          max-height: 100px; // 最大高度
+          overflow-x: hidden; // 隐藏横向滚动栏
+          margin-bottom: 0 !important;
+        }
+      }
+      .form-theme-list {
+        .form-theme-item {
+          display: inline-block;
+          margin-right: 2px;
+          margin-bottom: 2px;
+          padding: 2px;
+          background-color: rgba(239, 239, 239, 1);
+          .text-content {
+            max-width: 480px;
+          }
+          &.list-enter-active, &.list-leave-acitve {
+            transition: all .4s;
+          }
+          &.list-enter, &.list-leave-to {
+            opacity: 0;
+          }
+          &.list-enter-to, &.list-leave {
+            opacity: 1;
+          }
+          .text {
+            display: inline-block;
+            overflow: hidden;
+            max-width: 478px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: middle;
+          }
+        }
+      }
     }
   }
   .scroll-bar {

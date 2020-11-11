@@ -57,8 +57,16 @@
                     <span>查看</span>
                   </div>
                 </template>
+                <template v-else-if="item.label === '呼叫主题'">
+                  <el-tooltip placement="top-start">
+                    <div slot="content">
+                      <p v-for="(content, index) in scope.row.themeList" :key="index">{{ content }}</p>
+                    </div>
+                    <span style="white-space: nowrap;">{{ scope.row[item.prop] }}</span>
+                  </el-tooltip>
+                </template>
                 <template v-else>
-                  {{ scope.row[item.prop] }}
+                  {{ scope.row[item.prop] }}     
                 </template>
               </template>    
             </el-table-column>

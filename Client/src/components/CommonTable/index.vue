@@ -33,7 +33,7 @@
       :label="item.label"
       :align="item.align || 'left'"
       :sortable="item.isSort || false"
-      show-overflow-tooltip
+      :show-overflow-tooltip="!item.isMultipleLines"
     >
       <template slot-scope="scope" >
         <!--  有箭头的操作 -->
@@ -56,6 +56,15 @@
             :icon="item.icon || ''"
             :size="item.size || 'mini'"
           >{{ btnItem.btnText }}</el-button>
+        </template>
+        <!-- 冒泡提示语分行显示 -->
+        <template v-else-if="item.isMultipleLines">
+          <el-tooltip placement="top-start">
+            <div slot="content">
+              <p v-for="(content, index) in _formatArray(scope.row[item.prop], item.contentField)" :key="index">{{ content }}</p>
+            </div>
+            <span style="white-space: nowrap;">{{ _formatText(scope.row[item.prop], item.contentField) }}</span>
+          </el-tooltip>
         </template>
         <!-- 文本显示 -->
         <template v-else-if="item.originType !== 'selectoin'">
@@ -120,6 +129,14 @@ export default {
     }
   },
   methods: {
+    _formatArray (data, contentField) {
+      let result = Array.isArray(data) ? data : JSON.parse(data)  
+      return result.map(item => item[contentField])
+    },
+    _formatText (data, contentField) {
+      let result = Array.isArray(data) ? data : JSON.parse(data)  
+      return result.map(item => item[contentField]).join(' ')
+    },
     onCurrentChange (val) {
       console.log(val, 'val')
       // this.radio = val

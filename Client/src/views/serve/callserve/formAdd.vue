@@ -11,6 +11,7 @@
         class="rowStyle"
         ref="itemForm"
         size="mini"
+        :show-message="false"
       >
         <el-row class="row-bg">
           <el-col :span="7">
@@ -136,7 +137,11 @@
                         <el-tooltip popper-class="form-theme-toolip" effect="dark" :content="themeItem.description" placement="top">
                           <p class="text">{{ themeItem.description }}</p>
                         </el-tooltip>
-                        <i class="delete el-icon-error" @click.stop="deleteTheme(formList[0], themeIndex)"></i>
+                        <i 
+                          v-if="isShowDeleteIcon(formList[0])" 
+                          class="delete el-icon-error" 
+                          @click.stop="deleteTheme(formList[0], themeIndex)">
+                        </i>
                       </li>
                     </transition-group>
                   </div>
@@ -343,6 +348,7 @@
             class="rowStyle"
             ref="itemFormList"
             size="mini"
+            :show-message="false"
           >
             <el-row class="row-bg">
               <el-col :span="7">
@@ -465,7 +471,11 @@
                               <div slot="content">{{ themeItem.description }}</div>
                               <p class="text">{{ themeItem.description }}</p>
                             </el-tooltip>
-                            <i class="delete el-icon-error" @click.stop="deleteTheme(item, themeIndex)"></i>
+                            <i 
+                              v-if="isShowDeleteIcon(item)"  
+                              class="delete el-icon-error" 
+                              @click.stop="deleteTheme(item, themeIndex)">
+                            </i>
                           </li>
                         </transition-group>
                       </div>
@@ -785,17 +795,28 @@
     <my-dialog 
       ref="formTheme"
       width="500px"
+      title="呼叫主题"
       :btnList="themeBtnList"
       :appendToBody="true"
       @onClose="closeFormTheme"
     >
-      <common-table 
-        :loading="themeLoading"
-        ref="formThemeTable" 
-        :data="formThemeData" 
-        :columns="columns" 
-        :selectedList="selectedList"
-      ></common-table>
+      <el-input
+        style="width: 200px; margin-bottom: 10px;"
+        type="primary"
+        size="mini"
+        @keyup.enter.native="queryTheme" 
+        v-model="listQueryTheme.key" 
+        placeholder="呼叫主题内容">
+      </el-input>
+      <div style="height: 400px">
+        <common-table 
+          :loading="themeLoading"
+          ref="formThemeTable" 
+          :data="themeList" 
+          :columns="columns" 
+          :selectedList="selectedList"
+        ></common-table>
+      </div>
       <pagination
         v-show="themeTotal > 0"
         :total="themeTotal"
@@ -974,7 +995,7 @@ export default {
       formThemeData: [],
       columns: [
         { originType: 'selection' },
-        { label: '呼叫主题', prop: 'description' }
+        { label: '呼叫主题', prop: 'name' }
       ],
       selectedList: [] // 当前呼叫主题框存在的数组
     };
@@ -1007,31 +1028,32 @@ export default {
       this.listLoading = false;
     });
 
-    const list = [
-      '客户咨询如何设置工步？',
-      '如何设置18650电池的工步？',
-      '如何设置动力电池的工步',
-      'R部工程师新需求沟通，出差报备',
-      '寄出物料至客户现场',
-      '联机异常',
-      '新购工装需上门指导使用',
-      '通道保护，需上门检修。',
-      '设备需返修处理。',
-      '采购下位机板，询价/报价',
-      '登录用户时提示未知的错误，原因？',
-      '安装BTS8.0软件提示未注册，原因？',
-      '不会联机，需要指导。',
-      '8512分容柜无法联机'
-    ]
-    if (this.formName !== '查看') {
-      for (let i = 0; i < list.length; i++) {
-        this.formThemeData.push({
-          id: i + 1,
-          description: list[i]
-        })
-      }
-      this._getFormThemeList()
-    }
+    // const list = [
+    //   '客户咨询如何设置工步？',
+    //   '如何设置18650电池的工步？',
+    //   '如何设置动力电池的工步',
+    //   'R部工程师新需求沟通，出差报备',
+    //   '寄出物料至客户现场',
+    //   '联机异常',
+    //   '新购工装需上门指导使用',
+    //   '通道保护，需上门检修。',
+    //   '设备需返修处理。',
+    //   '采购下位机板，询价/报价',
+    //   '登录用户时提示未知的错误，原因？',
+    //   '安装BTS8.0软件提示未注册，原因？',
+    //   '不会联机，需要指导。',
+    //   '8512分容柜无法联机'
+    // ]
+    // if (this.formName !== '查看') {
+    //   for (let i = 0; i < list.length; i++) {
+    //     this.formThemeData.push({
+    //       id: i + 1,
+    //       description: list[i]
+    //     })
+    //   }
+      
+    // }
+    this._getFormThemeList()
   },
   computed: {
     themeBtnList () {
@@ -1205,6 +1227,11 @@ export default {
         this.themeLoading = false
       })
     },
+    queryTheme () {
+      this.listQueryTheme.page = 1
+      this.$refs.formThemeTable.clearSelection()
+      this._getFormThemeList()
+    },
     handleChangeTheme (val) {
       this.listQueryTheme.page = val.page
       this.listQueryTheme.limit = val.limit
@@ -1215,6 +1242,10 @@ export default {
       if (!selectList.length) {
         return this.$message.warning('请先选择数据')
       }
+      selectList = selectList.map(item => {
+        let { id, name } = item
+        return { id, description: name }
+      })
       let data = this.formList[this.currentFormIndex] // 当前选中的呼叫主题对应formList的第几项
       let newList = (data.themeList || []).concat(selectList)
       if (newList && newList.length > 10) {
@@ -1235,7 +1266,7 @@ export default {
         return this.$message.error('客户代码不能为空!')
       }
       let data = this.formList[formIndex]
-      if (this.isOrderDisabled(data)) {
+      if (this.isOrderDisabled(data) && this.formName === '编辑') {
         return
       }
       if (data.themeList && data.themeList.length > 10) {
@@ -1246,13 +1277,12 @@ export default {
       this.$refs.formTheme.open()
     },
     deleteTheme (data, themeIndex) { // formIndex 是formList的索引 themeIndex主题呼叫中标签的索引
-      if (this.formName === '查看') {
-        return
-      }
-      if (this.isOrderDisabled(data)) {
-        return
-      }
       data.themeList.splice(themeIndex, 1)
+    },
+    isShowDeleteIcon (data) { // 是否展示delteIcon
+      return (this.isOrderDisabled(data) && this.formName === '编辑')
+        ? false
+        : this.formName !== '查看'
     },
     isChangeStatus (val) { // 是否可以改变状态
       return (this.formName === '编辑' && !this.formInitailList.every(item => item.id === val.id)) 
@@ -1398,7 +1428,8 @@ export default {
           remark, 
           solutionId, 
           status, 
-          solutionsubject
+          solutionsubject,
+          themeList
         } = this.currentTarget || {}
         if (!this.formList[0].manufacturerSerialNumber) {
           //判断从哪里新增的依据是第一个工单是否有id
@@ -1449,6 +1480,7 @@ export default {
               materialDescription: newList[i].itemName,
               feeType: feeType || 1,
               fromTheme: fromTheme || "",
+              themeList: themeList || [],
               fromType: fromType || "",
               problemTypeName: problemTypeName || "",
               problemTypeId: problemTypeId || "",
@@ -1462,7 +1494,7 @@ export default {
           this.ifFormPush = true;
         } else {
           this.ifFormPush = true;
-          if(this.isEditOperation){
+          if(this.isEditOperation) {
             if (this.inputname) {
               this.inputname = false
               this.formListStart={
@@ -1473,6 +1505,7 @@ export default {
                 itemName: "",
                 feeType: 1,
                 fromTheme:  "",
+                themeList: [],
                 fromType:  "",
                 problemTypeName:  "",
                 problemTypeId:  "",
@@ -1510,6 +1543,7 @@ export default {
                 materialDescription: "",
                 feeType: feeType || 1,
                 fromTheme: fromTheme || "",
+                themeList: themeList || [],
                 fromType: fromType || "",
                 problemTypeName: problemTypeName || "",
                 problemTypeId: problemTypeId || "",
@@ -1529,6 +1563,7 @@ export default {
                 materialDescription: this.formListStart[i].itemName,
                 feeType: feeType || 1,
                 fromTheme: fromTheme || "",
+                themeList: themeList || [],
                 fromType: fromType || "",
                 problemTypeName: problemTypeName || "",
                 problemTypeId: problemTypeId || "",
@@ -1767,9 +1802,9 @@ export default {
     .form-theme-list {
       .form-theme-item {
         display: inline-block;
-        margin-right: 4px;
-        margin-bottom: 4px;
-        padding: 5px;
+        margin-right: 2px;
+        margin-bottom: 2px;
+        padding: 2px;
         background-color: rgba(239, 239, 239, 1);
         .text-content {
           max-width: 480px;
@@ -1786,7 +1821,7 @@ export default {
         .text {
           display: inline-block;
           overflow: hidden;
-          max-width: 480px;
+          max-width: 478px;
           text-overflow: ellipsis;
           white-space: nowrap;
           vertical-align: middle;

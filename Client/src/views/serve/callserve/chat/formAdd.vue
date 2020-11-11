@@ -37,14 +37,25 @@
       <el-row type="flex" class="row-bg" justify="space-around">
         <el-col :span="18">
           <el-form-item
-            label="呼叫主题"
-            prop="fromTheme"
-            :rules="{
-          required: true, message: '呼叫主题不能为空', trigger: 'blur'
-        }"
-          >
-            <el-input v-model="form.fromTheme" type="textarea" maxlength="255"></el-input>
-          </el-form-item>
+              label="呼叫主题"
+              required
+            >
+              <!-- <el-input v-model="formList[0].fromTheme" type="textarea" maxlength="255" autosize style="display: none;"></el-input> -->
+              <div class="form-theme-content" @click="openFormThemeDialog($event)">
+                <el-scrollbar wrapClass="scroll-wrap-class">
+                  <div class="form-theme-list">
+                    <transition-group name="list" tag="ul">
+                      <li class="form-theme-item" v-for="(themeItem, themeIndex) in form.themeList" :key="themeItem.id" >
+                        <el-tooltip popper-class="form-theme-toolip" effect="dark" :content="themeItem.description" placement="top">
+                          <p class="text">{{ themeItem.description }}</p>
+                        </el-tooltip>
+                        <i v-if="isNew" class="delete el-icon-error" @click.stop="deleteTheme(form, themeIndex)"></i>
+                      </li>
+                    </transition-group>
+                  </div>
+                </el-scrollbar>
+              </div>
+            </el-form-item>
         </el-col>
         <el-col :span="6">
           <el-form-item label="技术员">
@@ -358,6 +369,38 @@
         <el-button type="primary" @click="pushForm">确 定</el-button>
       </span>
     </el-dialog>
+    <my-dialog 
+      ref="formTheme"
+      width="500px"
+      :btnList="themeBtnList"
+      :appendToBody="true"
+      @onClose="closeFormTheme"
+    >
+      <el-input
+        style="width: 200px; margin-bottom: 10px;"
+        type="primary"
+        size="mini"
+        @keyup.enter.native="queryTheme" 
+        v-model="listQueryTheme.key" 
+        placeholder="呼叫主题内容">
+      </el-input>
+      <div style="height: 400px;">
+        <common-table 
+          :loading="themeLoading"
+          ref="formThemeTable" 
+          :data="themeList" 
+          :columns="columns" 
+          :selectedList="selectedList"
+        ></common-table>
+      </div>
+      <pagination
+        v-show="themeTotal > 0"
+        :total="themeTotal"
+        :page.sync="listQueryTheme.page"
+        :limit.sync="listQueryTheme.limit"
+        @pagination="handleChangeTheme"
+      /> 
+    </my-dialog>
   </div>
 </template>
 
@@ -368,7 +411,10 @@ import problemtype from "../problemtype";
 import solution from "../solution";
 import fromfSNC from '../fromfSNC'
 import Pagination from "@/components/Pagination";
+import MyDialog from '@/components/Dialog'
+import CommonTable from '@/components/CommonTable'
 import { solveTechApplyDevices } from '@/api/serve/technicianApply'
+import { getListByType } from '@/api/serve/knowledge'
 export default {
   inject: ['instance'],
   props: {
@@ -413,7 +459,9 @@ export default {
     problemtype,
     solution,
     fromfSNC,
-    Pagination
+    Pagination,
+    MyDialog,
+    CommonTable
   },
   watch: {
     formData: {
@@ -421,6 +469,14 @@ export default {
       handler (val) {
         this.form = Object.assign({}, this.form, val);
       }
+    }
+  },
+  computed: {
+    themeBtnList () {
+      return [
+        { btnText: '确认', handleClick: this.confirmTheme },
+        { btnText: '取消', handleClick: this.closeFormTheme }
+      ]
     }
   },
   data() {
@@ -446,6 +502,7 @@ export default {
         status: 1, //呼叫状态 1-待确认 2-已确认 3-已取消 4-待处理 5-已排配 6-已外出 7-已挂起 8-已接收 9-已解决 10-已回访
         currentUserId: "", //App当前流程处理用户Id
         fromTheme: "", //呼叫主题
+        themeList: [], // 呼叫主题数组
         fromId: 1, //呼叫来源 1-电话 2-APP
         problemTypeId: "", //问题类型Id
         fromType: "", //呼叫类型1-提交呼叫 2-在线解答（已解决）
@@ -481,6 +538,20 @@ export default {
         { label: "中", value: 2 },
         { label: "低", value: 1 },
       ],
+      themeList: [], // 呼叫主题列表
+      themeTotal: 0, // 呼叫主题总数
+      themeLoading: false, // 表格loading
+      listQueryTheme: {
+        page: 1,
+        limit: 20,
+        type: 7, // 呼叫主题
+        key: '' // 搜搜呼叫主题
+      },
+      columns: [
+        { originType: 'selection' },
+        { label: '呼叫主题', prop: 'name' }
+      ],
+      selectedList: [] // 当前呼叫主题框存在的数组
     };
   },
   methods: {
@@ -545,7 +616,8 @@ export default {
       this.solutionOpen = false;
     },
     checkForm () {
-      return this.form.fromTheme !== "" &&
+      return this.form.themeList &&
+        this.form.themeList.length &&
         this.form.fromType !== "" &&
         this.form.problemTypeId !== "" &&
         this.form.manufacturerSerialNumber !== "" &&
@@ -559,6 +631,7 @@ export default {
         applyId: this.info.id,
         addServiceWorkOrder: type === 'fail' ? {} : {
           ...this.form,
+          fromTheme: JSON.stringify(this.form.themeList),
           serviceOrderId: this.instance.serveId
         }
       }
@@ -610,7 +683,69 @@ export default {
         solutionId: "", //解决方案
         troubleDescription: "",
         processDescription: "",
+      },
+      this.listQueryTheme = {
+        page: 1,
+        limit: 20,
+        key: '',
+        type: 7
       }
+    },
+    _getFormThemeList () {
+      this.themeLoading = true
+      getListByType(this.listQueryTheme).then(res => {
+        let { data, count } = res
+        this.themeList = data
+        this.themeTotal = count
+        this.themeLoading = false
+      }).catch(err => {
+        this.$message.error(err.message)
+        this.themeLoading = false
+      })
+    },
+    queryTheme () {
+      this.listQueryTheme.page = 1
+      this.$refs.formThemeTable.clearSelection()
+      this._getFormThemeList()
+    },
+    handleChangeTheme (val) {
+      this.listQueryTheme.page = val.page
+      this.listQueryTheme.limit = val.limit
+      this._getFormThemeList()
+    },
+    confirmTheme () {
+      let selectList = this.$refs.formThemeTable.getSelectionList()
+      if (!selectList.length) {
+        return this.$message.warning('请先选择数据')
+      }
+      selectList = selectList.map(item => {
+        let { id, name } = item
+        return { id, description: name }
+      })
+      let data = this.form 
+      let newList = (data.themeList || []).concat(selectList)
+      if (newList && newList.length > 10) {
+        return this.$message.warning('最多选择十条数据!')
+      }
+      this.$set(data, 'themeList', newList)
+      this.closeFormTheme()
+    },
+    closeFormTheme () {
+      this.$refs.formThemeTable.clearSelection() // 清空多选
+      this.$refs.formTheme.close()
+    },
+    openFormThemeDialog () {
+      if (!this.isNew) return
+      let data = this.form
+      if (data.themeList && data.themeList.length > 10) {
+        return this.$message.warning('最多选择十条数据!')
+      }
+      this.selectedList = data.themeList || []
+      this.$refs.formTheme.open()
+    },
+    deleteTheme (data, themeIndex) { 
+      if (!this.isNew) return
+      data.themeList.splice(themeIndex, 1)
     }
   },
   created() {},
@@ -628,6 +763,7 @@ export default {
         this.solutionCount = response.count;
         this.listLoading = false;
       });
+      this._getFormThemeList()
   },
 };
 </script>
@@ -648,6 +784,75 @@ export default {
   .radio-item {
     display: flex;
     flex-direction: column;
+  }
+  /* 呼叫主题样式 */
+  .form-theme-content {
+    position: relative;
+    box-sizing: border-box;
+    min-height: 30px;
+    padding: 5px 15px;
+    color: #606266;
+    font-size: 12px;
+    line-height: 1.5;
+    border-radius: 4px;
+    border: 1px solid #DCDFE6;
+    background-color: #fff;
+    outline: none;
+    transition: border-color .2s cubic-bezier(.645, .045, .355, 1);
+    cursor: pointer;
+    &:focus {
+      border-color: #409EFF;
+    }
+    .form-theme-mask {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 10;
+    }
+    ::v-deep .el-scrollbar {
+      .scroll-wrap-class {
+        max-height: 100px; // 最大高度
+        overflow-x: hidden; // 隐藏横向滚动栏
+        margin-bottom: 0 !important;
+      }
+    }
+    .form-theme-list {
+      .form-theme-item {
+        display: inline-block;
+        margin-right: 2px;
+        margin-bottom: 2px;
+        padding: 2px;
+        background-color: rgba(239, 239, 239, 1);
+        .text-content {
+          max-width: 480px;
+        }
+        &.list-enter-active, &.list-leave-acitve {
+          transition: all .4s;
+        }
+        &.list-enter, &.list-leave-to {
+          opacity: 0;
+        }
+        &.list-enter-to, &.list-leave {
+          opacity: 1;
+        }
+        .text {
+          display: inline-block;
+          overflow: hidden;
+          max-width: 478px;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          vertical-align: middle;
+        }
+        .delete {
+          margin-left: 5px;
+          font-size: 12px;
+          vertical-align: middle;
+          cursor: pointer;
+        }
+      }
+    }
   }
   .operation-wrapper {
     display: flex;

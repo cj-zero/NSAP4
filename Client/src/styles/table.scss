@@ -36,3 +36,14 @@
 .status-gray {
   color: $statusGray;
 }
+
+/* 工单优先级 */
+.priority-low {
+  color: $priority-low;
+}
+.priority-middle {
+  color: $priority-middle;
+}
+.priority-high {
+  color: $priority-high;
+}

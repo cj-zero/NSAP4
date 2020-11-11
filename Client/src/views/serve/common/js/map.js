@@ -10,8 +10,9 @@ export const STATUS_COLOR_MAP = { // 工单呼叫状态颜色
 }
 
 export const PRIORITY_COLOR_MAP = { // 工单优先级颜色
-  2: 'status-yellow', // 中
-  3: 'status-red' // 高
+  1: 'priority-low', // 低
+  2: 'priority-middle', // 中
+  3: 'priority-high' // 高
 }
 
 
