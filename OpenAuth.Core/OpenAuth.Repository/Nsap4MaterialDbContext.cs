@@ -32,6 +32,8 @@ namespace OpenAuth.Repository
 
         public virtual DbSet<ReturnnoteMaterial> ReturnnoteMaterials { get; set; }
 
+        public virtual DbSet<QuotationOperationHistory> QuotationOperationHistory { get; set; }
+        
         #endregion
     }
 }
