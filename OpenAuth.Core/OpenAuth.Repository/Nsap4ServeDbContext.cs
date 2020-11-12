@@ -16,7 +16,8 @@ namespace OpenAuth.Repository
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.Entity<ReimburseInfo>(options => {
+            modelBuilder.Entity<ReimburseInfo>(options =>
+            {
                 options.Ignore(e => e.ReimburseAttachments);
             });
         }
@@ -49,12 +50,17 @@ namespace OpenAuth.Repository
         public virtual DbSet<ReimurseOperationHistory> Reimurseoperationhistories { get; set; }
 
         public virtual DbSet<ServiceOrderParticipationRecord> ServiceOrderParticipationRecords { get; set; }
-        
+
         public virtual DbSet<MyExpends> Myexpends { get; set; }
         #endregion
 
         public virtual DbSet<KnowledgeBase> KnowledgeBases { get; set; }
         //非数据库表格
         public virtual DbQuery<SysTableColumn> SysTableColumns { get; set; }
+
+        /// <summary>
+        /// 售后流程
+        /// </summary>
+        public virtual DbSet<ServiceFlow> Serviceflows { get; set; }
     }
 }
