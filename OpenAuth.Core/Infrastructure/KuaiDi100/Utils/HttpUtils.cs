@@ -43,5 +43,24 @@ namespace Utils
                 return e.ToString();
             }
         }
+
+        public static string doAutoGetComcode(string url)
+        {
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    Console.WriteLine(JsonConvert.SerializeObject(url));
+                    var result = client.GetAsync(url).Result.Content.ReadAsStringAsync().Result;
+                    Console.WriteLine(result);
+                    return result;
+
+                }
+            }
+            catch (Exception e)
+            {
+                return e.ToString();
+            }
+        }
     }
 }

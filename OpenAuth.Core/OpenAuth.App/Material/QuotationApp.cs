@@ -169,7 +169,7 @@ namespace OpenAuth.App.Material
 
         public void Update(AddOrUpdateQuotationReq obj)
         {
-            UnitWork.Update<Repository.Domain.Returnnote>(u => u.Id == obj.Id, u => new Repository.Domain.Returnnote
+            UnitWork.Update<Repository.Domain.ReturnNote>(u => u.Id == obj.Id, u => new Repository.Domain.ReturnNote
             {
                 //todo:要修改的字段赋值
             });
