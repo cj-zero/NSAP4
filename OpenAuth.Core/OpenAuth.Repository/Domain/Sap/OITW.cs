@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("OITW")]
-    public partial class OITW : Entity
+    public partial class OITW
     {
         public OITW()
         {
@@ -83,7 +83,17 @@ namespace OpenAuth.Repository.Domain.Sap
           this.U_KW= string.Empty;
           this.U_PRX_LCnt= string.Empty;
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string ItemCode { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string WhsCode { get; set; }
         
         /// <summary>
         /// 

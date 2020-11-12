@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("ITT1")]
-    public partial class ITT1 : Entity
+    public partial class ITT1
     {
         public ITT1()
         {
@@ -46,8 +46,13 @@ namespace OpenAuth.Repository.Domain.Sap
           this.U_DUnit= string.Empty;
           this.U_PCB= string.Empty;
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string Father { get; set; }
+        public int ChildNum { get; set; }
 
-        
         /// <summary>
         /// 
         /// </summary>

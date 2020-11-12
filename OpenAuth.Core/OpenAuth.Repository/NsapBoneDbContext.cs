@@ -1,0 +1,25 @@
+﻿using Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using OpenAuth.Repository.Domain;
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace OpenAuth.Repository
+{
+    [ConnectionString("NsapBoneDbContext")]
+    public class NsapBoneDbContext : DbContext
+    {
+        public NsapBoneDbContext(DbContextOptions<NsapBoneDbContext> options) : base(options)
+        {
+        }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            //当主键为联合主键时，需要把这里的内容拷贝到对应的位置
+        }
+        //public virtual DbSet<store_oitl> StoreOitls { get; set; }
+
+        //非数据库表格
+        public virtual DbSet<SysOIT1Column> SysOIT1Columns { get; set; }
+    }
+}
