@@ -6,6 +6,7 @@
 //     Author:Yubao Li
 //------------------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using OpenAuth.Repository.Core;
@@ -85,6 +86,11 @@ namespace OpenAuth.Repository.Domain
         [Description("差错数量")]
         public int? WrongCount { get; set; }
 
-
+        /// <summary>
+        ///退料图片
+        /// </summary>
+        [Description("退料图片")]
+        public List<ReturnNoteMaterialPicture> ReturnNoteMaterialPictures { get; set; }
+        
     }
 }
