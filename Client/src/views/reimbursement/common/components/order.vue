@@ -170,7 +170,14 @@
                     :prop="'reimburseTravellingAllowances.' + scope.$index + '.'+ item.prop"
                     :rules="travelRules[item.prop] || { required: false }"
                   >
-                    <el-input v-model="scope.row[item.prop]" :disabled="item.disabled" :placeholder="item.placeholder"></el-input>
+                    <el-tooltip 
+                      :disabled="!(item.prop === 'remark' && scope.row[item.prop].length > 0)" 
+                      effect="dark"
+                      :content="scope.row[item.prop]" 
+                      placement="top-start"
+                    >
+                      <el-input v-model="scope.row[item.prop]" :disabled="item.disabled" :placeholder="item.placeholder"></el-input>
+                    </el-tooltip>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'number'">
@@ -250,28 +257,35 @@
                     :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }"
                   >
                     <div class="area-wrapper">
-                      <el-input 
-                        v-model="scope.row[item.prop]" 
-                        :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)" 
-                        :readonly="item.readonly || false"
-                        :placeholder="item.placeholder"
-                        @focus="onAreaFocus({ prop: item.prop, index: scope.$index })">
-                        <el-tooltip
-                          v-if="item.prop === 'invoiceNumber'"
-                          :disabled="scope.row.isValidInvoice"
-                          slot="suffix"
-                          effect="dark"
-                          placement="top-start"
-                          :content="`${scope.row.isValidInvoice ? '' : '无发票附件'}`">
-                          <i 
-                            class="el-input__icon"
-                            :class="{
-                              'el-icon-upload-success el-icon-circle-check success': scope.row.isValidInvoice,
-                              'el-icon-warning-outline warning': !scope.row.isValidInvoice
-                            }">
-                          </i>
-                        </el-tooltip>
-                      </el-input>
+                      <el-tooltip 
+                        :disabled="!(item.prop === 'remark' && scope.row[item.prop].length > 0)" 
+                        effect="dark"
+                        :content="scope.row[item.prop]" 
+                        placement="top-start"
+                      >
+                        <el-input 
+                          v-model="scope.row[item.prop]" 
+                          :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)" 
+                          :readonly="item.readonly || false"
+                          :placeholder="item.placeholder"
+                          @focus="onAreaFocus({ prop: item.prop, index: scope.$index })">
+                          <el-tooltip
+                            v-if="item.prop === 'invoiceNumber'"
+                            :disabled="scope.row.isValidInvoice"
+                            slot="suffix"
+                            effect="dark"
+                            placement="top-start"
+                            :content="`${scope.row.isValidInvoice ? '' : '无发票附件'}`">
+                            <i 
+                              class="el-input__icon"
+                              :class="{
+                                'el-icon-upload-success el-icon-circle-check success': scope.row.isValidInvoice,
+                                'el-icon-warning-outline warning': !scope.row.isValidInvoice
+                              }">
+                            </i>
+                          </el-tooltip>
+                        </el-input>
+                      </el-tooltip>
                       <template v-if="ifFormEdit && (item.prop === 'from' || item.prop === 'to')">  
                         <div class="selector-wrapper" 
                           v-show="(scope.row.ifFromShow && item.prop === 'from') || (scope.row.ifToShow && item.prop === 'to')">
@@ -397,27 +411,34 @@
                     :prop="'reimburseAccommodationSubsidies.' + scope.$index + '.'+ item.prop"
                     :rules="scope.row.isAdd ? (accRules[item.prop] || { required: false }) : { required: false }"
                   >
-                    <el-input 
-                      v-model="scope.row[item.prop]" 
-                      :placeholder="item.placeholder"
-                      :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)" 
-                      @change="onChange">
-                      <el-tooltip
-                        v-if="item.prop === 'invoiceNumber'"
-                        :disabled="scope.row.isValidInvoice"
-                        slot="suffix"
-                        effect="dark"
-                        placement="top-start"
-                        :content="`${scope.row.isValidInvoice ? '' : '无发票附件'}`">
-                        <i 
-                          class="el-input__icon"
-                          :class="{
-                            'el-icon-upload-success el-icon-circle-check success': scope.row.isValidInvoice,
-                            'el-icon-warning-outline warning': !scope.row.isValidInvoice
-                          }">
-                        </i>
-                      </el-tooltip>
-                    </el-input>
+                    <el-tooltip 
+                      :disabled="!(item.prop === 'remark' && scope.row[item.prop].length > 0)" 
+                      effect="dark"
+                      :content="scope.row[item.prop]" 
+                      placement="top-start"
+                    >
+                      <el-input 
+                        v-model="scope.row[item.prop]" 
+                        :placeholder="item.placeholder"
+                        :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)" 
+                        @change="onChange">
+                        <el-tooltip
+                          v-if="item.prop === 'invoiceNumber'"
+                          :disabled="scope.row.isValidInvoice"
+                          slot="suffix"
+                          effect="dark"
+                          placement="top-start"
+                          :content="`${scope.row.isValidInvoice ? '' : '无发票附件'}`">
+                          <i 
+                            class="el-input__icon"
+                            :class="{
+                              'el-icon-upload-success el-icon-circle-check success': scope.row.isValidInvoice,
+                              'el-icon-warning-outline warning': !scope.row.isValidInvoice
+                            }">
+                          </i>
+                        </el-tooltip>
+                      </el-input>
+                    </el-tooltip>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'number'">
@@ -538,27 +559,34 @@
                     :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
                     :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }"
                   >
-                    <el-input 
-                      :placeholder="item.placeholder"
-                      v-model="scope.row[item.prop]" 
-                      :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)"
+                    <el-tooltip 
+                      :disabled="!(item.prop === 'remark' && scope.row[item.prop].length > 0)" 
+                      effect="dark"
+                      :content="scope.row[item.prop]" 
+                      placement="top-start"
                     >
-                      <el-tooltip
-                        v-if="item.prop === 'invoiceNumber'"
-                        :disabled="scope.row.isValidInvoice"
-                        slot="suffix"
-                        effect="dark"
-                        placement="top-start"
-                        :content="`${scope.row.isValidInvoice ? '' : '无发票附件'}`">
-                        <i 
-                          class="el-input__icon"
-                          :class="{
-                            'el-icon-upload-success el-icon-circle-check success': scope.row.isValidInvoice,
-                            'el-icon-warning-outline warning': !scope.row.isValidInvoice
-                          }">
-                        </i>
-                      </el-tooltip>
-                    </el-input>
+                      <el-input 
+                        :placeholder="item.placeholder"
+                        v-model="scope.row[item.prop]" 
+                        :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)"
+                      >
+                        <el-tooltip
+                          v-if="item.prop === 'invoiceNumber'"
+                          :disabled="scope.row.isValidInvoice"
+                          slot="suffix"
+                          effect="dark"
+                          placement="top-start"
+                          :content="`${scope.row.isValidInvoice ? '' : '无发票附件'}`">
+                          <i 
+                            class="el-input__icon"
+                            :class="{
+                              'el-icon-upload-success el-icon-circle-check success': scope.row.isValidInvoice,
+                              'el-icon-warning-outline warning': !scope.row.isValidInvoice
+                            }">
+                          </i>
+                        </el-tooltip>
+                      </el-input>
+                    </el-tooltip>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'number'">
@@ -2165,9 +2193,9 @@ export default {
   /* 各个表格的样式 */
   .form-item-wrapper {
     &.travel {
-      width: 622px;
+      width: 571px;
       &.uneditable {
-        width: 471px;
+        width: 421px;
       }
     }
     &.acc {
