@@ -10,6 +10,7 @@ namespace OpenAuth.App
         public const string ROLEELEMENT = "RoleElement"; //角色菜单关联KEY
         public const string ROLEMODULE = "RoleModule";   //角色模块关联KEY
         public const string ROLEDATAPROPERTY = "RoleDataProperty";   //角色数据字段权限
+        public const string USERAPP = "App"; //App登录账号
 
         public const string DBTYPE_SQLSERVER = "SqlServer";    //sql server
         public const string DBTYPE_MYSQL = "MySql";    //sql server
