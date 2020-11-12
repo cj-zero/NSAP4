@@ -32,11 +32,13 @@ namespace OpenAuth.Repository.Domain
         }
 
 
+
+        [Description("")]
+        public int Id { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        [Browsable(false)]
         public int? ServiceOrderId { get; set; }
         /// <summary>
         /// 

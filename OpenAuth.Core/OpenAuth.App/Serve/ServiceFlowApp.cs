@@ -34,8 +34,8 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             //获取当前用户nsap用户信息
-            var userInfo = (await UnitWork.Find<AppUserMap>(a => a.AppUserId == request.AppUserId).FirstOrDefaultAsync())?.User;
-            if (userInfo == null)
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == request.AppUserId).Include(a => a.User).FirstOrDefaultAsync();
+            if (userInfo.User == null)
             {
                 throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
             }
@@ -43,15 +43,15 @@ namespace OpenAuth.App
             {
                 case 1://选择电话服务
                     //列表
-                    await RemoteServer(request.ServiceOrderId, request.MaterialType, userInfo.Id, userInfo.Name, 1);
+                    await RemoteServer(request.ServiceOrderId, request.MaterialType, userInfo.User.Id, userInfo.User.Name, 1);
                     //详情
-                    await RemoteServer(request.ServiceOrderId, request.MaterialType, userInfo.Id, userInfo.Name, 2);
+                    await RemoteServer(request.ServiceOrderId, request.MaterialType, userInfo.User.Id, userInfo.User.Name, 2);
                     break;
                 case 2://选择上门服务或电话服务转上门服务
                     //列表
-                    await DoorServer(request.ServiceOrderId, request.MaterialType, userInfo.Id, userInfo.Name, 1);
+                    await DoorServer(request.ServiceOrderId, request.MaterialType, userInfo.User.Id, userInfo.User.Name, 1);
                     //详情
-                    await DoorServer(request.ServiceOrderId, request.MaterialType, userInfo.Id, userInfo.Name, 2);
+                    await DoorServer(request.ServiceOrderId, request.MaterialType, userInfo.Id, userInfo.User.Name, 2);
                     break;
                 case 3://拨打电话之后
                 case 5://跳转问题类型页面
@@ -68,16 +68,16 @@ namespace OpenAuth.App
                 //    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.Id && s.FlowNum == 6, o => new ServiceFlow { IsProceed = 1 });
                 //    break;
                 case 9://跳转领料页面
-                    await GetMaterial(request.ServiceOrderId, request.MaterialType, userInfo.Id, userInfo.Name, 1);
-                    await GetMaterial(request.ServiceOrderId, request.MaterialType, userInfo.Id, userInfo.Name, 2);
+                    await GetMaterial(request.ServiceOrderId, request.MaterialType, userInfo.User.Id, userInfo.User.Name, 1);
+                    await GetMaterial(request.ServiceOrderId, request.MaterialType, userInfo.User.Id, userInfo.User.Name, 2);
                     break;
                 case 11://跳转退料页面
                     await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.Id && s.FlowNum == 8, o => new ServiceFlow { IsProceed = 1 });
-                    await ReturnMaterial(request.ServiceOrderId, request.MaterialType, userInfo.Id, userInfo.Name);
+                    await ReturnMaterial(request.ServiceOrderId, request.MaterialType, userInfo.User.Id, userInfo.User.Name);
                     break;
                 case -1://跳转返厂页面
-                    await ReturnServer(request.ServiceOrderId, request.MaterialType, userInfo.Id, userInfo.Name, 1);
-                    await ReturnServer(request.ServiceOrderId, request.MaterialType, userInfo.Id, userInfo.Name, 2);
+                    await ReturnServer(request.ServiceOrderId, request.MaterialType, userInfo.User.Id, userInfo.User.Name, 1);
+                    await ReturnServer(request.ServiceOrderId, request.MaterialType, userInfo.User.Id, userInfo.User.Name, 2);
                     break;
                 case -2://跳转返厂进度页面
                     await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.Id && s.FlowNum == 10, o => new ServiceFlow { IsProceed = 1 });
@@ -172,7 +172,7 @@ namespace OpenAuth.App
             else if (flowType == 1)
             {
                 //清除填报告单流程与是否领料
-                await UnitWork.DeleteAsync<ServiceFlow>(s => s.ServiceOrderId == serviceOrderId && s.MaterialType.Equals(MaterialType) && s.Creater.Equals(creater) && s.FlowNum ==3 && s.FlowType == flowType);
+                await UnitWork.DeleteAsync<ServiceFlow>(s => s.ServiceOrderId == serviceOrderId && s.MaterialType.Equals(MaterialType) && s.Creater.Equals(creater) && s.FlowNum == 3 && s.FlowType == flowType);
                 await UnitWork.SaveAsync();
                 flowNums = new List<int> { 7, 3 };
             }

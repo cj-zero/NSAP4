@@ -34,7 +34,7 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             //获取当前用户nsap用户信息
-            var userInfo = (await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.AppUserId).FirstOrDefaultAsync())?.User;
+            var userInfo = (await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.AppUserId).Include(a => a.User).FirstOrDefaultAsync())?.User;
             if (userInfo == null)
             {
                 throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
@@ -85,7 +85,7 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             //获取当前用户nsap用户信息
-            var userInfo = (await UnitWork.Find<AppUserMap>(a => a.AppUserId == appUserId).FirstOrDefaultAsync())?.User;
+            var userInfo = (await UnitWork.Find<AppUserMap>(a => a.AppUserId == appUserId).Include(a => a.User).FirstOrDefaultAsync())?.User;
             if (userInfo == null)
             {
                 throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
