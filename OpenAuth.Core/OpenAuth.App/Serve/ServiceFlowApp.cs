@@ -51,18 +51,18 @@ namespace OpenAuth.App
                     //列表
                     await DoorServer(request.ServiceOrderId, request.MaterialType, userInfo.User.Id, userInfo.User.Name, 1);
                     //详情
-                    await DoorServer(request.ServiceOrderId, request.MaterialType, userInfo.Id, userInfo.User.Name, 2);
+                    await DoorServer(request.ServiceOrderId, request.MaterialType, userInfo.User.Id, userInfo.User.Name, 2);
                     break;
                 case 3://拨打电话之后
                 case 5://跳转问题类型页面
                 case 6://跳转解决方案页面
-                    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.Id && s.FlowNum == 2, o => new ServiceFlow { IsProceed = 1 });
+                    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.User.Id && s.FlowNum == 2, o => new ServiceFlow { IsProceed = 1 });
                     break;
                 case 4://跳转核对设备页面
-                    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.Id && s.FlowNum == 5, o => new ServiceFlow { IsProceed = 1 });
+                    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.User.Id && s.FlowNum == 5, o => new ServiceFlow { IsProceed = 1 });
                     break;
                 case 7://跳转服务报告单页面
-                    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.Id && s.FlowNum == 3, o => new ServiceFlow { IsProceed = 1 });
+                    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.User.Id && s.FlowNum == 3, o => new ServiceFlow { IsProceed = 1 });
                     break;
                 //case 8://跳转是否领料页面
                 //    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.Id && s.FlowNum == 6, o => new ServiceFlow { IsProceed = 1 });
@@ -72,7 +72,7 @@ namespace OpenAuth.App
                     await GetMaterial(request.ServiceOrderId, request.MaterialType, userInfo.User.Id, userInfo.User.Name, 2);
                     break;
                 case 11://跳转退料页面
-                    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.Id && s.FlowNum == 8, o => new ServiceFlow { IsProceed = 1 });
+                    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.User.Id && s.FlowNum == 8, o => new ServiceFlow { IsProceed = 1 });
                     await ReturnMaterial(request.ServiceOrderId, request.MaterialType, userInfo.User.Id, userInfo.User.Name);
                     break;
                 case -1://跳转返厂页面
@@ -80,7 +80,7 @@ namespace OpenAuth.App
                     await ReturnServer(request.ServiceOrderId, request.MaterialType, userInfo.User.Id, userInfo.User.Name, 2);
                     break;
                 case -2://跳转返厂进度页面
-                    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.Id && s.FlowNum == 10, o => new ServiceFlow { IsProceed = 1 });
+                    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.User.Id && s.FlowNum == 10, o => new ServiceFlow { IsProceed = 1 });
                     break;
                 case 10:
                 default:

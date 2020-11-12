@@ -2351,7 +2351,7 @@ namespace OpenAuth.App
             var ServiceOrderId = (await UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == SapOrderId).FirstOrDefaultAsync()).Id;
             var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
             //获取当前设备类型的售后进度
-            var flowInfo = await UnitWork.Find<ServiceFlow>(s => s.ServiceOrderId == ServiceOrderId && s.MaterialType == MaterialType && s.Creater == userInfo.UserID && s.FlowType == 2).OrderBy(o => o.Id).ToListAsync();
+            var flowInfo = await UnitWork.Find<ServiceFlow>(s => s.ServiceOrderId == ServiceOrderId && s.MaterialType == MaterialType && s.Creater == userInfo.UserID && s.FlowType == 2).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToListAsync();
             var query = UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == SapOrderId)
                         .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                         .Select(a => new
@@ -2457,7 +2457,7 @@ namespace OpenAuth.App
             var query = UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == SapOrderId)
                 .Include(s => s.ServiceWorkOrders);
             //获取当前设备类型的售后进度
-            var flowInfo = await UnitWork.Find<ServiceFlow>(s => s.ServiceOrderId == ServiceOrderId && s.MaterialType == MaterialType && s.Creater == userInfo.UserID && s.FlowType == 2).OrderBy(o => o.Id).ToListAsync();
+            var flowInfo = await UnitWork.Find<ServiceFlow>(s => s.ServiceOrderId == ServiceOrderId && s.MaterialType == MaterialType && s.Creater == userInfo.UserID && s.FlowType == 2).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToListAsync();
             var list = (await query
                          .ToListAsync()).Select(s => new
                          {
@@ -2576,8 +2576,9 @@ namespace OpenAuth.App
         /// 选择接单类型
         /// </summary>
         /// <returns></returns>
-        public async Task SaveOrderTakeType(SaveWorkOrderTakeTypeReq request)
+        public async Task<TableData> SaveOrderTakeType(SaveWorkOrderTakeTypeReq request)
         {
+            var result = new TableData();
             var servicemode = 0;
             var orderIds = await UnitWork.Find<ServiceWorkOrder>(null).Where(s => s.ServiceOrderId == request.ServiceOrderId && s.CurrentUserId == request.CurrentUserId)
     .WhereIf("其他设备".Equals(request.MaterialType), a => a.MaterialCode == "其他设备")
@@ -2620,6 +2621,15 @@ namespace OpenAuth.App
             //添加流程信息
             var flowRequest = new AddOrUpdateServerFlowReq { AppUserId = request.CurrentUserId, FlowNum = request.Type, ServiceOrderId = request.ServiceOrderId, MaterialType = request.MaterialType };
             await _serviceFlowApp.AddOrUpdateServerFlow(flowRequest);
+            //获取当前设备类型流程信息返回
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == request.CurrentUserId).Include(a => a.User).FirstOrDefaultAsync();
+            if (userInfo.User == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            var flowInfo = await UnitWork.Find<ServiceFlow>(w => w.ServiceOrderId == request.ServiceOrderId && w.MaterialType == request.MaterialType && w.FlowType == 1 && w.Creater == userInfo.User.Id).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToListAsync();
+            result.Data = flowInfo;
+            return result;
         }
 
         /// <summary>
@@ -3075,8 +3085,6 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<TableData> GetTechnicianServiceOrder(TechnicianServiceWorkOrderReq req)
         {
-            //20201109 前台不显示暂时放开显示限制
-            req.limit = 1000;
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
@@ -3168,7 +3176,7 @@ namespace OpenAuth.App
                     MaterialTypeName = "其他设备".Equals(o.Key) ? "其他设备" : MaterialTypeModel.Where(a => a.TypeAlias == o.Key).FirstOrDefault().TypeName,
                     OrderTakeType = o.ToList().Select(s => s.OrderTakeType).Distinct().FirstOrDefault(),
                     ServiceMode = o.ToList().Select(s => s.ServiceMode).Distinct().FirstOrDefault(),
-                    flowInfo = s.ServiceFlows.Where(w => w.MaterialType.Equals(o.Key)).OrderBy(o => o.Id).ToList()
+                    flowInfo = s.ServiceFlows.Where(w => w.MaterialType.Equals(o.Key)).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToList()
                 })
             }).ToList();
 
