@@ -14,6 +14,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using OpenAuth.Repository.Core;
 
 namespace OpenAuth.Repository.Interface
@@ -27,6 +28,8 @@ namespace OpenAuth.Repository.Interface
     /// </summary>
     public interface IUnitWork
     {
+
+        DbContext GetDbContext<T>() where T : class;
         T FindSingle<T>(Expression<Func<T, bool>> exp = null) where T : class;
         Task<T> FindSingleAsync<T>(Expression<Func<T, bool>> exp = null, CancellationToken cancellationToken = default) where T : class;
         bool IsExist<T>(Expression<Func<T, bool>> exp) where T : class;
@@ -63,7 +66,7 @@ namespace OpenAuth.Repository.Interface
 
         void BatchDelete<T>(T[] entity) where T : class;
         Task BatchDeleteAsync<T>(T[] entity, CancellationToken cancellationToken = default) where T : class;
-        
+
 
         /// <summary>
         /// 实现按需要只更新部分更新
