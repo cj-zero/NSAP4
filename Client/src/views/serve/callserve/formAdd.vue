@@ -844,6 +844,7 @@ import Report from '../common/components/report'
 import { reportMixin } from '../common/js/mixins'
 import elDragDialog from '@/directive/el-dragDialog'
 import { isCustomerCode } from '@/utils/validate'
+import { deepClone } from  '@/utils'
 import MyDialog from '@/components/Dialog'
 import CommonTable from '@/components/CommonTable'
 export default {
@@ -1088,7 +1089,7 @@ export default {
               let oldValChild = oldVal[index];
               if (newVal.length == oldVal.length) {
                 for (let item1 in newValChild) {
-                  if (newValChild[item1] !== oldValChild[item1]) {
+                  if (JSON.stringify(newValChild[item1]) !== JSON.stringify(oldValChild[item1])) {
                     //如果新值和旧值不一样
                     let sliceList = this.formList.slice(index);
                     if (this.formList[index].editTrue) {
@@ -1113,9 +1114,10 @@ export default {
                           }
                         });
                       } else if (item1 === 'themeList') {
+                        console.log('themeList')
                         sliceList.map((itemF, ind) => {
                           if (ind !== 0) {
-                            this.$set(itemF, 'themeList', newValChild.themeList)
+                            this.$set(itemF, 'themeList', deepClone(newValChild.themeList))
                           }
                         });
                       } else {
@@ -1480,7 +1482,7 @@ export default {
               materialDescription: newList[i].itemName,
               feeType: feeType || 1,
               fromTheme: fromTheme || "",
-              themeList: themeList || [],
+              themeList: deepClone(themeList) || [],
               fromType: fromType || "",
               problemTypeName: problemTypeName || "",
               problemTypeId: problemTypeId || "",
@@ -1543,7 +1545,7 @@ export default {
                 materialDescription: "",
                 feeType: feeType || 1,
                 fromTheme: fromTheme || "",
-                themeList: themeList || [],
+                themeList: deepClone(themeList) || [],
                 fromType: fromType || "",
                 problemTypeName: problemTypeName || "",
                 problemTypeId: problemTypeId || "",
@@ -1563,7 +1565,7 @@ export default {
                 materialDescription: this.formListStart[i].itemName,
                 feeType: feeType || 1,
                 fromTheme: fromTheme || "",
-                themeList: themeList || [],
+                themeList: deepClone(themeList) || [],
                 fromType: fromType || "",
                 problemTypeName: problemTypeName || "",
                 problemTypeId: problemTypeId || "",
