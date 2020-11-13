@@ -36,6 +36,7 @@ export let tableMixin = {
         { label: '结束日期', prop: 'endDate', width: 85 },
         { label: '报销部门', prop: 'orgName', width: 70 },
         { label: '报销人', prop: 'userName', width: 70 },
+        { label: '劳务关系', prop: 'serviceRelations', width: 70 },
         { label: '业务员', prop: 'salesMan', width: 80 },
         { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
         { label: '填报日期', prop: 'fillTime', width: 85 },
@@ -52,6 +53,7 @@ export let tableMixin = {
         { label: '结束日期', prop: 'endDate', width: 85 },
         { label: '报销部门', prop: 'orgName', width: 70 },
         { label: '报销人', prop: 'userName', width: 70 },
+        { label: '劳务关系', prop: 'serviceRelations', width: 70 },
         { label: '业务员', prop: 'salesMan', width: 80 },
         { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
         { label: '填报日期', prop: 'fillTime', width: 85 }
@@ -69,7 +71,8 @@ export let tableMixin = {
         responsibility: '',
         staticDate: '',
         endDate: '',
-        reimburseType: ''
+        reimburseType: '',
+        serviceRelations: '' // 劳务关系
       },
       listQuery: { // 分页参数
         page: 1,
@@ -336,13 +339,22 @@ export let categoryMixin = {
         this.$message.error('获取字典分类失败')
       })
     },
-    buildSelectOptions (list) {
-      list.forEach(item => {
-        let { name, dtValue } = item
-        item.label = name
-        item.value = dtValue
-      })
-      return list
+    buildSelectOptions (list, isName = false) {
+      if (isName) {
+        return list.map(item => {
+          return {
+            label: item.name,
+            value: item.name
+          }
+        })
+      } else {
+        list.forEach(item => {
+          let { name, dtValue } = item
+          item.label = name
+          item.value = dtValue
+        })
+        return list
+      }
     },
     buildMap (list) { // 用来对应表格的名字
       let result = {}
@@ -352,7 +364,7 @@ export let categoryMixin = {
       })
       return result
     },
-    buildReimburseAcc (list) { // 住宿标准费用格式 { cityName: { dtValue:.. , description: ..} }
+    buildReimburseAcc (list) { // 住宿标准费用格式 { cityName: { dtValue:.. , description: ..} } isName
       let result = {}
       list.forEach(item => {
         let { name, description, dtValue } = item
@@ -387,7 +399,7 @@ export let categoryMixin = {
       return this.buildMap(this.categoryList.filter(item => item.typeId === SYS_Responsibility))
     },
     serviceRelationsList () {
-      return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_ServiceRelations))
+      return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_ServiceRelations), true)
     },
     travellingList () {
       return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_TravellingAllowance))
@@ -503,7 +515,8 @@ export let categoryMixin = {
         { placeholder: '服务ID', prop: 'serviceOrderId', width: 100 },
         { placeholder: '报销部门', prop: 'orgName', width: 100 },
         { placeholder: '费用承担', prop: 'bearToPay', width: 100, type: 'select', options: this.expenseList },
-        { placeholder: '责任承担', prop: 'responsibility', width: 100, type: 'select', options: this.responsibilityList },
+        // { placeholder: '责任承担', prop: 'responsibility', width: 100, type: 'select', options: this.responsibilityList },
+        { placeholder: '劳务关系', prop: 'serviceRelations', width: 120, type: 'select', options: this.serviceRelationsList },
         { placeholder: '填报起始时间', prop: 'staticDate', type: 'date', width: 150 },
         { placeholder: '填报结束时间', prop: 'endDate', type: 'date', width: 150 }
       ]
