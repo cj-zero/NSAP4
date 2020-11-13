@@ -111,7 +111,10 @@ namespace OpenAuth.App.Request
         /// 是否已读
         /// </summary>
         public int? IsRead { get; set; }
-
+        /// <summary>
+        /// 更新时间
+        /// </summary>
+        public System.DateTime UpdateTime { get; set; }
 
 
         /// <summary>

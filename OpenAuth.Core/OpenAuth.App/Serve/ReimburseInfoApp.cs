@@ -205,10 +205,10 @@ namespace OpenAuth.App
             }
             #endregion
 
-            ReimburseInfos = ReimburseInfos.OrderByDescending(r => r.CreateTime);
+            ReimburseInfos = ReimburseInfos.OrderByDescending(r => r.UpdateTime);
             if (request.PageType == 2 || request.PageType == 5)
             {
-                ReimburseInfos = ReimburseInfos.OrderBy(r => r.CreateTime);
+                ReimburseInfos = ReimburseInfos.OrderBy(r=>r.UpdateTime);
             }
             var ReimburseInfolist = await ReimburseInfos.Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
@@ -232,11 +232,11 @@ namespace OpenAuth.App
                                  select new { a, b, c, d, f };
 
             ReimburseResps = ReimburseResps.OrderByDescending(r => r.f.CascadeId).ToList();
-            ReimburseResps = ReimburseResps.GroupBy(r => r.a.Id).Select(r => r.First()).OrderByDescending(r => r.a.CreateTime).ToList();
+            ReimburseResps = ReimburseResps.GroupBy(r => r.a.Id).Select(r => r.First()).OrderByDescending(r => r.a.UpdateTime).ToList();
 
             if (request.PageType == 2 || request.PageType == 5)
             {
-                ReimburseResps = ReimburseResps.OrderBy(r => r.a.CreateTime);
+                ReimburseResps = ReimburseResps.OrderBy(r => r.a.UpdateTime);
             }
             result.Count = ReimburseInfos.Count();
             result.Data = ReimburseResps.Select(r => new
@@ -584,6 +584,7 @@ namespace OpenAuth.App
                             var maxmainid = await UnitWork.Find<ReimburseInfo>(null).OrderByDescending(r => r.MainId).Select(r => r.MainId).FirstOrDefaultAsync();
                             obj.MainId = maxmainid + 1;
                         }
+                        obj.UpdateTime = DateTime.Now;
                         obj.CreateTime = DateTime.Now;
                         obj.RemburseStatus = 3;
                         obj.CreateUserId = loginUser.Id;
@@ -602,6 +603,7 @@ namespace OpenAuth.App
                     if (!obj.IsDraft)
                     {
                         obj.RemburseStatus = 4;
+                        obj.UpdateTime = DateTime.Now;
                         //创建报销流程
                         var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("报销"));
                         var afir = new AddFlowInstanceReq();
@@ -726,6 +728,7 @@ namespace OpenAuth.App
                         obj.IsRead = 1;
                         await UnitWork.UpdateAsync<ReimburseInfo>(r => r.Id == obj.Id, r => new ReimburseInfo
                         {
+                            UpdateTime = DateTime.Now,
                             ShortCustomerName = obj.ShortCustomerName,
                             ReimburseType = obj.ReimburseType,
                             ProjectName = obj.ProjectName,
@@ -773,6 +776,7 @@ namespace OpenAuth.App
                         obj.FlowInstanceId = FlowInstanceId;
                         await UnitWork.UpdateAsync<ReimburseInfo>(r => r.Id == obj.Id, r => new ReimburseInfo
                         {
+                            UpdateTime = DateTime.Now,
                             ShortCustomerName = obj.ShortCustomerName,
                             ReimburseType = obj.ReimburseType,
                             ProjectName = obj.ProjectName,
@@ -983,7 +987,6 @@ namespace OpenAuth.App
                     obj.RemburseStatus = 9;
                     obj.PayTime = DateTime.Now;
                 }
-
                 _flowInstanceApp.Verification(new VerificationReq
                 {
                     NodeRejectStep = "",
@@ -992,6 +995,17 @@ namespace OpenAuth.App
                     VerificationFinally = "1",
                     VerificationOpinion = "同意",
                 });
+                if (req.BearToPay == "2")
+                {
+                    eoh.Action = "已结束";
+                    eoh.ApprovalResult = "部门承担";
+                    obj.RemburseStatus = -1;
+                    obj.FlowInstanceId = "";
+                    List<string> ids = new List<string>();
+                    ids.Add(obj.FlowInstanceId);
+                    await _flowInstanceApp.DeleteAsync(ids.ToArray());
+                }
+                
             }
 
             await UnitWork.UpdateAsync<ReimburseInfo>(obj);
