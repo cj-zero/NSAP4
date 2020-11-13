@@ -748,7 +748,7 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
-        
+
         #endregion
 
         #region<<Customer>>
@@ -788,7 +788,7 @@ namespace OpenAuth.WebApi.Controllers
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("ServiceOrderId", request.ServiceOrderId);
                 parameters.Add("MaterialType", request.MaterialType);
-                
+
                 var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/AppLoadServiceOrderDetails");
                 result = JsonConvert.DeserializeObject<Response<dynamic>>(r);
                 //result = await _serviceOrderApp.AppLoadServiceOrderDetails(request);
@@ -842,7 +842,7 @@ namespace OpenAuth.WebApi.Controllers
                 parameters.Add("limit", request.limit);
                 parameters.Add("page", request.page);
                 parameters.Add("key", request.key);
-                
+
                 var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/AppLoad");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _serviceOrderApp.AppLoad(request);
@@ -903,7 +903,7 @@ namespace OpenAuth.WebApi.Controllers
                 parameters.Add("SapOrderId", SapOrderId);
                 parameters.Add("CurrentUserId", CurrentUserId);
                 parameters.Add("MaterialType", MaterialType);
-                
+
                 var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/AppTechnicianLoad");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _serviceOrderApp.AppTechnicianLoad(SapOrderId, CurrentUserId, MaterialType);
@@ -922,14 +922,14 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> SaveOrderTakeType(SaveWorkOrderTakeTypeReq request)
+        public async Task<TableData> SaveOrderTakeType(SaveWorkOrderTakeTypeReq request)
         {
-            var result = new Response();
+            var result = new TableData();
             try
             {
                 var parameters = new { request.ServiceOrderId, request.Type, request.CurrentUserId, request.MaterialType };
                 var r = await _httpClienService.Post(parameters, "api/serve/ServiceOrder/SaveOrderTakeType");
-                result = JsonConvert.DeserializeObject<Response>(r);
+                result = JsonConvert.DeserializeObject<TableData>(r);
                 //await _serviceOrderApp.SaveOrderTakeType(request);
             }
             catch (Exception ex)
@@ -1114,7 +1114,7 @@ namespace OpenAuth.WebApi.Controllers
                 parameters.Add("SapOrderId", SapOrderId);
                 parameters.Add("CurrentUserId", CurrentUserId);
                 parameters.Add("MaterialType", MaterialType);
-                
+
                 var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetAppTechnicianServiceOrderDetails");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _serviceOrderApp.GetAppTechnicianServiceOrderDetails(SapOrderId, CurrentUserId, MaterialType);
@@ -1139,7 +1139,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("ServiceOrderId", ServiceOrderId);
-                
+
                 var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetAppTechServiceOrderDetails");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _serviceOrderApp.GetAppTechServiceOrderDetails(ServiceOrderId);
@@ -1196,7 +1196,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("SapOrderId", SapOrderId);
-                
+
                 var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetAppAdminServiceOrderDetails");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _serviceOrderApp.GetAppAdminServiceOrderDetails(SapOrderId);
@@ -1228,7 +1228,7 @@ namespace OpenAuth.WebApi.Controllers
                 parameters.Add("limit", req.limit);
                 parameters.Add("page", req.page);
                 parameters.Add("key", req.key);
-                
+
                 var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetAppAllowSendOrderUser");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result = await _serviceOrderApp.GetAppAllowSendOrderUser(req);
@@ -1330,7 +1330,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("id", id);
-                
+
                 var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetUserCanOrderCount");
                 result = JsonConvert.DeserializeObject<TableData>(r);
                 //result.Data = await _serviceOrderApp.GetUserCanOrderCount(id);

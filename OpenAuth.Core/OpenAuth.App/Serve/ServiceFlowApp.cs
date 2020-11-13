@@ -103,7 +103,6 @@ namespace OpenAuth.App
         {
             //添加后续默认流程
             List<int> flowNums = new List<int> { 1, 2, 3 };
-            List<ServiceFlow> flows = new List<ServiceFlow>();
             foreach (var item in flowNums)
             {
                 var flow = new ServiceFlow { ServiceOrderId = serviceOrderId, MaterialType = MaterialType, Creater = creater, CreateTime = DateTime.Now, IsProceed = 0, CreaterName = createname, FlowNum = item, FlowName = GetFlowName(item), FlowType = flowType };
@@ -111,9 +110,9 @@ namespace OpenAuth.App
                 {
                     flow.IsProceed = 1;
                 }
-                flows.Add(flow);
+                await UnitWork.AddAsync(flow);
+                await UnitWork.SaveAsync();
             }
-            await UnitWork.BatchAddAsync(flows.ToArray());
             return true;
         }
 
@@ -133,7 +132,6 @@ namespace OpenAuth.App
             await UnitWork.SaveAsync();
             //添加后续默认流程
             List<int> flowNums = new List<int> { 4, 5, 3 };
-            List<ServiceFlow> flows = new List<ServiceFlow>();
             foreach (var item in flowNums)
             {
                 var flow = new ServiceFlow { ServiceOrderId = serviceOrderId, MaterialType = MaterialType, Creater = creater, CreateTime = DateTime.Now, IsProceed = 0, CreaterName = createname, FlowNum = item, FlowName = GetFlowName(item), FlowType = flowType };
@@ -141,9 +139,9 @@ namespace OpenAuth.App
                 {
                     flow.IsProceed = 1;
                 }
-                flows.Add(flow);
+                await UnitWork.AddAsync(flow);
+                await UnitWork.SaveAsync();
             }
-            await UnitWork.BatchAddAsync(flows.ToArray());
             return true;
         }
 
@@ -158,7 +156,6 @@ namespace OpenAuth.App
         /// <returns></returns>
         private async Task<bool> GetMaterial(int serviceOrderId, string MaterialType, string creater, string createname, int flowType)
         {
-            List<ServiceFlow> flows = new List<ServiceFlow>();
             List<int> flowNums = new List<int> { };
             //详情
             if (flowType == 2)
@@ -183,9 +180,9 @@ namespace OpenAuth.App
                 {
                     flow.IsProceed = 1;
                 }
-                flows.Add(flow);
+                await UnitWork.AddAsync(flow);
+                await UnitWork.SaveAsync();
             }
-            await UnitWork.BatchAddAsync(flows.ToArray());
             return true;
         }
 
@@ -200,7 +197,6 @@ namespace OpenAuth.App
         /// <returns></returns>
         private async Task<bool> ReturnServer(int serviceOrderId, string MaterialType, string creater, string createname, int flowType)
         {
-            List<ServiceFlow> flows = new List<ServiceFlow>();
             List<int> flowNums = new List<int> { 9, 10, 3 };
             if (flowType == 1)
             {
@@ -221,9 +217,9 @@ namespace OpenAuth.App
                 {
                     flow.IsProceed = 1;
                 }
-                flows.Add(flow);
+                await UnitWork.AddAsync(flow);
+                await UnitWork.SaveAsync();
             }
-            await UnitWork.BatchAddAsync(flows.ToArray());
             return true;
         }
 
@@ -242,7 +238,6 @@ namespace OpenAuth.App
             await UnitWork.SaveAsync();
             //添加后续默认流程
             List<int> flowNums = new List<int> { 8, 3 };
-            List<ServiceFlow> flows = new List<ServiceFlow>();
             foreach (var item in flowNums)
             {
                 var flow = new ServiceFlow { ServiceOrderId = serviceOrderId, MaterialType = MaterialType, Creater = creater, CreateTime = DateTime.Now, IsProceed = 0, CreaterName = createname, FlowNum = item, FlowName = GetFlowName(item), FlowType = 1 };
@@ -250,9 +245,9 @@ namespace OpenAuth.App
                 {
                     flow.IsProceed = 1;
                 }
-                flows.Add(flow);
+                await UnitWork.AddAsync(flow);
+                await UnitWork.SaveAsync();
             }
-            await UnitWork.BatchAddAsync(flows.ToArray());
             return true;
         }
 
