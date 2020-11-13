@@ -702,7 +702,7 @@
       :mAddToBody="true" 
       :appendToBody="true"
       :btnList="remarkBtnList"
-      :closed="onApproveClose"
+      :onClosed="onApproveClose"
       v-loading="remarkLoading"
       width="350px">
       <remark ref="remark" @input="onRemarkInput" :tagList="reimburseTagList" :title="title"></remark>
@@ -1788,15 +1788,16 @@ export default {
       })
     },
     closeRemarkDialog () {
-      this.remarkType = ''
-      this.$refs.remark.reset()
+      this.onApproveClose()
       this.$refs.approve.close()
     },
     onRemarkInput (val) {
+      console.log(val, 'val')
       this.remarkText = val
     },
     onApproveClose () {
       this.remarkType = ''
+      this.remarkText = ''
       this.$refs.remark.reset()
     },
     resetInfo () {
@@ -1849,6 +1850,9 @@ export default {
       }
       this.listQuery = { page: 1, limit: 30 }
       this.listQueryCost = { page: 1, limit: 30 }   
+      if (this.$refs.remark) {
+        this.$refs.remark.reset()
+      }
     },
     addSerialNumber (data) { // 为表格的数据添加序号
       data.forEach((item, index) => {
