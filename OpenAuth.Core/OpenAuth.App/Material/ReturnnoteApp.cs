@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
 using Infrastructure.Extensions;
+using KuaiDi100.Common.Request;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Material.Request;
@@ -65,7 +66,7 @@ namespace OpenAuth.App
                 if (!string.IsNullOrEmpty(req.TrackNumber))
                 {
                     //根据快递单号查询快递公司编码
-                    string comCode = QueryTrack.queryAuto(req.TrackNumber);
+                    string comCode = AutoNum.query(req.TrackNumber);
                 }
             }
             await UnitWork.SaveAsync();
@@ -101,6 +102,7 @@ namespace OpenAuth.App
                         where a.ServiceOrderId == ServiceOrderId && a.CreateUserId == userInfo.Id
                         select new { a, b, c };
             var returnNoteList = await query.Select(s => new { s.b.MaterialCode, s.b.Id, s.b.Count, s.b.TotalCount, s.c.PictureId, s.b.Check }).ToListAsync();
+            result.Data = returnNoteList;
             return result;
         }
     }
