@@ -17,9 +17,9 @@ namespace OpenAuth.Repository.Domain
     ///退料表
     /// </summary>
     [Table("returnnote")]
-    public class Returnnote : BaseEntity<int>
+    public class ReturnNote : BaseEntity<int>
     {
-        public Returnnote()
+        public ReturnNote()
         {
             this.CreateTime = DateTime.Now; ;
             this.FlowInstanceId = "";

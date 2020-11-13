@@ -15,6 +15,10 @@ namespace OpenAuth.App.Material.Request
     public partial class AddOrUpdateQuotationReq
     {
         /// <summary>
+        ///AppId
+        /// </summary>
+        public int? AppId { get; set; }
+        /// <summary>
         ///报价单Id
         /// </summary>
         public int? Id { get; set; }
@@ -104,14 +108,14 @@ namespace OpenAuth.App.Material.Request
         public string CollectionAddress { get; set; }
 
         /// <summary>
-        /// 物流表
+        /// 报价单设备列表
         /// </summary>
-        public virtual List<Expressage> Expressages { get; set; }
+        public virtual List<QuotationProduct> QuotationProducts { get; set; }
 
-        /// <summary>
-        /// 物料报价单物料列表
-        /// </summary>
-        public virtual List<QuotationMaterial> QuotationMaterials { get; set; }
+        ///// <summary>
+        ///// 物料报价单物料列表
+        ///// </summary>
+        //public virtual List<QuotationMaterial> QuotationMaterials { get; set; }
 
     }
 }

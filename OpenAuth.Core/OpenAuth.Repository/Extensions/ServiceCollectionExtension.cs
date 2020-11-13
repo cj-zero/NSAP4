@@ -17,6 +17,7 @@ namespace OpenAuth.Repository.Extensions
         public static IServiceCollection AddDbContexts(this IServiceCollection services)
         {
             InitDbContextDir();
+            AddDbContext<NsapBoneDbContext>(services);
             AddDbContext<OpenAuthDBContext>(services);
             AddDbContext<Nsap4NwcaliDbContext>(services);
             AddDbContext<NsapBaseDbContext>(services);
@@ -72,6 +73,7 @@ namespace OpenAuth.Repository.Extensions
             {
                 foreach (var property in dbContext.GetProperties())
                 {
+                    // || property.PropertyType.Name.Equal(typeof(DbQuery<>).Name)
                     if (property.PropertyType.Name.Equals(typeof(DbSet<>).Name))
                     {
                         Common.ContextDir.TryAdd(property.PropertyType.GenericTypeArguments[0], dbContext);

@@ -224,12 +224,12 @@ namespace NSAP.App.WebApi.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> SaveOrderTakeType(SaveWorkOrderTakeTypeReq request)
+        public async Task<TableData> SaveOrderTakeType(SaveWorkOrderTakeTypeReq request)
         {
-            var result = new Response();
+            var result = new TableData();
             try
             {
-                await _serviceOrderApp.SaveOrderTakeType(request);
+                result = await _serviceOrderApp.SaveOrderTakeType(request);
             }
             catch (Exception ex)
             {

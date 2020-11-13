@@ -35,6 +35,9 @@ namespace OpenAuth.Repository
             #endregion
             #region 物料编码
             modelBuilder.Entity<OITM>().HasKey(o => o.ItemCode);
+            modelBuilder.Entity<OITW>().HasKey(o => new { o.ItemCode, o.WhsCode });
+            modelBuilder.Entity<ITT1>().HasKey(o => new { o.Father, o.ChildNum });
+            modelBuilder.Entity<WOR1>().HasKey(o => new { o.DocEntry, o.LineNum });
             #endregion
 
         }

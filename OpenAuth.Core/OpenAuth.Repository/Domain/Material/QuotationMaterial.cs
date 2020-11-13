@@ -28,19 +28,18 @@ namespace OpenAuth.Repository.Domain
             this.UnitPrice = 0;
             this.Remark = "";
             this.Count = 0;
-
         }
 
         /// <summary>
         ///物料报价单Id
         /// </summary>
         [Description("物料报价单Id")]
-        public string QuotationId { get; set; }
+        public int QuotationId { get; set; }
         
         /// <summary>
-        ///报价单产品Id
+        ///报价单设备Id
         /// </summary>
-        [Description("报价单产品Id")]
+        [Description("报价单设备Id")]
         public string QuotationProductId { get; set; }
         
         /// <summary>

@@ -44,7 +44,7 @@ namespace OpenAuth.Repository.Domain
             this.Area = string.Empty;
             this.Address = string.Empty;
             this.AddressDesignator = string.Empty;
-            this.TerminalCustomerId= string.Empty;
+            this.TerminalCustomerId = string.Empty;
         }
 
         /// <summary>
@@ -249,5 +249,10 @@ namespace OpenAuth.Repository.Domain
         /// 服务单关联制作商序列号，物料
         /// </summary>
         public virtual List<ServiceOrderSerial> ServiceOrderSNs { get; set; }
+
+        /// <summary>
+        /// 服务单关联的售后流程
+        /// </summary>
+        public virtual List<ServiceFlow> ServiceFlows { get; set; }
     }
 }

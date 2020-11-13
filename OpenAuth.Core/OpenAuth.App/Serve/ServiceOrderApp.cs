@@ -30,6 +30,8 @@ using Infrastructure.Test;
 using NetOffice.Extensions.Conversion;
 using OpenAuth.App.Serve.Response;
 using RazorEngine.Compilation.ImpromptuInterface.InvokeExt;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace OpenAuth.App
 {
@@ -44,8 +46,9 @@ namespace OpenAuth.App
         private HttpHelper _helper;
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
         private readonly SignalRMessageApp _signalrmessage;
+        private readonly ServiceFlowApp _serviceFlowApp;
         public ServiceOrderApp(IUnitWork unitWork,
-            RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, SignalRMessageApp signalrmessage) : base(unitWork, auth)
+            RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, SignalRMessageApp signalrmessage, ServiceFlowApp serviceFlowApp) : base(unitWork, auth)
         {
             _appConfiguration = appConfiguration;
             _revelanceApp = app;
@@ -55,6 +58,7 @@ namespace OpenAuth.App
             _capBus = capBus;
             _ServiceOrderLogApp = ServiceOrderLogApp;
             _signalrmessage = signalrmessage;
+            _serviceFlowApp = serviceFlowApp;
         }
 
         #region<<nSAP System>>
@@ -2310,6 +2314,19 @@ namespace OpenAuth.App
         #endregion
 
         #region<<Technician>>
+        private static string GetServiceFromTheme(string fromtheme)
+        {
+            string result = string.Empty;
+            if (!string.IsNullOrEmpty(fromtheme))
+            {
+                JArray jArray = (JArray)JsonConvert.DeserializeObject(fromtheme);
+                foreach (var item in jArray)
+                {
+                    result += item["description"] + " ";
+                }
+            }
+            return result;
+        }
         /// <summary>
         /// 获取技术员设备类型列表/售后详情
         /// </summary>
@@ -2325,7 +2342,16 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == CurrentUserId).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            var ServiceOrderId = (await UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == SapOrderId).FirstOrDefaultAsync()).Id;
             var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
+            //获取当前设备类型的售后进度
+            var flowInfo = await UnitWork.Find<ServiceFlow>(s => s.ServiceOrderId == ServiceOrderId && s.MaterialType == MaterialType && s.Creater == userInfo.UserID && s.FlowType == 2).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToListAsync();
             var query = UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == SapOrderId)
                         .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                         .Select(a => new
@@ -2354,7 +2380,8 @@ namespace OpenAuth.App
                                 o.CurrentUserId,
                                 MaterialType = o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
                                 o.ProblemType,
-                                o.Priority
+                                o.Priority,
+                                o.ServiceMode
                             }).ToList()
                         });
 
@@ -2378,7 +2405,7 @@ namespace OpenAuth.App
                     a.CustomerName,
                     ProblemTypeName = string.IsNullOrEmpty(a.ProblemTypeName) ? a.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Name : a.ProblemTypeName,
                     ProblemTypeId = string.IsNullOrEmpty(a.ProblemTypeId) ? a.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Id : a.ProblemTypeId,
-                    Services = a.ServiceWorkOrders.FirstOrDefault()?.FromTheme,
+                    Services = GetServiceFromTheme(a.ServiceWorkOrders.FirstOrDefault()?.FromTheme),
                     Priority = a.ServiceWorkOrders.FirstOrDefault()?.Priority == 3 ? "高" : a.ServiceWorkOrders.FirstOrDefault()?.Priority == 2 ? "中" : "低",
                     ServiceWorkOrders = a.ServiceWorkOrders.GroupBy(o => o.MaterialType).Select(s => new
                     {
@@ -2388,9 +2415,11 @@ namespace OpenAuth.App
                         Count = s.Count(),
                         Orders = s.ToList(),
                         UnitName = "台",
-                        MaterialTypeName = string.IsNullOrEmpty(s.Key) ? "其他设备" : MaterialTypeModel.Where(a => a.TypeAlias == s.Key).FirstOrDefault().TypeName
+                        MaterialTypeName = string.IsNullOrEmpty(s.Key) ? "其他设备" : MaterialTypeModel.Where(a => a.TypeAlias == s.Key).FirstOrDefault().TypeName,
+                        ServiceMode = s.ToList().Select(s => s.ServiceMode).Distinct().FirstOrDefault()
                     }
-                    ).ToList()
+                    ).ToList(),
+                    flowInfo
                 });
             result.Count = count;
             result.Data = list;
@@ -2412,6 +2441,12 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == CurrentUserId).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
             var ServiceOrderId = (await UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == SapOrderId).FirstOrDefaultAsync()).Id;
             //获取当前服务单的设备类型接单状态进度
             var workOrderInfo = await UnitWork.Find<ServiceWorkOrder>(null).Where(s => s.CurrentUserId == CurrentUserId && s.ServiceOrderId == ServiceOrderId)
@@ -2421,6 +2456,8 @@ namespace OpenAuth.App
             string custMobile = (await GetProtectPhone(ServiceOrderId, MaterialType, 1)).Data;
             var query = UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == SapOrderId)
                 .Include(s => s.ServiceWorkOrders);
+            //获取当前设备类型的售后进度
+            var flowInfo = await UnitWork.Find<ServiceFlow>(s => s.ServiceOrderId == ServiceOrderId && s.MaterialType == MaterialType && s.Creater == userInfo.UserID && s.FlowType == 2).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToListAsync();
             var list = (await query
                          .ToListAsync()).Select(s => new
                          {
@@ -2446,7 +2483,8 @@ namespace OpenAuth.App
                              custMobile,
                              workOrderInfo.OrderTakeType,
                              s.CustomerId,
-                             workOrderInfo.ServiceMode
+                             workOrderInfo.ServiceMode,
+                             flowInfo
                          }).ToList();
             result.Data = list;
             return result;
@@ -2538,8 +2576,9 @@ namespace OpenAuth.App
         /// 选择接单类型
         /// </summary>
         /// <returns></returns>
-        public async Task SaveOrderTakeType(SaveWorkOrderTakeTypeReq request)
+        public async Task<TableData> SaveOrderTakeType(SaveWorkOrderTakeTypeReq request)
         {
+            var result = new TableData();
             var servicemode = 0;
             var orderIds = await UnitWork.Find<ServiceWorkOrder>(null).Where(s => s.ServiceOrderId == request.ServiceOrderId && s.CurrentUserId == request.CurrentUserId)
     .WhereIf("其他设备".Equals(request.MaterialType), a => a.MaterialCode == "其他设备")
@@ -2579,6 +2618,18 @@ namespace OpenAuth.App
                 ServiceMode = servicemode
             });
             await UnitWork.SaveAsync();
+            //添加流程信息
+            var flowRequest = new AddOrUpdateServerFlowReq { AppUserId = request.CurrentUserId, FlowNum = request.Type, ServiceOrderId = request.ServiceOrderId, MaterialType = request.MaterialType };
+            await _serviceFlowApp.AddOrUpdateServerFlow(flowRequest);
+            //获取当前设备类型流程信息返回
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == request.CurrentUserId).Include(a => a.User).FirstOrDefaultAsync();
+            if (userInfo.User == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            var flowInfo = await UnitWork.Find<ServiceFlow>(w => w.ServiceOrderId == request.ServiceOrderId && w.MaterialType == request.MaterialType && w.FlowType == 1 && w.Creater == userInfo.User.Id).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToListAsync();
+            result.Data = flowInfo;
+            return result;
         }
 
         /// <summary>
@@ -2739,7 +2790,9 @@ namespace OpenAuth.App
 
             await _ServiceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{username}预约工单{string.Join(",", orderIds.Select(s => s.WorkOrderNumber).ToArray())}", ActionType = "预约工单", MaterialType = req.MaterialType }, workOrderIds);
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = req.ServiceOrderId, Content = "技术员已预约上门时间成功，请尽早安排行程", AppUserId = 0 });
-
+            //添加流程信息
+            var flowRequest = new AddOrUpdateServerFlowReq { AppUserId = req.CurrentUserId, FlowNum = 4, ServiceOrderId = req.ServiceOrderId, MaterialType = req.MaterialType };
+            await _serviceFlowApp.AddOrUpdateServerFlow(flowRequest);
         }
 
         /// <summary>
@@ -2749,6 +2802,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task CheckTheEquipment(CheckTheEquipmentReq req)
         {
+            int orderTakeType = 0;
             //判断当前操作者是否有操作权限
             var order = await UnitWork.FindSingleAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId);
             if (order == null)
@@ -2799,11 +2853,12 @@ namespace OpenAuth.App
                 var applyCount = (await UnitWork.Find<SeviceTechnicianApplyOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.MaterialType.Contains(req.MaterialType) && s.TechnicianId == req.CurrentUserId).ToListAsync()).Count;
                 if (applyCount == 0)
                 {
+                    orderTakeType = 5;
                     await UnitWork.UpdateAsync<ServiceWorkOrder>(s => workOrderIds.Contains(s.Id), o => new ServiceWorkOrder
                     {
                         IsCheck = 1,
                         Status = 4,
-                        OrderTakeType = 5
+                        OrderTakeType = orderTakeType
                     });
                 }
             }
@@ -2829,6 +2884,12 @@ namespace OpenAuth.App
                 MaterialType = req.MaterialType
             });
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = req.ServiceOrderId, Content = "技术员已核对设备，请完成维修任务", AppUserId = 0 });
+            //添加流程
+            if (orderTakeType == 5)
+            {
+                var flowRequest = new AddOrUpdateServerFlowReq { AppUserId = req.CurrentUserId, FlowNum = 5, ServiceOrderId = req.ServiceOrderId, MaterialType = req.MaterialType };
+                await _serviceFlowApp.AddOrUpdateServerFlow(flowRequest);
+            }
         }
 
         /// <summary>
@@ -3024,25 +3085,33 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<TableData> GetTechnicianServiceOrder(TechnicianServiceWorkOrderReq req)
         {
-            //20201109 前台不显示暂时放开显示限制
-            req.limit = 1000;
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.TechnicianId).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            //获取设备信息
             var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
             var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.TechnicianId)
                 .WhereIf(req.Type == 1, s => s.Status.Value < 7 && s.Status.Value > 1)
                 .WhereIf(req.Type == 2, s => s.Status.Value >= 7)
                 .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+            //获取完工报告集合
+            var completeReportList = await UnitWork.Find<CompletionReport>(w => serviceOrderIds.Contains((int)w.ServiceOrderId)).Select(s => new { s.ServiceOrderId, s.IsReimburse, s.Id, s.ServiceMode, MaterialType = s.MaterialCode == "其他设备" ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) }).ToListAsync();
             var query = UnitWork.Find<ServiceOrder>(s => serviceOrderIds.Contains(s.Id))
                 .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
+                .Include(s => s.ServiceFlows)
                 .Select(s => new
                 {
                     s.Id,
                     s.AppUserId,
-                    s.Services,
+                    Services = GetServiceFromTheme(s.ServiceWorkOrders.FirstOrDefault().FromTheme),
                     s.Latitude,
                     s.Longitude,
                     s.Province,
@@ -3067,10 +3136,12 @@ namespace OpenAuth.App
                         MaterialType = "其他设备".Equals(o.MaterialCode) ? "其他设备" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
                         o.Status,
                         o.Id,
-                        o.OrderTakeType
+                        o.OrderTakeType,
+                        o.ServiceMode
                     }),
                     s.ProblemTypeName,
-                    ProblemType = s.ServiceWorkOrders.Select(s => s.ProblemType).FirstOrDefault()
+                    ProblemType = s.ServiceWorkOrders.Select(s => s.ProblemType).FirstOrDefault(),
+                    ServiceFlows = s.ServiceFlows.Where(w => w.Creater == userInfo.UserID && w.ServiceOrderId == s.Id && w.FlowType == 1).ToList()
                 });
 
             var result = new TableData();
@@ -3105,8 +3176,12 @@ namespace OpenAuth.App
                     MaterialType = o.Key,
                     Status = o.ToList().Select(s => s.Status).Distinct().FirstOrDefault(),
                     MaterialTypeName = "其他设备".Equals(o.Key) ? "其他设备" : MaterialTypeModel.Where(a => a.TypeAlias == o.Key).FirstOrDefault().TypeName,
-                    OrderTakeType = o.ToList().Select(s => s.OrderTakeType).Distinct().FirstOrDefault()
-                })
+                    OrderTakeType = o.ToList().Select(s => s.OrderTakeType).Distinct().FirstOrDefault(),
+                    ServiceMode = o.ToList().Select(s => s.ServiceMode).Distinct().FirstOrDefault(),
+                    flowInfo = s.ServiceFlows.Where(w => w.MaterialType.Equals(o.Key)).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToList()
+                }),
+                IsReimburse = req.Type == 2 ? completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1).FirstOrDefault() == null ? 0 : completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1).FirstOrDefault().IsReimburse : 0,
+                MaterialType = req.Type == 2 ? completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1).FirstOrDefault() == null ? string.Empty : completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1).FirstOrDefault().MaterialType : string.Empty
             }).ToList();
 
             var count = await query.CountAsync();

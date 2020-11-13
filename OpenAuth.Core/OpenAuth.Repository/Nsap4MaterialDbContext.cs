@@ -28,10 +28,12 @@ namespace OpenAuth.Repository
 
         public virtual DbSet<QuotationMaterial> QuotationMaterials { get; set; }
         public virtual DbSet<QuotationProduct> QuotationProducts { get; set; }
-        public virtual DbSet<Returnnote> Returnnotes { get; set; }
+        public virtual DbSet<ReturnNote> Returnnotes { get; set; }
 
         public virtual DbSet<ReturnnoteMaterial> ReturnnoteMaterials { get; set; }
 
+        public virtual DbSet<QuotationOperationHistory> QuotationOperationHistory { get; set; }
+        
         #endregion
     }
 }
