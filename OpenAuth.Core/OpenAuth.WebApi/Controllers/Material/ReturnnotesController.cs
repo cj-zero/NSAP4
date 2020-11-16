@@ -64,6 +64,27 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 获取物流详情
+        /// </summary>
+        /// <param name="expressageId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetExpressInfo(string expressageId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _returnnoteApp.GetExpressInfo(expressageId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
         public ReturnNotesController(ReturnNoteApp app)
         {
             _returnnoteApp = app;

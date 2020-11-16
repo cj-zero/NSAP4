@@ -87,41 +87,45 @@ namespace OpenAuth.App
             pictures.ForEach(r => r.CompletionReportId = o.Id);
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
-            var workOrderList = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId)
-                .WhereIf("其他设备".Equals(req.MaterialType), a => a.MaterialCode == "其他设备")
-                .WhereIf(!"其他设备".Equals(req.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == req.MaterialType)
-                .ToListAsync());
-            List<int> workorder = new List<int>();
-            foreach (var item in workOrderList)
+            //判断为非草稿提交 则修改对应状态和发送消息
+            if (req.IsDraft == 0)
             {
-                workorder.Add(item.Id);
+                var workOrderList = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId)
+                    .WhereIf("其他设备".Equals(req.MaterialType), a => a.MaterialCode == "其他设备")
+                    .WhereIf(!"其他设备".Equals(req.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == req.MaterialType)
+                    .ToListAsync());
+                List<int> workorder = new List<int>();
+                foreach (var item in workOrderList)
+                {
+                    workorder.Add(item.Id);
+                }
+                await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id), s => new ServiceWorkOrder { Status = 7 });
+                await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+                {
+                    Title = "技术员完成服务",
+                    Details = $"感谢您对新威的支持。您的服务已完成，如有疑问请及时拨打客服电话：8008308866，新威客服会全力帮您继续跟进",
+                    LogType = 1,
+                    ServiceOrderId = req.ServiceOrderId,
+                    ServiceWorkOrder = string.Join(',', workorder.ToArray()),
+                    MaterialType = req.MaterialType
+                });
+                await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+                {
+                    Title = "技术员完成售后维修",
+                    Details = $"提交了《行为服务报告单》，完成了本次任务",
+                    LogType = 2,
+                    ServiceOrderId = req.ServiceOrderId,
+                    ServiceWorkOrder = string.Join(',', workorder.ToArray()),
+                    MaterialType = req.MaterialType
+                });
+                //反写完工报告Id至工单
+                await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id),
+                    o => new ServiceWorkOrder { CompletionReportId = completionReportId, CompleteDate = DateTime.Now });
+                //获取当前服务单下的所有消息Id集合
+                var msgList = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == req.ServiceOrderId).Select(s => s.Id).ToListAsync();
+                //清空消息为已读
+                await UnitWork.UpdateAsync<ServiceOrderMessageUser>(s => s.FroUserId == req.CurrentUserId.ToString() && msgList.Contains(s.MessageId), e => new ServiceOrderMessageUser { HasRead = true });
             }
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id), s => new ServiceWorkOrder { Status = 7 });
-            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
-            {
-                Title = "技术员完成服务",
-                Details = $"感谢您对新威的支持。您的服务已完成，如有疑问请及时拨打客服电话：8008308866，新威客服会全力帮您继续跟进",
-                LogType = 1,
-                ServiceOrderId = req.ServiceOrderId,
-                ServiceWorkOrder = string.Join(',', workorder.ToArray()),
-                MaterialType = req.MaterialType
-            });
-            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
-            {
-                Title = "技术员完成售后维修",
-                Details = $"提交了《行为服务报告单》，完成了本次任务",
-                LogType = 2,
-                ServiceOrderId = req.ServiceOrderId,
-                ServiceWorkOrder = string.Join(',', workorder.ToArray()),
-                MaterialType = req.MaterialType
-            });
-            //反写完工报告Id至工单
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id),
-                o => new ServiceWorkOrder { CompletionReportId = completionReportId, CompleteDate = DateTime.Now });
-            //获取当前服务单下的所有消息Id集合
-            var msgList = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == req.ServiceOrderId).Select(s => s.Id).ToListAsync();
-            //清空消息为已读
-            await UnitWork.UpdateAsync<ServiceOrderMessageUser>(s => s.FroUserId == req.CurrentUserId.ToString() && msgList.Contains(s.MessageId), e => new ServiceOrderMessageUser { HasRead = true });
             //解除隐私号码绑定
             //await UnbindProtectPhone(req.ServiceOrderId, req.MaterialType);
             //删除草稿

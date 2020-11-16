@@ -2350,8 +2350,8 @@ namespace OpenAuth.App
             }
             var ServiceOrderId = (await UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == SapOrderId).FirstOrDefaultAsync()).Id;
             var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
-            //获取当前设备类型的售后进度
-            var flowInfo = await UnitWork.Find<ServiceFlow>(s => s.ServiceOrderId == ServiceOrderId && s.MaterialType == MaterialType && s.Creater == userInfo.UserID && s.FlowType == 2).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToListAsync();
+            //获取当前服务单的售后进度
+            var flowList = await UnitWork.Find<ServiceFlow>(s => s.ServiceOrderId == ServiceOrderId && s.Creater == userInfo.UserID && s.FlowType == 2).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed, s.MaterialType }).ToListAsync();
             var query = UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == SapOrderId)
                         .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                         .Select(a => new
@@ -2416,10 +2416,11 @@ namespace OpenAuth.App
                         Orders = s.ToList(),
                         UnitName = "台",
                         MaterialTypeName = string.IsNullOrEmpty(s.Key) ? "其他设备" : MaterialTypeModel.Where(a => a.TypeAlias == s.Key).FirstOrDefault().TypeName,
-                        ServiceMode = s.ToList().Select(s => s.ServiceMode).Distinct().FirstOrDefault()
+                        ServiceMode = s.ToList().Select(s => s.ServiceMode).Distinct().FirstOrDefault(),
+                        flowinfo = flowList.Where(w => w.MaterialType == (string.IsNullOrEmpty(s.Key) ? "其他设备" : s.Key)).ToList()
                     }
                     ).ToList(),
-                    flowInfo
+                    flowInfo = flowList.Where(w => w.MaterialType == MaterialType).ToList()
                 });
             result.Count = count;
             result.Data = list;

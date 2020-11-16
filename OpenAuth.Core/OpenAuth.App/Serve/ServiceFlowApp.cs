@@ -67,12 +67,14 @@ namespace OpenAuth.App
                 //case 8://跳转是否领料页面
                 //    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.Id && s.FlowNum == 6, o => new ServiceFlow { IsProceed = 1 });
                 //    break;
-                case 9://跳转领料页面
+                case 10://领完料后跳转
                     await GetMaterial(request.ServiceOrderId, request.MaterialType, userInfo.User.Id, userInfo.User.Name, 1);
                     await GetMaterial(request.ServiceOrderId, request.MaterialType, userInfo.User.Id, userInfo.User.Name, 2);
                     break;
                 case 11://跳转退料页面
-                    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.User.Id && s.FlowNum == 8, o => new ServiceFlow { IsProceed = 1 });
+                    //明细
+                    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.User.Id && s.FlowNum == 8 && s.FlowType == 2, o => new ServiceFlow { IsProceed = 1 });
+                    //列表
                     await ReturnMaterial(request.ServiceOrderId, request.MaterialType, userInfo.User.Id, userInfo.User.Name);
                     break;
                 case -1://跳转返厂页面
@@ -82,7 +84,7 @@ namespace OpenAuth.App
                 case -2://跳转返厂进度页面
                     await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.User.Id && s.FlowNum == 10, o => new ServiceFlow { IsProceed = 1 });
                     break;
-                case 10:
+                case 12:
                 default:
                     break;
             }
@@ -160,8 +162,8 @@ namespace OpenAuth.App
             //详情
             if (flowType == 2)
             {
-                //清除填报告单流程
-                await UnitWork.DeleteAsync<ServiceFlow>(s => s.ServiceOrderId == serviceOrderId && s.MaterialType.Equals(MaterialType) && s.Creater.Equals(creater) && s.FlowNum == 3 && s.FlowType == flowType);
+                //清除预约设备之后的流程
+                await UnitWork.DeleteAsync<ServiceFlow>(s => s.ServiceOrderId == serviceOrderId && s.MaterialType.Equals(MaterialType) && s.Creater.Equals(creater) && (s.FlowNum == 3 || s.FlowNum == 7 || s.FlowNum == 8) && s.FlowType == flowType);
                 await UnitWork.SaveAsync();
                 flowNums = new List<int> { 7, 8, 3 };
             }
@@ -169,7 +171,7 @@ namespace OpenAuth.App
             else if (flowType == 1)
             {
                 //清除填报告单流程与是否领料
-                await UnitWork.DeleteAsync<ServiceFlow>(s => s.ServiceOrderId == serviceOrderId && s.MaterialType.Equals(MaterialType) && s.Creater.Equals(creater) && s.FlowNum == 3 && s.FlowType == flowType);
+                await UnitWork.DeleteAsync<ServiceFlow>(s => s.ServiceOrderId == serviceOrderId && s.MaterialType.Equals(MaterialType) && s.Creater.Equals(creater) && (s.FlowNum == 3 || s.FlowNum == 7) && s.FlowType == flowType);
                 await UnitWork.SaveAsync();
                 flowNums = new List<int> { 7, 3 };
             }
@@ -234,7 +236,7 @@ namespace OpenAuth.App
         private async Task<bool> ReturnMaterial(int serviceOrderId, string MaterialType, string creater, string createname)
         {
             //清除物流进度与填报告单流程
-            await UnitWork.DeleteAsync<ServiceFlow>(s => s.ServiceOrderId == serviceOrderId && s.MaterialType.Equals(MaterialType) && s.Creater.Equals(creater) && (s.FlowNum == 3 || s.FlowNum == 7));
+            await UnitWork.DeleteAsync<ServiceFlow>(s => s.ServiceOrderId == serviceOrderId && s.MaterialType.Equals(MaterialType) && s.Creater.Equals(creater) && (s.FlowNum == 3 || s.FlowNum == 7 || s.FlowNum == 8));
             await UnitWork.SaveAsync();
             //添加后续默认流程
             List<int> flowNums = new List<int> { 8, 3 };
