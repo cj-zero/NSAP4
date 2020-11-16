@@ -186,6 +186,8 @@ namespace Infrastructure.Excel
                 .Map<NwcaliTur>(8, o => o.Distribution)
                 .Map<NwcaliTur>(9, o => o.Divisor)
                 .Map<NwcaliTur>(10, o => o.StdUncertainty)
+                //.Map<NwcaliTur>(11, o => o.DegreesOfFreedom)
+                //.Map<NwcaliTur>(10, o => o.SignificanceCheck)
                 .Take<NwcaliTur>(sheetName);
             return data.Select(d => d.Value).SkipWhile(v => v is null).Where(v => v.Tur != 0).ToList();
         }

@@ -12,6 +12,7 @@ using Infrastructure.Wrod;
 using Microsoft.AspNetCore.Mvc;
 using NetOffice.Extensions.Conversion;
 using OpenAuth.App;
+using OpenAuth.App.Nwcali.Models;
 using OpenAuth.App.Request;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -118,7 +119,7 @@ namespace OpenAuth.WebApi.Controllers
                         ExpirationDate = DateTime.Parse(ConvertTestInterval(baseInfo.Time, baseInfo.TestInterval))
                     });
                 }
-                var modelList = BuildWordModels(baseInfo, plcDataDic, plcRepetitiveMeasurementDataDic, turV, turA);
+                var modelList = await BuildWordModels(baseInfo, plcDataDic, plcRepetitiveMeasurementDataDic, turV, turA);
                 var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Calibration Certificate(word).docx");
                 var tagetPath = Path.Combine(BaseCertDir, baseInfo.CertificateNumber, $"Cert{baseInfo.CertificateNumber}.docx");
                 var result = WordHandler.DOCTemplateConvert(templatePath, tagetPath, modelList);
@@ -212,34 +213,38 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="turV">Tur电压数据</param>
         /// <param name="turA">Tur电流数据</param>
         /// <returns></returns>
-        private static List<WordModel> BuildWordModels(NwcaliBaseInfo baseInfo, Dictionary<string, List<NwcaliPLCData>> plcData, Dictionary<string, List<NwcaliPLCRepetitiveMeasurementData>> plcRepetitiveMeasurementData, List<NwcaliTur> turV, List<NwcaliTur> turA)
+        private static async Task<List<WordModel>> BuildWordModels(NwcaliBaseInfo baseInfo, Dictionary<string, List<NwcaliPLCData>> plcData, Dictionary<string, List<NwcaliPLCRepetitiveMeasurementData>> plcRepetitiveMeasurementData, List<NwcaliTur> turV, List<NwcaliTur> turA)
         {
             var list = new List<WordModel>();
-            var barcode = BarcodeGenerate(baseInfo.CertificateNumber);
+            var model = new CertModel();
+            var barcode = await BarcodeGenerate(baseInfo.CertificateNumber);
             #region 页眉
-            list.Add(new WordModel { MarkPosition = 1, TableMark = 1, ValueType = 1, XCellMark = 1, YCellMark = 2, ValueData = barcode });
+            model.BarCode = barcode;
             #endregion
             #region Calibration Certificate
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 1, ValueType = 0, XCellMark = 1, YCellMark = 4, ValueData = baseInfo.CertificateNumber });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 1, ValueType = 0, XCellMark = 2, YCellMark = 2, ValueData = baseInfo.TesterMake });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 1, ValueType = 0, XCellMark = 2, YCellMark = 4, ValueData = DateStringConverter(baseInfo.Time) });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 1, ValueType = 0, XCellMark = 3, YCellMark = 2, ValueData = baseInfo.TesterModel });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 1, ValueType = 0, XCellMark = 3, YCellMark = 4, ValueData = ConvertTestInterval(baseInfo.Time, baseInfo.TestInterval) });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 1, ValueType = 0, XCellMark = 4, YCellMark = 2, ValueData = baseInfo.TesterSn });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 1, ValueType = 0, XCellMark = 4, YCellMark = 4, ValueData = "-" });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 1, ValueType = 0, XCellMark = 5, YCellMark = 2, ValueData = baseInfo.AssetNo == "0" ? "------" : baseInfo.AssetNo });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 1, ValueType = 0, XCellMark = 5, YCellMark = 4, ValueData = baseInfo.SiteCode });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 1, ValueType = 0, XCellMark = 6, YCellMark = 2, ValueData = baseInfo.Temperature });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 1, ValueType = 0, XCellMark = 6, YCellMark = 4, ValueData = baseInfo.RelativeHumidity });
+            model.CalibrationCertificate.CertificatenNumber = baseInfo.CertificateNumber;
+            model.CalibrationCertificate.TesterMake = baseInfo.TesterMake;
+            model.CalibrationCertificate.CalibrationDate = DateStringConverter(baseInfo.Time);
+            model.CalibrationCertificate.TesterModel = baseInfo.TesterModel;
+            model.CalibrationCertificate.CalibrationDue = ConvertTestInterval(baseInfo.Time, baseInfo.TestInterval);
+            model.CalibrationCertificate.TesterSn = baseInfo.TesterSn;
+            model.CalibrationCertificate.DataType = "";
+            model.CalibrationCertificate.AssetNo = baseInfo.AssetNo == "0" ? "------" : baseInfo.AssetNo;
+            model.CalibrationCertificate.SiteCode = baseInfo.SiteCode;
+            model.CalibrationCertificate.Temperature = baseInfo.Temperature;
+            model.CalibrationCertificate.RelativeHumidity = baseInfo.RelativeHumidity;
             #endregion
             #region Main Standards Used
             for (int i = 0; i < baseInfo.Etalons.Count; i++)
             {
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 2, ValueType = 0, XCellMark = i + 2, YCellMark = 1, ValueData = baseInfo.Etalons[i].Name });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 2, ValueType = 0, XCellMark = i + 2, YCellMark = 2, ValueData = baseInfo.Etalons[i].Characteristics });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 2, ValueType = 0, XCellMark = i + 2, YCellMark = 3, ValueData = baseInfo.Etalons[i].AssetNo });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 2, ValueType = 0, XCellMark = i + 2, YCellMark = 4, ValueData = baseInfo.Etalons[i].CertificateNo });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 2, ValueType = 0, XCellMark = i + 2, YCellMark = 5, ValueData = DateStringConverter(baseInfo.Etalons[i].DueDate) });
+                model.MainStandardsUsed.Add(new MainStandardsUsed 
+                { 
+                    Name = baseInfo.Etalons[i].Name, 
+                    Characterisics = baseInfo.Etalons[i].Characteristics, 
+                    AssetNo = baseInfo.Etalons[i].AssetNo, 
+                    CertificateNo = baseInfo.Etalons[i].CertificateNo, 
+                    DueDate = DateStringConverter(baseInfo.Etalons[i].DueDate) 
+                });
             }
             #endregion
 
@@ -261,55 +266,30 @@ namespace OpenAuth.WebApi.Controllers
             //电压
             var vPoint = turV.Select(v => v.TestPoint).Distinct().ToList();
             var vPointIndex = (vPoint.Count - 1) / 2;
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 2, YCellMark = 1, ValueData = $"1" });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 3, YCellMark = 1, ValueData = $"2" });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 4, YCellMark = 1, ValueData = $"3" });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 2, YCellMark = 2, ValueData = $"{vPoint[vPointIndex - 1]}V" });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 3, YCellMark = 2, ValueData = $"{vPoint[vPointIndex]}V" });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 4, YCellMark = 2, ValueData = $"{vPoint[vPointIndex + 1]}V" });
             var vSpec = v.First().Scale * baseInfo.RatedAccuracyV * 1000;
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 2, YCellMark = 5, ValueData = $"±{vSpec}mV" });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 3, YCellMark = 5, ValueData = $"±{vSpec}mV" });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 4, YCellMark = 5, ValueData = $"±{vSpec}mV" });
             var u95_1 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex - 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
             var u95_2 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
             var u95_3 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex + 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 2, YCellMark = 3, ValueData = u95_1.ToString("e3") });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 3, YCellMark = 3, ValueData = u95_2.ToString("e3") });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 4, YCellMark = 3, ValueData = u95_3.ToString("e3") });
             var tur_1 = (2 * vSpec / 1000) / (2 * u95_1);
             var tur_2 = (2 * vSpec / 1000) / (2 * u95_2);
             var tur_3 = (2 * vSpec / 1000) / (2 * u95_3);
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 2, YCellMark = 4, ValueData = tur_1.ToString("f2") });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 3, YCellMark = 4, ValueData = tur_2.ToString("f2") });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 4, YCellMark = 4, ValueData = tur_3.ToString("f2") });
-
+            model.TurTables.Add(new TurTable { Number = "1", Point = $"{vPoint[vPointIndex - 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_1.ToString("e3"), TUR = tur_1.ToString("f2") });
+            model.TurTables.Add(new TurTable { Number = "2", Point = $"{vPoint[vPointIndex]}V", Spec = $"±{vSpec}mV", U95Standard = u95_2.ToString("e3"), TUR = tur_2.ToString("f2") });
+            model.TurTables.Add(new TurTable { Number = "3", Point = $"{vPoint[vPointIndex + 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_3.ToString("e3"), TUR = tur_3.ToString("f2") });
             //电流
             var cPoint = turA.Select(v => v.TestPoint).Distinct().ToList();
             var cPointIndex = cPoint.IndexOf(cscale / 1000); //(cPoint.Count - 1) / 2;
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 5, YCellMark = 1, ValueData = $"4" });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 6, YCellMark = 1, ValueData = $"5" });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 7, YCellMark = 1, ValueData = $"6" });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 5, YCellMark = 2, ValueData = $"{cPoint[cPointIndex - 1]}A" });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 6, YCellMark = 2, ValueData = $"{cPoint[cPointIndex]}A" });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 7, YCellMark = 2, ValueData = $"{cPoint[cPointIndex + 1]}A" });
             var cSpec = c.First().Scale * baseInfo.RatedAccuracyC;
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 5, YCellMark = 5, ValueData = $"±{cSpec}mA" });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 6, YCellMark = 5, ValueData = $"±{cSpec}mA" });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 7, YCellMark = 5, ValueData = $"±{cSpec}mA" });
             var u95_4 = 2 * Math.Sqrt(turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
             var u95_5 = 2 * Math.Sqrt(turA.Where(v => v.TestPoint == cPoint[cPointIndex]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
             var u95_6 = 2 * Math.Sqrt(turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 5, YCellMark = 3, ValueData = u95_4.ToString("e3") });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 6, YCellMark = 3, ValueData = u95_5.ToString("e3") });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 7, YCellMark = 3, ValueData = u95_6.ToString("e3") });
             var tur_4 = (2 * cSpec) / (2 * u95_4 * 1000);
             var tur_5 = (2 * cSpec) / (2 * u95_5 * 1000);
             var tur_6 = (2 * cSpec) / (2 * u95_6 * 1000);
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 5, YCellMark = 4, ValueData = tur_4.ToString("f2") });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 6, YCellMark = 4, ValueData = tur_5.ToString("f2") });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 3, ValueType = 0, XCellMark = 7, YCellMark = 4, ValueData = tur_6.ToString("f2") });
 
+            model.TurTables.Add(new TurTable { Number = "4", Point = $"{vPoint[cPointIndex - 1]}V", Spec = $"±{cSpec}mV", U95Standard = u95_4.ToString("e3"), TUR = tur_4.ToString("f2") });
+            model.TurTables.Add(new TurTable { Number = "5", Point = $"{vPoint[cPointIndex]}V", Spec = $"±{cSpec}mV", U95Standard = u95_5.ToString("e3"), TUR = tur_5.ToString("f2") });
+            model.TurTables.Add(new TurTable { Number = "6", Point = $"{vPoint[cPointIndex + 1]}V", Spec = $"±{cSpec}mV", U95Standard = u95_6.ToString("e3"), TUR = tur_6.ToString("f2") });
 
             #endregion
 
@@ -317,18 +297,18 @@ namespace OpenAuth.WebApi.Controllers
             #region Voltage
             var vv = 2 * (double)v.FirstOrDefault().Scale / Math.Pow(2, baseInfo.VoltmeterBits);
             var vstd = 2 * (double)v.FirstOrDefault().Scale / (Math.Pow(2, baseInfo.VoltmeterBits) * Math.Sqrt(12));
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 4, ValueType = 0, XCellMark = 1, YCellMark = 2, ValueData = $"{vscale}V" });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 6, YCellMark = 2, ValueData = vv.ToString("e3") });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 6, YCellMark = 8, ValueData = vstd.ToString("e3") });
-
+            var voltageUncertaintyBudgetTable = new UncertaintyBudgetTable();
+            voltageUncertaintyBudgetTable.Value = $"{vscale}V";
+            voltageUncertaintyBudgetTable.TesterResolutionValue = vv.ToString("e3");
+            voltageUncertaintyBudgetTable.TesterResolutionStdUncertainty = vstd.ToString("e3");
             var vmdcv = plcrmd.Where(d => d.Commanded_Value.Equals(vscale) && d.VoltsorAmps.Equals("Volts") && d.Mode.Equals("Charge") && d.Verify_Type.Equals("Post-Calibration")).GroupBy(a=>a.Channel).First().ToList();
             double vror;
             if (vmdcv.Count >= 6)//贝塞尔公式法
             {
                 var vavg = vmdcv.Sum(c => c.Standard_Value) / vmdcv.Count;
                 vror = Math.Sqrt(vmdcv.Select(c => Math.Pow(c.Standard_Value - vavg, 2)).Sum() / (vmdcv.Count - 1));
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 7, YCellMark = 2, ValueData = vror.ToString("e3") });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 7, YCellMark = 8, ValueData = vror.ToString("e3") });
+                voltageUncertaintyBudgetTable.RepeatabilityOfReadingValue = vror.ToString("e3");
+                voltageUncertaintyBudgetTable.RepeatabilityOfReadingStdUncertainty = vror.ToString("e3");
             }
             else//极差法
             {
@@ -337,54 +317,60 @@ namespace OpenAuth.WebApi.Controllers
                 var R = vmdsv.Max() - vmdsv.Min();
                 var u2 = R / poorCoefficient;
                 vror = u2;
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 7, YCellMark = 2, ValueData = u2.ToString("e3") });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 7, YCellMark = 8, ValueData = u2.ToString("e3") });
+                voltageUncertaintyBudgetTable.RepeatabilityOfReadingValue = u2.ToString("e3");
+                voltageUncertaintyBudgetTable.RepeatabilityOfReadingStdUncertainty = u2.ToString("e3");
             }
             turV = turV.Where(v => v.TestPoint == vscale).ToList();
             var combinedUncertaintyV = Math.Sqrt(turV.Sum(v => Math.Pow(v.StdUncertainty, 2)) + Math.Pow(vstd, 2) + Math.Pow(vror, 2));
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 8, YCellMark = 6, ValueData = combinedUncertaintyV.ToString("e3") });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 8, YCellMark = 7, ValueData = "100.000%" });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 9, YCellMark = 7, ValueData = baseInfo.K });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 10, YCellMark = 6, ValueData = (baseInfo.K * combinedUncertaintyV).ToString("e3") });
+            voltageUncertaintyBudgetTable.CombinedUncertainty = combinedUncertaintyV.ToString("e3");
+            voltageUncertaintyBudgetTable.CombinedUncertaintySignificance = "100.000%";
+            voltageUncertaintyBudgetTable.CoverageFactor = baseInfo.K.ToString(); ;
+            voltageUncertaintyBudgetTable.ExpandedUncertainty = (baseInfo.K * combinedUncertaintyV).ToString("e3");
             for (int i = 0; i < turV.Count; i++)
             {
+                var data = new UncertaintyBudgetTable.UncertaintyBudgetTableData();
                 var tv = turV[i];
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 2 + i, YCellMark = 1, ValueData = tv.UncertaintyContributors });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 2 + i, YCellMark = 2, ValueData = tv.Value.ToString("e3") });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 2 + i, YCellMark = 3, ValueData = tv.SensitivityCoefficient });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 2 + i, YCellMark = 4, ValueData = tv.Unit });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 2 + i, YCellMark = 5, ValueData = tv.Type });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 2 + i, YCellMark = 6, ValueData = tv.Distribution });
+                data.UncertaintyContributors = tv.UncertaintyContributors;
+                data.Value = tv.Value.ToString("e3");
+                data.SensitivityCoefficient = tv.SensitivityCoefficient.ToString();
+                data.Unit = tv.Unit;
+                data.Type = tv.Type;
+                data.Distribution = tv.Distribution;
                 if (tv.UncertaintyContributors.Equals("Resolution"))
                 {
-                    list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 2 + i, YCellMark = 7, ValueData = Math.Sqrt(12).ToString("f3") });
+                    data.CoverageFactor = Math.Sqrt(12).ToString("f3");
                 }
                 else
                 {
-                    list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 2 + i, YCellMark = 7, ValueData = tv.Divisor });
+                    data.CoverageFactor = tv.Divisor.ToString();
                 }
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 2 + i, YCellMark = 8, ValueData = tv.StdUncertainty.ToString("e3") });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 2 + i, YCellMark = 9, ValueData = (Math.Pow(tv.StdUncertainty, 2) / Math.Pow(combinedUncertaintyV, 2)).ToString("P3") });
+                data.StdUncertainty = tv.StdUncertainty.ToString("e3");
+                data.Significance = (Math.Pow(tv.StdUncertainty, 2) / Math.Pow(combinedUncertaintyV, 2)).ToString("P3");
+                voltageUncertaintyBudgetTable.Datas.Add(data);
             }
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 6, YCellMark = 9, ValueData = (Math.Pow(vstd, 2) / Math.Pow(combinedUncertaintyV, 2)).ToString("P3") });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 5, ValueType = 0, XCellMark = 7, YCellMark = 9, ValueData = (Math.Pow(vror, 2) / Math.Pow(combinedUncertaintyV, 2)).ToString("P3") });
-
+            voltageUncertaintyBudgetTable.TesterResolutionSignificance = (Math.Pow(vstd, 2) / Math.Pow(combinedUncertaintyV, 2)).ToString("P3");
+            voltageUncertaintyBudgetTable.RepeatabilityOfReadingSignificance = (Math.Pow(vror, 2) / Math.Pow(combinedUncertaintyV, 2)).ToString("P3");
+            model.VoltageUncertaintyBudgetTables = voltageUncertaintyBudgetTable;
             #endregion
 
             #region Current
+            var currentUncertaintyBudgetTable = new UncertaintyBudgetTable();
             var cvv = 2 * (double)c.FirstOrDefault().Scale / 1000 / Math.Pow(2, baseInfo.AmmeterBits);
             var cstd = 2 * (double)c.FirstOrDefault().Scale / 1000 / (Math.Pow(2, baseInfo.AmmeterBits) * Math.Sqrt(12));
             list.Add(new WordModel { MarkPosition = 0, TableMark = 6, ValueType = 0, XCellMark = 1, YCellMark = 2, ValueData = $"{cscale}mA" });
             list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 4, YCellMark = 2, ValueData = cvv.ToString("e3") });
             list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 4, YCellMark = 8, ValueData = cstd.ToString("e3") });
+            currentUncertaintyBudgetTable.Value = $"{cscale}mA";
+            currentUncertaintyBudgetTable.TesterResolutionValue = cvv.ToString("e3");
+            currentUncertaintyBudgetTable.TesterResolutionStdUncertainty = cstd.ToString("e3");
             var cmdcv = plcrmd.Where(d => d.Commanded_Value.Equals(cscale) && d.VoltsorAmps.Equals("Amps") && d.Mode.Equals("Charge") && d.Verify_Type.Equals("Post-Calibration")).GroupBy(a => a.Channel).First().ToList();
             double cror;
             if (cmdcv.Count >= 6)//贝塞尔公式法
             {
                 var cavg = cmdcv.Sum(c => c.Standard_Value) / cmdcv.Count / 1000;
                 cror = Math.Sqrt(cmdcv.Select(c => Math.Pow(c.Standard_Value / 1000 - cavg, 2)).Sum() / (cmdcv.Count - 1));
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 5, YCellMark = 2, ValueData = cror.ToString("e3") });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 5, YCellMark = 8, ValueData = cror.ToString("e3") });
+                currentUncertaintyBudgetTable.RepeatabilityOfReadingValue = cror.ToString("e3");
+                currentUncertaintyBudgetTable.RepeatabilityOfReadingStdUncertainty = cror.ToString("e3");
             }
             else//极差法
             {
@@ -393,32 +379,36 @@ namespace OpenAuth.WebApi.Controllers
                 var R = cmdsv.Max() - cmdsv.Min();
                 var u2 = R / poorCoefficient;
                 cror = u2;
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 5, YCellMark = 2, ValueData = u2.ToString("e3") });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 5, YCellMark = 8, ValueData = u2.ToString("e3") });
+                currentUncertaintyBudgetTable.RepeatabilityOfReadingValue = u2.ToString("e3");
+                currentUncertaintyBudgetTable.RepeatabilityOfReadingStdUncertainty = u2.ToString("e3");
             }
 
             turA = turA.Where(a => a.TestPoint * 1000 == cscale).ToList();
 
             var combinedUncertaintyA = Math.Sqrt(turA.Sum(c => Math.Pow(c.StdUncertainty, 2)) + Math.Pow(cstd, 2) + Math.Pow(cror, 2));
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 6, YCellMark = 6, ValueData = combinedUncertaintyA.ToString("e3") });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 6, YCellMark = 7, ValueData = "100.000%" });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 7, YCellMark = 7, ValueData = baseInfo.K });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 8, YCellMark = 6, ValueData = (baseInfo.K * combinedUncertaintyA).ToString("e3") });
+            currentUncertaintyBudgetTable.CombinedUncertainty = combinedUncertaintyA.ToString("e3");
+            currentUncertaintyBudgetTable.CombinedUncertaintySignificance = "100.000%";
+            currentUncertaintyBudgetTable.CoverageFactor = baseInfo.K.ToString(); ;
+            currentUncertaintyBudgetTable.ExpandedUncertainty = (baseInfo.K * combinedUncertaintyA).ToString("e3");
             for (int i = 0; i < turA.Count; i++)
             {
+                var data = new UncertaintyBudgetTable.UncertaintyBudgetTableData();
                 var ta = turA[i];
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 2 + i, YCellMark = 1, ValueData = ta.UncertaintyContributors });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 2 + i, YCellMark = 2, ValueData = ta.Value.ToString("e3") });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 2 + i, YCellMark = 3, ValueData = ta.SensitivityCoefficient.ToString("f5") });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 2 + i, YCellMark = 4, ValueData = ta.Unit });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 2 + i, YCellMark = 5, ValueData = ta.Type });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 2 + i, YCellMark = 6, ValueData = ta.Distribution });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 2 + i, YCellMark = 7, ValueData = ta.Divisor });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 2 + i, YCellMark = 8, ValueData = ta.StdUncertainty.ToString("e3") });
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 2 + i, YCellMark = 9, ValueData = (Math.Pow(ta.StdUncertainty, 2) / Math.Pow(combinedUncertaintyA, 2)).ToString("P3") });
+
+                data.UncertaintyContributors = ta.UncertaintyContributors;
+                data.Value = ta.Value.ToString("e3");
+                data.SensitivityCoefficient = ta.SensitivityCoefficient.ToString();
+                data.Unit = ta.Unit;
+                data.Type = ta.Type;
+                data.Distribution = ta.Distribution;
+                data.CoverageFactor = ta.Divisor.ToString();
+                data.StdUncertainty = ta.StdUncertainty.ToString("e3");
+                data.Significance = (Math.Pow(ta.StdUncertainty, 2) / Math.Pow(combinedUncertaintyA, 2)).ToString("P3");
+                currentUncertaintyBudgetTable.Datas.Add(data);
             }
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 4, YCellMark = 9, ValueData = (Math.Pow(cstd, 2) / Math.Pow(combinedUncertaintyA, 2)).ToString("P3") });
-            list.Add(new WordModel { MarkPosition = 0, TableMark = 7, ValueType = 0, XCellMark = 5, YCellMark = 9, ValueData = (Math.Pow(cror, 2) / Math.Pow(combinedUncertaintyA, 2)).ToString("P3") });
+            currentUncertaintyBudgetTable.TesterResolutionSignificance = (Math.Pow(cstd, 2) / Math.Pow(combinedUncertaintyA, 2)).ToString("P3");
+            currentUncertaintyBudgetTable.RepeatabilityOfReadingSignificance = (Math.Pow(cror, 2) / Math.Pow(combinedUncertaintyA, 2)).ToString("P3");
+            model.CurrentUncertaintyBudgetTables = voltageUncertaintyBudgetTable;
             #endregion
 
             #endregion
@@ -550,15 +540,34 @@ namespace OpenAuth.WebApi.Controllers
                                     }
                                 }
                             }
-
-                            list.Add(new WordModel { MarkPosition = 0, TableMark = tableIndex, ValueType = 0, XCellMark = j + 2, YCellMark = 1, ValueData = cvCHH });
-                            list.Add(new WordModel { MarkPosition = 0, TableMark = tableIndex, ValueType = 0, XCellMark = j + 2, YCellMark = 2, ValueData = cvRange });
-                            list.Add(new WordModel { MarkPosition = 0, TableMark = tableIndex, ValueType = 0, XCellMark = j + 2, YCellMark = 3, ValueData = IndicationReduce });
-                            list.Add(new WordModel { MarkPosition = 0, TableMark = tableIndex, ValueType = 0, XCellMark = j + 2, YCellMark = 4, ValueData = MeasuredValueReduce });
-                            list.Add(new WordModel { MarkPosition = 0, TableMark = tableIndex, ValueType = 0, XCellMark = j + 2, YCellMark = 5, ValueData = ErrorReduce });
-                            list.Add(new WordModel { MarkPosition = 0, TableMark = tableIndex, ValueType = 0, XCellMark = j + 2, YCellMark = 6, ValueData = cvAcceptanceStr });
-                            list.Add(new WordModel { MarkPosition = 0, TableMark = tableIndex, ValueType = 0, XCellMark = j + 2, YCellMark = 7, ValueData = UncertaintyReduce });
-                            list.Add(new WordModel { MarkPosition = 0, TableMark = tableIndex, ValueType = 0, XCellMark = j + 2, YCellMark = 8, ValueData = $"        {cvConclustion}" });
+                            if (mode.Equals("Charge"))
+                            {
+                                model.ChargingVoltage.Add(new DataSheet
+                                { 
+                                      Channel = cvCHH,
+                                      Range = cvRange.ToString(),
+                                      Indication = IndicationReduce,
+                                      MeasuredValue = MeasuredValueReduce,
+                                      Error = ErrorReduce,
+                                      Acceptance = cvAcceptanceStr,
+                                      Uncertainty = UncertaintyReduce,
+                                      Conclusion = cvConclustion
+                                });
+                            }
+                            else
+                            {
+                                model.DischargingVoltage.Add(new DataSheet
+                                {
+                                    Channel = cvCHH,
+                                    Range = cvRange.ToString(),
+                                    Indication = IndicationReduce,
+                                    MeasuredValue = MeasuredValueReduce,
+                                    Error = ErrorReduce,
+                                    Acceptance = cvAcceptanceStr,
+                                    Uncertainty = UncertaintyReduce,
+                                    Conclusion = cvConclustion
+                                });
+                            }
                             j++;
                         }
                     }
@@ -691,14 +700,34 @@ namespace OpenAuth.WebApi.Controllers
                                 }
                             }
 
-                            list.Add(new WordModel { MarkPosition = 0, TableMark = tableIndex, ValueType = 0, XCellMark = j + 2, YCellMark = 1, ValueData = CHH });
-                            list.Add(new WordModel { MarkPosition = 0, TableMark = tableIndex, ValueType = 0, XCellMark = j + 2, YCellMark = 2, ValueData = (double)Range / 1000 });
-                            list.Add(new WordModel { MarkPosition = 0, TableMark = tableIndex, ValueType = 0, XCellMark = j + 2, YCellMark = 3, ValueData = IndicationReduce });
-                            list.Add(new WordModel { MarkPosition = 0, TableMark = tableIndex, ValueType = 0, XCellMark = j + 2, YCellMark = 4, ValueData = MeasuredValueReduce });
-                            list.Add(new WordModel { MarkPosition = 0, TableMark = tableIndex, ValueType = 0, XCellMark = j + 2, YCellMark = 5, ValueData = ErrorReduce });
-                            list.Add(new WordModel { MarkPosition = 0, TableMark = tableIndex, ValueType = 0, XCellMark = j + 2, YCellMark = 6, ValueData = AcceptanceStr });
-                            list.Add(new WordModel { MarkPosition = 0, TableMark = tableIndex, ValueType = 0, XCellMark = j + 2, YCellMark = 7, ValueData = UncertaintyReduce });
-                            list.Add(new WordModel { MarkPosition = 0, TableMark = tableIndex, ValueType = 0, XCellMark = j + 2, YCellMark = 8, ValueData = $"       {Conclustion}" });
+                            if (mode.Equals("Charge"))
+                            {
+                                model.ChargingCurrent.Add(new DataSheet
+                                {
+                                    Channel = CHH,
+                                    Range = ((double)Range / 1000).ToString(),
+                                    Indication = IndicationReduce,
+                                    MeasuredValue = MeasuredValueReduce,
+                                    Error = ErrorReduce,
+                                    Acceptance = AcceptanceStr,
+                                    Uncertainty = UncertaintyReduce,
+                                    Conclusion = Conclustion
+                                });
+                            }
+                            else
+                            {
+                                model.DischargingCurrent.Add(new DataSheet
+                                {
+                                    Channel = CHH,
+                                    Range = ((double)Range / 1000).ToString(),
+                                    Indication = IndicationReduce,
+                                    MeasuredValue = MeasuredValueReduce,
+                                    Error = ErrorReduce,
+                                    Acceptance = AcceptanceStr,
+                                    Uncertainty = UncertaintyReduce,
+                                    Conclusion = Conclustion
+                                });
+                            }
                             j++;
                         }
                     }
@@ -807,7 +836,7 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private static string BarcodeGenerate(string data)
+        private static async Task<string> BarcodeGenerate(string data)
         {
             System.Drawing.Font labelFont = new System.Drawing.Font("OCRB", 11f, FontStyle.Bold);
             BarcodeLib.Barcode b = new BarcodeLib.Barcode
@@ -818,12 +847,14 @@ namespace OpenAuth.WebApi.Controllers
             Image img = b.Encode(BarcodeLib.TYPE.CODE128, data, Color.Black, Color.White, 180, 49);
 
             DirUtil.CheckOrCreateDir(Path.Combine(BaseCertDir, data));
-
-            var path = Path.Combine(BaseCertDir, data, $"{data}.png");
-            img.Save(path, ImageFormat.Png);
-
-            //return img;
-            return path;
+            var stream = new MemoryStream();
+            
+            img.Save(stream, ImageFormat.Png);
+            var bytes = new byte[stream.Length];
+            stream.Position = 0;
+            await stream.ReadAsync(bytes, 0, bytes.Length);
+            var base64str = Convert.ToBase64String(bytes);
+            return base64str;
         }
 
         /// <summary>
@@ -873,9 +904,9 @@ namespace OpenAuth.WebApi.Controllers
             }
             var indicationStr = indication.ToString($"f{j}");
             var measuredValueStr = measuredValue.ToString($"f{j}");
-            var errorStr = (Convert.ToDouble(indicationStr) * 1000 - Convert.ToDouble(measuredValueStr) * 1000).ToString($"f{j - 3}");//error.ToString($"f{j - 3}");
-            var acceptanceStr = acceptance.ToString($"f{j - 3}");
-            var uncertaintyStr = uncertainty.ToString($"f{j - 3}");
+            var errorStr = (Convert.ToDouble(indicationStr) * 1000 - Convert.ToDouble(measuredValueStr) * 1000).ToString($"f{j - 3}") == "f-1" ? error.ToString("0.00") : (Convert.ToDouble(indicationStr) * 1000 - Convert.ToDouble(measuredValueStr) * 1000).ToString($"f{j - 3}");//error.ToString($"f{j - 3}");
+            var acceptanceStr = acceptance.ToString($"f{j - 3}") == "f-1" ? acceptance.ToString("0.##########") : acceptance.ToString($"f{j - 3}");
+            var uncertaintyStr = uncertainty.ToString($"f{j - 3}") == "f-1" ? uncertainty.ToString("0.##########") : uncertainty.ToString($"f{j - 3}"); ;
             return (indicationStr, measuredValueStr, errorStr, acceptanceStr, uncertaintyStr);
         }
         /// <summary>
@@ -927,9 +958,9 @@ namespace OpenAuth.WebApi.Controllers
             }
             var indicationStr = (indication / 1000).ToString($"f{j}");
             var measuredValueStr = (measuredValue / 1000).ToString($"f{j}");
-            var errorStr = (Convert.ToDouble(indicationStr) * 1000 - Convert.ToDouble(measuredValueStr) * 1000).ToString($"f{j - 3}");// error.ToString($"f{j - 3}");
-            var acceptanceStr = acceptance.ToString($"f{j - 3}");
-            var uncertaintyStr = uncertainty.ToString($"f{j - 3}");
+            var errorStr = (Convert.ToDouble(indicationStr) * 1000 - Convert.ToDouble(measuredValueStr) * 1000).ToString($"f{j - 3}") == "f-1" ? error.ToString("0.00") : (Convert.ToDouble(indicationStr) * 1000 - Convert.ToDouble(measuredValueStr) * 1000).ToString($"f{j - 3}");//error.ToString($"f{j - 3}");
+            var acceptanceStr = acceptance.ToString($"f{j - 3}") == "f-1" ? acceptance.ToString("0.##########") : acceptance.ToString($"f{j - 3}");
+            var uncertaintyStr = uncertainty.ToString($"f{j - 3}") == "f-1" ? uncertainty.ToString("0.##########") : uncertainty.ToString($"f{j - 3}"); ;
             return (indicationStr, measuredValueStr, errorStr, acceptanceStr, uncertaintyStr);
         }
 
