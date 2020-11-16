@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Material.Request;
+using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
@@ -15,9 +16,13 @@ namespace OpenAuth.App
 {
     public class ReturnNoteApp : OnlyUnitWorkBaeApp
     {
-        public ReturnNoteApp(IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
-        {
+        private readonly FlowInstanceApp _flowInstanceApp;
 
+        private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
+        public ReturnNoteApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
+        {
+            _flowInstanceApp = flowInstanceApp;
+            _moduleFlowSchemeApp = moduleFlowSchemeApp;
         }
         /// <summary>
         /// 退料
@@ -94,6 +99,45 @@ namespace OpenAuth.App
                     }
                 }
             }
+
+            //创建物料报价单审批流程
+            var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("待退料"));
+            var afir = new AddFlowInstanceReq();
+            afir.SchemeId = mf.FlowSchemeId;
+            afir.FrmType = 2;
+            afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
+            afir.CustomName = $"退料单审批" + DateTime.Now;
+            afir.OrgId = "";
+            //保外申请报价单
+            afir.FrmData = $"{{\"ReturnnoteId\":\"{o.Id}\"}}";
+            var flowinstanceid = await _flowInstanceApp.CreateInstanceAndGetIdAsync(afir);
+            await UnitWork.UpdateAsync<ReturnNote>(r => r.Id == o.Id, r => new ReturnNote
+            {
+                FlowInstanceId = flowinstanceid
+            });
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
+        /// 审批
+        /// </summary>
+        /// <param name="FlowInstanceId"></param>
+        /// <returns></returns>
+        public async Task Accraditation(string FlowInstanceId)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            _flowInstanceApp.Verification(new VerificationReq
+            {
+                NodeRejectStep = "",
+                NodeRejectType = "0",
+                FlowInstanceId = FlowInstanceId,
+                VerificationFinally = "1",
+                VerificationOpinion = "同意",
+            });
             await UnitWork.SaveAsync();
         }
 
