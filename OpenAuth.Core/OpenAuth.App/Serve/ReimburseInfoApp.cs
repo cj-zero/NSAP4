@@ -79,7 +79,8 @@ namespace OpenAuth.App
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ReimburseType), r => r.ReimburseType.Equals(request.ReimburseType))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.OrgName), r => OrgUserIds.Contains(r.CreateUserId))
-                      .WhereIf(!string.IsNullOrWhiteSpace(request.TerminalCustomer), r => ServiceOrderIds.Contains(r.ServiceOrderId));
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.TerminalCustomer), r => ServiceOrderIds.Contains(r.ServiceOrderId))
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceRelations), r => r.ServiceRelations.Contains(request.ServiceRelations));
 
             if (!string.IsNullOrWhiteSpace(request.RemburseStatus))
             {
@@ -109,21 +110,30 @@ namespace OpenAuth.App
             switch (request.PageType)
             {
                 case 2:
+                    List<int> Condition = new List<int>();
                     if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")))
                     {
-                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 4);
+                        Condition.Add(4);
+                        //ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 4);
                     }
-                    else if (loginContext.Roles.Any(r => r.Name.Equals("财务初审")))
+                    if (loginContext.Roles.Any(r => r.Name.Equals("财务初审")))
                     {
-                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 5);
+                        Condition.Add(5);
+                        //ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 5);
                     }
-                    else if (loginContext.Roles.Any(r => r.Name.Equals("财务复审")))
+                    if (loginContext.Roles.Any(r => r.Name.Equals("财务复审")))
                     {
-                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 6);
+                        Condition.Add(6);
+                        //ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 6);
                     }
-                    else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
+                    if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
                     {
-                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 7);
+                        Condition.Add(7);
+                        //ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 7);
+                    }
+                    if (Condition.Count > 0)
+                    {
+                        ReimburseInfos = ReimburseInfos.Where(r => Condition.Contains(r.RemburseStatus));
                     }
                     else
                     {
@@ -208,7 +218,7 @@ namespace OpenAuth.App
             ReimburseInfos = ReimburseInfos.OrderByDescending(r => r.UpdateTime);
             if (request.PageType == 2 || request.PageType == 5)
             {
-                ReimburseInfos = ReimburseInfos.OrderBy(r=>r.UpdateTime);
+                ReimburseInfos = ReimburseInfos.OrderBy(r => r.UpdateTime);
             }
             var ReimburseInfolist = await ReimburseInfos.Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
@@ -687,7 +697,7 @@ namespace OpenAuth.App
                 }
             }
             //用信号量代替锁
-            
+
 
         }
 
@@ -941,12 +951,45 @@ namespace OpenAuth.App
             ReimurseOperationHistory eoh = new ReimurseOperationHistory();
 
             var obj = await UnitWork.Find<ReimburseInfo>(r => r.Id == req.Id).FirstOrDefaultAsync();
+
+            if (obj.RemburseStatus < 4) 
+            {
+                throw new Exception("报销单已撤回，不可操作。");
+            }
             obj.ShortCustomerName = req.ShortCustomerName;
             obj.ProjectName = req.ProjectName;
             obj.BearToPay = req.BearToPay;
             obj.ReimburseType = req.ReimburseType;
             obj.Responsibility = req.Responsibility;
             eoh.ApprovalStage = obj.RemburseStatus;
+
+            if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && obj.RemburseStatus == 4)
+            {
+                obj.RemburseStatus = 5;
+                eoh.Action = "客服主管审批";
+            }
+            else if (loginContext.Roles.Any(r => r.Name.Equals("财务初审")) && obj.RemburseStatus == 5)
+            {
+                obj.RemburseStatus = 6;
+                eoh.Action = "财务初审";
+            }
+            else if (loginContext.Roles.Any(r => r.Name.Equals("财务复审")) && obj.RemburseStatus == 6)
+            {
+                obj.RemburseStatus = 7;
+                eoh.Action = "财务复审";
+            }
+            else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) && obj.RemburseStatus == 7)
+            {
+                obj.RemburseStatus = 8;
+                eoh.Action = "总经理审批";
+            }
+            else if (loginContext.Roles.Any(r => r.Name.Equals("出纳")) && obj.RemburseStatus == 8)
+            {
+                eoh.Action = "已支付";
+                eoh.ApprovalResult = "已支付";
+                obj.RemburseStatus = 9;
+                obj.PayTime = DateTime.Now;
+            }
             if (req.IsReject)
             {
                 List<string> ids = new List<string>();
@@ -955,38 +998,10 @@ namespace OpenAuth.App
                 obj.RemburseStatus = 2;
                 obj.FlowInstanceId = "";
                 eoh.ApprovalResult = "驳回";
-                eoh.Action = "驳回报销单";
             }
             else
             {
                 eoh.ApprovalResult = "同意";
-                if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")))
-                {
-                    obj.RemburseStatus = 5;
-                    eoh.Action = "客服主管审批";
-                }
-                else if (loginContext.Roles.Any(r => r.Name.Equals("财务初审")))
-                {
-                    obj.RemburseStatus = 6;
-                    eoh.Action = "财务初审";
-                }
-                else if (loginContext.Roles.Any(r => r.Name.Equals("财务复审")))
-                {
-                    obj.RemburseStatus = 7;
-                    eoh.Action = "财务复审";
-                }
-                else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
-                {
-                    obj.RemburseStatus = 8;
-                    eoh.Action = "总经理审批";
-                }
-                else if (loginContext.Roles.Any(r => r.Name.Equals("出纳")))
-                {
-                    eoh.Action = "已支付";
-                    eoh.ApprovalResult = "已支付";
-                    obj.RemburseStatus = 9;
-                    obj.PayTime = DateTime.Now;
-                }
                 _flowInstanceApp.Verification(new VerificationReq
                 {
                     NodeRejectStep = "",
@@ -1005,7 +1020,7 @@ namespace OpenAuth.App
                     ids.Add(obj.FlowInstanceId);
                     await _flowInstanceApp.DeleteAsync(ids.ToArray());
                 }
-                
+
             }
 
             await UnitWork.UpdateAsync<ReimburseInfo>(obj);
@@ -1052,7 +1067,7 @@ namespace OpenAuth.App
                 await UnitWork.UpdateAsync<ReimburseInfo>(obj);
                 await UnitWork.AddAsync<ReimurseOperationHistory>(new ReimurseOperationHistory
                 {
-                    Action = "撤销报销单",
+                    Action = "撤回报销单",
                     CreateUser = loginUser.Name,
                     CreateUserId = loginUser.Id,
                     CreateTime = DateTime.Now,
@@ -1060,12 +1075,12 @@ namespace OpenAuth.App
                 });
                 await UnitWork.SaveAsync();
                 result.Code = 200;
-                result.Message = "已撤销到草稿箱";
+                result.Message = "已撤回到草稿箱";
             }
             else
             {
                 result.Code = 500;
-                result.Message = "客服主管已读不可撤销！！！";
+                result.Message = "客服主管已读不可撤回。";
             }
             return result;
 

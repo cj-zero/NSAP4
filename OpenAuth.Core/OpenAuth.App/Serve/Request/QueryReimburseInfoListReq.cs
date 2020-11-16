@@ -80,6 +80,12 @@ namespace OpenAuth.App.Request
         /// </summary>
         public int? AppId { get; set; }
 
+
+        /// <summary>
+        ///劳务关系
+        /// </summary>
+        public string ServiceRelations { get; set; }
+
         //todo:添加自己的请求字段
     }
 }
