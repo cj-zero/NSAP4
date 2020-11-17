@@ -8,7 +8,8 @@
     border
     fit
     row-key="id"
-    height="100%"
+    :height="height"
+    :max-height="maxHeight"
     style="width: 100%;"
     @current-change="onCurrentChange"
     @row-click="onRowClick"
@@ -38,24 +39,31 @@
       <template slot-scope="scope" >
         <!--  有箭头的操作 -->
         <div class="link-container" v-if="item.type === 'link'"> 
-          {{ JSON.stringify(item.options) }}
-          <img :src="rightImg" @click="item.handleClick({ ...scope.row, ...(item.options || {})})" class="pointer">
+          <img :src="rightImg" @click="isFunction(item.handleClick) ? item.handleClick({ ...scope.row, ...(item.options || {})}) : _noop" class="pointer">
           <span>{{ scope.row[item.prop] }}</span>
         </div>
         <!-- 单选 -->
         <template v-else-if="item.type === 'radio'">
-          <el-radio class="radio" v-model="radio" :label="scope.row[item.prop]">{{ &nbsp; }}</el-radio>
+          <el-radio class="radio" v-model="radio" :label="scope.row[radioKey]">{{ &nbsp; }}</el-radio>
+        </template>
+        <!-- 序号 -->
+        <template v-else-if="item.type === 'order'">
+          <span>{{ scope.$index + 1 }}</span>
         </template>
         <!-- 按钮操作 -->
         <template v-else-if="item.type === 'operation'">
           <el-button 
             v-for="btnItem in item.actions"
             :key="btnItem.btnText"
-            @click="btnItem.item.handleClick({ ...scope, ...(item.options || {})})" 
-            type="text" 
+            @click="btnItem.handleClick({ ...scope.row, ...(item.options || {})})" 
+            :type="item.btnType || text" 
             :icon="item.icon || ''"
             :size="item.size || 'mini'"
           >{{ btnItem.btnText }}</el-button>
+        </template>
+        <!-- slot -->
+        <template v-else-if="item.type === 'slot'">
+          <slot :data="{ ...scope.row, ...(item.options || {})}"></slot>
         </template>
         <!-- 文本显示 -->
         <template v-else-if="item.originType !== 'selectoin'">
@@ -68,6 +76,8 @@
 
 <script>
 import rightImg from '@/assets/table/right.png'
+import { noop } from '@/utils/declaration'
+import { isFunction } from '@/utils/validate'
 export default {
   props: {
     data: {
@@ -88,9 +98,12 @@ export default {
       type: Boolean,
       default: false
     },
+    height: {
+      type: String,
+      default: '100%'
+    },
     maxHeight: {
-      type: [Number, String],
-      default: 0
+      type: [Number, String]
     },
     selectedList: { // 已经选中里的列表(多选中，用来判断是否可以点击)
       type: Array,
@@ -101,13 +114,16 @@ export default {
     selectedKey: { // 用来判断多选是否可以点击的key(selectedList数组中对象的唯一key值)
       type: String,
       default: 'id'
+    },
+    radioKey: { // 单选标识字段
+      type: String
     }
   },
   data () {
     return {
       rightImg,
       radio: '',
-      currentRow: {},
+      currentRow: null,
       selectionList: [] // 多选的数据
     }
   },
@@ -120,19 +136,30 @@ export default {
     }
   },
   methods: {
+    isFunction,
+    _noop () {
+      noop()
+    },
     onCurrentChange (val) {
       console.log(val, 'val')
       // this.radio = val
     },
     onRowClick (row) {
-      // let { index } = row
-      let radioKey = row.radioKey
-      this.radio = row[radioKey]
+      if (this.radioKey) { // 点击行单选
+        this.radio = row[this.radioKey]
+      }
+      if (this.selectionColumns && row.selectable) { // 点击行进行多选 选择
+        this.$refs.commonTable.toggleRowSelection(row)
+      } 
       this.currentRow = row
+      this.$emit('rowClick', this.currentRow)
       // console.log(index, column, 'row click', radioKey, this.radio, Object.keys(row))
     },
     getCurrentRow () {
       return this.currentRow
+    },
+    resetCurrentRow () { 
+      this.currentRow = null
     },
     getSelectionList () {
       return this.selectionList
@@ -152,9 +179,10 @@ export default {
       this.$refs.commonTable.clearSelection()
     },
     checkSelectable (row) {
-      return this.selectedList.length 
+      row.selectable = this.selectedList.length 
         ? this.selectedList.every(item => item[this.selectedKey] !== row[this.selectedKey])
         : true
+      return row.selectable
     }
   },
   created () {

@@ -1,6 +1,5 @@
 <template>
   <div class="my-submission-wrapper">
-    <tab-list :initialName="initialName" :texts="texts" @tabChange="onTabChange"></tab-list>
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
@@ -25,18 +24,23 @@
         </div>
       </div>
     </div>    
-    <my-dialog ref="myDialog">
+    <my-dialog 
+      ref="outboundDialog"
+      width="918px"
+      :btnList="btnList"
+      :onClose="close">
+      <outbound-order ref="outboundOrder"></outbound-order>
     </my-dialog>
   </div>
 </template>
 
 <script>
-import TabList from '@/components/TabList'
 import Search from '@/components/Search'
 import Sticky from '@/components/Sticky'
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import CommonTable from '@/components/CommonTable'
+import OutboundOrder from './components/outboundorder'
 const tableData = []
 for (let i = 0; i < 100; i++) {
   tableData.push({
@@ -55,47 +59,36 @@ for (let i = 0; i < 100; i++) {
 export default {
   name: 'quotation',
   components: {
-    TabList,
     Search,
     Sticky,
     CommonTable,
     Pagination,
-    MyDialog
+    MyDialog,
+    OutboundOrder
   },
   computed: {
     searchConfig () {
       return [
-        { prop: 'pickNO', placeholder: '领料单号', width: 100 },
-        { prop: 'customerName', placeholder: '客户名称', width: 100 },
+        { prop: 'pickNO', placeholder: '出库单号', width: 100 },
+        { prop: 'customerName', placeholder: '客户', width: 100 },
         { prop: '', placeholder: '服务ID', width: 100 },
         { prop: 'applicant', placeholder: '申请人', width: 100 },
         { prop: 'startDate', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endDate', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
-        { type: 'button', btnText: '新建', isSpecial: true, handleClick: this.addAccount },
-        { type: 'button', btnText: '编辑', handleClick: this.getDetail, options: { type: 'edit', name: 'mySubmit' } },
         { type: 'button', btnText: '打印', handleClick: this.print },     
-        { type: 'button', btnText: '删除', handleClick: this.deleteOrder },
+        { type: 'button', btnText: '出库', handleClick: this.outbound },
       ]
     }, // 搜索配置
     btnList () {
       return [
-        { btnText: '提交', handleClick: this.submit },
-        { btnText: '存为草稿', handleClick: this.saveAsDraft },
-        { btnText: '关闭', handleClick: this.close }      
+        { btnText: '快速出库', handleClick: this.outbound, isShow: this.title !== 'view' },
+        { btnText: '关闭', handleClick: this.close, className: 'close' }      
       ]
     }
   },
   data () {
     return {
-      initialName: '1', // 初始标签的值
-      texts: [ // 标签数组
-        { label: '全部', name: '1' },
-        { label: '草稿箱', name: '2' },
-        { label: '申请中', name: '3' },
-        { label: '已领料', name: '4' },
-        { label: '已驳回', name: '5' }
-      ],
       formQuery: {
         pickNO: '',
         customerName: '',
@@ -111,7 +104,7 @@ export default {
       tableData,
       total: 100,
       quotationColumns: [
-        { label: '领料单号', prop: 'pickNO', handleClick: this.getDetail, options: { type: 'view' }, type: 'link'},
+        { label: '销售单号', prop: 'pickNO',  options: { type: 'view' }, type: 'link'},
         { label: '服务ID', prop: 'serviceOrderId', handleClick: this.getDetail, type: 'link' },
         { label: '客户代码', prop: 'customerId' },
         { label: '客户名称', prop: 'customerName' },
@@ -119,16 +112,19 @@ export default {
         { label: '未清金额', prop: 'otherMoney' },
         { label: '申请人', prop: 'applicant' },
         { label: '备注', prop: 'remark' },
-        { label: '创建时间', prop: 'createTime' },
-        { label: '状态', prop: 'status' }
-      ]
+        { label: '创建时间', prop: 'createTime' }
+      ],
+      title: '' // 弹窗状态
     } 
   },
   methods: {
-    onTabChange () {},
-    submit () {},
-    saveAsDraft () {},
-    close () {},
+    outbound () {
+      // getDetail
+      this.$refs.outboundDialog.open()
+    },
+    close () {
+       this.$refs.outboundDialog.close()
+    },
     getDetail (data) {
       console.log(data, 'data detail')
     },

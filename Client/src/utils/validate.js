@@ -39,10 +39,18 @@ export function isCustomerCode (code) {
 }
 
 const _toString = Object.prototype.toString
+
 export function isPlainObject (val) {
   return _toString.call(val) === '[object Object]'
 }
 
+export function isFunction (val) {
+  return typeof val === 'function'
+}
+
+export function isNumber (val) {
+  return typeof val === 'number' && !isNaN(val)
+}
 export function isSameObjectByValue (oldVal, newVal) {
   for (let key in newVal) {
     if (newVal[key] !== oldVal[key]) {

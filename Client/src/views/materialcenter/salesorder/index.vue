@@ -65,17 +65,17 @@ export default {
   computed: {
     searchConfig () {
       return [
-        { prop: 'pickNO', placeholder: '领料单号', width: 100 },
-        { prop: 'customerName', placeholder: '客户名称', width: 100 },
+        { prop: 'pickNO', placeholder: '销售单号', width: 100 },
+        { prop: 'customerName', placeholder: '客户', width: 100 },
         { prop: '', placeholder: '服务ID', width: 100 },
         { prop: 'applicant', placeholder: '申请人', width: 100 },
         { prop: 'startDate', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endDate', placeholder: '创建结束日期', type: 'date', width: 150 },
+        { prop: 'endDate', placeholder: '报价单号', width: 150 },
         { type: 'search' },
-        { type: 'button', btnText: '新建', isSpecial: true, handleClick: this.addAccount },
-        { type: 'button', btnText: '编辑', handleClick: this.getDetail, options: { type: 'edit', name: 'mySubmit' } },
         { type: 'button', btnText: '打印', handleClick: this.print },     
-        { type: 'button', btnText: '删除', handleClick: this.deleteOrder },
+        { type: 'button', btnText: '收款', handleClick: this.collect },
+        { type: 'button', btnText: '开票', handleClick: this.invoice },
       ]
     }, // 搜索配置
     btnList () {
@@ -113,6 +113,7 @@ export default {
       quotationColumns: [
         { label: '领料单号', prop: 'pickNO', handleClick: this.getDetail, options: { type: 'view' }, type: 'link'},
         { label: '服务ID', prop: 'serviceOrderId', handleClick: this.getDetail, type: 'link' },
+        { label: '报价单号', prop: 'serviceOrderId', handleClick: this.getDetail, type: 'link' },
         { label: '客户代码', prop: 'customerId' },
         { label: '客户名称', prop: 'customerName' },
         { label: '单据总金额', prop: 'totalMoney' },

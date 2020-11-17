@@ -1637,7 +1637,7 @@ export default {
     },
     confirm () {
       let currentRow = this.$refs.customerTable.getCurrentRow()
-      if (Object.keys(currentRow).length) {
+      if (currentRow) {
         let { 
           userName,
           serviceRelations,

@@ -1,253 +1,353 @@
 <template>
   <div class="quotation-wrapper">
-    <!-- <div class="title-wrapper">
-      <p>报价单号: <span></span></p>
-      <p>申请人: <span></span></p>
-      <p>创建时间: <span></span></p>
-    </div> -->
-    <el-form
-      :model="formData"
-      ref="form"
-      class="my-form-wrapper"
-      label-width="80px"
-      size="mini"
-      label-position="right"
-      :show-message="false"
-    >
-      <!-- 普通控件 -->
-      <el-row 
-        type="flex" 
-        v-for="(config, index) in formatFormConfig"
-        :key="index">
-        <el-col 
-          :span="item.col"
-          v-for="item in config"
-          :key="item.prop"
-        >
-          <el-form-item
-            :prop="item.prop"
-            :rules="rules[item.prop] || { required: false }">
-            <span slot="label">
-              <template v-if="item.prop === 'serviceOrderSapId'">
-                <div class="link-container" style="display: inline-block">
-                  <span>{{ item.label }}</span>
-                  <img :src="rightImg" @click="openTree(formData, false)" class="pointer">
-                </div>
-              </template>
-              <template v-else>
-                <span>{{ item.label }}</span>
-              </template>
-            </span>
-            <template v-if="!item.type">
-              <el-input 
-                v-model="formData[item.prop]" 
-                :style="{ width: item.width + 'px' }"
-                :maxlength="item.maxlength"
-                :disabled="item.disabled"
-                :readonly="item.readonly"
-                @focus="onServiceIdFocus"
-                >
-                <i :class="item.icon" v-if="item.icon"></i>
-              </el-input>
-            </template>
-            <template v-else-if="item.type === 'select'">
-              <el-select 
-                clearable
-                :style="{ width: item.width }"
-                v-model="formData[item.prop]" 
-                :placeholder="item.placeholder"
-                :disabled="item.disabled">
-                <el-option
-                  v-for="(item,index) in item.options"
-                  :key="index"
-                  :label="item.label"
-                  :value="item.value"
-                ></el-option>
-              </el-select>
-            </template>
-            <template v-else-if="item.type === 'date'">
-              <el-date-picker
-                :disabled="item.disabled"
-                :style="{ width: item.width + 'px' }"
-                :value-format="item.valueFormat || 'yyyy-MM-dd'"
-                :type="item.dateType || 'date'"
-                :placeholder="item.placeholder"
-                v-model="formData[item.prop]"
-              ></el-date-picker>
-            </template>
-            <template v-else-if="item.type === 'button'">
-              <el-button 
-                class="customer-btn-class"
-                type="primary" 
-                style="width: 100%;" 
-                @click="item.handleClick(formData)"
-                :loading="reportBtnLoading">{{ item.btnText }}</el-button>
-            </template>
-            <template v-else-if="item.type === 'money'">
-              <span class="money-text">￥{{ totalMoney | toThousands }}</span>
-            </template>
-          </el-form-item>
-        </el-col>
-      </el-row>
-    </el-form>
-    <!-- 物料添加 -->
-    <!-- <div class="material-wrapper">
-      <el-button class="add-btn" @click="addMaterial">添加</el-button>
-      <el-form 
-          ref="materialForm" 
-          :model="formData" 
-          size="mini" 
+    <el-row type="flex" class="title-wrapper">
+      <p class="bold id">报价单号: <span>{{ formData.id || '' }}</span></p>
+      <p class="bold">申请人: <span>{{ formData.createUser || createUser }}</span></p>
+      <p>创建时间: <span>{{ formData.createTime || createTime }}</span></p>
+      <p>销售员: <span>{{ formData.salesMan }}</span></p>
+    </el-row>
+    <el-scrollbar class="scroll-bar">
+      <!-- 表单 -->
+      <el-form
+          :model="formData"
+          ref="form"
+          class="my-form-wrapper" 
+          label-width="80px"
+          size="mini"
+          label-position="right"
           :show-message="false"
-          class="form-wrapper"
-          :disabled="!ifFormEdit"
-          :class="{ 'uneditable': !this.ifFormEdit }"
         >
-          <el-table 
-            :row-style="rowStyle"
-            border
-            :data="formData.reimburseOtherCharges"
-            max-height="250px"
-            @cell-click="onOtherCellClick"
-          >
-            <el-table-column
-              v-for="item in otherConfig"
-              :key="item.label"
-              :label="item.label"
-              :align="item.align || 'left'"
-              :prop="item.prop"
-              :width="item.width"
-              :fixed="item.fixed"
-              :resizable="false"
+          <!-- 普通控件 -->
+          <el-row 
+            type="flex" 
+            v-for="(config, index) in formatFormConfig"
+            :key="index">
+            <el-col 
+              :span="item.col"
+              v-for="item in config"
+              :key="item.prop"
             >
-              <template slot-scope="scope">
-                <template v-if="item.type === 'order'">
-                  {{ scope.$index + 1 }}
-                </template>
-                <template v-else-if="item.type === 'input'">
-                  <el-form-item
-                    :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
-                    :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }"
-                  >
-                    <el-input 
-                      :placeholder="item.placeholder"
-                      v-model="scope.row[item.prop]" 
-                      :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)"
+              <el-form-item
+                :prop="item.prop"
+                :rules="rules[item.prop] || { required: false }">
+                <span slot="label">
+                  <template v-if="item.prop === 'serviceOrderSapId'">
+                    <div class="link-container" style="display: inline-block">
+                      <span>{{ item.label }}</span>
+                      <img :src="rightImg" @click="openCustomerList" class="pointer">
+                    </div>
+                  </template>
+                  <template v-else>
+                    <span>{{ item.label }}</span>
+                  </template>
+                </span>
+                <template v-if="!item.type">
+                  <el-input 
+                    v-model="formData[item.prop]" 
+                    :style="{ width: item.width + 'px' }"
+                    :maxlength="item.maxlength"
+                    :disabled="item.disabled"
+                    :readonly="item.readonly"
+                    @focus="onServiceIdFocus(item.prop)"
                     >
-                    </el-input>
-                  </el-form-item>
-                </template>
-                <template v-else-if="item.type === 'number'">
-                  <el-form-item
-                    :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
-                    :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }"
-                  >
-                    <el-input 
-                      :class="{ 'money-class': item.prop === 'money'}"
-                      v-model="scope.row[item.prop]" 
-                      :type="item.type" 
-                      :disabled="item.disabled" 
-                      :min="0" 
-                      @focus="onFocus({ prop: item.prop, index: scope.$index })" 
-                      @input="onOtherInput"
-                      :placeholder="item.placeholder"></el-input>
-                  </el-form-item>
+                    <i :class="item.icon" v-if="item.icon"></i>
+                  </el-input>
                 </template>
                 <template v-else-if="item.type === 'select'">
-                  <el-form-item
-                    :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
-                    :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }"
-                  >
-                    <el-select
-                      v-model="scope.row[item.prop]"
-                    >
-                      <el-option
-                        v-for="optionItem in item.options"
-                        :key="optionItem.label"
-                        :value="optionItem.value"
-                        :label="optionItem.label"
-                      >
-                      </el-option>
-                    </el-select>
-                  </el-form-item>
+                  <el-select 
+                    clearable
+                    :style="{ width: item.width }"
+                    v-model="formData[item.prop]" 
+                    :placeholder="item.placeholder"
+                    :disabled="item.disabled">
+                    <el-option
+                      v-for="(item,index) in item.options"
+                      :key="index"
+                      :label="item.label"
+                      :value="item.value"
+                    ></el-option>
+                  </el-select>
                 </template>
-                <template v-else-if="item.type === 'operation'">
-                  <template v-for="iconItem in item.iconList">
-                    <i 
-                      :key="iconItem.icon"
-                      :class="iconItem.icon" 
-                      class="icon-item"
-                      @click="iconItem.handleClick(scope, formData.reimburseOtherCharges, iconItem.operationType)">
-                    </i>
+                <!-- <template v-else-if="item.type === 'address'">
+                  <div class="area-wrapper">
+                     <el-input 
+                      v-model="formData[item.prop]" 
+                      :style="{ width: item.width + 'px' }"
+                      :maxlength="item.maxlength"
+                      :disabled="item.disabled"
+                      :readonly="item.readonly"
+                      @focus="onAreaFocus(item.prop)"
+                      >
+                    </el-input>
+                    <template v-if="title !== 'view'">  
+                      <div class="selector-wrapper" 
+                        v-show="(isShowShipping && item.prop === 'shippingAddress' || isShowCollect && item.prop === 'collectionAddress')">
+                        <AreaSelector @close="onCloseArea" @change="onAreaChange" :options="{ prop: item.prop }"/>
+                      </div>
+                    </template>
+                  </div>
+                </template> -->
+              </el-form-item>
+            </el-col>
+          </el-row>
+      </el-form>
+      <template v-if="!isPreview">
+        <!-- 序列号查询表格 -->
+        <div class="record-wrapper">
+          <el-row type="flex" justify="space-between">
+            <div class="form-wrapper">
+              <el-form :model="listQuerySearial" size="mini">
+                <el-row type="flex">
+                  <el-col>
+                    <el-form-item>
+                      <el-input 
+                        style="width: 150px;"
+                        @keyup.enter.native="_getSerialNumberList" 
+                        v-model="listQuerySearial.serialNumber" 
+                        placeholder="制造商序列号"
+                        size="mini">
+                      </el-input>
+                    </el-form-item>
+                  </el-col>
+                  <el-col>
+                    <el-form-item>
+                      <el-input 
+                        style="width: 150px; margin-left: 10px;"
+                        @keyup.enter.native="_getSerialNumberList" 
+                        v-model="listQuerySearial.materialCode" 
+                        placeholder="物料编码"
+                        size="mini">
+                      </el-input>
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+              </el-form>
+            </div>
+            <div class="total-money">
+              <el-tooltip effect="dark" placement="top-start">
+                <div slot="content">{{ totalMoney | toThousands }}</div>
+                <p class="money">总金额: {{ totalMoney | toThousands }}</p>
+              </el-tooltip>
+            </div>
+          </el-row>
+          <div class="serial-table-wrapper">
+            <common-table 
+              @rowClick="onSerialRowClick"
+              ref="serialTable" 
+              maxHeight="200px"
+              :data="serialNumberList" 
+              :columns="serialColumns" 
+              :loading="serialLoading">
+              <template v-slot="{ data }">
+                <el-button 
+                  type="success"
+                  @click="openMaterialDialog(data)"
+                  size="mini">领取</el-button>
+              </template>
+            </common-table>
+          </div>
+        </div>
+        <!-- 物料表格 -->
+        <div class="material-wrapper">
+          <el-form 
+            ref="materialForm" 
+            :model="materialData" 
+            size="mini" 
+            :show-message="false"
+            class="form-wrapper"
+          >
+            <el-table 
+              border
+              :data="materialData.list"
+              highlight-current-row
+              max-height="200px"
+            >
+              <el-table-column
+                v-for="item in materialConfig"
+                :key="item.label"
+                :label="item.label"
+                :width="item.width"
+                :align="item.align || 'left'"
+                :prop="item.prop"
+                :fixed="item.fixed"
+                :resizable="false"
+                show-overflow-tooltip
+              >
+                <template slot-scope="scope">
+                  <template v-if="item.type === 'order'">
+                    {{ scope.$index + 1 }}
+                  </template>
+                  <template v-if="item.type === 'input'">
+                    <el-form-item
+                      :prop="'list.' + scope.$index + '.'+ item.prop"
+                      :rules="materialRules[item.prop] || { required: false }"
+                    >
+                      <el-input v-model="scope.row[item.prop]" :disabled="item.disabled" :placeholder="item.placeholder"></el-input>
+                    </el-form-item>
+                  </template>
+                  <template v-else-if="item.type === 'number'">
+                    <el-form-item
+                      :prop="'list.' + scope.$index + '.'+ item.prop"
+                      :rules="materialRules[item.prop] || { required: false }"
+                    >
+                      <el-input-number
+                        style="width: 200px;"
+                        :controls="false"
+                        v-model="scope.row[item.prop]" 
+                        :disabled="item.disabled"
+                        :precision="0"
+                        :placeholder="`最大数量${scope.row['maxCount']}`"
+                        :max="+scope.row['maxCount']"
+                        :min="0"
+                        @focus="onCountFocus(scope.$index)"
+                        @change="onCountChange"
+                      ></el-input-number>
+                    </el-form-item>
+                  </template>
+                  <template v-else-if="item.type === 'operation'">
+                    <template v-for="iconItem in item.iconList">
+                      <i 
+                        :key="iconItem.icon"
+                        :class="iconItem.icon" 
+                        class="icon-item"
+                        @click="iconItem.handleClick(scope)">
+                      </i>
+                    </template>
+                  </template>
+                  <template v-else>
+                    {{ scope.row[item.prop] }}
                   </template>
                 </template>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-form>
-    </div> -->
+              </el-table-column>
+            </el-table>
+          </el-form>
+        </div>
+      </template>
+      <template v-else>
+        <div class="preview-wrapper">
+          <ul class="preview-list-wrapper">
+            <li 
+              class="preview-item"
+              v-for="item in formData.quotationProducts"
+              :key="item.manufacturerSerialNumber"
+            >
+              <el-row type="flex" class="serial-info-wrapper">
+                <el-form label-width="85px" inline size="mini" style="padding-top: 0;" disabled>
+                  <el-form-item label="制造商序列号">
+                    <el-input class="input-item" size="mini" v-model="item.productCode"></el-input>
+                  </el-form-item>
+                  <el-form-item label="物料编码" label-width="60px">
+                    <el-input class="input-item" size="mini" v-model="item.materialCode"></el-input>
+                  </el-form-item>
+                  <el-form-item label="物料描述" label-width="60px">
+                    <el-input class="input-item" size="mini" v-model="item.materialDescription"></el-input>
+                  </el-form-item>
+                  <el-form-item label="保修日期" label-width="60px">
+                    <el-input class="input-item" size="mini" v-model="item.warrantyExpirationTime"></el-input>
+                  </el-form-item>
+                </el-form>
+                <div class="total-money">总金额: {{ item.quotationMaterials | calcTotalItem | toThousands }}</div>
+              </el-row>
+              <div>
+                <common-table maxHeight="200px" :data="item.quotationMaterials" :columns="materialTableColumns"></common-table>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </template>
+    </el-scrollbar>
+    <!-- 物料添加 -->
     <!-- 操作记录 -->
-    <div class="record-wrapper">
-      <!-- <el-table 
-        style="width: 989px;"
-        :data="formData.reimurseOperationHistories"
-        border
-        max-height="200px"
-      >
-        <el-table-column label="操作记录" prop="action" width="150px" show-overflow-tooltip></el-table-column>
-        <el-table-column label="操作人" prop="createUser" width="150px" show-overflow-tooltip></el-table-column>
-        <el-table-column label="操作时间" prop="createTime" width="150px" show-overflow-tooltip></el-table-column>
-        <el-table-column label="审批时长" prop="intervalTime" width="150px" show-overflow-tooltip>
-          <template slot-scope="scope">
-            {{ scope.row.intervalTime | timeFormat }}
-          </template>
-        </el-table-column>
-        <el-table-column label="审批结果" prop="approvalResult" width="150px" show-overflow-tooltip></el-table-column>
-        <el-table-column label="备注" prop="remark" width="147px" show-overflow-tooltip></el-table-column>
-      </el-table> -->
-      <common-table :data="recordData" :columns="recordColumns"></common-table>
-    </div>
+    <!-- <common-table :data="recordData" :columns="recordColumns"></common-table> -->
     <!-- 客户弹窗 -->
     <my-dialog
       ref="customerDialog"
+      title="服务列表"
+       width="500px"
       :btnList="customerBtnList"
+      :appendToBody="true"
     >
-      <common-table ref="customerTable" :data="customerTableData"></common-table>
+      <div>
+        <common-table maxHeight="400px" ref="customerTable" :data="customerData" :columns="customerColumns" radioKey='id'></common-table>
+      </div>
       <pagination
         v-show="customerTotal > 0"
-        :total="tcustomerTotal"
-        :page.sync="listQuery.page"
-        :limit.sync="listQuery.limit"
-        @pagination="handleCurrentChange"
+        :total="customerTotal"
+        :page.sync="listQueryCustomer.page"
+        :limit.sync="listQueryCustomer.limit"
+        @pagination="customerCurrentChange"
       />
     </my-dialog>
     <!-- 物料编码弹窗 -->
     <my-dialog 
       ref="materialDialog"
       title="物料编码"
+      width="500px"
       :btnList="materialBtnList"
+      :appendToBody="true"
     >
-      <common-table ref="materialTable" :data="materialTableData"></common-table>
+      <common-table  
+        ref="materialTable" 
+        height="400px"
+        :data="materialList" 
+        :columns="materialColumns" 
+        :loading="materialLoading"
+        :selectedList="selectedMaterialList"
+        selectedKey="itemCode"></common-table>
+      <pagination
+        v-show="materialCount > 0"
+        :total="materialCount"
+        :page.sync="listQueryMaterial.page"
+        :limit.sync="listQueryMaterial.limit"
+        @pagination="handleMaterialChange"
+      />
     </my-dialog>
+    <el-button @click="_checkFormData">点击校验</el-button>
   </div>
 </template>
 
 <script>
-import { getServiceOrderList } from '@/api/material/quotation'
+import { 
+  getServiceOrderList,
+  getSerialNumberList, 
+  getMaterialList, 
+  AddQuotationOrder,
+  updateQuotationOrder 
+} from '@/api/material/quotation'
 import CommonTable from '@/components/CommonTable' // 对于不可编辑的表格
 import MyDialog from '@/components/Dialog'
-
+import Pagination from '@/components/Pagination'
+// import AreaSelector from '@/components/AreaSelector'
 import { quotationOrderMixin } from '../js/mixins'
+import { timeToFormat } from "@/utils";
+import { findIndex } from '@/utils/process'
+import { isNumber } from '@/utils/validate'
 import rightImg from '@/assets/table/right.png'
 export default {
   mixins: [quotationOrderMixin],
   components: {
     CommonTable,
-    MyDialog
+    MyDialog,
+    Pagination,
+    // AreaSelector
+  },
+  filters: {
+    calcTotalItem (val) { // 计算每一个物料表格的总金额
+      return val.filter(item => isNumber(item.totalPrice))
+        .reduce((prev, next) => prev + next.totalPrice, 0)
+    }
   },
   props: {
     customerList: {
       type: Array,
       default () { () => [] }
+    },
+    detailInfo: { // 详情
+      type: Object,
+      default () { () => {} }
+    },
+    title: {
+      type: String
     }
   },
   watch: {
@@ -256,59 +356,479 @@ export default {
       deep: true,
       handler (val) {
         console.log(val, 'val')
-        if (this.title === 'creat') { // 新建时才需要去获取客户信息列表
+        if (this.title === 'create') { // 新建时才需要去获取客户信息列表
           this._getServiceOrderList()
         }
+      }
+    },
+    'formData.serviceOrderSapId': {
+      immediate: true,
+      handler (val) {
+        console.log(val, 'newVal')
+        if (val) {
+          if (this.title === 'create') {
+            this._resetMaterialInfo() // 清除所有的跟物料相关的数据
+          }
+          this.listQuerySearial.page = 1
+          this.listQuerySearial.limit = 50
+          this._getSerialNumberList()
+        }
+      }
+    },
+    detailInfo: {
+      immediate: true,
+      handler (val) {
+        if (this.title !== 'create') {
+          Object.assign(this.formData, val)
+          this.currentSerialNumber = this.formData.quotationProducts[0].productCode
+          // 构建selected Map
+          if (this.title === 'edit') {
+            for (let i = 0; i < this.formData.quotationProducts.length; i++) {
+              let item = this.formData.quotationProducts[i]
+              this.selectedMap[item.productCode] = []
+              for (let j = 0; j < item.quotationMaterials.length; j++) {
+                let materilItem = item.quotationMaterials[j]
+                this.selectedMap[item.productCode].push({ itemCode: materilItem.materialCode })
+              }
+            }
+          }
+        }
+      }
+    },
+    selectedMap: {
+      deep: true,
+      handler (val) {
+        console.log(val, 'selectedMap')
       }
     }
   },
   data () {
     return {
       rightImg,
-      formData: {}, // 表单数据
-      rules: {}, // 上表单校验规则
+      formData: {
+        // id: '',  报价单号
+        salesOrderId: '', // 销售单号
+        serviceOrderSapId: '', // NSAP ID
+        serviceOrderId: '', 
+        createUser: '',
+        terminalCustomer: '', // 客户名称
+        terminalCustomerId: '', // 客户代码
+        shippingAddress: '', // 开票地址
+        collectionAddress: '', // 收款地址
+        salesMan: '', // 销售员
+        totalMoney: 0, // 总金额
+        quotationProducts: [] // 报价单产品表
+      }, // 表单数据
+      createTime: timeToFormat('yyyy-MM-dd HH:mm'),
+      rules: {
+        serviceOrderSapId: [ { required: true } ],
+        terminalCustomerId: [ { required: true } ],
+        terminalCustomer: [{ required: true }],
+        shippingAddress: [{ required: true, trigger: ['change', 'blur'] }],
+        invoiceCompany: [{ required: true, trigger: ['change', 'blur'] }],
+        collectionAddress: [{ required: true, trigger: ['change', 'blur'] }],
+        deliveryMethod: [{ required: true, trigger: ['change', 'blur'] }]
+      }, // 上表单校验规则
+      // 操作记录
       recordColumns: [],
       recordData: [],
-      materialTableData: [],
+      // 物料弹窗列表
+      materialList: [],
+      materialCount: 0,
+      selectedMaterialList: [], // 已经选择了物料列表，再次弹窗时，不能再选
+      selectedMap: {}, // 已经选择物料列表
+      materialLoading: false,
+      listQueryMaterial: {
+        page: 1,
+        limit: 20
+      },
       materialBtnList: [
         { btnText: '确定', handleClick: this.selectMaterial },
         { btnText: '取消', handleClick: this.closeMaterialDialog }
       ],
+      materialColumns: [ 
+        { originType: 'selection' },
+        { label: '物料编码', prop: 'itemCode', width: 100 },
+        { label: '物料描述', prop: 'itemName', width: 100 },
+        { label: '零件规格', prop: 'buyUnitMsr', width: 100 },
+        { label: '库存量', prop: 'onHand', width: 100 },
+        { label: '仓库号', prop: 'whsCode', width: 100 }
+      ],
+      // 物料表格列表
+      materialRules: {
+        count: [{ required: true }]
+      },
+      materialTableColumns: [
+        { label: '序号', type: 'order' },
+        { label: '物料编码', prop: 'materialCode' },
+        { label: '物料描述', prop: 'materialDescription' },
+        { label: '数量', prop: 'count' },
+        { label: '最大数量', prop: 'maxCount' },
+        { label: '单价', prop: 'unitPrice' },
+        { label: '总计', prop: 'totalPrice' },
+        { label: '备注', prop: 'remark', type: 'input' }
+      ],
+      // 客户列表
+      customerData: [],
+      customerTotal: 0,
+      listQueryCustomer: { // 客户列表分页参数
+        page: 1,
+        limit: 20
+      },
+      customerColumns: [
+        { type: 'radio', width: '50px' },
+        { label: '服务单号', prop: 'u_SAP_ID' },
+        { label: '客户名称', prop: 'terminalCustomer' },
+        { label: '客户代码', prop: 'terminalCustomerId' },
+        { label: '销售员', prop: 'salesMan' }
+      ],
       customerBtnList: [
         { btnText: '确定', handleClick: this.selectCustomer },
         { btnText: '取消', handleClick: this.closeCustomerDialog }
-      ]
+      ],
+      // 序列号列表
+      currentSerialNumber: '', // 当前选中的设备序列号
+      serialNumberList: [],
+      serialCount: 0,
+      serialLoading: false,
+      serialColumns: [
+        { label: '制造商序列号', prop: 'manufacturerSerialNumber' },
+        { label: '物料编码', prop: 'materialCode' },
+        { label: '物料描述', prop: 'materialDescription' },
+        { label: '保修到期', prop: 'warrantyExpirationTime' },
+        { label: '金额', prop: 'money' },
+        { label: '领取物料', type: 'slot' }
+        // { label: '领取物料',  width: 100, type: 'operation',
+        //   actions: [{ btnText: '领取', handleClick: this.openMaterialDialog }] 
+        // }
+      ],
+      listQuerySearial: {
+        page: 1,
+        limit: 50,
+        serialNumber: '',
+        materialCode: ''
+      },
+      // 预览数据
+      isPreview: false, // 是否预览
+      // 地址选择器
+      isShowCollect: false,
+      isShowShipping: false
+    }
+  },
+  computed: {
+    totalMoney () {
+      if (this.formData.quotationProducts.length) {
+        let val = this.formData.quotationProducts
+        return this._calcTotalMoney(val)
+      } 
+      return 0
+    },
+    materialData () {
+      // 找到当前选择的设备序列号对应的物料列表数据
+      let index = findIndex(this.formData.quotationProducts, item => {
+        return item.productCode === this.currentSerialNumber
+      })
+      return  { list: index > -1 ? this.formData.quotationProducts[index].quotationMaterials : [] }
     }
   },
   methods: {
+    _calcTotalMoney (val) {
+      let result = 0
+      for (let i = 0; i < val.length; i++) {
+        result += val[i].quotationMaterials.filter(item => isNumber(item.totalPrice))
+          .reduce((prev, next) => prev + next.totalPrice, 0)
+      }
+      return result
+    },
+    onSerialRowClick (val) {
+      this.currentSerialNumber = val.manufacturerSerialNumber
+      this.currentSerialInfo = val
+    },
     onServiceIdFocus (prop) {
       if (prop === 'serviceOrderSapId') {
         this.$refs.customerDialog.open()
       }
     },
-    addMaterial () {}, // 添加物料
-    deleteMaterialItem () {}, // 删除物料
-    selectMaterialItem () {}, // 选择弹窗物料
-    materialDialog () { // 关闭弹窗
-      this.$refs.materialTable.clearSelection()
-      this.$refs.materialDialog.close()
+    openCustomerList () {
+      this.$refs.customerDialog.open()
     },
-    selectCustomer () {},
+    selectCustomer () { // 选择客户数据
+      let val = this.$refs.customerTable.getCurrentRow()
+      if (!val) {
+        return this.$message.warning('请先选择数据')
+      }
+      let { terminalCustomer, terminalCustomerId, salesMan, id, u_SAP_ID } = val
+      this.formData.terminalCustomer = terminalCustomer
+      this.formData.terminalCustomerId = terminalCustomerId
+      this.formData.salesMan = salesMan
+      this.formData.serviceOrderId = id
+      this.formData.serviceOrderSapId = u_SAP_ID
+      this.closeCustomerDialog()
+    },
     closeCustomerDialog () {
-      this.$refs.customerTable.clearSelection()
+      this.$refs.customerTable.resetRadio() // 清空单选
       this.$refs.customerDialog.close()
     },
-    openTree () {},
+    customerCurrentChange ({ page, limit }) {
+      this.listQueryCustomer.page = page
+      this.listQueryCustomer.limit = limit
+      this._getServiceOrderList()
+    },
     _getServiceOrderList () {
-      getServiceOrderList(this.listQueryService).then(res => {
+      getServiceOrderList(this.listQueryCustomer).then(res => {
         let { count, data } = res
         this.customerData = data
         this.customerTotal = count
       }).catch(err => {
         this.$message.error(err.message)
       })
+    },
+    _getSerialNumberList () { // 获取设备序列号列表
+      if (!this.formData.serviceOrderSapId) {
+        return this.$message.warning('请先选择服务单!')
+      }
+      this.serialLoading = true
+      getSerialNumberList({
+        serviceOrderId: this.formData.serviceOrderId,
+        ...this.listQuerySearial
+      }).then(res => {
+        let { data, count } = res
+        this.serialNumberList = data
+        this.serialCount = count
+        this.serialLoading = false
+        console.log(res, 'res')
+      }).catch(err => {
+        this.serialLoading = false
+        this.$message.error(err.message)
+      })
+    },
+    _getMaterialList (manufacturerSerialNumber, materialCode) { // 获取物料列表
+      this.materialLoading = true
+      getMaterialList({
+        ManufacturerSerialNumbers: manufacturerSerialNumber,
+        materialCode,
+        ...this.listQueryMaterial
+      }).then(res => {
+        console.log(res, 'res')
+        let { data, count } = res
+        this.materialList = data
+        this.materialCount = count
+        this.materialLoading = false
+      }).catch(err => {
+        this.$message.error(err.message)
+        this.materialLoading = false
+      })
+    },
+    handleMaterialChange ({ page, limit }) {
+      this.listQueryMaterial.page = page
+      this.listQueryMaterial.limit = limit
+      this._getMaterialList()
+    },
+    openMaterialDialog (val) { // 添加物料
+      let { manufacturerSerialNumber, materialCode } = val
+      if (this.currentSerialNumber !== manufacturerSerialNumber) {
+        this.listQueryMaterial.page = 1
+        this.listQueryMaterial.limit = 20
+        this.currentSerialNumber = manufacturerSerialNumber
+        this.currentSerialInfo = val
+      }
+      this._getMaterialList(manufacturerSerialNumber, materialCode)
+      this.selectedMaterialList = this.selectedMap[this.currentSerialNumber] || []
+      this.$refs.materialDialog.open()
+    }, 
+    deleteMaterialItem (scope) { // 删除物料
+      console.log('delete', scope)
+      // 执行删除操作时
+      // 删除表格数据
+      this.materialData.list.splice(scope.$index, 1)
+      this.selectedMap[this.currentSerialNumber].splice(scope.$index, 1)
+      if (!this.materialData.list.length) {
+        // deleteList
+        this.formData.quotationProducts.splice(this.materialIndex, 1)
+        delete this.selectedMap[this.currentSerialNumber]
+      }
+    },
+    onCountFocus (index) {
+      this.materialItemIndex = index // 当前点击的物料表格的第几项
+    },
+    onCountChange (val) {
+      let list = this.materialData.list
+      let data = list[this.materialItemIndex]
+      data.totalPrice = val * data.unitPrice || 0
+    },
+    _resetMaterialInfo () { // 重置物料相关的变量和数据
+      this.formData.quotationProducts = []
+      this.selectedMap = {}
+      this.selectedMaterialList = []
+      this.currentSerialNumber = ''
+      this.listQueryMaterial.page = 1
+      this.listQueryMaterial.limit = 20
+    },
+    selectMaterial () { // 选择弹窗物料
+      let selectedList = this.$refs.materialTable.getSelectionList()
+      if (!selectedList.length) {
+        return this.$message.warning('请先选择零件')
+      }
+      this._mergeSelectedList(selectedList)
+      this.closeMaterialDialog()
+      console.log(this.formData.quotationProducts, 'productList')
+    }, 
+    _normalizeSelectedList (selectedList) { // 格式化物料表格数据
+      return selectedList.map(selectItem => {
+        let item = {}
+        let { itemCode, itemName, onHand, quantity,  buyUnitMsr } = selectItem
+        item.unit = buyUnitMsr
+        item.materialDescription = itemName
+        item.materialCode = itemCode
+        item.remark = ''
+        item.unitPrice = 7
+        item.count = 1
+        item.onHand = onHand
+        item.maxCount = quantity
+        item.totalPrice = item.unitPrice * item.count
+        return item
+      })
+    },
+    _mergeSelectedList (selectedList) { // 整合所有的物料表格数据
+      let index = findIndex(this.formData.quotationProducts, item => {
+        return item.productCode === this.currentSerialNumber
+      })
+      let materialList = this._normalizeSelectedList(selectedList)
+      // 如果数组中已经存在了这个对象值 则需要将之前选择的跟现在选择的进行合并
+      if (index > -1) {
+        this.formData.quotationProducts[index].quotationMaterials.push(...materialList)
+        this.selectedMap[this.currentSerialNumber].push(...selectedList)
+      } else {
+        this.formData.quotationProducts.push({
+          ...this.currentSerialInfo,
+          productCode: this.currentSerialNumber,
+          quotationMaterials: materialList
+        })
+        this.selectedMap[this.currentSerialNumber] = []
+        this.selectedMap[this.currentSerialNumber].push(...selectedList)
+      }
+      this.materialIndex = index > -1 ? index : this.formData.quotationProducts.length - 1 // 设置当前物料表格对应quotationProducts第几项数据
+    },
+    closeMaterialDialog () { // 关闭弹窗
+      this.$refs.materialTable.clearSelection()
+      this.$refs.materialDialog.close()
+    },
+    resetInfo () { // 每次关闭弹窗
+      // 清空数据
+      this.formData = {
+        // id: '',  报价单号
+        salesOrderId: '', // 销售单号
+        serviceOrderSapId: '', // NSAP ID
+        serviceOrderId: '', 
+        createUser: '',
+        terminalCustomer: '', // 客户名称
+        terminalCustomerId: '', // 客户代码
+        shippingAddress: '', // 开票地址
+        collectionAddress: '', // 收款地址
+        salesMan: '', // 销售员
+        totalMoney: 0, // 总金额
+        quotationProducts: [] // 报价单产品表
+      } // 表单数据
+      this.$refs.form.resetFields()
+      this.$refs.form.clearValidate()
+      
+      this.serialNumberList = []
+      this.selectedMaterialList = [] // 已经选择了物料列表，再次弹窗时，不能再选
+      this.selectedMap = {} // 已经选择物料列表
+      this.listQueryMaterial = {
+        page: 1,
+        limit: 20
+      }
+      this.listQueryCustomer = { // 客户列表分页参数
+        page: 1,
+        limit: 20
+      }
+      // 序列号列表
+      this.currentSerialInfo = null
+      this.currentSerialNumber = '', // 当前选中的设备序列号
+      this.listQuerySearial = {
+        page: 1,
+        limit: 50,
+        serialNumber: '',
+        materialCode: ''
+      }
+      // 预览数据
+      this.isPreview = false
+    },
+    togglePreview () { // 预览
+      if (!this.formData.quotationProducts.length) {
+        return this.$message.warning('请先选择零件')
+      }
+      this.isPreview = !this.isPreview
+    },
+    onAreaFocus (prop) {
+      this.onCloseArea()
+      if (prop === 'shippingAddress') {
+        this.isShowShipping = true 
+      } else {
+        this.isShowCollect = true
+      }
+    },  
+    onCloseArea () { // 关闭地址选择器
+      this.isShowCollect = false
+      this.isShowShipping = false
+    },
+    onAreaChange (val) {
+      let { province, city, district, prop } = val
+      const countryList = ['北京市', '天津市', '上海市', '重庆市']
+      let result = ''
+      result = countryList.includes(province)
+        ? province + district
+        : city + district
+      console.log(prop, 'prop')
+      this.formData[prop] = result
+      this.onCloseArea()
+    },
+    async _checkFormData () {
+      let isFormValid = false
+      try {
+        isFormValid = await this.$refs.form.validate()
+        console.log(isFormValid, 'isFormValid')
+      } catch (err) {
+        console.log(isFormValid, 'isFormValid')
+      }
+      return isFormValid
+    },
+    async _operateOrder (isEdit, isDraft) { // 提交 存稿
+      // 判断表头表单
+      let isFormValid = await this._checkFormData()
+      console.log(isFormValid, 'isFormValid')
+      if (!isFormValid) {
+        return Promise.reject({ message: '请将表单必填项填写完成' })
+      }
+      // 判断物料列表
+      if (!this.formData.quotationProducts.length) {
+        return Promise.reject({ message: '零件物料不能为空' })
+      }
+      let materialList = []
+      this.formData.quotationProducts.forEach(item => {
+        materialList.push(...item.quotationMaterials)
+      })
+      let isMaterialValid = materialList.every(item => item.count)
+      if (!isMaterialValid) {
+        return Promise.reject({ message: '零件数量不能为空' })
+      }
+      return isEdit 
+        ? updateQuotationOrder({
+            ...this.formData,
+            isDraft,
+            totalMoney: this.totalMoney,
+            isProteced: true
+          })
+        : AddQuotationOrder({
+          ...this.formData,
+            isDraft,
+            createTime: this.createTime,
+            totalMoney: this.totalMoney,
+            createUser: this.formData.createUser || this.createUser,
+            isProteced: true
+          })
     }
-    
   },
   created () {
 
@@ -321,14 +841,107 @@ export default {
 <style lang='scss' scoped>
 .quotation-wrapper {
   position: relative;
-  > .title-wrapper {
+  ::v-deep .el-form-item--mini.el-form-item, .el-form-item--small.el-form-item {
+    margin-bottom: 5px;
+  }
+  /* 表头文案 */
+  > .title-wrapper { 
     position: absolute;
-    top: 0;
-    left: 0;
+    top: -48px;
+    left: 95px;
     height: 40px;
     line-height: 40px;
     > p {
-      min-width: 50px;
+      min-width: 55px;
+      margin-right: 10px;
+      &.id {
+        color: red;
+      }
+      &.bold {
+        font-weight: bold;
+      }
+      span {
+        font-weight: normal;
+      }
+    }
+  }
+  /* 表单表格内容 */
+  .scroll-bar {
+    &.el-scrollbar {
+       ::v-deep {
+        .el-scrollbar__wrap {
+          max-height: 600px; // 最大高度
+          overflow-x: hidden; // 隐藏横向滚动栏
+          margin-bottom: 0 !important;
+        }
+      }
+    }
+    .my-form-wrapper {
+      flex: 1;
+      .area-wrapper {
+        position: relative;
+        .selector-wrapper {
+          position: absolute;
+          left: 0;
+          top: 27px;
+          z-index: 10;
+        }
+      }
+    }
+    .record-wrapper {
+      border-top: 2px solid #eee;
+      .form-wrapper {}
+      .total-money {
+        overflow: hidden;
+        .money {
+          max-width: 200px;
+          margin-right: 5px;
+          margin-top: 15px;
+          font-size: 17px;
+          font-weight: bold;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+        }
+      }
+      .serial-table-wrapper {
+        height: 200px;
+      }
+    }
+    /* 物料表格 */
+    .material-wrapper {
+      .form-wrapper {
+        ::v-deep .el-input-number {
+          width: 100% !important;
+        }
+        .icon-item {
+          cursor: pointer;
+        }
+      }
+    }
+    /* 预览表格 */
+    .preview-wrapper {
+      margin-top: 10px;
+      .preview-list-wrapper {
+        .preview-item {
+          margin-bottom: 10px;
+          .serial-info-wrapper {
+            .input-item {
+              width: 150px;
+            }
+            .total-money {
+              flex: 1;
+              height: 28px;
+              line-height: 28px;
+              font-size: 16px;
+              font-weight: bold;
+              text-align: right;
+            }
+          }
+          .material-table-wrapper {
+            max-height: 100px;
+          }
+        }
+      }
     }
   }
 }

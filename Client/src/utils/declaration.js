@@ -1,2 +1,2 @@
-export function noop () {} // 空函数
+export function noop () { console.log('noop') } // 空函数
 

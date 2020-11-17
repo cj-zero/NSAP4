@@ -1,16 +1,43 @@
+export const quotationTableMixin = {
+  data () {
+    return {
+      textMap: Object.freeze({
+        create: '新建',
+        edit: '编辑',
+        approve: '审批'
+      })
+    }
+  },
+  updated () {
+    console.log('updated')
+  }
+}
 export const quotationOrderMixin = {
+  data () {
+    return {
+      invoiceCompany: [
+        { label: '新威尔', value: 1 },
+        { label: '新能源', value: 2 },
+        { label: '东莞新威', value: 3 }
+      ],
+      deliveryMethod: [
+        { label: '货到发款', value: 1 },
+        { label: '先票后款', value: 2 }
+      ],
+      createUser: this.$store.state.user.name
+    }
+  },
   computed: {
     formConfig () { // 头部表单配置
       return [
-        { label: '服务ID', prop: 'serviceOrderSapId', palceholder: '请选择', col: 6, readonly: true },
-        { label: '客户代码', prop: 'serviceOrderSapId', palceholder: '请选择', col: 6 },
-        { label: '客户名称', prop: 'serviceOrderSapId', palceholder: '请选择', col: 6 },
-        { label: '销售员', prop: 'serviceOrderSapId', palceholder: '请选择', col: 6, isEnd: true },
-        { label: '发货方式', prop: 'serviceOrderSapId', palceholder: '请选择', col: 6 },
-        { label: '开票单位', prop: 'serviceOrderSapId', palceholder: '请选择', col: 6, type: 'select', options: [], isEnd: true },
-        { label: '收款地址', prop: 'serviceOrderSapId', palceholder: '请选择', col: 18, isEnd: true },
-        { label: '收货地址', prop: 'serviceOrderSapId', palceholder: '请选择', col: 18, isEnd: true  },
-        { label: '备注', prop: 'serviceOrderSapId', palceholder: '请选择', col: 18 }
+        { label: '服务ID', prop: 'serviceOrderSapId', placeholder: '请选择', col: 6, readonly: true },
+        { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请选择', col: 6, disabled: true },
+        { label: '客户名称', prop: 'terminalCustomer', placeholder: '请选择', col: 12, disabled: true, isEnd: true },
+        { label: '开票地址', prop: 'shippingAddress', placeholder: '请选择', col: 18 },
+        { label: '开票单位', prop: 'invoiceCompany', placeholder: '请选择', col: 6, type: 'select', options: this.invoiceCompany, isEnd: true },
+        { label: '收货地址', prop: 'collectionAddress', placeholder: '请选择', col: 18 },
+        { label: '发货方式', prop: 'deliveryMethod', placeholder: '请选择', col: 6, type: 'select', options: this.deliveryMethod, isEnd: true },
+        { label: '备注', prop: 'remark', placeholder: '请填写', col: 18 }
       ]
     },
     formatFormConfig () {
@@ -28,20 +55,18 @@ export const quotationOrderMixin = {
       return result
     },
     materialConfig () {
-      let config = [ // 交通配置
-        { label: '物料编码', prop: 'trafficType', type: 'select', options: this.transportTypeList, width: 105 },
-        { label: '物料描述', prop: 'transport', type: 'select', options: this.transportationList, width: 135 },
-        { label: '数量', prop: 'from', type: 'input', width: 125, readonly: true },
-        { label: '单价', prop: 'to', type: 'input', width: 125, readonly: true },
-        { label: '总计', prop: 'mone', type: 'number', align: 'right', width: 120, placeholder: '大于0' },
-        { label: '当前库存量', prop: 'yremark', type: 'input', width: 100 },
-        { label: '仓库', prop: 'invoiceNumber', width: 155, placeholder: '7-11位字母数字' },
-        { label: '备注', prop: 'invoiceAttachment', width: 150 },
-      ]
-      return (this.ifFormEdit !== undefined && !this.ifFormEdit) || this.ifFormEdit === undefined // 不可编辑状态并且是报销单页面(不影响我的费用配置)
-        ? config 
-        : [...config, { type: 'operation', iconList: [{ icon: 'el-icon-delete', handleClick: this.deleteMaterialItem }], width: 130 }] // 交通配置        
-    },
+      return [
+        { label: '序号', type: 'order' },
+        { label: '物料编码', prop: 'materialCode' },
+        { label: '物料描述', prop: 'materialDescription' },
+        { label: '数量', prop: 'count', type: 'number' },
+        { label: '最大数量', prop: 'maxCount' },
+        { label: '单价', prop: 'unitPrice' },
+        { label: '总计', prop: 'totalPrice', disabled: true },
+        { label: '备注', prop: 'remark', type: 'input' },
+        { label: '操作', type: 'operation', iconList: [{ handleClick: this.deleteMaterialItem, icon: 'el-icon-delete' }] }
+      ]       
+    }
   }
 }
 

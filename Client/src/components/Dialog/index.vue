@@ -29,7 +29,7 @@
           v-if="btnItem.isShow === undefined ? true : btnItem.isShow"
           :key="btnItem.btnText"
           :type="btnItem.type || 'primary'"
-          @click="btnItem.handleClick(btnItem.options)"
+          @click="btnItem.handleClick(btnItem.options || {})"
           :size="btnItem.size || 'mini'"
           :loading="btnItem.loading === undefined ? false: btnItem.loading"
         >{{ btnItem.btnText }}</el-button>
