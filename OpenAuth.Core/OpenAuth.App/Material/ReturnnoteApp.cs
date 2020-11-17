@@ -71,32 +71,35 @@ namespace OpenAuth.App
             {
                 //根据快递单号查询快递公司编码
                 string comCode = AutoNum.query(req.TrackNumber);
-                string com = JsonConvert.DeserializeObject<dynamic>(comCode)[0].comCode;
-                QueryTrackParam trackReq = new QueryTrackParam
+                if (comCode != "[]")
                 {
-                    com = com,
-                    num = req.TrackNumber,
-                    resultv2 = "2"
-                };
-                string response = QueryTrack.queryTrackInfo(trackReq);
-                string message = JsonConvert.DeserializeObject<dynamic>(response).message;
-                if ("ok".Equals(message))
-                {
-                    var expressageInfo = await UnitWork.Find<Expressage>(w => w.ReturnNoteId == o.Id).FirstOrDefaultAsync();
-                    if (expressageInfo == null)
+                    string com = JsonConvert.DeserializeObject<dynamic>(comCode)[0].comCode;
+                    QueryTrackParam trackReq = new QueryTrackParam
                     {
-                        var express = new Expressage
+                        com = com,
+                        num = req.TrackNumber,
+                        resultv2 = "2"
+                    };
+                    string response = QueryTrack.queryTrackInfo(trackReq);
+                    string message = JsonConvert.DeserializeObject<dynamic>(response).message;
+                    if ("ok".Equals(message))
+                    {
+                        var expressageInfo = await UnitWork.Find<Expressage>(w => w.ReturnNoteId == o.Id).FirstOrDefaultAsync();
+                        if (expressageInfo == null)
                         {
-                            QuotationId = null,
-                            ReturnNoteId = o.Id,
-                            ExpressNumber = req.TrackNumber,
-                            ExpressInformation = response
-                        };
-                        await UnitWork.AddAsync(express);
-                    }
-                    else
-                    {
-                        await UnitWork.UpdateAsync<Expressage>(w => w.Id == expressageInfo.Id, u => new Expressage { ExpressInformation = response });
+                            var express = new Expressage
+                            {
+                                QuotationId = null,
+                                ReturnNoteId = o.Id,
+                                ExpressNumber = req.TrackNumber,
+                                ExpressInformation = response
+                            };
+                            await UnitWork.AddAsync(express);
+                        }
+                        else
+                        {
+                            await UnitWork.UpdateAsync<Expressage>(w => w.Id == expressageInfo.Id, u => new Expressage { ExpressInformation = response });
+                        }
                     }
                 }
             }
@@ -132,6 +135,8 @@ namespace OpenAuth.App
             }
             //仓库验货
             await SaveReceiveInfo(req.ReturnMaterials);
+            //验收通过
+            await UnitWork.UpdateAsync<ReturnNote>(r => r.FlowInstanceId == req.FlowInstanceId, u => new ReturnNote { Status = 2 });
             //流程通过
             _flowInstanceApp.Verification(new VerificationReq
             {
@@ -182,15 +187,16 @@ namespace OpenAuth.App
             }
             var result = new TableData();
             //获取退料列表
-            var returnNoteInfo = await UnitWork.Find<ReturnNote>(r => r.CreateUserId == userInfo.Id && r.ServiceOrderId == ServiceOrderId).ToListAsync();
             var query = from a in UnitWork.Find<ReturnNote>(null)
                         join b in UnitWork.Find<ReturnnoteMaterial>(null) on a.Id equals b.ReturnNoteId into ab
                         from b in ab.DefaultIfEmpty()
                         join c in UnitWork.Find<ReturnNoteMaterialPicture>(null) on b.Id equals c.ReturnnoteMaterialId into abc
                         from c in abc.DefaultIfEmpty()
+                        join d in UnitWork.Find<Expressage>(null) on a.Id equals d.ReturnNoteId into abcd
+                        from d in abcd.DefaultIfEmpty()
                         where a.ServiceOrderId == ServiceOrderId && a.CreateUserId == userInfo.Id
-                        select new { a, b, c };
-            var returnNoteList = (await query.Select(s => new { s.b.MaterialCode, s.b.Id, s.b.Count, s.b.TotalCount, s.c.PictureId, s.b.Check, returnNoteId = s.a.Id, s.b.WrongCount, s.b.ReceivingRemark, s.b.ShippingRemark }).ToListAsync()).GroupBy(g => g.returnNoteId).Select(s => new { ReturnNoteId = s.Key, Detail = s.ToList() }).ToList();
+                        select new { a, b, c, d };
+            var returnNoteList = (await query.Select(s => new { s.b.MaterialCode, s.b.Id, s.b.Count, s.b.TotalCount, s.c.PictureId, s.b.Check, returnNoteId = s.a.Id, s.b.WrongCount, s.b.ReceivingRemark, s.b.ShippingRemark, s.d.ExpressNumber, s.a.Status }).ToListAsync()).GroupBy(g => g.returnNoteId).Select(s => new { ReturnNoteId = s.Key, Detail = s.ToList() }).ToList();
             result.Data = returnNoteList;
             return result;
         }
@@ -212,32 +218,41 @@ namespace OpenAuth.App
             string tracknum = ExpressInfo.ExpressNumber;
             //根据快递单号查询快递公司编码
             string comCode = AutoNum.query(tracknum);
-            string com = JsonConvert.DeserializeObject<dynamic>(comCode)[0].comCode;
-            QueryTrackParam trackReq = new QueryTrackParam
+            if (comCode != "[]")
             {
-                com = com,
-                num = tracknum,
-                resultv2 = "2"
-            };
-            string response = QueryTrack.queryTrackInfo(trackReq);
-            string message = JsonConvert.DeserializeObject<dynamic>(response).message;
-            if ("ok".Equals(message))
-            {
-                result.Data = response;
-                var express = new Expressage
+                string com = JsonConvert.DeserializeObject<dynamic>(comCode)[0].comCode;
+                QueryTrackParam trackReq = new QueryTrackParam
                 {
-                    QuotationId = ExpressInfo.QuotationId,
-                    ReturnNoteId = ExpressInfo.ReturnNoteId,
-                    ExpressNumber = tracknum,
-                    ExpressInformation = response
+                    com = com,
+                    num = tracknum,
+                    resultv2 = "2"
                 };
-                await UnitWork.AddAsync(express);
-                await UnitWork.SaveAsync();
+                string response = QueryTrack.queryTrackInfo(trackReq);
+                string message = JsonConvert.DeserializeObject<dynamic>(response).message;
+                if ("ok".Equals(message))
+                {
+                    result.Data = response;
+                    var express = new Expressage
+                    {
+                        QuotationId = ExpressInfo.QuotationId,
+                        ReturnNoteId = ExpressInfo.ReturnNoteId,
+                        ExpressNumber = tracknum,
+                        ExpressInformation = response
+                    };
+                    await UnitWork.AddAsync(express);
+                    await UnitWork.SaveAsync();
+                }
+                else
+                {
+                    result.Code = 500;
+                    result.Message = message;
+                    return result;
+                }
             }
             else
             {
                 result.Code = 500;
-                result.Message = message;
+                result.Message = "暂无查询记录";
                 return result;
             }
             return result;

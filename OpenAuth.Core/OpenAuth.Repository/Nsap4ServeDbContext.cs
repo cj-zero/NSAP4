@@ -62,5 +62,9 @@ namespace OpenAuth.Repository
         /// 售后流程
         /// </summary>
         public virtual DbSet<ServiceFlow> Serviceflows { get; set; }
+
+        public virtual DbSet<Express> Expressages { get; set; }
+        public virtual DbSet<ExpressPicture> Expressagepictures { get; set; }
+        public virtual DbSet<ReturnRepair> Returnrepairs { get; set; }
     }
 }
