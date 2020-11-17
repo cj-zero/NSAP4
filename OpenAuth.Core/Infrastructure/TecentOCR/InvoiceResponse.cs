@@ -54,6 +54,11 @@ namespace Infrastructure.TecentOCR
         public string NotPassReason { get; set; }
 
         /// <summary>
+        /// 开票日期
+        /// </summary>
+        public string InvoiceDate { get; set; }
+
+        /// <summary>
         /// 扩展信息
         /// </summary>
         public ExtendInfo ExtendInfo { get; set; }
