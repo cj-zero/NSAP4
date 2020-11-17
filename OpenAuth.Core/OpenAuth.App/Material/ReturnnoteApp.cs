@@ -9,6 +9,7 @@ using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -99,9 +100,8 @@ namespace OpenAuth.App
                     }
                 }
             }
-
             //创建物料报价单审批流程
-            var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("待退料"));
+            var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("待退料单"));
             var afir = new AddFlowInstanceReq();
             afir.SchemeId = mf.FlowSchemeId;
             afir.FrmType = 2;
@@ -119,25 +119,45 @@ namespace OpenAuth.App
         }
 
         /// <summary>
-        /// 审批
+        /// 退料审批
         /// </summary>
-        /// <param name="FlowInstanceId"></param>
+        /// <param name="req"></param>
         /// <returns></returns>
-        public async Task Accraditation(string FlowInstanceId)
+        public async Task Accraditation(ReturnNoteAuditReq req)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            //仓库验货
+            await SaveReceiveInfo(req.ReturnMaterials);
+            //流程通过
             _flowInstanceApp.Verification(new VerificationReq
             {
                 NodeRejectStep = "",
                 NodeRejectType = "0",
-                FlowInstanceId = FlowInstanceId,
+                FlowInstanceId = req.FlowInstanceId,
                 VerificationFinally = "1",
                 VerificationOpinion = "同意",
             });
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
+        /// 仓库验货（保存）
+        /// </summary>
+        /// <param name="ReturnMaterials"></param>
+        /// <returns></returns>
+        public async Task SaveReceiveInfo(List<ReturnMaterial> ReturnMaterials)
+        {
+            if (ReturnMaterials != null && ReturnMaterials.Count > 0)
+            {
+                foreach (var item in ReturnMaterials)
+                {
+                    await UnitWork.UpdateAsync<ReturnnoteMaterial>(r => r.Id == item.Id, u => new ReturnnoteMaterial { Check = item.IsPass, WrongCount = item.WrongCount, ReceivingRemark = item.ReceiveRemark });
+                }
+            }
             await UnitWork.SaveAsync();
         }
 
@@ -170,7 +190,7 @@ namespace OpenAuth.App
                         from c in abc.DefaultIfEmpty()
                         where a.ServiceOrderId == ServiceOrderId && a.CreateUserId == userInfo.Id
                         select new { a, b, c };
-            var returnNoteList = (await query.Select(s => new { s.b.MaterialCode, s.b.Id, s.b.Count, s.b.TotalCount, s.c.PictureId, s.b.Check, returnNoteId = s.a.Id }).ToListAsync()).GroupBy(g => g.returnNoteId).Select(s => new { ReturnNoteId = s.Key, Detail = s.ToList() }).ToList();
+            var returnNoteList = (await query.Select(s => new { s.b.MaterialCode, s.b.Id, s.b.Count, s.b.TotalCount, s.c.PictureId, s.b.Check, returnNoteId = s.a.Id, s.b.WrongCount, s.b.ReceivingRemark, s.b.ShippingRemark }).ToListAsync()).GroupBy(g => g.returnNoteId).Select(s => new { ReturnNoteId = s.Key, Detail = s.ToList() }).ToList();
             result.Data = returnNoteList;
             return result;
         }

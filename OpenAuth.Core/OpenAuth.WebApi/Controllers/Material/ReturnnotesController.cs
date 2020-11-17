@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
@@ -82,6 +83,29 @@ namespace OpenAuth.WebApi.Controllers
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
             }
+            return result;
+        }
+
+        /// <summary>
+        /// 保存仓库验收记录
+        /// </summary>
+        /// <param name="ReturnMaterials"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> SaveReceiveInfo(List<ReturnMaterial> ReturnMaterials)
+        {
+            var result = new Response();
+            try
+            {
+                await _returnnoteApp.SaveReceiveInfo(ReturnMaterials);
+
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
             return result;
         }
 
