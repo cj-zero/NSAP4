@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Infrastructure;
 using Infrastructure.Excel;
+using Infrastructure.Export;
 using Infrastructure.Wrod;
 using Microsoft.AspNetCore.Mvc;
 using NetOffice.Extensions.Conversion;
@@ -59,44 +60,44 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         [HttpPost]
-        public async Task<Response<bool>> Generate()
+        public async Task<IActionResult> Generate()
         {
             var file = Request.Form.Files[0];
             var handler = new ExcelHandler(file.OpenReadStream());
             var baseInfo = handler.GetBaseInfo();
-            if (string.IsNullOrWhiteSpace(baseInfo.Operator))
-            {
-                return new Response<bool>()
-                {
-                    Code = 400,
-                    Message = "Operator can not be null.",
-                    Result = false
-                };
-            }
+            //if (string.IsNullOrWhiteSpace(baseInfo.Operator))
+            //{
+            //    return new Response<bool>()
+            //    {
+            //        Code = 400,
+            //        Message = "Operator can not be null.",
+            //        Result = false
+            //    };
+            //}
             var turV = handler.GetNwcaliTur("电压");
             var turA = handler.GetNwcaliTur("电流");
             try
             {
                 //用信号量代替锁
-                await semaphoreSlim.WaitAsync();
-                try
-                {
-                    baseInfo.CertificateNumber = await CertificateNoGenerate("O");
-                    await _certinfoApp.AddAsync(new AddOrUpdateCertinfoReq()
-                    {
-                        CertNo = baseInfo.CertificateNumber,
-                        AssetNo = baseInfo.AssetNo,
-                        Sn = baseInfo.TesterSn,
-                        Model = baseInfo.TesterModel,
-                        CalibrationDate = DateTime.Parse(baseInfo.Time),
-                        ExpirationDate = DateTime.Parse(ConvertTestInterval(baseInfo.Time, baseInfo.TestInterval)),
-                        Operator = baseInfo.Operator
-                    });
-                }
-                finally
-                {
-                    semaphoreSlim.Release();
-                }
+                //await semaphoreSlim.WaitAsync();
+                //try
+                //{
+                //    baseInfo.CertificateNumber = await CertificateNoGenerate("O");
+                //    await _certinfoApp.AddAsync(new AddOrUpdateCertinfoReq()
+                //    {
+                //        CertNo = baseInfo.CertificateNumber,
+                //        AssetNo = baseInfo.AssetNo,
+                //        Sn = baseInfo.TesterSn,
+                //        Model = baseInfo.TesterModel,
+                //        CalibrationDate = DateTime.Parse(baseInfo.Time),
+                //        ExpirationDate = DateTime.Parse(ConvertTestInterval(baseInfo.Time, baseInfo.TestInterval)),
+                //        Operator = baseInfo.Operator
+                //    });
+                //}
+                //finally
+                //{
+                //    semaphoreSlim.Release();
+                //}
                 handler.SetValue(baseInfo.CertificateNumber, 15, 1);
                 DirUtil.CheckOrCreateDir(Path.Combine(BaseCertDir, baseInfo.CertificateNumber));
                 var baseInfoTagetPath = Path.Combine(BaseCertDir, baseInfo.CertificateNumber, $"BaseInfo{baseInfo.CertificateNumber}.xls");
@@ -120,39 +121,44 @@ namespace OpenAuth.WebApi.Controllers
                     });
                 }
                 var modelList = await BuildWordModels(baseInfo, plcDataDic, plcRepetitiveMeasurementDataDic, turV, turA);
-                var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Calibration Certificate(word).docx");
-                var tagetPath = Path.Combine(BaseCertDir, baseInfo.CertificateNumber, $"Cert{baseInfo.CertificateNumber}.docx");
-                var result = WordHandler.DOCTemplateConvert(templatePath, tagetPath, modelList);
-                if (result)
-                {
-                    var flowInstanceId = await CreateFlow(baseInfo.CertificateNumber);
-                    var c = await _certinfoApp.GetAsync(s => s.CertNo.Equals(baseInfo.CertificateNumber));
-                    c.CertPath = tagetPath;
-                    c.BaseInfoPath = baseInfoTagetPath;
-                    c.FlowInstanceId = flowInstanceId;
-                    var obj = c.MapTo<AddOrUpdateCertinfoReq>();
-                    await _certinfoApp.UpdateAsync(obj);
-                }
-                else
-                {
-                    await _certinfoApp.DeleteAsync(s => s.CertNo.Equals(baseInfo.CertificateNumber));
-                    await _certPlcApp.DeleteAsync(s => s.CertNo.Equals(baseInfo.CertificateNumber));
-                }
-                return new Response<bool>()
-                {
-                    Result = true
-                };
-            }catch(Exception ex)
+                var datas = await ExportAllHandler.Exporterpdf(modelList, "Calibration Certificate.cshtml");
+
+                return File(datas, "application/pdf");
+                //var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Calibration Certificate(word).docx");
+                //var tagetPath = Path.Combine(BaseCertDir, baseInfo.CertificateNumber, $"Cert{baseInfo.CertificateNumber}.docx");
+                //var result = WordHandler.DOCTemplateConvert(templatePath, tagetPath, modelList);
+                //if (result)
+                //{
+                //var flowInstanceId = await CreateFlow(baseInfo.CertificateNumber);
+                //var c = await _certinfoApp.GetAsync(s => s.CertNo.Equals(baseInfo.CertificateNumber));
+                //c.CertPath = tagetPath;
+                //c.BaseInfoPath = baseInfoTagetPath;
+                //c.FlowInstanceId = flowInstanceId;
+                //var obj = c.MapTo<AddOrUpdateCertinfoReq>();
+                //await _certinfoApp.UpdateAsync(obj);
+                //}
+                //else
+                //{
+                //await _certinfoApp.DeleteAsync(s => s.CertNo.Equals(baseInfo.CertificateNumber));
+                //await _certPlcApp.DeleteAsync(s => s.CertNo.Equals(baseInfo.CertificateNumber));
+                //}
+                //return new Response<bool>()
+                //{
+                //    Result = true
+                //};
+            }
+            catch (Exception ex)
             {
-                await _certinfoApp.DeleteAsync(s => s.CertNo.Equals(baseInfo.CertificateNumber));
-                await _certPlcApp.DeleteAsync(s => s.CertNo.Equals(baseInfo.CertificateNumber));
+                //await _certinfoApp.DeleteAsync(s => s.CertNo.Equals(baseInfo.CertificateNumber));
+                //await _certPlcApp.DeleteAsync(s => s.CertNo.Equals(baseInfo.CertificateNumber));
                 //throw ex;
-                return new Response<bool>()
-                {
-                    Code = 500,
-                    Message = ex.Message,
-                    Result = false
-                };
+                //return new Response<bool>()
+                //{
+                //    Code = 500,
+                //    Message = ex.Message,
+                //    Result = false
+                //};
+                return BadRequest();
             }
         }
 
@@ -213,12 +219,13 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="turV">Tur电压数据</param>
         /// <param name="turA">Tur电流数据</param>
         /// <returns></returns>
-        private static async Task<List<WordModel>> BuildWordModels(NwcaliBaseInfo baseInfo, Dictionary<string, List<NwcaliPLCData>> plcData, Dictionary<string, List<NwcaliPLCRepetitiveMeasurementData>> plcRepetitiveMeasurementData, List<NwcaliTur> turV, List<NwcaliTur> turA)
+        private static async Task<CertModel> BuildWordModels(NwcaliBaseInfo baseInfo, Dictionary<string, List<NwcaliPLCData>> plcData, Dictionary<string, List<NwcaliPLCRepetitiveMeasurementData>> plcRepetitiveMeasurementData, List<NwcaliTur> turV, List<NwcaliTur> turA)
         {
             var list = new List<WordModel>();
             var model = new CertModel();
-            var barcode = await BarcodeGenerate(baseInfo.CertificateNumber);
             #region 页眉
+            baseInfo.CertificateNumber = "NWO20B17001";
+            var barcode = await BarcodeGenerate(baseInfo.CertificateNumber);
             model.BarCode = barcode;
             #endregion
             #region Calibration Certificate
@@ -287,9 +294,9 @@ namespace OpenAuth.WebApi.Controllers
             var tur_5 = (2 * cSpec) / (2 * u95_5 * 1000);
             var tur_6 = (2 * cSpec) / (2 * u95_6 * 1000);
 
-            model.TurTables.Add(new TurTable { Number = "4", Point = $"{vPoint[cPointIndex - 1]}V", Spec = $"±{cSpec}mV", U95Standard = u95_4.ToString("e3"), TUR = tur_4.ToString("f2") });
-            model.TurTables.Add(new TurTable { Number = "5", Point = $"{vPoint[cPointIndex]}V", Spec = $"±{cSpec}mV", U95Standard = u95_5.ToString("e3"), TUR = tur_5.ToString("f2") });
-            model.TurTables.Add(new TurTable { Number = "6", Point = $"{vPoint[cPointIndex + 1]}V", Spec = $"±{cSpec}mV", U95Standard = u95_6.ToString("e3"), TUR = tur_6.ToString("f2") });
+            model.TurTables.Add(new TurTable { Number = "4", Point = $"{cPoint[cPointIndex - 1]}V", Spec = $"±{cSpec}mV", U95Standard = u95_4.ToString("e3"), TUR = tur_4.ToString("f2") });
+            model.TurTables.Add(new TurTable { Number = "5", Point = $"{cPoint[cPointIndex]}V", Spec = $"±{cSpec}mV", U95Standard = u95_5.ToString("e3"), TUR = tur_5.ToString("f2") });
+            model.TurTables.Add(new TurTable { Number = "6", Point = $"{cPoint[cPointIndex + 1]}V", Spec = $"±{cSpec}mV", U95Standard = u95_6.ToString("e3"), TUR = tur_6.ToString("f2") });
 
             #endregion
 
@@ -761,14 +768,14 @@ namespace OpenAuth.WebApi.Controllers
             //list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 1, ValueData = signPath3 });
             //var signetPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "印章.png");
             //list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 3, ValueData = signetPath });
-            var signer = nameDic.GetValueOrDefault(baseInfo.Operator);
-            if(signer != null)
-            {
-                var signPath1 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", nameDic.GetValueOrDefault(baseInfo.Operator));
-                list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 1, ValueData = signPath1 });
-            }
+            //var signer = nameDic.GetValueOrDefault(baseInfo.Operator);
+            //if(signer != null)
+            //{
+            //    var signPath1 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", nameDic.GetValueOrDefault(baseInfo.Operator));
+            //    list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 1, ValueData = signPath1 });
+            //}
             #endregion
-            return list;
+            return model;
         }
 
         /// <summary>

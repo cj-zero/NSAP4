@@ -1,0 +1,1581 @@
+﻿@using System.Data
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calibration Certificate</title>
+    <style>
+               /*! normalize.css v8.0.1 | MIT License | github.com/necolas/normalize.css */
+
+               /* Document
+          ========================================================================== */
+
+               /**
+        * 1. Correct the line height in all browsers.
+        * 2. Prevent adjustments of font size after orientation changes in iOS.
+        */
+
+               html {
+                   line-height: 1.15;
+                   /* 1 */
+                   -webkit-text-size-adjust: 100%;
+                   /* 2 */
+               }
+
+               /* Sections
+          ========================================================================== */
+
+               /**
+        * Remove the margin in all browsers.
+        */
+
+               body {
+                   margin: 0;
+               }
+
+               /**
+        * Render the `main` element consistently in IE.
+        */
+
+               main {
+                   display: block;
+               }
+
+               /**
+        * Correct the font size and margin on `h1` elements within `section` and
+        * `article` contexts in Chrome, Firefox, and Safari.
+        */
+
+               h1 {
+                   font-size: 2em;
+                   margin: 0.67em 0;
+               }
+
+               /* Grouping content
+          ========================================================================== */
+
+               /**
+        * 1. Add the correct box sizing in Firefox.
+        * 2. Show the overflow in Edge and IE.
+        */
+
+               hr {
+                   box-sizing: content-box;
+                   /* 1 */
+                   height: 0;
+                   /* 1 */
+                   overflow: visible;
+                   /* 2 */
+               }
+
+               /**
+        * 1. Correct the inheritance and scaling of font size in all browsers.
+        * 2. Correct the odd `em` font sizing in all browsers.
+        */
+
+               pre {
+                   font-family: monospace, monospace;
+                   /* 1 */
+                   font-size: 1em;
+                   /* 2 */
+               }
+
+               /* Text-level semantics
+          ========================================================================== */
+
+               /**
+        * Remove the gray background on active links in IE 10.
+        */
+
+               a {
+                   background-color: transparent;
+               }
+
+               /**
+        * 1. Remove the bottom border in Chrome 57-
+        * 2. Add the correct text decoration in Chrome, Edge, IE, Opera, and Safari.
+        */
+
+               abbr[title] {
+                   border-bottom: none;
+                   /* 1 */
+                   text-decoration: underline;
+                   /* 2 */
+                   text-decoration: underline dotted;
+                   /* 2 */
+               }
+
+               /**
+        * Add the correct font weight in Chrome, Edge, and Safari.
+        */
+
+               b,
+               strong {
+                   font-weight: bolder;
+               }
+
+               /**
+        * 1. Correct the inheritance and scaling of font size in all browsers.
+        * 2. Correct the odd `em` font sizing in all browsers.
+        */
+
+               code,
+               kbd,
+               samp {
+                   font-family: monospace, monospace;
+                   /* 1 */
+                   font-size: 1em;
+                   /* 2 */
+               }
+
+               /**
+        * Add the correct font size in all browsers.
+        */
+
+               small {
+                   font-size: 80%;
+               }
+
+               /**
+        * Prevent `sub` and `sup` elements from affecting the line height in
+        * all browsers.
+        */
+
+               sub,
+               sup {
+                   font-size: 75%;
+                   line-height: 0;
+                   position: relative;
+                   vertical-align: baseline;
+               }
+
+               sub {
+                   bottom: -0.25em;
+               }
+
+               sup {
+                   top: -0.5em;
+               }
+
+               /* Embedded content
+          ========================================================================== */
+
+               /**
+        * Remove the border on images inside links in IE 10.
+        */
+
+               img {
+                   border-style: none;
+               }
+
+               /* Forms
+          ========================================================================== */
+
+               /**
+        * 1. Change the font styles in all browsers.
+        * 2. Remove the margin in Firefox and Safari.
+        */
+
+               button,
+               input,
+               optgroup,
+               select,
+               textarea {
+                   font-family: inherit;
+                   /* 1 */
+                   font-size: 100%;
+                   /* 1 */
+                   line-height: 1.15;
+                   /* 1 */
+                   margin: 0;
+                   /* 2 */
+               }
+
+               /**
+        * Show the overflow in IE.
+        * 1. Show the overflow in Edge.
+        */
+
+               button,
+               input {
+                   /* 1 */
+                   overflow: visible;
+               }
+
+               /**
+        * Remove the inheritance of text transform in Edge, Firefox, and IE.
+        * 1. Remove the inheritance of text transform in Firefox.
+        */
+
+               button,
+               select {
+                   /* 1 */
+                   text-transform: none;
+               }
+
+               /**
+        * Correct the inability to style clickable types in iOS and Safari.
+        */
+
+               button,
+               [type="button"],
+               [type="reset"],
+               [type="submit"] {
+                   -webkit-appearance: button;
+               }
+
+                   /**
+        * Remove the inner border and padding in Firefox.
+        */
+
+                   button::-moz-focus-inner,
+                   [type="button"]::-moz-focus-inner,
+                   [type="reset"]::-moz-focus-inner,
+                   [type="submit"]::-moz-focus-inner {
+                       border-style: none;
+                       padding: 0;
+                   }
+
+                   /**
+        * Restore the focus styles unset by the previous rule.
+        */
+
+                   button:-moz-focusring,
+                   [type="button"]:-moz-focusring,
+                   [type="reset"]:-moz-focusring,
+                   [type="submit"]:-moz-focusring {
+                       outline: 1px dotted ButtonText;
+                   }
+
+               /**
+        * Correct the padding in Firefox.
+        */
+
+               fieldset {
+                   padding: 0.35em 0.75em 0.625em;
+               }
+
+               /**
+        * 1. Correct the text wrapping in Edge and IE.
+        * 2. Correct the color inheritance from `fieldset` elements in IE.
+        * 3. Remove the padding so developers are not caught out when they zero out
+        *    `fieldset` elements in all browsers.
+        */
+
+               legend {
+                   box-sizing: border-box;
+                   /* 1 */
+                   color: inherit;
+                   /* 2 */
+                   display: table;
+                   /* 1 */
+                   max-width: 100%;
+                   /* 1 */
+                   padding: 0;
+                   /* 3 */
+                   white-space: normal;
+                   /* 1 */
+               }
+
+               /**
+        * Add the correct vertical alignment in Chrome, Firefox, and Opera.
+        */
+
+               progress {
+                   vertical-align: baseline;
+               }
+
+               /**
+        * Remove the default vertical scrollbar in IE 10+.
+        */
+
+               textarea {
+                   overflow: auto;
+               }
+
+               /**
+        * 1. Add the correct box sizing in IE 10.
+        * 2. Remove the padding in IE 10.
+        */
+
+               [type="checkbox"],
+               [type="radio"] {
+                   box-sizing: border-box;
+                   /* 1 */
+                   padding: 0;
+                   /* 2 */
+               }
+
+               /**
+        * Correct the cursor style of increment and decrement buttons in Chrome.
+        */
+
+               [type="number"]::-webkit-inner-spin-button,
+               [type="number"]::-webkit-outer-spin-button {
+                   height: auto;
+               }
+
+               /**
+        * 1. Correct the odd appearance in Chrome and Safari.
+        * 2. Correct the outline style in Safari.
+        */
+
+               [type="search"] {
+                   -webkit-appearance: textfield;
+                   /* 1 */
+                   outline-offset: -2px;
+                   /* 2 */
+               }
+
+                   /**
+        * Remove the inner padding in Chrome and Safari on macOS.
+        */
+
+                   [type="search"]::-webkit-search-decoration {
+                       -webkit-appearance: none;
+                   }
+
+               /**
+        * 1. Correct the inability to style clickable types in iOS and Safari.
+        * 2. Change font properties to `inherit` in Safari.
+        */
+
+               ::-webkit-file-upload-button {
+                   -webkit-appearance: button;
+                   /* 1 */
+                   font: inherit;
+                   /* 2 */
+               }
+
+               /* Interactive
+          ========================================================================== */
+
+               /*
+        * Add the correct display in Edge, IE 10+, and Firefox.
+        */
+
+               details {
+                   display: block;
+               }
+
+               /*
+        * Add the correct display in all browsers.
+        */
+
+               summary {
+                   display: list-item;
+               }
+
+               /* Misc
+          ========================================================================== */
+
+               /**
+        * Add the correct display in IE 10+.
+        */
+
+               template {
+                   display: none;
+               }
+
+               /**
+        * Add the correct display in IE 10.
+        */
+
+               [hidden] {
+                   display: none;
+               }
+    </style>
+    <style>
+        * {
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-size: 14px;
+            line-height: 1.5;
+            font-family: "Bahnschrift", "Consolas", sans-serif;
+            background-color: #fff;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        ol {
+            margin: 0;
+        }
+
+        .items-start {
+            -webkit-box-align: start;
+            -ms-flex-align: start;
+            align-items: flex-start;
+        }
+
+        .items-end {
+            -webkit-box-align: end;
+            -ms-flex-align: end;
+            align-items: flex-end;
+        }
+
+        .items-center {
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+        }
+
+        .items-baseline {
+            -webkit-box-align: baseline;
+            -ms-flex-align: baseline;
+            align-items: baseline;
+        }
+
+        .items-stretch {
+            -webkit-box-align: stretch;
+            -ms-flex-align: stretch;
+            align-items: stretch;
+        }
+
+        .block {
+            display: block;
+        }
+
+        .inline-block {
+            display: inline-block;
+        }
+
+        .inline {
+            display: inline;
+        }
+
+        .flex {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+        }
+
+        .inline-flex {
+            display: -webkit-inline-box;
+            display: -ms-inline-flexbox;
+            display: inline-flex;
+        }
+
+        .table {
+            display: table;
+        }
+
+        .table-caption {
+            display: table-caption;
+        }
+
+        .table-cell {
+            display: table-cell;
+        }
+
+        .table-column {
+            display: table-column;
+        }
+
+        .table-column-group {
+            display: table-column-group;
+        }
+
+        .table-footer-group {
+            display: table-footer-group;
+        }
+
+        .table-header-group {
+            display: table-header-group;
+        }
+
+        .font-consolas {
+            font-family: "consolas";
+        }
+
+        .text-xs {
+            font-size: 12px;
+        }
+
+        .text-sm {
+            font-size: 14px;
+        }
+
+        .text-base {
+            font-size: 16px;
+        }
+
+        .text-lg {
+            font-size: 18px;
+        }
+
+        .font-hairline {
+            font-weight: 100;
+        }
+
+        .font-thin {
+            font-weight: 200;
+        }
+
+        .font-light {
+            font-weight: 300;
+        }
+
+        .font-normal {
+            font-weight: 400;
+        }
+
+        .font-medium {
+            font-weight: 500;
+        }
+
+        .font-semibold {
+            font-weight: 600;
+        }
+
+        .font-bold {
+            font-weight: 700;
+        }
+
+        .font-extrabold {
+            font-weight: 800;
+        }
+
+        .font-black {
+            font-weight: 900;
+        }
+
+        .h-8 {
+            height: 40px;
+        }
+
+        .h-full {
+            height: 100%;
+        }
+
+        .leading-3 {
+            line-height: 0.75rem;
+        }
+
+        .leading-4 {
+            line-height: 1rem;
+        }
+
+        .leading-5 {
+            line-height: 1.25rem;
+        }
+
+        .leading-6 {
+            line-height: 1.5rem;
+        }
+
+        .leading-7 {
+            line-height: 1.75rem;
+        }
+
+        .leading-8 {
+            line-height: 2rem;
+        }
+
+        .leading-9 {
+            line-height: 2.25rem;
+        }
+
+        .leading-10 {
+            line-height: 2.5rem;
+        }
+
+        .leading-none {
+            line-height: 1;
+        }
+
+        .leading-tight {
+            line-height: 1.25;
+        }
+
+        .leading-snug {
+            line-height: 1.375;
+        }
+
+        .leading-normal {
+            line-height: 1.5;
+        }
+
+        .ml-4 {
+            margin-left: 20px;
+        }
+
+        .ml-8 {
+            margin-left: 40px;
+        }
+
+        .mt-4 {
+            margin-top: 20px;
+        }
+
+        .mt-8 {
+            margin-top: 40px;
+        }
+
+        .px-2 {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        .w-26 {
+            width: 130px;
+        }
+
+        .w-32 {
+            width: 160px;
+        }
+
+        .w-1\/2 {
+            width: 50%;
+        }
+
+        .w-1\/3 {
+            width: 33.333333%;
+        }
+
+        .w-2\/3 {
+            width: 66.666667%;
+        }
+
+        .w-1\/4 {
+            width: 25%;
+        }
+
+        .w-2\/4 {
+            width: 50%;
+        }
+
+        .w-3\/4 {
+            width: 75%;
+        }
+
+        .w-1\/5 {
+            width: 20%;
+        }
+
+        .w-2\/5 {
+            width: 40%;
+        }
+
+        .w-3\/5 {
+            width: 60%;
+        }
+
+        .w-4\/5 {
+            width: 80%;
+        }
+
+        .w-1\/6 {
+            width: 16.666667%;
+        }
+
+        .w-2\/6 {
+            width: 33.333333%;
+        }
+
+        .w-3\/6 {
+            width: 50%;
+        }
+
+        .w-4\/6 {
+            width: 66.666667%;
+        }
+
+        .w-5\/6 {
+            width: 83.333333%;
+        }
+
+        .w-1\/12 {
+            width: 8.333333%;
+        }
+
+        .w-2\/12 {
+            width: 16.666667%;
+        }
+
+        .w-3\/12 {
+            width: 25%;
+        }
+
+        .w-4\/12 {
+            width: 33.333333%;
+        }
+
+        .w-5\/12 {
+            width: 41.666667%;
+        }
+
+        .w-6\/12 {
+            width: 50%;
+        }
+
+        .w-7\/12 {
+            width: 58.333333%;
+        }
+
+        .w-8\/12 {
+            width: 66.666667%;
+        }
+
+        .w-9\/12 {
+            width: 75%;
+        }
+
+        .w-10\/12 {
+            width: 83.333333%;
+        }
+
+        .w-11\/12 {
+            width: 91.666667%;
+        }
+
+        .w-full {
+            width: 100%;
+        }
+
+        .text-left {
+            text-align: left !important;
+        }
+
+        .text-center {
+            text-align: center !important;
+        }
+
+        .text-right {
+            text-align: right !important;
+        }
+
+        .text-justify {
+            text-align: justify !important;
+        }
+
+        .whitespace-normal {
+            white-space: normal;
+        }
+
+        .whitespace-no-wrap {
+            white-space: nowrap;
+        }
+
+        .whitespace-pre {
+            white-space: pre;
+        }
+
+        .whitespace-pre-line {
+            white-space: pre-line;
+        }
+
+        .whitespace-pre-wrap {
+            white-space: pre-wrap;
+        }
+
+        #app {
+            width: 210mm;
+            margin: 20px auto;
+            padding: 0 40px;
+        }
+
+        .header {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            -webkit-box-pack: justify;
+            -ms-flex-pack: justify;
+            justify-content: space-between;
+            border-bottom: thin solid #000;
+        }
+
+            .header .header-left {
+                display: -webkit-box;
+                display: -ms-flexbox;
+                display: flex;
+                -webkit-box-orient: vertical;
+                -webkit-box-direction: normal;
+                -ms-flex-direction: column;
+                flex-direction: column;
+                font-size: 12px;
+            }
+
+                .header .header-left .logo {
+                    font-size: 30px;
+                    font-weight: bold;
+                    line-height: 1;
+                }
+
+            .header .header-code {
+                width: 106px;
+                height: 46px;
+                -o-object-fit: contain;
+                object-fit: contain;
+            }
+
+        .title {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            justify-content: center;
+            height: 70px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .table {
+            width: 100%;
+        }
+
+        .table--border-top {
+            border-top: thin solid #000 !important;
+        }
+
+        .table--border-bottom {
+            border-bottom: thin solid #000 !important;
+        }
+
+        .table thead {
+            border-bottom: thin solid #000;
+        }
+
+        .table tr td {
+            padding: 8px;
+        }
+
+        .table tr th {
+            padding: 8px;
+            text-align: left;
+        }
+
+        .autographs {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -ms-flex-wrap: wrap;
+            flex-wrap: wrap;
+            -webkit-box-pack: justify;
+            -ms-flex-pack: justify;
+            justify-content: space-between;
+            padding: 0 40px 40px;
+        }
+
+            .autographs .autograph {
+                position: relative;
+                width: 280px;
+                height: 80px;
+                border-bottom: thin solid #000;
+            }
+
+                .autographs .autograph::before {
+                    content: attr(data-name);
+                    position: absolute;
+                    top: 105%;
+                    right: 0;
+                    font-weight: bold;
+                }
+
+        .footer .footer-title {
+            border-bottom: thin solid #000;
+        }
+
+        .footer .footer-company {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .footer .copyright {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            -webkit-box-pack: justify;
+            -ms-flex-pack: justify;
+            justify-content: space-between;
+            line-height: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        /*# sourceMappingURL=app.css.map */
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <header class="header">
+            <div class="header-left">
+                <span class="logo">Newell</span>
+                <span>The truth builds trust.</span>
+            </div>
+            <img class="header-code" src=" data:image/png;base64,@Model.Data.BarCode" alt>
+        </header>
+        <header class="title">Calibration Certificate</header>
+        <table class="table table--border-top table--border-bottom">
+            <tbody>
+                <tr>
+                    <td>
+                        <div class="flex">
+                            <span class="font-semibold whitespace-no-wrap w-26">DUT Name:</span>
+                            <span>Battery Tester</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="flex">
+                            <span class="font-semibold whitespace-no-wrap w-32">Certificate No.:</span>
+                            <span></span>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="flex">
+                            <span class="font-semibold whitespace-no-wrap w-26">Manufacturer:</span>
+                            <span>NEWARE</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="flex">
+                            <span class="font-semibold whitespace-no-wrap w-32">Calibration Date:</span>
+                            <span></span>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="flex">
+                            <span class="font-semibold whitespace-no-wrap w-26">Model:</span>
+                            <span></span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="flex">
+                            <span class="font-semibold whitespace-no-wrap w-32">Calibration Due:</span>
+                            <span></span>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="flex">
+                            <span class="font-semibold whitespace-no-wrap w-26">Serial Number:</span>
+                            <span></span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="flex">
+                            <span class="font-semibold whitespace-no-wrap w-32">Data Type:</span>
+                            <span>As-Left</span>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="flex">
+                            <span class="font-semibold whitespace-no-wrap w-26">Asset No.:</span>
+                            <span></span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="flex">
+                            <span class="font-semibold whitespace-no-wrap w-32">Location:</span>
+                            <span></span>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="flex">
+                            <span class="font-semibold whitespace-no-wrap w-26">Temperature(℃):</span>
+                            <span></span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="flex">
+                            <span class="font-semibold whitespace-no-wrap w-32">Relative Humidity(RH):</span>
+                            <span></span>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <section>
+            <h1 class="font-extrabold text-base">I.Main Standards Used</h1>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Standard Name</th>
+                        <th>Characteristics</th>
+                        <th>Asset No.</th>
+                        <th>Certificate No.</th>
+                        <th>Due Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>0</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>1</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        <section>
+            <h1 class="font-extrabold text-base">II.Uncertainty Budget</h1>
+            <h2 class="text-xs">1. T.U.R. Table</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th class="text-right">#</th>
+                        <th class="text-right">Point</th>
+                        <th class="text-right">U<sub>95%</sub> Standard</th>
+                        <th class="text-right">T.U.R.</th>
+                        <th class="text-right">Spec</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="text-right">0</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">1</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">2</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">3</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">4</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="text-right">5</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+            <h2 class="text-xs mt-4">2. Uncertainty Budget Table*</h2>
+            <div class="inline-flex items-center h-8">
+                <span class="inline-block h-full flex items-center font-semibold text-base px-2">Voltage:</span>
+                <span class="inline-block h-full flex items-center font-semibold text-base px-2">2.25V</span>
+            </div>
+            <table class="table table--border-top">
+                <thead>
+                    <tr>
+                        <th>Uncertainty Contributors</th>
+                        <th class="text-right">Value</th>
+                        <th class="text-right">Sensitivity Coefficient</th>
+                        <th class="text-right">Unit</th>
+                        <th class="text-right">Type</th>
+                        <th class="text-right">Distribution</th>
+                        <th class="text-right">Coverage Factor</th>
+                        <th class="text-right">Std Uncertainty</th>
+                        <th class="text-right">Significance </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>0</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>1</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Tester Resolution</td>
+                        <td></td>
+                        <td class="text-right">1</td>
+                        <td>V</td>
+                        <td>B</td>
+                        <td>Rectangular</td>
+                        <td class="text-right">3.464</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr class="table--border-bottom">
+                        <td>Repeatability of Reading</td>
+                        <td></td>
+                        <td class="text-right">1</td>
+                        <td>V</td>
+                        <td>A</td>
+                        <td>Standard</td>
+                        <td class="text-right">1</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td colspan="3" class="font-semibold">Combined Uncertainty</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td colspan="2" class="font-semibold">Coverage Factor</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td colspan="3" class="font-semibold table--border-bottom">Expanded Uncertainty</td>
+                        <td class="table--border-bottom"></td>
+                        <td class="table--border-bottom"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="inline-flex items-center h-8 mt-4">
+                <span class="inline-block h-full flex items-center font-semibold text-base px-2">Current:</span>
+                <span class="inline-block h-full flex items-center font-semibold text-base px-2">4.5mA</span>
+            </div>
+            <table class="table table--border-top">
+                <thead>
+                    <tr>
+                        <th>Uncertainty Contributors</th>
+                        <th class="text-right">Value</th>
+                        <th class="text-right">Sensitivity Coefficient</th>
+                        <th class="text-right">Unit</th>
+                        <th class="text-right">Type</th>
+                        <th class="text-right">Distribution</th>
+                        <th class="text-right">Coverage Factor</th>
+                        <th class="text-right">Std Uncertainty</th>
+                        <th class="text-right">Significance </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>0</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>Ω</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Tester Resolution</td>
+                        <td></td>
+                        <td class="text-right">1</td>
+                        <td>A</td>
+                        <td>B</td>
+                        <td>Rectangular</td>
+                        <td class="text-right">3.464</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr class="table--border-bottom">
+                        <td>Repeatability of Reading</td>
+                        <td></td>
+                        <td class="text-right">1</td>
+                        <td>A</td>
+                        <td>A</td>
+                        <td>Standard</td>
+                        <td class="text-right">1</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td colspan="3" class="font-semibold">Combined Uncertainty</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td colspan="2" class="font-semibold">Coverage Factor</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td colspan="3" class="font-semibold table--border-bottom">Expanded Uncertainty</td>
+                        <td class="table--border-bottom"></td>
+                        <td class="table--border-bottom"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        <section>
+            <h1 class="font-extrabold text-base">IV.Data Sheet</h1>
+            <h2 class="text-xs">1. Charging Voltage</h2>
+            <table class="table table--border-bottom">
+                <thead>
+                    <tr>
+                        <th class="text-right">Channel</th>
+                        <th class="text-right">Range (V)</th>
+                        <th class="text-right">Indication (V)</th>
+                        <th class="text-right">Measured Value (V)</th>
+                        <th class="text-right">Error (mV)</th>
+                        <th class="text-right">Acceptance (mV)</th>
+                        <th class="text-right">Uncertainty (mV)</th>
+                        <th class="text-right">Conclusion</th>
+                    </tr>
+                </thead>
+                <tbody class="font-consolas">
+                    <tr>
+                        <td>1-1</td>
+                        <td class="text-right">5</td>
+                        <td class="text-right">0.5001</td>
+                        <td class="text-right">0.5002</td>
+                        <td class="text-right">-0.1</td>
+                        <td class="text-right">±2.5</td>
+                        <td class="text-right">0.3</td>
+                        <td class="text-center">P</td>
+                    </tr>
+                    <tr>
+                        <td>1-1</td>
+                        <td class="text-right">5</td>
+                        <td class="text-right">0.5002</td>
+                        <td class="text-right">0.5002</td>
+                        <td class="text-right">-0.1</td>
+                        <td class="text-right">±2.5</td>
+                        <td class="text-right">0.3</td>
+                        <td class="text-center">P</td>
+                    </tr>
+                    <tr>
+                        <td>1-1</td>
+                        <td class="text-right">5</td>
+                        <td class="text-right">0.5001</td>
+                        <td class="text-right">0.5002</td>
+                        <td class="text-right">-0.1</td>
+                        <td class="text-right">±2.5</td>
+                        <td class="text-right">0.3</td>
+                        <td class="text-center">P</td>
+                    </tr>
+                </tbody>
+            </table>
+            <h2 class="text-xs">2. Discharging Voltage</h2>
+            <table class="table table--border-bottom">
+                <thead>
+                    <tr>
+                        <th class="text-right">Channel</th>
+                        <th class="text-right">Range (V)</th>
+                        <th class="text-right">Indication (V)</th>
+                        <th class="text-right">Measured Value (V)</th>
+                        <th class="text-right">Error (mV)</th>
+                        <th class="text-right">Acceptance (mV)</th>
+                        <th class="text-right">Uncertainty (mV)</th>
+                        <th class="text-right">Conclusion</th>
+                    </tr>
+                </thead>
+                <tbody class="font-consolas">
+                    <tr>
+                        <td>1-1</td>
+                        <td class="text-right">5</td>
+                        <td class="text-right">0.5001</td>
+                        <td class="text-right">0.5002</td>
+                        <td class="text-right">-0.1</td>
+                        <td class="text-right">±2.5</td>
+                        <td class="text-right">0.3</td>
+                        <td class="text-center">P</td>
+                    </tr>
+                    <tr>
+                        <td>1-1</td>
+                        <td class="text-right">5</td>
+                        <td class="text-right">0.5001</td>
+                        <td class="text-right">0.5002</td>
+                        <td class="text-right">-0.1</td>
+                        <td class="text-right">±2.5</td>
+                        <td class="text-right">0.3</td>
+                        <td class="text-center">P</td>
+                    </tr>
+                    <tr>
+                        <td>1-1</td>
+                        <td class="text-right">5</td>
+                        <td class="text-right">0.5001</td>
+                        <td class="text-right">0.5002</td>
+                        <td class="text-right">-0.1</td>
+                        <td class="text-right">±2.5</td>
+                        <td class="text-right">0.3</td>
+                        <td class="text-center">P</td>
+                    </tr>
+                </tbody>
+            </table>
+            <h2 class="text-xs">3. Charging Current</h2>
+            <table class="table table--border-bottom">
+                <thead>
+                    <tr>
+                        <th class="text-right">Channel</th>
+                        <th class="text-right">Range (V)</th>
+                        <th class="text-right">Indication (V)</th>
+                        <th class="text-right">Measured Value (V)</th>
+                        <th class="text-right">Error (mV)</th>
+                        <th class="text-right">Acceptance (mV)</th>
+                        <th class="text-right">Uncertainty (mV)</th>
+                        <th class="text-right">Conclusion</th>
+                    </tr>
+                </thead>
+                <tbody class="font-consolas">
+                    <tr>
+                        <td>1-1</td>
+                        <td class="text-right">5</td>
+                        <td class="text-right">0.5001</td>
+                        <td class="text-right">0.5002</td>
+                        <td class="text-right">-0.1</td>
+                        <td class="text-right">±2.5</td>
+                        <td class="text-right">0.3</td>
+                        <td class="text-center">P</td>
+                    </tr>
+                    <tr>
+                        <td>1-1</td>
+                        <td class="text-right"></td>
+                        <td class="text-right"></td>
+                        <td class="text-right"></td>
+                        <td class="text-right"></td>
+                        <td class="text-right"></td>
+                        <td class="text-right"></td>
+                        <td class="text-center"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <h2 class="text-xs">4. Discharging Current</h2>
+            <table class="table table--border-bottom">
+                <thead>
+                    <tr>
+                        <th class="text-right">Channel</th>
+                        <th class="text-right">Range (V)</th>
+                        <th class="text-right">Indication (V)</th>
+                        <th class="text-right">Measured Value (V)</th>
+                        <th class="text-right">Error (mV)</th>
+                        <th class="text-right">Acceptance (mV)</th>
+                        <th class="text-right">Uncertainty (mV)</th>
+                        <th class="text-right">Conclusion</th>
+                    </tr>
+                </thead>
+                <tbody class="font-consolas">
+                    <tr>
+                        <td>1-1</td>
+                        <td class="text-right">5</td>
+                        <td class="text-right">0.5001</td>
+                        <td class="text-right">0.5002</td>
+                        <td class="text-right">-0.1</td>
+                        <td class="text-right">±2.5</td>
+                        <td class="text-right">0.3</td>
+                        <td class="text-center">P</td>
+                    </tr>
+                    <tr>
+                        <td>1-1</td>
+                        <td class="text-right"></td>
+                        <td class="text-right"></td>
+                        <td class="text-right"></td>
+                        <td class="text-right"></td>
+                        <td class="text-right"></td>
+                        <td class="text-right"></td>
+                        <td class="text-center"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        <section>
+            <h1 class="font-extrabold text-base">VI.Comments</h1>
+            <ol class="font-light leading-6">
+                <li>
+                    Measurement uncertainties are given in the pages above, where applicable. They are calculated in
+                    accordance with the method described in NIST TN 1297. All uncertainties are reported at a coverage
+                    factor of 2 (k=2) for an approximately 95% confidence unless specified.
+                </li>
+                <li>
+                    This calibration is traceable to the International System of Units (SI), through National
+                    Institute of Metrology (NIM) that is signatory to the CIPM Mutual Recognition Arrangement.
+                </li>
+                <li>
+                    The Data Type in this certificate could be interpreted as:
+                    <ol type='a'>
+                        <li>As Found. Calibration data collected before the unit is adjusted and/or repaired.</li>
+                        <li>As Left. Calibration data collected after the unit is adjusted and/or repaired.</li>
+                    </ol>
+                </li>
+                <li>
+                    The acceptance limit denotes the guard band imposed on specifications to ensure a probability of
+                    false accept (PFA) of 2% or less.
+                </li>
+                <li>
+                    Uncertainties are evaluated simultaneously when a calibration point is finished. Above data is
+                    presented for reference.
+                </li>
+                <li>
+                    Conclusion column indicates compliance or otherwise with specification taking into account the
+                    measurement uncertainty. Three conditions are indicated as follows:
+                    <ol type='a'>
+                        <li>
+                            P or PASS. The measurement result is inside the acceptance limit with a guard band
+                            strategy considered to ensure probability of false accept (PFA) of 2% or less.
+                        </li>
+                        <li>
+                            P* or PASS*. The measurement result is inside the specification limit but outside the above
+                            acceptance limit.
+                        </li>
+                        <li>F or Fail. The calibration point does not comply with the stated specification.</li>
+                    </ol>
+                </li>
+                <li>
+                    This certificate applies to only the item identified and shall not be reproduced other than in
+                    full, without the specific written approval by Newell Laboratories. Calibration certificates without
+                    signatures are not valid.
+                </li>
+            </ol>
+        </section>
+        <section class="autographs">
+            <div class="autograph" data-name="Calibration Technician"></div>
+            <div class="autograph" data-name="Technical Manager"></div>
+            <div class="autograph" data-name="Approval Director"></div>
+        </section>
+        <footer class="footer">
+            <div class="footer-title">
+                <span class="footer-company">Newell Laboratories</span>
+            </div>
+            <div class="copyright">
+                <span>15F, Tower 3, Excellence City, Futian, Shenzhen, China. 518049</span>
+                <span>www.newell.com.cn</span>
+            </div>
+            <div class="copyright">
+                <span>FRM-QC003-REV.01</span>
+                <span>support@newell.com.cn</span>
+            </div>
+        </footer>
+    </div>
+</body>
+
+</html>
