@@ -73,6 +73,12 @@ namespace OpenAuth.Repository.Domain
         public string CreateUserId { get; set; }
 
         /// <summary>
+        /// 是否最后一次退料
+        /// </summary>
+        [Description("是否最后一次退料")]
+        public int IsLast { get; set; }
+
+        /// <summary>
         /// 物流表
         /// </summary>
         public virtual List<Expressage> Expressages { get; set; }
