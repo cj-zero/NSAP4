@@ -343,19 +343,19 @@ namespace OpenAuth.App
                 s.SubmitUserId = loginContext.User.Id;
 
                 #region 问题类型是其他的子类型直接分配给售后主管
-                if (!string.IsNullOrEmpty(s.ProblemTypeId))
-                {
-                    if (ChildTypes.Count() > 0 && ChildTypes.Where(p => p.Id.Equals(s.ProblemTypeId)).ToList().Count() > 0)
-                    {
-                        if (AppUser != null)
-                        {
-                            s.CurrentUser = AppUser.User.Name;
-                            s.CurrentUserId = AppUser?.AppUserId;
-                            s.CurrentUserNsapId = obj.SupervisorId;
-                            s.Status = 2;
-                        }
-                    }
-                }
+                //if (!string.IsNullOrEmpty(s.ProblemTypeId))
+                //{
+                //    if (ChildTypes.Count() > 0 && ChildTypes.Where(p => p.Id.Equals(s.ProblemTypeId)).ToList().Count() > 0)
+                //    {
+                //        if (AppUser != null)
+                //        {
+                //            s.CurrentUser = AppUser.User.Name;
+                //            s.CurrentUserId = AppUser?.AppUserId;
+                //            s.CurrentUserNsapId = obj.SupervisorId;
+                //            s.Status = 2;
+                //        }
+                //    }
+                //}
                 #endregion
                 if (s.FromType == 2)
                 {
@@ -463,36 +463,38 @@ namespace OpenAuth.App
                 #region 如果问题类型是其他下面子类型,默认分配给技术主管
                 //获取"其他"问题类型及其子类
                 var theservice = await UnitWork.Find<ServiceOrder>(o => o.Id.Equals(obj.ServiceOrderId)).FirstOrDefaultAsync();
-                if (!string.IsNullOrEmpty(obj.ProblemTypeId))
-                {
-                    var otherProblemType = await UnitWork.Find<ProblemType>(o => o.Name.Equals("其他") && string.IsNullOrWhiteSpace(o.ParentId)).FirstOrDefaultAsync();
-                    var ChildTypes = new List<ProblemType>();
-                    if (otherProblemType != null && !string.IsNullOrEmpty(otherProblemType.Id))
-                    {
-                        ChildTypes = await UnitWork.Find<ProblemType>(null).Where(o1 => o1.ParentId.Equals(otherProblemType.Id)).ToListAsync();
-                    }
-                    var AppUser = await UnitWork.Find<AppUserMap>(s => s.UserID == theservice.SupervisorId).Include(s => s.User).FirstOrDefaultAsync();
-                    if (ChildTypes.Count() > 0 && ChildTypes.Where(p => p.Id.Equals(obj.ProblemTypeId)).ToList().Count() > 0)
-                    {
-                        if (AppUser != null)
-                        {
-                            obj.CurrentUser = theservice.Supervisor;
-                            obj.CurrentUserNsapId = theservice.SupervisorId;
-                            obj.CurrentUserId = AppUser.AppUserId;
-                            obj.Status = 2;
-                        }
-                    }
-                    if (obj.FromType == 2)
-                    {
-                        AppUser = await UnitWork.Find<AppUserMap>(s => s.UserID == loginContext.User.Id).Include(s => s.User).FirstOrDefaultAsync();
-                        obj.CurrentUser = loginContext.User.Name;
-                        obj.CurrentUserNsapId = loginContext.User.Id;
-                        obj.CurrentUserId = AppUser?.AppUserId;
-                        obj.Status = 7;
-                        obj.CompleteDate = DateTime.Now;
-                    }
-                }
+                //if (!string.IsNullOrEmpty(obj.ProblemTypeId))
+                //{
+                //    var otherProblemType = await UnitWork.Find<ProblemType>(o => o.Name.Equals("其他") && string.IsNullOrWhiteSpace(o.ParentId)).FirstOrDefaultAsync();
+                //    var ChildTypes = new List<ProblemType>();
+                //    if (otherProblemType != null && !string.IsNullOrEmpty(otherProblemType.Id))
+                //    {
+                //        ChildTypes = await UnitWork.Find<ProblemType>(null).Where(o1 => o1.ParentId.Equals(otherProblemType.Id)).ToListAsync();
+                //    }
+                //    var AppUser = await UnitWork.Find<AppUserMap>(s => s.UserID == theservice.SupervisorId).Include(s => s.User).FirstOrDefaultAsync();
+                //    if (ChildTypes.Count() > 0 && ChildTypes.Where(p => p.Id.Equals(obj.ProblemTypeId)).ToList().Count() > 0)
+                //    {
+                //        if (AppUser != null)
+                //        {
+                //            obj.CurrentUser = theservice.Supervisor;
+                //            obj.CurrentUserNsapId = theservice.SupervisorId;
+                //            obj.CurrentUserId = AppUser.AppUserId;
+                //            obj.Status = 2;
+                //        }
+                //    }
+                    
+                //}
                 #endregion
+
+                if (obj.FromType == 2)
+                {
+                    var AppUser = await UnitWork.Find<AppUserMap>(s => s.UserID == loginContext.User.Id).Include(s => s.User).FirstOrDefaultAsync();
+                    obj.CurrentUser = loginContext.User.Name;
+                    obj.CurrentUserNsapId = loginContext.User.Id;
+                    obj.CurrentUserId = AppUser?.AppUserId;
+                    obj.Status = 7;
+                    obj.CompleteDate = DateTime.Now;
+                }
                 await UnitWork.AddAsync<ServiceWorkOrder, int>(obj);
                 await UnitWork.SaveAsync();
 
@@ -730,19 +732,19 @@ namespace OpenAuth.App
                 s.SubmitDate = DateTime.Now;
                 s.SubmitUserId = loginContext.User.Id;
                 #region 问题类型是其他的子类型直接分配给售后主管
-                if (!string.IsNullOrEmpty(s.ProblemTypeId))
-                {
-                    if (ChildTypes.Count() > 0 && ChildTypes.Where(p => p.Id.Equals(s.ProblemTypeId)).ToList().Count() > 0)
-                    {
-                        if (AppUser != null)
-                        {
-                            s.CurrentUser = AppUser.User.Name;
-                            s.CurrentUserId = AppUser?.AppUserId;
-                            s.CurrentUserNsapId = obj.SupervisorId;
-                            s.Status = 2;
-                        }
-                    }
-                }
+                //if (!string.IsNullOrEmpty(s.ProblemTypeId))
+                //{
+                //    if (ChildTypes.Count() > 0 && ChildTypes.Where(p => p.Id.Equals(s.ProblemTypeId)).ToList().Count() > 0)
+                //    {
+                //        if (AppUser != null)
+                //        {
+                //            s.CurrentUser = AppUser.User.Name;
+                //            s.CurrentUserId = AppUser?.AppUserId;
+                //            s.CurrentUserNsapId = obj.SupervisorId;
+                //            s.Status = 2;
+                //        }
+                //    }
+                //}
                 if (s.FromType == 2)
                 {
                     s.CurrentUser = loginContext.User.Name;
