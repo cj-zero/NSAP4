@@ -48,52 +48,58 @@ namespace OpenAuth.App
             {
                 isAlreadyCheck = (int)expressageInfo.IsCheck;
             }
-            //判断物流单号不为空且未签收再进行物流查询
-            if (!string.IsNullOrEmpty(req.TrackNumber) && isAlreadyCheck == 0)
+            if (req.TrackNumbers != null && req.TrackNumbers.Count > 0)
             {
-                //根据快递单号查询快递公司编码
-                string comCode = AutoNum.query(req.TrackNumber);
-                if (comCode != "[]")
+                foreach (var item in req.TrackNumbers)
                 {
-                    string com = JsonConvert.DeserializeObject<dynamic>(comCode)[0].comCode;
-                    QueryTrackParam trackReq = new QueryTrackParam
+                    //判断物流单号不为空且未签收再进行物流查询
+                    if (isAlreadyCheck == 0)
                     {
-                        com = com,
-                        num = req.TrackNumber,
-                        resultv2 = "2"
-                    };
-                    string response = QueryTrack.queryTrackInfo(trackReq);
-                    var returndata = JsonConvert.DeserializeObject<dynamic>(response);
-                    string message = returndata.message;
-                    int isCheck = returndata.ischeck;
-                    var detail = returndata.data;
-                    if ("ok".Equals(message))
-                    {
-                        string checkTime = string.Empty;
-                        if (expressageInfo == null)
+                        //根据快递单号查询快递公司编码
+                        string comCode = AutoNum.query(item);
+                        if (comCode != "[]")
                         {
-                            if (isCheck == 1)
+                            string com = JsonConvert.DeserializeObject<dynamic>(comCode)[0].comCode;
+                            QueryTrackParam trackReq = new QueryTrackParam
                             {
-                                checkTime = detail[0]["time"].ToString();
-                            }
-                            var express = new Express
-                            {
-                                ReturnRepairId = o.Id,
-                                ExpressNumber = req.TrackNumber,
-                                ExpressInformation = response,
-                                Creater = userInfo.Name,
-                                CreateUserId = userInfo.Id,
-                                CreateTime = Convert.ToDateTime(detail[detail.Count - 1]["time"].ToString()),
-                                IsCheck = isCheck,
-                                Type = 1,
-                                Remark = req.Remark,
-                                CheckTime = Convert.ToDateTime(checkTime)
+                                com = com,
+                                num = item,
+                                resultv2 = "2"
                             };
-                            await UnitWork.AddAsync(express);
-                        }
-                        else
-                        {
-                            await UnitWork.UpdateAsync<Express>(w => w.Id == expressageInfo.Id, u => new Express { ExpressInformation = response });
+                            string response = QueryTrack.queryTrackInfo(trackReq);
+                            var returndata = JsonConvert.DeserializeObject<dynamic>(response);
+                            string message = returndata.message;
+                            int isCheck = returndata.ischeck;
+                            var detail = returndata.data;
+                            if ("ok".Equals(message))
+                            {
+                                string checkTime = string.Empty;
+                                if (expressageInfo == null)
+                                {
+                                    if (isCheck == 1)
+                                    {
+                                        checkTime = detail[0]["time"].ToString();
+                                    }
+                                    var express = new Express
+                                    {
+                                        ReturnRepairId = o.Id,
+                                        ExpressNumber = item,
+                                        ExpressInformation = response,
+                                        Creater = userInfo.Name,
+                                        CreateUserId = userInfo.Id,
+                                        CreateTime = Convert.ToDateTime(detail[detail.Count - 1]["time"].ToString()),
+                                        IsCheck = isCheck,
+                                        Type = 1,
+                                        Remark = req.Remark,
+                                        CheckTime = Convert.ToDateTime(checkTime)
+                                    };
+                                    await UnitWork.AddAsync(express);
+                                }
+                                else
+                                {
+                                    await UnitWork.UpdateAsync<Express>(w => w.Id == expressageInfo.Id, u => new Express { ExpressInformation = response });
+                                }
+                            }
                         }
                     }
                 }

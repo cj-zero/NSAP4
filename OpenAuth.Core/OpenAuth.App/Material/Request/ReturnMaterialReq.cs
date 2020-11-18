@@ -27,6 +27,11 @@ namespace OpenAuth.App.Material.Request
         public string TrackNumber { get; set; }
 
         /// <summary>
+        /// 是否最后一次退料
+        /// </summary>
+        public int IsLastReturn { get; set; }
+
+        /// <summary>
         /// 退料详情
         /// </summary>
         public List<ReturnMaterialDetail> ReturnMaterialDetail { get; set; }

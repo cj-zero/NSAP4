@@ -3100,14 +3100,16 @@ namespace OpenAuth.App
             //获取设备信息
             var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
             var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.TechnicianId)
-                .WhereIf(req.Type == 1, s => s.Status.Value < 7 && s.Status.Value > 1)
-                .WhereIf(req.Type == 2, s => s.Status.Value >= 7)
                 .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
             //获取完工报告集合
             var completeReportList = await UnitWork.Find<CompletionReport>(w => serviceOrderIds.Contains((int)w.ServiceOrderId)).Select(s => new { s.ServiceOrderId, s.IsReimburse, s.Id, s.ServiceMode, MaterialType = s.MaterialCode == "其他设备" ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) }).ToListAsync();
-            var query = UnitWork.Find<ServiceOrder>(s => serviceOrderIds.Contains(s.Id))
+            var query = UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
                 .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                 .Include(s => s.ServiceFlows)
+                .WhereIf(req.Type == 1, s => s.ServiceWorkOrders.All(a => a.OrderTakeType == 0))//待处理
+                .WhereIf(req.Type == 2, s => s.ServiceWorkOrders.Any(a => a.Status > 1 && a.Status < 7 && a.OrderTakeType != 0))//进行中
+                .WhereIf(req.Type == 3, s => s.ServiceWorkOrders.All(a => a.Status >= 7)) //已完成
+                 .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => s.U_SAP_ID == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key)))
                 .Select(s => new
                 {
                     s.Id,
@@ -3162,7 +3164,7 @@ namespace OpenAuth.App
                 NewestContacter = string.IsNullOrEmpty(s.NewestContacter) ? s.Contacter : s.NewestContacter,
                 NewestContactTel = string.IsNullOrEmpty(s.NewestContactTel) ? s.ContactTel : s.NewestContactTel,
                 s.Status,
-                CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
+                CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm"),
                 s.U_SAP_ID,
                 s.CustomerId,
                 s.CustomerName,
@@ -3181,8 +3183,8 @@ namespace OpenAuth.App
                     ServiceMode = o.ToList().Select(s => s.ServiceMode).Distinct().FirstOrDefault(),
                     flowInfo = s.ServiceFlows.Where(w => w.MaterialType.Equals(o.Key)).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToList()
                 }),
-                IsReimburse = req.Type == 2 ? completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1).FirstOrDefault() == null ? 0 : completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1).FirstOrDefault().IsReimburse : 0,
-                MaterialType = req.Type == 2 ? completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1).FirstOrDefault() == null ? string.Empty : completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1).FirstOrDefault().MaterialType : string.Empty
+                IsReimburse = req.Type == 3 ? completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1).FirstOrDefault() == null ? 0 : completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1).FirstOrDefault().IsReimburse : 0,
+                MaterialType = req.Type == 3 ? completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1).FirstOrDefault() == null ? string.Empty : completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1).FirstOrDefault().MaterialType : string.Empty
             }).ToList();
 
             var count = await query.CountAsync();

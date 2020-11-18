@@ -27,9 +27,9 @@ namespace OpenAuth.App.Serve.Request
         public int AppUserId { get; set; }
 
         /// <summary>
-        /// 物流单号
+        /// 物流单号集合
         /// </summary>
-        public string TrackNumber { get; set; }
+        public List<string> TrackNumbers { get; set; }
 
         /// <summary>
         /// 备注
