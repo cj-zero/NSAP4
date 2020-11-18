@@ -97,6 +97,11 @@ namespace OpenAuth.App.Request
         public bool IsDelete { get; set; }
 
         /// <summary>
+        /// 开票日期
+        /// </summary>
+        public DateTime? InvoiceTime { get; set; }
+
+        /// <summary>
         /// 附件表
         /// </summary>
         public virtual List<ReimburseAttachmentResp> ReimburseAttachments { get; set; }
