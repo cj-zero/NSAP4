@@ -77,6 +77,12 @@ namespace OpenAuth.Repository.Domain
         [Description("创建时间")]
         public DateTime CreateTime { get; set; }
 
+        /// <summary>
+        /// 开票日期
+        /// </summary>
+        [Description("开票日期")]
+        public DateTime? InvoiceTime { get; set; }
+
         public override void GenerateDefaultKeyVal()
         {
         }

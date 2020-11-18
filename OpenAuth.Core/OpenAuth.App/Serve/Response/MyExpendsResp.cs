@@ -78,6 +78,11 @@ namespace OpenAuth.App.Serve.Response
         public int? IsImport { get; set; }
 
         /// <summary>
+        /// 开票日期
+        /// </summary>
+        public DateTime? invoiceTime { get; set; }
+
+        /// <summary>
         /// 附件表
         /// </summary>
         public virtual List<ReimburseAttachmentResp> ReimburseAttachments { get; set; }

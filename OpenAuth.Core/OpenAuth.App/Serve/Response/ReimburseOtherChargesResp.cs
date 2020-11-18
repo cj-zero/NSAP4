@@ -52,6 +52,10 @@ namespace OpenAuth.App.Serve.Response
         /// 是否添加
         /// </summary>
         public bool? IsAdd { get; set; }
+        /// <summary>
+        /// 开票日期
+        /// </summary>
+        public DateTime? InvoiceTime { get; set; }
 
         /// <summary>
         /// 附件

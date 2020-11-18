@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -27,7 +29,6 @@ namespace OpenAuth.App
 {
     public class ReimburseInfoApp : OnlyUnitWorkBaeApp
     {
-        private RevelanceManagerApp _revelanceApp;
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
         private readonly FlowInstanceApp _flowInstanceApp;
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
@@ -645,7 +646,7 @@ namespace OpenAuth.App
                     List<ReimburseAttachment> filemodel = new List<ReimburseAttachment>();
                     if (req.ReimburseAttachments != null && req.ReimburseAttachments.Count > 0)
                     {
-                        filemodel = req.ReimburseAttachments.MapToList<ReimburseAttachment>();
+                        filemodel = req.ReimburseAttachments.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
                         filemodel.ForEach(f => { f.ReimburseId = obj.Id; f.ReimburseType = 0; f.Id = Guid.NewGuid().ToString(); });
                         if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
                     }
@@ -656,7 +657,7 @@ namespace OpenAuth.App
                         var racreq = req.ReimburseFares.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
                         if (racreq != null && racreq.Count > 0)
                         {
-                            filemodel = racreq.MapToList<ReimburseAttachment>();
+                            filemodel = racreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
                             filemodel.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 2; f.Id = Guid.NewGuid().ToString(); });
                             if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
                         }
@@ -668,7 +669,7 @@ namespace OpenAuth.App
                         var rasreq = req.ReimburseAccommodationSubsidies.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
                         if (rasreq != null && rasreq.Count > 0)
                         {
-                            filemodel = rasreq.MapToList<ReimburseAttachment>();
+                            filemodel = rasreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
                             filemodel.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 3; f.Id = Guid.NewGuid().ToString(); });
                             if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
                         }
@@ -681,7 +682,7 @@ namespace OpenAuth.App
                         var rocreq = req.ReimburseOtherCharges.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
                         if (rocreq != null && rocreq.Count > 0)
                         {
-                            filemodel = rocreq.MapToList<ReimburseAttachment>();
+                            filemodel = rocreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
                             filemodel.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 4; f.Id = Guid.NewGuid().ToString(); });
                             if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
                         }
@@ -878,7 +879,7 @@ namespace OpenAuth.App
                     List<ReimburseAttachment> filemodel = new List<ReimburseAttachment>();
                     if (req.ReimburseAttachments != null && req.ReimburseAttachments.Count > 0)
                     {
-                        filemodel = req.ReimburseAttachments.MapToList<ReimburseAttachment>();
+                        filemodel = req.ReimburseAttachments.Where(r=>r.IsAdd==true).MapToList<ReimburseAttachment>();
                         filemodel.ForEach(f => { f.ReimburseId = obj.Id; f.ReimburseType = 0; f.Id = Guid.NewGuid().ToString(); });
                         if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
                     }
@@ -889,7 +890,7 @@ namespace OpenAuth.App
                         var racreq = req.ReimburseFares.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
                         if (racreq != null && racreq.Count > 0)
                         {
-                            filemodel = racreq.MapToList<ReimburseAttachment>();
+                            filemodel = racreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
                             filemodel.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 2; f.Id = Guid.NewGuid().ToString(); });
                             if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
                         }
@@ -901,7 +902,7 @@ namespace OpenAuth.App
                         var rasreq = req.ReimburseAccommodationSubsidies.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
                         if (rasreq != null && rasreq.Count > 0)
                         {
-                            filemodel = rasreq.MapToList<ReimburseAttachment>();
+                            filemodel = rasreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
                             filemodel.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 3; f.Id = Guid.NewGuid().ToString(); });
                             if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
                         }
@@ -914,7 +915,7 @@ namespace OpenAuth.App
                         var rocreq = req.ReimburseOtherCharges.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
                         if (rocreq != null && rocreq.Count > 0)
                         {
-                            filemodel = rocreq.MapToList<ReimburseAttachment>();
+                            filemodel = rocreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
                             filemodel.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 4; f.Id = Guid.NewGuid().ToString(); });
                             if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
                         }
@@ -1217,56 +1218,111 @@ namespace OpenAuth.App
                         .FirstOrDefaultAsync();
 
             var user = await UnitWork.Find<User>(u => u.Id.Equals(Reimburse.CreateUserId)).FirstOrDefaultAsync();
-            var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == Reimburse.CreateUserId).Select(r => r.SecondId).ToListAsync();
-            var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == Reimburse.ServiceOrderId && c.CreateUserId.Equals(Reimburse.CreateUserId) && c.ServiceMode == 1).OrderByDescending(c => c.CreateTime).ToListAsync();
-            decimal Subsidy = 0;
-            if (Reimburse.ReimburseTravellingAllowances != null && Reimburse.ReimburseTravellingAllowances.Count > 0)
-            {
-                var rta = Reimburse.ReimburseTravellingAllowances.FirstOrDefault();
-                Subsidy = Convert.ToDecimal(rta.Money * rta.Days);
-            }
-            decimal PutUp = 0;
-            if (Reimburse.ReimburseAccommodationSubsidies != null && Reimburse.ReimburseAccommodationSubsidies.Count > 0)
-            {
-                Reimburse.ReimburseAccommodationSubsidies.ForEach(r => PutUp += Convert.ToDecimal(r.TotalMoney));
-            }
-            decimal Else = 0;
-            if (Reimburse.ReimburseOtherCharges != null && Reimburse.ReimburseOtherCharges.Count > 0)
-            {
-                Reimburse.ReimburseOtherCharges.ForEach(r => Else += Convert.ToDecimal(r.Money));
-            }
-            decimal? Aircraft = 0, Train = 0, Coach = 0, Transport = 0;
-            if (Reimburse.ReimburseFares != null && Reimburse.ReimburseFares.Count > 0)
-            {
-                Reimburse.ReimburseFares.Where(r => r.Transport == "1").ForEach(r => Aircraft += r.Money);
-                Reimburse.ReimburseFares.Where(r => r.Transport == "2").ForEach(r => Train += r.Money);
-                Reimburse.ReimburseFares.Where(r => r.Transport == "3").ForEach(r => Coach += r.Money);
-                Reimburse.ReimburseFares.Where(r => r.Transport == "4").ForEach(r => Transport += r.Money);
-            }
 
+            Reimburse.ReimburseFares.ForEach(r =>
+            {
+                switch (r.TrafficType)
+                {
+                    case "1":
+                        r.TrafficType = "飞机票";
+                        break;
+                    case "2":
+                        r.TrafficType = "火车票";
+                        break;
+                    case "3":
+                        r.TrafficType = "长途车船票";
+                        break;
+                    case "4":
+                        r.TrafficType = "市内交通";
+                        break;
+                }
+            });
+            Reimburse.ReimburseOtherCharges.ForEach(r =>
+            {
+                switch (r.ExpenseCategory)
+                {
+                    case "1":
+                        r.ExpenseCategory = "水电费";
+                        break;
+                    case "2":
+                        r.ExpenseCategory = "物业管理费";
+                        break;
+                    case "3":
+                        r.ExpenseCategory = "劳保费";
+                        break;
+                    case "4":
+                        r.ExpenseCategory = "劳务费";
+                        break;
+                    case "5":
+                        r.ExpenseCategory = "服务费";
+                        break;
+                    case "6":
+                        r.ExpenseCategory = @"清洁\保险费";
+                        break;
+                    case "7":
+                        r.ExpenseCategory = "福利费";
+                        break;
+                    case "8":
+                        r.ExpenseCategory = "保险费";
+                        break;
+                    case "9":
+                        r.ExpenseCategory = "办公费";
+                        break;
+                    case "10":
+                        r.ExpenseCategory = "维修费";
+                        break;
+                    case "11":
+                        r.ExpenseCategory = "业务招待费";
+                        break;
+                    case "12":
+                        r.ExpenseCategory = "物流运输费";
+                        break;
+                    case "13":
+                        r.ExpenseCategory = "快递费";
+                        break;
+                    case "14":
+                        r.ExpenseCategory = "咨询顾问费";
+                        break;
+                    case "15":
+                        r.ExpenseCategory = "宣传费";
+                        break;
+                    case "16":
+                        r.ExpenseCategory = "工具费";
+                        break;
+                    case "17":
+                        r.ExpenseCategory = "耗材费";
+                        break;
+                    case "18":
+                        r.ExpenseCategory = "其他";
+                        break;
+                }
+            });
+
+            var logopath= Path.Combine(Directory.GetCurrentDirectory(), "Templates", "logo.png");
+            //Image img = ;
+            var logostr = "";
+            using (var fs = new FileStream(logopath, FileMode.Open))
+            {
+                //img.Save(stream, ImageFormat.Png);
+                //BinaryReader br = new BinaryReader(stream);
+                var photo = new byte[fs.Length];
+                fs.Position = 0;
+                await fs.ReadAsync(photo, 0, photo.Length);
+                logostr=Convert.ToBase64String(photo);
+                Console.WriteLine(logostr);
+            }
             var PrintReimburse = new PrintReimburseResp
             {
-                StartTime = CompletionReports.Min(c => c.BusinessTripDate),
-                EndTime = CompletionReports.Max(c => c.EndDate),
-                Day = Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Days,
                 ReimburseId = Reimburse.MainId,
-                OrgName = orgname,
+                CompleteAddress = CompletionReports.FirstOrDefault()?.Becity +"-"+ CompletionReports.FirstOrDefault()?.Destination,
                 UserName = user.Name,
-                //Position = "",
-                TerminalCustomer = CompletionReports.FirstOrDefault()?.CustomerName,
+                TerminalCustomerId = CompletionReports.FirstOrDefault()?.TerminalCustomerId,
+                TerminalCustomer = CompletionReports.FirstOrDefault()?.TerminalCustomer,
                 FromTheme = CompletionReports.FirstOrDefault()?.FromTheme,
-                Subsidy = Subsidy,
-                Else = Else,
-                PutUp = PutUp,
-                Aircraft = Aircraft,
-                Train = Train,
-                Coach = Coach,
-                Transport = Transport,
-                Total = TransformCharOrNumber.SumConvert(null, Convert.ToDecimal(Reimburse.TotalMoney)),
+                logo= logostr,
+                Reimburse = Reimburse
             };
-            var result = new TableData();
-
             return await ExportAllHandler.Exporterpdf(PrintReimburse, "PrintReimburse.cshtml");
         }
 
@@ -1378,10 +1434,8 @@ namespace OpenAuth.App
 
             return req.MapTo<ReimburseInfo>();
         }
-        public ReimburseInfoApp(IUnitWork unitWork,
-            RevelanceManagerApp app, ModuleFlowSchemeApp moduleFlowSchemeApp, FlowInstanceApp flowInstanceApp, IAuth auth) : base(unitWork, auth)
+        public ReimburseInfoApp(IUnitWork unitWork,ModuleFlowSchemeApp moduleFlowSchemeApp, FlowInstanceApp flowInstanceApp, IAuth auth) : base(unitWork, auth)
         {
-            _revelanceApp = app;
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _flowInstanceApp = flowInstanceApp;
         }
