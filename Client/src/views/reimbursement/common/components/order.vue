@@ -634,7 +634,7 @@
             <el-table-column label="操作时间" prop="createTime" width="150px" show-overflow-tooltip></el-table-column>
             <el-table-column label="审批时长" prop="intervalTime" width="150px" show-overflow-tooltip>
               <template slot-scope="scope">
-                {{ scope.row.intervalTime | timeFormat }}
+                {{ scope.row.intervalTime | m2DHM }}
               </template>
             </el-table-column>
             <el-table-column label="审批结果" prop="approvalResult" width="150px" show-overflow-tooltip></el-table-column>
@@ -799,22 +799,6 @@ export default {
       default () {
         return []
       }
-    }
-  },
-  filters: {
-    timeFormat (val) {
-      if (typeof val === 'number') {
-        val = parseInt(val)
-        let days = Math.floor(val / (24 * 60)) || '' // 几天
-        let daysMin = days * 24 * 60 // 天数对应的分钟
-        let hours = Math.floor((val - daysMin) / 60) || '' // 减去天数对应的分钟后剩余的小时
-        let hoursMin = hours * 60
-        let mins = (val - daysMin - hoursMin)
-        return (days ? days + '天' : days) 
-          + (hours ? hours + '小时' : hours)
-          + (mins ? mins + '分钟' : (days || hours) ? '' : mins + '分钟') 
-      }
-      return ''
     }
   },
   data () {

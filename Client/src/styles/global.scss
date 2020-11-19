@@ -83,3 +83,10 @@
   background-color: #fff;
   opacity: 0;
 }
+
+/* 单行截取 */
+.text-overflow {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

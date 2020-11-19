@@ -1,264 +1,316 @@
 <template>
-  <div class="quotation-wrapper">
+  <div class="quotation-wrapper" :class="{ uneditable: ifNotEdit }">
     <el-row type="flex" class="title-wrapper">
       <p class="bold id">报价单号: <span>{{ formData.id || '' }}</span></p>
       <p class="bold">申请人: <span>{{ formData.createUser || createUser }}</span></p>
       <p>创建时间: <span>{{ formData.createTime || createTime }}</span></p>
       <p>销售员: <span>{{ formData.salesMan }}</span></p>
     </el-row>
+    <!-- 主题内容 -->
     <el-scrollbar class="scroll-bar">
       <!-- 表单 -->
       <el-form
-          :model="formData"
-          ref="form"
-          class="my-form-wrapper" 
-          label-width="80px"
-          size="mini"
-          label-position="right"
-          :show-message="false"
-        >
-          <!-- 普通控件 -->
-          <el-row 
-            type="flex" 
-            v-for="(config, index) in formatFormConfig"
-            :key="index">
-            <el-col 
-              :span="item.col"
-              v-for="item in config"
-              :key="item.prop"
-            >
-              <el-form-item
-                :prop="item.prop"
-                :rules="rules[item.prop] || { required: false }">
-                <span slot="label">
-                  <template v-if="item.prop === 'serviceOrderSapId'">
-                    <div class="link-container" style="display: inline-block">
-                      <span>{{ item.label }}</span>
-                      <img :src="rightImg" @click="openCustomerList" class="pointer">
-                    </div>
-                  </template>
-                  <template v-else>
+        :model="formData"
+        ref="form"
+        class="my-form-wrapper" 
+        label-width="80px"
+        size="mini"
+        :disabled="ifNotEdit"
+        label-position="right"
+        :show-message="false"
+      >
+        <!-- 普通控件 -->
+        <el-row 
+          type="flex" 
+          v-for="(config, index) in formatFormConfig"
+          :key="index">
+          <el-col 
+            :span="item.col"
+            v-for="item in config"
+            :key="item.prop"
+          >
+            <el-form-item
+              :prop="item.prop"
+              :rules="rules[item.prop] || { required: false }">
+              <span slot="label">
+                <template v-if="item.prop === 'serviceOrderSapId'">
+                  <div class="link-container" style="display: inline-block">
                     <span>{{ item.label }}</span>
-                  </template>
-                </span>
-                <template v-if="!item.type">
-                  <el-input 
+                    <img :src="rightImg" @click="openCustomerList" class="pointer">
+                  </div>
+                </template>
+                <template v-else>
+                  <span :class="{ 'total-money': item.label === '总金额'}">{{ item.label }}</span>
+                </template>
+              </span>
+              <template v-if="!item.type">
+                <el-input 
+                  v-model="formData[item.prop]" 
+                  :style="{ width: item.width + 'px' }"
+                  :maxlength="item.maxlength"
+                  :disabled="item.disabled"
+                  :readonly="item.readonly"
+                  @focus="onServiceIdFocus(item.prop)"
+                  >
+                  <i :class="item.icon" v-if="item.icon"></i>
+                </el-input>
+              </template>
+              <template v-else-if="item.type === 'select'">
+                <el-select 
+                  clearable
+                  :style="{ width: item.width }"
+                  v-model="formData[item.prop]" 
+                  :placeholder="item.placeholder"
+                  :disabled="item.disabled">
+                  <el-option
+                    v-for="(item,index) in item.options"
+                    :key="index"
+                    :label="item.label"
+                    :value="item.value"
+                  ></el-option>
+                </el-select>
+              </template>
+              <template v-else-if="item.type === 'money'">
+                <el-tooltip effect="dark" placement="top-start">
+                  <div slot="content">{{ totalMoney | toThousands }}</div>
+                  <p class="total-money text-overflow">{{ totalMoney | toThousands }}</p>
+                </el-tooltip>
+              </template>
+              <!-- <template v-else-if="item.type === 'address'">
+                <div class="area-wrapper">
+                    <el-input 
                     v-model="formData[item.prop]" 
                     :style="{ width: item.width + 'px' }"
                     :maxlength="item.maxlength"
                     :disabled="item.disabled"
                     :readonly="item.readonly"
-                    @focus="onServiceIdFocus(item.prop)"
+                    @focus="onAreaFocus(item.prop)"
                     >
-                    <i :class="item.icon" v-if="item.icon"></i>
                   </el-input>
-                </template>
-                <template v-else-if="item.type === 'select'">
-                  <el-select 
-                    clearable
-                    :style="{ width: item.width }"
-                    v-model="formData[item.prop]" 
-                    :placeholder="item.placeholder"
-                    :disabled="item.disabled">
-                    <el-option
-                      v-for="(item,index) in item.options"
-                      :key="index"
-                      :label="item.label"
-                      :value="item.value"
-                    ></el-option>
-                  </el-select>
-                </template>
-                <!-- <template v-else-if="item.type === 'address'">
-                  <div class="area-wrapper">
-                     <el-input 
-                      v-model="formData[item.prop]" 
-                      :style="{ width: item.width + 'px' }"
-                      :maxlength="item.maxlength"
-                      :disabled="item.disabled"
-                      :readonly="item.readonly"
-                      @focus="onAreaFocus(item.prop)"
-                      >
-                    </el-input>
-                    <template v-if="title !== 'view'">  
-                      <div class="selector-wrapper" 
-                        v-show="(isShowShipping && item.prop === 'shippingAddress' || isShowCollect && item.prop === 'collectionAddress')">
-                        <AreaSelector @close="onCloseArea" @change="onAreaChange" :options="{ prop: item.prop }"/>
-                      </div>
-                    </template>
-                  </div>
-                </template> -->
-              </el-form-item>
-            </el-col>
-          </el-row>
+                  <template v-if="title !== 'view'">  
+                    <div class="selector-wrapper" 
+                      v-show="(isShowShipping && item.prop === 'shippingAddress' || isShowCollect && item.prop === 'collectionAddress')">
+                      <AreaSelector @close="onCloseArea" @change="onAreaChange" :options="{ prop: item.prop }"/>
+                    </div>
+                  </template>
+                </div>
+              </template> -->
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
-      <template v-if="!isPreview">
-        <!-- 序列号查询表格 -->
-        <div class="record-wrapper">
-          <el-row type="flex" justify="space-between">
-            <div class="form-wrapper">
-              <el-form :model="listQuerySearial" size="mini">
-                <el-row type="flex">
-                  <el-col>
-                    <el-form-item>
-                      <el-input 
-                        style="width: 150px;"
-                        @keyup.enter.native="_getSerialNumberList" 
-                        v-model="listQuerySearial.serialNumber" 
-                        placeholder="制造商序列号"
-                        size="mini">
-                      </el-input>
-                    </el-form-item>
-                  </el-col>
-                  <el-col>
-                    <el-form-item>
-                      <el-input 
-                        style="width: 150px; margin-left: 10px;"
-                        @keyup.enter.native="_getSerialNumberList" 
-                        v-model="listQuerySearial.materialCode" 
-                        placeholder="物料编码"
-                        size="mini">
-                      </el-input>
-                    </el-form-item>
-                  </el-col>
-                </el-row>
-              </el-form>
+      <!-- 报价单模块 -->
+      <template v-if="isReceive">
+        <!-- 非预览 -->
+        <template v-if="!isPreview">
+          <!-- 序列号查询表格 -->
+          <div class="serial-wrapper">
+            <el-row type="flex" justify="space-between">
+              <div class="form-wrapper">
+                <el-form :model="listQuerySearial" size="mini" :disabled="ifNotEdit">
+                  <el-row type="flex">
+                    <el-col>
+                      <el-form-item>
+                        <el-input 
+                          style="width: 150px;"
+                          @keyup.enter.native="_getSerialNumberList" 
+                          v-model="listQuerySearial.serialNumber" 
+                          placeholder="制造商序列号"
+                          size="mini">
+                        </el-input>
+                      </el-form-item>
+                    </el-col>
+                    <el-col>
+                      <el-form-item>
+                        <el-input 
+                          style="width: 150px; margin-left: 10px;"
+                          @keyup.enter.native="_getSerialNumberList" 
+                          v-model="listQuerySearial.materialCode" 
+                          placeholder="物料编码"
+                          size="mini">
+                        </el-input>
+                      </el-form-item>
+                    </el-col>
+                  </el-row>
+                </el-form>
+              </div>
+            </el-row>
+            <div class="serial-table-wrapper">
+              <common-table 
+                @rowClick="onSerialRowClick"
+                ref="serialTable" 
+                maxHeight="200px"
+                :data="serialNumberList" 
+                :columns="serialColumns" 
+                :loading="serialLoading">
+                <template v-slot:btn="scope">
+                  <el-button 
+                    type="success"
+                    @click="openMaterialDialog(scope.row)"
+                    size="mini">领取</el-button>
+                </template>
+                <template v-slot:money="scope">
+                  {{ scope.row.manufacturerSerialNumber | calcSerialTotalMoney(formData.quotationProducts) }}
+                </template>
+              </common-table>
             </div>
-            <div class="total-money">
-              <el-tooltip effect="dark" placement="top-start">
-                <div slot="content">{{ totalMoney | toThousands }}</div>
-                <p class="money">总金额: {{ totalMoney | toThousands }}</p>
-              </el-tooltip>
-            </div>
-          </el-row>
-          <div class="serial-table-wrapper">
-            <common-table 
-              @rowClick="onSerialRowClick"
-              ref="serialTable" 
-              maxHeight="200px"
-              :data="serialNumberList" 
-              :columns="serialColumns" 
-              :loading="serialLoading">
-              <template v-slot="{ data }">
-                <el-button 
-                  type="success"
-                  @click="openMaterialDialog(data)"
-                  size="mini">领取</el-button>
-              </template>
-            </common-table>
           </div>
-        </div>
-        <!-- 物料表格 -->
-        <div class="material-wrapper">
-          <el-form 
-            ref="materialForm" 
-            :model="materialData" 
-            size="mini" 
-            :show-message="false"
-            class="form-wrapper"
-          >
-            <el-table 
-              border
-              :data="materialData.list"
-              highlight-current-row
-              max-height="200px"
+          <!-- 物料填写表格 -->
+          <div class="material-wrapper">
+            <el-form 
+              ref="materialForm" 
+              :model="materialData" 
+              size="mini" 
+              :show-message="false"
+              class="form-wrapper"
+              :disabled="ifNotEdit"
             >
-              <el-table-column
-                v-for="item in materialConfig"
-                :key="item.label"
-                :label="item.label"
-                :width="item.width"
-                :align="item.align || 'left'"
-                :prop="item.prop"
-                :fixed="item.fixed"
-                :resizable="false"
-                show-overflow-tooltip
+              <el-table 
+                class="material-table-wrapper"
+                border
+                :data="materialData.list"
+                highlight-current-row
+                max-height="200px"
               >
-                <template slot-scope="scope">
-                  <template v-if="item.type === 'order'">
-                    {{ scope.$index + 1 }}
-                  </template>
-                  <template v-if="item.type === 'input'">
-                    <el-form-item
-                      :prop="'list.' + scope.$index + '.'+ item.prop"
-                      :rules="materialRules[item.prop] || { required: false }"
-                    >
-                      <el-input v-model="scope.row[item.prop]" :disabled="item.disabled" :placeholder="item.placeholder"></el-input>
-                    </el-form-item>
-                  </template>
-                  <template v-else-if="item.type === 'number'">
-                    <el-form-item
-                      :prop="'list.' + scope.$index + '.'+ item.prop"
-                      :rules="materialRules[item.prop] || { required: false }"
-                    >
-                      <el-input-number
-                        style="width: 200px;"
-                        :controls="false"
-                        v-model="scope.row[item.prop]" 
-                        :disabled="item.disabled"
-                        :precision="0"
-                        :placeholder="`最大数量${scope.row['maxCount']}`"
-                        :max="+scope.row['maxCount']"
-                        :min="0"
-                        @focus="onCountFocus(scope.$index)"
-                        @change="onCountChange"
-                      ></el-input-number>
-                    </el-form-item>
-                  </template>
-                  <template v-else-if="item.type === 'operation'">
-                    <template v-for="iconItem in item.iconList">
-                      <i 
-                        :key="iconItem.icon"
-                        :class="iconItem.icon" 
-                        class="icon-item"
-                        @click="iconItem.handleClick(scope)">
-                      </i>
+                <el-table-column
+                  v-for="item in materialConfig"
+                  :key="item.label"
+                  :label="item.label"
+                  :width="item.width"
+                  :align="item.align || 'left'"
+                  :prop="item.prop"
+                  :fixed="item.fixed"
+                  :resizable="false"
+                  show-overflow-tooltip
+                >
+                  <template v-slot:header>
+                    <template v-if="item.prop === 'totalPrice'">
+                      <el-tooltip effect="dark" placement="top-end">
+                        <div slot="content">{{ materialData.list | calcTotalItem | toThousands}}</div>
+                        <p class="text-overflow">{{ item.label }} <span>{{ materialData.list | calcTotalItem | toThousands }}</span></p>
+                      </el-tooltip>
+                    </template>
+                    <template v-else>
+                      {{ item.label }}
                     </template>
                   </template>
-                  <template v-else>
-                    {{ scope.row[item.prop] }}
+                  <template slot-scope="scope">
+                    <template v-if="item.type === 'order'">
+                      {{ scope.$index + 1 }}
+                    </template>
+                    <template v-if="item.type === 'input'">
+                      <el-form-item
+                        :prop="'list.' + scope.$index + '.'+ item.prop"
+                        :rules="materialRules[item.prop] || { required: false }"
+                      >
+                        <el-input v-model="scope.row[item.prop]" :disabled="item.disabled" :placeholder="item.placeholder"></el-input>
+                      </el-form-item>
+                    </template>
+                    <template v-else-if="item.type === 'number'">
+                      <el-form-item
+                        :prop="'list.' + scope.$index + '.'+ item.prop"
+                        :rules="materialRules[item.prop] || { required: false }"
+                      >
+                        <el-input-number
+                          style="width: 200px;"
+                          :controls="false"
+                          v-model="scope.row[item.prop]" 
+                          :disabled="item.disabled"
+                          :precision="0"
+                          :placeholder="`最大数量${scope.row['maxCount']}`"
+                          :max="+scope.row['maxCount']"
+                          :min="0"
+                          @focus="onCountFocus(scope.$index)"
+                          @change="onCountChange"
+                        ></el-input-number>
+                      </el-form-item>
+                    </template>
+                    <template v-else-if="item.type === 'operation'">
+                      <template v-for="iconItem in item.iconList">
+                        <i 
+                          :key="iconItem.icon"
+                          :class="iconItem.icon" 
+                          class="icon-item"
+                          @click="iconItem.handleClick(scope)">
+                        </i>
+                      </template>
+                    </template>
+                    <template v-else>
+                      {{ scope.row[item.prop] }}
+                    </template>
                   </template>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-form>
-        </div>
+                </el-table-column>
+              </el-table>
+            </el-form>
+          </div>
+        </template>
+        <!-- 预览 -->
+        <template v-else>
+          <div class="preview-wrapper">
+            <ul class="preview-list-wrapper">
+              <li 
+                class="preview-item"
+                v-for="item in formData.quotationProducts"
+                :key="item.manufacturerSerialNumber"
+              >
+                <el-row type="flex" class="serial-info-wrapper">
+                  <el-form label-width="85px" inline size="mini" style="padding-top: 0;" disabled>
+                    <el-form-item label="制造商序列号">
+                      <el-input class="input-item" size="mini" v-model="item.productCode"></el-input>
+                    </el-form-item>
+                    <el-form-item label="物料编码" label-width="60px">
+                      <el-input class="input-item" size="mini" v-model="item.materialCode"></el-input>
+                    </el-form-item>
+                    <el-form-item label="物料描述" label-width="60px">
+                      <el-input class="input-item" size="mini" v-model="item.materialDescription"></el-input>
+                    </el-form-item>
+                    <el-form-item label="保修日期" label-width="60px">
+                      <el-input class="input-item" size="mini" v-model="item.warrantyExpirationTime"></el-input>
+                    </el-form-item>
+                  </el-form>
+                  <!-- <div class="total-money">总金额: {{ item.quotationMaterials | calcTotalItem | toThousands }}</div> -->
+                </el-row>
+                <div>
+                  <common-table 
+                    maxHeight="200px" 
+                    :data="item.quotationMaterials" 
+                    :columns="materialTableColumns">
+                    <template v-slot:totalPrice_header="scope">
+                      <el-tooltip effect="dark" placement="top-end">
+                        <div slot="content">{{ item.quotationMaterials | calcTotalItem | toThousands }}</div>
+                        <p class="text-overflow">{{ scope.row.label }} {{ item.quotationMaterials | calcTotalItem | toThousands }}</p>
+                      </el-tooltip>                      
+                    </template>
+                  </common-table>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </template>
       </template>
       <template v-else>
-        <div class="preview-wrapper">
-          <ul class="preview-list-wrapper">
-            <li 
-              class="preview-item"
-              v-for="item in formData.quotationProducts"
-              :key="item.manufacturerSerialNumber"
-            >
-              <el-row type="flex" class="serial-info-wrapper">
-                <el-form label-width="85px" inline size="mini" style="padding-top: 0;" disabled>
-                  <el-form-item label="制造商序列号">
-                    <el-input class="input-item" size="mini" v-model="item.productCode"></el-input>
-                  </el-form-item>
-                  <el-form-item label="物料编码" label-width="60px">
-                    <el-input class="input-item" size="mini" v-model="item.materialCode"></el-input>
-                  </el-form-item>
-                  <el-form-item label="物料描述" label-width="60px">
-                    <el-input class="input-item" size="mini" v-model="item.materialDescription"></el-input>
-                  </el-form-item>
-                  <el-form-item label="保修日期" label-width="60px">
-                    <el-input class="input-item" size="mini" v-model="item.warrantyExpirationTime"></el-input>
-                  </el-form-item>
-                </el-form>
-                <div class="total-money">总金额: {{ item.quotationMaterials | calcTotalItem | toThousands }}</div>
-              </el-row>
-              <div>
-                <common-table maxHeight="200px" :data="item.quotationMaterials" :columns="materialTableColumns"></common-table>
-              </div>
-            </li>
-          </ul>
+        <!-- 审批/销售订单出现 -->
+        <!-- 物料汇总表格 -->
+        <div class="material-summary-wrapper">
+          <common-table 
+            maxHeight="400px"
+            :data="materialSummaryList" 
+            :columns="materialAllColumns" 
+            :loading="materialAllLoading">
+          </common-table>
+        </div>
+      </template>
+      <!-- 操作记录 不可编辑时才出现 -->
+      <template v-if="ifNotEdit && formData.quotationOperationHistory && formData.quotationOperationHistory.length">
+        <div class="history-wrapper">
+          <common-table :data="formData.quotationOperationHistory" :columns="historyColumns" maxHeight="200px">
+            <template v-slot:intervalTime="scope">
+              {{ scope.row.intervalTime | m2DHM }}
+            </template>
+          </common-table>
         </div>
       </template>
     </el-scrollbar>
-    <!-- 物料添加 -->
-    <!-- 操作记录 -->
-    <!-- <common-table :data="recordData" :columns="recordColumns"></common-table> -->
     <!-- 客户弹窗 -->
     <my-dialog
       ref="customerDialog"
@@ -312,7 +364,9 @@ import {
   getSerialNumberList, 
   getMaterialList, 
   AddQuotationOrder,
-  updateQuotationOrder 
+  updateQuotationOrder,
+  getQuotationMaterialCode,
+  approveQuotationOrder
 } from '@/api/material/quotation'
 import CommonTable from '@/components/CommonTable' // 对于不可编辑的表格
 import MyDialog from '@/components/Dialog'
@@ -323,6 +377,7 @@ import { timeToFormat } from "@/utils";
 import { findIndex } from '@/utils/process'
 import { isNumber } from '@/utils/validate'
 import rightImg from '@/assets/table/right.png'
+const NOT_EDIT_STATUS_LIST = ['view', 'approve', 'pay'] // 不可编辑的状态 1.查看 2.审批 3.支付
 export default {
   mixins: [quotationOrderMixin],
   components: {
@@ -335,6 +390,17 @@ export default {
     calcTotalItem (val) { // 计算每一个物料表格的总金额
       return val.filter(item => isNumber(item.totalPrice))
         .reduce((prev, next) => prev + next.totalPrice, 0)
+    },
+    calcSerialTotalMoney (serialNumber, list) {
+      let index = findIndex(list, item => {
+        return item.productCode === serialNumber
+      })
+      if (index !== -1) {
+        return list[index].
+          quotationMaterials.filter(item => isNumber(item.totalPrice))
+          .reduce((prev, next) => prev + next.totalPrice, 0)
+      }
+      return 0
     }
   },
   props: {
@@ -346,17 +412,19 @@ export default {
       type: Object,
       default () { () => {} }
     },
-    title: {
+    status: { // 判断当前报价单所处于的状态 view create edit approve pay
       type: String
+    },
+    isReceive: { // 用来区别报价单模块 和 (销售订单模块/待处理物料模块)
+      type: Boolean
     }
   },
   watch: {
     customerList: {
       immediate: true,
-      deep: true,
       handler (val) {
         console.log(val, 'val')
-        if (this.title === 'create') { // 新建时才需要去获取客户信息列表
+        if (this.status === 'create') { // 新建时才需要去获取客户信息列表
           this._getServiceOrderList()
         }
       }
@@ -366,23 +434,34 @@ export default {
       handler (val) {
         console.log(val, 'newVal')
         if (val) {
-          if (this.title === 'create') {
-            this._resetMaterialInfo() // 清除所有的跟物料相关的数据
+          if (this.isReceive) {
+            if (this.status === 'create') {
+              this._resetMaterialInfo() // 新建的时候,清除所有的跟物料相关的数据
+            }
+            if (this.status !== 'view') {
+              this.listQuerySearial.page = 1
+              this.listQuerySearial.limit = 50
+              this._getSerialNumberList()
+            } else {
+              // 查看时直接预览
+              this.isPreview = true
+            }
+          } else {
+            // 审批/销售订单
+            // 获取服务单的所有报价零件
+            this._getQuotationMaterialCode()
           }
-          this.listQuerySearial.page = 1
-          this.listQuerySearial.limit = 50
-          this._getSerialNumberList()
         }
       }
     },
     detailInfo: {
       immediate: true,
       handler (val) {
-        if (this.title !== 'create') {
+        if (this.status !== 'create') {
           Object.assign(this.formData, val)
           this.currentSerialNumber = this.formData.quotationProducts[0].productCode
           // 构建selected Map
-          if (this.title === 'edit') {
+          if (this.status === 'edit') {
             for (let i = 0; i < this.formData.quotationProducts.length; i++) {
               let item = this.formData.quotationProducts[i]
               this.selectedMap[item.productCode] = []
@@ -415,6 +494,8 @@ export default {
         terminalCustomerId: '', // 客户代码
         shippingAddress: '', // 开票地址
         collectionAddress: '', // 收款地址
+        deliveryMethod: '', // 发货方式
+        invoiceCompany: '', // 开票方式
         salesMan: '', // 销售员
         totalMoney: 0, // 总金额
         quotationProducts: [] // 报价单产品表
@@ -430,8 +511,14 @@ export default {
         deliveryMethod: [{ required: true, trigger: ['change', 'blur'] }]
       }, // 上表单校验规则
       // 操作记录
-      recordColumns: [],
-      recordData: [],
+      historyColumns: [
+        { label: '操作记录', prop: 'action' },
+        { label: '操作人', prop: 'createUser' },
+        { label: '操作时间', prop: 'createTime' },
+        { label: '审批时长', prop: 'intervalTime', type: 'slot', slotName: 'intervalTime' },
+        { label: '审批结果', prop: 'approvalResult' },
+        { label: '备注', prop: 'remark' }
+      ],
       // 物料弹窗列表
       materialList: [],
       materialCount: 0,
@@ -454,7 +541,7 @@ export default {
         { label: '库存量', prop: 'onHand', width: 100 },
         { label: '仓库号', prop: 'whsCode', width: 100 }
       ],
-      // 物料表格列表
+      // 物料填写表格列表
       materialRules: {
         count: [{ required: true }]
       },
@@ -462,12 +549,25 @@ export default {
         { label: '序号', type: 'order' },
         { label: '物料编码', prop: 'materialCode' },
         { label: '物料描述', prop: 'materialDescription' },
-        { label: '数量', prop: 'count' },
-        { label: '最大数量', prop: 'maxCount' },
-        { label: '单价', prop: 'unitPrice' },
-        { label: '总计', prop: 'totalPrice' },
+        { label: '数量', prop: 'count', align: 'right' },
+        { label: '最大数量', prop: 'maxCount', align: 'right' },
+        { label: '单价', prop: 'unitPrice', align: 'right' },
+        { label: '总计', prop: 'totalPrice', align: 'right', isCustomizeHeader: true },
         { label: '备注', prop: 'remark', type: 'input' }
       ],
+      // 物料汇总表格
+      materialSummaryList: [],
+      materialAllColumns: [
+        { label: '序号', type: 'order' },
+        { label: '物料编码', prop: 'materialCode' },
+        { label: '物料描述', prop: 'materialDescription' },
+        { label: '数量', prop: 'count', align: 'right' },
+        { label: '最大数量', prop: 'maxCount', align: 'right' },
+        { label: '单价', prop: 'unitPrice', align: 'right' },
+        { label: '总计', prop: 'totalPrice', align: 'right' },
+        { label: '备注', prop: 'remark' },
+      ],
+      materialAllLoading: false,
       // 客户列表
       customerData: [],
       customerTotal: 0,
@@ -496,8 +596,8 @@ export default {
         { label: '物料编码', prop: 'materialCode' },
         { label: '物料描述', prop: 'materialDescription' },
         { label: '保修到期', prop: 'warrantyExpirationTime' },
-        { label: '金额', prop: 'money' },
-        { label: '领取物料', type: 'slot' }
+        { label: '金额', type: 'slot', slotName: 'money', align: 'right' },
+        { label: '领取物料', type: 'slot', slotName: 'btn' }
         // { label: '领取物料',  width: 100, type: 'operation',
         //   actions: [{ btnText: '领取', handleClick: this.openMaterialDialog }] 
         // }
@@ -512,10 +612,15 @@ export default {
       isPreview: false, // 是否预览
       // 地址选择器
       isShowCollect: false,
-      isShowShipping: false
+      isShowShipping: false,
+      // 驳回理由
+      remark: '',
     }
   },
   computed: {
+    ifNotEdit () {
+      return NOT_EDIT_STATUS_LIST.includes(this.status)
+    },
     totalMoney () {
       if (this.formData.quotationProducts.length) {
         let val = this.formData.quotationProducts
@@ -545,7 +650,7 @@ export default {
       this.currentSerialInfo = val
     },
     onServiceIdFocus (prop) {
-      if (prop === 'serviceOrderSapId') {
+      if (prop === 'serviceOrderSapId' && this.status === 'create') {
         this.$refs.customerDialog.open()
       }
     },
@@ -648,6 +753,22 @@ export default {
         delete this.selectedMap[this.currentSerialNumber]
       }
     },
+    _getQuotationMaterialCode () { // 获取服务单下的所有零件
+      this.materialAllLoading = true
+      getQuotationMaterialCode({
+        serviceOrderId: this.formData.serviceOrderId
+      }).then(res => {
+        let { data } = res
+        this.materialSummaryList = data.reduce((prev, next) => {
+          return prev.concat(next.materialDetailList)
+        }, [])
+        console.log(data, 'data')
+        this.materialAllLoading = true
+      }).catch(err => {
+        this.materialAllLoading = false
+        this.$message.error(err.message)
+      })
+    },
     onCountFocus (index) {
       this.materialItemIndex = index // 当前点击的物料表格的第几项
     },
@@ -725,13 +846,15 @@ export default {
         terminalCustomerId: '', // 客户代码
         shippingAddress: '', // 开票地址
         collectionAddress: '', // 收款地址
+        deliveryMethod: '', //发货方式
+        invoiceCompany: '', // 开票单位
         salesMan: '', // 销售员
         totalMoney: 0, // 总金额
         quotationProducts: [] // 报价单产品表
       } // 表单数据
+      this.$refs.form.clearValidate()
       this.$refs.form.resetFields()
       this.$refs.form.clearValidate()
-      
       this.serialNumberList = []
       this.selectedMaterialList = [] // 已经选择了物料列表，再次弹窗时，不能再选
       this.selectedMap = {} // 已经选择物料列表
@@ -773,7 +896,7 @@ export default {
       this.isShowCollect = false
       this.isShowShipping = false
     },
-    onAreaChange (val) {
+    onAreaChange (val) { // 选择地址完毕
       let { province, city, district, prop } = val
       const countryList = ['北京市', '天津市', '上海市', '重庆市']
       let result = ''
@@ -828,6 +951,17 @@ export default {
             createUser: this.formData.createUser || this.createUser,
             isProteced: true
           })
+    },
+    async _approve (isReject) { // 审核
+      let isFormValid = await this._checkFormData()
+      if (!isFormValid) {
+        return Promise.reject({ message: '请将表单必填项填写完成' })
+      }
+      return approveQuotationOrder({
+        id: this.formData.serviceOrderId,
+        isReject,
+        remark: this.remark
+      })
     }
   },
   created () {
@@ -843,6 +977,20 @@ export default {
   position: relative;
   ::v-deep .el-form-item--mini.el-form-item, .el-form-item--small.el-form-item {
     margin-bottom: 5px;
+  }
+  &.uneditable {
+    ::v-deep .el-input.is-disabled .el-input__inner {
+      background-color: #fff;
+      cursor: default;
+      color: #606266;
+      border-color: #DCDFE6;
+    }
+    ::v-deep .el-textarea.is-disabled .el-textarea__inner {
+      background-color: #fff;
+      cursor: default;
+      color: #606266;
+      border-color: #DCDFE6;
+    }
   }
   /* 表头文案 */
   > .title-wrapper { 
@@ -887,21 +1035,17 @@ export default {
           z-index: 10;
         }
       }
-    }
-    .record-wrapper {
-      border-top: 2px solid #eee;
-      .form-wrapper {}
+      /* 总金额 */
       .total-money {
-        overflow: hidden;
-        .money {
-          max-width: 200px;
-          margin-right: 5px;
-          margin-top: 15px;
-          font-size: 17px;
-          font-weight: bold;
-          white-space: nowrap;
-          text-overflow: ellipsis;
-        }
+        font-size: 17px;
+        font-weight: bold;
+      }
+    }
+    /* 序列号查询表格 */
+    .serial-wrapper {
+      border-top: 2px solid #eee;
+      .form-wrapper {
+        
       }
       .serial-table-wrapper {
         height: 200px;
@@ -912,6 +1056,10 @@ export default {
       .form-wrapper {
         ::v-deep .el-input-number {
           width: 100% !important;
+        }
+        .material-table-wrapper {
+          overflow: hidden;
+          white-space: nowrap;
         }
         .icon-item {
           cursor: pointer;
@@ -942,6 +1090,14 @@ export default {
           }
         }
       }
+    }
+    /* 物料汇总表格 */
+    .material-summary-wrapper {
+      margin-top: 10px;
+    }
+    /* 操作记录表格 */
+    .history-wrapper {
+      margin-top: 10px;
     }
   }
 }

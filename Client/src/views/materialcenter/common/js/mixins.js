@@ -37,7 +37,8 @@ export const quotationOrderMixin = {
         { label: '开票单位', prop: 'invoiceCompany', placeholder: '请选择', col: 6, type: 'select', options: this.invoiceCompany, isEnd: true },
         { label: '收货地址', prop: 'collectionAddress', placeholder: '请选择', col: 18 },
         { label: '发货方式', prop: 'deliveryMethod', placeholder: '请选择', col: 6, type: 'select', options: this.deliveryMethod, isEnd: true },
-        { label: '备注', prop: 'remark', placeholder: '请填写', col: 18 }
+        { label: '备注', prop: 'remark', placeholder: '请填写', col: 18 },
+        { label: '总金额', type: 'money', col: 6 }
       ]
     },
     formatFormConfig () {
@@ -59,10 +60,10 @@ export const quotationOrderMixin = {
         { label: '序号', type: 'order' },
         { label: '物料编码', prop: 'materialCode' },
         { label: '物料描述', prop: 'materialDescription' },
-        { label: '数量', prop: 'count', type: 'number' },
-        { label: '最大数量', prop: 'maxCount' },
-        { label: '单价', prop: 'unitPrice' },
-        { label: '总计', prop: 'totalPrice', disabled: true },
+        { label: '数量', prop: 'count', type: 'number', align: 'right' },
+        { label: '最大数量', prop: 'maxCount', align: 'right' },
+        { label: '单价', prop: 'unitPrice', align: 'right' },
+        { label: '总计', prop: 'totalPrice', disabled: true, align: 'right' },
         { label: '备注', prop: 'remark', type: 'input' },
         { label: '操作', type: 'operation', iconList: [{ handleClick: this.deleteMaterialItem, icon: 'el-icon-delete' }] }
       ]       

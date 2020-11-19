@@ -27,8 +27,10 @@ import FrmLeaveReqAdd from '@/views/forms/userDefine/frmLeaveReq/add'
 import FrmLeaveReqDetail from '@/views/forms/userDefine/frmLeaveReq/detail'
 
 // 全局过滤器
-import { toThousands } from '@/utils/format'
+import { toThousands } from '@/filter/money'
+import { m2DHM } from '@/filter/time'
 Vue.filter('toThousands', toThousands)
+Vue.filter('m2DHM', m2DHM)
 
 // 全局指令
 import elDragDialog from '@/directive/el-dragDialog'

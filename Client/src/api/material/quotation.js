@@ -56,4 +56,18 @@ export function updateQuotationOrder (data) { // 修改报价单
   })
 }
 
+export function getQuotationMaterialCode (params) { // 获取该服务单所有报价单零件
+  return request({
+    url: '/Material/Quotation/GetQuotationMaterialCode',
+    method: 'get',
+    params
+  })
+}
 
+export function approveQuotationOrder (data) {
+  return request({
+    url: '/Material/Quotation/Accraditation',
+    method: 'post',
+    data
+  })
+} 

@@ -15,7 +15,7 @@
     @row-click="onRowClick"
     @selection-change="onSelectChange"
     :row-class-name="tableRowClassName"
-    heighlight-current-row
+    highlight-current-row
     >
     <!-- 是否出现多选 -->
     <el-table-column 
@@ -36,6 +36,16 @@
       :sortable="item.isSort || false"
       show-overflow-tooltip
     >
+      <template slot="header" slot-scope="scope">
+        <span v-if="false">{{ scope.$index }}</span>
+        <!-- 自定义表头 -->
+        <template v-if="item.isCustomizeHeader">
+          <slot :name="`${item.prop}_header`" :row="{ ...scope, label: item.label }"></slot>
+        </template>
+        <template v-else>
+          {{ item.label }}
+        </template>
+      </template>
       <template slot-scope="scope" >
         <!--  有箭头的操作 -->
         <div class="link-container" v-if="item.type === 'link'"> 
@@ -61,9 +71,9 @@
             :size="item.size || 'mini'"
           >{{ btnItem.btnText }}</el-button>
         </template>
-        <!-- slot -->
+        <!-- slot 可以再外部使用具名插槽 展示不同列的值 -->
         <template v-else-if="item.type === 'slot'">
-          <slot :data="{ ...scope.row, ...(item.options || {})}"></slot>
+          <slot :name="item.slotName || 'default'" :row="{ ...scope.row, ...(item.options || {})}"></slot>
         </template>
         <!-- 文本显示 -->
         <template v-else-if="item.originType !== 'selectoin'">
