@@ -573,6 +573,28 @@ namespace NSAP.App.WebApi.Controllers
 
             return result;
         }
+
+        /// <summary>
+        /// 获取技术员单据数量列表
+        /// </summary>
+        /// <param name="CurrentUserId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetTechnicianServiceOrderCount(int CurrentUserId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetTechnicianServiceOrderCount(CurrentUserId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
         #endregion
 
         #region<<Admin/Supervisor>>

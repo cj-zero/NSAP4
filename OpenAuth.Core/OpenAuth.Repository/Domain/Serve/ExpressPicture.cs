@@ -24,7 +24,7 @@ namespace OpenAuth.Repository.Domain
     {
         public ExpressPicture()
         {
-            this.ExpressageId = string.Empty;
+            this.ExpressId = string.Empty;
             this.PictureId = string.Empty;
         }
 
@@ -34,7 +34,7 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         [Browsable(false)]
-        public string ExpressageId { get; set; }
+        public string ExpressId { get; set; }
         /// <summary>
         /// 
         /// </summary>

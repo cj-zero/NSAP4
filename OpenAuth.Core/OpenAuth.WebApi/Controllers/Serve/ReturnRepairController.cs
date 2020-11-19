@@ -68,5 +68,45 @@ namespace OpenAuth.WebApi.Controllers.Serve
             }
             return result;
         }
+
+        /// <summary>
+        /// 获取返厂维修列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetReturnRepairList()
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _returnRepairApp.GetReturnRepairList();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 修改快递单号
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> EditExpressNum(EditExpressNumReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _returnRepairApp.EditExpressNum(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }

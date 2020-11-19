@@ -482,7 +482,7 @@ namespace OpenAuth.App
                 //            obj.Status = 2;
                 //        }
                 //    }
-                    
+
                 //}
                 #endregion
 
@@ -2630,7 +2630,8 @@ namespace OpenAuth.App
             {
                 throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
             }
-            var flowInfo = await UnitWork.Find<ServiceFlow>(w => w.ServiceOrderId == request.ServiceOrderId && w.MaterialType == request.MaterialType && w.FlowType == 1 && w.Creater == userInfo.User.Id).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToListAsync();
+            //流程信息
+            var flowInfo = (await UnitWork.Find<ServiceFlow>(w => w.ServiceOrderId == request.ServiceOrderId && w.MaterialType == request.MaterialType && w.Creater == userInfo.User.Id).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed, s.FlowType }).ToListAsync()).GroupBy(g => g.FlowType).Select(s => new { s.Key, detail = s.ToList() });
             result.Data = flowInfo;
             return result;
         }
@@ -3105,6 +3106,8 @@ namespace OpenAuth.App
                 .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
             //获取完工报告集合
             var completeReportList = await UnitWork.Find<CompletionReport>(w => serviceOrderIds.Contains((int)w.ServiceOrderId)).Select(s => new { s.ServiceOrderId, s.IsReimburse, s.Id, s.ServiceMode, MaterialType = s.MaterialCode == "其他设备" ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) }).ToListAsync();
+            //获取我的报销单集合
+            var reimburseList = await UnitWork.Find<ReimburseInfo>(r => r.CreateUserId == userInfo.UserID).ToListAsync();
             var query = UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
                 .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                 .Include(s => s.ServiceFlows)
@@ -3186,7 +3189,10 @@ namespace OpenAuth.App
                     flowInfo = s.ServiceFlows.Where(w => w.MaterialType.Equals(o.Key)).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToList()
                 }),
                 IsReimburse = req.Type == 3 ? completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1).FirstOrDefault() == null ? 0 : completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1).FirstOrDefault().IsReimburse : 0,
-                MaterialType = req.Type == 3 ? completeReportList.Where(w => w.ServiceOrderId == s.Id).FirstOrDefault() == null ? string.Empty : completeReportList.Where(w => w.ServiceOrderId == s.Id).FirstOrDefault().MaterialType : string.Empty
+                MaterialType = req.Type == 3 ? completeReportList.Where(w => w.ServiceOrderId == s.Id).FirstOrDefault() == null ? string.Empty : completeReportList.Where(w => w.ServiceOrderId == s.Id).FirstOrDefault().MaterialType : string.Empty,
+                ReimburseId = req.Type == 3 ? reimburseList.Where(w => w.ServiceOrderId == s.Id).Select(s => s.Id).FirstOrDefault() : 0,
+                RemburseStatus = req.Type == 3 ? reimburseList.Where(w => w.ServiceOrderId == s.Id).Select(s => s.RemburseStatus).FirstOrDefault() : 0,
+                RemburseIsRead = req.Type == 3 ? reimburseList.Where(w => w.ServiceOrderId == s.Id).Select(s => s.IsRead).FirstOrDefault() : 0
             }).ToList();
 
             var count = await query.CountAsync();
@@ -3195,6 +3201,45 @@ namespace OpenAuth.App
             return result;
         }
 
+        /// <summary>
+        /// 获取技术员单据数量
+        /// </summary>
+        /// <param name="TechnicianId"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetTechnicianServiceOrderCount(int TechnicianId)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == TechnicianId)
+               .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+            //获取待处理单据数量
+            var pendingQty = (await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
+               .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
+               .Include(s => s.ServiceFlows)
+               .Where(s => s.ServiceWorkOrders.All(a => a.OrderTakeType == 0))
+               .ToListAsync()).Count;
+            //获取进行中的单据数量
+            var goingQty = (await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
+               .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
+               .Include(s => s.ServiceFlows)
+               .Where(s => s.ServiceWorkOrders.Any(a => a.Status > 1 && a.Status < 7 && a.OrderTakeType != 0))
+               .ToListAsync()).Count;
+            //获取已完成的单据数量
+            var finishQty = (await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
+              .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
+              .Include(s => s.ServiceFlows)
+              .Where(s => s.ServiceWorkOrders.All(a => a.Status >= 7))
+              .ToListAsync()).Count;
+            //获取已报销的单据数量
+            var reimburseQty = (await UnitWork.Find<ReimburseInfo>(w => serviceOrderIds.Contains(w.ServiceOrderId) && w.RemburseStatus > 3).ToListAsync()).Count;
+            //获取上门服务
+            result.Data = new { pendingQty, goingQty, finishQty, reimburseQty };
+            return result;
+        }
         #endregion
 
         #region<<Admin/Supervisor>>

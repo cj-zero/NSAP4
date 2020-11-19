@@ -80,5 +80,10 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("创建人名")]
         public string CreateUser { get; set; }
+
+        /// <summary>
+        /// 物流表
+        /// </summary>
+        public virtual List<Express> Express { get; set; }
     }
 }

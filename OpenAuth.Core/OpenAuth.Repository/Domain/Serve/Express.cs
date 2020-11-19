@@ -31,7 +31,6 @@ namespace OpenAuth.Repository.Domain
             this.CreateTime = DateTime.Now;
         }
 
-
         /// <summary>
         /// 返厂维修Id
         /// </summary>
@@ -85,5 +84,10 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("创建时间")]
         public System.DateTime? CreateTime { get; set; }
+
+        /// <summary>
+        /// 物流图片
+        /// </summary>
+        public virtual List<ExpressPicture> ExpressPictures { get; set; }
     }
 }
