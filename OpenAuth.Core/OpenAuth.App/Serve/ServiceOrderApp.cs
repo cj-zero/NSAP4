@@ -3235,9 +3235,15 @@ namespace OpenAuth.App
               .Where(s => s.ServiceWorkOrders.All(a => a.Status >= 7))
               .ToListAsync()).Count;
             //获取已报销的单据数量
-            var reimburseQty = (await UnitWork.Find<ReimburseInfo>(w => serviceOrderIds.Contains(w.ServiceOrderId) && w.RemburseStatus > 3).ToListAsync()).Count;
-            //获取上门服务
-            result.Data = new { pendingQty, goingQty, finishQty, reimburseQty };
+            var isReimburseQty = (await UnitWork.Find<ReimburseInfo>(w => serviceOrderIds.Contains(w.ServiceOrderId) && w.RemburseStatus > 3).ToListAsync()).Count;
+            //获取上门服务的完成单据数量
+            var doorQty = (await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
+              .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
+              .Include(s => s.ServiceFlows)
+              .Where(s => s.ServiceWorkOrders.All(a => a.Status >= 7))
+              .Where(s => s.ServiceWorkOrders.Any(a => a.ServiceMode == 1))
+              .ToListAsync()).Count;
+            result.Data = new { pendingQty, goingQty, finishQty, reimburseQty = doorQty - isReimburseQty };
             return result;
         }
         #endregion
