@@ -27,5 +27,10 @@ namespace OpenAuth.Repository
         //非数据库表格
         public virtual DbQuery<SysTableColumn> SysTableColumns { get; set; }
         public virtual DbSet<UserSign> UserSigns { get; set; }
+        public virtual DbSet<Etalon> Etalons { get; set; }
+        public virtual DbSet<NwcaliBaseInfo> Nwcalibaseinfos { get; set; }
+        public virtual DbSet<NwcaliPlcData> Nwcaliplcdatas { get; set; }
+        public virtual DbSet<NwcaliTur> Nwcaliturs { get; set; }
+        public virtual DbSet<PcPlc> Pcplcs { get; set; }
     }
 }
