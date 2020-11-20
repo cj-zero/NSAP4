@@ -3174,7 +3174,7 @@ namespace OpenAuth.App
                 s.CustomerId,
                 s.CustomerName,
                 s.TerminalCustomer,
-                Distance = (req.Latitude == 0 || s.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
+                //Distance = (req.Latitude == 0 || s.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
                 s.Count,
                 ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.ProblemType.Name : s.ProblemTypeName,
                 MaterialTypeQty = s.MaterialInfo.GroupBy(o => o.MaterialType).Select(i => i.Key).ToList().Count,

@@ -71,12 +71,12 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="expressageId"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetExpressInfo(string expressageId)
+        public async Task<TableData> GetExpressageInfo(string expressageId)
         {
             var result = new TableData();
             try
             {
-                result = await _returnnoteApp.GetExpressInfo(expressageId);
+                result = await _returnnoteApp.GetExpressageInfo(expressageId);
             }
             catch (Exception ex)
             {

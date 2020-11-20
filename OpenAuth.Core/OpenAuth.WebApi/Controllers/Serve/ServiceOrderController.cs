@@ -872,8 +872,8 @@ namespace OpenAuth.WebApi.Controllers
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("TechnicianId", req.TechnicianId);
                 parameters.Add("Type", req.Type);
-                parameters.Add("Longitude", req.Longitude);
-                parameters.Add("Latitude", req.Latitude);
+                //parameters.Add("Longitude", req.Longitude);
+                //parameters.Add("Latitude", req.Latitude);
                 parameters.Add("limit", req.limit);
                 parameters.Add("page", req.page);
                 parameters.Add("key", req.key);

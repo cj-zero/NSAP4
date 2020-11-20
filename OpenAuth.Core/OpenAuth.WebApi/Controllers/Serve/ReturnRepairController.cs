@@ -108,5 +108,25 @@ namespace OpenAuth.WebApi.Controllers.Serve
             }
             return result;
         }
+
+        /// <summary>
+        /// 获取物流信息（返厂维修）
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> GetExpressInfo(string Id)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _returnRepairApp.GetExpressInfo(Id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }

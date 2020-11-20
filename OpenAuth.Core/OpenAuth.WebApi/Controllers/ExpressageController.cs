@@ -21,12 +21,12 @@ namespace OpenAuth.WebApi.Controllers
         /// 查询物流信息
         /// </summary>
         [HttpGet]
-        public async Task<TableData> GetExpressInfo(string trackNumbet)
+        public async Task<TableData> GetExpressInfo(string trackNumber)
         {
             var result = new TableData();
             try
             {
-                result = await _app.GetExpressInfo(trackNumbet);
+                result = await _app.GetExpressInfo(trackNumber);
             }
             catch (Exception ex)
             {

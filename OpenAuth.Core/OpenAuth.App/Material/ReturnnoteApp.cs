@@ -195,7 +195,7 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="Id"></param>
         /// <returns></returns>
-        public async Task<TableData> GetExpressInfo(string Id)
+        public async Task<TableData> GetExpressageInfo(string Id)
         {
             var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
@@ -208,15 +208,8 @@ namespace OpenAuth.App
             var r = await _expressageApp.GetExpressInfo(tracknum);
             if (r.Code == 200)
             {
-                var response = (string)result.Data;
-                var express = new Expressage
-                {
-                    QuotationId = ExpressInfo.QuotationId,
-                    ReturnNoteId = ExpressInfo.ReturnNoteId,
-                    ExpressNumber = tracknum,
-                    ExpressInformation = response
-                };
-                await UnitWork.AddAsync(express);
+                var response = (string)r.Data;
+                await UnitWork.UpdateAsync<Expressage>(w => w.Id == Id, u => new Expressage { ExpressInformation = response});
                 await UnitWork.SaveAsync();
                 result.Data = response;
             }
@@ -224,6 +217,7 @@ namespace OpenAuth.App
             {
                 return result;
             }
+
             return result;
         }
     }

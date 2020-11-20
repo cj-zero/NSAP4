@@ -115,7 +115,7 @@ namespace OpenAuth.App
                         join b in UnitWork.Find<ReturnRepair>(null) on a.ReturnRepairId equals b.Id
                         where b.ServiceOrderId == serviceOrderId && b.MaterialType == materialType && b.CreateUserId == userInfo.Id
                         select new { a, b };
-            var resultList = (await query.Select(s => new { s.a.Id, s.a.IsCheck, s.a.Type, s.a.CreateTime, s.a.CheckTime }).OrderBy(o => o.CreateTime).ToListAsync()).GroupBy(g => g.Type).Select(s => new { type = s.Key, ExpressInfo = s.ToList() }).ToList();
+            var resultList = (await query.Select(s => new { s.a.Id, s.a.IsCheck, s.a.Type,s.a.CreateTime, s.a.CheckTime }).OrderBy(o => o.CreateTime).ToListAsync()).GroupBy(g => g.Type).Select(s => new { type = s.Key, ExpressInfo = s.ToList() }).ToList();
             result.Data = resultList;
             return result;
         }
@@ -209,6 +209,55 @@ namespace OpenAuth.App
             {
                 result.Code = r.Code;
                 result.Message = r.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取物流信息
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetExpressInfo(string Id)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var ExpressInfo = await UnitWork.Find<Express>(w => w.Id == Id).FirstOrDefaultAsync();
+            string tracknum = ExpressInfo.ExpressNumber;
+            int isCheck = (int)ExpressInfo.IsCheck;
+            if (isCheck == 1)
+            {
+                result.Data = ExpressInfo.ExpressInformation;
+                return result;
+            }
+            else
+            {
+                var r = await _expressageApp.GetExpressInfo(tracknum);
+                if (r.Code == 200)
+                {
+                    var response = (string)r.Data;
+                    var returndata = JsonConvert.DeserializeObject<dynamic>(response);
+                    int isAlreadyCheck = returndata.ischeck;
+                    var detail = returndata.data;
+                    DateTime? checkTime = null;//收货时间
+                    DateTime? CreateTime = null;//发货时间
+                    if (isCheck == 1)
+                    {
+                        checkTime = Convert.ToDateTime(detail[0]["time"].ToString());
+                    }
+                    CreateTime = Convert.ToDateTime(detail[detail.Count - 1]["time"].ToString());
+                    await UnitWork.UpdateAsync<Express>(w => w.Id == Id, u => new Express { ExpressInformation = response, CheckTime = checkTime, IsCheck = isAlreadyCheck, CreateTime = CreateTime});
+                    await UnitWork.SaveAsync();
+                    result.Data = response;
+                }
+                else
+                {
+                    return result;
+                }
             }
             return result;
         }
