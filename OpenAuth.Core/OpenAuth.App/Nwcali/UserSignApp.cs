@@ -20,7 +20,7 @@ namespace OpenAuth.App
         /// <summary>
         /// 加载列表
         /// </summary>
-        public async Task<TableData> Load(QueryUserSignListReq request)
+        public async Task<TableData<List<UserSign>>> Load(QueryUserSignListReq request)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -36,7 +36,7 @@ namespace OpenAuth.App
             //}
 
 
-            var result = new TableData();
+            var result = new TableData<List<UserSign>>();
             var objs = UnitWork.Find<UserSign>(null);
             if (!string.IsNullOrEmpty(request.key))
             {

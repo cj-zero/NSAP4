@@ -34,6 +34,7 @@ namespace OpenAuth.WebApi.Controllers
         private readonly FlowInstanceApp _flowInstanceApp;
         private readonly NwcaliCertApp _nwcaliCertApp;
         private readonly UserSignApp _userSignApp;
+        private readonly FileApp _fileApp;
         private static readonly string BaseCertDir = Path.Combine(Directory.GetCurrentDirectory(), "certs");
         private static readonly Dictionary<int, double> PoorCoefficients = new Dictionary<int, double>()
         {
@@ -54,7 +55,7 @@ namespace OpenAuth.WebApi.Controllers
 
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
 
-        public CertController(CertinfoApp certinfoApp, CertPlcApp certPlcApp, ModuleFlowSchemeApp moduleFlowSchemeApp, FlowInstanceApp flowInstanceApp, NwcaliCertApp nwcaliCertApp, UserSignApp userSignApp)
+        public CertController(CertinfoApp certinfoApp, CertPlcApp certPlcApp, ModuleFlowSchemeApp moduleFlowSchemeApp, FlowInstanceApp flowInstanceApp, NwcaliCertApp nwcaliCertApp, UserSignApp userSignApp, FileApp fileApp)
         {
             _certinfoApp = certinfoApp;
             _certPlcApp = certPlcApp;
@@ -62,6 +63,7 @@ namespace OpenAuth.WebApi.Controllers
             _flowInstanceApp = flowInstanceApp;
             _nwcaliCertApp = nwcaliCertApp;
             _userSignApp = userSignApp;
+            _fileApp = fileApp;
         }
 
         [HttpPost]
@@ -307,7 +309,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="turV">Tur电压数据</param>
         /// <param name="turA">Tur电流数据</param>
         /// <returns></returns>
-        private static async Task<CertModel> BuildModel(NwcaliBaseInfo baseInfo)
+        private async Task<CertModel> BuildModel(NwcaliBaseInfo baseInfo)
         {
             var list = new List<WordModel>();
             var model = new CertModel();
@@ -849,6 +851,12 @@ namespace OpenAuth.WebApi.Controllers
             #endregion
 
             #region 签名
+            var us = await _userSignApp.Load(new QueryUserSignListReq { });
+            var calibrationTechnician = us.Data.FirstOrDefault(u => u.UserName.Equals(baseInfo.Operator));
+            if (calibrationTechnician != null)
+            {
+                model.CalibrationTechnician = await GetSignBase64(calibrationTechnician.PictureId);
+            }
             //var signPath1 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "yang.png");
             //var signPath2 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "zhou.png");
             //var signPath3 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "chen.png");
@@ -1084,5 +1092,26 @@ namespace OpenAuth.WebApi.Controllers
             }
         }
 
+        /// <summary>
+        /// 获取签名base64字符串
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <returns></returns>
+        private async Task<string> GetSignBase64(string fileId)
+        {
+            var file = await _fileApp.GetFileAsync(fileId);
+            if(file!=null)
+            {
+                using (var fs = await _fileApp.GetFileStreamAsync(file.BucketName, file.FileName))
+                {
+                    var bytes = new byte[fs.Length];
+                    fs.Position = 0;
+                    await fs.ReadAsync(bytes, 0, bytes.Length);
+                    var base64str = Convert.ToBase64String(bytes);
+                    return base64str;
+                }
+            }
+            throw new Exception($"用户未配置签名。");
+        }
     }
 }

@@ -61,7 +61,7 @@ namespace OpenAuth.WebApi.Controllers
         /// 加载列表
         /// </summary>
         [HttpGet]
-        public async Task<TableData> Load([FromQuery]QueryUserSignListReq request)
+        public async Task<TableData<List<UserSign>>> Load([FromQuery]QueryUserSignListReq request)
         {
             return await _app.Load(request);
         }

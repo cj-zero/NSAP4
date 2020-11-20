@@ -388,6 +388,10 @@
         }
     </style>
     <style>
+        @@font-face {
+            font-family: "Bahnschrift";
+            src: url("C:\\Windows\\Fonts\\bahnschrift.svg")
+        }
         * {
             -webkit-box-sizing: border-box;
             box-sizing: border-box;
@@ -396,7 +400,7 @@
         body {
             font-size: 14px;
             line-height: 1.5;
-            font-family: "Bahnschrift", "Consolas", sans-serif;
+            /*font-family: "Bahnschrift", "Consolas", sans-serif;*/
             background-color: #fff;
         }
 
@@ -778,7 +782,6 @@
         #app {
             width: 210mm;
             margin: 20px auto;
-            padding: 0 40px;
         }
 
         .header {
@@ -795,19 +798,12 @@
         }
 
             .header .header-left {
-                display: -webkit-box;
-                display: -ms-flexbox;
-                display: flex;
-                -webkit-box-orient: vertical;
-                -webkit-box-direction: normal;
-                -ms-flex-direction: column;
-                flex-direction: column;
                 font-size: 12px;
             }
 
                 .header .header-left .logo {
                     font-size: 30px;
-                    font-weight: bold;
+                    font-weight: 600;
                     line-height: 1;
                 }
 
@@ -830,7 +826,7 @@
             justify-content: center;
             height: 70px;
             font-size: 20px;
-            font-weight: bold;
+            font-weight: 600;
         }
 
         .table {
@@ -856,34 +852,40 @@
         .table tr th {
             padding: 8px;
             text-align: left;
+            font-weight: 600;
         }
 
         .autographs {
-            display: -webkit-box;
-            display: -ms-flexbox;
-            display: flex;
-            -ms-flex-wrap: wrap;
-            flex-wrap: wrap;
-            -webkit-box-pack: justify;
-            -ms-flex-pack: justify;
-            justify-content: space-between;
             padding: 0 40px 40px;
         }
 
             .autographs .autograph {
                 position: relative;
+                display: inline-block;
                 width: 280px;
                 height: 80px;
+                text-align: center;
                 border-bottom: thin solid #000;
             }
+
+                .autographs .autograph:nth-child(even) {
+                    margin-left: 140px;
+                }
 
                 .autographs .autograph::before {
                     content: attr(data-name);
                     position: absolute;
                     top: 105%;
                     right: 0;
-                    font-weight: bold;
+                    font-weight: 600;
                 }
+
+            .autographs .autograph-img {
+                width: 80px;
+                height: 80px;
+                -o-object-fit: contain;
+                object-fit: contain;
+            }
 
         .footer .footer-title {
             border-bottom: thin solid #000;
@@ -891,24 +893,21 @@
 
         .footer .footer-company {
             font-size: 18px;
-            font-weight: bold;
+            font-weight: 600;
         }
 
-        .footer .copyright {
-            display: -webkit-box;
-            display: -ms-flexbox;
-            display: flex;
-            -webkit-box-align: center;
-            -ms-flex-align: center;
-            align-items: center;
-            -webkit-box-pack: justify;
-            -ms-flex-pack: justify;
-            justify-content: space-between;
+        .footer .copyright-span {
+            display: block;
+            height: 20px;
             line-height: 20px;
             font-size: 12px;
             color: #666;
         }
 
+            .footer .copyright-span:nth-child(even) {
+                margin-top: -20px;
+                text-align: right;
+            }
         /*# sourceMappingURL=app.css.map */
     </style>
 </head>
@@ -917,8 +916,8 @@
     <div id="app">
         <header class="header">
             <div class="header-left">
-                <span class="logo">Newell</span>
-                <span>The truth builds trust.</span>
+                <div class="logo">Newell</div>
+                <div>The truth builds trust.</div>
             </div>
             <img class="header-code" src=" data:image/png;base64,@Model.Data.BarCode" alt>
         </header>
@@ -927,84 +926,84 @@
             <tbody>
                 <tr>
                     <td>
-                        <div class="flex">
-                            <span class="font-semibold whitespace-no-wrap w-26">DUT Name:</span>
+                        <div>
+                            <span class="inline-block font-semibold whitespace-no-wrap w-26">DUT Name:</span>
                             <span>Battery Tester</span>
                         </div>
                     </td>
                     <td>
-                        <div class="flex">
-                            <span class="font-semibold whitespace-no-wrap w-32">Certificate No.:</span>
+                        <div>
+                            <span class="inline-block font-semibold whitespace-no-wrap w-32">Certificate No.:</span>
                             <span>@Model.Data.CalibrationCertificate.CertificatenNumber</span>
                         </div>
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <div class="flex">
-                            <span class="font-semibold whitespace-no-wrap w-26">Manufacturer:</span>
+                        <div>
+                            <span class="inline-block font-semibold whitespace-no-wrap w-26">Manufacturer:</span>
                             <span>NEWARE</span>
                         </div>
                     </td>
                     <td>
-                        <div class="flex">
-                            <span class="font-semibold whitespace-no-wrap w-32">Calibration Date:</span>
+                        <div>
+                            <span class="inline-block font-semibold whitespace-no-wrap w-32">Calibration Date:</span>
                             <span>@Model.Data.CalibrationCertificate.CalibrationDate</span>
                         </div>
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <div class="flex">
-                            <span class="font-semibold whitespace-no-wrap w-26">Model:</span>
+                        <div>
+                            <span class="inline-block font-semibold whitespace-no-wrap w-26">Model:</span>
                             <span>@Model.Data.CalibrationCertificate.TesterModel</span>
                         </div>
                     </td>
                     <td>
-                        <div class="flex">
-                            <span class="font-semibold whitespace-no-wrap w-32">Calibration Due:</span>
+                        <div>
+                            <span class="inline-block font-semibold whitespace-no-wrap w-32">Calibration Due:</span>
                             <span>@Model.Data.CalibrationCertificate.CalibrationDue</span>
                         </div>
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <div class="flex">
-                            <span class="font-semibold whitespace-no-wrap w-26">Serial Number:</span>
+                        <div>
+                            <span class="inline-block font-semibold whitespace-no-wrap w-26">Serial Number:</span>
                             <span>@Model.Data.CalibrationCertificate.TesterSn</span>
                         </div>
                     </td>
                     <td>
-                        <div class="flex">
-                            <span class="font-semibold whitespace-no-wrap w-32">Data Type:</span>
+                        <div>
+                            <span class="inline-block font-semibold whitespace-no-wrap w-32">Data Type:</span>
                             <span>@Model.Data.CalibrationCertificate.DataType As-Left</span>
                         </div>
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <div class="flex">
-                            <span class="font-semibold whitespace-no-wrap w-26">Asset No.:</span>
+                        <div>
+                            <span class="inline-block font-semibold whitespace-no-wrap w-26">Asset No.:</span>
                             <span>@Model.Data.CalibrationCertificate.AssetNo</span>
                         </div>
                     </td>
                     <td>
-                        <div class="flex">
-                            <span class="font-semibold whitespace-no-wrap w-32">Location:</span>
+                        <div>
+                            <span class="inline-block font-semibold whitespace-no-wrap w-32">Location:</span>
                             <span>@Model.Data.CalibrationCertificate.SiteCode</span>
                         </div>
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <div class="flex">
-                            <span class="font-semibold whitespace-no-wrap w-26">Temperature(℃):</span>
+                        <div>
+                            <span class="inline-block font-semibold whitespace-no-wrap w-26">Temperature(℃):</span>
                             <span>@Model.Data.CalibrationCertificate.Temperature</span>
                         </div>
                     </td>
                     <td>
-                        <div class="flex">
-                            <span class="font-semibold whitespace-no-wrap w-32">Relative Humidity(RH):</span>
+                        <div>
+                            <span class="inline-block font-semibold whitespace-no-wrap w-32">Relative Humidity(RH):</span>
                             <span>@Model.Data.CalibrationCertificate.RelativeHumidity</span>
                         </div>
                     </td>
@@ -1039,7 +1038,7 @@
         </section>
         <section>
             <h1 class="font-extrabold text-base">II.Uncertainty Budget</h1>
-            <h2 class="text-xs">1. T.U.R. Table</h2>
+            <h2 class="text-lg">1. T.U.R. Table</h2>
             <table class="table">
                 <thead>
                     <tr>
@@ -1065,7 +1064,7 @@
                 </tbody>
             </table>
             <div style="page-break-inside: avoid; page-break-before: always; page-break-after: always; "></div>
-            <h2 class="text-xs mt-4">2. Uncertainty Budget Table*</h2>
+            <h2 class="text-lg mt-4">2. Uncertainty Budget Table*</h2>
             <div class="inline-flex items-center h-8">
                 <span class="inline-block h-full flex items-center font-semibold text-base px-2">Voltage:</span>
                 <span class="inline-block h-full flex items-center font-semibold text-base px-2">@Model.Data.VoltageUncertaintyBudgetTables.Value</span>
@@ -1076,9 +1075,9 @@
                         <th>Uncertainty Contributors</th>
                         <th class="text-right">Value</th>
                         <th class="text-right">Sensitivity Coefficient</th>
-                        <th class="text-right">Unit</th>
-                        <th class="text-right">Type</th>
-                        <th class="text-right">Distribution</th>
+                        <th>Unit</th>
+                        <th>Type</th>
+                        <th>Distribution</th>
                         <th class="text-right">Coverage Factor</th>
                         <th class="text-right">Std Uncertainty</th>
                         <th class="text-right">Significance </th>
@@ -1428,21 +1427,25 @@
             </ol>
         </section>
         <section class="autographs">
-            <div class="autograph" data-name="Calibration Technician"></div>
-            <div class="autograph" data-name="Technical Manager"></div>
-            <div class="autograph" data-name="Approval Director"></div>
+            <div class="autograph" data-name="Calibration Technician">
+                <img class="autograph-img" src="./img/code.png" alt>
+            </div>
+            <div class="autograph" data-name="Technical Manager">
+                <img class="autograph-img" src="./img/code.png" alt>
+            </div>
+            <div class="autograph" data-name="Approval Director">
+                <img class="autograph-img" src="./img/code.png" alt>
+            </div>
         </section>
         <footer class="footer">
             <div class="footer-title">
                 <span class="footer-company">Newell Laboratories</span>
             </div>
             <div class="copyright">
-                <span>15F, Tower 3, Excellence City, Futian, Shenzhen, China. 518049</span>
-                <span>www.newell.com.cn</span>
-            </div>
-            <div class="copyright">
-                <span>FRM-QC003-REV.01</span>
-                <span>support@newell.com.cn</span>
+                <span class="copyright-span">15F, Tower 3, Excellence City, Futian, Shenzhen, China. 518049</span>
+                <span class="copyright-span">www.newell.com.cn</span>
+                <span class="copyright-span">FRM-QC003-REV.01</span>
+                <span class="copyright-span">support@newell.com.cn</span>
             </div>
         </footer>
     </div>
