@@ -75,12 +75,12 @@ export default {
   computed: {
     searchConfig () {
       return [
-        { prop: 'pickNO', placeholder: '领料单号', width: 100 },
-        { prop: 'customerName', placeholder: '客户名称', width: 100 },
-        { prop: '', placeholder: '服务ID', width: 100 },
-        { prop: 'applicant', placeholder: '申请人', width: 100 },
-        { prop: 'startDate', placeholder: '创建开始日期', type: 'date', width: 150 },
-        { prop: 'endDate', placeholder: '创建结束日期', type: 'date', width: 150 },
+        { prop: 'quotationId', placeholder: '领料单号', width: 100 },
+        { prop: 'cardCode', placeholder: '客户名称', width: 100 },
+        { prop: 'serviceOrderSapId', placeholder: '服务ID', width: 100 },
+        { prop: 'createUser', placeholder: '申请人', width: 100 },
+        { prop: 'startCreateTime', placeholder: '创建开始日期', type: 'date', width: 150 },
+        { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
         { type: 'button', btnText: '新建', isSpecial: true, handleClick: this.openMaterialOrder },
         { type: 'button', btnText: '编辑', handleClick: this._getQuotationDetail, options: { status: 'edit' } },

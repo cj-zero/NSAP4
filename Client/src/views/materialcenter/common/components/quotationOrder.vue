@@ -147,7 +147,9 @@
                   <el-button 
                     type="success"
                     @click="openMaterialDialog(scope.row)"
-                    size="mini">领取</el-button>
+                    size="mini">
+                      <el-icon class="el-icon-edit">添加</el-icon>
+                    </el-button>
                 </template>
                 <template v-slot:money="scope">
                   {{ scope.row.manufacturerSerialNumber | calcSerialTotalMoney(formData.quotationProducts) }}
@@ -372,14 +374,14 @@ import CommonTable from '@/components/CommonTable' // 对于不可编辑的表�
 import MyDialog from '@/components/Dialog'
 import Pagination from '@/components/Pagination'
 // import AreaSelector from '@/components/AreaSelector'
-import { quotationOrderMixin } from '../js/mixins'
+import { configMixin, quotationOrderMixin } from '../js/mixins'
 import { timeToFormat } from "@/utils";
 import { findIndex } from '@/utils/process'
 import { isNumber } from '@/utils/validate'
 import rightImg from '@/assets/table/right.png'
 const NOT_EDIT_STATUS_LIST = ['view', 'approve', 'pay'] // 不可编辑的状态 1.查看 2.审批 3.支付
 export default {
-  mixins: [quotationOrderMixin],
+  mixins: [configMixin, quotationOrderMixin],
   components: {
     CommonTable,
     MyDialog,

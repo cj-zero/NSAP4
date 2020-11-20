@@ -73,6 +73,7 @@
         </template>
         <!-- slot 可以再外部使用具名插槽 展示不同列的值 -->
         <template v-else-if="item.type === 'slot'">
+          <!-- {{ JSON.stringify(scope.row) }} -->
           <slot :name="item.slotName || 'default'" :row="{ ...scope.row, ...(item.options || {})}"></slot>
         </template>
         <!-- 文本显示 -->

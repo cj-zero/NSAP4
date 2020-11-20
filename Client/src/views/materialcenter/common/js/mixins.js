@@ -4,7 +4,8 @@ export const quotationTableMixin = {
       textMap: Object.freeze({
         create: '新建',
         edit: '编辑',
-        approve: '审批'
+        approve: '审批',
+        pay: '支付'
       })
     }
   },
@@ -12,6 +13,44 @@ export const quotationTableMixin = {
     console.log('updated')
   }
 }
+export const configMixin = { // 表单配置
+  computed: {
+    formConfig () { // 头部表单配置
+      return this.status === 'toReturn' || this.status === 'hasReturned' 
+        ? [
+            { label: '服务ID', prop: 'serviceOrderSapId', placeholder: '请选择', col: 6, readonly: true },
+            { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请选择', col: 6, disabled: true },
+            { label: '客户名称', prop: 'terminalCustomer', placeholder: '请选择', col: 12, disabled: true, isEnd: true },
+          ]
+        : [
+            { label: '服务ID', prop: 'serviceOrderSapId', placeholder: '请选择', col: 6, readonly: true },
+            { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请选择', col: 6, disabled: true },
+            { label: '客户名称', prop: 'terminalCustomer', placeholder: '请选择', col: 12, disabled: true, isEnd: true },
+            { label: '开票地址', prop: 'shippingAddress', placeholder: '请选择', col: 18 },
+            { label: '开票单位', prop: 'invoiceCompany', placeholder: '请选择', col: 6, type: 'select', options: this.invoiceCompany, isEnd: true },
+            { label: '收货地址', prop: 'collectionAddress', placeholder: '请选择', col: 18 },
+            { label: '发货方式', prop: 'deliveryMethod', placeholder: '请选择', col: 6, type: 'select', options: this.deliveryMethod, isEnd: true },
+            { label: '备注', prop: 'remark', placeholder: '请填写', col: 18 },
+            { label: '总金额', type: 'money', col: 6 }
+          ]
+    },
+    formatFormConfig () {
+      let noneSlotConfig = this.formConfig
+      let result = [], j = 0
+      for (let i = 0; i < noneSlotConfig.length; i++) {
+        if (!result[j]) {
+          result[j] = []
+        }
+        result[j].push(noneSlotConfig[i])
+        if (noneSlotConfig[i].isEnd) {
+          j++
+        }
+      }
+      return result
+    },
+  }
+}
+
 export const quotationOrderMixin = {
   data () {
     return {
@@ -28,33 +67,6 @@ export const quotationOrderMixin = {
     }
   },
   computed: {
-    formConfig () { // 头部表单配置
-      return [
-        { label: '服务ID', prop: 'serviceOrderSapId', placeholder: '请选择', col: 6, readonly: true },
-        { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请选择', col: 6, disabled: true },
-        { label: '客户名称', prop: 'terminalCustomer', placeholder: '请选择', col: 12, disabled: true, isEnd: true },
-        { label: '开票地址', prop: 'shippingAddress', placeholder: '请选择', col: 18 },
-        { label: '开票单位', prop: 'invoiceCompany', placeholder: '请选择', col: 6, type: 'select', options: this.invoiceCompany, isEnd: true },
-        { label: '收货地址', prop: 'collectionAddress', placeholder: '请选择', col: 18 },
-        { label: '发货方式', prop: 'deliveryMethod', placeholder: '请选择', col: 6, type: 'select', options: this.deliveryMethod, isEnd: true },
-        { label: '备注', prop: 'remark', placeholder: '请填写', col: 18 },
-        { label: '总金额', type: 'money', col: 6 }
-      ]
-    },
-    formatFormConfig () {
-      let noneSlotConfig = this.formConfig
-      let result = [], j = 0
-      for (let i = 0; i < noneSlotConfig.length; i++) {
-        if (!result[j]) {
-          result[j] = []
-        }
-        result[j].push(noneSlotConfig[i])
-        if (noneSlotConfig[i].isEnd) {
-          j++
-        }
-      }
-      return result
-    },
     materialConfig () {
       return [
         { label: '序号', type: 'order' },
@@ -70,4 +82,6 @@ export const quotationOrderMixin = {
     }
   }
 }
+
+
 
