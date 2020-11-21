@@ -92,15 +92,15 @@
       </order>
     </my-dialog>
     <!-- 完工报告 -->
-    <my-dialog
+    <!-- <my-dialog
       ref="reportDialog"
       width="983px"
       title="服务行为报告单"
       :onClosed="resetReport">
       <Report :data="reportData" ref="report"/>
-    </my-dialog>
+    </my-dialog> -->
     <!-- 只能查看的表单 -->
-    <my-dialog
+    <!-- <my-dialog
       ref="serviceDetail"
       width="1210px"
       title="服务单详情"
@@ -121,7 +121,7 @@
           <zxchat :serveId='serveId' formName="报销"></zxchat>
         </el-col>
       </el-row>
-    </my-dialog>
+    </my-dialog> -->
   </div>
 </template>
 
@@ -132,9 +132,9 @@ import Sticky from '@/components/Sticky'
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
-import Report from './common/components/report'
-import zxform from "@/views/serve/callserve/form";
-import zxchat from '@/views/serve/callserve/chat/index'
+// import Report from './common/components/report'
+// import zxform from "@/views/serve/callserve/form";
+// import zxchat from '@/views/serve/callserve/chat/index'
 import { tableMixin, categoryMixin, reportMixin, chatMixin } from './common/js/mixins'
 
 export default {
@@ -148,9 +148,9 @@ export default {
     MyDialog,
     Order,
     TabList,
-    Report,
-    zxform,
-    zxchat
+    // Report,
+    // zxform,
+    // zxchat
   },
   computed: {
     searchConfig () {

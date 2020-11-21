@@ -52,7 +52,8 @@ export default {
       city: '', // 对应level3
       district: '', // 街道 对应level4
       currentLevel: 1, // 默认level1
-      isFirst: true // 默认是第一次加载
+      isFirst: true, // 默认是第一次加载
+      cancelRequestFn: null // 取消请求
     }
   },
   methods: {
@@ -118,9 +119,13 @@ export default {
           this.currentIndex++ 
         }
       } else {
+        if (this.cancelRequestFn) {
+          console.log('11111')
+          this.cancelRequestFn()
+        }
         getAreaList({
           ReqId: id
-        }).then(res => {
+        }, this).then(res => {
           this.selectList = res.data
           setObject('addressInfo', id, this.selectList)
           if (isReset && Number(this.currentItem.areaLevel) !== 3) {
