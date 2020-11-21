@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
@@ -115,7 +116,7 @@ namespace OpenAuth.App
                         join b in UnitWork.Find<ReturnRepair>(null) on a.ReturnRepairId equals b.Id
                         where b.ServiceOrderId == serviceOrderId && b.MaterialType == materialType && b.CreateUserId == userInfo.Id
                         select new { a, b };
-            var resultList = (await query.Select(s => new { s.a.Id, s.a.IsCheck, s.a.Type,s.a.CreateTime, s.a.CheckTime }).OrderBy(o => o.CreateTime).ToListAsync()).GroupBy(g => g.Type).Select(s => new { type = s.Key, ExpressInfo = s.ToList() }).ToList();
+            var resultList = (await query.Select(s => new { s.a.Id, s.a.IsCheck, s.a.Type, s.a.CreateTime, s.a.CheckTime }).OrderBy(o => o.CreateTime).ToListAsync()).GroupBy(g => g.Type).Select(s => new { type = s.Key, ExpressInfo = s.ToList() }).ToList();
             result.Data = resultList;
             return result;
         }
@@ -220,6 +221,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<TableData> GetExpressInfo(string Id)
         {
+            Dictionary<string, object> outData = new Dictionary<string, object>();
             var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -228,10 +230,12 @@ namespace OpenAuth.App
             }
             var ExpressInfo = await UnitWork.Find<Express>(w => w.Id == Id).FirstOrDefaultAsync();
             string tracknum = ExpressInfo.ExpressNumber;
+            outData.Add("tracknum", tracknum);
             int isCheck = (int)ExpressInfo.IsCheck;
             if (isCheck == 1)
             {
-                result.Data = ExpressInfo.ExpressInformation;
+                outData.Add("expressinfo", ExpressInfo.ExpressInformation);
+                result.Data = outData;
                 return result;
             }
             else
@@ -250,15 +254,16 @@ namespace OpenAuth.App
                         checkTime = Convert.ToDateTime(detail[0]["time"].ToString());
                     }
                     CreateTime = Convert.ToDateTime(detail[detail.Count - 1]["time"].ToString());
-                    await UnitWork.UpdateAsync<Express>(w => w.Id == Id, u => new Express { ExpressInformation = response, CheckTime = checkTime, IsCheck = isAlreadyCheck, CreateTime = CreateTime});
+                    await UnitWork.UpdateAsync<Express>(w => w.Id == Id, u => new Express { ExpressInformation = response, CheckTime = checkTime, IsCheck = isAlreadyCheck, CreateTime = CreateTime });
                     await UnitWork.SaveAsync();
-                    result.Data = response;
+                    outData.Add("expressinfo", response);
                 }
                 else
                 {
-                    return result;
+                    outData.Add("expressinfo", "");
                 }
             }
+            result.Data = outData;
             return result;
         }
     }

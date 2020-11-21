@@ -109,6 +109,48 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 获取退料列表
+        /// </summary>
+        /// <param name="expressageId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetReturnNoteList([FromQuery] GetReturnNoteListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _returnnoteApp.GetReturnNoteList(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取退料详情（nsap）
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetReturnNoteDetail(int Id)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _returnnoteApp.GetReturnNoteDetail(Id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
         public ReturnNotesController(ReturnNoteApp app)
         {
             _returnnoteApp = app;

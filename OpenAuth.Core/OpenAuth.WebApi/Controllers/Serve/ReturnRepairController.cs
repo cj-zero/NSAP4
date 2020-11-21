@@ -113,7 +113,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// 获取物流信息（返厂维修）
         /// </summary>
         /// <returns></returns>
-        [HttpPost]
+        [HttpGet]
         public async Task<TableData> GetExpressInfo(string Id)
         {
             var result = new TableData();
