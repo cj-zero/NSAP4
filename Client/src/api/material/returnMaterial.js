@@ -1,5 +1,13 @@
 import request from '@/utils/request'
 
+export function getReturnNoteList(params) { // 获取退料单列表
+  return request({
+    url: 'ReturnNotes/GetReturnNoteList',
+    method: 'get',
+    params
+  })
+}
+
 export function returnMaterials(data) { // 退料
   return request({
     url: '/ReturnNotes/ReturnMaterials',

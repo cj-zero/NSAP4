@@ -10,7 +10,6 @@
     row-key="id"
     :height="height"
     :max-height="maxHeight"
-    style="width: 100%;"
     @current-change="onCurrentChange"
     @row-click="onRowClick"
     @selection-change="onSelectChange"
@@ -110,7 +109,7 @@ export default {
       default: false
     },
     height: {
-      type: String,
+      type: [String, Number],
       default: '100%'
     },
     maxHeight: {
