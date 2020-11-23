@@ -390,7 +390,7 @@
     <style>
         @@font-face {
             font-family: "Bahnschrift";
-            src: url("C:\\Windows\\Fonts\\bahnschrift.svg")
+            src: url("C:\\Windows\\Fonts\\bahnschrift.svg") format('svg'), url("C:\\Windows\\Fonts\\bahnschrift.ttf") format('ttf'),
         }
         * {
             -webkit-box-sizing: border-box;
@@ -398,6 +398,7 @@
         }
 
         body {
+            font-family: "Bahnschrift";
             font-size: 14px;
             line-height: 1.5;
             /*font-family: "Bahnschrift", "Consolas", sans-serif;*/
@@ -543,7 +544,7 @@
         }
 
         .font-extrabold {
-            font-weight: 800;
+            font-weight: 600;
         }
 
         .font-black {
@@ -780,8 +781,8 @@
         }
 
         #app {
-            width: 210mm;
-            margin: 20px auto;
+            /*width: 210mm;*/
+            /*margin: 20px auto;*/
         }
 
         .header {
@@ -881,8 +882,9 @@
                 }
 
             .autographs .autograph-img {
-                width: 80px;
-                height: 80px;
+                margin-top: 10%;
+                width: 150px;
+                height: 53px;
                 -o-object-fit: contain;
                 object-fit: contain;
             }
@@ -914,13 +916,6 @@
 
 <body>
     <div id="app">
-        <header class="header">
-            <div class="header-left">
-                <div class="logo">Newell</div>
-                <div>The truth builds trust.</div>
-            </div>
-            <img class="header-code" src=" data:image/png;base64,@Model.Data.BarCode" alt>
-        </header>
         <header class="title">Calibration Certificate</header>
         <table class="table table--border-top table--border-bottom">
             <tbody>
@@ -1055,10 +1050,10 @@
                     {
                         <tr>
                             <td class="text-right">@item.Number</td>
-                            <td>@item.Point</td>
-                            <td>@item.U95Standard</td>
-                            <td>@item.TUR</td>
-                            <td>@item.Spec</td>
+                            <td class="text-right">@item.Point</td>
+                            <td class="text-right">@item.U95Standard</td>
+                            <td class="text-right">@item.TUR</td>
+                            <td class="text-right">@item.Spec</td>
                         </tr>
                     }
                 </tbody>
@@ -1088,37 +1083,37 @@
                     {
                         <tr>
                             <td>@item.UncertaintyContributors</td>
-                            <td>@item.Value</td>
-                            <td>@item.SensitivityCoefficient</td>
+                            <td class="text-right">@item.Value</td>
+                            <td class="text-right">@item.SensitivityCoefficient</td>
                             <td>@item.Unit</td>
                             <td>@item.Type</td>
                             <td>@item.Distribution</td>
-                            <td>@item.CoverageFactor</td>
-                            <td>@item.StdUncertainty</td>
-                            <td>@item.Significance</td>
+                            <td class="text-right">@item.CoverageFactor</td>
+                            <td class="text-right">@item.StdUncertainty</td>
+                            <td class="text-right">@item.Significance</td>
                         </tr>
                     }
                     <tr>
                         <td>Tester Resolution</td>
-                        <td>@Model.Data.VoltageUncertaintyBudgetTables.TesterResolutionValue</td>
+                        <td class="text-right">@Model.Data.VoltageUncertaintyBudgetTables.TesterResolutionValue</td>
                         <td class="text-right">1</td>
                         <td>V</td>
                         <td>B</td>
                         <td>Rectangular</td>
                         <td class="text-right">3.464</td>
-                        <td>@Model.Data.VoltageUncertaintyBudgetTables.TesterResolutionStdUncertainty</td>
-                        <td>@Model.Data.VoltageUncertaintyBudgetTables.TesterResolutionSignificance</td>
+                        <td class="text-right">@Model.Data.VoltageUncertaintyBudgetTables.TesterResolutionStdUncertainty</td>
+                        <td class="text-right">@Model.Data.VoltageUncertaintyBudgetTables.TesterResolutionSignificance</td>
                     </tr>
                     <tr class="table--border-bottom">
                         <td>Repeatability of Reading</td>
-                        <td>@Model.Data.VoltageUncertaintyBudgetTables.RepeatabilityOfReadingValue</td>
+                        <td class="text-right">@Model.Data.VoltageUncertaintyBudgetTables.RepeatabilityOfReadingValue</td>
                         <td class="text-right">1</td>
                         <td>V</td>
                         <td>A</td>
                         <td>Standard</td>
                         <td class="text-right">1</td>
-                        <td>@Model.Data.VoltageUncertaintyBudgetTables.RepeatabilityOfReadingStdUncertainty</td>
-                        <td>@Model.Data.VoltageUncertaintyBudgetTables.RepeatabilityOfReadingSignificance</td>
+                        <td class="text-right">@Model.Data.VoltageUncertaintyBudgetTables.RepeatabilityOfReadingStdUncertainty</td>
+                        <td class="text-right">@Model.Data.VoltageUncertaintyBudgetTables.RepeatabilityOfReadingSignificance</td>
                     </tr>
                     <tr>
                         <td></td>
@@ -1126,8 +1121,8 @@
                         <td></td>
                         <td></td>
                         <td colspan="3" class="font-semibold">Combined Uncertainty</td>
-                        <td>@Model.Data.VoltageUncertaintyBudgetTables.CombinedUncertainty</td>
-                        <td>@Model.Data.VoltageUncertaintyBudgetTables.CombinedUncertaintySignificance</td>
+                        <td class="text-right">@Model.Data.VoltageUncertaintyBudgetTables.CombinedUncertainty</td>
+                        <td class="text-right">@Model.Data.VoltageUncertaintyBudgetTables.CombinedUncertaintySignificance</td>
                     </tr>
                     <tr>
                         <td></td>
@@ -1136,7 +1131,7 @@
                         <td></td>
                         <td colspan="2" class="font-semibold">Coverage Factor</td>
                         <td></td>
-                        <td>@Model.Data.VoltageUncertaintyBudgetTables.CoverageFactor</td>
+                        <td class="text-right">@Model.Data.VoltageUncertaintyBudgetTables.CoverageFactor</td>
                         <td></td>
                     </tr>
                     <tr>
@@ -1145,7 +1140,7 @@
                         <td></td>
                         <td></td>
                         <td colspan="3" class="font-semibold table--border-bottom">Expanded Uncertainty</td>
-                        <td class="table--border-bottom">@Model.Data.VoltageUncertaintyBudgetTables.ExpandedUncertainty</td>
+                        <td class="table--border-bottom text-right">@Model.Data.VoltageUncertaintyBudgetTables.ExpandedUncertainty</td>
                         <td class="table--border-bottom"></td>
                     </tr>
                 </tbody>
@@ -1173,8 +1168,8 @@
                     {
                         <tr>
                             <td>@item.UncertaintyContributors</td>
-                            <td>@item.Value</td>
-                            <td>@item.SensitivityCoefficient</td>
+                            <td class="text-right">@item.Value</td>
+                            <td class="text-right">@item.SensitivityCoefficient</td>
                             @{
                                 if (item.Unit == "Ohms")
                                 {
@@ -1191,32 +1186,32 @@
 
                             <td>@item.Type</td>
                             <td>@item.Distribution</td>
-                            <td>@item.CoverageFactor</td>
-                            <td>@item.StdUncertainty</td>
-                            <td>@item.Significance</td>
+                            <td class="text-right">@item.CoverageFactor</td>
+                            <td class="text-right">@item.StdUncertainty</td>
+                            <td class="text-right">@item.Significance</td>
                         </tr>
                     }
                     <tr>
                         <td>Tester Resolution</td>
-                        <td>@Model.Data.CurrentUncertaintyBudgetTables.TesterResolutionValue</td>
+                        <td class="text-right">@Model.Data.CurrentUncertaintyBudgetTables.TesterResolutionValue</td>
                         <td class="text-right">1</td>
                         <td>A</td>
                         <td>B</td>
                         <td>Rectangular</td>
                         <td class="text-right">3.464</td>
-                        <td>@Model.Data.CurrentUncertaintyBudgetTables.TesterResolutionStdUncertainty</td>
-                        <td>@Model.Data.CurrentUncertaintyBudgetTables.TesterResolutionSignificance</td>
+                        <td class="text-right">@Model.Data.CurrentUncertaintyBudgetTables.TesterResolutionStdUncertainty</td>
+                        <td class="text-right">@Model.Data.CurrentUncertaintyBudgetTables.TesterResolutionSignificance</td>
                     </tr>
                     <tr class="table--border-bottom">
                         <td>Repeatability of Reading</td>
-                        <td>@Model.Data.CurrentUncertaintyBudgetTables.RepeatabilityOfReadingValue</td>
+                        <td class="text-right">@Model.Data.CurrentUncertaintyBudgetTables.RepeatabilityOfReadingValue</td>
                         <td class="text-right">1</td>
                         <td>A</td>
                         <td>A</td>
                         <td>Standard</td>
                         <td class="text-right">1</td>
-                        <td>@Model.Data.CurrentUncertaintyBudgetTables.RepeatabilityOfReadingStdUncertainty</td>
-                        <td>@Model.Data.CurrentUncertaintyBudgetTables.RepeatabilityOfReadingSignificance</td>
+                        <td class="text-right">@Model.Data.CurrentUncertaintyBudgetTables.RepeatabilityOfReadingStdUncertainty</td>
+                        <td class="text-right">@Model.Data.CurrentUncertaintyBudgetTables.RepeatabilityOfReadingSignificance</td>
                     </tr>
                     <tr>
                         <td></td>
@@ -1224,8 +1219,8 @@
                         <td></td>
                         <td></td>
                         <td colspan="3" class="font-semibold">Combined Uncertainty</td>
-                        <td>@Model.Data.CurrentUncertaintyBudgetTables.CombinedUncertainty</td>
-                        <td>@Model.Data.CurrentUncertaintyBudgetTables.CombinedUncertaintySignificance</td>
+                        <td class="text-right">@Model.Data.CurrentUncertaintyBudgetTables.CombinedUncertainty</td>
+                        <td class="text-right">@Model.Data.CurrentUncertaintyBudgetTables.CombinedUncertaintySignificance</td>
                     </tr>
                     <tr>
                         <td></td>
@@ -1234,7 +1229,7 @@
                         <td></td>
                         <td colspan="2" class="font-semibold">Coverage Factor</td>
                         <td></td>
-                        <td>@Model.Data.CurrentUncertaintyBudgetTables.CoverageFactor</td>
+                        <td class="text-right">@Model.Data.CurrentUncertaintyBudgetTables.CoverageFactor</td>
                         <td></td>
                     </tr>
                     <tr>
@@ -1243,7 +1238,7 @@
                         <td></td>
                         <td></td>
                         <td colspan="3" class="font-semibold table--border-bottom">Expanded Uncertainty</td>
-                        <td class="table--border-bottom">@Model.Data.CurrentUncertaintyBudgetTables.ExpandedUncertainty</td>
+                        <td class="table--border-bottom text-right">@Model.Data.CurrentUncertaintyBudgetTables.ExpandedUncertainty</td>
                         <td class="table--border-bottom"></td>
                     </tr>
                 </tbody>
@@ -1362,7 +1357,20 @@
                 <tbody class="font-consolas">
                     @foreach (var item in @Model.Data.DischargingCurrent)
                     {
-                        <tr>
+                    <tr>
+                        @if (@item.Conclusion == "P")
+                        {
+                            <td style="color: red">@item.Channel</td>
+                            <td class="text-right" style="color: red">@item.Range</td>
+                            <td class="text-right" style="color: red">@item.Indication</td>
+                            <td class="text-right" style="color: red">@item.MeasuredValue</td>
+                            <td class="text-right" style="color: red">@item.Error</td>
+                            <td class="text-right" style="color: red">@item.Acceptance</td>
+                            <td class="text-right" style="color: red">@item.Uncertainty</td>
+                            <td class="text-center" style="color: red">@item.Conclusion</td>
+                        }
+                        else
+                        {
                             <td>@item.Channel</td>
                             <td class="text-right">@item.Range</td>
                             <td class="text-right">@item.Indication</td>
@@ -1371,7 +1379,8 @@
                             <td class="text-right">@item.Acceptance</td>
                             <td class="text-right">@item.Uncertainty</td>
                             <td class="text-center">@item.Conclusion</td>
-                        </tr>
+                        }
+                    </tr>
                     }
                 </tbody>
             </table>
@@ -1428,26 +1437,15 @@
         </section>
         <section class="autographs">
             <div class="autograph" data-name="Calibration Technician">
-                <img class="autograph-img" src="./img/code.png" alt>
+                <img class="autograph-img" src="data:image/png;base64,@Model.Data.CalibrationTechnician" alt>
             </div>
             <div class="autograph" data-name="Technical Manager">
-                <img class="autograph-img" src="./img/code.png" alt>
+                <img class="autograph-img" src="data:image/png;base64,@Model.Data.TechnicalManager" alt>
             </div>
             <div class="autograph" data-name="Approval Director">
-                <img class="autograph-img" src="./img/code.png" alt>
+                <img class="autograph-img" src="data:image/png;base64,@Model.Data.ApprovalDirector" alt>
             </div>
         </section>
-        <footer class="footer">
-            <div class="footer-title">
-                <span class="footer-company">Newell Laboratories</span>
-            </div>
-            <div class="copyright">
-                <span class="copyright-span">15F, Tower 3, Excellence City, Futian, Shenzhen, China. 518049</span>
-                <span class="copyright-span">www.newell.com.cn</span>
-                <span class="copyright-span">FRM-QC003-REV.01</span>
-                <span class="copyright-span">support@newell.com.cn</span>
-            </div>
-        </footer>
     </div>
 </body>
 

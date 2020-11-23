@@ -26,6 +26,17 @@ namespace OpenAuth.App.Nwcali
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var user = loginContext.User;
+            if (baseInfo.Operator.Equals(user.Name))
+            {
+                baseInfo.OperatorId = user.Id;
+            }
+            else
+            {
+                var u = await UnitWork.FindSingleAsync<User>(a => a.Name.Equals(baseInfo.Operator));
+                if (u is null)
+                    throw new CommonException("系统不存在当前校准人账号信息，请联系相关人员录入信息。", 400100);
+                baseInfo.OperatorId = u.Id;
+            }
             baseInfo.CertificateNumber = await CertificateNoGenerate("O");
             baseInfo.CreateTime = DateTime.Now;
             baseInfo.CreateUser = user.Name;

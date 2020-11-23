@@ -130,6 +130,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         public string Operator { get; set; }
+        public string OperatorId { get; set; }
+        public string TechnicalManager { get; set; }
+        public string TechnicalManagerId { get; set; }
+        public string ApprovalDirector { get; set; }
+        public string ApprovalDirectorId { get; set; }
         /// <summary>
         /// 
         /// </summary>

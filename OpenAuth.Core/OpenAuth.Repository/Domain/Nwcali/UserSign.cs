@@ -50,7 +50,7 @@ namespace OpenAuth.Repository.Domain
 
         public override void GenerateDefaultKeyVal()
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
         }
 
         public override bool KeyIsNull()

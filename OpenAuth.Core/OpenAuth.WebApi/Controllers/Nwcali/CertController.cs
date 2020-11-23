@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using DinkToPdf;
 using Infrastructure;
 using Infrastructure.Excel;
 using Infrastructure.Export;
@@ -270,28 +271,24 @@ namespace OpenAuth.WebApi.Controllers
         [HttpGet("{certNo}")]
         public async Task<IActionResult> DownloadCertPdf(string certNo)
         {
-            //var cert = await _certinfoApp.GetAsync(c => c.CertNo.Equals(certNo));
-            //if (cert is null)
-            //    return new NotFoundResult();
-            //if (!string.IsNullOrWhiteSpace(cert.PdfPath) && System.IO.File.Exists(cert.PdfPath))
-            //{
-
-            //    var fileStream = new FileStream(cert.PdfPath, FileMode.Open);
-            //    return File(fileStream, "application/pdf");
-            //}
-            //var pdfPath = WordHandler.DocConvertToPdf(cert.CertPath);
-            //if (!pdfPath.Equals("false"))
-            //{
-            //    cert.PdfPath = pdfPath;
-            //    await _certinfoApp.UpdateAsync(cert.MapTo<AddOrUpdateCertinfoReq>());
-            //    var fileStream = new FileStream(pdfPath, FileMode.Open);
-            //    return File(fileStream, "application/pdf");
-            //}
             var baseInfo = await _nwcaliCertApp.GetInfo(certNo);
             if(baseInfo != null)
             {
                 var model = await BuildModel(baseInfo);
-                var datas = await ExportAllHandler.Exporterpdf(model, "Calibration Certificate.cshtml");
+                var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Header.html");
+                var text = System.IO.File.ReadAllText(url);
+                text = text.Replace("@Model.Data.BarCode", model.BarCode);
+                var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"Header{Guid.NewGuid()}.html");
+                System.IO.File.WriteAllText(tempUrl, text);
+                var footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Footer.html");
+                var datas = await ExportAllHandler.Exporterpdf(model, "Calibration Certificate.cshtml", pdf=> {
+                    pdf.IsWriteHtml = true;
+                    pdf.PaperKind = PaperKind.A4;
+                    pdf.Orientation = Orientation.Portrait;
+                    pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+                    pdf.FooterSettings = new FooterSettings() { FontSize = 6, Right = "Page [page] of [toPage] ", Line = false, Spacing = 2.812, HtmUrl = footerUrl };
+                });
+                System.IO.File.Delete(tempUrl);
                 return File(datas, "application/pdf");
             }
             return new NotFoundResult();
@@ -834,19 +831,25 @@ namespace OpenAuth.WebApi.Controllers
             }
             #region Charging Voltage
             CalculateVoltage("Charge", 8);
+            model.ChargingVoltage = model.ChargingVoltage.OrderBy(s => s.Channel).ToList();
             #endregion
 
             #region Discharging Voltage
             CalculateVoltage("DisCharge", 9);
+            model.DischargingVoltage = model.DischargingVoltage.OrderBy(s => s.Channel).ToList();
             #endregion
 
             #region Charging Current
             CalculateCurrent("Charge", 10);
+            model.ChargingCurrent = model.ChargingCurrent.OrderBy(s => s.Channel).ToList();
             #endregion
 
             #region Discharging Current
             CalculateCurrent("DisCharge", 11);
+            model.DischargingCurrent = model.DischargingCurrent.OrderBy(s => s.Channel).ToList();
             #endregion
+
+
 
             #endregion
 
@@ -857,20 +860,16 @@ namespace OpenAuth.WebApi.Controllers
             {
                 model.CalibrationTechnician = await GetSignBase64(calibrationTechnician.PictureId);
             }
-            //var signPath1 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "yang.png");
-            //var signPath2 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "zhou.png");
-            //var signPath3 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "chen.png");
-            //list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 1, ValueData = signPath1 });
-            //list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 3, ValueData = signPath2 });
-            //list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 1, ValueData = signPath3 });
-            //var signetPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "印章.png");
-            //list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 3, ValueData = signetPath });
-            //var signer = nameDic.GetValueOrDefault(baseInfo.Operator);
-            //if(signer != null)
-            //{
-            //    var signPath1 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", nameDic.GetValueOrDefault(baseInfo.Operator));
-            //    list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 1, ValueData = signPath1 });
-            //}
+            var technicalManager = us.Data.FirstOrDefault(u => u.UserName.Equals(baseInfo.TechnicalManager));
+            if (technicalManager != null)
+            {
+                model.TechnicalManager = await GetSignBase64(technicalManager.PictureId);
+            }
+            var approvalDirector = us.Data.FirstOrDefault(u => u.UserName.Equals(baseInfo.ApprovalDirector));
+            if (technicalManager != null)
+            {
+                model.ApprovalDirector = await GetSignBase64(approvalDirector.PictureId);
+            }
             #endregion
             return model;
         }
@@ -1102,7 +1101,7 @@ namespace OpenAuth.WebApi.Controllers
             var file = await _fileApp.GetFileAsync(fileId);
             if(file!=null)
             {
-                using (var fs = await _fileApp.GetFileStreamAsync(file.BucketName, file.FileName))
+                using (var fs = await _fileApp.GetFileStreamAsync(file.BucketName, file.FilePath))
                 {
                     var bytes = new byte[fs.Length];
                     fs.Position = 0;

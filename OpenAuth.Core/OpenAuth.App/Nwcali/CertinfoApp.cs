@@ -208,8 +208,6 @@ namespace OpenAuth.App
                         });
                         await UnitWork.UpdateAsync<Certinfo>(c => c.Id.Equals(req.CertInfoId), o => new Certinfo { Operator = loginContext.User.Name, OperatorId = loginContext.User.Id });
                         await UnitWork.SaveAsync();
-                        //var signPath1 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", nameDic.GetValueOrDefault(loginContext.User.Name));
-                        //list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 1, ValueData = signPath1 });
                     }
                     else if (flowInstance.ActivityName.Equals("待审核"))
                     {
@@ -219,8 +217,8 @@ namespace OpenAuth.App
                             CertInfoId = certInfo.Id,
                             Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}审批通过。"
                         });
-                        var signPath2 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", nameDic.GetValueOrDefault(loginContext.User.Name));
-                        list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 1, YCellMark = 3, ValueData = signPath2 });
+                        await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber.Equal(certInfo.CertNo), o => new NwcaliBaseInfo { TechnicalManager = loginContext.User.Name, TechnicalManagerId = loginContext.User.Id });
+                        await UnitWork.SaveAsync();
                     }
                     else if (flowInstance.ActivityName.Equals("待批准"))
                     {
@@ -230,22 +228,10 @@ namespace OpenAuth.App
                             CertInfoId = certInfo.Id,
                             Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}批准证书。"
                         });
-                        var signPath3 = Path.Combine(Directory.GetCurrentDirectory(), "Templates", nameDic.GetValueOrDefault(loginContext.User.Name));
-                        list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 1, ValueData = signPath3 });
-                        //var signetPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "印章.png");
-                        //list.Add(new WordModel { MarkPosition = 0, TableMark = 12, ValueType = 1, XCellMark = 3, YCellMark = 3, ValueData = signetPath });
+                        await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber.Equal(certInfo.CertNo), o => new NwcaliBaseInfo { ApprovalDirector = loginContext.User.Name, ApprovalDirectorId = loginContext.User.Id });
+                        await UnitWork.SaveAsync();
                     }
                     #endregion
-                    var templatePath = certInfo.CertPath;
-                    var tagetPath = certInfo.CertPath;
-                    var result = WordHandler.DOCTemplateConvert(templatePath, tagetPath, list);
-
-                    var pdfPath = WordHandler.DocConvertToPdf(certInfo.CertPath);
-                    if (!pdfPath.Equals("false"))
-                    {
-                        certInfo.PdfPath = pdfPath;
-                        await UpdateAsync(certInfo.MapTo<AddOrUpdateCertinfoReq>());
-                    }
                     break;
                 case "2":
                     _flowInstanceApp.Verification(req.Verification);
