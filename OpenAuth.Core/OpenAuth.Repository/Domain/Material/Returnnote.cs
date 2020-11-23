@@ -17,9 +17,9 @@ namespace OpenAuth.Repository.Domain
     ///退料表
     /// </summary>
     [Table("returnnote")]
-    public class Returnnote : BaseEntity<int>
+    public class ReturnNote : BaseEntity<int>
     {
-        public Returnnote()
+        public ReturnNote()
         {
             this.CreateTime = DateTime.Now; ;
             this.FlowInstanceId = "";
@@ -71,6 +71,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("创建人Id")]
         public string CreateUserId { get; set; }
+
+        /// <summary>
+        /// 是否最后一次退料
+        /// </summary>
+        [Description("是否最后一次退料")]
+        public int IsLast { get; set; }
 
         /// <summary>
         /// 物流表

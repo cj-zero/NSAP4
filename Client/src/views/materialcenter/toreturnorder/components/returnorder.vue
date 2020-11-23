@@ -133,6 +133,7 @@
 </template>
 
 <script>
+import { saveReceiveInfo } from '@/api/material/returnMaterial'
 import { configMixin } from '../../common/js/mixins'
 import CommonTable from '@/components/CommonTable' // 对于不可编辑的表格
 import MyDialog from '@/components/Dialog'
@@ -205,7 +206,8 @@ export default {
         { label: '单位', prop: 'unit' },
         { label: '已出库', prop: 'outbound' },
         { label: '出库数量', prop: 'delivery', type: 'slot', slotName: 'delivery' }
-      ]
+      ],
+      ReceiveInfo: [] // 验收收货记录列表 { id: string, isPass: 0, wrongCount: 0, receiveRemark: string }
     }
   },
   watch: {
@@ -232,6 +234,9 @@ export default {
     },
     isOutboundAll (data) { // 判断是否物料的是否已经出料完成
       return !(data.count - data.outbound)
+    },
+    _saveReceiveInfo () {
+      return saveReceiveInfo.then()
     }
   },
   created () {

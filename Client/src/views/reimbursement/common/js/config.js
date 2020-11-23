@@ -1,5 +1,5 @@
 export let accommodationConfig = [ // 住房配置
-  { label: '天数', prop: 'days', type: 'number', width: 100 },
+  { label: '天数', prop: 'days', type: 'number', width: 100, align: 'right' },
   { label: '金额', prop: 'money', type: 'number', width: 120, disabled: true, align: 'right' },
   { label: '总金额', prop: 'totalMoney', type: 'number', width: 120, align: 'right', placeholder: '大于0' },
   { label: '备注', prop: 'remark', type: 'input', width: 100 },

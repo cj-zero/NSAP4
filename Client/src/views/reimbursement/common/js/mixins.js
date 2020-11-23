@@ -30,12 +30,13 @@ export let tableMixin = {
         { label: '呼叫主题', prop: 'fromTheme', width: 250 },
         { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
         { label: '客户名称', prop: 'terminalCustomer', width: 170 },
-        { label: '总金额', prop: 'totalMoney', width: 100 },
-        { label: '总天数', prop: 'businessTripDays', width: 60 },
+        { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
+        { label: '总天数', prop: 'days', width: 60, align: 'right' },
         { label: '出发日期', prop: 'businessTripDate', width: 85 },
         { label: '结束日期', prop: 'endDate', width: 85 },
         { label: '报销部门', prop: 'orgName', width: 70 },
         { label: '报销人', prop: 'userName', width: 70 },
+        // { label: '劳务关系', prop: 'serviceRelations', width: 100 },
         { label: '业务员', prop: 'salesMan', width: 80 },
         { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
         { label: '填报日期', prop: 'fillTime', width: 85 },
@@ -43,17 +44,18 @@ export let tableMixin = {
       ],
       processedColumns: [ // 不同的表格配置(我的提交除外的其它模块表格)
         { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleJump: this.getDetail },
-        { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleJump: this.openTree },
+        // { label: '服务ID', prop: 'serviceOrderSapId', width: 80 },
         { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
         { label: '客户名称', prop: 'terminalCustomer', width: 170 },
-        { label: '总金额', prop: 'totalMoney', width: 100 },
-        { label: '总天数', prop: 'businessTripDays', width: 60 },
+        { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
+        { label: '总天数', prop: 'days', width: 60, align: 'right' },
         { label: '出发日期', prop: 'businessTripDate', width: 85 },
         { label: '结束日期', prop: 'endDate', width: 85 },
         { label: '报销部门', prop: 'orgName', width: 70 },
         { label: '报销人', prop: 'userName', width: 70 },
+        // { label: '劳务关系', prop: 'serviceRelations', width: 100 },
         { label: '业务员', prop: 'salesMan', width: 80 },
-        { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
+        // { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
         { label: '填报日期', prop: 'fillTime', width: 85 }
       ],
       tableData: [],
@@ -69,7 +71,8 @@ export let tableMixin = {
         responsibility: '',
         staticDate: '',
         endDate: '',
-        reimburseType: ''
+        reimburseType: '',
+        // serviceRelations: '' // 劳务关系
       },
       listQuery: { // 分页参数
         page: 1,
@@ -160,7 +163,8 @@ export let tableMixin = {
           if (this.currentRow.createUserId !== this.originUserId) {
             return this.$message.warning('当前用户与报销人不符，不可编辑')
           }
-          if (this.currentRow.remburseStatus > 3) {
+          let status = this.currentRow.remburseStatus
+          if (Number(status) > 3|| Number(status) === -1) {
             return this.$message.warning('当前状态不可编辑')
           }
         }
@@ -173,15 +177,19 @@ export let tableMixin = {
         let { reimburseResp } = res.data
         delete res.data.reimburseResp
         this.detailData = Object.assign({}, res.data, { ...reimburseResp })
+        // 如果是审核流程、则判断当前用户是不是客服主管
+        this.title = tableClick ? 'view' : val.type
         try {
+          if (this.title === 'approve' && this.isGeneralManager) {
+            // 用于总经理审批页面的表格数据
+            this._generateApproveTable(this.detailData)
+          }
           this._normalizeDetail(this.detailData)
+          
         } catch (err) {
           console.log(err, 'err')
         }
-        // 如果是审核流程、则判断当前用户是不是客服主管
-        this.title = tableClick
-          ? 'view'
-          : val.type
+        
         this.tableLoading = false
         this.$refs.myDialog.open()
       }).catch(() => {
@@ -189,7 +197,64 @@ export let tableMixin = {
         this.$message.error('获取详情失败')
       })
     },
-    _normalizeDetail (data) {
+    processInvoiceTime (invoiceTime) {
+      return invoiceTime ? invoiceTime.split(' ')[0] : invoiceTime
+    },
+    _generateApproveTable (data) { // 针对总经理审批页面
+      console.log(data, 'generate')
+      let result = []
+      let { 
+        reimburseTravellingAllowances,
+        reimburseFares,
+        reimburseAccommodationSubsidies,
+        reimburseOtherCharges,
+      } = data
+      reimburseFares.forEach(item => {
+        let { invoiceTime, transport, from, to, money } = item
+        result.push({
+          invoiceTime: this.processInvoiceTime(invoiceTime),
+          expenseName: this.transportationMap[transport],
+          expenseDetail: from + '-' + to,
+          money
+        })
+      })
+      reimburseAccommodationSubsidies.forEach(item => {
+        let { invoiceTime, days, totalMoney } = item
+        result.push({
+          invoiceTime: this.processInvoiceTime(invoiceTime),
+          expenseName: '住宿补贴',
+          expenseDetail: days + '天',
+          money: totalMoney
+        })
+      })
+      reimburseTravellingAllowances.forEach(item => {
+        let { invoiceTime, days, money } = item
+        result.push({
+          invoiceTime: this.processInvoiceTime(invoiceTime),
+          expenseName: '出差补贴',
+          expenseDetail: days + '天',
+          money: money * days
+        })
+      })
+      reimburseOtherCharges.forEach(item => {
+        let { invoiceTime, money, expenseCategory } = item
+        result.push({
+          invoiceTime: this.processInvoiceTime(invoiceTime),
+          expenseName: this.otherExpensesMap[expenseCategory],
+          expenseDetail: '',
+          money
+        })
+      })
+      /* 日期从小到大， 没日期的话，交通费用→住宿补贴→出差补贴→其他费用 */
+      // let dataWithInvoiceTime = result.filter(item => item.invoiceTime).sort((a, b) => {
+      //   return new Date(a.invoiceTime).getTime() - new Date(b.invoiceTime).getTime()
+      // })
+      // let dataWithoutInvoiceTime = result.filter(item => !item.invoiceTime)
+      // 交通-住宿-出差-其它
+      // data.expenseCategoryList = dataWithInvoiceTime.concat(dataWithoutInvoiceTime)
+      data.expenseCategoryList = result
+    },
+    _normalizeDetail (data) { 
       let { 
         reimburseAttachments,
         reimburseTravellingAllowances,
@@ -209,6 +274,7 @@ export let tableMixin = {
       if (reimburseTravellingAllowances && reimburseTravellingAllowances.length) {
         reimburseTravellingAllowances[0].isAdd = true
       }
+      // 处理附件
       this._buildAttachment(reimburseFares)
       this._buildAttachment(reimburseAccommodationSubsidies)
       this._buildAttachment(reimburseOtherCharges)
@@ -336,13 +402,22 @@ export let categoryMixin = {
         this.$message.error('获取字典分类失败')
       })
     },
-    buildSelectOptions (list) {
-      list.forEach(item => {
-        let { name, dtValue } = item
-        item.label = name
-        item.value = dtValue
-      })
-      return list
+    buildSelectOptions (list, isName = false) {
+      if (isName) {
+        return list.map(item => {
+          return {
+            label: item.name,
+            value: item.name
+          }
+        })
+      } else {
+        list.forEach(item => {
+          let { name, dtValue } = item
+          item.label = name
+          item.value = dtValue
+        })
+        return list
+      }
     },
     buildMap (list) { // 用来对应表格的名字
       let result = {}
@@ -352,7 +427,7 @@ export let categoryMixin = {
       })
       return result
     },
-    buildReimburseAcc (list) { // 住宿标准费用格式 { cityName: { dtValue:.. , description: ..} }
+    buildReimburseAcc (list) { // 住宿标准费用格式 { cityName: { dtValue:.. , description: ..} } isName
       let result = {}
       list.forEach(item => {
         let { name, description, dtValue } = item
@@ -387,7 +462,7 @@ export let categoryMixin = {
       return this.buildMap(this.categoryList.filter(item => item.typeId === SYS_Responsibility))
     },
     serviceRelationsList () {
-      return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_ServiceRelations))
+      return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_ServiceRelations), true)
     },
     travellingList () {
       return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_TravellingAllowance))
@@ -395,11 +470,17 @@ export let categoryMixin = {
     transportTypeList () {
       return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_TransportationAllowance))
     },
+    transportationMap () {
+      return this.buildMap(this.categoryList.filter(item => item.typeId === SYS_Transportation))
+    },
     transportationList () {
       return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_Transportation))
     },
     otherExpensesList () {
       return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_OtherExpenses))
+    },
+    otherExpensesMap () {
+      return this.buildMap(this.categoryList.filter(item => item.typeId === SYS_OtherExpenses))
     },
     reimburseTagList () {
       return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_ReimburseAccraditation))
@@ -410,6 +491,11 @@ export let categoryMixin = {
     isCustomerSupervisor () { // 判断是不是客服主管
       return this.rolesList && this.rolesList.length
         ? this.rolesList.some(item => item === '客服主管')
+        : false
+    },
+    isGeneralManager () { // 判断是不是总经理
+      return this.rolesList && this.rolesList.length
+        ? this.rolesList.some(item => item === '总经理')
         : false
     },
     isEditItem () { // 审批的时候只有客服主管可以改 新增编辑都可以修改
@@ -423,15 +509,15 @@ export let categoryMixin = {
           col: this.ifFormEdit ? 5 : 6, type: 'select', options: this.reimburseTypeList, 
           disabled: this.isEditItem, width: '100%'
         },
-        { label: '客户简称', prop: 'shortCustomerName', palceholder: '最长6个字', col: this.ifFormEdit ? 5 : 6, maxlength: 6, disabled: this.isEditItem, required: true },
+        // { label: '客户简称', prop: 'shortCustomerName', palceholder: '最长6个字', col: this.ifFormEdit ? 5 : 6, maxlength: 6, disabled: this.isEditItem, required: true },
         { label: '费用承担', prop: 'bearToPay', palceholder: '请输入内容', 
           disabled: this.title === 'view' || !(this.isCustomerSupervisor && (this.title === 'create' || this.title === 'edit' || this.title === 'approve')), 
-          col: this.ifFormEdit ? 5 : 6, type: 'select', options: this.expenseList, width: '100%', isEnd: true
+          col: this.ifFormEdit ? 5 : 6, type: 'select', options: this.expenseList, width: '100%'
         },
         // { label: '报销单号', prop: 'mainId', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        { label: '报销状态', prop: 'reimburseTypeText', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '报销状态', prop: 'reimburseTypeText', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
         { label: '客户代码', prop: 'terminalCustomerId', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        { label: '客户名称', prop: 'terminalCustomer', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '客户名称', prop: 'terminalCustomer', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 10 : 12 },
         { label: '支付时间', prop: 'payTime', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
         // { label: '填报时间', prop: 'createTime', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
         // { label: '报销人', prop: 'userName', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
@@ -453,8 +539,8 @@ export let categoryMixin = {
     },    
     travelConfig () {
       let config = [
-        { label: '天数', prop: 'days', type: 'number', width: 150 },
-        { label: '金额', align: 'right', prop: 'money', type: 'number', disabled: true, width: 150 },
+        { label: '天数', prop: 'days', type: 'number', width: 100, align: 'right' },
+        { label: '金额', prop: 'money', type: 'number', disabled: true, width: 150, align: 'right' },
         { label: '备注', prop: 'remark', type: 'input', width: 150 }
       ]
       return (this.ifFormEdit !== undefined && !this.ifFormEdit) || this.ifFormEdit === undefined
@@ -503,7 +589,8 @@ export let categoryMixin = {
         { placeholder: '服务ID', prop: 'serviceOrderId', width: 100 },
         { placeholder: '报销部门', prop: 'orgName', width: 100 },
         { placeholder: '费用承担', prop: 'bearToPay', width: 100, type: 'select', options: this.expenseList },
-        { placeholder: '责任承担', prop: 'responsibility', width: 100, type: 'select', options: this.responsibilityList },
+        // { placeholder: '责任承担', prop: 'responsibility', width: 100, type: 'select', options: this.responsibilityList },
+        // { placeholder: '劳务关系', prop: 'serviceRelations', width: 120, type: 'select', options: this.serviceRelationsList },
         { placeholder: '填报起始时间', prop: 'staticDate', type: 'date', width: 150 },
         { placeholder: '填报结束时间', prop: 'endDate', type: 'date', width: 150 }
       ]
@@ -515,7 +602,7 @@ export let categoryMixin = {
 // 9：汽车票 10：轮船票 11：增值税发票（卷票 ）12：购车发票 13：过路过桥费发票
 const TRAFFIC_TYPE_LIST = [0, 2, 5, 9, 10, 13] // 交通类型发票
 const ACC_TYPE = 3
-
+const invoiceTimeReg = /(^\d{4}-\d{2}-\d{2}).*$/ // 发票时间正则
 export const attachmentMixin = {
   data () {
     return {
@@ -575,7 +662,8 @@ export const attachmentMixin = {
       return new Blob([new Uint8Array(array)], { type })
     },
     _setCurrentRow (currentRow, data) { // 识别发票凭据后，对表格行进行赋值
-      let { invoiceNo, money, isAcc, isValidInvoice } = data
+      console.log('setCurrentRow')
+      let { invoiceNo, invoiceDate, money, isAcc, isValidInvoice } = data
       if (isAcc) { // 住宿表格行数据
         currentRow.totalMoney = money
         currentRow.money = (currentRow.totalMoney / (currentRow.days || 1)).toFixed(2)
@@ -588,6 +676,7 @@ export const attachmentMixin = {
       this.$set(currentRow, 'isValidInvoice', isValidInvoice) // 判断发票是否正确，如果是正确的话就不给修改，不正确就给修改
       currentRow.maxMoney = money
       currentRow.invoiceNumber = invoiceNo
+      currentRow.invoiceTime = invoiceDate.match(invoiceTimeReg) ? RegExp.$1 : ''
     },
     _setAttachmentList ({ data, index, prop, reimburseType, val }) { // 设置通过上传获取到的附件列表
       let resultArr = []
@@ -629,6 +718,7 @@ export const attachmentMixin = {
                 invoiceNo: '',
                 money: '',
                 isAcc,
+                invoiceDate: '',
                 isValidInvoice: false
               })
             })
@@ -636,13 +726,14 @@ export const attachmentMixin = {
             this.$message.error('识别失败,请上传至其它附件列表')
             resolve(false)
           } else {
-            let { invoiceNo, amountWithTax, isValidate, isUsed, notPassReason, type, extendInfo } = res.data[0]
+            let { invoiceNo, invoiceDate, amountWithTax, isValidate, isUsed, notPassReason, type, extendInfo } = res.data[0]
             if (!isValidate || (isValidate && isUsed)) { // 识别失败
               this.$nextTick(() => {
                 this._setCurrentRow(currentRow, {
                   invoiceNo: '',
                   money: '',
                   isAcc,
+                  invoiceDate: '',
                   isValidInvoice: false
                 })
               })
@@ -658,6 +749,7 @@ export const attachmentMixin = {
                   invoiceNo,
                   money: amountWithTax,
                   isAcc,
+                  invoiceDate,
                   isValidInvoice: true
                 })
               })
@@ -671,6 +763,7 @@ export const attachmentMixin = {
               invoiceNo:'',
               money: '',
               isAcc,
+              invoiceDate: '',
               isValidInvoice: false
             })
           })

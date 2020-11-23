@@ -1,4 +1,5 @@
-﻿using Infrastructure.TecentOCR;
+﻿using Infrastructure;
+using Infrastructure.TecentOCR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using OpenAuth.App;
@@ -75,7 +76,27 @@ namespace OpenAuth.WebApi.Controllers
                 byte[] bt = new byte[fileStream.Length];
                 //调用read读取方法
                 fileStream.Read(bt, 0, bt.Length);
-                var base64Str = Convert.ToBase64String(bt);
+                string base64Str = Convert.ToBase64String(bt);
+                //1.识别发票
+                var r = new Result();
+                //1.1判断是否为PDF文件 若将PDF转为图片格式后进行识别
+                if (".PDF".Equals(file.Extension, StringComparison.OrdinalIgnoreCase))
+                {
+                    var imgStream = PdfConvertToImg.Do(bt);
+                    imgStream.Position = 0;
+                    byte[] imgbt = new byte[imgStream.Length];
+                    //调用read读取方法
+                    await imgStream.ReadAsync(imgbt, 0, imgbt.Length);
+                    base64Str = Convert.ToBase64String(imgbt);
+                    //var vatInvoiceOCRRequest = new VatInvoiceOCRRequest
+                    //{
+                    //    ImageUrl = string.Empty,
+                    //    ImageBase64 = base64Str,
+                    //    IsPdf = true,
+                    //    PdfPageNumber = 1
+                    //};
+                    //r = _tecentOCR.VatInvoiceOCR(vatInvoiceOCRRequest);
+                }
                 //判断图片大小
                 double size = base64Str.Length;// 获取文本所占字节大小
                 //所下载图片经Base64编码后不超过 7M。图片下载时间不超过 3 秒。
@@ -85,30 +106,15 @@ namespace OpenAuth.WebApi.Controllers
                     result.Message = $"fileId:{request.FileId} is more than 7M";
                     return result;
                 }
-                //1.识别发票
-                var r = new Result();
-                //1.1判断是否为PDF文件 若为PDF文件则使用VatInvoiceOCR方法进行识别
-                if (".PDF".Equals(file.Extension, StringComparison.OrdinalIgnoreCase))
+                //图片格式文件识别使用混贴MixedInvoiceOCR进行识别
+                var invoiceRequest = new MixedInvoiceOCRRequest
                 {
-                    var vatInvoiceOCRRequest = new VatInvoiceOCRRequest
-                    {
-                        ImageUrl = string.Empty,
-                        ImageBase64 = base64Str,
-                        IsPdf = true,
-                        PdfPageNumber = 1
-                    };
-                    r = _tecentOCR.VatInvoiceOCR(vatInvoiceOCRRequest);
-                }
-                else//图片格式文件识别使用混贴MixedInvoiceOCR进行识别
-                {
-                    var invoiceRequest = new MixedInvoiceOCRRequest
-                    {
-                        Types = request.Types,
-                        ImageUrl = string.Empty,
-                        ImageBase64 = base64Str
-                    };
-                    r = _tecentOCR.MixedInvoiceOCR(invoiceRequest);
-                }
+                    Types = request.Types,
+                    ImageUrl = string.Empty,
+                    ImageBase64 = base64Str
+                };
+                r = _tecentOCR.MixedInvoiceOCR(invoiceRequest);
+
                 if (r.Code == 200 && r.Data != null && r.Data.Count > 0)
                 {
                     //识别成功返回识别信息集合
@@ -121,6 +127,7 @@ namespace OpenAuth.WebApi.Controllers
                         invoiceresponse.CompanyName = item.CompanyName;
                         invoiceresponse.Type = item.Type;
                         invoiceresponse.ExtendInfo = item.Extend;
+                        invoiceresponse.InvoiceDate = item.InvoiceDate;
                         //判断若未识别出发票号码则直接返回
                         if (string.IsNullOrEmpty(item.InvoiceNo))
                         {

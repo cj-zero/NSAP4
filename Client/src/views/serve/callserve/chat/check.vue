@@ -1,38 +1,42 @@
 <template>
   <div class="check-wrapper">
-    <template v-if="checkList && checkList.length">
-      <ul class="check-list">
-        <li 
-          class="check-item"
-          v-for="item in checkList"
-          :key="item.id"
-        >
-          <div class="content">
-            <el-row v-if="!item.isNew" type="flex">
-              <span class="text">旧</span>
-              <div>
-                <p>序列号: {{ item.orginalManufSN }}</p>
-              </div>
+    <el-scrollbar class="scroll-bar">
+      <template v-if="checkList && checkList.length">
+        <ul class="check-list">
+          <li 
+            class="check-item"
+            v-for="item in checkList"
+            :key="item.id"
+          >
+            <div class="content">
+              <el-row v-if="!item.isNew" type="flex">
+                <span class="text">旧</span>
+                <div>
+                  <p>序列号: {{ item.orginalManufSN }}</p>
+                </div>
+              </el-row>
+              <el-row type="flex" class="new">
+                <span class="text">新</span>
+                <div>
+                  <p>序列号: {{ item.manufSN }}</p>
+                  <p>物料编码: {{ item.itemCode }}</p>
+                </div>
+              </el-row>
+            </div>
+            <el-row type="flex" justify="space-between" align="middle" class="btn-wrapper">
+              <span>{{ item.currentUser }}</span>
+              <el-button :type="changeType(item.status)" size="mini" @click="checkItem(item)">{{ item.status | processText }}</el-button>
             </el-row>
-            <el-row type="flex" class="new">
-              <span class="text">新</span>
-              <div>
-                <p>序列号: {{ item.manufSN }}</p>
-                <p>物料编码: {{ item.itemCode }}</p>
-              </div>
-            </el-row>
-          </div>
-          <el-row type="flex" justify="space-between" align="middle" class="btn-wrapper">
-            <span>{{ item.currentUser }}</span>
-            <el-button :type="changeType(item.status)" size="mini" @click="checkItem(item)">{{ item.status | processText }}</el-button>
-          </el-row>
-        </li>
-      </ul>
-    </template>
-    <template v-else>
-      暂无核对设备信息~~
-    </template>
+          </li>
+        </ul>
+      </template>
+      <template v-else>
+        暂无核对设备信息~~
+      </template>
+    </el-scrollbar>
+    
     <el-dialog
+      v-el-drag-dialog
       width="900px"
       top="10vh"
       class="dialog-mini"
@@ -125,10 +129,13 @@ export default {
         materialDescription,
         internalSerialNumber,
         problemTypeId,
-        problemTypeName
+        problemTypeName,
+        fromTheme,
+        fromType
       } = item
       this.dialogStatus = Boolean(isNew)
       this.info = item
+      console.log(status)
       if (status === 0) {
         if (!isNew) { // 修改核对
           getWorkOrderDetailById({
@@ -148,11 +155,11 @@ export default {
             remark: "", //备注
             status: 1, //呼叫状态 1-待确认 2-已确认 3-已取消 4-待处理 5-已排配 6-已外出 7-已挂起 8-已接收 9-已解决 10-已回访
             currentUserId: "", //App当前流程处理用户Id
-            fromTheme: "", //呼叫主题
+            fromTheme: fromTheme || "", //呼叫主题
             fromId: 1, //呼叫来源 1-电话 2-APP
             problemTypeId: problemTypeId || "", //问题类型Id
             problemTypeName: problemTypeName || "",
-            fromType: "", //呼叫类型1-提交呼叫 2-在线解答（已解决）
+            fromType: fromType || "", //呼叫类型1-提交呼叫 2-在线解答（已解决）
             materialCode: itemCode || "", //物料编码
             materialDescription: materialDescription || "", //物料描述
             manufacturerSerialNumber: manufSN || "", //制造商序列号
@@ -186,9 +193,10 @@ export default {
       this._getSerialNumber()
     },
     onClose (type) {
+      console.log(type, 'type')
       if (type) {
         if (type === 'success') { // 点击确认
-          this.instance._getDetails() // 不通过的不会刷新页面
+          // this.instance._getDetails() // 不通过的不会刷新页面
         }
         this._getTechnicianApplyDevices()
       }
@@ -230,9 +238,18 @@ export default {
 </script>
 <style lang='scss' scoped>
 .check-wrapper {
+  .scroll-bar {
+    &.el-scrollbar {
+      ::v-deep .el-scrollbar__wrap {
+        max-height: 550px; // 最大高度
+        overflow-x: hidden; // 隐藏横向滚动栏
+        margin-bottom: 0 !important;
+      }
+    }
+  }
   .check-list {
-    max-height: 600px;
-    overflow-y: auto;
+    // max-height: 600px;
+    // overflow-y: auto;
     .check-item {
       padding: 15px;
       box-shadow: 0 2px 12px 0 rgba(0,0,0,.1);

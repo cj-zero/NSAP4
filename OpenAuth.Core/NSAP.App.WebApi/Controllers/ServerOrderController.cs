@@ -224,12 +224,12 @@ namespace NSAP.App.WebApi.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> SaveOrderTakeType(SaveWorkOrderTakeTypeReq request)
+        public async Task<TableData> SaveOrderTakeType(SaveWorkOrderTakeTypeReq request)
         {
-            var result = new Response();
+            var result = new TableData();
             try
             {
-                await _serviceOrderApp.SaveOrderTakeType(request);
+                result = await _serviceOrderApp.SaveOrderTakeType(request);
             }
             catch (Exception ex)
             {
@@ -564,6 +564,28 @@ namespace NSAP.App.WebApi.Controllers
             try
             {
                 result.Result = await _attendanceClockApp.GetDetails(id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取技术员单据数量列表
+        /// </summary>
+        /// <param name="CurrentUserId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetTechnicianServiceOrderCount(int CurrentUserId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetTechnicianServiceOrderCount(CurrentUserId);
             }
             catch (Exception ex)
             {

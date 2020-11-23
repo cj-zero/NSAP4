@@ -66,6 +66,11 @@ namespace OpenAuth.App
 
         public async Task Add(AddOrUpdateCompletionReportReq req)
         {
+            //添加之前判断是否有报告提交记录 若有则删除之前的完工报告
+            var everCompletionReport = await UnitWork.Find<CompletionReport>(w => w.ServiceOrderId == req.ServiceOrderId && w.TechnicianId == req.CurrentUserId.ToString())
+                .WhereIf("其他设备".Equals(req.MaterialType), a => a.MaterialCode == "其他设备")
+                .WhereIf(!"其他设备".Equals(req.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == req.MaterialType)
+                .FirstOrDefaultAsync();
             var obj = req.MapTo<CompletionReport>();
 
             obj.CreateTime = DateTime.Now;
@@ -82,43 +87,53 @@ namespace OpenAuth.App
             pictures.ForEach(r => r.CompletionReportId = o.Id);
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
-            var workOrderList = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId)
-                .WhereIf("其他设备".Equals(req.MaterialType), a => a.MaterialCode == "其他设备")
-                .WhereIf(!"其他设备".Equals(req.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == req.MaterialType)
-                .ToListAsync());
-            List<int> workorder = new List<int>();
-            foreach (var item in workOrderList)
+            //判断为非草稿提交 则修改对应状态和发送消息
+            if (req.IsDraft == 0)
             {
-                workorder.Add(item.Id);
+                var workOrderList = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId)
+                    .WhereIf("其他设备".Equals(req.MaterialType), a => a.MaterialCode == "其他设备")
+                    .WhereIf(!"其他设备".Equals(req.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == req.MaterialType)
+                    .ToListAsync());
+                List<int> workorder = new List<int>();
+                foreach (var item in workOrderList)
+                {
+                    workorder.Add(item.Id);
+                }
+                await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id), s => new ServiceWorkOrder { Status = 7 });
+                await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+                {
+                    Title = "技术员完成服务",
+                    Details = $"感谢您对新威的支持。您的服务已完成，如有疑问请及时拨打客服电话：8008308866，新威客服会全力帮您继续跟进",
+                    LogType = 1,
+                    ServiceOrderId = req.ServiceOrderId,
+                    ServiceWorkOrder = string.Join(',', workorder.ToArray()),
+                    MaterialType = req.MaterialType
+                });
+                await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+                {
+                    Title = "技术员完成售后维修",
+                    Details = $"提交了《行为服务报告单》，完成了本次任务",
+                    LogType = 2,
+                    ServiceOrderId = req.ServiceOrderId,
+                    ServiceWorkOrder = string.Join(',', workorder.ToArray()),
+                    MaterialType = req.MaterialType
+                });
+                //反写完工报告Id至工单
+                await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id),
+                    o => new ServiceWorkOrder { CompletionReportId = completionReportId, CompleteDate = DateTime.Now });
+                //获取当前服务单下的所有消息Id集合
+                var msgList = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == req.ServiceOrderId).Select(s => s.Id).ToListAsync();
+                //清空消息为已读
+                await UnitWork.UpdateAsync<ServiceOrderMessageUser>(s => s.FroUserId == req.CurrentUserId.ToString() && msgList.Contains(s.MessageId), e => new ServiceOrderMessageUser { HasRead = true });
             }
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id), s => new ServiceWorkOrder { Status = 7 });
-            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
-            {
-                Title = "技术员完成服务",
-                Details = $"感谢您对新威的支持。您的服务已完成，如有疑问请及时拨打客服电话：8008308866，新威客服会全力帮您继续跟进",
-                LogType = 1,
-                ServiceOrderId = req.ServiceOrderId,
-                ServiceWorkOrder = string.Join(',', workorder.ToArray()),
-                MaterialType = req.MaterialType
-            });
-            await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
-            {
-                Title = "技术员完成售后维修",
-                Details = $"提交了《行为服务报告单》，完成了本次任务",
-                LogType = 2,
-                ServiceOrderId = req.ServiceOrderId,
-                ServiceWorkOrder = string.Join(',', workorder.ToArray()),
-                MaterialType = req.MaterialType
-            });
-            //反写完工报告Id至工单
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id),
-                o => new ServiceWorkOrder { CompletionReportId = completionReportId, CompleteDate = DateTime.Now });
-            //获取当前服务单下的所有消息Id集合
-            var msgList = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == req.ServiceOrderId).Select(s => s.Id).ToListAsync();
-            //清空消息为已读
-            await UnitWork.UpdateAsync<ServiceOrderMessageUser>(s => s.FroUserId == req.CurrentUserId.ToString() && msgList.Contains(s.MessageId), e => new ServiceOrderMessageUser { HasRead = true });
             //解除隐私号码绑定
             //await UnbindProtectPhone(req.ServiceOrderId, req.MaterialType);
+            //删除草稿
+            if (everCompletionReport != null)
+            {
+                await UnitWork.DeleteAsync<CompletionReport>(c => c.Id == everCompletionReport.Id);
+            }
+            await UnitWork.SaveAsync();
         }
 
 
@@ -171,34 +186,45 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<CompletionReportDetailsResp> GetOrderWorkInfoForAdd(int serviceOrderId, int currentUserId, string MaterialType)
         {
-            var result = new TableData();
-            var obj = from a in UnitWork.Find<ServiceWorkOrder>(null)
-                      join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
-                      from b in ab.DefaultIfEmpty()
-                      select new { a, b };
-            obj = obj.Where(o => o.b.Id == serviceOrderId && o.a.CurrentUserId == currentUserId)
-                .WhereIf("其他设备".Equals(MaterialType), q => q.a.MaterialCode.Equals("其他设备"))
-                .WhereIf(!"其他设备".Equals(MaterialType), q => q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-")) == MaterialType);
-            var query = await obj.Select(q => new
+            var thisworkdetail = new CompletionReportDetailsResp();
+            //先查找是否之前填过完工报告（草稿）若有则拉取草稿报告单 否则取默认带出的数据
+            var everCompletionReport = await UnitWork.Find<CompletionReport>(w => w.ServiceOrderId == serviceOrderId && w.TechnicianId == currentUserId.ToString())
+               .WhereIf("其他设备".Equals(MaterialType), a => a.MaterialCode == "其他设备")
+               .WhereIf(!"其他设备".Equals(MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == MaterialType)
+               .FirstOrDefaultAsync();
+            if (everCompletionReport != null)
             {
-                q.b.U_SAP_ID,
-                q.a.FromTheme,
-                q.a.CurrentUserId,
-                q.b.CustomerId,
-                q.b.CustomerName,
-                q.b.TerminalCustomer,
-                q.a.ServiceOrderId,
-                Contacter = string.IsNullOrEmpty(q.b.NewestContacter) ? q.b.Contacter : q.b.NewestContacter,
-                ContactTel = string.IsNullOrEmpty(q.b.NewestContactTel) ? q.b.ContactTel : q.b.NewestContactTel,
-                q.a.ManufacturerSerialNumber,
-                q.a.MaterialCode,
-                ProblemDescription = "故障描述：" + q.a.TroubleDescription + "；解决方案：" + q.a.ProcessDescription,
-                q.a.TroubleDescription,
-                q.a.ProcessDescription,
-                q.b.TerminalCustomerId,
-                q.a.ServiceMode
-            }).FirstOrDefaultAsync();
-            var thisworkdetail = query.MapTo<CompletionReportDetailsResp>();
+                thisworkdetail = everCompletionReport.MapTo<CompletionReportDetailsResp>();
+            }
+            else
+            {
+                var obj = from a in UnitWork.Find<ServiceWorkOrder>(null)
+                          join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
+                          from b in ab.DefaultIfEmpty()
+                          select new { a, b };
+                obj = obj.Where(o => o.b.Id == serviceOrderId && o.a.CurrentUserId == currentUserId)
+                    .WhereIf("其他设备".Equals(MaterialType), q => q.a.MaterialCode.Equals("其他设备"))
+                    .WhereIf(!"其他设备".Equals(MaterialType), q => q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-")) == MaterialType);
+                var query = await obj.Select(q => new
+                {
+                    q.b.U_SAP_ID,
+                    q.a.FromTheme,
+                    q.a.CurrentUserId,
+                    q.b.CustomerId,
+                    q.b.CustomerName,
+                    q.b.TerminalCustomer,
+                    q.a.ServiceOrderId,
+                    Contacter = string.IsNullOrEmpty(q.b.NewestContacter) ? q.b.Contacter : q.b.NewestContacter,
+                    ContactTel = string.IsNullOrEmpty(q.b.NewestContactTel) ? q.b.ContactTel : q.b.NewestContactTel,
+                    q.a.ManufacturerSerialNumber,
+                    q.a.MaterialCode,
+                    q.a.TroubleDescription,
+                    q.a.ProcessDescription,
+                    q.b.TerminalCustomerId,
+                    q.a.ServiceMode
+                }).FirstOrDefaultAsync();
+                thisworkdetail = query.MapTo<CompletionReportDetailsResp>();
+            }
             if (thisworkdetail.CurrentUserId != null)
             {
                 int theuserid = thisworkdetail.CurrentUserId == null ? 0 : (int)thisworkdetail.CurrentUserId;
@@ -252,7 +278,8 @@ namespace OpenAuth.App
                 q.c.TechnicianId,
                 q.c.TechnicianName,
                 q.a.TroubleDescription,
-                q.a.ProcessDescription
+                q.a.ProcessDescription,
+                q.c.ServiceMode
             }).FirstOrDefaultAsync();
             var thisworkdetail = query.MapTo<CompletionReportDetailsResp>();
             thisworkdetail.Files = new List<UploadFileResp>();
@@ -292,30 +319,30 @@ namespace OpenAuth.App
 
             var CompletionReportResps = CompletionReports.MapToList<CompletionReportDetailsResp>();
             var Materialworks = ServiceWorkOrders.Select(w => w.MaterialCode == "其他设备" ? "其他设备" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-"))).ToList();
-            
+
             Materialworks = Materialworks.Distinct().ToList();
             var MaterialTypes = await UnitWork.Find<MaterialType>(m => Materialworks.Contains(m.TypeAlias)).ToListAsync();
             List<string> fileids = new List<string>();
             CompletionReports.ForEach(c => fileids.AddRange(c.CompletionReportPictures.Select(p => p.PictureId).ToArray()));
-            var picfiles = await UnitWork.Find<UploadFile>(f=> fileids.Contains(f.Id)).ToListAsync();
+            var picfiles = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
 
             CompletionReportResps.ForEach(c =>
             {
-                var fileids= CompletionReports.FirstOrDefault(m => m.Id.Equals(c.Id)).CompletionReportPictures.Select(p => p.PictureId).ToArray();
-                c.Files=picfiles.Where(p=>fileids.Contains(p.Id)).MapToList<UploadFileResp>();
+                var fileids = CompletionReports.FirstOrDefault(m => m.Id.Equals(c.Id)).CompletionReportPictures.Select(p => p.PictureId).ToArray();
+                c.Files = picfiles.Where(p => fileids.Contains(p.Id)).MapToList<UploadFileResp>();
                 var worklist = ServiceWorkOrders.Where(w => w.CompletionReportId == c.Id).ToList();
-                if (worklist != null && worklist.Count>0) 
+                if (worklist != null && worklist.Count > 0)
                 {
                     c.ServiceWorkOrders = worklist.MapToList<WorkCompletionReportResp>();
                     c.ProcessDescription = worklist.FirstOrDefault().ProcessDescription;
                     c.TroubleDescription = worklist.FirstOrDefault().TroubleDescription;
                     c.U_SAP_ID = U_SAP_ID.ToString();
-                 }
+                }
                 c.MaterialCodeTypeName = c.MaterialCode == "其他设备" ? "其他设备" : MaterialTypes.FirstOrDefault(m => m.TypeAlias.Equal(c.MaterialCode.Substring(0, c.MaterialCode.IndexOf("-")))).TypeName;
             });
 
-            Materialworks = ServiceWorkOrders.Where(s=>string.IsNullOrWhiteSpace(s.CompletionReportId)).Select(w => w.MaterialCode == "其他设备" ? "其他设备" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-"))).ToList();
-           
+            Materialworks = ServiceWorkOrders.Where(s => string.IsNullOrWhiteSpace(s.CompletionReportId)).Select(w => w.MaterialCode == "其他设备" ? "其他设备" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-"))).ToList();
+
             Materialworks = Materialworks.Distinct().ToList();
             foreach (var item in Materialworks)
             {

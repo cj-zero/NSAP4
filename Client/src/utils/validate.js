@@ -34,7 +34,7 @@ export function isPhone (phone) {
   return /^(?:0[1-9][0-9]{1,2}-)?[2-8][0-9]{6,7}$/.test(phone)
 }
 
-export function isCustomerCode (code) {
+export function isCustomerCode (code) { // 客户代码规范
   return /^[a-z|A-Z]\d{5}$/g.test(code)
 }
 
@@ -44,6 +44,7 @@ export function isPlainObject (val) {
   return _toString.call(val) === '[object Object]'
 }
 
+
 export function isFunction (val) {
   return typeof val === 'function'
 }
@@ -51,9 +52,30 @@ export function isFunction (val) {
 export function isNumber (val) {
   return typeof val === 'number' && !isNaN(val)
 }
-export function isSameObjectByValue (oldVal, newVal) {
-  for (let key in newVal) {
-    if (newVal[key] !== oldVal[key]) {
+
+export function isObjectLike(value) {
+  return !!value && typeof value == 'object'
+}
+
+export function isEqual (value, other) { // 比较两个值是否长的一样
+  // 如果其中一个不为对象
+  if (!isObjectLike(value) || !isObjectLike(other)) {
+    return value === other
+  }
+  //  值相同直接return true
+  if (value === other) {
+    return true
+  }
+  let valueKeys = Object.keys(value).length
+  let otherKeys = Object.keys(value).length
+  // key的数量不一样
+  if (valueKeys !== otherKeys) {
+    return false
+  }
+  // 递归调用isEqual判断
+  for (let key in valueKeys) {
+    let res = isEqual(value[key], other[key])
+    if (!res) {
       return false
     }
   }

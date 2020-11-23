@@ -111,7 +111,10 @@ namespace OpenAuth.App.Request
         /// 是否已读
         /// </summary>
         public int? IsRead { get; set; }
-
+        /// <summary>
+        /// 更新时间
+        /// </summary>
+        public System.DateTime UpdateTime { get; set; }
 
 
         /// <summary>
@@ -139,15 +142,15 @@ namespace OpenAuth.App.Request
         /// </summary>
         public virtual List<ReimburseAttachmentResp> ReimburseAttachments { get; set; }
 
-        /// <summary>
-        /// 差旅报销单附件表(删除)
-        /// </summary>
-        public virtual List<DeleteReimburseReq> DelteReimburse { get; set; }
+        ///// <summary>
+        ///// 差旅报销单附件表(删除)
+        ///// </summary>
+        //public virtual List<DeleteReimburseReq> DelteReimburse { get; set; }
 
-        /// <summary>
-        /// 附件表(删除)
-        /// </summary>
-        public virtual List<string> FileId { get; set; }
+        ///// <summary>
+        ///// 附件表(删除)
+        ///// </summary>
+        //public virtual List<string> FileId { get; set; }
 
         /// <summary>
         /// 我的费用(删除)

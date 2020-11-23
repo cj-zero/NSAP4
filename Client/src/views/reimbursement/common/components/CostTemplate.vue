@@ -491,7 +491,9 @@ export default {
       let result = ''
       result = countryList.includes(province)
         ? province + district
-        : city + district
+        : (city === '自治区直辖县级行政区划' || city === '省直辖县级行政区划')
+          ? province + district
+          : city + district
       currentRow[prop] = result
       this.prevAreaData = null
     },
@@ -627,6 +629,7 @@ export default {
       this._setCurrentRow(currentRow, {
         invoiceNo: '',
         money: '',
+        invoiceDate: '',
         isAcc: this.currentType === ACC_TYPE,
         isValidInvoice: false
       })

@@ -33,7 +33,7 @@
       ref="returnOrderDialog"
       width="1100px"
       :loading="dialogLoading"
-      title="出库单详情"
+      title="退料单详情"
       :btnList="btnList"
       :onClosed="close"
     >
@@ -54,7 +54,7 @@ import MyDialog from '@/components/Dialog'
 import CommonTable from '@/components/CommonTable'
 import returnOrder from './components/returnorder'
 // import { getQuotationDetail } from '@/api/material/quotation'
-import { getReturnNoteList, getReturnNoteInfo } from '@/api/material/returnMaterial'
+import { getReturnNoteList, getReturnNoteDetail } from '@/api/material/returnMaterial'
 import {  quotationTableMixin } from '../common/js/mixins'
 export default {
   name: 'quotation',
@@ -77,15 +77,13 @@ export default {
         { prop: 'beginDate', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endDate', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
-        { type: 'button', btnText: '退料', handleClick: this._getReturnNoteInfo, options: { status: 'toReturn'} },
+        { type: 'button', btnText: '退料', handleClick: this._getReturnNoteDetail, options: { status: 'toReturn'} },
       ]
     }, // 搜索配置
     btnList () {
       return [
-        { btnText: '预览', handleClick: this.togglePreview, isShow: !this.isPreviewing && this.status !== 'view' },
-        { btnText: '返回', handleClick: this.togglePreview, isShow: this.isPreviewing },
-        { btnText: '提交', handleClick: this.submit, isShow: this.status !== 'view' },
-        { btnText: '草稿', handleClick: this.submit, options: { isDraft: true }, isShow: this.status !== 'view' },
+        { btnText: '验收', handleClick: this.checkOrSave, isShow: !this.isPreviewing },
+        { btnText: '保存', handleClick: this.checkOrSave, isShow: this.isPreviewing, options: { isSave: true } },
         { btnText: '关闭', handleClick: this.close, className: 'close' }      
       ]
     }
@@ -110,7 +108,7 @@ export default {
       tableData: [],
       total: 100,
       returnOrderColumns: [
-        { label: '退料单号', prop: 'id', handleClick: this._getReturnNoteInfo, options: { status: 'view' }, type: 'link'},
+        { label: '退料单号', prop: 'id', handleClick: this._getReturnNoteDetail, options: { status: 'view' }, type: 'link'},
         { label: '客户代码', prop: 'customerId' },
         { label: '客户名称', prop: 'customerName' },
         { label: '服务ID', prop: 'serviceOrderId', handleClick: this.getDetail, type: 'link' },
@@ -165,39 +163,39 @@ export default {
       this.$refs.outboundOrder.resetInfo()
       this.$refs.returnOrderTable.close()
     },
-    _getReturnNoteInfo (data) {
-      let serviceOrderId
+    _getReturnNoteDetail (data) {
+      let id
       let { status } = data
       if (status === 'view') {
-        serviceOrderId = data.id
+        id = data.id
       } else {
         let currentRow = this.$refs.returnOrderTable.getCurrentRow()
         console.log(currentRow, 'currentRow')
         if (!currentRow) {
           return this.$message.warning('请先选择数据')
         }
-        serviceOrderId = currentRow.serviceOrderId
+        id = currentRow.id
       }
-      console.log(status, 'status', serviceOrderId)
+      console.log(status, 'status', id)
       this.tableLoading = true
-      getReturnNoteInfo({
-        serviceOrderId
+      getReturnNoteDetail({
+        id
       }).then(res => {
         console.log(res,' res')
         // this.detailInfo = this._normalizeDetail(res.data)
-        // this.$refs.returnOrderTable.open()
-        // this.tableLoading = false
-        // this.status = status
+        this.$refs.returnOrderDialog.open()
+        this.tableLoading = false
+        this.status = status
       }).catch(err => {
         this.$message.error(err.message)
         this.tableLoading = false
       })
     },
-    _normalizeDetail (data) {
-      let { serviceOrders, quotations } = data
-      let { terminalCustomer, terminalCustomerId } = serviceOrders
-      // result
-      return { ...quotations, terminalCustomer, terminalCustomerId }
+    checkOrSave (value) {
+      let { isSave } = value
+      this.$refs.returnOrder.checkOrSave(isSave).then(() => {
+        //
+      })
     },
     handleCurrentChange ({ page, limit }) {
       this.listQuery.page = page
@@ -205,7 +203,7 @@ export default {
       this._getList()
     }
   },
-  created () {
+  mounted () {
     this._getList()
   }
 }

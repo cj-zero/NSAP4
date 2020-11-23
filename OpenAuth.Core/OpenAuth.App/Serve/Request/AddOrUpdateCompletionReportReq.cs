@@ -202,5 +202,10 @@ namespace OpenAuth.App.Request
         /// 责任环节
         /// </summary>
         public string Responsibility { get; set; }
+
+        /// <summary>
+        /// 是否草稿
+        /// </summary>
+        public int IsDraft { get; set; }
     }
 }

@@ -4,12 +4,26 @@
   font-size: 12px !important;
   th, td {
     padding: 0 !important;
+    .cell {
+      padding: 0 5px !important;
+      line-height: 20px;
+    }
   }
 }
-.el-table th {
-  padding: 0 !important;
-}
 
+.el-input {
+  > input {
+    padding: 0 5px !important;
+  }
+}
+.el-input.el-date-editor {
+  > input {
+    padding: 0 30px !important;
+  }
+}
+textarea {
+  padding: 5px !important;
+}
 /* 图片箭头样式 */
 .link-container {
   display: inline-block;

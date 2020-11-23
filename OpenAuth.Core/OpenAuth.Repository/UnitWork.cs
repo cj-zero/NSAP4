@@ -29,7 +29,7 @@ namespace OpenAuth.Repository
             _serviceProvider = serviceProvider;
         }
 
-        private DbContext GetDbContext<T>()
+        public DbContext GetDbContext<T>() where T : class
         {
             if(ContextTypes.TryGetValue(typeof(T), out Type contextType))
             {

@@ -60,6 +60,11 @@ namespace OpenAuth.Repository.Domain
         [Description("内容")]
         public string Content { get; set; }
         /// <summary>
+        /// 编码
+        /// </summary>
+        [Description("编码")]
+        public string Code { get; set; }
+        /// <summary>
         /// 
         /// </summary>
         [Description("")]

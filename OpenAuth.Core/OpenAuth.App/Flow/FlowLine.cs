@@ -5,6 +5,7 @@
 // <date>2019-03-05</date>
 // <summary>流程中的连线</summary>
 
+using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 
@@ -32,12 +33,12 @@ namespace OpenAuth.App.Flow
             foreach (var compare in Compares)
             {
                 decimal value = decimal.Parse(compare.Value);  //参考值
-                decimal frmvalue = decimal.Parse(frmDataJson.GetValue(compare.FieldName.ToLower()).ToString()); //表单中填写的值
+                decimal frmvalue = decimal.Parse(frmDataJson.GetValue(compare.FieldName.ToLower(), StringComparison.OrdinalIgnoreCase).ToString()); //表单中填写的值
 
                 switch (compare.Operation)
                 {
                     case DataCompare.Equal:
-                        result &= compare.Value == frmDataJson.GetValue(compare.FieldName).ToString();
+                        result &= compare.Value == frmDataJson.GetValue(compare.FieldName, StringComparison.OrdinalIgnoreCase).ToString();
                         break;
                     case DataCompare.Larger:
                         result &= frmvalue > value;

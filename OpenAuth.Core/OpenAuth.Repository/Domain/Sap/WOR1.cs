@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("WOR1")]
-    public partial class WOR1 : Entity
+    public partial class WOR1
     {
         public WOR1()
         {
@@ -47,7 +47,18 @@ namespace OpenAuth.Repository.Domain.Sap
           this.U_WFKC= string.Empty;
           this.U_MLKC= string.Empty;
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int DocEntry { get; set; }
 
+        // <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int LineNum { get; set; }
+        
         /// <summary>
         /// 
         /// </summary>

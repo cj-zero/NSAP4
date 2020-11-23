@@ -165,7 +165,7 @@ export default {
       }
     },
     checkStatus() {
-      this.timer = setTimeout(() => {
+      this.timer = setInterval(() => {
         login
           .ValidateLogin({ rd: this.randomNum })
           .then(res => {
@@ -178,6 +178,7 @@ export default {
                 type: "success",
                 message: "登陆成功"
               });
+              clearInterval(this.timer)
               this.$router.push({
                 path: "/"
               });
@@ -188,7 +189,7 @@ export default {
           });
       }, 1000);
       this.$once("hook:beforeDestroy", () => {
-        clearTimeout(this.timer);
+        clearInterval(this.timer);
       });
     },
     openQCCode() {
@@ -199,7 +200,7 @@ export default {
         this.dialogQ = true;
         this.checkStatus();
       }else{
-        clearTimeout(this.timer);
+        clearInterval(this.timer);
       }
     },
     handleLogin() {

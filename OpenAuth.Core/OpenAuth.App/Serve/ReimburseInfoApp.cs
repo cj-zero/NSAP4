@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -27,7 +29,6 @@ namespace OpenAuth.App
 {
     public class ReimburseInfoApp : OnlyUnitWorkBaeApp
     {
-        private RevelanceManagerApp _revelanceApp;
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
         private readonly FlowInstanceApp _flowInstanceApp;
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
@@ -68,7 +69,7 @@ namespace OpenAuth.App
             }
 
             var result = new TableData();
-            var objs = UnitWork.Find<ReimburseInfo>(null);
+            var objs = UnitWork.Find<ReimburseInfo>(null).Include(r => r.ReimburseTravellingAllowances);
             var ReimburseInfos = objs.WhereIf(!string.IsNullOrWhiteSpace(request.MainId), r => r.MainId.ToString().Contains(request.MainId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId), r => r.ServiceOrderSapId.ToString().Contains(request.ServiceOrderId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.BearToPay), r => r.BearToPay.Contains(request.BearToPay))
@@ -79,7 +80,8 @@ namespace OpenAuth.App
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ReimburseType), r => r.ReimburseType.Equals(request.ReimburseType))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.OrgName), r => OrgUserIds.Contains(r.CreateUserId))
-                      .WhereIf(!string.IsNullOrWhiteSpace(request.TerminalCustomer), r => ServiceOrderIds.Contains(r.ServiceOrderId));
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.TerminalCustomer), r => ServiceOrderIds.Contains(r.ServiceOrderId))
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceRelations), r => r.ServiceRelations.Contains(request.ServiceRelations));
 
             if (!string.IsNullOrWhiteSpace(request.RemburseStatus))
             {
@@ -109,21 +111,30 @@ namespace OpenAuth.App
             switch (request.PageType)
             {
                 case 2:
+                    List<int> Condition = new List<int>();
                     if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")))
                     {
-                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 4);
+                        Condition.Add(4);
+                        //ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 4);
                     }
-                    else if (loginContext.Roles.Any(r => r.Name.Equals("财务初审")))
+                    if (loginContext.Roles.Any(r => r.Name.Equals("财务初审")))
                     {
-                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 5);
+                        Condition.Add(5);
+                        //ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 5);
                     }
-                    else if (loginContext.Roles.Any(r => r.Name.Equals("财务复审")))
+                    if (loginContext.Roles.Any(r => r.Name.Equals("财务复审")))
                     {
-                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 6);
+                        Condition.Add(6);
+                        //ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 6);
                     }
-                    else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
+                    if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
                     {
-                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 7);
+                        Condition.Add(7);
+                        //ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 7);
+                    }
+                    if (Condition.Count > 0)
+                    {
+                        ReimburseInfos = ReimburseInfos.Where(r => Condition.Contains(r.RemburseStatus));
                     }
                     else
                     {
@@ -205,10 +216,10 @@ namespace OpenAuth.App
             }
             #endregion
 
-            ReimburseInfos = ReimburseInfos.OrderByDescending(r => r.CreateTime);
+            ReimburseInfos = ReimburseInfos.OrderByDescending(r => r.UpdateTime);
             if (request.PageType == 2 || request.PageType == 5)
             {
-                ReimburseInfos = ReimburseInfos.OrderBy(r => r.CreateTime);
+                ReimburseInfos = ReimburseInfos.OrderBy(r => r.UpdateTime);
             }
             var ReimburseInfolist = await ReimburseInfos.Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
@@ -227,32 +238,32 @@ namespace OpenAuth.App
                                  from d in ad.DefaultIfEmpty()
                                  join e in Relevances on a.CreateUserId equals e.FirstId into ae
                                  from e in ae.DefaultIfEmpty()
-                                 join f in SelOrgName on e.SecondId equals f.Id  into ef
+                                 join f in SelOrgName on e.SecondId equals f.Id into ef
                                  from f in ef.DefaultIfEmpty()
                                  select new { a, b, c, d, f };
 
             ReimburseResps = ReimburseResps.OrderByDescending(r => r.f.CascadeId).ToList();
-            ReimburseResps = ReimburseResps.GroupBy(r => r.a.Id).Select(r => r.First()).OrderByDescending(r => r.a.CreateTime).ToList();
+            ReimburseResps = ReimburseResps.GroupBy(r => r.a.Id).Select(r => r.First()).OrderByDescending(r => r.a.UpdateTime).ToList();
 
             if (request.PageType == 2 || request.PageType == 5)
             {
-                ReimburseResps = ReimburseResps.OrderBy(r => r.a.CreateTime);
+                ReimburseResps = ReimburseResps.OrderBy(r => r.a.UpdateTime);
             }
             result.Count = ReimburseInfos.Count();
             result.Data = ReimburseResps.Select(r => new
-                {
-                    ReimburseResp = r.a,
-                    fillTime = r.a.CreateTime.ToString("yyyy-MM-dd"),
-                    r.b.TerminalCustomerId,
-                    r.b.TerminalCustomer,
-                    BusinessTripDate = Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Min(c => c.BusinessTripDate)).ToString("yyyy-MM-dd"),
-                    EndDate = Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.EndDate)).ToString("yyyy-MM-dd"),
-                    r.b.BusinessTripDays,
-                    r.b.FromTheme,
-                    r.c.SalesMan,
-                    UserName = r.d.Name,
-                    OrgName = r.f.Name
-                });
+            {
+                ReimburseResp = r.a,
+                fillTime = r.a.CreateTime.ToString("yyyy-MM-dd"),
+                r.b.TerminalCustomerId,
+                r.b.TerminalCustomer,
+                BusinessTripDate = Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Min(c => c.BusinessTripDate)).ToString("yyyy-MM-dd"),
+                EndDate = Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.EndDate)).ToString("yyyy-MM-dd"),
+                r.a.ReimburseTravellingAllowances.FirstOrDefault()?.Days,
+                r.b.FromTheme,
+                r.c.SalesMan,
+                UserName = r.d.Name,
+                OrgName = r.f.Name
+            });
 
             return result;
         }
@@ -271,7 +282,7 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
-            if (loginUser.Account == "App")
+            if (loginUser.Account == Define.USERAPP)
             {
                 loginUser = await GetUserId(Convert.ToInt32(request.AppId));
             }
@@ -325,20 +336,20 @@ namespace OpenAuth.App
             ReimburseResps = ReimburseResps.GroupBy(r => r.a.Id).Select(r => r.First()).ToList();
 
             result.Count = ReimburseInfos.Count();
-            result.Data = ReimburseResps.Take(request.limit).Select(r => new
-                {
-                    ReimburseResp = r.a,
-                    RejectRemark = rohs.Where(o => o.ReimburseInfoId.Equals(r.a.Id)).OrderByDescending(o => o.CreateTime).Select(o => o.Remark).FirstOrDefault(),
-                    r.b.TerminalCustomerId,
-                    r.b.TerminalCustomer,
-                    r.b.BusinessTripDate,
-                    r.b.EndDate,
-                    r.b.BusinessTripDays,
-                    r.b.FromTheme,
-                    r.c.SalesMan,
-                    UserName = r.d.Name,
-                    OrgName = r.f.Name
-                }).ToList();
+            result.Data = ReimburseResps.OrderByDescending(r => r.a.CreateTime).Select(r => new
+            {
+                ReimburseResp = r.a,
+                RejectRemark = rohs.Where(o => o.ReimburseInfoId.Equals(r.a.Id)).OrderByDescending(o => o.CreateTime).Select(o => o.Remark).FirstOrDefault(),
+                r.b.TerminalCustomerId,
+                r.b.TerminalCustomer,
+                r.b.BusinessTripDate,
+                r.b.EndDate,
+                r.b.BusinessTripDays,
+                r.b.FromTheme,
+                r.c.SalesMan,
+                UserName = r.d.Name,
+                OrgName = r.f.Name
+            }).ToList();
 
             return result;
         }
@@ -356,7 +367,7 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
-            if (loginUser.Account == "App")
+            if (loginUser.Account == Define.USERAPP)
             {
                 loginUser = await GetUserId(Convert.ToInt32(request.AppId));
             }
@@ -553,170 +564,141 @@ namespace OpenAuth.App
             }
 
             var loginUser = loginContext.User;
-            if (loginUser.Account == "App")
+            if (loginUser.Account == Define.USERAPP)
             {
                 loginUser = await GetUserId(Convert.ToInt32(req.AppId));
             }
 
-            #region 报销单唯一 or 必须存在附件
+            #region 报销单唯一
             var ReimburseCount = await UnitWork.Find<ReimburseInfo>(r => r.ServiceOrderId.Equals(req.ServiceOrderId) && r.CreateUserId.Equals(loginUser.Id)).CountAsync();
             if (ReimburseCount > 0)
             {
                 throw new CommonException("该服务单已提交报销单，不可二次使用！", Define.INVALID_ReimburseAgain);
             }
-            int racount = 0;
-            req.ReimburseOtherCharges.Where(r => r.IsAdd == null || r.IsAdd == true).ForEach(r => racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0);
-            req.ReimburseFares.Where(r => r.IsAdd == null || r.IsAdd == true).ForEach(r => racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0);
-            req.ReimburseAccommodationSubsidies.Where(r => r.IsAdd == null || r.IsAdd == true).ForEach(r => racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0);
-            if (racount > 0)
-            {
-                throw new CommonException("请上传附件！", Define.INVALID_ReimburseAgain);
-            }
             #endregion
+            var obj = await Condition(req);
+            obj.ReimburseTravellingAllowances.ForEach(r => r.CreateTime = DateTime.Now);
+            obj.ReimburseOtherCharges.ForEach(r => r.CreateTime = DateTime.Now);
+            obj.ReimburseFares.ForEach(r => r.CreateTime = DateTime.Now);
+            obj.ReimburseAccommodationSubsidies.ForEach(r => r.CreateTime = DateTime.Now);
 
-            #region 删除我的费用
-
-            req.ReimburseFares = req.ReimburseFares.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
-            req.ReimburseAccommodationSubsidies = req.ReimburseAccommodationSubsidies.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
-            req.ReimburseOtherCharges = req.ReimburseOtherCharges.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
-            if (req.MyexpendsIds != null && req.MyexpendsIds.Count > 0)
+            var dbContext = UnitWork.GetDbContext<ReimburseInfo>();
+            using (var transaction = await dbContext.Database.BeginTransactionAsync())
             {
-                var myexpends = await UnitWork.Find<MyExpends>(m => req.MyexpendsIds.Contains(m.Id)).ToListAsync();
-                myexpends.ForEach(m => m.IsDelete = true);
-                await UnitWork.BatchUpdateAsync(myexpends.ToArray());
-            }
-
-            #endregion
-
-            #region 判断发票是否唯一
-            List<string> InvoiceNumbers = new List<string>();
-            InvoiceNumbers.AddRange(req.ReimburseFares.Select(r => r.InvoiceNumber).ToList());
-            InvoiceNumbers.AddRange(req.ReimburseAccommodationSubsidies.Select(r => r.InvoiceNumber).ToList());
-            InvoiceNumbers.AddRange(req.ReimburseOtherCharges.Select(r => r.InvoiceNumber).ToList());
-            bool IsInvoiceNumber = InvoiceNumbers.GroupBy(i => i).Where(g => g.Count() > 1).Count() >= 1;
-            if (IsInvoiceNumber)
-            {
-                string msg = "";
-                InvoiceNumbers.GroupBy(i => i).Where(g => g.Count() > 1).Select(i => i.Key).ToList().ForEach(i => msg += i + ",");
-                throw new CommonException($"添加报销单失败。发票号：{msg}重复！", Define.INVALID_InvoiceNumber);
-            }
-            else if (InvoiceNumbers.Count() > 0)
-            {
-                if (!await IsSole(InvoiceNumbers))
+                try
                 {
-                    throw new CommonException("添加报销单失败。发票已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                    await semaphoreSlim.WaitAsync();
+                    try
+                    {
+                        if (!obj.IsDraft)
+                        {
+                            var maxmainid = await UnitWork.Find<ReimburseInfo>(null).OrderByDescending(r => r.MainId).Select(r => r.MainId).FirstOrDefaultAsync();
+                            obj.MainId = maxmainid + 1;
+                        }
+                        obj.UpdateTime = DateTime.Now;
+                        obj.CreateTime = DateTime.Now;
+                        obj.RemburseStatus = 3;
+                        obj.CreateUserId = loginUser.Id;
+                        obj.IsRead = 1;
+                        obj = await UnitWork.AddAsync<ReimburseInfo, int>(obj);
+                        await UnitWork.SaveAsync();
+                    }
+                    finally
+                    {
+                        semaphoreSlim.Release();
+                    }
+
+                    var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == loginUser.Id).Select(r => r.SecondId).ToListAsync();
+                    var orgid = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderBy(o => o.CascadeId).Select(o => o.Id).FirstOrDefaultAsync();
+
+                    if (!obj.IsDraft)
+                    {
+                        obj.RemburseStatus = 4;
+                        obj.UpdateTime = DateTime.Now;
+                        //创建报销流程
+                        var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("报销"));
+                        var afir = new AddFlowInstanceReq();
+                        afir.SchemeId = mf.FlowSchemeId;
+                        afir.FrmType = 2;
+                        afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
+                        afir.CustomName = $"报销" + DateTime.Now;
+                        afir.FrmData = $"{{\"ReimburseInfoId\":\"{obj.Id}\"}}";
+                        afir.OrgId = orgid;
+                        var FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(afir);
+                        obj.FlowInstanceId = FlowInstanceId;
+                        await UnitWork.UpdateAsync<ReimburseInfo>(obj);
+                        await UnitWork.AddAsync<ReimurseOperationHistory>(new ReimurseOperationHistory
+                        {
+                            Action = "提交报销单",
+                            CreateUser = loginUser.Name,
+                            CreateUserId = loginUser.Id,
+                            CreateTime = DateTime.Now,
+                            ReimburseInfoId = obj.Id
+                        });
+                        await UnitWork.SaveAsync();
+                    }
+                    //反写完工报告
+                    var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == obj.ServiceOrderId && c.CreateUserId == obj.CreateUserId).ToListAsync();
+                    CompletionReports.ForEach(c => c.IsReimburse = 2);
+                    await UnitWork.BatchUpdateAsync<CompletionReport>(CompletionReports.ToArray());
+                    await UnitWork.SaveAsync();
+                    #region 保存附件
+                    List<ReimburseAttachment> filemodel = new List<ReimburseAttachment>();
+                    if (req.ReimburseAttachments != null && req.ReimburseAttachments.Count > 0)
+                    {
+                        filemodel = req.ReimburseAttachments.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
+                        filemodel.ForEach(f => { f.ReimburseId = obj.Id; f.ReimburseType = 0; f.Id = Guid.NewGuid().ToString(); });
+                        if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
+                    }
+
+                    var rac = await UnitWork.Find<ReimburseFare>(r => r.ReimburseInfoId == obj.Id).ToListAsync();
+                    foreach (var item in rac)
+                    {
+                        var racreq = req.ReimburseFares.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
+                        if (racreq != null && racreq.Count > 0)
+                        {
+                            filemodel = racreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
+                            filemodel.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 2; f.Id = Guid.NewGuid().ToString(); });
+                            if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
+                        }
+                    }
+                    var ras = await UnitWork.Find<ReimburseAccommodationSubsidy>(r => r.ReimburseInfoId == obj.Id).ToListAsync();
+
+                    foreach (var item in ras)
+                    {
+                        var rasreq = req.ReimburseAccommodationSubsidies.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
+                        if (rasreq != null && rasreq.Count > 0)
+                        {
+                            filemodel = rasreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
+                            filemodel.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 3; f.Id = Guid.NewGuid().ToString(); });
+                            if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
+                        }
+                    }
+
+                    var roc = await UnitWork.Find<ReimburseOtherCharges>(r => r.ReimburseInfoId == obj.Id).ToListAsync();
+
+                    foreach (var item in roc)
+                    {
+                        var rocreq = req.ReimburseOtherCharges.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
+                        if (rocreq != null && rocreq.Count > 0)
+                        {
+                            filemodel = rocreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
+                            filemodel.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 4; f.Id = Guid.NewGuid().ToString(); });
+                            if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
+                        }
+                    }
+                    await UnitWork.SaveAsync();
+                    #endregion
+                    await transaction.CommitAsync();
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw new Exception("添加报销单失败。");
                 }
             }
-            #endregion
-
-            int SerialNumber = 0;
-            req.ReimburseTravellingAllowances.ForEach(r => r.CreateTime = DateTime.Now);
-            req.ReimburseOtherCharges.ForEach(r => { r.CreateTime = DateTime.Now; r.SerialNumber = ++SerialNumber; });
-            SerialNumber = 0;
-            req.ReimburseFares.ForEach(r => { r.CreateTime = DateTime.Now; r.SerialNumber = ++SerialNumber; });
-            SerialNumber = 0;
-            req.ReimburseAccommodationSubsidies.ForEach(r => { r.CreateTime = DateTime.Now; r.SerialNumber = ++SerialNumber; });
-            var obj = req.MapTo<ReimburseInfo>();
             //用信号量代替锁
-            await semaphoreSlim.WaitAsync();
-            try
-            {
-                if (!obj.IsDraft)
-                {
-                    var maxmainid = await UnitWork.Find<ReimburseInfo>(null).OrderByDescending(r => r.MainId).Select(r => r.MainId).FirstOrDefaultAsync();
-                    obj.MainId = maxmainid + 1;
-                }
-                obj.CreateTime = DateTime.Now;
-                obj.RemburseStatus = 3;
-                obj.CreateUserId = loginUser.Id;
-                obj.IsRead = 1;
-                obj = await UnitWork.AddAsync<ReimburseInfo, int>(obj);
-                await UnitWork.SaveAsync();
-            }
-            finally
-            {
-                semaphoreSlim.Release();
-            }
 
-            var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == loginUser.Id).Select(r => r.SecondId).ToListAsync();
-            var orgid = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderBy(o => o.CascadeId).Select(o => o.Id).FirstOrDefaultAsync();
-
-            if (!obj.IsDraft)
-            {
-                obj.RemburseStatus = 4;
-                //创建报销流程
-                var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("报销"));
-                var afir = new AddFlowInstanceReq();
-                afir.SchemeId = mf.FlowSchemeId;
-                afir.FrmType = 2;
-                afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
-                afir.CustomName = $"报销" + DateTime.Now;
-                afir.FrmData = $"{{\"ReimburseInfoId\":\"{obj.Id}\"}}";
-                afir.OrgId = orgid;
-                var FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(afir);
-                obj.FlowInstanceId = FlowInstanceId;
-                await UnitWork.UpdateAsync<ReimburseInfo>(obj);
-                await UnitWork.AddAsync<ReimurseOperationHistory>(new ReimurseOperationHistory
-                {
-                    Action = "提交报销单",
-                    CreateUser = loginUser.Name,
-                    CreateUserId = loginUser.Id,
-                    CreateTime = DateTime.Now,
-                    ReimburseInfoId = obj.Id
-                });
-            }
-            //反写完工报告
-            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == obj.ServiceOrderId && c.CreateUserId == obj.CreateUserId).ToListAsync();
-            CompletionReports.ForEach(c => c.IsReimburse = 2);
-            await UnitWork.BatchUpdateAsync<CompletionReport>(CompletionReports.ToArray());
-
-            await UnitWork.SaveAsync();
-            #region 保存附件
-            List<ReimburseAttachment> filemodel = new List<ReimburseAttachment>();
-
-            if (req.ReimburseAttachments != null && req.ReimburseAttachments.Count > 0)
-            {
-                filemodel = req.ReimburseAttachments.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
-                filemodel.ForEach(f => { f.ReimburseId = obj.Id; f.ReimburseType = 0; f.Id = Guid.NewGuid().ToString(); });
-                if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
-            }
-            var rac = await UnitWork.Find<ReimburseFare>(r => r.ReimburseInfoId == obj.Id).ToListAsync();
-            foreach (var item in rac)
-            {
-                var racreq = req.ReimburseFares.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
-                if (racreq != null && racreq.Count > 0)
-                {
-                    filemodel = racreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
-                    filemodel.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 2; f.Id = Guid.NewGuid().ToString(); });
-                    if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
-                }
-            }
-
-            var ras = await UnitWork.Find<ReimburseAccommodationSubsidy>(r => r.ReimburseInfoId == obj.Id).ToListAsync();
-            foreach (var item in ras)
-            {
-                var rasreq = req.ReimburseAccommodationSubsidies.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
-                if (rasreq != null && rasreq.Count > 0)
-                {
-                    filemodel = rasreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
-                    filemodel.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 3; f.Id = Guid.NewGuid().ToString(); });
-                    if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
-                }
-            }
-
-            var roc = await UnitWork.Find<ReimburseOtherCharges>(r => r.ReimburseInfoId == obj.Id).ToListAsync();
-            foreach (var item in roc)
-            {
-                var rocreq = req.ReimburseOtherCharges.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
-                if (rocreq != null && rocreq.Count > 0)
-                {
-                    filemodel = rocreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
-                    filemodel.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 4; f.Id = Guid.NewGuid().ToString(); });
-                    if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
-                }
-            }
-            await UnitWork.SaveAsync();
-            #endregion
 
         }
 
@@ -733,313 +715,226 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
-            if (loginUser.Account == "App")
+            if (loginUser.Account == Define.USERAPP)
             {
                 loginUser = await GetUserId(Convert.ToInt32(req.AppId));
             }
-            #region 条件
-            
-            #region 必须存在附件
-            int racount = 0;
-            req.ReimburseOtherCharges.Where(r => r.IsAdd == null || r.IsAdd == true).ForEach(r => racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0);
-            req.ReimburseFares.Where(r => r.IsAdd == null || r.IsAdd == true).ForEach(r => racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0);
-            req.ReimburseAccommodationSubsidies.Where(r => r.IsAdd == null || r.IsAdd == true).ForEach(r => racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0);
-            if (racount > 0)
-            {
-                throw new CommonException("请上传附件！", Define.INVALID_ReimburseAgain);
-            }
-            #endregion
 
-            #region 删除我的费用（假删除）
-
-            req.ReimburseFares = req.ReimburseFares.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
-            req.ReimburseAccommodationSubsidies = req.ReimburseAccommodationSubsidies.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
-            req.ReimburseOtherCharges = req.ReimburseOtherCharges.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
-            if (req.MyexpendsIds != null && req.MyexpendsIds.Count > 0)
+            var dbContext = UnitWork.GetDbContext<ReimburseInfo>();
+            using (var transaction = await dbContext.Database.BeginTransactionAsync())
             {
-                var myexpends = await UnitWork.Find<MyExpends>(m => req.MyexpendsIds.Contains(m.Id)).ToListAsync();
-                myexpends.ForEach(m => m.IsDelete = true);
-                await UnitWork.BatchUpdateAsync(myexpends.ToArray());
-            }
-
-            #endregion
-
-            #region 判断发票是否唯一
-            List<string> InvoiceNumbers = new List<string>();
-            InvoiceNumbers.AddRange(req.ReimburseFares.Where(r => string.IsNullOrWhiteSpace(r.Id.ToString()) || r.Id.ToString() == "0").Select(r => r.InvoiceNumber).ToList());
-            InvoiceNumbers.AddRange(req.ReimburseAccommodationSubsidies.Where(r => string.IsNullOrWhiteSpace(r.Id.ToString()) || r.Id.ToString() == "0").Select(r => r.InvoiceNumber).ToList());
-            InvoiceNumbers.AddRange(req.ReimburseOtherCharges.Where(r => string.IsNullOrWhiteSpace(r.Id.ToString()) || r.Id.ToString() == "0").Select(r => r.InvoiceNumber).ToList());
-            bool IsInvoiceNumber = InvoiceNumbers.GroupBy(i => i).Where(g => g.Count() > 1).Count() >= 1;
-            if (IsInvoiceNumber)
-            {
-                string msg = "";
-                InvoiceNumbers.GroupBy(i => i).Where(g => g.Count() > 1).Select(i => i.Key).ToList().ForEach(i => msg += i + ",");
-                throw new CommonException($"添加报销单失败。发票号：{msg}重复！", Define.INVALID_InvoiceNumber);
-            }
-            else if (InvoiceNumbers.Count() > 0)
-            {
-                if (!await IsSole(InvoiceNumbers))
+                try
                 {
-                    throw new CommonException("添加报销单失败。发票已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                    #region 修改报销单
+                    await semaphoreSlim.WaitAsync();
+                    var obj = await Condition(req);
+                    try
+                    {
+                        if (!obj.IsDraft && string.IsNullOrWhiteSpace(req.FlowInstanceId) && (string.IsNullOrWhiteSpace(obj.MainId.ToString()) || obj.MainId == 0))
+                        {
+                            var maxmainid = await UnitWork.Find<ReimburseInfo>(null).OrderByDescending(r => r.MainId).Select(r => r.MainId).FirstOrDefaultAsync();
+                            obj.MainId = maxmainid + 1;
+                        }
+                        obj.RemburseStatus = 3;
+                        obj.IsRead = 1;
+                        await UnitWork.UpdateAsync<ReimburseInfo>(r => r.Id == obj.Id, r => new ReimburseInfo
+                        {
+                            UpdateTime = DateTime.Now,
+                            ShortCustomerName = obj.ShortCustomerName,
+                            ReimburseType = obj.ReimburseType,
+                            ProjectName = obj.ProjectName,
+                            RemburseStatus = obj.RemburseStatus,
+                            IsRead = obj.IsRead,
+                            TotalMoney = obj.TotalMoney,
+                            Remark = obj.Remark,
+                            BearToPay = obj.BearToPay,
+                            Responsibility = obj.Responsibility,
+                            PayTime = obj.PayTime,
+                            IsDraft = obj.IsDraft,
+                            FlowInstanceId = obj.FlowInstanceId,
+                            MainId = obj.MainId
+                        });
+                    }
+                    finally
+                    {
+                        semaphoreSlim.Release();
+                    }
+
+                    if (!req.IsDraft && string.IsNullOrWhiteSpace(req.FlowInstanceId))
+                    {
+                        var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == loginUser.Id).Select(r => r.SecondId).ToListAsync();
+                        var orgid = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderBy(o => o.CascadeId).Select(o => o.Id).FirstOrDefaultAsync();
+
+                        var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("报销"));
+                        var afir = new AddFlowInstanceReq();
+                        afir.SchemeId = mf.FlowSchemeId;
+                        afir.FrmType = 2;
+                        afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
+                        afir.CustomName = $"报销";
+                        afir.FrmData = "{ReimburseInfoId:" + obj.Id + "}";
+                        afir.OrgId = orgid;
+                        var FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(afir);
+                        await UnitWork.AddAsync<ReimurseOperationHistory>(new ReimurseOperationHistory
+                        {
+                            Action = "提交报销单",
+                            CreateUser = loginUser.Name,
+                            CreateUserId = loginUser.Id,
+                            CreateTime = DateTime.Now,
+                            ReimburseInfoId = obj.Id
+                        });
+                        obj.RemburseStatus = 4;
+                        obj.IsRead = 1;
+                        obj.FlowInstanceId = FlowInstanceId;
+                        await UnitWork.UpdateAsync<ReimburseInfo>(r => r.Id == obj.Id, r => new ReimburseInfo
+                        {
+                            UpdateTime = DateTime.Now,
+                            ShortCustomerName = obj.ShortCustomerName,
+                            ReimburseType = obj.ReimburseType,
+                            ProjectName = obj.ProjectName,
+                            RemburseStatus = obj.RemburseStatus,
+                            IsRead = obj.IsRead,
+                            TotalMoney = obj.TotalMoney,
+                            Remark = obj.Remark,
+                            BearToPay = obj.BearToPay,
+                            Responsibility = obj.Responsibility,
+                            PayTime = obj.PayTime,
+                            IsDraft = obj.IsDraft,
+                            FlowInstanceId = obj.FlowInstanceId,
+                            MainId = obj.MainId
+                        });
+                    }
+                    await UnitWork.SaveAsync();
+                    #endregion
+
+                    #region 删除
+                    List<ReimburseAttachment> ReimburseAttachments = new List<ReimburseAttachment>();
+                    ReimburseAttachments.AddRange(await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId.Equals(req.Id) && r.ReimburseType == 0).ToListAsync());
+
+                    var Reimburse = await UnitWork.Find<ReimburseInfo>(r => r.Id.Equals(req.Id))
+                                    .Include(r => r.ReimburseAccommodationSubsidies).Include(r => r.ReimburseFares)
+                                    .Include(r => r.ReimburseOtherCharges).Include(r => r.ReimburseTravellingAllowances).FirstOrDefaultAsync();
+                    //删除出差补贴
+                    if (Reimburse.ReimburseTravellingAllowances != null && Reimburse.ReimburseTravellingAllowances.Count > 0)
+                    {
+                        await UnitWork.BatchDeleteAsync<ReimburseTravellingAllowance>(Reimburse.ReimburseTravellingAllowances.ToArray());
+                    }
+
+                    //删除交通补贴及
+                    if (Reimburse.ReimburseFares != null && Reimburse.ReimburseFares.Count > 0)
+                    {
+                        var delids = Reimburse.ReimburseFares.Select(r => r.Id).ToList();
+                        ReimburseAttachments.AddRange(await UnitWork.Find<ReimburseAttachment>(r => delids.Contains(r.ReimburseId) && r.ReimburseType == 2).ToListAsync());
+                        await UnitWork.BatchDeleteAsync<ReimburseFare>(Reimburse.ReimburseFares.ToArray());
+                    }
+                    //删除住宿补贴
+                    if (Reimburse.ReimburseAccommodationSubsidies != null && Reimburse.ReimburseAccommodationSubsidies.Count > 0)
+                    {
+                        var delids = Reimburse.ReimburseAccommodationSubsidies.Select(r => r.Id).ToList();
+                        ReimburseAttachments.AddRange(await UnitWork.Find<ReimburseAttachment>(r => delids.Contains(r.ReimburseId) && r.ReimburseType == 3).ToListAsync());
+                        await UnitWork.BatchDeleteAsync<ReimburseAccommodationSubsidy>(Reimburse.ReimburseAccommodationSubsidies.ToArray());
+                    }
+                    //删除其他补贴
+
+                    if (Reimburse.ReimburseOtherCharges != null && Reimburse.ReimburseOtherCharges.Count > 0)
+                    {
+                        var delids = Reimburse.ReimburseOtherCharges.Select(r => r.Id).ToList();
+                        ReimburseAttachments.AddRange(await UnitWork.Find<ReimburseAttachment>(r => delids.Contains(r.ReimburseId) && r.ReimburseType == 4).ToListAsync());
+                        await UnitWork.BatchDeleteAsync<ReimburseOtherCharges>(Reimburse.ReimburseOtherCharges.ToArray());
+                    }
+                    if (ReimburseAttachments != null && ReimburseAttachments.Count > 0)
+                    {
+                        await UnitWork.BatchDeleteAsync<ReimburseAttachment>(ReimburseAttachments.ToArray());
+                    }
+
+                    await UnitWork.SaveAsync();
+                    #endregion
+
+                    #region 新增
+
+                    var ReimburseMap = req.MapTo<ReimburseInfo>();
+
+                    if (ReimburseMap.ReimburseTravellingAllowances != null && ReimburseMap.ReimburseTravellingAllowances.Count > 0)
+                    {
+                        ReimburseMap.ReimburseTravellingAllowances.ForEach(a => a.ReimburseInfoId = obj.Id);
+                        await UnitWork.BatchAddAsync<ReimburseTravellingAllowance, int>(ReimburseMap.ReimburseTravellingAllowances.ToArray());
+                    }
+                    if (ReimburseMap.ReimburseFares != null && ReimburseMap.ReimburseFares.Count > 0)
+                    {
+                        ReimburseMap.ReimburseFares.ForEach(a => a.ReimburseInfoId = obj.Id);
+                        await UnitWork.BatchAddAsync<ReimburseFare, int>(ReimburseMap.ReimburseFares.ToArray());
+                    }
+                    if (ReimburseMap.ReimburseAccommodationSubsidies != null && ReimburseMap.ReimburseAccommodationSubsidies.Count > 0)
+                    {
+                        ReimburseMap.ReimburseAccommodationSubsidies.ForEach(a => a.ReimburseInfoId = obj.Id);
+                        await UnitWork.BatchAddAsync<ReimburseAccommodationSubsidy, int>(ReimburseMap.ReimburseAccommodationSubsidies.ToArray());
+                    }
+                    if (ReimburseMap.ReimburseOtherCharges != null && ReimburseMap.ReimburseOtherCharges.Count > 0)
+                    {
+                        ReimburseMap.ReimburseOtherCharges.ForEach(a => a.ReimburseInfoId = obj.Id);
+                        await UnitWork.BatchAddAsync<ReimburseOtherCharges, int>(ReimburseMap.ReimburseOtherCharges.ToArray());
+                    }
+
+                    await UnitWork.SaveAsync();
+                    #region 保存附件
+                    List<ReimburseAttachment> filemodel = new List<ReimburseAttachment>();
+                    if (req.ReimburseAttachments != null && req.ReimburseAttachments.Count > 0)
+                    {
+                        filemodel = req.ReimburseAttachments.Where(r=>r.IsAdd==true).MapToList<ReimburseAttachment>();
+                        filemodel.ForEach(f => { f.ReimburseId = obj.Id; f.ReimburseType = 0; f.Id = Guid.NewGuid().ToString(); });
+                        if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
+                    }
+
+                    var rac = await UnitWork.Find<ReimburseFare>(r => r.ReimburseInfoId == obj.Id).ToListAsync();
+                    foreach (var item in rac)
+                    {
+                        var racreq = req.ReimburseFares.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
+                        if (racreq != null && racreq.Count > 0)
+                        {
+                            filemodel = racreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
+                            filemodel.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 2; f.Id = Guid.NewGuid().ToString(); });
+                            if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
+                        }
+                    }
+                    var ras = await UnitWork.Find<ReimburseAccommodationSubsidy>(r => r.ReimburseInfoId == obj.Id).ToListAsync();
+
+                    foreach (var item in ras)
+                    {
+                        var rasreq = req.ReimburseAccommodationSubsidies.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
+                        if (rasreq != null && rasreq.Count > 0)
+                        {
+                            filemodel = rasreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
+                            filemodel.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 3; f.Id = Guid.NewGuid().ToString(); });
+                            if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
+                        }
+                    }
+
+                    var roc = await UnitWork.Find<ReimburseOtherCharges>(r => r.ReimburseInfoId == obj.Id).ToListAsync();
+
+                    foreach (var item in roc)
+                    {
+                        var rocreq = req.ReimburseOtherCharges.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
+                        if (rocreq != null && rocreq.Count > 0)
+                        {
+                            filemodel = rocreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
+                            filemodel.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 4; f.Id = Guid.NewGuid().ToString(); });
+                            if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
+                        }
+                    }
+
+                    await UnitWork.SaveAsync();
+                    #endregion
+                    #endregion
+
+                    await transaction.CommitAsync();
                 }
-            }
-            #endregion
-            #endregion
-
-
-            await semaphoreSlim.WaitAsync();
-            int SerialNumber = 0;
-            req.ReimburseOtherCharges.ForEach(r => r.SerialNumber = ++SerialNumber);
-            SerialNumber = 0;
-            req.ReimburseFares.ForEach(r => r.SerialNumber = ++SerialNumber);
-            SerialNumber = 0;
-            req.ReimburseAccommodationSubsidies.ForEach(r => r.SerialNumber = ++SerialNumber);
-            var obj = req.MapTo<ReimburseInfo>();
-            try
-            {
-                if (!obj.IsDraft && string.IsNullOrWhiteSpace(req.FlowInstanceId) && (string.IsNullOrWhiteSpace(obj.MainId.ToString()) || obj.MainId == 0))
+                catch (Exception)
                 {
-                    var maxmainid = await UnitWork.Find<ReimburseInfo>(null).OrderByDescending(r => r.MainId).Select(r => r.MainId).FirstOrDefaultAsync();
-                    obj.MainId = maxmainid + 1;
-                }
-                obj.RemburseStatus = 3;
-                obj.IsRead = 1;
-                await UnitWork.UpdateAsync<ReimburseInfo>(r => r.Id == obj.Id, r => new ReimburseInfo
-                {
-                    ShortCustomerName = obj.ShortCustomerName,
-                    ReimburseType = obj.ReimburseType,
-                    ProjectName = obj.ProjectName,
-                    RemburseStatus = obj.RemburseStatus,
-                    IsRead = obj.IsRead,
-                    TotalMoney = obj.TotalMoney,
-                    Remark = obj.Remark,
-                    BearToPay = obj.BearToPay,
-                    Responsibility = obj.Responsibility,
-                    PayTime = obj.PayTime,
-                    IsDraft = obj.IsDraft,
-                    FlowInstanceId = obj.FlowInstanceId,
-                    MainId = obj.MainId
-                });
-            }
-            finally
-            {
-                semaphoreSlim.Release();
-            }
-
-            if (!req.IsDraft && string.IsNullOrWhiteSpace(req.FlowInstanceId))
-            {
-                var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == loginUser.Id).Select(r => r.SecondId).ToListAsync();
-                var orgid = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderBy(o => o.CascadeId).Select(o => o.Id).FirstOrDefaultAsync();
-
-                var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("报销"));
-                var afir = new AddFlowInstanceReq();
-                afir.SchemeId = mf.FlowSchemeId;
-                afir.FrmType = 2;
-                afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
-                afir.CustomName = $"报销";
-                afir.FrmData = "{ReimburseInfoId:" + obj.Id + "}";
-                afir.OrgId = orgid;
-                var FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(afir);
-                await UnitWork.AddAsync<ReimurseOperationHistory>(new ReimurseOperationHistory
-                {
-                    Action = "提交报销单",
-                    CreateUser = loginUser.Name,
-                    CreateUserId = loginUser.Id,
-                    CreateTime = DateTime.Now,
-                    ReimburseInfoId = obj.Id
-                });
-                obj.RemburseStatus = 4;
-                obj.IsRead = 1;
-                obj.FlowInstanceId = FlowInstanceId;
-                await UnitWork.UpdateAsync<ReimburseInfo>(r => r.Id == obj.Id, r => new ReimburseInfo
-                {
-                    ShortCustomerName = obj.ShortCustomerName,
-                    ReimburseType = obj.ReimburseType,
-                    ProjectName = obj.ProjectName,
-                    RemburseStatus = obj.RemburseStatus,
-                    IsRead = obj.IsRead,
-                    TotalMoney = obj.TotalMoney,
-                    Remark = obj.Remark,
-                    BearToPay = obj.BearToPay,
-                    Responsibility = obj.Responsibility,
-                    PayTime = obj.PayTime,
-                    IsDraft = obj.IsDraft,
-                    FlowInstanceId = obj.FlowInstanceId,
-                    MainId = obj.MainId
-                });
-            }
-
-
-            #region 删除
-            //附件删除
-            if (req.FileId != null && req.FileId.Count != 0)
-            {
-                var delfiles = await UnitWork.Find<ReimburseAttachment>(r => req.FileId.Contains(r.Id)).ToListAsync();
-                delfiles.ForEach(r => UnitWork.Delete<ReimburseAttachment>(r));
-            }
-            //删除出差补贴
-            if (req.DelteReimburse != null && req.DelteReimburse.Count != 0)
-            {
-                var delids = req.DelteReimburse.Where(r => r.ReimburseType == 1).Select(r => r.DeleteId).ToList();
-                if (delids.Count > 0)
-                {
-                    var delrta = await UnitWork.Find<ReimburseTravellingAllowance>(r => delids.Contains(r.Id) && r.ReimburseInfoId == req.Id).ToListAsync();
-                    delrta.ForEach(r => UnitWork.Delete<ReimburseTravellingAllowance>(r));
-                }
-                //删除交通补贴及附件
-                delids = req.DelteReimburse.Where(r => r.ReimburseType == 2).Select(r => r.DeleteId).ToList();
-                if (delids.Count > 0)
-                {
-                    var ReimburseAttachmentIds = await UnitWork.Find<ReimburseAttachment>(r => delids.Contains(r.ReimburseId) && r.ReimburseType == 2).ToListAsync();
-                    ReimburseAttachmentIds.ForEach(r => UnitWork.Delete<ReimburseAttachment>(r));
-
-                    var delrf = await UnitWork.Find<ReimburseFare>(r => delids.Contains(r.Id) && r.ReimburseInfoId == req.Id).ToListAsync();
-                    delrf.ForEach(r => UnitWork.DeleteAsync<ReimburseFare>(r));
-                }
-                //删除住宿补贴及附件
-                delids = req.DelteReimburse.Where(r => r.ReimburseType == 3).Select(r => r.DeleteId).ToList();
-                if (delids.Count > 0)
-                {
-                    var ReimburseAttachmentIds = await UnitWork.Find<ReimburseAttachment>(r => delids.Contains(r.ReimburseId) && r.ReimburseType == 3).ToListAsync();
-                    ReimburseAttachmentIds.ForEach(r => UnitWork.Delete<ReimburseAttachment>(r));
-
-                    var delras = await UnitWork.Find<ReimburseAccommodationSubsidy>(r => delids.Contains(r.Id) && r.ReimburseInfoId == req.Id).ToListAsync();
-                    delras.ForEach(r => UnitWork.Delete<ReimburseAccommodationSubsidy>(r));
-                }
-                //删除其他补贴及附件
-                delids = req.DelteReimburse.Where(r => r.ReimburseType == 4).Select(r => r.DeleteId).ToList();
-                if (delids.Count > 0)
-                {
-                    var ReimburseAttachmentIds = await UnitWork.Find<ReimburseAttachment>(r => delids.Contains(r.ReimburseId) && r.ReimburseType == 4).ToListAsync();
-                    ReimburseAttachmentIds.ForEach(r => UnitWork.Delete<ReimburseAttachment>(r));
-
-                    var delroc = await UnitWork.Find<ReimburseOtherCharges>(r => delids.Contains(r.Id) && r.ReimburseInfoId == req.Id).ToListAsync();
-                    delroc.ForEach(r => UnitWork.Delete<ReimburseOtherCharges>(r));
-                }
-
-            }
-
-            #endregion
-
-            #region 修改
-            //修改出差补贴
-
-            if (req.ReimburseTravellingAllowances != null && req.ReimburseTravellingAllowances.Count > 0)
-            {
-                var Updaterta = req.ReimburseTravellingAllowances.Where(r => !string.IsNullOrWhiteSpace(r.Id.ToString()) && r.Id != 0).ToList().MapToList<ReimburseTravellingAllowance>();
-                await UnitWork.BatchUpdateAsync<ReimburseTravellingAllowance>(Updaterta.ToArray());
-            }
-            //修改交通费用
-            if (req.ReimburseFares != null && req.ReimburseFares.Count > 0)
-            {
-                var Updaterf = req.ReimburseFares.Where(r => !string.IsNullOrWhiteSpace(r.Id.ToString()) && r.Id != 0).ToList().MapToList<ReimburseFare>();
-                await UnitWork.BatchUpdateAsync<ReimburseFare>(Updaterf.ToArray());
-            }
-            //修改住宿补贴
-            if (req.ReimburseAccommodationSubsidies != null && req.ReimburseAccommodationSubsidies.Count > 0)
-            {
-                var Updateras = req.ReimburseAccommodationSubsidies.Where(r => !string.IsNullOrWhiteSpace(r.Id.ToString()) && r.Id != 0).ToList().MapToList<ReimburseAccommodationSubsidy>();
-                await UnitWork.BatchUpdateAsync<ReimburseAccommodationSubsidy>(Updateras.ToArray());
-            }
-            //修改其他补贴
-            if (req.ReimburseOtherCharges != null && req.ReimburseOtherCharges.Count > 0)
-            {
-                var Updateroc = req.ReimburseOtherCharges.Where(r => !string.IsNullOrWhiteSpace(r.Id.ToString()) && r.Id != 0).ToList().MapToList<ReimburseOtherCharges>();
-                await UnitWork.BatchUpdateAsync<ReimburseOtherCharges>(Updateroc.ToArray());
-            }
-            #endregion
-
-            #region 新增
-
-            if (req.ReimburseTravellingAllowances != null && req.ReimburseTravellingAllowances.Count > 0)
-            {
-                var addrta = req.ReimburseTravellingAllowances.Where(r => string.IsNullOrWhiteSpace(r.Id.ToString()) || r.Id == 0).MapToList<ReimburseTravellingAllowance>();
-                if (addrta.Count > 0)
-                {
-                    addrta.ForEach(a => a.ReimburseInfoId = obj.Id);
-                    await UnitWork.BatchAddAsync<ReimburseTravellingAllowance, int>(addrta.ToArray());
-                }
-            }
-            if (req.ReimburseFares != null && req.ReimburseFares.Count > 0)
-            {
-                var addrf = req.ReimburseFares.Where(r => string.IsNullOrWhiteSpace(r.Id.ToString()) || r.Id == 0).MapToList<ReimburseFare>();
-                if (addrf.Count > 0)
-                {
-                    addrf.ForEach(a => a.ReimburseInfoId = obj.Id);
-                    await UnitWork.BatchAddAsync<ReimburseFare, int>(addrf.ToArray());
-                }
-            }
-            if (req.ReimburseAccommodationSubsidies != null && req.ReimburseAccommodationSubsidies.Count > 0)
-            {
-                var addras = req.ReimburseAccommodationSubsidies.Where(r => string.IsNullOrWhiteSpace(r.Id.ToString()) || r.Id == 0).MapToList<ReimburseAccommodationSubsidy>();
-                if (addras.Count > 0)
-                {
-                    addras.ForEach(a => a.ReimburseInfoId = obj.Id);
-                    await UnitWork.BatchAddAsync<ReimburseAccommodationSubsidy, int>(addras.ToArray());
-                }
-            }
-            if (req.ReimburseOtherCharges != null && req.ReimburseOtherCharges.Count > 0)
-            {
-                var addroc = req.ReimburseOtherCharges.Where(r => string.IsNullOrWhiteSpace(r.Id.ToString()) || r.Id == 0).MapToList<ReimburseOtherCharges>();
-                if (addroc.Count > 0)
-                {
-                    addroc.ForEach(a => a.ReimburseInfoId = obj.Id);
-                    await UnitWork.BatchAddAsync<ReimburseOtherCharges, int>(addroc.ToArray());
-                }
-            }
-            await UnitWork.SaveAsync();
-            #endregion
-
-            #region 保存新附件
-            List<ReimburseAttachment> filemodel = new List<ReimburseAttachment>();
-            if (req.ReimburseAttachments != null && req.ReimburseAttachments.Count > 0)
-            {
-                filemodel = req.ReimburseAttachments.Where(r => (string.IsNullOrWhiteSpace(r.Id) || r.Id == "0") && r.IsAdd == true).MapToList<ReimburseAttachment>();
-                filemodel.ForEach(f => { f.ReimburseId = obj.Id; f.ReimburseType = 0; f.Id = Guid.NewGuid().ToString(); });
-                if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
-            }
-
-            var rac = await UnitWork.Find<ReimburseFare>(r => r.ReimburseInfoId == obj.Id).ToListAsync();
-            foreach (var item in rac)
-            {
-                var racreq = req.ReimburseFares.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
-                if (racreq != null && racreq.Count > 0)
-                {
-                    racreq = racreq.Where(r => (string.IsNullOrWhiteSpace(r.Id) || r.Id == "0") && r.IsAdd == true).ToList();
-                    filemodel = racreq.MapToList<ReimburseAttachment>();
-                    filemodel.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 2; f.Id = Guid.NewGuid().ToString(); });
-                    if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
-                }
-            }
-            var ras = await UnitWork.Find<ReimburseAccommodationSubsidy>(r => r.ReimburseInfoId == obj.Id).ToListAsync();
-
-            foreach (var item in ras)
-            {
-                var rasreq = req.ReimburseAccommodationSubsidies.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
-                if (rasreq != null && rasreq.Count > 0)
-                {
-                    rasreq = rasreq.Where(r => (string.IsNullOrWhiteSpace(r.Id) || r.Id == "0") && r.IsAdd == true).ToList();
-                    filemodel = rasreq.MapToList<ReimburseAttachment>();
-                    filemodel.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 3; f.Id = Guid.NewGuid().ToString(); });
-                    if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
+                    await transaction.RollbackAsync();
+                    throw new Exception("修改报销单失败。");
                 }
             }
 
-            var roc = await UnitWork.Find<ReimburseOtherCharges>(r => r.ReimburseInfoId == obj.Id).ToListAsync();
 
-            foreach (var item in roc)
-            {
-                var rocreq = req.ReimburseOtherCharges.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
-                if (rocreq != null && rocreq.Count > 0)
-                {
-                    rocreq = rocreq.Where(r => (string.IsNullOrWhiteSpace(r.Id) || r.Id == "0") && r.IsAdd == true).ToList();
-                    filemodel = rocreq.MapToList<ReimburseAttachment>();
-                    filemodel.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 4; f.Id = Guid.NewGuid().ToString(); });
-                    if (filemodel.Count > 0) await UnitWork.BatchAddAsync<ReimburseAttachment>(filemodel.ToArray());
-                }
-            }
-            await UnitWork.SaveAsync();
-            #endregion
         }
 
         /// <summary>
@@ -1057,12 +952,45 @@ namespace OpenAuth.App
             ReimurseOperationHistory eoh = new ReimurseOperationHistory();
 
             var obj = await UnitWork.Find<ReimburseInfo>(r => r.Id == req.Id).FirstOrDefaultAsync();
+
+            if (obj.RemburseStatus < 4) 
+            {
+                throw new Exception("报销单已撤回，不可操作。");
+            }
             obj.ShortCustomerName = req.ShortCustomerName;
             obj.ProjectName = req.ProjectName;
             obj.BearToPay = req.BearToPay;
             obj.ReimburseType = req.ReimburseType;
             obj.Responsibility = req.Responsibility;
             eoh.ApprovalStage = obj.RemburseStatus;
+
+            if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && obj.RemburseStatus == 4)
+            {
+                obj.RemburseStatus = 5;
+                eoh.Action = "客服主管审批";
+            }
+            else if (loginContext.Roles.Any(r => r.Name.Equals("财务初审")) && obj.RemburseStatus == 5)
+            {
+                obj.RemburseStatus = 6;
+                eoh.Action = "财务初审";
+            }
+            else if (loginContext.Roles.Any(r => r.Name.Equals("财务复审")) && obj.RemburseStatus == 6)
+            {
+                obj.RemburseStatus = 7;
+                eoh.Action = "财务复审";
+            }
+            else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) && obj.RemburseStatus == 7)
+            {
+                obj.RemburseStatus = 8;
+                eoh.Action = "总经理审批";
+            }
+            else if (loginContext.Roles.Any(r => r.Name.Equals("出纳")) && obj.RemburseStatus == 8)
+            {
+                eoh.Action = "已支付";
+                eoh.ApprovalResult = "已支付";
+                obj.RemburseStatus = 9;
+                obj.PayTime = DateTime.Now;
+            }
             if (req.IsReject)
             {
                 List<string> ids = new List<string>();
@@ -1071,39 +999,10 @@ namespace OpenAuth.App
                 obj.RemburseStatus = 2;
                 obj.FlowInstanceId = "";
                 eoh.ApprovalResult = "驳回";
-                eoh.Action = "驳回报销单";
             }
             else
             {
                 eoh.ApprovalResult = "同意";
-                if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")))
-                {
-                    obj.RemburseStatus = 5;
-                    eoh.Action = "客服主管审批";
-                }
-                else if (loginContext.Roles.Any(r => r.Name.Equals("财务初审")))
-                {
-                    obj.RemburseStatus = 6;
-                    eoh.Action = "财务初审";
-                }
-                else if (loginContext.Roles.Any(r => r.Name.Equals("财务复审")))
-                {
-                    obj.RemburseStatus = 7;
-                    eoh.Action = "财务复审";
-                }
-                else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
-                {
-                    obj.RemburseStatus = 8;
-                    eoh.Action = "总经理审批";
-                }
-                else if (loginContext.Roles.Any(r => r.Name.Equals("出纳")))
-                {
-                    eoh.Action = "已支付";
-                    eoh.ApprovalResult = "已支付";
-                    obj.RemburseStatus = 9;
-                    obj.PayTime = DateTime.Now;
-                }
-
                 _flowInstanceApp.Verification(new VerificationReq
                 {
                     NodeRejectStep = "",
@@ -1112,6 +1011,17 @@ namespace OpenAuth.App
                     VerificationFinally = "1",
                     VerificationOpinion = "同意",
                 });
+                if (req.BearToPay == "2")
+                {
+                    eoh.Action = "已结束";
+                    eoh.ApprovalResult = "部门承担";
+                    obj.RemburseStatus = -1;
+                    obj.FlowInstanceId = "";
+                    List<string> ids = new List<string>();
+                    ids.Add(obj.FlowInstanceId);
+                    await _flowInstanceApp.DeleteAsync(ids.ToArray());
+                }
+
             }
 
             await UnitWork.UpdateAsync<ReimburseInfo>(obj);
@@ -1140,7 +1050,7 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
-            if (loginUser.Account == "App")
+            if (loginUser.Account == Define.USERAPP)
             {
                 loginUser = await GetUserId(Convert.ToInt32(req.AppId));
             }
@@ -1158,7 +1068,7 @@ namespace OpenAuth.App
                 await UnitWork.UpdateAsync<ReimburseInfo>(obj);
                 await UnitWork.AddAsync<ReimurseOperationHistory>(new ReimurseOperationHistory
                 {
-                    Action = "撤销报销单",
+                    Action = "撤回报销单",
                     CreateUser = loginUser.Name,
                     CreateUserId = loginUser.Id,
                     CreateTime = DateTime.Now,
@@ -1166,12 +1076,12 @@ namespace OpenAuth.App
                 });
                 await UnitWork.SaveAsync();
                 result.Code = 200;
-                result.Message = "已撤销到草稿箱";
+                result.Message = "已撤回到草稿箱";
             }
             else
             {
                 result.Code = 500;
-                result.Message = "客服主管已读不可撤销！！！";
+                result.Message = "客服主管已读不可撤回。";
             }
             return result;
 
@@ -1220,24 +1130,24 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            if (loginUser.Account == "APP") 
+            if (loginUser.Account == Define.USERAPP)
             {
                 loginUser = await GetUserId(Convert.ToInt32(req.AppId));
             }
-            if (!loginContext.Roles.Any(r => r.Name.Equals("客服主管"))) 
+            if (!loginContext.Roles.Any(r => r.Name.Equals("客服主管")))
             {
                 UserId = loginContext.User.Id;
             }
             #endregion
 
-            var Reimburse = await UnitWork.Find<ReimburseInfo>(r => r.Id == req.ReimburseInfoId && r.RemburseStatus==3)
+            var Reimburse = await UnitWork.Find<ReimburseInfo>(r => r.Id == req.ReimburseInfoId && r.RemburseStatus == 3)
                         //.Include(r => r.ReimburseAttachments)
                         .Include(r => r.ReimburseTravellingAllowances)
                         .Include(r => r.ReimburseFares)
                         .Include(r => r.ReimburseAccommodationSubsidies)
                         .Include(r => r.ReimburseOtherCharges)
                         .Include(r => r.ReimurseOperationHistories)
-                        .WhereIf(!string.IsNullOrWhiteSpace(UserId),r=>r.CreateUserId.Equals(UserId))
+                        .WhereIf(!string.IsNullOrWhiteSpace(UserId), r => r.CreateUserId.Equals(UserId))
                         .FirstOrDefaultAsync();
             if (Reimburse != null)
             {
@@ -1246,25 +1156,23 @@ namespace OpenAuth.App
                 await UnitWork.BatchDeleteAsync<ReimburseAttachment>(delfiles.ToArray());
                 foreach (var item in Reimburse.ReimburseFares)
                 {
-                    delfiles = files.Where(f => f.ReimburseId.Equals(item.Id) && f.ReimburseType == 2).ToList();
-                    await UnitWork.BatchDeleteAsync<ReimburseAttachment>(delfiles.ToArray());
+                    delfiles.AddRange(files.Where(f => f.ReimburseId.Equals(item.Id) && f.ReimburseType == 2).ToList());
                     Remark.Append(item.InvoiceNumber + ",");
                     await UnitWork.DeleteAsync<ReimburseFare>(item);
                 }
                 foreach (var item in Reimburse.ReimburseAccommodationSubsidies)
                 {
-                    delfiles = files.Where(f => f.ReimburseId.Equals(item.Id) && f.ReimburseType == 3).ToList();
-                    await UnitWork.BatchDeleteAsync<ReimburseAttachment>(delfiles.ToArray());
+                    delfiles.AddRange(files.Where(f => f.ReimburseId.Equals(item.Id) && f.ReimburseType == 3).ToList());
                     Remark.Append(item.InvoiceNumber + ",");
                     await UnitWork.DeleteAsync<ReimburseAccommodationSubsidy>(item);
                 }
                 foreach (var item in Reimburse.ReimburseOtherCharges)
                 {
-                    delfiles = files.Where(f => f.ReimburseId.Equals(item.Id) && f.ReimburseType == 4).ToList();
-                    await UnitWork.BatchDeleteAsync<ReimburseAttachment>(delfiles.ToArray());
+                    delfiles.AddRange(files.Where(f => f.ReimburseId.Equals(item.Id) && f.ReimburseType == 4).ToList());
                     Remark.Append(item.InvoiceNumber + ",");
                     await UnitWork.DeleteAsync<ReimburseOtherCharges>(item);
                 }
+                await UnitWork.BatchDeleteAsync<ReimburseAttachment>(delfiles.ToArray());
                 await UnitWork.BatchDeleteAsync<ReimburseTravellingAllowance>(Reimburse.ReimburseTravellingAllowances.ToArray());
                 await UnitWork.BatchDeleteAsync<ReimurseOperationHistory>(Reimburse.ReimurseOperationHistories.ToArray());
                 await UnitWork.DeleteAsync<ReimburseInfo>(Reimburse);
@@ -1278,12 +1186,11 @@ namespace OpenAuth.App
                     CreateUser = loginUser.Name,
                     CreateUserId = loginUser.Id,
                     CreateTime = DateTime.Now,
-                    ReimburseInfoId =req.ReimburseInfoId,
                     Remark = Remark.ToString()
                 });
                 await UnitWork.SaveAsync();
             }
-            else 
+            else
             {
                 throw new CommonException("只能删除未提交的报销单！", Define.INVALID_InvoiceNumber);
             }
@@ -1311,56 +1218,111 @@ namespace OpenAuth.App
                         .FirstOrDefaultAsync();
 
             var user = await UnitWork.Find<User>(u => u.Id.Equals(Reimburse.CreateUserId)).FirstOrDefaultAsync();
-            var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == Reimburse.CreateUserId).Select(r => r.SecondId).ToListAsync();
-            var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
-            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == Reimburse.ServiceOrderId && c.CreateUserId.Equals(Reimburse.CreateUserId) && c.ServiceMode==1).OrderByDescending(c => c.CreateTime).FirstOrDefaultAsync();
-            decimal Subsidy = 0;
-            if (Reimburse.ReimburseTravellingAllowances != null && Reimburse.ReimburseTravellingAllowances.Count > 0)
-            {
-                var rta = Reimburse.ReimburseTravellingAllowances.FirstOrDefault();
-                Subsidy = Convert.ToDecimal(rta.Money * rta.Days);
-            }
-            decimal PutUp = 0;
-            if (Reimburse.ReimburseAccommodationSubsidies != null && Reimburse.ReimburseAccommodationSubsidies.Count > 0)
-            {
-                Reimburse.ReimburseAccommodationSubsidies.ForEach(r => PutUp += Convert.ToDecimal(r.TotalMoney));
-            }
-            decimal Else = 0;
-            if (Reimburse.ReimburseOtherCharges != null && Reimburse.ReimburseOtherCharges.Count > 0)
-            {
-                Reimburse.ReimburseOtherCharges.ForEach(r => Else += Convert.ToDecimal(r.Money));
-            }
-            decimal? Aircraft = 0, Train = 0, Coach = 0, Transport = 0;
-            if (Reimburse.ReimburseFares != null && Reimburse.ReimburseFares.Count > 0)
-            {
-                Reimburse.ReimburseFares.Where(r => r.Transport == "1").ForEach(r => Aircraft += r.Money);
-                Reimburse.ReimburseFares.Where(r => r.Transport == "2").ForEach(r => Train += r.Money);
-                Reimburse.ReimburseFares.Where(r => r.Transport == "3").ForEach(r => Coach += r.Money);
-                Reimburse.ReimburseFares.Where(r => r.Transport == "4").ForEach(r => Transport += r.Money);
-            }
+            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == Reimburse.ServiceOrderId && c.CreateUserId.Equals(Reimburse.CreateUserId) && c.ServiceMode == 1).OrderByDescending(c => c.CreateTime).ToListAsync();
 
+            Reimburse.ReimburseFares.ForEach(r =>
+            {
+                switch (r.TrafficType)
+                {
+                    case "1":
+                        r.TrafficType = "飞机票";
+                        break;
+                    case "2":
+                        r.TrafficType = "火车票";
+                        break;
+                    case "3":
+                        r.TrafficType = "长途车船票";
+                        break;
+                    case "4":
+                        r.TrafficType = "市内交通";
+                        break;
+                }
+            });
+            Reimburse.ReimburseOtherCharges.ForEach(r =>
+            {
+                switch (r.ExpenseCategory)
+                {
+                    case "1":
+                        r.ExpenseCategory = "水电费";
+                        break;
+                    case "2":
+                        r.ExpenseCategory = "物业管理费";
+                        break;
+                    case "3":
+                        r.ExpenseCategory = "劳保费";
+                        break;
+                    case "4":
+                        r.ExpenseCategory = "劳务费";
+                        break;
+                    case "5":
+                        r.ExpenseCategory = "服务费";
+                        break;
+                    case "6":
+                        r.ExpenseCategory = @"清洁\保险费";
+                        break;
+                    case "7":
+                        r.ExpenseCategory = "福利费";
+                        break;
+                    case "8":
+                        r.ExpenseCategory = "保险费";
+                        break;
+                    case "9":
+                        r.ExpenseCategory = "办公费";
+                        break;
+                    case "10":
+                        r.ExpenseCategory = "维修费";
+                        break;
+                    case "11":
+                        r.ExpenseCategory = "业务招待费";
+                        break;
+                    case "12":
+                        r.ExpenseCategory = "物流运输费";
+                        break;
+                    case "13":
+                        r.ExpenseCategory = "快递费";
+                        break;
+                    case "14":
+                        r.ExpenseCategory = "咨询顾问费";
+                        break;
+                    case "15":
+                        r.ExpenseCategory = "宣传费";
+                        break;
+                    case "16":
+                        r.ExpenseCategory = "工具费";
+                        break;
+                    case "17":
+                        r.ExpenseCategory = "耗材费";
+                        break;
+                    case "18":
+                        r.ExpenseCategory = "其他";
+                        break;
+                }
+            });
+
+            var logopath= Path.Combine(Directory.GetCurrentDirectory(), "Templates", "logo.png");
+            //Image img = ;
+            var logostr = "";
+            using (var fs = new FileStream(logopath, FileMode.Open))
+            {
+                //img.Save(stream, ImageFormat.Png);
+                //BinaryReader br = new BinaryReader(stream);
+                var photo = new byte[fs.Length];
+                fs.Position = 0;
+                await fs.ReadAsync(photo, 0, photo.Length);
+                logostr=Convert.ToBase64String(photo);
+                Console.WriteLine(logostr);
+            }
             var PrintReimburse = new PrintReimburseResp
             {
-                StartTime = CompletionReports.BusinessTripDate,
-                EndTime = CompletionReports.EndDate,
-                Day = CompletionReports.BusinessTripDays,
                 ReimburseId = Reimburse.MainId,
-                OrgName = orgname,
+                CompleteAddress = CompletionReports.FirstOrDefault()?.Becity +"-"+ CompletionReports.FirstOrDefault()?.Destination,
                 UserName = user.Name,
-                //Position = "",
-                TerminalCustomer = Reimburse.ShortCustomerName,
-                FromTheme = CompletionReports.FromTheme,
-                Subsidy = Subsidy,
-                Else = Else,
-                PutUp = PutUp,
-                Aircraft = Aircraft,
-                Train = Train,
-                Coach = Coach,
-                Transport = Transport,
-                Total = TransformCharOrNumber.SumConvert(null, Convert.ToDecimal(Reimburse.TotalMoney)),
+                TerminalCustomerId = CompletionReports.FirstOrDefault()?.TerminalCustomerId,
+                TerminalCustomer = CompletionReports.FirstOrDefault()?.TerminalCustomer,
+                FromTheme = CompletionReports.FirstOrDefault()?.FromTheme,
+                logo= logostr,
+                Reimburse = Reimburse
             };
-            var result = new TableData();
-
             return await ExportAllHandler.Exporterpdf(PrintReimburse, "PrintReimburse.cshtml");
         }
 
@@ -1385,21 +1347,95 @@ namespace OpenAuth.App
         public async Task<bool> IsServiceRelations(string AppId, string ServiceRelations)
         {
             var user = _auth.GetCurrentUser().User;
-            if (user.Account == "App")
+            if (user.Account == Define.USERAPP)
             {
                 user = await GetUserId(Convert.ToInt32(AppId));
             }
-            if (user.ServiceRelations==null || !ServiceRelations.Contains(user.ServiceRelations))
+            var Relations = "";
+            switch (user.ServiceRelations)
+            {
+                case "新威尔":
+                    Relations = "深圳市新威尔电子有限公司";
+                    break;
+                case "东莞新威":
+                    Relations = "东莞新威检测技术有限公司";
+                    break;
+                case "新能源":
+                    Relations = "深圳市新威新能源技术有限公司";
+                    break;
+                default:
+                    Relations = null;
+                    break;
+            }
+            if (!ServiceRelations.Equals(Relations))
             {
                 return false;
             }
             return true;
         }
 
-        public ReimburseInfoApp(IUnitWork unitWork,
-            RevelanceManagerApp app, ModuleFlowSchemeApp moduleFlowSchemeApp, FlowInstanceApp flowInstanceApp, IAuth auth) : base(unitWork, auth)
+        /// <summary>
+        /// 添加修改通用条件
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        private async Task<ReimburseInfo> Condition(AddOrUpdateReimburseInfoReq req)
         {
-            _revelanceApp = app;
+
+            #region 过滤掉不需要添加的数据
+            req.ReimburseFares = req.ReimburseFares.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
+            req.ReimburseAccommodationSubsidies = req.ReimburseAccommodationSubsidies.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
+            req.ReimburseOtherCharges = req.ReimburseOtherCharges.Where(r => r.IsAdd == null || r.IsAdd == true).ToList();
+            #endregion
+
+            #region 删除我的费用(假删除)
+            if (req.MyexpendsIds != null && req.MyexpendsIds.Count > 0)
+            {
+                var myexpends = await UnitWork.Find<MyExpends>(m => req.MyexpendsIds.Contains(m.Id)).ToListAsync();
+                myexpends.ForEach(m => m.IsDelete = true);
+                await UnitWork.BatchUpdateAsync(myexpends.ToArray());
+            }
+            #endregion
+
+            #region 判断发票是否唯一
+            List<string> InvoiceNumbers = new List<string>();
+            InvoiceNumbers.AddRange(req.ReimburseFares.Where(r => string.IsNullOrWhiteSpace(r.Id.ToString()) || r.Id.ToString() == "0").Select(r => r.InvoiceNumber).ToList());
+            InvoiceNumbers.AddRange(req.ReimburseAccommodationSubsidies.Where(r => string.IsNullOrWhiteSpace(r.Id.ToString()) || r.Id.ToString() == "0").Select(r => r.InvoiceNumber).ToList());
+            InvoiceNumbers.AddRange(req.ReimburseOtherCharges.Where(r => string.IsNullOrWhiteSpace(r.Id.ToString()) || r.Id.ToString() == "0").Select(r => r.InvoiceNumber).ToList());
+            bool IsInvoiceNumber = InvoiceNumbers.GroupBy(i => i).Where(g => g.Count() > 1).Count() >= 1;
+            if (IsInvoiceNumber)
+            {
+                string msg = "";
+                InvoiceNumbers.GroupBy(i => i).Where(g => g.Count() > 1).Select(i => i.Key).ToList().ForEach(i => msg += i + ",");
+                throw new CommonException($"添加报销单失败。发票号：{msg}重复！", Define.INVALID_InvoiceNumber);
+            }
+            else if (InvoiceNumbers.Count() > 0)
+            {
+                if (!await IsSole(InvoiceNumbers))
+                {
+                    throw new CommonException("添加报销单失败。发票已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                }
+            }
+            #endregion
+
+            #region 必须存在附件并排序
+            int racount = 0;
+            int SerialNumber = 0;
+            req.ReimburseOtherCharges.ForEach(r => { racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0; r.SerialNumber = ++SerialNumber; });
+            SerialNumber = 0;
+            req.ReimburseFares.ForEach(r => { racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0; r.SerialNumber = ++SerialNumber; });
+            SerialNumber = 0;
+            req.ReimburseAccommodationSubsidies.ForEach(r => { racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0; r.SerialNumber = ++SerialNumber; });
+            if (racount > 0)
+            {
+                throw new CommonException("请上传附件！", Define.INVALID_ReimburseAgain);
+            }
+            #endregion
+
+            return req.MapTo<ReimburseInfo>();
+        }
+        public ReimburseInfoApp(IUnitWork unitWork,ModuleFlowSchemeApp moduleFlowSchemeApp, FlowInstanceApp flowInstanceApp, IAuth auth) : base(unitWork, auth)
+        {
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _flowInstanceApp = flowInstanceApp;
         }

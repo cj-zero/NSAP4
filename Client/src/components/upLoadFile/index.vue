@@ -232,7 +232,9 @@ export default {
             this.dialogImageUrl = file.url
             this.dialogVisible = true
           } else {
-            downloadFile(file.url)
+            window.open(file.url)
+            console.log(downloadFile)
+            // downloadFile(file.url)
           }
         }
       }

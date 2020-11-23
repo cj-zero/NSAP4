@@ -16,9 +16,9 @@ export function returnMaterials(data) { // 退料
   })
 }
 
-export function getReturnNoteInfo(params) { // 获取退料详情
+export function getReturnNoteDetail(params) { // 获取退料详情
   return request({
-    url: '/ReturnNotes/GetReturnNoteInfo',
+    url: '/ReturnNotes/GetReturnNoteDetail',
     method: 'get',
     params
   })
