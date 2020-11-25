@@ -41,7 +41,30 @@
       <quotation-order 
         ref="quotationOrder" 
         :detailInfo="detailInfo"
+        :categoryList="categoryList"
         :status="status"></quotation-order>
+    </my-dialog>
+    <!-- 只能查看的表单 -->
+    <my-dialog
+      ref="serviceDetail"
+      width="1210px"
+      title="服务单详情"
+    >
+      <el-row :gutter="20" class="position-view">
+        <el-col :span="18" >
+          <zxform
+            formName="查看"
+            labelposition="right"
+            labelwidth="72px"
+            max-width="800px"
+            :isCreate="false"
+            :refValue="dataForm"
+          ></zxform>
+        </el-col>
+        <el-col :span="6" class="lastWord">   
+          <zxchat :serveId='serveId' formName="报销"></zxchat>
+        </el-col>
+      </el-row>
     </my-dialog>
   </div>
 </template>
@@ -53,12 +76,14 @@ import Sticky from '@/components/Sticky'
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import CommonTable from '@/components/CommonTable'
-import QuotationOrder from '../common/components/quotationOrder'
-import { getQuotationList, getServiceOrderList, getQuotationDetail } from '@/api/material/quotation'
-import {  quotationTableMixin } from '../common/js/mixins'
+import QuotationOrder from '../common/components/QuotationOrder'
+import zxform from "@/views/serve/callserve/form";
+import zxchat from '@/views/serve/callserve/chat/index'
+import { getApprovePendingList, getServiceOrderList } from '@/api/material/quotation'
+import {  quotationTableMixin, categoryMixin, chatMixin } from '../common/js/mixins'
 export default {
   name: 'quotation',
-  mixins: [quotationTableMixin],
+  mixins: [quotationTableMixin, categoryMixin, chatMixin],
   components: {
     TabList,
     Search,
@@ -66,17 +91,19 @@ export default {
     CommonTable,
     Pagination,
     MyDialog,
-    QuotationOrder
+    QuotationOrder,
+    zxform,
+    zxchat
   },
   computed: {
     searchConfig () {
       return [
-        { prop: 'pickNO', placeholder: '报价单号', width: 100 },
-        { prop: 'customerName', placeholder: '客户名称', width: 100 },
-        { prop: '', placeholder: '服务ID', width: 100 },
-        { prop: 'applicant', placeholder: '申请人', width: 100 },
-        { prop: 'startDate', placeholder: '创建开始日期', type: 'date', width: 150 },
-        { prop: 'endDate', placeholder: '创建结束日期', type: 'date', width: 150 },
+        { prop: 'quotationId', placeholder: '领料单号', width: 100 },
+        { prop: 'cardCode', placeholder: '客户名称', width: 100 },
+        { prop: 'serviceOrderSapId', placeholder: '服务ID', width: 100 },
+        { prop: 'createUser', placeholder: '申请人', width: 100 },
+        { prop: 'startCreateTime', placeholder: '创建开始日期', type: 'date', width: 150 },
+        { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
         { type: 'button', btnText: '审批', handleClick: this._getQuotationDetail, options: { status: 'approve' } },
       ]
@@ -84,19 +111,19 @@ export default {
     btnList () {
       // 弹窗按钮
       return [
-        { btnText: '同意', handleClick: this.submit, options: { isReject: true }, isShow: !this.isPreviewing && this.status !== 'view' },
-        { btnText: '驳回', handleClick: this.submit, options: { isReject: false }, isShow: this.isPreviewing },
+        { btnText: '同意', handleClick: this.approve, options: { type: 'agree' }, isShow: this.status !== 'view' },
+        { btnText: '驳回', handleClick: this.approve, options: { type: 'reject' }, isShow: this.status !== 'view' },
         { btnText: '关闭', handleClick: this.close, className: 'close' }      
       ]
     }
   },
   data () {
     return {
-      initialName: '', // 初始标签的值
+      initialName: '1', // 初始标签的值
       texts: [ // 标签数组
-        { label: '待处理', name: '' },
-        { label: '已驳回', name: '1' },
-        { label: '已通过', name: '2' }
+        { label: '待处理', name: '1' },
+        { label: '已驳回', name: '2' },
+        { label: '已通过', name: '3' }
       ],
       formQuery: {
         quotationId: '', // 领料单号
@@ -107,17 +134,17 @@ export default {
         endCreateTime: '' // 创建结束
       },
       listQuery: {
-        startType: '',
+        startType: '1',
         page: 1,
         limit: 50,
       },
       dialogLoading: false,
       tableLoading: false,
       tableData: [],
-      total: 100,
+      total: 0,
       quotationColumns: [
         { label: '领料单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'view' }, type: 'link'},
-        { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this.getDetail, type: 'link' },
+        { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link', options: { isInTable: true } },
         { label: '客户代码', prop: 'terminalCustomerId' },
         { label: '客户名称', prop: 'terminalCustomer' },
         { label: '单据总金额', prop: 'totalMoney' },
@@ -134,9 +161,9 @@ export default {
   methods: {
     _getList () {
       this.tableLoading = true
-      getQuotationList(this.listQuery).then(res => {
+      getApprovePendingList(this.listQuery).then(res => {
         let { count, data } = res
-        this.tableData = data
+        this.tableData = this._normalizeList(data)
         this.total = count
         this.tableLoading = false
         this.$refs.quotationTable.resetCurrentRow()
@@ -157,77 +184,22 @@ export default {
         this.$message.error(err.message)
       })
     },
-    onSearch () {
-      this.listQuery.page = 1
-      this._getList()
-    },
-    onChangeForm (val) {
-      Object.assign(this.listQuery, val)
-      this.onSearch()
-    },
     onTabChange (name) {
       this.listQuery.startType = name
       this.listQuery.page = 1
       this._getList()
     },
-    submit (options) {
-      let isReject = !!options.isReject
-      this.dialogLoading = true
-      this.$refs.quotationOrder._approve(isReject).then(() => {
-        this.dialogLoading = false
-        this._getList()
-        this.close()
-        this.$message.success(isReject ? '驳回成功' : '审批成功')
-      }).catch(err => {
-        this.$message.error(err.message)
-        this.dialogLoading = false
-      })
+    approve (options) {
+      this.$refs.quotationOrder.beforeApprove(options.type)
     },
     close () {
       this.$refs.quotationOrder.resetInfo()
       this.$refs.quotationDialog.close()
-    },
-    _getQuotationDetail (data) {
-      let quotationId
-      let { status } = data
-      if (status === 'view') {
-        quotationId = data.id
-      } else {
-        let currentRow = this.$refs.quotationTable.getCurrentRow()
-        if (!currentRow) {
-          return this.$message.warning('请先选择数据')
-        }
-        quotationId = currentRow.id
-      }
-      console.log(status, 'status', quotationId)
-      this.tableLoading = true
-      getQuotationDetail({
-        quotationId
-      }).then(res => {
-        console.log(res,' res')
-        this.detailInfo = this._normalizeDetail(res.data)
-        this.$refs.quotationDialog.open()
-        this.tableLoading = false
-        this.status = status
-      }).catch(err => {
-        this.$message.error(err.message)
-        this.tableLoading = false
-      })
-    },
-    _normalizeDetail (data) {
-      let { serviceOrders, quotations } = data
-      let { terminalCustomer, terminalCustomerId } = serviceOrders
-      // result
-      return { ...quotations, terminalCustomer, terminalCustomerId }
-    },
-    handleCurrentChange ({ page, limit }) {
-      this.listQuery.page = page
-      this.listQuery.limit = limit
-      this._getList()
-    }
+    },  
   },
   created () {
     this._getList()
+    this._getCategoryNameList()
   }
 }
 </script>

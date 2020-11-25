@@ -1,5 +1,5 @@
 <template>
-  <div class="quotation-wrapper" :class="{ uneditable: ifNotEdit }">
+  <div class="quotation-wrapper" :class="{ uneditable: ifNotEdit }" v-loading="contentLoading">
     <el-row type="flex" class="title-wrapper">
       <p class="bold id">报价单号: <span>{{ formData.id || '' }}</span></p>
       <p class="bold">申请人: <span>{{ formData.createUser || createUser }}</span></p>
@@ -36,7 +36,7 @@
                 <template v-if="item.prop === 'serviceOrderSapId'">
                   <div class="link-container" style="display: inline-block">
                     <span>{{ item.label }}</span>
-                    <img :src="rightImg" @click="openCustomerList" class="pointer">
+                    <img :src="rightImg" @click="openServiceOrder" class="pointer">
                   </div>
                 </template>
                 <template v-else>
@@ -56,6 +56,7 @@
                 </el-input>
               </template>
               <template v-else-if="item.type === 'select'">
+                {{ typeof formData[item.prop] }}                
                 <el-select 
                   clearable
                   :style="{ width: item.width }"
@@ -63,8 +64,8 @@
                   :placeholder="item.placeholder"
                   :disabled="item.disabled">
                   <el-option
-                    v-for="(item,index) in item.options"
-                    :key="index"
+                    v-for="item in item.options"
+                    :key="item.value"
                     :label="item.label"
                     :value="item.value"
                   ></el-option>
@@ -167,82 +168,48 @@
               class="form-wrapper"
               :disabled="ifNotEdit"
             >
-              <el-table 
+              <common-table
                 class="material-table-wrapper"
-                border
                 :data="materialData.list"
-                highlight-current-row
-                max-height="200px"
+                :columns="materialConfig"
+                :height="0"
+                maxHeight="200px"
               >
-                <el-table-column
-                  v-for="item in materialConfig"
-                  :key="item.label"
-                  :label="item.label"
-                  :width="item.width"
-                  :align="item.align || 'left'"
-                  :prop="item.prop"
-                  :fixed="item.fixed"
-                  :resizable="false"
-                  show-overflow-tooltip
-                >
-                  <template v-slot:header>
-                    <template v-if="item.prop === 'totalPrice'">
-                      <el-tooltip effect="dark" placement="top-end">
-                        <div slot="content">{{ materialData.list | calcTotalItem | toThousands}}</div>
-                        <p class="text-overflow">{{ item.label }} <span>{{ materialData.list | calcTotalItem | toThousands }}</span></p>
-                      </el-tooltip>
-                    </template>
-                    <template v-else>
-                      {{ item.label }}
-                    </template>
-                  </template>
-                  <template slot-scope="scope">
-                    <template v-if="item.type === 'order'">
-                      {{ scope.$index + 1 }}
-                    </template>
-                    <template v-if="item.type === 'input'">
-                      <el-form-item
-                        :prop="'list.' + scope.$index + '.'+ item.prop"
-                        :rules="materialRules[item.prop] || { required: false }"
-                      >
-                        <el-input v-model="scope.row[item.prop]" :disabled="item.disabled" :placeholder="item.placeholder"></el-input>
-                      </el-form-item>
-                    </template>
-                    <template v-else-if="item.type === 'number'">
-                      <el-form-item
-                        :prop="'list.' + scope.$index + '.'+ item.prop"
-                        :rules="materialRules[item.prop] || { required: false }"
-                      >
-                        <el-input-number
-                          style="width: 200px;"
-                          :controls="false"
-                          v-model="scope.row[item.prop]" 
-                          :disabled="item.disabled"
-                          :precision="0"
-                          :placeholder="`最大数量${scope.row['maxCount']}`"
-                          :max="+scope.row['maxCount']"
-                          :min="0"
-                          @focus="onCountFocus(scope.$index)"
-                          @change="onCountChange"
-                        ></el-input-number>
-                      </el-form-item>
-                    </template>
-                    <template v-else-if="item.type === 'operation'">
-                      <template v-for="iconItem in item.iconList">
-                        <i 
-                          :key="iconItem.icon"
-                          :class="iconItem.icon" 
-                          class="icon-item"
-                          @click="iconItem.handleClick(scope)">
-                        </i>
-                      </template>
-                    </template>
-                    <template v-else>
-                      {{ scope.row[item.prop] }}
-                    </template>
-                  </template>
-                </el-table-column>
-              </el-table>
+                <template v-slot:totalPrice_header>
+                  <el-tooltip effect="dark" placement="top-end">
+                    <div slot="content">{{ materialData.list | calcTotalItem | toThousands}}</div>
+                    <p class="text-overflow"> 总计 <span>{{ materialData.list | calcTotalItem | toThousands }}</span></p>
+                  </el-tooltip>                     
+                </template>
+                <template v-slot:count="{ row }">
+                  <el-form-item
+                    :prop="'list.' + row.index + '.' + row.prop"
+                    :rules="materialRules[row.prop]"
+                  >
+                    <el-input-number
+                      size="mini"
+                      style="width: 200px;"
+                      :controls="false"
+                      v-model="row[row.prop]" 
+                      :precision="0"
+                      :placeholder="`最大数量${row['maxQuantity']}`"
+                      :max="+row['maxQuantity']"
+                      :min="0"
+                      @focus="onCountFocus(row.index)"
+                      @change="onCountChange"
+                    ></el-input-number>
+                  </el-form-item>
+                </template>
+                <template v-slot:remark="{ row }">
+                  <el-input size="mini" v-model="materialData.list[row.index][row.prop]"></el-input>
+                </template>
+                <template v-slot:operation="{ row }">
+                  <div style="display: inline-block;" @click="deleteMaterialItem(row.index)">
+                    <el-icon class="el-icon-delete icon-item"></el-icon>
+                  </div>
+                  
+                </template>
+              </common-table>
             </el-form>
           </div>
         </template>
@@ -295,6 +262,9 @@
         <!-- 物料汇总表格 -->
         <div class="material-summary-wrapper">
           <common-table 
+            class="material-summary-table"
+            rowKey="index"
+            :height="0"
             maxHeight="400px"
             :data="materialSummaryList" 
             :columns="materialAllColumns" 
@@ -356,6 +326,19 @@
         @pagination="handleMaterialChange"
       />
     </my-dialog>
+    <!-- 驳回理由弹窗 -->
+    <my-dialog
+      ref="remarkDialog"
+      :center="true"
+      title="驳回"
+      :mAddToBody="true" 
+      :appendToBody="true"
+      :btnList="remarkBtnList"
+      :onClosed="onRemarkClose"
+      v-loading="remarkLoading"
+      width="350px">
+      <remark ref="remark" @input="onRemarkInput" :tagList="[]"></remark>
+    </my-dialog>
     <el-button @click="_checkFormData">点击校验</el-button>
   </div>
 </template>
@@ -373,19 +356,22 @@ import {
 import CommonTable from '@/components/CommonTable' // 对于不可编辑的表格
 import MyDialog from '@/components/Dialog'
 import Pagination from '@/components/Pagination'
+import Remark from '@/views/reimbursement/common/components/remark'
 // import AreaSelector from '@/components/AreaSelector'
-import { configMixin, quotationOrderMixin } from '../js/mixins'
+import { configMixin, quotationOrderMixin, categoryMixin } from '../js/mixins'
 import { timeToFormat } from "@/utils";
 import { findIndex } from '@/utils/process'
 import { isNumber } from '@/utils/validate'
 import rightImg from '@/assets/table/right.png'
 const NOT_EDIT_STATUS_LIST = ['view', 'approve', 'pay'] // 不可编辑的状态 1.查看 2.审批 3.支付
 export default {
-  mixins: [configMixin, quotationOrderMixin],
+  inject: ['parentVm'],
+  mixins: [configMixin, quotationOrderMixin, categoryMixin],
   components: {
     CommonTable,
     MyDialog,
     Pagination,
+    Remark
     // AreaSelector
   },
   filters: {
@@ -417,8 +403,12 @@ export default {
     status: { // 判断当前报价单所处于的状态 view create edit approve pay
       type: String
     },
-    isReceive: { // 用来区别报价单模块 和 (销售订单模块/待处理物料模块)
+    isReceive: { // 用来区别报价单模块(true) 和 (销售订单模块/待处理物料模块 | false)
       type: Boolean
+    },
+    categoryList: {
+      type: Array,
+      default: () => []
     }
   },
   watch: {
@@ -485,6 +475,7 @@ export default {
   },
   data () {
     return {
+      contentLoading: false, // 弹窗内容loading
       rightImg,
       formData: {
         // id: '',  报价单号
@@ -543,6 +534,18 @@ export default {
         { label: '库存量', prop: 'onHand', width: 100 },
         { label: '仓库号', prop: 'whsCode', width: 100 }
       ],
+      // 根据设备序列号生成的物料表格
+      materialConfig:[
+        { label: '序号', type: 'order' },
+        { label: '物料编码', prop: 'materialCode' },
+        { label: '物料描述', prop: 'materialDescription' },
+        { label: '数量', prop: 'count', type: 'slot', slotName: 'count', align: 'right' },
+        { label: '最大数量', prop: 'maxQuantity', align: 'right' },
+        { label: '单价', prop: 'unitPrice', align: 'right' },
+        { label: '小计', prop: 'totalPrice', disabled: true, align: 'right', isCustomizeHeader: true },
+        { label: '备注', type: 'slot', slotName: 'remark', prop: 'remark' },
+        { label: '操作', type: 'slot', slotName: 'operation' }
+      ],    
       // 物料填写表格列表
       materialRules: {
         count: [{ required: true }]
@@ -552,9 +555,9 @@ export default {
         { label: '物料编码', prop: 'materialCode' },
         { label: '物料描述', prop: 'materialDescription' },
         { label: '数量', prop: 'count', align: 'right' },
-        { label: '最大数量', prop: 'maxCount', align: 'right' },
+        { label: '最大数量', prop: 'maxQuantity', align: 'right' },
         { label: '单价', prop: 'unitPrice', align: 'right' },
-        { label: '总计', prop: 'totalPrice', align: 'right', isCustomizeHeader: true },
+        { label: '小计', prop: 'totalPrice', align: 'right', isCustomizeHeader: true },
         { label: '备注', prop: 'remark', type: 'input' }
       ],
       // 物料汇总表格
@@ -564,9 +567,9 @@ export default {
         { label: '物料编码', prop: 'materialCode' },
         { label: '物料描述', prop: 'materialDescription' },
         { label: '数量', prop: 'count', align: 'right' },
-        { label: '最大数量', prop: 'maxCount', align: 'right' },
+        { label: '最大数量', prop: 'maxQuantity', align: 'right' },
         { label: '单价', prop: 'unitPrice', align: 'right' },
-        { label: '总计', prop: 'totalPrice', align: 'right' },
+        { label: '小计', prop: 'totalPrice', align: 'right' },
         { label: '备注', prop: 'remark' },
       ],
       materialAllLoading: false,
@@ -615,8 +618,9 @@ export default {
       // 地址选择器
       isShowCollect: false,
       isShowShipping: false,
-      // 驳回理由
+      // 驳回理由弹窗
       remark: '',
+      remarkLoading: false,
     }
   },
   computed: {
@@ -636,6 +640,12 @@ export default {
         return item.productCode === this.currentSerialNumber
       })
       return  { list: index > -1 ? this.formData.quotationProducts[index].quotationMaterials : [] }
+    },
+    remarkBtnList () {
+      return [
+        { btnText: '确认', handleClick: this.approveByReject },
+        { btnText: '取消', handleClick: this.closeRemark }
+      ]
     }
   },
   methods: {
@@ -656,8 +666,9 @@ export default {
         this.$refs.customerDialog.open()
       }
     },
-    openCustomerList () {
-      this.$refs.customerDialog.open()
+    openServiceOrder () { // 打开服务单
+      
+      // this.$refs.customerDialog.open()
     },
     selectCustomer () { // 选择客户数据
       let val = this.$refs.customerTable.getCurrentRow()
@@ -743,12 +754,12 @@ export default {
       this.selectedMaterialList = this.selectedMap[this.currentSerialNumber] || []
       this.$refs.materialDialog.open()
     }, 
-    deleteMaterialItem (scope) { // 删除物料
-      console.log('delete', scope)
+    deleteMaterialItem (index) { // 删除物料
+      console.log('delete', index)
       // 执行删除操作时
       // 删除表格数据
-      this.materialData.list.splice(scope.$index, 1)
-      this.selectedMap[this.currentSerialNumber].splice(scope.$index, 1)
+      this.materialData.list.splice(index, 1)
+      this.selectedMap[this.currentSerialNumber].splice(index, 1)
       if (!this.materialData.list.length) {
         // deleteList
         this.formData.quotationProducts.splice(this.materialIndex, 1)
@@ -763,9 +774,12 @@ export default {
         let { data } = res
         this.materialSummaryList = data.reduce((prev, next) => {
           return prev.concat(next.materialDetailList)
-        }, [])
-        console.log(data, 'data')
-        this.materialAllLoading = true
+        }, []).map((item, index) => {
+          item.index = index
+          return item
+        })
+        console.log(data, 'data', this.materialSummaryList)
+        this.materialAllLoading = false
       }).catch(err => {
         this.materialAllLoading = false
         this.$message.error(err.message)
@@ -807,7 +821,8 @@ export default {
         item.unitPrice = 7
         item.count = 1
         item.onHand = onHand
-        item.maxCount = quantity
+        item.maxQuantity = quantity
+        console.log(item.maxQuantity, 'quantity')
         item.totalPrice = item.unitPrice * item.count
         return item
       })
@@ -909,6 +924,18 @@ export default {
       this.formData[prop] = result
       this.onCloseArea()
     },
+    onRemarkInput (value) {
+      this.remark = value
+    },
+    closeRemark () {
+      this.remark = ''
+      this.$refs.remark.reset()
+      this.$refs.remarkDialog.close()
+    },
+    onRemarkClose () {
+      this.remark = ''
+      this.$refs.remark.reset()
+    },
     async _checkFormData () {
       let isFormValid = false
       try {
@@ -919,8 +946,9 @@ export default {
       }
       return isFormValid
     },
-    async _operateOrder (isEdit, isDraft) { // 提交 存稿
+    async _operateOrder (isEdit, isDraft) { // 提交 存稿 针对于报价单
       // 判断表头表单
+      console.log(this.formData.quotationProducts)
       let isFormValid = await this._checkFormData()
       console.log(isFormValid, 'isFormValid')
       if (!isFormValid) {
@@ -938,31 +966,81 @@ export default {
       if (!isMaterialValid) {
         return Promise.reject({ message: '零件数量不能为空' })
       }
+      this.formData.quotationProducts.forEach(item => {
+        item.isProtected = false
+      })
+      console.log(this.formData.quotationProducts)
       return isEdit 
         ? updateQuotationOrder({
             ...this.formData,
             isDraft,
-            totalMoney: this.totalMoney,
-            isProteced: true
+            totalMoney: this.totalMoney
           })
         : AddQuotationOrder({
           ...this.formData,
             isDraft,
             createTime: this.createTime,
             totalMoney: this.totalMoney,
-            createUser: this.formData.createUser || this.createUser,
-            isProteced: true
+            createUser: this.formData.createUser || this.createUser
           })
     },
-    async _approve (isReject) { // 审核
+    async beforeApprove (type) { // 待处理的报价单 审批
+      this.$refs.form.validate(isValid => {
+        if (isValid) {
+          if (type !== 'reject') {
+            this.$confirm('确定审批通过?', '提示', {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning'
+            }).then(() => {
+              this._approve(type)
+            })
+          } else {
+            this.$refs.remarkDialog.open()
+          }
+        } else {
+          this.$message.error('请将必填项填写')
+        }
+      })
+    },
+    approveByReject () {
+      this._approve('reject')
+    },
+    async _approve (type) { // 审核
       let isFormValid = await this._checkFormData()
       if (!isFormValid) {
         return Promise.reject({ message: '请将表单必填项填写完成' })
       }
-      return approveQuotationOrder({
-        id: this.formData.serviceOrderId,
-        isReject,
-        remark: this.remark
+      let params = {
+        id: this.formData.id,
+        isReject: type === 'reject',
+        remark: this.remark,
+        invoiceCompany: this.formData.invoiceCompany
+      }
+      type === 'reject'
+        ? this.remarkLoading = true
+        : this.contentLoading = true
+      approveQuotationOrder(params).then(() => {
+        this.$message({
+          type: 'success',
+          message:type === 'reject' 
+            ? '驳回成功' 
+            : (type === 'agree' ? '审核成功' : '支付成功')
+        })
+        this.parentVm._getList()
+        this.parentVm.close()
+        if (type === 'reject') {
+          this.remarkLoading = false
+          this.closeRemark()
+        } else {
+          this.contentLoading = false
+          this.parentVm.close()
+        }
+      }).catch(() => {
+        type === 'reject'
+          ? this.remarkLoading = false
+          : this.contentLoading = false
+        this.$message.error('操作失败')
       })
     }
   },
@@ -1060,6 +1138,7 @@ export default {
           width: 100% !important;
         }
         .material-table-wrapper {
+          height: auto !important;
           overflow: hidden;
           white-space: nowrap;
         }
@@ -1096,6 +1175,9 @@ export default {
     /* 物料汇总表格 */
     .material-summary-wrapper {
       margin-top: 10px;
+      .material-summary-table {
+        height: auto !important;
+      }
     }
     /* 操作记录表格 */
     .history-wrapper {

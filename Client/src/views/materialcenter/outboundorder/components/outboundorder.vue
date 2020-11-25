@@ -75,33 +75,47 @@
       </el-form>
       <div class="courier-wrapper">
         <!-- 物流表格 -->
-        <div class="courier-table-wrapper">
-          <common-table
+        <!-- <el-form :model="courierAllList"> -->
+          <div class="courier-table-wrapper">
+            <common-table
             class="courier-table"
             ref="courierTable"
             :data="courierList" 
-            :columns="courierColumns"
+            :columns="courierColumns2"
             :height="0"
             max-height="150px"
           >
-            <!-- 快递单号 -->
+       
             <template v-slot:courierNumber="{ row }">
               <el-input size="mini" v-model="courierList[row.index].number"></el-input>
             </template>
-            <!-- 物流信息 -->
+         
             <template v-slot:logisticsInfo="{ row }">
-              {{ courierList[row.index].info }}
+              <el-row>
+                <img :src="rightImg" @click="getExpressInfo(row)" class="search-icon">
+                {{ courierList[row.index].info }}
+              </el-row>
             </template>
-            <!-- 备注 -->
+       
             <template v-slot:remark="{ row }">
               <el-input size="mini" v-model="courierList[row.index].remark"></el-input>
             </template>
-            <!-- 图片信息 -->
-            <template v-slot:pictures>
-              <UpLoadFile uploadType="file" :limit="3" />
+        
+            <template v-slot:pictures="{ row }">
+              <UpLoadFile 
+                ref="uploadFile" 
+                uploadType="file" 
+                :limit="3" 
+                :onAccept="onAccept"
+                :fileList="courierList[row.index].fileList || []"
+                @get-ImgList="getFileList" 
+                :options="{ index: row.index }" 
+              />
             </template> 
           </common-table>
-        </div>
+          </div>
+        <!-- </el-form> -->
+        
         <div>
           <el-button class="add-courier-btn" size="min" @click="addCourier">新增快递</el-button>
         </div>
@@ -139,6 +153,7 @@ import MyDialog from '@/components/Dialog'
 import Pagination from '@/components/Pagination'
 import UpLoadFile from '@/components/upLoadFile'
 import rightImg from '@/assets/table/right.png'
+import { isImage } from '@/utils/file'
 export default {
   mixins: [configMixin],
   components: {
@@ -148,8 +163,16 @@ export default {
     UpLoadFile
     // AreaSelector
   },
+  computed: {
+    courierAllList () {
+      return {
+        courierList: this.courierList
+      }
+    }
+  },
   data () {
     return {
+      fileList: [],
       rightImg,
       formData: {
         // id: '',  报价单号
@@ -177,16 +200,24 @@ export default {
         deliveryMethod: [{ required: true, trigger: ['change', 'blur'] }]
       }, // 上表单校验规则
       // 物流表格
+      courierLoading: false,
       courierList: [{
         number: '1',
         info: '',
-        pictures: []
+        pictures: [],
+        fileList: []
       }],
       courierColumns: [
+        { label: '快递单号', type: 'input', prop: 'number', width: '100px' },
+        { label: '物流信息', prop: 'info' },
+        { label: '备注', type: 'input', prop: 'remark', width: '150px' },
+        { label: '图片', prop: 'pictures', width: '200px' }
+      ],
+      courierColumns2: [
         { label: '快递单号', type: 'slot', slotName: 'courierNumber', prop: 'number', width: '100px' },
         { label: '物流信息', type: 'slot', slotName: 'logisticsInfo', prop: 'info' },
         { label: '备注', type: 'slot', slotName: 'remark', prop: 'remark', width: '150px' },
-        { label: '图片', type: 'slot', slotName: 'pictures', prop: 'pictures', width: '100px' }
+        { label: '图片', type: 'slot', slotName: 'pictures', prop: 'pictures', width: '200px' }
       ],
       // 物料表格
       materialList: [{
@@ -232,6 +263,23 @@ export default {
     },
     isOutboundAll (data) { // 判断是否物料的是否已经出料完成
       return !(data.count - data.outbound)
+    },
+    getExpressInfo (data) { // 查询物流信息
+      console.log(data)
+    },
+    getFileList (value, { index }) {
+      this.courierList[index].pictures = value
+      console.log(this.courierList, 'fileList')
+    },
+    onAccept (file) { // 限制发票文件上传的格式
+      let { type } = file
+      // console.log(size, 'file size')
+      let isValid = isImage(type)
+      if (!isValid) {
+        this.$notifyMessage(() => this.$message.error('文件格式只能为图片'))
+        return false
+      }
+      return true
     }
   },
   created () {
@@ -301,11 +349,14 @@ export default {
       display: flex;
       margin-top: 10px;
       .courier-table-wrapper {
-        width: 700px;
+        width: 800px;
         // max-height: 100px;
         margin-right: 20px;
         .courier-table {
           height: auto !important;
+          .search-icon {
+            cursor: pointer;
+          }
         }
       }
       .add-courier-btn {

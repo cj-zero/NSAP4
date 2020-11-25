@@ -43,6 +43,28 @@
         :status="status"
         :isReceive="true"></outbound-order>
     </my-dialog>
+    <!-- 只能查看的表单 -->
+    <my-dialog
+      ref="serviceDetail"
+      width="1210px"
+      title="服务单详情"
+    >
+      <el-row :gutter="20" class="position-view">
+        <el-col :span="18" >
+          <zxform
+            formName="查看"
+            labelposition="right"
+            labelwidth="72px"
+            max-width="800px"
+            :isCreate="false"
+            :refValue="dataForm"
+          ></zxform>
+        </el-col>
+        <el-col :span="6" class="lastWord">   
+          <zxchat :serveId='serveId' formName="报销"></zxchat>
+        </el-col>
+      </el-row>
+    </my-dialog>
   </div>
 </template>
 
@@ -53,20 +75,23 @@ import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import CommonTable from '@/components/CommonTable'
 import OutboundOrder from './components/outboundorder'
+import zxform from "@/views/serve/callserve/form";
+import zxchat from '@/views/serve/callserve/chat/index'
 import { getQuotationList, getQuotationDetail } from '@/api/material/quotation'
-import {  quotationTableMixin } from '../common/js/mixins'
+import {  quotationTableMixin, chatMixin } from '../common/js/mixins'
 export default {
   name: 'quotation',
-  mixins: [quotationTableMixin],
+  mixins: [quotationTableMixin, chatMixin],
   components: {
     Search,
     Sticky,
     CommonTable,
     Pagination,
     MyDialog,
-    OutboundOrder
+    OutboundOrder,
+    zxform,
+    zxchat
   },
-  
   computed: {
     searchConfig () {
       return [
@@ -102,17 +127,17 @@ export default {
         endCreateTime: '' // 创建结束
       },
       listQuery: {
-        startType: '',
+        status: '2',
         page: 1,
         limit: 50,
       },
       dialogLoading: false,
       tableLoading: false,
       tableData: [],
-      total: 100,
+      total: 0,
       quotationColumns: [
         { label: '出库单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'view' }, type: 'link'},
-        { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this.getDetail, type: 'link' },
+        { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link', options: { isInTable: true } },
         { label: '客户代码', prop: 'terminalCustomerId' },
         { label: '客户名称', prop: 'terminalCustomer' },
         { label: '总金额', prop: 'totalMoney' },

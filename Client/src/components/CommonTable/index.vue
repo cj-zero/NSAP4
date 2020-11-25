@@ -7,13 +7,15 @@
     stripe
     border
     fit
-    row-key="id"
+    :row-key="rowKey"
     :height="height"
     :max-height="maxHeight"
     @current-change="onCurrentChange"
     @row-click="onRowClick"
     @selection-change="onSelectChange"
     :row-class-name="tableRowClassName"
+    :row-style="rowStyle"
+    :cell-style="cellStyle"
     highlight-current-row
     >
     <!-- 是否出现多选 -->
@@ -73,7 +75,7 @@
         <!-- slot 可以再外部使用具名插槽 展示不同列的值 -->
         <template v-else-if="item.type === 'slot'">
           <!-- {{ JSON.stringify(scope.row) }} -->
-          <slot :name="item.slotName || 'default'" :row="{ ...scope.row, ...(item.options || {})}"></slot>
+          <slot :name="item.slotName || 'default'" :row="{ ...scope.row, prop: item.prop, ...(item.options || {})}"></slot>
         </template>
         <!-- 文本显示 -->
         <template v-else-if="item.originType !== 'selectoin'">
@@ -90,6 +92,10 @@ import { noop } from '@/utils/declaration'
 import { isFunction } from '@/utils/validate'
 export default {
   props: {
+    rowKey: { // 表格标识符
+      type: String,
+      default: 'id'
+    },
     data: {
       type: Array,
       default () {
@@ -107,6 +113,14 @@ export default {
     loading: {
       type: Boolean,
       default: false
+    },
+    rowStyle: {
+      type: Function,
+      default: () => {}
+    },
+    cellStyle: {
+      type: Function,
+      default: () => {}
     },
     height: {
       type: [String, Number],
@@ -128,6 +142,9 @@ export default {
     radioKey: { // 单选标识字段
       type: String
     }
+  },
+  updated () {
+    console.log('table updated')
   },
   data () {
     return {

@@ -152,6 +152,9 @@ export default {
       type: Function
     }
   },
+  updated () {
+    console.log('updated')
+  },
   data () {
     return {
       dialogImageUrl: "",
@@ -171,6 +174,7 @@ export default {
     fileList: {
       immediate: true,
       handler (val) {
+        console.log('val', this.fileList)
         if (this.ifShowTip && this.limit) { 
           // 如果是再编辑状态下,需要判断当前的文件数量是否小于等于限制数量，从而控制tip是否展示
           this.isShowTip = val.length < this.limit
@@ -262,7 +266,7 @@ export default {
           return false
         }
       }
-      if (this.onAccept) { // 自定义上传之前的回调函数
+      if (this.onAccept) { // 自定义上传之前的回调函数P
         return this.onAccept(file, { prop: this.options.prop })
       }
       return true

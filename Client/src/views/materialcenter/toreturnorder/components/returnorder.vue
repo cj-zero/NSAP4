@@ -84,53 +84,96 @@
             :height="0"
             max-height="150px"
           >
-            <!-- 快递单号 -->
-            <template v-slot:courierNumber="{ row }">
+            <!-- <template v-slot:courierNumber="{ row }">
               <el-input size="mini" v-model="courierList[row.index].number"></el-input>
-            </template>
+            </template> -->
             <!-- 物流信息 -->
-            <template v-slot:logisticsInfo="{ row }">
+            <!-- <template v-slot:logisticsInfo="{ row }">
               {{ courierList[row.index].info }}
-            </template>
+            </template> -->
             <!-- 备注 -->
-            <template v-slot:remark="{ row }">
+            <!-- <template v-slot:remark="{ row }">
               <el-input size="mini" v-model="courierList[row.index].remark"></el-input>
-            </template>
+            </template> -->
             <!-- 图片信息 -->
             <template v-slot:pictures>
-              <UpLoadFile uploadType="file" :limit="3" />
+              <UpLoadFile uploadType="file" :limit="3" :disabled="true" />
             </template> 
           </common-table>
-        </div>
-        <div>
-          <el-button class="add-courier-btn" size="min" @click="addCourier">新增快递</el-button>
         </div>
         
       </div>
       <!-- 物料表格 -->
       <div class="material-wrapper">
-        <common-table 
-          ref="materialTable"
-          :data="materialList" 
-          :columns="materialColumns">
-          <template v-slot:delivery="{ row }">
-            <el-input-number 
-              size="mini"
-              :controls="false"
-              v-model="materialList[row.index].delivery"
-              :mini="0"
-              :max="materialList[row.index].count - materialList[row.index].outbound"
-              :disabled="isOutboundAll(materialList[row.index])"
-            >
-            </el-input-number>  
-          </template>  
-        </common-table>
+        <el-form 
+          ref="materialForm"
+          :disabled="status === 'view'"
+          :model="materialFormData" 
+          size="mini">
+          <common-table 
+            ref="materialTable"
+            :data="materialFormData.materialList"
+            maxHeight="250px" 
+            :show-message="false"
+            :columns="materialColumns"
+            :cellStyle="cellStyle"
+            :rowStyle="rowStyle">
+            <template v-slot:check="{ row }">
+              <el-button v-if="(status === 'view' && checkList[row.index].isPass !== 2) || status === 'return'" 
+                type="success" 
+                size="mini" 
+                @click="check(1, row.index)">通过</el-button>
+              <el-button 
+                v-if="(status === 'view' && checkList[row.index].isPass !== 1) || status === 'return'"
+                :type="checkList[row.index].isPass === 2 ? 'info' : 'danger'" 
+                size="mini" 
+                @click="check(2, row.index)">未通过</el-button>
+            </template>
+            <template v-slot:wrongCount="{ row }">
+              <el-form-item 
+                :prop="'materialList.' + row.index + '.' + row.prop"
+                :rules="{ required: checkList[row.index].isPass === 2 }">
+                <el-input-number 
+                  size="mini"
+                  :controls="false"
+                  v-model="materialList[row.index].wrongCount"
+                  :mini="0"
+                  :max="materialList[row.index].totalCount - materialList[row.index].count"
+                >
+                </el-input-number>
+              </el-form-item>
+            </template>  
+            <template v-slot:receiveRemark="{ row }">
+              <el-form-item 
+                :prop="'materialList.' + row.index + '.' + row.prop"
+                :rules="{ required: checkList[row.index].isPass === 2 }">
+                <el-input 
+                  size="mini"
+                  v-model="materialList[row.index].receivingRemark"
+                >
+                </el-input>
+              </el-form-item>
+            </template>
+            <template v-slot:pictures="{ row }">
+              <el-button size="mini" class="customer-btn-class" @click="previewPicture(row.pictureId)">查看</el-button>
+            </template>
+          </common-table>
+        </el-form>
+        
       </div>
+      <el-button @click="validate">点击校验表格信息</el-button>
       <my-dialog></my-dialog>
       <pagination :total="0"></pagination>
     </el-scrollbar>
+    <el-image-viewer
+      v-if="dialogVisible"
+      :url-list="[dialogImageUrl]"
+      :on-close="closeViewer"
+    >
+    </el-image-viewer>
   </div>
 </template>
+
 
 <script>
 import { saveReceiveInfo } from '@/api/material/returnMaterial'
@@ -138,19 +181,62 @@ import { configMixin } from '../../common/js/mixins'
 import CommonTable from '@/components/CommonTable' // 对于不可编辑的表格
 import MyDialog from '@/components/Dialog'
 import Pagination from '@/components/Pagination'
-import UpLoadFile from '@/components/upLoadFile'
+// import UpLoadFile from '@/components/upLoadFile'
+import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import rightImg from '@/assets/table/right.png'
+import { processDownloadUrl } from '@/utils/file'
 export default {
   mixins: [configMixin],
   components: {
     CommonTable,
     MyDialog,
     Pagination,
-    UpLoadFile
+    // UpLoadFile,
+    ElImageViewer
     // AreaSelector
+  },
+  props: {
+    detailInfo: {
+      type: Object,
+      default: () => {}
+    },
+    status: {
+      type: String
+    },
+    isReturn: Boolean
+  },
+  watch: {
+    detailInfo: {
+      immediate: true,
+      handler () {
+        let { expressList, returnNoteList } = this.detailInfo
+        this.courierList = this._normalizeExpressList(expressList)
+        this.materialList = returnNoteList
+        // 初始化 验收列表
+        this.checkList = this.materialList.map(item => {
+          let { id, check: isPass, wrongCount, receivingRemark: receiveRemark } = item
+          return {
+            id,
+            isPass, // check: 0 未处理 1 通过 2 未通过
+            wrongCount,
+            receiveRemark
+          }
+        })
+        console.log(this.courierList, this.materialList, this.checkList)
+      }
+    }
+  },
+  computed: {
+    materialFormData () {
+      return {
+        materialList: this.materialList
+      }
+    }
   },
   data () {
     return {
+      dialogVisible: false,
+      dialogImageUrl: '',
       rightImg,
       formData: {
         // id: '',  报价单号
@@ -168,75 +254,106 @@ export default {
         totalMoney: 0, // 总金额
         quotationProducts: [] // 报价单产品表
       }, // 表单数据
-      rules: {
-        serviceOrderSapId: [ { required: true } ],
-        terminalCustomerId: [ { required: true } ],
-        terminalCustomer: [{ required: true }],
-        shippingAddress: [{ required: true, trigger: ['change', 'blur'] }],
-        invoiceCompany: [{ required: true, trigger: ['change', 'blur'] }],
-        collectionAddress: [{ required: true, trigger: ['change', 'blur'] }],
-        deliveryMethod: [{ required: true, trigger: ['change', 'blur'] }]
-      }, // 上表单校验规则
+      rules: {},
       // 物流表格
-      courierList: [{
-        number: '1',
-        info: '',
-        pictures: []
-      }],
+      courierList: [],
       courierColumns: [
-        { label: '快递单号', type: 'slot', slotName: 'courierNumber', prop: 'number', width: '100px' },
-        { label: '物流信息', type: 'slot', slotName: 'logisticsInfo', prop: 'info' },
-        { label: '备注', type: 'slot', slotName: 'remark', prop: 'remark', width: '150px' },
-        { label: '图片', type: 'slot', slotName: 'pictures', prop: 'pictures', width: '100px' }
+        { label: '快递单号', prop: 'expressNumber', width: '100px' },
+        { label: '物流信息', prop: 'expressInformation' },
+        // { label: '备注', type: 'slot', slotName: 'remark', prop: 'remark', width: '150px' },
+        // { label: '图片', type: 'slot', slotName: 'pictures', prop: 'pictures', width: '100px' }
       ],
       // 物料表格
-      materialList: [{
-        materialCode: '1111',
-        materialDescription: '232323',
-        count: 5,
-        unit: 'PCS',
-        outbound: 5,
-        delivery: ''
-      }],
+      materialList: [],
       materialColumns: [
-        { label: '序号', type: 'order' },
         { label: '物料编码', prop: 'materialCode' },
         { label: '物料描述', prop: 'materialDescription' },
-        { label: '数量', prop: 'count' },
-        { label: '单位', prop: 'unit' },
-        { label: '已出库', prop: 'outbound' },
-        { label: '出库数量', prop: 'delivery', type: 'slot', slotName: 'delivery' }
+        { label: '本次退还数量', prop: 'count' },
+        { label: '已退数量', prop: 'hasCount' },
+        { label: '需退总计', prop: 'totalCount' },
+        { label: '图片', type: 'slot', slotName: 'pictures' },
+        { label: '发货备注', prop: 'shippingRemark' },
+        { label: '核对验收', type: 'slot', slotName: 'check', width: '150px' },
+        { label: '差错数量', prop: 'wrongCount', type: 'slot', slotName: 'wrongCount' },
+        { label: '收货备注', prop: 'receivingRemark', type: 'slot', slotName: 'receiveRemark' }
       ],
-      ReceiveInfo: [] // 验收收货记录列表 { id: string, isPass: 0, wrongCount: 0, receiveRemark: string }
-    }
-  },
-  watch: {
-    courierList: {
-      deep: true,
-      handler (val) {
-        console.log(val, 'courierList')
-      }
+      checkList: [] // 验收收货记录列表
     }
   },
   methods: {
+    previewPicture (pictureId) {
+      this.dialogImageUrl = processDownloadUrl(pictureId)
+      this.dialogVisible = true
+    },
+    closeViewer () {
+      this.dialogVisible = false
+    },
+    rowStyle ({ rowIndex }) {
+      let isPass = this.checkIsPass(rowIndex)
+      console.log('isPass', isPass)
+      return isPass 
+        ? { backgroundColor: 'rgba(0, 0, 0, .1)' }
+        : { }
+    },
+    cellStyle ({ rowIndex }) {
+      let isPass = this.checkIsPass(rowIndex)
+      console.log('isPass', isPass)
+      return isPass 
+        ? { backgroundColor: 'transparent' }
+        : { }
+    },
+    checkIsPass (rowIndex) { // 判断当前行是否已经通过
+      return this.checkList.some((item, index) => {
+        return item.isPass === 1 && rowIndex === index
+      })
+    },
+    _normalizeExpressList (expressList) { // 格式化物流信息列表
+      return expressList.map(item => {
+        let infoList = JSON.parse(item.expressInformation).data
+        item.expressInformation = infoList[infoList.length - 1].context
+        return item
+      })
+    },
     onServiceIdFocus (prop) {
       console.log(prop)
     },
     openCustomerList () {
       this.$refs.customerDialog.open()
     },
-    addCourier () { // 增加快递
-      this.courierList.push({
-        number: '1',
-        info: '',
-        pictures: []
-      })
+    check (isValid, index) { // 选择通过或者未通过
+      console.log(isValid, index)
+      if (this.status === 'view') {
+        return
+      }
+      this.checkList[index].isPass = isValid
+      console.log(this.checkList[index].isPass, 'isPass')
     },
-    isOutboundAll (data) { // 判断是否物料的是否已经出料完成
-      return !(data.count - data.outbound)
+    async validate () {
+      console.log('validate')
+      let isValid
+      try {
+        isValid = await this.$refs.materialForm.validate()
+      } catch (err) {
+        isValid = err
+      }
+      return isValid
     },
-    _saveReceiveInfo () {
-      return saveReceiveInfo.then()
+    async checkOrSave () {
+      if (this.checkList.some(item => item.isPass === 0)) {
+        return Promise.reject({ message: '请对所有物料进行校验操作' })
+      }
+      let isFormValid = await this.validate()
+      console.log(isFormValid, 'isFormValid')
+      if (!isFormValid) {
+        return Promise.reject({ message: '请将表单必填项填写完成' })
+      }
+      console.log(this.checkList)
+      return saveReceiveInfo(this.checkList)
+    },
+    resetInfo () {
+      this.checkList = []
+      this.materialList = []
+      this.courierList = []
     }
   },
   created () {
@@ -252,6 +369,9 @@ export default {
   position: relative;
   ::v-deep .el-form-item--mini.el-form-item, .el-form-item--small.el-form-item {
     margin-bottom: 5px;
+  }
+  ::v-deep .el-input-number {
+    width: 100%;
   }
   ::v-deep .el-input.is-disabled .el-input__inner {
     background-color: #fff;

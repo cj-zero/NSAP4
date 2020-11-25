@@ -41,7 +41,30 @@
         ref="returnOrder" 
         :detailInfo="detailInfo"
         :status="status"
-        :isReceive="true"></return-Order>
+        :isReturn="true"
+        ></return-Order>
+    </my-dialog>
+    <!-- 只能查看的表单 -->
+    <my-dialog
+      ref="serviceDetail"
+      width="1210px"
+      title="服务单详情"
+    >
+      <el-row :gutter="20" class="position-view">
+        <el-col :span="18" >
+          <zxform
+            formName="查看"
+            labelposition="right"
+            labelwidth="72px"
+            max-width="800px"
+            :isCreate="false"
+            :refValue="dataForm"
+          ></zxform>
+        </el-col>
+        <el-col :span="6" class="lastWord">   
+          <zxchat :serveId='serveId' formName="报销"></zxchat>
+        </el-col>
+      </el-row>
     </my-dialog>
   </div>
 </template>
@@ -53,19 +76,23 @@ import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import CommonTable from '@/components/CommonTable'
 import returnOrder from './components/returnorder'
+import zxform from "@/views/serve/callserve/form";
+import zxchat from '@/views/serve/callserve/chat/index'
 // import { getQuotationDetail } from '@/api/material/quotation'
 import { getReturnNoteList, getReturnNoteDetail } from '@/api/material/returnMaterial'
-import {  quotationTableMixin } from '../common/js/mixins'
+import {  quotationTableMixin, chatMixin } from '../common/js/mixins'
 export default {
   name: 'quotation',
-  mixins: [quotationTableMixin],
+  mixins: [quotationTableMixin, chatMixin],
   components: {
     Search,
     Sticky,
     CommonTable,
     Pagination,
     MyDialog,
-    returnOrder
+    returnOrder,
+    zxform,
+    zxchat
   },
   computed: {
     searchConfig () {
@@ -77,13 +104,13 @@ export default {
         { prop: 'beginDate', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endDate', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
-        { type: 'button', btnText: '退料', handleClick: this._getReturnNoteDetail, options: { status: 'toReturn'} },
+        { type: 'button', btnText: '退料', handleClick: this._getReturnNoteDetail, options: { status: 'return'} },
       ]
     }, // 搜索配置
     btnList () {
       return [
-        { btnText: '验收', handleClick: this.checkOrSave, isShow: !this.isPreviewing },
-        { btnText: '保存', handleClick: this.checkOrSave, isShow: this.isPreviewing, options: { isSave: true } },
+        { btnText: '验收', handleClick: this.checkOrSave, isShow: this.status !== 'view' },
+        { btnText: '保存', handleClick: this.checkOrSave, isShow: this.status !== 'view', options: { isSave: true } },
         { btnText: '关闭', handleClick: this.close, className: 'close' }      
       ]
     }
@@ -106,12 +133,12 @@ export default {
       dialogLoading: false,
       tableLoading: false,
       tableData: [],
-      total: 100,
+      total: 0,
       returnOrderColumns: [
         { label: '退料单号', prop: 'id', handleClick: this._getReturnNoteDetail, options: { status: 'view' }, type: 'link'},
         { label: '客户代码', prop: 'customerId' },
         { label: '客户名称', prop: 'customerName' },
-        { label: '服务ID', prop: 'serviceOrderId', handleClick: this.getDetail, type: 'link' },
+        { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link', options: { isInTable: true } },
         { label: '申请人', prop: 'createUser' },
         { label: '创建时间', prop: 'createDate' },
       ],
@@ -160,8 +187,8 @@ export default {
       })
     },
     close () {
-      this.$refs.outboundOrder.resetInfo()
-      this.$refs.returnOrderTable.close()
+      this.$refs.returnOrder.resetInfo()
+      this.$refs.returnOrderDialog.close()
     },
     _getReturnNoteDetail (data) {
       let id
@@ -182,6 +209,7 @@ export default {
         id
       }).then(res => {
         console.log(res,' res')
+        this.detailInfo = res.data
         // this.detailInfo = this._normalizeDetail(res.data)
         this.$refs.returnOrderDialog.open()
         this.tableLoading = false
@@ -193,8 +221,17 @@ export default {
     },
     checkOrSave (value) {
       let { isSave } = value
-      this.$refs.returnOrder.checkOrSave(isSave).then(() => {
-        //
+      this.dialogLoading = true
+      this.$refs.returnOrder.checkOrSave(isSave).then((res) => {
+        console.log('res', res)
+        this.$message.success(isSave ? '保存成功' : '验收成功')
+        this._getList()
+        this.close()
+        this.dialogLoading = false
+      }).catch(err => {
+        this.$message.error(err.message)
+        // this.close()
+        this.dialogLoading = false
       })
     },
     handleCurrentChange ({ page, limit }) {

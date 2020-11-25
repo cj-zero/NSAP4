@@ -64,10 +64,18 @@ export function getQuotationMaterialCode (params) { // 获取该服务单所有�
   })
 }
 
-export function approveQuotationOrder (data) {
+export function approveQuotationOrder (data) { // 审批报价单
   return request({
     url: '/Material/Quotation/Accraditation',
     method: 'post',
     data
   })
 } 
+
+export function getApprovePendingList (params) { // 获取未审批报价单列表
+  return request({
+    url: '/Material/Quotation/ApprovalPendingLoad',
+    method: 'get',
+    params
+  })
+}

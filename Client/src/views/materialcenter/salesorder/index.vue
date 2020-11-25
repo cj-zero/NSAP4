@@ -1,6 +1,5 @@
 <template>
   <div class="my-submission-wrapper">
-    <tab-list :initialName="initialName" :texts="texts" @tabChange="onTabChange"></tab-list>
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
@@ -14,7 +13,12 @@
     <div class="app-container">
       <div class="bg-white">
         <div class="content-wrapper">
-          <common-table :data="tableData" :columns="quotationColumns" :loading="tableLoading"></common-table>
+          <common-table 
+            ref="quotationTable" 
+            :data="tableData" 
+            :columns="quotationColumns" 
+            :loading="tableLoading">
+          </common-table>
           <pagination
             v-show="total>0"
             :total="total"
@@ -25,117 +29,163 @@
         </div>
       </div>
     </div>    
-    <my-dialog ref="myDialog">
+    <my-dialog 
+      ref="quotationDialog"
+      width="1100px"
+      :loading="dialogLoading"
+      title="销售订单详情"
+      :btnList="btnList"
+      :onClosed="close"
+    >
+      <quotation-order 
+        ref="quotationOrder" 
+        :detailInfo="detailInfo"
+        :categoryList="categoryList"
+        :status="status"></quotation-order>
+    </my-dialog>
+    <!-- 只能查看的表单 -->
+    <my-dialog
+      ref="serviceDetail"
+      width="1210px"
+      title="服务单详情"
+    >
+      <el-row :gutter="20" class="position-view">
+        <el-col :span="18" >
+          <zxform
+            formName="查看"
+            labelposition="right"
+            labelwidth="72px"
+            max-width="800px"
+            :isCreate="false"
+            :refValue="dataForm"
+          ></zxform>
+        </el-col>
+        <el-col :span="6" class="lastWord">   
+          <zxchat :serveId='serveId' formName="报销"></zxchat>
+        </el-col>
+      </el-row>
     </my-dialog>
   </div>
 </template>
 
 <script>
-import TabList from '@/components/TabList'
 import Search from '@/components/Search'
 import Sticky from '@/components/Sticky'
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import CommonTable from '@/components/CommonTable'
-const tableData = []
-for (let i = 0; i < 100; i++) {
-  tableData.push({
-    pickNO: i,
-    serviceOrderId: i,
-    customerId: i,
-    customerName: i,
-    totalMoney: i,
-    otherMoney: i,
-    applicant: 'rookie',
-    remark: 'rookie',
-    createTime: '123',
-    status: '审批中'
-  })
-}
+import QuotationOrder from '../common/components/QuotationOrder'
+import zxform from "@/views/serve/callserve/form";
+import zxchat from '@/views/serve/callserve/chat/index'
+import { getQuotationList, getServiceOrderList } from '@/api/material/quotation'
+import {  quotationTableMixin, categoryMixin, chatMixin } from '../common/js/mixins'
 export default {
   name: 'quotation',
+  mixins: [quotationTableMixin, categoryMixin, chatMixin],
   components: {
-    TabList,
     Search,
     Sticky,
     CommonTable,
     Pagination,
-    MyDialog
+    MyDialog,
+    QuotationOrder,
+    zxform,
+    zxchat
   },
   computed: {
     searchConfig () {
       return [
-        { prop: 'pickNO', placeholder: '销售单号', width: 100 },
-        { prop: 'customerName', placeholder: '客户', width: 100 },
-        { prop: '', placeholder: '服务ID', width: 100 },
-        { prop: 'applicant', placeholder: '申请人', width: 100 },
-        { prop: 'startDate', placeholder: '创建开始日期', type: 'date', width: 150 },
-        { prop: 'endDate', placeholder: '创建结束日期', type: 'date', width: 150 },
-        { prop: 'endDate', placeholder: '报价单号', width: 150 },
+        { prop: 'quotationId', placeholder: '销售单号', width: 100 },
+        { prop: 'cardCode', placeholder: '客户名称', width: 100 },
+        { prop: 'serviceOrderSapId', placeholder: '服务ID', width: 100 },
+        { prop: 'createUser', placeholder: '申请人', width: 100 },
+        { prop: 'startCreateTime', placeholder: '创建开始日期', type: 'date', width: 150 },
+        { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
-        { type: 'button', btnText: '打印', handleClick: this.print },     
-        { type: 'button', btnText: '收款', handleClick: this.collect },
-        { type: 'button', btnText: '开票', handleClick: this.invoice },
+        { type: 'search' },
+        { type: 'button', btnText: '收款', handleClick: this._getQuotationDetail, options: { status: 'pay' } },
       ]
     }, // 搜索配置
     btnList () {
+      // 弹窗按钮
       return [
-        { btnText: '提交', handleClick: this.submit },
-        { btnText: '存为草稿', handleClick: this.saveAsDraft },
-        { btnText: '关闭', handleClick: this.close }      
+        { btnText: '确认收款', handleClick: this.pay, options: { type: 'pay' }, isShow: this.status !== 'view' },
+        { btnText: '关闭', handleClick: this.close, className: 'close' }      
       ]
     }
   },
   data () {
     return {
-      initialName: '1', // 初始标签的值
-      texts: [ // 标签数组
-        { label: '全部', name: '1' },
-        { label: '草稿箱', name: '2' },
-        { label: '申请中', name: '3' },
-        { label: '已领料', name: '4' },
-        { label: '已驳回', name: '5' }
-      ],
       formQuery: {
-        pickNO: '',
-        customerName: '',
-        serviceOrderId: '',
-        startDate: '',
-        endDate: ''
+        quotationId: '', // 领料单号
+        cardCode: '', // 客户
+        serviceOrderSapId: '', // 服务Id
+        createUser: '', // 申请人
+        startCreateTime: '', // 创建开始
+        endCreateTime: '' // 创建结束
       },
       listQuery: {
+        IsSalesOrderList: true,
         page: 1,
         limit: 50,
       },
+      dialogLoading: false,
       tableLoading: false,
-      tableData,
-      total: 100,
+      tableData: [],
+      total: 0,
       quotationColumns: [
-        { label: '领料单号', prop: 'pickNO', handleClick: this.getDetail, options: { type: 'view' }, type: 'link'},
-        { label: '服务ID', prop: 'serviceOrderId', handleClick: this.getDetail, type: 'link' },
-        { label: '报价单号', prop: 'serviceOrderId', handleClick: this.getDetail, type: 'link' },
-        { label: '客户代码', prop: 'customerId' },
-        { label: '客户名称', prop: 'customerName' },
+        { label: '销售单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'view' }, type: 'link'},
+        { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link', options: { isInTable: true } },
+        { label: '客户代码', prop: 'terminalCustomerId' },
+        { label: '客户名称', prop: 'terminalCustomer' },
         { label: '单据总金额', prop: 'totalMoney' },
         { label: '未清金额', prop: 'otherMoney' },
-        { label: '申请人', prop: 'applicant' },
+        { label: '申请人', prop: 'createUser' },
         { label: '备注', prop: 'remark' },
         { label: '创建时间', prop: 'createTime' },
-        { label: '状态', prop: 'status' }
-      ]
+        { label: '状态', prop: 'quotationStatus' }
+      ],
+      status: 'create', // 报价单状态
+      detailInfo: null // 详情信息
     } 
   },
   methods: {
-    onTabChange () {},
-    submit () {},
-    saveAsDraft () {},
-    close () {},
-    getDetail (data) {
-      console.log(data, 'data detail')
+    _getList () {
+      this.tableLoading = true
+      getQuotationList(this.listQuery).then(res => {
+        let { count, data } = res
+        this.tableData = this._normalizeList(data)
+        this.total = count
+        this.tableLoading = false
+        this.$refs.quotationTable.resetCurrentRow()
+      }).catch(err => {
+        this.$message.error(err.message)
+        this.tableLoading = false
+      })
     },
-    onChangeForm () {},
-    onSearch () {},
-    handleCurrentChange () {}
+    openMaterialOrder () {
+      getServiceOrderList({ page: 1, limit: 1 }).then((res) => {
+        this.customerList = res.data
+        if (this.customerList && this.customerList.length) {
+          this.status = 'create'
+          return this.$refs.quotationDialog.open()
+        } 
+        this.$message.warning('无服务单数据')
+      }).catch(err => {
+        this.$message.error(err.message)
+      })
+    },
+    pay (options) {
+      this.$refs.quotationOrder.beforeApprove(options.type)
+    },
+    close () {
+      this.$refs.quotationOrder.resetInfo()
+      this.$refs.quotationDialog.close()
+    }
+  },
+  created () {
+    this._getList()
+    this._getCategoryNameList()
   }
 }
 </script>

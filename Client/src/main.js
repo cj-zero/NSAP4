@@ -56,6 +56,9 @@ Vue.config.productionTip = false
 Vue.prototype.$layer = layer(Vue, {
   msgtime: 3
 })
+Vue.prototype.$notifyMessage = function (cb) {
+  setTimeout(cb, 0)
+}
 Vue.component('FrmLeaveReqAdd', FrmLeaveReqAdd)
 Vue.component('FrmLeaveReqDetail', FrmLeaveReqDetail)
 new Vue({

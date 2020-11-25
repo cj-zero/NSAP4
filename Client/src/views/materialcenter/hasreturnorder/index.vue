@@ -92,7 +92,7 @@ export default {
       },
       tableLoading: false,
       tableData,
-      total: 100,
+      total: 0,
       quotationColumns: [
         { label: '退料单号', prop: 'pickNO', handleClick: this.getDetail, options: { type: 'view' }, type: 'link'},
         { label: '客户代码', prop: 'customerId' },

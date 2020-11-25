@@ -18,8 +18,7 @@
             ref="quotationTable" 
             :data="tableData" 
             :columns="quotationColumns" 
-            :loading="tableLoading"
-            @rowClick="onRowClick">
+            :loading="tableLoading">
           </common-table>
           <pagination
             v-show="total>0"
@@ -44,7 +43,30 @@
         :customerList="customerList"
         :detailInfo="detailInfo"
         :status="status"
+        :categoryList="categoryList"
         :isReceive="true"></quotation-order>
+    </my-dialog>
+    <!-- 只能查看的表单 -->
+    <my-dialog
+      ref="serviceDetail"
+      width="1210px"
+      title="服务单详情"
+    >
+      <el-row :gutter="20" class="position-view">
+        <el-col :span="18" >
+          <zxform
+            formName="查看"
+            labelposition="right"
+            labelwidth="72px"
+            max-width="800px"
+            :isCreate="false"
+            :refValue="dataForm"
+          ></zxform>
+        </el-col>
+        <el-col :span="6" class="lastWord">   
+          <zxchat :serveId='serveId' formName="报销"></zxchat>
+        </el-col>
+      </el-row>
     </my-dialog>
   </div>
 </template>
@@ -56,12 +78,14 @@ import Sticky from '@/components/Sticky'
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import CommonTable from '@/components/CommonTable'
-import QuotationOrder from '../common/components/quotationOrder'
-import { getQuotationList, getServiceOrderList, getQuotationDetail } from '@/api/material/quotation'
-import {  quotationTableMixin } from '../common/js/mixins'
+import QuotationOrder from '../common/components/QuotationOrder'
+import zxform from "@/views/serve/callserve/form";
+import zxchat from '@/views/serve/callserve/chat/index'
+import { getQuotationList, getServiceOrderList } from '@/api/material/quotation'
+import {  quotationTableMixin, categoryMixin, chatMixin } from '../common/js/mixins'
 export default {
   name: 'quotation',
-  mixins: [quotationTableMixin],
+  mixins: [quotationTableMixin, categoryMixin, chatMixin],
   components: {
     TabList,
     Search,
@@ -69,7 +93,9 @@ export default {
     CommonTable,
     Pagination,
     MyDialog,
-    QuotationOrder
+    QuotationOrder,
+    zxform,
+    zxchat
   },
   
   computed: {
@@ -125,10 +151,10 @@ export default {
       dialogLoading: false,
       tableLoading: false,
       tableData: [],
-      total: 100,
+      total: 0,
       quotationColumns: [
         { label: '领料单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'view' }, type: 'link'},
-        { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this.getDetail, type: 'link' },
+        { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link', options: { isInTable: true } },
         { label: '客户代码', prop: 'terminalCustomerId' },
         { label: '客户名称', prop: 'terminalCustomer' },
         { label: '单据总金额', prop: 'totalMoney' },
@@ -150,11 +176,10 @@ export default {
       this.tableLoading = true
       getQuotationList(this.listQuery).then(res => {
         let { count, data } = res
-        this.tableData = data
+        this.tableData = this._normalizeList(data)
         this.total = count
         this.tableLoading = false
         this.$refs.quotationTable.resetCurrentRow()
-        console.log('_getList', this.$refs.quotationTable.getCurrentRow())
       }).catch(err => {
         this.$message.error(err.message)
         this.tableLoading = false
@@ -171,14 +196,6 @@ export default {
       }).catch(err => {
         this.$message.error(err.message)
       })
-    },
-    onSearch () {
-      this.listQuery.page = 1
-      this._getList()
-    },
-    onChangeForm (val) {
-      Object.assign(this.listQuery, val)
-      this.onSearch()
     },
     onTabChange (name) {
       this.listQuery.startType = name
@@ -207,52 +224,11 @@ export default {
       this.isPreviewing = false
       this.$refs.quotationOrder.resetInfo()
       this.$refs.quotationDialog.close()
-    },
-    onRowClick (row) {
-      this.currentRow = row
-    },
-    _getQuotationDetail (data) {
-      let quotationId
-      let { status } = data
-      if (status === 'view') {
-        quotationId = data.id
-      } else {
-        let currentRow = this.$refs.quotationTable.getCurrentRow()
-        console.log(currentRow, 'currentRow')
-        if (!currentRow) {
-          return this.$message.warning('请先选择数据')
-        }
-        quotationId = currentRow.id
-      }
-      console.log(status, 'status', quotationId)
-      this.tableLoading = true
-      getQuotationDetail({
-        quotationId
-      }).then(res => {
-        console.log(res,' res')
-        this.detailInfo = this._normalizeDetail(res.data)
-        this.$refs.quotationDialog.open()
-        this.tableLoading = false
-        this.status = status
-      }).catch(err => {
-        this.$message.error(err.message)
-        this.tableLoading = false
-      })
-    },
-    _normalizeDetail (data) {
-      let { serviceOrders, quotations } = data
-      let { terminalCustomer, terminalCustomerId } = serviceOrders
-      // result
-      return { ...quotations, terminalCustomer, terminalCustomerId }
-    },
-    handleCurrentChange ({ page, limit }) {
-      this.listQuery.page = page
-      this.listQuery.limit = limit
-      this._getList()
     }
   },
   created () {
     this._getList()
+    this._getCategoryNameList()
   }
 }
 </script>
