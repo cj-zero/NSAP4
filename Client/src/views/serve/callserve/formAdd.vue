@@ -792,6 +792,7 @@
         :data="reportData"
       ></Report>
     </el-dialog>
+    <!-- 呼叫主题弹窗 -->
     <my-dialog 
       ref="formTheme"
       width="500px"
@@ -822,6 +823,7 @@
         :total="themeTotal"
         :page.sync="listQueryTheme.page"
         :limit.sync="listQueryTheme.limit"
+        layout="total, sizes, prev, next, jumper"
         @pagination="handleChangeTheme"
       /> 
     </my-dialog>
@@ -990,7 +992,7 @@ export default {
       listQueryTheme: {
         page: 1,
         limit: 20,
-        type: 7, // 呼叫主题
+        type: 4, // 呼叫主题
         key: '' // 搜搜呼叫主题
       },
       formThemeData: [],
@@ -1773,7 +1775,7 @@ export default {
     position: relative;
     box-sizing: border-box;
     min-height: 30px;
-    padding: 5px 15px;
+    padding: 1px 15px;
     color: #606266;
     font-size: 12px;
     line-height: 1.5;

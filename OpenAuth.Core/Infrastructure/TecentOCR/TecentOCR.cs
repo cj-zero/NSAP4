@@ -40,7 +40,7 @@ namespace Infrastructure.TecentOCR
         /// <returns></returns>
         private string GetDateFormat(string date)
         {
-            return date.Replace("年", "-").Replace("月", "-").Replace("日", string.Empty);
+            return date.Replace("年", "-").Replace("月", "-").Replace("日", " ");
         }
 
         /// <summary>
@@ -137,7 +137,7 @@ namespace Infrastructure.TecentOCR
                                     invoiceCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "序列号").Value;
                                     invoiceNo = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "编号").Value;
                                     amountWithTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "票价").Value);
-                                    invoiceDate = GetDateFormat(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "出发时间").Value.Substring(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "出发时间").Value.Length - 5));
+                                    invoiceDate = GetDateFormat(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "出发时间").Value);
                                     extend.OriginationStation = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "出发站").Value;
                                     extend.ArrivalStation = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "到达站").Value;
                                     extend.ServiceName = "交通费";

@@ -14,18 +14,18 @@ namespace OpenAuth.App.Request
         public int TechnicianId { get; set; }
 
         /// <summary>
-        /// 状态类型 1-未完成 2-已完成
+        /// 状态类型 1-待处理 2-进行中 3已完成
         /// </summary>
         [Required]
         public int Type { get; set; }
 
-        /// <summary>
-        /// 经度
-        /// </summary>
-        public decimal Longitude { get; set; }
-        /// <summary>
-        /// 纬度
-        /// </summary>
-        public decimal Latitude { get; set; }
+        ///// <summary>
+        ///// 经度
+        ///// </summary>
+        //public decimal Longitude { get; set; }
+        ///// <summary>
+        ///// 纬度
+        ///// </summary>
+        //public decimal Latitude { get; set; }
     }
 }

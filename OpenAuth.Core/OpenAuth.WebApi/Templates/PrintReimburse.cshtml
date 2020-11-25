@@ -1,240 +1,153 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+﻿@using OpenAuth.App.Serve.Response
+
+<!doctype html>
+<html>
 
 <head>
-    <meta charset="utf-8" />
+    <meta charset="utf-8">
     <title></title>
-    <style>
-        html {
-            font-size: 16px;
+    <style type="text/css">
+        body {
+            width: 825px;
+            margin: 0 auto;
+            margin-top: 10px;
+            font-size: 15px;
+            font-family: "华文宋体";
+            color: #202020;
         }
 
         table {
-            width: 800px;
-            float: right;
-            border-width: 1px;
-            border-style: solid;
-            border-color: black;
+            border-collapse: collapse;
         }
 
-            table td {
-                background-color: white;
-                height: 25px;
+        #tablebor {
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+
+            #tablebor th {
+                border-color: #808A87;
+                border-style: solid;
                 border-width: 1px;
-                border-style: dotted none none dotted;
-                border-color: black;
             }
 
-        .borderTop td {
-            border-top-style: none;
+        #divtitle {
+            margin: 0 auto;
         }
 
-        .borderleft {
-            border-left-style: none;
+        hr {
+            height: 0px;
+            border-top: 1px solid #808A87;
+            border-right: 0px;
+            border-bottom: 0px;
+            border-left: 0px;
+        }
+
+        #divcode {
+            border-style: solid;
+            border-width: 1px;
+            border-color: #808A87;
+            height: 50px;
+            width: 825px;
+            margin: 0 auto;
         }
     </style>
-
 </head>
 
 <body>
-    <div class="Page">
-        <h3 style="margin-top: 2rem; text-align: center; font-size:30px;">差旅报销单</h3>
-        <table>
-            <tr class="borderTop">
-                <td class="borderleft" style="width:90px">
-                    &nbsp <b>开始日期</b>
-                </td>
-                <td style="width:120px">
-                    &nbsp @Model.Data.StartTime.ToString("yyyy年MM月dd日")
-                </td>
-                <td style="width:90px">
-                    &nbsp <b>结束日期</b>
-                </td>
-                <td style="width:120px">
-                    &nbsp @Model.Data.EndTime.ToString("yyyy年MM月dd日")
-                </td>
-                <td style="width:90px">
-                    &nbsp <b>单号</b>
-                </td>
-                <td style="width:90px">
-                    &nbsp @Model.Data.ReimburseId
-                </td>
-                <td style="width:90px">
-                    &nbsp <b>总天数</b>
-                </td>
-                <td style="width:60px">
-                    &nbsp @Model.Data.Day
-                </td>
-
-            </tr>
-            <tr>
-                <td class="borderleft">
-                    &nbsp <b>部门</b>
-                </td>
-                <td>
-                    &nbsp @Model.Data.OrgName
-                </td>
-
-                <td>
-                    &nbsp <b>客户名称</b>
-                </td>
-                <td colspan="5">
-                    &nbsp @Model.Data.TerminalCustomer
-                </td>
-            </tr>
-            <tr>
-                <td class="borderleft  ">
-                    &nbsp <b>姓名</b>
-                </td>
-                <td>
-                    &nbsp @Model.Data.UserName
-                </td>
-                <td class=" ">
-                    &nbsp  <b>出差事由</b>
-                </td>
-                <td colspan="5">
-                    &nbsp @Model.Data.FromTheme
-                </td>
-            </tr>
-            <tr>
-                <td class="borderleft  ">
-                    &nbsp <b>费用类型</b>
-                </td>
-                <td>
-                    &nbsp <b>金额</b>
-                </td>
-                <td>
-                    &nbsp <b>交通费</b>
-                </td>
-                <td>
-                    &nbsp <b>住宿费</b>
-                </td>
-                <td>
-                    &nbsp <b>其他费</b>
-                </td>
-                <td>
-                    &nbsp <b>补助</b>
-                </td>
-                <td colspan="2">
-                    &nbsp <b>合计</b>
-                </td>
-            </tr>
-            <tr>
-                <td class="borderleft">
-                    &nbsp 飞机
-                </td>
-                <td style="text-align: right; ">
-                    @Model.Data.Aircraft.ToString("#0.00")
-                    &nbsp
-                </td>
-                <td rowspan="7" style="text-align: right; ">
-                    @{ var money = Model.Data.Aircraft + Model.Data.Train + Model.Data.Coach + Model.Data.Transport; }
-                    @money.ToString("#0.00")
-                    &nbsp
-
-                </td>
-                <td rowspan="7" style="text-align: right; ">
-                    @Model.Data.PutUp.ToString("#0.00")
-                    &nbsp
-                </td>
-                <td rowspan="7" style="text-align: right; ">
-                    @Model.Data.Else.ToString("#0.00")
-                    &nbsp
-                </td>
-                <td rowspan="7" style="text-align: right; ">
-                    @Model.Data.Subsidy.ToString("#0.00")
-                    &nbsp
-                </td>
-                <td rowspan="7" colspan="2" style="text-align: right; ">
-                    @{ money = Model.Data.Aircraft + Model.Data.Train + Model.Data.Coach + Model.Data.Transport +
-                        Model.Data.PutUp + Model.Data.Else + Model.Data.Subsidy; }
-                    @money.ToString("#0.00")
-                    &nbsp
-                </td>
-            </tr>
-            <tr>
-                <td class="borderleft">
-                    &nbsp 火车
-                </td>
-                <td style="text-align: right; ">
-                    @Model.Data.Train.ToString("#0.00")
-                    &nbsp
-                </td>
-            </tr>
-            <tr>
-                <td class="borderleft">
-                    &nbsp 长途汽车
-                </td>
-                <td style="text-align: right; ">
-                    @Model.Data.Coach.ToString("#0.00")
-                    &nbsp
-                </td>
-            </tr>
-            <tr>
-                <td class="borderleft">
-                    &nbsp 市内交通
-                </td>
-                <td style="text-align: right; ">
-                    @Model.Data.Transport.ToString("#0.00")
-                    &nbsp
-                </td>
-            </tr>
-            <tr>
-                <td class="borderleft">
-                    &nbsp 住宿
-                </td>
-                <td style="text-align: right; ">
-                    @Model.Data.PutUp.ToString("#0.00")
-                    &nbsp
-                </td>
-            </tr>
-            <tr>
-                <td class="borderleft">
-                    &nbsp 其他
-                </td>
-                <td style="text-align: right; ">
-                    @Model.Data.Else.ToString("#0.00")
-                    &nbsp
-                </td>
-            </tr>
-            <tr>
-                <td class="borderleft">
-                    &nbsp 补助
-                </td>
-                <td style="text-align: right; ">
-                    @Model.Data.Subsidy.ToString("#0.00")
-                    &nbsp
-                </td>
-            </tr>
-            <tr>
-                <td class="borderleft  ">
-                    &nbsp <b>合计(大写)</b>
-                </td>
-                <td colspan="7">
-                    &nbsp
-                    @Model.Data.Total
-                </td>
-            </tr>
-            <tr>
-                <td class="borderleft  ">
-                    &nbsp <b>客服主管:</b>
-                </td>
-                <td class="borderleft  " colspan="2">
-                    &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp <b>审核:</b>
-                </td>
-                <td class="borderleft  ">
-                    &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp <b>复审:</b>
-                </td>
-                <td class="borderleft  ">
-                </td>
-                <td class="borderleft  " colspan="3">
-                    &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<b>出纳:</b>
-                </td>
-            </tr>
-        </table>
-        <div class="bill" style=" float:right; width: 800px; height: 600;">
-            <div align="center" style="line-height:600px; font-size: 20px;">票据张贴处</div>
+    <div id="divtitle" style=" width: 825px; height:60px;">
+        <div style="float:left;width: 200px; margin-top: 10px;">
+            <img src="data:image/png;base64,@Model.Data.logo" style="width: 140px;height: 40px;">
         </div>
+        <div style="float:left;width: 250px; ">
+            <span style="font-size: 42px;">差旅报销单</span>
+        </div>
+        <div style="float:left;width: 250px; margin-top: -5px;">
+            <span>
+                <b>单号：</b><span style="font-size: 24px;">@Model.Data.ReimburseId</span>
+            </span>
+            <br>
+            <span>
+                <b>日期：</b>@Model.Data.Reimburse.UpdateTime.ToString("yyyy.MM.dd")
+            </span>
+            <br>
+            <span>
+                <b>报销：</b>@Model.Data.UserName
+            </span>
+        </div>
+        <div style="float:left;width: 100px; margin-top: 5px;">
+        </div>
+    </div>
+    <table style="margin-top: 10px;" id="divcode">
+        <tr>
+            <td style="width:50px; ">&nbsp;<b>客户代码:</b></td>
+            <td style="width:50px; ">@Model.Data.TerminalCustomerId</td>
+            <td style="width:50px;"><b>客户名称:</b></td>
+            <td style="width:80px;">@Model.Data.TerminalCustomer</td>
+            <td style="width:30px" align="right">&nbsp;&nbsp;&nbsp;<b>地址：</b></td>
+            <td style="width:120px">@Model.Data.CompleteAddress</td>
+        </tr>
+        <tr>
+            <td style="width: 50px;">&nbsp;<b>服务单号:</b></td>
+            <td style="width: 50px;">@Model.Data.Reimburse.ServiceOrderSapId</td>
+            <td style="width: 50px;"><b>出差事由:</b></td>
+            <td style="width: 450px;" colspan="3">@Model.Data.FromTheme</td>
+        </tr>
+    </table>
+    <table style="margin-top: 15px;  width:825px" id="tablebor">
+        <tr>
+            <th style="width: 40px;">序号</th>
+            <th style="width: 100px;" align="left">&nbsp; 日期</th>
+            <th style="width: 150px;" align="left">&nbsp; 费用名称</th>
+            <th style="width: 410px;" align="left">&nbsp; 费用详情</th>
+            <th style="width: 100px; " align="right">金额 &nbsp;</th>
+        </tr>
+        @{int number = 0;}
+        @foreach (var item in Model.Data.Reimburse.ReimburseFares)
+        {
+            <tr>
+                <td> @{++number;} @number</td>
+                <td>&nbsp; @item.InvoiceTime?.ToString("yyyy.MM.dd")</td>
+                <td>&nbsp; @item.TrafficType</td>
+                <td>&nbsp; @item.From - @item.To </td>
+                <td align="right">@item.Money &nbsp;</td>
+            </tr>
+        }
+        @foreach (var item in Model.Data.Reimburse.ReimburseAccommodationSubsidies)
+        {
+            <tr>
+                <td> @{++number;}@number</td>
+                <td>&nbsp; @item.InvoiceTime?.ToString("yyyy.MM.dd")</td>
+                <td>&nbsp; 住宿补贴</td>
+                <td>&nbsp; @item.Days 天 </td>
+                <td align="right">@item.Money &nbsp;</td>
+            </tr>
+        }
+        @foreach (var item in Model.Data.Reimburse.ReimburseTravellingAllowances)
+        {
+            <tr>
+                <td> @{++number;} @number</td>
+                <td></td>
+                <td>&nbsp; 出差补贴</td>
+                <td>&nbsp; @item.Days 天 </td>
+                <td align="right">@{var Money = item.Money * item.Days; }@Money &nbsp;</td>
+            </tr>
+        }
+        @foreach (var item in Model.Data.Reimburse.ReimburseOtherCharges)
+        {
+            <tr>
+                <td>  @{++number;} @number</td>
+                <td>&nbsp; @item.InvoiceTime?.ToString("yyyy.MM.dd")</td>
+                <td>&nbsp; @item.ExpenseCategory</td>
+                <td></td>
+                <td align="right">@item.Money &nbsp;</td>
+            </tr>
+        }
+
+    </table>
+    <div style="margin-top: 20px;">
+        <div style="font-size:20px; font-weight: 800;" align="right">费用总计：@Model.Data.Reimburse.TotalMoney.ToString("N") &nbsp;</div>
+        <hr>
     </div>
 </body>
 

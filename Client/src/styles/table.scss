@@ -4,12 +4,43 @@
   font-size: 12px !important;
   th, td {
     padding: 0 !important;
+    .cell {
+      padding: 0 5px !important;
+      line-height: 20px;
+    }
   }
 }
-.el-table th {
-  padding: 0 !important;
+
+.global-unused { // 不可编辑把输入框border去掉 全局的
+  .el-select {
+    .el-input__suffix {
+      display: none;
+    }
+  }
+  .el-input {
+    input {
+      border: none;
+    }
+  }
 }
 
+.el-input {
+  > input {
+    padding: 0 2px !important;
+  }
+}
+.el-input.el-date-editor {
+  > input {
+    padding: 0 30px !important;
+  }
+}
+textarea {
+  padding: 2px !important;
+}
+
+.el-form-item, .el-form-item--mini {
+  margin-bottom: 2px !important;
+}
 /* 图片箭头样式 */
 .link-container {
   display: inline-block;

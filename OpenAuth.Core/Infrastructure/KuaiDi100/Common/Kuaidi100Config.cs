@@ -15,10 +15,11 @@ namespace KuaiDi100.Common
         /// customer
         /// </summary>
         public string customer { get; set; } = "5A22443B478B450D1E7488E3EF0BDF02";
+
         /// <summary>
         /// secret
         /// </summary>
-        public string secret { get; set; }
+        public string secret { get; set; } = "819e7e135ac243af851dd23f564b572c";
         /// <summary>
         /// 电子面单模板id
         /// </summary>
@@ -26,7 +27,7 @@ namespace KuaiDi100.Common
         /// <summary>
         /// userid
         /// </summary>
-        public string userid { get; set; }
+        public string userid { get; set; } = "b1eb8001d532422a98979f983d2f7e7f";
         /// <summary>
         /// 短信模板id
         /// </summary>

@@ -148,7 +148,6 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("报价单审批状态")]
         public int? QuotationStatus { get; set; }
-        
 
         /// <summary>
         /// 物流表
@@ -159,7 +158,18 @@ namespace OpenAuth.Repository.Domain
         /// 物料报价单物料列表
         /// </summary>
         public virtual List<QuotationMaterial> QuotationMaterials { get; set; }
-        
+
+        /// <summary>
+        /// 报价单设备列表
+        /// </summary>
+        public virtual List<QuotationProduct> QuotationProducts { get; set; }
+
+        /// <summary>
+        /// 报价单操作表
+        /// </summary>
+        public virtual List<QuotationOperationHistory> QuotationOperationHistory { get; set; }
+
+
 
         public override void GenerateDefaultKeyVal()
         {

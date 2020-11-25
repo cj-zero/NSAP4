@@ -24,6 +24,26 @@ namespace OpenAuth.WebApi.Controllers.Material
             _app = app;
         }
 
+        /// <summary>
+        /// 加载报价单列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> Load([FromQuery] QueryQuotationListReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.Load(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
 
         /// <summary>
         /// 加载服务单列表
@@ -36,6 +56,135 @@ namespace OpenAuth.WebApi.Controllers.Material
             try
             {
                 return await _app.GetServiceOrderList(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取序列号和设备
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetSerialNumberList([FromQuery] QueryQuotationListReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetSerialNumberList(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        
+        /// <summary>
+        /// 加载物料列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetMaterialCodeList([FromQuery] QueryQuotationListReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetMaterialCodeList(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 报价单详情
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetDetails(int QuotationId)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetDetails(QuotationId);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        
+        /// <summary>
+        /// 添加报价单
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> Add(AddOrUpdateQuotationReq obj) 
+        {
+            var result = new Response();
+            try
+            {
+                await _app.Add(obj);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 修改报价单
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> Update(AddOrUpdateQuotationReq obj)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.Update(obj);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 审批报价单
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> Accraditation(AddOrUpdateQuotationReq obj)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.Accraditation(obj);
             }
             catch (Exception ex)
             {

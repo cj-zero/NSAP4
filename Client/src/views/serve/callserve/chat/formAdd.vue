@@ -790,7 +790,7 @@ export default {
     position: relative;
     box-sizing: border-box;
     min-height: 30px;
-    padding: 5px 15px;
+    padding: 1px 15px;
     color: #606266;
     font-size: 12px;
     line-height: 1.5;

@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
+using OpenAuth.App.Material.Request;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
@@ -13,55 +16,22 @@ namespace OpenAuth.WebApi.Controllers
     /// </summary>
     [Route("api/[controller]/[action]")]
     [ApiController]
-    public class ReturnnotesController : ControllerBase
+    public class ReturnNotesController : ControllerBase
     {
-        private readonly Returnnote _app;
-        
-        //获取详情
-        [HttpGet]
-        public Response<Returnnote> Get(string id)
-        {
-            var result = new Response<Returnnote>();
-            try
-            {
-                
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
-            }
+        private readonly ReturnNoteApp _returnnoteApp;
 
-            return result;
-        }
-
-        //添加
-       [HttpPost]
-        public Response Add(AddOrUpdateReturnnoteReq obj)
+        /// <summary>
+        /// 退料
+        /// </summary>
+        /// <param name="returnMaterialReq"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> ReturnMaterials(ReturnMaterialReq returnMaterialReq)
         {
             var result = new Response();
             try
             {
-                
-
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
-            }
-
-            return result;
-        }
-
-        //修改
-       [HttpPost]
-        public Response Update(AddOrUpdateReturnnoteReq obj)
-        {
-            var result = new Response();
-            try
-            {
-               
+                await _returnnoteApp.ReturnMaterials(returnMaterialReq);
 
             }
             catch (Exception ex)
@@ -74,24 +44,60 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        /// 加载列表
+        /// 获取退料详情
         /// </summary>
+        /// <param name="serviceOrderId"></param>
+        /// <param name="appUserId"></param>
+        /// <returns></returns>
         [HttpGet]
-        public TableData Load([FromQuery]QueryReturnnoteListReq request)
+        public async Task<TableData> GetReturnNoteInfo(int serviceOrderId, int appUserId)
         {
-            return null;
+            var result = new TableData();
+            try
+            {
+                result = await _returnnoteApp.GetReturnNoteInfo(appUserId, serviceOrderId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
         }
 
         /// <summary>
-        /// 批量删除
+        /// 获取物流详情
         /// </summary>
-       [HttpPost]
-        public Response Delete([FromBody]string[] ids)
+        /// <param name="expressageId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetExpressageInfo(string expressageId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _returnnoteApp.GetExpressageInfo(expressageId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 保存仓库验收记录
+        /// </summary>
+        /// <param name="ReturnMaterials"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> SaveReceiveInfo(List<ReturnMaterial> ReturnMaterials)
         {
             var result = new Response();
             try
             {
-                
+                await _returnnoteApp.SaveReceiveInfo(ReturnMaterials);
 
             }
             catch (Exception ex)
@@ -103,9 +109,9 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
-        public ReturnnotesController(Returnnote app) 
+        public ReturnNotesController(ReturnNoteApp app)
         {
-            _app = app;
+            _returnnoteApp = app;
         }
     }
 }

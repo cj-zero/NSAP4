@@ -132,7 +132,7 @@
 </template>
 
 <script>
-// 报销状态 1: '撤回' 2: '驳回' 3: '未提交' 4: '客服主管审批' 5: '财务初审' 6: '财务复审' 7: '总经理审批' 8: '待支付' 9: '已支付'
+// 报销状态 1: '撤回' 2: '驳回' 3: '未提交' 4: '客服主管审批' 5: '财务初审' 6: '财务复审' 7: '总经理审批' 8: '待支付' 9: '已支付' -1: '已结束'
 import TabList from '@/components/TabList'
 import Search from '@/components/Search'
 import Sticky from '@/components/Sticky'

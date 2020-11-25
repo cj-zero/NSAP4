@@ -6,6 +6,7 @@
 //     Author:Yubao Li
 //------------------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using OpenAuth.Repository.Core;
@@ -25,7 +26,7 @@ namespace OpenAuth.Repository.Domain
             this.ReceivingRemark = "";
             this.ShippingRemark = "";
             this.ReturnNoteId = 0;
-            this.Check = false;
+            this.Check = 0;
             this.MaterialDescription = "";
             this.TotalCount = 0;
             this.WrongCount = 0;
@@ -65,7 +66,7 @@ namespace OpenAuth.Repository.Domain
         ///核对验收
         /// </summary>
         [Description("核对验收")]
-        public bool? Check { get; set; }
+        public int? Check { get; set; }
 
         /// <summary>
         ///物料描述
@@ -85,6 +86,11 @@ namespace OpenAuth.Repository.Domain
         [Description("差错数量")]
         public int? WrongCount { get; set; }
 
-
+        /// <summary>
+        ///退料图片
+        /// </summary>
+        [Description("退料图片")]
+        public List<ReturnNoteMaterialPicture> ReturnNoteMaterialPictures { get; set; }
+        
     }
 }

@@ -94,6 +94,11 @@ namespace OpenAuth.Repository.Domain
         [Description("创建时间")]
         public System.DateTime CreateTime { get; set; }
         /// <summary>
+        /// 开票日期
+        /// </summary>
+        [Description("开票日期")]
+        public DateTime? InvoiceTime { get; set; }
+        /// <summary>
         /// 天数
         /// </summary>
         [Description("天数")]

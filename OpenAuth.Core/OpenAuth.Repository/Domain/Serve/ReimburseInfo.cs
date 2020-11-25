@@ -132,10 +132,14 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("是否已读")]
         [Browsable(false)]
-        public int? IsRead { get; set; }
+        public int IsRead { get; set; }
 
-       
-        
+        /// <summary>
+        /// 更新时间
+        /// </summary>
+        [Description("更新时间")]
+        public System.DateTime UpdateTime { get; set; }
+
 
         /// <summary>
         /// 出差补贴
