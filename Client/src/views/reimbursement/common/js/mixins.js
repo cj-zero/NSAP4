@@ -602,7 +602,7 @@ export let categoryMixin = {
 // 9：汽车票 10：轮船票 11：增值税发票（卷票 ）12：购车发票 13：过路过桥费发票
 const TRAFFIC_TYPE_LIST = [0, 2, 5, 9, 10, 13] // 交通类型发票
 const ACC_TYPE = 3
-
+const invoiceTimeReg = /(^\d{4}-\d{2}-\d{2}).*$/ // 发票时间正则
 export const attachmentMixin = {
   data () {
     return {
@@ -676,7 +676,7 @@ export const attachmentMixin = {
       this.$set(currentRow, 'isValidInvoice', isValidInvoice) // 判断发票是否正确，如果是正确的话就不给修改，不正确就给修改
       currentRow.maxMoney = money
       currentRow.invoiceNumber = invoiceNo
-      currentRow.invoiceTime = /^\d{4}-\d{2}-\d{2}$/.test(invoiceDate) ? invoiceDate : ''
+      currentRow.invoiceTime = invoiceDate.match(invoiceTimeReg) ? RegExp.$1 : ''
     },
     _setAttachmentList ({ data, index, prop, reimburseType, val }) { // 设置通过上传获取到的附件列表
       let resultArr = []
