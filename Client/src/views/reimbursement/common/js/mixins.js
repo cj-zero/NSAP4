@@ -180,7 +180,7 @@ export let tableMixin = {
         // 如果是审核流程、则判断当前用户是不是客服主管
         this.title = tableClick ? 'view' : val.type
         try {
-          if (this.title === 'approve' && this.isGeneralManager) {
+          if ((this.title === 'approve' || this.title === 'view') && this.isGeneralManager) {
             // 用于总经理审批页面的表格数据
             this._generateApproveTable(this.detailData)
           }

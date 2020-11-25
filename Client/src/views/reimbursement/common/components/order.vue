@@ -21,7 +21,7 @@
     <!-- 主表单 -->
     <el-scrollbar class="scroll-bar">
       <!-- 总经理并且是处于审批状态 -->
-      <template v-if="isGeneralManager && this.title === 'approve'">
+      <template v-if="isGeneralManager && (this.title === 'approve' || this.title === 'view')">
         <div class="general-order-wrapper">
           <el-form
           :model="formData"
@@ -676,26 +676,42 @@
       </template>
       <!-- 操作记录 -->
       <template v-if="!this.ifFormEdit && this.formData.reimurseOperationHistories.length">
-        <div class="history-wrapper" :class="{ 'general': this.title === 'approve' && this.isGeneralManager }">
-          <el-table 
-            style="width: 989px;"
-            :data="formData.reimurseOperationHistories"
-            border
-            max-height="200px"
-          >
-            <el-table-column label="操作记录" prop="action" width="150px" show-overflow-tooltip></el-table-column>
-            <el-table-column label="操作人" prop="createUser" width="100px" show-overflow-tooltip></el-table-column>
-            <el-table-column label="操作时间" prop="createTime" width="150px" show-overflow-tooltip></el-table-column>
-            <el-table-column label="审批时长" prop="intervalTime" width="150px" show-overflow-tooltip>
-              <template slot-scope="scope">
-                <!-- 10天10小时10分钟 -->
-                {{ scope.row.intervalTime | timeFormat }}
-              </template>
-            </el-table-column>
-            <el-table-column label="审批结果" prop="approvalResult" width="80px" show-overflow-tooltip></el-table-column>
-            <el-table-column label="备注" prop="remark" show-overflow-tooltip></el-table-column>
-          </el-table>
-        </div>
+        <!-- 总经理操作记录 -->
+        <template v-if="isGeneralManager && (this.title === 'approve' || this.title === 'view')">
+          <el-timeline class="my-timeline-wrapper">
+            <el-timeline-item v-for="item in formData.reimurseOperationHistories" :key="item.id">
+              <el-row type="flex">
+                <span class="action">{{ item.action }}</span>
+                <span>{{ item. createTime }}</span>
+                <span class="bold">{{ item.createUser }}</span>
+                <span :class="{ 'danger': item.approvalResult === '驳回' }">{{ item.approvalResult }}</span>
+                <span>{{ item.remark }}</span>
+              </el-row>
+            </el-timeline-item>
+          </el-timeline>
+        </template>
+        <template v-else>
+          <div class="history-wrapper" :class="{ 'general': this.title === 'approve' && this.isGeneralManager }">
+            <el-table 
+              style="width: 989px;"
+              :data="formData.reimurseOperationHistories"
+              border
+              max-height="200px"
+            >
+              <el-table-column label="操作记录" prop="action" width="150px" show-overflow-tooltip></el-table-column>
+              <el-table-column label="操作人" prop="createUser" width="100px" show-overflow-tooltip></el-table-column>
+              <el-table-column label="操作时间" prop="createTime" width="150px" show-overflow-tooltip></el-table-column>
+              <el-table-column label="审批时长" prop="intervalTime" width="150px" show-overflow-tooltip>
+                <template slot-scope="scope">
+                  <!-- 10天10小时10分钟 -->
+                  {{ scope.row.intervalTime | timeFormat }}
+                </template>
+              </el-table-column>
+              <el-table-column label="审批结果" prop="approvalResult" width="80px" show-overflow-tooltip></el-table-column>
+              <el-table-column label="备注" prop="remark" show-overflow-tooltip></el-table-column>
+            </el-table>
+          </div>
+        </template>
       </template>
     </el-scrollbar>
     
@@ -2256,6 +2272,41 @@ export default {
       font-size: 12px;
       text-align: right;
       white-space: nowrap;
+    }
+  }
+  /* 时间线 */
+  .my-timeline-wrapper {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-left: 100px;
+    &.el-timeline {
+      ::v-deep {
+        .el-timeline-item {
+          padding-bottom: 0;
+          .el-timeline-item__tail {
+            height: 150%;
+          }
+        } 
+        .el-timeline-item__wrapper {
+          margin-left: -127px;
+          .el-timeline-item__content {
+            span {
+              margin-right: 20px;
+              &:nth-child(1) {
+                width: 100px;
+                margin-right: 30px;
+              }
+              &.danger {
+                color: red;
+              }
+              &.bold {
+                min-width: 70px;
+                font-weight: bold;
+              }
+            }
+          }
+        }
+      }
     }
   }
   .history-wrapper {
