@@ -133,7 +133,7 @@ namespace OpenAuth.App
             await UnitWork.DeleteAsync<ServiceFlow>(s => s.ServiceOrderId == serviceOrderId && s.MaterialType.Equals(MaterialType) && s.Creater.Equals(creater) && s.FlowType == flowType);
             await UnitWork.SaveAsync();
             //添加后续默认流程
-            List<int> flowNums = new List<int> { 4, 5, 3 };
+            List<int> flowNums = new List<int> { 4, 5, 6, 3 };
             foreach (var item in flowNums)
             {
                 var flow = new ServiceFlow { ServiceOrderId = serviceOrderId, MaterialType = MaterialType, Creater = creater, CreateTime = DateTime.Now, IsProceed = 0, CreaterName = createname, FlowNum = item, FlowName = GetFlowName(item), FlowType = flowType };
@@ -278,9 +278,9 @@ namespace OpenAuth.App
                 case 5:
                     name = "核对设备";
                     break;
-                //case 6:
-                //    name = "是否领料";
-                //    break;
+                case 6:
+                    name = "是否领料";
+                    break;
                 case 7:
                     name = "物料进度";
                     break;

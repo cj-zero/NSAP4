@@ -266,20 +266,27 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var result = new TableData();
+            //获取退料单主表详情
+            var returnNote = await UnitWork.Find<ReturnNote>(w => w.Id == Id).FirstOrDefaultAsync();
+            //获取服务单详情
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(w => w.Id == returnNote.ServiceOrderId && w.U_SAP_ID == returnNote.ServiceOrderSapId).FirstOrDefaultAsync();
+            var mainInfo = new Dictionary<string, object>()
+            {
+                {"returnNoteCode" ,returnNote.Id},{"creater",returnNote.CreateUser },{ "createTime",returnNote.CreateTime },{"salMan",serviceOrder.SalesMan},{ "serviceSapId",serviceOrder.U_SAP_ID},{ "customerCode",serviceOrder.CreateUserId},{ "customerName",serviceOrder.CustomerName}
+            };
+            outDta.Add("mainInfo", mainInfo);
             //获取物流信息
             var expressList = await UnitWork.Find<Expressage>(w => w.ReturnNoteId == Id).ToListAsync();
-            outDta.Add("expressList",expressList);
+            outDta.Add("expressList", expressList);
             //获取退料列表
             var query = from a in UnitWork.Find<ReturnNote>(null)
                         join b in UnitWork.Find<ReturnnoteMaterial>(null) on a.Id equals b.ReturnNoteId into ab
                         from b in ab.DefaultIfEmpty()
                         join c in UnitWork.Find<ReturnNoteMaterialPicture>(null) on b.Id equals c.ReturnnoteMaterialId into abc
                         from c in abc.DefaultIfEmpty()
-                        join d in UnitWork.Find<Expressage>(null) on a.Id equals d.ReturnNoteId into abcd
-                        from d in abcd.DefaultIfEmpty()
                         where a.Id == Id
-                        select new { a, b, c, d };
-            var returnNoteList = await query.Select(s => new { s.b.MaterialCode, s.b.Id, s.b.Count, s.b.TotalCount, s.c.PictureId, s.b.Check, returnNoteId = s.a.Id, s.b.WrongCount, s.b.ReceivingRemark, s.b.ShippingRemark, s.d.ExpressNumber, s.a.Status, s.a.IsLast}).OrderByDescending(o => o.returnNoteId).ToListAsync();
+                        select new { a, b, c };
+            var returnNoteList = await query.Select(s => new { s.b.MaterialCode, s.b.MaterialDescription, s.b.Id, s.b.Count, s.b.TotalCount, s.c.PictureId, s.b.Check, returnNoteId = s.a.Id, s.b.WrongCount, s.b.ReceivingRemark, s.b.ShippingRemark, s.a.Status, s.a.IsLast }).OrderByDescending(o => o.returnNoteId).ToListAsync();
             outDta.Add("returnNoteList", returnNoteList);
             result.Data = outDta;
             return result;

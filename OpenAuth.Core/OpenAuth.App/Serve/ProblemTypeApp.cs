@@ -91,7 +91,7 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             string[] ChildTypes = new string[0];
-            var objs = UnitWork.Find<ProblemType>(null).Where(o => o.ParentId.Trim().Length.Equals(0)).Select(f => new
+            var objs = UnitWork.Find<ProblemType>(null).Where(o => o.ParentId.Trim().Length.Equals(0)&&(o.Name=="硬件问题"|| o.Name == "软件问题" || o.Name == "操作使用" || o.Name == "其他")).Select(f => new
             {
                 f.Id,
                 f.Name,
