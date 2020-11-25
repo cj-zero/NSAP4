@@ -77,7 +77,7 @@
     <!-- 审核弹窗 -->
     <my-dialog
       ref="myDialog"
-      width="1206px"
+      :width="dialogWidth"
       :onClosed="closeDialog"
       :title="textMap[title]"
       :loading="dialogLoading"
@@ -163,7 +163,10 @@ export default {
       return [
         { btnText: '关闭', handleClick: this.closeDialog, className: 'close' }
       ]
-    } 
+    },
+    dialogWidth () {
+      return (this.title === 'approve' || this.title === 'view') && this.isGeneralManager ? '1015px' :'1206px'
+    }
   },
   data () {
     return {

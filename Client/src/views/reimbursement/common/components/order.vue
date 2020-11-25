@@ -1,13 +1,36 @@
 <template>
   <div class="order-wrapper" v-loading.fullscreen="orderLoading">
     <!-- 标题头 -->
-    <el-row type="flex" class="head-title-wrapper">
+    <el-row 
+      type="flex" 
+      class="head-title-wrapper" 
+      :class="{ 'general': isGeneralStatus }"
+    >
       <p style="color: red;">报销单号: <span>{{ formData.mainId }}</span></p>
-      <p>报销人: <span>{{ formData.userName }}</span></p>
-      <p>部门: <span>{{ formData.orgName }}</span></p>
-      <p v-if="!(isGeneralManager && this.title === 'approve')">劳务关系: <span>{{ formData.serviceRelations }}</span></p>
-      <p>创建时间: <span v-if="formData.createTime">{{ formData.createTime.split(' ')[0] }}</span></p>
+      <p v-if="isGeneralStatus"><span>服务ID: {{ formData.serviceOrderSapId }}</span></p>
+      <p>报销人: {{ formData.orgName }} <span>{{ formData.userName }}</span></p>
+      <p v-if="!isGeneralStatus">部门: <span>{{ formData.orgName }}</span></p>
+      <p v-if="!isGeneralStatus">劳务关系: <span>{{ formData.serviceRelations }}</span></p>
+      <p v-if="!isGeneralStatus">创建时间: <span v-if="formData.createTime">{{ formData.createTime.split(' ')[0] }}</span></p>
     </el-row>
+    <!-- 时间进度轴，仅总经理可看 timelineList -->
+    <template v-if="isGeneralStatus">
+      <div class="timeline-progress-wrapper">
+        <el-row class="content-wrapper" type="flex" align="middle" justify="space-between">
+          <template v-for="item in timelineList">
+            <div class="content-item" :key="item.text">
+              <el-tooltip  palcement="top-center" :disabled="!item.isFinished" :content="item.createTime">
+                <!-- <div> -->
+                  <i class="icon-status" :class="processStatusIcon(item)"></i>
+                <!-- </div> -->
+              </el-tooltip>
+              <p class="text">{{ item.text }}</p>
+            </div>
+          </template>
+        </el-row>
+      </div>
+    </template>
+    
     <!-- 总经理审批页面专属表头 -->
     <!-- <template v-if="isGeneralManager && this.title === 'approve'">
       <el-row  type="flex" class="general-title-wrapper" justify="center" align="middle">
@@ -19,9 +42,10 @@
       </el-row>
     </template> -->
     <!-- 主表单 -->
+    
     <el-scrollbar class="scroll-bar">
       <!-- 总经理并且是处于审批状态 -->
-      <template v-if="isGeneralManager && this.title === 'approve'">
+      <template v-if="isGeneralStatus">
         <div class="general-order-wrapper">
           <el-form
           :model="formData"
@@ -36,11 +60,21 @@
         >
           <el-row type="flex" class="item">
             <p><span class="first-item">客户代码</span><span>{{ formData.terminalCustomerId }}</span></p>
-            <p><span>客户名称</span><span>{{ formData.terminalCustomerId }}</span></p>
-            <p><span>出发到达</span><span>{{ formData.becity }}-{{ formData.destination }}</span></p>
+            <p>
+              <el-row type="flex" align="middle">
+                <span>客户名称</span>
+                <p class="content">{{ formData.terminalCustomer }}</p>
+              </el-row>
+            </p>
+            <p>
+              <el-row type="flex" align="middle">
+                <span>出发到达</span>
+                <p class="content">{{ formData.becity }}-{{ formData.destination }}</p>
+              </el-row>
+            </p>
           </el-row>
           <el-row type="flex" class="item">
-            <p><span class="first-item">服务ID</span><span>{{ formData.serviceOrderSapId }}</span></p>
+            <!-- <p><span class="first-item">服务ID</span><span>{{ formData.serviceOrderSapId }}</span></p> -->
             <p><span>出差事由</span><span>{{ formData.fromTheme }}</span></p>
           </el-row>
         </el-form>
@@ -59,8 +93,41 @@
             </el-table-column>
             <el-table-column label="日期" prop="invoiceTime" width="100px"></el-table-column>
             <el-table-column label="费用名称" prop="expenseName" width="100px"></el-table-column>
-            <el-table-column label="费用详情" prop="expenseDetail"></el-table-column>
-            <el-table-column label="金额" width="120px" align="right">
+            <el-table-column label="费用详情" prop="expenseDetail">
+              <template slot-scope="scope">
+                <div class="detail-content">
+                  <p>{{ scope.row.expenseDetail }}</p>
+                  <el-tooltip 
+                    :content="scope.row.remark">
+                    <i class="remark el-icon-chat-dot-round" v-if="scope.row.remark"></i>
+                  </el-tooltip>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column label="发票号码" width="150px">
+              <template slot-scope="scope">
+                <el-row class="invoice-number-wrapper" type="flex" align="middle" v-if="scope.row.invoiceNumber">
+                  <img class="pointer" :src="rightImg" alt="" @click="openFile(scope.row)">
+                  <span>{{ scope.row.invoiceNumber }}</span>
+                  <el-tooltip content="无发票附件" :disabled="scope.row.isValidInvoice">
+                    <i :class="[scope.row.isValidInvoice ? 'el-icon-upload-success el-icon-circle-check success' : 'el-icon-warning-outline warning']"></i>
+                  </el-tooltip>
+                </el-row>
+                <el-row>
+                  <upLoadFile 
+                    class="upload-number-wrapper"
+                    :ifShowTip="false"
+                    uploadType="file" 
+                    :fileList="scope.row.otherFileList"
+                    :disabled="true" 
+                  />
+                </el-row>
+              </template>
+            </el-table-column>
+            <el-table-column width="120px" align="right">
+              <template v-slot:header>
+                金额（元）
+              </template>
               <template slot-scope="scope">{{ scope.row.money | toThousands }}</template>
             </el-table-column>
           </el-table>
@@ -676,26 +743,42 @@
       </template>
       <!-- 操作记录 -->
       <template v-if="!this.ifFormEdit && this.formData.reimurseOperationHistories.length">
-        <div class="history-wrapper" :class="{ 'general': this.title === 'approve' && this.isGeneralManager }">
-          <el-table 
-            style="width: 989px;"
-            :data="formData.reimurseOperationHistories"
-            border
-            max-height="200px"
-          >
-            <el-table-column label="操作记录" prop="action" width="150px" show-overflow-tooltip></el-table-column>
-            <el-table-column label="操作人" prop="createUser" width="100px" show-overflow-tooltip></el-table-column>
-            <el-table-column label="操作时间" prop="createTime" width="150px" show-overflow-tooltip></el-table-column>
-            <el-table-column label="审批时长" prop="intervalTime" width="150px" show-overflow-tooltip>
-              <template slot-scope="scope">
-                <!-- 10天10小时10分钟 -->
-                {{ scope.row.intervalTime | timeFormat }}
-              </template>
-            </el-table-column>
-            <el-table-column label="审批结果" prop="approvalResult" width="80px" show-overflow-tooltip></el-table-column>
-            <el-table-column label="备注" prop="remark" show-overflow-tooltip></el-table-column>
-          </el-table>
-        </div>
+        <!-- 总经理操作记录 -->
+        <template v-if="isGeneralStatus">
+          <!-- <el-timeline class="my-timeline-wrapper">
+            <el-timeline-item v-for="item in formData.reimurseOperationHistories" :key="item.id">
+              <el-row type="flex">
+                <span class="action">{{ item.action }}</span>
+                <span>{{ item. createTime }}</span>
+                <span class="bold">{{ item.createUser }}</span>
+                <span :class="{ 'danger': item.approvalResult === '驳回' }">{{ item.approvalResult }}</span>
+                <span>{{ item.remark }}</span>
+              </el-row>
+            </el-timeline-item>
+          </el-timeline> -->
+        </template>
+        <template v-else>
+          <div class="history-wrapper">
+            <el-table 
+              style="width: 989px;"
+              :data="formData.reimurseOperationHistories"
+              border
+              max-height="200px"
+            >
+              <el-table-column label="操作记录" prop="action" width="150px" show-overflow-tooltip></el-table-column>
+              <el-table-column label="操作人" prop="createUser" width="100px" show-overflow-tooltip></el-table-column>
+              <el-table-column label="操作时间" prop="createTime" width="150px" show-overflow-tooltip></el-table-column>
+              <el-table-column label="审批时长" prop="intervalTime" width="150px" show-overflow-tooltip>
+                <template slot-scope="scope">
+                  <!-- 10天10小时10分钟 -->
+                  {{ scope.row.intervalTime | timeFormat }}
+                </template>
+              </el-table-column>
+              <el-table-column label="审批结果" prop="approvalResult" width="80px" show-overflow-tooltip></el-table-column>
+              <el-table-column label="备注" prop="remark" show-overflow-tooltip></el-table-column>
+            </el-table>
+          </div>
+        </template>
       </template>
     </el-scrollbar>
     
@@ -793,6 +876,13 @@
         </el-col>
       </el-row>
     </my-dialog>
+    <!-- 预览图片 -->
+    <el-image-viewer
+      v-if="previewVisible"
+      :url-list="[previewImageUrl]"
+      :on-close="closeViewer"
+    >
+    </el-image-viewer>
   </div>
 </template>
 
@@ -808,6 +898,7 @@ import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import Report from './report'
 import Remark from './remark'
+import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import AreaSelector from '@/components/AreaSelector'
 import { toThousands } from '@/utils/format'
 import { findIndex } from '@/utils/process'
@@ -818,6 +909,7 @@ import { noop } from '@/utils/declaration'
 import { categoryMixin, reportMixin, attachmentMixin, chatMixin } from '../js/mixins'
 import { REIMBURSE_TYPE_MAP, IF_SHOW_MAP, REMARK_TEXT_MAP } from '../js/map'
 import rightImg from '@/assets/table/right.png'
+const PROGRESS_TEXT_LIST = ['提交', '客服审批', '财务初审', '财务复审', '总经理审批', '出纳'] // 进度条文本
 export default {
   inject: ['parentVm'],
   mixins: [categoryMixin, reportMixin, attachmentMixin, chatMixin],
@@ -830,7 +922,8 @@ export default {
     Remark,
     AreaSelector,
     zxform,
-    zxchat
+    zxchat,
+    ElImageViewer
   },
   props: {
     title: {
@@ -874,6 +967,12 @@ export default {
   },
   data () {
     return {
+      generalStyle: { // 总经理头部style
+        fontSize: 'bold'
+      },
+      previewVisible: '',
+      previewImageUrl: '', // 预览图片
+      timelineList: [], // 总经理时间进度条
       orderLoading: false, // orderWrapper loading
       rightImg, // 箭头图标
       ifShowTraffic: true, // 是否展示交通补贴表格， 以下类似
@@ -1007,6 +1106,9 @@ export default {
         }
         this.formData = Object.assign({}, this.formData, val)
         console.log(this.formData, 'detailData')
+        if (this.isGeneralStatus) { // 总经理审批和查看的时候才执行
+          this.timelineList = this._normalizeTimelineList(this.formData.reimurseOperationHistories)
+        }
         if (this.title === 'approve') { // 审批的时候要告诉审批人 住宿金额补贴是否符合标准
           this._checkAccMoney()
         }
@@ -1141,7 +1243,66 @@ export default {
     }
   },
   methods: {
-    rowStyle ({ row }) {
+    openFile (row) { // 打开发票附件
+      console.log(row, 'row')
+      let firstFile = row.reimburseAttachments[0]
+      if (firstFile) {
+        let { url, attachmentType } = firstFile
+        // 1 其它附件 2 发票附件
+        attachmentType === 2 
+          ? this.previewImage(url) // 预览图片
+          : window.open(url)
+      }
+    }, 
+    previewImage (url) {
+      this.previewVisible = true
+      this.previewImageUrl = url
+    },
+    closeViewer () {
+      this.previewVisible = false
+    },
+    processStatusIcon (item) { // 处理时间进度条icon
+      // iconfont icon-big-circle 阿里巴巴图标
+      return item.isFinished 
+        ? 'big el-icon-upload-success el-icon-circle-check success' 
+        : item.isCurrent
+          ? 'iconfont icon-big-circle warning'
+          : 'not-current'
+    },
+    setFinishedStatus (list) { // 设置状态
+      return list.map(item => {
+        item.isFinished = true // 完成(审批完的状态)
+        return item
+      })
+    },
+    _normalizeTimelineList (historyList) { // 格式化操作记录流程
+      console.log(historyList, PROGRESS_TEXT_LIST)
+      // 需要展示最新的进度状态，审批到了总经理这一步，每一个步骤最新的状态必然是连续的
+      let lastInfo = historyList[historyList.length - 1]
+      if (lastInfo.action === '总经理审批') { // 说明总经理已经审批完了
+        historyList = this.setFinishedStatus(historyList.slice(-5))
+      } else if (lastInfo.action === '已支付') {
+        historyList = this.setFinishedStatus(historyList.slice(-6))
+      } else { // 说明当前状态必然是财务复审
+        historyList = this.setFinishedStatus(historyList.slice(-4))
+      }
+      console.log(historyList, 'history')
+      let isCurrent = true // 用来标识当前状态 当前进度后面的都是灰色按钮
+      while (historyList.length < 6) { // 进度条一共六个状态
+        historyList.push({
+          isFinished: false, // 设置进度条未完成的状态
+          isCurrent
+        })
+        isCurrent = false
+      }
+      historyList.forEach((item, index) => {
+        item.text = PROGRESS_TEXT_LIST[index]
+      })
+      console.log('list', historyList)
+      return historyList
+      // PROGRESS_TEXT_LIST
+    },
+    rowStyle ({ row }) { // 隐藏删除的表格数据， 因为el-upload的原因
       if (!row.isAdd) {
         return {
           display: 'none'
@@ -1885,6 +2046,7 @@ export default {
       this.$refs.form.resetFields()
       this.clearFile()
       this.ifShowTraffic = this.ifShowOther = this.ifShowAcc = this.ifShowTravel = true
+      this.timelineList = []
       this.selectedList = []
       this.prevAreaData = null
       this.formData = { // 表单参数
@@ -2057,11 +2219,11 @@ export default {
           } else {
             this.parentVm.closeLoading()
           }
-        }).catch(() => {
+        }).catch((err) => {
           this.remarkType === 'reject'
             ? this.remarkLoading = false
             : this.parentVm.closeLoading()
-          this.$message.error('操作失败')
+          this.$message.error(err.message)
         })
       })       
     }
@@ -2071,6 +2233,12 @@ export default {
 <style lang='scss' scoped>
 .order-wrapper {
   position: relative;
+  .success {
+    color: rgba(0, 128, 0, 1);
+  }
+  .warning {
+    color: rgba(255, 165, 0, 1);
+  }
   /* 总经理审批头部 */
   .general-title-wrapper {
     font-weight: bold;
@@ -2095,11 +2263,63 @@ export default {
       }
     }
   }
+  /* 总经理头部时间进度条 */
+  .timeline-progress-wrapper {
+    position: absolute;
+    left: 61px;
+    top: -37px;
+    width: 400px;
+    height: 5px;
+    background-color: rgba(206, 206, 206, 1);
+    .content-wrapper {
+      position: absolute;
+      z-index: 2;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      top: 0;
+      .content-item {
+        position: relative;
+        .icon-status {
+          display: inline-block;
+          font-size: 12px;
+          background-color: #fff;
+          border-radius: 50%;
+          &.big {
+            font-size: 13px;
+          }
+          &.not-current {
+            position: relative;
+            top: 1px;
+            width: 12px;
+            height: 12px;
+            background-color: rgba(206, 206, 206, 1);
+          }
+        }
+        .text {
+          position: absolute;
+          left: 0;
+          top: 17px;
+          font-size: 12px;
+          white-space: nowrap;
+          color: #000;
+          transform: translate3d(-36%, 0, 0);
+        }
+        // background-color: #fff;
+      }
+    }
+  }
   /* 头部 */
   .head-title-wrapper {
     position: absolute;
     top: -34px;
     left: 51px;
+    &.general {
+      left: 500px;
+      span {
+        font-weight: bold;
+      }
+    }
     p {
       min-width: 65px;
       margin-right: 10px;
@@ -2160,7 +2380,12 @@ export default {
             margin-bottom: 0;
           }
         }
+        .content {
+          max-width: 300px;
+        }
         p {
+          display: flex;
+          align-items: center;
           min-width: 120px;
           margin-right: 20px;
           font-size: 12px;
@@ -2180,10 +2405,41 @@ export default {
     /* 总经理审批表格 */
     .general-table-wrapper {
       // padding-right: 10px;
-      width: 828px;
+      // width: 828px;
+      width: 993px;
       margin-top: 10px;
       .table-container {
         overflow: visible;
+        .upload-number-wrapper {
+          ::v-deep .el-upload-list {
+            .el-upload-list__item-name {
+              padding-left: 0 !important;
+            }
+            label {
+              display: none !important;
+            }
+          }
+        }
+        .detail-content {
+          position: relative;
+          display: inline-block;
+          max-width: 280px;
+          p {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+          .remark {
+            position: absolute;
+            right: -14px;
+            bottom: 6px;
+          }
+        }
+        .invoice-number-wrapper {
+          * {
+            margin-right: 10px;
+          }
+        }
       }
       ::v-deep .el-table__header {
         border-collapse: collapse;
@@ -2256,6 +2512,41 @@ export default {
       font-size: 12px;
       text-align: right;
       white-space: nowrap;
+    }
+  }
+  /* 时间线 */
+  .my-timeline-wrapper {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-left: 100px;
+    &.el-timeline {
+      ::v-deep {
+        .el-timeline-item {
+          padding-bottom: 0;
+          .el-timeline-item__tail {
+            height: 150%;
+          }
+        } 
+        .el-timeline-item__wrapper {
+          margin-left: -127px;
+          .el-timeline-item__content {
+            span {
+              margin-right: 20px;
+              &:nth-child(1) {
+                width: 100px;
+                margin-right: 30px;
+              }
+              &.danger {
+                color: red;
+              }
+              &.bold {
+                min-width: 70px;
+                font-weight: bold;
+              }
+            }
+          }
+        }
+      }
     }
   }
   .history-wrapper {

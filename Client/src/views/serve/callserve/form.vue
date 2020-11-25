@@ -594,7 +594,7 @@ export default {
         newestContactTel: "", //最新联系人电话号码,
         contractId: "", //服务合同
         recepUserName: "", //接单员
-        addressDesignator: "", //地址标识
+        addressDesignator: "发运至", //地址标识
         recepUserId: "", //接单人用户ID
         address: "", //详细地址
         // createTime: timeToFormat("yyyy-MM-dd HH-mm-ss"),
@@ -700,7 +700,7 @@ export default {
   watch: {
     customer: {
       handler(val) {
-        this.getPartnerInfo(String(val.customerId).toUpperCase())
+        // this.getPartnerInfo(String(val.customerId).toUpperCase())
         this.setForm(val);
       },
     },
@@ -744,7 +744,7 @@ export default {
           }
         }
         if (isCustomerCode(val)) {
-          if (this.formName !== '编辑' && this.formName !== '查看') {         
+          if (this.formName !== '编辑' && this.formName !== '查看' && this.formName !== '确认') {         
             let value = this.selectType === 'click'
               ? this.currentItem
               : { cardCode: val }
@@ -998,7 +998,7 @@ export default {
       this.form.contactTel = ''
       this.form.newestContacter = ''
       this.form.newestContactTel = ''
-      this.form.addressDesignator = '';
+      // this.form.addressDesignator = '';
       this.form.address = '';
       
     },
@@ -1251,36 +1251,28 @@ export default {
           if (!res.result) {
             return
           }
-          if (this.handleSelectType === 'customer') {
-            this.form.salesMan = res.result.slpName
-            this.form.customerName = res.result.cardName
-            if (this.form.terminalCustomerId === this.form.customerId) {
-              this.form.terminalCustomer = res.result.cardName
-            }
-          } else {
-            this.form.terminalCustomer = res.result.cardName
-          }
+          // if (this.handleSelectType === 'customer') {
+          //   this.form.salesMan = res.result.slpName
+          //   this.form.customerName = res.result.cardName
+          //   if (this.form.terminalCustomerId === this.form.customerId) {
+          //     this.form.terminalCustomer = res.result.cardName
+          //   }
+          // } else {
+          //   this.form.terminalCustomer = res.result.cardName
+          // }
           // 如果已经存在终端客户，则只有改变终端客户时才可以更改相关信息
           // 如果终端客户代码和客户代码一致，则可以更改相关信息
           if ((this.handleSelectType === 'terminalCustomer' && this.form.terminalCustomerId) || 
             (this.handleSelectType === 'customer' && this.form.terminalCustomerId === this.form.customerId) ||
             this.formName === '确认') {
-            this.addressList = res.result.addressList;
+            // this.addressList = res.result.addressList;
             this.cntctPrsnList = res.result.cntctPrsnList;
             this.form.supervisor = res.result.techName;
-            if (this.cntctPrsnList && this.cntctPrsnList.length) {
-            // let firstValue = res.result.cntctPrsnList[0]
-              // let { tel1, tel2, cellolar, name } = firstValue
-              if (this.formName !== '确认') {
-                // this.form.newestContacter = name
-                // this.form.newestContactTel = tel1 || tel2 || cellolar
-              }
-            }
-            if (this.addressList.length) {
-              let { address, building, city } = this.addressList[0];
-              this.form.addressDesignator = address;
-              this.form.address = city + building
-            }
+            // if (this.addressList.length) {
+            //   let { address, building, city } = this.addressList[0];
+            //   this.form.addressDesignator = address;
+            //   this.form.address = city + building
+            // }
           }
         })
         .catch(() => {
@@ -1290,10 +1282,6 @@ export default {
           //   duration: "5000"
           // });
         });
-    },
-    changeAddr(val) {
-      let res = this.addressList.filter((item) => item.address == val);
-      this.form.address = res[0].building;
     },
     choosePeople(val) {
       let res = this.cntctPrsnList.filter((item) => item.name == val);
@@ -1397,9 +1385,6 @@ export default {
     handleSelectCustomer(item) {
       this.handleSelect(item, 'customer')
     },
-    handleSelectTerminal (item) {
-      this.handleSelect(item, 'terminalCustomer')
-    },
     handleSelect (item, type) {
       this.selectType = 'click' // 通过什么方式来填写客户/终端客户代码
       this.businessType = 'input'
@@ -1411,6 +1396,7 @@ export default {
         this.form.salesMan = item.slpName;
         if (!this.form.terminalCustomerId) {
           this.form.contactTel = item.cellular;
+          this.form.address = item.address2
         }
       } 
     },
@@ -1429,10 +1415,16 @@ export default {
         this.form.salesMan = item.slpName;
         if (!this.form.terminalCustomerId) {
           this.form.contactTel = item.cellular;
+          this.form.address = item.address2
         }
       } else { // 终端客户代码
         this.form.terminalCustomerId = item.cardCode
         this.form.terminalCustomer = item.cardName
+        this.form.supervisor = item.technician
+        this.form.contactTel = item.cellular;
+        // this.form.addressDesignator = item.address
+        this.form.address = item.address2
+        console.log(item, 'termianl')
         this.handleCurrentChange(item)
       }
     },

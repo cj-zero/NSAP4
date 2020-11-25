@@ -180,7 +180,7 @@ export let tableMixin = {
         // 如果是审核流程、则判断当前用户是不是客服主管
         this.title = tableClick ? 'view' : val.type
         try {
-          if (this.title === 'approve' && this.isGeneralManager) {
+          if ((this.title === 'approve' || this.title === 'view') && this.isGeneralManager) {
             // 用于总经理审批页面的表格数据
             this._generateApproveTable(this.detailData)
           }
@@ -197,7 +197,17 @@ export let tableMixin = {
         this.$message.error('获取详情失败')
       })
     },
-    processInvoiceTime (invoiceTime) {
+    isValidInvoice (attachmentList) { // 判断有没有发票附件
+      return attachmentList.some(item => {
+        return item.attachmentType === 2
+      })
+    },
+    getOtherFileList (attachmentList) { // 获取其它附件列表
+      return attachmentList.filter(item => {
+        return item.attachmentType === 1
+      })
+    },
+    processInvoiceTime (invoiceTime) { // 截取年月日
       return invoiceTime ? invoiceTime.split(' ')[0] : invoiceTime
     },
     _generateApproveTable (data) { // 针对总经理审批页面
@@ -210,39 +220,55 @@ export let tableMixin = {
         reimburseOtherCharges,
       } = data
       reimburseFares.forEach(item => {
-        let { invoiceTime, transport, from, to, money } = item
+        let { invoiceTime, transport, from, to, money, reimburseAttachments, invoiceNumber, remark } = item
         result.push({
           invoiceTime: this.processInvoiceTime(invoiceTime),
           expenseName: this.transportationMap[transport],
           expenseDetail: from + '-' + to,
-          money
+          money,
+          remark,
+          invoiceNumber,
+          isValidInvoice: this.isValidInvoice(reimburseAttachments),
+          reimburseAttachments,
+          otherFileList: this.getOtherFileList(reimburseAttachments)
         })
       })
       reimburseAccommodationSubsidies.forEach(item => {
-        let { invoiceTime, days, totalMoney } = item
+        let { invoiceTime, days, totalMoney, reimburseAttachments, invoiceNumber, remark } = item
         result.push({
           invoiceTime: this.processInvoiceTime(invoiceTime),
           expenseName: '住宿补贴',
           expenseDetail: days + '天',
-          money: totalMoney
+          money: totalMoney,
+          remark,
+          invoiceNumber,
+          isValidInvoice: this.isValidInvoice(reimburseAttachments),
+          reimburseAttachments,
+          otherFileList: this.getOtherFileList(reimburseAttachments)
         })
       })
       reimburseTravellingAllowances.forEach(item => {
-        let { invoiceTime, days, money } = item
+        let { invoiceTime, days, money, remark } = item
         result.push({
           invoiceTime: this.processInvoiceTime(invoiceTime),
           expenseName: '出差补贴',
           expenseDetail: days + '天',
-          money: money * days
+          money: money * days,
+          remark
         })
       })
       reimburseOtherCharges.forEach(item => {
-        let { invoiceTime, money, expenseCategory } = item
+        let { invoiceTime, money, expenseCategory, remark, reimburseAttachments, invoiceNumber } = item
         result.push({
           invoiceTime: this.processInvoiceTime(invoiceTime),
           expenseName: this.otherExpensesMap[expenseCategory],
           expenseDetail: '',
-          money
+          money,
+          remark,
+          invoiceNumber,
+          isValidInvoice: this.isValidInvoice(reimburseAttachments),
+          reimburseAttachments,
+          otherFileList: this.getOtherFileList(reimburseAttachments)
         })
       })
       /* 日期从小到大， 没日期的话，交通费用→住宿补贴→出差补贴→其他费用 */
@@ -252,6 +278,7 @@ export let tableMixin = {
       // let dataWithoutInvoiceTime = result.filter(item => !item.invoiceTime)
       // 交通-住宿-出差-其它
       // data.expenseCategoryList = dataWithInvoiceTime.concat(dataWithoutInvoiceTime)
+      console.log(result, 'result')
       data.expenseCategoryList = result
     },
     _normalizeDetail (data) { 
@@ -498,6 +525,9 @@ export let categoryMixin = {
         ? this.rolesList.some(item => item === '总经理')
         : false
     },
+    isGeneralStatus () { // 判断是不是处于总经理浏览
+      return this.isGeneralManager && (this.title === 'approve' || this.title === 'view')
+    },
     isEditItem () { // 审批的时候只有客服主管可以改 新增编辑都可以修改
       return (this.title === 'view' || (this.title === 'approve' && !this.isCustomerSupervisor) || this.title === 'toPay')
     },
@@ -602,7 +632,7 @@ export let categoryMixin = {
 // 9：汽车票 10：轮船票 11：增值税发票（卷票 ）12：购车发票 13：过路过桥费发票
 const TRAFFIC_TYPE_LIST = [0, 2, 5, 9, 10, 13] // 交通类型发票
 const ACC_TYPE = 3
-
+const invoiceTimeReg = /(^\d{4}-\d{2}-\d{2}).*$/ // 发票时间正则
 export const attachmentMixin = {
   data () {
     return {
@@ -676,7 +706,7 @@ export const attachmentMixin = {
       this.$set(currentRow, 'isValidInvoice', isValidInvoice) // 判断发票是否正确，如果是正确的话就不给修改，不正确就给修改
       currentRow.maxMoney = money
       currentRow.invoiceNumber = invoiceNo
-      currentRow.invoiceTime = /^\d{4}-\d{2}-\d{2}$/.test(invoiceDate) ? invoiceDate : ''
+      currentRow.invoiceTime = invoiceDate.match(invoiceTimeReg) ? RegExp.$1 : ''
     },
     _setAttachmentList ({ data, index, prop, reimburseType, val }) { // 设置通过上传获取到的附件列表
       let resultArr = []
