@@ -190,7 +190,7 @@
                       size="mini"
                       style="width: 200px;"
                       :controls="false"
-                      v-model="row[row.prop]" 
+                      v-model="materialData.list[row.index][row.prop]" 
                       :precision="0"
                       :placeholder="`最大数量${row['maxQuantity']}`"
                       :max="+row['maxQuantity']"
@@ -287,7 +287,7 @@
     <my-dialog
       ref="customerDialog"
       title="服务列表"
-       width="500px"
+      width="600px"
       :btnList="customerBtnList"
       :appendToBody="true"
     >
@@ -306,7 +306,7 @@
     <my-dialog 
       ref="materialDialog"
       title="物料编码"
-      width="500px"
+      width="580px"
       :btnList="materialBtnList"
       :appendToBody="true"
     >
@@ -350,7 +350,7 @@ import {
   getMaterialList, 
   AddQuotationOrder,
   updateQuotationOrder,
-  getQuotationMaterialCode,
+  // getQuotationMaterialCode,
   approveQuotationOrder
 } from '@/api/material/quotation'
 import CommonTable from '@/components/CommonTable' // 对于不可编辑的表格
@@ -441,7 +441,8 @@ export default {
           } else {
             // 审批/销售订单
             // 获取服务单的所有报价零件
-            this._getQuotationMaterialCode()
+            this._normalizeMaterialSummaryList()
+            // this._getQuotationMaterialCode()
           }
         }
       }
@@ -529,7 +530,7 @@ export default {
       materialColumns: [ 
         { originType: 'selection' },
         { label: '物料编码', prop: 'itemCode', width: 100 },
-        { label: '物料描述', prop: 'itemName', width: 100 },
+        { label: '物料描述', prop: 'itemName' },
         { label: '零件规格', prop: 'buyUnitMsr', width: 100 },
         { label: '库存量', prop: 'onHand', width: 100 },
         { label: '仓库号', prop: 'whsCode', width: 100 }
@@ -766,25 +767,33 @@ export default {
         delete this.selectedMap[this.currentSerialNumber]
       }
     },
-    _getQuotationMaterialCode () { // 获取服务单下的所有零件
-      this.materialAllLoading = true
-      getQuotationMaterialCode({
-        serviceOrderId: this.formData.serviceOrderId
-      }).then(res => {
-        let { data } = res
-        this.materialSummaryList = data.reduce((prev, next) => {
-          return prev.concat(next.materialDetailList)
-        }, []).map((item, index) => {
-          item.index = index
-          return item
-        })
-        console.log(data, 'data', this.materialSummaryList)
-        this.materialAllLoading = false
-      }).catch(err => {
-        this.materialAllLoading = false
-        this.$message.error(err.message)
+    _normalizeMaterialSummaryList () {
+      this.materialSummaryList = this.formData.quotationProducts.reduce((prev, next) => {
+        return prev.concat(next.quotationMaterials)
+      }, []).map((item , index) => {
+        item.index = index
+        return item
       })
     },
+    // _getQuotationMaterialCode () { // 获取服务单下的所有零件
+    //   this.materialAllLoading = true
+    //   getQuotationMaterialCode({
+    //     serviceOrderId: this.formData.serviceOrderId
+    //   }).then(res => {
+    //     let { data } = res
+    //     this.materialSummaryList = data.reduce((prev, next) => {
+    //       return prev.concat(next.materialDetailList)
+    //     }, []).map((item, index) => {
+    //       item.index = index
+    //       return item
+    //     })
+    //     console.log(data, 'data', this.materialSummaryList)
+    //     this.materialAllLoading = false
+    //   }).catch(err => {
+    //     this.materialAllLoading = false
+    //     this.$message.error(err.message)
+    //   })
+    // },
     onCountFocus (index) {
       this.materialItemIndex = index // 当前点击的物料表格的第几项
     },

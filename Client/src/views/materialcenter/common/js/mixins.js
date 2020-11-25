@@ -12,6 +12,7 @@ export const quotationTableMixin = {
       textMap: Object.freeze({
         create: '新建',
         edit: '编辑',
+        view: '查看',
         approve: '审批',
         pay: '支付'
       }),
