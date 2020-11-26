@@ -13,7 +13,12 @@
     <div class="app-container">
       <div class="bg-white">
         <div class="content-wrapper">
-          <common-table :data="tableData" :columns="quotationColumns" :loading="tableLoading"></common-table>
+          <common-table 
+            ref="returnOrderTable" 
+            :data="tableData" 
+            :columns="returnOrderColumns" 
+            :loading="tableLoading">
+          </common-table>
           <pagination
             v-show="total>0"
             :total="total"
@@ -24,7 +29,42 @@
         </div>
       </div>
     </div>    
-    <my-dialog ref="myDialog">
+    <my-dialog 
+      ref="returnOrderDialog"
+      width="1100px"
+      :loading="dialogLoading"
+      title="退料单详情"
+      :btnList="btnList"
+      :onClosed="close"
+    >
+      <return-Order 
+        ref="returnOrder" 
+        :detailInfo="detailInfo"
+        :status="status"
+        :isReturn="true"
+        ></return-Order>
+    </my-dialog>
+    <!-- 只能查看的表单 -->
+    <my-dialog
+      ref="serviceDetail"
+      width="1210px"
+      title="服务单详情"
+    >
+      <el-row :gutter="20" class="position-view">
+        <el-col :span="18" >
+          <zxform
+            formName="查看"
+            labelposition="right"
+            labelwidth="72px"
+            max-width="800px"
+            :isCreate="false"
+            :refValue="dataForm"
+          ></zxform>
+        </el-col>
+        <el-col :span="6" class="lastWord">   
+          <zxchat :serveId='serveId' formName="报销"></zxchat>
+        </el-col>
+      </el-row>
     </my-dialog>
   </div>
 </template>
@@ -35,38 +75,31 @@ import Sticky from '@/components/Sticky'
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import CommonTable from '@/components/CommonTable'
-const tableData = []
-for (let i = 0; i < 100; i++) {
-  tableData.push({
-    pickNO: i,
-    serviceOrderId: i,
-    customerId: i,
-    customerName: i,
-    totalMoney: i,
-    otherMoney: i,
-    applicant: 'rookie',
-    remark: 'rookie',
-    createTime: '123',
-    status: '审批中'
-  })
-}
+import ReturnOrder from '../common/components/ReturnOrder'
+import zxform from "@/views/serve/callserve/form";
+import zxchat from '@/views/serve/callserve/chat/index'
+import {  quotationTableMixin, chatMixin, returnTableMixin } from '../common/js/mixins'
 export default {
   name: 'quotation',
+  mixins: [quotationTableMixin, chatMixin, returnTableMixin],
   components: {
     Search,
     Sticky,
     CommonTable,
     Pagination,
-    MyDialog
+    MyDialog,
+    ReturnOrder,
+    zxform,
+    zxchat
   },
   computed: {
     searchConfig () {
       return [
-        { prop: 'pickNO', placeholder: '退料单号', width: 100 },
-        { prop: 'customerName', placeholder: '客户', width: 100 },
-        { prop: '', placeholder: '服务ID', width: 100 },
-        { prop: 'applicant', placeholder: '申请人', width: 100 },
-        { prop: 'startDate', placeholder: '创建开始日期', type: 'date', width: 150 },
+        { prop: 'id', placeholder: '退料单号', width: 100 },
+        { prop: 'customer', placeholder: '客户名称', width: 100 },
+        { prop: 'sapId', placeholder: '服务ID', width: 100 },
+        { prop: 'createName', placeholder: '申请人', width: 100 },
+        { prop: 'beginDate', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endDate', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' }
       ]
@@ -79,40 +112,17 @@ export default {
   },
   data () {
     return {
-      formQuery: {
-        pickNO: '',
-        customerName: '',
-        serviceOrderId: '',
-        startDate: '',
-        endDate: ''
-      },
       listQuery: {
+        status: '2',
         page: 1,
         limit: 50,
       },
-      tableLoading: false,
-      tableData,
-      total: 0,
-      quotationColumns: [
-        { label: '退料单号', prop: 'pickNO', handleClick: this.getDetail, options: { type: 'view' }, type: 'link'},
-        { label: '客户代码', prop: 'customerId' },
-        { label: '客户名称', prop: 'customerName' },
-        { label: '服务ID', prop: 'serviceOrderId', handleClick: this.getDetail, type: 'link' },
-        { label: '申请人', prop: 'applicant' },
-        { label: '创建时间', prop: 'createTime' }
-      ]
+      status: '', // 报价单状态
+      detailInfo: null // 详情信息
     } 
   },
-  methods: {
-    submit () {},
-    saveAsDraft () {},
-    close () {},
-    getDetail (data) {
-      console.log(data, 'data detail')
-    },
-    onChangeForm () {},
-    onSearch () {},
-    handleCurrentChange () {}
+  mounted () {
+    this._getList()
   }
 }
 </script>

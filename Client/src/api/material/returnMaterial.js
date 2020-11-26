@@ -26,7 +26,7 @@ export function getReturnNoteDetail(params) { // 获取退料详情
 
 export function getExpressInfo (params) { // 获取物流详情
   return request({
-    url: '/ReturnNotes/GetExpressInfo',
+    url: '/ReturnNotes/GetExpressageInfo',
     method: 'get',
     params
   })
@@ -39,6 +39,17 @@ export function saveReceiveInfo(data) { // 保存仓库验收记录
     data
   })
 }
+
+export function accraditate(data) { // 验收仓库记录
+  return request({
+    url: '/ReturnNotes/Accraditation',
+    method: 'post',
+    data
+  })
+}
+
+
+
 
  
 

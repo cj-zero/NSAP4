@@ -1,6 +1,7 @@
 import { getCategoryNameList } from '@/api/directory'
-import { getQuotationDetail } from '@/api/material/quotation'
-import { GetDetails } from '@/api/serve/callservesure'
+import { getQuotationDetail } from '@/api/material/quotation' // 报价单详情
+import { GetDetails } from '@/api/serve/callservesure' // 服务单
+import { getReturnNoteList, getReturnNoteDetail } from '@/api/material/returnMaterial' // 退料
 export const quotationTableMixin = {
   provide () {
     return {
@@ -16,19 +17,40 @@ export const quotationTableMixin = {
         approve: '审批',
         pay: '支付'
       }),
-      categoryList: [] // 分类列表
+      categoryList: [], // 分类列表
+      rolesList: this.$store.state.user.userInfoAll.roles, // 当前用户的角色列表
+      originUserId: this.$store.state.user.userInfoAll.userId // 当前用户的ID
+    }
+  },
+  computed: {
+    isMaterialFinancial () { // 判断是不是物料财务
+      return this.rolesList && this.rolesList.length
+        ? this.rolesList.some(item => item === '物料财务')
+        : false
     }
   },
   methods: {
     _getQuotationDetail (data) {
       let quotationId
       let { status } = data
+      console.log(status,' status')
       if (status === 'view') {
         quotationId = data.id
       } else {
         let currentRow = this.$refs.quotationTable.getCurrentRow()
         if (!currentRow) {
           return this.$message.warning('请先选择数据')
+        }
+        let { quotationStatus } = currentRow
+        if (status === 'edit') {
+          if (+quotationStatus !== 1 && +quotationStatus !== 3) {
+            return this.$message.warning('当前状态不可编辑')
+          }
+        } else if (status === 'pay') { // 财务付款审批
+          console.log('pay')
+          if (+quotationStatus === 9) {
+            return this.$message.warning('需要客户签字')
+          }
         }
         quotationId = currentRow.id
       }
@@ -55,7 +77,7 @@ export const quotationTableMixin = {
     },
     _normalizeList (list) { // 格式化表格数据
       return list.map(item => {
-        item.quotationStatus = this.quotationStatusMap[item.quotationStatus]
+        item.quotationStatusText = this.quotationStatusMap[item.quotationStatus]
         return item
       })
     },
@@ -136,27 +158,65 @@ export const configMixin = { // 表单配置
         : false
     },
     formConfig () { // 头部表单配置
-      return this.status === 'return' || this.isReturn
+      return this.status === 'outbound' // 出库单
         ? [
-            { label: '服务ID', prop: 'serviceOrderSapId', placeholder: '请选择', col: 6, readonly: true },
-            { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请选择', col: 6, disabled: true },
-            { label: '客户名称', prop: 'terminalCustomer', placeholder: '请选择', col: 12, disabled: true, isEnd: true },
+        { label: '服务ID', prop: 'serviceOrderSapId', placeholder: '请选择', col: 6, readonly: true, disabled: !this.ifEdit },
+        { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请选择', col: 6, disabled: true },
+        { label: '客户名称', prop: 'terminalCustomer', placeholder: '请选择', col: 12, disabled: true, isEnd: true },
+        { label: '开票地址', prop: 'shippingAddress', placeholder: '请选择', col: 24, disabled: !this.ifEdit, isEnd: true },
+        { label: '收货地址', prop: 'collectionAddress', placeholder: '请选择', col: 24, disabled: !this.ifEdit, isEnd: true },
+        { label: '备注', prop: 'remark', placeholder: '请填写', col: 24, disabled: !this.ifEdit, isEnd: true },
+      ]
+      : this.status === 'pay' ? // 销售单
+      [
+        { label: '服务ID', prop: 'serviceOrderSapId', placeholder: '请选择', col: 6, readonly: true, disabled: !this.ifEdit },
+        { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请选择', col: 6, disabled: true },
+        { label: '客户名称', prop: 'terminalCustomer', placeholder: '请选择', col: 12, disabled: true, isEnd: true },
+        { label: '开票地址', prop: 'shippingAddress', placeholder: '请选择', col: 18, disabled: !this.ifEdit },
+        { label: '开票单位', prop: 'invoiceCompany', placeholder: '请选择', col: 6, 
+          type: 'select', options: this.invoiceCompanyList, isEnd: true, disabled: true },
+        { label: '收货地址', prop: 'collectionAddress', placeholder: '请选择', col: 18, disabled: !this.ifEdit },
+        { label: '发货方式', prop: 'deliveryMethod', placeholder: '请选择', col: 6, type: 'select', options: this.deliveryMethodList, disabled: !this.ifEdit, isEnd: true },
+        { label: '备注', prop: 'remark', placeholder: '请填写', col: 18, disabled: !this.ifEdit },
+      ] 
+      :
+      [ // 报价单
+        { label: '服务ID', prop: 'serviceOrderSapId', placeholder: '请选择', col: 6, readonly: true, disabled: !this.ifEdit },
+        { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请选择', col: 6, disabled: true },
+        { label: '客户名称', prop: 'terminalCustomer', placeholder: '请选择', col: 12, disabled: true, isEnd: true },
+        { label: '开票地址', prop: 'shippingAddress', placeholder: '请选择', col: 18, disabled: !this.ifEdit },
+        { label: '开票单位', prop: 'invoiceCompany', placeholder: '请选择', col: 6, 
+          type: 'select', options: this.invoiceCompanyList, isEnd: true, disabled: !(this.ifEdit || (this.isMaterialTreasurer && this.status === 'approve')) },
+        { label: '收货地址', prop: 'collectionAddress', placeholder: '请选择', col: 18, disabled: !this.ifEdit },
+        { label: '发货方式', prop: 'deliveryMethod', placeholder: '请选择', col: 6, type: 'select', options: this.deliveryMethodList, disabled: !this.ifEdit, isEnd: true },
+        { label: '备注', prop: 'remark', placeholder: '请填写', col: 18, disabled: !this.ifEdit },
+        { label: '总计', type: 'money', col: 6 }
+      ] 
+      
+    },
+    returnFormConfig () { // 退料单表单
+      return this.isReturn 
+        ? [
+            { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请选择', col: 8, disabled: true },
+            { label: '客户名称', prop: 'terminalCustomer', placeholder: '请选择', col: 16, disabled: true, isEnd: true },
           ]
         : [
-            { label: '服务ID', prop: 'serviceOrderSapId', placeholder: '请选择', col: 6, readonly: true, disabled: !this.ifEdit },
-            { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请选择', col: 6, disabled: true },
-            { label: '客户名称', prop: 'terminalCustomer', placeholder: '请选择', col: 12, disabled: true, isEnd: true },
-            { label: '开票地址', prop: 'shippingAddress', placeholder: '请选择', col: 18, disabled: !this.ifEdit },
-            { label: '开票单位', prop: 'invoiceCompany', placeholder: '请选择', col: 6, 
-              type: 'select', options: this.invoiceCompanyList, isEnd: true, disabled: this.isMaterialTreasurer },
-            { label: '收货地址', prop: 'collectionAddress', placeholder: '请选择', col: 18, disabled: !this.ifEdit },
-            { label: '发货方式', prop: 'deliveryMethod', placeholder: '请选择', col: 6, type: 'select', options: this.deliveryMethodList, disabled: !this.ifEdit, isEnd: true },
-            { label: '备注', prop: 'remark', placeholder: '请填写', col: 18, disabled: !this.ifEdit },
-            { label: '总计', type: 'money', col: 6 }
+            { label: '客户代码', prop: 'terminalCustomerId', col: 8, disabled: true },
+            { label: '客户名称', prop: 'terminalCustomer', col: 16, disabled: true, isEnd: true },
+            { label: '退货备注', prop: 'terminalCustomer', placeholder: '请输入', col: 24, disabled: true, isEnd: true },
+            { label: '签收备注', prop: '', placeholder: '请输入内容', col: 24, disabled: this.status !== 'toReturn' , isEnd: true },
           ]
     },
     formatFormConfig () {
-      let noneSlotConfig = this.formConfig
+      return this._normalizeFormatFormConfig(this.formConfig)
+    },
+    formatReturnConfig () {
+      return this._normalizeFormatFormConfig(this.returnFormConfig)
+    }
+  },
+  methods: {
+    _normalizeFormatFormConfig (config) {
+      let noneSlotConfig = config
       let result = [], j = 0
       for (let i = 0; i < noneSlotConfig.length; i++) {
         if (!result[j]) {
@@ -168,7 +228,7 @@ export const configMixin = { // 表单配置
         }
       }
       return result
-    },
+    }
   }
 }
 
@@ -204,7 +264,7 @@ export const quotationOrderMixin = { // 报价单
   // }
 }
 
-export const chatMixin = { // 服务单
+export const chatMixin = { // 服务单详情
   data () {
     return {
       serveId: '',
@@ -254,5 +314,92 @@ export const chatMixin = { // 服务单
   }
 }
 
-
+export const returnTableMixin = { // 退料表格
+  data () {
+    return {
+      formQuery: { //  查询字段
+        id: '', // 退料单ID
+        customer: '', // 客户
+        sapId: '', // 服务Id
+        createName: '', // 申请人
+        beginDate: '', // 创建开始
+        endDate: '' // 创建结束
+      },
+      returnOrderColumns: [
+        { label: '退料单号', prop: 'id', handleClick: this._getReturnNoteDetail, options: { status: 'view' }, type: 'link'},
+        { label: '客户代码', prop: 'customerId' },
+        { label: '客户名称', prop: 'customerName' },
+        { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link', options: { isInTable: true } },
+        { label: '申请人', prop: 'createUser' },
+        { label: '创建时间', prop: 'createDate' },
+      ],
+      dialogLoading: false,
+      tableLoading: false,
+      tableData: [],
+      total: 0,
+    }
+  },
+  methods: {
+    _getList () { // 获取涂料单列表信息
+      this.tableLoading = true
+      getReturnNoteList(this.listQuery).then(res => {
+        let { count, data } = res
+        this.tableData = data
+        this.total = count
+        this.tableLoading = false
+        this.$refs.returnOrderTable.resetCurrentRow()
+        console.log('_getList', this.$refs.returnOrderTable.getCurrentRow())
+      }).catch(err => {
+        this.$message.error(err.message)
+        this.tableLoading = false
+      })
+    },
+    _getReturnNoteDetail (data) { // 获取退料单详情
+      let id
+      let { status } = data
+      if (status === 'view') {
+        id = data.id
+      } else {
+        let currentRow = this.$refs.returnOrderTable.getCurrentRow()
+        console.log(currentRow, 'currentRow')
+        if (!currentRow) {
+          return this.$message.warning('请先选择数据')
+        }
+        id = currentRow.id
+      }
+      console.log(status, 'status', id)
+      this.tableLoading = true
+      getReturnNoteDetail({
+        id
+      }).then(res => {
+        console.log(res,' res')
+        this.detailInfo = res.data
+        // this.detailInfo = this._normalizeDetail(res.data)
+        this.$refs.returnOrderDialog.open()
+        this.tableLoading = false
+        this.status = status
+      }).catch(err => {
+        this.$message.error(err.message)
+        this.tableLoading = false
+      })
+    },
+    close () { // 关闭弹窗
+      this.$refs.returnOrder.resetInfo()
+      this.$refs.returnOrderDialog.close()
+    },
+    handleCurrentChange ({ page, limit }) {
+      this.listQuery.page = page
+      this.listQuery.limit = limit
+      this._getList()
+    },
+    onSearch () {
+      this.listQuery.page = 1
+      this._getList()
+    },
+    onChangeForm (val) {
+      Object.assign(this.listQuery, val)
+      this.onSearch()
+    },
+  }
+}
 

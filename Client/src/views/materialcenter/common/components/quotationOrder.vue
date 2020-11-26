@@ -56,7 +56,6 @@
                 </el-input>
               </template>
               <template v-else-if="item.type === 'select'">
-                {{ typeof formData[item.prop] }}                
                 <el-select 
                   clearable
                   :style="{ width: item.width }"
@@ -273,9 +272,9 @@
         </div>
       </template>
       <!-- 操作记录 不可编辑时才出现 -->
-      <template v-if="ifNotEdit && formData.quotationOperationHistory && formData.quotationOperationHistory.length">
+      <template v-if="ifNotEdit && formData.quotationOperationHistorys && formData.quotationOperationHistorys.length">
         <div class="history-wrapper">
-          <common-table :data="formData.quotationOperationHistory" :columns="historyColumns" maxHeight="200px">
+          <common-table :data="formData.quotationOperationHistorys" :columns="historyColumns" maxHeight="200px">
             <template v-slot:intervalTime="scope">
               {{ scope.row.intervalTime | m2DHM }}
             </template>
@@ -339,6 +338,29 @@
       width="350px">
       <remark ref="remark" @input="onRemarkInput" :tagList="[]"></remark>
     </my-dialog>
+    <!-- 只能查看的表单 -->
+    <my-dialog
+      ref="serviceDetail"
+      width="1210px"
+      title="服务单详情"
+      :appendToBody="true"
+    >
+      <el-row :gutter="20" class="position-view">
+        <el-col :span="18" >
+          <zxform
+            formName="查看"
+            labelposition="right"
+            labelwidth="72px"
+            max-width="800px"
+            :isCreate="false"
+            :refValue="dataForm"
+          ></zxform>
+        </el-col>
+        <el-col :span="6" class="lastWord">   
+          <zxchat :serveId='serveId' formName="报销"></zxchat>
+        </el-col>
+      </el-row>
+    </my-dialog>
     <el-button @click="_checkFormData">点击校验</el-button>
   </div>
 </template>
@@ -357,8 +379,10 @@ import CommonTable from '@/components/CommonTable' // 对于不可编辑的表�
 import MyDialog from '@/components/Dialog'
 import Pagination from '@/components/Pagination'
 import Remark from '@/views/reimbursement/common/components/remark'
+import zxform from "@/views/serve/callserve/form";
+import zxchat from '@/views/serve/callserve/chat/index'
 // import AreaSelector from '@/components/AreaSelector'
-import { configMixin, quotationOrderMixin, categoryMixin } from '../js/mixins'
+import { configMixin, quotationOrderMixin, categoryMixin, chatMixin } from '../js/mixins'
 import { timeToFormat } from "@/utils";
 import { findIndex } from '@/utils/process'
 import { isNumber } from '@/utils/validate'
@@ -366,12 +390,14 @@ import rightImg from '@/assets/table/right.png'
 const NOT_EDIT_STATUS_LIST = ['view', 'approve', 'pay'] // 不可编辑的状态 1.查看 2.审批 3.支付
 export default {
   inject: ['parentVm'],
-  mixins: [configMixin, quotationOrderMixin, categoryMixin],
+  mixins: [configMixin, quotationOrderMixin, categoryMixin, chatMixin],
   components: {
     CommonTable,
     MyDialog,
     Pagination,
-    Remark
+    Remark,
+    zxform,
+    zxchat
     // AreaSelector
   },
   filters: {
@@ -414,8 +440,8 @@ export default {
   watch: {
     customerList: {
       immediate: true,
-      handler (val) {
-        console.log(val, 'val')
+      handler (val, oldVal) {
+        console.log(val, oldVal, 'val')
         if (this.status === 'create') { // 新建时才需要去获取客户信息列表
           this._getServiceOrderList()
         }
@@ -626,6 +652,7 @@ export default {
   },
   computed: {
     ifNotEdit () {
+      console.log(this.status, 'status')
       return NOT_EDIT_STATUS_LIST.includes(this.status)
     },
     totalMoney () {
@@ -668,7 +695,10 @@ export default {
       }
     },
     openServiceOrder () { // 打开服务单
-      
+      // if (!this.formData.serviceOrderId) {
+      //   return this.$message.error('请先选择客户单')
+      // }
+      this._openServiceOrder(this.formData)
       // this.$refs.customerDialog.open()
     },
     selectCustomer () { // 选择客户数据
@@ -975,8 +1005,8 @@ export default {
       if (!isMaterialValid) {
         return Promise.reject({ message: '零件数量不能为空' })
       }
-      this.formData.quotationProducts.forEach(item => {
-        item.isProtected = false
+      this.formData.quotationProducts.forEach((item, index) => {
+        item.isProtected = !!(index % 2)
       })
       console.log(this.formData.quotationProducts)
       return isEdit 

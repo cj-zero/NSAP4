@@ -1,7 +1,7 @@
 <template>
   <div class="quotation-wrapper">
     <el-row type="flex" class="title-wrapper">
-      <p class="bold id">报价单号: <span>{{ formData.id || '' }}</span></p>
+      <p class="bold id">出库单号: <span>{{ formData.id || '' }}</span></p>
       <p class="bold">申请人: <span>{{ formData.createUser }}</span></p>
       <p>创建时间: <span>{{ formData.createTime }}</span></p>
       <p>销售员: <span>{{ formData.salesMan }}</span></p>
@@ -35,7 +35,7 @@
                 <template v-if="item.prop === 'serviceOrderSapId'">
                   <div class="link-container" style="display: inline-block">
                     <span>{{ item.label }}</span>
-                    <img :src="rightImg" @click="openCustomerList" class="pointer">
+                    <img :src="rightImg" @click="openServiceOrder" class="pointer">
                   </div>
                 </template>
                 <template v-else>
@@ -115,11 +115,9 @@
           </common-table>
           </div>
         <!-- </el-form> -->
-        
         <div>
-          <el-button class="add-courier-btn" size="min" @click="addCourier">新增快递</el-button>
+          <el-button class="add-courier-btn" size="mini" @click="addCourier" v-if="status !== 'view'">新增快递</el-button>
         </div>
-        
       </div>
       <!-- 物料表格 -->
       <div class="material-wrapper">
@@ -140,28 +138,76 @@
           </template>  
         </common-table>
       </div>
-      <my-dialog></my-dialog>
-      <pagination :total="0"></pagination>
     </el-scrollbar>
+    <!-- 只能查看的表单 -->
+    <my-dialog
+      ref="serviceDetail"
+      width="1210px"
+      title="服务单详情"
+      :appendToBody="true"
+    >
+      <el-row :gutter="20" class="position-view">
+        <el-col :span="18" >
+          <zxform
+            formName="查看"
+            labelposition="right"
+            labelwidth="72px"
+            max-width="800px"
+            :isCreate="false"
+            :refValue="dataForm"
+          ></zxform>
+        </el-col>
+        <el-col :span="6" class="lastWord">   
+          <zxchat :serveId='serveId' formName="报销"></zxchat>
+        </el-col>
+      </el-row>
+    </my-dialog>
   </div>
 </template>
 
 <script>
-import { configMixin } from '../../common/js/mixins'
+import { configMixin, chatMixin } from '../../common/js/mixins'
 import CommonTable from '@/components/CommonTable' // 对于不可编辑的表格
 import MyDialog from '@/components/Dialog'
-import Pagination from '@/components/Pagination'
+import zxform from "@/views/serve/callserve/form";
+import zxchat from '@/views/serve/callserve/chat/index'
+// import Pagination from '@/components/Pagination'
 import UpLoadFile from '@/components/upLoadFile'
 import rightImg from '@/assets/table/right.png'
 import { isImage } from '@/utils/file'
 export default {
-  mixins: [configMixin],
+  mixins: [configMixin, chatMixin],
   components: {
     CommonTable,
     MyDialog,
-    Pagination,
-    UpLoadFile
+    // Pagination,
+    UpLoadFile,
+    zxform,
+    zxchat
     // AreaSelector
+  },
+  props: {
+    detailInfo: {
+      type: Object,
+      default: () => {}
+    },
+    status: String
+  },
+  watch: {
+    courierList: {
+      deep: true,
+      handler (val) {
+        console.log(val, 'courierList')
+      }
+    },
+    detailInfo: {
+      immediate: true,
+      handler (val) {
+        Object.assign(this.formData, val)
+        this.expressList = val.expressages
+        console.log(val, this.expressList, 'detail info')
+      }
+    }
   },
   computed: {
     courierAllList () {
@@ -173,6 +219,7 @@ export default {
   data () {
     return {
       fileList: [],
+      expressList: [], // 快递信息
       rightImg,
       formData: {
         // id: '',  报价单号
@@ -239,20 +286,12 @@ export default {
       ]
     }
   },
-  watch: {
-    courierList: {
-      deep: true,
-      handler (val) {
-        console.log(val, 'courierList')
-      }
-    }
-  },
   methods: {
     onServiceIdFocus (prop) {
       console.log(prop)
     },
-    openCustomerList () {
-      this.$refs.customerDialog.open()
+    openServiceOrder () {
+      this._openServiceOrder(this.formData)
     },
     addCourier () { // 增加快递
       this.courierList.push({
@@ -280,7 +319,8 @@ export default {
         return false
       }
       return true
-    }
+    },
+    resetInfo () {}
   },
   created () {
 

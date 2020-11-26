@@ -7,7 +7,7 @@
     stripe
     border
     fit
-    :row-key="rowKey"
+    :row-key="hasSelection ? rowKey : ''"
     :height="height"
     :max-height="maxHeight"
     @current-change="onCurrentChange"
@@ -21,7 +21,7 @@
     <!-- 是否出现多选 -->
     <el-table-column 
       type="selection" 
-      v-if="selectionColumns && selectionColumns.originType === 'selection'"
+      v-if="hasSelection"
       reserve-selection
       :selectable="checkSelectable"
       show-overflow-tooltip
@@ -143,9 +143,6 @@ export default {
       type: String
     }
   },
-  updated () {
-    console.log('table updated')
-  },
   data () {
     return {
       rightImg,
@@ -160,6 +157,9 @@ export default {
     },
     selectionColumns () {
       return this.columns.filter(item => item.originType === 'selection')[0]
+    },
+    hasSelection () {
+      return this.selectionColumns && this.selectionColumns.originType === 'selection'
     }
   },
   methods: {

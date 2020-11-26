@@ -79,3 +79,19 @@ export function getApprovePendingList (params) { // 获取未审批报价单列�
     params
   })
 }
+
+export function updateOutboundOrder (data) { // 修改出库单信息
+  return request({
+    url: '/Material/Quotation/UpdateMaterial',
+    method: 'post',
+    data
+  })
+}
+
+export function getOutboundOrderDetail (params) { // 获取出库单详情
+  return request({
+    url: '/api/Material/Quotation/UpdateMaterial',
+    method: 'get',
+    params
+  })
+}

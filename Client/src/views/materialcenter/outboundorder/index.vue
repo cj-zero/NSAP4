@@ -40,6 +40,7 @@
       <outbound-order 
         ref="outboundOrder" 
         :detailInfo="detailInfo"
+        :categoryList="categoryList"
         :status="status"
         :isReceive="true"></outbound-order>
     </my-dialog>
@@ -77,11 +78,11 @@ import CommonTable from '@/components/CommonTable'
 import OutboundOrder from './components/outboundorder'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
-import { getQuotationList, getQuotationDetail } from '@/api/material/quotation'
-import {  quotationTableMixin, chatMixin } from '../common/js/mixins'
+import { getQuotationList } from '@/api/material/quotation'
+import {  quotationTableMixin, chatMixin, categoryMixin } from '../common/js/mixins'
 export default {
   name: 'quotation',
-  mixins: [quotationTableMixin, chatMixin],
+  mixins: [quotationTableMixin, chatMixin, categoryMixin],
   components: {
     Search,
     Sticky,
@@ -103,7 +104,7 @@ export default {
         { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
         { type: 'button', btnText: '打印', handleClick: this.print },     
-        { type: 'button', btnText: '出库', handleClick: this.oubboundOrder, options: { status: 'outbound'} },
+        { type: 'button', btnText: '出库', handleClick: this._getQuotationDetail, options: { status: 'outbound'} },
       ]
     }, // 搜索配置
     btnList () {
@@ -146,9 +147,8 @@ export default {
         { label: '创建时间', prop: 'createTime' },
       ],
       customerList: [], // 用户服务单列表
-      status: 'create', // 报价单状态
+      status: 'outbound', // 报价单状态
       isPreviewing: false, // 处于预览状态
-      currentRow: null, // 当前点击行
       detailInfo: null // 详情信息
     } 
   },
@@ -166,14 +166,6 @@ export default {
         this.$message.error(err.message)
         this.tableLoading = false
       })
-    },
-    onSearch () {
-      this.listQuery.page = 1
-      this._getList()
-    },
-    onChangeForm (val) {
-      Object.assign(this.listQuery, val)
-      this.onSearch()
     },
     submit (options) {
       let isDraft = !!options.isDraft
@@ -193,48 +185,10 @@ export default {
       this.$refs.outboundOrder.resetInfo()
       this.$refs.quotationDialog.close()
     },
-    _getQuotationDetail (data) {
-      let quotationId
-      let { status } = data
-      if (status === 'view') {
-        quotationId = data.id
-      } else {
-        let currentRow = this.$refs.quotationTable.getCurrentRow()
-        console.log(currentRow, 'currentRow')
-        if (!currentRow) {
-          return this.$message.warning('请先选择数据')
-        }
-        quotationId = currentRow.id
-      }
-      console.log(status, 'status', quotationId)
-      this.tableLoading = true
-      getQuotationDetail({
-        quotationId
-      }).then(res => {
-        console.log(res,' res')
-        this.detailInfo = this._normalizeDetail(res.data)
-        this.$refs.quotationDialog.open()
-        this.tableLoading = false
-        this.status = status
-      }).catch(err => {
-        this.$message.error(err.message)
-        this.tableLoading = false
-      })
-    },
-    _normalizeDetail (data) {
-      let { serviceOrders, quotations } = data
-      let { terminalCustomer, terminalCustomerId } = serviceOrders
-      // result
-      return { ...quotations, terminalCustomer, terminalCustomerId }
-    },
-    handleCurrentChange ({ page, limit }) {
-      this.listQuery.page = page
-      this.listQuery.limit = limit
-      this._getList()
-    }
   },
   created () {
     this._getList()
+    this._getCategoryNameList()
   }
 }
 </script>

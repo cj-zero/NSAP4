@@ -15,6 +15,7 @@
     :modal-append-to-body="mAddToBody"
     :close-on-click-modal="closeByClickModal"
     :append-to-body="appendToBody"
+    :destroy-on-close="destroyOnClose"
     @closed="onClosed"
     @close="onClosed"
     @open="onOpen"
@@ -102,7 +103,8 @@ export default {
     loading: {
       type: Boolean,
       default: false
-    }
+    },
+    destroyOnClose: Boolean // 关闭弹窗时 是否销毁内部元素
   },
   data () {
     return {

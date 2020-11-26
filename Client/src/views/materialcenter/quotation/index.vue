@@ -162,7 +162,7 @@ export default {
         { label: '申请人', prop: 'createUser' },
         { label: '备注', prop: 'remark' },
         { label: '创建时间', prop: 'createTime' },
-        { label: '状态', prop: 'quotationStatus' }
+        { label: '状态', prop: 'quotationStatusText' }
       ],
       customerList: [], // 用户服务单列表
       status: 'create', // 报价单状态
@@ -222,7 +222,7 @@ export default {
     },
     close () {
       this.isPreviewing = false
-      this.$refs.quotationOrder.resetInfo()
+      // this.$refs.quotationOrder.resetInfo()
       this.$refs.quotationDialog.close()
     }
   },

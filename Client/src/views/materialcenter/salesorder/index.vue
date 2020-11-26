@@ -102,8 +102,7 @@ export default {
         { prop: 'startCreateTime', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
-        { type: 'search' },
-        { type: 'button', btnText: '收款', handleClick: this._getQuotationDetail, options: { status: 'pay' } },
+        { type: 'button', btnText: '收款', handleClick: this._getQuotationDetail, options: { status: 'pay' }, isShow: this.isMaterialFinancial },
       ]
     }, // 搜索配置
     btnList () {
@@ -143,7 +142,7 @@ export default {
         { label: '申请人', prop: 'createUser' },
         { label: '备注', prop: 'remark' },
         { label: '创建时间', prop: 'createTime' },
-        { label: '状态', prop: 'quotationStatus' }
+        { label: '状态', prop: 'quotationStatusText' }
       ],
       status: 'create', // 报价单状态
       detailInfo: null // 详情信息

@@ -105,7 +105,7 @@ export default {
         { prop: 'startCreateTime', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
-        { type: 'button', btnText: '审批', handleClick: this._getQuotationDetail, options: { status: 'approve' } },
+        { type: 'button', btnText: '审批', handleClick: this._getQuotationDetail, options: { status: 'approve' }, isShow: this.isToProcess },
       ]
     }, // 搜索配置
     btnList () {
@@ -125,6 +125,7 @@ export default {
         { label: '已驳回', name: '2' },
         { label: '已通过', name: '3' }
       ],
+      isToProcess: true,
       formQuery: {
         quotationId: '', // 领料单号
         cardCode: '', // 客户
@@ -152,7 +153,7 @@ export default {
         { label: '申请人', prop: 'createUser' },
         { label: '备注', prop: 'remark' },
         { label: '创建时间', prop: 'createTime' },
-        { label: '状态', prop: 'quotationStatus' }
+        { label: '状态', prop: 'quotationStatusText' }
       ],
       status: 'create', // 报价单状态
       detailInfo: null // 详情信息
@@ -187,6 +188,7 @@ export default {
     onTabChange (name) {
       this.listQuery.startType = name
       this.listQuery.page = 1
+      this.isToProcess = name === '1'
       this._getList()
     },
     approve (options) {
