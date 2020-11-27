@@ -123,16 +123,18 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            //获取退料单表头信息
+            var returnNote = await UnitWork.Find<ReturnNote>(w => w.Id == req.Id).FirstOrDefaultAsync();
             //仓库验货
             await SaveReceiveInfo(req.ReturnMaterials);
             //验收通过
-            await UnitWork.UpdateAsync<ReturnNote>(r => r.FlowInstanceId == req.FlowInstanceId, u => new ReturnNote { Status = 2 });
+            await UnitWork.UpdateAsync<ReturnNote>(r => r.FlowInstanceId == returnNote.FlowInstanceId, u => new ReturnNote { Status = 2 });
             //流程通过
             _flowInstanceApp.Verification(new VerificationReq
             {
                 NodeRejectStep = "",
                 NodeRejectType = "0",
-                FlowInstanceId = req.FlowInstanceId,
+                FlowInstanceId = returnNote.FlowInstanceId,
                 VerificationFinally = "1",
                 VerificationOpinion = "同意",
             });
@@ -238,9 +240,10 @@ namespace OpenAuth.App
             //获取退料列表
             var returnNote = await UnitWork.Find<ReturnNote>(null)
               .WhereIf(!string.IsNullOrWhiteSpace(req.Id), q => q.Id.Equals(Convert.ToInt32(req.Id)))
-              .WhereIf(!string.IsNullOrWhiteSpace(req.CreaterName), q => q.CreateUser.Equals(Convert.ToInt32(req.CreaterName)))
+              .WhereIf(!string.IsNullOrWhiteSpace(req.CreaterName), q => q.CreateUser.Equals(req.CreaterName))
               .WhereIf(!string.IsNullOrWhiteSpace(req.BeginDate), q => q.CreateTime >= Convert.ToDateTime(req.BeginDate))
               .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate), q => q.CreateTime < Convert.ToDateTime(req.EndDate))
+              .WhereIf(!string.IsNullOrWhiteSpace(req.Status), q => q.Status == Convert.ToInt32(req.Status))
               .OrderBy(s => s.Id).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
             //获取服务单列表
             var serviceOrderList = await UnitWork.Find<ServiceOrder>(null)
@@ -272,7 +275,7 @@ namespace OpenAuth.App
             var serviceOrder = await UnitWork.Find<ServiceOrder>(w => w.Id == returnNote.ServiceOrderId && w.U_SAP_ID == returnNote.ServiceOrderSapId).FirstOrDefaultAsync();
             var mainInfo = new Dictionary<string, object>()
             {
-                {"returnNoteCode" ,returnNote.Id},{"creater",returnNote.CreateUser },{ "createTime",returnNote.CreateTime },{"salMan",serviceOrder.SalesMan},{ "serviceSapId",serviceOrder.U_SAP_ID},{ "customerCode",serviceOrder.CreateUserId},{ "customerName",serviceOrder.CustomerName}
+                {"returnNoteCode" ,returnNote.Id},{"creater",returnNote.CreateUser },{ "createTime",returnNote.CreateTime },{"salMan",serviceOrder.SalesMan},{ "serviceSapId",serviceOrder.U_SAP_ID},{ "customerCode",serviceOrder.CustomerId},{ "customerName",serviceOrder.CustomerName},{ "status",returnNote.Status},{ "isLast",returnNote.IsLast}
             };
             outDta.Add("mainInfo", mainInfo);
             //获取物流信息
@@ -286,10 +289,12 @@ namespace OpenAuth.App
                         from c in abc.DefaultIfEmpty()
                         where a.Id == Id
                         select new { a, b, c };
-            var returnNoteList = await query.Select(s => new { s.b.MaterialCode, s.b.MaterialDescription, s.b.Id, s.b.Count, s.b.TotalCount, s.c.PictureId, s.b.Check, returnNoteId = s.a.Id, s.b.WrongCount, s.b.ReceivingRemark, s.b.ShippingRemark, s.a.Status, s.a.IsLast }).OrderByDescending(o => o.returnNoteId).ToListAsync();
+            var returnNoteList = await query.Select(s => new { s.b.MaterialCode, s.b.MaterialDescription, s.b.Id, s.b.Count, s.b.TotalCount, s.c.PictureId, s.b.Check, returnNoteId = s.a.Id, s.b.WrongCount, s.b.ReceivingRemark, s.b.ShippingRemark }).OrderByDescending(o => o.returnNoteId).ToListAsync();
             outDta.Add("returnNoteList", returnNoteList);
             result.Data = outDta;
             return result;
         }
+
+
     }
 }

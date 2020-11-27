@@ -18,5 +18,7 @@ namespace OpenAuth.App.Material.Request
         public string BeginDate { get; set; }
 
         public string EndDate { get; set; }
+
+        public string Status { get; set; }
     }
 }

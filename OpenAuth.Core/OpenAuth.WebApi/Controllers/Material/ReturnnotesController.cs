@@ -151,6 +151,29 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 验收
+        /// </summary>
+        /// <param name="returnMaterialReq"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> Accraditation(ReturnNoteAuditReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _returnnoteApp.Accraditation(req);
+
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
         public ReturnNotesController(ReturnNoteApp app)
         {
             _returnnoteApp = app;

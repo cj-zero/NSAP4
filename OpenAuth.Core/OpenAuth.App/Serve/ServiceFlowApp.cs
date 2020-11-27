@@ -171,7 +171,7 @@ namespace OpenAuth.App
             else if (flowType == 1)
             {
                 //清除填报告单流程与是否领料
-                await UnitWork.DeleteAsync<ServiceFlow>(s => s.ServiceOrderId == serviceOrderId && s.MaterialType.Equals(MaterialType) && s.Creater.Equals(creater) && (s.FlowNum == 3 || s.FlowNum == 7) && s.FlowType == flowType);
+                await UnitWork.DeleteAsync<ServiceFlow>(s => s.ServiceOrderId == serviceOrderId && s.MaterialType.Equals(MaterialType) && s.Creater.Equals(creater) && (s.FlowNum == 3 || s.FlowNum == 7 || s.FlowNum == 6) && s.FlowType == flowType);
                 await UnitWork.SaveAsync();
                 flowNums = new List<int> { 7, 3 };
             }

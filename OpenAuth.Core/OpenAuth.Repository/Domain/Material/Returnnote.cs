@@ -30,6 +30,8 @@ namespace OpenAuth.Repository.Domain
             this.CreateUserId = "";
 
         }
+
+        public int Id { get; set; }
         /// <summary>
         ///创建时间
         /// </summary>
