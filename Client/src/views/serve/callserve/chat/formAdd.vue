@@ -544,7 +544,7 @@ export default {
       listQueryTheme: {
         page: 1,
         limit: 20,
-        type: 7, // 呼叫主题
+        type: 4, // 呼叫主题
         key: '' // 搜搜呼叫主题
       },
       columns: [
