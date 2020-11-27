@@ -102,15 +102,19 @@ export default {
         { prop: 'startCreateTime', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
-        { type: 'button', btnText: '收款', handleClick: this._getQuotationDetail, options: { status: 'pay' }, isShow: this.isMaterialFinancial },
+        { type: 'button', btnText: this.searchBtnText, handleClick: this._getQuotationDetail, options: { status: 'pay' } },
       ]
     }, // 搜索配置
     btnList () {
       // 弹窗按钮
       return [
-        { btnText: '确认收款', handleClick: this.pay, options: { type: 'pay' }, isShow: this.status !== 'view' },
+        { btnText: this.isMaterialFinancial ? '确认收款' : '审批', handleClick: this.pay, options: { type: this.isMaterialFinancial ? 'pay' : 'agree' }, isShow: this.status !== 'view' },
+        { btnText: '驳回', handleClick: this.pay, options: { type: 'reject' }, isShow: this.status !== 'view' && !this.isMaterialFinancial },
         { btnText: '关闭', handleClick: this.close, className: 'close' }      
       ]
+    },
+    searchBtnText () {
+      return this.isMaterialFinancial ? '收款' : '审批'
     }
   },
   data () {

@@ -1064,7 +1064,7 @@ export default {
           type: 'success',
           message:type === 'reject' 
             ? '驳回成功' 
-            : (type === 'agree' ? '审核成功' : '支付成功')
+            : (type === 'agree' ? '审核成功' : '收款成功')
         })
         this.parentVm._getList()
         this.parentVm.close()

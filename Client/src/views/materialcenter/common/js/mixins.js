@@ -42,14 +42,17 @@ export const quotationTableMixin = {
           return this.$message.warning('请先选择数据')
         }
         let { quotationStatus } = currentRow
+        quotationStatus = +quotationStatus
         if (status === 'edit') {
-          if (+quotationStatus !== 1 && +quotationStatus !== 3) {
+          if (quotationStatus > 3) {
             return this.$message.warning('当前状态不可编辑')
           }
         } else if (status === 'pay') { // 财务付款审批
           console.log('pay')
-          if (+quotationStatus === 9) {
+          if (quotationStatus === 9 && this.isMaterialFinancial) {
             return this.$message.warning('需要客户签字')
+          } else if (!this.isMaterialFinancial && quotationStatus === 10) {
+            return this.$message.warning('当前状态不可审批')
           }
         }
         quotationId = currentRow.id
