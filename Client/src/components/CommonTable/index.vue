@@ -130,11 +130,13 @@ export default {
   },
   methods: {
     _formatArray (data, contentField) {
-      let result = Array.isArray(data) ? data : JSON.parse(data)  
+      let reg = /[\r|\r\n|\n\t\v]/g
+      let result = Array.isArray(data) ? data : JSON.parse(data.replace(reg, ''))
       return result.map(item => item[contentField])
     },
     _formatText (data, contentField) {
-      let result = Array.isArray(data) ? data : JSON.parse(data)  
+      let reg = /[\r|\r\n|\n\t\v]/g
+      let result = Array.isArray(data) ? data : JSON.parse(data.replace(reg, ''))  
       return result.map(item => item[contentField]).join(' ')
     },
     onCurrentChange (val) {

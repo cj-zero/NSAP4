@@ -133,6 +133,7 @@ export let tableMixin = {
       this._getList()
     },
     _normalizeList (data) { // 处理table数据
+      let reg = /[\r|\r\n|\n\t\v]/g
       return data.map(item => {
         let { reimburseResp } = item
         delete item.reimburseResp
@@ -142,7 +143,7 @@ export let tableMixin = {
         item.remburseStatusText = this.reimburseStatusMap[item.remburseStatus]
         item.responsibility = this.responsibilityMap[item.responsibility]
         item.totalMoney = toThousands(item.totalMoney)
-        item.themeList = JSON.parse(item.fromTheme).map(item => item.description)
+        item.themeList = JSON.parse(item.fromTheme.replace(reg, '')).map(item => item.description)
         item.fromTheme = item.themeList.join(' ')
         return item
       })
@@ -281,6 +282,7 @@ export let tableMixin = {
       data.expenseCategoryList = result
     },
     _normalizeDetail (data) { 
+      let reg = /[\r|\r\n|\n\t\v]/g
       let { 
         reimburseAttachments,
         reimburseTravellingAllowances,
@@ -289,7 +291,7 @@ export let tableMixin = {
         reimburseOtherCharges,
         remburseStatus 
       } = data
-      data.themeList = JSON.parse(data.fromTheme)
+      data.themeList = JSON.parse(data.fromTheme.replace(reg, ''))
       data.reimburseTypeText = this.reimburseStatusMap[remburseStatus] // 处理报销状态
       data.attachmentsFileList = reimburseAttachments
         .map(item => {
@@ -910,6 +912,7 @@ export const chatMixin = {
       return date ? date.slice(0, -3) : date
     },
     _normalizeOrderDetail (data) {
+      let reg = /[\r|\r\n|\n\t\v]/g
       let { serviceWorkOrders } = data
       if (serviceWorkOrders && serviceWorkOrders.length) {
         serviceWorkOrders.forEach(serviceOrder => {
@@ -919,7 +922,7 @@ export const chatMixin = {
           serviceOrder.visitTime = this.deleteSeconds(visitTime)
           serviceOrder.liquidationDate = this.deleteSeconds(liquidationDate)
           serviceOrder.completeDate = this.deleteSeconds(completeDate)
-          serviceOrder.themeList = JSON.parse(serviceOrder.fromTheme)
+          serviceOrder.themeList = JSON.parse(serviceOrder.fromTheme.replace(reg, ''))
         })
       }
       return data

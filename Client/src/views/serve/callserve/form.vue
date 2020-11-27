@@ -1115,6 +1115,7 @@ export default {
     async postServe() {
       //创建整个工单
       if (!this.form.serviceWorkOrders.length) {
+        console.log('first error')
         this.$message({
           message: `请将必填项填写完整`,
           type: "error",
@@ -1245,6 +1246,7 @@ export default {
               });
           }
         } else {
+          console.log('last error')
           this.$message({
             message: `请将必填项填写完整`,
             type: "error",

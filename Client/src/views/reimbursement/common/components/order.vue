@@ -1901,6 +1901,7 @@ export default {
     confirm () {
       let currentRow = this.$refs.customerTable.getCurrentRow()
       if (Object.keys(currentRow).length) {
+        let reg = /[\r|\r\n|\n\t\v]/g
         let { 
           userName,
           serviceRelations,
@@ -1924,7 +1925,7 @@ export default {
         formData.serviceOrderId = id
         formData.serviceOrderSapId = u_SAP_ID
         formData.fromTheme = fromTheme
-        formData.themeList = JSON.parse(formData.fromTheme)
+        formData.themeList = JSON.parse(formData.fromTheme.replace(reg, ''))
         formData.createUserId = userId
         formData.becity = becity
         formData.businessTripDate = businessTripDate

@@ -837,13 +837,11 @@ export default {
         if (serviceWorkOrders.length) {
           serviceWorkOrders.forEach(workItem => {
             workItem.recepUserName = recepUserName
-            // let theme = workItem.fromTheme.replace(/\n|↵/g, '')
-            // theme = JSON.parse(theme)
-            // if (typeof theme === 'string') {
-            //   theme = JSON.parse(theme)
-            // }
-            // console.log(typeof theme, 'theme')
-            workItem.themeList = JSON.parse(workItem.fromTheme.replace(/\n|↵/g, '')).map(item => item.description)
+            let theme = workItem.fromTheme
+            let reg = /[\r|\r\n|\n\t\v]/g
+            theme = theme.replace(reg, '')
+            console.log(theme)
+            workItem.themeList = JSON.parse(theme).map(item => item.description.trim())
             workItem.fromTheme = workItem.themeList.join(' ')
           })
           let {
