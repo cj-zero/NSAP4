@@ -54,8 +54,12 @@ namespace OpenAuth.App
 
         public async Task Add(AddOrUpdateUserSignReq req)
         {
+            var u = await UnitWork.FindSingleAsync<UserSign>(o=>o.UserId.Equals(req.UserId));
+            if(u != null)
+            {
+                throw new Exception("该用户已经添加签名");
+            }
             var obj = req.MapTo<UserSign>();
-            //todo:补充或调整自己需要的字段
             var user = _auth.GetCurrentUser().User;
             await UnitWork.AddAsync<UserSign,int>(obj);
         }
@@ -68,7 +72,6 @@ namespace OpenAuth.App
                 UserId = obj.UserId,
                 UserName = obj.UserName,
                 PictureId = obj.PictureId,
-                //todo:补充或调整自己需要的字段
             });
         }
 

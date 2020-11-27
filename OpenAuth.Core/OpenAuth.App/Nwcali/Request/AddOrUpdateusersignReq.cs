@@ -10,6 +10,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using OpenAuth.Repository.Core;
@@ -30,6 +31,7 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 
         /// </summary>
+        [Required(ErrorMessage ="必须选择用户")]
         public string UserId { get; set; }
         /// <summary>
         /// 
@@ -38,6 +40,7 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 
         /// </summary>
+        [Required(ErrorMessage ="必须添加签名图片")]
         public string PictureId { get; set; }
         
          //todo:添加自己的请求字段

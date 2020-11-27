@@ -351,18 +351,18 @@ namespace OpenAuth.WebApi.Controllers
             var plc = plcGroupData.First();
             var plcrmd = plcRepetitiveMeasurementGroupData.First();
             var v = plc.Where(p => p.VoltsorAmps.Equals("Volts") && p.Mode.Equals("Charge") && p.VerifyType.Equals("Post-Calibration")).GroupBy(p=>p.Channel).First().ToList();
-            var sv = v.Select(s => s.CommandedValue).ToList();
+            var sv = v.Select(s => s.CommandedValue).OrderBy(s => s).ToList();
             sv.Sort();
             var vscale = sv[(sv.Count - 1) / 2];
 
 
             var c = plc.Where(p => p.VoltsorAmps.Equals("Amps") && p.Mode.Equals("Charge") && p.VerifyType.Equals("Post-Calibration")).OrderByDescending(a=>a.Scale).GroupBy(p => p.Scale).First().ToList();
-            var cv = c.Select(c => c.CommandedValue).ToList();
+            var cv = c.Select(c => c.CommandedValue).OrderBy(s=>s).ToList();
             cv.Sort();
             var cscale = cv[(cv.Count - 1) / 2];
             #region T.U.R. Table
             //电压
-            var vPoint = turV.Select(v => v.TestPoint).Distinct().ToList();
+            var vPoint = turV.Select(v => v.TestPoint).Distinct().OrderBy(v => v).ToList();
             var vPointIndex = (vPoint.Count - 1) / 2;
             var vSpec = v.First().Scale * baseInfo.RatedAccuracyV * 1000;
             var u95_1 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex - 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
@@ -375,7 +375,7 @@ namespace OpenAuth.WebApi.Controllers
             model.TurTables.Add(new TurTable { Number = "2", Point = $"{vPoint[vPointIndex]}V", Spec = $"±{vSpec}mV", U95Standard = u95_2.ToString("e3"), TUR = tur_2.ToString("f2") });
             model.TurTables.Add(new TurTable { Number = "3", Point = $"{vPoint[vPointIndex + 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_3.ToString("e3"), TUR = tur_3.ToString("f2") });
             //电流
-            var cPoint = turA.Select(v => v.TestPoint).Distinct().ToList();
+            var cPoint = turA.Select(v => v.TestPoint).Distinct().OrderBy(v=>v).ToList();
             var cPointIndex = cPoint.IndexOf(cscale / 1000); //(cPoint.Count - 1) / 2;
             var cSpec = c.First().Scale * baseInfo.RatedAccuracyC;
             var u95_4 = 2 * Math.Sqrt(turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
@@ -399,7 +399,7 @@ namespace OpenAuth.WebApi.Controllers
             voltageUncertaintyBudgetTable.Value = $"{vscale}V";
             voltageUncertaintyBudgetTable.TesterResolutionValue = vv.ToString("e3");
             voltageUncertaintyBudgetTable.TesterResolutionStdUncertainty = vstd.ToString("e3");
-            var vmdcv = plcrmd.Where(d => d.CommandedValue.Equals(vscale) && d.VoltsorAmps.Equals("Volts") && d.Mode.Equals("Charge") && d.VerifyType.Equals("Post-Calibration")).GroupBy(a=>a.Channel).First().ToList();
+            var vmdcv = plcrmd.Where(d => d.CommandedValue.Equals(vscale) && d.VoltsorAmps.Equals("Volts") && d.Mode.Equals("Charge") && d.VerifyType.Equals("Post-Calibration")).GroupBy(a=>a.Channel).First().GroupBy(a => a.Point).First().ToList();
             double vror;
             if (vmdcv.Count >= 6)//贝塞尔公式法
             {
@@ -458,7 +458,7 @@ namespace OpenAuth.WebApi.Controllers
             currentUncertaintyBudgetTable.Value = $"{cscale}mA";
             currentUncertaintyBudgetTable.TesterResolutionValue = cvv.ToString("e3");
             currentUncertaintyBudgetTable.TesterResolutionStdUncertainty = cstd.ToString("e3");
-            var cmdcv = plcrmd.Where(d => d.CommandedValue.Equals(cscale) && d.VoltsorAmps.Equals("Amps") && d.Mode.Equals("Charge") && d.VerifyType.Equals("Post-Calibration")).GroupBy(a => a.Channel).First().ToList();
+            var cmdcv = plcrmd.Where(d => d.CommandedValue.Equals(cscale) && d.VoltsorAmps.Equals("Amps") && d.Mode.Equals("Charge") && d.VerifyType.Equals("Post-Calibration")).GroupBy(a => a.Channel).First().GroupBy(a=>a.Point).First().ToList();
             double cror;
             if (cmdcv.Count >= 6)//贝塞尔公式法
             {
@@ -529,8 +529,8 @@ namespace OpenAuth.WebApi.Controllers
                             var cvError = (cvIndication - cvMeasuredValue) * 1000;
                             double cvAcceptance = 0;
                             var cvAcceptanceStr = "";
-
-                            var mdcv = plcrmd.Where(d => d.CommandedValue.Equals(cvData.CommandedValue) && d.VoltsorAmps.Equals("Volts") && d.Mode.Equals("Charge") && d.VerifyType.Equals("Post-Calibration")).GroupBy(a => a.Channel).First().ToList();
+                            var plcrmd = plcRepetitiveMeasurementGroupData.First(a => a.Key.Equals(cvData.PclNo));
+                            var mdcv = plcrmd.Where(d => d.CommandedValue.Equals(cvData.CommandedValue) && d.VoltsorAmps.Equals("Volts") && d.Mode.Equals(mode) && d.VerifyType.Equals("Post-Calibration")).GroupBy(a => a.Channel).First().GroupBy(a => a.Point).First().ToList();
                             double ror;
                             if (baseInfo.RepetitiveMeasurementsCount >= 6)//贝塞尔公式法
                             {
@@ -689,7 +689,8 @@ namespace OpenAuth.WebApi.Controllers
                             double Acceptance = 0;
                             var AcceptanceStr = "";
 
-                            var mdcv = plcrmd.Where(d => d.CommandedValue.Equals(cvData.CommandedValue) && d.VoltsorAmps.Equals("Amps") && d.Mode.Equals("Charge") && d.VerifyType.Equals("Post-Calibration")).GroupBy(a => a.Channel).First().ToList();
+                            var plcrmd = plcRepetitiveMeasurementGroupData.First(a => a.Key.Equals(cvData.PclNo));
+                            var mdcv = plcrmd.Where(d => d.CommandedValue.Equals(cvData.CommandedValue) && d.VoltsorAmps.Equals("Amps") && d.Mode.Equals(mode) && d.VerifyType.Equals("Post-Calibration")).GroupBy(a => a.Channel).First().GroupBy(a=>a.Point).First().ToList();
                             double ror;
                             if (baseInfo.RepetitiveMeasurementsCount >= 6)//贝塞尔公式法
                             {
@@ -947,7 +948,7 @@ namespace OpenAuth.WebApi.Controllers
                 IncludeLabel = true,
                 LabelFont = labelFont
             };
-            Image img = b.Encode(BarcodeLib.TYPE.CODE128, data, Color.Black, Color.White, 180, 49);
+            Image img = b.Encode(BarcodeLib.TYPE.CODE128, data, Color.Black, Color.White, 131, 50);
 
             DirUtil.CheckOrCreateDir(Path.Combine(BaseCertDir, data));
             using (var stream = new MemoryStream()) 
