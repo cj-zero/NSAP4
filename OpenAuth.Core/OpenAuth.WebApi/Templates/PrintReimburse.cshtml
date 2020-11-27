@@ -56,47 +56,50 @@
 
 <body>
     <div id="divtitle" style=" width: 825px; height:60px;">
-        <div style="float:left;width: 200px; margin-top: 10px;">
-            <img src="data:image/png;base64,@Model.Data.logo" style="width: 140px;height: 40px;">
+        <div style="float:left;width: 240px; margin-top: 10px;">
+            <img src="data:image/png;base64,@Model.Data.logo" style="width: 120px;height: 45px;">
         </div>
-        <div style="float:left;width: 250px; ">
-            <span style="font-size: 42px;">差旅报销单</span>
+        <div style="float:left;width: 300px; margin-top: 10px;">
+            <span style="font-size: 42px; font-weight:900;">差旅报销单</span>
         </div>
-        <div style="float:left;width: 250px; margin-top: -5px;">
+        <div style="float:left;width: 150px; margin-top: -3px;">
             <span>
-                <b>单号：</b><span style="font-size: 24px;">@Model.Data.ReimburseId</span>
+                <b style="font-weight:900;">服务ID：</b><span style="font-size: 20px;">@Model.Data.Reimburse.ServiceOrderSapId</span>
             </span>
             <br>
             <span>
-                <b>日期：</b>@Model.Data.Reimburse.UpdateTime.ToString("yyyy.MM.dd")
+                <b style="ffont-weight:900;">报销ID：</b><span style="font-size: 20px;">@Model.Data.ReimburseId</span>
             </span>
             <br>
             <span>
-                <b>报销：</b>@Model.Data.UserName
+                <b style="font-weight:900;">日期：</b>&nbsp;&nbsp;&nbsp;&nbsp;@Model.Data.Reimburse.UpdateTime.ToString("yyyy.MM.dd")
+            </span>
+            <br>
+            <span>
+                <b style="font-weight:900;">报销人：</b>@Model.Data.UserName
             </span>
         </div>
-        <div style="float:left;width: 100px; margin-top: 5px;">
+        <div style="float:right;width: 90px; margin-top: -10px;">
+            <img src="@Model.Data.QRcode" style="width: 80px;height: 80px;">
         </div>
     </div>
     <table style="margin-top: 10px;" id="divcode">
         <tr>
-            <td style="width:50px; ">&nbsp;<b>客户代码:</b></td>
-            <td style="width:50px; ">@Model.Data.TerminalCustomerId</td>
-            <td style="width:50px;"><b>客户名称:</b></td>
-            <td style="width:80px;">@Model.Data.TerminalCustomer</td>
-            <td style="width:30px" align="right">&nbsp;&nbsp;&nbsp;<b>地址：</b></td>
-            <td style="width:120px">@Model.Data.CompleteAddress</td>
+            <td style="width:30px; " align="left">&nbsp;<b>客户代码:</b></td>
+            <td style="width:20px; " align="left">@Model.Data.TerminalCustomerId</td>
+            <td style="width:40px;" align="left"><b>客户名称:</b></td>
+            <td style="width:100px;" align="left">@Model.Data.TerminalCustomer</td>
+            <td style="width:50px" align="left">&nbsp;&nbsp;&nbsp;<b>客户地址：</b></td>
+            <td style="width:150px" align="left">@Model.Data.CompleteAddress</td>
         </tr>
         <tr>
-            <td style="width: 50px;">&nbsp;<b>服务单号:</b></td>
-            <td style="width: 50px;">@Model.Data.Reimburse.ServiceOrderSapId</td>
-            <td style="width: 50px;"><b>出差事由:</b></td>
-            <td style="width: 450px;" colspan="3">@Model.Data.FromTheme</td>
+            <td style="width: 50px;">&nbsp;<b>出差事由:</b></td>
+            <td style="width: 550px;" colspan="5">@Model.Data.FromTheme</td>
         </tr>
     </table>
-    <table style="margin-top: 15px;  width:825px" id="tablebor">
+    <table style="margin-top: 5px;  width:825px" id="tablebor">
         <tr>
-            <th style="width: 40px;">序号</th>
+            <th style="width: 40px;" align="left"># </th>
             <th style="width: 100px;" align="left">&nbsp; 日期</th>
             <th style="width: 150px;" align="left">&nbsp; 费用名称</th>
             <th style="width: 410px;" align="left">&nbsp; 费用详情</th>
@@ -145,8 +148,9 @@
         }
 
     </table>
-    <div style="margin-top: 20px;">
-        <div style="font-size:20px; font-weight: 800;" align="right">费用总计：@Model.Data.Reimburse.TotalMoney.ToString("N") &nbsp;</div>
+    <hr>
+    <div style="">
+        <div style="font-weight: 800;" align="right">总金额：@Model.Data.Reimburse.TotalMoney.ToString("N") &nbsp;</div>
         <hr>
     </div>
 </body>

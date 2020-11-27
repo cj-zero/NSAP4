@@ -39,6 +39,11 @@ namespace OpenAuth.App.Serve.Response
         /// logo
         /// </summary>
         public string logo { get; set; }
+
+        /// <summary>
+        /// 二维码
+        /// </summary>
+        public string QRcode { get; set; }
         
         /// <summary>
         /// 出差事由

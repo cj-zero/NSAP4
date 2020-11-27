@@ -607,7 +607,7 @@ namespace OpenAuth.App
                             afir.FrmType = 2;
                             afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
                             afir.CustomName = $"报销" + DateTime.Now;
-                            afir.FrmData = $"{{\"ReimburseInfoId\":\"{obj.Id}\"}}";
+                            afir.FrmData = "{\"ReimburseInfoId\":\"" + obj.Id + "\"}";
                             afir.OrgId = orgid;
                             var FlowInstanceId = _flowInstanceApp.CreateInstanceAndGetIdAsync(afir).ConfigureAwait(false).GetAwaiter().GetResult();
                             //添加报销单
@@ -687,7 +687,7 @@ namespace OpenAuth.App
                                 //if (filemodel.Count > 0) UnitWork.BatchAdd<ReimburseAttachment>(filemodel.ToArray());
                             }
                         }
-                        if (AttachmentList!=null && AttachmentList.Count > 0) 
+                        if (AttachmentList != null && AttachmentList.Count > 0)
                         {
                             UnitWork.BatchAdd<ReimburseAttachment>(AttachmentList.ToArray());
                         }
@@ -748,7 +748,7 @@ namespace OpenAuth.App
                             afir.FrmType = 2;
                             afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
                             afir.CustomName = $"报销";
-                            afir.FrmData = "{ReimburseInfoId:" + obj.Id + "}";
+                            afir.FrmData = "{\"ReimburseInfoId\":\"" + obj.Id + "\"}";
                             afir.OrgId = orgid;
                             var FlowInstanceId = _flowInstanceApp.CreateInstanceAndGetIdAsync(afir).ConfigureAwait(false).GetAwaiter().GetResult();
                             //修改报销单
@@ -1173,30 +1173,25 @@ namespace OpenAuth.App
 
             if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && obj.RemburseStatus == 4)
             {
-                obj.RemburseStatus = 5;
+                
                 eoh.Action = "客服主管审批";
             }
             else if (loginContext.Roles.Any(r => r.Name.Equals("财务初审")) && obj.RemburseStatus == 5)
             {
-                obj.RemburseStatus = 6;
                 eoh.Action = "财务初审";
             }
             else if (loginContext.Roles.Any(r => r.Name.Equals("财务复审")) && obj.RemburseStatus == 6)
             {
-                obj.RemburseStatus = 7;
                 eoh.Action = "财务复审";
             }
             else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) && obj.RemburseStatus == 7)
             {
-                obj.RemburseStatus = 8;
                 eoh.Action = "总经理审批";
             }
             else if (loginContext.Roles.Any(r => r.Name.Equals("出纳")) && obj.RemburseStatus == 8)
             {
                 eoh.Action = "已支付";
                 eoh.ApprovalResult = "已支付";
-                obj.RemburseStatus = 9;
-                obj.PayTime = DateTime.Now;
             }
             if (req.IsReject)
             {
@@ -1209,15 +1204,6 @@ namespace OpenAuth.App
             }
             else
             {
-                eoh.ApprovalResult = "同意";
-                _flowInstanceApp.Verification(new VerificationReq
-                {
-                    NodeRejectStep = "",
-                    NodeRejectType = "0",
-                    FlowInstanceId = req.FlowInstanceId,
-                    VerificationFinally = "1",
-                    VerificationOpinion = "同意",
-                });
                 if (req.BearToPay == "2")
                 {
                     eoh.Action = "已结束";
@@ -1228,6 +1214,48 @@ namespace OpenAuth.App
                     ids.Add(obj.FlowInstanceId);
                     await _flowInstanceApp.DeleteAsync(ids.ToArray());
                 }
+                else
+                {
+                    VerificationReq VerificationReqModle = new VerificationReq
+                    {
+                        NodeRejectStep = "",
+                        NodeRejectType = "0",
+                        FlowInstanceId = obj.FlowInstanceId,
+                        VerificationFinally = "1",
+                        VerificationOpinion = "同意",
+                    };
+                    if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && obj.RemburseStatus == 4)
+                    {
+                        obj.RemburseStatus = 5;
+                        _flowInstanceApp.Verification(VerificationReqModle);
+                    }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("财务初审")) && obj.RemburseStatus == 5)
+                    {
+                        obj.RemburseStatus = 6;
+                        _flowInstanceApp.Verification(VerificationReqModle);
+                    }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("财务复审")) && obj.RemburseStatus == 6)
+                    {
+                        obj.RemburseStatus = 7;
+                        _flowInstanceApp.Verification(VerificationReqModle);
+                    }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) && obj.RemburseStatus == 7)
+                    {
+                        obj.RemburseStatus = 8;
+                        _flowInstanceApp.Verification(VerificationReqModle);
+                    }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("出纳")) && obj.RemburseStatus == 8)
+                    {
+                        obj.RemburseStatus = 9;
+                        obj.PayTime = DateTime.Now;
+                        _flowInstanceApp.Verification(VerificationReqModle);
+                    }
+                    else
+                    {
+                        throw new Exception("审批失败，暂无权限审批当前流程。");
+                    }
+                }
+
 
             }
 
@@ -1425,109 +1453,40 @@ namespace OpenAuth.App
                         .FirstOrDefaultAsync();
 
             var user = await UnitWork.Find<User>(u => u.Id.Equals(Reimburse.CreateUserId)).FirstOrDefaultAsync();
+            var serviceorderobj = await UnitWork.Find<ServiceOrder>(u => u.Id.Equals(Reimburse.ServiceOrderId)).FirstOrDefaultAsync();
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == Reimburse.ServiceOrderId && c.CreateUserId.Equals(Reimburse.CreateUserId) && c.ServiceMode == 1).OrderByDescending(c => c.CreateTime).ToListAsync();
 
-            Reimburse.ReimburseFares.ForEach(r =>
-            {
-                switch (r.Transport)
-                {
-                    case "1":
-                        r.Transport = "飞机票";
-                        break;
-                    case "2":
-                        r.Transport = "火车票";
-                        break;
-                    case "3":
-                        r.Transport = "长途车船票";
-                        break;
-                    case "4":
-                        r.Transport = "市内交通";
-                        break;
-                }
-            });
-            Reimburse.ReimburseOtherCharges.ForEach(r =>
-            {
-                switch (r.ExpenseCategory)
-                {
-                    case "1":
-                        r.ExpenseCategory = "水电费";
-                        break;
-                    case "2":
-                        r.ExpenseCategory = "物业管理费";
-                        break;
-                    case "3":
-                        r.ExpenseCategory = "劳保费";
-                        break;
-                    case "4":
-                        r.ExpenseCategory = "劳务费";
-                        break;
-                    case "5":
-                        r.ExpenseCategory = "服务费";
-                        break;
-                    case "6":
-                        r.ExpenseCategory = @"清洁\保险费";
-                        break;
-                    case "7":
-                        r.ExpenseCategory = "福利费";
-                        break;
-                    case "8":
-                        r.ExpenseCategory = "保险费";
-                        break;
-                    case "9":
-                        r.ExpenseCategory = "办公费";
-                        break;
-                    case "10":
-                        r.ExpenseCategory = "维修费";
-                        break;
-                    case "11":
-                        r.ExpenseCategory = "业务招待费";
-                        break;
-                    case "12":
-                        r.ExpenseCategory = "物流运输费";
-                        break;
-                    case "13":
-                        r.ExpenseCategory = "快递费";
-                        break;
-                    case "14":
-                        r.ExpenseCategory = "咨询顾问费";
-                        break;
-                    case "15":
-                        r.ExpenseCategory = "宣传费";
-                        break;
-                    case "16":
-                        r.ExpenseCategory = "工具费";
-                        break;
-                    case "17":
-                        r.ExpenseCategory = "耗材费";
-                        break;
-                    case "18":
-                        r.ExpenseCategory = "其他";
-                        break;
-                }
-            });
+            var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == Reimburse.CreateUserId).Select(r => r.SecondId).ToListAsync();
+            var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
 
+            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_OtherExpenses") || u.TypeId.Equals("SYS_Transportation")).Select(u => new { u.Name, u.TypeId, u.DtValue, u.Description }).ToListAsync();
+
+            Reimburse.ReimburseFares.ForEach(r => r.Transport = CategoryList.Where(u => u.TypeId.Equals("SYS_Transportation") && u.DtValue.Equals(r.Transport)).FirstOrDefault()?.Name);
+            Reimburse.ReimburseOtherCharges.ForEach(r => r.ExpenseCategory = CategoryList.Where(u => u.TypeId.Equals("SYS_OtherExpenses") && u.DtValue.Equals(r.ExpenseCategory)).FirstOrDefault()?.Name);
             var logopath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "logo.png");
-            //Image img = ;
             var logostr = "";
             using (var fs = new FileStream(logopath, FileMode.Open))
             {
-                //img.Save(stream, ImageFormat.Png);
-                //BinaryReader br = new BinaryReader(stream);
                 var photo = new byte[fs.Length];
                 fs.Position = 0;
                 await fs.ReadAsync(photo, 0, photo.Length);
                 logostr = Convert.ToBase64String(photo);
                 Console.WriteLine(logostr);
             }
+            var FromThemeJson = JsonHelper.Instance.Deserialize<List<FromThemeJsonResp>>(CompletionReports.FirstOrDefault()?.FromTheme);
+            StringBuilder FromTheme = new StringBuilder();
+            FromThemeJson.ForEach(f => FromTheme.Append(f.description));
+
             var PrintReimburse = new PrintReimburseResp
             {
                 ReimburseId = Reimburse.MainId,
-                CompleteAddress = CompletionReports.FirstOrDefault()?.Becity + "-" + CompletionReports.FirstOrDefault()?.Destination,
-                UserName = user.Name,
+                CompleteAddress = serviceorderobj.Province + serviceorderobj.City + serviceorderobj.Area + serviceorderobj.Addr,
+                UserName = orgname + " " + user.Name,
                 TerminalCustomerId = CompletionReports.FirstOrDefault()?.TerminalCustomerId,
-                TerminalCustomer = CompletionReports.FirstOrDefault()?.TerminalCustomer,
-                FromTheme = CompletionReports.FirstOrDefault()?.FromTheme,
+                TerminalCustomer = FromTheme.ToString(),
+                FromTheme = FromTheme.ToString(),
                 logo = logostr,
+                QRcode = QRCoderHelper.CreateQRCodeToBase64(Reimburse.MainId.ToString()),
                 Reimburse = Reimburse
             };
             return await ExportAllHandler.Exporterpdf(PrintReimburse, "PrintReimburse.cshtml");
