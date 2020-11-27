@@ -65,7 +65,7 @@ namespace OpenAuth.App
                     await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.User.Id && s.FlowNum == 3, o => new ServiceFlow { IsProceed = 1 });
                     break;
                 case 8://跳转是否领料页面
-                    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.Id && s.FlowNum == 6, o => new ServiceFlow { IsProceed = 1 });
+                    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.User.Id && s.FlowNum == 6, o => new ServiceFlow { IsProceed = 1 });
                     break;
                 case 10://领完料后跳转
                     await GetMaterial(request.ServiceOrderId, request.MaterialType, userInfo.User.Id, userInfo.User.Name, 1);
