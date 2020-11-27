@@ -31,18 +31,6 @@
       </div>
     </template>
     
-    <!-- 总经理审批页面专属表头 -->
-    <!-- <template v-if="isGeneralManager && this.title === 'approve'">
-      <el-row  type="flex" class="general-title-wrapper" justify="center" align="middle">
-        <p class="title">差旅费报销单</p>
-        <div class="info-wrapper">
-          <p><span>单号:</span> <span>{{ formData.mainId }}</span></p>
-          <p><span>报销人:</span> <span>{{ formData.userName }}</span></p>
-        </div>
-      </el-row>
-    </template> -->
-    <!-- 主表单 -->
-    
     <el-scrollbar class="scroll-bar">
       <!-- 总经理并且是处于审批状态 -->
       <template v-if="isGeneralStatus">
@@ -88,7 +76,7 @@
             :header-cell-style="headerCellStyle"
             show-overflow-tooltip
             :cell-style="cellStyle">
-            <el-table-column label="序号" width="55px">
+            <el-table-column label="#" width="55px">
               <template slot-scope="scope">{{ scope.$index + 1 }}</template>
             </el-table-column>
             <el-table-column label="日期" prop="invoiceTime" width="100px"></el-table-column>
@@ -104,24 +92,37 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="发票号码" width="150px">
+            <el-table-column label="发票号码" width="135px">
               <template slot-scope="scope">
-                <el-row class="invoice-number-wrapper" type="flex" align="middle" v-if="scope.row.invoiceNumber">
-                  <img class="pointer" :src="rightImg" alt="" @click="openFile(scope.row)">
-                  <span>{{ scope.row.invoiceNumber }}</span>
+                <el-row class="invoice-number-wrapper" type="flex" align="middle" v-if="scope.row.invoiceNumber" justify="space-between">
+                  <el-row type="flex" align="middle">
+                    <img class="pointer" :src="rightImg" alt="" @click="openFile(scope.row, true)">
+                    <span style="margin-right: 5px;">{{ scope.row.invoiceNumber }}</span>
+                  </el-row>
                   <el-tooltip content="无发票附件" :disabled="scope.row.isValidInvoice">
-                    <i :class="[scope.row.isValidInvoice ? 'el-icon-upload-success el-icon-circle-check success' : 'el-icon-warning-outline warning']"></i>
+                    <i calss="invoice-icon" :class="[scope.row.isValidInvoice ? 'el-icon-upload-success el-icon-circle-check success' : 'el-icon-warning-outline warning']"></i>
                   </el-tooltip>
                 </el-row>
-                <el-row>
-                  <upLoadFile 
-                    class="upload-number-wrapper"
-                    :ifShowTip="false"
-                    uploadType="file" 
-                    :fileList="scope.row.otherFileList"
-                    :disabled="true" 
-                  />
-                </el-row>
+                <div>
+                  <template v-if="scope.row.otherFileList && scope.row.otherFileList.length">
+                    <el-row 
+                      style="margin-left: 18px;"
+                      type="flex" align="middle" 
+                      v-for="(item, index) in scope.row.otherFileList" 
+                      :key="item.id"
+                    >
+                      <!-- <img :src="rightImg" @click="openFile(item)" class="pointer"> -->
+                      <span class="pointer" @click="openFile(item)">附件{{ index + 1 }}</span>
+                      <!-- <upLoadFile 
+                        class="upload-number-wrapper"
+                        :ifShowTip="false"
+                        uploadType="file" 
+                        :fileList="scope.row.otherFileList"
+                        :disabled="true" 
+                      /> -->
+                    </el-row>
+                  </template>
+                </div>
               </template>
             </el-table-column>
             <el-table-column width="120px" align="right">
@@ -348,7 +349,6 @@
                 :width="item.width"
                 :fixed="item.fixed"
                 :resizable="false"
-                
               >
                 <template slot-scope="scope">
                   <template v-if="item.type === 'order'">
@@ -1243,15 +1243,16 @@ export default {
     }
   },
   methods: {
-    openFile (row) { // 打开发票附件
+    openFile (row, isInvoiceAttachment) { // 打开发票附件
       console.log(row, 'row')
-      let firstFile = row.reimburseAttachments[0]
-      if (firstFile) {
-        let { url, attachmentType } = firstFile
-        // 1 其它附件 2 发票附件
-        attachmentType === 2 
-          ? this.previewImage(url) // 预览图片
-          : window.open(url)
+      let file = isInvoiceAttachment ? row.reimburseAttachments[0] : row
+      if (file) {
+        let { url, fileType } = file
+        if (/^image\/.*$/.test(fileType)) {
+          this.previewImage(url) // 预览图片
+        } else {
+          window.open(url)
+        }
       }
     }, 
     previewImage (url) {
@@ -2234,9 +2235,11 @@ export default {
 .order-wrapper {
   position: relative;
   .success {
+    font-size: 14px;
     color: rgba(0, 128, 0, 1);
   }
   .warning {
+    font-size: 14px;
     color: rgba(255, 165, 0, 1);
   }
   /* 总经理审批头部 */
@@ -2411,9 +2414,11 @@ export default {
       .table-container {
         overflow: visible;
         .upload-number-wrapper {
+          margin-left: 18px;
           ::v-deep .el-upload-list {
             .el-upload-list__item-name {
               padding-left: 0 !important;
+              margin-bottom: 0 !important;
             }
             label {
               display: none !important;
@@ -2436,9 +2441,7 @@ export default {
           }
         }
         .invoice-number-wrapper {
-          * {
-            margin-right: 10px;
-          }
+          position: relative;
         }
       }
       ::v-deep .el-table__header {
@@ -2466,10 +2469,11 @@ export default {
     }
     /* 总经理审批总金额 */
     .general-total-money {
-      padding-right: 10px;
+      padding-right: 5px;
       margin: 10px 0;
-      font-size: 15px;
+      font-size: 12px;
       font-weight: bold;
+      border-top: 1px solid #000;
       border-bottom: 1px solid #000;
     }
   }
