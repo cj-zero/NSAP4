@@ -148,7 +148,7 @@ export default {
     maxSize: {
       type: [Number, String]
     },
-    onAccept: {
+    onAccept: { // 文件上传之前的校验函数
       type: Function
     }
   },
@@ -234,7 +234,6 @@ export default {
           } else {
             window.open(file.url)
             console.log(downloadFile)
-            // downloadFile(file.url)
           }
         }
       }

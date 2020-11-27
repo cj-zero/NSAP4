@@ -165,7 +165,7 @@ export default {
       ]
     },
     dialogWidth () {
-      return (this.title === 'approve' || this.title === 'view') && this.isGeneralManager ? '1015px' :'1206px'
+      return this.isGeneralStatus ? '1015px' :'1206px'
     }
   },
   data () {

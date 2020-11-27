@@ -14,7 +14,9 @@
     @row-click="onRowClick"
     @selection-change="onSelectChange"
     :row-class-name="tableRowClassName"
+    heighlight-current-row
     >
+    <!-- 是否出现多选 -->
     <el-table-column 
       type="selection" 
       v-if="selectionColumns && selectionColumns.originType === 'selection'"
@@ -23,6 +25,7 @@
       show-overflow-tooltip
     >
     </el-table-column>
+    <!-- 除了多选外的 -->
     <el-table-column
       v-for="item in normalColumns"
       :key="item.prop"
@@ -30,26 +33,40 @@
       :label="item.label"
       :align="item.align || 'left'"
       :sortable="item.isSort || false"
-      show-overflow-tooltip
+      :show-overflow-tooltip="!item.isMultipleLines"
     >
       <template slot-scope="scope" >
-        <div class="link-container" v-if="item.type === 'link'">
-          <img :src="rightImg" @click="item.handleJump(scope.row)" class="pointer">
+        <!--  有箭头的操作 -->
+        <div class="link-container" v-if="item.type === 'link'"> 
+          {{ JSON.stringify(item.options) }}
+          <img :src="rightImg" @click="item.handleClick({ ...scope.row, ...(item.options || {})})" class="pointer">
           <span>{{ scope.row[item.prop] }}</span>
         </div>
+        <!-- 单选 -->
         <template v-else-if="item.type === 'radio'">
           <el-radio class="radio" v-model="radio" :label="scope.row[item.prop]">{{ &nbsp; }}</el-radio>
         </template>
+        <!-- 按钮操作 -->
         <template v-else-if="item.type === 'operation'">
           <el-button 
             v-for="btnItem in item.actions"
             :key="btnItem.btnText"
-            @click="btnItem.btnClick(scope.row)" 
+            @click="btnItem.item.handleClick({ ...scope, ...(item.options || {})})" 
             type="text" 
             :icon="item.icon || ''"
             :size="item.size || 'mini'"
           >{{ btnItem.btnText }}</el-button>
         </template>
+        <!-- 冒泡提示语分行显示 -->
+        <template v-else-if="item.isMultipleLines">
+          <el-tooltip placement="top-start">
+            <div slot="content">
+              <p v-for="(content, index) in _formatArray(scope.row[item.prop], item.contentField)" :key="index">{{ content }}</p>
+            </div>
+            <span style="white-space: nowrap;">{{ _formatText(scope.row[item.prop], item.contentField) }}</span>
+          </el-tooltip>
+        </template>
+        <!-- 文本显示 -->
         <template v-else-if="item.originType !== 'selectoin'">
           {{ scope.row[item.prop] }}
         </template>
@@ -68,7 +85,9 @@ export default {
         return []
       }
     },
-    columns: {
+    columns: { 
+      // 表格数据示例 { label: '文本信息', prop: '数据字段', originType: 'selection表格自带的类型', 
+      //  type: '用户定义的类型', handleClick: '执行的function', width: '单元格宽度' }
       type: Array,
       default () {
         return []
@@ -110,6 +129,14 @@ export default {
     }
   },
   methods: {
+    _formatArray (data, contentField) {
+      let result = Array.isArray(data) ? data : JSON.parse(data)  
+      return result.map(item => item[contentField])
+    },
+    _formatText (data, contentField) {
+      let result = Array.isArray(data) ? data : JSON.parse(data)  
+      return result.map(item => item[contentField]).join(' ')
+    },
     onCurrentChange (val) {
       console.log(val, 'val')
       // this.radio = val

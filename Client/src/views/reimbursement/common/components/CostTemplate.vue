@@ -31,7 +31,7 @@
         size="mini" 
         :show-message="false"
         class="form-wrapper"
-        :class="{ other: currentType === 3, acc: currentType === 2, uneditable: this.operation === 'view' }"
+        :class="{ other: currentType === 3, acc: currentType === 2, 'uneditable global-unused': this.operation === 'view' }"
         :disabled="isDisabled"
       >
         <el-table 

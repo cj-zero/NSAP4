@@ -877,11 +877,11 @@ export default {
         console.log(local.getResults().getPoi(0), 'position')
         let { point, address, city, province } = local.getResults().getPoi(0) //获取第一个智能搜索的结果
         if (auto) { // 如果是通过客户代码或者终端代码进行选择的
-          this.form.province = province
+          this.form.province = province || ''
           if (province === city) { // 如果省和市名字一样则直接取省
             this.form.city = ''
           } else {
-            this.form.city = city
+            this.form.city = city || ''
           }
           let district = address
             .replace(province, '')
@@ -1122,24 +1122,15 @@ export default {
         this.$emit("close-Dia", "N");
         return;
       }
+      console.log('创建工单')
       if (!this.form.longitude) {
-        this.$message({
+        this.$emit("close-Dia", "N");
+        return this.$message({
           message: `请手动选择地址`,
           type: "error",
         });
-        this.$emit("close-Dia", "N");
-        return;
       }
       if (this.form.serviceWorkOrders.length >= 0) {
-        let chec = this.form.serviceWorkOrders.every(
-          (item) => {
-            return (item.fromTheme !== "" &&
-            item.fromType !== "" &&
-            item.problemTypeId !== "" &&
-            item.manufacturerSerialNumber !== "" &&
-            (item.fromType === 2 ? item.solutionId !== "" : true))
-          }
-        );
         try {
           this.isValid = await this.$refs.form.validate()
         } catch (err) {
@@ -1153,6 +1144,17 @@ export default {
           this.$message.error('请输入正确的终端代码格式')
           return this.$emit('close-Dia', 'closeLoading')
         }
+        let chec = this.form.serviceWorkOrders.every(
+          (item) => {
+            return ( item.themeList && 
+            item.themeList.length &&
+            item.fromType !== "" &&
+            item.problemTypeId !== "" &&
+            item.manufacturerSerialNumber !== "" &&
+            (item.fromType === 2 ? item.solutionId !== "" : true))
+          }
+        );
+        
         console.log(chec, this.isValid, 'chec')
         if (chec && this.isValid) {
           if (this.$route.path === "/serve/callserve") {
@@ -1165,6 +1167,9 @@ export default {
                 this.form.city = ""
               }
               this.form.pictures = [...this.upLoadImgList, ...this.upLoadFileList]
+              this.form.serviceWorkOrders.forEach(workOrder => {
+                workOrder.fromTheme = JSON.stringify(workOrder.themeList)
+              })
               callservesure
                 .CreateOrder(this.form)
                 .then(() => {
@@ -1197,6 +1202,7 @@ export default {
                 let promise = callservesure.addWorkOrder({
                   serviceOrderId: this.serviceOrderId,
                   ...item,
+                  fromTheme: JSON.stringify(item.themeList)
                 });
                 promiseList.push(promise);
               }
@@ -1218,6 +1224,9 @@ export default {
             }
           } else {
             this.form.pictures = [...this.upLoadImgList, ...this.upLoadFileList]
+            this.form.serviceWorkOrders.forEach(workOrder => {
+              workOrder.fromTheme = JSON.stringify(workOrder.themeList)
+            })
             callservesure
               .CreateWorkOrder(this.form)
               .then(() => {

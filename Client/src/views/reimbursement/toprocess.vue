@@ -165,12 +165,11 @@ export default {
       ]
     },
     dialogWidth () {
-      return (this.title === 'approve' || this.title === 'view') && this.isGeneralManager ? '1015px' :'1206px'
+      return this.isGeneralStatus ? '1015px' :'1206px'
     }
   },
   data () {
     return {
-      
       customerInfo: {}, // 当前报销人的id， 名字
       categoryList: [], // 字典数组
     }

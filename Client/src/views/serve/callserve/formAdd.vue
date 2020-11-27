@@ -11,6 +11,7 @@
         class="rowStyle"
         ref="itemForm"
         size="mini"
+        :show-message="false"
       >
         <el-row class="row-bg">
           <el-col :span="7">
@@ -54,7 +55,7 @@
               label="序列号"
               prop="manufacturerSerialNumber"
               :rules="{
-              required: true, message: '制造商序列号不能为空', trigger: 'blur'
+              required: true, message: '', trigger: 'blur'
             }"
             >
               <el-input
@@ -124,12 +125,28 @@
           <el-col :span="18">
             <el-form-item
               label="呼叫主题"
-              prop="fromTheme"
-              :rules="{
-              required: true, message: '呼叫主题不能为空', trigger: 'blur'
-            }"
+              required
             >
-              <el-input v-model="formList[0].fromTheme" type="textarea" maxlength="255" autosize></el-input>
+              <!-- <el-input v-model="formList[0].fromTheme" type="textarea" maxlength="255" autosize style="display: none;"></el-input> -->
+              <div class="form-theme-content" @click="openFormThemeDialog($event, 0)">
+                <!-- <div class="form-theme-mask" v-if="isOrderDisabled(formList[0]) || formName === '查看'"></div> -->
+                <el-scrollbar wrapClass="scroll-wrap-class">
+                  <div class="form-theme-list">
+                    <transition-group name="list" tag="ul">
+                      <li class="form-theme-item" v-for="(themeItem, themeIndex) in formList[0].themeList" :key="themeItem.id" >
+                        <el-tooltip popper-class="form-theme-toolip" effect="dark" :content="themeItem.description" placement="top">
+                          <p class="text">{{ themeItem.description }}</p>
+                        </el-tooltip>
+                        <i 
+                          v-if="isShowDeleteIcon(formList[0])" 
+                          class="delete el-icon-error" 
+                          @click.stop="deleteTheme(formList[0], themeIndex)">
+                        </i>
+                      </li>
+                    </transition-group>
+                  </div>
+                </el-scrollbar>
+              </div>
             </el-form-item>
           </el-col>
           <el-col :span="6">
@@ -331,6 +348,7 @@
             class="rowStyle"
             ref="itemFormList"
             size="mini"
+            :show-message="false"
           >
             <el-row class="row-bg">
               <el-col :span="7">
@@ -372,7 +390,7 @@
                   label="序列号"
                   prop="manufacturerSerialNumber"
                   :rules="{
-                  required: true, message: '制造商序列号不能为空', trigger: 'blur'
+                  required: true, message: '', trigger: 'blur'
                 }"
                 >
                   <el-input
@@ -441,12 +459,28 @@
               <el-col :span="18">
                 <el-form-item
                   label="呼叫主题"
-                  prop="fromTheme"
-                  :rules="{
-                  required: true, message: '呼叫主题不能为空', trigger: 'blur'
-                }"
+                  required
                 >
-                  <el-input type="textarea" maxlength="255" v-model="item.fromTheme" autosize></el-input>
+                  <!-- <el-input type="textarea" maxlength="255" v-model="item.fromTheme" autosize></el-input> -->
+                  <div class="form-theme-content" @click="openFormThemeDialog($event, index + 1)">
+                    <el-scrollbar wrapClass="scroll-wrap-class">
+                      <div class="form-theme-list">
+                        <transition-group name="list" tag="ul">
+                          <li class="form-theme-item" v-for="(themeItem, themeIndex) in item.themeList" :key="themeItem.id">
+                            <el-tooltip popper-class="form-theme-toolip" effect="dark" placement="top">
+                              <div slot="content">{{ themeItem.description }}</div>
+                              <p class="text">{{ themeItem.description }}</p>
+                            </el-tooltip>
+                            <i 
+                              v-if="isShowDeleteIcon(item)"  
+                              class="delete el-icon-error" 
+                              @click.stop="deleteTheme(item, themeIndex)">
+                            </i>
+                          </li>
+                        </transition-group>
+                      </div>
+                    </el-scrollbar>
+                  </div>
                 </el-form-item>
               </el-col>
               <el-col :span="6">
@@ -758,11 +792,47 @@
         :data="reportData"
       ></Report>
     </el-dialog>
+    <!-- 呼叫主题弹窗 -->
+    <my-dialog 
+      ref="formTheme"
+      width="500px"
+      title="呼叫主题"
+      :btnList="themeBtnList"
+      :appendToBody="true"
+      @onClose="closeFormTheme"
+    >
+      <el-input
+        style="width: 200px; margin-bottom: 10px;"
+        type="primary"
+        size="mini"
+        @keyup.enter.native="queryTheme" 
+        v-model="listQueryTheme.key" 
+        placeholder="呼叫主题内容">
+      </el-input>
+      <div style="height: 400px">
+        <common-table 
+          :loading="themeLoading"
+          ref="formThemeTable" 
+          :data="themeList" 
+          :columns="columns" 
+          :selectedList="selectedList"
+        ></common-table>
+      </div>
+      <pagination
+        v-show="themeTotal > 0"
+        :total="themeTotal"
+        :page.sync="listQueryTheme.page"
+        :limit.sync="listQueryTheme.limit"
+        layout="total, sizes, prev, next, jumper"
+        @pagination="handleChangeTheme"
+      /> 
+    </my-dialog>
   </div>
 </template>
 
 <script>
 import { getSerialNumber } from "@/api/callserve";
+import { getListByType } from '@/api/serve/knowledge'
 import Pagination from "@/components/Pagination";
 import * as callservesure from "@/api/serve/callservesure";
 import fromfSN from "./fromfSN";
@@ -776,8 +846,11 @@ import Report from '../common/components/report'
 import { reportMixin } from '../common/js/mixins'
 import elDragDialog from '@/directive/el-dragDialog'
 import { isCustomerCode } from '@/utils/validate'
+import { deepClone } from  '@/utils'
+import MyDialog from '@/components/Dialog'
+import CommonTable from '@/components/CommonTable'
 export default {
-  components: { fromfSN, problemtype, solution, Pagination, fromfSNC, Report },
+  components: { fromfSN, problemtype, solution, Pagination, fromfSNC, Report, MyDialog, CommonTable },
   mixins: [reportMixin],
   provide() {
     let that = this;
@@ -912,7 +985,22 @@ export default {
       },
       isDisalbed: false,
       collapseTitle: '展开更多订单',
-      dialogReportVisible: false
+      dialogReportVisible: false,
+      themeList: [], // 呼叫主题列表
+      themeTotal: 0, // 呼叫主题总数
+      themeLoading: false, // 表格loading
+      listQueryTheme: {
+        page: 1,
+        limit: 20,
+        type: 4, // 呼叫主题
+        key: '' // 搜搜呼叫主题
+      },
+      formThemeData: [],
+      columns: [
+        { originType: 'selection' },
+        { label: '呼叫主题', prop: 'name' }
+      ],
+      selectedList: [] // 当前呼叫主题框存在的数组
     };
   },
   created() {
@@ -942,8 +1030,41 @@ export default {
       this.solutionCount = response.count;
       this.listLoading = false;
     });
+
+    // const list = [
+    //   '客户咨询如何设置工步？',
+    //   '如何设置18650电池的工步？',
+    //   '如何设置动力电池的工步',
+    //   'R部工程师新需求沟通，出差报备',
+    //   '寄出物料至客户现场',
+    //   '联机异常',
+    //   '新购工装需上门指导使用',
+    //   '通道保护，需上门检修。',
+    //   '设备需返修处理。',
+    //   '采购下位机板，询价/报价',
+    //   '登录用户时提示未知的错误，原因？',
+    //   '安装BTS8.0软件提示未注册，原因？',
+    //   '不会联机，需要指导。',
+    //   '8512分容柜无法联机'
+    // ]
+    // if (this.formName !== '查看') {
+    //   for (let i = 0; i < list.length; i++) {
+    //     this.formThemeData.push({
+    //       id: i + 1,
+    //       description: list[i]
+    //     })
+    //   }
+      
+    // }
+    this._getFormThemeList()
   },
   computed: {
+    themeBtnList () {
+      return [
+        { btnText: '确认', handleClick: this.confirmTheme },
+        { btnText: '取消', handleClick: this.closeFormTheme }
+      ]
+    },
     newValue() {
       return JSON.stringify(this.formList);
     },
@@ -969,8 +1090,8 @@ export default {
               let newValChild = newVal[index]; //新值的每一项
               let oldValChild = oldVal[index];
               if (newVal.length == oldVal.length) {
-                for (let item1 in oldValChild) {
-                  if (newValChild[item1] !== oldValChild[item1]) {
+                for (let item1 in newValChild) {
+                  if (JSON.stringify(newValChild[item1]) !== JSON.stringify(oldValChild[item1])) {
                     //如果新值和旧值不一样
                     let sliceList = this.formList.slice(index);
                     if (this.formList[index].editTrue) {
@@ -992,6 +1113,13 @@ export default {
                           if (ind !== 0) {
                             itemF.solutionId = newValChild.solutionId;
                             itemF.solutionsubject = newValChild.solutionsubject;
+                          }
+                        });
+                      } else if (item1 === 'themeList') {
+                        console.log('themeList')
+                        sliceList.map((itemF, ind) => {
+                          if (ind !== 0) {
+                            this.$set(itemF, 'themeList', deepClone(newValChild.themeList))
                           }
                         });
                       } else {
@@ -1091,6 +1219,75 @@ export default {
   },
   // inject: ["form"],
   methods: {
+    _getFormThemeList () {
+      this.themeLoading = true
+      getListByType(this.listQueryTheme).then(res => {
+        let { data, count } = res
+        this.themeList = data
+        this.themeTotal = count
+        this.themeLoading = false
+      }).catch(err => {
+        this.$message.error(err.message)
+        this.themeLoading = false
+      })
+    },
+    queryTheme () {
+      this.listQueryTheme.page = 1
+      // this.$refs.formThemeTable.clearSelection()
+      this._getFormThemeList()
+    },
+    handleChangeTheme (val) {
+      this.listQueryTheme.page = val.page
+      this.listQueryTheme.limit = val.limit
+      this._getFormThemeList()
+    },
+    confirmTheme () {
+      let selectList = this.$refs.formThemeTable.getSelectionList()
+      if (!selectList.length) {
+        return this.$message.warning('请先选择数据')
+      }
+      selectList = selectList.map(item => {
+        let { id, name } = item
+        return { id, description: name }
+      })
+      let data = this.formList[this.currentFormIndex] // 当前选中的呼叫主题对应formList的第几项
+      let newList = (data.themeList || []).concat(selectList)
+      if (newList && newList.length > 10) {
+        return this.$message.warning('最多选择十条数据!')
+      }
+      this.$set(data, 'themeList', newList)
+      this.closeFormTheme()
+    },
+    closeFormTheme () {
+      this.$refs.formThemeTable.clearSelection() // 清空多选
+      this.$refs.formTheme.close()
+    },
+    openFormThemeDialog (e, formIndex) {
+      if (this.formName === '查看') {
+        return
+      }
+      if (!this.form.customerId) {
+        return this.$message.error('客户代码不能为空!')
+      }
+      let data = this.formList[formIndex]
+      if (this.isOrderDisabled(data) && this.formName === '编辑') {
+        return
+      }
+      if (data.themeList && data.themeList.length > 10) {
+        return this.$message.warning('最多选择十条数据!')
+      }
+      this.currentFormIndex = formIndex // 记录当前选中数据对应的索引值
+      this.selectedList = data.themeList || []
+      this.$refs.formTheme.open()
+    },
+    deleteTheme (data, themeIndex) { // formIndex 是formList的索引 themeIndex主题呼叫中标签的索引
+      data.themeList.splice(themeIndex, 1)
+    },
+    isShowDeleteIcon (data) { // 是否展示delteIcon
+      return (this.isOrderDisabled(data) && this.formName === '编辑')
+        ? false
+        : this.formName !== '查看'
+    },
     isChangeStatus (val) { // 是否可以改变状态
       return (this.formName === '编辑' && !this.formInitailList.every(item => item.id === val.id)) 
       || this.formName === '新建' 
@@ -1235,7 +1432,8 @@ export default {
           remark, 
           solutionId, 
           status, 
-          solutionsubject
+          solutionsubject,
+          themeList
         } = this.currentTarget || {}
         if (!this.formList[0].manufacturerSerialNumber) {
           //判断从哪里新增的依据是第一个工单是否有id
@@ -1286,6 +1484,7 @@ export default {
               materialDescription: newList[i].itemName,
               feeType: feeType || 1,
               fromTheme: fromTheme || "",
+              themeList: deepClone(themeList) || [],
               fromType: fromType || "",
               problemTypeName: problemTypeName || "",
               problemTypeId: problemTypeId || "",
@@ -1299,7 +1498,7 @@ export default {
           this.ifFormPush = true;
         } else {
           this.ifFormPush = true;
-          if(this.isEditOperation){
+          if(this.isEditOperation) {
             if (this.inputname) {
               this.inputname = false
               this.formListStart={
@@ -1310,6 +1509,7 @@ export default {
                 itemName: "",
                 feeType: 1,
                 fromTheme:  "",
+                themeList: [],
                 fromType:  "",
                 problemTypeName:  "",
                 problemTypeId:  "",
@@ -1347,6 +1547,7 @@ export default {
                 materialDescription: "",
                 feeType: feeType || 1,
                 fromTheme: fromTheme || "",
+                themeList: deepClone(themeList) || [],
                 fromType: fromType || "",
                 problemTypeName: problemTypeName || "",
                 problemTypeId: problemTypeId || "",
@@ -1366,6 +1567,7 @@ export default {
                 materialDescription: this.formListStart[i].itemName,
                 feeType: feeType || 1,
                 fromTheme: fromTheme || "",
+                themeList: deepClone(themeList) || [],
                 fromType: fromType || "",
                 problemTypeName: problemTypeName || "",
                 problemTypeId: problemTypeId || "",
@@ -1410,6 +1612,7 @@ export default {
       const targetForm = index !== undefined ? itemFormList[index] : itemForm;
       targetForm.validate((valid) => {
         if (valid) {
+          console.log('新增工单陈工')
           callservesure
             .addWorkOrder(result)
             .then(() => {
@@ -1568,6 +1771,74 @@ export default {
     display: flex;
     flex-direction: column;
   }
+  .form-theme-content {
+    position: relative;
+    box-sizing: border-box;
+    min-height: 30px;
+    padding: 1px 15px;
+    color: #606266;
+    font-size: 12px;
+    line-height: 1.5;
+    border-radius: 4px;
+    border: 1px solid #DCDFE6;
+    background-color: #fff;
+    outline: none;
+    transition: border-color .2s cubic-bezier(.645, .045, .355, 1);
+    cursor: pointer;
+    &:focus {
+      border-color: #409EFF;
+    }
+    .form-theme-mask {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 10;
+    }
+    ::v-deep .el-scrollbar {
+      .scroll-wrap-class {
+        max-height: 100px; // 最大高度
+        overflow-x: hidden; // 隐藏横向滚动栏
+        margin-bottom: 0 !important;
+      }
+    }
+    .form-theme-list {
+      .form-theme-item {
+        display: inline-block;
+        margin-right: 2px;
+        margin-bottom: 2px;
+        padding: 2px;
+        background-color: rgba(239, 239, 239, 1);
+        .text-content {
+          max-width: 480px;
+        }
+        &.list-enter-active, &.list-leave-acitve {
+          transition: all .4s;
+        }
+        &.list-enter, &.list-leave-to {
+          opacity: 0;
+        }
+        &.list-enter-to, &.list-leave {
+          opacity: 1;
+        }
+        .text {
+          display: inline-block;
+          overflow: hidden;
+          max-width: 478px;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          vertical-align: middle;
+        }
+        .delete {
+          margin-left: 5px;
+          font-size: 12px;
+          vertical-align: middle;
+          cursor: pointer;
+        }
+      }
+    }
+  }
   .confirm-add-btn {
     position: absolute;
     bottom: 7px;
@@ -1634,6 +1905,16 @@ export default {
   width: 130px;
   line-height: 30px;
   font-size: 24px;
+}
+</style>
+<style lang="scss">
+/* 设置呼叫主题文字提示的最大宽度 */
+body {
+  .el-tooltip__popper  {
+    &.form-theme-toolip {
+      max-width: 480px;
+    }
+  }
 }
 </style>
 

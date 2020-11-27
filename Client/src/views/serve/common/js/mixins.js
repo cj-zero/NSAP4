@@ -87,6 +87,13 @@ export let dispatchMixin = { // 派单 转派
       this.listQuery2.page = val.page;
       this.listQuery2.limit = val.limit;
       this._getAllowSendOrderUser()
+    },
+    _normalizeRightList (data) {
+      data.forEach(item => {
+        item.themeList = JSON.parse(item.fromTheme).map(item => item.description)
+        item.fromTheme = item.themeList.join(' ')
+      })
+      return data
     }
   },
   watch: {
@@ -127,13 +134,14 @@ export let chatMixin = { // 查看、编辑服务单时 右侧出现的聊天记
           serviceOrder.visitTime = this.deleteSeconds(visitTime)
           serviceOrder.liquidationDate = this.deleteSeconds(liquidationDate)
           serviceOrder.completeDate = this.deleteSeconds(completeDate)
+          serviceOrder.themeList = JSON.parse(serviceOrder.fromTheme)
         })
       }
       return data
     },
     openDetail() {
       this.dataForm = this.dataForm1;
-    },
+    }
   }
 }
 
@@ -145,6 +153,13 @@ export let tableMixin = {
       }
       let { status } = val
       return STATUS_COLOR_MAP[status]
+    },
+    processFromType (val) {
+      if (!val) {
+        return
+      }
+      let { fromType } = val
+      return fromType * 1 === 1 ? 'status-red' : 'status-green'
     },
     processPriorityStatus (val) {
       if (!val) {

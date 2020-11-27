@@ -106,7 +106,7 @@ export let tableMixin = {
       // console.log([printOrder, 'printOrder'])
       window.open(`${process.env.VUE_APP_BASE_API}/serve/Reimburse/Print?ReimburseInfoId=${this.currentRow.id}&X-Token=${this.tokenValue}`)
     },
-    _getList () {
+    _getList () { // 获取表格列表
       this.tableLoading = true
       getList({
         ...this.formQuery,
@@ -142,9 +142,8 @@ export let tableMixin = {
         item.remburseStatusText = this.reimburseStatusMap[item.remburseStatus]
         item.responsibility = this.responsibilityMap[item.responsibility]
         item.totalMoney = toThousands(item.totalMoney)
-        // item.createTime = item.createTime.split(' ')[0]
-        // item.businessTripDate = item.businessTripDate.split(' ')[0].replace('/', '.')
-        // item.endDate = item.endDate.split(' ')[0].replace('/', '.')
+        item.themeList = JSON.parse(item.fromTheme).map(item => item.description)
+        item.fromTheme = item.themeList.join(' ')
         return item
       })
     },
@@ -290,6 +289,7 @@ export let tableMixin = {
         reimburseOtherCharges,
         remburseStatus 
       } = data
+      data.themeList = JSON.parse(data.fromTheme)
       data.reimburseTypeText = this.reimburseStatusMap[remburseStatus] // 处理报销状态
       data.attachmentsFileList = reimburseAttachments
         .map(item => {
@@ -544,17 +544,10 @@ export let categoryMixin = {
           disabled: this.title === 'view' || !(this.isCustomerSupervisor && (this.title === 'create' || this.title === 'edit' || this.title === 'approve')), 
           col: this.ifFormEdit ? 5 : 6, type: 'select', options: this.expenseList, width: '100%'
         },
-        // { label: '报销单号', prop: 'mainId', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
         { label: '报销状态', prop: 'reimburseTypeText', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
         { label: '客户代码', prop: 'terminalCustomerId', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
         { label: '客户名称', prop: 'terminalCustomer', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 10 : 12 },
         { label: '支付时间', prop: 'payTime', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
-        // { label: '填报时间', prop: 'createTime', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
-        // { label: '报销人', prop: 'userName', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        // { label: '部门', prop: 'orgName', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        // { label: '劳务关系', prop: 'serviceRelations', palceholder: '请输入内容',  
-        //   col: this.ifFormEdit ? 5 : 6, disabled: true
-        // },
         { label: '呼叫主题', prop: 'fromTheme', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 15 : 18 },
         { label: '服务报告', prop: 'report',  disabled: true, col: this.ifFormEdit ? 5 : 6, 
           type: 'button', btnText: '服务报告', handleClick: this.openReport, isEnd: true
@@ -926,6 +919,7 @@ export const chatMixin = {
           serviceOrder.visitTime = this.deleteSeconds(visitTime)
           serviceOrder.liquidationDate = this.deleteSeconds(liquidationDate)
           serviceOrder.completeDate = this.deleteSeconds(completeDate)
+          serviceOrder.themeList = JSON.parse(serviceOrder.fromTheme)
         })
       }
       return data

@@ -72,7 +72,7 @@
                 @row-click="rowClick"
               >
                 <el-table-column
-                  show-overflow-tooltip
+                  :show-overflow-tooltip="fruit.name !== 'fromTheme'"
                   v-for="(fruit,index) in formTheadOptions"
                   :align="fruit.align?fruit.align:'left'"
                   :header-align="fruit.align?fruit.align:'left'"
@@ -88,27 +88,27 @@
                       <img :src="rightImg" @click="openTree(scope.row.serviceOrderId)" class="pointer" />
                       <span>{{ scope.row.workOrderNumber }}</span>
                     </div>
+                    <template v-else-if="fruit.name === 'fromTheme'">
+                      <el-tooltip placement="top-start">
+                        <div slot="content">
+                          <p v-for="(content, index) in scope.row.themeList" :key="index">{{ content }}</p>
+                        </div>
+                        <span style="white-space: nowrap;">{{ scope.row[fruit.name] }}</span>
+                      </el-tooltip>
+                    </template>
                     <span
-                      v-if="fruit.name === 'status'"
+                      v-else-if="fruit.name === 'status'"
                       :class="processStatus(scope.row)"
                     >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
-                    <span v-if="fruit.name === 'customerId'">
+                    <span v-else-if="fruit.name === 'customerId'">
                       {{ scope.row.terminalCustomerId ? scope.row.terminalCustomerId : scope.row.customerId }}
                     </span>
-                    <span v-if="fruit.name === 'customerName'">
+                    <span v-else-if="fruit.name === 'customerName'">
                       {{ scope.row.terminalCustomer ? scope.row.terminalCustomer : scope.row.customerName }}
                     </span>
-                    <span v-if="fruit.name === 'fromType'">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
-                    <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority - 1]}}</span>
-                    <span
-                      v-if="fruit.name != 'priority' 
-                      && fruit.name!='fromType' 
-                      && fruit.name!='status'
-                      && fruit.name!='serviceOrderId'
-                      && fruit.name !== 'workOrderNumber'
-                      && fruit.name !== 'customerName'
-                      && fruit.name !== 'customerId'"
-                    >{{scope.row[fruit.name]}}</span>
+                    <span v-else-if="fruit.name === 'fromType'">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
+                    <span v-else-if="fruit.name === 'priority'" :class="processPriorityStatus(scope.row)">{{priorityOptions[scope.row.priority - 1]}}</span>
+                    <span v-else>{{scope.row[fruit.name]}}</span>
                   </template>
                 </el-table-column>
               </el-table>
@@ -888,7 +888,7 @@ export default {
         .getRightList(this.listQuery)
         .then((response) => {
           if (response.code === 200) {
-            this.list = response.data.data;
+            this.list = this._normalizeRightList(response.data.data);
             this.total = response.data.count;
             this.listLoading = false;
           } else {
