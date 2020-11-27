@@ -236,7 +236,7 @@ namespace OpenAuth.App
         private async Task<bool> ReturnMaterial(int serviceOrderId, string MaterialType, string creater, string createname)
         {
             //清除物流进度与填报告单流程
-            await UnitWork.DeleteAsync<ServiceFlow>(s => s.ServiceOrderId == serviceOrderId && s.MaterialType.Equals(MaterialType) && s.Creater.Equals(creater) && (s.FlowNum == 3 || s.FlowNum == 7 || s.FlowNum == 8) & s.FlowType == 1);
+            await UnitWork.DeleteAsync<ServiceFlow>(s => s.ServiceOrderId == serviceOrderId && s.MaterialType.Equals(MaterialType) && s.Creater.Equals(creater) && (s.FlowNum == 3 || s.FlowNum == 7 || s.FlowNum == 8 || s.FlowNum == 6) & s.FlowType == 1);
             await UnitWork.SaveAsync();
             //添加后续默认流程
             List<int> flowNums = new List<int> { 8, 3 };
