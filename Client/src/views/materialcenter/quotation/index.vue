@@ -222,7 +222,7 @@ export default {
     },
     close () {
       this.isPreviewing = false
-      // this.$refs.quotationOrder.resetInfo()
+      this.$refs.quotationOrder.resetInfo()
       this.$refs.quotationDialog.close()
     }
   },
