@@ -1405,9 +1405,10 @@ export default {
         this.form.customerId = item.cardCode;
         this.form.customerName = item.cardName;
         this.form.salesMan = item.slpName;
-        if (!this.form.terminalCustomerId) {
+        if (!this.form.terminalCustomerId || !this.form.terminalCustomer) {
           this.form.contactTel = item.cellular;
           this.form.address = item.address2
+          this.form.terminalCustomer = item.cardName;
         }
       } 
     },
@@ -1424,9 +1425,10 @@ export default {
         this.form.customerId = item.cardCode;
         this.form.customerName = item.cardName;
         this.form.salesMan = item.slpName;
-        if (!this.form.terminalCustomerId) {
+        if (!this.form.terminalCustomerId || !this.form.terminalCustomer) {
           this.form.contactTel = item.cellular;
           this.form.address = item.address2
+          this.form.terminalCustomer = item.cardName;
         }
       } else { // 终端客户代码
         this.form.terminalCustomerId = item.cardCode
