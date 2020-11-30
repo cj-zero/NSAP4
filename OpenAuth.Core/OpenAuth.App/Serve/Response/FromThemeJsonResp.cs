@@ -9,7 +9,7 @@ namespace OpenAuth.App.Serve.Response
         /// <summary>
         /// 服务呼叫ID
         /// </summary>
-        public int? Id { get; set; }
+        public string Id { get; set; }
 
         /// <summary>
         /// 服务呼叫内容
