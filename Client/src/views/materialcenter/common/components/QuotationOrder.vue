@@ -15,7 +15,6 @@
         class="my-form-wrapper" 
         label-width="80px"
         size="mini"
-        :disabled="ifNotEdit"
         label-position="right"
         :show-message="false"
       >
@@ -143,6 +142,12 @@
                 :data="serialNumberList" 
                 :columns="serialColumns" 
                 :loading="serialLoading">
+                <template v-slot:materialCode="{ row }">
+                  <el-row type="flex" align="middle">
+                    <span style="margin-right: 3px;">{{ row.materialCode }}</span>
+                    <svg-icon iconClass="warranty" v-if="row.isProtected"></svg-icon>
+                  </el-row>
+                </template>
                 <template v-slot:btn="scope">
                   <el-button 
                     type="success"
@@ -268,6 +273,12 @@
             :data="materialSummaryList" 
             :columns="materialAllColumns" 
             :loading="materialAllLoading">
+            <template v-slot:materialCode="{ row }">
+              <el-row type="flex" align="middle">
+                <span style="margin-right: 3px;">{{ row.materialCode }}</span>
+                <svg-icon iconClass="warranty" v-if="row.isProtected"></svg-icon>
+              </el-row>
+            </template>
           </common-table>
         </div>
       </template>
@@ -296,6 +307,7 @@
       <pagination
         v-show="customerTotal > 0"
         :total="customerTotal"
+        layout="prev, next, jumper"
         :page.sync="listQueryCustomer.page"
         :limit.sync="listQueryCustomer.limit"
         @pagination="customerCurrentChange"
@@ -590,14 +602,16 @@ export default {
       // 物料汇总表格
       materialSummaryList: [],
       materialAllColumns: [
-        { label: '序号', type: 'order' },
-        { label: '物料编码', prop: 'materialCode' },
+        { label: '序号', type: 'order', width: '50px' },
+        { label: '物料编码', prop: 'materialCode', type: 'slot', slotName: 'materialCode', width: '150px' },
         { label: '物料描述', prop: 'materialDescription' },
         { label: '数量', prop: 'count', align: 'right' },
-        { label: '最大数量', prop: 'maxQuantity', align: 'right' },
-        { label: '单价', prop: 'unitPrice', align: 'right' },
-        { label: '小计', prop: 'totalPrice', align: 'right' },
-        { label: '备注', prop: 'remark' },
+        { label: '成本价', prop: 'costPrice', align: 'right' },
+        { label: '销售价', prop: 'salesPrice', align: 'right' },
+        { label: '总计', prop: 'totalPrice', align: 'right' },
+        { label: '可领数量', prop: 'a', align: 'right' },
+        { label: '当前库存', prop: 'b', align: 'right' },
+        { label: '仓库', prop: 'c', align: 'right' }
       ],
       materialAllLoading: false,
       // 客户列表
@@ -625,7 +639,7 @@ export default {
       serialLoading: false,
       serialColumns: [
         { label: '制造商序列号', prop: 'manufacturerSerialNumber' },
-        { label: '物料编码', prop: 'materialCode' },
+        { label: '物料编码', prop: 'materialCode', type: 'slot', slotName: 'materialCode' },
         { label: '物料描述', prop: 'materialDescription' },
         { label: '保修到期', prop: 'warrantyExpirationTime' },
         { label: '金额', type: 'slot', slotName: 'money', align: 'right' },
@@ -706,12 +720,14 @@ export default {
       if (!val) {
         return this.$message.warning('请先选择数据')
       }
-      let { terminalCustomer, terminalCustomerId, salesMan, id, u_SAP_ID } = val
+      let { terminalCustomer, terminalCustomerId, salesMan, id, u_SAP_ID, billingAddress, deliveryAddress } = val
       this.formData.terminalCustomer = terminalCustomer
       this.formData.terminalCustomerId = terminalCustomerId
       this.formData.salesMan = salesMan
       this.formData.serviceOrderId = id
       this.formData.serviceOrderSapId = u_SAP_ID
+      this.formData.shippingAddress = billingAddress
+      this.formData.collectionAddress = deliveryAddress
       this.closeCustomerDialog()
     },
     closeCustomerDialog () {
@@ -798,12 +814,8 @@ export default {
       }
     },
     _normalizeMaterialSummaryList () {
-      this.materialSummaryList = this.formData.quotationProducts.reduce((prev, next) => {
-        return prev.concat(next.quotationMaterials)
-      }, []).map((item , index) => {
-        item.index = index
-        return item
-      })
+      console.log(this.formData.quotationMergeMaterials)
+      this.materialSummaryList = this.formData.quotationMergeMaterials
     },
     // _getQuotationMaterialCode () { // 获取服务单下的所有零件
     //   this.materialAllLoading = true
@@ -1005,9 +1017,9 @@ export default {
       if (!isMaterialValid) {
         return Promise.reject({ message: '零件数量不能为空' })
       }
-      this.formData.quotationProducts.forEach((item, index) => {
-        item.isProtected = !!(index % 2)
-      })
+      // this.formData.quotationProducts.forEach((item, index) => {
+      //   item.isProtected = !!(index % 2)
+      // })
       console.log(this.formData.quotationProducts)
       return isEdit 
         ? updateQuotationOrder({

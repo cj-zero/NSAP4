@@ -400,7 +400,11 @@ export default {
         return this.$message.error('无物流Id')
       }
       getExpressInfo({expressageId: row.id }).then(res => {
-        console.log(res, 'res')
+        let expressInformation = JSON.parse(res.data).data
+        this.courierList[row.index].expressInformation = expressInformation[expressInformation.length - 1].context
+        console.log(expressInformation, this.courierList[row.index].expressInformation, row.index)
+      }).catch(err => {
+        this.$message.error(err.message)
       })
     },
     resetInfo () {

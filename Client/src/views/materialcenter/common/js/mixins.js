@@ -33,7 +33,7 @@ export const quotationTableMixin = {
     _getQuotationDetail (data) {
       let quotationId
       let { status } = data
-      console.log(status,' status')
+      console.log(status,' status', this.isMaterialFinancial)
       if (status === 'view') {
         quotationId = data.id
       } else {
@@ -73,10 +73,10 @@ export const quotationTableMixin = {
       })
     },
     _normalizeDetail (data) {
-      let { serviceOrders, quotations } = data
+      let { serviceOrders, quotations, quotationMergeMaterials = [] } = data
       let { terminalCustomer, terminalCustomerId, salesMan } = serviceOrders
       // result
-      return { ...quotations, terminalCustomer, terminalCustomerId, salesMan }
+      return { ...quotations, terminalCustomer, terminalCustomerId, salesMan, quotationMergeMaterials }
     },
     _normalizeList (list) { // 格式化表格数据
       return list.map(item => {
@@ -155,7 +155,7 @@ export const configMixin = { // 表单配置
     ifEdit () {
       return this.status === 'create' || this.status === 'edit'
     },
-    isMaterialTreasurer () { // 判断是不是物料财务
+    isMaterialFinancial () { // 判断是不是物料财务
       return this.rolesList && this.rolesList.length
         ? this.rolesList.some(item => item === '物料财务')
         : false
@@ -189,7 +189,7 @@ export const configMixin = { // 表单配置
         { label: '客户名称', prop: 'terminalCustomer', placeholder: '请选择', col: 12, disabled: true, isEnd: true },
         { label: '开票地址', prop: 'shippingAddress', placeholder: '请选择', col: 18, disabled: !this.ifEdit },
         { label: '开票单位', prop: 'invoiceCompany', placeholder: '请选择', col: 6, 
-          type: 'select', options: this.invoiceCompanyList, isEnd: true, disabled: !(this.ifEdit || (this.isMaterialTreasurer && this.status === 'approve')) },
+          type: 'select', options: this.invoiceCompanyList, isEnd: true, disabled: !(this.isMaterialFinancial && this.status === 'approve') },
         { label: '收货地址', prop: 'collectionAddress', placeholder: '请选择', col: 18, disabled: !this.ifEdit },
         { label: '发货方式', prop: 'deliveryMethod', placeholder: '请选择', col: 6, type: 'select', options: this.deliveryMethodList, disabled: !this.ifEdit, isEnd: true },
         { label: '备注', prop: 'remark', placeholder: '请填写', col: 18, disabled: !this.ifEdit },

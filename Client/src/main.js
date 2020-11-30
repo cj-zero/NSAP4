@@ -39,7 +39,9 @@ Vue.directive('elDragDialog', elDragDialog)
 Vue.directive('debounce', debounce)
 // 全局组件
 import MyDialog from '@/components/Dialog'
+import SvgIcon from '@/components/SvgIcon'
 Vue.component('MyDialog', MyDialog)
+Vue.component(SvgIcon.name, SvgIcon)
 // 引入PDFJS
 Vue.use(ElementUI, { locale })
 Vue.use(VueContextMenu)
@@ -56,7 +58,7 @@ Vue.config.productionTip = false
 Vue.prototype.$layer = layer(Vue, {
   msgtime: 3
 })
-Vue.prototype.$notifyMessage = function (cb) {
+Vue.prototype.$delay = function (cb) {
   setTimeout(cb, 0)
 }
 Vue.component('FrmLeaveReqAdd', FrmLeaveReqAdd)

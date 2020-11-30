@@ -42,6 +42,7 @@
         ref="quotationOrder" 
         :detailInfo="detailInfo"
         :categoryList="categoryList"
+        isMerged="true"
         :status="status"></quotation-order>
     </my-dialog>
     <!-- 只能查看的表单 -->
@@ -148,8 +149,8 @@ export default {
         { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link', options: { isInTable: true } },
         { label: '客户代码', prop: 'terminalCustomerId' },
         { label: '客户名称', prop: 'terminalCustomer' },
-        { label: '单据总金额', prop: 'totalMoney' },
-        { label: '未清金额', prop: 'otherMoney' },
+        { label: '单据总金额', prop: 'totalMoney', align: 'right' },
+        { label: '未清金额', prop: 'otherMoney', align: 'right' },
         { label: '申请人', prop: 'createUser' },
         { label: '备注', prop: 'remark' },
         { label: '创建时间', prop: 'createTime' },

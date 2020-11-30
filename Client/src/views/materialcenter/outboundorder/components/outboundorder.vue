@@ -205,6 +205,7 @@ export default {
       handler (val) {
         Object.assign(this.formData, val)
         this.expressList = val.expressages
+        this.materialList = val.quotationMergeMaterials
         console.log(val, this.expressList, 'detail info')
       }
     }
@@ -214,7 +215,16 @@ export default {
       return {
         courierList: this.courierList
       }
-    }
+    },
+    materialColumns: [
+        { label: '序号', type: 'order' },
+        { label: '物料编码', prop: 'materialCode' },
+        { label: '物料描述', prop: 'materialDescription' },
+        { label: '总数量', prop: 'count' },
+        { label: '单位', prop: 'unit' },
+        { label: '已出库', prop: 'sentQuantity' },
+        { label: '出库数量', prop: 'delivery', type: 'slot', slotName: 'delivery' }
+      ]
   },
   data () {
     return {
@@ -267,23 +277,7 @@ export default {
         { label: '图片', type: 'slot', slotName: 'pictures', prop: 'pictures', width: '200px' }
       ],
       // 物料表格
-      materialList: [{
-        materialCode: '1111',
-        materialDescription: '232323',
-        count: 5,
-        unit: 'PCS',
-        outbound: 5,
-        delivery: ''
-      }],
-      materialColumns: [
-        { label: '序号', type: 'order' },
-        { label: '物料编码', prop: 'materialCode' },
-        { label: '物料描述', prop: 'materialDescription' },
-        { label: '数量', prop: 'count' },
-        { label: '单位', prop: 'unit' },
-        { label: '已出库', prop: 'outbound' },
-        { label: '出库数量', prop: 'delivery', type: 'slot', slotName: 'delivery' }
-      ]
+      materialList: []
     }
   },
   methods: {
@@ -315,7 +309,7 @@ export default {
       // console.log(size, 'file size')
       let isValid = isImage(type)
       if (!isValid) {
-        this.$notifyMessage(() => this.$message.error('文件格式只能为图片'))
+        this.$delay(() => this.$message.error('文件格式只能为图片'))
         return false
       }
       return true
