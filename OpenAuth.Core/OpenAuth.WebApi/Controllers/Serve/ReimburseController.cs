@@ -139,12 +139,12 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// <param name="obj"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> Add(AddOrUpdateReimburseInfoReq obj)
+        public Response Add(AddOrUpdateReimburseInfoReq obj)
         {
             var result = new Response();
             try
             {
-                await _reimburseinfoapp.Add(obj);
+                 _reimburseinfoapp.Add(obj);
             }
             catch (Exception ex)
             {
@@ -160,12 +160,12 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// <param name="obj"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> UpDate(AddOrUpdateReimburseInfoReq obj)
+        public Response UpDate(AddOrUpdateReimburseInfoReq obj)
         {
             var result = new Response();
             try
             {
-                await _reimburseinfoapp.UpDate(obj);
+                _reimburseinfoapp.UpDate(obj);
             }
             catch (Exception ex)
             {

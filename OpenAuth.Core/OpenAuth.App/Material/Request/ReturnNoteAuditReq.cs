@@ -6,7 +6,10 @@ namespace OpenAuth.App.Material.Request
 {
     public class ReturnNoteAuditReq
     {
-        public string FlowInstanceId { get; set; }
+        /// <summary>
+        /// 退料单Id
+        /// </summary>
+        public int Id { get; set; }
 
         public List<ReturnMaterial> ReturnMaterials { get; set; }
     }

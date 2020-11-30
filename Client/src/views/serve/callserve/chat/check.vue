@@ -119,6 +119,7 @@ export default {
   methods: {
     checkItem (item) {
       // GetWorkOrderDetailById
+      let reg = /[\r|\r\n|\n\t\v]/g
       let { 
         status,
         isNew, 
@@ -141,8 +142,13 @@ export default {
           getWorkOrderDetailById({
             workOrderId: orginalWorkOrderId
           }).then(res => {
-            this.formData = res.data[0]
-            this.dialogFormVisible = true
+            if (res.data && res.data.length) {
+              res.data[0].themeList = JSON.parse(res.data[0].fromTheme.replace(reg, ''))
+              this.formData = res.data[0]
+              this.dialogFormVisible = true
+            } else {
+              this.$message.error('获取工单详情失败')
+            }
           }).catch(() => {
             this.$message.error('获取工单详情失败!')
           })
@@ -155,7 +161,9 @@ export default {
             remark: "", //备注
             status: 1, //呼叫状态 1-待确认 2-已确认 3-已取消 4-待处理 5-已排配 6-已外出 7-已挂起 8-已接收 9-已解决 10-已回访
             currentUserId: "", //App当前流程处理用户Id
-            fromTheme: fromTheme || "", //呼叫主题
+            fromTheme: '',
+            // fromTheme: fromTheme.replace(reg, '') || "", //呼叫主题
+            themeList: JSON.parse(fromTheme.replace(reg, '')).filter(item => item.description),
             fromId: 1, //呼叫来源 1-电话 2-APP
             problemTypeId: problemTypeId || "", //问题类型Id
             problemTypeName: problemTypeName || "",
@@ -176,7 +184,11 @@ export default {
           }
           this.dialogFormVisible = true
         }
+        if (this.$refs.formAdd && !!isNew) {
+          this.$refs.formAdd._getFormThemeList()
+        }
       }
+      
     },
     changeType (status) {
       return status !== 0 ? 'info' : 'primary'

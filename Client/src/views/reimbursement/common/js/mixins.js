@@ -106,7 +106,7 @@ export let tableMixin = {
       // console.log([printOrder, 'printOrder'])
       window.open(`${process.env.VUE_APP_BASE_API}/serve/Reimburse/Print?ReimburseInfoId=${this.currentRow.id}&X-Token=${this.tokenValue}`)
     },
-    _getList () {
+    _getList () { // 获取表格列表
       this.tableLoading = true
       getList({
         ...this.formQuery,
@@ -133,6 +133,7 @@ export let tableMixin = {
       this._getList()
     },
     _normalizeList (data) { // 处理table数据
+      let reg = /[\r|\r\n|\n\t\v]/g
       return data.map(item => {
         let { reimburseResp } = item
         delete item.reimburseResp
@@ -142,9 +143,8 @@ export let tableMixin = {
         item.remburseStatusText = this.reimburseStatusMap[item.remburseStatus]
         item.responsibility = this.responsibilityMap[item.responsibility]
         item.totalMoney = toThousands(item.totalMoney)
-        // item.createTime = item.createTime.split(' ')[0]
-        // item.businessTripDate = item.businessTripDate.split(' ')[0].replace('/', '.')
-        // item.endDate = item.endDate.split(' ')[0].replace('/', '.')
+        item.themeList = JSON.parse(item.fromTheme.replace(reg, '')).map(item => item.description)
+        item.fromTheme = item.themeList.join(' ')
         return item
       })
     },
@@ -180,7 +180,7 @@ export let tableMixin = {
         // 如果是审核流程、则判断当前用户是不是客服主管
         this.title = tableClick ? 'view' : val.type
         try {
-          if (this.title === 'approve' && this.isGeneralManager) {
+          if ((this.title === 'approve' || this.title === 'view') && this.isGeneralManager) {
             // 用于总经理审批页面的表格数据
             this._generateApproveTable(this.detailData)
           }
@@ -197,7 +197,17 @@ export let tableMixin = {
         this.$message.error('获取详情失败')
       })
     },
-    processInvoiceTime (invoiceTime) {
+    isValidInvoice (attachmentList) { // 判断有没有发票附件
+      return attachmentList.some(item => {
+        return item.attachmentType === 2
+      })
+    },
+    getOtherFileList (attachmentList) { // 获取其它附件列表
+      return attachmentList.filter(item => {
+        return item.attachmentType === 1
+      })
+    },
+    processInvoiceTime (invoiceTime) { // 截取年月日
       return invoiceTime ? invoiceTime.split(' ')[0] : invoiceTime
     },
     _generateApproveTable (data) { // 针对总经理审批页面
@@ -210,39 +220,55 @@ export let tableMixin = {
         reimburseOtherCharges,
       } = data
       reimburseFares.forEach(item => {
-        let { invoiceTime, transport, from, to, money } = item
+        let { invoiceTime, transport, from, to, money, reimburseAttachments, invoiceNumber, remark } = item
         result.push({
           invoiceTime: this.processInvoiceTime(invoiceTime),
           expenseName: this.transportationMap[transport],
           expenseDetail: from + '-' + to,
-          money
+          money,
+          remark,
+          invoiceNumber,
+          isValidInvoice: this.isValidInvoice(reimburseAttachments),
+          reimburseAttachments,
+          otherFileList: this.getOtherFileList(reimburseAttachments)
         })
       })
       reimburseAccommodationSubsidies.forEach(item => {
-        let { invoiceTime, days, totalMoney } = item
+        let { invoiceTime, days, totalMoney, reimburseAttachments, invoiceNumber, remark } = item
         result.push({
           invoiceTime: this.processInvoiceTime(invoiceTime),
           expenseName: '住宿补贴',
           expenseDetail: days + '天',
-          money: totalMoney
+          money: totalMoney,
+          remark,
+          invoiceNumber,
+          isValidInvoice: this.isValidInvoice(reimburseAttachments),
+          reimburseAttachments,
+          otherFileList: this.getOtherFileList(reimburseAttachments)
         })
       })
       reimburseTravellingAllowances.forEach(item => {
-        let { invoiceTime, days, money } = item
+        let { invoiceTime, days, money, remark } = item
         result.push({
           invoiceTime: this.processInvoiceTime(invoiceTime),
           expenseName: '出差补贴',
           expenseDetail: days + '天',
-          money: money * days
+          money: money * days,
+          remark
         })
       })
       reimburseOtherCharges.forEach(item => {
-        let { invoiceTime, money, expenseCategory } = item
+        let { invoiceTime, money, expenseCategory, remark, reimburseAttachments, invoiceNumber } = item
         result.push({
           invoiceTime: this.processInvoiceTime(invoiceTime),
           expenseName: this.otherExpensesMap[expenseCategory],
           expenseDetail: '',
-          money
+          money,
+          remark,
+          invoiceNumber,
+          isValidInvoice: this.isValidInvoice(reimburseAttachments),
+          reimburseAttachments,
+          otherFileList: this.getOtherFileList(reimburseAttachments)
         })
       })
       /* 日期从小到大， 没日期的话，交通费用→住宿补贴→出差补贴→其他费用 */
@@ -252,9 +278,11 @@ export let tableMixin = {
       // let dataWithoutInvoiceTime = result.filter(item => !item.invoiceTime)
       // 交通-住宿-出差-其它
       // data.expenseCategoryList = dataWithInvoiceTime.concat(dataWithoutInvoiceTime)
+      console.log(result, 'result')
       data.expenseCategoryList = result
     },
     _normalizeDetail (data) { 
+      let reg = /[\r|\r\n|\n\t\v]/g
       let { 
         reimburseAttachments,
         reimburseTravellingAllowances,
@@ -263,6 +291,7 @@ export let tableMixin = {
         reimburseOtherCharges,
         remburseStatus 
       } = data
+      data.themeList = JSON.parse(data.fromTheme.replace(reg, ''))
       data.reimburseTypeText = this.reimburseStatusMap[remburseStatus] // 处理报销状态
       data.attachmentsFileList = reimburseAttachments
         .map(item => {
@@ -498,6 +527,9 @@ export let categoryMixin = {
         ? this.rolesList.some(item => item === '总经理')
         : false
     },
+    isGeneralStatus () { // 判断是不是处于总经理浏览
+      return this.isGeneralManager && (this.title === 'approve' || this.title === 'view')
+    },
     isEditItem () { // 审批的时候只有客服主管可以改 新增编辑都可以修改
       return (this.title === 'view' || (this.title === 'approve' && !this.isCustomerSupervisor) || this.title === 'toPay')
     },
@@ -514,17 +546,10 @@ export let categoryMixin = {
           disabled: this.title === 'view' || !(this.isCustomerSupervisor && (this.title === 'create' || this.title === 'edit' || this.title === 'approve')), 
           col: this.ifFormEdit ? 5 : 6, type: 'select', options: this.expenseList, width: '100%'
         },
-        // { label: '报销单号', prop: 'mainId', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
         { label: '报销状态', prop: 'reimburseTypeText', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
         { label: '客户代码', prop: 'terminalCustomerId', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
         { label: '客户名称', prop: 'terminalCustomer', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 10 : 12 },
         { label: '支付时间', prop: 'payTime', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
-        // { label: '填报时间', prop: 'createTime', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
-        // { label: '报销人', prop: 'userName', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        // { label: '部门', prop: 'orgName', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        // { label: '劳务关系', prop: 'serviceRelations', palceholder: '请输入内容',  
-        //   col: this.ifFormEdit ? 5 : 6, disabled: true
-        // },
         { label: '呼叫主题', prop: 'fromTheme', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 15 : 18 },
         { label: '服务报告', prop: 'report',  disabled: true, col: this.ifFormEdit ? 5 : 6, 
           type: 'button', btnText: '服务报告', handleClick: this.openReport, isEnd: true
@@ -887,6 +912,7 @@ export const chatMixin = {
       return date ? date.slice(0, -3) : date
     },
     _normalizeOrderDetail (data) {
+      let reg = /[\r|\r\n|\n\t\v]/g
       let { serviceWorkOrders } = data
       if (serviceWorkOrders && serviceWorkOrders.length) {
         serviceWorkOrders.forEach(serviceOrder => {
@@ -896,6 +922,7 @@ export const chatMixin = {
           serviceOrder.visitTime = this.deleteSeconds(visitTime)
           serviceOrder.liquidationDate = this.deleteSeconds(liquidationDate)
           serviceOrder.completeDate = this.deleteSeconds(completeDate)
+          serviceOrder.themeList = JSON.parse(serviceOrder.fromTheme.replace(reg, ''))
         })
       }
       return data

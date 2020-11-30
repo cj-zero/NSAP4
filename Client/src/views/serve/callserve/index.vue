@@ -48,7 +48,6 @@
             fit
             height="100%"
             style="width: 100%;"
-            highlight-current-row
             @row-click="rowClick"
             :row-class-name="rowClassName"
           >
@@ -69,7 +68,7 @@
                     :row-style="rowStyle"
                   >
                     <el-table-column
-                      show-overflow-tooltip
+                      :show-overflow-tooltip="fruit.name !== 'fromTheme'"
                       v-for="(fruit,index) in ChildheadOptions"
                       :align="fruit.align"
                       :key="`ind${index}`"
@@ -85,15 +84,22 @@
                           :class="processStatus(scope.row)"
                         >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
                         <span
-                          v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
+                          v-else-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
+                          :class="processFromType(scope.row)"
                         >{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
                         <span 
-                          v-if="fruit.name === 'priority'"
+                          v-else-if="fruit.name === 'priority'"
                           :class="processPriorityStatus(scope.row)"
                         >{{priorityOptions[scope.row.priority - 1]}}</span>
-                        <span
-                          v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
-                        >{{scope.row[fruit.name]}}</span>
+                        <template v-else-if="fruit.name === 'fromTheme'">
+                          <el-tooltip placement="top-start">
+                            <div slot="content">
+                              <p v-for="(content, index) in scope.row.themeList" :key="index">{{ content }}</p>
+                            </div>
+                            <span style="white-space: nowrap;">{{ scope.row[fruit.name] }}</span>
+                          </el-tooltip>
+                        </template>
+                        <span v-else>{{scope.row[fruit.name]}}</span>
                         <!-- <span v-if="fruit.name === 'recepUserName'">{{ scope.row.</span> -->
                       </template>
                     </el-table-column>
@@ -102,7 +108,7 @@
               </el-table-column>
             </div>
             <el-table-column
-              show-overflow-tooltip
+              :show-overflow-tooltip="fruit.name !== 'fromTheme'"
               v-for="(fruit,index) in ParentHeadOptions"
               :align="fruit.align"
               :key="`ind${index}`"
@@ -116,54 +122,39 @@
                 <div v-if="fruit.name === 'radio'">
                   <el-radio v-model="radio" :label="scope.row.serviceOrderId"></el-radio>
                 </div>
-                <span v-if="fruit.name === 'order'">
+                <span v-else-if="fruit.name === 'order'">
                   {{ scope.$index + 1 }}
                 </span>
-                <div v-if="fruit.name === 'u_SAP_ID'" class="link-container" >
+                <div v-else-if="fruit.name === 'u_SAP_ID'" class="link-container" >
                   <img :src="rightImg" @click="openTree(scope.row.serviceOrderId)" class="pointer" />
                   <span>{{ scope.row.u_SAP_ID }}</span>
                 </div>
-                <div v-if="fruit.name === 'customerId'" class="link-container" >
+                <div v-else-if="fruit.name === 'customerId'" class="link-container" >
                   <img :src="rightImg" @click="getCustomerInfo(scope.row.customerId)" class="pointer" />
                   <span>{{ scope.row.customerId }}</span>
                 </div>
-                <!-- <span
-                  v-if="fruit.name === 'status'"
-                  :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-                >{{statusOptions[scope.row[fruit.name]].label}}</span> -->
-                <span
-                  v-if="fruit.name === 'workOrderNumber'">
-                  {{ scope.row.serviceWorkOrders.length }}
-                </span>
-                <span v-if="fruit.name === 'fromTheme'">
-                  {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].fromTheme: '' }}
-                </span>
-                <span v-if="fruit.name === 'manufacturerSerialNumber'">
-                  {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].manufacturerSerialNumber: '' }}
-                </span>
-                <span v-if="fruit.name === 'materialCode'">
-                  {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].materialCode: '' }}
-                </span>
-                <span v-if="fruit.name === 'status'"
-                  :class="processStatus(scope.row.serviceWorkOrders[0])"
+                <template v-else-if="fruit.name === 'fromTheme'">
+                  <el-tooltip placement="top-start">
+                    <div slot="content">
+                      <p v-for="(content, index) in scope.row.themeList" :key="index">{{ content }}</p>
+                    </div>
+                    <span style="white-space: nowrap;">{{ scope.row[fruit.name] }}</span>
+                  </el-tooltip>
+                </template>
+                <span v-else-if="fruit.name === 'status'"
+                  :class="processStatus(scope.row)"
                 >
-                  {{ scope.row.serviceWorkOrders[0] ? statusOptions[scope.row.serviceWorkOrders[0].status - 1].label: '' }}
+                  {{ statusOptions[scope.row.status - 1].label }}
                 </span>
                 <span
-                  v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
+                  v-else-if="fruit.name === 'fromType'"
+                  :class="processFromType(scope.row)"
                 >{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
-                <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority - 1]}}</span>
-                <span
-                  v-if="fruit.name!='priority'&&
-                  fruit.name!='fromType'&&
-                  fruit.name!='status'&&
-                  fruit.name!='u_SAP_ID'&&
-                  fruit.name !== 'workOrderNumber' &&
-                  fruit.name !== 'workOrderNumber' && 
-                  fruit.name !== 'customerId' &&
-                  fruit.name !== 'materialCode' &&
-                  fruit.name !== 'manufacturerSerialNumber'"
-                >{{scope.row[fruit.name]}}</span>
+                <span 
+                  v-else-if="fruit.name === 'priority'"
+                  :class="processPriorityStatus(scope.row)"
+                >{{priorityOptions[scope.row.priority - 1]}}</span>
+                <span v-else>{{scope.row[fruit.name]}}</span>
               </template>
             </el-table-column>
           </el-table>
@@ -473,7 +464,10 @@ export default {
         { name: 'radio', width: 30 },
         { name: 'order', label: '序号', width: '50' },
         { name: "u_SAP_ID", label: "服务单号", align:'left', sortable:true, width: '80' },
+        { name: "priority", label: "优先级" ,align:'left', width: '60' },
+        { name: "fromType", label: "呼叫类型", width: "100px",align:'left'  },
         { name: "status", label: "工单状态", align: 'left', width: '70' },
+        { name: "currentUser", label: "技术员" ,align:'left' },
         { name: "customerId", label: "客户代码", align:'left', width: '90' },
         { name: "customerName", label: "客户名称" ,align:'left', width: '180' },
         { name: "fromTheme", label: "呼叫主题", align: 'left', width: '275' },
@@ -487,7 +481,7 @@ export default {
         { name: "salesMan", label: "销售员" ,align:'left', width: '70' },
         { name: "recepUserName", label: "接单员" ,align:'left', width: '85' },
         { name: 'serviceCreateTime', label: '创建时间', align: 'left', width: '140' },
-        { name: 'workOrderNumber', label: '工单数', align: 'left', width: '' } 
+        { name: 'workOrderNumber', label: '工单数', align: 'left' } 
       ],
       ChildheadOptions: [
         // { name: "serviceOrderId", label: "服务单号", ifFixed: true },
@@ -829,7 +823,8 @@ export default {
     // },
     _normalize (data) {
       let resultArr = data.map(item => {
-        let { recepUserName, 
+        let { 
+          recepUserName, 
           serviceWorkOrders, 
           customerId,
           customerName,
@@ -837,9 +832,38 @@ export default {
           terminalCustomer } = item
         item.customerId = terminalCustomerId ? terminalCustomerId : customerId
         item.customerName = terminalCustomer ? terminalCustomer : customerName
-        serviceWorkOrders.forEach(workItem => {
-          workItem.recepUserName = recepUserName
-        })
+        // ite
+        console.log(item.u_SAP_ID, 'usapid')
+        if (serviceWorkOrders.length) {
+          serviceWorkOrders.forEach(workItem => {
+            workItem.recepUserName = recepUserName
+            let theme = workItem.fromTheme
+            let reg = /[\r|\r\n|\n\t\v]/g
+            theme = theme.replace(reg, '')
+            console.log(theme)
+            workItem.themeList = JSON.parse(theme).map(item => item.description.trim())
+            workItem.fromTheme = workItem.themeList.join(' ')
+          })
+          let {
+            fromTheme,
+            priority,
+            fromType,
+            currentUser,
+            materialCode,
+            manufacturerSerialNumber,
+            status,
+            themeList
+          } = serviceWorkOrders[0]
+          item.fromTheme = fromTheme
+          item.themeList = themeList
+          item.priority = priority
+          item.fromType = fromType
+          item.currentUser = currentUser
+          item.materialCode = materialCode
+          item.manufacturerSerialNumber = manufacturerSerialNumber
+          item.workOrderNumber = serviceWorkOrders.length
+          item.status = status
+        }
         return item
       })
       this.list = resultArr
@@ -851,7 +875,8 @@ export default {
         this.total = response.count;
         this._normalize(result)
         this.listLoading = false;
-      }).catch(() => {
+      }).catch((err) => {
+        console.log(err, 'err')
         this.listLoading = false;
         this.$message({
           type: "error",

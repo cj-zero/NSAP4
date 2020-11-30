@@ -75,8 +75,8 @@ namespace OpenAuth.App
 
             obj.CreateTime = DateTime.Now;
             //获取当前登陆者的nsap用户Id
-            var nsap_userId = (await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.CurrentUserId).FirstOrDefaultAsync())?.UserID;
-            obj.CreateUserId = nsap_userId;
+            var nsapInfo = (await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.CurrentUserId).Include(a => a.User).FirstOrDefaultAsync());
+            obj.CreateUserId = nsapInfo.User.Id;
             obj.IsReimburse = 1;
             obj.TechnicianId = req.CurrentUserId.ToString();
             //obj.CreateUserName = user.Name;
@@ -118,6 +118,7 @@ namespace OpenAuth.App
                     ServiceWorkOrder = string.Join(',', workorder.ToArray()),
                     MaterialType = req.MaterialType
                 });
+                await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{nsapInfo.User.Name}完成了服务", ActionType = "完成服务单", ServiceOrderId = req.ServiceOrderId, MaterialType = req.MaterialType });
                 //反写完工报告Id至工单
                 await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id),
                     o => new ServiceWorkOrder { CompletionReportId = completionReportId, CompleteDate = DateTime.Now });

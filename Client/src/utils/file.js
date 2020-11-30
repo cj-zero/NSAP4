@@ -24,10 +24,12 @@ export function download (src) {
   img.src = src
 }
 
-export function downloadFile (url) {
+export function downloadFile (url, isDownload = true) {
   let a = document.createElement('a')
   a.href = url
-  a.download = url
+  if (isDownload) {
+    a.download = url
+  }
   a.target = '_blank'
   a.click()
 }

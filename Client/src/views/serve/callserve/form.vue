@@ -594,7 +594,7 @@ export default {
         newestContactTel: "", //最新联系人电话号码,
         contractId: "", //服务合同
         recepUserName: "", //接单员
-        addressDesignator: "", //地址标识
+        addressDesignator: "发运至", //地址标识
         recepUserId: "", //接单人用户ID
         address: "", //详细地址
         // createTime: timeToFormat("yyyy-MM-dd HH-mm-ss"),
@@ -700,7 +700,7 @@ export default {
   watch: {
     customer: {
       handler(val) {
-        this.getPartnerInfo(String(val.customerId).toUpperCase())
+        // this.getPartnerInfo(String(val.customerId).toUpperCase())
         this.setForm(val);
       },
     },
@@ -744,7 +744,7 @@ export default {
           }
         }
         if (isCustomerCode(val)) {
-          if (this.formName !== '编辑' && this.formName !== '查看') {         
+          if (this.formName !== '编辑' && this.formName !== '查看' && this.formName !== '确认') {         
             let value = this.selectType === 'click'
               ? this.currentItem
               : { cardCode: val }
@@ -877,11 +877,11 @@ export default {
         console.log(local.getResults().getPoi(0), 'position')
         let { point, address, city, province } = local.getResults().getPoi(0) //获取第一个智能搜索的结果
         if (auto) { // 如果是通过客户代码或者终端代码进行选择的
-          this.form.province = province
+          this.form.province = province || ''
           if (province === city) { // 如果省和市名字一样则直接取省
             this.form.city = ''
           } else {
-            this.form.city = city
+            this.form.city = city || ''
           }
           let district = address
             .replace(province, '')
@@ -998,7 +998,7 @@ export default {
       this.form.contactTel = ''
       this.form.newestContacter = ''
       this.form.newestContactTel = ''
-      this.form.addressDesignator = '';
+      // this.form.addressDesignator = '';
       this.form.address = '';
       
     },
@@ -1115,6 +1115,7 @@ export default {
     async postServe() {
       //创建整个工单
       if (!this.form.serviceWorkOrders.length) {
+        console.log('first error')
         this.$message({
           message: `请将必填项填写完整`,
           type: "error",
@@ -1122,24 +1123,15 @@ export default {
         this.$emit("close-Dia", "N");
         return;
       }
+      console.log('创建工单')
       if (!this.form.longitude) {
-        this.$message({
+        this.$emit("close-Dia", "N");
+        return this.$message({
           message: `请手动选择地址`,
           type: "error",
         });
-        this.$emit("close-Dia", "N");
-        return;
       }
       if (this.form.serviceWorkOrders.length >= 0) {
-        let chec = this.form.serviceWorkOrders.every(
-          (item) => {
-            return (item.fromTheme !== "" &&
-            item.fromType !== "" &&
-            item.problemTypeId !== "" &&
-            item.manufacturerSerialNumber !== "" &&
-            (item.fromType === 2 ? item.solutionId !== "" : true))
-          }
-        );
         try {
           this.isValid = await this.$refs.form.validate()
         } catch (err) {
@@ -1153,6 +1145,17 @@ export default {
           this.$message.error('请输入正确的终端代码格式')
           return this.$emit('close-Dia', 'closeLoading')
         }
+        let chec = this.form.serviceWorkOrders.every(
+          (item) => {
+            return ( item.themeList && 
+            item.themeList.length &&
+            item.fromType !== "" &&
+            item.problemTypeId !== "" &&
+            item.manufacturerSerialNumber !== "" &&
+            (item.fromType === 2 ? item.solutionId !== "" : true))
+          }
+        );
+        
         console.log(chec, this.isValid, 'chec')
         if (chec && this.isValid) {
           if (this.$route.path === "/serve/callserve") {
@@ -1165,6 +1168,9 @@ export default {
                 this.form.city = ""
               }
               this.form.pictures = [...this.upLoadImgList, ...this.upLoadFileList]
+              this.form.serviceWorkOrders.forEach(workOrder => {
+                workOrder.fromTheme = JSON.stringify(workOrder.themeList)
+              })
               callservesure
                 .CreateOrder(this.form)
                 .then(() => {
@@ -1197,6 +1203,7 @@ export default {
                 let promise = callservesure.addWorkOrder({
                   serviceOrderId: this.serviceOrderId,
                   ...item,
+                  fromTheme: JSON.stringify(item.themeList)
                 });
                 promiseList.push(promise);
               }
@@ -1218,6 +1225,9 @@ export default {
             }
           } else {
             this.form.pictures = [...this.upLoadImgList, ...this.upLoadFileList]
+            this.form.serviceWorkOrders.forEach(workOrder => {
+              workOrder.fromTheme = JSON.stringify(workOrder.themeList)
+            })
             callservesure
               .CreateWorkOrder(this.form)
               .then(() => {
@@ -1236,6 +1246,7 @@ export default {
               });
           }
         } else {
+          console.log('last error')
           this.$message({
             message: `请将必填项填写完整`,
             type: "error",
@@ -1251,36 +1262,28 @@ export default {
           if (!res.result) {
             return
           }
-          if (this.handleSelectType === 'customer') {
-            this.form.salesMan = res.result.slpName
-            this.form.customerName = res.result.cardName
-            if (this.form.terminalCustomerId === this.form.customerId) {
-              this.form.terminalCustomer = res.result.cardName
-            }
-          } else {
-            this.form.terminalCustomer = res.result.cardName
-          }
+          // if (this.handleSelectType === 'customer') {
+          //   this.form.salesMan = res.result.slpName
+          //   this.form.customerName = res.result.cardName
+          //   if (this.form.terminalCustomerId === this.form.customerId) {
+          //     this.form.terminalCustomer = res.result.cardName
+          //   }
+          // } else {
+          //   this.form.terminalCustomer = res.result.cardName
+          // }
           // 如果已经存在终端客户，则只有改变终端客户时才可以更改相关信息
           // 如果终端客户代码和客户代码一致，则可以更改相关信息
           if ((this.handleSelectType === 'terminalCustomer' && this.form.terminalCustomerId) || 
             (this.handleSelectType === 'customer' && this.form.terminalCustomerId === this.form.customerId) ||
             this.formName === '确认') {
-            this.addressList = res.result.addressList;
+            // this.addressList = res.result.addressList;
             this.cntctPrsnList = res.result.cntctPrsnList;
             this.form.supervisor = res.result.techName;
-            if (this.cntctPrsnList && this.cntctPrsnList.length) {
-            // let firstValue = res.result.cntctPrsnList[0]
-              // let { tel1, tel2, cellolar, name } = firstValue
-              if (this.formName !== '确认') {
-                // this.form.newestContacter = name
-                // this.form.newestContactTel = tel1 || tel2 || cellolar
-              }
-            }
-            if (this.addressList.length) {
-              let { address, building, city } = this.addressList[0];
-              this.form.addressDesignator = address;
-              this.form.address = city + building
-            }
+            // if (this.addressList.length) {
+            //   let { address, building, city } = this.addressList[0];
+            //   this.form.addressDesignator = address;
+            //   this.form.address = city + building
+            // }
           }
         })
         .catch(() => {
@@ -1290,10 +1293,6 @@ export default {
           //   duration: "5000"
           // });
         });
-    },
-    changeAddr(val) {
-      let res = this.addressList.filter((item) => item.address == val);
-      this.form.address = res[0].building;
     },
     choosePeople(val) {
       let res = this.cntctPrsnList.filter((item) => item.name == val);
@@ -1397,9 +1396,6 @@ export default {
     handleSelectCustomer(item) {
       this.handleSelect(item, 'customer')
     },
-    handleSelectTerminal (item) {
-      this.handleSelect(item, 'terminalCustomer')
-    },
     handleSelect (item, type) {
       this.selectType = 'click' // 通过什么方式来填写客户/终端客户代码
       this.businessType = 'input'
@@ -1409,8 +1405,10 @@ export default {
         this.form.customerId = item.cardCode;
         this.form.customerName = item.cardName;
         this.form.salesMan = item.slpName;
-        if (!this.form.terminalCustomerId) {
+        if (!this.form.terminalCustomerId || !this.form.terminalCustomer) {
           this.form.contactTel = item.cellular;
+          this.form.address = item.address2
+          this.form.terminalCustomer = item.cardName;
         }
       } 
     },
@@ -1427,12 +1425,19 @@ export default {
         this.form.customerId = item.cardCode;
         this.form.customerName = item.cardName;
         this.form.salesMan = item.slpName;
-        if (!this.form.terminalCustomerId) {
+        if (!this.form.terminalCustomerId || !this.form.terminalCustomer) {
           this.form.contactTel = item.cellular;
+          this.form.address = item.address2
+          this.form.terminalCustomer = item.cardName;
         }
       } else { // 终端客户代码
         this.form.terminalCustomerId = item.cardCode
         this.form.terminalCustomer = item.cardName
+        this.form.supervisor = item.technician
+        this.form.contactTel = item.cellular;
+        // this.form.addressDesignator = item.address
+        this.form.address = item.address2
+        console.log(item, 'termianl')
         this.handleCurrentChange(item)
       }
     },

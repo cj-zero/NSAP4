@@ -118,8 +118,14 @@ namespace OpenAuth.Repository
             }
             GetDbContext<T>().Set<T>().Add(entity);
         }
+        public T Add<T,TKey>(T entity) where T : class
+        {
+            var e=GetDbContext<T>().Set<T>().Add(entity);
 
-        /// <summary>
+            return e.Entity;
+        }
+
+        /// <summary> 
         /// 批量添加
         /// </summary>
         /// <param name="entities">The entities.</param>
@@ -132,6 +138,15 @@ namespace OpenAuth.Repository
                     entity.GenerateDefaultKeyVal();
                 }
             }
+            GetDbContext<T>().Set<T>().AddRange(entities);
+        }
+
+        /// <summary>
+        /// 同步带key批量添加
+        /// </summary>
+        /// <param name="entities">The entities.</param>
+        public void BatchAdd<T, TKey>(T[] entities) where T : class
+        {
             GetDbContext<T>().Set<T>().AddRange(entities);
         }
 
@@ -267,6 +282,8 @@ namespace OpenAuth.Repository
             var e = await GetDbContext<T>().Set<T>().AddAsync(entity, cancellationToken);
             return e.Entity;
         }
+
+        
 
         public async Task BatchAddAsync<T>(T[] entities, CancellationToken cancellationToken = default) where T : BaseEntity
         {

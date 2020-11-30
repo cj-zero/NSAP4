@@ -190,6 +190,7 @@ export default {
       return date ? date.slice(0, -3) : date
     },
     _normalizeOrderDetail (data) {
+      let reg = /[\r|\r\n|\n\t\v]/g
       let { serviceWorkOrders } = data
       if (serviceWorkOrders && serviceWorkOrders.length) {
         serviceWorkOrders.forEach(serviceOrder => {
@@ -199,6 +200,7 @@ export default {
           serviceOrder.visitTime = this.deleteSeconds(visitTime)
           serviceOrder.liquidationDate = this.deleteSeconds(liquidationDate)
           serviceOrder.completeDate = this.deleteSeconds(completeDate)
+          serviceOrder.themeList = JSON.parse(serviceOrder.fromTheme.replace(reg, ''))
         })
       }
       return data

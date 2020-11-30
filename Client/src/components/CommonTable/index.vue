@@ -35,7 +35,7 @@
       :label="item.label"
       :align="item.align || 'left'"
       :sortable="item.isSort || false"
-      show-overflow-tooltip
+      :show-overflow-tooltip="!item.isMultipleLines"
     >
       <template slot="header" slot-scope="scope">
         <span v-if="false">{{ scope.$index }}</span>
@@ -72,10 +72,20 @@
             :size="item.size || 'mini'"
           >{{ btnItem.btnText }}</el-button>
         </template>
+
         <!-- slot 可以再外部使用具名插槽 展示不同列的值 -->
         <template v-else-if="item.type === 'slot'">
           <!-- {{ JSON.stringify(scope.row) }} -->
           <slot :name="item.slotName || 'default'" :row="{ ...scope.row, prop: item.prop, ...(item.options || {})}"></slot>
+        </template>
+        <!-- 冒泡提示语分行显示 -->
+        <template v-else-if="item.isMultipleLines">
+          <el-tooltip placement="top-start">
+            <div slot="content">
+              <p v-for="(content, index) in _formatArray(scope.row[item.prop], item.contentField)" :key="index">{{ content }}</p>
+            </div>
+            <span style="white-space: nowrap;">{{ _formatText(scope.row[item.prop], item.contentField) }}</span>
+          </el-tooltip>
         </template>
         <!-- 文本显示 -->
         <template v-else-if="item.originType !== 'selectoin'">
@@ -87,6 +97,7 @@
 </template>
 
 <script>
+const TEXT_REG = /[\r|\r\n|\n\t\v]/g
 import rightImg from '@/assets/table/right.png'
 import { noop } from '@/utils/declaration'
 import { isFunction } from '@/utils/validate'
@@ -166,6 +177,14 @@ export default {
     isFunction,
     _noop () {
       noop()
+    },
+    _formatArray (data, contentField) {
+      let result = Array.isArray(data) ? data : JSON.parse(data.replace(TEXT_REG, ''))
+      return result.map(item => item[contentField])
+    },
+    _formatText (data, contentField) {
+      let result = Array.isArray(data) ? data : JSON.parse(data.replace(TEXT_REG, ''))  
+      return result.map(item => item[contentField]).join(' ')
     },
     onCurrentChange (val) {
       console.log(val, 'val')

@@ -11,9 +11,22 @@
   }
 }
 
+.global-unused { // 不可编辑把输入框border去掉 全局的
+  .el-select {
+    .el-input__suffix {
+      display: none;
+    }
+  }
+  .el-input {
+    input {
+      border: none;
+    }
+  }
+}
+
 .el-input {
   > input {
-    padding: 0 5px !important;
+    padding: 0 2px !important;
   }
 }
 .el-input.el-date-editor {
@@ -22,7 +35,11 @@
   }
 }
 textarea {
-  padding: 5px !important;
+  padding: 2px !important;
+}
+
+.el-form-item, .el-form-item--mini {
+  margin-bottom: 2px !important;
 }
 /* 图片箭头样式 */
 .link-container {
@@ -49,4 +66,15 @@ textarea {
 }
 .status-gray {
   color: $statusGray;
+}
+
+/* 工单优先级 */
+.priority-low {
+  color: $priority-low;
+}
+.priority-middle {
+  color: $priority-middle;
+}
+.priority-high {
+  color: $priority-high;
 }

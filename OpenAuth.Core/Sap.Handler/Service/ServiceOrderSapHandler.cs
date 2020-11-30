@@ -59,7 +59,8 @@ namespace Sap.Handler.Service
                     {
                         sc.ServiceBPType = ServiceTypeEnum.srvcSales;
                     }
-                    sc.Subject = thisSwork.FromTheme;
+                    var FromTheme = JsonHelper.Instance.Deserialize<List<FromThemeJson>>(thisSwork.FromTheme);
+                    sc.Subject = FromTheme.FirstOrDefault()?.description;
                     //sc.ContactCode = 15;
                    if (!string.IsNullOrWhiteSpace(thisSwork.ContractId) && thisSwork.ContractId.Trim() != "-1")
                     {

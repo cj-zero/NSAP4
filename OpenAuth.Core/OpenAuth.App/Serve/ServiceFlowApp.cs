@@ -65,7 +65,7 @@ namespace OpenAuth.App
                     await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.User.Id && s.FlowNum == 3, o => new ServiceFlow { IsProceed = 1 });
                     break;
                 case 8://跳转是否领料页面
-                    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.Id && s.FlowNum == 6, o => new ServiceFlow { IsProceed = 1 });
+                    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.User.Id && s.FlowNum == 6, o => new ServiceFlow { IsProceed = 1 });
                     break;
                 case 10://领完料后跳转
                     await GetMaterial(request.ServiceOrderId, request.MaterialType, userInfo.User.Id, userInfo.User.Name, 1);
@@ -133,7 +133,7 @@ namespace OpenAuth.App
             await UnitWork.DeleteAsync<ServiceFlow>(s => s.ServiceOrderId == serviceOrderId && s.MaterialType.Equals(MaterialType) && s.Creater.Equals(creater) && s.FlowType == flowType);
             await UnitWork.SaveAsync();
             //添加后续默认流程
-            List<int> flowNums = new List<int> { 4, 5, 3 };
+            List<int> flowNums = new List<int> { 4, 5, 6, 3 };
             foreach (var item in flowNums)
             {
                 var flow = new ServiceFlow { ServiceOrderId = serviceOrderId, MaterialType = MaterialType, Creater = creater, CreateTime = DateTime.Now, IsProceed = 0, CreaterName = createname, FlowNum = item, FlowName = GetFlowName(item), FlowType = flowType };
@@ -171,7 +171,7 @@ namespace OpenAuth.App
             else if (flowType == 1)
             {
                 //清除填报告单流程与是否领料
-                await UnitWork.DeleteAsync<ServiceFlow>(s => s.ServiceOrderId == serviceOrderId && s.MaterialType.Equals(MaterialType) && s.Creater.Equals(creater) && (s.FlowNum == 3 || s.FlowNum == 7) && s.FlowType == flowType);
+                await UnitWork.DeleteAsync<ServiceFlow>(s => s.ServiceOrderId == serviceOrderId && s.MaterialType.Equals(MaterialType) && s.Creater.Equals(creater) && (s.FlowNum == 3 || s.FlowNum == 7 || s.FlowNum == 6) && s.FlowType == flowType);
                 await UnitWork.SaveAsync();
                 flowNums = new List<int> { 7, 3 };
             }
@@ -236,7 +236,7 @@ namespace OpenAuth.App
         private async Task<bool> ReturnMaterial(int serviceOrderId, string MaterialType, string creater, string createname)
         {
             //清除物流进度与填报告单流程
-            await UnitWork.DeleteAsync<ServiceFlow>(s => s.ServiceOrderId == serviceOrderId && s.MaterialType.Equals(MaterialType) && s.Creater.Equals(creater) && (s.FlowNum == 3 || s.FlowNum == 7 || s.FlowNum == 8) & s.FlowType == 1);
+            await UnitWork.DeleteAsync<ServiceFlow>(s => s.ServiceOrderId == serviceOrderId && s.MaterialType.Equals(MaterialType) && s.Creater.Equals(creater) && (s.FlowNum == 3 || s.FlowNum == 7 || s.FlowNum == 8 || s.FlowNum == 6) & s.FlowType == 1);
             await UnitWork.SaveAsync();
             //添加后续默认流程
             List<int> flowNums = new List<int> { 8, 3 };
@@ -278,9 +278,9 @@ namespace OpenAuth.App
                 case 5:
                     name = "核对设备";
                     break;
-                //case 6:
-                //    name = "是否领料";
-                //    break;
+                case 6:
+                    name = "是否领料";
+                    break;
                 case 7:
                     name = "物料进度";
                     break;

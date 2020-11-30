@@ -1,5 +1,6 @@
 using Infrastructure;
 using KuaiDi100.Common.Request;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using OpenAuth.App.Interface;
@@ -12,7 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
+using Infrastructure.Extensions;
 namespace OpenAuth.App
 {
     public class ReturnNoteApp : OnlyUnitWorkBaeApp
@@ -122,16 +123,18 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            //获取退料单表头信息
+            var returnNote = await UnitWork.Find<ReturnNote>(w => w.Id == req.Id).FirstOrDefaultAsync();
             //仓库验货
             await SaveReceiveInfo(req.ReturnMaterials);
             //验收通过
-            await UnitWork.UpdateAsync<ReturnNote>(r => r.FlowInstanceId == req.FlowInstanceId, u => new ReturnNote { Status = 2 });
+            await UnitWork.UpdateAsync<ReturnNote>(r => r.FlowInstanceId == returnNote.FlowInstanceId, u => new ReturnNote { Status = 2 });
             //流程通过
             _flowInstanceApp.Verification(new VerificationReq
             {
                 NodeRejectStep = "",
                 NodeRejectType = "0",
-                FlowInstanceId = req.FlowInstanceId,
+                FlowInstanceId = returnNote.FlowInstanceId,
                 VerificationFinally = "1",
                 VerificationOpinion = "同意",
             });
@@ -209,7 +212,7 @@ namespace OpenAuth.App
             if (r.Code == 200)
             {
                 var response = (string)r.Data;
-                await UnitWork.UpdateAsync<Expressage>(w => w.Id == Id, u => new Expressage { ExpressInformation = response});
+                await UnitWork.UpdateAsync<Expressage>(w => w.Id == Id, u => new Expressage { ExpressInformation = response });
                 await UnitWork.SaveAsync();
                 result.Data = response;
             }
@@ -220,5 +223,78 @@ namespace OpenAuth.App
 
             return result;
         }
+
+        /// <summary>
+        /// 获取退料单列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetReturnNoteList(GetReturnNoteListReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = new TableData();
+            //获取退料列表
+            var returnNote = await UnitWork.Find<ReturnNote>(null)
+              .WhereIf(!string.IsNullOrWhiteSpace(req.Id), q => q.Id.Equals(Convert.ToInt32(req.Id)))
+              .WhereIf(!string.IsNullOrWhiteSpace(req.CreaterName), q => q.CreateUser.Equals(req.CreaterName))
+              .WhereIf(!string.IsNullOrWhiteSpace(req.BeginDate), q => q.CreateTime >= Convert.ToDateTime(req.BeginDate))
+              .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate), q => q.CreateTime < Convert.ToDateTime(req.EndDate))
+              .WhereIf(!string.IsNullOrWhiteSpace(req.Status), q => q.Status == Convert.ToInt32(req.Status))
+              .OrderBy(s => s.Id).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
+            //获取服务单列表
+            var serviceOrderList = await UnitWork.Find<ServiceOrder>(null)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.SapId), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.SapId)))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.Customer), q => q.CustomerName.Equals(req.Customer))
+                .ToListAsync();
+            var returnNoteList = returnNote.Select(s => new { s.Id, CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerName).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.mm.dd") }).ToList();
+            result.Data = returnNoteList;
+            return result;
+        }
+
+        /// <summary>
+        /// 获取退料单详情（nsap）
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetReturnNoteDetail(int Id)
+        {
+            Dictionary<string, object> outDta = new Dictionary<string, object>();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = new TableData();
+            //获取退料单主表详情
+            var returnNote = await UnitWork.Find<ReturnNote>(w => w.Id == Id).FirstOrDefaultAsync();
+            //获取服务单详情
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(w => w.Id == returnNote.ServiceOrderId && w.U_SAP_ID == returnNote.ServiceOrderSapId).FirstOrDefaultAsync();
+            var mainInfo = new Dictionary<string, object>()
+            {
+                {"returnNoteCode" ,returnNote.Id},{"creater",returnNote.CreateUser },{ "createTime",returnNote.CreateTime },{"salMan",serviceOrder.SalesMan},{ "serviceSapId",serviceOrder.U_SAP_ID},{ "customerCode",serviceOrder.CustomerId},{ "customerName",serviceOrder.CustomerName},{ "status",returnNote.Status},{ "isLast",returnNote.IsLast}
+            };
+            outDta.Add("mainInfo", mainInfo);
+            //获取物流信息
+            var expressList = await UnitWork.Find<Expressage>(w => w.ReturnNoteId == Id).ToListAsync();
+            outDta.Add("expressList", expressList);
+            //获取退料列表
+            var query = from a in UnitWork.Find<ReturnNote>(null)
+                        join b in UnitWork.Find<ReturnnoteMaterial>(null) on a.Id equals b.ReturnNoteId into ab
+                        from b in ab.DefaultIfEmpty()
+                        join c in UnitWork.Find<ReturnNoteMaterialPicture>(null) on b.Id equals c.ReturnnoteMaterialId into abc
+                        from c in abc.DefaultIfEmpty()
+                        where a.Id == Id
+                        select new { a, b, c };
+            var returnNoteList = await query.Select(s => new { s.b.MaterialCode, s.b.MaterialDescription, s.b.Id, s.b.Count, s.b.TotalCount, s.c.PictureId, s.b.Check, returnNoteId = s.a.Id, s.b.WrongCount, s.b.ReceivingRemark, s.b.ShippingRemark }).OrderByDescending(o => o.returnNoteId).ToListAsync();
+            outDta.Add("returnNoteList", returnNoteList);
+            result.Data = outDta;
+            return result;
+        }
+
+
     }
 }
