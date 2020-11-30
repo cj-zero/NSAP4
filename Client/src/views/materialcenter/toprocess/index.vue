@@ -106,7 +106,7 @@ export default {
         { prop: 'startCreateTime', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
-        { type: 'button', btnText: '审批', handleClick: this._getQuotationDetail, options: { status: 'approve' }, isShow: this.isToProcess },
+        { type: 'button', btnText: '审批', handleClick: this._getQuotationDetail, options: { status: 'approve' }, isSpecial: true, isShow: this.isToProcess },
       ]
     }, // 搜索配置
     btnList () {

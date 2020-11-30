@@ -404,6 +404,7 @@ export default {
         this.courierList[row.index].expressInformation = expressInformation[expressInformation.length - 1].context
         console.log(expressInformation, this.courierList[row.index].expressInformation, row.index)
       }).catch(err => {
+        this.courierList[row.index].expressInformation = ''
         this.$message.error(err.message)
       })
     },

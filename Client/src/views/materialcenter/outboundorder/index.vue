@@ -41,8 +41,7 @@
         ref="outboundOrder" 
         :detailInfo="detailInfo"
         :categoryList="categoryList"
-        :status="status"
-        :isReceive="true"></outbound-order>
+        :status="status"></outbound-order>
     </my-dialog>
     <!-- 只能查看的表单 -->
     <my-dialog
@@ -109,10 +108,7 @@ export default {
     }, // 搜索配置
     btnList () {
       return [
-        { btnText: '预览', handleClick: this.togglePreview, isShow: !this.isPreviewing && this.status !== 'view' },
-        { btnText: '返回', handleClick: this.togglePreview, isShow: this.isPreviewing },
-        { btnText: '提交', handleClick: this.submit, isShow: this.status !== 'view' },
-        { btnText: '草稿', handleClick: this.submit, options: { isDraft: true }, isShow: this.status !== 'view' },
+        { btnText: '保存', handleClick: this.updateMaterial, isShow: this.status !== 'view' },
         { btnText: '关闭', handleClick: this.close, className: 'close' }      
       ]
     }
@@ -148,7 +144,6 @@ export default {
       ],
       customerList: [], // 用户服务单列表
       status: 'outbound', // 报价单状态
-      isPreviewing: false, // 处于预览状态
       detailInfo: null // 详情信息
     } 
   },
@@ -167,18 +162,17 @@ export default {
         this.tableLoading = false
       })
     },
-    submit (options) {
-      let isDraft = !!options.isDraft
+    updateMaterial () {
       this.dialogLoading = true
-      let isEdit = this.status === 'edit'
-      this.$refs.quotationOrder._operateOrder(isEdit, isDraft).then(() => {
-        this.dialogLoading = false
+      this.$refs.outboundOrder.updateMaterial().then(res => {
+        console.log(res, 'res')
+        this.$message.success('保存成功')
         this._getList()
         this.close()
-        this.$message.success(isDraft ? '存为草稿成功' : '提交成功')
-      }).catch(err => {
-        this.$message.error(err.message)
         this.dialogLoading = false
+      }).catch(err => {
+        this.dialogLoading = false
+        this.$message.error(typeof err === 'object' ? err.message : '保存失败')
       })
     },
     close () {

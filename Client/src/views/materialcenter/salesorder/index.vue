@@ -41,7 +41,7 @@
         ref="quotationOrder" 
         :detailInfo="detailInfo"
         :categoryList="categoryList"
-        isMerged="true"
+        :isSales="true"
         :status="status"></quotation-order>
     </my-dialog>
     <!-- 只能查看的表单 -->

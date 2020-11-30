@@ -7,7 +7,7 @@
     stripe
     border
     fit
-    :row-key="rowKey"
+    :row-key="hasSelection ? rowKey : ''"
     :height="height"
     :max-height="maxHeight"
     @current-change="onCurrentChange"

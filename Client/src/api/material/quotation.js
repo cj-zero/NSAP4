@@ -88,9 +88,10 @@ export function updateOutboundOrder (data) { // 修改出库单信息
   })
 }
 
-export function getOutboundOrderDetail (params) { // 获取出库单详情
+
+export function getExpressInfo (params) { // 根据快递单号查询物流信息
   return request({
-    url: '/api/Material/Quotation/UpdateMaterial',
+    url: '/Expressage/GetExpressInfo',
     method: 'get',
     params
   })

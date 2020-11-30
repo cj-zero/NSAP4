@@ -33,7 +33,6 @@ export const quotationTableMixin = {
     _getQuotationDetail (data) {
       let quotationId
       let { status } = data
-      console.log(status,' status', this.isMaterialFinancial)
       if (status === 'view') {
         quotationId = data.id
       } else {
@@ -189,7 +188,7 @@ export const configMixin = { // 表单配置
         { label: '客户名称', prop: 'terminalCustomer', placeholder: '请选择', col: 12, disabled: true, isEnd: true },
         { label: '开票地址', prop: 'shippingAddress', placeholder: '请选择', col: 18, disabled: !this.ifEdit },
         { label: '开票单位', prop: 'invoiceCompany', placeholder: '请选择', col: 6, 
-          type: 'select', options: this.invoiceCompanyList, isEnd: true, disabled: !(this.isMaterialFinancial && this.status === 'approve') },
+          type: 'select', options: this.invoiceCompanyList, isEnd: true, disabled: this.status === 'view' || this.status === 'pay' || (!this.isMaterialFinancial && this.status === 'approve') },
         { label: '收货地址', prop: 'collectionAddress', placeholder: '请选择', col: 18, disabled: !this.ifEdit },
         { label: '发货方式', prop: 'deliveryMethod', placeholder: '请选择', col: 6, type: 'select', options: this.deliveryMethodList, disabled: !this.ifEdit, isEnd: true },
         { label: '备注', prop: 'remark', placeholder: '请填写', col: 18, disabled: !this.ifEdit },
@@ -301,6 +300,7 @@ export const chatMixin = { // 服务单详情
       return date ? date.slice(0, -3) : date
     },
     _normalizeOrderDetail (data) {
+      let reg = /[\r|\r\n|\n\t\v]/g
       let { serviceWorkOrders } = data
       if (serviceWorkOrders && serviceWorkOrders.length) {
         serviceWorkOrders.forEach(serviceOrder => {
@@ -310,6 +310,7 @@ export const chatMixin = { // 服务单详情
           serviceOrder.visitTime = this.deleteSeconds(visitTime)
           serviceOrder.liquidationDate = this.deleteSeconds(liquidationDate)
           serviceOrder.completeDate = this.deleteSeconds(completeDate)
+          serviceOrder.themeList = JSON.parse(serviceOrder.fromTheme.replace(reg, ''))
         })
       }
       return data

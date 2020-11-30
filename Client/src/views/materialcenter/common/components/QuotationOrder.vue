@@ -1,10 +1,12 @@
 <template>
   <div class="quotation-wrapper" :class="{ uneditable: ifNotEdit }" v-loading="contentLoading">
     <el-row type="flex" class="title-wrapper">
-      <p class="bold id">报价单号: <span>{{ formData.id || '' }}</span></p>
+      <p class="bold id" v-if="formData.salesOrderId && isSales">销售单号：<span>{{ formData.salesOrderId }}</span></p>
+      <p class="bold id">{{ isSales ? '报价单号' : '领料单号' }}: <span>{{ formData.id || '' }}</span></p>
       <p class="bold">申请人: <span>{{ formData.createUser || createUser }}</span></p>
       <p>创建时间: <span>{{ formData.createTime || createTime }}</span></p>
       <p>销售员: <span>{{ formData.salesMan }}</span></p>
+      <p class="bold id" v-if="formData.salesOrderId && !isSales">销售单号：<span>{{ formData.salesOrderId }}</span></p>
     </el-row>
     <!-- 主题内容 -->
     <el-scrollbar class="scroll-bar">
@@ -181,8 +183,8 @@
               >
                 <template v-slot:totalPrice_header>
                   <el-tooltip effect="dark" placement="top-end">
-                    <div slot="content">{{ materialData.list | calcTotalItem | toThousands}}</div>
-                    <p class="text-overflow"> 总计 <span>{{ materialData.list | calcTotalItem | toThousands }}</span></p>
+                    <div slot="content">{{ materialData.list | calcTotalItem(materialData.isProtected) | toThousands}}</div>
+                    <p class="text-overflow"> 总计 <span>{{ materialData.list | calcTotalItem(materialData.isProtected) | toThousands }}</span></p>
                   </el-tooltip>                     
                 </template>
                 <template v-slot:count="{ row }">
@@ -250,8 +252,8 @@
                     :columns="materialTableColumns">
                     <template v-slot:totalPrice_header="scope">
                       <el-tooltip effect="dark" placement="top-end">
-                        <div slot="content">{{ item.quotationMaterials | calcTotalItem | toThousands }}</div>
-                        <p class="text-overflow">{{ scope.row.label }} {{ item.quotationMaterials | calcTotalItem | toThousands }}</p>
+                        <div slot="content">{{ item.quotationMaterials | calcTotalItem(item.isProtected) | toThousands }}</div>
+                        <p class="text-overflow">{{ scope.row.label }} {{ item.quotationMaterials | calcTotalItem(item.isProtected) | toThousands }}</p>
                       </el-tooltip>                      
                     </template>
                   </common-table>
@@ -307,7 +309,7 @@
       <pagination
         v-show="customerTotal > 0"
         :total="customerTotal"
-        layout="prev, next, jumper"
+        layout="total, prev, next, jumper"
         :page.sync="listQueryCustomer.page"
         :limit.sync="listQueryCustomer.limit"
         @pagination="customerCurrentChange"
@@ -373,7 +375,7 @@
         </el-col>
       </el-row>
     </my-dialog>
-    <el-button @click="_checkFormData">点击校验</el-button>
+    <!-- <el-button @click="_checkFormData">点击校验</el-button> -->
   </div>
 </template>
 
@@ -413,15 +415,16 @@ export default {
     // AreaSelector
   },
   filters: {
-    calcTotalItem (val) { // 计算每一个物料表格的总金额
-      return val.filter(item => isNumber(item.totalPrice))
-        .reduce((prev, next) => prev + next.totalPrice, 0)
+    calcTotalItem (val, isProtected) { // 计算每一个物料表格的总金额
+      return isProtected ? 0 : 
+        val.filter(item => isNumber(item.totalPrice))
+          .reduce((prev, next) => prev + next.totalPrice, 0)
     },
     calcSerialTotalMoney (serialNumber, list) {
       let index = findIndex(list, item => {
         return item.productCode === serialNumber
       })
-      if (index !== -1) {
+      if (index !== -1 && !list[index].isProtected) { // 保外的才算钱
         return list[index].
           quotationMaterials.filter(item => isNumber(item.totalPrice))
           .reduce((prev, next) => prev + next.totalPrice, 0)
@@ -444,6 +447,7 @@ export default {
     isReceive: { // 用来区别报价单模块(true) 和 (销售订单模块/待处理物料模块 | false)
       type: Boolean
     },
+    isSales: Boolean, // 用来区分销售订单和领料单
     categoryList: {
       type: Array,
       default: () => []
@@ -681,7 +685,8 @@ export default {
       let index = findIndex(this.formData.quotationProducts, item => {
         return item.productCode === this.currentSerialNumber
       })
-      return  { list: index > -1 ? this.formData.quotationProducts[index].quotationMaterials : [] }
+      let { quotationMaterials = [], isProtected } = index !== -1 ? this.formData.quotationProducts[index] : {}
+      return  { list: quotationMaterials , isProtected }
     },
     remarkBtnList () {
       return [
@@ -694,8 +699,10 @@ export default {
     _calcTotalMoney (val) {
       let result = 0
       for (let i = 0; i < val.length; i++) {
-        result += val[i].quotationMaterials.filter(item => isNumber(item.totalPrice))
+        if (!val[i].isProtected) {
+          result += val[i].quotationMaterials.filter(item => isNumber(item.totalPrice))
           .reduce((prev, next) => prev + next.totalPrice, 0)
+        }
       }
       return result
     },
@@ -815,7 +822,10 @@ export default {
     },
     _normalizeMaterialSummaryList () {
       console.log(this.formData.quotationMergeMaterials)
-      this.materialSummaryList = this.formData.quotationMergeMaterials
+      this.materialSummaryList = this.formData.quotationMergeMaterials.map((item, index) => {
+        item.index = index
+        return item
+      })
     },
     // _getQuotationMaterialCode () { // 获取服务单下的所有零件
     //   this.materialAllLoading = true
@@ -840,9 +850,9 @@ export default {
       this.materialItemIndex = index // 当前点击的物料表格的第几项
     },
     onCountChange (val) {
-      let list = this.materialData.list
+      let { list, isProtected } = this.materialData
       let data = list[this.materialItemIndex]
-      data.totalPrice = val * data.unitPrice || 0
+      data.totalPrice = !isProtected ? (val * data.unitPrice || 0) : 0
     },
     _resetMaterialInfo () { // 重置物料相关的变量和数据
       this.formData.quotationProducts = []
@@ -864,6 +874,7 @@ export default {
     _normalizeSelectedList (selectedList) { // 格式化物料表格数据
       return selectedList.map(selectItem => {
         let item = {}
+        let { isProtected } = this.currentSerialInfo
         let { itemCode, itemName, onHand, quantity,  buyUnitMsr } = selectItem
         item.unit = buyUnitMsr
         item.materialDescription = itemName
@@ -874,7 +885,7 @@ export default {
         item.onHand = onHand
         item.maxQuantity = quantity
         console.log(item.maxQuantity, 'quantity')
-        item.totalPrice = item.unitPrice * item.count
+        item.totalPrice = !isProtected ? item.unitPrice * item.count : 0
         return item
       })
     },
