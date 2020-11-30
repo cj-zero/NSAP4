@@ -3,12 +3,18 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <permission-btn moduleName="problemtypes" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
+        <Search 
+          :listQuery="listQuerySearch" 
+          :config="searchConfig"
+          @changeForm="onChangeForm" 
+          @search="onSearch"
+          ></Search>
       </div>
     </sticky>
     <el-card shadow="never" class="card-body-none fh" style="height:100%;overflow-y:auto;">
       <el-tree
         ref="tree"
-        default-expand-all
+        :default-expanded-keys="expandedKeys"
         :props="defualtProps"
         :data="modulesTree"
         node-key="id"
@@ -81,6 +87,7 @@
 <script>
 import { getList, add, update, getDetail, deleteAll } from "@/api/serve/knowledge";
 import waves from "@/directive/waves"; // 水波纹指令
+import Search from '@/components/Search'
 // import Pagination from '@/components/Pagination'
 import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
@@ -88,11 +95,10 @@ import elDragDialog from "@/directive/el-dragDialog";
 import MyDialog from '@/components/Dialog'
 export default {
   name: "knowledge",
-  components: { Sticky, permissionBtn, MyDialog },
+  components: { Sticky, permissionBtn, MyDialog, Search },
   directives: {
     waves,
-    elDragDialog,
-    MyDialog
+    elDragDialog
   },
   data() {
     return {
@@ -118,6 +124,9 @@ export default {
         page: 1,
         limit: 20
       },
+      listQuerySearch: {
+        key: ''
+      },
       columns: [
         {
           text: "描述",
@@ -134,14 +143,36 @@ export default {
       btnList: [
         { btnText: '确认', handleClick: this.confirm },
         { btnText: '取消', handleClick: this.closeDialog }
-      ]
+      ],
+      expandedKeys: [] // 默认展开的数组id
     };
   },
   created() {
     this._getList();
   },
-
+  watch: {
+    expandedKeys: {
+      deep: true,
+      handler (val) {
+        console.log(val, 'expandedKeys')
+      }
+    }
+  },
+  computed: {
+    searchConfig () {
+      return [
+        { width: 150, placeholder: '请输入内容', prop: 'key' },
+        { type: 'search' },
+      ]
+    }
+  },
   methods: {
+    onChangeForm (val) {
+      Object.assign(this.listQuery, val)
+    },
+    onSearch () {
+      this._getList()
+    },
     handleSelectionChange(val) {
       this.multipleSelection = val;
       if (val.parentId == "" || !val.parentId) {
@@ -198,12 +229,15 @@ export default {
         this.$message.error('获取列表信息失败!')
       })
     },
-    _normalizeList (data) {
+    _normalizeList (data, level = 0) {
       return data.map(dataItem => {
         let { item, children } = dataItem
         dataItem = { ...item, children, disabled: Number(item.type) <= 2 }
+        if (level < 2) {
+          this.expandedKeys.push(dataItem.id)
+        }
         if (children && children.length) {
-          dataItem.children = this._normalizeList(children)
+          dataItem.children = this._normalizeList(children, ++level)
         }
         return dataItem
       })
