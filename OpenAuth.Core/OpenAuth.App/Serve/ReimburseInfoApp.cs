@@ -1483,7 +1483,7 @@ namespace OpenAuth.App
                 CompleteAddress = serviceorderobj.Province + serviceorderobj.City + serviceorderobj.Area + serviceorderobj.Addr,
                 UserName = orgname + " " + user.Name,
                 TerminalCustomerId = CompletionReports.FirstOrDefault()?.TerminalCustomerId,
-                TerminalCustomer = FromTheme.ToString(),
+                TerminalCustomer = CompletionReports.FirstOrDefault()?.TerminalCustomer,
                 FromTheme = FromTheme.ToString(),
                 logo = logostr,
                 QRcode = QRCoderHelper.CreateQRCodeToBase64(Reimburse.MainId.ToString()),
