@@ -24,7 +24,6 @@ namespace OpenAuth.Repository.Domain
     {
         public NwcaliBaseInfo()
         {
-          this.Time= string.Empty;
           this.FileVersion= string.Empty;
           this.TesterMake= string.Empty;
           this.TesterModel= string.Empty;
@@ -54,7 +53,7 @@ namespace OpenAuth.Repository.Domain
         /// 
         /// </summary>
         [Description("")]
-        public string Time { get; set; }
+        public DateTime? Time { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -174,11 +173,12 @@ namespace OpenAuth.Repository.Domain
         public virtual List<NwcaliTur> NwcaliTurs { get; set; } = new List<NwcaliTur>();
         public virtual List<Etalon> Etalons { get; set; } = new List<Etalon>();
         public virtual List<PcPlc> PcPlcs { get; set; } = new List<PcPlc>();
+        public virtual FlowInstance FlowInstance { get; set; } = new FlowInstance();
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public System.DateTime? CreateTime { get; set; }
+        public System.DateTime CreateTime { get; set; }
         public System.DateTime? ExpirationDate { get; set; }
         /// <summary>
         /// 

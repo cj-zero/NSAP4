@@ -54,6 +54,13 @@ namespace OpenAuth.App.Nwcali
                 .FirstOrDefaultAsync(b => b.CertificateNumber.Equals(certNo));
             return info;
         }
+
+        public async Task<dynamic> GetPcPlcs(string guid)
+        {
+            var ids = await UnitWork.Find<PcPlc>(p => p.Guid.Equals(guid)).Select(o=>o.NwcaliBaseInfoId).ToListAsync();
+            var list = await UnitWork.Find<NwcaliBaseInfo>(b => ids.Contains(b.Id)).Select(a => new { CertNo = a.CertificateNumber, CalibrationDate = a.Time, ExpirationDate = a.ExpirationDate }).ToListAsync();
+            return list;
+        }
         /// <summary>
         /// 生成证书编号
         /// </summary>

@@ -75,7 +75,7 @@ namespace OpenAuth.WebApi.Controllers
             var baseInfo = handler.GetBaseInfo<NwcaliBaseInfo>(sheet => {
                 var baseInfo = new NwcaliBaseInfo();
                 var timeRow = sheet.GetRow(1);
-                baseInfo.Time = timeRow.GetCell(1).StringCellValue;
+                baseInfo.Time = DateTime.Parse(timeRow.GetCell(1).StringCellValue);
                 var fileVersionRow = sheet.GetRow(3);
                 baseInfo.FileVersion = fileVersionRow.GetCell(1).StringCellValue;
                 var testerMakeRow = sheet.GetRow(4);
@@ -162,8 +162,8 @@ namespace OpenAuth.WebApi.Controllers
                             Comment = pclCommentRow.GetCell(i).StringCellValue,
                             No = Convert.ToInt32(pclNoRow.GetCell(i).StringCellValue),
                             Guid = pclGuidRow.GetCell(i).StringCellValue,
-                            CalibrationDate = DateTime.Parse(baseInfo.Time),
-                            ExpirationDate = DateTime.Parse(ConvertTestInterval(baseInfo.Time, baseInfo.TestInterval))
+                            CalibrationDate = baseInfo.Time,
+                            ExpirationDate = DateTime.Parse(ConvertTestInterval(baseInfo.Time.Value.ToString(), baseInfo.TestInterval))
                         });
                     }
                     catch
@@ -189,7 +189,7 @@ namespace OpenAuth.WebApi.Controllers
             var ta = turA.Select(v => new Repository.Domain.NwcaliTur { DataType = 2, Range = v.Range, TestPoint = v.TestPoint, Tur = v.Tur, UncertaintyContributors = v.UncertaintyContributors, SensitivityCoefficient = v.SensitivityCoefficient, Value = v.Value, Unit = v.Unit, Type = v.Type, Distribution = v.Distribution, Divisor = v.Divisor, StdUncertainty = v.StdUncertainty, DegreesOfFreedom = v.DegreesOfFreedom, SignificanceCheck = v.SignificanceCheck }).ToList();
             baseInfo.NwcaliTurs.AddRange(tv);
             baseInfo.NwcaliTurs.AddRange(ta);
-            baseInfo.ExpirationDate = DateTime.Parse(ConvertTestInterval(baseInfo.Time, baseInfo.TestInterval));
+            baseInfo.ExpirationDate = DateTime.Parse(ConvertTestInterval(baseInfo.Time.ToString(), baseInfo.TestInterval));
             try
             {
                 foreach (var plc in baseInfo.PcPlcs)
@@ -250,6 +250,14 @@ namespace OpenAuth.WebApi.Controllers
 
 
         [HttpGet("{certNo}")]
+        public async Task<Response<NwcaliBaseInfo>> GetBaseInfo(string certNo)
+        {
+            var result = new Response<NwcaliBaseInfo>();
+            var info = await _nwcaliCertApp.GetInfo(certNo);
+            result.Result = info;
+            return result;
+        }
+        [HttpGet("{certNo}")]
         public async Task<IActionResult> DownloadBaseInfo(string certNo)
         {
             var cert = await _certinfoApp.GetAsync(c => c.CertNo.Equals(certNo));
@@ -291,12 +299,37 @@ namespace OpenAuth.WebApi.Controllers
                 System.IO.File.Delete(tempUrl);
                 return File(datas, "application/pdf");
             }
+            else
+            {
+                var cert = await _certinfoApp.GetAsync(c => c.CertNo.Equals(certNo));
+                if (cert is null)
+                    return new NotFoundResult();
+                if (!string.IsNullOrWhiteSpace(cert.PdfPath) && System.IO.File.Exists(cert.PdfPath))
+                {
+
+                    var fileStream = new FileStream(cert.PdfPath, FileMode.Open);
+                    return File(fileStream, "application/pdf");
+                }
+                var pdfPath = WordHandler.DocConvertToPdf(cert.CertPath);
+                if (!pdfPath.Equals("false"))
+                {
+                    cert.PdfPath = pdfPath;
+                    await _certinfoApp.UpdateAsync(cert.MapTo<AddOrUpdateCertinfoReq>());
+                    var fileStream = new FileStream(pdfPath, FileMode.Open);
+                    return File(fileStream, "application/pdf");
+                }
+            }
             return new NotFoundResult();
         }
         [HttpGet("{plcGuid}")]
         public async Task<IActionResult> GetCertNoList(string plcGuid)
         {
             var certNos = (await _certPlcApp.GetAllAsync(p => p.PlcGuid.Equals(plcGuid))).OrderByDescending(c => c.CertNo).Select(cp => new { cp.CertNo, cp.CalibrationDate, cp.ExpirationDate });
+            if(certNos is null || certNos.Count() == 0)
+            {
+                var data = await _nwcaliCertApp.GetPcPlcs(plcGuid);
+                return Ok(certNos);
+            }
             return Ok(certNos);
         }
         /// <summary>
@@ -321,9 +354,9 @@ namespace OpenAuth.WebApi.Controllers
             #region Calibration Certificate
             model.CalibrationCertificate.CertificatenNumber = baseInfo.CertificateNumber;
             model.CalibrationCertificate.TesterMake = baseInfo.TesterMake;
-            model.CalibrationCertificate.CalibrationDate = DateStringConverter(baseInfo.Time);
+            model.CalibrationCertificate.CalibrationDate = DateStringConverter(baseInfo.Time.Value.ToString());
             model.CalibrationCertificate.TesterModel = baseInfo.TesterModel;
-            model.CalibrationCertificate.CalibrationDue = ConvertTestInterval(baseInfo.Time, baseInfo.TestInterval);
+            model.CalibrationCertificate.CalibrationDue = ConvertTestInterval(baseInfo.Time.Value.ToString(), baseInfo.TestInterval);
             model.CalibrationCertificate.TesterSn = baseInfo.TesterSn;
             model.CalibrationCertificate.DataType = "";
             model.CalibrationCertificate.AssetNo = baseInfo.AssetNo == "0" ? "------" : baseInfo.AssetNo;
