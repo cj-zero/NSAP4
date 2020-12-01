@@ -47,6 +47,7 @@
             border
             fit
             height="100%"
+            highlight-current-row
             style="width: 100%;"
             @row-click="rowClick"
             :row-class-name="rowClassName"
@@ -119,10 +120,10 @@
               :width="fruit.width"
             >
               <template slot-scope="scope">
-                <div v-if="fruit.name === 'radio'">
+                <!-- <div v-if="fruit.name === 'radio'">
                   <el-radio v-model="radio" :label="scope.row.serviceOrderId"></el-radio>
-                </div>
-                <span v-else-if="fruit.name === 'order'">
+                </div> -->
+                <span v-if="fruit.name === 'order'">
                   {{ scope.$index + 1 }}
                 </span>
                 <div v-else-if="fruit.name === 'u_SAP_ID'" class="link-container" >
@@ -461,27 +462,26 @@ export default {
       sure: 0,
       rightImg,
       ParentHeadOptions: [
-        { name: 'radio', width: 30 },
-        { name: 'order', label: '序号', width: '50' },
-        { name: "u_SAP_ID", label: "服务单号", align:'left', sortable:true, width: '80' },
-        { name: "priority", label: "优先级" ,align:'left', width: '60' },
-        { name: "fromType", label: "呼叫类型", width: "100px",align:'left'  },
-        { name: "status", label: "工单状态", align: 'left', width: '70' },
-        { name: "currentUser", label: "技术员" ,align:'left' },
-        { name: "customerId", label: "客户代码", align:'left', width: '90' },
-        { name: "customerName", label: "客户名称" ,align:'left', width: '180' },
+        { name: 'order', label: '序号', width: '38' },
+        { name: "u_SAP_ID", label: "服务单号", align:'left', sortable:true, width: '60' },
+        { name: "priority", label: "优先级" ,align:'left', width: '50' },
+        { name: "fromType", label: "呼叫类型", width: "60px",align:'left'  },
+        { name: "status", label: "工单状态", align: 'left', width: '60' },
+        { name: "currentUser", label: "技术员" ,align:'left', width: '55' },
+        { name: "customerId", label: "客户代码", align:'left', width: '70' },
+        { name: "customerName", label: "客户名称" ,align:'left', width: '170' },
         { name: "fromTheme", label: "呼叫主题", align: 'left', width: '275' },
-        { name: "manufacturerSerialNumber", label: "制造商序列号",width:'120px' ,align:'left' },
-        { name: "materialCode", label: "物料编码",width:'150px' ,align:'left' },
+        { name: "manufacturerSerialNumber", label: "制造商序列号",width:'90px' ,align:'left' },
+        { name: "materialCode", label: "物料编码",width:'120px' ,align:'left' },
         // { name: "contacter", label: "联系人" ,align:'left', width: '100' },
         // { name: "contactTel", label: "电话号码" ,align:'left', width: '125' },
         { name: "newestContacter", label: "最近联系人" ,align:'left', width: '90' },
         { name: "newestContactTel", label: "最新联系方式" ,align:'left', width: '100' },
         { name: "supervisor", label: "售后主管" ,align:'left', width: '70' },
-        { name: "salesMan", label: "销售员" ,align:'left', width: '70' },
+        { name: "salesMan", label: "销售员" ,align:'left', width: '55' },
         { name: "recepUserName", label: "接单员" ,align:'left', width: '85' },
         { name: 'serviceCreateTime', label: '创建时间', align: 'left', width: '140' },
-        { name: 'workOrderNumber', label: '工单数', align: 'left' } 
+        { name: 'workOrderNumber', label: '工单数', align: 'left', width: '55' } 
       ],
       ChildheadOptions: [
         // { name: "serviceOrderId", label: "服务单号", ifFixed: true },
