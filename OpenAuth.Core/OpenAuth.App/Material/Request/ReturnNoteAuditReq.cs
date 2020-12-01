@@ -11,6 +11,11 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public int Id { get; set; }
 
+        /// <summary>
+        /// 签收备注
+        /// </summary>
+        public string Remark { get; set; }
+
         public List<ReturnMaterial> ReturnMaterials { get; set; }
     }
 
