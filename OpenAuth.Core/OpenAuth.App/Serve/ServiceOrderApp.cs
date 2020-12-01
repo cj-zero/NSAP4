@@ -2313,6 +2313,19 @@ namespace OpenAuth.App
             result.Data = list;
             return result;
         }
+
+        //public async Task<TableData> GetCustServiceNews(int currenUserId)
+        //{
+        //    var result = new TableData();
+        //    var newsList = await UnitWork.Find<ServiceWorkOrder>(w => w.CurrentUserId== currenUserId)
+        //    return result;
+        //}
+
+        //private string GetNewsContent(int serviceOrderId)
+        //{
+
+
+        //}
         #endregion
 
         #region<<Technician>>
@@ -3216,33 +3229,26 @@ namespace OpenAuth.App
             }
             var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == TechnicianId)
                .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+            var serviceWorkOrderList = await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
+               .Include(s => s.ServiceWorkOrders).ToListAsync();
             //获取待处理单据数量
-            var pendingQty = (await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
-               .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
-               .Include(s => s.ServiceFlows)
-               .Where(s => s.ServiceWorkOrders.All(a => a.OrderTakeType == 0))
-               .ToListAsync()).Count;
+            var pendingQty = (serviceWorkOrderList.Where(s => s.ServiceWorkOrders.All(a => a.OrderTakeType == 0))
+               .ToList()).Count;
             //获取进行中的单据数量
-            var goingQty = (await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
-               .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
-               .Include(s => s.ServiceFlows)
+            var goingQty = (serviceWorkOrderList
                .Where(s => s.ServiceWorkOrders.Any(a => a.Status > 1 && a.Status < 7 && a.OrderTakeType != 0))
-               .ToListAsync()).Count;
+               .ToList()).Count;
             //获取已完成的单据数量
-            var finishQty = (await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
-              .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
-              .Include(s => s.ServiceFlows)
+            var finishQty = (serviceWorkOrderList
               .Where(s => s.ServiceWorkOrders.All(a => a.Status >= 7))
-              .ToListAsync()).Count;
+              .ToList()).Count;
             //获取已报销的单据数量
             var isReimburseQty = (await UnitWork.Find<ReimburseInfo>(w => serviceOrderIds.Contains(w.ServiceOrderId) && w.RemburseStatus > 3).ToListAsync()).Count;
             //获取上门服务的完成单据数量
-            var doorQty = (await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
-              .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
-              .Include(s => s.ServiceFlows)
+            var doorQty = (serviceWorkOrderList
               .Where(s => s.ServiceWorkOrders.All(a => a.Status >= 7))
               .Where(s => s.ServiceWorkOrders.Any(a => a.ServiceMode == 1))
-              .ToListAsync()).Count;
+              .ToList()).Count;
             result.Data = new { pendingQty, goingQty, finishQty, reimburseQty = doorQty - isReimburseQty };
             return result;
         }
