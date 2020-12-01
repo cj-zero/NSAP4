@@ -817,6 +817,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryTechName), q => q.CurrentUser.Contains(req.QryTechName))
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromTheme), q => q.FromTheme.Contains(req.QryFromTheme))
+                .WhereIf(req.CompleteDate!=null, q=>q.CompleteDate>req.CompleteDate && q.CompleteDate<Convert.ToDateTime(req.CompleteDate).AddHours(24))
                 .OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
 
             var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceWorkOrders)
@@ -868,7 +869,8 @@ namespace OpenAuth.App
                 && (string.IsNullOrWhiteSpace(req.QryFromType) || a.FromType.Equals(Convert.ToInt32(req.QryFromType)))
                 && (string.IsNullOrWhiteSpace(req.QryTechName) || a.CurrentUser.Contains(req.QryTechName))
                 && (string.IsNullOrWhiteSpace(req.QryProblemType) || a.ProblemTypeId.Equals(req.QryProblemType))
-                && (string.IsNullOrWhiteSpace(req.QryFromTheme) || a.FromTheme.Contains(req.QryFromTheme))).ToList()
+                && (string.IsNullOrWhiteSpace(req.QryFromTheme) || a.FromTheme.Contains(req.QryFromTheme))
+                && (req.CompleteDate==null ||(a.CompleteDate > req.CompleteDate && a.CompleteDate < Convert.ToDateTime(req.CompleteDate).AddHours(24)))).ToList()
             });
 
             result.Data = await resultsql.Skip((req.page - 1) * req.limit)
@@ -977,7 +979,6 @@ namespace OpenAuth.App
             return result;
         }
 
-
         /// <summary>
         /// 调出该客户代码近10个呼叫ID,及未关闭的近10个呼叫ID
         /// </summary>
@@ -1018,7 +1019,6 @@ namespace OpenAuth.App
                 .Skip(0).Take(10).ToListAsync();
             return new { newestOrder, newestNotCloseOrder };
         }
-
 
         /// <summary>
         /// 回访服务单
@@ -1497,6 +1497,7 @@ namespace OpenAuth.App
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.ContactTel.Contains(req.ContactTel) || q.NewestContactTel.Contains(req.ContactTel))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromType), q => q.ServiceWorkOrders.Any(a => a.FromType.Equals(Convert.ToInt32(req.QryFromType))))
+                .WhereIf(req.CompleteDate!=null, q => q.ServiceWorkOrders.Any(s=>s.CompleteDate > req.CompleteDate && s.CompleteDate < Convert.ToDateTime(req.CompleteDate).AddHours(24)))
                 .Where(q => q.Status == 2);
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
@@ -1529,7 +1530,8 @@ namespace OpenAuth.App
                 && (string.IsNullOrWhiteSpace(req.QryState) || a.Status.Equals(Convert.ToInt32(req.QryState)))
                 && (string.IsNullOrWhiteSpace(req.QryManufSN) || a.ManufacturerSerialNumber.Contains(req.QryManufSN))
                 //&& ((req.QryCreateTimeFrom == null || req.QryCreateTimeTo == null) || (a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
-                && (string.IsNullOrWhiteSpace(req.QryFromType) || a.FromType.Equals(Convert.ToInt32(req.QryFromType)))).ToList()
+                && (string.IsNullOrWhiteSpace(req.QryFromType) || a.FromType.Equals(Convert.ToInt32(req.QryFromType)))
+                && (req.CompleteDate == null || (a.CompleteDate > req.CompleteDate && a.CompleteDate < Convert.ToDateTime(req.CompleteDate).AddHours(24)))).ToList()
             });
 
             var dataList = await resultsql.ToListAsync(); ;
@@ -1550,6 +1552,9 @@ namespace OpenAuth.App
             {
                 foreach (var workOrder in serviceOrder.ServiceWorkOrders)
                 {
+                    var FromThemeJson = JsonHelper.Instance.Deserialize<List<FromThemeJsonResp>>(workOrder?.FromTheme);
+                    string FromTheme = "";
+                    FromThemeJson.ForEach(f => FromTheme+=f.description);
                     list.Add(new ServiceOrderExcelDto
                     {
                         U_SAP_ID = serviceOrder.U_SAP_ID,
