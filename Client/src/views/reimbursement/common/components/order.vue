@@ -46,101 +46,115 @@
           size="mini"
           :label-position="labelPosition"
           :show-message="false"
-        >
-          <el-row type="flex" class="item">
-            <p><span class="first-item">客户代码</span><span>{{ formData.terminalCustomerId }}</span></p>
-            <p>
-              <el-row type="flex" align="middle">
-                <span>客户名称</span>
-                <p class="content">{{ formData.terminalCustomer }}</p>
-              </el-row>
-            </p>
-            <p>
-              <el-row type="flex" align="middle">
-                <span>出发到达</span>
-                <p class="content">{{ formData.becity }}-{{ formData.destination }}</p>
-              </el-row>
-            </p>
-          </el-row>
-          <el-row type="flex" class="item">
-            <p>
-              <el-row type="flex" align="middle">
-                <span>出差事由</span>
-                <div>
-                  <p v-if="formData.themeList && formData.themeList.length">{{ formData.themeList[0].description }}</p>
-                </div>
-              </el-row>
-            </p>
-          </el-row>
-        </el-form>
-        </div>
-        <div class="general-table-wrapper">
-          <el-table 
-            class="table-container" 
-            :data="formData.expenseCategoryList" 
-            max-height="400px" 
-            border
-            :header-cell-style="headerCellStyle"
-            show-overflow-tooltip
-            :cell-style="cellStyle">
-            <el-table-column label="#" width="55px">
-              <template slot-scope="scope">{{ scope.$index + 1 }}</template>
-            </el-table-column>
-            <el-table-column label="日期" prop="invoiceTime" width="100px"></el-table-column>
-            <el-table-column label="费用名称" prop="expenseName" width="100px"></el-table-column>
-            <el-table-column label="费用详情" prop="expenseDetail">
-              <template slot-scope="scope">
-                <div class="detail-content">
-                  <p>{{ scope.row.expenseDetail }}</p>
-                  <el-tooltip 
-                    :content="scope.row.remark">
-                    <i class="remark el-icon-chat-dot-round" v-if="scope.row.remark"></i>
-                  </el-tooltip>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column label="发票号码" width="135px">
-              <template slot-scope="scope">
-                <el-row class="invoice-number-wrapper" type="flex" align="middle" v-if="scope.row.invoiceNumber" justify="space-between">
-                  <el-row type="flex" align="middle">
-                    <img class="pointer" :src="rightImg" alt="" @click="openFile(scope.row, true)">
-                    <span style="margin-right: 5px;">{{ scope.row.invoiceNumber }}</span>
-                  </el-row>
-                  <el-tooltip content="无发票附件" :disabled="scope.row.isValidInvoice">
-                    <i calss="invoice-icon" :class="[scope.row.isValidInvoice ? 'el-icon-upload-success el-icon-circle-check success' : 'el-icon-warning-outline warning']"></i>
-                  </el-tooltip>
+          >
+            <el-row type="flex" class="item">
+              <p><span class="first-item">客户代码</span><span>{{ formData.terminalCustomerId }}</span></p>
+              <p>
+                <el-row type="flex" align="middle">
+                  <span>客户名称</span>
+                  <p class="content">{{ formData.terminalCustomer }}</p>
                 </el-row>
-                <div>
-                  <template v-if="scope.row.otherFileList && scope.row.otherFileList.length">
-                    <el-row 
-                      style="margin-left: 18px;"
-                      type="flex" align="middle" 
-                      v-for="(item, index) in scope.row.otherFileList" 
-                      :key="item.id"
-                    >
-                      <!-- <img :src="rightImg" @click="openFile(item)" class="pointer"> -->
-                      <span class="pointer" @click="openFile(item)">附件{{ index + 1 }}</span>
-                      <!-- <upLoadFile 
-                        class="upload-number-wrapper"
-                        :ifShowTip="false"
-                        uploadType="file" 
-                        :fileList="scope.row.otherFileList"
-                        :disabled="true" 
-                      /> -->
-                    </el-row>
-                  </template>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column width="120px" align="right">
-              <template v-slot:header>
-                金额（元）
-              </template>
-              <template slot-scope="scope">{{ scope.row.money | toThousands }}</template>
-            </el-table-column>
-          </el-table>
+              </p>
+              <p>
+                <el-row type="flex" align="middle">
+                  <span>出发到达</span>
+                  <p class="content">{{ formData.becity }}-{{ formData.destination }}</p>
+                </el-row>
+              </p>
+            </el-row>
+            <el-row type="flex" class="item">
+              <p>
+                <el-row type="flex" align="middle">
+                  <span>出差事由</span>
+                  <div>
+                    <p v-if="formData.themeList && formData.themeList.length">{{ formData.themeList[0].description }}</p>
+                  </div>
+                </el-row>
+              </p>
+            </el-row>
+          </el-form>
         </div>
-        <el-row type="flex" justify="end" class="general-total-money">总金额：{{ totalMoney | toThousands }}</el-row>
+        <el-row type="flex" class="tablist-wrapper">
+          <span 
+            v-for="(item, index) in tabList" 
+            :key="item.label" 
+            @click="changeContent(index)"
+            :class="{ active: index === currentTabIndex }">{{ item.label }}</span>
+        </el-row>
+          <!-- 费用详情 -->
+        <div v-show="currentTabIndex === 0">
+          <div class="general-table-wrapper" >
+            <el-table 
+              class="table-container" 
+              :data="formData.expenseCategoryList" 
+              max-height="400px" 
+              border
+              :header-cell-style="headerCellStyle"
+              show-overflow-tooltip
+              :cell-style="cellStyle">
+              <el-table-column label="#" width="55px">
+                <template slot-scope="scope">{{ scope.$index + 1 }}</template>
+              </el-table-column>
+              <el-table-column label="日期" prop="invoiceTime" width="100px"></el-table-column>
+              <el-table-column label="费用名称" prop="expenseName" width="100px"></el-table-column>
+              <el-table-column label="费用详情" prop="expenseDetail">
+                <template slot-scope="scope">
+                  <div class="detail-content">
+                    <p>{{ scope.row.expenseDetail }}</p>
+                    <el-tooltip 
+                      :content="scope.row.remark">
+                      <i class="remark el-icon-chat-dot-round" v-if="scope.row.remark"></i>
+                    </el-tooltip>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="发票号码" width="135px">
+                <template slot-scope="scope">
+                  <el-row class="invoice-number-wrapper" type="flex" align="middle" v-if="scope.row.invoiceNumber" justify="space-between">
+                    <el-row type="flex" align="middle">
+                      <img class="pointer" :src="rightImg" alt="" @click="openFile(scope.row, true)">
+                      <span style="margin-right: 5px;">{{ scope.row.invoiceNumber }}</span>
+                    </el-row>
+                    <el-tooltip content="无发票附件" :disabled="scope.row.isValidInvoice">
+                      <i calss="invoice-icon" :class="[scope.row.isValidInvoice ? 'el-icon-upload-success el-icon-circle-check success' : 'el-icon-warning-outline warning']"></i>
+                    </el-tooltip>
+                  </el-row>
+                  <div>
+                    <template v-if="scope.row.otherFileList && scope.row.otherFileList.length">
+                      <el-row 
+                        style="margin-left: 18px;"
+                        type="flex" align="middle" 
+                        v-for="(item, index) in scope.row.otherFileList" 
+                        :key="item.id"
+                      >
+                        <!-- <img :src="rightImg" @click="openFile(item)" class="pointer"> -->
+                        <span class="pointer" @click="openFile(item)">附件{{ index + 1 }}</span>
+                        <!-- <upLoadFile 
+                          class="upload-number-wrapper"
+                          :ifShowTip="false"
+                          uploadType="file" 
+                          :fileList="scope.row.otherFileList"
+                          :disabled="true" 
+                        /> -->
+                      </el-row>
+                    </template>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column width="120px" align="right">
+                <template v-slot:header>
+                  金额（元）
+                </template>
+                <template slot-scope="scope">{{ scope.row.money | toThousands }}</template>
+              </el-table-column>
+            </el-table>
+          </div>
+          <el-row type="flex" justify="end" class="general-total-money">总金额：{{ totalMoney | toThousands }}</el-row>
+        </div>
+        <!-- 服务报告 -->
+        <div v-show="currentTabIndex === 1">服务报告</div>
+        <!-- 历史费用 -->
+        <div v-show="currentTabIndex === 2">历史费用</div>    
       </template>
       <template v-else>
         <el-form
@@ -994,6 +1008,12 @@ export default {
   },
   data () {
     return {
+      currentTabIndex: 0,
+      tabList: [
+        { label: '费用详情', type: 'COST_DETAIL' },
+        { label: '服务报告', type: 'SERVICE_REPORT' },
+        { label: '历史费用', type: 'HISTORY_COST' }
+      ],
       generalStyle: { // 总经理头部style
         fontSize: 'bold'
       },
@@ -1271,6 +1291,9 @@ export default {
     }
   },
   methods: {
+    changeContent (index) { // 总经理审批页面费用详情/服务博爱高/历史费用 切换
+      this.currentTabIndex = index
+    },
     openFile (row, isInvoiceAttachment) { // 打开发票附件
       console.log(row, 'row')
       let file = isInvoiceAttachment ? row.reimburseAttachments[0] : row
@@ -1283,7 +1306,7 @@ export default {
         }
       }
     }, 
-    previewImage (url) {
+    previewImage (url) { // 预览附件
       this.previewVisible = true
       this.previewImageUrl = url
     },
@@ -2447,6 +2470,7 @@ export default {
         margin-top: 0;
       }
     }
+    /* 总经理审批表单 */
     .general-order-wrapper {
       margin-top: 10px;
       .general-form-wrapper {
@@ -2486,6 +2510,27 @@ export default {
               font-weight: normal;
             }
           }
+        }
+      }
+    }
+    /* 总经理tabList */
+    .tablist-wrapper {
+      margin-bottom: 10px;
+      span {
+        height: 30px;
+        padding: 0 10px;
+        line-height: 30px;
+        text-align: center;
+        background-color: #f5f7fa;
+        border: 1px solid rgba(0, 0, 0, .3);
+        border-left: none;
+        cursor: pointer;
+        &:nth-child(1) {
+          border-left: 1px solid rgba(0, 0, 0, .3);
+        }
+        &.active {
+          background-color: #fff;
+          color: #7fbeff;
         }
       }
     }
