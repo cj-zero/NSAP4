@@ -80,7 +80,7 @@ import zxchat from '@/views/serve/callserve/chat/index'
 import { getQuotationList } from '@/api/material/quotation'
 import {  quotationTableMixin, chatMixin, categoryMixin } from '../common/js/mixins'
 export default {
-  name: 'quotation',
+  name: 'outBoundOrder',
   mixins: [quotationTableMixin, chatMixin, categoryMixin],
   components: {
     Search,

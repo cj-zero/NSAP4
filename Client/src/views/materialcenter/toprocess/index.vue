@@ -83,7 +83,7 @@ import zxchat from '@/views/serve/callserve/chat/index'
 import { getApprovePendingList, getServiceOrderList } from '@/api/material/quotation'
 import {  quotationTableMixin, categoryMixin, chatMixin } from '../common/js/mixins'
 export default {
-  name: 'quotation',
+  name: 'materialToProcess',
   mixins: [quotationTableMixin, categoryMixin, chatMixin],
   components: {
     TabList,

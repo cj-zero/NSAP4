@@ -281,6 +281,7 @@ export default {
   },
   data () {
     return {
+      isOutbound: true,
       fileList: [],
       rightImg,
       formData: {

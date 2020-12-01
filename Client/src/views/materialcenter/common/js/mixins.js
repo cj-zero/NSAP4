@@ -160,7 +160,7 @@ export const configMixin = { // 表单配置
         : false
     },
     formConfig () { // 头部表单配置
-      return this.status === 'outbound' // 出库单
+      return this.isOutbound || this.status === 'outbound' // 出库单
         ? [
         { label: '服务ID', prop: 'serviceOrderSapId', placeholder: '请选择', col: 6, readonly: true, disabled: !this.ifEdit },
         { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请选择', col: 6, disabled: true },
@@ -169,7 +169,7 @@ export const configMixin = { // 表单配置
         { label: '收货地址', prop: 'collectionAddress', placeholder: '请选择', col: 24, disabled: !this.ifEdit, isEnd: true },
         { label: '备注', prop: 'remark', placeholder: '请填写', col: 24, disabled: !this.ifEdit, isEnd: true },
       ]
-      : this.status === 'pay' ? // 销售单
+      : this.isSales || this.status === 'pay' ? // 销售单
       [
         { label: '服务ID', prop: 'serviceOrderSapId', placeholder: '请选择', col: 6, readonly: true, disabled: !this.ifEdit },
         { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请选择', col: 6, disabled: true },

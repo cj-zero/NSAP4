@@ -79,7 +79,7 @@ import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import {  quotationTableMixin, chatMixin, returnTableMixin } from '../common/js/mixins'
 export default {
-  name: 'quotation',
+  name: 'materialToReturnOrder',
   mixins: [quotationTableMixin, chatMixin, returnTableMixin],
   components: {
     Search,
