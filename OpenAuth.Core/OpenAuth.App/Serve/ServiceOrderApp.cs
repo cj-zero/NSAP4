@@ -2372,6 +2372,7 @@ namespace OpenAuth.App
                     newsList.Add("sapId", item.U_SAP_ID);
                     newsList.Add("serviceOrderId", item.Id);
                     newsList.Add("materialType", materialType);
+                    newsList.Add("status", status);
                     newsList.Add("content", conetnt);
                 }
                 else
@@ -2379,6 +2380,7 @@ namespace OpenAuth.App
                     newsList.Add("sapId", item.U_SAP_ID);
                     newsList.Add("serviceOrderId", item.Id);
                     newsList.Add("materialType", "");
+                    newsList.Add("status", 0);
                     newsList.Add("content", "你的服务单" + item.U_SAP_ID + "已提交成功，请耐心等客服接收");
                 }
                 outData.Add(newsList);
@@ -2717,6 +2719,10 @@ namespace OpenAuth.App
             else if (request.Type > 4)
             {
                 status = 4;
+            }
+            else if (request.Type == -1)//返厂维修
+            {
+                servicemode = 3;
             }
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => workOrderIds.Contains(s.Id), e => new ServiceWorkOrder
             {
