@@ -12,7 +12,7 @@
 }
 /* 设置el-table点击当前行高亮的样式 */
 .el-table__body tr.current-row > td {
-  background-color: rgba(255, 253, 237, 1) !important;
+  background-color: #fdfdaf !important;
 }
 
 .global-unused { // 不可编辑把输入框border去掉 全局的

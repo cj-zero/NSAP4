@@ -150,18 +150,10 @@
             </el-table>
           </div>
           <el-row type="flex" justify="end" class="general-total-money">总金额：{{ totalMoney | toThousands }}</el-row>
-          <el-button size="mini" @click="toggleAfterEva" v-if="title !== 'view'">售后评价</el-button>
-          <common-table 
-            v-show="isShowAfterEva"
-            :data="afterEvaluationList"
-            :columns="afterEvaluationColumns"
-            maxHeight="300px"
-            :loading="afterEvaLoading"
-          >
-          </common-table>
+          <!-- <el-button size="mini" @click="toggleAfterEva">售后评价</el-button> -->
         </div>
         <!-- 服务报告 -->
-        <div v-show="currentTabIndex === 1" style="width: 602px;">
+        <div v-show="currentTabIndex === 1" style="width: 602px;margin-top: 5px;">
           <common-table 
             :data="reportTableData"
             :columns="reportTableColumns"
@@ -171,7 +163,7 @@
           </common-table>
         </div>
         <!-- 历史费用 -->
-        <div v-show="currentTabIndex === 2" style="width: 984px;">
+        <div v-show="currentTabIndex === 2" style="width: 984px;margin-top: 5px;">
           <common-table 
             :data="historyCostData"
             :columns="historyCostColumns"
@@ -200,6 +192,16 @@
             </template>
           </common-table>
         </div>    
+        <div v-show="currentTabIndex === 3" style="margin-top: 5px;">
+          <common-table 
+            style="width: 778px;"
+            :data="afterEvaluationList"
+            :columns="afterEvaluationColumns"
+            maxHeight="300px"
+            :loading="afterEvaLoading"
+          >
+          </common-table>
+        </div>
       </template>
       <template v-else>
         <el-form
@@ -339,7 +341,7 @@
               <div class="number-count">总数量:{{ travelCount }}个</div>
               <div class="title">
                 <span>出差补贴</span>
-                <p class="total-money">总金额: ￥{{ travelTotalMoney | toThousands }}</p>
+                <p class="total-money">小计: ￥{{ travelTotalMoney | toThousands }}</p>
               </div>
             </div>
             <el-table 
@@ -412,7 +414,7 @@
               <div class="number-count">总数量:{{ trafficCount }}个</div>
               <div class="title">
                 <span>交通费用</span>
-                <p class="total-money">总金额: ￥{{ trafficTotalMoney | toThousands }}</p>
+                <p class="total-money">小计: ￥{{ trafficTotalMoney | toThousands }}</p>
               </div>
             </div>
             <el-table 
@@ -560,7 +562,7 @@
               <div class="number-count">总数量:{{ accCount }}个</div>
               <div class="title">
                 <span>住宿补贴</span>
-                <p class="total-money">总金额: ￥{{ accTotalMoney | toThousands }}</p>
+                <p class="total-money">小计: ￥{{ accTotalMoney | toThousands }}</p>
               </div>
             </div>
             <el-table 
@@ -701,7 +703,7 @@
               <div class="number-count">总数量:{{ otherCount }}个</div>
               <div class="title">
                 <span>其他费用</span>
-                <p class="total-money">总金额: ￥{{ otherTotalMoney | toThousands }}</p>
+                <p class="total-money">小计: ￥{{ otherTotalMoney | toThousands }}</p>
               </div>
             </div>
             <el-table 
@@ -1054,25 +1056,25 @@ export default {
   },
   data () {
     return {
-      isShowAfterEva: true,
       currentTabIndex: 0,
       tabList: [
-        { label: '费用详情', type: 'COST_DETAIL' },
-        { label: '服务报告', type: 'SERVICE_REPORT' },
-        { label: '历史费用', type: 'HISTORY_COST' }
+        { label: '费用详情' },
+        { label: '服务报告' },
+        { label: '历史费用' },
+        { label: '售后评价' }
       ],
       // 售后评价
       afterEvaluationList: [],
       afterEvaluationColumns: [
-        { label: '技术员', prop: 'technician' },
-        { label: '响应速度', prop: 'responseSpeed' },
-        { label: '方案有效性', prop: 'schemeEffectiveness' },
-        { label: '服务态度', prop: 'serviceAttitude' },
-        { label: '产品质量', prop: 'productQuality' },
-        { label: '服务价格', prop: 'servicePrice' },
-        { label: '技客户建议或意见', prop: 'comment' },
-        { label: '回访人', prop: 'visitPeople' },
-        { label: '评价日期', prop: 'commentDate' }
+        { label: '技术员', prop: 'technician', width: 50 },
+        { label: '响应速度', prop: 'responseSpeed', width: 70 },
+        { label: '方案有效性', prop: 'schemeEffectiveness', width: 80 },
+        { label: '服务态度', prop: 'serviceAttitude', width: 70 },
+        { label: '产品质量', prop: 'productQuality', width: 70 },
+        { label: '服务价格', prop: 'servicePrice', width: 70 },
+        { label: '客户建议或意见', prop: 'comment', width: 180 },
+        { label: '回访人', prop: 'visitPeople', width: 50 },
+        { label: '评价日期', prop: 'commentDate', width: 137 }
       ],
       afterEvaLoading: false,
       // 服务报告
@@ -1095,7 +1097,7 @@ export default {
         { label: '出差补贴', prop: 'travellingAllowancesMoney', type: 'slot', slotName: 'travel', align: 'right', width: '100px' },
         { label: '其他费用', prop: 'otherChargesMoney', type: 'slot', slotName: 'other', align: 'right', width: '100px' },
         { label: '出发时间', prop: 'businessTripDate', width: '126px' },
-        { label: '到达时间', prop: 'endDate', width: '126px' },
+        { label: '结束时间', prop: 'endDate', width: '126px' },
         { label: '报销人', prop: 'userName', width: '70px' }
       ],
       historyCostLoading: false,
@@ -1379,25 +1381,23 @@ export default {
     }
   },
   methods: {
-    toggleAfterEva () {
-      this.isShowAfterEva = !this.isShowAfterEva
-    },
     changeContent (index) { // 总经理审批页面费用详情/服务博爱高/历史费用 切换
       this.currentTabIndex = index
     },
     _getAfterEvaluation () { // 获取售后评价
-      if (!this.formData.serviceOrderId) {
+      if (!this.formData.serviceOrderSapId) {
         return this.$message.error('没有服务ID，无法获取售后评价列表')
       }
       this.afterEvaLoading = true
       getAfterEvaluaton({
-        serviceOrderId: this.formData.serviceOrderId
+        serviceOrderId: this.formData.serviceOrderSapId
       }).then(res => {
         this.afterEvaluationList = res.data
         this.afterEvaLoading = false
       }).catch(err => {
         this.$message.error(err.message)
         this.afterEvaLoading = false
+        console.log('afterEva')
       })
     },
     _getReportDetail () { // 获取服务报告
@@ -1408,6 +1408,7 @@ export default {
       }).then(res => {
         let result = []
         this.reportDetaiLoading = false
+        console.log(res.result.data.filter(item => item.id), 'null')
         res.result.data.filter(item => item.id).forEach(item => {
           let { troubleDescription, processDescription, serviceWorkOrders } = item
           serviceWorkOrders.forEach(workOrderItem => {
@@ -1425,6 +1426,7 @@ export default {
       }).catch(err => {
         this.reportDetaiLoading = false
         this.$message.error(err.message)
+        console.log('reportTable')
       })
     },
     _getHistoryCost () { // 获取历史费用
@@ -1438,6 +1440,7 @@ export default {
       }).catch(err => {
         this.historyCostLoading = false
         this.$message.error(err.message)
+        console.log('histroylist')
       })
     },
     openFile (row, isInvoiceAttachment) { // 打开发票附件
@@ -2235,7 +2238,6 @@ export default {
     },
     resetInfo () {
       // let { createUserId, userName, orgName } = this.formData
-      this.isShowAfterEva = true
       this.currentTabIndex = 0
       this.$refs.form.clearValidate()
       this.$refs.form.resetFields()

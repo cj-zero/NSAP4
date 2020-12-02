@@ -104,3 +104,19 @@ export function getHistoryReimburseInfo (params) { // 客户历史报销单
     params
   })
 }
+
+export function exportList (params) { // 导出支付表格
+  return request({
+    url: '/serve/Reimburse/Export',
+    method: 'get',
+    params
+  })
+}
+
+export function pay (data) { // 导出支付表格
+  return request({
+    url: '/serve/Reimburse/BatchAccraditation',
+    method: 'post',
+    data
+  })
+}
