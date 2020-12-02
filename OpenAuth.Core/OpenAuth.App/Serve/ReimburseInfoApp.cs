@@ -1600,6 +1600,45 @@ namespace OpenAuth.App
 
             return req.MapTo<ReimburseInfo>();
         }
+
+        /// <summary>
+        /// 客户历史报销单 
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> HistoryReimburseInfo(QueryReimburseInfoListReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = new TableData();
+            var CompletionReports = await UnitWork.Find<CompletionReport>(c =>c.TerminalCustomerId.Equals(req.TerminalCustomer) && c.IsReimburse==2).ToListAsync();
+            var ServiceOrderIds = CompletionReports.Select(c => c.ServiceOrderId).Distinct().ToList();
+            var ReimburseInfos=await UnitWork.Find<ReimburseInfo>(r => ServiceOrderIds.Contains(r.ServiceOrderId) && r.RemburseStatus>3)
+                               .Include(r=>r.ReimburseTravellingAllowances)
+                               .Include(r => r.ReimburseFares)
+                               .Include(r => r.ReimburseAccommodationSubsidies)
+                               .Include(r => r.ReimburseOtherCharges).Skip((req.page - 1) * req.limit)
+                               .Take(req.limit).ToListAsync();
+            result.Data = ReimburseInfos.Select(r=>new 
+            {
+                r.MainId,
+                r.ReimburseTravellingAllowances.FirstOrDefault()?.Days,
+                r.TotalMoney,
+                FaresMoney=r.ReimburseFares.Sum(f=>f.Money),
+                TravellingAllowancesMoney = r.ReimburseTravellingAllowances.Sum(t => t.Money),
+                AccommodationSubsidiesMoney = r.ReimburseAccommodationSubsidies.Sum(a => a.Money),
+                OtherChargesMoney = r.ReimburseOtherCharges.Sum(o => o.Money),
+                BusinessTripDate=CompletionReports.Where(c=>c.CreateUserId.Equals(r.CreateUserId) && c.ServiceOrderId.Equals(r.ServiceOrderId)).Min(c=>c.BusinessTripDate),
+                EndDate = CompletionReports.Where(c => c.CreateUserId.Equals(r.CreateUserId) && c.ServiceOrderId.Equals(r.ServiceOrderId)).Max(c => c.EndDate),
+                UserName= CompletionReports.Where(c => c.CreateUserId.Equals(r.CreateUserId) && c.ServiceOrderId.Equals(r.ServiceOrderId)).FirstOrDefault()?.TechnicianName
+            });
+            return result;
+
+        }
+
         public ReimburseInfoApp(IUnitWork unitWork, ModuleFlowSchemeApp moduleFlowSchemeApp, FlowInstanceApp flowInstanceApp, IAuth auth) : base(unitWork, auth)
         {
             _moduleFlowSchemeApp = moduleFlowSchemeApp;

@@ -285,6 +285,27 @@ namespace OpenAuth.WebApi.Controllers.Serve
 
             return result;
         }
+        /// <summary>
+        /// 客户历史报销单 
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> HistoryReimburseInfo([FromQuery]QueryReimburseInfoListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _reimburseinfoapp.HistoryReimburseInfo(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
     }
 
 }
