@@ -933,7 +933,6 @@ export default {
       } // 表单数据
       this.$refs.form.clearValidate()
       this.$refs.form.resetFields()
-      this.$refs.form.clearValidate()
       this.serialNumberList = []
       this.selectedMaterialList = [] // 已经选择了物料列表，再次弹窗时，不能再选
       this.selectedMap = {} // 已经选择物料列表

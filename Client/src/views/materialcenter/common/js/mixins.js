@@ -2,6 +2,7 @@ import { getCategoryNameList } from '@/api/directory'
 import { getQuotationDetail } from '@/api/material/quotation' // 报价单详情
 import { GetDetails } from '@/api/serve/callservesure' // 服务单
 import { getReturnNoteList, getReturnNoteDetail } from '@/api/material/returnMaterial' // 退料
+import { normalizeFormConfig } from '@/utils/format'
 export const quotationTableMixin = {
   provide () {
     return {
@@ -72,10 +73,10 @@ export const quotationTableMixin = {
       })
     },
     _normalizeDetail (data) {
-      let { serviceOrders, quotations, quotationMergeMaterials = [] } = data
+      let { serviceOrders, quotations, quotationMergeMaterials = [], expressages } = data
       let { terminalCustomer, terminalCustomerId, salesMan } = serviceOrders
       // result
-      return { ...quotations, terminalCustomer, terminalCustomerId, salesMan, quotationMergeMaterials }
+      return { ...quotations, terminalCustomer, terminalCustomerId, salesMan, quotationMergeMaterials, expressages }
     },
     _normalizeList (list) { // 格式化表格数据
       return list.map(item => {
@@ -210,26 +211,10 @@ export const configMixin = { // 表单配置
           ]
     },
     formatFormConfig () {
-      return this._normalizeFormatFormConfig(this.formConfig)
+      return normalizeFormConfig(this.formConfig)
     },
     formatReturnConfig () {
-      return this._normalizeFormatFormConfig(this.returnFormConfig)
-    }
-  },
-  methods: {
-    _normalizeFormatFormConfig (config) {
-      let noneSlotConfig = config
-      let result = [], j = 0
-      for (let i = 0; i < noneSlotConfig.length; i++) {
-        if (!result[j]) {
-          result[j] = []
-        }
-        result[j].push(noneSlotConfig[i])
-        if (noneSlotConfig[i].isEnd) {
-          j++
-        }
-      }
-      return result
+      return normalizeFormConfig(this.returnFormConfig)
     }
   }
 }

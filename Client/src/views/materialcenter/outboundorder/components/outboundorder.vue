@@ -236,7 +236,7 @@ export default {
         this.expressList = val.expressages.map(item => {
           item.fileList = item.expressagePicture.map(item => {
             item.url = processDownloadUrl(item.pictureId)
-            item.name = 'dsdasdsa'
+            item.name = item.fileName
             return item
           })
           return item
@@ -390,7 +390,16 @@ export default {
       }
       return true
     },
-    resetInfo () {},
+    resetFile () { // 清空文件列表
+      if (this.$refs.uploadFile && this.$refs.uploadFile.length) {
+        this.$refs.uploadFile.forEach(uploadFile => {
+          uploadFile.clearFiles()
+        })
+      }
+    },
+    resetInfo () {
+      this.resetFile()
+    },
     _normalizeExpressList (list) { // 格式化物流列表
       list.forEach(item => {
         item.expressNumber = item.expressNumber.trim()
@@ -403,6 +412,9 @@ export default {
       })
     },
     async updateMaterial () {
+      if (!this.expressList.length) {
+        return Promise.reject({ message: '至少填写一个快递' })
+      }
       let isExpressValid = await this.$refs.expressInfo.validate()
       let isMaterialValid = await this.$refs.materialForm.validate()
       if (isExpressValid && isMaterialValid) {
