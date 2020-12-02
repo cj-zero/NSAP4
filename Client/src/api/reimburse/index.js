@@ -96,3 +96,11 @@ export function printOrder (params) { // 打印报销单
     params
   })
 }
+
+export function getHistoryReimburseInfo (params) { // 客户历史报销单
+  return request({
+    url: '/serve/Reimburse/HistoryReimburseInfo',
+    method: 'get',
+    params
+  })
+}

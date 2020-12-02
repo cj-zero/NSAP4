@@ -150,11 +150,56 @@
             </el-table>
           </div>
           <el-row type="flex" justify="end" class="general-total-money">总金额：{{ totalMoney | toThousands }}</el-row>
+          <el-button size="mini" @click="toggleAfterEva" v-if="title !== 'view'">售后评价</el-button>
+          <common-table 
+            v-show="isShowAfterEva"
+            :data="afterEvaluationList"
+            :columns="afterEvaluationColumns"
+            maxHeight="300px"
+            :loading="afterEvaLoading"
+          >
+          </common-table>
         </div>
         <!-- 服务报告 -->
-        <div v-show="currentTabIndex === 1">服务报告</div>
+        <div v-show="currentTabIndex === 1" style="width: 602px;">
+          <common-table 
+            :data="reportTableData"
+            :columns="reportTableColumns"
+            maxHeight="300px"
+            :loading="reportDetailLoading"
+          >
+          </common-table>
+        </div>
         <!-- 历史费用 -->
-        <div v-show="currentTabIndex === 2">历史费用</div>    
+        <div v-show="currentTabIndex === 2" style="width: 984px;">
+          <common-table 
+            :data="historyCostData"
+            :columns="historyCostColumns"
+            maxHeight="300px"
+            :loading="historyCostLoading"
+          >
+            <!-- 总金额 -->
+            <template v-slot:totalMoney="{ row }">
+              {{ row.totalMoney | toThousands }}
+            </template>
+            <!-- 交通费用 -->
+            <template v-slot:faresMoney="{ row }">
+              {{ row.faresMoney | toThousands }}
+            </template>
+            <!-- 住宿补贴 -->
+            <template v-slot:acc="{ row }">
+              {{ row.accommodationSubsidiesMoney | toThousands }}
+            </template>
+            <!-- 出差补贴 -->
+            <template v-slot:travel="{ row }">
+              {{ row.travellingAllowancesMoney | toThousands }}
+            </template>
+            <!-- 其它费用 -->
+            <template v-slot:other="{ row }">
+              {{ row.otherChargesMoney | toThousands }}
+            </template>
+          </common-table>
+        </div>    
       </template>
       <template v-else>
         <el-form
@@ -928,9 +973,10 @@
 </template>
 
 <script>
-import { addOrder, getOrder, updateOrder, approve, isSole } from '@/api/reimburse'
+import { addOrder, getOrder, updateOrder, approve, isSole, getHistoryReimburseInfo } from '@/api/reimburse'
+import { getList as getAfterEvaluaton } from '@/api/serve/afterevaluation'
 import { getList } from '@/api/reimburse/mycost'
-// import { forServe } from '@/api/serve/callservesure'
+import { getReportDetail } from '@/api/serve/callservesure'
 import upLoadFile from "@/components/upLoadFile";
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
@@ -1008,12 +1054,51 @@ export default {
   },
   data () {
     return {
+      isShowAfterEva: true,
       currentTabIndex: 0,
       tabList: [
         { label: '费用详情', type: 'COST_DETAIL' },
         { label: '服务报告', type: 'SERVICE_REPORT' },
         { label: '历史费用', type: 'HISTORY_COST' }
       ],
+      // 售后评价
+      afterEvaluationList: [],
+      afterEvaluationColumns: [
+        { label: '技术员', prop: 'technician' },
+        { label: '响应速度', prop: 'responseSpeed' },
+        { label: '方案有效性', prop: 'schemeEffectiveness' },
+        { label: '服务态度', prop: 'serviceAttitude' },
+        { label: '产品质量', prop: 'productQuality' },
+        { label: '服务价格', prop: 'servicePrice' },
+        { label: '技客户建议或意见', prop: 'comment' },
+        { label: '回访人', prop: 'visitPeople' },
+        { label: '评价日期', prop: 'commentDate' }
+      ],
+      afterEvaLoading: false,
+      // 服务报告
+      reportTableData: [],
+      reportTableColumns: [
+        { label: '制造商序列号', prop: 'manufacturerSerialNumber', width: 120 },
+        { label: '物料编码', prop: 'materialCode', width: 120 },
+        { label: '问题类型', prop: 'troubleDescription', width: 180 },
+        { label: '解决方案', prop: 'processDescription', width: 180 }
+      ],
+      reportDetailLoading: false,
+      // 历史费用
+      historyCostData: [],
+      historyCostColumns: [
+        { label: '报销单号', prop: 'mainId', width: '80px' },
+        { label: '总天数', prop: 'days', align: 'right', width: '80px' },
+        { label: '总金额', prop: 'totalMoney', type: 'slot', slotName: 'totalMoney', align: 'right', width: '100px' },
+        { label: '交通费用', prop: 'faresMoney', type: 'slot', slotName: 'faresMoney', align: 'right', width: '100px' },
+        { label: '住宿补贴', prop: 'accommodationSubsidiesMoney', type: 'slot', slotName: 'acc', align: 'right', width: '100px' },
+        { label: '出差补贴', prop: 'travellingAllowancesMoney', type: 'slot', slotName: 'travel', align: 'right', width: '100px' },
+        { label: '其他费用', prop: 'otherChargesMoney', type: 'slot', slotName: 'other', align: 'right', width: '100px' },
+        { label: '出发时间', prop: 'businessTripDate', width: '126px' },
+        { label: '到达时间', prop: 'endDate', width: '126px' },
+        { label: '报销人', prop: 'userName', width: '70px' }
+      ],
+      historyCostLoading: false,
       generalStyle: { // 总经理头部style
         fontSize: 'bold'
       },
@@ -1155,6 +1240,9 @@ export default {
         this.formData = Object.assign({}, this.formData, val)
         console.log(this.formData, 'detailData')
         if (this.isGeneralStatus) { // 总经理审批和查看的时候才执行
+          this._getAfterEvaluation() // 获取售后评价
+          this._getReportDetail() // 获取服务报告
+          this._getHistoryCost() // 获取历史费用
           this.timelineList = this._normalizeTimelineList(this.formData.reimurseOperationHistories)
         }
         if (this.title === 'approve') { // 审批的时候要告诉审批人 住宿金额补贴是否符合标准
@@ -1291,8 +1379,66 @@ export default {
     }
   },
   methods: {
+    toggleAfterEva () {
+      this.isShowAfterEva = !this.isShowAfterEva
+    },
     changeContent (index) { // 总经理审批页面费用详情/服务博爱高/历史费用 切换
       this.currentTabIndex = index
+    },
+    _getAfterEvaluation () { // 获取售后评价
+      if (!this.formData.serviceOrderId) {
+        return this.$message.error('没有服务ID，无法获取售后评价列表')
+      }
+      this.afterEvaLoading = true
+      getAfterEvaluaton({
+        serviceOrderId: this.formData.serviceOrderId
+      }).then(res => {
+        this.afterEvaluationList = res.data
+        this.afterEvaLoading = false
+      }).catch(err => {
+        this.$message.error(err.message)
+        this.afterEvaLoading = false
+      })
+    },
+    _getReportDetail () { // 获取服务报告
+      this.reportDetaiLoading = true
+      getReportDetail({
+        serviceOrderId: this.formData.serviceOrderId,
+        userId: this.formData.createUserId
+      }).then(res => {
+        let result = []
+        this.reportDetaiLoading = false
+        res.result.data.filter(item => item.id).forEach(item => {
+          let { troubleDescription, processDescription, serviceWorkOrders } = item
+          serviceWorkOrders.forEach(workOrderItem => {
+            let { manufacturerSerialNumber, materialCode } = workOrderItem
+            result.push({
+              manufacturerSerialNumber,
+              materialCode,
+              troubleDescription,
+              processDescription
+            })
+          })
+        })
+        this.reportTableData = result
+        console.log(this.reportTableData, 'report list')
+      }).catch(err => {
+        this.reportDetaiLoading = false
+        this.$message.error(err.message)
+      })
+    },
+    _getHistoryCost () { // 获取历史费用
+      this.historyCostLoading = true
+      getHistoryReimburseInfo({
+        terminalCustomer: this.formData.terminalCustomerId
+      }).then(res => {
+        this.historyCostLoading = false
+        this.historyCostData = res.data
+        console.log(res, 'historyList')
+      }).catch(err => {
+        this.historyCostLoading = false
+        this.$message.error(err.message)
+      })
     },
     openFile (row, isInvoiceAttachment) { // 打开发票附件
       console.log(row, 'row')
@@ -2089,6 +2235,8 @@ export default {
     },
     resetInfo () {
       // let { createUserId, userName, orgName } = this.formData
+      this.isShowAfterEva = true
+      this.currentTabIndex = 0
       this.$refs.form.clearValidate()
       this.$refs.form.resetFields()
       this.clearFile()
@@ -2515,7 +2663,7 @@ export default {
     }
     /* 总经理tabList */
     .tablist-wrapper {
-      margin-bottom: 10px;
+      margin-top: 5px;
       span {
         height: 30px;
         padding: 0 10px;
@@ -2539,7 +2687,7 @@ export default {
       // padding-right: 10px;
       // width: 828px;
       width: 993px;
-      margin-top: 10px;
+      margin-top: 5px;
       .table-container {
         overflow: visible;
         .upload-number-wrapper {
@@ -2566,7 +2714,8 @@ export default {
           .remark {
             position: absolute;
             right: -14px;
-            bottom: 6px;
+            bottom: 2px;
+            color: red;
           }
         }
         .invoice-number-wrapper {
