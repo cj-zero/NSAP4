@@ -817,7 +817,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryTechName), q => q.CurrentUser.Contains(req.QryTechName))
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromTheme), q => q.FromTheme.Contains(req.QryFromTheme))
-                .WhereIf(req.CompleteDate!=null, q=>q.CompleteDate>req.CompleteDate && q.CompleteDate<Convert.ToDateTime(req.CompleteDate).AddHours(24))
+                .WhereIf(req.CompleteDate != null, q => q.CompleteDate > req.CompleteDate && q.CompleteDate < Convert.ToDateTime(req.CompleteDate).AddHours(24))
                 .OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
 
             var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceWorkOrders)
@@ -870,7 +870,7 @@ namespace OpenAuth.App
                 && (string.IsNullOrWhiteSpace(req.QryTechName) || a.CurrentUser.Contains(req.QryTechName))
                 && (string.IsNullOrWhiteSpace(req.QryProblemType) || a.ProblemTypeId.Equals(req.QryProblemType))
                 && (string.IsNullOrWhiteSpace(req.QryFromTheme) || a.FromTheme.Contains(req.QryFromTheme))
-                && (req.CompleteDate==null ||(a.CompleteDate > req.CompleteDate && a.CompleteDate < Convert.ToDateTime(req.CompleteDate).AddHours(24)))).ToList()
+                && (req.CompleteDate == null || (a.CompleteDate > req.CompleteDate && a.CompleteDate < Convert.ToDateTime(req.CompleteDate).AddHours(24)))).ToList()
             });
 
             result.Data = await resultsql.Skip((req.page - 1) * req.limit)
@@ -1497,7 +1497,7 @@ namespace OpenAuth.App
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.ContactTel.Contains(req.ContactTel) || q.NewestContactTel.Contains(req.ContactTel))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromType), q => q.ServiceWorkOrders.Any(a => a.FromType.Equals(Convert.ToInt32(req.QryFromType))))
-                .WhereIf(req.CompleteDate!=null, q => q.ServiceWorkOrders.Any(s=>s.CompleteDate > req.CompleteDate && s.CompleteDate < Convert.ToDateTime(req.CompleteDate).AddHours(24)))
+                .WhereIf(req.CompleteDate != null, q => q.ServiceWorkOrders.Any(s => s.CompleteDate > req.CompleteDate && s.CompleteDate < Convert.ToDateTime(req.CompleteDate).AddHours(24)))
                 .Where(q => q.Status == 2);
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
@@ -1554,7 +1554,7 @@ namespace OpenAuth.App
                 {
                     var FromThemeJson = JsonHelper.Instance.Deserialize<List<FromThemeJsonResp>>(workOrder?.FromTheme);
                     string FromTheme = "";
-                    FromThemeJson.ForEach(f => FromTheme+=f.description);
+                    FromThemeJson.ForEach(f => FromTheme += f.description);
                     list.Add(new ServiceOrderExcelDto
                     {
                         U_SAP_ID = serviceOrder.U_SAP_ID,
@@ -1811,11 +1811,13 @@ namespace OpenAuth.App
         {
             //发给服务单客服/主管
             var serviceInfo = await UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId).FirstOrDefaultAsync();
+            //获取App与Erp绑定关系
+            var appuserMapInfo = await UnitWork.Find<AppUserMap>(null).ToListAsync();
             //客服Id
             string RecepUserId = serviceInfo.RecepUserId;
             if (!string.IsNullOrEmpty(RecepUserId))
             {
-                var recepUserInfo = await UnitWork.Find<AppUserMap>(a => a.UserID == RecepUserId).FirstOrDefaultAsync();
+                var recepUserInfo = appuserMapInfo.Where(a => a.UserID == RecepUserId).FirstOrDefault();
                 if (recepUserInfo != null && recepUserInfo.AppUserId > 0 && !recepUserInfo.AppUserId.Equals(FromUserId))
                 {
                     var msgObj = new ServiceOrderMessageUser
@@ -1833,7 +1835,7 @@ namespace OpenAuth.App
             string SupervisorId = serviceInfo.SupervisorId;
             if (!string.IsNullOrEmpty(SupervisorId))
             {
-                var superUserInfo = await UnitWork.Find<AppUserMap>(a => a.UserID == SupervisorId).FirstOrDefaultAsync();
+                var superUserInfo = appuserMapInfo.Where(a => a.UserID == SupervisorId).FirstOrDefault();
                 if (superUserInfo != null && superUserInfo.AppUserId > 0 && !superUserInfo.AppUserId.Equals(FromUserId))
                 {
                     var msgObj = new ServiceOrderMessageUser
@@ -1841,6 +1843,24 @@ namespace OpenAuth.App
                         CreateTime = DateTime.Now,
                         FromUserId = FromUserId.ToString(),
                         FroUserId = superUserInfo.AppUserId.ToString(),
+                        HasRead = false,
+                        MessageId = MessageId
+                    };
+                    await UnitWork.AddAsync<ServiceOrderMessageUser, int>(msgObj);
+                }
+            }
+            //销售用户Id
+            string salesManId = serviceInfo.SalesManId;
+            if (!string.IsNullOrEmpty(salesManId))
+            {
+                var salesManInfo = appuserMapInfo.Where(a => a.UserID == salesManId).FirstOrDefault();
+                if (salesManInfo != null && salesManInfo.AppUserId > 0 && !salesManInfo.AppUserId.Equals(FromUserId))
+                {
+                    var msgObj = new ServiceOrderMessageUser
+                    {
+                        CreateTime = DateTime.Now,
+                        FromUserId = FromUserId.ToString(),
+                        FroUserId = salesManInfo.AppUserId.ToString(),
                         HasRead = false,
                         MessageId = MessageId
                     };
@@ -2327,23 +2347,43 @@ namespace OpenAuth.App
         public async Task<TableData> GetCustServiceNews(int currenUserId)
         {
             var result = new TableData();
-            List<string> newsList = new List<string>();
-            var workorderList = await UnitWork.Find<ServiceOrder>(w => w.AppUserId == currenUserId).Include(i => i.ServiceWorkOrders).Select(s => new { s.U_SAP_ID, s.ServiceWorkOrders }).ToListAsync();
+            var outData = new List<dynamic>();
+            var workorderList = await UnitWork.Find<ServiceOrder>(w => w.AppUserId == currenUserId).Include(i => i.ServiceWorkOrders).Select(s => new
+            {
+                s.U_SAP_ID,
+                ServiceWorkOrders = s.ServiceWorkOrders.Select(o => new
+                {
+                    o.Id,
+                    o.Status,
+                    MaterialType = "其他设备".Equals(o.MaterialCode) ? "其他设备" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
+                    o.OrderTakeType
+                }).ToList(),
+                s.Id
+            }).ToListAsync();
             foreach (var item in workorderList)
             {
+                Dictionary<string, object> newsList = new Dictionary<string, object>();
                 if (item.ServiceWorkOrders.Count > 0 && item.U_SAP_ID != null)
                 {
                     int status = (int)item.ServiceWorkOrders.Max(s => s.Status);
                     int orderTakeType = (int)item.ServiceWorkOrders.Max(s => s.OrderTakeType);
+                    string materialType = item.ServiceWorkOrders.Where(w => w.Status == status && w.OrderTakeType == orderTakeType).Select(s => s.MaterialType).FirstOrDefault();
                     string conetnt = GetNewsContent(status, (int)item.U_SAP_ID, orderTakeType);
-                    newsList.Add(conetnt);
+                    newsList.Add("sapId", item.U_SAP_ID);
+                    newsList.Add("serviceOrderId", item.Id);
+                    newsList.Add("materialType", materialType);
+                    newsList.Add("content", conetnt);
                 }
                 else
                 {
-                    newsList.Add("你的服务单" + item.U_SAP_ID + "已提交成功，请耐心等客服接收");
+                    newsList.Add("sapId", item.U_SAP_ID);
+                    newsList.Add("serviceOrderId", item.Id);
+                    newsList.Add("materialType", "");
+                    newsList.Add("content", "你的服务单" + item.U_SAP_ID + "已提交成功，请耐心等客服接收");
                 }
+                outData.Add(newsList);
             }
-            result.Data = newsList;
+            result.Data = outData;
             return result;
         }
 
