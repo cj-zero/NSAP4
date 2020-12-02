@@ -173,6 +173,28 @@ namespace NSAP.App.WebApi.Controllers
         {
             return _problemTypeApp.AppLoad();
         }
+
+        /// <summary>
+        /// 获取客户快报信息
+        /// </summary>
+        /// <param name="appUserId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetCustServiceNews(int appUserId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetCustServiceNews(appUserId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
         #endregion
 
         #region<<Technician>>

@@ -2314,18 +2314,64 @@ namespace OpenAuth.App
             return result;
         }
 
-        //public async Task<TableData> GetCustServiceNews(int currenUserId)
-        //{
-        //    var result = new TableData();
-        //    var newsList = await UnitWork.Find<ServiceWorkOrder>(w => w.CurrentUserId== currenUserId)
-        //    return result;
-        //}
+        /// <summary>
+        /// 获取客户快报信息
+        /// </summary>
+        /// <param name="currenUserId"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetCustServiceNews(int currenUserId)
+        {
+            var result = new TableData();
+            List<string> newsList = new List<string>();
+            var workorderList = await UnitWork.Find<ServiceOrder>(w => w.AppUserId == currenUserId).Include(i => i.ServiceWorkOrders).Select(s => new { s.U_SAP_ID, s.ServiceWorkOrders }).ToListAsync();
+            foreach (var item in workorderList)
+            {
+                if (item.ServiceWorkOrders.Count > 0 && item.U_SAP_ID != null)
+                {
+                    int status = (int)item.ServiceWorkOrders.Max(s => s.Status);
+                    int orderTakeType = (int)item.ServiceWorkOrders.Max(s => s.OrderTakeType);
+                    string conetnt = GetNewsContent(status, (int)item.U_SAP_ID, orderTakeType);
+                    newsList.Add(conetnt);
+                }
+                else
+                {
+                    newsList.Add("你的服务单" + item.U_SAP_ID + "已提交成功，请耐心等客服接收");
+                }
+            }
+            result.Data = newsList;
+            return result;
+        }
 
-        //private string GetNewsContent(int serviceOrderId)
-        //{
-
-
-        //}
+        private string GetNewsContent(int status, int sapId, int orderTakeType)
+        {
+            string content = string.Empty;
+            if (status < 3)
+            {
+                content = "你的服务单" + sapId + "客服已接收，请留意服务进度";
+            }
+            else
+            {
+                switch (orderTakeType)
+                {
+                    case 4:
+                        content = "你的服务单" + sapId + "技术员已预约上门时间，请留意服务进度";
+                        break;
+                    case -1:
+                        content = "你的服务单" + sapId + "已返厂维修，请保持电话畅通";
+                        break;
+                    case -2:
+                        content = "你的服务单" + sapId + "设备已发回，请保持电话畅通";
+                        break;
+                    case 5:
+                        content = "你的服务单" + sapId + "技术员已经上门，请保持电话畅通";
+                        break;
+                    default:
+                        content = "你的服务单" + sapId + "正在服务中";
+                        break;
+                }
+            }
+            return content;
+        }
         #endregion
 
         #region<<Technician>>
