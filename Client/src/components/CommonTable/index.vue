@@ -8,9 +8,8 @@
     border
     fit
     row-key="id"
-    height="100%"
+    :height="height"
     :max-height="maxHeight"
-    style="width: 100%;"
     @current-change="onCurrentChange"
     @row-click="onRowClick"
     @selection-change="onSelectChange"
@@ -39,7 +38,6 @@
       <template slot-scope="scope" >
         <!--  有箭头的操作 -->
         <div class="link-container" v-if="item.type === 'link'"> 
-          {{ JSON.stringify(item.options) }}
           <img :src="rightImg" @click="item.handleClick({ ...scope.row, ...(item.options || {})})" class="pointer">
           <span>{{ scope.row[item.prop] }}</span>
         </div>
@@ -103,8 +101,11 @@ export default {
       default: false
     },
     maxHeight: {
+      type: [Number, String]
+    },
+    height: {
       type: [Number, String],
-      default: 0
+      default: '100%'
     },
     selectedList: { // 已经选中里的列表(多选中，用来判断是否可以点击)
       type: Array,
@@ -153,6 +154,9 @@ export default {
       let radioKey = row.radioKey
       this.radio = row[radioKey]
       this.currentRow = row
+      if (this.selectionColumns) {
+        this.$refs.commonTable.toggleRowSelection(row)
+      }
       // console.log(index, column, 'row click', radioKey, this.radio, Object.keys(row))
     },
     getCurrentRow () {
