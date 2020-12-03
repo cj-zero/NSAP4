@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
+using Infrastructure.Export;
 using Infrastructure.Extensions;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -170,6 +171,49 @@ namespace OpenAuth.App
             result.Count = count;
             result.Data = data;
             return result;
+        }
+
+        /// <summary>
+        /// 导出考勤
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<byte[]> ExportAttendanceClock(QueryAttendanceClockListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            #region 查询条件
+            var objs = UnitWork.Find<AttendanceClock>(null).Include(a => a.AttendanceClockPictures);
+            var ClockModels = objs.WhereIf(!string.IsNullOrEmpty(request.key), u => u.Id.Contains(request.key))
+                .WhereIf(!string.IsNullOrEmpty(request.Name), u => u.Name.Contains(request.Name))
+                .WhereIf(!string.IsNullOrEmpty(request.Org), u => u.Org.Contains(request.Org.ToUpper()))
+                .WhereIf(!string.IsNullOrEmpty(request.VisitTo), u => u.VisitTo.Contains(request.VisitTo))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.Location), u => u.Location.Contains(request.Location))
+                .WhereIf(request.DateFrom != null && request.DateTo != null, u => u.ClockDate >= request.DateFrom && u.ClockDate < Convert.ToDateTime(request.DateTo).AddMinutes(1440))
+                ;
+            // 主管只能看到本部门的技术员的打卡记录
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
+            {
+                var userIds = _revelanceApp.Get(Define.USERORG, false, loginContext.Orgs.Select(o => o.Id).ToArray());
+                ClockModels = ClockModels.Where(q => userIds.Contains(q.UserId));
+            }
+            var listobj = ClockModels.ToList();
+            listobj.ForEach(s => s.ClockDate = s.ClockDate + s.ClockTime);
+            #endregion
+            // Name 姓名,org 部门,ClockDate 打卡日期,ClockTime,location 详细地址,VisitTo 拜访对象,Remark 备注
+            var AttendanceClockList = listobj.Select(u => new
+            {
+                姓名=u.Name,
+                部门=u.Org,
+                打卡日期=u.ClockDate,
+                详细地址=u.Location,
+                拜访对象=u.VisitTo,
+                备注=u.Remark
+            }).ToList();
+            return await ExportAllHandler.ExporterExcel(AttendanceClockList);
         }
 
     }

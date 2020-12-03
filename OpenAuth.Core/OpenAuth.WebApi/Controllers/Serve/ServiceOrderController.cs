@@ -826,6 +826,31 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 获取客户快报
+        /// </summary>
+        /// <param name="appUserId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetCustServiceNews(int appUserId)
+        {
+            var result = new TableData();
+            try
+            {
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
+                parameters.Add("appUserId", appUserId);
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetCustServiceNews");
+                result = JsonConvert.DeserializeObject<TableData>(r);
+                //result = await _serviceOrderApp.GetAppCustServiceOrderDetails(ServiceOrderId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
         /// app查询服务单列表
         /// </summary>
         /// <param name="request"></param>

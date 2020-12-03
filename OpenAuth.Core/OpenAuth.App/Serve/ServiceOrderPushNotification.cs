@@ -47,7 +47,7 @@ namespace OpenAuth.App.Serve
         }
 
         /// <summary>
-        /// Web获取未读消息个数
+        /// Web获取消息个数
         /// </summary>
         /// <returns></returns>
         public async Task GetMessageWeb()
@@ -56,9 +56,9 @@ namespace OpenAuth.App.Serve
                            join b in UnitWork.Find<ServiceOrderMessageUser>(null) on a.Id equals b.MessageId into ab
                            from b in ab.DefaultIfEmpty()
                            join c in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals c.Id
-                           where b.HasRead == false && b.FromUserId != "0"
+                           where a.CreateTime>=DateTime.Now.AddMonths(-1) && b.FromUserId != "0" && b.FroUserId!=null
                            select new { a, b, c };
-            var MessageList = await Messages.Select(m => new { m.a.Content, m.a.ServiceOrderId, m.a.Replier, CreateTime = m.a.CreateTime.ToString(), m.b.FroUserId, m.c.U_SAP_ID }).ToListAsync();
+            var MessageList = await Messages.Select(m => new { m.a.Content, m.a.ServiceOrderId, m.a.Replier, CreateTime = m.a.CreateTime.ToString(), m.b.FroUserId, m.c.U_SAP_ID,m.b.HasRead }).ToListAsync();
             var DistinctMessage = MessageList.OrderByDescending(m => m.CreateTime).GroupBy(m => new { m.ServiceOrderId, m.FroUserId }).Select(m => m.First()).ToList();
             var AppUserIds = DistinctMessage.Select(m => m.FroUserId).Distinct().ToList();
             var AppUserMaps = await UnitWork.Find<AppUserMap>(u => AppUserIds.Contains(u.AppUserId.ToString())).Include(u => u.User).ToListAsync();

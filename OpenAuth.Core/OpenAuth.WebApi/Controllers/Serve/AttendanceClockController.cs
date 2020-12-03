@@ -38,6 +38,18 @@ namespace OpenAuth.WebApi.Controllers
             return _app.Load(request);
         }
 
+        /// <summary>
+        /// 导出考勤Excel
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> ExportAttendanceClock([FromQuery] QueryAttendanceClockListReq req)
+        {
+            var data = await _app.ExportAttendanceClock(req);
+
+            return File(data, "application/vnd.ms-excel");
+        }
         #region 新威智能APP售后接口 若修改请告知！！！
         /// <summary>
         /// 获取详情
