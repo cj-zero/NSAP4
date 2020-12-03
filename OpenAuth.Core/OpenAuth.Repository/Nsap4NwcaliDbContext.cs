@@ -15,6 +15,7 @@ namespace OpenAuth.Repository
         {
             //当主键为联合主键时，需要把这里的内容拷贝到对应的位置
             modelBuilder.Entity<Asset>().HasKey(c => new { c.Id });
+            modelBuilder.Entity<NwcaliBaseInfo>().Ignore(c => c.FlowInstance );
         }
 
         public virtual DbSet<Certinfo> Certinfos { get; set; }

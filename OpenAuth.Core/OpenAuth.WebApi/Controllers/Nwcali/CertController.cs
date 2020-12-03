@@ -900,7 +900,7 @@ namespace OpenAuth.WebApi.Controllers
                 model.TechnicalManager = await GetSignBase64(technicalManager.PictureId);
             }
             var approvalDirector = us.Data.FirstOrDefault(u => u.UserName.Equals(baseInfo.ApprovalDirector));
-            if (technicalManager != null)
+            if (approvalDirector != null)
             {
                 model.ApprovalDirector = await GetSignBase64(approvalDirector.PictureId);
             }

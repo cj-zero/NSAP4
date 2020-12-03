@@ -161,15 +161,15 @@ namespace OpenAuth.App
                     .Select(u => u.InstanceId).Distinct().ToListAsync();
 
             var fs = await UnitWork.Find<FlowInstance>(f => f.SchemeId == mf.FlowSchemeId)
-                .Where(o => o.MakerList == "1" || o.MakerList.Contains(user.User.Id))//待办事项
-                .WhereIf(request.FlowStatus == 1, o => o.ActivityName == "待送审" || instances.Contains(o.Id))
+                .WhereIf(request.FlowStatus != 1, o => o.MakerList == "1" || o.MakerList.Contains(user.User.Id))//待办事项
+                //.WhereIf(request.FlowStatus == 1, o => o.ActivityName == "待送审" || instances.Contains(o.Id))
                 .WhereIf(request.FlowStatus == 2, o => o.ActivityName == "待审核" || o.ActivityName == "待批准")
                 .ToListAsync();
             var fsid = fs.Select(f => f.Id).ToList();
             var certObjs = UnitWork.Find<NwcaliBaseInfo>(null);
             certObjs = certObjs
-                .Where(o => fsid.Contains(o.FlowInstanceId))
-                .WhereIf(request.FlowStatus == 1, u => u.Operator.Equals(user.User.Name))
+                .Where(o => fsid.Contains(o.FlowInstanceId) || o.Operator.Equals(user.User.Name))
+                //.WhereIf(request.FlowStatus == 1, u => u.Operator.Equals(user.User.Name))
                 .WhereIf(!string.IsNullOrEmpty(request.CertNo), u => u.CertificateNumber.Contains(request.CertNo))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.AssetNo), u => u.AssetNo.Contains(request.AssetNo))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.Model), u => u.TesterModel.Contains(request.Model))
@@ -266,7 +266,7 @@ namespace OpenAuth.App
             }
             var certInfo = await Repository.Find(c => c.Id.Equals(req.CertInfoId)).FirstOrDefaultAsync();
 
-            var baseInfo = await UnitWork.FindSingleAsync<NwcaliBaseInfo>(c => c.Id.Equal(req.CertInfoId));
+            var baseInfo = await UnitWork.Find<NwcaliBaseInfo>(null).FirstOrDefaultAsync(c => c.Id == req.CertInfoId);
             if (certInfo is null && baseInfo is null)
                 throw new CommonException("证书不存在", 80001);
             var id = certInfo is null ? baseInfo.Id : certInfo.Id;
@@ -277,7 +277,7 @@ namespace OpenAuth.App
                 throw new CommonException("您无法操作此步骤。", 80011);
             }
             var flowInstanceId = certInfo is null ? baseInfo.FlowInstanceId : certInfo.FlowInstanceId;
-            var flowInstance = await UnitWork.FindSingleAsync<FlowInstance>(c => c.Id.Equals(flowInstanceId));
+            var flowInstance = await UnitWork.FindSingleAsync<FlowInstance>(c => c.Id == flowInstanceId);
             var operatorName = certInfo is null ? baseInfo.Operator : certInfo.Operator;
             if (flowInstance.ActivityName.Equals("待送审") && !operatorName.Equals(loginContext.User.Name))
             {
@@ -307,7 +307,7 @@ namespace OpenAuth.App
                             CertInfoId = id,
                             Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}审批通过。"
                         });
-                        await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber.Equal(certNo), o => new NwcaliBaseInfo { TechnicalManager = loginContext.User.Name, TechnicalManagerId = loginContext.User.Id });
+                        await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { TechnicalManager = loginContext.User.Name, TechnicalManagerId = loginContext.User.Id });
                         await UnitWork.SaveAsync();
                     }
                     else if (flowInstance.ActivityName.Equals("待批准"))
@@ -318,7 +318,7 @@ namespace OpenAuth.App
                             CertInfoId = id,
                             Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}批准证书。"
                         });
-                        await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber.Equal(certNo), o => new NwcaliBaseInfo { ApprovalDirector = loginContext.User.Name, ApprovalDirectorId = loginContext.User.Id });
+                        await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { ApprovalDirector = loginContext.User.Name, ApprovalDirectorId = loginContext.User.Id });
                         await UnitWork.SaveAsync();
                     }
                     #endregion
@@ -338,8 +338,8 @@ namespace OpenAuth.App
                         CertInfoId = id,
                         Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}驳回证书。"
                     });
-                    await _flowInstanceApp.DeleteAsync(f => f.Id.Equal(req.Verification.FlowInstanceId));
-                    var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("校准证书"));
+                    await _flowInstanceApp.DeleteAsync(f => f.Id == req.Verification.FlowInstanceId);
+                    var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name == "校准证书");
                     var request = new AddFlowInstanceReq();
                     request.SchemeId = mf.FlowSchemeId;
                     request.FrmType = 2;
@@ -347,7 +347,7 @@ namespace OpenAuth.App
                     request.CustomName = $"校准证书{certNo}审批";
                     request.FrmData = $"{{\"certNo\":\"{certNo}\",\"cert\":[{{\"key\":\"{DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString()}\",\"url\":\"/Cert/DownloadCertPdf/{certNo}\",\"percent\":100,\"status\":\"success\",\"isImg\":false}}]}}";
                     var newFlowId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(request);
-                    await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber.Equal(certNo), o => new NwcaliBaseInfo { FlowInstanceId = newFlowId });
+                    await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { FlowInstanceId = newFlowId });
                     break;
                 default:
                     break;
