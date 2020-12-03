@@ -430,8 +430,9 @@ export default {
         { width: 100, placeholder: '呼叫类型', prop: 'QryFromType', options: this.options_type, type: 'select' },
         { width: 180, placeholder: '呼叫主题', prop: 'QryFromTheme' },
         { width: 140, placeholder: '联系电话', prop: 'ContactTel' },
-        { width: 150, placeholder: '创建日期', prop: 'QryCreateTimeFrom', type: 'date', showText: true },
-        { width: 150, placeholder: '结束日期', prop: 'QryCreateTimeTo', type: 'date' },
+        { width: 150, placeholder: '创建开始日期', prop: 'QryCreateTimeFrom', type: 'date', showText: true },
+        { width: 150, placeholder: '创建结束日期', prop: 'QryCreateTimeTo', type: 'date' },
+        { width: 150, placeholder: '完工日期', prop: 'CompleteDate', type: 'date' }
       ]
     }
   },
@@ -1145,6 +1146,7 @@ export default {
     handleExcel () { // 导出表格
       let baseURL = `${process.env.VUE_APP_BASE_API}${this.exportExcelUrl}`
       let params = this.serializeParams(this.listQuery)
+      console.log(`${baseURL}?X-Token=${this.$store.state.user.token}&${params}`)
       window.location.href = `${baseURL}?X-Token=${this.$store.state.user.token}&${params}`
     },
     onChangeComment (val) {
