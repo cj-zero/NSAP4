@@ -9,6 +9,7 @@
     fit
     row-key="id"
     height="100%"
+    :max-height="maxHeight"
     style="width: 100%;"
     @current-change="onCurrentChange"
     @row-click="onRowClick"
@@ -56,6 +57,10 @@
             :icon="item.icon || ''"
             :size="item.size || 'mini'"
           >{{ btnItem.btnText }}</el-button>
+        </template>
+        <!-- 插槽 -->
+        <template v-else-if="item.type === 'slot'">
+          <slot :name="item.slotName || 'default'" :row="{ ...scope.row, ...(item.options || {}), prop: item.prop }"></slot>
         </template>
         <!-- 冒泡提示语分行显示 -->
         <template v-else-if="item.isMultipleLines">
