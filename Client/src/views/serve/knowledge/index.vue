@@ -220,8 +220,6 @@ export default {
       getList(this.listQuery).then(res => {
         console.log(res, 'resd')
         let { result } = res
-        // this._normalizeList(result)
-        console.log(this.listQuerySearch.key, !!this.listQuery.key)
         this.expandedKeys = []
         this.modulesTree = this._normalizeList(result)
         this.listLoading = false

@@ -737,12 +737,12 @@ export default {
         }
         this.handleSelectType = 'customer'
         if (this.formName === '新建') {
-          if (!this.form.terminalCustomerId) {
-            isCustomerCode(val) ?
-            this.form.terminalCustomerId = val :
-            this.form.terminalCustomerId = ''
-          }
-        }
+          // if (!this.form.terminalCustomerId) {
+          isCustomerCode(val) 
+            ? this.form.terminalCustomerId = val 
+            : this.form.terminalCustomerId = ''
+        } 
+        // }
         if (isCustomerCode(val)) {
           if (this.formName !== '编辑' && this.formName !== '查看' && this.formName !== '确认') {         
             let value = this.selectType === 'click'
@@ -1262,15 +1262,14 @@ export default {
           if (!res.result) {
             return
           }
-          // if (this.handleSelectType === 'customer') {
-          //   this.form.salesMan = res.result.slpName
-          //   this.form.customerName = res.result.cardName
-          //   if (this.form.terminalCustomerId === this.form.customerId) {
-          //     this.form.terminalCustomer = res.result.cardName
-          //   }
-          // } else {
-          //   this.form.terminalCustomer = res.result.cardName
-          // }
+          if (this.handleSelectType === 'customer') {
+            this.form.customerName = res.result.cardName
+            if (this.form.terminalCustomerId === this.form.customerId) {
+              this.form.terminalCustomer = res.result.cardName
+            }
+          } else {
+            this.form.terminalCustomer = res.result.cardName
+          }
           // 如果已经存在终端客户，则只有改变终端客户时才可以更改相关信息
           // 如果终端客户代码和客户代码一致，则可以更改相关信息
           if ((this.handleSelectType === 'terminalCustomer' && this.form.terminalCustomerId) || 
@@ -1279,11 +1278,14 @@ export default {
             // this.addressList = res.result.addressList;
             this.cntctPrsnList = res.result.cntctPrsnList;
             this.form.supervisor = res.result.techName;
-            // if (this.addressList.length) {
-            //   let { address, building, city } = this.addressList[0];
-            //   this.form.addressDesignator = address;
-            //   this.form.address = city + building
-            // }
+            console.log(res.result.addressList, 'addressList')
+            if (res.result.addressList.length) {
+              let { building, city } = res.result.addressList[0];
+              // this.form.addressDesignator = address;
+              city = city || ''
+              this.form.address = city + building
+              console.log(this.form.address, 'address')
+            }
           }
         })
         .catch(() => {
@@ -1407,7 +1409,7 @@ export default {
         this.form.salesMan = item.slpName;
         if (!this.form.terminalCustomerId || !this.form.terminalCustomer) {
           this.form.contactTel = item.cellular;
-          this.form.address = item.address2
+          // this.form.address = item.address2
           this.form.terminalCustomer = item.cardName;
         }
       } 
@@ -1427,7 +1429,7 @@ export default {
         this.form.salesMan = item.slpName;
         if (!this.form.terminalCustomerId || !this.form.terminalCustomer) {
           this.form.contactTel = item.cellular;
-          this.form.address = item.address2
+          // this.form.address = item.address2
           this.form.terminalCustomer = item.cardName;
         }
       } else { // 终端客户代码
@@ -1436,7 +1438,7 @@ export default {
         this.form.supervisor = item.technician
         this.form.contactTel = item.cellular;
         // this.form.addressDesignator = item.address
-        this.form.address = item.address2
+        // this.form.address = item.address2
         console.log(item, 'termianl')
         this.handleCurrentChange(item)
       }

@@ -14,7 +14,7 @@
     @row-click="onRowClick"
     @selection-change="onSelectChange"
     :row-class-name="tableRowClassName"
-    heighlight-current-row
+    highlight-current-row
     >
     <!-- 是否出现多选 -->
     <el-table-column 
