@@ -32,7 +32,7 @@ namespace Infrastructure.Export
             {
                 tplPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "default.cshtml");
             }
-            else 
+            else
             {
                 tplPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", tplPath);
             }
@@ -92,16 +92,22 @@ namespace Infrastructure.Export
         /// <returns></returns>
         public static async Task ExporterExcel<T>(string filePath, List<T> data) where T : class
         {
-            try
-            {
-                IExporter exporter = new ExcelExporter();
-                var result = await exporter.Export(filePath, data);
-            }
-            catch (Exception e)
-            {
+            IExporter exporter = new ExcelExporter();
+            var result = await exporter.Export(filePath, data);
+        }
 
-                throw;
-            }
+        /// <summary>
+        /// Excel导出byte数组
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="filePath"></param>
+        /// <param name="tplPath"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public static async Task<byte[]> ExporterExcel<T>(List<T> data) where T : class
+        {
+            IExporter exporter = new ExcelExporter();
+            return await exporter.ExportAsByteArray(data);
         }
         #endregion
 
