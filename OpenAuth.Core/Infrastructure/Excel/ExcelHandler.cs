@@ -67,109 +67,106 @@ namespace Infrastructure.Excel
                 .Take<NwcaliPLCRepetitiveMeasurementData>(sheetName);
             return data.Select(d => d.Value).SkipWhile(v => v is null).ToList();
         }
-        public NwcaliBaseInfo GetBaseInfo()
+        public T GetBaseInfo<T>(Func<ISheet, T> func)
         {
-            var baseInfo = new NwcaliBaseInfo();
             var sheet = mapper.Workbook.GetSheetAt(0);
-
-            var timeRow = sheet.GetRow(1);
-            baseInfo.Time = timeRow.GetCell(1).StringCellValue;
-            var fileVersionRow = sheet.GetRow(3);
-            baseInfo.FileVersion = fileVersionRow.GetCell(1).StringCellValue;
-            var testerMakeRow = sheet.GetRow(4);
-            baseInfo.TesterMake = testerMakeRow.GetCell(1).StringCellValue;
-            var testerModelRow = sheet.GetRow(5);
-            baseInfo.TesterModel = testerModelRow.GetCell(1).StringCellValue;
-            var testerSnRow = sheet.GetRow(6);
-            baseInfo.TesterSn = testerSnRow.GetCell(1).StringCellValue;
-            var assetNoRow = sheet.GetRow(7);
-            baseInfo.AssetNo = assetNoRow.GetCell(1).StringCellValue;
-            var siteCodeRow = sheet.GetRow(8);
-            baseInfo.SiteCode = "Electrical Lab";//siteCodeRow.GetCell(1).StringCellValue;
-            var temperatureRow = sheet.GetRow(9);
-            baseInfo.Temperature = temperatureRow.GetCell(1).StringCellValue;
-            var relativeHumidityRow = sheet.GetRow(10);
-            baseInfo.RelativeHumidity = relativeHumidityRow.GetCell(1).StringCellValue;
-            var ratedAccuracyCRow = sheet.GetRow(11);
-            baseInfo.RatedAccuracyC = ratedAccuracyCRow.GetCell(1).NumericCellValue / 1000;
-            var ratedAccuracyVRow = sheet.GetRow(12);
-            baseInfo.RatedAccuracyV = ratedAccuracyVRow.GetCell(1).NumericCellValue / 1000;
-            var ammeterBitsRow = sheet.GetRow(13);
-            baseInfo.AmmeterBits = Convert.ToInt32(ammeterBitsRow.GetCell(1).NumericCellValue);
-            var VoltmeterBitsRow = sheet.GetRow(14);
-            baseInfo.VoltmeterBits = Convert.ToInt32(VoltmeterBitsRow.GetCell(1).NumericCellValue);
-            var certificateNumberRow = sheet.GetRow(15);
-            baseInfo.CertificateNumber = certificateNumberRow.GetCell(1).StringCellValue;
-            var calibrationEntityRow = sheet.GetRow(16);
-            baseInfo.CallbrationEntity = calibrationEntityRow.GetCell(1).StringCellValue;
-            var operatorRow = sheet.GetRow(17);
-            baseInfo.Operator = operatorRow.GetCell(1).StringCellValue;
-            #region 标准器设备信息
-            var etalonsNameRow = sheet.GetRow(18);
-            var etalonsCharacteristicsRow = sheet.GetRow(19);
-            var etalonsAssetNoRow = sheet.GetRow(20);
-            var etalonsCertificateNoRow = sheet.GetRow(22);
-            var etalonsDueDateRow = sheet.GetRow(23);
-            for (int i = 1; i < etalonsNameRow.LastCellNum; i++)
-            {
-                if (string.IsNullOrWhiteSpace(etalonsNameRow.GetCell(i).StringCellValue))
-                    break;
-                try
-                {
-                    baseInfo.Etalons.Add(new Etalon
-                    {
-                        Name = etalonsNameRow.GetCell(i).StringCellValue,
-                        Characteristics = etalonsCharacteristicsRow.GetCell(i).StringCellValue,
-                        AssetNo = etalonsAssetNoRow.GetCell(i).StringCellValue,
-                        CertificateNo = etalonsCertificateNoRow.GetCell(i).StringCellValue,
-                        DueDate = etalonsDueDateRow.GetCell(i).StringCellValue
-                    });
-                }
-                catch
-                {
-                    break;
-                }
-
-            }
-            #endregion
-            var commentRow = sheet.GetRow(24);
-            baseInfo.Comment = commentRow.GetCell(1).StringCellValue;
-            var calibrationTypeRow = sheet.GetRow(25);
-            baseInfo.CalibrationType = calibrationTypeRow.GetCell(1).StringCellValue;
-            var repetitiveMeasurementsCountRow = sheet.GetRow(26);
-            baseInfo.RepetitiveMeasurementsCount = Convert.ToInt32(repetitiveMeasurementsCountRow.GetCell(1).NumericCellValue);
-            var turRow = sheet.GetRow(27);
-            baseInfo.TUR = turRow.GetCell(1).StringCellValue;
-            var acceptedToleranceRow = sheet.GetRow(28);
-            baseInfo.AcceptedTolerance = acceptedToleranceRow.GetCell(1).StringCellValue;
-            var kRow = sheet.GetRow(29);
-            baseInfo.K = kRow.GetCell(1).NumericCellValue;
-            var testIntervalRow = sheet.GetRow(30);
-            baseInfo.TestInterval = testIntervalRow.GetCell(1).StringCellValue;
-            #region 下位机
-            var pclCommentRow = sheet.GetRow(31);
-            var pclNoRow = sheet.GetRow(32);
-            var pclGuidRow = sheet.GetRow(33);
-            for (int i = 1; i < pclNoRow.LastCellNum; i++)
-            {
-                if (string.IsNullOrWhiteSpace(pclGuidRow.GetCell(i)?.StringCellValue))
-                    continue;
-                try
-                {
-                    baseInfo.PCPLCs.Add(new PCPLC
-                    {
-                        Comment = pclCommentRow.GetCell(i).StringCellValue,
-                        No = Convert.ToInt32(pclNoRow.GetCell(i).StringCellValue),
-                        Guid = pclGuidRow.GetCell(i).StringCellValue
-                    });
-                }
-                catch
-                {
-                    break;
-                }
-            }
-            #endregion
-            return baseInfo;
+            return func(sheet);
+            //var timeRow = sheet.GetRow(1);
+            //baseInfo.Time = timeRow.GetCell(1).StringCellValue;
+            //var fileVersionRow = sheet.GetRow(3);
+            //baseInfo.FileVersion = fileVersionRow.GetCell(1).StringCellValue;
+            //var testerMakeRow = sheet.GetRow(4);
+            //baseInfo.TesterMake = testerMakeRow.GetCell(1).StringCellValue;
+            //var testerModelRow = sheet.GetRow(5);
+            //baseInfo.TesterModel = testerModelRow.GetCell(1).StringCellValue;
+            //var testerSnRow = sheet.GetRow(6);
+            //baseInfo.TesterSn = testerSnRow.GetCell(1).StringCellValue;
+            //var assetNoRow = sheet.GetRow(7);
+            //baseInfo.AssetNo = assetNoRow.GetCell(1).StringCellValue;
+            //var siteCodeRow = sheet.GetRow(8);
+            //baseInfo.SiteCode = "Electrical Lab";//siteCodeRow.GetCell(1).StringCellValue;
+            //var temperatureRow = sheet.GetRow(9);
+            //baseInfo.Temperature = temperatureRow.GetCell(1).StringCellValue;
+            //var relativeHumidityRow = sheet.GetRow(10);
+            //baseInfo.RelativeHumidity = relativeHumidityRow.GetCell(1).StringCellValue;
+            //var ratedAccuracyCRow = sheet.GetRow(11);
+            //baseInfo.RatedAccuracyC = ratedAccuracyCRow.GetCell(1).NumericCellValue / 1000;
+            //var ratedAccuracyVRow = sheet.GetRow(12);
+            //baseInfo.RatedAccuracyV = ratedAccuracyVRow.GetCell(1).NumericCellValue / 1000;
+            //var ammeterBitsRow = sheet.GetRow(13);
+            //baseInfo.AmmeterBits = Convert.ToInt32(ammeterBitsRow.GetCell(1).NumericCellValue);
+            //var VoltmeterBitsRow = sheet.GetRow(14);
+            //baseInfo.VoltmeterBits = Convert.ToInt32(VoltmeterBitsRow.GetCell(1).NumericCellValue);
+            //var certificateNumberRow = sheet.GetRow(15);
+            //baseInfo.CertificateNumber = certificateNumberRow.GetCell(1).StringCellValue;
+            //var calibrationEntityRow = sheet.GetRow(16);
+            //baseInfo.CallbrationEntity = calibrationEntityRow.GetCell(1).StringCellValue;
+            //var operatorRow = sheet.GetRow(17);
+            //baseInfo.Operator = operatorRow.GetCell(1).StringCellValue;
+            //#region 标准器设备信息
+            //var etalonsNameRow = sheet.GetRow(18);
+            //var etalonsCharacteristicsRow = sheet.GetRow(19);
+            //var etalonsAssetNoRow = sheet.GetRow(20);
+            //var etalonsCertificateNoRow = sheet.GetRow(22);
+            //var etalonsDueDateRow = sheet.GetRow(23);
+            //for (int i = 1; i < etalonsNameRow.LastCellNum; i++)
+            //{
+            //    if (string.IsNullOrWhiteSpace(etalonsNameRow.GetCell(i).StringCellValue))
+            //        break;
+            //    try
+            //    {
+            //        baseInfo.Etalons.Add(new Etalon
+            //        {
+            //            Name = etalonsNameRow.GetCell(i).StringCellValue,
+            //            Characteristics = etalonsCharacteristicsRow.GetCell(i).StringCellValue,
+            //            AssetNo = etalonsAssetNoRow.GetCell(i).StringCellValue,
+            //            CertificateNo = etalonsCertificateNoRow.GetCell(i).StringCellValue,
+            //            DueDate = etalonsDueDateRow.GetCell(i).StringCellValue
+            //        });
+            //    }
+            //    catch
+            //    {
+            //        break;
+            //    }
+            //}
+            //#endregion
+            //var commentRow = sheet.GetRow(24);
+            //baseInfo.Comment = commentRow.GetCell(1).StringCellValue;
+            //var calibrationTypeRow = sheet.GetRow(25);
+            //baseInfo.CalibrationType = calibrationTypeRow.GetCell(1).StringCellValue;
+            //var repetitiveMeasurementsCountRow = sheet.GetRow(26);
+            //baseInfo.RepetitiveMeasurementsCount = Convert.ToInt32(repetitiveMeasurementsCountRow.GetCell(1).NumericCellValue);
+            //var turRow = sheet.GetRow(27);
+            //baseInfo.TUR = turRow.GetCell(1).StringCellValue;
+            //var acceptedToleranceRow = sheet.GetRow(28);
+            //baseInfo.AcceptedTolerance = acceptedToleranceRow.GetCell(1).StringCellValue;
+            //var kRow = sheet.GetRow(29);
+            //baseInfo.K = kRow.GetCell(1).NumericCellValue;
+            //var testIntervalRow = sheet.GetRow(30);
+            //baseInfo.TestInterval = testIntervalRow.GetCell(1).StringCellValue;
+            //#region 下位机
+            //var pclCommentRow = sheet.GetRow(31);
+            //var pclNoRow = sheet.GetRow(32);
+            //var pclGuidRow = sheet.GetRow(33);
+            //for (int i = 1; i < pclNoRow.LastCellNum; i++)
+            //{
+            //    if (string.IsNullOrWhiteSpace(pclGuidRow.GetCell(i)?.StringCellValue))
+            //        continue;
+            //    try
+            //    {
+            //        baseInfo.PCPLCs.Add(new PCPLC
+            //        {
+            //            Comment = pclCommentRow.GetCell(i).StringCellValue,
+            //            No = Convert.ToInt32(pclNoRow.GetCell(i).StringCellValue),
+            //            Guid = pclGuidRow.GetCell(i).StringCellValue
+            //        });
+            //    }
+            //    catch
+            //    {
+            //        break;
+            //    }
+            //}
+            //#endregion
         }
 
         public List<NwcaliTur> GetNwcaliTur(string sheetName)
@@ -186,6 +183,8 @@ namespace Infrastructure.Excel
                 .Map<NwcaliTur>(8, o => o.Distribution)
                 .Map<NwcaliTur>(9, o => o.Divisor)
                 .Map<NwcaliTur>(10, o => o.StdUncertainty)
+                //.Map<NwcaliTur>(11, o => o.DegreesOfFreedom)
+                //.Map<NwcaliTur>(10, o => o.SignificanceCheck)
                 .Take<NwcaliTur>(sheetName);
             return data.Select(d => d.Value).SkipWhile(v => v is null).Where(v => v.Tur != 0).ToList();
         }

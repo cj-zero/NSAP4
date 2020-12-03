@@ -8,7 +8,7 @@ namespace Infrastructure.Excel
     public class NwcaliTur
     {
         [Column(0)]
-        public int Range { get; set; }
+        public double Range { get; set; }
         [Column(1)]
         public double TestPoint { get; set; }
         [Column(2)]
@@ -29,5 +29,9 @@ namespace Infrastructure.Excel
         public double Divisor { get; set; }
         [Column(10)]
         public double StdUncertainty { get; set; }
+        [Column(11)]
+        public string DegreesOfFreedom { get; set; }
+        [Column(12)]
+        public double SignificanceCheck { get; set; }
     }
 }
