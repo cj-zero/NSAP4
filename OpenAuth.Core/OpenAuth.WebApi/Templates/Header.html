@@ -5,15 +5,28 @@
         src: url("C:\\Windows\\Fonts\\bahnschrift.svg") format('svg'), 
             url("C:\\Windows\\Fonts\\bahnschrift.ttf") format('ttf'),
     }
+    @font-face {
+        font-family: 'Roboto';
+        src: url(../font/Roboto/Roboto-Regular.ttf);
+    }
 
+    @font-face {
+        font-family: 'Roboto Medium';
+        src: url(../font/Roboto/Roboto-Medium.ttf);
+    }
+
+    @font-face {
+        font-family: 'Roboto Black';
+        src: url(../font/Roboto/Roboto-Black.ttf);
+    }
     * {
         -webkit-box-sizing: border-box;
         box-sizing: border-box;
     }
 
     body {
-        font-family: "Bahnschrift";
-        font-size: 14px;
+        font-family: 'Roboto', sans-serif;
+        font-size: 10.5pt;
         line-height: 1.5;
         /*font-family: "Bahnschrift", "Consolas", sans-serif;*/
         background-color: #fff;
@@ -21,7 +34,6 @@
     }
 
     .header {
-        font-family: "Bahnschrift";
         display: -webkit-box;
         display: -ms-flexbox;
         display: flex;
@@ -36,6 +48,7 @@
 
         .header .header-left {
             font-size: 12px;
+            font-family: 'Century Gothic';
         }
 
             .header .header-left .logo {

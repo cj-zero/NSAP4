@@ -6,38 +6,54 @@
         src: url("C:\\Windows\\Fonts\\bahnschrift.svg") format('svg'), url("C:\\Windows\\Fonts\\bahnschrift.ttf") format('ttf'),
     }
 
+    @font-face {
+        font-family: 'Roboto';
+        src: url(../font/Roboto/Roboto-Regular.ttf);
+    }
+
+    @font-face {
+        font-family: 'Roboto Medium';
+        src: url(../font/Roboto/Roboto-Medium.ttf);
+    }
+
+    @font-face {
+        font-family: 'Roboto Black';
+        src: url(../font/Roboto/Roboto-Black.ttf);
+    }
     * {
         -webkit-box-sizing: border-box;
         box-sizing: border-box;
     }
 
     body {
-        font-family: "Bahnschrift";
+        font-family: 'Roboto', sans-serif;
         margin: 0;
     }
 
+    .footer {
+        font-family: 'Century Gothic';
+    }
     .footer .footer-title {
-        font-family: "Bahnschrift";
         border-bottom: thin solid #000;
     }
 
     .footer .footer-company {
-        font-size: 18px;
-        font-weight: 600;
+        font-size: 12pt;
+        font-weight: bold;
     }
 
     .footer .copyright-span {
         display: block;
-        height: 20px;
-        line-height: 20px;
-        font-size: 12px;
-        color: #000000;
+        height: 15pt;
+        line-height: 15pt;
+        font-size: 10pt;
+        color: #666;
     }
 
-        .footer .copyright-span:nth-child(even) {
-            margin-top: -20px;
-            text-align: right;
-        }
+    .footer .copyright-span:nth-child(even) {
+        margin-top: -15px;
+        text-align: right;
+    }
     /*# sourceMappingURL=app.css.map */
 </style>
 <footer class="footer">
