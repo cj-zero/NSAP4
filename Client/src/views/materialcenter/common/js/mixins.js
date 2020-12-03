@@ -18,6 +18,7 @@ export const quotationTableMixin = {
         approve: '审批',
         pay: '支付'
       }),
+      isReceive: true, // 用来区分  报价单->true /(待处理、销售订单模块->false)
       categoryList: [], // 分类列表
       rolesList: this.$store.state.user.userInfoAll.roles, // 当前用户的角色列表
       originUserId: this.$store.state.user.userInfoAll.userId // 当前用户的ID
@@ -33,8 +34,12 @@ export const quotationTableMixin = {
   methods: {
     _getQuotationDetail (data) {
       let quotationId
-      let { status } = data
-      if (status === 'view') {
+      let { status, isReceive, isSalesOrder } = data
+      this.isReceive = !!isReceive
+      if (isSalesOrder && !data.salesOrderId) {
+        return this.$message.warning('无销售单号')
+      }
+       if (status === 'view') {
         quotationId = data.id
       } else {
         let currentRow = this.$refs.quotationTable.getCurrentRow()

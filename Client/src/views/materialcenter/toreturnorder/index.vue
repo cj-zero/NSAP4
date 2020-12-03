@@ -101,7 +101,7 @@ export default {
         { prop: 'beginDate', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endDate', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
-        { type: 'button', btnText: '退料', handleClick: this._getReturnNoteDetail, options: { status: 'toReturn'} },
+        { type: 'button', btnText: '退料', handleClick: this._getReturnNoteDetail, options: { status: 'toReturn'}, isSpecial: true },
       ]
     }, // 搜索配置
     btnList () {

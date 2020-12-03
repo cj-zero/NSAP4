@@ -102,8 +102,8 @@ export default {
         { prop: 'startCreateTime', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
-        { type: 'button', btnText: '打印', handleClick: this.print },     
-        { type: 'button', btnText: '出库', handleClick: this._getQuotationDetail, options: { status: 'outbound'} },
+        { type: 'button', btnText: '打印', handleClick: this.print, isSpecial: true },     
+        { type: 'button', btnText: '出库', handleClick: this._getQuotationDetail, options: { status: 'outbound'}, isSpecial: true },
       ]
     }, // 搜索配置
     btnList () {

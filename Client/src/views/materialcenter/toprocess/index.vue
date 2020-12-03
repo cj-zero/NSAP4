@@ -42,8 +42,8 @@
         ref="quotationOrder" 
         :detailInfo="detailInfo"
         :categoryList="categoryList"
-        isMerged="true"
-        :status="status"></quotation-order>
+        :status="status"
+        :isReceive="isReceive"></quotation-order>
     </my-dialog>
     <!-- 只能查看的表单 -->
     <my-dialog
@@ -145,8 +145,9 @@ export default {
       tableData: [],
       total: 0,
       quotationColumns: [
-        { label: '领料单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'view' }, type: 'link'},
+        { label: '领料单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'view', isReceive: true }, type: 'link'},
         { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link', options: { isInTable: true } },
+        { label: '销售单号', prop: 'salesOrderId', handleClick: this._getQuotationDetail, options: { status: 'view', isSalesOrder: true }, type: 'link'},
         { label: '客户代码', prop: 'terminalCustomerId' },
         { label: '客户名称', prop: 'terminalCustomer' },
         { label: '单据总金额', prop: 'totalMoney', align: 'right' },

@@ -44,7 +44,7 @@
         :detailInfo="detailInfo"
         :status="status"
         :categoryList="categoryList"
-        :isReceive="true"></quotation-order>
+        :isReceive="isReceive"></quotation-order>
     </my-dialog>
     <!-- 只能查看的表单 -->
     <my-dialog
@@ -108,10 +108,10 @@ export default {
         { prop: 'startCreateTime', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
-        { type: 'button', btnText: '新建', isSpecial: true, handleClick: this.openMaterialOrder },
-        { type: 'button', btnText: '编辑', handleClick: this._getQuotationDetail, options: { status: 'edit' } },
-        { type: 'button', btnText: '打印', handleClick: this.print },     
-        { type: 'button', btnText: '删除', handleClick: this.deleteOrder },
+        { type: 'button', btnText: '新建', handleClick: this.openMaterialOrder, isSpecial: true, options: { isReceive: true } },
+        { type: 'button', btnText: '编辑', handleClick: this._getQuotationDetail, isSpecial: true, options: { status: 'edit', isReceive: true } },
+        { type: 'button', btnText: '打印', handleClick: this.print, isSpecial: true },     
+        { type: 'button', btnText: '删除', handleClick: this.deleteOrder, style: { backgroundColor: '#f56c6c', color: '#fff' } },
       ]
     }, // 搜索配置
     btnList () {
@@ -153,8 +153,9 @@ export default {
       tableData: [],
       total: 0,
       quotationColumns: [
-        { label: '领料单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'view' }, type: 'link'},
+        { label: '领料单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'view', isReceive: true }, type: 'link'},
         { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link', options: { isInTable: true } },
+        { label: '销售单号', prop: 'salesOrderId', handleClick: this._getQuotationDetail, options: { status: 'view', isSalesOrder: true }, type: 'link', width: 120 },
         { label: '客户代码', prop: 'terminalCustomerId' },
         { label: '客户名称', prop: 'terminalCustomer' },
         { label: '单据总金额', prop: 'totalMoney', align: 'right' },
