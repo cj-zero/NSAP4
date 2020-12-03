@@ -397,6 +397,7 @@ import Rate from './rate'
 import Report from '../common/components/report'
 import Analysis from './workOrderReport'
 import { chatMixin, reportMixin, tableMixin } from '../common/js/mixins'
+import { serializeParams } from '@/utils/process'
 export default {
   provide () {
     return {
@@ -1144,23 +1145,23 @@ export default {
         })
     },
     handleExcel () { // 导出表格
-      let baseURL = `${process.env.VUE_APP_BASE_API}${this.exportExcelUrl}`
-      let params = this.serializeParams(this.listQuery)
-      console.log(`${baseURL}?X-Token=${this.$store.state.user.token}&${params}`)
-      window.location.href = `${baseURL}?X-Token=${this.$store.state.user.token}&${params}`
+      this.$confirm('确认导出？', '确认信息', {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        closeOnClickModal: false,
+        type: 'warning'
+      })
+      .then(() => {
+        let searchStr = serializeParams(this.listQuery)
+        searchStr += `&X-Token=${this.$store.state.user.token}`
+        let baseURL = `${process.env.VUE_APP_BASE_API}${this.exportExcelUrl}`
+        console.log(`${baseURL}?X-Token=${this.$store.state.user.token}&${searchStr}`)
+        window.open(`${baseURL}?${searchStr}`, '_blank')
+      }) 
     },
     onChangeComment (val) {
       Object.assign(this.commentList, val)
       // this.newCommentList = val
-    },
-    serializeParams (params) {
-      let result = []
-      for (let key in params) {
-        if (params[key]) {
-          result.push(`${key}=${params[key]}`)
-        } 
-      }
-      return result.join('&')
     },
     closeDia(a) {
       if (a === 'closeLoading') {

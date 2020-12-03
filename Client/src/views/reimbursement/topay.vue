@@ -137,6 +137,7 @@ import Order from './common/components/order'
 // import zxchat from '@/views/serve/callserve/chat/index'
 import { tableMixin, categoryMixin, reportMixin, chatMixin } from './common/js/mixins'
 import { pay } from '@/api/reimburse'
+import { serializeParams } from '@/utils/process'
 export default {
   name: 'toPay',
   mixins: [tableMixin, categoryMixin, reportMixin, chatMixin],
@@ -171,7 +172,8 @@ export default {
     return {
       customerInfo: {}, // 当前报销人的id， 名字
       categoryList: [], // 字典数组
-      token: this.$store.state.user.token
+      token: this.$store.state.user.token,
+      selectList: [] // 多选已经选中的列表
     }
   },
   methods: {
@@ -211,13 +213,18 @@ export default {
         })
     },
     _export () {
-      let searchStr = ''
-      for (let key in this.listQuery) {
-        searchStr += `${key}=${this.listQuery[key]}&`
-      }
-      searchStr += `X-Token=${this.token}`
-      console.log(searchStr)
-      window.open(`${process.env.VUE_APP_BASE_API}/serve/Reimburse/Export?${searchStr}`, '_blank')
+      this.$confirm('确认导出？', '确认信息', {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        closeOnClickModal: false,
+        type: 'warning'
+      })
+      .then(() => {
+        let searchStr = serializeParams(this.listQuery)
+        searchStr += `&X-Token=${this.token}`
+        console.log(searchStr)
+        window.open(`${process.env.VUE_APP_BASE_API}/serve/Reimburse/Export?${searchStr}`, '_blank')
+      }) 
     },
     closeDialog () {
       this.$refs.order.resetInfo()
