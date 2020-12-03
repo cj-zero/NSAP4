@@ -240,10 +240,10 @@ namespace OpenAuth.App.Material
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var result = new TableData();
-            var Quotations = await UnitWork.Find<Quotation>(null).Include(q=>q.Expressages).Include(q => q.QuotationOperationHistorys).WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId.ToString()), q => q.ServiceOrderId.Equals(request.ServiceOrderId))
+            var Quotations = await UnitWork.Find<Quotation>(null).Include(q => q.Expressages).Include(q => q.QuotationOperationHistorys).WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId.ToString()), q => q.ServiceOrderId.Equals(request.ServiceOrderId))
                      .WhereIf(!string.IsNullOrWhiteSpace(request.QuotationId.ToString()), q => q.Id.Equals(request.QuotationId)).ToListAsync();
             Quotations.ForEach(q => q.QuotationOperationHistorys = q.QuotationOperationHistorys.OrderBy(o => o.CreateTime).ToList());
-            result.Data =Quotations.Skip((request.page - 1) * request.limit).Take(request.limit).ToList();
+            result.Data = Quotations.Skip((request.page - 1) * request.limit).Take(request.limit).ToList();
             result.Count = Quotations.Count();
             return result;
         }
@@ -274,14 +274,14 @@ namespace OpenAuth.App.Material
             var CustomerIds = ServiceOrderList.Select(s => s.a.CustomerId).ToList();
 
             var CardAddress = from a in UnitWork.Find<OCRD>(null)
-                        join c in UnitWork.Find<OCRY>(null) on a.Country equals c.Code into ac
-                        from c in ac.DefaultIfEmpty()
-                        join d in UnitWork.Find<OCST>(null) on a.State1 equals d.Code into ad
-                        from d in ad.DefaultIfEmpty()
-                        join e in UnitWork.Find<OCRY>(null) on a.MailCountr equals e.Code into ae
-                        from e in ae.DefaultIfEmpty()
-                        where CustomerIds.Contains(a.CardCode)
-                        select new { a, c, d, e };
+                              join c in UnitWork.Find<OCRY>(null) on a.Country equals c.Code into ac
+                              from c in ac.DefaultIfEmpty()
+                              join d in UnitWork.Find<OCST>(null) on a.State1 equals d.Code into ad
+                              from d in ad.DefaultIfEmpty()
+                              join e in UnitWork.Find<OCRY>(null) on a.MailCountr equals e.Code into ae
+                              from e in ae.DefaultIfEmpty()
+                              where CustomerIds.Contains(a.CardCode)
+                              select new { a, c, d, e };
             var Address = await CardAddress.Select(q => new
             {
                 q.a.CardCode,
@@ -467,13 +467,13 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var Quotations = await UnitWork.Find<Quotation>(q => q.Id.Equals(QuotationId)).Include(q=>q.QuotationProducts).ThenInclude(p=>p.QuotationMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
+            var Quotations = await UnitWork.Find<Quotation>(q => q.Id.Equals(QuotationId)).Include(q => q.QuotationProducts).ThenInclude(p => p.QuotationMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
             if (loginContext.Roles.Any(r => r.Name.Equals("售后主管")))
             {
                 Quotations.IsRead = 1;
                 await UnitWork.UpdateAsync<Quotation>(Quotations);
             }
-            
+
             var result = new TableData();
             var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(Quotations.ServiceOrderId)).Select(s => new { s.Id, s.U_SAP_ID, s.TerminalCustomer, s.TerminalCustomerId, s.SalesMan }).FirstOrDefaultAsync();
             var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(QuotationId)).ToListAsync();
@@ -516,7 +516,7 @@ namespace OpenAuth.App.Material
                     ServiceOrders
                 };
             }
-            else 
+            else
             {
                 result.Data = new
                 {
@@ -525,7 +525,7 @@ namespace OpenAuth.App.Material
                     ServiceOrders
                 };
             }
-            
+
 
             return result;
         }
@@ -574,24 +574,10 @@ namespace OpenAuth.App.Material
                 loginUser = await GetUserId(Convert.ToInt32(request.AppId));
             }
             var result = new TableData();
-            var Quotations = await UnitWork.Find<Quotation>(null).WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId.ToString()), q => q.ServiceOrderId.Equals(request.ServiceOrderId) && q.CreateUserId.Equals(loginUser.Id) && q.Status==2)
-                .WhereIf(!string.IsNullOrWhiteSpace(request.QuotationId.ToString()), q => q.Id.Equals(request.QuotationId)).ToListAsync();
-            var Quotationids = Quotations.Select(q => q.Id).ToList();
-            var QuotationProducts = await UnitWork.Find<QuotationProduct>(q => Quotationids.Contains((int)q.QuotationId)).Include(q => q.QuotationMaterials).ToListAsync();
-            List<MaterialCodeListReap> MaterialCodeListReaps = new List<MaterialCodeListReap>();
-            List<QuotationMaterial> QuotationMaterials = new List<QuotationMaterial>();
-            Quotations.ForEach(q =>
-            {
-                QuotationMaterials.Clear();
-                var QuotationMaterialList = QuotationProducts.Where(p => p.QuotationId.Equals(q.Id)).Select(p => p.QuotationMaterials).ToList();
-                QuotationMaterialList.ForEach(p => QuotationMaterials.AddRange(p.ToList()));
-                MaterialCodeListReaps.Add(new MaterialCodeListReap
-                {
-                    QuotationId = q.Id,
-                    MaterialDetailList = QuotationMaterials
-                });
-            });
-            result.Data = MaterialCodeListReaps;
+            var QuotationIds = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(request.ServiceOrderId) && q.CreateUserId.Equals(loginUser.Id)).Select(q => q.Id).ToListAsync();
+
+            var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => QuotationIds.Contains((int)q.QuotationId) && q.IsProtected == true).ToListAsync();
+            result.Data = QuotationMergeMaterials;
             return result;
         }
 
@@ -615,7 +601,7 @@ namespace OpenAuth.App.Material
             QuotationObj.IsProtected = true;
             QuotationObj.QuotationProducts.ForEach(q =>
             {
-                if (!(bool)q.IsProtected) 
+                if (!(bool)q.IsProtected)
                 {
                     QuotationObj.IsProtected = false;
                 }
@@ -657,7 +643,7 @@ namespace OpenAuth.App.Material
                             {
                                 afir.FrmData = "{ \"QuotationId\":\"" + QuotationObj.Id + "\",\"IsProtected\":\"0\",\"IsRead\":\"1\"}";
                             }
-                            else 
+                            else
                             {
                                 afir.FrmData = "{ \"QuotationId\":\"" + QuotationObj.Id + "\",\"IsProtected\":\"0\",\"IsRead\":\"0\"}";
                             }
@@ -964,7 +950,7 @@ namespace OpenAuth.App.Material
             {
                 try
                 {
-                    obj.Expressages=obj.Expressages.Where(e => string.IsNullOrWhiteSpace(e.Id)).ToList();
+                    obj.Expressages = obj.Expressages.Where(e => string.IsNullOrWhiteSpace(e.Id)).ToList();
                     obj.Expressages.ForEach(e => { e.ReturnNoteId = null; e.QuotationId = obj.Id; e.Id = Guid.NewGuid().ToString(); });
                     var ExpressageMap = obj.Expressages.MapToList<Expressage>();
                     await UnitWork.BatchAddAsync<Expressage>(ExpressageMap.ToArray());
@@ -1001,7 +987,7 @@ namespace OpenAuth.App.Material
 
             QuotationOperationHistory qoh = new QuotationOperationHistory();
 
-            var obj = await UnitWork.Find<Quotation>(q => q.Id == req.Id).Include(q=>q.QuotationProducts).FirstOrDefaultAsync();
+            var obj = await UnitWork.Find<Quotation>(q => q.Id == req.Id).Include(q => q.QuotationProducts).FirstOrDefaultAsync();
 
             qoh.ApprovalStage = obj.QuotationStatus;
             obj.InvoiceCompany = req.InvoiceCompany;
@@ -1082,7 +1068,7 @@ namespace OpenAuth.App.Material
                     bool IsProtected = false;
                     obj.QuotationProducts.ForEach(q =>
                     {
-                        if(q.IsProtected ==true)IsProtected = (bool)q.IsProtected;
+                        if (q.IsProtected == true) IsProtected = (bool)q.IsProtected;
                     });
                     if (!IsProtected)
                     {
@@ -1159,7 +1145,7 @@ namespace OpenAuth.App.Material
             {
                 loginUser = await GetUserId(Convert.ToInt32(req.AppId));
             }
-            var obj=await UnitWork.Find<Quotation>(q => q.Id.Equals(req.QuotationId)).Include(q => q.QuotationOperationHistorys)
+            var obj = await UnitWork.Find<Quotation>(q => q.Id.Equals(req.QuotationId)).Include(q => q.QuotationOperationHistorys)
                 .Include(q => q.Expressages).Include(q => q.QuotationProducts).ThenInclude(p => p.QuotationMaterials).FirstOrDefaultAsync();
             var Materials = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(req.QuotationId)).ToListAsync();
             List<QuotationMaterial> QuotationMaterials = new List<QuotationMaterial>();
@@ -1195,30 +1181,30 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         private async Task<dynamic> JudgeIsProtected(List<string> MnfSerials)
         {
-          //      StringBuilder MnfSerial = new StringBuilder();
-          //      MnfSerials.ForEach(item =>
-          //      {
-          //          MnfSerial.Append("'" + item + "',");
-          //      });
-          //      var Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"SELECT d.DocEntry,c.MnfSerial
-          //      FROM oitl a left join itl1 b
-          //      on a.LogEntry = b.LogEntry and a.ItemCode = b.ItemCode 
-          //      left join osrn c on b.ItemCode = c.ItemCode and b.SysNumber = c.SysNumber
-						    //left join odln d on a.DocEntry=d.DocEntry
-          //      where a.DocType =15 and c.MnfSerial in ({MnfSerial.ToString().Substring(0, MnfSerial.Length - 1)})").Select(s => new SysEquipmentColumn { MnfSerial = s.MnfSerial, DocEntry = s.DocEntry }).ToListAsync();
+            //      StringBuilder MnfSerial = new StringBuilder();
+            //      MnfSerials.ForEach(item =>
+            //      {
+            //          MnfSerial.Append("'" + item + "',");
+            //      });
+            //      var Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"SELECT d.DocEntry,c.MnfSerial
+            //      FROM oitl a left join itl1 b
+            //      on a.LogEntry = b.LogEntry and a.ItemCode = b.ItemCode 
+            //      left join osrn c on b.ItemCode = c.ItemCode and b.SysNumber = c.SysNumber
+            //left join odln d on a.DocEntry=d.DocEntry
+            //      where a.DocType =15 and c.MnfSerial in ({MnfSerial.ToString().Substring(0, MnfSerial.Length - 1)})").Select(s => new SysEquipmentColumn { MnfSerial = s.MnfSerial, DocEntry = s.DocEntry }).ToListAsync();
 
-          //      var DocEntryIds = Equipments.Select(e => e.DocEntry).ToList();
+            //      var DocEntryIds = Equipments.Select(e => e.DocEntry).ToList();
 
-          //      var buyopors = from a in UnitWork.Find<buy_opor>(null)
-          //                     join b in UnitWork.Find<sale_transport>(null) on a.DocEntry equals b.Buy_DocEntry
-          //                     where DocEntryIds.Contains(b.Base_DocEntry) && b.Base_DocType == 24
-          //                     select new { a, b };
-          //      var docdate = await buyopors.ToListAsync();
-          //      var IsProtecteds = Equipments.Select(e => new
-          //      {
-          //          MnfSerial = e.MnfSerial,
-          //          DocDate = Convert.ToDateTime(docdate.Where(d => d.b.Base_DocEntry.Equals(e.DocEntry)).FirstOrDefault()?.a.DocDate).AddYears(1)
-          //      }).ToList();
+            //      var buyopors = from a in UnitWork.Find<buy_opor>(null)
+            //                     join b in UnitWork.Find<sale_transport>(null) on a.DocEntry equals b.Buy_DocEntry
+            //                     where DocEntryIds.Contains(b.Base_DocEntry) && b.Base_DocType == 24
+            //                     select new { a, b };
+            //      var docdate = await buyopors.ToListAsync();
+            //      var IsProtecteds = Equipments.Select(e => new
+            //      {
+            //          MnfSerial = e.MnfSerial,
+            //          DocDate = Convert.ToDateTime(docdate.Where(d => d.b.Base_DocEntry.Equals(e.DocEntry)).FirstOrDefault()?.a.DocDate).AddYears(1)
+            //      }).ToList();
 
             return null;
         }
