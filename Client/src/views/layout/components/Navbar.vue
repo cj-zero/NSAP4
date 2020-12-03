@@ -23,16 +23,28 @@
     </el-dropdown>
     <el-dropdown class="notify-message" trigger="click" @visible-change="onMsgVisibleChange" :hide-on-click="false" ref="dropDown">
       <div class="notify-message">
-        <i class="unread-number" v-show="newMessageList.length">{{ newMessageList.length }}</i>
+        <i class="unread-number" v-show="notHasNumber">{{ notHasNumber }}</i>
         <div class="notify-icon-wrapper">
           <el-icon class="el-icon-close-notification" ></el-icon>
         </div>
       </div>
       <el-dropdown-menu :class="{ 'hidden-dropdown': !newMessageList.length }" class="notify-message-dropdown" slot="dropdown">
         <el-dropdown-item>
-					<el-scrollbar class="drop-scrollbar">
-            <message-list :messageList="newMessageList" @hasRead="onHasRead" :isShow="isShowMessage" v-loading="messageLoading"></message-list>
-          </el-scrollbar> 
+          <div class="global-message-list-wrapper" v-if="newMessageList.length">
+            <div class="button-wrapper">
+              <template v-for="(item, index) in messageBtnList">
+                <span 
+                  :key="item.text"
+                  :class="{ active: index === currentIndex }"
+                  @click="changeList(index)"
+                >{{ item.text }}</span>
+              </template>
+            </div>
+            <div class="empty-wrapper" v-if="!transformList.length">暂无数据</div>
+            <el-scrollbar class="drop-scrollbar" v-else>
+              <message-list :messageList="transformList" @hasRead="onHasRead" :isShow="isShowMessage" v-loading="messageLoading"></message-list>
+            </el-scrollbar> 
+          </div>
 				</el-dropdown-item>
       </el-dropdown-menu>
     </el-dropdown>
@@ -55,7 +67,7 @@
           ></zxform>
         </el-col>
         <el-col :span="6" class="lastWord">   
-          <zxchat :serveId='serveId' formName="查看"></zxchat>
+          <zxchat :serveId='serveId' :timer="timer" formName="查看"></zxchat>
         </el-col>
       </el-row>
     </my-dialog>
@@ -72,6 +84,7 @@ import logo from '@/assets/logo_new.png?imageView2/1/w/80/h/80'
 import MessageList from './MessageList'
 import { readMessage } from '@/api/message'
 import { GetDetails } from '@/api/serve/callservesure'
+import { findIndex } from '@/utils/process'
 export default {
   props: {
     messageList: {
@@ -87,6 +100,7 @@ export default {
       newMessageList: [],
       messageLoading: false,
       serveId: '',
+      timer: null, // 用来更新弹窗中的子组件
       dataForm: {}, //传递的表单props
       temp: {
         id: "", // Id
@@ -97,7 +111,14 @@ export default {
         descriptio: "", // Descriptio
         status: "", // Status
         extendInfo: "" // 其他信息,防止最后加逗号，可以删除
-      }
+      },
+      messageBtnList: [
+        { text: '未读消息', hasRead: false },
+        { text: '已读消息', hasRead: true }
+      ],
+      currentIndex: 0, // 当前默认展示未读消息
+      hasReadList: [], // 已读列表
+      notHasReadList: [] // 未读列表
     }
   },
   components: {
@@ -108,7 +129,13 @@ export default {
     zxchat
   },
   computed: {
-    ...mapGetters(['sidebar', 'isIdentityAuth', 'name', 'themeStatus'])
+    ...mapGetters(['sidebar', 'isIdentityAuth', 'name', 'themeStatus']),
+    transformList () {
+      return this.newMessageList.filter(item => item.HasRead === !!this.currentIndex)
+    },
+    notHasNumber () { // 未读消息
+      return this.newMessageList.filter(item => !item.HasRead).length
+    }
   },
   watch: {
     theme() {
@@ -138,22 +165,21 @@ export default {
       'signOutOidc',
       'saveTheme'
     ]),
+    changeList (index) {
+      this.currentIndex = index
+    },
     onVisibleChange (visible) {
       console.log(visible, 'visible')
       if (visible) {
         this.isShowMessage = false
+        this.currentIndex = 0
       }
     },
     onMsgVisibleChange (visible) {
       this.isShowMessage = visible
-    },
-    toggleShowMessage () {
-      console.log('click', this.newMessageList.length)
-      if (!this.newMessageList.length) {
-        return
+      if (!this.isShowMessage) {
+        this.currentIndex = 0
       }
-      console.log(this.isShowMessage, 'isSHowMESSAGE')
-      this.isShowMessage = !this.isShowMessage
     },
     onHasRead (data) {
       // 消息已读从列表中删除
@@ -162,22 +188,30 @@ export default {
       this.openTree(data)
       console.log(this.newMessageList, 'newmessage')
     },
-    openTree({ ServiceOrderId, FroUserId, index }) {
+    openTree({ ServiceOrderId, FroUserId, HasRead, U_SAP_ID }) {
       if (!ServiceOrderId) {
         return this.$message.error('无服务单ID')
       }
+      console.log(findIndex)
       this.messageLoading = true
       GetDetails(ServiceOrderId).then(res => {
         if (res.code == 200) {
+          this.timer = new Date().getTime()
           this.dataForm = this._normalizeOrderDetail(res.result);
           this.serveId = ServiceOrderId
           this.$refs.serviceDetail.open()
-          readMessage({
-            currentUserId: FroUserId,
-            serviceOrderId: ServiceOrderId
-          })
-          this.newMessageList.splice(index, 1)
-          console.log(this.newMessageList, index, FroUserId, 'delete')
+          if (!HasRead) {
+            readMessage({
+              currentUserId: FroUserId,
+              serviceOrderId: ServiceOrderId
+            })
+            let index = findIndex(this.newMessageList, item => { // 找到未读列表中删除的项 在原数组newMessageList中的索引值
+              return item.U_SAP_ID === U_SAP_ID
+            })
+            console.log(index, 'index')
+            this.newMessageList.splice(index, 1)
+          }
+          console.log(this.newMessageList, FroUserId, 'delete')
           this.messageLoading = false
         }
       }).catch((err) => {

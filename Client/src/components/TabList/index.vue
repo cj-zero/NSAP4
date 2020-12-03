@@ -1,10 +1,12 @@
 <template>
-  <el-tabs v-model="activeName" type="card" @tab-click="handleClick">
+  <el-tabs v-model="activeName" :type="type" @tab-click="handleClick">
     <el-tab-pane 
       v-for="item in texts" 
       :key="item.name" 
       :label="item.label" 
-      :name="item.name"></el-tab-pane>
+      :name="item.name">
+        <slot :name="item.slotName || 'defualt'"></slot>
+      </el-tab-pane>
   </el-tabs>
 </template>
 
@@ -21,6 +23,10 @@ export default {
     initialName: {
       type: String,
       default: ''
+    },
+    type: {
+      type: String,
+      default: 'card'
     }
   },
   watch: {

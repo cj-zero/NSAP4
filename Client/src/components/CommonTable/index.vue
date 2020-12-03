@@ -8,8 +8,8 @@
     border
     fit
     row-key="id"
-    height="100%"
-    style="width: 100%;"
+    :height="height"
+    :max-height="maxHeight"
     @current-change="onCurrentChange"
     @row-click="onRowClick"
     @selection-change="onSelectChange"
@@ -38,7 +38,6 @@
       <template slot-scope="scope" >
         <!--  有箭头的操作 -->
         <div class="link-container" v-if="item.type === 'link'"> 
-          {{ JSON.stringify(item.options) }}
           <img :src="rightImg" @click="item.handleClick({ ...scope.row, ...(item.options || {})})" class="pointer">
           <span>{{ scope.row[item.prop] }}</span>
         </div>
@@ -56,6 +55,10 @@
             :icon="item.icon || ''"
             :size="item.size || 'mini'"
           >{{ btnItem.btnText }}</el-button>
+        </template>
+        <!-- 插槽 -->
+        <template v-else-if="item.type === 'slot'">
+          <slot :name="item.slotName || 'default'" :row="{ ...scope.row, ...(item.options || {}), prop: item.prop }"></slot>
         </template>
         <!-- 冒泡提示语分行显示 -->
         <template v-else-if="item.isMultipleLines">
@@ -98,8 +101,11 @@ export default {
       default: false
     },
     maxHeight: {
+      type: [Number, String]
+    },
+    height: {
       type: [Number, String],
-      default: 0
+      default: '100%'
     },
     selectedList: { // 已经选中里的列表(多选中，用来判断是否可以点击)
       type: Array,
@@ -148,6 +154,9 @@ export default {
       let radioKey = row.radioKey
       this.radio = row[radioKey]
       this.currentRow = row
+      if (this.selectionColumns) {
+        this.$refs.commonTable.toggleRowSelection(row)
+      }
       // console.log(index, column, 'row click', radioKey, this.radio, Object.keys(row))
     },
     getCurrentRow () {

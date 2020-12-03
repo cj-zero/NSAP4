@@ -1094,6 +1094,13 @@ export default {
         })
     },
     handleExcel () { // 导出表格
+    let searchStr = ''
+      for (let key in this.listQuery) {
+        searchStr += `${key}=${this.listQuery[key]}&`
+      }
+      searchStr += `X-Token=${this.token}`
+      console.log(searchStr)
+      window.open(`${process.env.VUE_APP_BASE_API}/serve/Reimburse/Export?${searchStr}`, '_blank')
       let baseURL = `${process.env.VUE_APP_BASE_API}${this.exportExcelUrl}`
       let params = this.serializeParams(this.listQuery)
       window.location.href = `${baseURL}?X-Token=${this.$store.state.user.token}&${params}`
@@ -1102,15 +1109,7 @@ export default {
       Object.assign(this.commentList, val)
       // this.newCommentList = val
     },
-    serializeParams (params) {
-      let result = []
-      for (let key in params) {
-        if (params[key]) {
-          result.push(`${key}=${params[key]}`)
-        } 
-      }
-      return result.join('&')
-    },
+    
     closeDia(a) {
       if (a === 'closeLoading') {
         return this.loadingBtn = false

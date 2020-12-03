@@ -81,6 +81,12 @@ namespace OpenAuth.Repository.Domain
         public int IsLast { get; set; }
 
         /// <summary>
+        /// 是否最后一次退料
+        /// </summary>
+        [Description("签收备注")]
+        public string Remark { get; set; }
+
+        /// <summary>
         /// 物流表
         /// </summary>
         public virtual List<Expressage> Expressages { get; set; }
