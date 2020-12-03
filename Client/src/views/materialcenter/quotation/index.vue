@@ -81,7 +81,7 @@ import CommonTable from '@/components/CommonTable'
 import QuotationOrder from '../common/components/QuotationOrder'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
-import { getQuotationList, getServiceOrderList } from '@/api/material/quotation'
+import { getQuotationList, getServiceOrderList, deleteOrder } from '@/api/material/quotation'
 import {  quotationTableMixin, categoryMixin, chatMixin } from '../common/js/mixins'
 export default {
   name: 'quotation',
@@ -196,6 +196,27 @@ export default {
         this.$message.warning('无服务单数据')
       }).catch(err => {
         this.$message.error(err.message)
+      })
+    },
+    deleteOrder () {
+      let currentRow = this.$refs.quotationTable.getCurrentRow()
+      if (!currentRow) {
+        return this.$message.warning('请先选择数据')
+      }
+      let { quotationStatus, id } = currentRow
+      if (+quotationStatus !== 3) {
+        return this.$message.warning('当前报价单状态不可删除')
+      }
+      this.$confirm('确定删除？', '提示消息', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消'
+      }).then(() => {
+        deleteOrder({ quotationId: id }).then(() => {
+          this.$message.success('删除成功')
+          this._getList()
+        }).catch(err => {
+          this.$message.error(err.message)
+        })
       })
     },
     onTabChange (name) {

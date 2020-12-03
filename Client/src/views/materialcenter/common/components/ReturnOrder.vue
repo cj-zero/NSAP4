@@ -49,7 +49,6 @@
                   :maxlength="item.maxlength"
                   :disabled="item.disabled"
                   :readonly="item.readonly"
-                  @focus="onServiceIdFocus(item.prop)"
                   >
                   <i :class="item.icon" v-if="item.icon"></i>
                 </el-input>
@@ -124,6 +123,7 @@
             :columns="materialColumns"
             :cellStyle="cellStyle"
             :rowStyle="rowStyle">
+            <!-- 核对设备 -->
             <template v-slot:check="{ row }">
               <el-button 
                 v-if="(status === 'view' && checkList[row.index].isPass !== 2) || status === 'toReturn'" 
@@ -138,6 +138,7 @@
                 size="mini" 
                 @click="check(2, row.index)">未通过</el-button>
             </template>
+            <!-- 差错数量 -->
             <template v-slot:wrongCount="{ row }">
               <el-form-item 
                 :prop="'materialList.' + row.index + '.' + row.prop"
@@ -153,6 +154,7 @@
                 </el-input-number>
               </el-form-item>
             </template>  
+            <!-- 收货备注 -->
             <template v-slot:receiveRemark="{ row }">
               <el-form-item 
                 :prop="'materialList.' + row.index + '.' + row.prop"
@@ -166,8 +168,14 @@
                 </el-input>
               </el-form-item>
             </template>
+            <!-- 图片 -->
             <template v-slot:pictures="{ row }">
-              <el-button size="mini" class="customer-btn-class" @click="previewPicture(row.pictureId)">查看</el-button>
+              <el-button 
+                v-if="row.pictureId" 
+                size="mini" 
+                class="customer-btn-class"
+                @click="previewPicture(row.pictureId)"
+              >查看</el-button>
             </template>
           </common-table>
         </el-form>
@@ -283,12 +291,13 @@ export default {
         { label: '发货备注', prop: 'shippingRemark' },
         { label: '核对验收', type: 'slot', slotName: 'check', width: '150px' }
       ]
-      return this.isReturn 
-        ?  config 
-        : config.concat([
-          { label: '差错数量', prop: 'wrongCount', type: 'slot', slotName: 'wrongCount' },
-          { label: '收货备注', prop: 'receivingRemark', type: 'slot', slotName: 'receiveRemark' }
-        ])
+      return config
+      // return this.isReturn 
+      //   ?  config 
+      //   : config.concat([
+      //     { label: '差错数量', prop: 'wrongCount', type: 'slot', slotName: 'wrongCount' },
+      //     { label: '收货备注', prop: 'receivingRemark', type: 'slot', slotName: 'receiveRemark' }
+      //   ])
     }
   },
     
@@ -306,6 +315,7 @@ export default {
         terminalCustomer: '', // 客户名称
         terminalCustomerId: '', // 客户代码
         salMan: '', // 销售员
+        remark: '' // 收货备注
       }, // 表单数据
       rules: {},
       // 物流表格
@@ -318,7 +328,8 @@ export default {
       ],
       // 物料表格
       materialList: [],
-      checkList: [] // 验收收货记录列表
+      checkList: [], // 验收收货记录列表
+      
     }
   },
   methods: {
@@ -389,10 +400,13 @@ export default {
         return Promise.reject({ message: '请将表单必填项填写完成' })
       }
       console.log(this.checkList)
-      return isSave ? saveReceiveInfo(this.checkList) : accraditate({
+      let params = {
         id: this.formData.returnNoteCode,
-        returnMaterials: this.checkList
-      })
+        returnMaterials: this.checkList,
+        remark: this.formData.remark
+      }
+      console.log(params)
+      return isSave ? saveReceiveInfo(params) : accraditate(params)
     },
     getExpressInformation (row) {
       console.log(row, 'row')
@@ -409,6 +423,18 @@ export default {
       })
     },
     resetInfo () {
+      this.$refs.form.resetFields()
+      this.$refs.form.clearValidate()
+      this.formData = {
+        returnMaterial: '', 
+        serviceOrderSapId: '', 
+        serviceOrderId: '', 
+        createUser: '',
+        terminalCustomer: '', 
+        terminalCustomerId: '', 
+        salMan: '', 
+        remark: '' 
+      }
       this.checkList = []
       this.materialList = []
       this.courierList = []

@@ -211,8 +211,8 @@ export const configMixin = { // 表单配置
         : [
             { label: '客户代码', prop: 'terminalCustomerId', col: 8, disabled: true },
             { label: '客户名称', prop: 'terminalCustomer', col: 16, disabled: true, isEnd: true },
-            { label: '退货备注', prop: 'terminalCustomer', placeholder: '请输入', col: 24, disabled: true, isEnd: true },
-            { label: '签收备注', prop: '', placeholder: '请输入内容', col: 24, disabled: this.status !== 'toReturn' , isEnd: true },
+            // { label: '退货备注', prop: 'terminalCustomer', placeholder: '请输入', col: 24, disabled: true, isEnd: true },
+            { label: '签收备注', prop: 'remark', placeholder: '请输入内容', col: 24, disabled: this.status !== 'toReturn' , isEnd: true },
           ]
     },
     formatFormConfig () {

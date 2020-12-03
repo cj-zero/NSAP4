@@ -96,3 +96,11 @@ export function getExpressInfo (params) { // 根据快递单号查询物流信�
     params
   })
 }
+
+export function deleteOrder (data) { // 删除报价单
+  return request({
+    url: '/Material/Quotation/Delete',
+    method: 'post',
+    data
+  })
+}
