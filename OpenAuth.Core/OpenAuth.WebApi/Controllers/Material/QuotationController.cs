@@ -12,7 +12,7 @@ using OpenAuth.App.Response;
 namespace OpenAuth.WebApi.Controllers.Material
 {
     /// <summary>
-    /// 报价表
+    /// 报价单操作
     /// </summary>
     [Route("api/Material/[controller]/[action]")]
     [ApiController]
@@ -35,6 +35,46 @@ namespace OpenAuth.WebApi.Controllers.Material
             try
             {
                 return await _app.Load(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 待审批列表
+        /// </summary>
+        [HttpGet]
+        public async Task<TableData> ApprovalPendingLoad([FromQuery]  QueryQuotationListReq request) 
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.ApprovalPendingLoad(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        
+        /// <summary>
+        /// 获取报价单流程
+        /// </summary>
+        [HttpGet]
+        public async Task<TableData> GetQuotationOperationHistory([FromQuery] QueryQuotationListReq request) 
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetQuotationOperationHistory(request);
             }
             catch (Exception ex)
             {
@@ -128,7 +168,51 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return result;
         }
-        
+
+        /// <summary>
+        /// 获取待合并报价单
+        /// </summary>
+        /// <param name="ServiceOrderId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetUnreadQuotations(int ServiceOrderId) 
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetUnreadQuotations(ServiceOrderId);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取该服务单所有报价单零件
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetQuotationMaterialCode([FromQuery]QueryQuotationListReq request) 
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetQuotationMaterialCode(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
         /// <summary>
         /// 添加报价单
         /// </summary>
@@ -174,17 +258,60 @@ namespace OpenAuth.WebApi.Controllers.Material
         }
 
         /// <summary>
+        /// 修改报价单物料，物流
+        /// </summary>
+        /// <param name="obj"></param>
+        [HttpPost]
+        public async Task<Response> UpdateMaterial(AddOrUpdateQuotationReq obj)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.UpdateMaterial(obj);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 审批报价单
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> Accraditation(AddOrUpdateQuotationReq obj)
+        public async Task<Response> Accraditation(AccraditationQuotationReq req)
         {
             var result = new Response();
             try
             {
-                await _app.Accraditation(obj);
+                await _app.Accraditation(req);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 删除报价单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> Delete(QueryQuotationListReq req) 
+        {
+            var result = new Response();
+            try
+            {
+                await _app.Delete(req);
             }
             catch (Exception ex)
             {

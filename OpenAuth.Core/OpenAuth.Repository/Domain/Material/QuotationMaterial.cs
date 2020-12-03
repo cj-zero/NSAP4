@@ -28,6 +28,7 @@ namespace OpenAuth.Repository.Domain
             this.UnitPrice = 0;
             this.Remark = "";
             this.Count = 0;
+            this.MaxQuantity = 0;
         }
 
         /// <summary>
@@ -82,6 +83,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("数量")]
         public int? Count { get; set; }
+
+        /// <summary>
+        ///最大数量
+        /// </summary>
+        [Description("最大数量")]
+        public int? MaxQuantity { get; set; }
 
 
     }

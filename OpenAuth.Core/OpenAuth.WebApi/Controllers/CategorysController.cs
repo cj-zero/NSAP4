@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
@@ -125,6 +126,28 @@ namespace OpenAuth.WebApi.Controllers
             var data = _categoryTypeApp.AllTypes();
             return JsonHelper.Instance.Serialize(data);
         }
+
+
+        /// <summary>
+        /// 按字典ID查询字典类型
+        /// </summary>
+        [HttpGet]
+        public async Task<TableData> GetCategoryNameList([FromQuery]List<string> ids)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetCategoryNameList(ids);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
         public CategorysController(CategoryApp app, CategoryTypeApp categoryTypeApp)
         {
             _app = app;

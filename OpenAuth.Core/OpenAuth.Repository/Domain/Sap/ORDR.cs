@@ -264,8 +264,12 @@ namespace OpenAuth.Repository.Domain.Sap
           this.U_TSYQ= string.Empty;
           this.U_EshopNo= string.Empty;
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int DocEntry { get; set; }
 
-        
         /// <summary>
         /// 
         /// </summary>

@@ -55,12 +55,12 @@ namespace OpenAuth.Repository.Extensions
                 if (dbType.ToLower() == "sqlserver") //sqlserver
                 {
                     services.AddDbContext<T>(options =>
-                        options.UseSqlServer(connectionString));
+                        options.UseSqlServer(connectionString),ServiceLifetime.Transient);
                 }
                 else if (dbType.ToLower() == "mysql") //mysql
                 {
                     services.AddDbContext<T>(options =>
-                        options.UseMySql(connectionString));
+                        options.UseMySql(connectionString), ServiceLifetime.Transient);
                 }
             }
 
