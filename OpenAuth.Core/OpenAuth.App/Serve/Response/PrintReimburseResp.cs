@@ -33,7 +33,7 @@ namespace OpenAuth.App.Serve.Response
         /// <summary>
         /// 出差事由
         /// </summary>
-        public string FromTheme { get; set; }
+        public List<string> FromTheme { get; set; }
 
         /// <summary>
         /// logo
@@ -46,7 +46,7 @@ namespace OpenAuth.App.Serve.Response
         public string QRcode { get; set; }
         
         /// <summary>
-        /// 出差事由
+        /// 报销单
         /// </summary>
         public ReimburseInfo Reimburse { get; set; }
         
