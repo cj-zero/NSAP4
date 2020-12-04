@@ -49,6 +49,7 @@ namespace OpenAuth.App
             //todo:补充或调整自己需要的字段
             var user = _auth.GetCurrentUser().User;
             UnitWork.Add<BtsGroup,int>(obj);
+            UnitWork.Save();
         }
 
          public void Update(AddOrUpdatebtsgroupReq obj)
@@ -59,6 +60,7 @@ namespace OpenAuth.App
                 Group = obj.Group,
                 //todo:补充或调整自己需要的字段
             });
+            UnitWork.Save();
 
         }
             
@@ -72,6 +74,7 @@ namespace OpenAuth.App
         public void Delete(List<int> ids)
         {
             UnitWork.Delete<BtsGroup>(g => ids.Contains(g.Id));
+            UnitWork.Save();
         }
     }
 }

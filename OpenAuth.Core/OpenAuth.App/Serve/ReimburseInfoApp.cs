@@ -541,6 +541,7 @@ namespace OpenAuth.App
                 TerminalCustomerId = completionreport.TerminalCustomerId,
                 FromTheme = completionreport.FromTheme,
                 Becity = completionreport.Becity,
+                CompleteAddress = ServiceOrders.Province + ServiceOrders.City + ServiceOrders.Area + ServiceOrders.Addr,
                 Destination = completionreport.Destination,
                 BusinessTripDate = CompletionReports.Min(c => c.BusinessTripDate),
                 EndDate = CompletionReports.Max(c => c.EndDate),
@@ -1535,8 +1536,6 @@ namespace OpenAuth.App
                 Console.WriteLine(logostr);
             }
             var FromThemeJson = JsonHelper.Instance.Deserialize<List<FromThemeJsonResp>>(CompletionReports.FirstOrDefault()?.FromTheme);
-            StringBuilder FromTheme = new StringBuilder();
-            FromThemeJson.ForEach(f => FromTheme.Append(f.description));
 
             var PrintReimburse = new PrintReimburseResp
             {
@@ -1545,7 +1544,7 @@ namespace OpenAuth.App
                 UserName = orgname + " " + user.Name,
                 TerminalCustomerId = CompletionReports.FirstOrDefault()?.TerminalCustomerId,
                 TerminalCustomer = CompletionReports.FirstOrDefault()?.TerminalCustomer,
-                FromTheme = FromTheme.ToString(),
+                FromTheme = FromThemeJson.Take(2).Select(f=>f.description).ToList(),
                 logo = logostr,
                 QRcode = QRCoderHelper.CreateQRCodeToBase64(Reimburse.MainId.ToString()),
                 Reimburse = Reimburse
