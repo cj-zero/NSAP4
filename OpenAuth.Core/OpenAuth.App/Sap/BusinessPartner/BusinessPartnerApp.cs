@@ -244,7 +244,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
                 TechID = q.a.DfTcnician,
                 TechName = $"{q.e.lastName ?? ""}{q.e.firstName}",
                 CntctPrsnList = UnitWork.Find<OCPR>(null).Where(o => o.CardCode.Equals(q.a.CardCode)).ToList(),
-                AddressList = UnitWork.Find<CRD1>(null).Where(o => o.CardCode.Equals(q.a.CardCode)).ToList(),
+                AddressList = UnitWork.Find<CRD1>(null).Where(o => o.CardCode.Equals(q.a.CardCode) && o.Address.Equals(q.a.ShipToDef)).ToList(),
             });
 
             var rltList = await query.FirstOrDefaultAsync();
