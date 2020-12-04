@@ -860,6 +860,9 @@ export default {
       this.form.province = province
       this.form.city = city
       this.form.area = district
+      if (province === '香港特别行政区' || province === '澳门特别行政区') { // 特殊处理
+        city = ''
+      }
       this._getPosition(`${province}${city}${district}`.replace('海外', ''))
     },
     _getPosition (address, auto) {
