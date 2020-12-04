@@ -92,5 +92,10 @@ namespace OpenAuth.App.Request
         /// </summary>
         public DateTime? CompleteDate { get; set; }
 
+        /// <summary>
+        /// 完工时间
+        /// </summary>
+        public DateTime? EndCompleteDate { get; set; }
+
     }
 }
