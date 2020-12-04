@@ -790,13 +790,13 @@ export default {
             });
             return;
           }
-          if (this.multipleSelection.status === 2) {
-            this.$message({
-              message: "该服务单已经被确认过",
-              type: "warning"
-            });
-            return;
-          }
+          // if (this.multipleSelection.status === 2) {
+          //   this.$message({
+          //     message: "该服务单已经被确认过",
+          //     type: "warning"
+          //   });
+          //   return;
+          // }
           this.handleUpdate(this.multipleSelection);
           break;
         case "btnDel":

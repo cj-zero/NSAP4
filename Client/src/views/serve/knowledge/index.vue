@@ -144,7 +144,7 @@ export default {
         { btnText: '确认', handleClick: this.confirm },
         { btnText: '取消', handleClick: this.closeDialog }
       ],
-      expandedKeys: [] // 默认展开的数组id
+      expandedKeys: [], // 默认展开的数组id
     };
   },
   created() {
@@ -221,6 +221,8 @@ export default {
         console.log(res, 'resd')
         let { result } = res
         // this._normalizeList(result)
+        console.log(this.listQuerySearch.key, !!this.listQuery.key)
+        this.expandedKeys = []
         this.modulesTree = this._normalizeList(result)
         this.listLoading = false
         console.log(this.modulesTree, 'moduleTree')
@@ -233,11 +235,13 @@ export default {
       return data.map(dataItem => {
         let { item, children } = dataItem
         dataItem = { ...item, children, disabled: Number(item.type) <= 2 }
-        if (level < 2) {
+        if (level < 2 && !this.listQuery.key) {
+          this.expandedKeys.push(dataItem.id)
+        } else if (this.listQuery.key) {
           this.expandedKeys.push(dataItem.id)
         }
         if (children && children.length) {
-          dataItem.children = this._normalizeList(children, ++level)
+          dataItem.children = this._normalizeList(children, level + 1)
         }
         return dataItem
       })

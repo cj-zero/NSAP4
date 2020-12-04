@@ -877,7 +877,7 @@
       <div style="height: 400px;">
         <common-table 
           ref="customerTable"
-          maxHeight="500px"
+          maxHeight="400px"
           :data="customerInfoList"
           :columns="customerColumns"
         ></common-table>
@@ -902,7 +902,7 @@
       <div style="height: 400px;">
         <common-table 
           ref="costTable"
-          maxHeight="500px"
+          maxHeight="400px"
           :data="costData"
           :columns="costColumns"
           :selectedList="selectedList"
