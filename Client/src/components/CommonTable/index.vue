@@ -154,7 +154,7 @@ export default {
       let radioKey = row.radioKey
       this.radio = row[radioKey]
       this.currentRow = row
-      if (this.selectionColumns) {
+      if (this.selectionColumns && row.selectabled) {
         this.$refs.commonTable.toggleRowSelection(row)
       }
       // console.log(index, column, 'row click', radioKey, this.radio, Object.keys(row))
@@ -180,9 +180,10 @@ export default {
       this.$refs.commonTable.clearSelection()
     },
     checkSelectable (row) {
-      return this.selectedList.length 
+      row.selectabled = this.selectedList.length 
         ? this.selectedList.every(item => item[this.selectedKey] !== row[this.selectedKey])
         : true
+      return row.selectabled
     }
   },
   created () {
