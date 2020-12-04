@@ -46,12 +46,14 @@ namespace OpenAuth.App
             //todo:补充或调整自己需要的字段
             var user = _auth.GetCurrentUser().User;
             UnitWork.Add<BtsModel, int>(obj);
+            UnitWork.Save();
         }
         public void BatchAdd(List<BtsModel> reqs)
         {
             //todo:补充或调整自己需要的字段
             var user = _auth.GetCurrentUser().User;
             UnitWork.BatchAdd<BtsModel, int>(reqs.ToArray());
+            UnitWork.Save();
         }
 
          public void Update(AddOrUpdatebtsmodelReq obj)
@@ -63,12 +65,14 @@ namespace OpenAuth.App
                 Remark = obj.Remark,
                 //todo:补充或调整自己需要的字段
             });
+            UnitWork.Save();
 
         }
 
         public void Delete(List<int> ids)
         {
             UnitWork.Delete<BtsModel>(m => ids.Contains(m.Id));
+            UnitWork.Save();
         }
 
         public BtsModelApp(IUnitWork unitWork,
