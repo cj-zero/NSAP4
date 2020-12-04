@@ -20,6 +20,8 @@ namespace OpenAuth.App
         public const int INVALID_InvoiceNumber = 50015;   //发票号码不唯一
         public const int INVALID_ReimburseAgain = 50016;   //重复提交报销单
         public const int INVALID_APPUser = 50017;     //未绑定App账户
+        public const int ExpressNum_IsNull = 50018;     //快递单号为空
+        public const int IS_OverTime = 50019;//时间超时
 
         public const string TOKEN_NAME = "X-Token";
 
