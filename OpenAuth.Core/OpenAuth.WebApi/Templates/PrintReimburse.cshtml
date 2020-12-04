@@ -123,7 +123,7 @@
                 <td>&nbsp; @item.InvoiceTime?.ToString("yyyy.MM.dd")</td>
                 <td>&nbsp; 住宿补贴</td>
                 <td>&nbsp; @item.Days 天 </td>
-                <td align="right">@item.Money &nbsp;</td>
+                <td align="right">@item.TotalMoney &nbsp;</td>
             </tr>
         }
         @foreach (var item in Model.Data.Reimburse.ReimburseTravellingAllowances)
