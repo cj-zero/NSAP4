@@ -641,7 +641,7 @@ namespace OpenAuth.App
                         UnitWork.Save();
                         //保存附件
                         List<ReimburseAttachment> AttachmentList = new List<ReimburseAttachment>();
-                        var Attachments = req.ReimburseAttachments.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
+                        var Attachments = req.ReimburseAttachments.Where(r => r.IsAdd == true || r.IsAdd==null).MapToList<ReimburseAttachment>();
                         if (Attachments != null && Attachments.Count > 0)
                         {
                             Attachments.ForEach(f => { f.ReimburseId = obj.Id; f.ReimburseType = 0; f.Id = Guid.NewGuid().ToString(); });
@@ -655,7 +655,7 @@ namespace OpenAuth.App
                             var racreq = req.ReimburseFares.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
                             if (racreq != null && racreq.Count > 0)
                             {
-                                Attachments = racreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
+                                Attachments = racreq.Where(r => r.IsAdd == true || r.IsAdd == null).MapToList<ReimburseAttachment>();
                                 Attachments.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 2; f.Id = Guid.NewGuid().ToString(); });
                                 AttachmentList.AddRange(Attachments);
                                 //if (filemodel.Count > 0) UnitWork.BatchAdd<ReimburseAttachment>(filemodel.ToArray());
@@ -668,7 +668,7 @@ namespace OpenAuth.App
                             var rasreq = req.ReimburseAccommodationSubsidies.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
                             if (rasreq != null && rasreq.Count > 0)
                             {
-                                Attachments = rasreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
+                                Attachments = rasreq.Where(r => r.IsAdd == true || r.IsAdd == null).MapToList<ReimburseAttachment>();
                                 Attachments.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 3; f.Id = Guid.NewGuid().ToString(); });
                                 AttachmentList.AddRange(Attachments);
                                 //if (filemodel.Count > 0) UnitWork.BatchAdd<ReimburseAttachment>(filemodel.ToArray());
@@ -681,7 +681,7 @@ namespace OpenAuth.App
                             var rocreq = req.ReimburseOtherCharges.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
                             if (rocreq != null && rocreq.Count > 0)
                             {
-                                Attachments = rocreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
+                                Attachments = rocreq.Where(r => r.IsAdd == true || r.IsAdd == null).MapToList<ReimburseAttachment>();
                                 Attachments.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 4; f.Id = Guid.NewGuid().ToString(); });
                                 AttachmentList.AddRange(Attachments);
                                 //if (filemodel.Count > 0) UnitWork.BatchAdd<ReimburseAttachment>(filemodel.ToArray());
@@ -1077,7 +1077,7 @@ namespace OpenAuth.App
 
                     #region 新增附件
                     List<ReimburseAttachment> AttachmentList = new List<ReimburseAttachment>();
-                    var Attachments = req.ReimburseAttachments.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
+                    var Attachments = req.ReimburseAttachments.Where(r => r.IsAdd == true || r.IsAdd == null).MapToList<ReimburseAttachment>();
                     if (Attachments != null && Attachments.Count > 0)
                     {
                         Attachments.ForEach(f => { f.ReimburseId = obj.Id; f.ReimburseType = 0; f.Id = Guid.NewGuid().ToString(); });
@@ -1091,7 +1091,7 @@ namespace OpenAuth.App
                         var racreq = req.ReimburseFares.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
                         if (racreq != null && racreq.Count > 0)
                         {
-                            Attachments = racreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
+                            Attachments = racreq.Where(r => r.IsAdd == true || r.IsAdd == null).MapToList<ReimburseAttachment>();
                             Attachments.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 2; f.Id = Guid.NewGuid().ToString(); });
                             AttachmentList.AddRange(Attachments);
                             //if (filemodel.Count > 0) UnitWork.BatchAdd<ReimburseAttachment>(filemodel.ToArray());
@@ -1104,7 +1104,7 @@ namespace OpenAuth.App
                         var rasreq = req.ReimburseAccommodationSubsidies.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
                         if (rasreq != null && rasreq.Count > 0)
                         {
-                            Attachments = rasreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
+                            Attachments = rasreq.Where(r => r.IsAdd == true || r.IsAdd == null).MapToList<ReimburseAttachment>();
                             Attachments.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 3; f.Id = Guid.NewGuid().ToString(); });
                             AttachmentList.AddRange(Attachments);
                             //if (filemodel.Count > 0) UnitWork.BatchAdd<ReimburseAttachment>(filemodel.ToArray());
@@ -1117,7 +1117,7 @@ namespace OpenAuth.App
                         var rocreq = req.ReimburseOtherCharges.Where(r => r.SerialNumber == item.SerialNumber).Select(r => r.ReimburseAttachments).FirstOrDefault();
                         if (rocreq != null && rocreq.Count > 0)
                         {
-                            Attachments = rocreq.Where(r => r.IsAdd == true).MapToList<ReimburseAttachment>();
+                            Attachments = rocreq.Where(r => r.IsAdd == true || r.IsAdd == null).MapToList<ReimburseAttachment>();
                             Attachments.ForEach(f => { f.ReimburseId = item.Id; f.ReimburseType = 4; f.Id = Guid.NewGuid().ToString(); });
                             AttachmentList.AddRange(Attachments);
                             //if (filemodel.Count > 0) UnitWork.BatchAdd<ReimburseAttachment>(filemodel.ToArray());
