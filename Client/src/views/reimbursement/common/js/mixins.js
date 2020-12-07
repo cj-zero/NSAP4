@@ -207,8 +207,23 @@ export let tableMixin = {
         return item.attachmentType === 1
       })
     },
+    getInvoiceFileList (attachmentList) { // 获取发票附件
+      return attachmentList.filter(item => {
+        return item.attachmentType === 2
+      })
+    },
     processInvoiceTime (invoiceTime) { // 截取年月日
-      return invoiceTime ? invoiceTime.split(' ')[0] : invoiceTime
+      if (!invoiceTime) { // 为空直接返回
+        return invoiceTime
+      }
+      let date = new Date(invoiceTime)
+      let hours = date.getHours()
+      let min = date.getMinutes()
+      if (hours <= 0 && min <= 0) { // 判断时分是否存在， 都不存在就只展示年月日
+        return invoiceTime.split(' ')[0]
+      }
+      invoiceTime = invoiceTime.slice(0, -3)
+      return invoiceTime
     },
     _generateApproveTable (data) { // 针对总经理审批页面
       console.log(data, 'generate')
@@ -229,7 +244,7 @@ export let tableMixin = {
           remark,
           invoiceNumber,
           isValidInvoice: this.isValidInvoice(reimburseAttachments),
-          reimburseAttachments,
+          invoiceFileList: this.getInvoiceFileList(reimburseAttachments),
           otherFileList: this.getOtherFileList(reimburseAttachments)
         })
       })
@@ -243,10 +258,11 @@ export let tableMixin = {
           remark,
           invoiceNumber,
           isValidInvoice: this.isValidInvoice(reimburseAttachments),
-          reimburseAttachments,
+          invoiceFileList: this.getInvoiceFileList(reimburseAttachments),
           otherFileList: this.getOtherFileList(reimburseAttachments)
         })
       })
+      
       reimburseTravellingAllowances.forEach(item => {
         let { invoiceTime, days, money, remark } = item
         result.push({
@@ -267,19 +283,19 @@ export let tableMixin = {
           remark,
           invoiceNumber,
           isValidInvoice: this.isValidInvoice(reimburseAttachments),
-          reimburseAttachments,
+          invoiceFileList: this.getInvoiceFileList(reimburseAttachments),
           otherFileList: this.getOtherFileList(reimburseAttachments)
         })
       })
       /* 日期从小到大， 没日期的话，交通费用→住宿补贴→出差补贴→其他费用 */
-      // let dataWithInvoiceTime = result.filter(item => item.invoiceTime).sort((a, b) => {
-      //   return new Date(a.invoiceTime).getTime() - new Date(b.invoiceTime).getTime()
-      // })
-      // let dataWithoutInvoiceTime = result.filter(item => !item.invoiceTime)
+      let dataWithInvoiceTime = result.filter(item => item.invoiceTime).sort((a, b) => {
+        return new Date(b.invoiceTime).getTime() - new Date(a.invoiceTime).getTime()
+      })
+      let dataWithoutInvoiceTime = result.filter(item => !item.invoiceTime)
       // 交通-住宿-出差-其它
-      // data.expenseCategoryList = dataWithInvoiceTime.concat(dataWithoutInvoiceTime)
+      data.expenseCategoryList = dataWithInvoiceTime.concat(dataWithoutInvoiceTime)
       console.log(result, 'result')
-      data.expenseCategoryList = result
+      // data.expenseCategoryList = result
     },
     _normalizeDetail (data) { 
       let reg = /[\r|\r\n|\n\t\v]/g
@@ -580,7 +596,7 @@ export let categoryMixin = {
         { label: '目的地', prop: 'to', type: 'input', width: 125, readonly: true },
         { label: '金额', prop: 'money', type: 'number', align: 'right', width: 120, placeholder: '大于0' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '7-11位字母数字' },
+        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '不能为空' },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 }
       ]
@@ -598,7 +614,7 @@ export let categoryMixin = {
         { label: '费用类别', prop: 'expenseCategory', type: 'select', width: 150, options: this.otherExpensesList },
         { label: '其他费用', prop: 'money', type: 'number', width: 120, align: 'right', placeholder: '大于0' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '7-11位字母数字' },
+        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '不能为空' },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 }
       ]
@@ -701,7 +717,7 @@ export const attachmentMixin = {
       this.$set(currentRow, 'isValidInvoice', isValidInvoice) // 判断发票是否正确，如果是正确的话就不给修改，不正确就给修改
       currentRow.maxMoney = money
       currentRow.invoiceNumber = invoiceNo
-      currentRow.invoiceTime = invoiceDate.match(invoiceTimeReg) ? RegExp.$1 : ''
+      currentRow.invoiceTime = invoiceDate.match(invoiceTimeReg) ? RegExp.$_ : ''
     },
     _setAttachmentList ({ data, index, prop, reimburseType, val }) { // 设置通过上传获取到的附件列表
       let resultArr = []

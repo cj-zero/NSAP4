@@ -126,9 +126,9 @@ namespace OpenAuth.App
             //获取退料单表头信息
             var returnNote = await UnitWork.Find<ReturnNote>(w => w.Id == req.Id).FirstOrDefaultAsync();
             //仓库验货
-            await SaveReceiveInfo(req.ReturnMaterials);
+            await SaveReceiveInfo(req);
             //验收通过
-            await UnitWork.UpdateAsync<ReturnNote>(r => r.FlowInstanceId == returnNote.FlowInstanceId, u => new ReturnNote { Status = 2, Remark = req.Remark });
+            await UnitWork.UpdateAsync<ReturnNote>(r => r.FlowInstanceId == returnNote.FlowInstanceId, u => new ReturnNote { Status = 2 });
             //流程通过
             _flowInstanceApp.Verification(new VerificationReq
             {
@@ -146,15 +146,18 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="ReturnMaterials"></param>
         /// <returns></returns>
-        public async Task SaveReceiveInfo(List<ReturnMaterial> ReturnMaterials)
+        public async Task SaveReceiveInfo(ReturnNoteAuditReq req)
         {
-            if (ReturnMaterials != null && ReturnMaterials.Count > 0)
+            //保存验收结果
+            if (req.ReturnMaterials != null && req.ReturnMaterials.Count > 0)
             {
-                foreach (var item in ReturnMaterials)
+                foreach (var item in req.ReturnMaterials)
                 {
                     await UnitWork.UpdateAsync<ReturnnoteMaterial>(r => r.Id == item.Id, u => new ReturnnoteMaterial { Check = item.IsPass, WrongCount = item.WrongCount, ReceivingRemark = item.ReceiveRemark });
                 }
             }
+            //保存签收备注
+            await UnitWork.UpdateAsync<ReturnNote>(r => r.Id == req.Id, u => new ReturnNote { Remark = req.Remark });
             await UnitWork.SaveAsync();
         }
 
@@ -275,7 +278,7 @@ namespace OpenAuth.App
             var serviceOrder = await UnitWork.Find<ServiceOrder>(w => w.Id == returnNote.ServiceOrderId && w.U_SAP_ID == returnNote.ServiceOrderSapId).FirstOrDefaultAsync();
             var mainInfo = new Dictionary<string, object>()
             {
-                {"returnNoteCode" ,returnNote.Id},{"creater",returnNote.CreateUser },{ "createTime",returnNote.CreateTime },{"salMan",serviceOrder.SalesMan},{ "serviceSapId",serviceOrder.U_SAP_ID},{ "customerCode",serviceOrder.CustomerId},{ "customerName",serviceOrder.CustomerName},{ "status",returnNote.Status},{ "isLast",returnNote.IsLast}
+                {"returnNoteCode" ,returnNote.Id},{"creater",returnNote.CreateUser },{ "createTime",returnNote.CreateTime },{"salMan",serviceOrder.SalesMan},{ "serviceSapId",serviceOrder.U_SAP_ID},{ "customerCode",serviceOrder.CustomerId},{ "customerName",serviceOrder.CustomerName},{ "status",returnNote.Status},{ "isLast",returnNote.IsLast},{ "remark",(string.IsNullOrEmpty(returnNote.Remark)? string.Empty:returnNote.Remark)}
             };
             outDta.Add("mainInfo", mainInfo);
             //获取物流信息

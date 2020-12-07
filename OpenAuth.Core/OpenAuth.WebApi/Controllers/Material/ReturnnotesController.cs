@@ -89,15 +89,15 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 保存仓库验收记录
         /// </summary>
-        /// <param name="ReturnMaterials"></param>
+        /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> SaveReceiveInfo(List<ReturnMaterial> ReturnMaterials)
+        public async Task<Response> SaveReceiveInfo(ReturnNoteAuditReq req)
         {
             var result = new Response();
             try
             {
-                await _returnnoteApp.SaveReceiveInfo(ReturnMaterials);
+                await _returnnoteApp.SaveReceiveInfo(req);
 
             }
             catch (Exception ex)
