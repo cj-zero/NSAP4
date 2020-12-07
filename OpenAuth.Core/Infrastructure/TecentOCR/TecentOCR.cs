@@ -40,7 +40,7 @@ namespace Infrastructure.TecentOCR
         /// <returns></returns>
         private string GetDateFormat(string date)
         {
-            return date.Replace("年", "-").Replace("月", "-").Replace("日", " ");
+            return date.Replace("年", "-").Replace("月", "-").Replace("日", string.Empty);
         }
 
         /// <summary>
