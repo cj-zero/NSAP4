@@ -349,18 +349,10 @@
             <el-row>
               <el-form-item label="图片">
                 <el-row type="flex">
-                  <el-image
-                    class="asset-image"
-                    fit="contain"
-                    v-if="formData.assetImage"
-                    :src="getImgUrl(formData.assetImage)"
-                    :preview-src-list="[getImgUrl(formData.assetImage)]"
-                    alt
-                  ></el-image>
                   <el-upload
+                    class="avatar-uploader"
                     v-if="openDialogType === '新增'"
                     name="files"
-                    list-type="picture-card"
                     accept="image/*"
                     :action="action"
                     :headers="headers"
@@ -370,7 +362,18 @@
                     :on-remove="handleRemoveAssetImage"
                     :on-preview="handlePictureCardPreviewAssetImage"
                   >
-                    <i class="el-icon-plus"></i>
+                    <div class="asset-image" v-if="formData.assetImage" @click.stop>
+                      <el-image class="avatar" :src="getImgUrl(formData.assetImage)" :preview-src-list="[getImgUrl(formData.assetImage)]"> </el-image>
+                      <div class="asset-image-actions">
+                        <div class="asset-image-action" @click="handlePictureCardPreview(file)">
+                          <i class="el-icon-zoom-in"></i>
+                        </div>
+                        <div class="asset-image-action" @click="handleRemoveAssetImage()">
+                          <i class="el-icon-delete"></i>
+                        </div>
+                      </div>
+                    </div>
+                    <i v-else class="el-icon-plus avatar-uploader-icon"></i>
                   </el-upload>
                 </el-row>
               </el-form-item>
@@ -975,72 +978,10 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-.avatar-uploader {
-  position: relative;
-  width: 80px;
-  height: 40px;
-
-  ::v-deep .el-upload {
-    position: relative;
-    width: 100%;
-    height: 100%;
-  }
-
-  ::v-deep .el-icon-plus,
-  .avatar-uploader-icon {
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    top: 0;
-    width: 15px;
-    height: 15px;
-    margin: auto;
-  }
-
-  .add-wrapper {
-    display: flex;
-    width: 100%;
-    height: 100%;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .upload-img {
-    position: relative;
-    width: 80px;
-    height: 40px;
-
-    &:hover .mask-wrapper {
-      opacity: 1;
-    }
-
-    .mask-wrapper {
-      position: absolute;
-      display: flex;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      top: 0;
-      align-items: center;
-      justify-content: center;
-      background-color: rgba(0, 0, 0, 0.5);
-      opacity: 0;
-      transition: opacity 0.3s;
-
-      .item {
-        margin: 0 5px;
-        color: white;
-      }
-    }
-  }
-}
-
 body {
   ::v-deep .popper__arrow {
     display: none;
   }
-
   ::v-deep .el-select-dropdown {
     margin-top: 0 !important;
   }
@@ -1048,11 +989,65 @@ body {
 .input {
   margin: 5px 0;
 }
+// ----
+
 .asset-image {
-  display: inline-block;
-  width: 148px;
-  height: 148px;
+  position: relative;
+  &:hover {
+    .asset-image-actions {
+      visibility: visible;
+      background-color: rgba(#000, 0.5);
+    }
+  }
+  &-actions {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    transition: background-color 300ms;
+    background-color: rgba(#000, 0.1);
+    visibility: hidden;
+    pointer-events: none;
+  }
+  &-action {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 25px;
+    &:nth-child(2) {
+      pointer-events: all;
+    }
+  }
+}
+
+// ----
+.avatar-uploader ::v-deep .el-upload {
+  border: 1px dashed #d9d9d9;
   border-radius: 6px;
-  margin-right: 10px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.avatar-uploader .el-upload:hover {
+  border-color: #409eff;
+}
+.avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 178px;
+  height: 178px;
+  line-height: 178px;
+  text-align: center;
+}
+.avatar {
+  width: 178px;
+  height: 178px;
+  display: block;
 }
 </style>
