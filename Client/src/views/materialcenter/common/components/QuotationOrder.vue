@@ -138,9 +138,9 @@
             </el-row>
             <div class="serial-table-wrapper">
               <common-table 
-                @rowClick="onSerialRowClick"
+                @row-click="onSerialRowClick"
                 ref="serialTable" 
-                maxHeight="200px"
+                max-height="200px"
                 :data="serialNumberList" 
                 :columns="serialColumns" 
                 :loading="serialLoading">
@@ -178,8 +178,7 @@
                 class="material-table-wrapper"
                 :data="materialData.list"
                 :columns="materialConfig"
-                :height="0"
-                maxHeight="200px"
+                max-height="200px"
               >
                 <template v-slot:totalPrice_header>
                   <el-tooltip effect="dark" placement="top-end">
@@ -213,7 +212,6 @@
                   <div style="display: inline-block;" @click="deleteMaterialItem(row.index)">
                     <el-icon class="el-icon-delete icon-item"></el-icon>
                   </div>
-                  
                 </template>
               </common-table>
             </el-form>
@@ -247,7 +245,7 @@
                 </el-row>
                 <div>
                   <common-table 
-                    maxHeight="200px" 
+                    max-height="200px" 
                     :data="item.quotationMaterials" 
                     :columns="materialTableColumns">
                     <template v-slot:totalPrice_header="scope">
@@ -269,9 +267,8 @@
         <div class="material-summary-wrapper">
           <common-table 
             class="material-summary-table"
-            rowKey="index"
-            :height="0"
-            maxHeight="400px"
+            row-key="index"
+            max-height="400px"
             :data="materialSummaryList" 
             :columns="materialAllColumns" 
             :loading="materialAllLoading">
@@ -287,7 +284,11 @@
       <!-- 操作记录 不可编辑时才出现 -->
       <template v-if="ifNotEdit && formData.quotationOperationHistorys && formData.quotationOperationHistorys.length">
         <div class="history-wrapper">
-          <common-table :data="formData.quotationOperationHistorys" :columns="historyColumns" maxHeight="200px">
+          <common-table 
+            :data="formData.quotationOperationHistorys" 
+            :columns="historyColumns" 
+            max-height="200px"
+          >
             <template v-slot:intervalTime="scope">
               {{ scope.row.intervalTime | m2DHM }}
             </template>
@@ -304,7 +305,13 @@
       :appendToBody="true"
     >
       <div>
-        <common-table maxHeight="400px" ref="customerTable" :data="customerData" :columns="customerColumns" radioKey='id'></common-table>
+        <common-table 
+          ref="customerTable" 
+          :data="customerData" 
+          :columns="customerColumns" 
+          max-height="400px"
+          radioKey='id'>
+        </common-table>
       </div>
       <pagination
         v-show="customerTotal > 0"
@@ -325,6 +332,7 @@
     >
       <common-table  
         ref="materialTable" 
+        row-key="id"
         height="400px"
         :data="materialList" 
         :columns="materialColumns" 
@@ -551,7 +559,7 @@ export default {
         { label: '操作记录', prop: 'action' },
         { label: '操作人', prop: 'createUser' },
         { label: '操作时间', prop: 'createTime' },
-        { label: '审批时长', prop: 'intervalTime', type: 'slot', slotName: 'intervalTime' },
+        { label: '审批时长', prop: 'intervalTime', slotName: 'intervalTime' },
         { label: '审批结果', prop: 'approvalResult' },
         { label: '备注', prop: 'remark' }
       ],
@@ -570,7 +578,7 @@ export default {
         { btnText: '取消', handleClick: this.closeMaterialDialog }
       ],
       materialColumns: [ 
-        { originType: 'selection' },
+        { type: 'selection' },
         { label: '物料编码', prop: 'itemCode', width: 100 },
         { label: '物料描述', prop: 'itemName' },
         { label: '零件规格', prop: 'buyUnitMsr', width: 100 },
@@ -582,12 +590,12 @@ export default {
         { label: '序号', type: 'order' },
         { label: '物料编码', prop: 'materialCode' },
         { label: '物料描述', prop: 'materialDescription' },
-        { label: '数量', prop: 'count', type: 'slot', slotName: 'count', align: 'right' },
+        { label: '数量', prop: 'count', slotName: 'count', align: 'right' },
         { label: '最大数量', prop: 'maxQuantity', align: 'right' },
         { label: '单价', prop: 'unitPrice', align: 'right' },
         { label: '小计', prop: 'totalPrice', disabled: true, align: 'right', isCustomizeHeader: true },
-        { label: '备注', type: 'slot', slotName: 'remark', prop: 'remark' },
-        { label: '操作', type: 'slot', slotName: 'operation' }
+        { label: '备注', slotName: 'remark', prop: 'remark' },
+        { label: '操作', slotName: 'operation' }
       ],    
       // 物料填写表格列表
       materialRules: {
@@ -607,7 +615,7 @@ export default {
       materialSummaryList: [],
       materialAllColumns: [
         { label: '序号', type: 'order', width: '50px' },
-        { label: '物料编码', prop: 'materialCode', type: 'slot', slotName: 'materialCode', width: '150px' },
+        { label: '物料编码', prop: 'materialCode', slotName: 'materialCode', width: '150px' },
         { label: '物料描述', prop: 'materialDescription' },
         { label: '数量', prop: 'count', align: 'right' },
         { label: '成本价', prop: 'costPrice', align: 'right' },
@@ -643,11 +651,11 @@ export default {
       serialLoading: false,
       serialColumns: [
         { label: '制造商序列号', prop: 'manufacturerSerialNumber' },
-        { label: '物料编码', prop: 'materialCode', type: 'slot', slotName: 'materialCode' },
+        { label: '物料编码', prop: 'materialCode', slotName: 'materialCode' },
         { label: '物料描述', prop: 'materialDescription' },
         { label: '保修到期', prop: 'warrantyExpirationTime' },
-        { label: '金额', type: 'slot', slotName: 'money', align: 'right' },
-        { label: '领取物料', type: 'slot', slotName: 'btn' }
+        { label: '金额', slotName: 'money', align: 'right' },
+        { label: '领取物料', slotName: 'btn' }
         // { label: '领取物料',  width: 100, type: 'operation',
         //   actions: [{ btnText: '领取', handleClick: this.openMaterialDialog }] 
         // }
@@ -1199,7 +1207,6 @@ export default {
           width: 100% !important;
         }
         .material-table-wrapper {
-          height: auto !important;
           overflow: hidden;
           white-space: nowrap;
         }

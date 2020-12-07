@@ -80,3 +80,13 @@ export function findIndex (list, fn) {
   return index
 }
 
+// 处理查询字符
+export function serializeParams (params) {
+  let result = []
+  for (let key in params) {
+    if (params[key]) {
+      result.push(`${key}=${params[key]}`)
+    } 
+  }
+  return result.join('&')
+}

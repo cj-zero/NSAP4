@@ -22,6 +22,7 @@ namespace OpenAuth.App
 
         }
 
+
         /// <summary>
         /// 查询物流信息
         /// </summary>
@@ -67,6 +68,32 @@ namespace OpenAuth.App
                 result.Message = "未查询到有效的物流信息";
                 return result;
             }
+        }
+
+        /// <summary>
+        /// 批量查询物流信息
+        /// </summary>
+        /// <param name="trackNumbers"></param>
+        /// <returns></returns>
+        public async Task<TableData> BatchGetExpressInfo(List<string> trackNumbers)
+        {
+            var outData = new List<dynamic>();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = new TableData();
+            foreach (var item in trackNumbers)
+            {
+                Dictionary<string, object> trackInfo = new Dictionary<string, object>();
+                result = await GetExpressInfo(item);
+                trackInfo.Add("trackNumber", item);
+                trackInfo.Add("data", result.Data);
+                outData.Add(trackInfo);
+            }
+            result.Data = outData;
+            return result;
         }
     }
 }

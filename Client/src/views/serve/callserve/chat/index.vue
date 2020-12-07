@@ -10,7 +10,7 @@
     <!-- <template v-show="currentName === 'message'"> -->
     <!-- 留言 -->
     <div class="content-wrapper" :class="{ reimburse: this.formName === '报销' }">
-      <Message :serveId="serveId" v-show="currentName === 'message'"></Message>
+      <Message :key="timer" :serveId="serveId" v-show="currentName === 'message'"></Message>
       <!-- </template> -->
       <!-- 服务进度 -->
       <Log v-show="currentName === 'progress'" :serveId="serveId"></Log>
@@ -36,6 +36,7 @@ export default {
     Log
   },
   props: {
+    timer: null, // 用于重新渲染组件
     serveId: {
       type: [Number, String],
       default: ''

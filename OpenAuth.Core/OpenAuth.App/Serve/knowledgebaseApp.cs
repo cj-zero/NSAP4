@@ -54,14 +54,19 @@ namespace OpenAuth.App
             }
 
             var result = new Response<IEnumerable<TreeItem<KnowledgeBase>>>();
-            var objs = UnitWork.Find<KnowledgeBase>(null);
+            var objs =await UnitWork.Find<KnowledgeBase>(null).ToListAsync();
             if (!string.IsNullOrEmpty(request.key))
             {
-                objs = objs.Where(u => u.Id.Contains(request.key) || u.Name.Contains(request.key));
+                var ids = objs.Where(u => u.Id.Contains(request.key) || u.Name.Contains(request.key) || u.ParentName.Contains(request.key)).Select(s => s.CascadeId).ToList();
+                List<KnowledgeBase> KnowledgeBases = new List<KnowledgeBase>();
+                foreach (var item in ids)
+                {
+                    KnowledgeBases.AddRange(objs.Where(u => item.Contains(u.CascadeId)).ToList());
+                }
+                objs = KnowledgeBases.GroupBy(u=>u).Select(u=>u.First()).OrderBy(u=>u.Id).ToList();
             }
 
-            var Data = await objs.OrderBy(u => u.Id).ToListAsync();
-            result.Result = Data.GenerateTree(d=>d.Id, d=>d.ParentId);
+            result.Result = objs.GenerateTree(d=>d.Id, d=>d.ParentId).ToList();
             return result;
         }
 

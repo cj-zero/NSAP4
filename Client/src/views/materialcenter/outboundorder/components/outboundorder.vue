@@ -88,10 +88,8 @@
             ref="courierTable"
             :data="expressListData.list" 
             :columns="expressColumns2"
-            :height="0"
             max-height="150px"
           >
-       
             <template v-slot:expressNumber="{ row }">
               <el-form-item
                 :prop="'list.' + row.index + '.' + row.prop"

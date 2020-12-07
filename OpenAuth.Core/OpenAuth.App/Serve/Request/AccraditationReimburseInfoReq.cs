@@ -12,7 +12,7 @@ namespace OpenAuth.App.Serve.Request
     public class AccraditationReimburseInfoReq
     {
         /// <summary>
-        /// Id
+        /// 报销单单个Id
         /// </summary>
         public int? Id { get; set; }
 
@@ -52,5 +52,11 @@ namespace OpenAuth.App.Serve.Request
         /// 是否驳回
         /// </summary>
         public bool IsReject { get; set; }
+
+
+        /// <summary>
+        /// 报销单多个Id
+        /// </summary>
+        public List<int> ReimburseId { get; set; }
     }
 }

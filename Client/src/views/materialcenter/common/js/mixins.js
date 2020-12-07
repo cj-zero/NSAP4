@@ -238,22 +238,7 @@ export const quotationOrderMixin = { // 报价单
       ],
       createUser: this.$store.state.user.name
     }
-  },
-  // computed: {
-  //   materialConfig () {
-  //     return [
-  //       { label: '序号', type: 'order' },
-  //       { label: '物料编码', prop: 'materialCode' },
-  //       { label: '物料描述', prop: 'materialDescription' },
-  //       { label: '数量', prop: 'count', type: 'number', align: 'right' },
-  //       { label: '最大数量', prop: 'maxCount', align: 'right' },
-  //       { label: '单价', prop: 'unitPrice', align: 'right' },
-  //       { label: '总计', prop: 'totalPrice', disabled: true, align: 'right' },
-  //       { label: '备注', prop: 'remark', type: 'input' },
-  //       { label: '操作', type: 'operation', iconList: [{ handleClick: this.deleteMaterialItem, icon: 'el-icon-delete' }] }
-  //     ]       
-  //   }
-  // }
+  }
 }
 
 export const chatMixin = { // 服务单详情

@@ -615,7 +615,7 @@ export let categoryMixin = {
         { placeholder: '报销部门', prop: 'orgName', width: 100 },
         { placeholder: '费用承担', prop: 'bearToPay', width: 100, type: 'select', options: this.expenseList },
         // { placeholder: '责任承担', prop: 'responsibility', width: 100, type: 'select', options: this.responsibilityList },
-        // { placeholder: '劳务关系', prop: 'serviceRelations', width: 120, type: 'select', options: this.serviceRelationsList },
+        { placeholder: '劳务关系', prop: 'serviceRelations', width: 120, type: 'select', options: this.serviceRelationsList },
         { placeholder: '填报起始时间', prop: 'staticDate', type: 'date', width: 150 },
         { placeholder: '填报结束时间', prop: 'endDate', type: 'date', width: 150 }
       ]

@@ -32,7 +32,7 @@ namespace Infrastructure.Export
             {
                 tplPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "default.cshtml");
             }
-            else 
+            else
             {
                 tplPath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", tplPath);
             }
@@ -61,7 +61,7 @@ namespace Infrastructure.Export
         /// <param name="data"></param>
         /// <param name="tplPath"></param>
         /// <returns></returns>
-        public static async Task<byte[]> Exporterpdf<T>(T data, string tplPath = null) where T : class
+        public static async Task<byte[]> Exporterpdf<T>(T data, string tplPath = null, Action<PdfExporterAttribute> action = null) where T : class
         {
             if (tplPath == null)
             {
@@ -74,8 +74,15 @@ namespace Infrastructure.Export
             var tpl = System.IO.File.ReadAllText(tplPath);
             var exporter = new PdfExporter();
             PdfExporterAttribute pdf = new PdfExporterAttribute();
-            pdf.IsWriteHtml = true;
-            pdf.Orientation = Orientation.Portrait;
+            if (action != null)
+                action.Invoke(pdf);
+            else
+            {
+                pdf.IsWriteHtml = true;
+                pdf.PaperKind = PaperKind.A4;
+                pdf.Orientation = Orientation.Portrait;
+                pdf.FooterSettings = new FooterSettings() { FontSize = 5, Right = "Page [page] of [toPage]", Line = false, Spacing = 2.812 };
+            }
             var result = await exporter.ExportBytesByTemplate(data, pdf, tpl);
             return result;
         }
@@ -92,16 +99,22 @@ namespace Infrastructure.Export
         /// <returns></returns>
         public static async Task ExporterExcel<T>(string filePath, List<T> data) where T : class
         {
-            try
-            {
-                IExporter exporter = new ExcelExporter();
-                var result = await exporter.Export(filePath, data);
-            }
-            catch (Exception e)
-            {
+            IExporter exporter = new ExcelExporter();
+            var result = await exporter.Export(filePath, data);
+        }
 
-                throw;
-            }
+        /// <summary>
+        /// Excel导出byte数组
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="filePath"></param>
+        /// <param name="tplPath"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public static async Task<byte[]> ExporterExcel<T>(List<T> data) where T : class
+        {
+            IExporter exporter = new ExcelExporter();
+            return await exporter.ExportAsByteArray(data);
         }
         #endregion
 

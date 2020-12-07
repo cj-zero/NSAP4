@@ -1,10 +1,4 @@
 import store from '@/store'
-export function print (url) {
-  var wind = window.open(url,'newwindow', 'height=300, width=700, top=100, left=100, toolbar=no, menubar=no, scrollbars=no, resizable=no,location=n o, status=no');
-
-  wind.print();
-}
-
 export function download (src) {
   let canvas = document.createElement('canvas')
   const context = canvas.getContext("2d");
@@ -42,3 +36,4 @@ export function processDownloadUrl (pictureId) {
   console.log(pictureId, store.state.user.token)
   return `${process.env.VUE_APP_BASE_API}/files/Download/${pictureId}?X-Token=${store.state.user.token}`
 }
+

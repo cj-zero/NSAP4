@@ -81,7 +81,6 @@
             ref="courierTable"
             :data="courierList" 
             :columns="courierColumns"
-            :height="0"
             max-height="150px"
           >
             <!-- <template v-slot:courierNumber="{ row }">
@@ -113,11 +112,10 @@
           <common-table 
             ref="materialTable"
             :data="materialFormData.materialList"
-            maxHeight="250px" 
-            :show-message="false"
+            max-height="250px" 
             :columns="materialColumns"
-            :cellStyle="cellStyle"
-            :rowStyle="rowStyle">
+            :cell-style="cellStyle"
+            :row-style="rowStyle">
             <template v-slot:check="{ row }">
               <el-button v-if="(status === 'view' && checkList[row.index].isPass !== 2) || status === 'return'" 
                 type="success" 

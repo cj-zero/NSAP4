@@ -15,6 +15,7 @@ namespace OpenAuth.Repository
         {
             //当主键为联合主键时，需要把这里的内容拷贝到对应的位置
             modelBuilder.Entity<Asset>().HasKey(c => new { c.Id });
+            modelBuilder.Entity<NwcaliBaseInfo>().Ignore(c => c.FlowInstance );
         }
 
         public virtual DbSet<Certinfo> Certinfos { get; set; }
@@ -26,5 +27,18 @@ namespace OpenAuth.Repository
         public virtual DbSet<CertOperationHistory> Certoperationhistories { get; set; }
         //非数据库表格
         public virtual DbQuery<SysTableColumn> SysTableColumns { get; set; }
+        public virtual DbSet<UserSign> UserSigns { get; set; }
+        public virtual DbSet<Etalon> Etalons { get; set; }
+        public virtual DbSet<NwcaliBaseInfo> Nwcalibaseinfos { get; set; }
+        public virtual DbSet<NwcaliPlcData> Nwcaliplcdatas { get; set; }
+        public virtual DbSet<NwcaliTur> Nwcaliturs { get; set; }
+        public virtual DbSet<PcPlc> Pcplcs { get; set; }
+
+        // BTS
+
+        public virtual DbSet<BtsGroup> Btsgroups { get; set; }
+        public virtual DbSet<BtsGroupModel> Btsgroupmodels { get; set; }
+        public virtual DbSet<BtsGroupUser> Btsgroupusers { get; set; }
+        public virtual DbSet<BtsModel> Btsmodels { get; set; }
     }
 }

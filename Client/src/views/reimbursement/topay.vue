@@ -22,9 +22,12 @@
               fit
               height="100%"
               style="width: 100%;"
+              :row-style="rowStyle"
               @row-click="onRowClick"
               highlight-current-row
+              @selection-change="handleSelectionChange"
               >
+              <el-table-column type="selection"></el-table-column>
               <el-table-column
                 v-for="item in processedColumns"
                 :key="item.prop"
@@ -32,7 +35,6 @@
                 :label="item.label"
                 :align="item.align || 'left'"
                 :sortable="item.isSort || false"
-                :type="item.originType || ''"
                 show-overflow-tooltip
               >
                 <template slot-scope="scope" >
@@ -134,7 +136,8 @@ import Order from './common/components/order'
 // import zxform from "@/views/serve/callserve/form";
 // import zxchat from '@/views/serve/callserve/chat/index'
 import { tableMixin, categoryMixin, reportMixin, chatMixin } from './common/js/mixins'
-
+import { pay } from '@/api/reimburse'
+import { serializeParams } from '@/utils/process'
 export default {
   name: 'toPay',
   mixins: [tableMixin, categoryMixin, reportMixin, chatMixin],
@@ -154,7 +157,8 @@ export default {
       return [
         ...this.commonSearch,
         { type: 'search' },
-        { type: 'button', handleClick: this.getDetail, btnText: '支付', isSpecial: true, options:  { type: 'toPay' } }
+        { type: 'button', handleClick: this._pay, btnText: '支付', isSpecial: true, options:  { type: 'toPay' } },
+        { type: 'button', handleClick: this._export, btnText: '导出', isSpecial: true }
       ]
     }, // 搜索配置
     btnList () {
@@ -168,6 +172,8 @@ export default {
     return {
       customerInfo: {}, // 当前报销人的id， 名字
       categoryList: [], // 字典数组
+      token: this.$store.state.user.token,
+      selectList: [] // 多选已经选中的列表
     }
   },
   methods: {
@@ -175,8 +181,50 @@ export default {
       this.currentFormQuery = val
       Object.assign(this.listQuery, val)
     },
-    toPay () {
-      this.$refs.order.openRemarkDialog('pay')
+    rowStyle ({ row, rowIndex }) {
+      row.index = rowIndex
+    },
+    onRowClick (row) {
+      this.$refs.table.toggleRowSelection(row)
+    },
+    handleSelectionChange (val) {
+      this.selectList = val
+    },
+    _pay () {
+      if (!this.selectList.length) {
+        return this.$message.warning('请先选择报销单')
+      }
+      let reimburseId = this.selectList.map(item => item.id)
+      console.log(reimburseId, 'reimburseList')
+      this.$confirm('是否已支付报销费用？?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          this.tableLoading = true
+          pay({ reimburseId }).then(() => {
+            this.$message.success('支付成功')
+            this.tableLoading = false
+            this._getList()
+          }).catch(err => {
+            this.tableLoading = false
+            this.$message.error(err.message)
+          })
+        })
+    },
+    _export () {
+      this.$confirm('确认导出？', '确认信息', {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        closeOnClickModal: false,
+        type: 'warning'
+      })
+      .then(() => {
+        let searchStr = serializeParams(this.listQuery)
+        searchStr += `&X-Token=${this.token}`
+        console.log(searchStr)
+        window.open(`${process.env.VUE_APP_BASE_API}/serve/Reimburse/Export?${searchStr}`, '_blank')
+      }) 
     },
     closeDialog () {
       this.$refs.order.resetInfo()

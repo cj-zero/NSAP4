@@ -82,6 +82,7 @@ import elDragDialog from "@/directive/el-dragDialog";
 import Search from '@/components/Search'
 import rightImg from '@/assets/table/right.png'
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
+import { serializeParams } from '@/utils/process'
 export default {
   name: "attendanceclock",
   components: {
@@ -94,6 +95,20 @@ export default {
   directives: {
     waves,
     elDragDialog
+  },
+  computed: {
+    searchConfig () {
+      return [
+        { width: 100, placeholder: '姓名', prop: 'Name' },
+        { width: 100, placeholder: '部门', prop: 'Org' },
+        { width: 100, placeholder: '拜访对象', prop: 'VisitTo' },
+        { width: 150, placeholder: '地址', prop: 'Location' },
+        { width: 150, placeholder: '起始日期', prop: 'DateFrom', type: 'date' },
+        { width: 150, placeholder: '结束日期', prop: 'DateTo', type: 'date' },
+        { type: 'search' },
+        { type: 'button', btnText: '导出', handleClick: this._export }
+      ]
+    } 
   },
   data() {
     return {
@@ -144,15 +159,6 @@ export default {
         name: [{ required: true, message: "名称不能为空", trigger: "blur" }]
       },
       downloadLoading: false,
-      searchConfig: [
-        { width: 100, placeholder: '姓名', prop: 'Name' },
-        { width: 100, placeholder: '部门', prop: 'Org' },
-        { width: 100, placeholder: '拜访对象', prop: 'VisitTo' },
-        { width: 150, placeholder: '地址', prop: 'Location' },
-        { width: 150, placeholder: '起始日期', prop: 'DateFrom', type: 'date' },
-        { width: 150, placeholder: '结束日期', prop: 'DateTo', type: 'date' },
-        { type: 'search' }
-      ],
       baseURL: process.env.VUE_APP_BASE_API,
       tokenValue: this.$store.state.user.token,
       previewUrl: "", //预览图片的定义
@@ -166,6 +172,20 @@ export default {
   },
 
   methods: {
+    _export () {
+      this.$confirm('确认导出？', '确认信息', {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        closeOnClickModal: false,
+        type: 'warning'
+      })
+      .then(() => {
+        let searchStr = serializeParams(this.listQuery)
+        searchStr += `&X-Token=${this.tokenValue}`
+        console.log(searchStr)
+        window.open(`${process.env.VUE_APP_BASE_API}/serve/AttendanceClock/ExportAttendanceClock?${searchStr}`, '_blank')
+      })      
+    },
     toView (picturesList) {
       if (picturesList && picturesList.length) {
         let { pictureId, id } = picturesList[0]

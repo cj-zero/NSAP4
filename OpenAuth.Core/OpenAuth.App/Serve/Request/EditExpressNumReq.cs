@@ -20,5 +20,10 @@ namespace OpenAuth.App.Serve.Request
         /// 当前登录者用户Id
         /// </summary>
         public int AppUserId { get; set; }
+
+        /// <summary>
+        ///  1领料 2返厂
+        /// </summary>
+        public int Type { get; set; }
     }
 }

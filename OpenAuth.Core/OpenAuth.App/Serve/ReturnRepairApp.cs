@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Infrastructure;
 using KuaiDi100.Common.Request;
@@ -202,7 +203,15 @@ namespace OpenAuth.App
                     checkTime = Convert.ToDateTime(detail[0]["time"].ToString());
                 }
                 CreateTime = Convert.ToDateTime(detail[detail.Count - 1]["time"].ToString());
-                await UnitWork.UpdateAsync<Express>(w => w.Id == req.ExpressId, u => new Express { ExpressInformation = response, CheckTime = checkTime, IsCheck = isCheck, CreateTime = CreateTime, ExpressNumber = req.TrackNumber, Creater = userInfo.Name, CreateUserId = userInfo.Id });
+                switch (req.Type)
+                {
+                    case 1:
+                        await UnitWork.UpdateAsync<Expressage>(w => w.Id == req.ExpressId, u => new Expressage { ExpressInformation = response, ExpressNumber = req.TrackNumber });
+                        break;
+                    case 2:
+                        await UnitWork.UpdateAsync<Express>(w => w.Id == req.ExpressId, u => new Express { ExpressInformation = response, CheckTime = checkTime, IsCheck = isCheck, CreateTime = CreateTime, ExpressNumber = req.TrackNumber, Creater = userInfo.Name, CreateUserId = userInfo.Id });
+                        break;
+                }
                 await UnitWork.SaveAsync();
                 result.Data = response;
             }

@@ -15,6 +15,7 @@
       <div class="bg-white">
         <div class="content-wrapper">
           <common-table 
+            :highlight-current-row="false"
             ref="quotationTable" 
             :data="tableData" 
             :columns="quotationColumns" 

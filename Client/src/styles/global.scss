@@ -55,15 +55,47 @@
 }
 
 /* 消息提示的样式 */
-.drop-scrollbar {
-  color: #000;
-  font-size: 12px;
-  .el-scrollbar__wrap {
-    max-height: 200px; // 最大高度
-    overflow-x: hidden; // 隐藏横向滚动栏
-    margin-bottom: 0 !important;
+.global-message-list-wrapper {
+  .button-wrapper {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    span {
+      width: 100px;
+      height: 30px;
+      line-height: 30px;
+      flex: 0 0 50%;
+      text-align: center;
+      border: 1px solid #eee;
+      box-shadow: 0 0 1px 1px #fff;
+      color: #000;
+      background-color: rgba(245, 247, 250, 1);
+      &:hover {
+        color: #000 !important;
+      }
+      &.active {
+        color: rgba(138, 195, 255, 1);
+        background-color: #fff;
+        &:hover {
+          color:  rgba(138, 195, 255, 1) !important;
+        }
+      }
+    }
+  }
+  .empty-wrapper {
+    text-align: center;
+  }
+  .drop-scrollbar {
+    color: #000;
+    font-size: 12px;
+    .el-scrollbar__wrap {
+      max-height: 200px; // 最大高度
+      overflow-x: hidden; // 隐藏横向滚动栏
+      margin-bottom: 0 !important;
+    }
   }
 }
+
 .hidden-dropdown {
   display: none;
 }

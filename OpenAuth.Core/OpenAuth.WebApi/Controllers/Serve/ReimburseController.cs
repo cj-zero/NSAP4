@@ -221,6 +221,28 @@ namespace OpenAuth.WebApi.Controllers.Serve
         }
 
         /// <summary>
+        /// 批量审批
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> BatchAccraditation(AccraditationReimburseInfoReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                await _reimburseinfoapp.BatchAccraditation(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// 发票号码是否唯一
         /// </summary>
         /// <param name="InvoiceNumber"></param>
@@ -284,6 +306,41 @@ namespace OpenAuth.WebApi.Controllers.Serve
             }
 
             return result;
+        }
+        /// <summary>
+        /// 客户历史报销单 
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> HistoryReimburseInfo([FromQuery] QueryReimburseInfoListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _reimburseinfoapp.HistoryReimburseInfo(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 导出Excel
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> Export([FromQuery] QueryReimburseInfoListReq req)
+        {
+            var data = await _reimburseinfoapp.Export(req);
+
+
+            return File(data, "application/vnd.ms-excel");
         }
     }
 

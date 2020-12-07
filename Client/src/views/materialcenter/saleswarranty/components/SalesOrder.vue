@@ -55,7 +55,7 @@
       <div class="history-wrapper">
         <common-table 
           ref="historyTable" 
-          maxHeight="300px"
+          max-height="300px"
           :data="historyTableData" 
           :columns="historyColumns">
         </common-table>

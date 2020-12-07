@@ -87,5 +87,15 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string QryMaterialCode { get; set; }
 
+        /// <summary>
+        /// 完工时间
+        /// </summary>
+        public DateTime? CompleteDate { get; set; }
+
+        /// <summary>
+        /// 完工时间
+        /// </summary>
+        public DateTime? EndCompleteDate { get; set; }
+
     }
 }

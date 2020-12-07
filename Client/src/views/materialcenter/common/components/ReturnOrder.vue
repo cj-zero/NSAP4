@@ -80,20 +80,8 @@
             ref="courierTable"
             :data="courierList" 
             :columns="courierColumns"
-            :height="0"
             max-height="150px"
           >
-            <!-- <template v-slot:courierNumber="{ row }">
-              <el-input size="mini" v-model="courierList[row.index].number"></el-input>
-            </template> -->
-            <!-- 物流信息 -->
-            <!-- <template v-slot:logisticsInfo="{ row }">
-              {{ courierList[row.index].info }}
-            </template> -->
-            <!-- 备注 -->
-            <!-- <template v-slot:remark="{ row }">
-              <el-input size="mini" v-model="courierList[row.index].remark"></el-input>
-            </template> -->
             <!-- 图片信息 -->
             <template v-slot:expressInformation="{ row }">
               <el-row type="flex" align="middle">
@@ -101,9 +89,6 @@
                 <span>{{ courierList[row.index].expressInformation }}</span>
               </el-row>
             </template>
-            <!-- <template v-slot:pictures>
-              <UpLoadFile uploadType="file" :limit="3" :disabled="true" />
-            </template>  -->
           </common-table>
         </div>
         
@@ -118,11 +103,10 @@
           <common-table 
             ref="materialTable"
             :data="materialFormData.materialList"
-            maxHeight="250px" 
-            :show-message="false"
+            max-height="250px" 
             :columns="materialColumns"
-            :cellStyle="cellStyle"
-            :rowStyle="rowStyle">
+            :cell-style="cellStyle"
+            :row-style="rowStyle">
             <!-- 核对设备 -->
             <template v-slot:check="{ row }">
               <el-button 
@@ -130,13 +114,13 @@
                 :disabled="status === 'view'"
                 type="success" 
                 size="mini" 
-                @click="check(1, row.index)">通过</el-button>
+                @click.stop="check(1, row.index)">通过</el-button>
               <el-button 
                 :disabled="status === 'view'"
                 v-if="(status === 'view' && checkList[row.index].isPass !== 1) || status === 'toReturn'"
                 :type="checkList[row.index].isPass === 2 ? 'info' : 'danger'" 
                 size="mini" 
-                @click="check(2, row.index)">未通过</el-button>
+                @click.stop="check(2, row.index)">未通过</el-button>
             </template>
             <!-- 差错数量 -->
             <template v-slot:wrongCount="{ row }">
@@ -287,9 +271,9 @@ export default {
         { label: '物料描述', prop: 'materialDescription' },
         { label: '本次退还数量', prop: 'count' },
         { label: '需退总计', prop: 'totalCount' },
-        { label: '图片', type: 'slot', slotName: 'pictures' },
+        { label: '图片', slot: 'pictures' },
         { label: '发货备注', prop: 'shippingRemark' },
-        { label: '核对验收', type: 'slot', slotName: 'check', width: '150px' }
+        { label: '核对验收', slotName: 'check', width: '150px' }
       ]
       return config
       // return this.isReturn 
@@ -322,7 +306,7 @@ export default {
       courierList: [],
       courierColumns: [
         { label: '快递单号', prop: 'expressNumber', width: '100px' },
-        { label: '物流信息', prop: 'expressInformation', type: 'slot', slotName: 'expressInformation' },
+        { label: '物流信息', prop: 'expressInformation', slotName: 'expressInformation' },
         // { label: '备注', type: 'slot', slotName: 'remark', prop: 'remark', width: '150px' },
         // { label: '图片', type: 'slot', slotName: 'pictures', prop: 'pictures', width: '100px' }
       ],
