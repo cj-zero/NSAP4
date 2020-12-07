@@ -144,6 +144,7 @@ namespace OpenAuth.App
                            .WhereIf(!string.IsNullOrEmpty(req.EndDate), w => w.CreateTime < Convert.ToDateTime(req.EndDate))//创建时间（结束）
                            .ToListAsync();
             var returnReturnIds = baseInfo.Select(s => s.Id).Distinct().ToList();
+            var fileList = await UnitWork.Find<UploadFile>(null).ToListAsync();
             var resultList = (await UnitWork.Find<Express>(e => returnReturnIds.Contains((int)e.ReturnRepairId)).Include(s => s.ExpressPictures)
                 .WhereIf(!string.IsNullOrEmpty(req.ExpressNum), w => w.ExpressNumber.Equals(req.ExpressNum))            //快递单号
                 .WhereIf(!string.IsNullOrEmpty(req.Creater), w => w.Creater.Equals(req.Creater))//寄件人
@@ -175,16 +176,41 @@ namespace OpenAuth.App
                     CustomerId = baseInfo.Where(w => w.Id == s.ReturnRepairId).Select(s => s.CustomerId).FirstOrDefault(),
                     CustomerName = baseInfo.Where(w => w.Id == s.ReturnRepairId).Select(s => s.CustomerName).FirstOrDefault(),
                     ServiceOrderId = baseInfo.Where(w => w.Id == s.ReturnRepairId).Select(s => s.ServiceOrderId).FirstOrDefault(),
-                    MaterualType = baseInfo.Where(w => w.Id == s.ReturnRepairId).Select(s => s.MaterialType).FirstOrDefault(),
+                    MaterialType = baseInfo.Where(w => w.Id == s.ReturnRepairId).Select(s => s.MaterialType).FirstOrDefault(),
                     s.ExpressNumber,
                     s.ExpressInformation,
                     s.Creater,
                     s.Remark,
-                    s.ExpressPictures,
+                    ExpressAccessorys = GetAccessorys(s.ExpressPictures, fileList),
                     s.ReturnRepairId
                 }).ToList();
             result.Count = resultList.Count;
             result.Data = resultList.GroupBy(g => g.Id).Select(s => new { ExpressId = s.Key, ExpressInfo = s.ToList() }).Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+            return result;
+        }
+
+        /// <summary>
+        /// 获取附件信息集合
+        /// </summary>
+        /// <param name="accessoryIds"></param>
+        /// <param name="fileList"></param>
+        /// <returns></returns>
+        private dynamic GetAccessorys(List<string> accessoryIds, List<UploadFile> fileList)
+        {
+            List<dynamic> result = new List<dynamic>();
+
+            foreach (var item in accessoryIds)
+            {
+                Dictionary<string, object> accessoryInfo = new Dictionary<string, object>();
+                var fileInfo = fileList.Where(w => w.Id == item).FirstOrDefault();
+                if (fileInfo != null)
+                {
+                    accessoryInfo.Add("fileId", item);
+                    accessoryInfo.Add("fileName", fileInfo.FileName);
+                    accessoryInfo.Add("fileType", fileInfo.FileType);
+                    result.Add(accessoryInfo);
+                }
+            }
             return result;
         }
 
