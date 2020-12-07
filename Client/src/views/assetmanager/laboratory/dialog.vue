@@ -709,6 +709,7 @@ export default {
     async updateAssets() {
       try {
         const formData = this.formData
+        formData.assetCategorys = formData.assetCategorys.filter(assetCategory => !!assetCategory.categoryNondeterminacy)
         const res = await update(formData)
         this.$message.success(res.message)
         this.close()
@@ -791,7 +792,9 @@ export default {
       this.$refs.form.validate(valid => {
         if (valid) {
           if (this.openDialogType === '新增') {
-            this.addzc(this.formData)
+            const formData = this.formData
+            formData.assetCategorys = formData.assetCategorys.filter(assetCategory => !!assetCategory.categoryNondeterminacy)
+            this.addzc(formData)
           } else {
             this.updateAssets()
           }
