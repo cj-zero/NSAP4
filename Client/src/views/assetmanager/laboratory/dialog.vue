@@ -351,20 +351,19 @@
                 <el-row type="flex">
                   <el-upload
                     class="avatar-uploader"
-                    v-if="openDialogType === '新增'"
                     name="files"
                     accept="image/*"
                     :action="action"
                     :headers="headers"
                     :show-file-list="false"
-                    :disabled="openDialogType === '编辑' || openDialogType === '查看'"
+                    :disabled="openDialogType === '查看'"
                     :on-success="handleSuccessAssetImage"
                     :on-remove="handleRemoveAssetImage"
                     :on-preview="handlePictureCardPreviewAssetImage"
                   >
                     <div class="asset-image" v-if="formData.assetImage" @click.stop>
-                      <el-image class="avatar" :src="getImgUrl(formData.assetImage)" :preview-src-list="[getImgUrl(formData.assetImage)]"> </el-image>
-                      <div class="asset-image-actions">
+                      <el-image class="avatar" fit="contain" :src="getImgUrl(formData.assetImage)" :preview-src-list="[getImgUrl(formData.assetImage)]"> </el-image>
+                      <div class="asset-image-actions" v-if="openDialogType != '查看'">
                         <div class="asset-image-action" @click="handlePictureCardPreview(file)">
                           <i class="el-icon-zoom-in"></i>
                         </div>
