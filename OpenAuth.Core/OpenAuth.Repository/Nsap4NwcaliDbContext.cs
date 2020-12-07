@@ -33,5 +33,12 @@ namespace OpenAuth.Repository
         public virtual DbSet<NwcaliPlcData> Nwcaliplcdatas { get; set; }
         public virtual DbSet<NwcaliTur> Nwcaliturs { get; set; }
         public virtual DbSet<PcPlc> Pcplcs { get; set; }
+
+        // BTS
+
+        public virtual DbSet<BtsGroup> Btsgroups { get; set; }
+        public virtual DbSet<BtsGroupModel> Btsgroupmodels { get; set; }
+        public virtual DbSet<BtsGroupUser> Btsgroupusers { get; set; }
+        public virtual DbSet<BtsModel> Btsmodels { get; set; }
     }
 }

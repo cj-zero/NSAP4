@@ -541,6 +541,7 @@ namespace OpenAuth.App
                 TerminalCustomerId = completionreport.TerminalCustomerId,
                 FromTheme = completionreport.FromTheme,
                 Becity = completionreport.Becity,
+                CompleteAddress = ServiceOrders.Province + ServiceOrders.City + ServiceOrders.Area + ServiceOrders.Addr,
                 Destination = completionreport.Destination,
                 BusinessTripDate = CompletionReports.Min(c => c.BusinessTripDate),
                 EndDate = CompletionReports.Max(c => c.EndDate),
@@ -641,7 +642,7 @@ namespace OpenAuth.App
                         UnitWork.Save();
                         //保存附件
                         List<ReimburseAttachment> AttachmentList = new List<ReimburseAttachment>();
-                        var Attachments = req.ReimburseAttachments.Where(r => r.IsAdd == true || r.IsAdd==null).MapToList<ReimburseAttachment>();
+                        var Attachments = req.ReimburseAttachments.Where(r => r.IsAdd == true || r.IsAdd == null).MapToList<ReimburseAttachment>();
                         if (Attachments != null && Attachments.Count > 0)
                         {
                             Attachments.ForEach(f => { f.ReimburseId = obj.Id; f.ReimburseType = 0; f.Id = Guid.NewGuid().ToString(); });
@@ -1327,7 +1328,7 @@ namespace OpenAuth.App
                 catch (Exception ex)
                 {
                     transaction.Rollback();
-                    throw new Exception("审批失败,请重试"+ex.Message);
+                    throw new Exception("审批失败,请重试" + ex.Message);
                 }
             }
 
@@ -1505,7 +1506,6 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var Reimburse = await UnitWork.Find<ReimburseInfo>(r => r.Id == ReimburseInfoId)
-                        //.Include(r => r.ReimburseAttachments)
                         .Include(r => r.ReimburseTravellingAllowances)
                         .Include(r => r.ReimburseFares)
                         .Include(r => r.ReimburseAccommodationSubsidies)
@@ -1516,14 +1516,104 @@ namespace OpenAuth.App
             var user = await UnitWork.Find<User>(u => u.Id.Equals(Reimburse.CreateUserId)).FirstOrDefaultAsync();
             var serviceorderobj = await UnitWork.Find<ServiceOrder>(u => u.Id.Equals(Reimburse.ServiceOrderId)).FirstOrDefaultAsync();
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == Reimburse.ServiceOrderId && c.CreateUserId.Equals(Reimburse.CreateUserId) && c.ServiceMode == 1).OrderByDescending(c => c.CreateTime).ToListAsync();
-
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == Reimburse.CreateUserId).Select(r => r.SecondId).ToListAsync();
             var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
-
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_OtherExpenses") || u.TypeId.Equals("SYS_Transportation")).Select(u => new { u.Name, u.TypeId, u.DtValue, u.Description }).ToListAsync();
 
-            Reimburse.ReimburseFares.ForEach(r => r.Transport = CategoryList.Where(u => u.TypeId.Equals("SYS_Transportation") && u.DtValue.Equals(r.Transport)).FirstOrDefault()?.Name);
-            Reimburse.ReimburseOtherCharges.ForEach(r => r.ExpenseCategory = CategoryList.Where(u => u.TypeId.Equals("SYS_OtherExpenses") && u.DtValue.Equals(r.ExpenseCategory)).FirstOrDefault()?.Name);
+            List<ReimburseCost> ReimburseCostList = new List<ReimburseCost>();
+
+            if (Reimburse.ReimburseFares != null && Reimburse.ReimburseFares.Count > 0)
+            {
+                Reimburse.ReimburseFares.ForEach(r =>
+                {
+                    var InvoiceTime = "";
+                    if (r.InvoiceTime != null && Convert.ToDateTime(r.InvoiceTime).Hour <= 0 && Convert.ToDateTime(r.InvoiceTime).Minute <= 0 && Convert.ToDateTime(r.InvoiceTime).Second <= 0)
+                    {
+                        InvoiceTime = Convert.ToDateTime(r.InvoiceTime).ToString("yyyy.MM.dd");
+                    }
+                    else if (r.InvoiceTime == null)
+                    {
+                        InvoiceTime = "";
+                    }
+                    else
+                    {
+                        InvoiceTime = Convert.ToDateTime(r.InvoiceTime).ToString("yyyy.MM.dd HH:mm");
+                    }
+                    ReimburseCostList.Add(new ReimburseCost
+                    {
+                        SerialNumber = 1,
+                        InvoiceTime = InvoiceTime,
+                        ExpendDetails = r.From + "-" + r.To,
+                        ExpendName = CategoryList.Where(u => u.TypeId.Equals("SYS_Transportation") && u.DtValue.Equals(r.Transport)).FirstOrDefault()?.Name,
+                        Money = (decimal)r.Money
+                    });
+                });
+            }
+            if (Reimburse.ReimburseOtherCharges != null && Reimburse.ReimburseOtherCharges.Count > 0)
+            {
+                Reimburse.ReimburseOtherCharges.ForEach(r =>
+                {
+                    var InvoiceTime = "";
+                    if (r.InvoiceTime != null && Convert.ToDateTime(r.InvoiceTime).Hour <= 0 && Convert.ToDateTime(r.InvoiceTime).Minute <= 0 && Convert.ToDateTime(r.InvoiceTime).Second <= 0)
+                    {
+                        InvoiceTime = Convert.ToDateTime(r.InvoiceTime).ToString("yyyy.MM.dd");
+                    }
+                    else if (r.InvoiceTime == null)
+                    {
+                        InvoiceTime = "";
+                    }
+                    else
+                    {
+                        InvoiceTime = Convert.ToDateTime(r.InvoiceTime).ToString("yyyy.MM.dd HH:mm");
+                    }
+                    ReimburseCostList.Add(new ReimburseCost
+                    {
+                        SerialNumber = 4,
+                        InvoiceTime = InvoiceTime,
+                        ExpendName = r.ExpenseCategory = CategoryList.Where(u => u.TypeId.Equals("SYS_OtherExpenses") && u.DtValue.Equals(r.ExpenseCategory)).FirstOrDefault()?.Name,
+                        Money = (decimal)r.Money
+                    });
+
+                });
+            }
+            if (Reimburse.ReimburseAccommodationSubsidies != null && Reimburse.ReimburseAccommodationSubsidies.Count > 0)
+            {
+                Reimburse.ReimburseAccommodationSubsidies.ForEach(r =>
+                {
+                    var InvoiceTime = "";
+                    if (r.InvoiceTime != null && Convert.ToDateTime(r.InvoiceTime).Hour <= 0 && Convert.ToDateTime(r.InvoiceTime).Minute <= 0 && Convert.ToDateTime(r.InvoiceTime).Second <= 0)
+                    {
+                        InvoiceTime = Convert.ToDateTime(r.InvoiceTime).ToString("yyyy.MM.dd");
+                    }
+                    else if (r.InvoiceTime == null)
+                    {
+                        InvoiceTime = "";
+                    }
+                    else
+                    {
+                        InvoiceTime = Convert.ToDateTime(r.InvoiceTime).ToString("yyyy.MM.dd HH:mm");
+                    }
+                    ReimburseCostList.Add(new ReimburseCost
+                    {
+                        SerialNumber = 2,
+                        InvoiceTime = InvoiceTime,
+                        ExpendDetails = r.Days + "天",
+                        ExpendName = "住宿补贴",
+                        Money = (decimal)r.TotalMoney
+                    });
+                });
+            }
+            if (Reimburse.ReimburseTravellingAllowances != null && Reimburse.ReimburseTravellingAllowances.Count > 0)
+            {
+                ReimburseCostList.Add(new ReimburseCost
+                {
+                    SerialNumber = 3,
+                    InvoiceTime = "",
+                    ExpendDetails = Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Days + "天",
+                    ExpendName = "出差补贴",
+                    Money = Convert.ToDecimal(Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Days * Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Money)
+                });
+            }
             var logopath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "logo.png");
             var logostr = "";
             using (var fs = new FileStream(logopath, FileMode.Open))
@@ -1535,8 +1625,6 @@ namespace OpenAuth.App
                 Console.WriteLine(logostr);
             }
             var FromThemeJson = JsonHelper.Instance.Deserialize<List<FromThemeJsonResp>>(CompletionReports.FirstOrDefault()?.FromTheme);
-            StringBuilder FromTheme = new StringBuilder();
-            FromThemeJson.ForEach(f => FromTheme.Append(f.description));
 
             var PrintReimburse = new PrintReimburseResp
             {
@@ -1545,10 +1633,11 @@ namespace OpenAuth.App
                 UserName = orgname + " " + user.Name,
                 TerminalCustomerId = CompletionReports.FirstOrDefault()?.TerminalCustomerId,
                 TerminalCustomer = CompletionReports.FirstOrDefault()?.TerminalCustomer,
-                FromTheme = FromTheme.ToString(),
+                FromTheme = FromThemeJson.Take(2).Select(f => f.description).ToList(),
                 logo = logostr,
                 QRcode = QRCoderHelper.CreateQRCodeToBase64(Reimburse.MainId.ToString()),
-                Reimburse = Reimburse
+                Reimburse = Reimburse,
+                ReimburseCosts = ReimburseCostList.OrderByDescending(r => r.InvoiceTime).ThenBy(r => r.SerialNumber).ToList()
             };
             return await ExportAllHandler.Exporterpdf(PrintReimburse, "PrintReimburse.cshtml");
         }
@@ -1569,7 +1658,7 @@ namespace OpenAuth.App
             List<string> UserIds = new List<string>();
             List<int> ServiceOrderIds = new List<int>();
             List<string> OrgUserIds = new List<string>();
-            var users = await UnitWork.Find<User>(u=>u.Status==0).ToListAsync();
+            var users = await UnitWork.Find<User>(u => u.Status == 0).ToListAsync();
             if (!string.IsNullOrWhiteSpace(request.CreateUserName))
             {
                 UserIds.AddRange(users.Where(u => u.Name.Contains(request.CreateUserName)).Select(u => u.Id).ToList());
@@ -1586,7 +1675,7 @@ namespace OpenAuth.App
             }
             var result = new TableData();
             var objs = UnitWork.Find<ReimburseInfo>(null).Include(r => r.ReimburseTravellingAllowances);
-            var ReimburseInfos =await  objs.WhereIf(!string.IsNullOrWhiteSpace(request.MainId), r => r.MainId.ToString().Contains(request.MainId))
+            var ReimburseInfos = await objs.WhereIf(!string.IsNullOrWhiteSpace(request.MainId), r => r.MainId.ToString().Contains(request.MainId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId), r => r.ServiceOrderSapId.ToString().Contains(request.ServiceOrderId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.BearToPay), r => r.BearToPay.Contains(request.BearToPay))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.Responsibility), r => r.Responsibility.Contains(request.Responsibility))
@@ -1597,13 +1686,13 @@ namespace OpenAuth.App
                       .WhereIf(!string.IsNullOrWhiteSpace(request.OrgName), r => OrgUserIds.Contains(r.CreateUserId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.TerminalCustomer), r => ServiceOrderIds.Contains(r.ServiceOrderId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceRelations), r => r.ServiceRelations.Contains(request.ServiceRelations))
-                      .Where(r=> r.RemburseStatus == 8).ToListAsync();
+                      .Where(r => r.RemburseStatus == 8).ToListAsync();
             #endregion
 
             var query = from a in ReimburseInfos
                         join b in users on a.CreateUserId equals b.Id into ab
                         from b in ab.DefaultIfEmpty()
-                        select new { 姓名 = b.Name,金额 = a.TotalMoney};
+                        select new { 姓名 = b.Name, 金额 = a.TotalMoney };
 
             return await ExportAllHandler.ExporterExcel(query.ToList());
         }

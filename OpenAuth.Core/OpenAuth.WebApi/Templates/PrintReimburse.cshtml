@@ -7,13 +7,18 @@
     <meta charset="utf-8">
     <title></title>
     <style type="text/css">
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
         body {
-            width: 825px;
+            width: 1000px;
             margin: 0 auto;
             margin-top: 10px;
-            font-size: 15px;
+            font-size: 13.5px;
             font-family: "微软雅黑";
-            color: #202020;
+            color: #7F7F7F;
         }
 
         table {
@@ -25,11 +30,10 @@
             border-collapse: collapse;
         }
 
-            #tablebor th {
-                border-color: #808A87;
-                border-style: solid;
-                border-width: 1px;
-            }
+        .TH td {
+            border-style: solid;
+            border-width: 1px;
+        }
 
         #divtitle {
             margin: 0 auto;
@@ -48,110 +52,92 @@
             border-width: 1px;
             border-color: #808A87;
             height: 50px;
-            width: 825px;
+            width: 1000px;
             margin: 0 auto;
         }
+
+            #divcode tr {
+                vertical-align: top;
+            }
     </style>
 </head>
 
 <body>
-    <div id="divtitle" style=" width: 825px; height:60px;">
-        <div style="float:left;width: 240px; margin-top: 10px;">
-            <img src="data:image/png;base64,@Model.Data.logo" style="width: 120px;height: 45px;">
+    <div style=" width: 1000px; height:60px; margin: 0 auto;">
+        <div id="divtitle" style=" width: 1000px; height:60px;">
+            <div style="float:left;width: 240px; margin-top: 20px;">
+                <img src="data:image/png;base64,@Model.Data.logo" color="#6F6F6F" style="width: 120px;height: 45px;margin-left:20px">
+            </div>
+            <div style="float:left;width: 300px; margin-top: 10px; margin-left:100px">
+                <span style="font-size: 42px;">差旅报销单</span>
+            </div>
+            <div style="float:left;width: 180px; margin-top: -3px; margin-left:10px">
+                <span>
+                    报销ID：<span style="font-size: 30px; font-weight: 900;">@Model.Data.ReimburseId</span>
+                </span>
+                <br>
+                <span>
+                    服务ID：@Model.Data.Reimburse.ServiceOrderSapId
+                </span>
+                <br>
+                <span>
+                    日　期：@Model.Data.Reimburse.UpdateTime.ToString("yyyy.MM.dd")
+                </span>
+                <br>
+                <span>
+                    报销人：@Model.Data.UserName
+                </span>
+            </div>
+            <div style="float:right;width: 90px; ">
+                <img src="@Model.Data.QRcode" style="width: 80px;height: 80px; color:#6F6F6F">
+            </div>
         </div>
-        <div style="float:left;width: 300px; margin-top: 10px;">
-            <span style="font-size: 42px; font-weight:900;">差旅报销单</span>
-        </div>
-        <div style="float:left;width: 150px; margin-top: -3px;">
-            <span>
-                <b style="font-weight:900;">服务ID：</b><span style="font-size: 20px;">@Model.Data.Reimburse.ServiceOrderSapId</span>
-            </span>
-            <br>
-            <span>
-                <b style="ffont-weight:900;">报销ID：</b><span style="font-size: 20px;">@Model.Data.ReimburseId</span>
-            </span>
-            <br>
-            <span>
-                <b style="font-weight:900;">日期：</b>&nbsp;&nbsp;&nbsp;&nbsp;@Model.Data.Reimburse.UpdateTime.ToString("yyyy.MM.dd")
-            </span>
-            <br>
-            <span>
-                <b style="font-weight:900;">报销人：</b>@Model.Data.UserName
-            </span>
-        </div>
-        <div style="float:right;width: 90px; margin-top: -10px;">
-            <img src="@Model.Data.QRcode" style="width: 80px;height: 80px;">
-        </div>
-    </div>
-    <table style="margin-top: 10px;" id="divcode">
-        <tr>
-            <td style="width:30px; " align="left">&nbsp;<b>客户代码:</b></td>
-            <td style="width:20px; " align="left">@Model.Data.TerminalCustomerId</td>
-            <td style="width:40px;" align="left"><b>客户名称:</b></td>
-            <td style="width:100px;" align="left">@Model.Data.TerminalCustomer</td>
-            <td style="width:50px" align="left">&nbsp;&nbsp;&nbsp;<b>客户地址：</b></td>
-            <td style="width:150px" align="left">@Model.Data.CompleteAddress</td>
-        </tr>
-        <tr>
-            <td style="width: 50px;">&nbsp;<b>出差事由:</b></td>
-            <td style="width: 550px;" colspan="5">@Model.Data.FromTheme</td>
-        </tr>
-    </table>
-    <table style="margin-top: 5px;  width:825px" id="tablebor">
-        <tr>
-            <th style="width: 40px;" align="left"># </th>
-            <th style="width: 100px;" align="left">&nbsp; 日期</th>
-            <th style="width: 150px;" align="left">&nbsp; 费用名称</th>
-            <th style="width: 410px;" align="left">&nbsp; 费用详情</th>
-            <th style="width: 100px; " align="right">金额 &nbsp;</th>
-        </tr>
-        @{int number = 0;}
-        @foreach (var item in Model.Data.Reimburse.ReimburseFares)
-        {
+        <table style="margin-top: 10px;" id="divcode">
             <tr>
-                <td> @{++number;} @number</td>
-                <td>&nbsp; @item.InvoiceTime?.ToString("yyyy.MM.dd")</td>
-                <td>&nbsp; @item.Transport</td>
-                <td>&nbsp; @item.From - @item.To </td>
-                <td align="right">@item.Money &nbsp;</td>
+                <td style="width:40pt; " align="left">&nbsp;客户代码：</td>
+                <td style="width:25pt;">@Model.Data.TerminalCustomerId</td>
+                <td style="width:40pt;" align="left">客户名称：</td>
+                <td style="width:130pt;" align="left">@Model.Data.TerminalCustomer</td>
+                <td style="width:40pt" align="left">&nbsp;&nbsp;&nbsp;客户地址：</td>
+                <td style="width:200pt" align="left">@Model.Data.CompleteAddress</td>
             </tr>
-        }
-        @foreach (var item in Model.Data.Reimburse.ReimburseAccommodationSubsidies)
-        {
             <tr>
-                <td> @{++number;}@number</td>
-                <td>&nbsp; @item.InvoiceTime?.ToString("yyyy.MM.dd")</td>
-                <td>&nbsp; 住宿补贴</td>
-                <td>&nbsp; @item.Days 天 </td>
-                <td align="right">@item.TotalMoney &nbsp;</td>
+                <td style="width: 40pt;">&nbsp;出差事由：</td>
+                <td style="width: 550pt;" colspan="5">
+                    @foreach (var item in Model.Data.FromTheme)
+                    {
+                        @item;
+                        <span>&nbsp;</span>
+                    }
+                </td>
             </tr>
-        }
-        @foreach (var item in Model.Data.Reimburse.ReimburseTravellingAllowances)
-        {
-            <tr>
-                <td> @{++number;} @number</td>
-                <td></td>
-                <td>&nbsp; 出差补贴</td>
-                <td>&nbsp; @item.Days 天 </td>
-                <td align="right">@{var Money = item.Money * item.Days; }@Money &nbsp;</td>
+        </table>
+        <table style="margin-top: 5px;  width:1000px" id="tablebor">
+            <tr class="TH">
+                <td style="width: 40px;" align="left"># </td>
+                <td style="width: 100px;" align="left">&nbsp; 日期</td>
+                <td style="width: 150px;" align="left">&nbsp; 费用名称</td>
+                <td style="width: 410px;" align="left">&nbsp; 费用详情</td>
+                <td style="width: 100px; " align="right">金额 &nbsp;</td>
             </tr>
-        }
-        @foreach (var item in Model.Data.Reimburse.ReimburseOtherCharges)
-        {
-            <tr>
-                <td>  @{++number;} @number</td>
-                <td>&nbsp; @item.InvoiceTime?.ToString("yyyy.MM.dd")</td>
-                <td>&nbsp; @item.ExpenseCategory</td>
-                <td></td>
-                <td align="right">@item.Money &nbsp;</td>
-            </tr>
-        }
+            @{int number = 0;}
+            @foreach (var item in Model.Data.ReimburseCosts)
+            {
+                <tr>
+                    <td> @{++number;} @number</td>
+                    <td>&nbsp; @item.InvoiceTime</td>
+                    <td>&nbsp; @item.ExpendName</td>
+                    <td>&nbsp; @item.ExpendDetails </td>
+                    <td align="right">@item.Money.ToString("N") &nbsp;</td>
+                </tr>
+            }
 
-    </table>
-    <hr>
-    <div style="">
-        <div style="font-weight: 800;" align="right">总金额：@Model.Data.Reimburse.TotalMoney.ToString("N") &nbsp;</div>
+        </table>
         <hr>
+        <div style="">
+            <div style="font-weight: 800;" align="right">总金额：@Model.Data.Reimburse.TotalMoney.ToString("N") &nbsp;</div>
+            <hr>
+        </div>
     </div>
 </body>
 
