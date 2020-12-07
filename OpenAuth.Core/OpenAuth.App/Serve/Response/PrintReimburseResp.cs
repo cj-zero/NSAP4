@@ -49,6 +49,40 @@ namespace OpenAuth.App.Serve.Response
         /// 报销单
         /// </summary>
         public ReimburseInfo Reimburse { get; set; }
-        
+
+        /// <summary>
+        /// 差旅报销单费用表
+        /// </summary>
+        public List<ReimburseCost> ReimburseCosts { get; set; }
+
+
+    }
+
+    /// <summary>
+    /// 差旅报销单费用表
+    /// </summary>
+    public class ReimburseCost 
+    {
+
+        /// <summary>
+        /// 序号
+        /// </summary>
+        public int SerialNumber { get; set; }
+        /// <summary>
+        /// 发票时间
+        /// </summary>
+        public string InvoiceTime { get; set; }
+        /// <summary>
+        /// 费用名称
+        /// </summary>
+        public string ExpendName { get; set; }
+        /// <summary>
+        /// 费用详情
+        /// </summary>
+        public string ExpendDetails{ get; set; }
+        /// <summary>
+        /// 金额
+        /// </summary>
+        public decimal Money { get; set; }
     }
 }
