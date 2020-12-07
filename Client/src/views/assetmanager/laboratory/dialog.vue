@@ -148,7 +148,8 @@
                     :on-success="handleSuccessJZ"
                     :on-remove="handleRemoveJZ"
                   >
-                    <el-button type="primary" size="mini" :disabled="openDialogType === '查看'">添加校准证书</el-button>
+                    <el-button type="primary" v-if="openDialogType === '查看'" @click="download(formData.assetCalibrationCertificate)">查看校准证书</el-button>
+                    <el-button type="primary" v-else size="mini">添加校准证书</el-button>
                   </el-upload>
                 </el-form-item>
               </el-col>
@@ -177,7 +178,8 @@
                     :on-success="handleSuccessAssetInspectDataOne"
                     :on-remove="handleRemoveAssetInspectDataOne"
                   >
-                    <el-button type="primary" size="mini" :disabled="openDialogType === '编辑' || openDialogType === '查看'">添加技术指标</el-button>
+                    <el-button type="primary" v-if="openDialogType === '查看'" @click="download(formData.assetInspectDataOne)">查看技术指标</el-button>
+                    <el-button type="primary" v-else size="mini" :disabled="openDialogType === '编辑'">添加技术指标</el-button>
                   </el-upload>
                 </el-form-item>
               </el-col>
@@ -194,7 +196,8 @@
                     :on-success="handleSuccessAssetInspectDataTwo"
                     :on-remove="handleRemoveAssetInspectDataTwo"
                   >
-                    <el-button type="primary" size="mini" :disabled="openDialogType === '查看'">添加校准数据</el-button>
+                    <el-button type="primary" v-if="openDialogType === '查看'" @click="download(formData.assetInspectDataTwo)">查看校准数据</el-button>
+                    <el-button type="primary" v-else size="mini">添加校准数据</el-button>
                   </el-upload>
                 </el-form-item>
               </el-col>
@@ -209,7 +212,8 @@
                     :on-success="handleSuccessAssetTCF"
                     :on-remove="handleRemoveAssetTCF"
                   >
-                    <el-button type="primary" size="mini" :disabled="openDialogType === '编辑' || openDialogType === '查看'">添加技术文件</el-button>
+                    <el-button type="primary" v-if="openDialogType === '查看'" @click="download(formData.assetTCF)">查看技术文件</el-button>
+                    <el-button type="primary" v-else size="mini" :disabled="openDialogType === '编辑'">添加技术文件</el-button>
                   </el-upload>
                 </el-form-item>
               </el-col>
@@ -398,6 +402,7 @@
 import { getListCategoryName, getListOrg, getListUser, add, update, getSingleAsset } from '@/api/assetmanagement'
 import Inspection from './inspection'
 import Operation from './operation'
+import { downloadFile } from '@/utils/file'
 
 const SYS_AssetCategory = 'SYS_AssetCategory' //类别
 const SYS_AssetStatus = 'SYS_AssetStatus' // 状态
@@ -972,6 +977,10 @@ export default {
     getImgUrl(id) {
       if (!id) return ''
       return `${this.baseURL}/files/Download/${id}?X-Token=${this.tokenValue}`
+    },
+    download(id) {
+      const url = this.getImgUrl(id)
+      downloadFile(url)
     }
   }
 }
