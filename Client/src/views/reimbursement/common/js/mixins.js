@@ -207,6 +207,11 @@ export let tableMixin = {
         return item.attachmentType === 1
       })
     },
+    getInvoiceFileList (attachmentList) { // 获取发票附件
+      return attachmentList.filter(item => {
+        return item.attachmentType === 2
+      })
+    },
     processInvoiceTime (invoiceTime) { // 截取年月日
       return invoiceTime ? invoiceTime.split(' ')[0] : invoiceTime
     },
@@ -229,7 +234,7 @@ export let tableMixin = {
           remark,
           invoiceNumber,
           isValidInvoice: this.isValidInvoice(reimburseAttachments),
-          reimburseAttachments,
+          invoiceFileList: this.getInvoiceFileList(reimburseAttachments),
           otherFileList: this.getOtherFileList(reimburseAttachments)
         })
       })
@@ -243,7 +248,7 @@ export let tableMixin = {
           remark,
           invoiceNumber,
           isValidInvoice: this.isValidInvoice(reimburseAttachments),
-          reimburseAttachments,
+          invoiceFileList: this.getInvoiceFileList(reimburseAttachments),
           otherFileList: this.getOtherFileList(reimburseAttachments)
         })
       })
@@ -267,7 +272,7 @@ export let tableMixin = {
           remark,
           invoiceNumber,
           isValidInvoice: this.isValidInvoice(reimburseAttachments),
-          reimburseAttachments,
+          invoiceFileList: this.getInvoiceFileList(reimburseAttachments),
           otherFileList: this.getOtherFileList(reimburseAttachments)
         })
       })
@@ -580,7 +585,7 @@ export let categoryMixin = {
         { label: '目的地', prop: 'to', type: 'input', width: 125, readonly: true },
         { label: '金额', prop: 'money', type: 'number', align: 'right', width: 120, placeholder: '大于0' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '7-11位字母数字' },
+        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '不能为空' },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 }
       ]
@@ -598,7 +603,7 @@ export let categoryMixin = {
         { label: '费用类别', prop: 'expenseCategory', type: 'select', width: 150, options: this.otherExpensesList },
         { label: '其他费用', prop: 'money', type: 'number', width: 120, align: 'right', placeholder: '大于0' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '7-11位字母数字' },
+        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '不能为空' },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 }
       ]
