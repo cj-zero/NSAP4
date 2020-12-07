@@ -74,12 +74,12 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetReturnRepairList()
+        public async Task<TableData> GetReturnRepairList([FromQuery] QueryRerurnRepairListReq req)
         {
             var result = new TableData();
             try
             {
-                result = await _returnRepairApp.GetReturnRepairList();
+                result = await _returnRepairApp.GetReturnRepairList(req);
             }
             catch (Exception ex)
             {
@@ -120,6 +120,48 @@ namespace OpenAuth.WebApi.Controllers.Serve
             try
             {
                 result = await _returnRepairApp.GetExpressInfo(Id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 寄出设备
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> AddExpress(AddExpressReq request)
+        {
+            var result = new Response();
+            try
+            {
+                await _returnRepairApp.AddExpress(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 撤回快递
+        /// </summary>
+        /// <param name="ExpresssId"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> WithDrawExpress(string ExpresssId)
+        {
+            var result = new Response();
+            try
+            {
+                await _returnRepairApp.WithDrawExpress(ExpresssId);
             }
             catch (Exception ex)
             {
