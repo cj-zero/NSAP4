@@ -93,7 +93,7 @@
               <el-table-column label="#" width="55px">
                 <template slot-scope="scope">{{ scope.$index + 1 }}</template>
               </el-table-column>
-              <el-table-column label="日期" prop="invoiceTime" width="100px"></el-table-column>
+              <el-table-column label="日期" prop="invoiceTime" width="110px"></el-table-column>
               <el-table-column label="费用名称" prop="expenseName" width="100px"></el-table-column>
               <el-table-column label="费用详情" prop="expenseDetail">
                 <template slot-scope="scope">
@@ -118,11 +118,12 @@
                     </el-tooltip>
                   </el-row>
                   <div>
-                    <template v-if="scope.row.otherFileList && scope.row.otherFileList.length">
+
+                    <template v-if="scope.row.otherFileList && normalizeOtherFileList(scope.row).length">
                       <el-row 
                         style="margin-left: 18px;"
                         type="flex" align="middle" 
-                        v-for="(item, index) in scope.row.otherFileList" 
+                        v-for="(item, index) in normalizeOtherFileList(scope.row)" 
                         :key="item.id"
                       >
                         <!-- <img :src="rightImg" @click="openFile(item)" class="pointer"> -->
@@ -155,7 +156,7 @@
           <common-table 
             :data="reportTableData"
             :columns="reportTableColumns"
-            maxHeight="300px"
+            max-height="300px"
             :loading="reportDetailLoading"
           >
           </common-table>
@@ -165,7 +166,7 @@
           <common-table 
             :data="historyCostData"
             :columns="historyCostColumns"
-            maxHeight="300px"
+            max-height="300px"
             :loading="historyCostLoading"
           >
             <!-- 总金额 -->
@@ -195,7 +196,7 @@
             style="width: 778px;"
             :data="afterEvaluationList"
             :columns="afterEvaluationColumns"
-            maxHeight="300px"
+            max-height="300px"
             :loading="afterEvaLoading"
           >
           </common-table>
@@ -443,7 +444,7 @@
                     >
                       <div class="area-wrapper">
                         <el-input 
-                          v-model="scope.row[item.prop]" 
+                          v-model.trim="scope.row[item.prop]" 
                           :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)" 
                           :readonly="item.readonly || false"
                           :placeholder="item.placeholder"
@@ -590,7 +591,7 @@
                       :rules="scope.row.isAdd ? (accRules[item.prop] || { required: false }) : { required: false }"
                     >
                       <el-input 
-                        v-model="scope.row[item.prop]" 
+                        v-model.trim="scope.row[item.prop]" 
                         :placeholder="item.placeholder"
                         :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)" 
                         @change="onChange">
@@ -732,7 +733,7 @@
                     >
                       <el-input 
                         :placeholder="item.placeholder"
-                        v-model="scope.row[item.prop]" 
+                        v-model.trim="scope.row[item.prop]" 
                         :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)"
                       >
                         <el-tooltip
@@ -874,7 +875,7 @@
       :onClosed="closeDialog">
       <common-table 
         ref="customerTable"
-        maxHeight="500px"
+        max-height="500px"
         :data="customerInfoList"
         :columns="customerColumns"
         radioKey="id"
@@ -899,10 +900,11 @@
       <div style="height: 400px;">
         <common-table 
           ref="costTable"
-          maxHeight="400px"
+          max-height="400px"
           :data="costData"
           :columns="costColumns"
           :selectedList="selectedList"
+          selectedKey="id"
         ></common-table>
       </div>
       <pagination
@@ -1424,9 +1426,15 @@ export default {
         console.log('histroylist')
       })
     },
+    normalizeOtherFileList (row) {
+      let { isValidInvoice, otherFileList } = row
+      return isValidInvoice ? otherFileList : otherFileList.slice(1)
+    },
     openFile (row, isInvoiceAttachment) { // 打开发票附件
       console.log(row, 'row')
-      let file = isInvoiceAttachment ? row.reimburseAttachments[0] : row
+      let file = isInvoiceAttachment 
+        ? (row.isValidInvoice ? row.invoiceFileList[0] : row.otherFileList[0])
+        : row
       if (file) {
         let { url, fileType } = file
         if (/^image\/.*$/.test(fileType)) {

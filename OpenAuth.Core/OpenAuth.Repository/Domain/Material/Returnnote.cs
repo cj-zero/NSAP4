@@ -81,7 +81,7 @@ namespace OpenAuth.Repository.Domain
         public int IsLast { get; set; }
 
         /// <summary>
-        /// 是否最后一次退料
+        /// 签收备注
         /// </summary>
         [Description("签收备注")]
         public string Remark { get; set; }

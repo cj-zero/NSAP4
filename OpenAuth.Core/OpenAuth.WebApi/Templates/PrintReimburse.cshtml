@@ -16,9 +16,9 @@
             width: 1000px;
             margin: 0 auto;
             margin-top: 10px;
-            font-size: 15px;
+            font-size: 13.5px;
             font-family: "微软雅黑";
-            color: #6F6F6F;
+            color: #7F7F7F;
         }
 
         table {
@@ -73,15 +73,15 @@
             </div>
             <div style="float:left;width: 180px; margin-top: -3px; margin-left:10px">
                 <span>
-                    服务ID：<span style="font-size: 30px; font-weight: 900;">@Model.Data.Reimburse.ServiceOrderSapId</span>
+                    报销ID：<span style="font-size: 30px; font-weight: 900;">@Model.Data.ReimburseId</span>
+                </span>
+				<br>
+                <span>
+                    服务ID：@Model.Data.Reimburse.ServiceOrderSapId
                 </span>
                 <br>
                 <span>
-                    报销ID：@Model.Data.ReimburseId
-                </span>
-                <br>
-                <span>
-                    日期：&nbsp;&nbsp;&nbsp;&nbsp;@Model.Data.Reimburse.UpdateTime.ToString("yyyy.MM.dd")
+                    日　期：@Model.Data.Reimburse.UpdateTime.ToString("yyyy.MM.dd")
                 </span>
                 <br>
                 <span>
@@ -94,15 +94,15 @@
         </div>
         <table style="margin-top: 10px;" id="divcode">
             <tr>
-                <td style="width:40pt; " align="left">&nbsp;客户代码:</td>
+                <td style="width:40pt; " align="left">&nbsp;客户代码：</td>
                 <td style="width:25pt;">@Model.Data.TerminalCustomerId</td>
-                <td style="width:40pt;" align="left">客户名称:</td>
+                <td style="width:40pt;" align="left">客户名称：</td>
                 <td style="width:130pt;" align="left">@Model.Data.TerminalCustomer</td>
-                <td style="width:40pt" align="left">&nbsp;&nbsp;&nbsp;客户地址:</td>
+                <td style="width:40pt" align="left">&nbsp;&nbsp;&nbsp;客户地址：</td>
                 <td style="width:200pt" align="left">@Model.Data.CompleteAddress</td>
             </tr>
             <tr>
-                <td style="width: 40pt;">&nbsp;出差事由:</td>
+                <td style="width: 40pt;">&nbsp;出差事由：</td>
                 <td style="width: 550pt;" colspan="5">
                     @foreach (var item in Model.Data.FromTheme)
                     {
@@ -121,47 +121,17 @@
                 <td style="width: 100px; " align="right">金额 &nbsp;</td>
             </tr>
             @{int number = 0;}
-            @foreach (var item in Model.Data.Reimburse.ReimburseFares)
+            @foreach (var item in Model.Data.ReimburseCosts)
             {
                 <tr>
                     <td> @{++number;} @number</td>
-                    <td>&nbsp; @item.InvoiceTime?.ToString("yyyy.MM.dd")</td>
-                    <td>&nbsp; @item.Transport</td>
-                    <td>&nbsp; @item.From - @item.To </td>
+                    <td>&nbsp; @item.InvoiceTime</td>
+                    <td>&nbsp; @item.ExpendName</td>
+                    <td>&nbsp; @item.ExpendDetails </td>
                     <td align="right">@item.Money.ToString("N") &nbsp;</td>
                 </tr>
             }
-            @foreach (var item in Model.Data.Reimburse.ReimburseAccommodationSubsidies)
-            {
-                <tr>
-                    <td> @{++number;}@number</td>
-                    <td>&nbsp; @item.InvoiceTime?.ToString("yyyy.MM.dd")</td>
-                    <td>&nbsp; 住宿补贴</td>
-                    <td>&nbsp; @item.Days 天 </td>
-                    <td align="right">@item.Money.ToString("N") &nbsp;</td>
-                </tr>
-            }
-            @foreach (var item in Model.Data.Reimburse.ReimburseTravellingAllowances)
-            {
-                <tr>
-                    <td> @{++number;} @number</td>
-                    <td></td>
-                    <td>&nbsp; 出差补贴</td>
-                    <td>&nbsp; @item.Days 天 </td>
-                    <td align="right">@{var Money = item.Money * item.Days; }@Money.ToString("N") &nbsp;</td>
-                </tr>
-            }
-            @foreach (var item in Model.Data.Reimburse.ReimburseOtherCharges)
-            {
-                <tr>
-                    <td>  @{++number;} @number</td>
-                    <td>&nbsp; @item.InvoiceTime?.ToString("yyyy.MM.dd")</td>
-                    <td>&nbsp; @item.ExpenseCategory</td>
-                    <td></td>
-                    <td align="right">@item.Money.ToString("N") &nbsp;</td>
-                </tr>
-            }
-
+            
         </table>
         <hr>
         <div style="">

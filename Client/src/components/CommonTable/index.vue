@@ -145,7 +145,6 @@ export default {
       if (this.radioKey) { // 点击行单选
         this.radio = row[this.radioKey]
       }
-      console.log(this.data, this.data.some(item => item.type === 'selection'))
       if (this.selectionColumns && row.selectable) { // 点击行进行多选 选择
         this.$refs.commonTable.toggleRowSelection(row)
       } 

@@ -63,7 +63,7 @@
                   >
                     <div class="area-wrapper">
                       <el-input 
-                        v-model="scope.row[item.prop]" 
+                        v-model.trim="scope.row[item.prop]" 
                         :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)" 
                         :readonly="item.readonly || false"
                         :placeholder="item.placeholder"

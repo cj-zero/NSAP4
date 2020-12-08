@@ -1,4 +1,5 @@
 import store from '@/store'
+
 export function download (src) {
   let canvas = document.createElement('canvas')
   const context = canvas.getContext("2d");
@@ -27,7 +28,6 @@ export function downloadFile (url, isDownload = true) {
   a.target = '_blank'
   a.click()
 }
-
 export function isImage (type) { // 判断是否是图片格式
   return /^image\/\w+/i.test(type)
 }
@@ -36,4 +36,5 @@ export function processDownloadUrl (pictureId) {
   console.log(pictureId, store.state.user.token)
   return `${process.env.VUE_APP_BASE_API}/files/Download/${pictureId}?X-Token=${store.state.user.token}`
 }
+
 

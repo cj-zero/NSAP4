@@ -391,6 +391,7 @@
           :data="themeList" 
           :columns="columns" 
           :selectedList="selectedList"
+          selectedKey="id"
         ></common-table>
       </div>
       <pagination
@@ -548,7 +549,7 @@ export default {
         key: '' // 搜搜呼叫主题
       },
       columns: [
-        { originType: 'selection' },
+        { type: 'selection' },
         { label: '呼叫主题', prop: 'name' }
       ],
       selectedList: [] // 当前呼叫主题框存在的数组
