@@ -3232,9 +3232,9 @@ namespace OpenAuth.App
             var query = UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
                 .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                 .Include(s => s.ServiceFlows)
-                .WhereIf(req.Type == 1, s => s.ServiceWorkOrders.All(a => a.OrderTakeType == 0))//待处理
-                .WhereIf(req.Type == 2, s => s.ServiceWorkOrders.Any(a => a.Status > 1 && a.Status < 7 && a.OrderTakeType != 0))//进行中
-                .WhereIf(req.Type == 3, s => s.ServiceWorkOrders.All(a => a.Status >= 7)) //已完成
+                .WhereIf(req.Type == 1, s => s.ServiceWorkOrders.All(a => a.OrderTakeType == 0))//待处理 所有设备类型都未操作
+                .WhereIf(req.Type == 2, s => !s.ServiceWorkOrders.All(a => a.OrderTakeType == 0) && !s.ServiceWorkOrders.All(a => a.Status >= 7))//进行中 有任意一个设备类型进行了操作
+                .WhereIf(req.Type == 3, s => s.ServiceWorkOrders.All(a => a.Status >= 7)) //已完成 所有设备类型都已完成
                  .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => s.U_SAP_ID == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key)))
                 .Select(s => new
                 {
