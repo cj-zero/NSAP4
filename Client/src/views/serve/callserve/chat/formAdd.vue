@@ -384,16 +384,15 @@
         v-model="listQueryTheme.key" 
         placeholder="呼叫主题内容">
       </el-input>
-      <div style="height: 400px;">
-        <common-table 
-          :loading="themeLoading"
-          ref="formThemeTable" 
-          :data="themeList" 
-          :columns="columns" 
-          :selectedList="selectedList"
-          selectedKey="id"
-        ></common-table>
-      </div>
+      <common-table 
+        height="400px"
+        :loading="themeLoading"
+        ref="formThemeTable" 
+        :data="themeList" 
+        :columns="columns" 
+        :selectedList="selectedList"
+        selectedKey="id"
+      ></common-table>
       <pagination
         v-show="themeTotal > 0"
         :total="themeTotal"

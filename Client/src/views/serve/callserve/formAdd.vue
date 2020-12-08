@@ -809,8 +809,8 @@
         v-model="listQueryTheme.key" 
         placeholder="呼叫主题内容">
       </el-input>
-      <div style="height: 400px">
         <common-table 
+          height="400px"
           :loading="themeLoading"
           ref="formThemeTable" 
           :data="themeList" 
@@ -818,7 +818,6 @@
           :selectedList="selectedList"
           selectedKey="id"
         ></common-table>
-      </div>
       <pagination
         v-show="themeTotal > 0"
         :total="themeTotal"
