@@ -20,9 +20,9 @@
       <!-- 序号 -->
       <el-table-column
         :key="column.prop" 
-        type="order" 
+        type="index" 
         v-bind="column"
-        v-else-if="column.type === 'order'"
+        v-else-if="column.type === 'index'"
       >
       </el-table-column>
       <el-table-column
@@ -115,6 +115,9 @@ export default {
   computed: {
     attrs () {
       return Object.assign({}, defaultTableConfig, this.$attrs)
+    },
+    selectionColumns () {
+      return this.columns.some(item => item.type === 'selection')
     }
   },
   data () {
@@ -142,6 +145,7 @@ export default {
       if (this.radioKey) { // 点击行单选
         this.radio = row[this.radioKey]
       }
+      console.log(this.data, this.data.some(item => item.type === 'selection'))
       if (this.selectionColumns && row.selectable) { // 点击行进行多选 选择
         this.$refs.commonTable.toggleRowSelection(row)
       } 

@@ -316,7 +316,6 @@
       <pagination
         v-show="customerTotal > 0"
         :total="customerTotal"
-        layout="total, prev, next, jumper"
         :page.sync="listQueryCustomer.page"
         :limit.sync="listQueryCustomer.limit"
         @pagination="customerCurrentChange"
@@ -587,7 +586,7 @@ export default {
       ],
       // 根据设备序列号生成的物料表格
       materialConfig:[
-        { label: '序号', type: 'order' },
+        { label: '序号', type: 'index' },
         { label: '物料编码', prop: 'materialCode' },
         { label: '物料描述', prop: 'materialDescription' },
         { label: '数量', prop: 'count', slotName: 'count', align: 'right' },
@@ -602,7 +601,7 @@ export default {
         count: [{ required: true }]
       },
       materialTableColumns: [
-        { label: '序号', type: 'order' },
+        { label: '序号', type: 'index' },
         { label: '物料编码', prop: 'materialCode' },
         { label: '物料描述', prop: 'materialDescription' },
         { label: '数量', prop: 'count', align: 'right' },
@@ -614,7 +613,7 @@ export default {
       // 物料汇总表格
       materialSummaryList: [],
       materialAllColumns: [
-        { label: '序号', type: 'order', width: '50px' },
+        { label: '序号', type: 'index', width: '50px' },
         { label: '物料编码', prop: 'materialCode', slotName: 'materialCode', width: '150px' },
         { label: '物料描述', prop: 'materialDescription' },
         { label: '数量', prop: 'count', align: 'right' },

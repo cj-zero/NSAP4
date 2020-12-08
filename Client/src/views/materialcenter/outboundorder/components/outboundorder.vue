@@ -266,7 +266,7 @@ export default {
     },
     materialColumns () {
       let columns = [
-        { label: '序号', type: 'order' },
+        { label: '序号', type: 'index' },
         { label: '物料编码', prop: 'materialCode' },
         { label: '物料描述', prop: 'materialDescription' },
         { label: '总数量', prop: 'count' },
@@ -274,7 +274,7 @@ export default {
         { label: '已出库', prop: 'sentQuantity' }
       ]
       console.log(this.status)
-      return this.status === 'view' ? columns : columns.concat([{ label: '出库数量', prop: 'delivery', type: 'slot', slotName: 'delivery' }])
+      return this.status === 'view' ? columns : columns.concat([{ label: '出库数量', prop: 'delivery', slotName: 'delivery' }])
     }
   },
   data () {
@@ -389,10 +389,9 @@ export default {
       return true
     },
     resetFile () { // 清空文件列表
-      if (this.$refs.uploadFile && this.$refs.uploadFile.length) {
-        this.$refs.uploadFile.forEach(uploadFile => {
-          uploadFile.clearFiles()
-        })
+    console.log(this.$refs.uploadFile, this.$refs.uploadFile.length)
+      if (this.$refs.uploadFile) {
+        this.$refs.uploadFile.clearFiles()
       }
     },
     resetInfo () {

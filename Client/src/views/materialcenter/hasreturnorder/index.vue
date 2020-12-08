@@ -14,6 +14,7 @@
       <div class="bg-white">
         <div class="content-wrapper">
           <common-table 
+            height="100%"
             ref="returnOrderTable" 
             :data="tableData" 
             :columns="returnOrderColumns" 

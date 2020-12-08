@@ -1,5 +1,4 @@
 export const defaultTableConfig = {
-  height: '100%',
   stripe: true,
   border: true,
   fit: true,

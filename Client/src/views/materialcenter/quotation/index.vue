@@ -15,6 +15,7 @@
       <div class="bg-white">
         <div class="content-wrapper">
           <common-table 
+            height="100%"
             ref="quotationTable" 
             :data="tableData" 
             :columns="quotationColumns" 
