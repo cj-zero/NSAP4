@@ -394,7 +394,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var expressInfo = await UnitWork.Find<Express>(null).FirstOrDefaultAsync(w => w.Id == ExpressId);
+            var expressInfo = await UnitWork.Find<Express>(null).FirstOrDefaultAsync(w => w.Id.Equals(ExpressId));
             if (expressInfo == null)
             {
                 throw new CommonException("当前快递信息已不存在", Define.Express_NotFound);
