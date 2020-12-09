@@ -1363,13 +1363,28 @@
             <table class="table table--stripe table--border-bottom">
                 <thead class="font-consolas">
                     <tr>
+                        @{ 
+                            var unit = "";
+                            var unitma = "";
+                            if (Model.Data.CalibrationCertificate.TesterModel.Contains("mA"))
+                            {
+                                unit = "mA";
+                                unitma = "μA";
+
+                            }
+                            else
+                            {
+                                unit = "A";
+                                unitma = "mA";
+                            }
+                        }
                         <th class="font-bold">Channel &emsp;&emsp;&emsp;&emsp;</th>
-                        <th class="text-right font-bold">Range (A)</th>
-                        <th class="text-right font-bold">Indication (A)</th>
-                        <th class="text-right font-bold">Measured Value (A)</th>
-                        <th class="text-right font-bold">Error (mA)</th>
-                        <th class="text-right font-bold">Acceptance (mA)</th>
-                        <th class="text-right font-bold">Uncertainty (mA)</th>
+                        <th class="text-right font-bold">Range (@unit)</th>
+                        <th class="text-right font-bold">Indication (@unit)</th>
+                        <th class="text-right font-bold">Measured Value (@unit)</th>
+                        <th class="text-right font-bold">Error (@unitma)</th>
+                        <th class="text-right font-bold">Acceptance (@unitma)</th>
+                        <th class="text-right font-bold">Uncertainty (@unitma)</th>
                         <th class="text-right font-bold">Conclusion &emsp;</th>
                     </tr>
                 </thead>

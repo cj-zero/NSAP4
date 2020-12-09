@@ -863,6 +863,168 @@ namespace OpenAuth.WebApi.Controllers
                     l++;
                 }
             }
+            void CalculateCurrentmA(string mode)
+            {
+                int j = 0;
+                foreach (var item in plcGroupData)
+                {
+                    int l = 1;
+                    var data = item.Where(p => p.VoltsorAmps.Equals("Amps") && p.Mode.Equals(mode) && p.VerifyType.Equals("Post-Calibration")).GroupBy(d => d.Channel);
+                    foreach (var item2 in data)
+                    {
+                        var cvDataList = item2.OrderBy(dd => dd.Scale).ThenBy(dd => dd.CommandedValue).ToList();
+                        foreach (var cvData in cvDataList)
+                        {
+                            var CHH = $"{l}-{cvData.Channel}";
+                            var Range = cvData.Scale;
+                            var Indication = cvData.MeasuredValue;
+                            var MeasuredValue = cvData.StandardValue;
+                            var Error = Indication - MeasuredValue;
+                            double Acceptance = 0;
+                            var AcceptanceStr = "";
+
+                            var plcrmd = plcRepetitiveMeasurementGroupData.First(a => a.Key.Equals(cvData.PclNo));
+                            var mdcv = plcrmd.Where(d => d.CommandedValue.Equals(cvData.CommandedValue) && d.VoltsorAmps.Equals("Amps") && d.Mode.Equals(mode) && d.VerifyType.Equals("Post-Calibration")).GroupBy(a => a.Channel).First().GroupBy(a => a.Point).First().ToList();
+                            double ror;
+                            if (baseInfo.RepetitiveMeasurementsCount >= 6)//贝塞尔公式法
+                            {
+                                var avg = mdcv.Sum(c => c.StandardValue) / mdcv.Count / 1000;
+                                ror = Math.Sqrt(mdcv.Select(c => Math.Pow(c.StandardValue / 1000 - avg, 2)).Sum() / (mdcv.Count - 1));
+                            }
+                            else//极差法
+                            {
+                                var poorCoefficient = PoorCoefficients[mdcv.Count];
+                                var mdsv = mdcv.Select(c => c.StandardValue / 1000).ToList();
+                                var R = mdsv.Max() - mdsv.Min();
+                                var u2 = R / poorCoefficient;
+                                ror = u2;
+                            }
+                            //计算不确定度
+                            var UncertaintyStr = (baseInfo.K * 1000 * Math.Sqrt(Math.Pow(cvData.StandardTotalU / 2, 2) + Math.Pow(cstd, 2) + Math.Pow(ror, 2))).ToString();
+                            var Uncertainty = double.Parse(UncertaintyStr);
+                            var T = double.Parse((cvData.Scale * baseInfo.RatedAccuracyC).ToString("G2"));
+                            var Conclustion = "";
+                            //计算接受限
+                            if (baseInfo.AcceptedTolerance.Equals("0"))
+                            {
+                                var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyC;
+                                Acceptance = accpetedTolerance;
+                            }
+                            else if (baseInfo.AcceptedTolerance.Equals("1"))
+                            {
+                                var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyC - Uncertainty;
+                                Acceptance = accpetedTolerance;
+                            }
+                            else if (baseInfo.AcceptedTolerance.Equals("M2%"))
+                            {
+                                var m2 = 1.04 - Math.Pow(Math.E, 0.38 * Math.Log(cvData.Scale * baseInfo.RatedAccuracyC * 2 / (2 * Uncertainty / 1000)) - 0.54);
+                                if (m2 < 0)
+                                {
+                                    var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyC;
+                                    Acceptance = accpetedTolerance;
+                                }
+                                else
+                                {
+                                    var accpetedTolerance = (cvData.Scale * baseInfo.RatedAccuracyC - Uncertainty) * m2;
+                                    Acceptance = accpetedTolerance;
+                                }
+                            }
+                            //约分
+                            var (IndicationReduce, MeasuredValueReduce, ErrorReduce, AcceptanceReduce, UncertaintyReduce) = ReduceCurrent(Math.Abs(Indication), Math.Abs(MeasuredValue), Error, Acceptance, Uncertainty);
+                            AcceptanceStr = $"±{AcceptanceReduce}";
+                            //计算判定结果
+                            if (baseInfo.AcceptedTolerance.Equals("0"))
+                            {
+                                if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
+                                {
+                                    Conclustion = "P";
+                                }
+                                else
+                                {
+                                    Conclustion = "F";
+                                }
+                            }
+                            else if (baseInfo.AcceptedTolerance.Equals("1"))
+                            {
+                                if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
+                                {
+                                    Conclustion = "P";
+                                }
+                                else if (Math.Abs(double.Parse(ErrorReduce)) >= Math.Abs(double.Parse(AcceptanceReduce)) && Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(T))
+                                {
+                                    Conclustion = "P*";
+                                }
+                                else
+                                {
+                                    Conclustion = "F";
+                                }
+                            }
+                            else if (baseInfo.AcceptedTolerance.Equals("M2%"))
+                            {
+                                var m2 = 1.04 - Math.Pow(Math.E, 0.38 * Math.Log(cvData.Scale / 1000 * baseInfo.RatedAccuracyC * 2 / (2 * Uncertainty / 1000)) - 0.54);
+                                if (m2 < 0)
+                                {
+                                    if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
+                                    {
+                                        Conclustion = "P";
+                                    }
+                                    else
+                                    {
+                                        Conclustion = "F";
+                                    }
+                                }
+                                else
+                                {
+                                    if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
+                                    {
+                                        Conclustion = "P";
+                                    }
+                                    else if (Math.Abs(double.Parse(ErrorReduce)) >= Math.Abs(double.Parse(AcceptanceReduce)) && Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(T))
+                                    {
+                                        Conclustion = "P*";
+                                    }
+                                    else
+                                    {
+                                        Conclustion = "F";
+                                    }
+                                }
+                            }
+
+                            if (mode.Equals("Charge"))
+                            {
+                                model.ChargingCurrent.Add(new DataSheet
+                                {
+                                    Channel = CHH,
+                                    Range = ((double)Range / 1000).ToString(),
+                                    Indication = IndicationReduce,
+                                    MeasuredValue = MeasuredValueReduce,
+                                    Error = ErrorReduce,
+                                    Acceptance = AcceptanceStr,
+                                    Uncertainty = UncertaintyReduce,
+                                    Conclusion = Conclustion
+                                });
+                            }
+                            else
+                            {
+                                model.DischargingCurrent.Add(new DataSheet
+                                {
+                                    Channel = CHH,
+                                    Range = ((double)Range / 1000).ToString(),
+                                    Indication = IndicationReduce,
+                                    MeasuredValue = MeasuredValueReduce,
+                                    Error = ErrorReduce,
+                                    Acceptance = AcceptanceStr,
+                                    Uncertainty = UncertaintyReduce,
+                                    Conclusion = Conclustion
+                                });
+                            }
+                            j++;
+                        }
+                    }
+                    l++;
+                }
+            }
+
             #region Charging Voltage
             CalculateVoltage("Charge", 8);
             model.ChargingVoltage = model.ChargingVoltage.OrderBy(s => s.Channel).ToList();
@@ -874,13 +1036,29 @@ namespace OpenAuth.WebApi.Controllers
             #endregion
 
             #region Charging Current
-            CalculateCurrent("Charge", 10);
-            model.ChargingCurrent = model.ChargingCurrent.OrderBy(s => s.Channel).ToList();
+            if (baseInfo.TesterModel.Contains("mA"))
+            {
+                CalculateCurrentmA("Charge");
+                model.ChargingCurrent = model.ChargingCurrent.OrderBy(s => s.Channel).ToList();
+            }
+            else 
+            {
+                CalculateCurrent("Charge", 10);
+                model.ChargingCurrent = model.ChargingCurrent.OrderBy(s => s.Channel).ToList();
+            }
             #endregion
 
             #region Discharging Current
-            CalculateCurrent("DisCharge", 11);
-            model.DischargingCurrent = model.DischargingCurrent.OrderBy(s => s.Channel).ToList();
+            if (baseInfo.TesterModel.Contains("mA"))
+            {
+                CalculateCurrentmA("DisCharge");
+                model.DischargingCurrent = model.DischargingCurrent.OrderBy(s => s.Channel).ToList();
+            }
+            else
+            {
+                CalculateCurrent("DisCharge", 10);
+                model.DischargingCurrent = model.DischargingCurrent.OrderBy(s => s.Channel).ToList();
+            }
             #endregion
 
 
@@ -907,6 +1085,7 @@ namespace OpenAuth.WebApi.Controllers
             #endregion
             return model;
         }
+
 
         /// <summary>
         /// 将日期转成英文格式
@@ -1101,6 +1280,61 @@ namespace OpenAuth.WebApi.Controllers
             var uncertaintyStr = uncertainty.ToString($"f{j - 3}") == "f-1" ? uncertainty.ToString("0.##########") : uncertainty.ToString($"f{j - 3}"); ;
             return (indicationStr, measuredValueStr, errorStr, acceptanceStr, uncertaintyStr);
         }
+        /// <summary>
+        /// 电流mA单位约分
+        /// </summary>
+        /// <param name="indication"></param>
+        /// <param name="measuredValue"></param>
+        /// <param name="error"></param>
+        /// <param name="acceptance"></param>
+        /// <param name="uncertainty"></param>
+        /// <returns></returns>
+        private static (string, string, string, string, string) ReduceCurrentmA(double indication, double measuredValue, double error, double acceptance, double uncertainty)
+        {
+            var istr = indication.ToString("f3").Split('.')[1];
+            istr = (indication / 1000).ToString($"f{istr.Length + 3}").Split('.')[1];
+            var spMstr = measuredValue.ToString().Split('.');
+            string mstr;
+            if (spMstr.Count() == 1)
+            {
+                mstr = "00";
+            }
+            else
+            {
+                mstr = measuredValue.ToString().Split('.')[1];
+            }
+            mstr = measuredValue.ToString($"f{mstr.Length + 3}").Split('.')[1];
+            var sp = ((decimal)uncertainty).ToString("G2").Split('.');
+            if (sp[0] == "1" || sp[0] == "2")
+                sp = (uncertainty / 1000).ToString("f4").Split('.');
+            else
+                sp = double.Parse((uncertainty / 1000).ToString("G2")).ToString("0.##########").Split('.');
+            var ustr = sp[1];
+            int j;
+            if (istr.Length >= mstr.Length)
+            {
+                j = mstr.Length;
+                if (ustr.Length < mstr.Length)
+                {
+                    j = ustr.Length;
+                }
+            }
+            else
+            {
+                j = istr.Length;
+                if (ustr.Length < istr.Length)
+                {
+                    j = ustr.Length;
+                }
+            }
+            var indicationStr = indication.ToString($"f{j}");
+            var measuredValueStr = measuredValue.ToString($"f{j}");
+            var errorStr = (Convert.ToDouble(indicationStr) * 1000 - Convert.ToDouble(measuredValueStr) * 1000).ToString($"f{j - 3}") == "f-1" ? error.ToString("0.00") : (Convert.ToDouble(indicationStr) * 1000 - Convert.ToDouble(measuredValueStr) * 1000).ToString($"f{j - 3}");//error.ToString($"f{j - 3}");
+            var acceptanceStr = (acceptance*1000).ToString($"f{j - 3}") == "f-1" ? (acceptance * 1000).ToString("0.##########") : (acceptance * 1000).ToString($"f{j - 3}");
+            var uncertaintyStr = (uncertainty * 1000).ToString($"f{j - 3}") == "f-1" ? (uncertainty * 1000).ToString("0.##########") : (uncertainty * 1000).ToString($"f{j - 3}"); ;
+            return (indicationStr, measuredValueStr, errorStr, acceptanceStr, uncertaintyStr);
+        }
+
 
         /// <summary>
         /// 创建流程

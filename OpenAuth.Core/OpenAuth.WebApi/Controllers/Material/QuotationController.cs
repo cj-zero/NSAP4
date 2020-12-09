@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
+using Infrastructure.Excel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App.Material;
@@ -321,5 +322,30 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return result;
         }
+
+        /// <summary>
+        /// 导入设备零件价格
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> ImportMaterialPrice()
+        {
+            var result = new Response();
+            try
+            {
+                var file = Request.Form.Files[0];
+                var handler = new ExcelHandler(file.OpenReadStream());
+                await _app.ImportMaterialPrice(handler);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
     }
 }
