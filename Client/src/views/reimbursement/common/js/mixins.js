@@ -208,7 +208,17 @@ export let tableMixin = {
       })
     },
     processInvoiceTime (invoiceTime) { // 截取年月日
-      return invoiceTime ? invoiceTime.split(' ')[0] : invoiceTime
+      if (!invoiceTime) { // 为空直接返回
+        return invoiceTime
+      }
+      let date = new Date(invoiceTime)
+      let hours = date.getHours()
+      let min = date.getMinutes()
+      if (hours <= 0 && min <= 0) { // 判断时分是否存在， 都不存在就只展示年月日
+        return invoiceTime.split(' ')[0]
+      }
+      invoiceTime = invoiceTime.slice(0, -3)
+      return invoiceTime
     },
     _generateApproveTable (data) { // 针对总经理审批页面
       console.log(data, 'generate')
@@ -247,6 +257,7 @@ export let tableMixin = {
           otherFileList: this.getOtherFileList(reimburseAttachments)
         })
       })
+      
       reimburseTravellingAllowances.forEach(item => {
         let { invoiceTime, days, money, remark } = item
         result.push({
@@ -272,14 +283,14 @@ export let tableMixin = {
         })
       })
       /* 日期从小到大， 没日期的话，交通费用→住宿补贴→出差补贴→其他费用 */
-      // let dataWithInvoiceTime = result.filter(item => item.invoiceTime).sort((a, b) => {
-      //   return new Date(a.invoiceTime).getTime() - new Date(b.invoiceTime).getTime()
-      // })
-      // let dataWithoutInvoiceTime = result.filter(item => !item.invoiceTime)
+      let dataWithInvoiceTime = result.filter(item => item.invoiceTime).sort((a, b) => {
+        return new Date(b.invoiceTime).getTime() - new Date(a.invoiceTime).getTime()
+      })
+      let dataWithoutInvoiceTime = result.filter(item => !item.invoiceTime)
       // 交通-住宿-出差-其它
-      // data.expenseCategoryList = dataWithInvoiceTime.concat(dataWithoutInvoiceTime)
+      data.expenseCategoryList = dataWithInvoiceTime.concat(dataWithoutInvoiceTime)
       console.log(result, 'result')
-      data.expenseCategoryList = result
+      // data.expenseCategoryList = result
     },
     _normalizeDetail (data) { 
       let reg = /[\r|\r\n|\n\t\v]/g
@@ -701,7 +712,7 @@ export const attachmentMixin = {
       this.$set(currentRow, 'isValidInvoice', isValidInvoice) // 判断发票是否正确，如果是正确的话就不给修改，不正确就给修改
       currentRow.maxMoney = money
       currentRow.invoiceNumber = invoiceNo
-      currentRow.invoiceTime = invoiceDate.match(invoiceTimeReg) ? RegExp.$1 : ''
+      currentRow.invoiceTime = invoiceDate.match(invoiceTimeReg) ? RegExp.$_ : ''
     },
     _setAttachmentList ({ data, index, prop, reimburseType, val }) { // 设置通过上传获取到的附件列表
       let resultArr = []
