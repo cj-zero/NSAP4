@@ -47,7 +47,7 @@ namespace OpenAuth.App
 
             var propertyStr = string.Join(',', properties.Select(u =>u.Key));
             result.columnHeaders = properties;
-            result.Data = await objs.OrderBy(u => u.DtCode)
+            result.Data = await objs.OrderBy(u => u.SortNo)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();//.Select($"new ({propertyStr})");
             result.Count = await objs.CountAsync();
@@ -73,6 +73,9 @@ namespace OpenAuth.App
                 DtValue = obj.DtValue,
                 DtCode = obj.DtCode,
                 TypeId = obj.TypeId,
+                Name=obj.Name,
+                SortNo=obj.SortNo,
+                Description=obj.Description,
                 UpdateTime = DateTime.Now,
                 UpdateUserId = user.Id,
                 UpdateUserName = user.Name
