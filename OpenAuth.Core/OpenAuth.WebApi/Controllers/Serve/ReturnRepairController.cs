@@ -156,12 +156,12 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// <param name="ExpresssId"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> WithDrawExpress(string ExpresssId)
+        public async Task<Response> WithDrawExpress(string ExpressId)
         {
             var result = new Response();
             try
             {
-                await _returnRepairApp.WithDrawExpress(ExpresssId);
+                await _returnRepairApp.WithDrawExpress(ExpressId);
             }
             catch (Exception ex)
             {
