@@ -31,6 +31,8 @@ namespace OpenAuth.Repository.Domain
             this.CreateTime = DateTime.Now;
         }
 
+        public string Id { get; set; }
+
         /// <summary>
         /// 返厂维修Id
         /// </summary>
