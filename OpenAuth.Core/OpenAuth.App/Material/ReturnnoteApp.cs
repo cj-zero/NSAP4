@@ -45,6 +45,12 @@ namespace OpenAuth.App
             {
                 throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
             }
+            //判断是否已存在最后一次退料
+            var isExist = (await UnitWork.Find<ReturnNote>(w => w.ServiceOrderId == req.ServiceOrderId && w.IsLast == 1 && w.CreateUserId == userInfo.Id).ToListAsync()).Count > 0 ? true : false;
+            if (isExist)
+            {
+                throw new CommonException("已完成退料，无法继续退料", Define.IS_Return_Finish);
+            }
             //1.新增退料单主表
             var newNoteInfo = new ReturnNote { ServiceOrderId = req.ServiceOrderId, ServiceOrderSapId = req.SapId, Status = 1, CreateTime = DateTime.Now, CreateUserId = userInfo.Id, CreateUser = userInfo.Name, IsLast = req.IsLastReturn };
             var o = await UnitWork.AddAsync<ReturnNote, int>(newNoteInfo);
@@ -253,7 +259,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.SapId), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.SapId)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.Customer), q => q.CustomerName.Equals(req.Customer))
                 .ToListAsync();
-            var returnNoteList = returnNote.Select(s => new { s.Id, CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerName).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.mm.dd"), s.ServiceOrderSapId }).ToList();
+            var returnNoteList = returnNote.Select(s => new { s.Id, CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerName).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.MM.dd"), s.ServiceOrderSapId }).ToList();
             result.Data = returnNoteList;
             return result;
         }

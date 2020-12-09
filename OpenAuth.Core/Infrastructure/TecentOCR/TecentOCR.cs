@@ -121,61 +121,66 @@ namespace Infrastructure.TecentOCR
                             switch (ticketType)
                             {
                                 case 0:
+                                    invoiceCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票代码")?.Value;
+                                    invoiceNo = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票号码")?.Value;
+                                    amountWithTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "金额")?.Value);
+                                    invoiceDate = GetDateFormat(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "日期")?.Value) + SingleInvoiceInfos.FirstOrDefault(s => s.Name == "上车")?.Value;
+                                    break;
                                 case 13:
-                                    invoiceCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票代码").Value;
-                                    invoiceNo = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票号码").Value;
-                                    amountWithTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "金额").Value);
-                                    invoiceDate = GetDateFormat(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "日期").Value);
+                                    invoiceCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票代码")?.Value;
+                                    invoiceNo = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票号码")?.Value;
+                                    amountWithTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "金额")?.Value);
+                                    invoiceDate = GetDateFormat(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "日期")?.Value) + SingleInvoiceInfos.FirstOrDefault(s => s.Name == "时间")?.Value;
                                     extend.ServiceName = "交通费";
                                     break;
                                 case 1:
-                                    invoiceCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票代码").Value;
-                                    invoiceNo = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票号码").Value;
-                                    amountWithTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "小写金额").Value);
+                                    invoiceCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票代码")?.Value;
+                                    invoiceNo = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票号码")?.Value;
+                                    amountWithTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "小写金额")?.Value);
                                     break;
                                 case 2://火车票没有发票代码和发票号码 分别取火车票上的序列号和编号
-                                    invoiceCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "序列号").Value;
-                                    invoiceNo = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "编号").Value;
-                                    amountWithTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "票价").Value);
-                                    invoiceDate = GetDateFormat(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "出发时间").Value);
-                                    extend.OriginationStation = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "出发站").Value;
-                                    extend.ArrivalStation = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "到达站").Value;
+                                    invoiceCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "序列号")?.Value;
+                                    invoiceNo = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "编号")?.Value;
+                                    amountWithTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "票价")?.Value);
+                                    invoiceDate = GetDateFormat(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "出发时间")?.Value);
+                                    extend.OriginationStation = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "出发站")?.Value;
+                                    extend.ArrivalStation = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "到达站")?.Value;
                                     extend.ServiceName = "交通费";
                                     break;
                                 case 3:
-                                    invoiceNo = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票号码").Value.ToString()[2..SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票号码").Value.Length];
+                                    invoiceNo = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票号码")?.Value.ToString()[2..SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票号码").Value.Length];
                                     invoiceCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票代码").Value;
-                                    invoiceDate = GetDateFormat(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "开票日期").Value);
-                                    checkCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "校验码").Value;
-                                    companyName = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "购买方名称").Value;
-                                    companyTaxCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "购买方识别号").Value;
-                                    amountWithTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "小写金额").Value.ToString()[1..SingleInvoiceInfos.SingleOrDefault(s => s.Name == "小写金额").Value.Length]);
-                                    amountWithOutTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "合计金额").Value.ToString()[1..SingleInvoiceInfos.SingleOrDefault(s => s.Name == "合计金额").Value.Length]);
-                                    extend.ServiceName = SingleInvoiceInfos.FirstOrDefault(s => s.Name.Contains("服务名称")).Value;
+                                    invoiceDate = GetDateFormat(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "开票日期")?.Value);
+                                    checkCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "校验码")?.Value;
+                                    companyName = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "购买方名称")?.Value;
+                                    companyTaxCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "购买方识别号")?.Value;
+                                    amountWithTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "小写金额")?.Value.ToString()[1..SingleInvoiceInfos.SingleOrDefault(s => s.Name == "小写金额").Value.Length]);
+                                    amountWithOutTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "合计金额")?.Value.ToString()[1..SingleInvoiceInfos.SingleOrDefault(s => s.Name == "合计金额").Value.Length]);
+                                    extend.ServiceName = SingleInvoiceInfos.FirstOrDefault(s => s.Name.Contains("服务名称"))?.Value;
                                     break;
                                 case 5://飞机行程单没有发票代码和发票号码 分别取行程单上的印刷序号和电子客票号码
-                                    invoiceCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "电子客票号码").Value;
-                                    invoiceNo = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "印刷序号").Value;
-                                    amountWithTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "合计金额").Value);
-                                    invoiceDate = GetDateFormat(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "填开日期").Value);
+                                    invoiceCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "电子客票号码")?.Value;
+                                    invoiceNo = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "印刷序号")?.Value;
+                                    amountWithTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "合计金额")?.Value);
+                                    invoiceDate = GetDateFormat(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "填开日期")?.Value) + SingleInvoiceInfos.FirstOrDefault(s => s.Name == "时间")?.Value;
                                     extend.ServiceName = "交通费";
                                     break;
                                 case 9:
                                 case 10:
-                                    invoiceCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票代码").Value;
-                                    invoiceNo = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票号码").Value;
-                                    amountWithTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "票价").Value);
-                                    invoiceDate = GetDateFormat(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "日期").Value);
-                                    extend.OriginationStation = SingleInvoiceInfos.SingleOrDefault(s => s.Name.Contains("始发")).Value;
-                                    extend.ArrivalStation = SingleInvoiceInfos.SingleOrDefault(s => s.Name.Contains("目的")).Value;
+                                    invoiceCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票代码")?.Value;
+                                    invoiceNo = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票号码")?.Value;
+                                    amountWithTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "票价")?.Value);
+                                    invoiceDate = GetDateFormat(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "日期")?.Value) + SingleInvoiceInfos.FirstOrDefault(s => s.Name == "时间")?.Value;
+                                    extend.OriginationStation = SingleInvoiceInfos.SingleOrDefault(s => s.Name.Contains("始发"))?.Value;
+                                    extend.ArrivalStation = SingleInvoiceInfos.SingleOrDefault(s => s.Name.Contains("目的"))?.Value;
                                     extend.ServiceName = "交通费";
                                     break;
                                 case 8:
                                 case 11:
-                                    invoiceCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票代码").Value;
-                                    invoiceNo = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票号码").Value;
-                                    amountWithTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "合计金额(小写)").Value);
-                                    invoiceDate = GetDateFormat(SingleInvoiceInfos.SingleOrDefault(s => s.Name.Contains("日期")).Value);
+                                    invoiceCode = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票代码")?.Value;
+                                    invoiceNo = SingleInvoiceInfos.SingleOrDefault(s => s.Name == "发票号码")?.Value;
+                                    amountWithTax = decimal.Parse(SingleInvoiceInfos.SingleOrDefault(s => s.Name == "合计金额(小写)")?.Value);
+                                    invoiceDate = GetDateFormat(SingleInvoiceInfos.SingleOrDefault(s => s.Name.Contains("日期"))?.Value);
                                     break;
                                 case 12:
                                 default:
@@ -233,6 +238,10 @@ namespace Infrastructure.TecentOCR
                 if (e.ToString().Contains("ResourceNotFound"))
                 {
                     result.Message = "发票不存在";
+                }
+                if (e.ToString().Contains("InvoiceMismatch"))
+                {
+                    result.Message = "发票数据不一致";
                 }
                 return result;
             }

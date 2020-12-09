@@ -41,6 +41,8 @@ namespace OpenAuth.Repository
 
         public virtual DbSet<QuotationOperationHistory> QuotationOperationHistories { get; set; }
 
+        public virtual DbSet<MaterialPrice> MaterialPrices { get; set; }
+        
         #endregion
     }
 }

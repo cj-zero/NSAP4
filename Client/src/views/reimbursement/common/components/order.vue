@@ -95,7 +95,7 @@
               <el-table-column label="#" width="55px">
                 <template slot-scope="scope">{{ scope.$index + 1 }}</template>
               </el-table-column>
-              <el-table-column label="日期" prop="invoiceTime" width="100px"></el-table-column>
+              <el-table-column label="日期" prop="invoiceTime" width="110px"></el-table-column>
               <el-table-column label="费用名称" prop="expenseName" width="100px"></el-table-column>
               <el-table-column label="费用详情" prop="expenseDetail">
                 <template slot-scope="scope">

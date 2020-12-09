@@ -82,5 +82,12 @@ namespace OpenAuth.Repository.Domain
         [Description("交货单号")]
         public int? DocEntry { get; set; }
 
+        /// <summary>
+        /// 最新进货价
+        /// </summary>
+        [Description("最新进货价")]
+        public decimal? lastPurPrc { get; set; }
+        
+
     }
 }

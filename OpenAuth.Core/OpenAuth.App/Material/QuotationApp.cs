@@ -1,4 +1,5 @@
 ﻿using Infrastructure;
+using Infrastructure.Excel;
 using Infrastructure.Extensions;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Npoi.Mapper;
 
 namespace OpenAuth.App.Material
 {
@@ -428,7 +430,7 @@ namespace OpenAuth.App.Material
             //}
             #endregion
 
-            var Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"select a.ItemCode,b.MnfSerial,c.ItemName,c.BuyUnitMsr,d.OnHand, d.WhsCode,a.BaseQty as Quantity from WOR1 a 
+            var Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"select a.ItemCode,b.MnfSerial,c.ItemName,c.BuyUnitMsr,d.OnHand, d.WhsCode,a.BaseQty as Quantity ,c.lastPurPrc from WOR1 a 
 						join (SELECT a.BaseEntry,c.MnfSerial,a.BaseType
             FROM oitl a left join itl1 b
             on a.LogEntry = b.LogEntry and a.ItemCode = b.ItemCode 
@@ -437,16 +439,28 @@ namespace OpenAuth.App.Material
 						join OITM c on a.itemcode = c.itemcode
 						join OITW d on a.itemcode=d.itemcode 
 						where d.WhsCode=37").WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
-                        .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity }).ToListAsync();
+                        .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
 
             if (Equipments == null && Equipments.Count() <= 0)
             {
-                Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"select a.Father as MnfSerial,a.Code as ItemCode,a.U_Desc as ItemName,a.U_DUnit as BuyUnitMsr,b.OnHand,b.WhsCode,a.Quantity
+                Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"select a.Father as MnfSerial,a.Code as ItemCode,a.U_Desc as ItemName,a.U_DUnit as BuyUnitMsr,b.OnHand,b.WhsCode,a.Quantity,c.lastPurPrc
                         from ITT1 a join OITW b on a.Code=b.ItemCode where a.Father='{request.MaterialCode}' and b.WhsCode=37")
                     .WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
-                    .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity }).ToListAsync();
+                    .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
             }
-            Equipments.ForEach(e => e.MnfSerial = request.ManufacturerSerialNumbers);
+
+            var ItemCodes = Equipments.Select(e => e.ItemCode).ToList();
+            var MaterialPrices = await UnitWork.Find<MaterialPrice>(m => ItemCodes.Contains(m.MaterialCode)).ToListAsync();
+
+            Equipments.ForEach(e =>
+            {
+                e.MnfSerial = request.ManufacturerSerialNumbers;
+                var Prices = MaterialPrices.Where(m => m.MaterialCode.Equals(e.ItemCode)).FirstOrDefault();
+                if (Prices != null) 
+                {
+                    e.lastPurPrc = Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
+                }
+            });
 
             result.Data = Equipments.Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToList();
@@ -592,12 +606,15 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var QuotationObj = obj.MapTo<Quotation>();
+            QuotationObj.ErpOrApp = 1;
             var loginUser = loginContext.User;
             if (loginUser.Account == Define.USERAPP)
             {
                 loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
+                QuotationObj.ErpOrApp = 2;
             }
-            var QuotationObj = obj.MapTo<Quotation>();
+
             QuotationObj.IsProtected = true;
             QuotationObj.QuotationProducts.ForEach(q =>
             {
@@ -730,12 +747,14 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var QuotationObj = obj.MapTo<Quotation>();
+            QuotationObj.ErpOrApp = 1;
             var loginUser = loginContext.User;
             if (loginUser.Account == Define.USERAPP)
             {
                 loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
+                QuotationObj.ErpOrApp = 2;
             }
-            var QuotationObj = obj.MapTo<Quotation>();
             QuotationObj.IsProtected = true;
             QuotationObj.QuotationProducts.ForEach(q =>
             {
@@ -1232,5 +1251,36 @@ namespace OpenAuth.App.Material
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
         }
 
+        /// <summary>
+        /// 导入设备零件价格
+        /// </summary>
+        /// <param name="handler"></param>
+        /// <returns></returns>
+        public async Task ImportMaterialPrice(ExcelHandler handler)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var MaterialPriceList = handler.GetListData<MaterialPrice>(mapper =>
+            {
+                var data = mapper
+                .Map<MaterialPrice>(0, a=>a.MaterialCode)
+                .Map<MaterialPrice>(1,a=>a.SettlementPrice)
+                .Map<MaterialPrice>(2,a=>a.SettlementPriceModel)
+                .Take<MaterialPrice> (0);
+                return data.Select(d => d.Value).SkipWhile(v => v is null).ToList();
+            });
+            MaterialPriceList.ForEach(m =>
+            {
+                m.CreateId = loginContext.User.Id;
+                m.CreateName = loginContext.User.Name;
+                m.CreateTime = DateTime.Now;
+            });
+
+            await UnitWork.BatchAddAsync(MaterialPriceList.ToArray());
+            await UnitWork.SaveAsync();
+        }
     }
 }

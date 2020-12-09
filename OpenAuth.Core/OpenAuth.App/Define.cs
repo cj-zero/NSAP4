@@ -22,7 +22,12 @@ namespace OpenAuth.App
         public const int INVALID_APPUser = 50017;     //未绑定App账户
         public const int ExpressNum_IsNull = 50018;     //快递单号为空
         public const int IS_OverTime = 50019;//时间超时
+<<<<<<< HEAD
         public const int Express_NotFound = 50021;//快递已不存在
+=======
+        public const int IS_Return_Finish = 50020;//退料完成
+
+>>>>>>> e920d70035bac1b53ccfd125a3652e020b055329
         public const string TOKEN_NAME = "X-Token";
 
 

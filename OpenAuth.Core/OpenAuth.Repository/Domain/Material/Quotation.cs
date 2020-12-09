@@ -40,6 +40,7 @@ namespace OpenAuth.Repository.Domain
             this.CollectionAddress = "";
             this.QuotationStatus = 0;
             this.IsRead = 0;
+            this.ErpOrApp = 1;
 
         }
         /// <summary>
@@ -156,6 +157,12 @@ namespace OpenAuth.Repository.Domain
         [Description("已读未读")]
         public int IsRead { get; set; }
 
+        /// <summary>
+        ///提交对象1-ERP 2-APP
+        /// </summary>
+        [Description("提交对象")]
+        public int ErpOrApp { get; set; }
+        
         /// <summary>
         /// 物流表
         /// </summary>
