@@ -1,8 +1,10 @@
 import { getCategoryNameList } from '@/api/directory'
 import { getQuotationDetail } from '@/api/material/quotation' // 报价单详情
-import { GetDetails } from '@/api/serve/callservesure' // 服务单
+// import { GetDetails } from '@/api/serve/callservesure' // 服务单
 import { getReturnNoteList, getReturnNoteDetail } from '@/api/material/returnMaterial' // 退料
 import { normalizeFormConfig } from '@/utils/format'
+import { chatMixin } from '@/mixins/serve'
+export { chatMixin }
 export const quotationTableMixin = {
   provide () {
     return {
@@ -32,6 +34,9 @@ export const quotationTableMixin = {
     }
   },
   methods: {
+    _openServiceOrder (row) {
+      this.openServiceOrder(row.serviceOrderId, () => this.tableLoading = true, () => this.tableLoading = false)
+    },
     _getQuotationDetail (data) {
       let quotationId
       let { status, isReceive, isSalesOrder } = data
@@ -241,57 +246,57 @@ export const quotationOrderMixin = { // 报价单
   }
 }
 
-export const chatMixin = { // 服务单详情
-  data () {
-    return {
-      serveId: '',
-      dataForm: {}, //传递的表单props
+// export const chatMixin = { // 服务单详情
+//   data () {
+//     return {
+//       serveId: '',
+//       dataForm: {}, //传递的表单props
 
-    }
-  },
-  methods: {
-    _openServiceOrder(row) {
-       // 判断服务单详情是否在表格页面打开,否则就是在报销单查看页面打开  isOpenInTable
-      let serviceOrderId = row.serviceOrderId
-      let isInTable = row.isInTable
-      if (!serviceOrderId) {
-        return this.$message.error('无服务单ID')
-      }
-      isInTable ? this.tableLoading = true : this.contentLoading = true
-      GetDetails(serviceOrderId).then(res => {
-        if (res.code == 200) {
-          this.dataForm = this._normalizeOrderDetail(res.result);
-          this.serveId = serviceOrderId
-          this.$refs.serviceDetail.open()
-          isInTable ? this.tableLoading = false : this.contentLoading = false
-        }
-      }).catch((err) => {
-        console.error(err)
-        isInTable ? this.tableLoading = false : this.contentLoading = false
-        this.$message.error('获取服务单详情失败')
-      })
-    },
-    deleteSeconds (date) { // yyyy-MM-dd HH:mm:ss 删除秒
-      return date ? date.slice(0, -3) : date
-    },
-    _normalizeOrderDetail (data) {
-      let reg = /[\r|\r\n|\n\t\v]/g
-      let { serviceWorkOrders } = data
-      if (serviceWorkOrders && serviceWorkOrders.length) {
-        serviceWorkOrders.forEach(serviceOrder => {
-          let { warrantyEndDate, bookingDate, visitTime, liquidationDate, completeDate } = serviceOrder
-          serviceOrder.warrantyEndDate = this.deleteSeconds(warrantyEndDate)
-          serviceOrder.bookingDate = this.deleteSeconds(bookingDate)
-          serviceOrder.visitTime = this.deleteSeconds(visitTime)
-          serviceOrder.liquidationDate = this.deleteSeconds(liquidationDate)
-          serviceOrder.completeDate = this.deleteSeconds(completeDate)
-          serviceOrder.themeList = JSON.parse(serviceOrder.fromTheme.replace(reg, ''))
-        })
-      }
-      return data
-    },
-  }
-}
+//     }
+//   },
+//   methods: {
+//     _openServiceOrder(row) {
+//        // 判断服务单详情是否在表格页面打开,否则就是在报销单查看页面打开  isOpenInTable
+//       let serviceOrderId = row.serviceOrderId
+//       let isInTable = row.isInTable
+//       if (!serviceOrderId) {
+//         return this.$message.error('无服务单ID')
+//       }
+//       isInTable ? this.tableLoading = true : this.contentLoading = true
+//       GetDetails(serviceOrderId).then(res => {
+//         if (res.code == 200) {
+//           this.dataForm = this._normalizeOrderDetail(res.result);
+//           this.serveId = serviceOrderId
+//           this.$refs.serviceDetail.open()
+//           isInTable ? this.tableLoading = false : this.contentLoading = false
+//         }
+//       }).catch((err) => {
+//         console.error(err)
+//         isInTable ? this.tableLoading = false : this.contentLoading = false
+//         this.$message.error('获取服务单详情失败')
+//       })
+//     },
+//     deleteSeconds (date) { // yyyy-MM-dd HH:mm:ss 删除秒
+//       return date ? date.slice(0, -3) : date
+//     },
+//     _normalizeOrderDetail (data) {
+//       let reg = /[\r|\r\n|\n\t\v]/g
+//       let { serviceWorkOrders } = data
+//       if (serviceWorkOrders && serviceWorkOrders.length) {
+//         serviceWorkOrders.forEach(serviceOrder => {
+//           let { warrantyEndDate, bookingDate, visitTime, liquidationDate, completeDate } = serviceOrder
+//           serviceOrder.warrantyEndDate = this.deleteSeconds(warrantyEndDate)
+//           serviceOrder.bookingDate = this.deleteSeconds(bookingDate)
+//           serviceOrder.visitTime = this.deleteSeconds(visitTime)
+//           serviceOrder.liquidationDate = this.deleteSeconds(liquidationDate)
+//           serviceOrder.completeDate = this.deleteSeconds(completeDate)
+//           serviceOrder.themeList = JSON.parse(serviceOrder.fromTheme.replace(reg, ''))
+//         })
+//       }
+//       return data
+//     },
+//   }
+// }
 
 export const returnTableMixin = { // 退料表格
   data () {
@@ -308,7 +313,7 @@ export const returnTableMixin = { // 退料表格
         { label: '退料单号', prop: 'id', handleClick: this._getReturnNoteDetail, options: { status: 'view' }, type: 'link'},
         { label: '客户代码', prop: 'customerId' },
         { label: '客户名称', prop: 'customerName' },
-        { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link', options: { isInTable: true } },
+        { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link' },
         { label: '申请人', prop: 'createUser' },
         { label: '创建时间', prop: 'createDate' },
       ],
@@ -372,10 +377,10 @@ export const returnTableMixin = { // 退料表格
       this._getList()
     },
     onSearch () {
-      this.listQuery.page = 1
       this._getList()
     },
     onChangeForm (val) {
+      this.listQuery.page = 1
       Object.assign(this.listQuery, val)
       this.onSearch()
     },

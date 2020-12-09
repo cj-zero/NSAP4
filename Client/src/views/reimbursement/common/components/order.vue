@@ -1,5 +1,5 @@
 <template>
-  <div class="order-wrapper" v-loading.fullscreen="orderLoading">
+  <div class="order-wrapper" v-loading="orderLoading">
     <!-- 标题头 -->
     <el-row 
       type="flex" 
@@ -231,7 +231,7 @@
                   <template v-if="item.prop === 'serviceOrderSapId' && title !== 'create'">
                     <div class="link-container" style="display: inline-block">
                       <span>{{ item.label }}</span>
-                      <img :src="rightImg" @click="openTree(formData, false)" class="pointer">
+                      <img :src="rightImg" @click="_openServiceOrder" class="pointer">
                     </div>
                   </template>
                   <template v-else>
@@ -949,7 +949,6 @@
       <el-row :gutter="20" class="position-view">
         <el-col :span="18" >
           <zxform
-            :form="temp"
             formName="查看"
             labelposition="right"
             labelwidth="72px"
@@ -1364,6 +1363,9 @@ export default {
     }
   },
   methods: {
+    _openServiceOrder () {
+      this.openServiceOrder(this.formData.serviceOrderId, () => this.orderLoading = true, () => this.orderLoading = false)
+    },
     changeContent (index) { // 总经理审批页面费用详情/服务博爱高/历史费用 切换
       this.currentTabIndex = index
     },

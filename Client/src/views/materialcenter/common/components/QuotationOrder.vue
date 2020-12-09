@@ -37,7 +37,7 @@
                 <template v-if="item.prop === 'serviceOrderSapId'">
                   <div class="link-container" style="display: inline-block">
                     <span>{{ item.label }}</span>
-                    <img :src="rightImg" @click="openServiceOrder" class="pointer">
+                    <img :src="rightImg" @click="_openServiceOrder" class="pointer">
                   </div>
                 </template>
                 <template v-else>
@@ -722,11 +722,12 @@ export default {
         this.$refs.customerDialog.open()
       }
     },
-    openServiceOrder () { // 打开服务单
+    _openServiceOrder () { // 打开服务单
       // if (!this.formData.serviceOrderId) {
       //   return this.$message.error('请先选择客户单')
       // }
-      this._openServiceOrder(this.formData)
+      console.log(this.formData.serviceOrderId)
+      this.openServiceOrder(this.formData.serviceOrderId, () => this.contentLoading = true, () => this.contentLoading = false)
       // this.$refs.customerDialog.open()
     },
     selectCustomer () { // 选择客户数据

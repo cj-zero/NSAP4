@@ -114,7 +114,6 @@
       <el-row :gutter="20" class="position-view">
         <el-col :span="18" >
           <zxform
-            :form="temp"
             formName="查看"
             labelposition="right"
             labelwidth="72px"

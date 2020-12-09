@@ -1,5 +1,5 @@
 <template>
-  <div class="quotation-wrapper">
+  <div class="quotation-wrapper" v-loading="loading">
     <el-row type="flex" class="title-wrapper">
       <p class="bold id">出库单号: <span>{{ formData.id || '' }}</span></p>
       <p class="bold">申请人: <span>{{ formData.createUser }}</span></p>
@@ -36,7 +36,7 @@
                 <template v-if="item.prop === 'serviceOrderSapId'">
                   <div class="link-container" style="display: inline-block">
                     <span>{{ item.label }}</span>
-                    <img :src="rightImg" @click="openServiceOrder" class="pointer">
+                    <img :src="rightImg" @click="_openServiceOrder" class="pointer">
                   </div>
                 </template>
                 <template v-else>
@@ -279,6 +279,7 @@ export default {
   },
   data () {
     return {
+      loading: false,
       isOutbound: true,
       fileList: [],
       rightImg,
@@ -338,8 +339,9 @@ export default {
     onServiceIdFocus (prop) {
       console.log(prop)
     },
-    openServiceOrder () {
-      this._openServiceOrder(this.formData)
+    _openServiceOrder () {
+      console.log(this.formData.serviceOrderId, this.formData)
+      this.openServiceOrder(this.formData.serviceOrderId, () => this.loading = true, () => this.loading = false)
     },
     addCourier () { // 增加快递
       this.expressList.push({

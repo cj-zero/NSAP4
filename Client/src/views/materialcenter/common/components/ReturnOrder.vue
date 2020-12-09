@@ -1,5 +1,5 @@
 <template>
-  <div class="quotation-wrapper">
+  <div class="quotation-wrapper" v-loading="returnLoading">
     <el-row type="flex" class="title-wrapper">
       <p class="bold id">退料单号: <span>{{ formData.returnNoteCode || '' }}</span></p>
       <p class="bold">服务ID： {{ formData.serviceOrderSapId }}</p>
@@ -35,7 +35,7 @@
                 <template v-if="item.prop === 'serviceOrderSapId'">
                   <div class="link-container" style="display: inline-block">
                     <span>{{ item.label }}</span>
-                    <img :src="rightImg" @click="openServiceOrder" class="pointer">
+                    <img :src="rightImg" @click="_openServiceOrder" class="pointer">
                   </div>
                 </template>
                 <template v-else>
@@ -313,7 +313,7 @@ export default {
       // 物料表格
       materialList: [],
       checkList: [], // 验收收货记录列表
-      
+      returnLoading: false
     }
   },
   methods: {
@@ -353,8 +353,8 @@ export default {
     onReceiveInput (index) {
       this.checkList[index].receiveRemark = this.materialList[index].receivingRemark
     },
-    openServiceOrder () {
-      this._openServiceOrder()
+    _openServiceOrder () {
+      this.openServiceOrder(this.formData.serviceOrderId, () => this.returnLoading = true, () => this.returnLoading = false)
     },
     check (isValid, index) { // 选择通过或者未通过
       console.log(isValid, index)
