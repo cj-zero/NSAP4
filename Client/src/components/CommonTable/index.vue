@@ -41,7 +41,7 @@
         </template>
         <template slot-scope="scope" >
           <!--  有箭头的操作 -->
-          <div class="link-container" v-if="column.type === 'link'"> 
+          <div class="link-container text-overflow" v-if="column.type === 'link'" style="width: 100%;"> 
             <img :src="rightImg" @click="isFunction(column.handleClick) ? column.handleClick({ ...scope.row, ...(column.options || {})}) : _noop" class="pointer">
             <span>{{ scope.row[column.prop] }}</span>
           </div>
