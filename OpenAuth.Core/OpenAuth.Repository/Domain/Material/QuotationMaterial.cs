@@ -90,6 +90,16 @@ namespace OpenAuth.Repository.Domain
         [Description("最大数量")]
         public int? MaxQuantity { get; set; }
 
+        /// <summary>
+        ///折扣
+        /// </summary>
+        [Description("折扣")]
+        public decimal? Discount { get; set; }
 
+        /// <summary>
+        ///销售价
+        /// </summary>
+        [Description("销售价")]
+        public decimal? SalesPrice { get; set; }
     }
 }

@@ -44,6 +44,12 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<ORDR>().HasKey(o => o.DocEntry);
             #endregion
 
+            modelBuilder.Entity<OITL>().HasKey(o => o.LogEntry);
+            modelBuilder.Entity<ITL1>().HasKey(o => new { o.LogEntry, o.ItemCode, o.SysNumber, });
+            modelBuilder.Entity<OSRN>().HasKey(o => o.AbsEntry);
+            
+
+
         }
         //非数据库表格
         public virtual DbSet<SysEquipmentColumn> SysEquipmentColumns { get; set; }
@@ -963,7 +969,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<ISW1> Isw1s { get; set; }
         //public virtual DbSet<ISW2> Isw2s { get; set; }
         //public virtual DbSet<ISW3> Isw3s { get; set; }
-        //public virtual DbSet<ITL1> Itl1s { get; set; }
+        public virtual DbSet<ITL1> Itl1s { get; set; }
         //public virtual DbSet<ITM1> Itm1s { get; set; }
         //public virtual DbSet<ITM10> Itm10s { get; set; }
         //public virtual DbSet<ITM11> Itm11s { get; set; }
@@ -1363,7 +1369,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<OISW> Oisws { get; set; }
         //public virtual DbSet<OITB> Oitbs { get; set; }
         //public virtual DbSet<OITG> Oitgs { get; set; }
-        //public virtual DbSet<OITL> Oitls { get; set; }
+        public virtual DbSet<OITL> Oitls { get; set; }
         public virtual DbSet<OITM> Oitms { get; set; }
         //public virtual DbSet<OITR> Oitrs { get; set; }
         //public virtual DbSet<OITT> Oitts { get; set; }
@@ -1568,7 +1574,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<OSRA> Osras { get; set; }
         //public virtual DbSet<OSRC> Osrcs { get; set; }
         //public virtual DbSet<OSRL> Osrls { get; set; }
-        //public virtual DbSet<OSRN> Osrns { get; set; }
+        public virtual DbSet<OSRN> Osrns { get; set; }
         //public virtual DbSet<OSRQ> Osrqs { get; set; }
         //public virtual DbSet<OSRT> Osrts { get; set; }
         //public virtual DbSet<OSRW> Osrws { get; set; }

@@ -45,7 +45,12 @@ namespace OpenAuth.Repository.Domain.Sap
           this.UpdateDate= DateTime.Now;
         }
 
-        
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? AbsEntry { get; set; }
+
         /// <summary>
         /// 
         /// </summary>
