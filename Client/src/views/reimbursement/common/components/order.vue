@@ -997,6 +997,20 @@ import { categoryMixin, reportMixin, attachmentMixin, chatMixin } from '../js/mi
 import { REIMBURSE_TYPE_MAP, IF_SHOW_MAP, REMARK_TEXT_MAP } from '../js/map'
 import rightImg from '@/assets/table/right.png'
 const PROGRESS_TEXT_LIST = ['提交', '客服审批', '财务初审', '财务复审', '总经理审批', '出纳'] // 进度条文本
+const AFTER_EVALUTION_KEY = ['responseSpeed', 'schemeEffectiveness', 'serviceAttitude', 'productQuality', 'servicePrice']
+// { label: '响应速度', prop: 'responseSpeed', width: 70 },
+//         { label: '方案有效性', prop: 'schemeEffectiveness', width: 80 },
+//         { label: '服务态度', prop: 'serviceAttitude', width: 70 },
+//         { label: '产品质量', prop: 'productQuality', width: 70 },
+//         { label: '服务价格', prop: 'servicePrice', width: 70 },
+const AFTER_EVALUTION_STATUS = {
+  0: '未统计',
+  1: '非常差',
+  2: '差',
+  3: '一般',
+  4: '满意',
+  5: '非常满意'
+}
 export default {
   inject: ['parentVm'],
   mixins: [categoryMixin, reportMixin, attachmentMixin, chatMixin],
@@ -1390,6 +1404,11 @@ export default {
       getAfterEvaluaton({
         serviceOrderId: this.formData.serviceOrderSapId
       }).then(res => {
+        res.data.forEach(item => {
+          AFTER_EVALUTION_KEY.forEach(key => {
+            item[key] = AFTER_EVALUTION_STATUS[item[key]]
+          })
+        })
         this.afterEvaluationList = res.data
         this.afterEvaLoading = false
       }).catch(err => {
