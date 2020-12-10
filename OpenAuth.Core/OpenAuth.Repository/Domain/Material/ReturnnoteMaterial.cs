@@ -74,6 +74,13 @@ namespace OpenAuth.Repository.Domain
         [Description("物料描述")]
         public string MaterialDescription { get; set; }
 
+
+        /// <summary>
+        ///成本价
+        /// </summary>
+        [Description("成本价")]
+        public decimal? CostPrice { get; set; }
+
         /// <summary>
         ///需退总计
         /// </summary>
@@ -91,6 +98,6 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("退料图片")]
         public List<ReturnNoteMaterialPicture> ReturnNoteMaterialPictures { get; set; }
-        
+
     }
 }

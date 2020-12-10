@@ -81,6 +81,12 @@ namespace OpenAuth.Repository.Domain
         public int IsLast { get; set; }
 
         /// <summary>
+        /// 是否可以结算 0不可结算 1可结算
+        /// </summary>
+        [Description("是否可以结算 0不可结算 1可结算")]
+        public int IsCanClear { get; set; }
+
+        /// <summary>
         /// 签收备注
         /// </summary>
         [Description("签收备注")]
