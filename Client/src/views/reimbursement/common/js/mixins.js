@@ -289,7 +289,7 @@ export let tableMixin = {
       })
       /* 日期从小到大， 没日期的话，交通费用→住宿补贴→出差补贴→其他费用 */
       let dataWithInvoiceTime = result.filter(item => item.invoiceTime).sort((a, b) => {
-        return new Date(b.invoiceTime).getTime() - new Date(a.invoiceTime).getTime()
+        return new Date(a.invoiceTime).getTime() - new Date(b.invoiceTime).getTime()
       })
       let dataWithoutInvoiceTime = result.filter(item => !item.invoiceTime)
       // 交通-住宿-出差-其它
