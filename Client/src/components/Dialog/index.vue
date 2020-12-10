@@ -59,9 +59,6 @@ export default {
       dialogVisible: false
     }
   },
-  updated () {
-    console.log(this.attrs, this.$listeners)
-  },
   methods: {
     open () {
       this.dialogVisible = true

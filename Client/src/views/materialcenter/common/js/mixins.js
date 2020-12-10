@@ -110,10 +110,11 @@ export const quotationTableMixin = {
   }
 }
 
-const IDS = ['SYS_QuotationStatus', 'SYS_InvoiceCompany', 'SYS_DeliveryMethod']
+const IDS = ['SYS_QuotationStatus', 'SYS_InvoiceCompany', 'SYS_DeliveryMethod', 'SYS_MaterialDiscount']
 const SYS_QuotationStatus = 'SYS_QuotationStatus'
 const SYS_InvoiceCompany = 'SYS_InvoiceCompany'
 const SYS_DeliveryMethod = 'SYS_DeliveryMethod'
+const SYS_MaterialDiscount = 'SYS_MaterialDiscount'
 export const categoryMixin = {
   computed: {
     quotationStatusMap () {
@@ -124,6 +125,9 @@ export const categoryMixin = {
     },
     deliveryMethodList () {
       return this.buildSelectList(this.categoryList.filter(item => item.typeId === SYS_DeliveryMethod))
+    },
+    discountList () {
+      return this.buildSelectList(this.categoryList.filter(item => item.typeId === SYS_MaterialDiscount))
     }
   },
   methods: {
@@ -202,10 +206,8 @@ export const configMixin = { // 表单配置
           type: 'select', options: this.invoiceCompanyList, isEnd: true, disabled: this.status === 'view' || this.status === 'pay' || (!this.isMaterialFinancial && this.status === 'approve') },
         { label: '收货地址', prop: 'collectionAddress', placeholder: '请选择', col: 18, disabled: !this.ifEdit },
         { label: '发货方式', prop: 'deliveryMethod', placeholder: '请选择', col: 6, type: 'select', options: this.deliveryMethodList, disabled: !this.ifEdit, isEnd: true },
-        { label: '备注', prop: 'remark', placeholder: '请填写', col: 18, disabled: !this.ifEdit },
-        { label: '总计', type: 'money', col: 6 }
+        { label: '备注', prop: 'remark', placeholder: '请填写', col: 18, disabled: !this.ifEdit }
       ] 
-      
     },
     returnFormConfig () { // 退料单表单
       return this.isReturn 

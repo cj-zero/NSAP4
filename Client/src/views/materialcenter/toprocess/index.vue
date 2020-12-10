@@ -146,7 +146,7 @@ export default {
       tableData: [],
       total: 0,
       quotationColumns: [
-        { label: '领料单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'view', isReceive: true }, type: 'link'},
+        { label: '领料单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'view' }, type: 'link'},
         { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link' },
         { label: '销售单号', prop: 'salesOrderId', handleClick: this._getQuotationDetail, options: { status: 'view', isSalesOrder: true }, type: 'link'},
         { label: '客户代码', prop: 'terminalCustomerId' },

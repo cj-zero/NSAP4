@@ -77,25 +77,6 @@
                   <p class="total-money text-overflow">{{ totalMoney | toThousands }}</p>
                 </el-tooltip>
               </template>
-              <!-- <template v-else-if="item.type === 'address'">
-                <div class="area-wrapper">
-                    <el-input 
-                    v-model="formData[item.prop]" 
-                    :style="{ width: item.width + 'px' }"
-                    :maxlength="item.maxlength"
-                    :disabled="item.disabled"
-                    :readonly="item.readonly"
-                    @focus="onAreaFocus(item.prop)"
-                    >
-                  </el-input>
-                  <template v-if="title !== 'view'">  
-                    <div class="selector-wrapper" 
-                      v-show="(isShowShipping && item.prop === 'shippingAddress' || isShowCollect && item.prop === 'collectionAddress')">
-                      <AreaSelector @close="onCloseArea" @change="onAreaChange" :options="{ prop: item.prop }"/>
-                    </div>
-                  </template>
-                </div>
-              </template> -->
             </el-form-item>
           </el-col>
         </el-row>
@@ -180,12 +161,14 @@
                 :columns="materialConfig"
                 max-height="200px"
               >
+                <!-- 小计头 -->
                 <template v-slot:totalPrice_header>
                   <el-tooltip effect="dark" placement="top-end">
-                    <div slot="content">{{ materialData.list | calcTotalItem(materialData.isProtected) | toThousands}}</div>
-                    <p class="text-overflow"> 总计 <span>{{ materialData.list | calcTotalItem(materialData.isProtected) | toThousands }}</span></p>
+                    <div slot="content">{{ materialData.list | calcTotalItem(materialData.isProtected) | toThousands }}</div>
+                    <p class="text-overflow"> 小计 <span>{{ materialData.list | calcTotalItem(materialData.isProtected) | toThousands }}</span></p>
                   </el-tooltip>                     
                 </template>
+                <!-- 数量 -->
                 <template v-slot:count="{ row }">
                   <el-form-item
                     :prop="'list.' + row.index + '.' + row.prop"
@@ -205,9 +188,31 @@
                     ></el-input-number>
                   </el-form-item>
                 </template>
+                <!-- 备注 -->
                 <template v-slot:remark="{ row }">
                   <el-input size="mini" v-model="materialData.list[row.index][row.prop]"></el-input>
                 </template>
+                <!-- 折扣 -->
+                <template v-slot:discount="{ row }">
+                  <el-select 
+                    size="mini"
+                    v-model="materialData.list[row.index].discount" 
+                    placeholder="请选择"
+                    @change="onDiscountChange"
+                    @focus="onDiscountFocus(row.index)">
+                    <el-option
+                      v-for="item in discountList"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value">
+                    </el-option>
+                  </el-select>
+                </template>
+                <!-- 总价格 -->
+                <template v-slot:totalPrice="{ row }">
+                  <span style="text-align: right;">{{ row.totalPrice | toThousands}}</span>
+                </template>
+                <!-- 操作 -->
                 <template v-slot:operation="{ row }">
                   <div style="display: inline-block;" @click="deleteMaterialItem(row.index)">
                     <el-icon class="el-icon-delete icon-item"></el-icon>
@@ -254,12 +259,21 @@
                         <p class="text-overflow">{{ scope.row.label }} {{ item.quotationMaterials | calcTotalItem(item.isProtected) | toThousands }}</p>
                       </el-tooltip>                      
                     </template>
+                    <template v-slot:discount="{ row }">
+                      {{ row.discount ? row.discount * 100  + '%' : '' }}
+                    </template>
+                    <template v-slot:totalPrice="{ row }">
+                      <span style="text-align: right;">{{ row.totalPrice | toThousands }}</span>
+                    </template>
                   </common-table>
                 </div>
               </li>
             </ul>
           </div>
         </template>
+        <el-row justify="end" class="quotation-total-money">
+          <p>总计：{{ totalMoney | toThousands }}</p>
+        </el-row>
       </template>
       <template v-else>
         <!-- 审批/销售订单出现 -->
@@ -279,6 +293,12 @@
               </el-row>
             </template>
           </common-table>
+          <el-row type="flex" class="money-wrapper">
+            <p>总金额：{{ salesPriceTotal | toThousands }}</p>
+            <p>成本：{{ costPirceTotal | toThousands}}</p>
+            <p>毛利： {{ grossProfit | toThousands }}%</p>
+            <p>毛利总价：{{ grossProfitTotal | toThousands }}</p>
+          </el-row>
         </div>
       </template>
       <!-- 操作记录 不可编辑时才出现 -->
@@ -326,6 +346,7 @@
       width="580px"
       :btnList="materialBtnList"
       :append-to-body="true"
+      @closed="closeMaterialDialog"
     >
       <common-table  
         ref="materialTable" 
@@ -387,7 +408,7 @@ import {
   getServiceOrderList,
   getSerialNumberList, 
   getMaterialList, 
-  AddQuotationOrder,
+  AddQuotationOrder, 
   updateQuotationOrder,
   // getQuotationMaterialCode,
   approveQuotationOrder
@@ -401,7 +422,7 @@ import zxchat from '@/views/serve/callserve/chat/index'
 // import AreaSelector from '@/components/AreaSelector'
 import { configMixin, quotationOrderMixin, categoryMixin, chatMixin } from '../js/mixins'
 import { timeToFormat } from "@/utils";
-import { findIndex } from '@/utils/process'
+import { findIndex, accAdd } from '@/utils/process'
 import { isNumber } from '@/utils/validate'
 import rightImg from '@/assets/table/right.png'
 const NOT_EDIT_STATUS_LIST = ['view', 'approve', 'pay'] // 不可编辑的状态 1.查看 2.审批 3.支付
@@ -421,7 +442,7 @@ export default {
     calcTotalItem (val, isProtected) { // 计算每一个物料表格的总金额
       return isProtected ? 0 : 
         val.filter(item => isNumber(item.totalPrice))
-          .reduce((prev, next) => prev + next.totalPrice, 0)
+          .reduce((prev, next) => accAdd(prev, next.totalPrice), 0)
     },
     calcSerialTotalMoney (serialNumber, list) {
       let index = findIndex(list, item => {
@@ -430,7 +451,7 @@ export default {
       if (index !== -1 && !list[index].isProtected) { // 保外的才算钱
         return list[index].
           quotationMaterials.filter(item => isNumber(item.totalPrice))
-          .reduce((prev, next) => prev + next.totalPrice, 0)
+          .reduce((prev, next) => accAdd(prev, next.totalPrice), 0)
       }
       return 0
     }
@@ -587,24 +608,29 @@ export default {
         { label: '物料描述', prop: 'materialDescription' },
         { label: '数量', prop: 'count', slotName: 'count', align: 'right' },
         { label: '最大数量', prop: 'maxQuantity', align: 'right' },
-        { label: '单价', prop: 'unitPrice', align: 'right' },
-        { label: '小计', prop: 'totalPrice', disabled: true, align: 'right', isCustomizeHeader: true },
+        { label: '成本价', prop: 'unitPrice', align: 'right' },
+        { label: '销售价', prop: 'salesPrice', align: 'right' },
+        { label: '折扣(%)', prop: 'discount', slotName: 'discount', align: 'right' },
         { label: '备注', slotName: 'remark', prop: 'remark' },
+        { label: '小计', prop: 'totalPrice', disabled: true, align: 'right', isCustomizeHeader: true, slotName: 'totalPrice' },
         { label: '操作', slotName: 'operation' }
       ],    
-      // 物料填写表格列表
+      // 物料填写表格列表 
       materialRules: {
         count: [{ required: true }]
       },
+      // 预览
       materialTableColumns: [
         { label: '序号', type: 'index' },
         { label: '物料编码', prop: 'materialCode' },
         { label: '物料描述', prop: 'materialDescription' },
         { label: '数量', prop: 'count', align: 'right' },
         { label: '最大数量', prop: 'maxQuantity', align: 'right' },
-        { label: '单价', prop: 'unitPrice', align: 'right' },
-        { label: '小计', prop: 'totalPrice', align: 'right', isCustomizeHeader: true },
-        { label: '备注', prop: 'remark', type: 'input' }
+        { label: '成本价', prop: 'unitPrice', align: 'right' },
+        { label: '销售价', prop: 'salesPrice', align: 'right' },
+        { label: '折扣(%)', prop: 'discount', align: 'right', slotName: 'discount' },
+        { label: '备注', prop: 'remark', type: 'input' },
+        { label: '小计', prop: 'totalPrice', align: 'right', isCustomizeHeader: true, slotName: 'totalPrice' },
       ],
       // 物料汇总表格
       materialSummaryList: [],
@@ -676,12 +702,31 @@ export default {
       console.log(this.status, 'status')
       return NOT_EDIT_STATUS_LIST.includes(this.status)
     },
-    totalMoney () {
+    totalMoney () { // 报价单总金额
       if (this.formData.quotationProducts.length) {
         let val = this.formData.quotationProducts
         return this._calcTotalMoney(val)
       } 
       return 0
+    },
+    salesPriceTotal () { // 汇总物料的 销售价总计
+      return this.materialSummaryList.reduce((prev, next) => {
+        return accAdd(prev, next.salesPrice)
+      }, 0)
+    },
+    costPirceTotal () { // 汇总物料的 成本价总计
+      return this.materialSummaryList.reduce((prev, next) => {
+        return accAdd(prev, next.costPrice)
+      }, 0)
+    },
+    grossProfitTotal () { // 毛利总价
+      return this.salesPriceTotal - this.costPirceTotal
+    },
+    grossProfit () { // 毛利
+      if (this.costPirceTotal === 0) {
+        return 0 
+      }
+      return (this.grossProfitTotal / this.costPirceTotal * 100)
     },
     materialData () {
       // 找到当前选择的设备序列号对应的物料列表数据
@@ -704,7 +749,7 @@ export default {
       for (let i = 0; i < val.length; i++) {
         if (!val[i].isProtected) {
           result += val[i].quotationMaterials.filter(item => isNumber(item.totalPrice))
-          .reduce((prev, next) => prev + next.totalPrice, 0)
+          .reduce((prev, next) => accAdd(prev, next.totalPrice), 0)
         }
       }
       return result
@@ -831,32 +876,25 @@ export default {
         return item
       })
     },
-    // _getQuotationMaterialCode () { // 获取服务单下的所有零件
-    //   this.materialAllLoading = true
-    //   getQuotationMaterialCode({
-    //     serviceOrderId: this.formData.serviceOrderId
-    //   }).then(res => {
-    //     let { data } = res
-    //     this.materialSummaryList = data.reduce((prev, next) => {
-    //       return prev.concat(next.materialDetailList)
-    //     }, []).map((item, index) => {
-    //       item.index = index
-    //       return item
-    //     })
-    //     console.log(data, 'data', this.materialSummaryList)
-    //     this.materialAllLoading = false
-    //   }).catch(err => {
-    //     this.materialAllLoading = false
-    //     this.$message.error(err.message)
-    //   })
-    // },
+    onDiscountChange (val) {
+      let { list, isProtected } = this.materialData
+      let data = list[this.materialItemIndex]
+      console.log(val, 'val')
+      let { salesPrice, count } = data
+      data.totalPrice = Number((!isProtected ? (val * salesPrice * count || 0) : 0).toFixed(2))
+    },
+    onDiscountFocus (index) {
+      this.materialItemIndex = index
+      console.log(this.materilItemIndex, 'discount focus')
+    },
     onCountFocus (index) {
       this.materialItemIndex = index // 当前点击的物料表格的第几项
     },
     onCountChange (val) {
       let { list, isProtected } = this.materialData
       let data = list[this.materialItemIndex]
-      data.totalPrice = !isProtected ? (val * data.unitPrice || 0) : 0
+      let { salesPrice, discount } = data
+      data.totalPrice = Number((!isProtected ? (val * salesPrice * discount || 0) : 0).toFixed(2))
     },
     _resetMaterialInfo () { // 重置物料相关的变量和数据
       this.formData.quotationProducts = []
@@ -885,11 +923,13 @@ export default {
         item.materialCode = itemCode
         item.remark = ''
         item.unitPrice = 7
+        item.salesPrice = 3 * item.unitPrice
+        item.discount = '1.00'
         item.count = 1
         item.onHand = onHand
         item.maxQuantity = quantity
         console.log(item.maxQuantity, 'quantity')
-        item.totalPrice = !isProtected ? item.unitPrice * item.count : 0
+        item.totalPrice = Number((!isProtected ? item.salesPrice * item.count : 0).toFixed(2))
         return item
       })
     },
@@ -1180,11 +1220,6 @@ export default {
           z-index: 10;
         }
       }
-      /* 总金额 */
-      .total-money {
-        font-size: 17px;
-        font-weight: bold;
-      }
     }
     /* 序列号查询表格 */
     .serial-wrapper {
@@ -1236,11 +1271,32 @@ export default {
         }
       }
     }
+    /* 报价单总价格 */
+    .quotation-total-money {
+      margin-top: 4px;
+      padding: 1px 0;
+      font-size: 17px;
+      font-weight: bold;
+      border-top: 1px solid;
+      border-bottom: 1px solid;
+      p {
+        text-align: right;
+      }
+    }
     /* 物料汇总表格 */
     .material-summary-wrapper {
       margin-top: 10px;
       .material-summary-table {
         height: auto !important;
+      }
+      /* 物料汇总金额样式 */
+      .money-wrapper { 
+        justify-content: flex-end;
+        font-size: 17px;
+        font-weight: bold;
+        p  {
+          margin-left: 10px;
+        }
       }
     }
     /* 操作记录表格 */
