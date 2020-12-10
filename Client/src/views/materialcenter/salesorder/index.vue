@@ -36,7 +36,7 @@
       :loading="dialogLoading"
       title="销售订单详情"
       :btnList="btnList"
-      :onClosed="close"
+      @closed="close"
     >
       <quotation-order 
         ref="quotationOrder" 

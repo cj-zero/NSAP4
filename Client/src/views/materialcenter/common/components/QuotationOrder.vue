@@ -300,19 +300,17 @@
     <my-dialog
       ref="customerDialog"
       title="服务列表"
-      width="600px"
+      width="770px"
       :btnList="customerBtnList"
-      :appendToBody="true"
+      :append-to-body="true"
     >
-      <div>
-        <common-table 
-          ref="customerTable" 
-          :data="customerData" 
-          :columns="customerColumns" 
-          max-height="400px"
-          radioKey='id'>
-        </common-table>
-      </div>
+      <common-table 
+        ref="customerTable" 
+        :data="customerData" 
+        :columns="customerColumns" 
+        max-height="400px"
+        radioKey='id'>
+      </common-table>
       <pagination
         v-show="customerTotal > 0"
         :total="customerTotal"
@@ -327,7 +325,7 @@
       title="物料编码"
       width="580px"
       :btnList="materialBtnList"
-      :appendToBody="true"
+      :append-to-body="true"
     >
       <common-table  
         ref="materialTable" 
@@ -349,12 +347,10 @@
     <!-- 驳回理由弹窗 -->
     <my-dialog
       ref="remarkDialog"
-      :center="true"
       title="驳回"
-      :mAddToBody="true" 
-      :appendToBody="true"
+      :append-to-body="true"
       :btnList="remarkBtnList"
-      :onClosed="onRemarkClose"
+      @closed="onRemarkClose"
       v-loading="remarkLoading"
       width="350px">
       <remark ref="remark" @input="onRemarkInput" :tagList="[]"></remark>
@@ -364,7 +360,7 @@
       ref="serviceDetail"
       width="1210px"
       title="服务单详情"
-      :appendToBody="true"
+      :append-to-body="true"
     >
       <el-row :gutter="20" class="position-view">
         <el-col :span="18" >

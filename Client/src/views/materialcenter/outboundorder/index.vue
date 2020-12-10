@@ -36,7 +36,7 @@
       :loading="dialogLoading"
       title="出库单详情"
       :btnList="btnList"
-      :onClosed="close"
+      @closed="close"
     >
       <outbound-order 
         ref="outboundOrder" 

@@ -798,8 +798,8 @@
       width="500px"
       title="呼叫主题"
       :btnList="themeBtnList"
-      :appendToBody="true"
-      @onClose="closeFormTheme"
+      :append-to-body="true"
+      @closed="closeFormTheme"
     >
       <el-input
         style="width: 200px; margin-bottom: 10px;"

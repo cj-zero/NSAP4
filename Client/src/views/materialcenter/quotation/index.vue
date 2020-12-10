@@ -37,7 +37,7 @@
       :loading="dialogLoading"
       :title="`${textMap[status]}报价单`"
       :btnList="btnList"
-      :onClosed="close"
+      @closed="close"
     >
       <quotation-order 
         ref="quotationOrder" 

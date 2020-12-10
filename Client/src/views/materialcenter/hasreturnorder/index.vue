@@ -36,7 +36,7 @@
       :loading="dialogLoading"
       title="退料单详情"
       :btnList="btnList"
-      :onClosed="close"
+      @closed="close"
     >
       <return-Order 
         ref="returnOrder" 

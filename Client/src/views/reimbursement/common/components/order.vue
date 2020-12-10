@@ -869,10 +869,9 @@
     <my-dialog 
       ref="customerDialog" 
       width="621px" 
-      :mAddToBody="true" 
-      :appendToBody="true"
+      :append-to-body="true"
       :btnList="customerBtnList"
-      :onClosed="closeDialog">
+      @closed="closeDialog">
       <common-table 
         ref="customerTable"
         max-height="500px"
@@ -892,11 +891,10 @@
     <my-dialog 
       ref="costDialog" 
       width="800px" 
-      :mAddToBody="true" 
-      :appendToBody="true"
+      :append-to-body="true"
       :btnList="costBtnList"
       :loading="costLoading"
-      :onClosed="closeCostDialog">
+      @closed="closeCostDialog">
       <div style="height: 400px;">
         <common-table 
           ref="costTable"
@@ -920,9 +918,8 @@
       width="983px"
       title="服务行为报告单"
       ref="reportDialog"
-      :mAddToBody="true" 
-      :appendToBody="true"
-      :onClosed="resetReport">
+      :append-to-body="true"
+      @closed="resetReport">
       <Report :data="reportData" ref="report"/>
     </my-dialog>
     <!-- 确认审批弹窗 -->
@@ -930,10 +927,9 @@
       ref="approve"
       :center="true"
       :title="remarkTitle"
-      :mAddToBody="true" 
-      :appendToBody="true"
+      :append-to-body="true"
       :btnList="remarkBtnList"
-      :onClosed="onApproveClose"
+      @closed="onApproveClose"
       v-loading="remarkLoading"
       width="350px">
       <remark ref="remark" @input="onRemarkInput" :tagList="reimburseTagList" :title="title"></remark>
@@ -943,8 +939,7 @@
       ref="serviceDetail"
       width="1210px"
       title="服务单详情"
-      :mAddToBody="true" 
-      :appendToBody="true"
+      :append-to-body="true"
     >
       <el-row :gutter="20" class="position-view">
         <el-col :span="18" >

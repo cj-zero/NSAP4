@@ -36,7 +36,7 @@
       :loading="dialogLoading"
       title="退料单详情"
       :btnList="btnList"
-      :onClosed="close"
+      @closed="close"
     >
       <return-Order 
         ref="returnOrder" 
@@ -154,7 +154,10 @@ export default {
         this.dialogLoading = false
       })
     },
-    
+    close () {
+      this.$refs.returnOrder.resetInfo()
+      this.$refs.returnOrderDialog.close()
+    }
   },
   mounted () {
     this._getList()

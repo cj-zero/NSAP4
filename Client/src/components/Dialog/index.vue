@@ -3,22 +3,9 @@
     class="my-dialog-wrapper my-dialog-mini"
     v-el-drag-dialog
     v-loading.fullscreen="loading"
-    :element-loading-text="loadingText"
-    element-loading-spinner="el-icon-loading"
-    element-loading-background="rgba(0, 0, 0, 0.8)"
-    :center="center"
-    :width="width"
-    :title="title"
-    :modal="modal"
-    :top="top"
+    v-bind="attrs"
+    v-on="$listeners"
     :visible.sync="dialogVisible"
-    :modal-append-to-body="mAddToBody"
-    :close-on-click-modal="closeByClickModal"
-    :append-to-body="appendToBody"
-    :destroy-on-close="destroyOnClose"
-    @closed="onClosed"
-    @close="onClosed"
-    @open="onOpen"
     @click.native.stop
   >
     <slot></slot>
@@ -41,50 +28,15 @@
 
 <script>
 import elDragDialog from "@/directive/el-dragDialog";
+import { defaultConfig } from './default'
 export default {
   directives: {
     elDragDialog
   },
   props: {
-    width: {
-      type: String,
-      default: '50%'
-    },
-    modal: {
-      type: Boolean,
-      default: false
-    },
-    top: {
-      type: String,
-      default: '76px'
-    },
-    loadingText: {
-      type: String,
-      defualt: '拼命加载中'
-    },
-    title: {
-      type: String,
-      default: ''
-    },
     isShowBtn: {
       type: Boolean,
       default: true
-    },
-    mAddToBody: { // 遮罩层是否插入至 body 元素上，若为 false，则遮罩层会插入至 Dialog 的父元素上
-      type: Boolean,
-      default: false
-    },
-    closeByClickModal: {
-      type: Boolean,
-      default: false
-    },
-    appendToBody: { // Dialog 自身是否插入至 body 元素上。嵌套的 Dialog 必须指定该属性并赋值为 true
-      type: Boolean,
-      default: false 
-    },
-    center: {
-      type: Boolean,
-      default: false
     },
     btnList: {
       type: Array,
@@ -92,24 +44,23 @@ export default {
         return []
       }
     },
-    onClosed: { // 弹窗关闭
-      type: Function,
-      default () { () => {} }
-    },
-    onOpen: { // 弹窗打开
-      type: Function,
-      default () { () => {} }
-    },
     loading: {
       type: Boolean,
       default: false
     },
-    destroyOnClose: Boolean // 关闭弹窗时 是否销毁内部元素
+  },
+  computed: {
+    attrs () {
+      return Object.assign({}, defaultConfig, this.$attrs)
+    }
   },
   data () {
     return {
       dialogVisible: false
     }
+  },
+  updated () {
+    console.log(this.attrs, this.$listeners)
   },
   methods: {
     open () {

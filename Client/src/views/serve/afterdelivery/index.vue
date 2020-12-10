@@ -53,7 +53,7 @@
       :loading="dialogLoading"
       title="快递单详情"
       :btnList="btnList"
-      :onClosed="close"
+      @closed="close"
     >
       <express-order 
         ref="expressOrder" 

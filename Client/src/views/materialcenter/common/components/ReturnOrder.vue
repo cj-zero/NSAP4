@@ -171,7 +171,7 @@
       ref="serviceDetail"
       width="1210px"
       title="服务单详情"
-      :appendToBody="true"
+      :append-to-body="true"
     >
       <el-row :gutter="20" class="position-view">
         <el-col :span="18" >
