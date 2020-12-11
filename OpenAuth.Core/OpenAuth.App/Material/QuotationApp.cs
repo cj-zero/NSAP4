@@ -342,13 +342,26 @@ namespace OpenAuth.App.Material
                 {
                     MnfSerialStr.Append("'" + item + "',");
                 });
+                var manufacturerSerialNumber = from a in UnitWork.Find<OITL>(null)
+                                    join b in UnitWork.Find<ITL1>(null) on new { a.LogEntry, a.ItemCode } equals new { b.LogEntry, b.ItemCode } into ab
+                                    from b in ab.DefaultIfEmpty()
+                                    join c in UnitWork.Find<OSRN>(null) on new { b.ItemCode, SysNumber = b.SysNumber.Value } equals new { c.ItemCode, c.SysNumber } into bc
+                                    from c in bc.DefaultIfEmpty()
+                                    where (a.DocType == 15 || a.DocType == 59) && c.MnfSerial.Contains(MnfSerialStr.ToString().Substring(0, MnfSerialStr.Length - 1))
+                                    select new { c.MnfSerial, a.DocEntry,a.BaseEntry,a.DocType };
 
-                var Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"SELECT d.DocEntry,c.MnfSerial
-                    FROM oitl a left join itl1 b
-                    on a.LogEntry = b.LogEntry and a.ItemCode = b.ItemCode 
-                    left join osrn c on b.ItemCode = c.ItemCode and b.SysNumber = c.SysNumber
-						        left join odln d on a.DocEntry=d.DocEntry
-                    where a.DocType =15 and c.MnfSerial in ({MnfSerialStr.ToString().Substring(0, MnfSerialStr.Length - 1)})").Select(s => new SysEquipmentColumn { MnfSerial = s.MnfSerial, DocEntry = s.DocEntry }).ToListAsync();
+                var Equipments = from a in manufacturerSerialNumber
+                                 join b in UnitWork.Find<ODLN>(null) on a.DocEntry equals b.DocEntry into ab
+                                 from b in ab.DefaultIfEmpty()
+                                 select new { a.DocEntry,a.MnfSerial};
+                var MnfSerialList = await manufacturerSerialNumber.ToListAsync();
+                var EquipmentList = await Equipments.ToListAsync();
+                //  var Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"SELECT d.DocEntry,c.MnfSerial
+                //      FROM oitl a left join itl1 b
+                //      on a.LogEntry = b.LogEntry and a.ItemCode = b.ItemCode 
+                //      left join osrn c on b.ItemCode = c.ItemCode and b.SysNumber = c.SysNumber
+                //left join odln d on a.DocEntry=d.DocEntry
+                //      where a.DocType =15 and c.MnfSerial in ({MnfSerialStr.ToString().Substring(0, MnfSerialStr.Length - 1)})").Select(s => new SysEquipmentColumn { MnfSerial = s.MnfSerial, DocEntry = s.DocEntry }).ToListAsync();
 
                 var DocEntryIds = Equipments.Select(e => e.DocEntry).ToList();
 
@@ -357,19 +370,23 @@ namespace OpenAuth.App.Material
                                where DocEntryIds.Contains(b.Base_DocEntry) && b.Base_DocType == 24
                                select new { a, b };
                 var docdate = await buyopors.ToListAsync();
-                var IsProtecteds = Equipments.Select(e => new
+                var IsProtecteds = EquipmentList.Select(e => new
                 {
                     MnfSerial = e.MnfSerial,
                     DocDate = Convert.ToDateTime(docdate.Where(d => d.b.Base_DocEntry.Equals(e.DocEntry)).FirstOrDefault()?.a.DocDate).AddYears(1)
                 }).ToList();
                 #endregion
+
                 result.Data = ServiceWorkOrderList.Skip((request.page - 1) * request.limit)
                 .Take(request.limit).Select(s => new
                 {
+                    SalesOrder= MnfSerialList.Where(m=>m.MnfSerial.Equals(s.ManufacturerSerialNumber) && m.DocType==17)?.Max(m=>m.BaseEntry).Value,
+                    ProductionOrder = MnfSerialList.Where(m => m.MnfSerial.Equals(s.ManufacturerSerialNumber) && m.DocType == 202)?.Max(m => m.BaseEntry).Value,
                     ManufacturerSerialNumber = s.ManufacturerSerialNumber,
                     MaterialCode = s.MaterialCode,
                     MaterialDescription = s.MaterialDescription,
-                    IsProtected = IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).FirstOrDefault()?.DocDate > DateTime.Now ? true : false
+                    IsProtected = IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).FirstOrDefault()?.DocDate > DateTime.Now ? true : false,
+                    DocDate=IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).FirstOrDefault()?.DocDate
                 }).ToList();
             }
             else
