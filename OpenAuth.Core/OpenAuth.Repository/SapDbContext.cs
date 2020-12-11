@@ -47,9 +47,7 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<OITL>().HasKey(o => o.LogEntry);
             modelBuilder.Entity<ITL1>().HasKey(o => new { o.LogEntry, o.ItemCode, o.SysNumber, });
             modelBuilder.Entity<OSRN>().HasKey(o => o.AbsEntry);
-            
-
-
+            modelBuilder.Entity<ODLN>().HasKey(o => o.DocEntry);
         }
         //非数据库表格
         public virtual DbSet<SysEquipmentColumn> SysEquipmentColumns { get; set; }
@@ -1216,7 +1214,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<ODGP> Odgps { get; set; }
         //public virtual DbSet<ODIM> Odims { get; set; }
         //public virtual DbSet<ODLL> Odlls { get; set; }
-        //public virtual DbSet<ODLN> Odlns { get; set; }
+        public virtual DbSet<ODLN> Odlns { get; set; }
         //public virtual DbSet<ODMC> Odmcs { get; set; }
         //public virtual DbSet<ODMW> Odmws { get; set; }
         //public virtual DbSet<ODNF> Odnfs { get; set; }
