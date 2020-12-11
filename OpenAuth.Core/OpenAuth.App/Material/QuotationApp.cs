@@ -806,46 +806,6 @@ namespace OpenAuth.App.Material
                             //todo:要修改的字段赋值
                         });
                         await UnitWork.SaveAsync();
-                        #region 合并零件表
-                        List<QuotationMaterial> QuotationMaterialsT = new List<QuotationMaterial>();
-                        QuotationObj.QuotationProducts.Where(q => q.IsProtected == true).ToList().ForEach(q => QuotationMaterialsT.AddRange(q.QuotationMaterials));
-                        List<QuotationMaterial> QuotationMaterialsF = new List<QuotationMaterial>();
-                        QuotationObj.QuotationProducts.Where(q => q.IsProtected == false).ToList().ForEach(q => QuotationMaterialsF.AddRange(q.QuotationMaterials));
-
-                        var MaterialsT = from a in QuotationMaterialsT
-                                         group a by new { a.MaterialCode, a.MaterialDescription, a.Unit, a.UnitPrice } into g
-                                         select new QueryQuotationMergeMaterialListReq
-                                         {
-                                             MaterialCode = g.Key.MaterialCode,
-                                             MaterialDescription = g.Key.MaterialDescription,
-                                             Unit = g.Key.Unit,
-                                             SalesPrice = g.Key.UnitPrice,
-                                             Count = g.Sum(a => a.Count),
-                                             TotalPrice = g.Sum(a => a.TotalPrice),
-                                             IsProtected = true,
-                                             QuotationId = QuotationObj.Id
-                                         };
-
-                        var MaterialsF = from a in QuotationMaterialsF
-                                         group a by new { a.MaterialCode, a.MaterialDescription, a.Unit, a.UnitPrice } into g
-                                         select new QueryQuotationMergeMaterialListReq
-                                         {
-                                             MaterialCode = g.Key.MaterialCode,
-                                             MaterialDescription = g.Key.MaterialDescription,
-                                             Unit = g.Key.Unit,
-                                             SalesPrice = g.Key.UnitPrice,
-                                             Count = g.Sum(a => a.Count),
-                                             TotalPrice = g.Sum(a => a.TotalPrice),
-                                             IsProtected = false,
-                                             QuotationId = QuotationObj.Id
-                                         };
-
-                        var QuotationMergeMaterialList = MaterialsT.ToList();
-                        QuotationMergeMaterialList.AddRange(MaterialsF.ToList());
-                        var QuotationMergeMaterialListMap = QuotationMergeMaterialList.MapToList<QuotationMergeMaterial>();
-                        await UnitWork.BatchAddAsync<QuotationMergeMaterial>(QuotationMergeMaterialListMap.ToArray());
-                        await UnitWork.SaveAsync();
-                        #endregion
                     }
                     else
                     {
@@ -909,8 +869,47 @@ namespace OpenAuth.App.Material
                             QuotationId = QuotationObj.Id
                         });
                         await UnitWork.SaveAsync();
-                    }
+                        #region 合并零件表
+                        List<QuotationMaterial> QuotationMaterialsT = new List<QuotationMaterial>();
+                        QuotationObj.QuotationProducts.Where(q => q.IsProtected == true).ToList().ForEach(q => QuotationMaterialsT.AddRange(q.QuotationMaterials));
+                        List<QuotationMaterial> QuotationMaterialsF = new List<QuotationMaterial>();
+                        QuotationObj.QuotationProducts.Where(q => q.IsProtected == false).ToList().ForEach(q => QuotationMaterialsF.AddRange(q.QuotationMaterials));
 
+                        var MaterialsT = from a in QuotationMaterialsT
+                                         group a by new { a.MaterialCode, a.MaterialDescription, a.Unit, a.UnitPrice } into g
+                                         select new QueryQuotationMergeMaterialListReq
+                                         {
+                                             MaterialCode = g.Key.MaterialCode,
+                                             MaterialDescription = g.Key.MaterialDescription,
+                                             Unit = g.Key.Unit,
+                                             SalesPrice = g.Key.UnitPrice,
+                                             Count = g.Sum(a => a.Count),
+                                             TotalPrice = g.Sum(a => a.TotalPrice),
+                                             IsProtected = true,
+                                             QuotationId = QuotationObj.Id
+                                         };
+
+                        var MaterialsF = from a in QuotationMaterialsF
+                                         group a by new { a.MaterialCode, a.MaterialDescription, a.Unit, a.UnitPrice } into g
+                                         select new QueryQuotationMergeMaterialListReq
+                                         {
+                                             MaterialCode = g.Key.MaterialCode,
+                                             MaterialDescription = g.Key.MaterialDescription,
+                                             Unit = g.Key.Unit,
+                                             SalesPrice = g.Key.UnitPrice,
+                                             Count = g.Sum(a => a.Count),
+                                             TotalPrice = g.Sum(a => a.TotalPrice),
+                                             IsProtected = false,
+                                             QuotationId = QuotationObj.Id
+                                         };
+
+                        var QuotationMergeMaterialList = MaterialsT.ToList();
+                        QuotationMergeMaterialList.AddRange(MaterialsF.ToList());
+                        var QuotationMergeMaterialListMap = QuotationMergeMaterialList.MapToList<QuotationMergeMaterial>();
+                        await UnitWork.BatchAddAsync<QuotationMergeMaterial>(QuotationMergeMaterialListMap.ToArray());
+                        await UnitWork.SaveAsync();
+                        #endregion
+                    }
                     #region 删除
 
                     var QuotationProducts = await UnitWork.Find<QuotationProduct>(q => q.QuotationId.Equals(QuotationObj.Id)).Include(q => q.QuotationMaterials).ToListAsync();
