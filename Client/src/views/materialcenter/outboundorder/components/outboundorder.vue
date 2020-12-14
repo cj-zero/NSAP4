@@ -87,7 +87,7 @@
             class="courier-table"
             ref="courierTable"
             :data="expressListData.list" 
-            :columns="expressColumns2"
+            :columns="expressColumns"
             max-height="150px"
           >
             <template v-slot:expressNumber="{ row }">
@@ -269,9 +269,9 @@ export default {
         { label: '序号', type: 'index' },
         { label: '物料编码', prop: 'materialCode' },
         { label: '物料描述', prop: 'materialDescription' },
-        { label: '总数量', prop: 'count' },
-        { label: '单位', prop: 'unit' },
-        { label: '已出库', prop: 'sentQuantity' }
+        { label: '总数量', prop: 'count', align: 'right' },
+        { label: '单位', prop: 'unit', align: 'right' },
+        { label: '已出库', prop: 'sentQuantity', align: 'right' }
       ]
       console.log(this.status)
       return this.status === 'view' ? columns : columns.concat([{ label: '出库数量', prop: 'delivery', slotName: 'delivery' }])
@@ -320,12 +320,6 @@ export default {
         // expressInformation: [{ required: true }]
       },
       expressColumns: [
-        { label: '快递单号', type: 'input', prop: 'number', width: '100px' },
-        { label: '物流信息', prop: 'info' },
-        { label: '备注', type: 'input', prop: 'remark', width: '150px' },
-        { label: '图片', prop: 'pictures', width: '200px' }
-      ],
-      expressColumns2: [
         { label: '快递单号', type: 'slot', slotName: 'expressNumber', prop: 'expressNumber', width: '100px' },
         { label: '物流信息', type: 'slot', slotName: 'expressInformation', prop: 'expressInformation' },
         { label: '备注', type: 'slot', slotName: 'remark', prop: 'remark', width: '150px' },

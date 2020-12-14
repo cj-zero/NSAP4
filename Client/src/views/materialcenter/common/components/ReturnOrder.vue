@@ -269,8 +269,8 @@ export default {
       let config = [
         { label: '物料编码', prop: 'materialCode' },
         { label: '物料描述', prop: 'materialDescription' },
-        { label: '本次退还数量', prop: 'count' },
-        { label: '需退总计', prop: 'totalCount' },
+        { label: '本次退还数量', prop: 'count', align: 'right' },
+        { label: '需退总计', prop: 'totalCount', align: 'right' },
         { label: '图片', slot: 'pictures' },
         { label: '发货备注', prop: 'shippingRemark' },
         { label: '核对验收', slotName: 'check', width: '150px' }

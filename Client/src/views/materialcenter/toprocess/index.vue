@@ -152,7 +152,6 @@ export default {
         { label: '客户代码', prop: 'terminalCustomerId' },
         { label: '客户名称', prop: 'terminalCustomer' },
         { label: '单据总金额', prop: 'totalMoney', align: 'right' },
-        { label: '未清金额', prop: 'otherMoney', align: 'right' },
         { label: '申请人', prop: 'createUser' },
         { label: '备注', prop: 'remark' },
         { label: '创建时间', prop: 'createTime' },

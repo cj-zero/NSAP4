@@ -7,7 +7,6 @@ export function getReturnNoteList(params) { // 获取退料单列表
     params
   })
 }
-
 export function returnMaterials(data) { // 退料
   return request({
     url: '/ReturnNotes/ReturnMaterials',
@@ -47,6 +46,24 @@ export function accraditate(data) { // 验收仓库记录
     data
   })
 }
+
+export function getClearReturnNoteList (params) { // 获取结算退料列表
+  return request({
+    url: '/ReturnNotes/GetClearReturnNoteList',
+    method: 'get',
+    params
+  })
+}
+
+export function getClearReturnNoteDetail (params) { // 获取结算退料详情
+  return request({
+    url: '/ReturnNotes/GetClearReturnNoteDetail',
+    method: 'get',
+    params
+  })
+}
+
+
 
 
 

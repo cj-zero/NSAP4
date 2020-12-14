@@ -597,9 +597,9 @@ export default {
         { type: 'selection' },
         { label: '物料编码', prop: 'itemCode', width: 100 },
         { label: '物料描述', prop: 'itemName' },
-        { label: '零件规格', prop: 'buyUnitMsr', width: 100 },
-        { label: '库存量', prop: 'onHand', width: 100 },
-        { label: '仓库号', prop: 'whsCode', width: 100 }
+        { label: '零件规格', prop: 'buyUnitMsr', width: 100, align: 'right' },
+        { label: '库存量', prop: 'onHand', width: 100, align: 'right' },
+        { label: '仓库号', prop: 'whsCode', width: 100, align: 'right' }
       ],
       // 根据设备序列号生成的物料表格
       materialConfig:[

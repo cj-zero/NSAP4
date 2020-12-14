@@ -20,20 +20,24 @@
             :columns="repairColumns" 
             :loading="tableLoading"
             @row-click="onRowClick">
+            <template v-slot:expand="{ row }">
+              <common-table 
+                v-if="row.children && row.children.length"
+                style="width: calc(100% - 47px);margin-left: 47px;"
+                height="100%"
+                :data="row.children" 
+                :columns="repairColumns.slice(1)" 
+                :row-style="rowStyle"
+                :stripe="false"
+                @row-click="onRowClick">
+                <template v-slot:attachment="{ row }">
+                  <AttachmentList :fileList="row.fileList">
+                  </AttachmentList>
+                </template>
+              </common-table>
+            </template>
             <template v-slot:attachment="{ row }">
-              <!-- <UploadFile 
-                uploadType="file" 
-                :fileList="row.fileList" 
-                :ifShowTip="false" 
-                :disabled="true" 
-              /> -->
               <AttachmentList :fileList="row.fileList">
-                <template v-slot:a>
-                  aaaaa
-                </template>
-                <template slot-scope="scope">
-                  <span>{{ scope.row.index }}</span>
-                </template>
               </AttachmentList>
             </template>
           </common-table>
@@ -176,6 +180,7 @@ export default {
       total: 0,
       currentRow: null,
       repairColumns: [
+        { type: 'expand' },
         { type: 'index', label: '序号' },
         { label: '服务ID', prop: 'u_SAP_ID', handleClick: this._openServiceOrder, type: 'link', width: 60 },
         { label: '设备类型', prop: 'materialType', width: 60 },
@@ -196,14 +201,19 @@ export default {
     onRowClick (row) {
       this.currentRow = row
     },
+    rowStyle () {
+      return {
+        backgroundColor: '#f2f6fc'
+      }
+    },
     _getList () {
       this.tableLoading = true
       getReturnRepairList(this.listQuery).then(res => {
         let { count, data } = res
         this.tableData = this._normalizeList(data)
+        console.log(this.tableData, 'tableData')
         this.total = count
         this.tableLoading = false
-        this.$refs.expressTable.resetCurrentRow()
         this.currentRow = null
       }).catch(err => {
         this.$message.error(err.message)
@@ -211,26 +221,32 @@ export default {
       })
     },
     _normalizeList (list) {
-      return list.map(item => {
-        let { expressId, expressInfo } = item
-        let result = { expressId, ...expressInfo[0] }
-        let  { expressInformation, expressAccessorys, isCheck } = result
-        let expressInfoList = expressInformation ? JSON.parse(expressInformation).data : '' // 物流信息
-        let newContext = expressInfoList ? expressInfoList[expressInfoList.length - 1].context : ''
-        result.expressInfoName = (Number(isCheck) ? '已签收 ' : '') + newContext
-        result.fileList = expressAccessorys.map(item => {
-          item.name = item.fileName
-          item.url = processDownloadUrl(item.fileId)
-          return item
+      let result = []
+      list.forEach(item => {
+        let { expressInfo } = item
+        expressInfo.forEach(item => {
+          let  { expressInformation, expressAccessorys, isCheck } = item
+          let expressInfoList = expressInformation ? JSON.parse(expressInformation).data : '' // 物流信息
+          let newContext = expressInfoList ? expressInfoList[expressInfoList.length - 1].context : ''
+          item.expressInfoName = (Number(isCheck) ? '已签收 ' : '') + newContext
+          item.fileList = expressAccessorys.map(item => {
+            item.name = item.fileName
+            item.url = processDownloadUrl(item.fileId)
+            return item
+          })
         })
-        return result
+        let expressInfoData = expressInfo[0]
+        expressInfoData.children = expressInfo.slice(1)
+        result.push(expressInfoData)
+        // return result
       })
+      return result
     },
     withDrawExpress () {
-      let currentRow = this.$refs.expressTable.getCurrentRow()
-      if (!currentRow) {
+      if (!this.currentRow) {
         return this.$message.warning('请先选择数据')
       }
+      let currentRow = this.currentRow
       if (currentRow.typeName === '寄回') {
         return this.$message.warning('当前状态不可撤回')
       }
@@ -259,10 +275,10 @@ export default {
       })
     },
     send () { // 寄出
-      let currentRow = this.$refs.expressTable.getCurrentRow()
-      if (!currentRow) {
+      if (!this.currentRow) {
         return this.$message.warning('请先选择数据')
       }
+      let currentRow = this.currentRow
       if (currentRow.typeName === '寄出') {
         return this.$message.warning('当前状态不可寄出')
       }
@@ -276,7 +292,7 @@ export default {
       if (this.cancelRequestFn) {
         this.cancelRequestFn()
       }
-      getExpressInfo({ id: row.expressId }, this).then(res => {
+      getExpressInfo({ id: row.id }, this).then(res => {
         let { expressinfo } = res.data
         if (!expressinfo) {
           return this.$message.warning('暂无物流数据')

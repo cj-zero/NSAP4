@@ -9,6 +9,7 @@
     @selection-change="onSelectChange"
   >
     <template v-for="column in columns">
+      <!-- 多选 -->
       <el-table-column 
         :key="column.prop"
         type="selection" 
@@ -24,6 +25,17 @@
         v-bind="column"
         v-else-if="column.type === 'index'"
       >
+      </el-table-column>
+      <!-- 展开 -->
+      <el-table-column
+        :key="column.prop" 
+        type="expand" 
+        v-bind="column"
+        v-else-if="column.type === 'expand'"
+      >
+        <template slot-scope="scope">
+          <slot name="expand" :row="{ ...scope.row }"></slot>
+        </template>
       </el-table-column>
       <el-table-column
         v-else
