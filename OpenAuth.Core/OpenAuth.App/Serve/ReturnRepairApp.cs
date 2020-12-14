@@ -176,18 +176,16 @@ namespace OpenAuth.App
                     CustomerId = baseInfo.Where(w => w.Id == s.ReturnRepairId).Select(s => s.CustomerId).FirstOrDefault(),
                     CustomerName = baseInfo.Where(w => w.Id == s.ReturnRepairId).Select(s => s.CustomerName).FirstOrDefault(),
                     ServiceOrderId = baseInfo.Where(w => w.Id == s.ReturnRepairId).Select(s => s.ServiceOrderId).FirstOrDefault(),
-
                     MaterialType = baseInfo.Where(w => w.Id == s.ReturnRepairId).Select(s => s.MaterialType).FirstOrDefault(),
                     s.ExpressNumber,
                     s.ExpressInformation,
                     s.Creater,
                     s.Remark,
-
                     ExpressAccessorys = GetAccessorys(s.ExpressPictures, fileList),
                     s.ReturnRepairId
                 }).ToList();
             result.Count = resultList.Count;
-            result.Data = resultList.GroupBy(g => g.Id).Select(s => new { ExpressId = s.Key, ExpressInfo = s.ToList() }).Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+            result.Data = resultList.Skip((req.page - 1) * req.limit).Take(req.limit).ToList().GroupBy(g => g.ServiceOrderId).Select(s => new { ServiceOrderId = s.Key, ExpressInfo = s.ToList() }).ToList();
 
             return result;
         }

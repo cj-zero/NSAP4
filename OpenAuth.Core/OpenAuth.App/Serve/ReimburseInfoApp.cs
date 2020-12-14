@@ -1617,7 +1617,8 @@ namespace OpenAuth.App
                 Console.WriteLine(logostr);
             }
             var FromThemeJson = JsonHelper.Instance.Deserialize<List<FromThemeJsonResp>>(CompletionReports.FirstOrDefault()?.FromTheme);
-
+            var ReimburseCosts= ReimburseCostList.Where(r => !string.IsNullOrWhiteSpace(r.InvoiceTime.ToString())).OrderBy(r => r.InvoiceTime).ToList();
+            ReimburseCosts.AddRange(ReimburseCostList.Where(r =>string.IsNullOrWhiteSpace(r.InvoiceTime.ToString())).OrderBy(r => r.SerialNumber).ToList());
             var PrintReimburse = new PrintReimburseResp
             {
                 ReimburseId = Reimburse.MainId,
@@ -1629,7 +1630,7 @@ namespace OpenAuth.App
                 logo = logostr,
                 QRcode = QRCoderHelper.CreateQRCodeToBase64(Reimburse.MainId.ToString()),
                 Reimburse = Reimburse,
-                ReimburseCosts = ReimburseCostList.OrderByDescending(r => r.InvoiceTime).ThenBy(r => r.SerialNumber).ToList()
+                ReimburseCosts = ReimburseCosts
             };
             return await ExportAllHandler.Exporterpdf(PrintReimburse, "PrintReimburse.cshtml");
         }

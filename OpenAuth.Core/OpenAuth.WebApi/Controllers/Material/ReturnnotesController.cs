@@ -112,7 +112,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 获取退料列表
         /// </summary>
-        /// <param name="expressageId"></param>
+        /// <param name="req"></param>
         /// <returns></returns>
         [HttpGet]
         public async Task<TableData> GetReturnNoteList([FromQuery] GetReturnNoteListReq req)
@@ -171,6 +171,49 @@ namespace OpenAuth.WebApi.Controllers
                 result.Message = ex.InnerException?.Message ?? ex.Message;
             }
 
+            return result;
+        }
+
+        /// <summary>
+        /// 获取退料结算列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetClearReturnNoteList([FromQuery] GetClearReturnNoteListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _returnnoteApp.GetClearReturnNoteList(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取退料结算详情
+        /// </summary>
+        /// <param name="serviceSapId"></param>
+        /// <param name="createrId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetClearReturnNoteDetail(int serviceSapId, string createrId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _returnnoteApp.GetClearReturnNoteDetail(serviceSapId, createrId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
             return result;
         }
 

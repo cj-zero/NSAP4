@@ -79,8 +79,10 @@ export let commonMixin = {
       this.visible = true
     },
     onHandleSubmit () {
-      this.type === 'query' ? this._getQueryList() : this._loadApprover()
-      this.closeDialog()
+      setTimeout(() => {
+        this.type === 'query' ? this._getQueryList() : this._loadApprover()
+        this.closeDialog()
+      }, 300)
     },
     onClosed () {
       this.activeName = 'first'
