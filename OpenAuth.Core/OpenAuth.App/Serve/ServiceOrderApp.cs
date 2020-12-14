@@ -1266,10 +1266,13 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var orgs = loginContext.Orgs.Select(o => o.Id).ToArray();
-
-            var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole > 1).ToListAsync();
+            var tUsers = await UnitWork.Find<AppUserMap>(null).WhereIf(!loginContext.Roles.Any(a => a.Name == "管理员" || a.Name == "呼叫中心"), w => w.AppUserRole > 1).ToListAsync();
+            var ids = tUsers.Select(u => u.UserID);
             var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
-            var ids = userIds.Intersect(tUsers.Select(u => u.UserID));
+            if (!loginContext.Roles.Any(a => a.Name == "管理员" || a.Name == "呼叫中心"))
+            {
+                ids = userIds.Intersect(tUsers.Select(u => u.UserID));
+            }
             var users = await UnitWork.Find<User>(u => ids.Contains(u.Id) && u.Status == 0).WhereIf(!string.IsNullOrEmpty(req.key), u => u.Name.Equals(req.key)).ToListAsync();
             var us = users.Select(u => new { u.Name, AppUserId = tUsers.FirstOrDefault(a => a.UserID.Equals(u.Id)).AppUserId, u.Id });
             var appUserIds = tUsers.Where(u => userIds.Contains(u.UserID)).Select(u => u.AppUserId).ToList();
