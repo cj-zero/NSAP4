@@ -1686,8 +1686,8 @@ namespace OpenAuth.App
                         join b in users on a.CreateUserId equals b.Id into ab
                         from b in ab.DefaultIfEmpty()
                         select new {a.CreateUserId,b.Name, a.TotalMoney };
-            var Totalquery = query.GroupBy(q =>new { q.CreateUserId, q.Name }).Select(q =>new { q.Key.Name, TotalMoney=q.Select(s=>s.TotalMoney).Sum()});
-            return await ExportAllHandler.ExporterExcel(Totalquery.ToList());
+            var Totalquery = query.GroupBy(q =>new { q.CreateUserId, q.Name }).Select(q =>new { q.Key.Name, TotalMoney=q.Select(s=>s.TotalMoney).Sum().ToString("F2")});
+            return await NPOIHelper.ExporterExcel(Totalquery.ToList());
         }
 
         /// <summary>
