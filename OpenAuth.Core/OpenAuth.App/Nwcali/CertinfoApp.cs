@@ -431,7 +431,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<Category> GetCategory(string Model)
         {
-            var objs = await UnitWork.Find<Category>(c=> Model.Contains(c.Name)).FirstOrDefaultAsync();
+            var objs = await UnitWork.Find<Category>(c=> Model.Contains(c.Name) && c.TypeId.Equals("SYS_CalibrationCertificateType")).FirstOrDefaultAsync();
             return objs;
         }
 
