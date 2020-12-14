@@ -3,83 +3,93 @@
     ref="commonTable"
     :data="data" 
     v-loading="loading" 
-    size="mini"
-    stripe
-    border
-    fit
-    row-key="id"
-    :height="height"
-    :max-height="maxHeight"
-    @current-change="onCurrentChange"
+    v-bind="attrs"
+    v-on="$listeners"
     @row-click="onRowClick"
     @selection-change="onSelectChange"
-    :row-class-name="tableRowClassName"
-    heighlight-current-row
-    >
-    <!-- 是否出现多选 -->
-    <el-table-column 
-      type="selection" 
-      v-if="selectionColumns && selectionColumns.originType === 'selection'"
-      reserve-selection
-      :selectable="checkSelectable"
-      show-overflow-tooltip
-    >
-    </el-table-column>
-    <!-- 除了多选外的 -->
-    <el-table-column
-      v-for="item in normalColumns"
-      :key="item.prop"
-      :width="item.width"
-      :label="item.label"
-      :align="item.align || 'left'"
-      :sortable="item.isSort || false"
-      :show-overflow-tooltip="!item.isMultipleLines"
-    >
-      <template slot-scope="scope" >
-        <!--  有箭头的操作 -->
-        <div class="link-container" v-if="item.type === 'link'"> 
-          <img :src="rightImg" @click="item.handleClick({ ...scope.row, ...(item.options || {})})" class="pointer">
-          <span>{{ scope.row[item.prop] }}</span>
-        </div>
-        <!-- 单选 -->
-        <template v-else-if="item.type === 'radio'">
-          <el-radio class="radio" v-model="radio" :label="scope.row[item.prop]">{{ &nbsp; }}</el-radio>
+  >
+    <template v-for="column in columns">
+      <!-- 多选 -->
+      <el-table-column 
+        :key="column.prop"
+        type="selection" 
+        v-if="column.type === 'selection'"
+        reserve-selection
+        :selectable="checkSelectable"
+      >
+      </el-table-column>
+      <!-- 序号 -->
+      <el-table-column
+        :key="column.prop" 
+        type="index" 
+        v-bind="column"
+        v-else-if="column.type === 'index'"
+      >
+      </el-table-column>
+      <!-- 展开 -->
+      <el-table-column
+        :key="column.prop" 
+        type="expand" 
+        v-bind="column"
+        v-else-if="column.type === 'expand'"
+      >
+        <template slot-scope="scope">
+          <slot name="expand" :row="{ ...scope.row }"></slot>
         </template>
-        <!-- 按钮操作 -->
-        <template v-else-if="item.type === 'operation'">
-          <el-button 
-            v-for="btnItem in item.actions"
-            :key="btnItem.btnText"
-            @click="btnItem.item.handleClick({ ...scope, ...(item.options || {})})" 
-            type="text" 
-            :icon="item.icon || ''"
-            :size="item.size || 'mini'"
-          >{{ btnItem.btnText }}</el-button>
+      </el-table-column>
+      <el-table-column
+        v-else
+        :key="column.prop"
+        v-bind="mergeColumnConfig(column)"
+      >
+        <template slot="header" slot-scope="scope">
+          <!-- 自定义表头 -->
+          <template v-if="column.isCustomizeHeader">
+            <slot :name="`${column.prop}_header`" :row="{ ...scope, label: column.label }"></slot>
+          </template>
+          <template v-else>
+            {{ column.label }}
+          </template>
         </template>
-        <!-- 插槽 -->
-        <template v-else-if="item.type === 'slot'">
-          <slot :name="item.slotName || 'default'" :row="{ ...scope.row, ...(item.options || {}), prop: item.prop }"></slot>
-        </template>
-        <!-- 冒泡提示语分行显示 -->
-        <template v-else-if="item.isMultipleLines">
-          <el-tooltip placement="top-start">
-            <div slot="content">
-              <p v-for="(content, index) in _formatArray(scope.row[item.prop], item.contentField)" :key="index">{{ content }}</p>
-            </div>
-            <span style="white-space: nowrap;">{{ _formatText(scope.row[item.prop], item.contentField) }}</span>
-          </el-tooltip>
-        </template>
-        <!-- 文本显示 -->
-        <template v-else-if="item.originType !== 'selectoin'">
-          {{ scope.row[item.prop] }}
-        </template>
-      </template>    
-    </el-table-column>
+        <template slot-scope="scope" >
+          <!--  有箭头的操作 -->
+          <div class="link-container text-overflow" v-if="column.type === 'link'" style="width: 100%;"> 
+            <img :src="rightImg" @click="isFunction(column.handleClick) ? column.handleClick({ ...scope.row, ...(column.options || {})}) : _noop" class="pointer">
+            <span>{{ scope.row[column.prop] }}</span>
+          </div>
+          <!-- 单选 -->
+          <template v-else-if="column.type === 'radio'">
+            <el-radio class="radio" v-model="radio" :label="scope.row[radioKey]">{{ &nbsp; }}</el-radio>
+          </template>
+          <!-- slot 可以再外部使用具名插槽 展示不同列的值 -->
+          <template v-else-if="column.slotName">
+            <slot :name="column.slotName || 'default'" :row="{ ...scope.row, prop: column.prop, ...(column.options || {})}"></slot>
+          </template>
+          <!-- 冒泡提示语分行显示 -->
+          <template v-else-if="column.isMultipleLines">
+            <el-tooltip placement="top-start">
+              <div slot="content">
+                <p v-for="(content, index) in _formatArray(scope.row[column.prop], column.contentField)" :key="index">{{ content }}</p>
+              </div>
+              <span style="white-space: nowrap;">{{ _formatText(scope.row[column.prop], column.contentField) }}</span>
+            </el-tooltip>
+          </template>
+          <!-- 文本显示 -->
+          <template v-else>
+            {{ scope.row[column.prop] }}
+          </template>
+        </template>    
+      </el-table-column>
+    </template>
   </el-table>  
 </template>
 
 <script>
+const TEXT_REG = /[\r|\r\n|\n\t\v]/g
+import { defaultTableConfig, defaultColumnConfig } from './default'
 import rightImg from '@/assets/table/right.png'
+import { noop } from '@/utils/declaration'
+import { isFunction } from '@/utils/validate'
 export default {
   props: {
     data: {
@@ -100,13 +110,6 @@ export default {
       type: Boolean,
       default: false
     },
-    maxHeight: {
-      type: [Number, String]
-    },
-    height: {
-      type: [Number, String],
-      default: '100%'
-    },
     selectedList: { // 已经选中里的列表(多选中，用来判断是否可以点击)
       type: Array,
       default () {
@@ -116,73 +119,80 @@ export default {
     selectedKey: { // 用来判断多选是否可以点击的key(selectedList数组中对象的唯一key值)
       type: String,
       default: 'id'
+    },
+    radioKey: { // 单选标识字段
+      type: String
+    }
+  },
+  computed: {
+    attrs () {
+      return Object.assign({}, defaultTableConfig, this.$attrs)
+    },
+    selectionColumns () {
+      return this.columns.some(item => item.type === 'selection')
     }
   },
   data () {
     return {
       rightImg,
       radio: '',
-      currentRow: {},
+      currentRow: null,
       selectionList: [] // 多选的数据
     }
   },
-  computed: {
-    normalColumns () {
-      return this.columns.filter(item => item.originType !== 'selection')
-    },
-    selectionColumns () {
-      return this.columns.filter(item => item.originType === 'selection')[0]
-    }
-  },
   methods: {
+    isFunction,
+    _noop () {
+      noop()
+    },
     _formatArray (data, contentField) {
-      let reg = /[\r|\r\n|\n\t\v]/g
-      let result = Array.isArray(data) ? data : JSON.parse(data.replace(reg, ''))
+      let result = Array.isArray(data) ? data : JSON.parse(data.replace(TEXT_REG, ''))
       return result.map(item => item[contentField])
     },
     _formatText (data, contentField) {
-      let reg = /[\r|\r\n|\n\t\v]/g
-      let result = Array.isArray(data) ? data : JSON.parse(data.replace(reg, ''))  
+      let result = Array.isArray(data) ? data : JSON.parse(data.replace(TEXT_REG, ''))  
       return result.map(item => item[contentField]).join(' ')
     },
-    onCurrentChange (val) {
-      console.log(val, 'val')
-      // this.radio = val
-    },
     onRowClick (row) {
-      // let { index } = row
-      let radioKey = row.radioKey
-      this.radio = row[radioKey]
-      this.currentRow = row
-      if (this.selectionColumns) {
-        this.$refs.commonTable.toggleRowSelection(row)
+      if (this.radioKey) { // 点击行单选
+        this.radio = row[this.radioKey]
       }
+      if (this.selectionColumns && row.selectable) { // 点击行进行多选 选择
+        this.$refs.commonTable.toggleRowSelection(row)
+      } 
+      this.currentRow = row
+      console.log(this.currentRow, 'currentRow')
+      this.$emit('rowClick', this.currentRow)
       // console.log(index, column, 'row click', radioKey, this.radio, Object.keys(row))
     },
     getCurrentRow () {
       return this.currentRow
     },
+    resetCurrentRow () { 
+      this.currentRow = null
+    },
     getSelectionList () {
       return this.selectionList
-    },
-    tableRowClassName ({ row, rowIndex }) {
-      // 把每一行的index加到row中
-      row.index = rowIndex
     },
     resetRadio () {
       this.radio = ''
     },
     onSelectChange (val) {
       this.selectionList = val
+      this.$emit('selectChange', val)
       console.log(val, 'selection')
     },
     clearSelection () {
       this.$refs.commonTable.clearSelection()
     },
     checkSelectable (row) {
-      return this.selectedList.length 
+      row.selectable = this.selectedList.length 
         ? this.selectedList.every(item => item[this.selectedKey] !== row[this.selectedKey])
         : true
+      return row.selectable
+    },
+    mergeColumnConfig (column) { // 合并自定义配置与默认配置
+      return Object.assign({}, column, defaultColumnConfig)
     }
   },
   created () {

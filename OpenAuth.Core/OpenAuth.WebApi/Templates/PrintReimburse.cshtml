@@ -56,9 +56,9 @@
             margin: 0 auto;
         }
 
-            #divcode tr {
-                vertical-align: top;
-            }
+        #divcode tr {
+            vertical-align: top;
+        }
     </style>
 </head>
 
@@ -75,7 +75,7 @@
                 <span>
                     报销ID：<span style="font-size: 30px; font-weight: 900;">@Model.Data.ReimburseId</span>
                 </span>
-                <br>
+				<br>
                 <span>
                     服务ID：@Model.Data.Reimburse.ServiceOrderSapId
                 </span>
@@ -106,9 +106,9 @@
                 <td style="width: 550pt;" colspan="5">
                     @foreach (var item in Model.Data.FromTheme)
                     {
-                        @item;
+                        @item; 
                         <span>&nbsp;</span>
-                    }
+                    } 
                 </td>
             </tr>
         </table>
@@ -131,7 +131,7 @@
                     <td align="right">@item.Money.ToString("N") &nbsp;</td>
                 </tr>
             }
-
+            
         </table>
         <hr>
         <div style="">

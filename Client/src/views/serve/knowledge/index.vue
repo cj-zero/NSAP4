@@ -29,7 +29,7 @@
         :title="dialogTitle"
         :btnList="btnList"
         :loading="dialogLoading"
-        :onClosed="closeDialog"
+        @closed="closeDialog"
       >
         <el-form
           :rules="rules"

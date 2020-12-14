@@ -27,8 +27,10 @@ import FrmLeaveReqAdd from '@/views/forms/userDefine/frmLeaveReq/add'
 import FrmLeaveReqDetail from '@/views/forms/userDefine/frmLeaveReq/detail'
 
 // 全局过滤器
-import { toThousands } from '@/utils/format'
+import { toThousands } from '@/filter/money'
+import { m2DHM } from '@/filter/time'
 Vue.filter('toThousands', toThousands)
+Vue.filter('m2DHM', m2DHM)
 
 // 全局指令
 import elDragDialog from '@/directive/el-dragDialog'
@@ -37,7 +39,9 @@ Vue.directive('elDragDialog', elDragDialog)
 Vue.directive('debounce', debounce)
 // 全局组件
 import MyDialog from '@/components/Dialog'
+import SvgIcon from '@/components/SvgIcon'
 Vue.component('MyDialog', MyDialog)
+Vue.component(SvgIcon.name, SvgIcon)
 // 引入PDFJS
 Vue.use(ElementUI, { locale })
 Vue.use(VueContextMenu)
@@ -54,6 +58,9 @@ Vue.config.productionTip = false
 Vue.prototype.$layer = layer(Vue, {
   msgtime: 3
 })
+Vue.prototype.$delay = function (cb) {
+  setTimeout(cb, 0)
+}
 Vue.component('FrmLeaveReqAdd', FrmLeaveReqAdd)
 Vue.component('FrmLeaveReqDetail', FrmLeaveReqDetail)
 new Vue({

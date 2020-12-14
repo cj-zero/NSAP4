@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-input @focus="selectDialog = true" v-model="names"></el-input>
-    <el-dialog :destroy-on-close="true" class="dialog-mini custom-dialog user-dialog" width="850px" title="选择角色"
+    <el-dialog :destroy-on-close="true" class="dialog-mini custom-dialog user-dialog" width="850px" title="选择角色" :append-to-body="true"
       :visible.sync="selectDialog">
       <selectUsersCom v-if="selectDialog" :selectUsers:sync="selectRoleList" :show.sync="selectDialog" :loginKey="'loginRole'" :users.sync="selectRoles" :userNames.sync="names"></selectUsersCom>
     </el-dialog>

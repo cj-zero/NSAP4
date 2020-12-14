@@ -1,10 +1,12 @@
 import rightImg from '@/assets/table/right.png'
-import { getReportDetail, GetDetails } from '@/api/serve/callservesure'
+import { getReportDetail } from '@/api/serve/callservesure'
 import { getCategoryName } from '@/api/reimburse'
 import { accommodationConfig } from './config'
 import { toThousands } from '@/utils/format'
 import { getList, getDetails } from '@/api/reimburse'
 import { identifyInvoice } from '@/api/reimburse' // 票据识别
+import { chatMixin } from '@/mixins/serve'
+export { chatMixin }
 // import imageConversion from 'image-conversion'
 export let tableMixin = {
   provide () {
@@ -26,7 +28,7 @@ export let tableMixin = {
       submissionColumns: [ // 表格配置(我的提交)
         { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleJump: this.getDetail },
         { label: '报销状态', prop: 'remburseStatusText', width: 100 },
-        { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleJump: this.openTree },
+        { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleJump: this._openServiceOrder },
         { label: '呼叫主题', prop: 'fromTheme', width: 250 },
         { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
         { label: '客户名称', prop: 'terminalCustomer', width: 170 },
@@ -106,6 +108,9 @@ export let tableMixin = {
     }
   },
   methods: {
+    _openServiceOrder (row) {
+      this.openServiceOrder(row.serviceOrderId, () => this.tableLoading = true, () => this.tableLoading = false)
+    },
     openLoading () {
       this.dialogLoading = true
     },
@@ -897,62 +902,3 @@ export const attachmentMixin = {
   }
 }
 
-export const chatMixin = {
-  data () {
-    return {
-      serveId: '',
-      dataForm: {}, //传递的表单props
-      temp: {
-        id: "", // Id
-        sltCode: "", // SltCode
-        subject: "", // Subject
-        cause: "", // Cause
-        symptom: "", // Symptom
-        descriptio: "", // Descriptio
-        status: "", // Status
-        extendInfo: "" // 其他信息,防止最后加逗号，可以删除
-      }
-    }
-  },
-  methods: {
-    openTree(row, isOpenInTable = true) {
-       // 判断服务单详情是否在表格页面打开,否则就是在报销单查看页面打开  isOpenInTable
-      let serviceOrderId = row.serviceOrderId
-      if (!serviceOrderId) {
-        return this.$message.error('无服务单ID')
-      }
-      isOpenInTable ? this.tableLoading = true : this.orderLoading = true
-      GetDetails(serviceOrderId).then(res => {
-        if (res.code == 200) {
-          this.dataForm = this._normalizeOrderDetail(res.result);
-          this.serveId = serviceOrderId
-          this.$refs.serviceDetail.open()
-          isOpenInTable ? this.tableLoading = false : this.orderLoading = false
-        }
-      }).catch((err) => {
-        console.error(err)
-        isOpenInTable ? this.tableLoading = false : this.orderLoading = false
-        this.$message.error('获取服务单详情失败')
-      })
-    },
-    deleteSeconds (date) { // yyyy-MM-dd HH:mm:ss 删除秒
-      return date ? date.slice(0, -3) : date
-    },
-    _normalizeOrderDetail (data) {
-      let reg = /[\r|\r\n|\n\t\v]/g
-      let { serviceWorkOrders } = data
-      if (serviceWorkOrders && serviceWorkOrders.length) {
-        serviceWorkOrders.forEach(serviceOrder => {
-          let { warrantyEndDate, bookingDate, visitTime, liquidationDate, completeDate } = serviceOrder
-          serviceOrder.warrantyEndDate = this.deleteSeconds(warrantyEndDate)
-          serviceOrder.bookingDate = this.deleteSeconds(bookingDate)
-          serviceOrder.visitTime = this.deleteSeconds(visitTime)
-          serviceOrder.liquidationDate = this.deleteSeconds(liquidationDate)
-          serviceOrder.completeDate = this.deleteSeconds(completeDate)
-          serviceOrder.themeList = JSON.parse(serviceOrder.fromTheme.replace(reg, ''))
-        })
-      }
-      return data
-    },
-  }
-}
