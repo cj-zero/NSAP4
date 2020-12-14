@@ -58,6 +58,22 @@ export let tableMixin = {
         // { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
         { label: '填报日期', prop: 'fillTime', width: 85 }
       ],
+      toPayColumns: [
+        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleJump: this.getDetail },
+        { label: '服务ID', prop: 'serviceOrderSapId', width: 80 },
+        { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
+        { label: '客户名称', prop: 'terminalCustomer', width: 170 },
+        { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
+        { label: '总天数', prop: 'days', width: 60, align: 'right' },
+        { label: '出发日期', prop: 'businessTripDate', width: 85 },
+        { label: '结束日期', prop: 'endDate', width: 85 },
+        { label: '报销部门', prop: 'orgName', width: 70 },
+        { label: '报销人', prop: 'userName', width: 70 },
+        { label: '劳务关系', prop: 'serviceRelations', width: 100 },
+        { label: '业务员', prop: 'salesMan', width: 80 },
+        // { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
+        { label: '填报日期', prop: 'fillTime', width: 85 }
+      ],
       tableData: [],
       total: 0, // 表格数据的总数量
       dialogLoading: false, 
