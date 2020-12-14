@@ -992,6 +992,20 @@ import { categoryMixin, reportMixin, attachmentMixin, chatMixin } from '../js/mi
 import { REIMBURSE_TYPE_MAP, IF_SHOW_MAP, REMARK_TEXT_MAP } from '../js/map'
 import rightImg from '@/assets/table/right.png'
 const PROGRESS_TEXT_LIST = ['提交', '客服审批', '财务初审', '财务复审', '总经理审批', '出纳'] // 进度条文本
+const AFTER_EVALUTION_KEY = ['responseSpeed', 'schemeEffectiveness', 'serviceAttitude', 'productQuality', 'servicePrice']
+// { label: '响应速度', prop: 'responseSpeed', width: 70 },
+//         { label: '方案有效性', prop: 'schemeEffectiveness', width: 80 },
+//         { label: '服务态度', prop: 'serviceAttitude', width: 70 },
+//         { label: '产品质量', prop: 'productQuality', width: 70 },
+//         { label: '服务价格', prop: 'servicePrice', width: 70 },
+const AFTER_EVALUTION_STATUS = {
+  0: '未统计',
+  1: '非常差',
+  2: '差',
+  3: '一般',
+  4: '满意',
+  5: '非常满意'
+}
 export default {
   inject: ['parentVm'],
   mixins: [categoryMixin, reportMixin, attachmentMixin, chatMixin],
@@ -1372,6 +1386,11 @@ export default {
       getAfterEvaluaton({
         serviceOrderId: this.formData.serviceOrderSapId
       }).then(res => {
+        res.data.forEach(item => {
+          AFTER_EVALUTION_KEY.forEach(key => {
+            item[key] = AFTER_EVALUTION_STATUS[item[key]]
+          })
+        })
         this.afterEvaluationList = res.data
         this.afterEvaLoading = false
       }).catch(err => {
@@ -1465,16 +1484,24 @@ export default {
     _normalizeTimelineList (historyList) { // 格式化操作记录流程
       console.log(historyList, PROGRESS_TEXT_LIST)
       // 需要展示最新的进度状态，审批到了总经理这一步，每一个步骤最新的状态必然是连续的
-      let lastInfo = historyList[historyList.length - 1]
-      if (lastInfo.action === '总经理审批') { // 说明总经理已经审批完了
-        historyList = this.setFinishedStatus(historyList.slice(-5))
-      } else if (lastInfo.action === '已支付') {
-        historyList = this.setFinishedStatus(historyList.slice(-6))
-      } else { // 说明当前状态必然是财务复审
-        historyList = this.setFinishedStatus(historyList.slice(-4))
+      let reimburseStatus = this.formData.remburseStatus // 报销单状态
+      console.log(reimburseStatus)
+      // key为报销状态 value 截取操作记录的倒数几个
+      let statusMap = {
+        4: -1,
+        5: -2,
+        6: -3,
+        7: -4,
+        8: -5,
+        9: -6
       }
-      console.log(historyList, 'history')
-      let isCurrent = true // 用来标识当前状态 当前进度后面的都是灰色按钮
+      if (statusMap[reimburseStatus]) {
+        let length = statusMap[reimburseStatus]
+        historyList = this.setFinishedStatus(historyList.slice(length))
+      } else {
+        historyList = []
+      }
+      let isCurrent = historyList.length ? true : false // 用来标识当前状态 当前进度后面的都是灰色按钮
       while (historyList.length < 6) { // 进度条一共六个状态
         historyList.push({
           isFinished: false, // 设置进度条未完成的状态

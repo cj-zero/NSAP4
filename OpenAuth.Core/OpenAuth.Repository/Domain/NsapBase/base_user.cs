@@ -34,9 +34,16 @@ namespace OpenAuth.Repository.Domain
           this.im_nm= string.Empty;
           this.rec_dt= DateTime.Now;
           this.log_dt= DateTime.Now;
+
         }
 
-        
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public uint user_id { get; set; }
+
         /// <summary>
         /// 
         /// </summary>

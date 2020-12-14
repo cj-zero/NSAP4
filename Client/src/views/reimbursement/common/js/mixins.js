@@ -60,6 +60,22 @@ export let tableMixin = {
         // { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
         { label: '填报日期', prop: 'fillTime', width: 85 }
       ],
+      toPayColumns: [
+        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleJump: this.getDetail },
+        { label: '服务ID', prop: 'serviceOrderSapId', width: 80 },
+        { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
+        { label: '客户名称', prop: 'terminalCustomer', width: 170 },
+        { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
+        { label: '总天数', prop: 'days', width: 60, align: 'right' },
+        { label: '出发日期', prop: 'businessTripDate', width: 85 },
+        { label: '结束日期', prop: 'endDate', width: 85 },
+        { label: '报销部门', prop: 'orgName', width: 70 },
+        { label: '报销人', prop: 'userName', width: 70 },
+        { label: '劳务关系', prop: 'serviceRelations', width: 100 },
+        { label: '业务员', prop: 'salesMan', width: 80 },
+        // { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
+        { label: '填报日期', prop: 'fillTime', width: 85 }
+      ],
       tableData: [],
       total: 0, // 表格数据的总数量
       dialogLoading: false, 
@@ -294,7 +310,7 @@ export let tableMixin = {
       })
       /* 日期从小到大， 没日期的话，交通费用→住宿补贴→出差补贴→其他费用 */
       let dataWithInvoiceTime = result.filter(item => item.invoiceTime).sort((a, b) => {
-        return new Date(b.invoiceTime).getTime() - new Date(a.invoiceTime).getTime()
+        return new Date(a.invoiceTime).getTime() - new Date(b.invoiceTime).getTime()
       })
       let dataWithoutInvoiceTime = result.filter(item => !item.invoiceTime)
       // 交通-住宿-出差-其它

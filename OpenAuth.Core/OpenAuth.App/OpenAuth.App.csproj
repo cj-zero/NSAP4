@@ -19,6 +19,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="Eshop\WfaEshopCanceledStatusApp.cs" />
+    <Compile Remove="Eshop\WfaEshopOqutdetailApp.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="aliyun-net-sdk-core" Version="1.5.8" />
     <PackageReference Include="Autofac" Version="5.1.2" />
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="6.0.0" />

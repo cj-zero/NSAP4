@@ -63,5 +63,10 @@ namespace OpenAuth.App.Material.Request
         /// 退料图片Id
         /// </summary>
         public string PictureId { get; set; }
+
+        /// <summary>
+        /// 成本价
+        /// </summary>
+        public decimal CostPrice { get; set; }
     }
 }

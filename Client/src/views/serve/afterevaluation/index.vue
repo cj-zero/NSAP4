@@ -233,6 +233,8 @@ export default {
     backStatus(res) {
       if (res == 0) {
         return "未统计";
+      } else if (res == 1 ) {
+        return "非常差";
       } else if (res <= 2) {
         return "差";
       } else if (res <= 3) {

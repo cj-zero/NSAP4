@@ -47,9 +47,10 @@
             border
             fit
             height="100%"
-            style="width: 100%;"
             highlight-current-row
+            style="width: 100%;"
             @row-click="rowClick"
+            :row-class-name="rowClassName"
           >
             <div class="mr48">
               <el-table-column type="expand">
@@ -68,7 +69,7 @@
                     :row-style="rowStyle"
                   >
                     <el-table-column
-                      show-overflow-tooltip
+                      :show-overflow-tooltip="fruit.name !== 'fromTheme'"
                       v-for="(fruit,index) in ChildheadOptions"
                       :align="fruit.align"
                       :key="`ind${index}`"
@@ -84,12 +85,22 @@
                           :class="processStatus(scope.row)"
                         >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
                         <span
-                          v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
+                          v-else-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
+                          :class="processFromType(scope.row)"
                         >{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
-                        <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority - 1]}}</span>
-                        <span
-                          v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
-                        >{{scope.row[fruit.name]}}</span>
+                        <span 
+                          v-else-if="fruit.name === 'priority'"
+                          :class="processPriorityStatus(scope.row)"
+                        >{{priorityOptions[scope.row.priority - 1]}}</span>
+                        <template v-else-if="fruit.name === 'fromTheme'">
+                          <el-tooltip placement="top-start">
+                            <div slot="content">
+                              <p v-for="(content, index) in scope.row.themeList" :key="index">{{ content }}</p>
+                            </div>
+                            <span style="white-space: nowrap;">{{ scope.row[fruit.name] }}</span>
+                          </el-tooltip>
+                        </template>
+                        <span v-else>{{scope.row[fruit.name]}}</span>
                         <!-- <span v-if="fruit.name === 'recepUserName'">{{ scope.row.</span> -->
                       </template>
                     </el-table-column>
@@ -98,7 +109,7 @@
               </el-table-column>
             </div>
             <el-table-column
-              show-overflow-tooltip
+              :show-overflow-tooltip="fruit.name !== 'fromTheme'"
               v-for="(fruit,index) in ParentHeadOptions"
               :align="fruit.align"
               :key="`ind${index}`"
@@ -109,51 +120,42 @@
               :width="fruit.width"
             >
               <template slot-scope="scope">
-                <div v-if="fruit.name === 'u_SAP_ID'" class="link-container" >
+                <!-- <div v-if="fruit.name === 'radio'">
+                  <el-radio v-model="radio" :label="scope.row.serviceOrderId"></el-radio>
+                </div> -->
+                <span v-if="fruit.name === 'order'">
+                  {{ scope.$index + 1 }}
+                </span>
+                <div v-else-if="fruit.name === 'u_SAP_ID'" class="link-container" >
                   <img :src="rightImg" @click="openTree(scope.row.serviceOrderId)" class="pointer" />
                   <span>{{ scope.row.u_SAP_ID }}</span>
                 </div>
-                <div v-if="fruit.name === 'customerId'" class="link-container" >
+                <div v-else-if="fruit.name === 'customerId'" class="link-container" >
                   <img :src="rightImg" @click="getCustomerInfo(scope.row.customerId)" class="pointer" />
                   <span>{{ scope.row.customerId }}</span>
                 </div>
-                <!-- <span
-                  v-if="fruit.name === 'status'"
-                  :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-                >{{statusOptions[scope.row[fruit.name]].label}}</span> -->
-                <span
-                  v-if="fruit.name === 'workOrderNumber'">
-                  {{ scope.row.serviceWorkOrders.length }}
-                </span>
-                <span v-if="fruit.name === 'fromTheme'">
-                  {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].fromTheme: '' }}
-                </span>
-                <span v-if="fruit.name === 'manufacturerSerialNumber'">
-                  {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].manufacturerSerialNumber: '' }}
-                </span>
-                <span v-if="fruit.name === 'materialCode'">
-                  {{ scope.row.serviceWorkOrders[0] ? scope.row.serviceWorkOrders[0].materialCode: '' }}
-                </span>
-                <span v-if="fruit.name === 'status'"
-                  :class="processStatus(scope.row.serviceWorkOrders[0])"
+                <template v-else-if="fruit.name === 'fromTheme'">
+                  <el-tooltip placement="top-start">
+                    <div slot="content">
+                      <p v-for="(content, index) in scope.row.themeList" :key="index">{{ content }}</p>
+                    </div>
+                    <span style="white-space: nowrap;">{{ scope.row[fruit.name] }}</span>
+                  </el-tooltip>
+                </template>
+                <span v-else-if="fruit.name === 'status'"
+                  :class="processStatus(scope.row)"
                 >
-                  {{ scope.row.serviceWorkOrders[0] ? statusOptions[scope.row.serviceWorkOrders[0].status - 1].label: '' }}
+                  {{ statusOptions[scope.row.status - 1].label }}
                 </span>
                 <span
-                  v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders"
+                  v-else-if="fruit.name === 'fromType'"
+                  :class="processFromType(scope.row)"
                 >{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
-                <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority - 1]}}</span>
-                <span
-                  v-if="fruit.name!='priority'&&
-                  fruit.name!='fromType'&&
-                  fruit.name!='status'&&
-                  fruit.name!='u_SAP_ID'&&
-                  fruit.name !== 'workOrderNumber' &&
-                  fruit.name !== 'workOrderNumber' && 
-                  fruit.name !== 'customerId' &&
-                  fruit.name !== 'materialCode' &&
-                  fruit.name !== 'manufacturerSerialNumber'"
-                >{{scope.row[fruit.name]}}</span>
+                <span 
+                  v-else-if="fruit.name === 'priority'"
+                  :class="processPriorityStatus(scope.row)"
+                >{{priorityOptions[scope.row.priority - 1]}}</span>
+                <span v-else>{{scope.row[fruit.name]}}</span>
               </template>
             </el-table-column>
           </el-table>
@@ -170,12 +172,11 @@
       <el-dialog
         v-el-drag-dialog
         width="800px"
-        :modal="false"
-        class="dialog-mini"
         :close-on-click-modal="false"
+        :modal-append-to-body="false"
         :visible.sync="dialogInfoVisible"
         title="客户信息"
-        :modal-append-to-body="false"
+        :modal="false"
       >
         <CustomerInfo :formData="customerInfo" />
       </el-dialog>
@@ -184,11 +185,11 @@
         v-el-drag-dialog
         width="900px"
         top="10vh"
-        class="dialog-mini"
         :modal="false"
-        :close-on-click-modal="false"
+        class="dialog-mini"
         :modal-append-to-body="false"
         @close="closeCustoner"
+        :close-on-click-modal="false"
         :destroy-on-close="true"
         :title="textMap[dialogStatus]"
         :visible.sync="dialogFormVisible"
@@ -214,12 +215,12 @@
         v-el-drag-dialog
         width="1210px"
         top="10vh"
+        :modal="false"
+        :modal-append-to-body="false"
         class="dialog-mini"
         @open="openDetail"
         @close="closeCustoner"
-        :modal="false"
         :close-on-click-modal="false"
-        :modal-append-to-body="false"
         :destroy-on-close="true"
         :title="textMap[dialogStatus]"
         :visible.sync="FormUpdate"
@@ -253,13 +254,13 @@
       <!-- 只能查看的表单 -->
       <el-dialog
         v-el-drag-dialog
+        :modal-append-to-body="false"
         width="1210px"
         top="10vh"
-        title="服务单详情"
         :modal="false"
+        title="服务单详情"
         :close-on-click-modal="false"
         destroy-on-close
-        :modal-append-to-body="false"
         class="addClass1 dialog-mini"
         @open="openDetail"
         :visible.sync="dialogFormView"
@@ -282,6 +283,7 @@
         </el-row>
 
         <div slot="footer">
+          <el-button size="mini" @click="handlePhone(multipleSelection, true)" v-if="isCallCenter">回访</el-button>
           <el-button size="mini" @click="dialogFormView = false">取消</el-button>
           <el-button size="mini" type="primary" @click="dialogFormView = false">确认</el-button>
         </div>
@@ -297,13 +299,13 @@
       <!-- 电话回访评价 -->
       <el-dialog
         :visible.sync="dialogRateVisible"
+        :close-on-click-modal="false"
         width="1015px"
         center
         v-el-drag-dialog
         :modal="false"
-        class="dialog-mini"
-        :close-on-click-modal="false"
         :modal-append-to-body="false"
+        :append-to-body="isRateAToBody"
       >
         <Rate :data="commentList" @changeComment="onChangeComment" :isView="isView" ref="rateRoot" />
         <div slot="footer">
@@ -316,10 +318,10 @@
         v-el-drag-dialog
         width="983px"
         class="dialog-mini"
-        :modal="false"
+        :modal-append-to-body="false"
         :close-on-click-modal="false"
         title="服务行为报告单"
-        :modal-append-to-body="false"
+        :modal="false"
         :visible.sync="dialogReportVisible"
         @closed="onReportClosed"
       >
@@ -331,11 +333,11 @@
       <el-dialog
         v-el-drag-dialog
         width="983px"
-        :modal="false"
-        :modal-append-to-body="false"
         class="dialog-mini"
         :close-on-click-modal="false"
         title="分析报表"
+        :modal="false"
+        :modal-append-to-body="false"
         :visible.sync="dialogAnalysisVisible"
       >
         <Analysis
@@ -343,6 +345,31 @@
           :data="analysisData"
         ></Analysis>
       </el-dialog>
+      <!-- <el-dialog
+        v-el-drag-dialog
+        width="983px"
+        class="dialog-mini"
+        :close-on-click-modal="false"
+        title="分析报表"
+        :modal-append-to-body="false"
+        :visible.sync="dialog123"
+      >
+        12312313
+        <el-button @click="dialog1234 = true">点击点击</el-button>
+        <el-dialog
+          v-el-drag-dialog
+          width="300px"
+          class="dialog-mini"
+          :append-to-body="true" 
+          :close-on-click-modal="false"
+          title="分析"
+          :modal-append-to-body="false"
+          :visible.sync="dialog1234" 
+          >
+          1234123456
+        </el-dialog>
+      </el-dialog>
+      <el-button @click="dialog123 = true">按钮</el-button> -->
     </div>
   </div>
 </template>
@@ -370,17 +397,21 @@ import Rate from '../callserve/rate'
 import Report from '../common/components/report'
 import Analysis from '../callserve/workOrderReport'
 import { chatMixin, reportMixin, tableMixin } from '../common/js/mixins'
+import { serializeParams } from '@/utils/process'
 export default {
   provide () {
     return {
       instance: this
     }
   },
-  name: "salesCallServe",
+  name: "callServer",
   computed: {
     ...mapGetters([
       'formList'
     ]),
+    isCallCenter () { // 是否是呼叫中心
+      return this.$store.state.user.userInfoAll.roles.some(item => item === '呼叫中心')
+    },
     searchConfig () {
       return [
         { width: 100, placeholder: '服务ID', prop: 'QryU_SAP_ID' },
@@ -400,8 +431,10 @@ export default {
         { width: 100, placeholder: '呼叫类型', prop: 'QryFromType', options: this.options_type, type: 'select' },
         { width: 180, placeholder: '呼叫主题', prop: 'QryFromTheme' },
         { width: 140, placeholder: '联系电话', prop: 'ContactTel' },
-        { width: 150, placeholder: '创建日期', prop: 'QryCreateTimeFrom', type: 'date', showText: true },
-        { width: 150, placeholder: '结束日期', prop: 'QryCreateTimeTo', type: 'date' },
+        { width: 150, placeholder: '创建开始日期', prop: 'QryCreateTimeFrom', type: 'date', showText: true },
+        { width: 150, placeholder: '创建截止日期', prop: 'QryCreateTimeTo', type: 'date' },
+        { width: 150, placeholder: '完工开始日期', prop: 'CompleteDate', type: 'date' },
+        { width: 150, placeholder: '完工截止日期', prop: 'EndCompleteDate', type: 'date' },
       ]
     }
   },
@@ -432,22 +465,26 @@ export default {
       sure: 0,
       rightImg,
       ParentHeadOptions: [
-        { name: "u_SAP_ID", label: "服务单号", align:'left', sortable:true, width: '80' },
-        { name: "status", label: "工单状态", align: 'left', width: '70' },
-        { name: "customerId", label: "客户代码", align:'left', width: '90' },
-        { name: "customerName", label: "客户名称" ,align:'left', width: '180' },
+        { name: 'order', label: '序号', width: '38' },
+        { name: "u_SAP_ID", label: "服务单号", align:'left', sortable:true, width: '60' },
+        { name: "priority", label: "优先级" ,align:'left', width: '50' },
+        { name: "fromType", label: "呼叫类型", width: "60px",align:'left'  },
+        { name: "status", label: "工单状态", align: 'left', width: '60' },
+        { name: "currentUser", label: "技术员" ,align:'left', width: '55' },
+        { name: "customerId", label: "客户代码", align:'left', width: '70' },
+        { name: "customerName", label: "客户名称" ,align:'left', width: '170' },
         { name: "fromTheme", label: "呼叫主题", align: 'left', width: '275' },
-        { name: "manufacturerSerialNumber", label: "制造商序列号",width:'120px' ,align:'left' },
-        { name: "materialCode", label: "物料编码",width:'150px' ,align:'left' },
+        { name: "manufacturerSerialNumber", label: "制造商序列号",width:'90px' ,align:'left' },
+        { name: "materialCode", label: "物料编码",width:'120px' ,align:'left' },
         // { name: "contacter", label: "联系人" ,align:'left', width: '100' },
         // { name: "contactTel", label: "电话号码" ,align:'left', width: '125' },
         { name: "newestContacter", label: "最近联系人" ,align:'left', width: '90' },
         { name: "newestContactTel", label: "最新联系方式" ,align:'left', width: '100' },
         { name: "supervisor", label: "售后主管" ,align:'left', width: '70' },
-        { name: "salesMan", label: "销售员" ,align:'left', width: '70' },
+        { name: "salesMan", label: "销售员" ,align:'left', width: '55' },
         { name: "recepUserName", label: "接单员" ,align:'left', width: '85' },
         { name: 'serviceCreateTime', label: '创建时间', align: 'left', width: '140' },
-        { name: 'workOrderNumber', label: '工单数', align: 'left', width: '' } 
+        { name: 'workOrderNumber', label: '工单数', align: 'left', width: '55' } 
       ],
       ChildheadOptions: [
         // { name: "serviceOrderId", label: "服务单号", ifFixed: true },
@@ -578,6 +615,7 @@ export default {
       serviceOrderId: '', // 服务单ID 用于后续工单的创建和修改
       exportExcelUrl: '/serve/ServiceOrder/ExportExcel', // 表格导出地址
       dialogRateVisible: false,
+      isRateAToBody: false, // 是否将回访弹窗插入到body中
       commentList: {}, // 评价内容 (新增评价或者查看评价 都要用到)
       newCommentList: {}, // 用于存放修改后的评分列表
       isView: false, // 评分标识(是否是查看)
@@ -666,23 +704,6 @@ export default {
     closeCustoner() {
       // this.getList();
     },
-    _getDetails () {
-      let serviceOrderId = this.serveId
-      callservesure.GetDetails(serviceOrderId).then(res => {
-        if (res.code == 200) {
-          this.dataForm = this.dataForm1 = res.result;
-        }
-      })
-    },
-    // openTree(serviceOrderId) {
-    //   callservesure.GetDetails(serviceOrderId).then(res => {
-    //     if (res.code == 200) {
-    //       this.dataForm1 = res.result;
-    //       this.serveId = serviceOrderId
-    //       this.dialogFormView = true;
-    //     }
-    //   });
-    // },
     getCustomerInfo (customerId) { // 打开用户信息弹窗
       if (!customerId) {
         return this.$message.error('客户代码不能为空!')
@@ -698,9 +719,14 @@ export default {
           this.$message.error('查询客户信息失败')
         })
     },
+    rowClassName ({ row, rowIndex }) {
+      row.index = rowIndex
+    },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();
       this.multipleSelection = row;
+      this.radio = row.serviceOrderId
+      console.log(this.radio, 'radio')
       this.$refs.mainTable.toggleRowSelection(row);
     },
     rowClickChild(row) {
@@ -765,13 +791,13 @@ export default {
             });
             return;
           }
-          if (this.multipleSelection.status === 2) {
-            this.$message({
-              message: "该服务单已经被确认过",
-              type: "warning"
-            });
-            return;
-          }
+          // if (this.multipleSelection.status === 2) {
+          //   this.$message({
+          //     message: "该服务单已经被确认过",
+          //     type: "warning"
+          //   });
+          //   return;
+          // }
           this.handleUpdate(this.multipleSelection);
           break;
         case "btnDel":
@@ -800,7 +826,8 @@ export default {
     // },
     _normalize (data) {
       let resultArr = data.map(item => {
-        let { recepUserName, 
+        let { 
+          recepUserName, 
           serviceWorkOrders, 
           customerId,
           customerName,
@@ -808,9 +835,38 @@ export default {
           terminalCustomer } = item
         item.customerId = terminalCustomerId ? terminalCustomerId : customerId
         item.customerName = terminalCustomer ? terminalCustomer : customerName
-        serviceWorkOrders.forEach(workItem => {
-          workItem.recepUserName = recepUserName
-        })
+        // ite
+        console.log(item.u_SAP_ID, 'usapid')
+        if (serviceWorkOrders.length) {
+          serviceWorkOrders.forEach(workItem => {
+            workItem.recepUserName = recepUserName
+            let theme = workItem.fromTheme
+            let reg = /[\r|\r\n|\n\t\v]/g
+            theme = theme.replace(reg, '')
+            console.log(theme)
+            workItem.themeList = JSON.parse(theme).map(item => item.description.trim())
+            workItem.fromTheme = workItem.themeList.join(' ')
+          })
+          let {
+            fromTheme,
+            priority,
+            fromType,
+            currentUser,
+            materialCode,
+            manufacturerSerialNumber,
+            status,
+            themeList
+          } = serviceWorkOrders[0]
+          item.fromTheme = fromTheme
+          item.themeList = themeList
+          item.priority = priority
+          item.fromType = fromType
+          item.currentUser = currentUser
+          item.materialCode = materialCode
+          item.manufacturerSerialNumber = manufacturerSerialNumber
+          item.workOrderNumber = serviceWorkOrders.length
+          item.status = status
+        }
         return item
       })
       this.list = resultArr
@@ -822,7 +878,8 @@ export default {
         this.total = response.count;
         this._normalize(result)
         this.listLoading = false;
-      }).catch(() => {
+      }).catch((err) => {
+        console.log(err, 'err')
         this.listLoading = false;
         this.$message({
           type: "error",
@@ -894,6 +951,7 @@ export default {
     handleCurrentChange(val) {
       this.listQuery.page = val.page;
       this.listQuery.limit = val.limit;
+      this.radio = ''
       this.getList();
     },
     handleModifyStatus(row, disable) {
@@ -955,7 +1013,7 @@ export default {
         this.listLoading = true;
       callservesure.GetDetails(row.serviceOrderId).then(res => {
         if (res.code == 200) {
-          this.dataForm1 = res.result;
+          this.dataForm1 = this._normalizeOrderDetail(res.result);
           let { serviceOrderId, u_SAP_ID, customerId } = row
           this.serveId = serviceOrderId
           this.sapOrderId = u_SAP_ID
@@ -1000,29 +1058,24 @@ export default {
         this.$message.error('暂无数据')
       })
     },
-    handlePhone (row) { // 电话回访
+    handlePhone (row, isInTable) { // 电话回访
       let { serviceOrderId, serviceWorkOrders } = row // 8 代表已回访
       let hasVisit = serviceWorkOrders.every(item => { // 是否已经回访
         return Number(item.status) === 8
       })
       if (hasVisit) {
-        this.$message({
-          type: 'warning',
-          message: '该服务单已评价'
-        })
+        this.$message.warning('该服务单已评价')
       } else {
         afterEvaluation.getTechnicianName({
           serviceOrderId
         }).then(res => {
           if (!res.data) {
-            return this.$message({
-              type: 'warning',
-              message: '工单未解决或在线解答方式不可回访'
-            })
+            return this.$message.warning('工单未解决或在线解答方式不可回访')
           }
           this.isView = false
           this.commentList = this._normalizeCommentList(res, row)
           this.dialogRateVisible = true
+          this.isRateAToBody = Boolean(isInTable) // 判断是否将dialog插入到body中
         }).catch(err => {
           this.$message.error(err.message)
         })
@@ -1078,15 +1131,14 @@ export default {
       if (!(isValid && productQuality && servicePrice)) {
         return this.$message.error('评分不能为零！')
       }
+      this.loadingBtn = true
       afterEvaluation.addComment(this.commentList)
         .then(() => {
-          this.$message({
-            message: '评价成功',
-            type: 'success'
-          })
+          this.$message.success('评价成功')
           this.$refs.rateRoot.resetInfo()
           this.loadingBtn = false
           this.dialogRateVisible = false
+          this.dialogFormView = false
           this.getList()
         }).catch(() => {
           this.loadingBtn = false
@@ -1094,22 +1146,24 @@ export default {
         })
     },
     handleExcel () { // 导出表格
-    let searchStr = ''
-      for (let key in this.listQuery) {
-        searchStr += `${key}=${this.listQuery[key]}&`
-      }
-      searchStr += `X-Token=${this.token}`
-      console.log(searchStr)
-      window.open(`${process.env.VUE_APP_BASE_API}/serve/Reimburse/Export?${searchStr}`, '_blank')
-      let baseURL = `${process.env.VUE_APP_BASE_API}${this.exportExcelUrl}`
-      let params = this.serializeParams(this.listQuery)
-      window.location.href = `${baseURL}?X-Token=${this.$store.state.user.token}&${params}`
+      this.$confirm('确认导出？', '确认信息', {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        closeOnClickModal: false,
+        type: 'warning'
+      })
+      .then(() => {
+        let searchStr = serializeParams(this.listQuery)
+        searchStr += `&X-Token=${this.$store.state.user.token}`
+        let baseURL = `${process.env.VUE_APP_BASE_API}${this.exportExcelUrl}`
+        console.log(`${baseURL}?X-Token=${this.$store.state.user.token}&${searchStr}`)
+        window.open(`${baseURL}?${searchStr}`, '_blank')
+      }) 
     },
     onChangeComment (val) {
       Object.assign(this.commentList, val)
       // this.newCommentList = val
     },
-    
     closeDia(a) {
       if (a === 'closeLoading') {
         return this.loadingBtn = false
@@ -1174,7 +1228,7 @@ export default {
 }
 .table_label {
   ::v-deep.el-radio {
-    margin-left: 6px;
+    // margin-left: 6px;
   }
   ::v-deep.el-radio__label {
     display: none;

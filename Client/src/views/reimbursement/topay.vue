@@ -29,7 +29,7 @@
               >
               <el-table-column type="selection"></el-table-column>
               <el-table-column
-                v-for="item in processedColumns"
+                v-for="item in toPayColumns"
                 :key="item.prop"
                 :width="item.width"
                 :label="item.label"
@@ -39,7 +39,7 @@
               >
                 <template slot-scope="scope" >
                   <div class="link-container" v-if="item.type === 'link'">
-                    <img :src="rightImg" @click="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
+                    <img :src="rightImg" @click.stop="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
                     <span>{{ scope.row[item.prop] }}</span>
                   </div>
                   <template v-else-if="item.type === 'operation'">
@@ -101,7 +101,7 @@
         <Report :data="reportData" ref="report"/>
       </my-dialog> -->
        <!-- 只能查看的表单 -->
-      <!-- <my-dialog
+      <my-dialog
         ref="serviceDetail"
         width="1210px"
         title="服务单详情"
@@ -122,7 +122,7 @@
             <zxchat :serveId='serveId' formName="报销"></zxchat>
           </el-col>
         </el-row>
-      </my-dialog> -->
+      </my-dialog>
   </div>
 </template>
 
@@ -133,8 +133,8 @@ import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
 // import Report from './common/components/report'
-// import zxform from "@/views/serve/callserve/form";
-// import zxchat from '@/views/serve/callserve/chat/index'
+import zxform from "@/views/serve/callserve/form";
+import zxchat from '@/views/serve/callserve/chat/index'
 import { tableMixin, categoryMixin, reportMixin, chatMixin } from './common/js/mixins'
 import { pay } from '@/api/reimburse'
 import { serializeParams } from '@/utils/process'
@@ -149,8 +149,8 @@ export default {
     MyDialog,
     Order,
     // Report,
-    // zxform,
-    // zxchat
+    zxform,
+    zxchat
   },
   computed: {
     searchConfig () {
