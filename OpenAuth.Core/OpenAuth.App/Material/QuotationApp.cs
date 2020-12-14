@@ -380,8 +380,8 @@ namespace OpenAuth.App.Material
                 result.Data = ServiceWorkOrderList.Skip((request.page - 1) * request.limit)
                 .Take(request.limit).Select(s => new
                 {
-                    SalesOrder= MnfSerialList.Where(m=>m.MnfSerial.Equals(s.ManufacturerSerialNumber) && m.DocType==17)?.Max(m=>m.BaseEntry).Value,
-                    ProductionOrder = MnfSerialList.Where(m => m.MnfSerial.Equals(s.ManufacturerSerialNumber) && m.DocType == 202)?.Max(m => m.BaseEntry).Value,
+                    SalesOrder= MnfSerialList.Where(m=>m.MnfSerial.Equals(s.ManufacturerSerialNumber) && m.DocType==17)?.Max(m=>m.BaseEntry),
+                    ProductionOrder = MnfSerialList.Where(m => m.MnfSerial.Equals(s.ManufacturerSerialNumber) && m.DocType == 202)?.Max(m => m.BaseEntry),
                     ManufacturerSerialNumber = s.ManufacturerSerialNumber,
                     MaterialCode = s.MaterialCode,
                     MaterialDescription = s.MaterialDescription,
@@ -574,7 +574,7 @@ namespace OpenAuth.App.Material
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var result = new TableData();
-            var Quotations = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(ServiceOrderId) && q.IsRead == 0).ToListAsync();
+            var Quotations = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(ServiceOrderId) && q.IsRead == 0 && q.ErpOrApp == 2).ToListAsync();
             var QuotationIds = Quotations.Select(q => q.Id).ToList();
             var QuotationProducts = await UnitWork.Find<QuotationProduct>(q => QuotationIds.Contains((int)q.QuotationId)).Include(q => q.QuotationMaterials).ToListAsync();
             Quotations.ForEach(q => q.QuotationProducts = QuotationProducts.Where(p => p.QuotationId.Equals(q.Id)).ToList());
