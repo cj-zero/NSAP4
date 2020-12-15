@@ -207,5 +207,10 @@ namespace OpenAuth.App.Request
         /// 是否草稿
         /// </summary>
         public int IsDraft { get; set; }
+
+        /// <summary>
+        /// 是否转派
+        /// </summary>
+        public int IsRedeploy { get; set; }
     }
 }
