@@ -373,8 +373,8 @@
       ref="formTheme"
       width="500px"
       :btnList="themeBtnList"
-      :appendToBody="true"
-      @onClose="closeFormTheme"
+      :append-to-body="true"
+      @closed="closeFormTheme"
     >
       <el-input
         style="width: 200px; margin-bottom: 10px;"
@@ -384,15 +384,15 @@
         v-model="listQueryTheme.key" 
         placeholder="呼叫主题内容">
       </el-input>
-      <div style="height: 400px;">
-        <common-table 
-          :loading="themeLoading"
-          ref="formThemeTable" 
-          :data="themeList" 
-          :columns="columns" 
-          :selectedList="selectedList"
-        ></common-table>
-      </div>
+      <common-table 
+        height="400px"
+        :loading="themeLoading"
+        ref="formThemeTable" 
+        :data="themeList" 
+        :columns="columns" 
+        :selectedList="selectedList"
+        selectedKey="id"
+      ></common-table>
       <pagination
         v-show="themeTotal > 0"
         :total="themeTotal"
@@ -548,7 +548,7 @@ export default {
         key: '' // 搜搜呼叫主题
       },
       columns: [
-        { originType: 'selection' },
+        { type: 'selection' },
         { label: '呼叫主题', prop: 'name' }
       ],
       selectedList: [] // 当前呼叫主题框存在的数组

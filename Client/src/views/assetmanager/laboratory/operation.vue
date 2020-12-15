@@ -1,11 +1,15 @@
 <template>
   <div class="timeline">
     <el-timeline>
-      <el-timeline-item v-for="(activity, index) in activities" :key="index" :timestamp="activity.operationCreateTime" color="#0bbd87">
-        <p effect="dark" size="small">
-          <span :class="{ highlight: !!activity.inspectId }">{{ activity.operationUser }}</span>
-          <el-button v-if="activity.inspectId" size="mini" round type="success" @click.native="timelineClick(activity.inspectId)">去查看</el-button>
-        </p>
+      <el-timeline-item
+        v-for="(activity, index) in activities"
+        :key="index"
+        :timestamp="activity.operationCreateTime"
+        color="#0bbd87"
+        :class="{ highlight: !!activity.inspectId }"
+        @click.native="timelineClick(activity.inspectId)"
+      >
+        <el-tag effect="dark" size="small">{{ activity.operationUser }}</el-tag>
         <div class="content" v-html="activity.operationContent"></div>
       </el-timeline-item>
     </el-timeline>
@@ -45,7 +49,6 @@ export default {
   }
 }
 .highlight {
-  color: #f4615c;
-  margin-right: 5px;
+  background-color: rgba(#409eff, 0.1);
 }
 </style>

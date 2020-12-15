@@ -423,6 +423,18 @@ namespace OpenAuth.App
             var h = await UnitWork.FindSingleAsync<CertOperationHistory>(c => c.CertInfoId.Equals(id) && c.Action.Contains(name));
             return h is null;
         }
+
+        /// <summary>
+        /// 查询字典
+        /// </summary>
+        /// <param name="Model"></param>
+        /// <returns></returns>
+        public async Task<Category> GetCategory(string Model)
+        {
+            var objs = await UnitWork.Find<Category>(c=> Model.Contains(c.Name) && c.TypeId.Equals("SYS_CalibrationCertificateType")).FirstOrDefaultAsync();
+            return objs;
+        }
+
         public CertinfoApp(IUnitWork unitWork, IRepository<Certinfo> repository,
             RevelanceManagerApp app, IAuth auth, FlowInstanceApp flowInstanceApp, CertOperationHistoryApp certOperationHistoryApp, ModuleFlowSchemeApp moduleFlowSchemeApp) : base(unitWork, repository, auth)
         {

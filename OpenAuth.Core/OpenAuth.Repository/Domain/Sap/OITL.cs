@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("OITL")]
-    public partial class OITL : Entity
+    public partial class OITL 
     {
         public OITL()
         {
@@ -34,7 +34,12 @@ namespace OpenAuth.Repository.Domain.Sap
           this.VersionNum= string.Empty;
           this.Transfered= string.Empty;
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        [Browsable(false)]
+        public int? LogEntry { get; set; }
         
         /// <summary>
         /// 

@@ -135,7 +135,7 @@ namespace OpenAuth.App
             //仓库验货
             await SaveReceiveInfo(req);
             //验收通过
-            await UnitWork.UpdateAsync<ReturnNote>(r => r.FlowInstanceId == returnNote.FlowInstanceId, u => new ReturnNote { Status = 2 });
+            await UnitWork.UpdateAsync<ReturnNote>(r => r.FlowInstanceId == returnNote.FlowInstanceId, u => new ReturnNote { Status = 2, Remark = req.Remark });
             //流程通过
             _flowInstanceApp.Verification(new VerificationReq
             {

@@ -20,6 +20,8 @@ namespace OpenAuth.Repository
         public virtual DbQuery<SysTableColumn> SysTableColumns { get; set; }
 
         #region 物料
+        public virtual DbSet<SalesOrderWarrantyDate> SalesOrderWarrantyDates { get; set; }
+
         public virtual DbSet<Expressage> Expressages { get; set; }
 
         public virtual DbSet<ExpressagePicture> ExpressagePictures { get; set; }
@@ -28,14 +30,19 @@ namespace OpenAuth.Repository
 
         public virtual DbSet<QuotationMaterial> QuotationMaterials { get; set; }
         public virtual DbSet<QuotationProduct> QuotationProducts { get; set; }
+
+        public virtual DbSet<QuotationMergeMaterial> QuotationMergeMaterials { get; set; }
+
         public virtual DbSet<ReturnNote> Returnnotes { get; set; }
 
         public virtual DbSet<ReturnnoteMaterial> ReturnnoteMaterials { get; set; }
 
         public virtual DbSet<ReturnNoteMaterialPicture> ReturnNoteMaterialPictures { get; set; }
 
-        public virtual DbSet<QuotationOperationHistory> QuotationOperationHistory { get; set; }
+        public virtual DbSet<QuotationOperationHistory> QuotationOperationHistories { get; set; }
 
+        public virtual DbSet<MaterialPrice> MaterialPrices { get; set; }
+        
         #endregion
     }
 }

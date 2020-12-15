@@ -139,12 +139,16 @@
               </el-col>
               <el-col :span="12">
                 <el-form-item label="校准证书" prop="assetCalibrationCertificate">
-                  <el-upload name="files" :action="action" :headers="headers" :disabled="openDialogType === '查看'" :on-success="handleSuccessJZ" :show-file-list="false">
-                    <template v-if="formData.assetCalibrationCertificate">
-                      <el-button type="primary" @click="download(formData.assetCalibrationCertificate)">查看校准证书</el-button>
-                      <el-button v-if="openDialogType != '查看'" type="danger" icon="el-icon-delete" @click.stop="handleRemoveJZ"></el-button>
-                    </template>
-                    <el-button v-else type="primary" size="mini">添加校准证书</el-button>
+                  <el-upload
+                    name="files"
+                    :action="action"
+                    :headers="headers"
+                    :limit="1"
+                    :disabled="openDialogType === '查看'"
+                    :on-success="handleSuccessJZ"
+                    :on-remove="handleRemoveJZ"
+                  >
+                    <el-button type="primary" size="mini" :disabled="openDialogType === '查看'">添加校准证书</el-button>
                   </el-upload>
                 </el-form-item>
               </el-col>
@@ -168,15 +172,12 @@
                     name="files"
                     :action="action"
                     :headers="headers"
+                    :limit="1"
                     :disabled="openDialogType === '编辑' || openDialogType === '查看'"
                     :on-success="handleSuccessAssetInspectDataOne"
-                    :show-file-list="false"
+                    :on-remove="handleRemoveAssetInspectDataOne"
                   >
-                    <template v-if="formData.assetInspectDataOne">
-                      <el-button type="primary" @click="download(formData.assetInspectDataOne)">查看技术指标</el-button>
-                      <el-button v-if="openDialogType === '新增'" type="danger" icon="el-icon-delete" @click.stop="handleRemoveAssetInspectDataOne"></el-button>
-                    </template>
-                    <el-button v-else type="primary" size="mini">添加技术指标</el-button>
+                    <el-button type="primary" size="mini" :disabled="openDialogType === '编辑' || openDialogType === '查看'">添加技术指标</el-button>
                   </el-upload>
                 </el-form-item>
               </el-col>
@@ -188,15 +189,12 @@
                     name="files"
                     :action="action"
                     :headers="headers"
+                    :limit="1"
                     :disabled="openDialogType === '查看'"
                     :on-success="handleSuccessAssetInspectDataTwo"
-                    :show-file-list="false"
+                    :on-remove="handleRemoveAssetInspectDataTwo"
                   >
-                    <template v-if="formData.assetInspectDataTwo">
-                      <el-button type="primary" @click="download(formData.assetInspectDataTwo)">查看技术文件</el-button>
-                      <el-button v-if="openDialogType != '查看'" type="danger" icon="el-icon-delete" @click.stop="handleRemoveAssetInspectDataTwo"></el-button>
-                    </template>
-                    <el-button v-else type="primary" size="mini">添加校准数据</el-button>
+                    <el-button type="primary" size="mini" :disabled="openDialogType === '查看'">添加校准数据</el-button>
                   </el-upload>
                 </el-form-item>
               </el-col>
@@ -206,15 +204,12 @@
                     name="files"
                     :action="action"
                     :headers="headers"
+                    :limit="1"
                     :disabled="openDialogType === '编辑' || openDialogType === '查看'"
                     :on-success="handleSuccessAssetTCF"
-                    :show-file-list="false"
+                    :on-remove="handleRemoveAssetTCF"
                   >
-                    <template v-if="formData.assetTCF">
-                      <el-button type="primary" @click="download(formData.assetTCF)">查看技术文件</el-button>
-                      <el-button v-if="openDialogType === '新增'" type="danger" icon="el-icon-delete" @click.stop="handleRemoveAssetTCF"></el-button>
-                    </template>
-                    <el-button v-else type="primary" size="mini">添加技术文件</el-button>
+                    <el-button type="primary" size="mini" :disabled="openDialogType === '编辑' || openDialogType === '查看'">添加技术文件</el-button>
                   </el-upload>
                 </el-form-item>
               </el-col>
@@ -354,30 +349,28 @@
             <el-row>
               <el-form-item label="图片">
                 <el-row type="flex">
+                  <el-image
+                    class="asset-image"
+                    fit="contain"
+                    v-if="formData.assetImage"
+                    :src="getImgUrl(formData.assetImage)"
+                    :preview-src-list="[getImgUrl(formData.assetImage)]"
+                    alt
+                  ></el-image>
                   <el-upload
-                    class="avatar-uploader"
+                    v-if="openDialogType === '新增'"
                     name="files"
+                    list-type="picture-card"
                     accept="image/*"
                     :action="action"
                     :headers="headers"
                     :show-file-list="false"
-                    :disabled="openDialogType === '查看'"
+                    :disabled="openDialogType === '编辑' || openDialogType === '查看'"
                     :on-success="handleSuccessAssetImage"
                     :on-remove="handleRemoveAssetImage"
                     :on-preview="handlePictureCardPreviewAssetImage"
                   >
-                    <div class="asset-image" v-if="formData.assetImage" @click.stop>
-                      <el-image class="avatar" fit="contain" :src="getImgUrl(formData.assetImage)" :preview-src-list="[getImgUrl(formData.assetImage)]"> </el-image>
-                      <div class="asset-image-actions" v-if="openDialogType != '查看'">
-                        <div class="asset-image-action" @click="handlePictureCardPreview(file)">
-                          <i class="el-icon-zoom-in"></i>
-                        </div>
-                        <div class="asset-image-action" @click="handleRemoveAssetImage()">
-                          <i class="el-icon-delete"></i>
-                        </div>
-                      </div>
-                    </div>
-                    <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                    <i class="el-icon-plus"></i>
                   </el-upload>
                 </el-row>
               </el-form-item>
@@ -403,7 +396,6 @@
 import { getListCategoryName, getListOrg, getListUser, add, update, getSingleAsset } from '@/api/assetmanagement'
 import Inspection from './inspection'
 import Operation from './operation'
-import { downloadFile } from '@/utils/file'
 
 const SYS_AssetCategory = 'SYS_AssetCategory' //类别
 const SYS_AssetStatus = 'SYS_AssetStatus' // 状态
@@ -709,7 +701,6 @@ export default {
     async updateAssets() {
       try {
         const formData = this.formData
-        formData.assetCategorys = formData.assetCategorys.filter(assetCategory => !!assetCategory.categoryNondeterminacy)
         const res = await update(formData)
         this.$message.success(res.message)
         this.close()
@@ -792,9 +783,7 @@ export default {
       this.$refs.form.validate(valid => {
         if (valid) {
           if (this.openDialogType === '新增') {
-            const formData = this.formData
-            formData.assetCategorys = formData.assetCategorys.filter(assetCategory => !!assetCategory.categoryNondeterminacy)
-            this.addzc(formData)
+            this.addzc(this.formData)
           } else {
             this.updateAssets()
           }
@@ -981,19 +970,77 @@ export default {
     getImgUrl(id) {
       if (!id) return ''
       return `${this.baseURL}/files/Download/${id}?X-Token=${this.tokenValue}`
-    },
-    download(id) {
-      const url = this.getImgUrl(id)
-      downloadFile(url)
     }
   }
 }
 </script>
 <style lang="scss" scoped>
+.avatar-uploader {
+  position: relative;
+  width: 80px;
+  height: 40px;
+
+  ::v-deep .el-upload {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  ::v-deep .el-icon-plus,
+  .avatar-uploader-icon {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    top: 0;
+    width: 15px;
+    height: 15px;
+    margin: auto;
+  }
+
+  .add-wrapper {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .upload-img {
+    position: relative;
+    width: 80px;
+    height: 40px;
+
+    &:hover .mask-wrapper {
+      opacity: 1;
+    }
+
+    .mask-wrapper {
+      position: absolute;
+      display: flex;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      top: 0;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      transition: opacity 0.3s;
+
+      .item {
+        margin: 0 5px;
+        color: white;
+      }
+    }
+  }
+}
+
 body {
   ::v-deep .popper__arrow {
     display: none;
   }
+
   ::v-deep .el-select-dropdown {
     margin-top: 0 !important;
   }
@@ -1001,65 +1048,11 @@ body {
 .input {
   margin: 5px 0;
 }
-// ----
-
 .asset-image {
-  position: relative;
-  &:hover {
-    .asset-image-actions {
-      visibility: visible;
-      background-color: rgba(#000, 0.5);
-    }
-  }
-  &-actions {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1;
-    display: flex;
-    transition: background-color 300ms;
-    background-color: rgba(#000, 0.1);
-    visibility: hidden;
-    pointer-events: none;
-  }
-  &-action {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    font-size: 25px;
-    &:nth-child(2) {
-      pointer-events: all;
-    }
-  }
-}
-
-// ----
-.avatar-uploader ::v-deep .el-upload {
-  border: 1px dashed #d9d9d9;
+  display: inline-block;
+  width: 148px;
+  height: 148px;
   border-radius: 6px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-.avatar-uploader .el-upload:hover {
-  border-color: #409eff;
-}
-.avatar-uploader-icon {
-  font-size: 28px;
-  color: #8c939d;
-  width: 178px;
-  height: 178px;
-  line-height: 178px;
-  text-align: center;
-}
-.avatar {
-  width: 178px;
-  height: 178px;
-  display: block;
+  margin-right: 10px;
 }
 </style>

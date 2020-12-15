@@ -8,12 +8,7 @@ let validateMoney = (rule, value, callback) => {
 }
 
 let validateInvoiceNumber = (rule, value, callback) => { // 校验发票号码8位数字
-  // if (/^[\d|a-z|A-Z]{7,11}$/.test(value))  {
-  //   callback()
-  // } else {
-  //   callback(new Error())
-  // }
-  if (value.trim()) {
+  if (/^[\d|a-z|A-Z]{7,11}$/.test(value))  {
     callback()
   } else {
     callback(new Error())

@@ -116,6 +116,13 @@
   opacity: 0;
 }
 
+
+/* 单行截取 */
+.text-overflow {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 /* image-viewer组件 删除按钮样式 */
 .el-image-viewer__wrapper {
   .el-image-viewer__close {

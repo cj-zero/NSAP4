@@ -23,7 +23,7 @@ namespace OpenAuth.App
         public const int ExpressNum_IsNull = 50018;     //快递单号为空
         public const int IS_OverTime = 50019;//时间超时
         public const int IS_Return_Finish = 50020;//退料完成
-
+        public const int Express_NotFound = 50021;//快递已不存在
         public const string TOKEN_NAME = "X-Token";
 
 

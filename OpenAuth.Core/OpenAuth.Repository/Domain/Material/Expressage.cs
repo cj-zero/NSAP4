@@ -52,6 +52,12 @@ namespace OpenAuth.Repository.Domain
         public string ExpressInformation { get; set; }
 
         /// <summary>
+        ///备注
+        /// </summary>
+        [Description("备注")]
+        public string Remark { get; set; }
+
+        /// <summary>
         /// 物流图片
         /// </summary>
         public virtual List<ExpressagePicture> ExpressagePicture { get; set; }

@@ -17,7 +17,7 @@ export let customerColumns = [ // 用户信息表单配置
 ]
 
 export let costColumns = [ // 费用列表配置 
-  { originType: 'selection' },
+  { type: 'selection' },
   { label: '费用类型', prop: 'feeType' },
   { label: '总金额', prop: 'moneyText' },
   { label: '发票号码', prop: 'invoiceNumber' },

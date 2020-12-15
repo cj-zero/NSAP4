@@ -67,6 +67,12 @@ namespace Infrastructure.Excel
                 .Take<NwcaliPLCRepetitiveMeasurementData>(sheetName);
             return data.Select(d => d.Value).SkipWhile(v => v is null).ToList();
         }
+        public List<T> GetListData<T>(Func<Mapper, List<T>> func)
+        {
+            return func(mapper);
+        }
+
+
         public T GetBaseInfo<T>(Func<ISheet, T> func)
         {
             var sheet = mapper.Workbook.GetSheetAt(0);
@@ -213,5 +219,7 @@ namespace Infrastructure.Excel
         {
             mapper.Save(filePath);
         }
+
+       
     }
 }

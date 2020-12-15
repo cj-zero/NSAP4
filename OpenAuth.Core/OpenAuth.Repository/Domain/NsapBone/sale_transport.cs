@@ -19,24 +19,46 @@ namespace OpenAuth.Repository.Domain
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("store_oitl")]
-    public partial class SysOIT1Column : Entity
+    [Table("sale_transport")]
+    public partial class sale_transport 
     {
-        public SysOIT1Column()
+        public sale_transport()
         {
-            this.BaseEntry = 0;
-            this.MnfSerial = string.Empty;
         }
+
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? BaseEntry { get; set; }
+        [Browsable(false)]
+        public int Base_DocEntry { get; set; }
+
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string MnfSerial { get; set; }
-        
+        [Browsable(false)]
+        public int Base_DocType{ get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        [Browsable(false)]
+        public int SboId { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        [Browsable(false)]
+        public int Buy_DocEntry { get; set; }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? Buy_SboId { get; set; }
     }
 }

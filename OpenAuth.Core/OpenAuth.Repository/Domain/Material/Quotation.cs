@@ -21,8 +21,8 @@ namespace OpenAuth.Repository.Domain
     {
         public Quotation()
         {
-            this.Status = 0;
-            this.InvoiceCompany = 0;
+            this.Status =0;
+            this.InvoiceCompany = "";
             this.ServiceOrderSapId = 0;
             this.SalesOrderId = 0;
             this.TotalMoney = 0;
@@ -30,7 +30,7 @@ namespace OpenAuth.Repository.Domain
             this.PayTime = DateTime.Now; ;
             this.CreateUser = "";
             this.CreateTime = DateTime.Now; ;
-            this.DeliveryMethod = 0;
+            this.DeliveryMethod = "";
             this.CreateUserId = "";
             this.ServiceOrderId = 0;
             this.IsProtected = false;
@@ -39,6 +39,8 @@ namespace OpenAuth.Repository.Domain
             this.ShippingAddress = "";
             this.CollectionAddress = "";
             this.QuotationStatus = 0;
+            this.IsRead = 0;
+            this.ErpOrApp = 1;
 
         }
         /// <summary>
@@ -51,7 +53,7 @@ namespace OpenAuth.Repository.Domain
         ///开票单位 1 新威尔 2 新能源 3 东莞新威
         /// </summary>
         [Description("开票单位 1 新威尔 2 新能源 3 东莞新威")]
-        public int? InvoiceCompany { get; set; }
+        public string InvoiceCompany { get; set; }
 
         /// <summary>
         ///SAP服务Id
@@ -99,7 +101,7 @@ namespace OpenAuth.Repository.Domain
         ///发货方式 1 款到发货 2 先票后货
         /// </summary>
         [Description("发货方式 1 款到发货 2 先票后货")]
-        public int? DeliveryMethod { get; set; }
+        public string DeliveryMethod { get; set; }
 
         /// <summary>
         ///创建人Id
@@ -150,6 +152,18 @@ namespace OpenAuth.Repository.Domain
         public int? QuotationStatus { get; set; }
 
         /// <summary>
+        ///已读未读
+        /// </summary>
+        [Description("已读未读")]
+        public int IsRead { get; set; }
+
+        /// <summary>
+        ///提交对象1-ERP 2-APP
+        /// </summary>
+        [Description("提交对象")]
+        public int ErpOrApp { get; set; }
+        
+        /// <summary>
         /// 物流表
         /// </summary>
         public virtual List<Expressage> Expressages { get; set; }
@@ -157,7 +171,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 物料报价单物料列表
         /// </summary>
-        public virtual List<QuotationMaterial> QuotationMaterials { get; set; }
+        //public virtual List<QuotationMaterial> QuotationMaterials { get; set; }
 
         /// <summary>
         /// 报价单设备列表
@@ -167,7 +181,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 报价单操作表
         /// </summary>
-        public virtual List<QuotationOperationHistory> QuotationOperationHistory { get; set; }
+        public virtual List<QuotationOperationHistory> QuotationOperationHistorys { get; set; }
 
 
 

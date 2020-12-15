@@ -26,7 +26,22 @@ namespace OpenAuth.Repository.Domain.Sap
         {
         }
 
-        
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? LogEntry { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string ItemCode { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? SysNumber { get; set; }
+
         /// <summary>
         /// 
         /// </summary>

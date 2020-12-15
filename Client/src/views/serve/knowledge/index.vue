@@ -29,7 +29,7 @@
         :title="dialogTitle"
         :btnList="btnList"
         :loading="dialogLoading"
-        :onClosed="closeDialog"
+        @closed="closeDialog"
       >
         <el-form
           :rules="rules"
@@ -220,6 +220,8 @@ export default {
       getList(this.listQuery).then(res => {
         console.log(res, 'resd')
         let { result } = res
+        // this._normalizeList(result)
+        console.log(this.listQuerySearch.key, !!this.listQuery.key)
         this.expandedKeys = []
         this.modulesTree = this._normalizeList(result)
         this.listLoading = false

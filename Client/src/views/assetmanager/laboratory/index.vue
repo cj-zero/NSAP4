@@ -190,13 +190,8 @@ export default {
   },
   watch: {
     'form.daterange': function(daterange) {
-      if (daterange) {
-        this.form.assetStartDate = daterange[0]
-        this.form.assetEndDate = daterange[1]
-      } else {
-        this.form.assetStartDate = ''
-        this.form.assetEndDate = ''
-      }
+      this.form.assetStartDate = daterange[0]
+      this.form.assetEndDate = daterange[1]
     }
   },
   created() {

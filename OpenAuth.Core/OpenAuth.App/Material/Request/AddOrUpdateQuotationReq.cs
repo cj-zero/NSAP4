@@ -108,14 +108,25 @@ namespace OpenAuth.App.Material.Request
         public string CollectionAddress { get; set; }
 
         /// <summary>
+        ///删除报价单
+        /// </summary>
+        public List<int> QuotationIds { get; set; }
+
+        /// <summary>
         /// 报价单设备列表
         /// </summary>
         public virtual List<QuotationProduct> QuotationProducts { get; set; }
 
-        ///// <summary>
-        ///// 物料报价单物料列表
-        ///// </summary>
-        //public virtual List<QuotationMaterial> QuotationMaterials { get; set; }
+        /// <summary>
+        /// 报价单零件合并列表
+        /// </summary>
+
+        public virtual List<QuotationMergeMaterial> QuotationMergeMaterials { get; set; }
+
+        /// <summary>
+        /// 物流表
+        /// </summary>
+        public virtual List<ExpressageReq> Expressages { get; set; }
 
     }
 }

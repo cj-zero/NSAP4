@@ -385,7 +385,7 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="ExpresssId"></param>
         /// <returns></returns>
-        public async Task WithDrawExpress(string ExpresssId)
+        public async Task WithDrawExpress(string ExpressId)
         {
             //获取当前用户nsap用户信息
             var loginContext = _auth.GetCurrentUser();
@@ -393,16 +393,20 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var expressInfo = await UnitWork.Find<Express>(w => w.Id == ExpresssId).FirstOrDefaultAsync();
+            var expressInfo = await UnitWork.Find<Express>(null).FirstOrDefaultAsync(w => w.Id.Equals(ExpressId));
+            if (expressInfo == null)
+            {
+                throw new CommonException("当前快递信息已不存在", Define.Express_NotFound);
+            }
 
-            TimeSpan timeSpan = (TimeSpan)(DateTime.Now - expressInfo.CreateTime);
+            TimeSpan timeSpan = (TimeSpan)(DateTime.Now - expressInfo?.CreateTime);
             if (timeSpan.TotalMinutes > 5)
             {
                 throw new CommonException("无法撤回，寄出时间已超5分钟", Define.IS_OverTime);
             }
             //删除快递单
-            await UnitWork.DeleteAsync<Express>(w => w.Id == ExpresssId);
-            await UnitWork.DeleteAsync<ExpressPicture>(w => w.ExpressId == ExpresssId);
+            await UnitWork.DeleteAsync<Express>(w => w.Id == ExpressId);
+            await UnitWork.DeleteAsync<ExpressPicture>(w => w.ExpressId == ExpressId);
             await UnitWork.SaveAsync();
         }
     }

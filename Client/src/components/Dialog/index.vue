@@ -3,20 +3,9 @@
     class="my-dialog-wrapper my-dialog-mini"
     v-el-drag-dialog
     v-loading.fullscreen="loading"
-    :element-loading-text="loadingText"
-    element-loading-spinner="el-icon-loading"
-    element-loading-background="rgba(0, 0, 0, 0.8)"
-    :center="center"
-    :width="width"
-    :title="title"
-    :modal="modal"
-    :top="top"
+    v-bind="attrs"
+    v-on="$listeners"
     :visible.sync="dialogVisible"
-    :modal-append-to-body="mAddToBody"
-    :close-on-click-modal="closeByClickModal"
-    :append-to-body="appendToBody"
-    @closed="onClosed"
-    @close="onClosed"
     @click.native.stop
   >
     <slot></slot>
@@ -28,7 +17,7 @@
           v-if="btnItem.isShow === undefined ? true : btnItem.isShow"
           :key="btnItem.btnText"
           :type="btnItem.type || 'primary'"
-          @click="btnItem.handleClick(btnItem.options)"
+          @click="btnItem.handleClick(btnItem.options || {})"
           :size="btnItem.size || 'mini'"
           :loading="btnItem.loading === undefined ? false: btnItem.loading"
         >{{ btnItem.btnText }}</el-button>
@@ -39,50 +28,15 @@
 
 <script>
 import elDragDialog from "@/directive/el-dragDialog";
+import { defaultConfig } from './default'
 export default {
   directives: {
     elDragDialog
   },
   props: {
-    width: {
-      type: String,
-      default: '50%'
-    },
-    modal: {
-      type: Boolean,
-      default: false
-    },
-    top: {
-      type: String,
-      default: '76px'
-    },
-    loadingText: {
-      type: String,
-      defualt: '拼命加载中'
-    },
-    title: {
-      type: String,
-      default: ''
-    },
     isShowBtn: {
       type: Boolean,
       default: true
-    },
-    mAddToBody: { // 遮罩层是否插入至 body 元素上，若为 false，则遮罩层会插入至 Dialog 的父元素上
-      type: Boolean,
-      default: false
-    },
-    closeByClickModal: {
-      type: Boolean,
-      default: false
-    },
-    appendToBody: { // Dialog 自身是否插入至 body 元素上。嵌套的 Dialog 必须指定该属性并赋值为 true
-      type: Boolean,
-      default: false 
-    },
-    center: {
-      type: Boolean,
-      default: false
     },
     btnList: {
       type: Array,
@@ -90,13 +44,14 @@ export default {
         return []
       }
     },
-    onClosed: {
-      type: Function,
-      default () { () => {} }
-    },
     loading: {
       type: Boolean,
       default: false
+    },
+  },
+  computed: {
+    attrs () {
+      return Object.assign({}, defaultConfig, this.$attrs)
     }
   },
   data () {

@@ -68,7 +68,7 @@
       ref="myDialog"
       :center="true"
       width="1206px"
-      :onClosed="closeDialog"
+      @closed="closeDialog"
       :title="`${textMap[type]}费用模板`"
       :btnList="btnList"
       :loading="dialogLoading"

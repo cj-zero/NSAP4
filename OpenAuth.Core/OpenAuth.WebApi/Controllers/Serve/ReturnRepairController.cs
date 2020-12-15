@@ -153,15 +153,15 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// <summary>
         /// 撤回快递
         /// </summary>
-        /// <param name="ExpresssId"></param>
+        /// <param name="ExpressId"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> WithDrawExpress(string ExpresssId)
+        public async Task<Response> WithDrawExpress(WithDrawExpressReq req)
         {
             var result = new Response();
             try
             {
-                await _returnRepairApp.WithDrawExpress(ExpresssId);
+                await _returnRepairApp.WithDrawExpress(req.ExpressId);
             }
             catch (Exception ex)
             {

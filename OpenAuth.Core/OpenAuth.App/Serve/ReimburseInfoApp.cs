@@ -1,21 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Infrastructure;
 using Infrastructure.Export;
 using Infrastructure.Extensions;
-using Infrastructure.GeneralAnalytical;
-using log4net.Appender;
-using Microsoft.CodeAnalysis.Operations;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Npoi.Mapper;
 using NStandard;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
@@ -1693,9 +1685,9 @@ namespace OpenAuth.App
             var query = from a in ReimburseInfos
                         join b in users on a.CreateUserId equals b.Id into ab
                         from b in ab.DefaultIfEmpty()
-                        select new { 姓名 = b.Name, 金额 = a.TotalMoney };
-
-            return await ExportAllHandler.ExporterExcel(query.ToList());
+                        select new {a.CreateUserId,b.Name, a.TotalMoney };
+            var Totalquery = query.GroupBy(q =>new { q.CreateUserId, q.Name }).Select(q =>new { q.Key.Name, TotalMoney=q.Select(s=>s.TotalMoney).Sum().ToString("F2")});
+            return await NPOIHelper.ExporterExcel(Totalquery.ToList());
         }
 
         /// <summary>

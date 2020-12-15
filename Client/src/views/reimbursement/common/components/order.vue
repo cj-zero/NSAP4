@@ -1,5 +1,5 @@
 <template>
-  <div class="order-wrapper" v-loading.fullscreen="orderLoading">
+  <div class="order-wrapper" v-loading="orderLoading">
     <!-- 标题头 -->
     <el-row 
       type="flex" 
@@ -48,27 +48,29 @@
           :show-message="false"
           >
             <el-row type="flex" class="item">
-              <div><span class="first-item">客户代码</span><span>{{ formData.terminalCustomerId }}</span></div>
-              <div>
-                <el-row type="flex" align="start">
-                  <span >客户名称</span>
+              <p><span class="first-item">客户代码</span><span>{{ formData.terminalCustomerId }}</span></p>
+              <p>
+                <el-row type="flex" align="middle">
+                  <span>客户名称</span>
                   <p class="content">{{ formData.terminalCustomer }}</p>
                 </el-row>
-              </div>
-              <div>
-                <el-row type="flex" align="start">
-                  <span>客户地址</span>
-                  <p class="content-long">{{ formData.completeAddress }}</p>
+              </p>
+              <p>
+                <el-row type="flex" align="middle">
+                  <span>出发到达</span>
+                  <p class="content">{{ formData.becity }}-{{ formData.destination }}</p>
                 </el-row>
-              </div>
+              </p>
             </el-row>
             <el-row type="flex" class="item">
-              <div>
-                <span class="first-item">出差事由</span>
-                <div v-if="formData.themeList && formData.themeList.length">
-                  <p v-for="item in formData.themeList.slice(0, 2)" :key="item.description">{{ item.description }}</p>
-                </div>
-              </div>
+              <p>
+                <el-row type="flex" align="middle">
+                  <span>出差事由</span>
+                  <div>
+                    <p v-if="formData.themeList && formData.themeList.length">{{ formData.themeList[0].description }}</p>
+                  </div>
+                </el-row>
+              </p>
             </el-row>
           </el-form>
         </div>
@@ -118,6 +120,7 @@
                     </el-tooltip>
                   </el-row>
                   <div>
+
                     <template v-if="scope.row.otherFileList && normalizeOtherFileList(scope.row).length">
                       <el-row 
                         style="margin-left: 18px;"
@@ -155,7 +158,7 @@
           <common-table 
             :data="reportTableData"
             :columns="reportTableColumns"
-            maxHeight="300px"
+            max-height="300px"
             :loading="reportDetailLoading"
           >
           </common-table>
@@ -165,7 +168,7 @@
           <common-table 
             :data="historyCostData"
             :columns="historyCostColumns"
-            maxHeight="300px"
+            max-height="300px"
             :loading="historyCostLoading"
           >
             <!-- 总金额 -->
@@ -195,7 +198,7 @@
             style="width: 778px;"
             :data="afterEvaluationList"
             :columns="afterEvaluationColumns"
-            maxHeight="300px"
+            max-height="300px"
             :loading="afterEvaLoading"
           >
           </common-table>
@@ -230,7 +233,7 @@
                   <template v-if="item.prop === 'serviceOrderSapId' && title !== 'create'">
                     <div class="link-container" style="display: inline-block">
                       <span>{{ item.label }}</span>
-                      <img :src="rightImg" @click="openTree(formData, false)" class="pointer">
+                      <img :src="rightImg" @click="_openServiceOrder" class="pointer">
                     </div>
                   </template>
                   <template v-else>
@@ -853,7 +856,7 @@
               <el-table-column label="审批时长" prop="intervalTime" width="150px" show-overflow-tooltip>
                 <template slot-scope="scope">
                   <!-- 10天10小时10分钟 -->
-                  {{ scope.row.intervalTime | timeFormat }}
+                  {{ scope.row.intervalTime | m2DHM }}
                 </template>
               </el-table-column>
               <el-table-column label="审批结果" prop="approvalResult" width="80px" show-overflow-tooltip></el-table-column>
@@ -868,18 +871,16 @@
     <my-dialog 
       ref="customerDialog" 
       width="621px" 
-      :mAddToBody="true" 
-      :appendToBody="true"
+      :append-to-body="true"
       :btnList="customerBtnList"
-      :onClosed="closeDialog">
-      <div style="height: 400px;">
-        <common-table 
-          ref="customerTable"
-          maxHeight="400px"
-          :data="customerInfoList"
-          :columns="customerColumns"
-        ></common-table>
-      </div>
+      @closed="closeDialog">
+      <common-table 
+        ref="customerTable"
+        max-height="500px"
+        :data="customerInfoList"
+        :columns="customerColumns"
+        radioKey="id"
+      ></common-table>
       <pagination
         v-show="customerTotal > 0"
         :total="customerTotal"
@@ -892,18 +893,18 @@
     <my-dialog 
       ref="costDialog" 
       width="800px" 
-      :mAddToBody="true" 
-      :appendToBody="true"
+      :append-to-body="true"
       :btnList="costBtnList"
       :loading="costLoading"
-      :onClosed="closeCostDialog">
+      @closed="closeCostDialog">
       <div style="height: 400px;">
         <common-table 
           ref="costTable"
-          maxHeight="400px"
+          max-height="400px"
           :data="costData"
           :columns="costColumns"
           :selectedList="selectedList"
+          selectedKey="id"
         ></common-table>
       </div>
       <pagination
@@ -919,9 +920,8 @@
       width="983px"
       title="服务行为报告单"
       ref="reportDialog"
-      :mAddToBody="true" 
-      :appendToBody="true"
-      :onClosed="resetReport">
+      :append-to-body="true"
+      @closed="resetReport">
       <Report :data="reportData" ref="report"/>
     </my-dialog>
     <!-- 确认审批弹窗 -->
@@ -929,10 +929,9 @@
       ref="approve"
       :center="true"
       :title="remarkTitle"
-      :mAddToBody="true" 
-      :appendToBody="true"
+      :append-to-body="true"
       :btnList="remarkBtnList"
-      :onClosed="onApproveClose"
+      @closed="onApproveClose"
       v-loading="remarkLoading"
       width="350px">
       <remark ref="remark" @input="onRemarkInput" :tagList="reimburseTagList" :title="title"></remark>
@@ -942,13 +941,11 @@
       ref="serviceDetail"
       width="1210px"
       title="服务单详情"
-      :mAddToBody="true" 
-      :appendToBody="true"
+      :append-to-body="true"
     >
       <el-row :gutter="20" class="position-view">
         <el-col :span="18" >
           <zxform
-            :form="temp"
             formName="查看"
             labelposition="right"
             labelwidth="72px"
@@ -1048,22 +1045,6 @@ export default {
       default () {
         return []
       }
-    }
-  },
-  filters: {
-    timeFormat (val) {
-      if (typeof val === 'number') {
-        val = parseInt(val)
-        let days = Math.floor(val / (24 * 60)) || '' // 几天
-        let daysMin = days * 24 * 60 // 天数对应的分钟
-        let hours = Math.floor((val - daysMin) / 60) || '' // 减去天数对应的分钟后剩余的小时
-        let hoursMin = hours * 60
-        let mins = (val - daysMin - hoursMin)
-        return (days ? days + '天' : days) 
-          + (hours ? hours + '小时' : hours)
-          + (mins ? mins + '分钟' : (days || hours) ? '' : mins + '分钟') 
-      }
-      return ''
     }
   },
   data () {
@@ -1393,6 +1374,9 @@ export default {
     }
   },
   methods: {
+    _openServiceOrder () {
+      this.openServiceOrder(this.formData.serviceOrderId, () => this.orderLoading = true, () => this.orderLoading = false)
+    },
     changeContent (index) { // 总经理审批页面费用详情/服务博爱高/历史费用 切换
       this.currentTabIndex = index
     },
@@ -1466,9 +1450,7 @@ export default {
     },
     openFile (row, isInvoiceAttachment) { // 打开发票附件
       console.log(row, 'row')
-      let file = isInvoiceAttachment 
-        ? (row.isValidInvoice ? row.invoiceFileList[0] : row.otherFileList[0])
-        : row
+      let file = isInvoiceAttachment ? row.reimburseAttachments[0] : row
       if (file) {
         let { url, fileType } = file
         if (/^image\/.*$/.test(fileType)) {
@@ -2081,15 +2063,13 @@ export default {
       getOrder(this.listQuery).then(res => {
         let { data, count } = res
         this.customerInfoList = data
-        this.customerInfoList.forEach(item => {
-          item.radioKey = 'id'
-        })
         this.customerTotal = count
       }).catch(() => {
         this.$message.error('获取用户信息失败')
       })
     },
     closeDialog () {
+      this.$refs.customerTable.resetCurrentRow()
       this.$refs.customerTable.resetRadio()
       this.$refs.customerDialog.close()
     },
@@ -2103,7 +2083,8 @@ export default {
     },
     confirm () {
       let currentRow = this.$refs.customerTable.getCurrentRow()
-      if (Object.keys(currentRow).length) {
+      console.log(currentRow, 'currentRow')
+      if (currentRow) {
         let reg = /[\r|\r\n|\n\t\v]/g
         let { 
           userName,
@@ -2136,7 +2117,6 @@ export default {
         formData.destination = destination
         this._checkTravelDays(currentRow)
         this._checkAccMoney()
-        // consol
       }
       this.closeDialog()
     },
@@ -2659,23 +2639,27 @@ export default {
         border: 1px solid #000;
         .item {
           margin-bottom: 10px;
+          p {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+          }
           .first-item {
-            flex: 0 0 50px;
+            display: inline-block;
+            width: 50px;
           }
           &:nth-last-child(1) {
             margin-bottom: 0;
           }
         }
         .content {
-          width: 270px;
+          max-width: 300px;
         }
-        .content-long {
-          max-width: 440px;
-        }
-        div {
+        p {
           display: flex;
+          align-items: center;
           min-width: 120px;
-          margin-right: 5px;
+          margin-right: 20px;
           font-size: 12px;
           font-weight: bold;
           span {

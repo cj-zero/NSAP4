@@ -77,6 +77,7 @@
           v-if="item.isShow === undefined ? true : item.isShow"
           :key="index"
           class="filter-item"
+          :style="item.style || {}"
           :class="{ 'customer-btn-class': item.isSpecial }"
           @click="item.handleClick({ listSearchQuery, ...(item.options || {}) })"
           :icon="item.icon || ''"

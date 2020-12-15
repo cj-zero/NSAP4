@@ -23,6 +23,7 @@ module.exports = {
       exprContextCritical: false,
     },
     // devtool: 'eval-cheap-source-map',
+    // devtool: process.NODE_ENV === 'development' ? 'source-map' : 'eval-cheap-source-map'
     devtool: 'source-map'
   },
   // svg配置

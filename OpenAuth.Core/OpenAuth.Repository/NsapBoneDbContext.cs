@@ -16,10 +16,11 @@ namespace OpenAuth.Repository
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             //当主键为联合主键时，需要把这里的内容拷贝到对应的位置
+            modelBuilder.Entity<sale_transport>().HasKey(s => new { s.Base_DocEntry, s.Base_DocType,s.Buy_DocEntry,s.SboId });
+            modelBuilder.Entity<buy_opor>().HasKey(b => new { b.sbo_id,b.DocEntry });
         }
-        //public virtual DbSet<store_oitl> StoreOitls { get; set; }
+        public virtual DbSet<sale_transport> sale_transports { get; set; }
 
-        //非数据库表格
-        public virtual DbSet<SysOIT1Column> SysOIT1Columns { get; set; }
+        public virtual DbSet<buy_opor> buy_opors { get; set; }
     }
 }

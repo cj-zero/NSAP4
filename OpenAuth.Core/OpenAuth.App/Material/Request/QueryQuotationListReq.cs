@@ -67,5 +67,17 @@ namespace OpenAuth.App.Material.Request
         /// 物料类型
         /// </summary>
         public string MaterialType { get; set; }
+
+        /// <summary>
+        /// 是否出库
+        /// </summary>
+        public int? Status { get; set; }
+
+        /// <summary>
+        /// 是否查看销售订单
+        /// </summary>
+        public bool? IsSalesOrderList { get; set; }
+
+
     }
 }
