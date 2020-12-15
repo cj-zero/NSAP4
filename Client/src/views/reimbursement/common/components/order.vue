@@ -47,7 +47,7 @@
         :show-message="false"
         >
           <el-row type="flex" class="item">
-            <div><span class="first-item">客户代码</span><span>{{ formData.terminalCustomerId }}</span></div>
+            <p><span class="first-item">客户代码</span><span>{{ formData.terminalCustomerId }}</span></p>
             <div>
               <el-row type="flex" align="start">
                 <span >客户名称</span>
@@ -192,11 +192,23 @@
               <!-- 费用详情 -->
               <template v-slot:expenseDetail="{ row }">
                 <div class="detail-content">
-                  <p>{{ row.expenseDetail }}</p>
-                  <el-tooltip 
-                    :content="row.remark">
-                    <i class="remark el-icon-chat-dot-round" v-if="row.remark"></i>
-                  </el-tooltip>
+                  <div>
+                    <span>{{ row.expenseDetail }}</span>
+                    <el-tooltip 
+                      :content="row.remark">
+                      <i class="remark el-icon-chat-dot-round" v-if="row.remark"></i>
+                    </el-tooltip>
+                    <template v-if="row.otherFileList && normalizeOtherFileList(row).length">
+                      <div
+                        style="display: inline-block; margin-left: 2px;"
+                        v-for="(item, index) in normalizeOtherFileList(row)" 
+                        :key="item.id"
+                      >
+                        <!-- <span class="pointer" @click="openFile(item)">附件{{ index + 1 }}</span> -->
+                        <i class="el-icon-document pointer" @click="openFile(item)">{{ index + 1 }}</i>
+                      </div>
+                    </template>
+                  </div>
                 </div>
               </template>
               <!-- 发票号码 -->
@@ -210,16 +222,6 @@
                     <i calss="invoice-icon" :class="[row.isValidInvoice ? 'el-icon-upload-success el-icon-circle-check success' : 'el-icon-warning-outline warning']"></i>
                   </el-tooltip>
                 </el-row>
-                <template v-if="row.otherFileList && normalizeOtherFileList(row).length">
-                  <el-row 
-                    style="margin-left: 18px;"
-                    type="flex" align="middle" 
-                    v-for="(item, index) in normalizeOtherFileList(row)" 
-                    :key="item.id"
-                  >
-                    <span class="pointer" @click="openFile(item)">附件{{ index + 1 }}</span>
-                  </el-row>
-                </template>
               </template>
               <!-- 金额 -->
               <template v-slot:money="{ row }">
@@ -1020,7 +1022,7 @@ export default {
         { label: '#', type: 'index' },
         { label: '日期', prop: 'invoiceTime' },
         { label: '费用名称', prop: 'expenseName' },
-        { label: '费用详情', slotName: 'expenseDetail' },
+        { label: '费用详情', slotName: 'expenseDetail', 'show-overflow-tooltip': false },
         { label: '发票号码', slotName: 'invoiceNumber' },
         { label: '金额（元）', slotName: 'money', align: 'right' },
       ],
@@ -2640,27 +2642,6 @@ export default {
               font-weight: normal;
             }
           }
-        }
-      }
-    }
-    /* 总经理tabList */
-    .tablist-wrapper {
-      margin-top: 5px;
-      span {
-        height: 30px;
-        padding: 0 10px;
-        line-height: 30px;
-        text-align: center;
-        background-color: #f5f7fa;
-        border: 1px solid rgba(0, 0, 0, .3);
-        border-left: none;
-        cursor: pointer;
-        &:nth-child(1) {
-          border-left: 1px solid rgba(0, 0, 0, .3);
-        }
-        &.active {
-          background-color: #fff;
-          color: #7fbeff;
         }
       }
     }
