@@ -1413,6 +1413,10 @@ export default {
         console.log('histroylist')
       })
     },
+    normalizeOtherFileList (row) {
+      let { isValidInvoice, otherFileList } = row
+      return isValidInvoice ? otherFileList : otherFileList.slice(1)
+    },
     openFile (row, isInvoiceAttachment) { // 打开发票附件
       console.log(row, 'row')
       let file = isInvoiceAttachment ? row.reimburseAttachments[0] : row
