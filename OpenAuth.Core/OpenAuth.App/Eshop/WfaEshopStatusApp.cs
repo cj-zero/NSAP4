@@ -30,24 +30,23 @@ namespace OpenAuth.App
         /// <param name="RegisterMobile"></param>
         /// <param name="request"></param>
         /// <returns></returns>
-        public async Task<TableData> GetOrderStatusByRegMobile (string RegisterMobile,QryWfaEshopStatusListReq request)
+        public async Task<TableData> GetOrderStatusByRegMobile (QryWfaEshopStatusListReq request)
         {
             var result = new TableData();
-            //查是否为客户
-            var objclient = from a in UnitWork.Find<OCRD>(null)
-                       join b in UnitWork.Find<OCPR>(null) on new { a.CardCode, a.CntctPrsn } equals new{b.CardCode, CntctPrsn = b.Name} into ab
-                       from b in ab.DefaultIfEmpty()
-                       select new { a, b };
-            string cardcode = await objclient.Where(o => o.b.Cellolar.Equals(RegisterMobile)).Select(s => s.a.CardCode).FirstOrDefaultAsync(); ;
-            //如果是客户则查该客户的列表
-            if (!string.IsNullOrEmpty(cardcode))
+            //如果是客户类型则查该客户的列表
+            if (request.QryType.ToString()=="1")
             {
+                //查是否为客户
+                var objclient = from a in UnitWork.Find<OCRD>(null)
+                                join b in UnitWork.Find<OCPR>(null) on new { a.CardCode, a.CntctPrsn } equals new { b.CardCode, CntctPrsn = b.Name } into ab
+                                from b in ab.DefaultIfEmpty()
+                                select new { a, b };
+                string cardcode = await objclient.Where(o => o.b.Cellolar.Equals(request.QryMobile)).Select(s => s.a.CardCode).FirstOrDefaultAsync();
+
                 var qrystatus = UnitWork.Find<wfa_eshop_status>(o => o.card_code.Equals(cardcode)).Include(s => s.wfa_eshop_oqutdetails)
-                    .WhereIf(!string.IsNullOrWhiteSpace(request.QryCardCode), q => q.card_code.Equals(request.QryCardCode))
-                    .WhereIf(!string.IsNullOrWhiteSpace(request.QryCardName), q => q.card_name.Contains(request.QryCardName))
-                    .WhereIf(!string.IsNullOrWhiteSpace(request.QryJobId), q => q.job_id.Equals(Convert.ToInt32(request.QryJobId)))
-                    .WhereIf(!string.IsNullOrWhiteSpace(request.QryOrderId), q => q.order_entry.Equals(Convert.ToInt32(request.QryOrderId)))
-                    .WhereIf(!string.IsNullOrWhiteSpace(request.QryQuotationId), q => q.quotation_entry.Equals(Convert.ToInt32(request.QryQuotationId)));
+                    .WhereIf(! string.IsNullOrEmpty(request.QryStatus.ToString()), q=>q.cur_status.Equals(request.QryStatus))
+                    .WhereIf(!string.IsNullOrWhiteSpace(request.key), q => q.card_code.Equals(request.key) || q.card_name.Contains(request.key) || q.job_id.Equals(request.key)
+                    || q.order_entry.Equals(Convert.ToInt32(request.key)) || q.quotation_entry.Equals(Convert.ToInt32(request.key)));
                 var resultStatus = qrystatus.OrderByDescending(o => o.first_createdate).Select(q => new
                 {
                     q.job_id,
@@ -69,15 +68,13 @@ namespace OpenAuth.App
                               join b in UnitWork.Find<base_user>(null) on a.user_id equals b.user_id into ab
                               from b in ab.DefaultIfEmpty()
                               select new { a, b };
-                var saleId = await objuser.Where(o => o.a.sale_id>0 && (o.b.mobile).ToString().Equals(RegisterMobile)).Select(s => s.a.sale_id).FirstOrDefaultAsync();
+                var saleId = await objuser.Where(o => o.a.sale_id > 0 && (o.b.mobile).ToString().Equals(request.QryMobile)).Select(s => s.a.sale_id).FirstOrDefaultAsync();
                 if (saleId > 0)
                 {
                     var qrystatus = UnitWork.Find<wfa_eshop_status>(o => o.slp_code.Equals(saleId)).Include(s => s.wfa_eshop_oqutdetails)
-                    .WhereIf(!string.IsNullOrWhiteSpace(request.QryCardCode), q => q.card_code.Equals(request.QryCardCode))
-                    .WhereIf(!string.IsNullOrWhiteSpace(request.QryCardName), q => q.card_name.Contains(request.QryCardName))
-                    .WhereIf(!string.IsNullOrWhiteSpace(request.QryJobId), q => q.job_id.Equals(Convert.ToInt32(request.QryJobId)))
-                    .WhereIf(!string.IsNullOrWhiteSpace(request.QryOrderId), q => q.order_entry.Equals(Convert.ToInt32(request.QryOrderId)))
-                    .WhereIf(!string.IsNullOrWhiteSpace(request.QryQuotationId), q => q.quotation_entry.Equals(Convert.ToInt32(request.QryQuotationId)));
+                     .WhereIf(!string.IsNullOrEmpty(request.QryStatus.ToString()), q => q.cur_status.Equals(request.QryStatus))
+                     .WhereIf(!string.IsNullOrWhiteSpace(request.key), q => q.card_code.Equals(request.key) || q.card_name.Contains(request.key) || q.job_id.Equals(request.key)
+                    || q.order_entry.Equals(Convert.ToInt32(request.key)) || q.quotation_entry.Equals(Convert.ToInt32(request.key)));
                     var resultStatus = qrystatus.OrderByDescending(o => o.first_createdate).Select(q => new
                     {
                         q.job_id,

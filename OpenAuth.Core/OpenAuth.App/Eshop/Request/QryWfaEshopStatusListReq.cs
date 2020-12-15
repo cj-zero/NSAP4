@@ -4,36 +4,17 @@
     {
         //todo:添加自己的请求字段
         /// <summary>
-        /// 业务员查询条件
+        /// 登录手机号
         /// </summary>
-        public string QrySalesCode { get; set; }
+        public string QryMobile { get; set; }
         /// <summary>
-        /// 提交用户查询条件
+        /// 登录用户类型 1 客户 2 业务员
         /// </summary>
-        public string QryUserId { get; set; }
-
+        public string QryType { get; set; }
         /// <summary>
-        /// 客户编号
+        /// 订单状态查询 (0 已提交 1 待发货 2 已发货 3 已完成）
         /// </summary>
-        public string QryCardCode { get; set; }
-
-        /// <summary>
-        /// 客户名称查询条件
-        /// </summary>
-        public string QryCardName { get; set; }
-
-        /// <summary>
-        /// 报价单审批编码
-        /// </summary>
-        public string QryJobId { get; set; }
-
-        /// <summary>
-        /// 报价单编号
-        /// </summary>
-        public string QryQuotationId { get; set; }
-        /// <summary>
-        /// 合同编号
-        /// </summary>
-        public string QryOrderId { get; set; }
+        public int? QryStatus { get; set; }
+  
     }
 }
