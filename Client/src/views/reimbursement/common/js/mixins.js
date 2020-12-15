@@ -577,7 +577,7 @@ export let categoryMixin = {
         },
         // { label: '客户简称', prop: 'shortCustomerName', palceholder: '最长6个字', col: this.ifFormEdit ? 5 : 6, maxlength: 6, disabled: this.isEditItem, required: true },
         { label: '费用承担', prop: 'bearToPay', palceholder: '请输入内容', 
-          disabled: this.title === 'view' || !(this.isCustomerSupervisor && (this.title === 'create' || this.title === 'edit' || this.title === 'approve')), 
+          disabled: this.isProcessed || this.title === 'view' || !(this.isCustomerSupervisor && (this.title === 'create' || this.title === 'edit' || this.title === 'approve')), 
           col: this.ifFormEdit ? 5 : 6, type: 'select', options: this.expenseList, width: '100%'
         },
         { label: '报销状态', prop: 'reimburseTypeText', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
@@ -785,7 +785,13 @@ export const attachmentMixin = {
             this.$message.error('识别失败,请上传至其它附件列表')
             resolve(false)
           } else {
-            let { invoiceNo, invoiceDate, amountWithTax, isValidate, isUsed, notPassReason, type, extendInfo } = res.data[0]
+            let { invoiceNo, invoiceDate, amountWithTax, isValidate, isUsed, notPassReason, type, extendInfo
+            
+            
+            
+            
+            
+            } = res.data[0]
             if (!isValidate || (isValidate && isUsed)) { // 识别失败
               this.$nextTick(() => {
                 this._setCurrentRow(currentRow, {

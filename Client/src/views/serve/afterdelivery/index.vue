@@ -136,7 +136,7 @@ export default {
         { prop: 'customer', placeholder: '客户', width: 100 },
         { prop: 'expressNum', placeholder: '快递单号', width: 100 },
         { prop: 'creater', placeholder: '寄件人', width: 100 },
-        { prop: 'expressState', placeholder: '快递状态', width: 100, type: 'select', options: this.statusOptions },
+        { prop: 'expressState', placeholder: '快递状态', width: 100, type: 'select', options: this.statusOptions, isClear: false },
         { prop: 'startDate', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endDate', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
@@ -254,7 +254,7 @@ export default {
         confirmButtonText: '确认',
         cancelButtonText: '取消'
       }).then(() => {
-        withDrawExpress({ expressId: currentRow.expressId }).then(() => {
+        withDrawExpress({ expressId: currentRow.id }).then(() => {
           this.$message.success('撤销成功')
           this._getList()
         }).catch(err => {

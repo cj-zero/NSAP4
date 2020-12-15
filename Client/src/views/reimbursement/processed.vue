@@ -87,6 +87,7 @@
       <order 
         ref="order" 
         :title="title"
+        :isProcessed="true"
         :detailData="detailData"
         :categoryList="categoryList"
         :customerInfo="customerInfo">
@@ -166,7 +167,7 @@ export default {
       ]
     },
     dialogWidth () {
-      return this.isGeneralStatus ? '1015px' :'1206px'
+      return this.title === 'approve' ? '1015px' :'1206px'
     }
   },
   data () {

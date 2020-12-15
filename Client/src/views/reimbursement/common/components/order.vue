@@ -47,27 +47,33 @@
         :show-message="false"
         >
           <el-row type="flex" class="item">
-            <p><span class="first-item">客户代码</span><span>{{ formData.terminalCustomerId }}</span></p>
-            <div>
-              <el-row type="flex" align="start">
-                <span >客户名称</span>
+            <p>
+              <span class="first-item">客户代码</span>
+              <img :src="rightImg" @click="openHistory" class="pointer">
+              <span>{{ formData.terminalCustomerId }}</span>
+            </p>
+            <p>
+              <el-row type="flex" align="middle">
+                <span>客户名称</span>
                 <p class="content">{{ formData.terminalCustomer }}</p>
               </el-row>
-            </div>
-            <div>
-              <el-row type="flex" align="start">
-                <span>客户地址</span>
-                <p class="content-long">{{ formData.completeAddress }}</p>
+            </p>
+            <p>
+              <el-row type="flex" align="middle">
+                <span>出发到达</span>
+                <p class="content">{{ formData.becity }}-{{ formData.destination }}</p>
               </el-row>
-            </div>
+            </p>
           </el-row>
           <el-row type="flex" class="item">
-            <div>
-              <span class="first-item">出差事由</span>
-              <div v-if="formData.themeList && formData.themeList.length">
-                <p v-for="item in formData.themeList.slice(0, 2)" :key="item.description">{{ item.description }}</p>
-              </div>
-            </div>
+            <p>
+              <el-row type="flex" align="middle">
+                <span>出差事由</span>
+                <div>
+                  <p v-if="formData.themeList && formData.themeList.length">{{ formData.themeList[0].description }}</p>
+                </div>
+              </el-row>
+            </p>
           </el-row>
         </el-form>
       </div>
@@ -245,38 +251,7 @@
           >
           </common-table>
         </div>
-        <!-- 历史费用 -->
-        <div style="width: 984px;margin-top: 5px;">
-          <h2 style="font-weight: bold;">历史费用</h2>
-          <common-table 
-            style="margin-top: 5px;"
-            :data="historyCostData"
-            :columns="historyCostColumns"
-            max-height="300px"
-            :loading="historyCostLoading"
-          >
-            <!-- 总金额 -->
-            <template v-slot:totalMoney="{ row }">
-              {{ row.totalMoney | toThousands }}
-            </template>
-            <!-- 交通费用 -->
-            <template v-slot:faresMoney="{ row }">
-              {{ row.faresMoney | toThousands }}
-            </template>
-            <!-- 住宿补贴 -->
-            <template v-slot:acc="{ row }">
-              {{ row.accommodationSubsidiesMoney | toThousands }}
-            </template>
-            <!-- 出差补贴 -->
-            <template v-slot:travel="{ row }">
-              {{ row.travellingAllowancesMoney | toThousands }}
-            </template>
-            <!-- 其它费用 -->
-            <template v-slot:other="{ row }">
-              {{ row.otherChargesMoney | toThousands }}
-            </template>
-          </common-table>
-        </div>    
+        
         <div style="margin-top: 5px;">
           <h2 style="font-weight: bold;">售后评价</h2>
           <common-table 
@@ -927,6 +902,49 @@
         </el-col>
       </el-row>
     </my-dialog>
+    <!-- 历史费用弹窗 -->
+    <my-dialog
+      ref="historyDialog"
+      width="1004px"
+      title="历史费用"
+      top="200px"
+      :append-to-body="true"
+    >
+      <!-- 历史费用 -->
+      <div style="width: 984px;">
+        <common-table 
+          class="history-table-wrapper"
+          :data="historyCostData"
+          :columns="historyCostColumns"
+          :stripe="false"
+          max-height="300px"
+          :loading="historyCostLoading"
+          :header-cell-style="historyCell"
+          :cell-style="historyCell"
+        >
+          <!-- 总金额 -->
+          <template v-slot:totalMoney="{ row }">
+            {{ row.totalMoney | toThousands }}
+          </template>
+          <!-- 交通费用 -->
+          <template v-slot:faresMoney="{ row }">
+            {{ row.faresMoney | toThousands }}
+          </template>
+          <!-- 住宿补贴 -->
+          <template v-slot:acc="{ row }">
+            {{ row.accommodationSubsidiesMoney | toThousands }}
+          </template>
+          <!-- 出差补贴 -->
+          <template v-slot:travel="{ row }">
+            {{ row.travellingAllowancesMoney | toThousands }}
+          </template>
+          <!-- 其它费用 -->
+          <template v-slot:other="{ row }">
+            {{ (row.otherChargesMoney / row.totalMoney) | toThousands }}
+          </template>
+        </common-table>
+      </div>    
+    </my-dialog>
     <!-- 预览图片 -->
     <el-image-viewer
       v-if="previewVisible"
@@ -996,6 +1014,7 @@ export default {
       type: String,
       default: ''
     },
+    isProcessed: Boolean, // 是否已经处理
     customerInfo: {
       type: Object,
       default () {
@@ -1054,11 +1073,15 @@ export default {
       historyCostColumns: [
         { label: '报销单号', prop: 'mainId', width: '80px' },
         { label: '总天数', prop: 'days', align: 'right', width: '80px' },
-        { label: '总金额', prop: 'totalMoney', type: 'slot', slotName: 'totalMoney', align: 'right', width: '100px' },
-        { label: '交通费用', prop: 'faresMoney', type: 'slot', slotName: 'faresMoney', align: 'right', width: '100px' },
-        { label: '住宿补贴', prop: 'accommodationSubsidiesMoney', type: 'slot', slotName: 'acc', align: 'right', width: '100px' },
-        { label: '出差补贴', prop: 'travellingAllowancesMoney', type: 'slot', slotName: 'travel', align: 'right', width: '100px' },
-        { label: '其他费用', prop: 'otherChargesMoney', type: 'slot', slotName: 'other', align: 'right', width: '100px' },
+        { label: '总金额', prop: 'totalMoney', slotName: 'totalMoney', align: 'right', width: '100px', 'class-name': 'red' },
+        { label: '交通费用', prop: 'faresMoney', slotName: 'faresMoney', align: 'right', width: '100px' },
+        { label: '交通占比', prop: 'fmProportion', width: '70px', align: 'right' },
+        { label: '住宿补贴', prop: 'accommodationSubsidiesMoney', slotName: 'acc', align: 'right', width: '100px' },
+        { label: '住宿占比', prop: 'asProportion', width: '70px', align: 'right' },
+        { label: '出差补贴', prop: 'travellingAllowancesMoney', slotName: 'travel', align: 'right', width: '100px' },
+        { label: '出差占比', prop: 'taProportion', width: '70px', align: 'right' },
+        { label: '其他费用', prop: 'otherChargesMoney', slotName: 'other', align: 'right', width: '100px' },
+        { label: '其他占比', prop: 'ocProportion', width: '70px', align: 'right' },
         { label: '出发时间', prop: 'businessTripDate', width: '126px' },
         { label: '结束时间', prop: 'endDate', width: '126px' },
         { label: '报销人', prop: 'userName', width: '70px' }
@@ -1345,11 +1368,15 @@ export default {
     }
   },
   methods: {
-    _openServiceOrder () {
+    historyCell ({ columnIndex }) {
+      const grayList = [3, 4, 7, 8]
+      return grayList.includes(columnIndex) ? { backgroundColor: '#fafafa' } : {}
+    },
+    _openServiceOrder () { // 打开服务单详情
       this.openServiceOrder(this.formData.serviceOrderId, () => this.orderLoading = true, () => this.orderLoading = false)
     },
-    changeContent (index) { // 总经理审批页面费用详情/服务博爱高/历史费用 切换
-      this.currentTabIndex = index
+    openHistory () { // 打开历史费用
+      this.$refs.historyDialog.open()
     },
     _getAfterEvaluation () { // 获取售后评价
       if (!this.formData.serviceOrderSapId) {
@@ -1453,7 +1480,6 @@ export default {
       })
     },
     _normalizeTimelineList (historyList) { // 格式化操作记录流程
-      console.log(historyList, PROGRESS_TEXT_LIST)
       // 需要展示最新的进度状态，审批到了总经理这一步，每一个步骤最新的状态必然是连续的
       let reimburseStatus = this.formData.remburseStatus // 报销单状态
       console.log(reimburseStatus)
@@ -2651,6 +2677,9 @@ export default {
       // width: 828px;
       width: 993px;
       margin-top: 5px;
+      ::v-deep .el-table th .cell, .el-table td .cell {
+        line-height: 16px;
+      }
       .table-container {
         overflow: visible;
         .upload-number-wrapper {
@@ -2675,9 +2704,9 @@ export default {
             white-space: nowrap;
           }
           .remark {
-            position: absolute;
-            right: -14px;
-            bottom: 2px;
+            // position: absolute;
+            // right: -14px;
+            // bottom: 2px;
             color: red;
           }
         }
@@ -2758,6 +2787,9 @@ export default {
       text-align: right;
       white-space: nowrap;
     }
+  }
+  /* 历史费用弹窗表格 */
+  .history-table-wrapper {
   }
   /* 时间线 */
 
