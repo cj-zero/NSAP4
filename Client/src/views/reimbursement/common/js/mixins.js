@@ -171,10 +171,9 @@ export let tableMixin = {
     },
     getDetail (val) { // 获取服务单详情
       let id
-      let tableClick = false
-      if (val.type === 'view') { // 如果是点击底部表格里的箭头查看详情
+      let { type } = val
+      if (type === 'view' || type === 'approve') { // 如果是点击底部表格里的箭头查看详情
         id = val.id
-        tableClick = true
       } else {
         if (!this.currentRow) { // 编辑审核等操作
           return this.$message.warning('请先选择报销单')
@@ -199,9 +198,10 @@ export let tableMixin = {
         delete res.data.reimburseResp
         this.detailData = Object.assign({}, res.data, { ...reimburseResp })
         // 如果是审核流程、则判断当前用户是不是客服主管
-        this.title = tableClick ? 'view' : val.type
+        // this.title = tableClick ? 'view' : val.type
+        this.title = val.type
         try {
-          if ((this.title === 'approve' || this.title === 'view') && this.isGeneralManager) {
+          if (this.title === 'approve') {
             // 用于总经理审批页面的表格数据
             this._generateApproveTable(this.detailData)
           }
@@ -250,6 +250,7 @@ export let tableMixin = {
         reimburseAccommodationSubsidies,
         reimburseOtherCharges,
       } = data
+      // 交通
       reimburseFares.forEach(item => {
         let { invoiceTime, transport, from, to, money, reimburseAttachments, invoiceNumber, remark } = item
         result.push({
@@ -264,12 +265,13 @@ export let tableMixin = {
           otherFileList: this.getOtherFileList(reimburseAttachments)
         })
       })
+      // 住宿
       reimburseAccommodationSubsidies.forEach(item => {
         let { invoiceTime, days, totalMoney, reimburseAttachments, invoiceNumber, remark } = item
         result.push({
           invoiceTime: this.processInvoiceTime(invoiceTime),
           expenseName: '住宿补贴',
-          expenseDetail: days + '天',
+          expenseDetail: `${toThousands(totalMoney / days)}元/天*${days}天`,
           money: totalMoney,
           remark,
           invoiceNumber,
@@ -278,13 +280,13 @@ export let tableMixin = {
           otherFileList: this.getOtherFileList(reimburseAttachments)
         })
       })
-      
+      // 出差
       reimburseTravellingAllowances.forEach(item => {
         let { invoiceTime, days, money, remark } = item
         result.push({
           invoiceTime: this.processInvoiceTime(invoiceTime),
           expenseName: '出差补贴',
-          expenseDetail: days + '天',
+          expenseDetail: `${toThousands(money / days)}元/天*${days}天`,
           money: money * days,
           remark
         })

@@ -38,7 +38,7 @@
             >
               <template slot-scope="scope" >
                 <div class="link-container" v-if="item.type === 'link'">
-                  <img :src="rightImg" @click.stop="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
+                  <img :src="rightImg" @click.stop="item.handleJump({ ...scope.row, ...{ type: 'approve' }})" class="pointer">
                   <span>{{ scope.row[item.prop] }}</span>
                 </div>
                 <template v-else-if="item.type === 'operation'">
@@ -77,9 +77,10 @@
     <!-- 审核弹窗 -->
     <my-dialog
       ref="myDialog"
+      top="10px"
       :width="dialogWidth"
       @closed="closeDialog"
-      :title="textMap[title]"
+      title="查看"
       :loading="dialogLoading"
       :btnList="btnList"
     >
