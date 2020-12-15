@@ -192,7 +192,7 @@ export default {
       return row.selectable
     },
     mergeColumnConfig (column) { // 合并自定义配置与默认配置
-      return Object.assign({}, column, defaultColumnConfig)
+      return Object.assign({}, defaultColumnConfig, column)
     }
   },
   created () {
