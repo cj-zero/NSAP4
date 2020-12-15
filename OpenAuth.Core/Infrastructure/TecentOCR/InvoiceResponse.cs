@@ -59,6 +59,11 @@ namespace Infrastructure.TecentOCR
         public string InvoiceDate { get; set; }
 
         /// <summary>
+        /// 销售方名称
+        /// </summary>
+        public string SellerName { get; set; }
+
+        /// <summary>
         /// 扩展信息
         /// </summary>
         public ExtendInfo ExtendInfo { get; set; }
@@ -142,6 +147,11 @@ namespace Infrastructure.TecentOCR
         /// 发票校验码
         /// </summary>
         public string CheckCode { get; set; }
+
+        /// <summary>
+        /// 销售方名字
+        /// </summary>
+        public string SellerName { get; set; }
 
         public ExtendInfo Extend { get; set; }
 

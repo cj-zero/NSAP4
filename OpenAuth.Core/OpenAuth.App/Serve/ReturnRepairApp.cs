@@ -163,7 +163,7 @@ namespace OpenAuth.App
                     s.Creater,
                     s.Remark,
                     ExpressPictures = s.ExpressPictures.Select(s => s.PictureId).ToList()
-                }).OrderBy(o => o.CreateTime).ToListAsync())
+                }).ToListAsync())
                 .Select(s => new
                 {
                     s.Id,
@@ -184,8 +184,9 @@ namespace OpenAuth.App
                     ExpressAccessorys = GetAccessorys(s.ExpressPictures, fileList),
                     s.ReturnRepairId
                 }).ToList();
-            result.Count = resultList.Count;
-            result.Data = resultList.Skip((req.page - 1) * req.limit).Take(req.limit).ToList().GroupBy(g => g.ServiceOrderId).Select(s => new { ServiceOrderId = s.Key, ExpressInfo = s.ToList() }).ToList();
+            var returnData = resultList.Skip((req.page - 1) * req.limit).Take(req.limit).ToList().OrderBy(o => o.CreateTime).GroupBy(g => g.ServiceOrderId).Select(s => new { ServiceOrderId = s.Key, ExpressInfo = s.ToList() }).ToList();
+            result.Count = returnData.Count;
+            result.Data = returnData;
 
             return result;
         }
