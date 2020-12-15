@@ -2664,7 +2664,7 @@ export default {
           font-weight: bold;
           span {
             &:nth-child(1) {
-              width: 60px;
+              width: 50px;
               margin-right: 10px;
             }
             &:nth-child(2) {
