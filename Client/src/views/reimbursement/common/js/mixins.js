@@ -104,7 +104,8 @@ export let tableMixin = {
       detailData: {}, // 报销单详情
       baseURL: process.env.VUE_APP_BASE_API + "/files/Download", // 图片基地址
       tokenValue: this.$store.state.user.token,
-      originUserId: this.$store.state.user.userInfoAll.userId // 当前用户的ID
+      originUserId: this.$store.state.user.userInfoAll.userId, // 当前用户的ID
+      reimburseStatus: 0 // 报销状态
     }
   },
   methods: {
@@ -171,9 +172,10 @@ export let tableMixin = {
     },
     getDetail (val) { // 获取服务单详情
       let id
-      let { type } = val
+      let { type, remburseStatus } = val
       if (type === 'view' || type === 'approve') { // 如果是点击底部表格里的箭头查看详情
         id = val.id
+        this.reimburseStatus = Number(remburseStatus)
       } else {
         if (!this.currentRow) { // 编辑审核等操作
           return this.$message.warning('请先选择报销单')
