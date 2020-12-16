@@ -53,26 +53,24 @@
               <span>{{ formData.terminalCustomerId }}</span>
             </div>
             <div>
-              <el-row type="flex" align="middle">
-                <span>客户名称</span>
+              <el-row type="flex" align="start">
+                <span >客户名称</span>
                 <p class="content">{{ formData.terminalCustomer }}</p>
               </el-row>
             </div>
             <div>
-              <el-row type="flex" align="middle">
-                <span>出发到达</span>
-                <p class="content">{{ formData.becity }}-{{ formData.destination }}</p>
+              <el-row type="flex" align="start">
+                <span>客户地址</span>
+                <p class="content-long">{{ formData.completeAddress }}</p>
               </el-row>
             </div>
           </el-row>
           <el-row type="flex" class="item">
             <div>
-              <el-row type="flex" align="middle">
-                <span>出差事由</span>
-                <div>
-                  <p v-if="formData.themeList && formData.themeList.length">{{ formData.themeList[0].description }}</p>
-                </div>
-              </el-row>
+              <span class="first-item">出差事由</span>
+              <div v-if="formData.themeList && formData.themeList.length">
+                <p v-for="item in formData.themeList.slice(0, 2)" :key="item.description">{{ item.description }}</p>
+              </div>
             </div>
           </el-row>
         </el-form>
