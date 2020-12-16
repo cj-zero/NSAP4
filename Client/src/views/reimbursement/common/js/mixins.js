@@ -267,10 +267,11 @@ export let tableMixin = {
       })
       // 住宿
       reimburseAccommodationSubsidies.forEach(item => {
-        let { invoiceTime, days, totalMoney, reimburseAttachments, invoiceNumber, remark } = item
+        let { invoiceTime, days, totalMoney, reimburseAttachments, invoiceNumber, remark, sellerName } = item
         result.push({
           invoiceTime: this.processInvoiceTime(invoiceTime),
           expenseName: '住宿补贴',
+          sellerName,
           expenseDetail: `${toThousands(totalMoney / days)}元/天*${days}天`,
           money: totalMoney,
           remark,
@@ -722,7 +723,7 @@ export const attachmentMixin = {
     },
     _setCurrentRow (currentRow, data) { // 识别发票凭据后，对表格行进行赋值
       console.log('setCurrentRow')
-      let { invoiceNo, invoiceDate, money, isAcc, isValidInvoice } = data
+      let { invoiceNo, invoiceDate, money, isAcc, isValidInvoice, sellerName = '' } = data
       if (isAcc) { // 住宿表格行数据
         currentRow.totalMoney = money
         currentRow.money = (currentRow.totalMoney / (currentRow.days || 1)).toFixed(2)
@@ -735,6 +736,7 @@ export const attachmentMixin = {
       this.$set(currentRow, 'isValidInvoice', isValidInvoice) // 判断发票是否正确，如果是正确的话就不给修改，不正确就给修改
       currentRow.maxMoney = money
       currentRow.invoiceNumber = invoiceNo
+      currentRow.sellerName = sellerName
       currentRow.invoiceTime = invoiceDate.match(invoiceTimeReg) ? RegExp.$_ : ''
     },
     _setAttachmentList ({ data, index, prop, reimburseType, val }) { // 设置通过上传获取到的附件列表
@@ -777,6 +779,7 @@ export const attachmentMixin = {
                 invoiceNo: '',
                 money: '',
                 isAcc,
+                sellerName: '',
                 invoiceDate: '',
                 isValidInvoice: false
               })
@@ -785,19 +788,14 @@ export const attachmentMixin = {
             this.$message.error('识别失败,请上传至其它附件列表')
             resolve(false)
           } else {
-            let { invoiceNo, invoiceDate, amountWithTax, isValidate, isUsed, notPassReason, type, extendInfo
-            
-            
-            
-            
-            
-            } = res.data[0]
+            let { invoiceNo, invoiceDate, amountWithTax, isValidate, isUsed, notPassReason, type, extendInfo, sellerName } = res.data[0]
             if (!isValidate || (isValidate && isUsed)) { // 识别失败
               this.$nextTick(() => {
                 this._setCurrentRow(currentRow, {
                   invoiceNo: '',
                   money: '',
                   isAcc,
+                  sellerName: '',
                   invoiceDate: '',
                   isValidInvoice: false
                 })
@@ -815,6 +813,7 @@ export const attachmentMixin = {
                   money: amountWithTax,
                   isAcc,
                   invoiceDate,
+                  sellerName,
                   isValidInvoice: true
                 })
               })
@@ -828,6 +827,7 @@ export const attachmentMixin = {
               invoiceNo:'',
               money: '',
               isAcc,
+              sellerName: '',
               invoiceDate: '',
               isValidInvoice: false
             })

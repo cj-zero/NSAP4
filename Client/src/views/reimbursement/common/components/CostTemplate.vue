@@ -630,6 +630,7 @@ export default {
         invoiceNo: '',
         money: '',
         invoiceDate: '',
+        sellerName: '',
         isAcc: this.currentType === ACC_TYPE,
         isValidInvoice: false
       })

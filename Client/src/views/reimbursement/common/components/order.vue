@@ -199,7 +199,8 @@
               <template v-slot:expenseDetail="{ row }">
                 <div class="detail-content">
                   <div>
-                    <span>{{ row.expenseDetail }}</span>
+                    <span style="display: inline-block;margin-right: 5px;">{{ row.sellerName }}</span>
+                    <span style="display: inline-block;margin-right: 5px;">{{ row.expenseDetail }}</span>
                     <el-tooltip 
                       :content="row.remark">
                       <i class="remark el-icon-chat-dot-round" v-if="row.remark"></i>
@@ -1448,7 +1449,9 @@ export default {
     },
     openFile (row, isInvoiceAttachment) { // 打开发票附件
       console.log(row, 'row')
-      let file = isInvoiceAttachment ? row.reimburseAttachments[0] : row
+      let file = isInvoiceAttachment 
+        ? (row.isValidInvoice ? row.invoiceFileList[0] : row.otherFileList[0])
+        : row
       if (file) {
         let { url, fileType } = file
         if (/^image\/.*$/.test(fileType)) {
@@ -2026,6 +2029,7 @@ export default {
           invoiceNo: '',
           money: '',
           invoiceDate: '',
+          sellerName: '',
           isAcc,
           isValidInvoice: false
         })
@@ -2677,23 +2681,8 @@ export default {
       // width: 828px;
       width: 993px;
       margin-top: 5px;
-      ::v-deep .el-table th .cell, .el-table td .cell {
-        line-height: 16px;
-      }
       .table-container {
         overflow: visible;
-        .upload-number-wrapper {
-          margin-left: 18px;
-          ::v-deep .el-upload-list {
-            .el-upload-list__item-name {
-              padding-left: 0 !important;
-              margin-bottom: 0 !important;
-            }
-            label {
-              display: none !important;
-            }
-          }
-        }
         .detail-content {
           position: relative;
           display: inline-block;
@@ -2713,6 +2702,9 @@ export default {
         .invoice-number-wrapper {
           position: relative;
         }
+      }
+      ::v-deep .cell {
+        line-height: 16px;
       }
       ::v-deep .el-table__header {
         border-collapse: collapse;
