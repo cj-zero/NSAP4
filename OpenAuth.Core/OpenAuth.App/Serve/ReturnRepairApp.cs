@@ -140,8 +140,6 @@ namespace OpenAuth.App
                             select new { b.U_SAP_ID, b.CustomerId, b.CustomerName, a.ServiceOrderId, a.Id, a.MaterialType, a.CreateTime };
             var baseInfo = await querybase.WhereIf(Convert.ToInt32(req.SapId) > 0, w => w.U_SAP_ID == Convert.ToInt32(req.SapId))            //服务Id
                            .WhereIf(!string.IsNullOrEmpty(req.Customer), w => w.CustomerId.Contains(req.Customer) || w.CustomerName.Contains(req.Customer))//客户
-                           .WhereIf(!string.IsNullOrEmpty(req.StartDate), w => w.CreateTime >= Convert.ToDateTime(req.StartDate))//创建时间（开始）
-                           .WhereIf(!string.IsNullOrEmpty(req.EndDate), w => w.CreateTime < Convert.ToDateTime(req.EndDate))//创建时间（结束）
                            .ToListAsync();
             var returnReturnIds = baseInfo.Select(s => s.Id).Distinct().ToList();
             var fileList = await UnitWork.Find<UploadFile>(null).ToListAsync();
@@ -150,6 +148,8 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrEmpty(req.Creater), w => w.Creater.Equals(req.Creater))//寄件人
                 .WhereIf(Convert.ToInt32(req.ExpressState) == 1, w => w.IsCheck == 0)
                 .WhereIf(Convert.ToInt32(req.ExpressState) == 2, w => w.IsCheck == 1)
+                .WhereIf(!string.IsNullOrEmpty(req.StartDate), w => w.CreateTime >= Convert.ToDateTime(req.StartDate))//创建时间（开始）
+                .WhereIf(!string.IsNullOrEmpty(req.EndDate), w => w.CreateTime < Convert.ToDateTime(req.EndDate))//创建时间（结束）
                 .Select(s => new
                 {
                     s.Id,
@@ -163,7 +163,7 @@ namespace OpenAuth.App
                     s.Creater,
                     s.Remark,
                     ExpressPictures = s.ExpressPictures.Select(s => s.PictureId).ToList()
-                }).OrderBy(o => o.CreateTime).ToListAsync())
+                }).ToListAsync())
                 .Select(s => new
                 {
                     s.Id,
@@ -184,8 +184,9 @@ namespace OpenAuth.App
                     ExpressAccessorys = GetAccessorys(s.ExpressPictures, fileList),
                     s.ReturnRepairId
                 }).ToList();
-            result.Count = resultList.Count;
-            result.Data = resultList.Skip((req.page - 1) * req.limit).Take(req.limit).ToList().GroupBy(g => g.ServiceOrderId).Select(s => new { ServiceOrderId = s.Key, ExpressInfo = s.ToList() }).ToList();
+            var returnData = resultList.OrderBy(o => o.CreateTime).GroupBy(g => g.ServiceOrderId).Select(s => new { ServiceOrderId = s.Key, ExpressInfo = s.ToList() }).ToList();
+            result.Count = returnData.Count;
+            result.Data = returnData.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
 
             return result;
         }

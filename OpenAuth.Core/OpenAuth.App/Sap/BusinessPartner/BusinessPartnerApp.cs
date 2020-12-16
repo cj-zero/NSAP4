@@ -281,6 +281,12 @@ namespace OpenAuth.App.Sap.BusinessPartner
                 }
                 nsapId = User.Id;
             }
+            //判断当前账号是否存在服务单 若存在不允许进行解绑或绑定操作
+            var isExistService = (await UnitWork.Find<ServiceWorkOrder>(w => w.AppUserId == appUserId).ToListAsync())?.Count > 0 ? true : false;
+            if (isExistService)
+            {
+                throw new CommonException("当前账号存在服务关系不可绑定", 90019);
+            }
             var obj = from a in UnitWork.Find<OCRD>(null)
                       join b in UnitWork.Find<OSLP>(null) on a.SlpCode equals b.SlpCode into ab
                       from b in ab.DefaultIfEmpty()
