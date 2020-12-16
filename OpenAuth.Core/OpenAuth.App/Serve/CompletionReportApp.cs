@@ -87,18 +87,24 @@ namespace OpenAuth.App
             pictures.ForEach(r => r.CompletionReportId = o.Id);
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
+            var workOrderList = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId)
+    .WhereIf("其他设备".Equals(req.MaterialType), a => a.MaterialCode == "其他设备")
+    .WhereIf(!"其他设备".Equals(req.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == req.MaterialType)
+    .ToListAsync());
+            List<int> workorder = new List<int>();
+            foreach (var item in workOrderList)
+            {
+                workorder.Add(item.Id);
+            }
+            if (req.IsRedeploy == 1)//若转派则将当前设备类型置为初始未派单状态
+            {
+                await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id),
+                 o => new ServiceWorkOrder { Status = 1, OrderTakeType = 0, CurrentUser = string.Empty, CurrentUserId = 0, CurrentUserNsapId = string.Empty, BookingDate = null, VisitTime = null, ServiceMode = 0, CompletionReportId = string.Empty, TroubleDescription = string.Empty, ProcessDescription = string.Empty, IsCheck = 0, CompleteDate = null });
+            }
             //判断为非草稿提交 则修改对应状态和发送消息
             if (req.IsDraft == 0)
             {
-                var workOrderList = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId)
-                    .WhereIf("其他设备".Equals(req.MaterialType), a => a.MaterialCode == "其他设备")
-                    .WhereIf(!"其他设备".Equals(req.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == req.MaterialType)
-                    .ToListAsync());
-                List<int> workorder = new List<int>();
-                foreach (var item in workOrderList)
-                {
-                    workorder.Add(item.Id);
-                }
+
                 await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id), s => new ServiceWorkOrder { Status = 7 });
                 await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
                 {
