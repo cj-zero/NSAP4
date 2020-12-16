@@ -104,6 +104,6 @@ namespace OpenAuth.App.Response
         /// 
         /// </summary>
         [Description("物流单上传时间")]
-        public string CreateDate { get; set; }
+        public System.DateTime? CreateDate { get; set; }
     }
 }

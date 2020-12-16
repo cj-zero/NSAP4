@@ -45,8 +45,8 @@ namespace OpenAuth.App
 
                 var qrystatus = UnitWork.Find<wfa_eshop_status>(o => o.card_code.Equals(cardcode)).Include(s => s.wfa_eshop_oqutdetails)
                     .WhereIf(! string.IsNullOrEmpty(request.QryStatus.ToString()), q=>q.cur_status.Equals(request.QryStatus))
-                    .WhereIf(!string.IsNullOrWhiteSpace(request.key), q => q.card_code.Equals(request.key) || q.card_name.Contains(request.key) || q.job_id.Equals(request.key)
-                    || q.order_entry.Equals(Convert.ToInt32(request.key)) || q.quotation_entry.Equals(Convert.ToInt32(request.key)));
+                    .WhereIf(!string.IsNullOrWhiteSpace(request.key), q => q.card_code.Equals(request.key) || q.card_name.Contains(request.key) || q.job_id.ToString().Equals(request.key)
+                    || q.order_entry.ToString().Equals(request.key) || q.quotation_entry.ToString().Equals(request.key));
                 var resultStatus = qrystatus.OrderByDescending(o => o.first_createdate).Select(q => new
                 {
                     q.job_id,
