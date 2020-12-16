@@ -98,6 +98,21 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 
         /// </summary>
+        [Description("提交阶段最新更新时间")]
+        public System.DateTime? order_lastdate { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("交货阶段最新更新时间")]
+        public System.DateTime? shipping_lastdate { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("结束阶段最新更新时间")]
+        public System.DateTime? complete_lastdate { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
         [Description("初次创建时间")]
         public System.DateTime? first_createdate { get; set; }
 
