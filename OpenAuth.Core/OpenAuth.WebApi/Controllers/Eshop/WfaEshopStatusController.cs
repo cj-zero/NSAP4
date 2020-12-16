@@ -7,6 +7,7 @@ using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace OpenAuth.WebApi.Controllers
 {
@@ -31,12 +32,13 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetOrderStatusByRegMobile(string MobileNo, [FromQuery] QryWfaEshopStatusListReq req)
+        [AllowAnonymous]
+        public async Task<TableData> GetOrderStatusByRegMobile([FromQuery] QryWfaEshopStatusListReq req)
         {
             var result = new TableData();
             try
             {
-                result.Data =await  _wfastatusapp.GetOrderStatusByRegMobile(MobileNo, req);
+                result.Data =await  _wfastatusapp.GetOrderStatusByRegMobile(req);
             }
             catch (Exception ex)
             {

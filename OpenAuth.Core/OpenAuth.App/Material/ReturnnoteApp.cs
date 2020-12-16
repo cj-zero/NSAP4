@@ -336,7 +336,7 @@ namespace OpenAuth.App
             //获取服务单列表
             var serviceOrderList = await UnitWork.Find<ServiceOrder>(null)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.SapId), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.SapId)))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.Customer), q => q.CustomerName.Equals(req.Customer) || q.CustomerId.Equal(req.Customer))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.Customer), q => q.CustomerName.Contains(req.Customer) || q.CustomerId.Contains(req.Customer))
                 .ToListAsync();
             var returnNoteList = returnNote.Select(s => new { CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerName).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.mm.dd"), s.ServiceOrderSapId, s.CreateUserId }).ToList().GroupBy(g => new { g.ServiceOrderSapId, g.CreateUserId }).Select(s => new { s.Key.ServiceOrderSapId, s.Key.CreateUserId, detail = s.ToList() }).ToList();
             result.Data = returnNoteList;

@@ -47,33 +47,33 @@
         :show-message="false"
         >
           <el-row type="flex" class="item">
-            <p>
+            <div>
               <span class="first-item">客户代码</span>
               <img :src="rightImg" @click="openHistory" class="pointer">
               <span>{{ formData.terminalCustomerId }}</span>
-            </p>
-            <p>
+            </div>
+            <div>
               <el-row type="flex" align="middle">
                 <span>客户名称</span>
                 <p class="content">{{ formData.terminalCustomer }}</p>
               </el-row>
-            </p>
-            <p>
+            </div>
+            <div>
               <el-row type="flex" align="middle">
                 <span>出发到达</span>
                 <p class="content">{{ formData.becity }}-{{ formData.destination }}</p>
               </el-row>
-            </p>
+            </div>
           </el-row>
           <el-row type="flex" class="item">
-            <p>
+            <div>
               <el-row type="flex" align="middle">
                 <span>出差事由</span>
                 <div>
                   <p v-if="formData.themeList && formData.themeList.length">{{ formData.themeList[0].description }}</p>
                 </div>
               </el-row>
-            </p>
+            </div>
           </el-row>
         </el-form>
       </div>
@@ -181,7 +181,6 @@
           </el-col>
         </el-row>
       </el-form>
-
       <template v-if="title === 'approve'">
         <!-- 费用详情 -->
         <div>
@@ -1448,7 +1447,9 @@ export default {
     },
     openFile (row, isInvoiceAttachment) { // 打开发票附件
       console.log(row, 'row')
-      let file = isInvoiceAttachment ? row.reimburseAttachments[0] : row
+      let file = isInvoiceAttachment 
+        ? (row.isValidInvoice ? row.invoiceFileList[0] : row.otherFileList[0])
+        : row
       if (file) {
         let { url, fileType } = file
         if (/^image\/.*$/.test(fileType)) {
@@ -2636,27 +2637,23 @@ export default {
         border: 1px solid #000;
         .item {
           margin-bottom: 10px;
-          p {
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-          }
           .first-item {
-            display: inline-block;
-            width: 50px;
+            flex: 0 0 50px;
           }
           &:nth-last-child(1) {
             margin-bottom: 0;
           }
         }
         .content {
-          max-width: 300px;
+          width: 270px;
         }
-        p {
+        .content-long {
+          max-width: 440px;
+        }
+        div {
           display: flex;
-          align-items: center;
           min-width: 120px;
-          margin-right: 20px;
+          margin-right: 5px;
           font-size: 12px;
           font-weight: bold;
           span {

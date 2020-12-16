@@ -128,6 +128,7 @@ namespace OpenAuth.WebApi.Controllers
                         invoiceresponse.Type = item.Type;
                         invoiceresponse.ExtendInfo = item.Extend;
                         invoiceresponse.InvoiceDate = item.InvoiceDate;
+                        invoiceresponse.SellerName = item.SellerName;
                         //判断若未识别出发票号码则直接返回
                         if (string.IsNullOrEmpty(item.InvoiceNo))
                         {
