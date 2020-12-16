@@ -59,6 +59,21 @@ namespace OpenAuth.App.Response
         /// <summary>
         /// 
         /// </summary>
+        [Description("提交阶段最新更新时间")]
+        public System.DateTime? order_lastdate { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("交货阶段最新更新时间")]
+        public System.DateTime? shipping_lastdate { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("结束阶段最新更新时间")]
+        public System.DateTime? complete_lastdate { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
         [Description("初次创建时间")]
         public System.DateTime? first_createdate { get; set; }
 
@@ -67,5 +82,28 @@ namespace OpenAuth.App.Response
 
         [Description("销售单取消历史")]
         public virtual List<wfa_eshop_canceledstatus> wfa_eshop_canceledstatuss { get; set; }
+        
+        [Description("销售单物流明细")]
+        public virtual List<LogInfo> wfa_eshop_Logs { get; set; }
+
+    }
+
+    public class LogInfo
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("物流公司名称")]
+        public string CoName { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("物流单号")]
+        public string ExpNum { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("物流单上传时间")]
+        public string CreateDate { get; set; }
     }
 }
