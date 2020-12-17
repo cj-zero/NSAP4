@@ -3232,8 +3232,25 @@ namespace OpenAuth.App
             }
             //获取设备信息
             var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
+            //获取当前技术员的服务单集合
             var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.TechnicianId)
                 .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+            List<int> workIds = new List<int>();
+            //获取转派的已完成的单据
+            if (req.Type == 3)
+            {
+                var redeployList = await UnitWork.Find<ServiceRedeploy>(w => w.TechnicianId == req.TechnicianId).ToListAsync();
+                var redeployIds = redeployList.Select(s => s.ServiceOrderId).Distinct().ToList();
+                foreach (var item in redeployList)
+                {
+                    List<int> ids = item.WorkOrderIds.Split(',').Select(m => Convert.ToInt32(m)).ToList();
+                    workIds = workIds.Concat(ids).ToList();
+                }
+                if (redeployIds.Count > 0)
+                {
+                    redeployIds.ForEach(f => serviceOrderIds.Add((int)f));
+                }
+            }
             //获取完工报告集合
             var completeReportList = await UnitWork.Find<CompletionReport>(w => serviceOrderIds.Contains((int)w.ServiceOrderId)).Select(s => new { s.ServiceOrderId, s.IsReimburse, s.Id, s.ServiceMode, MaterialType = s.MaterialCode == "其他设备" ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) }).ToListAsync();
             //获取我的报销单集合
@@ -3267,7 +3284,7 @@ namespace OpenAuth.App
                     s.CustomerName,
                     s.TerminalCustomer,
                     Count = s.ServiceWorkOrders.Where(w => w.ServiceOrderId == s.Id && w.CurrentUserId == req.TechnicianId).Count(),
-                    MaterialInfo = s.ServiceWorkOrders.Where(w => w.CurrentUserId == req.TechnicianId).Select(o => new
+                    MaterialInfo = s.ServiceWorkOrders.Where(w => req.Type == 3 ? workIds.Contains(w.Id) : w.CurrentUserId == req.TechnicianId).Select(o => new
                     {
                         o.MaterialCode,
                         o.ManufacturerSerialNumber,
@@ -3353,14 +3370,14 @@ namespace OpenAuth.App
                .ToList()).Count;
             //获取进行中的单据数量
             var goingQty = (serviceWorkOrderList
-               .Where(s => s.ServiceWorkOrders.Any(a => a.Status > 1 && a.Status < 7 && a.OrderTakeType != 0))
+               .Where(s => !s.ServiceWorkOrders.All(a => a.OrderTakeType == 0) && !s.ServiceWorkOrders.All(a => a.Status >= 7))
                .ToList()).Count;
             //获取已完成的单据数量
             var finishQty = (serviceWorkOrderList
               .Where(s => s.ServiceWorkOrders.All(a => a.Status >= 7))
               .ToList()).Count;
             //获取已报销的单据数量
-            var isReimburseQty = (await UnitWork.Find<ReimburseInfo>(w => serviceOrderIds.Contains(w.ServiceOrderId) && w.RemburseStatus > 3).ToListAsync()).Count;
+            var isReimburseQty = (await UnitWork.Find<ReimburseInfo>(w => serviceOrderIds.Contains(w.ServiceOrderId) && w.RemburseStatus != 3).ToListAsync()).Count;
             //获取上门服务的完成单据数量
             var doorQty = (serviceWorkOrderList
               .Where(s => s.ServiceWorkOrders.All(a => a.Status >= 7))
