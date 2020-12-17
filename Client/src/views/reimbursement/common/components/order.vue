@@ -950,6 +950,13 @@
       :on-close="closeViewer"
     >
     </el-image-viewer>
+    <!-- 百度地图实例化 -->
+    <template v-if="title === 'approve'">
+      <div id="map-container" style="width:400px;height:400px;"></div>
+      <div id="date-picker-wrapper">
+        <date-picker v-model="currentTime" :markedDateList="formData.allDateList || []"></date-picker>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -968,22 +975,20 @@ import Report from './report'
 import Remark from './remark'
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import AreaSelector from '@/components/AreaSelector'
+// import Bmap from '@/components/bmap'
 import { toThousands } from '@/utils/format'
 import { findIndex } from '@/utils/process'
 import { deepClone } from '@/utils'
+import { formatDate } from '@/utils/date'
 import { travelRules, trafficRules, accRules, otherRules } from '../js/customerRules'
 import { customerColumns, costColumns } from '../js/config'
 import { noop } from '@/utils/declaration'
 import { categoryMixin, reportMixin, attachmentMixin, chatMixin } from '../js/mixins'
 import { REIMBURSE_TYPE_MAP, IF_SHOW_MAP, REMARK_TEXT_MAP } from '../js/map'
 import rightImg from '@/assets/table/right.png'
+import DatePicker from './DatePicker.vue'
 const PROGRESS_TEXT_LIST = ['提交', '客服审批', '财务初审', '财务复审', '总经理审批', '出纳'] // 进度条文本
 const AFTER_EVALUTION_KEY = ['responseSpeed', 'schemeEffectiveness', 'serviceAttitude', 'productQuality', 'servicePrice']
-// { label: '响应速度', prop: 'responseSpeed', width: 70 },
-//         { label: '方案有效性', prop: 'schemeEffectiveness', width: 80 },
-//         { label: '服务态度', prop: 'serviceAttitude', width: 70 },
-//         { label: '产品质量', prop: 'productQuality', width: 70 },
-//         { label: '服务价格', prop: 'servicePrice', width: 70 },
 const AFTER_EVALUTION_STATUS = {
   0: '未统计',
   1: '非常差',
@@ -1005,12 +1010,20 @@ export default {
     AreaSelector,
     zxform,
     zxchat,
-    ElImageViewer
+    ElImageViewer,
+    DatePicker,
+    // Bmap
   },
   props: {
     title: {
       type: String,
       default: ''
+    },
+    BMap: {
+      type: Object
+    },
+    map: {
+      type: Object
     },
     isProcessed: Boolean, // 是否已经处理
     customerInfo: {
@@ -1251,6 +1264,12 @@ export default {
     }
   },
   computed: {
+    currentTime () { // 当前报销单的出差首日期
+      if (this.formData.businessTripDate) {
+        return new Date(formatDate(this.formData.businessTripDate))
+      }
+      return new Date()
+    },
     ifFormEdit () { // 是否可以编辑
       return this.title === 'view'
         ? false
@@ -1365,8 +1384,55 @@ export default {
       return 0
     }
   },
+  mounted () {
+    console.log('order mounted')
+  },
   methods: {
-    historyCell ({ columnIndex }) {
+    initMap () {
+      let BMap = global.BMap
+      console.log(document.getElementById('map-container'))
+      let map = new BMap.Map("map-container", { enableMapClick: false })  //新建地图实例，enableMapClick:false ：禁用地图默认点击弹框
+      let point = new BMap.Point(113.30765, 23.12005);
+      map.centerAndZoom(point, 19)
+      map.enableScrollWheelZoom() // 滚轮缩放
+      map.clearOverlays();                        //清除地图上所有的覆盖物  
+      let driving = new BMap.DrivingRoute(map);    //创建驾车实例  
+      // 生成坐标点
+      let pointArr = this.formData.pointArr
+      let trackPoint = [];
+      for (let i = 0, j = pointArr.length; i < j; i++) {
+        trackPoint.push(new BMap.Point(pointArr[i].lng, pointArr[i].lat));
+      }
+      for (let i = 0; i < trackPoint.length; i++) {
+        if(i !== trackPoint.length - 1){
+          driving.search(trackPoint[i], trackPoint[i+1])
+        }
+      }
+      driving.setSearchCompleteCallback(() => {  
+        let pts = driving.getResults().getPlan(0).getRoute(0).getPath()   //通过驾车实例，获得一系列点的数组  
+  
+        let polyline = new BMap.Polyline(pts)      
+        map.addOverlay(polyline)
+
+      // 画图标、想要展示的起点终点途经点
+        for (let i = 0; i < trackPoint.length; i++) {
+          let lab;
+          if(i == 0) {
+            lab = new BMap.Label("起点",{ position: trackPoint[i] })
+          } else if(i == trackPoint.length - 1){
+              lab = new BMap.Label("终点",{ position: trackPoint[i] })
+          } else {
+            // lab = new BMap.Label("途径点",{position: trackPoint[i]})
+          }
+          let marker = new BMap.Marker(trackPoint[i])
+          map.addOverlay(marker);
+          map.addOverlay(lab);
+        }
+        map.setViewport(trackPoint)
+      }) 
+      console.log('initMap', this.formData.pointArr)
+    },
+    historyCell ({ columnIndex }) { // 历史费用样式
       const grayList = [3, 4, 7, 8]
       return grayList.includes(columnIndex) ? { backgroundColor: '#fafafa' } : {}
     },
@@ -1881,6 +1947,14 @@ export default {
     onAreaChange (val) {
       let { province, city, district, prop, index } = val
       let currentRow = this.formData.reimburseFares[index]
+      if (province === '香港特别行政区' || province === '澳门特别行政区') { // 特殊处理
+        city = ''
+      }
+      // 获取对应的坐标点
+      this._getPosition(`${province}${city}${district}`.replace('海外', ''), {
+        currentRow,
+        prop
+      })
       const countryList = ['北京市', '天津市', '上海市', '重庆市']
       let result = ''
       result = countryList.includes(province)
@@ -1890,6 +1964,34 @@ export default {
           : city + district
       currentRow[prop] = result
       this.prevAreaData = null
+    },
+    _getPosition (address, { currentRow, prop}) {
+      let local = new global.BMap.LocalSearch(this.map, { //智能搜索
+        onSearchComplete: onSearchComplete.bind(this)
+      })
+      address = address.replace(/^中国/i, '') // 如果以中国开头会直接搜索北京市
+      console.log(address, 'address')
+      local.search(address)
+      let result
+      function onSearchComplete () {
+        if (!local.getResults().getPoi(0)) {
+          result = { lng: '', lat: '' }
+        } else {
+          console.log(local.getResults().getPoi(0), 'position')
+          let { point} = local.getResults().getPoi(0) //获取第一个智能搜索的结果
+          let { lat, lng } = point
+          console.log(lat, lng)
+          result = point
+        }
+        let { lat, lng } = result
+        if (prop === 'from') {
+          currentRow.fromLng = lng
+          currentRow.fromLat = lat
+        } else {
+          currentRow.toLng = lng
+          currentRow.toLat = lat
+        }
+      }
     },
     changeAddr (scope) { // 交通表格 交换出发地和目的地
       if (!this.ifFormEdit) return
@@ -2440,6 +2542,20 @@ export default {
 <style lang='scss' scoped>
 .order-wrapper {
   position: relative;
+  /* 日历样式 */
+  #date-picker-wrapper {
+    position: absolute;
+    top: 0;
+    left: -10px;
+    transform: translate3d(-100%, 0, 0);
+  }
+  /* 地图样式 */
+  #map-container {
+    position: absolute;
+    top: 200px;
+    left: -10px;
+    transform: translate3d(-100%, 0, 0);
+  }
   .success {
     font-size: 14px;
     color: rgba(0, 128, 0, 1);

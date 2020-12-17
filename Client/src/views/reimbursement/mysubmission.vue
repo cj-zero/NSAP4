@@ -92,6 +92,8 @@
     >
       <order 
         ref="order" 
+        :map="map"
+        :BMap="BMap"
         :title="title"
         :detailData="detailData"
         :categoryList="categoryList"
@@ -127,6 +129,8 @@
         </el-col>
       </el-row>
     </my-dialog>
+    <!-- 百度地图实例化 -->
+    <Bmap @mapInitail="onMapInitail" />
   </div>
 </template>
 
@@ -144,6 +148,8 @@ import zxchat from '@/views/serve/callserve/chat/index'
 import { tableMixin, categoryMixin, reportMixin, chatMixin } from './common/js/mixins'
 import { getOrder, withdraw, deleteOrder } from '@/api/reimburse'
 import { serializeParams } from '@/utils/process'
+// import { loadBMap } from '@/utils/remoteLoad'
+import Bmap from '@/components/bmap'
 export default {
   name: 'mySubmission',
   mixins: [tableMixin, categoryMixin, reportMixin, chatMixin],
@@ -157,7 +163,8 @@ export default {
     Order,
     Report,
     zxform,
-    zxchat
+    zxchat,
+    Bmap
   },
   computed: {
     searchConfig () {
@@ -204,7 +211,9 @@ export default {
       submitLoading: false, 
       draftLoading: false,
       editLoading: false,
-      isSubmit: true
+      isSubmit: true,
+      map: null,
+      BMap: null
     } 
   },
   methods: {
@@ -376,16 +385,18 @@ export default {
     closeDialog () {
       this.$refs.order.resetInfo()
       this.$refs.myDialog.close()
+    },
+    onMapInitail ({ map, BMap }) {
+      this.map = map
+      this.BMap = BMap
+      console.log(map, BMap)
     }
   },
-  created () {
+  async created () {
     this.listQuery.pageType = 1
     this._getList()
     this._getCategoryName()
-  },
-  mounted () {
-  
-  },
+  }
 }
 </script>
 <style lang='scss' scoped>

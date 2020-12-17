@@ -9,7 +9,7 @@ const WEEK_MAP = {
   6: '六'
 }
 
-export function formatDate(value, formatType) {
+export function formatDate(value, formatType = 'YYYY-MM-DD') {
   let result = Day(value).format(formatType)
   return result === 'Invalid Date' ? '' : result
 }
