@@ -2024,7 +2024,6 @@ namespace OpenAuth.App
                 Content = content
             }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "BbsCommunity/AppPushMsg");
         }
-
         #endregion
 
         #region<<Customer>>
@@ -3355,8 +3354,21 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            List<int> workIds = new List<int>();
             var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == TechnicianId)
                .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+            //获取转派的已完成的单据
+            var redeployList = await UnitWork.Find<ServiceRedeploy>(w => w.TechnicianId == TechnicianId).ToListAsync();
+            var redeployIds = redeployList.Select(s => s.ServiceOrderId).Distinct().ToList();
+            foreach (var item in redeployList)
+            {
+                List<int> ids = item.WorkOrderIds.Split(',').Select(m => Convert.ToInt32(m)).ToList();
+                workIds = workIds.Concat(ids).ToList();
+            }
+            if (redeployIds.Count > 0)
+            {
+                redeployIds.ForEach(f => serviceOrderIds.Add((int)f));
+            }
             var serviceWorkOrderList = await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
                .Include(s => s.ServiceWorkOrders).ToListAsync();
             //获取待处理单据数量
@@ -3661,6 +3673,11 @@ namespace OpenAuth.App
 
             var Model = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.ToString() == req.ServiceOrderId && req.MaterialType.Equals(s.MaterialCode == "其他设备" ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")))).Select(s => s.Id);
             var ids = await Model.ToListAsync();
+            var canTransfer = await CheckCanTransfer(req.TechnicianId, Convert.ToInt32(req.ServiceOrderId), req.MaterialType);
+            if (!canTransfer)
+            {
+                throw new CommonException("该技术员已有转派记录不可派单", 60002);
+            }
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => ids.Contains(s.Id), o => new ServiceWorkOrder
             {
                 CurrentUser = u.User.Name,
@@ -3786,6 +3803,18 @@ namespace OpenAuth.App
             result.Data = data;
             result.Count = userInfo.Count;
             return result;
+        }
+
+        /// <summary>
+        /// 判断当前技术员是否有转派记录
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="serviceOrderId"></param>
+        /// <param name="MaterialType"></param>
+        /// <returns></returns>
+        private async Task<bool> CheckCanTransfer(int id, int serviceOrderId, string MaterialType)
+        {
+            return (await UnitWork.Find<ServiceRedeploy>(w => w.MaterialType == MaterialType && w.ServiceOrderId == serviceOrderId && w.TechnicianId == id).ToListAsync()).Count > 0 ? false : true;
         }
         #endregion
     }
