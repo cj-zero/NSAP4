@@ -1607,7 +1607,7 @@ namespace OpenAuth.App
                         Solution = workOrder.Solution?.Subject,
                         TroubleDescription = workOrder.TroubleDescription,
                         ProcessDescription = workOrder.ProcessDescription,
-                        CompletionReporRemark = completionReports.Where(c=> c.Id.Equals(workOrder?.CompletionReportId)).FirstOrDefault()?.Remark
+                        CompletionReporRemark = completionReports.Where(c => c.Id.Equals(workOrder?.CompletionReportId)).FirstOrDefault()?.Remark
                     });
                 }
             }
@@ -3251,7 +3251,7 @@ namespace OpenAuth.App
                 }
             }
             //获取完工报告集合
-            var completeReportList = await UnitWork.Find<CompletionReport>(w => serviceOrderIds.Contains((int)w.ServiceOrderId)).Select(s => new { s.ServiceOrderId, s.IsReimburse, s.Id, s.ServiceMode, MaterialType = s.MaterialCode == "其他设备" ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) }).ToListAsync();
+            var completeReportList = await UnitWork.Find<CompletionReport>(w => serviceOrderIds.Contains((int)w.ServiceOrderId)).Select(s => new { s.ServiceOrderId, s.TechnicianId, s.IsReimburse, s.Id, s.ServiceMode, MaterialType = s.MaterialCode == "其他设备" ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) }).ToListAsync();
             //获取我的报销单集合
             var reimburseList = await UnitWork.Find<ReimburseInfo>(r => r.CreateUserId == userInfo.UserID).ToListAsync();
             var query = UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
@@ -3320,7 +3320,6 @@ namespace OpenAuth.App
                 s.CustomerId,
                 s.CustomerName,
                 s.TerminalCustomer,
-                //Distance = (req.Latitude == 0 || s.Latitude is null) ? 0 : NauticaUtil.GetDistance(Convert.ToDouble(s.Latitude ?? 0), Convert.ToDouble(s.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)),
                 s.Count,
                 ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.ProblemType.Name : s.ProblemTypeName,
                 MaterialTypeQty = s.MaterialInfo.GroupBy(o => o.MaterialType).Select(i => i.Key).ToList().Count,
@@ -3334,11 +3333,11 @@ namespace OpenAuth.App
                     ServiceMode = o.ToList().Select(s => s.ServiceMode).Distinct().FirstOrDefault(),
                     flowInfo = s.ServiceFlows.Where(w => w.MaterialType.Equals(o.Key)).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToList()
                 }),
-                IsReimburse = req.Type == 3 ? completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1).FirstOrDefault() == null ? 0 : completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1).FirstOrDefault().IsReimburse : 0,
-                MaterialType = req.Type == 3 ? completeReportList.Where(w => w.ServiceOrderId == s.Id).FirstOrDefault() == null ? string.Empty : completeReportList.Where(w => w.ServiceOrderId == s.Id).FirstOrDefault().MaterialType : string.Empty,
-                ReimburseId = req.Type == 3 ? reimburseList.Where(w => w.ServiceOrderId == s.Id).Select(s => s.Id).FirstOrDefault() : 0,
-                RemburseStatus = req.Type == 3 ? reimburseList.Where(w => w.ServiceOrderId == s.Id).Select(s => s.RemburseStatus).FirstOrDefault() : 0,
-                RemburseIsRead = req.Type == 3 ? reimburseList.Where(w => w.ServiceOrderId == s.Id).Select(s => s.IsRead).FirstOrDefault() : 0
+                IsReimburse = req.Type == 3 ? completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1 && w.TechnicianId == req.TechnicianId.ToString()).FirstOrDefault() == null ? 0 : completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1 && w.TechnicianId == req.TechnicianId.ToString()).FirstOrDefault().IsReimburse : 0,
+                MaterialType = req.Type == 3 ? completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == req.TechnicianId.ToString()).FirstOrDefault() == null ? string.Empty : completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == req.TechnicianId.ToString()).OrderBy(o => o.ServiceMode).FirstOrDefault().MaterialType : string.Empty,
+                ReimburseId = req.Type == 3 ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.Id).FirstOrDefault() : 0,
+                RemburseStatus = req.Type == 3 ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.RemburseStatus).FirstOrDefault() : 0,
+                RemburseIsRead = req.Type == 3 ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.IsRead).FirstOrDefault() : 0
             }).ToList();
 
             var count = await query.CountAsync();
@@ -3363,6 +3362,17 @@ namespace OpenAuth.App
             List<int> workIds = new List<int>();
             var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == TechnicianId)
                .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+            var serviceWorkOrderList = await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
+               .Include(s => s.ServiceWorkOrders).ToListAsync();
+            //获取待处理单据数量
+            var pendingQty = (serviceWorkOrderList.Where(s => s.ServiceWorkOrders.All(a => a.OrderTakeType == 0))
+               .ToList()).Count;
+            //获取进行中的单据数量
+            var goingQty = (serviceWorkOrderList
+               .Where(s => !s.ServiceWorkOrders.All(a => a.OrderTakeType == 0) && !s.ServiceWorkOrders.All(a => a.Status >= 7))
+               .ToList()).Count;
+
+            //获取已完成的单据数量
             //获取转派的已完成的单据
             var redeployList = await UnitWork.Find<ServiceRedeploy>(w => w.TechnicianId == TechnicianId).ToListAsync();
             var redeployIds = redeployList.Select(s => s.ServiceOrderId).Distinct().ToList();
@@ -3374,26 +3384,20 @@ namespace OpenAuth.App
             if (redeployIds.Count > 0)
             {
                 redeployIds.ForEach(f => serviceOrderIds.Add((int)f));
+                serviceOrderIds = serviceOrderIds.Distinct().ToList();
             }
-            var serviceWorkOrderList = await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
+            var finishList = await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
                .Include(s => s.ServiceWorkOrders).ToListAsync();
-            //获取待处理单据数量
-            var pendingQty = (serviceWorkOrderList.Where(s => s.ServiceWorkOrders.All(a => a.OrderTakeType == 0))
-               .ToList()).Count;
-            //获取进行中的单据数量
-            var goingQty = (serviceWorkOrderList
-               .Where(s => !s.ServiceWorkOrders.All(a => a.OrderTakeType == 0) && !s.ServiceWorkOrders.All(a => a.Status >= 7))
-               .ToList()).Count;
-            //获取已完成的单据数量
-            var finishQty = (serviceWorkOrderList
-              .Where(s => s.ServiceWorkOrders.All(a => a.Status >= 7))
-              .ToList()).Count;
+            var finishQty = finishList
+              .Where(s => s.ServiceWorkOrders.All(a => a.Status >= 7)).ToList().Count;
+
             //获取已报销的单据数量
             var isReimburseQty = (await UnitWork.Find<ReimburseInfo>(w => serviceOrderIds.Contains(w.ServiceOrderId) && w.RemburseStatus != 3).ToListAsync()).Count;
+            //获取报销草稿
+            var draftIds = await UnitWork.Find<ReimburseInfo>(w => serviceOrderIds.Contains(w.ServiceOrderId) && w.RemburseStatus == 3).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
             //获取上门服务的完成单据数量
-            var doorQty = (serviceWorkOrderList
-              .Where(s => s.ServiceWorkOrders.All(a => a.Status >= 7))
-              .Where(s => s.ServiceWorkOrders.Any(a => a.ServiceMode == 1))
+            var doorQty = (finishList
+              .Where(s => s.ServiceWorkOrders.Any(a => a.ServiceMode == 1) && s.ServiceWorkOrders.All(a => a.Status >= 7) && !draftIds.Contains(s.Id))
               .ToList()).Count;
             result.Data = new { pendingQty, goingQty, finishQty, reimburseQty = doorQty - isReimburseQty };
             return result;
@@ -3614,6 +3618,11 @@ namespace OpenAuth.App
 
             var Model = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.ToString() == req.ServiceOrderId && req.QryMaterialTypes.Contains(s.MaterialCode == "其他设备" ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")))).Select(s => s.Id);
             var ids = await Model.ToListAsync();
+            var canTransfer = await CheckCanTransfer(req.CurrentUserId, Convert.ToInt32(req.ServiceOrderId), string.Empty, req.QryMaterialTypes);
+            if (!canTransfer)
+            {
+                throw new CommonException("该技术员已有转派记录不可派单", 60002);
+            }
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => ids.Contains(s.Id), o => new ServiceWorkOrder
             {
                 CurrentUser = u.User.Name,
@@ -3679,7 +3688,7 @@ namespace OpenAuth.App
 
             var Model = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.ToString() == req.ServiceOrderId && req.MaterialType.Equals(s.MaterialCode == "其他设备" ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")))).Select(s => s.Id);
             var ids = await Model.ToListAsync();
-            var canTransfer = await CheckCanTransfer(req.TechnicianId, Convert.ToInt32(req.ServiceOrderId), req.MaterialType);
+            var canTransfer = await CheckCanTransfer(req.TechnicianId, Convert.ToInt32(req.ServiceOrderId), req.MaterialType, null);
             if (!canTransfer)
             {
                 throw new CommonException("该技术员已有转派记录不可派单", 60002);
@@ -3817,9 +3826,14 @@ namespace OpenAuth.App
         /// <param name="id"></param>
         /// <param name="serviceOrderId"></param>
         /// <param name="MaterialType"></param>
+        /// <param name="QryMaterialTypes"></param
         /// <returns></returns>
-        private async Task<bool> CheckCanTransfer(int id, int serviceOrderId, string MaterialType)
+        private async Task<bool> CheckCanTransfer(int id, int serviceOrderId, string MaterialType, List<string> QryMaterialTypes)
         {
+            if (QryMaterialTypes != null)
+            {
+                return (await UnitWork.Find<ServiceRedeploy>(w => QryMaterialTypes.Contains(w.MaterialType) && w.ServiceOrderId == serviceOrderId && w.TechnicianId == id).ToListAsync()).Count > 0 ? false : true;
+            }
             return (await UnitWork.Find<ServiceRedeploy>(w => w.MaterialType == MaterialType && w.ServiceOrderId == serviceOrderId && w.TechnicianId == id).ToListAsync()).Count > 0 ? false : true;
         }
         #endregion
