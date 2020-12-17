@@ -1555,6 +1555,11 @@ namespace OpenAuth.App
                 { 7, "已解决"},
                 { 8, "已回访"},
             };
+            List<ServiceWorkOrder> serviceWorkOrders = new List<ServiceWorkOrder>();
+            dataList.ForEach(d => serviceWorkOrders.AddRange(d.ServiceWorkOrders));
+            var completionReportIds = serviceWorkOrders.Select(s => s.CompletionReportId).ToList();
+            var completionReports = await UnitWork.Find<CompletionReport>(c => completionReportIds.Contains(c.Id)).ToListAsync();
+
             var list = new List<ServiceOrderExcelDto>();
             foreach (var serviceOrder in dataList)
             {
@@ -1601,7 +1606,8 @@ namespace OpenAuth.App
                         LiquidationDate = workOrder.LiquidationDate,
                         Solution = workOrder.Solution?.Subject,
                         TroubleDescription = workOrder.TroubleDescription,
-                        ProcessDescription = workOrder.ProcessDescription
+                        ProcessDescription = workOrder.ProcessDescription,
+                        CompletionReporRemark = completionReports.Where(c=> c.Id.Equals(workOrder?.CompletionReportId)).FirstOrDefault()?.Remark
                     });
                 }
             }
