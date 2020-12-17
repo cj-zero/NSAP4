@@ -113,7 +113,7 @@ export function exportList (params) { // 导出支付表格
   })
 }
 
-export function pay (data) { // 导出支付表格
+export function pay (data) { // 支付
   return request({
     url: '/serve/Reimburse/BatchAccraditation',
     method: 'post',
