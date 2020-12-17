@@ -241,7 +241,7 @@
         <div style="width: 984px;margin-top: 5px;">
           <h2 style="font-weight: bold;">服务报告</h2>
           <common-table 
-            style="margin-top: 5px;"
+            style="width: 601px;margin-top: 5px;"
             :data="reportTableData"
             :columns="reportTableColumns"
             max-height="300px"
@@ -870,6 +870,7 @@
       ref="approve"
       :center="true"
       :title="remarkTitle"
+      top="200px"
       :append-to-body="true"
       :btnList="remarkBtnList"
       @closed="onApproveClose"
@@ -2217,13 +2218,14 @@ export default {
       this.$refs.form.validate(isValid => {
         if (isValid) {
           if (type !== 'reject') {
-          this.$confirm(`${type === 'pay' ? '支付' : '同意'}此次报销?`, '提示', {
-              confirmButtonText: '确定',
-              cancelButtonText: '取消',
-              type: 'warning'
-            }).then(() => {
-              this.approve()
-            })
+            // this.$confirm(`${type === 'pay' ? '支付' : '同意'}此次报销?`, '提示', {
+            //   confirmButtonText: '确定',
+            //   cancelButtonText: '取消',
+            //   type: 'warning'
+            // }).then(() => {
+            //   this.approve()
+            // })
+            this.approve()
           } else {
             this.$refs.approve.open() 
           }
@@ -2674,6 +2676,9 @@ export default {
       // width: 828px;
       width: 993px;
       margin-top: 5px;
+      ::v-deep .cell {
+        line-height: 16px;
+      }
       .table-container {
         overflow: visible;
         .detail-content {

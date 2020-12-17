@@ -90,6 +90,8 @@ export let tableMixin = {
         staticDate: '',
         endDate: '',
         reimburseType: '',
+        completionStaticDate: '', // 完工报告出差开始日期
+        completionEndDate: '' // 完工报告出差结束日期
         // serviceRelations: '' // 劳务关系
       },
       listQuery: { // 分页参数
@@ -104,7 +106,8 @@ export let tableMixin = {
       detailData: {}, // 报销单详情
       baseURL: process.env.VUE_APP_BASE_API + "/files/Download", // 图片基地址
       tokenValue: this.$store.state.user.token,
-      originUserId: this.$store.state.user.userInfoAll.userId // 当前用户的ID
+      originUserId: this.$store.state.user.userInfoAll.userId, // 当前用户的ID
+      reimburseStatus: 0 // 报销状态
     }
   },
   methods: {
@@ -171,9 +174,10 @@ export let tableMixin = {
     },
     getDetail (val) { // 获取服务单详情
       let id
-      let { type } = val
+      let { type, remburseStatus } = val
       if (type === 'view' || type === 'approve') { // 如果是点击底部表格里的箭头查看详情
         id = val.id
+        this.reimburseStatus = Number(remburseStatus)
       } else {
         if (!this.currentRow) { // 编辑审核等操作
           return this.$message.warning('请先选择报销单')
@@ -653,11 +657,13 @@ export let categoryMixin = {
         { placeholder: '客户代码/名称', prop: 'terminalCustomer', width: 150 },
         { placeholder: '服务ID', prop: 'serviceOrderId', width: 100 },
         { placeholder: '报销部门', prop: 'orgName', width: 100 },
-        { placeholder: '费用承担', prop: 'bearToPay', width: 100, type: 'select', options: this.expenseList },
+        { placeholder: '费用承担', prop: 'bearToPay', width: 100, type: 'select', options: this.expenseList, isShow: !!this.isToPay },
         // { placeholder: '责任承担', prop: 'responsibility', width: 100, type: 'select', options: this.responsibilityList },
-        { placeholder: '劳务关系', prop: 'serviceRelations', width: 120, type: 'select', options: this.serviceRelationsList },
+        { placeholder: '劳务关系', prop: 'serviceRelations', width: 120, type: 'select', options: this.serviceRelationsList, isShow: !!this.isToPay },
         { placeholder: '填报起始时间', prop: 'staticDate', type: 'date', width: 150 },
-        { placeholder: '填报结束时间', prop: 'endDate', type: 'date', width: 150 }
+        { placeholder: '填报结束时间', prop: 'endDate', type: 'date', width: 150 },
+        { placeholder: '出差开始时间', prop: 'completionStaticDate', type: 'date', width: 150, isShow: !!this.isSubmit },
+        { placeholder: '出差结束时间', prop: 'completionEndDate', type: 'date', width: 150, isShow: !!this.isSubmit }    
       ]
     }
   }

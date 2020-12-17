@@ -4,6 +4,7 @@
       <!-- 普通el-input -->
       <template v-if="!item.type">
         <el-input
+          v-if="item.isShow === undefined ? true : item.isShow"
           class="filter-item"
           :style="{ width: item.width + 'px' }"
           v-model="listSearchQuery[item.prop]" 
@@ -17,6 +18,7 @@
       <!-- 下拉选择 -->
       <template v-else-if="item.type === 'select'">
         <el-select 
+          v-if="item.isShow === undefined ? true : item.isShow"
           class="filter-item"
           clearable
           :style="{ width: item.width + 'px' }"
@@ -50,6 +52,7 @@
       <template v-else-if="item.type === 'date'">
         <div class="filter-item" :key="index">
           <el-date-picker
+            v-if="item.isShow === undefined ? true : item.isShow"
             :style="{ width: item.width + 'px' }"
             :value-format="item.valueFormat || 'yyyy-MM-dd'"
             :type="item.dateType || 'date'"

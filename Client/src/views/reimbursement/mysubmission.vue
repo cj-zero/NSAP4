@@ -143,6 +143,7 @@ import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import { tableMixin, categoryMixin, reportMixin, chatMixin } from './common/js/mixins'
 import { getOrder, withdraw, deleteOrder } from '@/api/reimburse'
+import { serializeParams } from '@/utils/process'
 export default {
   name: 'mySubmission',
   mixins: [tableMixin, categoryMixin, reportMixin, chatMixin],
@@ -167,7 +168,8 @@ export default {
         { type: 'button', btnText: '编辑', handleClick: this.getDetail, options: { type: 'edit', name: 'mySubmit' } },
         { type: 'button', btnText: '撤回', handleClick: this.recall },
         { type: 'button', btnText: '删除', handleClick: this.deleteOrder },
-        { type: 'button', btnText: '打印', handleClick: this.print }
+        { type: 'button', btnText: '打印', handleClick: this.print },
+        { type: 'button', btnText: '导出表格', handleClick: this.exportExcel }
       ]
     }, // 搜索配置
     btnList () {
@@ -201,7 +203,8 @@ export default {
       categoryList: [], // 字典数组
       submitLoading: false, 
       draftLoading: false,
-      editLoading: false
+      editLoading: false,
+      isSubmit: true
     } 
   },
   methods: {
@@ -353,6 +356,12 @@ export default {
         this.dialogLoading = false
         this.$message.error(err.message)
       })
+    },
+    exportExcel () {
+      let params = serializeParams(this.listQuery)
+      console.log(this.$store.state.user.token, 'token')
+      let staticUrl = `${process.env.VUE_APP_BASE_API}/serve/Reimburse/ExportLoad?${params}&X-token=${this.$store.state.user.token}`
+      window.open(staticUrl, '_blank')
     },
     reset () {
       this.$confirm('确定重置?', '提示', {

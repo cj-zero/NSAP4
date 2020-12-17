@@ -163,6 +163,9 @@ export default {
     }, // 搜索配置
     btnList () {
       return [
+        { btnText: '驳回到发起人', handleClick: this.reject, 
+          // 总经理并且当前状态为待支付
+          isShow: this.isGeneralManager && this.reimburseStatus === 8, className: 'danger' },
         { btnText: '关闭', handleClick: this.closeDialog, className: 'close' }
       ]
     },
@@ -186,6 +189,9 @@ export default {
       this.listQuery.pageType = name
       this.listQuery.page = 1
       this._getList()
+    },
+    reject () { // 驳回
+      this.$refs.order.openRemarkDialog('reject')
     },
     onChangeForm (val) {
       this.currentFormQuery = val

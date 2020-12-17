@@ -109,7 +109,6 @@
         <el-row :gutter="20" class="position-view">
           <el-col :span="18" >
             <zxform
-              :form="temp"
               formName="查看"
               labelposition="right"
               labelwidth="72px"
@@ -173,7 +172,8 @@ export default {
       customerInfo: {}, // 当前报销人的id， 名字
       categoryList: [], // 字典数组
       token: this.$store.state.user.token,
-      selectList: [] // 多选已经选中的列表
+      selectList: [], // 多选已经选中的列表
+      isToPay: true
     }
   },
   methods: {
