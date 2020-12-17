@@ -3393,11 +3393,12 @@ namespace OpenAuth.App
 
             //获取已报销的单据数量
             var isReimburseQty = (await UnitWork.Find<ReimburseInfo>(w => serviceOrderIds.Contains(w.ServiceOrderId) && w.RemburseStatus != 3).ToListAsync()).Count;
-            //获取报销草稿
-            var draftIds = await UnitWork.Find<ReimburseInfo>(w => serviceOrderIds.Contains(w.ServiceOrderId) && w.RemburseStatus == 3).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
             //获取上门服务的完成单据数量
+            var a = finishList
+              .Where(s => s.ServiceWorkOrders.Any(a => a.ServiceMode == 1) && s.ServiceWorkOrders.All(a => a.Status >= 7))
+              .Select(s => s.U_SAP_ID).ToList();
             var doorQty = (finishList
-              .Where(s => s.ServiceWorkOrders.Any(a => a.ServiceMode == 1) && s.ServiceWorkOrders.All(a => a.Status >= 7) && !draftIds.Contains(s.Id))
+              .Where(s => s.ServiceWorkOrders.Any(a => a.ServiceMode == 1) && s.ServiceWorkOrders.All(a => a.Status >= 7))
               .ToList()).Count;
             result.Data = new { pendingQty, goingQty, finishQty, reimburseQty = doorQty - isReimburseQty };
             return result;

@@ -381,7 +381,17 @@ namespace OpenAuth.App
                     ServiceOrderList.Add(item);
                 }
             }
-
+            //判断是否有转派的单子
+            var redeployList = await UnitWork.Find<ServiceRedeploy>(w => w.TechnicianId == request.AppId).ToListAsync();
+            if (redeployList != null)
+            {
+                var redeployIds = redeployList.Select(s => s.ServiceOrderId).Distinct().ToList();
+                var redeployOrderList = await UnitWork.Find<ServiceOrder>(s => redeployIds.Contains(s.Id)).Include(s => s.ServiceWorkOrders).ToListAsync();
+                foreach (var item in redeployOrderList)
+                {
+                    ServiceOrderList.Add(item);
+                }
+            }
             var ServiceOrderLists = from a in ServiceOrderList
                                     join b in CompletionReports on a.Id equals b.ServiceOrderId
                                     where b.ServiceMode == 1
@@ -1617,8 +1627,8 @@ namespace OpenAuth.App
                 Console.WriteLine(logostr);
             }
             var FromThemeJson = JsonHelper.Instance.Deserialize<List<FromThemeJsonResp>>(CompletionReports.FirstOrDefault()?.FromTheme);
-            var ReimburseCosts= ReimburseCostList.Where(r => !string.IsNullOrWhiteSpace(r.InvoiceTime.ToString())).OrderBy(r => r.InvoiceTime).ToList();
-            ReimburseCosts.AddRange(ReimburseCostList.Where(r =>string.IsNullOrWhiteSpace(r.InvoiceTime.ToString())).OrderBy(r => r.SerialNumber).ToList());
+            var ReimburseCosts = ReimburseCostList.Where(r => !string.IsNullOrWhiteSpace(r.InvoiceTime.ToString())).OrderBy(r => r.InvoiceTime).ToList();
+            ReimburseCosts.AddRange(ReimburseCostList.Where(r => string.IsNullOrWhiteSpace(r.InvoiceTime.ToString())).OrderBy(r => r.SerialNumber).ToList());
             var PrintReimburse = new PrintReimburseResp
             {
                 ReimburseId = Reimburse.MainId,
@@ -1685,8 +1695,8 @@ namespace OpenAuth.App
             var query = from a in ReimburseInfos
                         join b in users on a.CreateUserId equals b.Id into ab
                         from b in ab.DefaultIfEmpty()
-                        select new {a.CreateUserId,b.Name, a.TotalMoney };
-            var Totalquery = query.GroupBy(q =>new { q.CreateUserId, q.Name }).Select(q =>new { q.Key.Name, TotalMoney=q.Select(s=>s.TotalMoney).Sum().ToString("F2")});
+                        select new { a.CreateUserId, b.Name, a.TotalMoney };
+            var Totalquery = query.GroupBy(q => new { q.CreateUserId, q.Name }).Select(q => new { q.Key.Name, TotalMoney = q.Select(s => s.TotalMoney).Sum().ToString("F2") });
             return await NPOIHelper.ExporterExcel(Totalquery.ToList());
         }
 
