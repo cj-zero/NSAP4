@@ -415,7 +415,7 @@ export default {
     searchConfig () {
       return [
         { width: 100, placeholder: '服务ID', prop: 'QryU_SAP_ID' },
-        { width: 90, placeholder: '请选择呼叫状态', prop: 'QryState', options: this.callStatus, type: 'select' },
+        { width: 90, placeholder: '请选择呼叫状态', prop: 'QryState', options: [{ value: '', label: '全部' }, ...this.statusOptions], type: 'select' },
         { width: 170, placeholder: '客户', prop: 'QryCustomer' },
         { width: 150, placeholder: '序列号', prop: 'QryManufSN' },
         { width: 90, placeholder: '接单员', prop: 'QryRecepUser' },
@@ -519,21 +519,10 @@ export default {
         { value: 1, label: "待处理" },
         { value: 2, label: "已排配" },
         { value: 3, label: "已预约" },
-        { value: 4, label: "已外出" },
-        { value: 5, label: "已挂起" },
-        { value: 6, label: "已接收" },
-        { value: 7, label: "已解决" },
-        { value: 8, label: "已回访" }
-      ],
-      callStatus: [
-        { value: '', label: '全部' },
-        { value: 1, label: "待处理" },
-        { value: 2, label: "已排配" },
-        { value: 3, label: "已预约" },
-        { value: 4, label: "已外出" },
-        { value: 5, label: "已挂起" },
-        { value: 6, label: "已接收" },
-        { value: 7, label: "已解决" },
+        { value: 4, label: "在上门" },
+        { value: 5, label: "在维修" },
+        { value: 6, label: "已寄回" },
+        { value: 7, label: "已完成" },
         { value: 8, label: "已回访" }
       ],
       options_type: [
