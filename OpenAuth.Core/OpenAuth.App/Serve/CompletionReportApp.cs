@@ -122,7 +122,6 @@ namespace OpenAuth.App
             //判断为非草稿提交 则修改对应状态和发送消息
             if (req.IsDraft == 0)
             {
-
                 await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id), s => new ServiceWorkOrder { Status = 7 });
                 await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
                 {
@@ -264,6 +263,7 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="serviceOrderId">服务单Id</param>
         /// <param name="currentUserId">当前技术员Id</param>
+        /// <param name="MaterialType">当前技术员Id</param>
         /// <returns></returns>
         public async Task<CompletionReportDetailsResp> GetCompletionReportDetails(int serviceOrderId, int currentUserId, string MaterialType)
         {
@@ -273,9 +273,9 @@ namespace OpenAuth.App
                       join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into abc
                       from b in abc.DefaultIfEmpty()
                       select new { a, b, c };
-            obj = obj.Where(o => o.a.ServiceOrderId == serviceOrderId && o.a.CurrentUserId == currentUserId)
-                     .WhereIf("其他设备".Equals(MaterialType), q => q.a.MaterialCode.Equals("其他设备"))
-                     .WhereIf(!"其他设备".Equals(MaterialType), q => q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-")) == MaterialType);
+            obj = obj.Where(o => o.c.ServiceOrderId == serviceOrderId && o.c.TechnicianId == currentUserId.ToString())
+                     .WhereIf("其他设备".Equals(MaterialType), q => q.c.MaterialCode.Equals("其他设备"))
+                     .WhereIf(!"其他设备".Equals(MaterialType), q => q.c.MaterialCode.Substring(0, q.c.MaterialCode.IndexOf("-")) == MaterialType);
             var query = await obj.Select(q => new
             {
                 q.b.U_SAP_ID,

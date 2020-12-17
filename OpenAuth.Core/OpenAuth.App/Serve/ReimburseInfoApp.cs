@@ -382,7 +382,17 @@ namespace OpenAuth.App
                     ServiceOrderList.Add(item);
                 }
             }
-
+            //判断是否有转派的单子
+            var redeployList = await UnitWork.Find<ServiceRedeploy>(w => w.TechnicianId == request.AppId).ToListAsync();
+            if (redeployList != null)
+            {
+                var redeployIds = redeployList.Select(s => s.ServiceOrderId).Distinct().ToList();
+                var redeployOrderList = await UnitWork.Find<ServiceOrder>(s => redeployIds.Contains(s.Id)).Include(s => s.ServiceWorkOrders).ToListAsync();
+                foreach (var item in redeployOrderList)
+                {
+                    ServiceOrderList.Add(item);
+                }
+            }
             var ServiceOrderLists = from a in ServiceOrderList
                                     join b in CompletionReports on a.Id equals b.ServiceOrderId
                                     where b.ServiceMode == 1
