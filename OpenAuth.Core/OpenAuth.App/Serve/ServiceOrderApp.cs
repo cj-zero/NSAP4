@@ -3212,11 +3212,123 @@ namespace OpenAuth.App
             return result;
         }
 
+
         /// <summary>
         /// 技术员查看服务单列表(技术员主页-工单池)
+        /// 旧版本只有进行中和已完成 1进行中2已完成 无分页 默认全部显示
         /// </summary>
         /// <returns></returns>
         public async Task<TableData> GetTechnicianServiceOrder(TechnicianServiceWorkOrderReq req)
+        {
+            //20201109 前台不显示暂时放开显示限制
+            req.limit = 1000;
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.TechnicianId).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            //获取设备信息
+            var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
+            var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.TechnicianId)
+                .WhereIf(req.Type == 1, s => s.Status.Value < 7 && s.Status.Value > 1)
+                .WhereIf(req.Type == 2, s => s.Status.Value >= 7)
+                .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+            var query = UnitWork.Find<ServiceOrder>(s => serviceOrderIds.Contains(s.Id))
+                .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
+                .Include(s => s.ServiceFlows)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.AppUserId,
+                    Services = GetServiceFromTheme(s.ServiceWorkOrders.FirstOrDefault().FromTheme),
+                    s.Latitude,
+                    s.Longitude,
+                    s.Province,
+                    s.City,
+                    s.Area,
+                    s.Addr,
+                    s.Contacter,
+                    s.ContactTel,
+                    s.NewestContacter,
+                    s.NewestContactTel,
+                    s.Status,
+                    s.CreateTime,
+                    s.U_SAP_ID,
+                    s.CustomerId,
+                    s.CustomerName,
+                    s.TerminalCustomer,
+                    Count = s.ServiceWorkOrders.Where(w => w.ServiceOrderId == s.Id && w.CurrentUserId == req.TechnicianId).Count(),
+                    MaterialInfo = s.ServiceWorkOrders.Where(w => w.CurrentUserId == req.TechnicianId).Select(o => new
+                    {
+                        o.MaterialCode,
+                        o.ManufacturerSerialNumber,
+                        MaterialType = "其他设备".Equals(o.MaterialCode) ? "其他设备" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
+                        o.Status,
+                        o.Id,
+                        o.OrderTakeType,
+                        o.ServiceMode
+                    }),
+                    s.ProblemTypeName,
+                    ProblemType = s.ServiceWorkOrders.Select(s => s.ProblemType).FirstOrDefault(),
+                    ServiceFlows = s.ServiceFlows.Where(w => w.Creater == userInfo.UserID && w.ServiceOrderId == s.Id && w.FlowType == 1).ToList()
+                });
+
+            var result = new TableData();
+            var list = (await query.OrderByDescending(o => o.Id)
+            .Skip((req.page - 1) * req.limit)
+            .Take(req.limit).ToListAsync()).Select(s => new
+            {
+                s.Id,
+                s.AppUserId,
+                s.Services,
+                s.Latitude,
+                s.Longitude,
+                s.Province,
+                s.City,
+                s.Area,
+                s.Addr,
+                NewestContacter = string.IsNullOrEmpty(s.NewestContacter) ? s.Contacter : s.NewestContacter,
+                NewestContactTel = string.IsNullOrEmpty(s.NewestContactTel) ? s.ContactTel : s.NewestContactTel,
+                s.Status,
+                CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
+                s.U_SAP_ID,
+                s.CustomerId,
+                s.CustomerName,
+                s.TerminalCustomer,
+                s.Count,
+                ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.ProblemType.Name : s.ProblemTypeName,
+                MaterialTypeQty = s.MaterialInfo.GroupBy(o => o.MaterialType).Select(i => i.Key).ToList().Count,
+                MaterialInfo = s.MaterialInfo.GroupBy(o => o.MaterialType).ToList()
+                .Select(o => new
+                {
+                    MaterialType = o.Key,
+                    Status = o.ToList().Select(s => s.Status).Distinct().FirstOrDefault(),
+                    MaterialTypeName = "其他设备".Equals(o.Key) ? "其他设备" : MaterialTypeModel.Where(a => a.TypeAlias == o.Key).FirstOrDefault().TypeName,
+                    OrderTakeType = o.ToList().Select(s => s.OrderTakeType).Distinct().FirstOrDefault(),
+                    ServiceMode = o.ToList().Select(s => s.ServiceMode).Distinct().FirstOrDefault(),
+                    flowInfo = s.ServiceFlows.Where(w => w.MaterialType.Equals(o.Key)).OrderBy(o => o.Id).ToList()
+                })
+            }).ToList();
+
+            var count = await query.CountAsync();
+            result.Data = list;
+            result.Count = count;
+            return result;
+        }
+
+
+        /// <summary>
+        /// 技术员查看服务单列表(技术员主页-工单池)
+        /// 2020.12.17版本 此版本有待处理、进行中、已完成3种单据状态列表 Type：1待处理 2进行中 3已完成
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> GetTechnicianServiceOrderNew(TechnicianServiceWorkOrderReq req)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)

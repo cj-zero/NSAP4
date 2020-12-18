@@ -199,7 +199,7 @@ namespace NSAP.App.WebApi.Controllers
 
         #region<<Technician>>
         /// <summary>
-        /// 技术员查看服务单单列表（工单池）
+        /// 技术员查看服务单单列表（工单池）旧
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
@@ -211,6 +211,28 @@ namespace NSAP.App.WebApi.Controllers
             try
             {
                 result = await _serviceOrderApp.GetTechnicianServiceOrder(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 技术员查看服务单单列表（工单池）新
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetTechnicianServiceOrderNew([FromQuery] TechnicianServiceWorkOrderReq req)
+        {
+
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetTechnicianServiceOrderNew(req);
             }
             catch (Exception ex)
             {
