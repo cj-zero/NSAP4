@@ -75,7 +75,7 @@ namespace OpenAuth.App
                       .WhereIf(!string.IsNullOrWhiteSpace(request.OrgName), r => OrgUserIds.Contains(r.CreateUserId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.TerminalCustomer), r => ServiceOrderIds.Contains(r.ServiceOrderId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceRelations), r => r.ServiceRelations.Contains(request.ServiceRelations))
-                      .WhereIf(!string.IsNullOrWhiteSpace(request.Status), r => r.RemburseStatus.Equals(request.Status));
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.Status), r => r.RemburseStatus.Equals(int.Parse(request.Status)));
 
             if (!string.IsNullOrWhiteSpace(request.RemburseStatus))
             {
