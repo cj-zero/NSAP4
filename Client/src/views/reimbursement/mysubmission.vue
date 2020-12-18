@@ -60,7 +60,7 @@
             >
               <template slot-scope="scope" >
                 <div class="link-container" v-if="item.type === 'link'">
-                  <img :src="rightImg" @click.stop="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
+                  <img :src="rightImg" @click="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
                   <span>{{ scope.row[item.prop] }}</span>
                 </div>
                 <template v-else-if="item.type === 'operation'">
@@ -192,7 +192,7 @@ export default {
         { type: 'button', btnText: '撤回', handleClick: this.recall },
         { type: 'button', btnText: '删除', handleClick: this.deleteOrder },
         { type: 'button', btnText: '打印', handleClick: this.print },
-        { type: 'button', btnText: '导出表格', handleClick: this.exportExce, isShow: !!this.isCustomerSupervisor }
+        { type: 'button', btnText: '导出表格', handleClick: this.exportExcel, isShow: !!this.isCustomerSupervisor }
       ]
     }, // 搜索配置
     btnList () {

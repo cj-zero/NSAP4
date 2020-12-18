@@ -622,7 +622,7 @@ export let categoryMixin = {
         { placeholder: '服务ID', prop: 'serviceOrderId', width: 100 },
         { placeholder: '报销部门', prop: 'orgName', width: 100 },
         { placeholder: '报销状态', prop: 'status', width: 100, type: 'select', 
-          options: [{ label: '全部', value: '' }, ...this.reimburseStatusList], isShow: !!this.isCustomerSupervisor && this.isSubmit && !this.listQuery.remburseStatus },
+          options: [{ label: '全部', value: '' }, ...this.reimburseStatusList], isShow: !!this.isCustomerSupervisor && !!this.isSubmit && !this.listQuery.status },
         { placeholder: '费用承担', prop: 'bearToPay', width: 100, type: 'select', options: this.expenseList, isShow: !!this.isToPay },
         // { placeholder: '责任承担', prop: 'responsibility', width: 100, type: 'select', options: this.responsibilityList },
         { placeholder: '劳务关系', prop: 'serviceRelations', width: 120, type: 'select', options: this.serviceRelationsList, isShow: !!this.isToPay },

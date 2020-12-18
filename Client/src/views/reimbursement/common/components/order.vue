@@ -1252,11 +1252,6 @@ export default {
       }
     }
   },
-  provide () {
-    return {
-      userId: this.formData.createUserId
-    }
-  },
   computed: {
     ifFormEdit () { // 是否可以编辑
       return this.title === 'view'
@@ -1420,15 +1415,17 @@ export default {
         console.log(res.result.data.filter(item => item.id), 'null')
         res.result.data.filter(item => item.id).forEach(item => {
           let { troubleDescription, processDescription, serviceWorkOrders } = item
-          serviceWorkOrders.forEach(workOrderItem => {
-            let { manufacturerSerialNumber, materialCode } = workOrderItem
-            result.push({
-              manufacturerSerialNumber,
-              materialCode,
-              troubleDescription,
-              processDescription
+          if (serviceWorkOrders) {
+            serviceWorkOrders.forEach(workOrderItem => {
+              let { manufacturerSerialNumber, materialCode } = workOrderItem
+              result.push({
+                manufacturerSerialNumber,
+                materialCode,
+                troubleDescription,
+                processDescription
+              })
             })
-          })
+          }
         })
         this.reportTableData = result
         console.log(this.reportTableData, 'report list')

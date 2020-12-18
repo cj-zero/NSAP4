@@ -601,9 +601,9 @@ namespace OpenAuth.WebApi.Controllers
             void CalculateVoltage(string mode, int tableIndex, int DecimalPlace)
             {
                 int j = 0;
+                int l = 1;
                 foreach (var item in plcGroupData)
                 {
-                    int l = 1;
                     var data = item.Where(p => p.VoltsorAmps.Equals("Volts") && p.Mode.Equals(mode) && p.VerifyType.Equals("Post-Calibration")).GroupBy(d => d.Channel);
                     foreach (var item2 in data)
                     {
@@ -767,9 +767,9 @@ namespace OpenAuth.WebApi.Controllers
             void CalculateCurrent(string mode, int tableIndex, int DecimalPlace, int Cunit)
             {
                 int j = 0;
+                int l = 1;
                 foreach (var item in plcGroupData)
                 {
-                    int l = 1;
                     var data = item.Where(p => p.VoltsorAmps.Equals("Amps") && p.Mode.Equals(mode) && p.VerifyType.Equals("Post-Calibration")).GroupBy(d => d.Channel);
                     foreach (var item2 in data)
                     {

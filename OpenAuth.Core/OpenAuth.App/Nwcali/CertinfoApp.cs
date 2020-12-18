@@ -162,13 +162,13 @@ namespace OpenAuth.App
 
             var fs = await UnitWork.Find<FlowInstance>(f => f.SchemeId == mf.FlowSchemeId)
                 .WhereIf(request.FlowStatus != 1, o => o.MakerList == "1" || o.MakerList.Contains(user.User.Id))//待办事项
-                //.WhereIf(request.FlowStatus == 1, o => o.ActivityName == "待送审" || instances.Contains(o.Id))
+                .WhereIf(request.FlowStatus == 1, o => (o.ActivityName == "待送审" || instances.Contains(o.Id)) && o.ActivityName != "结束")
                 .WhereIf(request.FlowStatus == 2, o => o.ActivityName == "待审核" || o.ActivityName == "待批准")
                 .ToListAsync();
             var fsid = fs.Select(f => f.Id).ToList();
             var certObjs = UnitWork.Find<NwcaliBaseInfo>(null);
             certObjs = certObjs
-                .Where(o => fsid.Contains(o.FlowInstanceId) || o.Operator.Equals(user.User.Name))
+                .Where(o => fsid.Contains(o.FlowInstanceId))
                 //.WhereIf(request.FlowStatus == 1, u => u.Operator.Equals(user.User.Name))
                 .WhereIf(!string.IsNullOrEmpty(request.CertNo), u => u.CertificateNumber.Contains(request.CertNo))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.AssetNo), u => u.AssetNo.Contains(request.AssetNo))
@@ -176,6 +176,11 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(request.Sn), u => u.TesterSn.Contains(request.Sn))
                 .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.Time >= request.CalibrationDateFrom && u.Time <= request.CalibrationDateTo)
                 ;
+            if (request.FlowStatus == 1)
+            {
+                certObjs = certObjs.Where(o => o.Operator.Equals(user.User.Name));
+            }
+            
             var certList = await certObjs.OrderByDescending(u => u.CreateTime)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
@@ -204,6 +209,7 @@ namespace OpenAuth.App
             });
             var certCount1 = await certObjs.CountAsync();
             var objs = UnitWork.Find<Certinfo>(null);
+            
             objs = objs
                 .Where(o => fsid.Contains(o.FlowInstanceId))
                 .WhereIf(request.FlowStatus == 1, u => u.Operator.Equals(user.User.Name))
@@ -213,6 +219,10 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(request.Sn), u => u.Sn.Contains(request.Sn))
                 .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.CalibrationDate >= request.CalibrationDateFrom && u.CalibrationDate <= request.CalibrationDateTo)
                 ;
+            if (request.FlowStatus == 1)
+            {
+                objs = objs.Where(u => u.Operator.Equals(user.User.Name));
+            }
             var take = certList.Count == 0 ? request.limit : request.limit - certList.Count;
             var page = certCount1 / request.limit;
             var skip = certList.Count == 0 ? (request.page - page) * request.limit : 0;

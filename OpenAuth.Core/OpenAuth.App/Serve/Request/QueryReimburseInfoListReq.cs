@@ -14,6 +14,10 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string RemburseStatus { get; set; }
 
+        /// <summary>
+        /// 状态
+        /// </summary>
+        public string Status { get; set; }
 
         /// <summary>
         /// 报销人
@@ -85,6 +89,17 @@ namespace OpenAuth.App.Request
         ///劳务关系
         /// </summary>
         public string ServiceRelations { get; set; }
+
+
+        /// <summary>
+        /// 完工报告开始日期
+        /// </summary>
+        public DateTime? CompletionStaticDate { get; set; }
+
+        /// <summary>
+        /// 完工报告出差结束日期
+        /// </summary>
+        public DateTime? CompletionEndDate { get; set; }
 
         //todo:添加自己的请求字段
     }

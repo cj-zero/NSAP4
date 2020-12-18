@@ -83,6 +83,13 @@ namespace OpenAuth.Repository.Domain
         [Description("开票日期")]
         public DateTime? InvoiceTime { get; set; }
 
+        /// <summary>
+        /// 开票单位
+        /// </summary>
+        [Description("开票单位")]
+        public string SellerName { get; set; }
+        
+
         public override void GenerateDefaultKeyVal()
         {
         }

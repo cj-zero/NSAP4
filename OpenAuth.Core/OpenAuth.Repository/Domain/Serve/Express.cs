@@ -86,6 +86,12 @@ namespace OpenAuth.Repository.Domain
         public System.DateTime? CreateTime { get; set; }
 
         /// <summary>
+        /// 开票单位
+        /// </summary>
+        [Description("开票单位")]
+        public string SellerName { get; set; }
+
+        /// <summary>
         /// 物流图片
         /// </summary>
         public virtual List<ExpressPicture> ExpressPictures { get; set; }
