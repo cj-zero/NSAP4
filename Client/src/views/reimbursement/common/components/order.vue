@@ -6,12 +6,14 @@
       class="head-title-wrapper" 
       :class="{ 'general': title === 'approve' }"
     >
-      <p style="color: red;">报销单号: <span>{{ formData.mainId }}</span></p>
-      <p v-if="isGeneralStatus"><span>服务ID: {{ formData.serviceOrderSapId }}</span></p>
+      <p style="color: red;" v-if="formData.mainId">报销单号: <span>{{ formData.mainId }}</span></p>
+      <p class="pointer underline" @click="_openServiceOrHistory(true)" v-if="title === 'approve'">
+        <span>服务ID: {{ formData.serviceOrderSapId }}</span>
+      </p>
       <p>报销人: {{ formData.orgName }} <span>{{ formData.userName }}</span></p>
       <p v-if="!isGeneralStatus">部门: <span>{{ formData.orgName }}</span></p>
       <p v-if="!isGeneralStatus">劳务关系: <span>{{ formData.serviceRelations }}</span></p>
-      <p v-if="!isGeneralStatus">创建时间: <span v-if="formData.createTime">{{ formData.createTime.split(' ')[0] }}</span></p>
+      <p v-if="!isGeneralStatus">创建时间: <span>{{ formData.createTime && formData.createTime.split(' ')[0] }}</span></p>
     </el-row>
     <!-- 时间进度轴，仅总经理可看 timelineList -->
     <template v-if="title === 'approve'">
@@ -104,7 +106,7 @@
                 <template v-if="item.prop === 'serviceOrderSapId' && title !== 'create'">
                   <div class="link-container" style="display: inline-block">
                     <span>{{ item.label }}</span>
-                    <img :src="rightImg" @click="_openServiceOrder" class="pointer">
+                    <img :src="rightImg" @click="_openServiceOrHistory(false)" class="pointer">
                   </div>
                 </template>
                 <template v-else>
@@ -903,13 +905,13 @@
     <!-- 历史费用弹窗 -->
     <my-dialog
       ref="historyDialog"
-      width="1004px"
+      width="1025px"
       title="历史费用"
       top="200px"
       :append-to-body="true"
     >
       <!-- 历史费用 -->
-      <div style="width: 984px;">
+      <div>
         <common-table 
           class="history-table-wrapper"
           :data="historyCostData"
@@ -938,7 +940,7 @@
           </template>
           <!-- 其它费用 -->
           <template v-slot:other="{ row }">
-            {{ (row.otherChargesMoney / row.totalMoney) | toThousands }}
+            {{ row.otherChargesMoney | toThousands }}
           </template>
         </common-table>
       </div>    
@@ -1082,20 +1084,20 @@ export default {
       // 历史费用
       historyCostData: [],
       historyCostColumns: [
-        { label: '报销单号', prop: 'mainId', width: '80px' },
-        { label: '总天数', prop: 'days', align: 'right', width: '80px' },
-        { label: '总金额', prop: 'totalMoney', slotName: 'totalMoney', align: 'right', width: '100px', 'class-name': 'red' },
-        { label: '交通费用', prop: 'faresMoney', slotName: 'faresMoney', align: 'right', width: '100px' },
-        { label: '交通占比', prop: 'fmProportion', width: '70px', align: 'right' },
-        { label: '住宿补贴', prop: 'accommodationSubsidiesMoney', slotName: 'acc', align: 'right', width: '100px' },
-        { label: '住宿占比', prop: 'asProportion', width: '70px', align: 'right' },
-        { label: '出差补贴', prop: 'travellingAllowancesMoney', slotName: 'travel', align: 'right', width: '100px' },
-        { label: '出差占比', prop: 'taProportion', width: '70px', align: 'right' },
-        { label: '其他费用', prop: 'otherChargesMoney', slotName: 'other', align: 'right', width: '100px' },
-        { label: '其他占比', prop: 'ocProportion', width: '70px', align: 'right' },
+        { label: '报销单号', prop: 'mainId', width: '60px' },
+        { label: '总天数', prop: 'days', align: 'right', width: '50px' },
+        { label: '总金额', prop: 'totalMoney', slotName: 'totalMoney', align: 'right', width: '63px' },
+        { label: '交通费用', prop: 'faresMoney', slotName: 'faresMoney', align: 'right', width: '63px' },
+        { label: '交通占比', prop: 'fmProportion', width: '63px', align: 'right' },
+        { label: '住宿补贴', prop: 'accommodationSubsidiesMoney', slotName: 'acc', align: 'right', width: '63px' },
+        { label: '住宿占比', prop: 'asProportion', width: '63px', align: 'right' },
+        { label: '出差补贴', prop: 'travellingAllowancesMoney', slotName: 'travel', align: 'right', width: '63px' },
+        { label: '出差占比', prop: 'taProportion', width: '63px', align: 'right' },
+        { label: '其他费用', prop: 'otherChargesMoney', slotName: 'other', align: 'right', width: '63px' },
+        { label: '其他占比', prop: 'ocProportion', width: '63px', align: 'right' },
         { label: '出发时间', prop: 'businessTripDate', width: '126px' },
         { label: '结束时间', prop: 'endDate', width: '126px' },
-        { label: '报销人', prop: 'userName', width: '70px' }
+        { label: '报销人', prop: 'userName', width: '75px' }
       ],
       historyCostLoading: false,
       generalStyle: { // 总经理头部style
@@ -1194,7 +1196,8 @@ export default {
       remarkType: '', // 
       remarkText: '', // 弹窗备注
       remarkLoading: false,
-      prevAreaData: null // 上一次点击地址框的是时候，交通表格的行数据
+      prevAreaData: null, // 上一次点击地址框的是时候，交通表格的行数据
+      currentTime: new Date() // 完工报告首日期
     }
   },
   watch: {
@@ -1246,6 +1249,9 @@ export default {
           this._getAfterEvaluation() // 获取售后评价
           this._getReportDetail() // 获取服务报告
           this._getHistoryCost() // 获取历史费用
+          if (this.formData.businessTripDate) {
+            this.currentTime = new Date(formatDate(this.formData.businessTripDate))
+          }
           this.timelineList = this._normalizeTimelineList(this.formData.reimurseOperationHistories)
         }
         if (this.title === 'create' || this.title === 'edit') { // 只有在create或者edit的时候，才可以导入费用模板
@@ -1263,13 +1269,12 @@ export default {
       }
     }
   },
+  provide () {
+    return {
+      userId: this.formData.createUserId
+    }
+  },
   computed: {
-    currentTime () { // 当前报销单的出差首日期
-      if (this.formData.businessTripDate) {
-        return new Date(formatDate(this.formData.businessTripDate))
-      }
-      return new Date()
-    },
     ifFormEdit () { // 是否可以编辑
       return this.title === 'view'
         ? false
@@ -1409,26 +1414,28 @@ export default {
         }
       }
       driving.setSearchCompleteCallback(() => {  
-        let pts = driving.getResults().getPlan(0).getRoute(0).getPath()   //通过驾车实例，获得一系列点的数组  
-  
-        let polyline = new BMap.Polyline(pts)      
-        map.addOverlay(polyline)
-
-      // 画图标、想要展示的起点终点途经点
-        for (let i = 0; i < trackPoint.length; i++) {
-          let lab;
-          if(i == 0) {
-            lab = new BMap.Label("起点",{ position: trackPoint[i] })
-          } else if(i == trackPoint.length - 1){
-              lab = new BMap.Label("终点",{ position: trackPoint[i] })
-          } else {
-            // lab = new BMap.Label("途径点",{position: trackPoint[i]})
+        try {
+          let pts = driving.getResults().getPlan(0).getRoute(0).getPath()   //通过驾车实例，获得一系列点的数组  
+          let polyline = new BMap.Polyline(pts)      
+          map.addOverlay(polyline)
+        // 画图标、想要展示的起点终点途经点
+          for (let i = 0; i < trackPoint.length; i++) {
+            let lab;
+            if(i == 0) {
+              lab = new BMap.Label("起点",{ position: trackPoint[i] })
+            } else if(i == trackPoint.length - 1){
+                lab = new BMap.Label("终点",{ position: trackPoint[i] })
+            } else {
+              // lab = new BMap.Label("途径点",{position: trackPoint[i]})
+            }
+            let marker = new BMap.Marker(trackPoint[i])
+            map.addOverlay(marker);
+            map.addOverlay(lab);
           }
-          let marker = new BMap.Marker(trackPoint[i])
-          map.addOverlay(marker);
-          map.addOverlay(lab);
+          map.setViewport(trackPoint)
+        } catch (err) {
+          console.log(err)
         }
-        map.setViewport(trackPoint)
       }) 
       console.log('initMap', this.formData.pointArr)
     },
@@ -1436,10 +1443,15 @@ export default {
       const grayList = [3, 4, 7, 8]
       return grayList.includes(columnIndex) ? { backgroundColor: '#fafafa' } : {}
     },
-    _openServiceOrder () { // 打开服务单详情
-      this.openServiceOrder(this.formData.serviceOrderId, () => this.orderLoading = true, () => this.orderLoading = false)
+    _openServiceOrHistory (isServe) { // 打开服务单详情或者打开历史费用
+      this.title === 'approve' && !isServe
+        ? this.openHistory()
+        : this.openServiceOrder(this.formData.serviceOrderId, () => this.orderLoading = true, () => this.orderLoading = false)
     },
     openHistory () { // 打开历史费用
+      if (this.historyCostData && !this.historyCostData.length) {
+        return this.$message.warning('暂无历史费用')
+      }
       this.$refs.historyDialog.open()
     },
     _getAfterEvaluation () { // 获取售后评价
@@ -1499,6 +1511,22 @@ export default {
       }).then(res => {
         this.historyCostLoading = false
         this.historyCostData = res.data
+        // this.historyCostData = [{
+        //   mainId: '1',
+        //   days: '1',
+        //   totalMoney: 1000,
+        //   faresMoney: 1000,
+        //   fmProportion: '100.00%',
+        //   accommodationSubsidiesMoney: 1000,
+        //   asProportion: '100.00%',
+        //   travellingAllowancesMoney: 1000,
+        //   taProportion: '100.00%',
+        //   otherChargesMoney: 1000,
+        //   ocProportion: '100.00%',
+        //   businessTripDate: '2020-02-02 14:20:00',
+        //   endDate: '2020-02-02 14:20:00',
+        //   userName: '超级管理员'
+        // }]
         console.log(res, 'historyList')
       }).catch(err => {
         this.historyCostLoading = false
@@ -2640,7 +2668,7 @@ export default {
     top: -36px;
     left: 51px;
     &.general {
-      left: 500px;
+      left: 480px;
       span {
         font-weight: bold;
       }
@@ -2650,6 +2678,9 @@ export default {
       margin-right: 10px;
       font-size: 12px;
       font-weight: bold;
+      &.underline {
+        text-decoration: underline;
+      }
       span {
         font-weight: normal;
       }
@@ -2852,6 +2883,7 @@ export default {
     }
     /* 总经理审批总金额 */
     .general-total-money {
+      width: 992px;
       padding-right: 5px;
       margin: 10px 0;
       font-size: 12px;

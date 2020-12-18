@@ -1218,6 +1218,7 @@ export default {
     },
   },
   // inject: ["form"],
+  inject: ['userId'],
   methods: {
     _getFormThemeList () {
       this.themeLoading = true

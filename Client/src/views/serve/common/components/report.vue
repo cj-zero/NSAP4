@@ -4,7 +4,7 @@
       <el-tabs v-model="activeName" type="card" @tab-click="handleClick">
         <el-tab-pane 
           v-for="(item, index) in data"
-          :key="item.materialCodeTypeName"
+          :key="item.id"
           :label="item.materialCodeTypeName"
           :name="String(index)"
           :disabled="!item.id"

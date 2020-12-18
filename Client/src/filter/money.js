@@ -6,7 +6,7 @@
  * @param {*} decimalNumber 保留小数位数
  */
 export function toThousands (val, range =  3, separator = ',', decimalNumber = 2) { // 千分位化
-  let [integer, decimal] = String(val).split('.')
+  let [integer, decimal] = String(Number(val)).split('.')
   let result = '', j = 1
   for (let i = integer.length - 1; i >= 0; i--) {
     result = integer[i] + result

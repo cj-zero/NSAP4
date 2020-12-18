@@ -106,6 +106,7 @@ export default {
   font-size: 12px;
   border-radius: 2px;
   box-shadow: 0 0 1px 2px #eee;
+  background-color: #fff;
   .control-pannel {
     display: flex;
     justify-content: space-between;
@@ -144,6 +145,7 @@ export default {
         align-items: center;
         justify-content: center;
         &.marked {
+          color: #fff;
           background-color: #0078d7;
           border-radius: 50%;
         }

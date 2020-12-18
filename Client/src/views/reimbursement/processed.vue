@@ -171,7 +171,7 @@ export default {
       ]
     },
     dialogWidth () {
-      return this.title === 'approve' ? '1015px' :'1206px'
+      return this.isGeneralManager ? '1015px' : '1100px'
     }
   },
   data () {
