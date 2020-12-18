@@ -169,7 +169,7 @@ export default {
       ]
     },
     dialogWidth () {
-      return this.isGeneralManager ? '1015px' : '1100px'
+      return this.isGeneralManager ? '1015px' : '1130px'
     }
   },
   data () {
