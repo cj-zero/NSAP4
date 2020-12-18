@@ -107,7 +107,7 @@ export let tableMixin = {
       baseURL: process.env.VUE_APP_BASE_API + "/files/Download", // 图片基地址
       tokenValue: this.$store.state.user.token,
       originUserId: this.$store.state.user.userInfoAll.userId, // 当前用户的ID
-      reimburseStatus: 0 // 报销状态
+      reimburseStatus: 0, // 报销状态
     }
   },
   methods: {
@@ -214,7 +214,6 @@ export let tableMixin = {
         } catch (err) {
           console.log(err, 'err')
         }
-        
         this.tableLoading = false
         this.$refs.myDialog.open()
       }).catch(() => {
@@ -253,7 +252,7 @@ export let tableMixin = {
     _generateApproveTable (data) { // 针对总经理审批页面
       console.log(data, 'generate')
       let result = []
-      let { 
+      let {
         reimburseTravellingAllowances,
         reimburseFares,
         reimburseAccommodationSubsidies,
@@ -295,7 +294,7 @@ export let tableMixin = {
         result.push({
           invoiceTime: this.processInvoiceTime(invoiceTime),
           expenseName: '出差补贴',
-          expenseDetail: `${toThousands(money / days)}元/天*${days}天`,
+          expenseDetail: `${toThousands(money)}元/天*${days}天`,
           money: money * days,
           remark
         })
@@ -574,34 +573,34 @@ export let categoryMixin = {
       return this.isGeneralManager && (this.title === 'approve' || this.title === 'view')
     },
     isEditItem () { // 审批的时候只有客服主管可以改 新增编辑都可以修改
-      return (this.title === 'view' || (this.title === 'approve' && !this.isCustomerSupervisor) || this.title === 'toPay')
+      return (this.title === 'view' || this.isProcessed || (this.title === 'approve' && !this.isCustomerSupervisor) || this.title === 'toPay')
     },
     formConfig () {
       return [
-        { label: '服务ID', prop: 'serviceOrderSapId', palceholder: '请选择', col: this.ifFormEdit ? 5 : 6, disabled: this.title !== 'create', readonly: true },
+        { label: '服务ID', prop: 'serviceOrderSapId', placeholder: '请选择', col: this.ifFormEdit ? 5 : 6, disabled: this.title !== 'create', readonly: true },
         { 
-          label: '报销类别', prop: 'reimburseType', palceholder: '请输入内容', 
+          label: '报销类别', prop: 'reimburseType', placeholder: '请输入内容', 
           col: this.ifFormEdit ? 5 : 6, type: 'select', options: this.reimburseTypeList, 
           disabled: this.isEditItem, width: '100%'
         },
-        // { label: '客户简称', prop: 'shortCustomerName', palceholder: '最长6个字', col: this.ifFormEdit ? 5 : 6, maxlength: 6, disabled: this.isEditItem, required: true },
-        { label: '费用承担', prop: 'bearToPay', palceholder: '请输入内容', 
+        // { label: '客户简称', prop: 'shortCustomerName', placeholder: '最长6个字', col: this.ifFormEdit ? 5 : 6, maxlength: 6, disabled: this.isEditItem, required: true },
+        { label: '费用承担', prop: 'bearToPay', placeholder: '请输入内容', 
           disabled: this.isProcessed || this.title === 'view' || !(this.isCustomerSupervisor && (this.title === 'create' || this.title === 'edit' || this.title === 'approve')), 
           col: this.ifFormEdit ? 5 : 6, type: 'select', options: this.expenseList, width: '100%'
         },
-        { label: '报销状态', prop: 'reimburseTypeText', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
-        { label: '客户代码', prop: 'terminalCustomerId', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        { label: '客户名称', prop: 'terminalCustomer', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 10 : 12 },
-        { label: '支付时间', prop: 'payTime', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
-        { label: '呼叫主题', prop: 'fromTheme', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 15 : 18 },
+        { label: '报销状态', prop: 'reimburseTypeText', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
+        { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '客户名称', prop: 'terminalCustomer', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 10 : 12 },
+        { label: '支付时间', prop: 'payTime', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
+        { label: '呼叫主题', prop: 'fromTheme', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 15 : 18 },
         { label: '服务报告', prop: 'report',  disabled: true, col: this.ifFormEdit ? 5 : 6, 
           type: 'button', btnText: '服务报告', handleClick: this.openReport, isEnd: true
         },
-        { label: '出发地点', prop: 'becity', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        { label: '到达地点', prop: 'destination', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        { label: '开始时间', prop: 'businessTripDate', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, width: '100%' },
-        { label: '结束时间', prop: 'endDate', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true, width: '100%' },
-        { label: '备注', prop: 'remark', palceholder: '请输入内容', disabled: !this.ifFormEdit, col: this.ifFormEdit ? 15 : 18 }, 
+        { label: '出发地点', prop: 'becity', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '到达地点', prop: 'destination', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '开始时间', prop: 'businessTripDate', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, width: '100%' },
+        { label: '结束时间', prop: 'endDate', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true, width: '100%' },
+        { label: '备注', prop: 'remark', placeholder: '请输入内容', disabled: !this.ifFormEdit, col: this.ifFormEdit ? 15 : 18 }, 
         { label: '总金额', type: 'money', col: this.ifFormEdit ? 5 : 6 }
       ]
     },    

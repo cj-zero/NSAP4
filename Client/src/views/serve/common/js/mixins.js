@@ -23,9 +23,11 @@ export let reportMixin = {
         let { status, fromType } = workOrder
         return Number(status) >= 7 && Number(fromType) !== 2 // 所有工单状态为已解决且呼叫类型不为在线解答
       })
+      console.log(this.userId, 'userId')
       if (hasFinished) {
         getReportDetail({
-          serviceOrderId
+          serviceOrderId,
+          userId: this.userId
         }).then(res => {
           this.reportData = this._normalizeReportData(res.result.data)
           if (this.reportData.length) {

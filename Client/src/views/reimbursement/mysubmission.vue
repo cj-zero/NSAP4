@@ -34,7 +34,7 @@
               :align="item.align || 'left'"
               :sortable="item.isSort || false"
               :type="item.originType || ''"
-              show-overflow-tooltip
+              :show-overflow-tooltip="item.label !== '呼叫主题'"
             >
               <template slot-scope="scope" >
                 <div class="link-container" v-if="item.type === 'link'">
