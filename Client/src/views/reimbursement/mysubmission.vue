@@ -13,7 +13,30 @@
     <div class="app-container">
       <div class="bg-white">
         <div class="content-wrapper">
-          <el-table 
+          <common-table
+            ref="table"
+            height="100%"
+            :data="tableData"
+            :columns="submissionColumns"
+            :loading="tableLoading"
+            @row-click="onRowClick"
+          >
+            <template v-slot:report="{ row }">
+              <div class="link-container">
+                <img :src="rightImg" @click="openReport(row, 'table')" class="pointer">
+                <span>查看</span>
+              </div>
+            </template>
+            <template v-slot:fromTheme="{ row }">
+              <el-tooltip placement="top-start">
+                <div slot="content">
+                  <p v-for="(content, index) in row.themeList" :key="index">{{ content }}</p>
+                </div>
+                <span style="white-space: nowrap;">{{ row[row.prop] }}</span>
+              </el-tooltip>
+            </template>
+          </common-table>
+          <!-- <el-table 
             ref="table"
             :data="tableData"
             v-loading="tableLoading" 
@@ -69,7 +92,7 @@
                 </template>
               </template>    
             </el-table-column>
-          </el-table>
+          </el-table> -->
           <!-- <common-table :data="tableData" :columns="columns" :loading="tableLoading"></common-table> -->
           <pagination
             v-show="total>0"
@@ -140,6 +163,7 @@ import Order from './common/components/order'
 import Report from './common/components/report'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
+import CommonTable from '@/components/CommonTable'
 import { tableMixin, categoryMixin, reportMixin, chatMixin } from './common/js/mixins'
 import { getOrder, withdraw, deleteOrder } from '@/api/reimburse'
 import { serializeParams } from '@/utils/process'
@@ -150,7 +174,7 @@ export default {
     TabList,
     Search,
     Sticky,
-    // CommonTable,
+    CommonTable,
     Pagination,
     MyDialog,
     Order,
@@ -197,6 +221,25 @@ export default {
         { label: '已支付', value: '2' },
         { label: '已撤回', value: '3' },
         { label: '草稿箱', value: '4' }
+      ],
+      submissionColumns: [ // 表格配置(我的提交)
+        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleClick: this.getDetail, options: { type: 'view' } },
+        { label: '报销状态', prop: 'remburseStatusText', width: 100 },
+        { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleClick: this._openServiceOrder },
+        { label: '呼叫主题', prop: 'fromTheme', width: 250, 'show-overflow-tooltip': false, slotName: 'fromTheme' },
+        { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
+        { label: '客户名称', prop: 'terminalCustomer', width: 170 },
+        { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
+        { label: '总天数', prop: 'days', width: 60, align: 'right' },
+        { label: '出发日期', prop: 'businessTripDate', width: 85 },
+        { label: '结束日期', prop: 'endDate', width: 85 },
+        { label: '报销部门', prop: 'orgName', width: 70 },
+        { label: '报销人', prop: 'userName', width: 70 },
+        // { label: '劳务关系', prop: 'serviceRelations', width: 100 },
+        { label: '业务员', prop: 'salesMan', width: 80 },
+        { label: '服务报告', width: 70, slotName: 'report'  },
+        { label: '填报日期', prop: 'fillTime', width: 85 },
+        { label: '备注', prop: 'remark' }
       ],
       customerInfo: {}, // 当前报销人的id， 名字
       categoryList: [], // 字典数组
