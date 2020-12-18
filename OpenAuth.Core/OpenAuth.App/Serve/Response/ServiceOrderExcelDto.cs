@@ -194,5 +194,12 @@ namespace OpenAuth.App.Response
         /// </summary>
         [ExporterHeader(DisplayName = "过程描述")]
         public string ProcessDescription { get; set; }
+
+        /// <summary>
+        /// 完工报告备注
+        /// </summary>
+        [ExporterHeader(DisplayName = "完工报告备注")]
+        public string CompletionReporRemark { get; set; }
+        
     }
 }
