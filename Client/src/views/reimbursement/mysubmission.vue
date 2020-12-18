@@ -4,7 +4,6 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
-          :listQuery="formQuery" 
           :config="searchConfig"
           @changeForm="onChangeForm" 
           @search="onSearch">
@@ -169,7 +168,7 @@ export default {
         { type: 'button', btnText: '撤回', handleClick: this.recall },
         { type: 'button', btnText: '删除', handleClick: this.deleteOrder },
         { type: 'button', btnText: '打印', handleClick: this.print },
-        { type: 'button', btnText: '导出表格', handleClick: this.exportExcel }
+        { type: 'button', btnText: '导出表格', handleClick: this.exportExce, isShow: !!this.isCustomerSupervisor }
       ]
     }, // 搜索配置
     btnList () {
@@ -210,6 +209,10 @@ export default {
   methods: {
     onTabChange (name) {
       this.listQuery.remburseStatus = name
+      if (name) {
+        // 如果不是tab不是全部，就删除listQuery.status字段
+        delete this.listQuery.status
+      }
       this.listQuery.page = 1
       this._getList()
     },
