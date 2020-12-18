@@ -14,6 +14,10 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string RemburseStatus { get; set; }
 
+        /// <summary>
+        /// 状态
+        /// </summary>
+        public string Status { get; set; }
 
         /// <summary>
         /// 报销人
