@@ -14,7 +14,7 @@
         :key="column.prop"
         type="selection" 
         v-if="column.type === 'selection'"
-        reserve-selection
+        v-bind="mergeColumnConfig(column)"
         :selectable="checkSelectable"
       >
       </el-table-column>

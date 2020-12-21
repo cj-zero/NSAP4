@@ -12,58 +12,13 @@
       <div class="app-container">
         <div class="bg-white">
           <div class="content-wrapper">
-            <el-table 
+            <common-table
               ref="table"
-              :data="tableData" 
-              v-loading="tableLoading" 
-              size="mini"
-              border
-              fit
               height="100%"
-              style="width: 100%;"
-              :row-style="rowStyle"
-              @row-click="onRowClick"
-              highlight-current-row
-              @selection-change="handleSelectionChange"
-              >
-              <el-table-column type="selection"></el-table-column>
-              <el-table-column
-                v-for="item in toPayColumns"
-                :key="item.prop"
-                :width="item.width"
-                :label="item.label"
-                :align="item.align || 'left'"
-                :sortable="item.isSort || false"
-                show-overflow-tooltip
-              >
-                <template slot-scope="scope" >
-                  <div class="link-container" v-if="item.type === 'link'">
-                    <img :src="rightImg" @click="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
-                    <span>{{ scope.row[item.prop] }}</span>
-                  </div>
-                  <template v-else-if="item.type === 'operation'">
-                    <el-button 
-                      v-for="btnItem in item.actions"
-                      :key="btnItem.btnText"
-                      @click="btnItem.btnClick(scope.row)" 
-                      type="text" 
-                      :icon="item.icon || ''"
-                      :size="item.size || 'mini'"
-                    >{{ btnItem.btnText }}</el-button>
-                  </template>
-                  <template v-else-if="item.label === '服务报告'">
-                    <div class="link-container">
-                      <img :src="rightImg" @click="item.handleClick(scope.row, 'table')" class="pointer">
-                      <span>查看</span>
-                    </div>
-                  </template>
-                  <template v-else>
-                    {{ scope.row[item.prop] }}
-                  </template>
-                </template>    
-              </el-table-column>
-            </el-table>
-            <!-- <common-table :data="tableData" :columns="columns" :loading="tableLoading"></common-table> -->
+              :data="tableData"
+              :columns="toPayColumns"
+              :loading="tableLoading"
+            ></common-table>
             <pagination
               v-show="total>0"
               :total="total"
@@ -130,6 +85,7 @@ import Sticky from '@/components/Sticky'
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
+import CommonTable from '@/components/CommonTable'
 // import Report from './common/components/report'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
@@ -142,7 +98,7 @@ export default {
   components: {
     Search,
     Sticky,
-    // CommonTable,
+    CommonTable,
     Pagination,
     MyDialog,
     Order,
@@ -183,13 +139,14 @@ export default {
     rowStyle ({ row, rowIndex }) {
       row.index = rowIndex
     },
-    onRowClick (row) {
-      this.$refs.table.toggleRowSelection(row)
-    },
-    handleSelectionChange (val) {
-      this.selectList = val
-    },
+    // onRowClick (row) {
+    //   this.$refs.table.toggleRowSelection(row)
+    // },
+    // handleSelectionChange (val) {
+    //   this.selectList = val
+    // },
     _pay () {
+      this.selectList = this.$refs.table.getSelectionList()
       if (!this.selectList.length) {
         return this.$message.warning('请先选择报销单')
       }

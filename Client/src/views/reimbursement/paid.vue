@@ -12,7 +12,14 @@
       <div class="app-container">
         <div class="bg-white">
           <div class="content-wrapper">
-            <el-table 
+            <common-table
+              ref="table"
+              height="100%"
+              :data="tableData"
+              :columns="processedColumns"
+              :loading="tableLoading"
+            ></common-table>
+            <!-- <el-table 
               ref="table"
               :data="tableData" 
               v-loading="tableLoading" 
@@ -60,7 +67,7 @@
                   </template>
                 </template>    
               </el-table-column>
-            </el-table>
+            </el-table> -->
             <!-- <common-table :data="tableData" :columns="columns" :loading="tableLoading"></common-table> -->
             <pagination
               v-show="total>0"
@@ -129,6 +136,7 @@ import Sticky from '@/components/Sticky'
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
+import CommonTable from '@/components/CommonTable'
 // import Report from './common/components/report'
 // import zxform from "@/views/serve/callserve/form";
 // import zxchat from '@/views/serve/callserve/chat/index'
@@ -140,7 +148,7 @@ export default {
   components: {
     Search,
     Sticky,
-    // CommonTable,
+    CommonTable,
     Pagination,
     MyDialog,
     Order,
@@ -165,6 +173,7 @@ export default {
     return {
       customerInfo: {}, // 当前报销人的id， 名字
       categoryList: [], // 字典数组
+      isPaid: true // 已经支付标识变量
     }
   },
   methods: {

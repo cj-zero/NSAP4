@@ -36,64 +36,6 @@
               </el-tooltip>
             </template>
           </common-table>
-          <!-- <el-table 
-            ref="table"
-            :data="tableData"
-            v-loading="tableLoading" 
-            size="mini"
-            border
-            fit
-            height="100%"
-            style="width: 100%;"
-            @row-click="onRowClick"
-            highlight-current-row
-            >
-            <el-table-column
-              v-for="item in submissionColumns"
-              :key="item.prop"
-              :width="item.width"
-              :label="item.label"
-              :align="item.align || 'left'"
-              :sortable="item.isSort || false"
-              :type="item.originType || ''"
-              :show-overflow-tooltip="item.label !== '呼叫主题'"
-            >
-              <template slot-scope="scope" >
-                <div class="link-container" v-if="item.type === 'link'">
-                  <img :src="rightImg" @click="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
-                  <span>{{ scope.row[item.prop] }}</span>
-                </div>
-                <template v-else-if="item.type === 'operation'">
-                  <el-button 
-                    v-for="btnItem in item.actions"
-                    :key="btnItem.btnText"
-                    @click="btnItem.btnClick(scope.row)" 
-                    type="text" 
-                    :icon="item.icon || ''"
-                    :size="item.size || 'mini'"
-                  >{{ btnItem.btnText }}</el-button>
-                </template>
-                <template v-else-if="item.label === '服务报告'">
-                  <div class="link-container">
-                    <img :src="rightImg" @click="item.handleClick(scope.row, 'table')" class="pointer">
-                    <span>查看</span>
-                  </div>
-                </template>
-                <template v-else-if="item.label === '呼叫主题'">
-                  <el-tooltip placement="top-start">
-                    <div slot="content">
-                      <p v-for="(content, index) in scope.row.themeList" :key="index">{{ content }}</p>
-                    </div>
-                    <span style="white-space: nowrap;">{{ scope.row[item.prop] }}</span>
-                  </el-tooltip>
-                </template>
-                <template v-else>
-                  {{ scope.row[item.prop] }}     
-                </template>
-              </template>    
-            </el-table-column>
-          </el-table> -->
-          <!-- <common-table :data="tableData" :columns="columns" :loading="tableLoading"></common-table> -->
           <pagination
             v-show="total>0"
             :total="total"

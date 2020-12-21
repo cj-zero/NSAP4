@@ -14,5 +14,6 @@ function tableRowClassName ({ row, rowIndex }) {
 }
 
 export const defaultColumnConfig = {
-  'show-overflow-tooltip': true
+  'show-overflow-tooltip': true,
+  'reserve-selection': true
 }
