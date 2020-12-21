@@ -32,7 +32,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpGet]
-        [AllowAnonymous]
+        //[AllowAnonymous]
         public async Task<TableData> GetOrderStatusByRegMobile([FromQuery] QryWfaEshopStatusListReq req)
         {
             var result = new TableData();

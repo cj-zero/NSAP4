@@ -48,7 +48,7 @@ namespace OpenAuth.App
                                 join b in UnitWork.Find<OCPR>(null) on new { a.CardCode, a.CntctPrsn } equals new { b.CardCode, CntctPrsn = b.Name } into ab
                                 from b in ab.DefaultIfEmpty()
                                 select new { a, b };
-                string cardcode = await objclient.Where(o => o.b.Cellolar.Equals(request.QryMobile)).Select(s => s.a.CardCode).FirstOrDefaultAsync();
+                string cardcode = await objclient.Where(o => o.b.Cellolar.Equals(request.QryMobile) || o.b.Tel1.Equals(request.QryMobile) || o.b.Tel2.Equals(request.QryMobile)).Select(s => s.a.CardCode).FirstOrDefaultAsync();
 
                 var qrystatus = UnitWork.Find<wfa_eshop_status>(o => o.card_code.Equals(cardcode)).Include(s => s.wfa_eshop_oqutdetails)
                     .WhereIf(! string.IsNullOrEmpty(request.QryStatus.ToString()), q=>q.cur_status.Equals(request.QryStatus))
