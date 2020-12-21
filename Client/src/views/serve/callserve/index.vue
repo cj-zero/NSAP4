@@ -433,7 +433,8 @@ export default {
         { width: 140, placeholder: '联系电话', prop: 'ContactTel' },
         { width: 150, placeholder: '创建开始日期', prop: 'QryCreateTimeFrom', type: 'date', showText: true },
         { width: 150, placeholder: '创建结束日期', prop: 'QryCreateTimeTo', type: 'date' },
-        { width: 150, placeholder: '完工日期', prop: 'CompleteDate', type: 'date' }
+        { width: 150, placeholder: '完工开始日期', prop: 'CompleteDate', type: 'date' },
+        { width: 150, placeholder: '完工结束日期', prop: 'EndCompleteDate', type: 'date' }
       ]
     }
   },
