@@ -76,7 +76,7 @@ namespace OpenAuth.Repository.Domain
         [Description("客户名称")]
         public string card_name { get; set; }
         /// <summary>
-        /// 
+        /// 订单状态查询 (0 已提交 1 待发货 2 已发货 3 已完成）
         /// </summary>
         [Description("当前总状态")]
         public int? cur_status { get; set; }

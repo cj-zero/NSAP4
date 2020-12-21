@@ -53,7 +53,8 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="DocumentId"></param>
         /// <returns></returns>
         [HttpGet]
-         public async Task<Response<WfaEshopStatusResp>> GetStatusInfoById(int DocumentId)
+       // [AllowAnonymous]
+        public async Task<Response<WfaEshopStatusResp>> GetStatusInfoById(int DocumentId)
         {
             var result = new Response<WfaEshopStatusResp>();
             try
