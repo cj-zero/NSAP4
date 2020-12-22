@@ -13,7 +13,7 @@ export let customerColumns = [ // 用户信息表单配置
   { type: 'radio', prop: 'id', width: '50px' },
   { label: '服务Id', prop: 'u_SAP_ID', width: '70px' },
   { label: '客户名称', prop: 'terminalCustomer', width: '180px' },
-  { label: '呼叫主题', prop: 'fromTheme', width: '300px', isMultipleLines: true, contentField: 'description' }
+  { label: '呼叫主题', prop: 'fromTheme', width: '300px', slotName: 'fromTheme', 'show-overflow-tooltip': false }
 ]
 
 export let costColumns = [ // 费用列表配置 

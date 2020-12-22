@@ -120,9 +120,9 @@
                     <div class="form-theme-list">
                       <transition-group name="list" tag="ul">
                         <li class="form-theme-item" v-for="themeItem in formData.themeList" :key="themeItem.id" >
-                          <el-tooltip popper-class="form-theme-toolip" effect="dark" :content="themeItem.description" placement="top">
-                            <p class="text">{{ themeItem.description }}</p>
-                          </el-tooltip>
+                          <!-- <el-tooltip popper-class="form-theme-toolip" effect="dark" :content="themeItem.description" placement="top"> -->
+                            <p class="text" v-infotooltip.ellipsis="themeItem.description">{{ themeItem.description }}</p>
+                          <!-- </el-tooltip> -->
                         </li>
                       </transition-group>
                     </div>
@@ -322,7 +322,12 @@
                       :prop="'reimburseTravellingAllowances.' + scope.$index + '.'+ item.prop"
                       :rules="travelRules[item.prop] || { required: false }"
                     >
-                      <el-input v-model="scope.row[item.prop]" :disabled="item.disabled" :placeholder="item.placeholder"></el-input>
+                      <el-input 
+                        v-model="scope.row[item.prop]" 
+                        :disabled="item.disabled" 
+                        :placeholder="item.placeholder" 
+                        v-infotooltip:200.top-start>
+                      </el-input>
                     </el-form-item>
                   </template>
                   <template v-else-if="item.type === 'number'">
@@ -475,6 +480,7 @@
                       ref="trafficUploadFile"
                       :options="{ prop: item.prop, index: scope.$index, type: 'traffic' }" 
                       :ifShowTip="ifFormEdit"
+                      :isInline="isGeneralManager && isCustomerSupervisor"
                       @deleteFileList="deleteFileList"
                       :onAccept="onAccept"
                       :fileList="
@@ -618,6 +624,7 @@
                       :ifShowTip="ifFormEdit"
                       @deleteFileList="deleteFileList"
                       :onAccept="onAccept"
+                      :isInline="isGeneralManager || isCustomerSupervisor"
                       :fileList="
                         formData.reimburseAccommodationSubsidies[scope.$index] 
                           ? (item.prop === 'invoiceAttachment' 
@@ -757,6 +764,7 @@
                       :ifShowTip="ifFormEdit"
                       @deleteFileList="deleteFileList"
                       :onAccept="onAccept"
+                      :isInline="isGeneralManager && isCustomerSupervisor"
                       :fileList="
                         formData.reimburseOtherCharges[scope.$index] 
                           ? (item.prop === 'invoiceAttachment' 
@@ -822,7 +830,12 @@
         :data="customerInfoList"
         :columns="customerColumns"
         radioKey="id"
-      ></common-table>
+      >
+        <template v-slot:fromTheme="{ row }">
+           <!-- 呼叫主题显示 -->
+           <p class="text" v-infotooltip.top-start.ellipsis="row.themeList">{{ row.themeList.join(' ') }}</p>
+        </template>
+      </common-table>
       <pagination
         v-show="customerTotal > 0"
         :total="customerTotal"
@@ -952,6 +965,7 @@
       :on-close="closeViewer"
     >
     </el-image-viewer>
+    <PDF :pdfURL="pdfURL" :on-close="closePDF" v-if="pdfVisible" />
   </div>
 </template>
 
@@ -964,6 +978,7 @@ import upLoadFile from "@/components/upLoadFile";
 import Pagination from '@/components/Pagination'
 import MyDialog from '@/components/Dialog'
 import CommonTable from '@/components/CommonTable'
+import PDF from './pdf'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import Report from './report'
@@ -971,7 +986,7 @@ import Remark from './remark'
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import AreaSelector from '@/components/AreaSelector'
 import { toThousands } from '@/utils/format'
-import { findIndex } from '@/utils/process'
+import { findIndex, accAdd } from '@/utils/process'
 import { deepClone } from '@/utils'
 import { travelRules, trafficRules, accRules, otherRules } from '../js/customerRules'
 import { customerColumns, costColumns } from '../js/config'
@@ -981,11 +996,7 @@ import { REIMBURSE_TYPE_MAP, IF_SHOW_MAP, REMARK_TEXT_MAP } from '../js/map'
 import rightImg from '@/assets/table/right.png'
 const PROGRESS_TEXT_LIST = ['提交', '客服审批', '财务初审', '财务复审', '总经理审批', '出纳'] // 进度条文本
 const AFTER_EVALUTION_KEY = ['responseSpeed', 'schemeEffectiveness', 'serviceAttitude', 'productQuality', 'servicePrice']
-// { label: '响应速度', prop: 'responseSpeed', width: 70 },
-//         { label: '方案有效性', prop: 'schemeEffectiveness', width: 80 },
-//         { label: '服务态度', prop: 'serviceAttitude', width: 70 },
-//         { label: '产品质量', prop: 'productQuality', width: 70 },
-//         { label: '服务价格', prop: 'servicePrice', width: 70 },
+const TEXT_REG = /[\r|\r\n|\n\t\v]/g
 const AFTER_EVALUTION_STATUS = {
   0: '未统计',
   1: '非常差',
@@ -1007,7 +1018,8 @@ export default {
     AreaSelector,
     zxform,
     zxchat,
-    ElImageViewer
+    ElImageViewer,
+    PDF
   },
   props: {
     title: {
@@ -1036,6 +1048,8 @@ export default {
   },
   data () {
     return {
+      pdfURL: '',
+      pdfVisible: false,
       // 费用详情
       expenseCategoryColumns: [
         { label: '#', type: 'index' },
@@ -1479,10 +1493,18 @@ export default {
         if (/^image\/.*$/.test(fileType)) {
           this.previewImage(url) // 预览图片
         } else {
-          window.open(url)
+          if (this.isCustomerSupervisor || this.isGeneralManager) {
+            this.pdfVisible = true
+            this.pdfURL = url
+          } else {
+            window.open(url)
+          }
         }
       }
     }, 
+    closePDF () {
+      this.pdfVisible = false
+    },
     previewImage (url) { // 预览附件
       this.previewVisible = true
       this.previewImageUrl = url
@@ -1566,8 +1588,8 @@ export default {
       let result = 0
       result += data.reduce((prev, next) => {
         return next.isAdd 
-          ? prev + parseFloat(String(next.totalMoney || next.money || 0)) 
-          : prev + 0
+          ? accAdd(prev, parseFloat(String(next.totalMoney || next.money || 0)))
+          : prev
       }, 0)
       return this.isValidNumber(result) ? result : 0
     },
@@ -2084,9 +2106,16 @@ export default {
     _getCustomerInfo () {
       getOrder(this.listQuery).then(res => {
         let { data, count } = res
-        this.customerInfoList = data
+        let result = data.map(item => {
+          item.themeList = 
+          JSON.parse(item.fromTheme.replace(TEXT_REG, ''))
+            .map(item => item.description)
+        })
+        console.log(result, 'result')
+        this.customerInfoList = result
         this.customerTotal = count
-      }).catch(() => {
+      }).catch((err) => {
+        console.error(err, 'err')
         this.$message.error('获取用户信息失败')
       })
     },

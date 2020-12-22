@@ -40,16 +40,6 @@
                   <img :src="rightImg" @click="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
                   <span>{{ scope.row[item.prop] }}</span>
                 </div>
-                <template v-else-if="item.type === 'operation'">
-                  <el-button 
-                    v-for="btnItem in item.actions"
-                    :key="btnItem.btnText"
-                    @click="btnItem.btnClick(scope.row)" 
-                    type="text" 
-                    :icon="item.icon || ''"
-                    :size="item.size || 'mini'"
-                  >{{ btnItem.btnText }}</el-button>
-                </template>
                 <template v-else-if="item.label === '服务报告'">
                   <div class="link-container">
                     <img :src="rightImg" @click="item.handleClick(scope.row, 'table')" class="pointer">
@@ -57,12 +47,13 @@
                   </div>
                 </template>
                 <template v-else-if="item.label === '呼叫主题'">
-                  <el-tooltip placement="top-start">
+                  <span v-infotooltip.top-start.ellipsis="scope.row.themeList">{{ scope.row[item.prop] }}</span>
+                  <!-- <el-tooltip placement="top-start">
                     <div slot="content">
                       <p v-for="(content, index) in scope.row.themeList" :key="index">{{ content }}</p>
                     </div>
                     <span style="white-space: nowrap;">{{ scope.row[item.prop] }}</span>
-                  </el-tooltip>
+                  </el-tooltip> -->
                 </template>
                 <template v-else>
                   {{ scope.row[item.prop] }}     

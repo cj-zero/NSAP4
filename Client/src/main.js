@@ -35,8 +35,10 @@ Vue.filter('m2DHM', m2DHM)
 // 全局指令
 import elDragDialog from '@/directive/el-dragDialog'
 import debounce from '@/directive/utils/debounce'
+import infoTooltip from '@/directive/info-tooltip'
 Vue.directive('elDragDialog', elDragDialog)
 Vue.directive('debounce', debounce)
+Vue.use(infoTooltip)
 // 全局组件
 import MyDialog from '@/components/Dialog'
 import SvgIcon from '@/components/SvgIcon'
