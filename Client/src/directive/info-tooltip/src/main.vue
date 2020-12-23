@@ -17,8 +17,6 @@
       <!-- {{tooltipContent}} -->
       <p class="content" v-for="content in tooltipContent" :key="content">{{ content }}</p>
     </div>
-
-    <!-- ref需要，因为后面需要获取这个元素，id没什么用可以不要 -->
   </transition>
 </template>
 
@@ -97,14 +95,8 @@ export default {
 <style lang="scss">
 .infotooltip-row-tip {
   position: fixed;
-  // width: auto;
-  // height: auto;
-  padding: 5px 10px;
-  // display: flex;
-  // align-items: center;
-  // justify-content: center;
-  padding: 10px;
   z-index: 6000 !important;
+  padding: 10px;
   font-size: 12px;
   line-height: 1.2;
   min-width: 10px;
@@ -125,12 +117,16 @@ export default {
   position: absolute;
   // transform
 }
-.infotooltip-row-tip-top-start::after {
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-top: 8px solid #303133;
-  bottom: -7px;
+.infotooltip-row-tip-top-start {
+  transform: translate3d(0, -10px, 0);
+  &::after {
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid #303133;
+    bottom: -7px;
+  }
 }
+
 .infotooltip-row-tip-top::after {
   border-left: 8px solid transparent;
   border-right: 8px solid transparent;
