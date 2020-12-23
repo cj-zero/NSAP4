@@ -1882,7 +1882,7 @@ namespace OpenAuth.App
                 }
             }
             //查询相关技术员Id
-            var userList = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == ServiceOrderId && s.CurrentUserId != FromUserId && s.CurrentUserId > 0).ToListAsync()).GroupBy(g => g.CurrentUserId)
+            var userList = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == ServiceOrderId && s.CurrentUserId != FromUserId && s.CurrentUserId > 0 && s.Status < 7).ToListAsync()).GroupBy(g => g.CurrentUserId)
                 .Select(s => new { s.Key });
             foreach (var item in userList)
             {
@@ -3235,7 +3235,7 @@ namespace OpenAuth.App
             }
             //获取设备信息
             var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
-            var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.TechnicianId)
+            var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.TechnicianId && s.FromType == 1)
                 .WhereIf(req.Type == 1, s => s.Status.Value < 7 && s.Status.Value > 1)
                 .WhereIf(req.Type == 2, s => s.Status.Value >= 7)
                 .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
@@ -3343,8 +3343,8 @@ namespace OpenAuth.App
             }
             //获取设备信息
             var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
-            //获取当前技术员的服务单集合
-            var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.TechnicianId)
+            //获取当前技术员的服务单集合 排除在线解答的单子
+            var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.TechnicianId && s.FromType == 1)
                 .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
             List<int> workIds = new List<int>();
             //获取转派的已完成的单据
