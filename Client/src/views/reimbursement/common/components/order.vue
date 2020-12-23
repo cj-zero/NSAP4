@@ -1078,8 +1078,9 @@ export default {
       reportTableColumns: [
         { label: '制造商序列号', prop: 'manufacturerSerialNumber', width: 120 },
         { label: '物料编码', prop: 'materialCode', width: 120 },
-        { label: '问题类型', prop: 'troubleDescription', width: 180 },
-        { label: '解决方案', prop: 'processDescription', width: 180 }
+        // { label: '问题类型', prop: 'troubleDescription', width: 180 },
+        { label: '解决方案', prop: 'processDescription', width: 180 },
+        { label: "备注", prop: 'remark', width: 180 }
       ],
       reportDetailLoading: false,
       // 历史费用
@@ -1428,15 +1429,16 @@ export default {
         this.reportDetaiLoading = false
         console.log(res.result.data.filter(item => item.id), 'null')
         res.result.data.filter(item => item.id).forEach(item => {
-          let { troubleDescription, processDescription, serviceWorkOrders } = item
+          let { processDescription, serviceWorkOrders, remark } = item
           if (serviceWorkOrders) {
             serviceWorkOrders.forEach(workOrderItem => {
               let { manufacturerSerialNumber, materialCode } = workOrderItem
               result.push({
                 manufacturerSerialNumber,
                 materialCode,
-                troubleDescription,
-                processDescription
+                // troubleDescription,
+                processDescription,
+                remark
               })
             })
           }
