@@ -1574,9 +1574,10 @@ namespace OpenAuth.App
                     {
                         SerialNumber = 4,
                         InvoiceTime = InvoiceTime,
+                        ExpendDetails = r.Remark,
                         ExpendName = r.ExpenseCategory = CategoryList.Where(u => u.TypeId.Equals("SYS_OtherExpenses") && u.DtValue.Equals(r.ExpenseCategory)).FirstOrDefault()?.Name,
                         Money = (decimal)r.Money
-                    });
+                    }) ;
 
                 });
             }
