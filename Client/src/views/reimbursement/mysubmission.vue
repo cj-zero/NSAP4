@@ -4,7 +4,6 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
-          :listQuery="formQuery" 
           :config="searchConfig"
           @changeForm="onChangeForm" 
           @search="onSearch">
@@ -34,11 +33,11 @@
               :align="item.align || 'left'"
               :sortable="item.isSort || false"
               :type="item.originType || ''"
-              show-overflow-tooltip
+              :show-overflow-tooltip="item.label !== '呼叫主题'"
             >
               <template slot-scope="scope" >
                 <div class="link-container" v-if="item.type === 'link'">
-                  <img :src="rightImg" @click.stop="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
+                  <img :src="rightImg" @click="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
                   <span>{{ scope.row[item.prop] }}</span>
                 </div>
                 <template v-else-if="item.type === 'operation'">
@@ -143,6 +142,7 @@ import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import { tableMixin, categoryMixin, reportMixin, chatMixin } from './common/js/mixins'
 import { getOrder, withdraw, deleteOrder } from '@/api/reimburse'
+import { serializeParams } from '@/utils/process'
 export default {
   name: 'mySubmission',
   mixins: [tableMixin, categoryMixin, reportMixin, chatMixin],
@@ -167,7 +167,8 @@ export default {
         { type: 'button', btnText: '编辑', handleClick: this.getDetail, options: { type: 'edit', name: 'mySubmit' } },
         { type: 'button', btnText: '撤回', handleClick: this.recall },
         { type: 'button', btnText: '删除', handleClick: this.deleteOrder },
-        { type: 'button', btnText: '打印', handleClick: this.print }
+        { type: 'button', btnText: '打印', handleClick: this.print },
+        { type: 'button', btnText: '导出表格', handleClick: this.exportExcel, isShow: !!this.isCustomerSupervisor }
       ]
     }, // 搜索配置
     btnList () {
@@ -201,12 +202,17 @@ export default {
       categoryList: [], // 字典数组
       submitLoading: false, 
       draftLoading: false,
-      editLoading: false
+      editLoading: false,
+      isSubmit: true
     } 
   },
   methods: {
     onTabChange (name) {
       this.listQuery.remburseStatus = name
+      if (name) {
+        // 如果不是tab不是全部，就删除listQuery.status字段
+        delete this.listQuery.status
+      }
       this.listQuery.page = 1
       this._getList()
     },
@@ -353,6 +359,12 @@ export default {
         this.dialogLoading = false
         this.$message.error(err.message)
       })
+    },
+    exportExcel () {
+      let params = serializeParams(this.listQuery)
+      console.log(this.$store.state.user.token, 'token')
+      let staticUrl = `${process.env.VUE_APP_BASE_API}/serve/Reimburse/ExportLoad?${params}&X-token=${this.$store.state.user.token}`
+      window.open(staticUrl, '_blank')
     },
     reset () {
       this.$confirm('确定重置?', '提示', {

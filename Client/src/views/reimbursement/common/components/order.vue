@@ -4,17 +4,19 @@
     <el-row 
       type="flex" 
       class="head-title-wrapper" 
-      :class="{ 'general': isGeneralStatus }"
+      :class="{ 'general': title === 'approve' }"
     >
-      <p style="color: red;">报销单号: <span>{{ formData.mainId }}</span></p>
-      <p v-if="isGeneralStatus"><span>服务ID: {{ formData.serviceOrderSapId }}</span></p>
+      <p style="color: red;" v-if="formData.mainId">报销单号: <span>{{ formData.mainId }}</span></p>
+      <p class="pointer underline" @click="_openServiceOrHistory(true)" v-if="title === 'approve'">
+        <span>服务ID: {{ formData.serviceOrderSapId }}</span>
+      </p>
       <p>报销人: {{ formData.orgName }} <span>{{ formData.userName }}</span></p>
       <p v-if="!isGeneralStatus">部门: <span>{{ formData.orgName }}</span></p>
       <p v-if="!isGeneralStatus">劳务关系: <span>{{ formData.serviceRelations }}</span></p>
-      <p v-if="!isGeneralStatus">创建时间: <span v-if="formData.createTime">{{ formData.createTime.split(' ')[0] }}</span></p>
+      <p v-if="!isGeneralStatus">创建时间: <span>{{ formData.createTime && formData.createTime.split(' ')[0] }}</span></p>
     </el-row>
     <!-- 时间进度轴，仅总经理可看 timelineList -->
-    <template v-if="isGeneralStatus">
+    <template v-if="title === 'approve'">
       <div class="timeline-progress-wrapper">
         <el-row class="content-wrapper" type="flex" align="middle" justify="space-between">
           <template v-for="item in timelineList">
@@ -33,119 +35,214 @@
     
     <el-scrollbar class="scroll-bar">
 
-      <!-- 总经理并且是处于审批状态 -->
-      <template v-if="isGeneralStatus">
-        <div class="general-order-wrapper">
-          <el-form
-          :model="formData"
-          ref="form"
-          class="general-form-wrapper"
-          :class="{ 'uneditable': !this.ifFormEdit }"
-          :disabled="disabled"
-          :label-width="labelWidth"
-          size="mini"
-          :label-position="labelPosition"
-          :show-message="false"
+      <!-- 总经理审批查看 -->
+      <div class="general-order-wrapper" v-if="isGeneralStatus">
+        <el-form
+        :model="formData"
+        ref="form"
+        class="general-form-wrapper"
+        :class="{ 'uneditable': !this.ifFormEdit }"
+        :disabled="disabled"
+        :label-width="labelWidth"
+        size="mini"
+        :label-position="labelPosition"
+        :show-message="false"
+        >
+          <el-row type="flex" class="item">
+            <div>
+              <span class="first-item">客户代码</span>
+              <img :src="rightImg" @click="openHistory" class="pointer">
+              <span>{{ formData.terminalCustomerId }}</span>
+            </div>
+            <div>
+              <el-row type="flex" align="start">
+                <span >客户名称</span>
+                <p class="content">{{ formData.terminalCustomer }}</p>
+              </el-row>
+            </div>
+            <div>
+              <el-row type="flex" align="start">
+                <span>客户地址</span>
+                <p class="content-long">{{ formData.completeAddress }}</p>
+              </el-row>
+            </div>
+          </el-row>
+          <el-row type="flex" class="item">
+            <div>
+              <span class="first-item">出差事由</span>
+              <div v-if="formData.themeList && formData.themeList.length">
+                <p v-for="item in formData.themeList.slice(0, 2)" :key="item.description">{{ item.description }}</p>
+              </div>
+            </div>
+          </el-row>
+        </el-form>
+      </div>
+      <el-form
+        v-else
+        :model="formData"
+        ref="form"
+        class="my-form-wrapper"
+        :class="{ 'uneditable': !this.ifFormEdit }"
+        :disabled="disabled"
+        :label-width="labelWidth"
+        size="mini"
+        :label-position="labelPosition"
+        :show-message="false"
+      >
+        <!-- 普通控件 -->
+        <el-row 
+          type="flex" 
+          v-for="(config, index) in normalConfig"
+          :key="index">
+          <el-col 
+            :span="item.col"
+            v-for="item in config"
+            :key="item.prop"
           >
-            <el-row type="flex" class="item">
-              <div><span class="first-item">客户代码</span><span>{{ formData.terminalCustomerId }}</span></div>
-              <div>
-                <el-row type="flex" align="start">
-                  <span >客户名称</span>
-                  <p class="content">{{ formData.terminalCustomer }}</p>
-                </el-row>
-              </div>
-              <div>
-                <el-row type="flex" align="start">
-                  <span>客户地址</span>
-                  <p class="content-long">{{ formData.completeAddress }}</p>
-                </el-row>
-              </div>
-            </el-row>
-            <el-row type="flex" class="item">
-              <div>
-                <span class="first-item">出差事由</span>
-                <div v-if="formData.themeList && formData.themeList.length">
-                  <p v-for="item in formData.themeList.slice(0, 2)" :key="item.description">{{ item.description }}</p>
-                </div>
-              </div>
-            </el-row>
-          </el-form>
-        </div>
-        <el-row type="flex" class="tablist-wrapper">
-          <span 
-            v-for="(item, index) in tabList" 
-            :key="item.label" 
-            @click="changeContent(index)"
-            :class="{ active: index === currentTabIndex }">{{ item.label }}</span>
-        </el-row>
-          <!-- 费用详情 -->
-        <div v-show="currentTabIndex === 0">
-          <div class="general-table-wrapper" >
-            <el-table 
-              class="table-container" 
-              :data="formData.expenseCategoryList" 
-              max-height="400px" 
-              border
-              :header-cell-style="headerCellStyle"
-              show-overflow-tooltip
-              :cell-style="cellStyle">
-              <el-table-column label="#" width="55px">
-                <template slot-scope="scope">{{ scope.$index + 1 }}</template>
-              </el-table-column>
-              <el-table-column label="日期" prop="invoiceTime" width="110px"></el-table-column>
-              <el-table-column label="费用名称" prop="expenseName" width="100px"></el-table-column>
-              <el-table-column label="费用详情" prop="expenseDetail">
-                <template slot-scope="scope">
-                  <div class="detail-content">
-                    <p>{{ scope.row.expenseDetail }}</p>
-                    <el-tooltip 
-                      :content="scope.row.remark">
-                      <i class="remark el-icon-chat-dot-round" v-if="scope.row.remark"></i>
-                    </el-tooltip>
+            <el-form-item
+              :prop="item.prop"
+              :rules="rules[item.prop] || { required: false }">
+              <span slot="label">
+                <template v-if="item.prop === 'serviceOrderSapId' && title !== 'create'">
+                  <div class="link-container" style="display: inline-block">
+                    <span>{{ item.label }}</span>
+                    <img :src="rightImg" @click="_openServiceOrHistory(false)" class="pointer">
                   </div>
                 </template>
-              </el-table-column>
-              <el-table-column label="发票号码" width="135px">
-                <template slot-scope="scope">
-                  <el-row class="invoice-number-wrapper" type="flex" align="middle" v-if="scope.row.invoiceNumber" justify="space-between">
-                    <el-row type="flex" align="middle">
-                      <img class="pointer" :src="rightImg" alt="" @click="openFile(scope.row, true)">
-                      <span style="margin-right: 5px;">{{ scope.row.invoiceNumber }}</span>
-                    </el-row>
-                    <el-tooltip content="无发票附件" :disabled="scope.row.isValidInvoice">
-                      <i calss="invoice-icon" :class="[scope.row.isValidInvoice ? 'el-icon-upload-success el-icon-circle-check success' : 'el-icon-warning-outline warning']"></i>
-                    </el-tooltip>
-                  </el-row>
+                <template v-else>
+                  <span :class="{ 'upload-title money': item.label === '总金额'}">{{ item.label }}{{ item.label === '总金额' ? ':' : '' }}</span>
+                </template>
+              </span>
+                <!-- 呼叫主题 -->
+              <template v-if="item.label === '呼叫主题'">
+                <div class="form-theme-content" :class="{ 'uneditable': !ifFormEdit }">
+                  <el-scrollbar wrapClass="scroll-wrap-class">
+                    <div class="form-theme-list">
+                      <transition-group name="list" tag="ul">
+                        <li class="form-theme-item" v-for="themeItem in formData.themeList" :key="themeItem.id" >
+                          <el-tooltip popper-class="form-theme-toolip" effect="dark" :content="themeItem.description" placement="top">
+                            <p class="text">{{ themeItem.description }}</p>
+                          </el-tooltip>
+                        </li>
+                      </transition-group>
+                    </div>
+                  </el-scrollbar>
+                </div>
+              </template>
+              <template v-else-if="!item.type">
+                <el-input 
+                  v-model="formData[item.prop]" 
+                  :style="{ width: item.width + 'px' }"
+                  :maxlength="item.maxlength"
+                  :disabled="item.disabled"
+                  @focus="customerFocus(item.prop) || noop"
+                  :readonly="item.readonly"
+                  >
+                  <i :class="item.icon" v-if="item.icon"></i>
+                </el-input>
+              </template>
+              <template v-else-if="item.type === 'select'">
+                <el-select 
+                  clearable
+                  :style="{ width: item.width }"
+                  v-model="formData[item.prop]" 
+                  :placeholder="item.placeholder"
+                  :disabled="item.disabled">
+                  <el-option
+                    v-for="(item,index) in item.options"
+                    :key="index"
+                    :label="item.label"
+                    :value="item.value"
+                  ></el-option>
+                </el-select>
+              </template>
+              <template v-else-if="item.type === 'date'">
+                <el-date-picker
+                  :disabled="item.disabled"
+                  :style="{ width: item.width + 'px' }"
+                  :value-format="item.valueFormat || 'yyyy-MM-dd'"
+                  :type="item.dateType || 'date'"
+                  :placeholder="item.placeholder"
+                  v-model="formData[item.prop]"
+                ></el-date-picker>
+              </template>
+              <template v-else-if="item.type === 'button'">
+                <el-button 
+                  class="customer-btn-class"
+                  type="primary" 
+                  style="width: 100%;" 
+                  @click="item.handleClick(formData)"
+                  :loading="reportBtnLoading">{{ item.btnText }}</el-button>
+              </template>
+              <template v-else-if="item.type === 'money'">
+                <span class="money-text">￥{{ totalMoney | toThousands }}</span>
+              </template>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+      <template v-if="title === 'approve'">
+        <!-- 费用详情 -->
+        <div>
+           <h2 style="font-weight: bold;">费用详情</h2>
+          <div class="general-table-wrapper" >
+            <common-table
+              class="table-container"
+              :data="formData.expenseCategoryList"
+              :columns="expenseCategoryColumns"
+              max-height="400px"
+              :header-cell-style="headerCellStyle"
+              :cell-style="cellStyle"
+            >
+              <!-- 费用详情 -->
+              <template v-slot:expenseDetail="{ row }">
+                <div class="detail-content">
                   <div>
-
-                    <template v-if="scope.row.otherFileList && normalizeOtherFileList(scope.row).length">
-                      <el-row 
-                        style="margin-left: 18px;"
-                        type="flex" align="middle" 
-                        v-for="(item, index) in normalizeOtherFileList(scope.row)" 
+                    <span>{{ row.expenseDetail }}</span>
+                    <el-tooltip 
+                      :content="row.remark">
+                      <i class="remark el-icon-chat-dot-round" v-if="row.remark"></i>
+                    </el-tooltip>
+                    <template v-if="row.otherFileList && normalizeOtherFileList(row).length">
+                      <div
+                        style="display: inline-block; margin-left: 2px;"
+                        v-for="(item, index) in normalizeOtherFileList(row)" 
                         :key="item.id"
                       >
-                        <span class="pointer" @click="openFile(item)">附件{{ index + 1 }}</span>
-                      </el-row>
+                        <!-- <span class="pointer" @click="openFile(item)">附件{{ index + 1 }}</span> -->
+                        <i class="el-icon-document pointer" @click="openFile(item)">{{ index + 1 }}</i>
+                      </div>
                     </template>
                   </div>
-                </template>
-              </el-table-column>
-              <el-table-column width="120px" align="right">
-                <template v-slot:header>
-                  金额（元）
-                </template>
-                <template slot-scope="scope">{{ scope.row.money | toThousands }}</template>
-              </el-table-column>
-            </el-table>
+                </div>
+              </template>
+              <!-- 发票号码 -->
+              <template v-slot:invoiceNumber="{ row }">
+                <el-row class="invoice-number-wrapper" type="flex" align="middle" v-if="row.invoiceNumber" justify="space-between">
+                  <el-row type="flex" align="middle">
+                    <img class="pointer" :src="rightImg" alt="" @click="openFile(row, true)">
+                    <span style="margin-right: 5px;">{{ row.invoiceNumber }}</span>
+                  </el-row>
+                  <el-tooltip content="无发票附件" :disabled="row.isValidInvoice">
+                    <i calss="invoice-icon" :class="[row.isValidInvoice ? 'el-icon-upload-success el-icon-circle-check success' : 'el-icon-warning-outline warning']"></i>
+                  </el-tooltip>
+                </el-row>
+              </template>
+              <!-- 金额 -->
+              <template v-slot:money="{ row }">
+                {{ row.money | toThousands }}
+              </template>
+            </common-table>
+           
           </div>
           <el-row type="flex" justify="end" class="general-total-money">总金额：{{ totalMoney | toThousands }}</el-row>
           <!-- <el-button size="mini" @click="toggleAfterEva">售后评价</el-button> -->
         </div>
         <!-- 服务报告 -->
-        <div v-show="currentTabIndex === 1" style="width: 602px;margin-top: 5px;">
+        <div style="width: 984px;margin-top: 5px;">
+          <h2 style="font-weight: bold;">服务报告</h2>
           <common-table 
+            style="width: 601px;margin-top: 5px;"
             :data="reportTableData"
             :columns="reportTableColumns"
             max-height="300px"
@@ -153,39 +250,11 @@
           >
           </common-table>
         </div>
-        <!-- 历史费用 -->
-        <div v-show="currentTabIndex === 2" style="width: 984px;margin-top: 5px;">
+        
+        <div style="margin-top: 5px;">
+          <h2 style="font-weight: bold;">售后评价</h2>
           <common-table 
-            :data="historyCostData"
-            :columns="historyCostColumns"
-            max-height="300px"
-            :loading="historyCostLoading"
-          >
-            <!-- 总金额 -->
-            <template v-slot:totalMoney="{ row }">
-              {{ row.totalMoney | toThousands }}
-            </template>
-            <!-- 交通费用 -->
-            <template v-slot:faresMoney="{ row }">
-              {{ row.faresMoney | toThousands }}
-            </template>
-            <!-- 住宿补贴 -->
-            <template v-slot:acc="{ row }">
-              {{ row.accommodationSubsidiesMoney | toThousands }}
-            </template>
-            <!-- 出差补贴 -->
-            <template v-slot:travel="{ row }">
-              {{ row.travellingAllowancesMoney | toThousands }}
-            </template>
-            <!-- 其它费用 -->
-            <template v-slot:other="{ row }">
-              {{ row.otherChargesMoney | toThousands }}
-            </template>
-          </common-table>
-        </div>    
-        <div v-show="currentTabIndex === 3" style="margin-top: 5px;">
-          <common-table 
-            style="width: 778px;"
+            style="width: 778px;margin-top:"
             :data="afterEvaluationList"
             :columns="afterEvaluationColumns"
             max-height="300px"
@@ -195,109 +264,6 @@
         </div>
       </template>
       <template v-else>
-        <el-form
-          :model="formData"
-          ref="form"
-          class="my-form-wrapper"
-          :class="{ 'uneditable': !this.ifFormEdit }"
-          :disabled="disabled"
-          :label-width="labelWidth"
-          size="mini"
-          :label-position="labelPosition"
-          :show-message="false"
-        >
-          <!-- 普通控件 -->
-          <el-row 
-            type="flex" 
-            v-for="(config, index) in normalConfig"
-            :key="index">
-            <el-col 
-              :span="item.col"
-              v-for="item in config"
-              :key="item.prop"
-            >
-              <el-form-item
-                :prop="item.prop"
-                :rules="rules[item.prop] || { required: false }">
-                <span slot="label">
-                  <template v-if="item.prop === 'serviceOrderSapId' && title !== 'create'">
-                    <div class="link-container" style="display: inline-block">
-                      <span>{{ item.label }}</span>
-                      <img :src="rightImg" @click="_openServiceOrder" class="pointer">
-                    </div>
-                  </template>
-                  <template v-else>
-                    <span :class="{ 'upload-title money': item.label === '总金额'}">{{ item.label }}{{ item.label === '总金额' ? ':' : '' }}</span>
-                  </template>
-                </span>
-                 <!-- 呼叫主题 -->
-                <template v-if="item.label === '呼叫主题'">
-                  <div class="form-theme-content" :class="{ 'uneditable': !ifFormEdit }">
-                    <el-scrollbar wrapClass="scroll-wrap-class">
-                      <div class="form-theme-list">
-                        <transition-group name="list" tag="ul">
-                          <li class="form-theme-item" v-for="themeItem in formData.themeList" :key="themeItem.id" >
-                            <el-tooltip popper-class="form-theme-toolip" effect="dark" :content="themeItem.description" placement="top">
-                              <p class="text">{{ themeItem.description }}</p>
-                            </el-tooltip>
-                          </li>
-                        </transition-group>
-                      </div>
-                    </el-scrollbar>
-                  </div>
-                </template>
-                <template v-else-if="!item.type">
-                  <el-input 
-                    v-model="formData[item.prop]" 
-                    :style="{ width: item.width + 'px' }"
-                    :maxlength="item.maxlength"
-                    :disabled="item.disabled"
-                    @focus="customerFocus(item.prop) || noop"
-                    :readonly="item.readonly"
-                    >
-                    <i :class="item.icon" v-if="item.icon"></i>
-                  </el-input>
-                </template>
-                <template v-else-if="item.type === 'select'">
-                  <el-select 
-                    clearable
-                    :style="{ width: item.width }"
-                    v-model="formData[item.prop]" 
-                    :placeholder="item.placeholder"
-                    :disabled="item.disabled">
-                    <el-option
-                      v-for="(item,index) in item.options"
-                      :key="index"
-                      :label="item.label"
-                      :value="item.value"
-                    ></el-option>
-                  </el-select>
-                </template>
-                <template v-else-if="item.type === 'date'">
-                  <el-date-picker
-                    :disabled="item.disabled"
-                    :style="{ width: item.width + 'px' }"
-                    :value-format="item.valueFormat || 'yyyy-MM-dd'"
-                    :type="item.dateType || 'date'"
-                    :placeholder="item.placeholder"
-                    v-model="formData[item.prop]"
-                  ></el-date-picker>
-                </template>
-                <template v-else-if="item.type === 'button'">
-                  <el-button 
-                    class="customer-btn-class"
-                    type="primary" 
-                    style="width: 100%;" 
-                    @click="item.handleClick(formData)"
-                    :loading="reportBtnLoading">{{ item.btnText }}</el-button>
-                </template>
-                <template v-else-if="item.type === 'money'">
-                  <span class="money-text">￥{{ totalMoney | toThousands }}</span>
-                </template>
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </el-form>
         <!-- 附件上传 -->
         <el-row type="flex" class="upload-wrapper">
           <el-col :span="this.ifFormEdit ? 15 : 18">
@@ -819,20 +785,7 @@
       <!-- 操作记录 -->
       <template v-if="!this.ifFormEdit && this.formData.reimurseOperationHistories.length">
         <!-- 总经理操作记录 -->
-        <template v-if="isGeneralStatus">
-          <!-- <el-timeline class="my-timeline-wrapper">
-            <el-timeline-item v-for="item in formData.reimurseOperationHistories" :key="item.id">
-              <el-row type="flex">
-                <span class="action">{{ item.action }}</span>
-                <span>{{ item. createTime }}</span>
-                <span class="bold">{{ item.createUser }}</span>
-                <span :class="{ 'danger': item.approvalResult === '驳回' }">{{ item.approvalResult }}</span>
-                <span>{{ item.remark }}</span>
-              </el-row>
-            </el-timeline-item>
-          </el-timeline> -->
-        </template>
-        <template v-else>
+        <template v-if="title !== 'approve'">
           <div class="history-wrapper">
             <el-table 
               style="width: 989px;"
@@ -845,7 +798,6 @@
               <el-table-column label="操作时间" prop="createTime" width="150px" show-overflow-tooltip></el-table-column>
               <el-table-column label="审批时长" prop="intervalTime" width="150px" show-overflow-tooltip>
                 <template slot-scope="scope">
-                  <!-- 10天10小时10分钟 -->
                   {{ scope.row.intervalTime | m2DHM }}
                 </template>
               </el-table-column>
@@ -919,6 +871,7 @@
       ref="approve"
       :center="true"
       :title="remarkTitle"
+      top="200px"
       :append-to-body="true"
       :btnList="remarkBtnList"
       @closed="onApproveClose"
@@ -948,6 +901,49 @@
           <zxchat :serveId='serveId' formName="报销"></zxchat>
         </el-col>
       </el-row>
+    </my-dialog>
+    <!-- 历史费用弹窗 -->
+    <my-dialog
+      ref="historyDialog"
+      width="1025px"
+      title="历史费用"
+      top="200px"
+      :append-to-body="true"
+    >
+      <!-- 历史费用 -->
+      <div>
+        <common-table 
+          class="history-table-wrapper"
+          :data="historyCostData"
+          :columns="historyCostColumns"
+          :stripe="false"
+          max-height="300px"
+          :loading="historyCostLoading"
+          :header-cell-style="historyCell"
+          :cell-style="historyCell"
+        >
+          <!-- 总金额 -->
+          <template v-slot:totalMoney="{ row }">
+            {{ row.totalMoney | toThousands }}
+          </template>
+          <!-- 交通费用 -->
+          <template v-slot:faresMoney="{ row }">
+            {{ row.faresMoney | toThousands }}
+          </template>
+          <!-- 住宿补贴 -->
+          <template v-slot:acc="{ row }">
+            {{ row.accommodationSubsidiesMoney | toThousands }}
+          </template>
+          <!-- 出差补贴 -->
+          <template v-slot:travel="{ row }">
+            {{ row.travellingAllowancesMoney | toThousands }}
+          </template>
+          <!-- 其它费用 -->
+          <template v-slot:other="{ row }">
+            {{ row.otherChargesMoney | toThousands }}
+          </template>
+        </common-table>
+      </div>    
     </my-dialog>
     <!-- 预览图片 -->
     <el-image-viewer
@@ -1018,6 +1014,7 @@ export default {
       type: String,
       default: ''
     },
+    isProcessed: Boolean, // 是否已经处理
     customerInfo: {
       type: Object,
       default () {
@@ -1039,12 +1036,14 @@ export default {
   },
   data () {
     return {
-      currentTabIndex: 0,
-      tabList: [
-        { label: '费用详情' },
-        { label: '服务报告' },
-        { label: '历史费用' },
-        { label: '售后评价' }
+      // 费用详情
+      expenseCategoryColumns: [
+        { label: '#', type: 'index' },
+        { label: '日期', prop: 'invoiceTime' },
+        { label: '费用名称', prop: 'expenseName' },
+        { label: '费用详情', slotName: 'expenseDetail', 'show-overflow-tooltip': false },
+        { label: '发票号码', slotName: 'invoiceNumber' },
+        { label: '金额（元）', slotName: 'money', align: 'right' },
       ],
       // 售后评价
       afterEvaluationList: [],
@@ -1072,16 +1071,20 @@ export default {
       // 历史费用
       historyCostData: [],
       historyCostColumns: [
-        { label: '报销单号', prop: 'mainId', width: '80px' },
-        { label: '总天数', prop: 'days', align: 'right', width: '80px' },
-        { label: '总金额', prop: 'totalMoney', type: 'slot', slotName: 'totalMoney', align: 'right', width: '100px' },
-        { label: '交通费用', prop: 'faresMoney', type: 'slot', slotName: 'faresMoney', align: 'right', width: '100px' },
-        { label: '住宿补贴', prop: 'accommodationSubsidiesMoney', type: 'slot', slotName: 'acc', align: 'right', width: '100px' },
-        { label: '出差补贴', prop: 'travellingAllowancesMoney', type: 'slot', slotName: 'travel', align: 'right', width: '100px' },
-        { label: '其他费用', prop: 'otherChargesMoney', type: 'slot', slotName: 'other', align: 'right', width: '100px' },
+        { label: '报销单号', prop: 'mainId', width: '60px' },
+        { label: '总天数', prop: 'days', align: 'right', width: '50px' },
+        { label: '总金额', prop: 'totalMoney', slotName: 'totalMoney', align: 'right', width: '63px' },
+        { label: '交通费用', prop: 'faresMoney', slotName: 'faresMoney', align: 'right', width: '63px' },
+        { label: '交通占比', prop: 'fmProportion', width: '63px', align: 'right' },
+        { label: '住宿补贴', prop: 'accommodationSubsidiesMoney', slotName: 'acc', align: 'right', width: '63px' },
+        { label: '住宿占比', prop: 'asProportion', width: '63px', align: 'right' },
+        { label: '出差补贴', prop: 'travellingAllowancesMoney', slotName: 'travel', align: 'right', width: '63px' },
+        { label: '出差占比', prop: 'taProportion', width: '63px', align: 'right' },
+        { label: '其他费用', prop: 'otherChargesMoney', slotName: 'other', align: 'right', width: '63px' },
+        { label: '其他占比', prop: 'ocProportion', width: '63px', align: 'right' },
         { label: '出发时间', prop: 'businessTripDate', width: '126px' },
         { label: '结束时间', prop: 'endDate', width: '126px' },
-        { label: '报销人', prop: 'userName', width: '70px' }
+        { label: '报销人', prop: 'userName', width: '75px' }
       ],
       historyCostLoading: false,
       generalStyle: { // 总经理头部style
@@ -1224,14 +1227,15 @@ export default {
         }
         this.formData = Object.assign({}, this.formData, val)
         console.log(this.formData, 'detailData')
-        if (this.isGeneralStatus) { // 总经理审批和查看的时候才执行
+        // if (this.isGeneralStatus) { // 总经理审批和查看的时候才执行
+          
+        // }
+        if (this.title === 'approve') { // 审批的时候要告诉审批人 住宿金额补贴是否符合标准
+          this._checkAccMoney()
           this._getAfterEvaluation() // 获取售后评价
           this._getReportDetail() // 获取服务报告
           this._getHistoryCost() // 获取历史费用
           this.timelineList = this._normalizeTimelineList(this.formData.reimurseOperationHistories)
-        }
-        if (this.title === 'approve') { // 审批的时候要告诉审批人 住宿金额补贴是否符合标准
-          this._checkAccMoney()
         }
         if (this.title === 'create' || this.title === 'edit') { // 只有在create或者edit的时候，才可以导入费用模板
           this._getCostList() // 获取费用模板
@@ -1364,11 +1368,20 @@ export default {
     }
   },
   methods: {
-    _openServiceOrder () {
-      this.openServiceOrder(this.formData.serviceOrderId, () => this.orderLoading = true, () => this.orderLoading = false)
+    historyCell ({ columnIndex }) {
+      const grayList = [3, 4, 7, 8]
+      return grayList.includes(columnIndex) ? { backgroundColor: '#fafafa' } : {}
     },
-    changeContent (index) { // 总经理审批页面费用详情/服务博爱高/历史费用 切换
-      this.currentTabIndex = index
+    _openServiceOrHistory (isServe) { // 打开服务单详情或者打开历史费用
+      this.title === 'approve' && !isServe
+        ? this.openHistory()
+        : this.openServiceOrder(this.formData.serviceOrderId, () => this.orderLoading = true, () => this.orderLoading = false)
+    },
+    openHistory () { // 打开历史费用
+      if (this.historyCostData && !this.historyCostData.length) {
+        return this.$message.warning('暂无历史费用')
+      }
+      this.$refs.historyDialog.open()
     },
     _getAfterEvaluation () { // 获取售后评价
       if (!this.formData.serviceOrderSapId) {
@@ -1402,15 +1415,17 @@ export default {
         console.log(res.result.data.filter(item => item.id), 'null')
         res.result.data.filter(item => item.id).forEach(item => {
           let { troubleDescription, processDescription, serviceWorkOrders } = item
-          serviceWorkOrders.forEach(workOrderItem => {
-            let { manufacturerSerialNumber, materialCode } = workOrderItem
-            result.push({
-              manufacturerSerialNumber,
-              materialCode,
-              troubleDescription,
-              processDescription
+          if (serviceWorkOrders) {
+            serviceWorkOrders.forEach(workOrderItem => {
+              let { manufacturerSerialNumber, materialCode } = workOrderItem
+              result.push({
+                manufacturerSerialNumber,
+                materialCode,
+                troubleDescription,
+                processDescription
+              })
             })
-          })
+          }
         })
         this.reportTableData = result
         console.log(this.reportTableData, 'report list')
@@ -1427,6 +1442,22 @@ export default {
       }).then(res => {
         this.historyCostLoading = false
         this.historyCostData = res.data
+        // this.historyCostData = [{
+        //   mainId: '1',
+        //   days: '1',
+        //   totalMoney: 1000,
+        //   faresMoney: 1000,
+        //   fmProportion: '100.00%',
+        //   accommodationSubsidiesMoney: 1000,
+        //   asProportion: '100.00%',
+        //   travellingAllowancesMoney: 1000,
+        //   taProportion: '100.00%',
+        //   otherChargesMoney: 1000,
+        //   ocProportion: '100.00%',
+        //   businessTripDate: '2020-02-02 14:20:00',
+        //   endDate: '2020-02-02 14:20:00',
+        //   userName: '超级管理员'
+        // }]
         console.log(res, 'historyList')
       }).catch(err => {
         this.historyCostLoading = false
@@ -1474,7 +1505,6 @@ export default {
       })
     },
     _normalizeTimelineList (historyList) { // 格式化操作记录流程
-      console.log(historyList, PROGRESS_TEXT_LIST)
       // 需要展示最新的进度状态，审批到了总经理这一步，每一个步骤最新的状态必然是连续的
       let reimburseStatus = this.formData.remburseStatus // 报销单状态
       console.log(reimburseStatus)
@@ -2211,13 +2241,14 @@ export default {
       this.$refs.form.validate(isValid => {
         if (isValid) {
           if (type !== 'reject') {
-          this.$confirm(`${type === 'pay' ? '支付' : '同意'}此次报销?`, '提示', {
-              confirmButtonText: '确定',
-              cancelButtonText: '取消',
-              type: 'warning'
-            }).then(() => {
-              this.approve()
-            })
+            // this.$confirm(`${type === 'pay' ? '支付' : '同意'}此次报销?`, '提示', {
+            //   confirmButtonText: '确定',
+            //   cancelButtonText: '取消',
+            //   type: 'warning'
+            // }).then(() => {
+            //   this.approve()
+            // })
+            this.approve()
           } else {
             this.$refs.approve.open() 
           }
@@ -2518,7 +2549,7 @@ export default {
     top: -36px;
     left: 51px;
     &.general {
-      left: 500px;
+      left: 480px;
       span {
         font-weight: bold;
       }
@@ -2528,6 +2559,9 @@ export default {
       margin-right: 10px;
       font-size: 12px;
       font-weight: bold;
+      &.underline {
+        text-decoration: underline;
+      }
       span {
         font-weight: normal;
       }
@@ -2662,33 +2696,15 @@ export default {
         }
       }
     }
-    /* 总经理tabList */
-    .tablist-wrapper {
-      margin-top: 5px;
-      span {
-        height: 30px;
-        padding: 0 10px;
-        line-height: 30px;
-        text-align: center;
-        background-color: #f5f7fa;
-        border: 1px solid rgba(0, 0, 0, .3);
-        border-left: none;
-        cursor: pointer;
-        &:nth-child(1) {
-          border-left: 1px solid rgba(0, 0, 0, .3);
-        }
-        &.active {
-          background-color: #fff;
-          color: #7fbeff;
-        }
-      }
-    }
     /* 总经理审批表格 */
     .general-table-wrapper {
       // padding-right: 10px;
       // width: 828px;
       width: 993px;
       margin-top: 5px;
+      ::v-deep .cell {
+        line-height: 16px;
+      }
       .table-container {
         overflow: visible;
         .upload-number-wrapper {
@@ -2713,9 +2729,9 @@ export default {
             white-space: nowrap;
           }
           .remark {
-            position: absolute;
-            right: -14px;
-            bottom: 2px;
+            // position: absolute;
+            // right: -14px;
+            // bottom: 2px;
             color: red;
           }
         }
@@ -2748,6 +2764,7 @@ export default {
     }
     /* 总经理审批总金额 */
     .general-total-money {
+      width: 992px;
       padding-right: 5px;
       margin: 10px 0;
       font-size: 12px;
@@ -2796,6 +2813,9 @@ export default {
       text-align: right;
       white-space: nowrap;
     }
+  }
+  /* 历史费用弹窗表格 */
+  .history-table-wrapper {
   }
   /* 时间线 */
 

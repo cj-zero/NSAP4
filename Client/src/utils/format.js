@@ -48,3 +48,7 @@ export function normalizeFormConfig (config) { /* 格式化表单的配置项 */
   }
   return result
 }
+
+export function change2Percent (data, total, decimalNumber = 2) {
+  return ((data / total) * 100).toFixed(decimalNumber)
+}

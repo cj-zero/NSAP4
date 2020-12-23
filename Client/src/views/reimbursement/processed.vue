@@ -4,7 +4,6 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
-          :listQuery="formQuery" 
           :config="searchConfig"
           @changeForm="onChangeForm" 
           @search="onSearch">
@@ -38,7 +37,7 @@
             >
               <template slot-scope="scope" >
                 <div class="link-container" v-if="item.type === 'link'">
-                  <img :src="rightImg" @click.stop="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
+                  <img :src="rightImg" @click="item.handleJump({ ...scope.row, ...{ type: 'approve' }})" class="pointer">
                   <span>{{ scope.row[item.prop] }}</span>
                 </div>
                 <template v-else-if="item.type === 'operation'">
@@ -77,15 +76,17 @@
     <!-- 审核弹窗 -->
     <my-dialog
       ref="myDialog"
+      top="10px"
       :width="dialogWidth"
       @closed="closeDialog"
-      :title="textMap[title]"
+      title="查看"
       :loading="dialogLoading"
       :btnList="btnList"
     >
       <order 
         ref="order" 
         :title="title"
+        :isProcessed="true"
         :detailData="detailData"
         :categoryList="categoryList"
         :customerInfo="customerInfo">
@@ -161,11 +162,14 @@ export default {
     }, // 搜索配置
     btnList () {
       return [
+        { btnText: '驳回到发起人', handleClick: this.reject, 
+          // 总经理并且当前状态为待支付
+          isShow: this.isGeneralManager && this.reimburseStatus === 8, className: 'danger' },
         { btnText: '关闭', handleClick: this.closeDialog, className: 'close' }
       ]
     },
     dialogWidth () {
-      return this.isGeneralStatus ? '1015px' :'1206px'
+      return this.isGeneralManager ? '1015px' : '1130px'
     }
   },
   data () {
@@ -184,6 +188,9 @@ export default {
       this.listQuery.pageType = name
       this.listQuery.page = 1
       this._getList()
+    },
+    reject () { // 驳回
+      this.$refs.order.openRemarkDialog('reject')
     },
     onChangeForm (val) {
       this.currentFormQuery = val

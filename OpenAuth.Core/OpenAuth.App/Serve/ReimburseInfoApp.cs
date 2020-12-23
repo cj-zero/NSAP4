@@ -74,7 +74,8 @@ namespace OpenAuth.App
                       .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.OrgName), r => OrgUserIds.Contains(r.CreateUserId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.TerminalCustomer), r => ServiceOrderIds.Contains(r.ServiceOrderId))
-                      .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceRelations), r => r.ServiceRelations.Contains(request.ServiceRelations));
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceRelations), r => r.ServiceRelations.Contains(request.ServiceRelations))
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.Status), r => r.RemburseStatus.Equals(int.Parse(request.Status)));
 
             if (!string.IsNullOrWhiteSpace(request.RemburseStatus))
             {
@@ -1573,9 +1574,10 @@ namespace OpenAuth.App
                     {
                         SerialNumber = 4,
                         InvoiceTime = InvoiceTime,
+                        ExpendDetails = r.Remark,
                         ExpendName = r.ExpenseCategory = CategoryList.Where(u => u.TypeId.Equals("SYS_OtherExpenses") && u.DtValue.Equals(r.ExpenseCategory)).FirstOrDefault()?.Name,
                         Money = (decimal)r.Money
-                    });
+                    }) ;
 
                 });
             }
@@ -1713,6 +1715,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+
             #region 查询条件
             List<string> UserIds = new List<string>();
             List<int> ServiceOrderIds = new List<int>();
@@ -1744,7 +1747,8 @@ namespace OpenAuth.App
                       .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.OrgName), r => OrgUserIds.Contains(r.CreateUserId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.TerminalCustomer), r => ServiceOrderIds.Contains(r.ServiceOrderId))
-                      .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceRelations), r => r.ServiceRelations.Contains(request.ServiceRelations));
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceRelations), r => r.ServiceRelations.Contains(request.ServiceRelations))
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.Status), r => r.RemburseStatus.Equals(request.Status));
 
             if (!string.IsNullOrWhiteSpace(request.RemburseStatus))
             {
@@ -2022,19 +2026,18 @@ namespace OpenAuth.App
             var SalesManList = await SalesMans.ToListAsync();
             var SalesManReportList = SalesManList.GroupBy(s => s.b.SalesMan).Select(s => new AnalysisReportSublist { Name = s.Key, Count = s.Select(u => u.a.Id).Count() }).ToList();
             AnalysisReportRespList.Add(new AnalysisReportResp { Name = "SalesManReport", AnalysisReportSublists = SalesManReportList });
-            
+
+            var userIds = await UnitWork.Find<ReimburseInfo>(null).Select(s => s.CreateUserId).ToListAsync();
+
             //按部门
-            var OrgNames = from a in UnitWork.Find<ReimburseInfo>(null)
-                           join b in UnitWork.Find<Relevance>(null) on a.CreateUserId equals b.FirstId into ab
-                           from b in ab.DefaultIfEmpty()
+            var OrgNames = from  b in UnitWork.Find<Relevance>(r=>userIds.Contains(r.FirstId))
                            join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on b.SecondId equals c.Id into bc
                            from c in bc.DefaultIfEmpty()
                            where b.Key.Equals(Define.USERORG)
-                           select new { a, b,c };
+                           select new { b,c };
             var OrgNameList = await OrgNames.OrderByDescending(o=>o.c.CascadeId).ToListAsync();
-            OrgNameList = OrgNameList.GroupBy(o => o.a.Id).Select(o=>o.First()).ToList();
-
-            var OrgNameReportList = OrgNameList.GroupBy(o => new { o.c.Id, o.c.Name }).Select(o => new AnalysisReportSublist { Name = o.Key.Name, Count = o.Select(u => u.a.Id).Count() }).ToList();
+            OrgNameList = OrgNameList.GroupBy(o => o.b.FirstId).Select(o => o.First()).ToList();
+            var OrgNameReportList = OrgNameList.GroupBy(o => new { o.c.Id, o.c.Name }).Select(o => new AnalysisReportSublist { Name = o.Key.Name, Count = o.Select(u => u.b.Id).Count() }).ToList();
             AnalysisReportRespList.Add(new AnalysisReportResp { Name = "OrgNameReport", AnalysisReportSublists = OrgNameReportList });
             
             result.Data = AnalysisReportRespList;

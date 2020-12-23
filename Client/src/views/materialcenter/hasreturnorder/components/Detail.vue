@@ -49,7 +49,7 @@ export default {
     return {
       materialColumns: [
         { label: '物料编码', prop: 'materialCode' },
-        { label: '物料描述', prop: 'materialDescription' },
+        { label: '物料描述', prop: 'materDescription' },
         { label: '已退数量', prop: 'alreadyReturnQty', align: 'right' },
         { label: '需退总计', prop: 'totalReturnCount', align: 'right' },
         { label: '成本价', prop: 'costPrice', align: 'right' },

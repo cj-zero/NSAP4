@@ -415,7 +415,7 @@ export default {
     searchConfig () {
       return [
         { width: 100, placeholder: '服务ID', prop: 'QryU_SAP_ID' },
-        { width: 90, placeholder: '请选择呼叫状态', prop: 'QryState', options: this.callStatus, type: 'select' },
+        { width: 90, placeholder: '请选择呼叫状态', prop: 'QryState', options: [{ value: '', label: '全部' }, ...this.statusOptions], type: 'select' },
         { width: 170, placeholder: '客户', prop: 'QryCustomer' },
         { width: 150, placeholder: '序列号', prop: 'QryManufSN' },
         { width: 90, placeholder: '接单员', prop: 'QryRecepUser' },
@@ -433,7 +433,8 @@ export default {
         { width: 140, placeholder: '联系电话', prop: 'ContactTel' },
         { width: 150, placeholder: '创建开始日期', prop: 'QryCreateTimeFrom', type: 'date', showText: true },
         { width: 150, placeholder: '创建结束日期', prop: 'QryCreateTimeTo', type: 'date' },
-        { width: 150, placeholder: '完工日期', prop: 'CompleteDate', type: 'date' }
+        { width: 150, placeholder: '完工开始日期', prop: 'CompleteDate', type: 'date' },
+        { width: 150, placeholder: '完工结束日期', prop: 'EndCompleteDate', type: 'date' }
       ]
     }
   },
@@ -508,33 +509,27 @@ export default {
         { name: "visitTime", label: "上门时间" ,align:'left' },
         { name: "warrantyEndDate", label: "结束时间",align:'left'  },
       ],
-      // stateValue: ["待确认", "已确认", "已取消"],
-      serviceStatusOptions: [
-        { key: 1, display_name: "待确认" },
-        { key: 2, display_name: "已确认" },
-        { key: 3, display_name: "已取消" }
-      ],
       statusOptions: [
         { value: 1, label: "待处理" },
         { value: 2, label: "已排配" },
         { value: 3, label: "已预约" },
-        { value: 4, label: "已外出" },
-        { value: 5, label: "已挂起" },
-        { value: 6, label: "已接收" },
-        { value: 7, label: "已解决" },
+        { value: 4, label: "在上门" },
+        { value: 5, label: "在维修" },
+        { value: 6, label: "已寄回" },
+        { value: 7, label: "已完成" },
         { value: 8, label: "已回访" }
       ],
-      callStatus: [
-        { value: '', label: '全部' },
-        { value: 1, label: "待处理" },
-        { value: 2, label: "已排配" },
-        { value: 3, label: "已预约" },
-        { value: 4, label: "已外出" },
-        { value: 5, label: "已挂起" },
-        { value: 6, label: "已接收" },
-        { value: 7, label: "已解决" },
-        { value: 8, label: "已回访" }
-      ],
+      // callStatus: [
+      //   { value: '', label: '全部' },
+      //   { value: 1, label: "待处理" },
+      //   { value: 2, label: "已排配" },
+      //   { value: 3, label: "已预约" },
+      //   { value: 4, label: "已外出" },
+      //   { value: 5, label: "已挂起" },
+      //   { value: 6, label: "已接收" },
+      //   { value: 7, label: "已解决" },
+      //   { value: 8, label: "已回访" }
+      // ],
       options_type: [
         { value: '', label: '全部' },
         { value: 1, label: "提交呼叫" },

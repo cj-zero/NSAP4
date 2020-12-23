@@ -126,13 +126,13 @@ export default {
             { value: '', label: '全部' },
             { value: 2, label: "已排配" },
             { value: 3, label: "已预约" },
-            { value: 4, label: "已外出" },
-            { value: 5, label: "已挂起" },
-            { value: 6, label: "已接收" }
+            { value: 4, label: "在上门" },
+            { value: 5, label: "在维修" },
+            { value: 6, label: "已寄回" }
           ]
         : [
             { value: '', label: '全部' },
-            { value: 7, label: "已解决" },
+            { value: 7, label: "已完成" },
             { value: 8, label: "已回访" }
           ]
     }

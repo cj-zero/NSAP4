@@ -152,7 +152,7 @@ namespace OpenAuth.WebApi.Controllers
             if (string.IsNullOrWhiteSpace(contentType))
                 contentType = "application/octet-stream";
             var fileStream = await _app.GetFileStreamAsync(file.BucketName, file.FilePath);
-            return File(fileStream, contentType, file.FileName);
+            return File(fileStream, contentType);//, file.FileName
         }
     }
 }

@@ -3,7 +3,6 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
-          :listQuery="formQuery" 
           :config="searchConfig"
           @changeForm="onChangeForm" 
           @search="onSearch">
@@ -37,7 +36,7 @@
               >
                 <template slot-scope="scope" >
                   <div class="link-container" v-if="item.type === 'link'">
-                    <img :src="rightImg" @click.stop="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
+                    <img :src="rightImg" @click="item.handleJump({ ...scope.row, ...{ type: 'approve' }})" class="pointer">
                     <span>{{ scope.row[item.prop] }}</span>
                   </div>
                   <template v-else-if="item.type === 'operation'">
@@ -76,6 +75,7 @@
       <!-- 审核弹窗 -->
       <my-dialog
         ref="myDialog"
+        top="10px"
         :width="dialogWidth"
         :btnList="btnList"
         @closed="closeDialog"
@@ -154,7 +154,7 @@ export default {
       return [
         ...this.commonSearch,
         { type: 'search' },
-        { type: 'button', btnText: '审批', isSpecial: true, handleClick: this.getDetail, options: { type: 'approve' } }
+        // { type: 'button', btnText: '审批', isSpecial: true, handleClick: this.getDetail, options: { type: 'approve' } }
       ]
     }, // 搜索配置
     btnList () {
@@ -165,7 +165,7 @@ export default {
       ]
     },
     dialogWidth () {
-      return this.isGeneralStatus ? '1015px' :'1206px'
+      return this.isGeneralManager ? '1015px' : '1130px'
     }
   },
   data () {
