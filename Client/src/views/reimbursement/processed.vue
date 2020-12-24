@@ -54,7 +54,7 @@
       top="10px"
       :width="dialogWidth"
       @closed="closeDialog"
-      title="查看"
+      title="进程"
       :loading="dialogLoading"
       :btnList="btnList"
     >

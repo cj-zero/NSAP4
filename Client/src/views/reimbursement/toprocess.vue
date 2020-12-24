@@ -54,7 +54,7 @@
         :width="dialogWidth"
         :btnList="btnList"
         @closed="closeDialog"
-        :title="textMap[title]"
+        title="进程"
         :loading="dialogLoading"
       >
         <order 
