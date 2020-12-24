@@ -9,59 +9,36 @@
         </Search>
       </div>
     </sticky>
-    <div class="app-container">
-      <div class="bg-white">
-        <div class="content-wrapper">
-          <el-table 
-            ref="table"
-            :data="tableData" 
-            v-loading="tableLoading" 
-            size="mini"
-            border
-            fit
-            height="100%"
-            style="width: 100%;"
-            @row-click="onRowClick"
-            highlight-current-row
-            >
-            <el-table-column
-              v-for="item in columns"
-              :key="item.prop"
-              :width="item.width"
-              :label="item.label"
-              :align="item.align || 'left'"
-              :sortable="item.isSort || false"
-              :type="item.originType || ''"
-              show-overflow-tooltip
-            >
-              <template slot-scope="scope" >
-                <div class="link-container" v-if="item.type === 'link'">
-                  <img :src="rightImg" @click.stop="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
-                  <span>{{ scope.$index + 1 }}</span>
-                </div>
-                <template v-else-if="item.label === '发票附件'">
-                  <div class="link-container">
-                    <img :src="rightImg" @click="item.handleJump(scope.row.reimburseAttachments)" class="pointer">
-                    <span>查看</span>
-                  </div>
-                </template>
-                <template v-else>
-                  {{ scope.row[item.prop] }}
-                </template>
-              </template>    
-            </el-table-column>
-          </el-table>
-          <!-- <common-table :data="tableData" :columns="columns" :loading="tableLoading"></common-table> -->
-          <pagination
-            v-show="total>0"
-            :total="total"
-            :page.sync="listQuery.page"
-            :limit.sync="listQuery.limit"
-            @pagination="handleCurrentChange"
-          />
-        </div>
-      </div>
-    </div>
+    <Layer>
+      <common-table
+        ref="table"
+        :data="tableData"
+        :loading="tableLoading"
+        :columns="columns"
+        height="100%"
+        @row-click="onRowClick"
+      >
+        <template v-slot:order="{ row }" >
+          <div class="link-container">
+            <img :src="rightImg" @click.stop="getDetail({ ...row, type: 'view' })" class="pointer">
+            <span>{{ row.index + 1 }}</span>
+          </div>
+        </template>
+        <template v-slot:attachment="{ row }">
+          <div class="link-container">
+            <img :src="rightImg" @click="jumpToDetail(row.reimburseAttachments)" class="pointer">
+            <span>查看</span>
+          </div>
+        </template>
+      </common-table>
+      <pagination
+        v-show="total>0"
+        :total="total"
+        :page.sync="listQuery.page"
+        :limit.sync="listQuery.limit"
+        @pagination="handleCurrentChange"
+      />
+    </Layer>
     <!-- 模板弹窗 -->
     <my-dialog
       ref="myDialog"
@@ -90,9 +67,6 @@
 
 <script>
 import Search from '@/components/Search'
-import Sticky from '@/components/Sticky'
-import Pagination from '@/components/Pagination'
-import MyDialog from '@/components/Dialog'
 import CostTemplate from './common/components/CostTemplate'
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import rightImg from '@/assets/table/right.png'
@@ -109,10 +83,6 @@ export default {
   mixins: [categoryMixin],
   components: {
     Search,
-    Sticky,
-    // CommonTable,
-    Pagination,
-    MyDialog,
     CostTemplate,
     ElImageViewer
   },
@@ -155,11 +125,11 @@ export default {
         { type: 'button', handleClick: this.delete, btnText: '删除' },
       ],
       columns: [ // 表格配置
-        { label: '序号', type: 'link', handleJump: this.getDetail },
+        { label: '序号', slotName: 'order' },
         { label: '费用类型', prop: 'feeType' },
         { label: '总金额', prop: 'moneyText' },
         { label: '发票号码', prop: 'invoiceNumber' },
-        { label: '发票附件', prop: 'invoiceAttachment', handleJump: this.jumpToDetail },
+        { label: '发票附件', prop: 'invoiceAttachment', slotName: 'attachment' },
         { label: '日期', prop: 'createTime', width: 90 },
         { label: '备注', prop: 'remark' }
       ],

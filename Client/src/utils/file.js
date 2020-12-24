@@ -9,7 +9,6 @@ export function download (src) {
     let link = document.createElement('a')
     canvas.width = img.width;
     canvas.height = img.height;
-    // const context = canvas.getContext("2d");
     context.drawImage(img, 0, 0, img.width, img.height);
     link.href = canvas.toDataURL('image/png')
     link.download = ''

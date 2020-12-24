@@ -11,26 +11,22 @@
         </Search>
       </div>
     </sticky>
-    <div class="app-container">
-      <div class="bg-white">
-        <div class="content-wrapper">
-          <common-table 
-            height="100%"
-            ref="quotationTable" 
-            :data="tableData" 
-            :columns="quotationColumns" 
-            :loading="tableLoading">
-          </common-table>
-          <pagination
-            v-show="total>0"
-            :total="total"
-            :page.sync="listQuery.page"
-            :limit.sync="listQuery.limit"
-            @pagination="handleCurrentChange"
-          />
-        </div>
-      </div>
-    </div>    
+    <Layer>
+      <common-table 
+        height="100%"
+        ref="quotationTable" 
+        :data="tableData" 
+        :columns="quotationColumns" 
+        :loading="tableLoading">
+      </common-table>
+      <pagination
+        v-show="total>0"
+        :total="total"
+        :page.sync="listQuery.page"
+        :limit.sync="listQuery.limit"
+        @pagination="handleCurrentChange"
+      />
+    </Layer> 
     <my-dialog 
       ref="quotationDialog"
       width="1100px"
@@ -74,10 +70,6 @@
 <script>
 import TabList from '@/components/TabList'
 import Search from '@/components/Search'
-import Sticky from '@/components/Sticky'
-import Pagination from '@/components/Pagination'
-import MyDialog from '@/components/Dialog'
-import CommonTable from '@/components/CommonTable'
 import QuotationOrder from '../common/components/QuotationOrder'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
@@ -89,10 +81,6 @@ export default {
   components: {
     TabList,
     Search,
-    Sticky,
-    CommonTable,
-    Pagination,
-    MyDialog,
     QuotationOrder,
     zxform,
     zxchat

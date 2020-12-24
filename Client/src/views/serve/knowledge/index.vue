@@ -11,7 +11,7 @@
           ></Search>
       </div>
     </sticky>
-    <el-card shadow="never" class="card-body-none fh" style="height:100%;overflow-y:auto;">
+    <el-card v-loading="listLoading" shadow="never" class="card-body-none fh" style="height:100%;overflow-y:auto;">
       <el-tree
         ref="tree"
         :default-expanded-keys="expandedKeys"
@@ -88,14 +88,11 @@
 import { getList, add, update, getDetail, deleteAll } from "@/api/serve/knowledge";
 import waves from "@/directive/waves"; // 水波纹指令
 import Search from '@/components/Search'
-// import Pagination from '@/components/Pagination'
-import Sticky from "@/components/Sticky";
 import permissionBtn from "@/components/PermissionBtn";
 import elDragDialog from "@/directive/el-dragDialog";
-import MyDialog from '@/components/Dialog'
 export default {
   name: "knowledge",
-  components: { Sticky, permissionBtn, MyDialog, Search },
+  components: { permissionBtn, Search },
   directives: {
     waves,
     elDragDialog

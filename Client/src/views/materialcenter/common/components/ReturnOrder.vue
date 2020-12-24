@@ -203,9 +203,6 @@
 <script>
 import { saveReceiveInfo, accraditate, getExpressInfo } from '@/api/material/returnMaterial'
 import { configMixin, chatMixin } from '../js/mixins'
-import CommonTable from '@/components/CommonTable' // 对于不可编辑的表格
-// import MyDialog from '@/components/Dialog'
-// import UpLoadFile from '@/components/upLoadFile'
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
@@ -214,9 +211,6 @@ import { processDownloadUrl } from '@/utils/file'
 export default {
   mixins: [configMixin, chatMixin],
   components: {
-    CommonTable,
-    // MyDialog,
-    // UpLoadFile,
     ElImageViewer,
     zxchat,
     zxform

@@ -91,7 +91,7 @@
         </el-form-item>
       
       <el-form-item size="small" :label="'排序号'">
-          <el-input-number v-model="temp.sortNo" :min="0" :max="10" ></el-input-number>
+          <el-input-number v-model="temp.sortNo" :min="0"></el-input-number>
       </el-form-item>
     
         <el-form-item size="small" :label="'描述'" prop="description">

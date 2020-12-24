@@ -9,26 +9,22 @@
         </Search>
       </div>
     </sticky>
-      <div class="app-container">
-        <div class="bg-white">
-          <div class="content-wrapper">
-            <common-table
-              ref="table"
-              height="100%"
-              :data="tableData"
-              :columns="toPayColumns"
-              :loading="tableLoading"
-            ></common-table>
-            <pagination
-              v-show="total>0"
-              :total="total"
-              :page.sync="listQuery.page"
-              :limit.sync="listQuery.limit"
-              @pagination="handleCurrentChange"
-            />
-          </div>
-        </div>
-      </div>
+    <Layer>
+      <common-table
+        ref="table"
+        height="100%"
+        :data="tableData"
+        :columns="toPayColumns"
+        :loading="tableLoading"
+      ></common-table>
+      <pagination
+        v-show="total>0"
+        :total="total"
+        :page.sync="listQuery.page"
+        :limit.sync="listQuery.limit"
+        @pagination="handleCurrentChange"
+      />
+    </Layer>
       <!-- 审核弹窗 -->
       <my-dialog
         ref="myDialog"
@@ -81,11 +77,7 @@
 
 <script>
 import Search from '@/components/Search'
-import Sticky from '@/components/Sticky'
-import Pagination from '@/components/Pagination'
-import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
-import CommonTable from '@/components/CommonTable'
 // import Report from './common/components/report'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
@@ -97,10 +89,6 @@ export default {
   mixins: [tableMixin, categoryMixin, reportMixin, chatMixin],
   components: {
     Search,
-    Sticky,
-    CommonTable,
-    Pagination,
-    MyDialog,
     Order,
     // Report,
     zxform,

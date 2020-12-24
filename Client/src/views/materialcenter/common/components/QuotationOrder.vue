@@ -413,9 +413,6 @@ import {
   // getQuotationMaterialCode,
   approveQuotationOrder
 } from '@/api/material/quotation'
-import CommonTable from '@/components/CommonTable' // 对于不可编辑的表格
-import MyDialog from '@/components/Dialog'
-import Pagination from '@/components/Pagination'
 import Remark from '@/views/reimbursement/common/components/remark'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
@@ -430,9 +427,6 @@ export default {
   inject: ['parentVm'],
   mixins: [configMixin, quotationOrderMixin, categoryMixin, chatMixin],
   components: {
-    CommonTable,
-    MyDialog,
-    Pagination,
     Remark,
     zxform,
     zxchat

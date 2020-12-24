@@ -169,6 +169,18 @@ export let tableMixin = {
       }
       let { priority } = val
       return PRIORITY_COLOR_MAP[priority]
+    },
+    processServiceOrders (serviceWorkOrders) { // 返回第一项展示的值
+      if (serviceWorkOrders && serviceWorkOrders.length === 1) {
+        return serviceWorkOrders[0]
+      }
+      let processing = serviceWorkOrders.some(item => item.status <= 6) // 判断有没有正在处理的服务单
+      
+      let result = []
+      result = processing 
+        ? serviceWorkOrders.filter(item => item.status <= 6).sort((a, b) => b.status - a.status) // 优先级越大优先展示
+        : serviceWorkOrders.filter(item => item.status >= 7).sort((a, b) => a.status - b.status) // 已访问 优先于 已回访
+      return result[0]
     }
   }
 }

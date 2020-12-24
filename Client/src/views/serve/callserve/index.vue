@@ -433,7 +433,8 @@ export default {
         { width: 140, placeholder: '联系电话', prop: 'ContactTel' },
         { width: 150, placeholder: '创建开始日期', prop: 'QryCreateTimeFrom', type: 'date', showText: true },
         { width: 150, placeholder: '创建结束日期', prop: 'QryCreateTimeTo', type: 'date' },
-        { width: 150, placeholder: '完工日期', prop: 'CompleteDate', type: 'date' }
+        { width: 150, placeholder: '完工开始日期', prop: 'CompleteDate', type: 'date' },
+        { width: 150, placeholder: '完工结束日期', prop: 'EndCompleteDate', type: 'date' }
       ]
     }
   },
@@ -847,9 +848,9 @@ export default {
             currentUser,
             materialCode,
             manufacturerSerialNumber,
-            status,
-            themeList
-          } = serviceWorkOrders[0]
+            themeList,
+            status
+          } = this.processServiceOrders(serviceWorkOrders)
           item.fromTheme = fromTheme
           item.themeList = themeList
           item.priority = priority
@@ -863,6 +864,21 @@ export default {
         return item
       })
       this.list = resultArr
+    },
+    processStatusText (serviceWorkOrders) {
+      if (serviceWorkOrders && serviceWorkOrders.length === 1) {
+        return serviceWorkOrders[0].status
+      }
+      let result = []
+      serviceWorkOrders.forEach(serviceOrder => {
+        result.push(serviceOrder.status)
+      })
+      let processing = result.some(item => item <= 6) // 有正在处理的服务单
+      if (processing) {
+        return Math.max.apply(null, result.filter(item => item <= 6)) // 优先级越大优先展示
+      } else {
+        return Math.min.apply(null, result.filter(item => item >= 7)) // 已访问 优先于 已回访
+      }
     },
     getList() {
       this.listLoading = true;

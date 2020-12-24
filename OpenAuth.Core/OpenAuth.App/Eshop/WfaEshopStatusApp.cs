@@ -17,6 +17,13 @@ namespace OpenAuth.App
     {
         private RevelanceManagerApp _revelanceApp;
 
+        public enum CurStatus
+        {
+            Submit=0,
+            PendingShip=1,
+            Shipping=2,
+            Complete=3
+        }
 
         public WfaEshopStatusApp(IUnitWork unitWork,
             RevelanceManagerApp app, IAuth auth) : base(unitWork,auth)
@@ -41,7 +48,7 @@ namespace OpenAuth.App
                                 join b in UnitWork.Find<OCPR>(null) on new { a.CardCode, a.CntctPrsn } equals new { b.CardCode, CntctPrsn = b.Name } into ab
                                 from b in ab.DefaultIfEmpty()
                                 select new { a, b };
-                string cardcode = await objclient.Where(o => o.b.Cellolar.Equals(request.QryMobile)).Select(s => s.a.CardCode).FirstOrDefaultAsync();
+                string cardcode = await objclient.Where(o => o.b.Cellolar.Equals(request.QryMobile) || o.b.Tel1.Equals(request.QryMobile) || o.b.Tel2.Equals(request.QryMobile)).Select(s => s.a.CardCode).FirstOrDefaultAsync();
 
                 var qrystatus = UnitWork.Find<wfa_eshop_status>(o => o.card_code.Equals(cardcode)).Include(s => s.wfa_eshop_oqutdetails)
                     .WhereIf(! string.IsNullOrEmpty(request.QryStatus.ToString()), q=>q.cur_status.Equals(request.QryStatus))
@@ -101,15 +108,19 @@ namespace OpenAuth.App
         {
             var obj =await UnitWork.Find<wfa_eshop_status>(o => o.document_id.Equals(documentId)).Include(s => s.wfa_eshop_oqutdetails)
                 .Include(d=>d.wfa_eshop_canceledstatuss).FirstOrDefaultAsync();
-
-            var logsql = from a in UnitWork.Find<buy_opor>(null)
-                                      join b in UnitWork.Find<sale_transport>(null) on new { a.sbo_id, a.DocEntry } equals new { sbo_id=b.SboId, DocEntry=b.Buy_DocEntry }
-                                      join c in UnitWork.Find<sale_dln1>(null) on new {b.SboId,b.Base_DocEntry} equals new { SboId=c.sbo_id, Base_DocEntry=c.DocEntry }
-                                      where b.Base_DocType == 24 && c.BaseType==17 && c.BaseEntry.Equals( obj.order_entry)
-                                      select new { a, b,c };
-            var logobj = await logsql.Select(o => new { CoName = o.a.CardName, ExpNum = o.a.LicTradNum, CreateDate = o.a.CreateDate }).Distinct().ToListAsync();
             var result = obj.MapTo<WfaEshopStatusResp>();
-            result.wfa_eshop_Logs = logobj.MapToList< LogInfo>();
+
+            //已发货,已结束状态赋上物流信息
+            if (obj.cur_status== (int)CurStatus.Shipping || obj.cur_status== (int)CurStatus.Complete)
+            {
+                var logsql = from a in UnitWork.Find<buy_opor>(null)
+                             join b in UnitWork.Find<sale_transport>(null) on new { a.sbo_id, a.DocEntry } equals new { sbo_id = b.SboId, DocEntry = b.Buy_DocEntry }
+                             join c in UnitWork.Find<sale_dln1>(null) on new { b.SboId, b.Base_DocEntry } equals new { SboId = c.sbo_id, Base_DocEntry = c.DocEntry }
+                             where b.Base_DocType == 24 && c.BaseType == 17 && a.CANCELED=="N" && c.BaseEntry.Equals(obj.order_entry)
+                             select new { a, b, c };
+                var logobj = await logsql.Select(o => new { CoName = o.a.CardName, ExpNum = o.a.LicTradNum, CreateDate = o.a.CreateDate }).Distinct().ToListAsync();
+                result.wfa_eshop_Logs = logobj.MapToList<LogInfo>();
+            }
             return result;
         }
     }
