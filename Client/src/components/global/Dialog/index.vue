@@ -9,19 +9,22 @@
     @click.native.stop
   >
     <slot></slot>
-    <div slot="footer" class="dialog-footer" style="text-align: center;" v-if="isShowBtn && btnList.length">
-      <template v-for="btnItem in btnList">
-        <el-button
-          class="btn-item customer-btn-class"
-          :class="btnItem.className"
-          v-if="btnItem.isShow === undefined ? true : btnItem.isShow"
-          :key="btnItem.btnText"
-          :type="btnItem.type || 'primary'"
-          @click="btnItem.handleClick(btnItem.options || {})"
-          :size="btnItem.size || 'mini'"
-          :loading="btnItem.loading === undefined ? false: btnItem.loading"
-        >{{ btnItem.btnText }}</el-button>
-      </template>
+    <div slot="footer" class="dialog-footer" style="text-align: center;">
+      <slot name="footer">
+        <template v-if="isShowBtn && newBtnList.length">
+          <el-button
+            v-for="btnItem in newBtnList"
+            class="btn-item customer-btn-class"
+            :class="btnItem.className"
+            :key="btnItem.btnText"
+            :type="btnItem.type || 'primary'"
+            @click="btnItem.handleClick(btnItem.options || {})"
+            :size="btnItem.size || 'mini'"
+            :loading="btnItem.loading === undefined ? false: btnItem.loading"
+          >{{ btnItem.btnText }}</el-button>
+        </template>
+      </slot>
+      
     </div>
   </el-dialog>  
 </template>
@@ -53,6 +56,9 @@ export default {
   computed: {
     attrs () {
       return Object.assign({}, defaultConfig, this.$attrs)
+    },
+    newBtnList () {
+      return this.btnList.filter(item => !!(item.isShow === undefined ? true : item.isShow))
     }
   },
   data () {
