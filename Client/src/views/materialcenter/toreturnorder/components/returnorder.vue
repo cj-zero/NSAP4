@@ -176,22 +176,13 @@
 <script>
 import { saveReceiveInfo } from '@/api/material/returnMaterial'
 import { configMixin } from '../../common/js/mixins'
-import CommonTable from '@/components/CommonTable' // 对于不可编辑的表格
-import MyDialog from '@/components/Dialog'
-import Pagination from '@/components/Pagination'
-// import UpLoadFile from '@/components/upLoadFile'
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import rightImg from '@/assets/table/right.png'
 import { processDownloadUrl } from '@/utils/file'
 export default {
   mixins: [configMixin],
   components: {
-    CommonTable,
-    MyDialog,
-    Pagination,
-    // UpLoadFile,
     ElImageViewer
-    // AreaSelector
   },
   props: {
     detailInfo: {

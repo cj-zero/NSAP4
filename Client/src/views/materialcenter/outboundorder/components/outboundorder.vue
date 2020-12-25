@@ -193,8 +193,6 @@
 <script>
 import { getExpressInfo, updateOutboundOrder } from '@/api/material/quotation'
 import { configMixin, chatMixin, categoryMixin } from '../../common/js/mixins'
-import CommonTable from '@/components/CommonTable' // 对于不可编辑的表格
-import MyDialog from '@/components/Dialog'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 // import Pagination from '@/components/Pagination'
@@ -204,8 +202,6 @@ import { isImage, processDownloadUrl } from '@/utils/file'
 export default {
   mixins: [configMixin, chatMixin, categoryMixin],
   components: {
-    CommonTable,
-    MyDialog,
     // Pagination,
     UpLoadFile,
     zxform,

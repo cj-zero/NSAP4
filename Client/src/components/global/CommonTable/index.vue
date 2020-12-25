@@ -14,7 +14,7 @@
         :key="column.prop"
         type="selection" 
         v-if="column.type === 'selection'"
-        reserve-selection
+        v-bind="mergeColumnConfig(column)"
         :selectable="checkSelectable"
       >
       </el-table-column>
@@ -63,17 +63,10 @@
           </template>
           <!-- slot 可以再外部使用具名插槽 展示不同列的值 -->
           <template v-else-if="column.slotName">
-            <slot :name="column.slotName || 'default'" :row="{ ...scope.row, prop: column.prop, ...(column.options || {})}"></slot>
+            <!-- <slot :name="column.slotName || 'default'" :row="{ ...scope.row, prop: column.prop, ...(column.options || {})}"></slot> -->
+            <slot :name="column.slotName || 'default'" :row="Object.assign(scope.row, { prop: column.prop }, (column.options || {}))"></slot>
           </template>
-          <!-- 冒泡提示语分行显示 -->
-          <template v-else-if="column.isMultipleLines">
-            <el-tooltip placement="top-start">
-              <div slot="content">
-                <p v-for="(content, index) in _formatArray(scope.row[column.prop], column.contentField)" :key="index">{{ content }}</p>
-              </div>
-              <span style="white-space: nowrap;">{{ _formatText(scope.row[column.prop], column.contentField) }}</span>
-            </el-tooltip>
-          </template>
+         
           <!-- 文本显示 -->
           <template v-else>
             {{ scope.row[column.prop] }}
@@ -85,12 +78,12 @@
 </template>
 
 <script>
-const TEXT_REG = /[\r|\r\n|\n\t\v]/g
 import { defaultTableConfig, defaultColumnConfig } from './default'
 import rightImg from '@/assets/table/right.png'
 import { noop } from '@/utils/declaration'
 import { isFunction } from '@/utils/validate'
 export default {
+  name: 'CommonTable',
   props: {
     data: {
       type: Array,
@@ -144,14 +137,6 @@ export default {
     isFunction,
     _noop () {
       noop()
-    },
-    _formatArray (data, contentField) {
-      let result = Array.isArray(data) ? data : JSON.parse(data.replace(TEXT_REG, ''))
-      return result.map(item => item[contentField])
-    },
-    _formatText (data, contentField) {
-      let result = Array.isArray(data) ? data : JSON.parse(data.replace(TEXT_REG, ''))  
-      return result.map(item => item[contentField]).join(' ')
     },
     onRowClick (row) {
       if (this.radioKey) { // 点击行单选

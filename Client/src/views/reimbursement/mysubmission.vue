@@ -10,77 +10,33 @@
         </Search>
       </div>
     </sticky>
-    <div class="app-container">
-      <div class="bg-white">
-        <div class="content-wrapper">
-          <el-table 
-            ref="table"
-            :data="tableData"
-            v-loading="tableLoading" 
-            size="mini"
-            border
-            fit
-            height="100%"
-            style="width: 100%;"
-            @row-click="onRowClick"
-            highlight-current-row
-            >
-            <el-table-column
-              v-for="item in submissionColumns"
-              :key="item.prop"
-              :width="item.width"
-              :label="item.label"
-              :align="item.align || 'left'"
-              :sortable="item.isSort || false"
-              :type="item.originType || ''"
-              :show-overflow-tooltip="item.label !== '呼叫主题'"
-            >
-              <template slot-scope="scope" >
-                <div class="link-container" v-if="item.type === 'link'">
-                  <img :src="rightImg" @click="item.handleJump({ ...scope.row, ...{ type: 'view' }})" class="pointer">
-                  <span>{{ scope.row[item.prop] }}</span>
-                </div>
-                <template v-else-if="item.type === 'operation'">
-                  <el-button 
-                    v-for="btnItem in item.actions"
-                    :key="btnItem.btnText"
-                    @click="btnItem.btnClick(scope.row)" 
-                    type="text" 
-                    :icon="item.icon || ''"
-                    :size="item.size || 'mini'"
-                  >{{ btnItem.btnText }}</el-button>
-                </template>
-                <template v-else-if="item.label === '服务报告'">
-                  <div class="link-container">
-                    <img :src="rightImg" @click="item.handleClick(scope.row, 'table')" class="pointer">
-                    <span>查看</span>
-                  </div>
-                </template>
-                <template v-else-if="item.label === '呼叫主题'">
-                  <el-tooltip placement="top-start">
-                    <div slot="content">
-                      <p v-for="(content, index) in scope.row.themeList" :key="index">{{ content }}</p>
-                    </div>
-                    <span style="white-space: nowrap;">{{ scope.row[item.prop] }}</span>
-                  </el-tooltip>
-                </template>
-                <template v-else>
-                  {{ scope.row[item.prop] }}     
-                </template>
-              </template>    
-            </el-table-column>
-          </el-table>
-          <!-- <common-table :data="tableData" :columns="columns" :loading="tableLoading"></common-table> -->
-          <pagination
-            v-show="total>0"
-            :total="total"
-            :page.sync="listQuery.page"
-            :limit.sync="listQuery.limit"
-            @pagination="handleCurrentChange"
-          />
-        </div>
-      </div>
-    </div>    
+    <Layer>
+      <common-table
+        ref="table"
+        height="100%"
+        :data="tableData"
+        :columns="submissionColumns"
+        :loading="tableLoading"
+        @row-click="onRowClick"
+      >
+        <template v-slot:report="{ row }">
+          <div class="link-container">
+            <img :src="rightImg" @click="openReport(row, 'table')" class="pointer">
+            <span>查看</span>
+          </div>
+        </template>
+        <template v-slot:fromTheme="{ row }">
+          <span v-infotooltip.top-start.ellipsis="row.themeList">{{ row[row.prop] }}</span>
+        </template>
+      </common-table>
+      <pagination
+        v-show="total>0"
+        :total="total"
+        :page.sync="listQuery.page"
+        :limit.sync="listQuery.limit"
+        @pagination="handleCurrentChange"
+      />
+    </Layer>
     <my-dialog
       ref="myDialog"
       :width="this.title === 'view' ? '1206px' : '1336px'"
@@ -133,13 +89,11 @@
 // 报销状态 1: '撤回' 2: '驳回' 3: '未提交' 4: '客服主管审批' 5: '财务初审' 6: '财务复审' 7: '总经理审批' 8: '待支付' 9: '已支付' -1: '已结束'
 import TabList from '@/components/TabList'
 import Search from '@/components/Search'
-import Sticky from '@/components/Sticky'
-import Pagination from '@/components/Pagination'
-import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
 import Report from './common/components/report'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
+
 import { tableMixin, categoryMixin, reportMixin, chatMixin } from './common/js/mixins'
 import { getOrder, withdraw, deleteOrder } from '@/api/reimburse'
 import { serializeParams } from '@/utils/process'
@@ -149,10 +103,6 @@ export default {
   components: {
     TabList,
     Search,
-    Sticky,
-    // CommonTable,
-    Pagination,
-    MyDialog,
     Order,
     Report,
     zxform,
@@ -197,6 +147,25 @@ export default {
         { label: '已支付', value: '2' },
         { label: '已撤回', value: '3' },
         { label: '草稿箱', value: '4' }
+      ],
+      submissionColumns: [ // 表格配置(我的提交)
+        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleClick: this.getDetail, options: { type: 'view' } },
+        { label: '报销状态', prop: 'remburseStatusText', width: 100 },
+        { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleClick: this._openServiceOrder },
+        { label: '呼叫主题', prop: 'fromTheme', width: 250, 'show-overflow-tooltip': false, slotName: 'fromTheme' },
+        { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
+        { label: '客户名称', prop: 'terminalCustomer', width: 170 },
+        { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
+        { label: '总天数', prop: 'days', width: 60, align: 'right' },
+        { label: '出发日期', prop: 'businessTripDate', width: 85 },
+        { label: '结束日期', prop: 'endDate', width: 85 },
+        { label: '报销部门', prop: 'orgName', width: 70 },
+        { label: '报销人', prop: 'userName', width: 70 },
+        // { label: '劳务关系', prop: 'serviceRelations', width: 100 },
+        { label: '业务员', prop: 'salesMan', width: 80 },
+        { label: '服务报告', width: 70, slotName: 'report'  },
+        { label: '填报日期', prop: 'fillTime', width: 85 },
+        { label: '备注', prop: 'remark' }
       ],
       customerInfo: {}, // 当前报销人的id， 名字
       categoryList: [], // 字典数组

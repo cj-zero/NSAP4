@@ -297,14 +297,23 @@
         </span>
       </el-dialog>
       <!-- 电话回访评价 -->
-      <el-dialog
+      <my-dialog
+        ref="commentDialog"
+        width="1015px"
+        title="回访"
+        :append-to-body="isRateAToBody"
+        :btnList="commentBtnList"
+        @closed="onRateClose"
+      > 
+        <Rate :data="commentList" @changeComment="onChangeComment" :isView="isView" ref="rateRoot" />
+      </my-dialog>
+      <!-- <el-dialog
         :visible.sync="dialogRateVisible"
         :close-on-click-modal="false"
         width="1015px"
         center
         v-el-drag-dialog
         :modal="false"
-        :modal-append-to-body="false"
         :append-to-body="isRateAToBody"
       >
         <Rate :data="commentList" @changeComment="onChangeComment" :isView="isView" ref="rateRoot" />
@@ -312,7 +321,7 @@
           <el-button size="mini" type="primary" :loading="loadingBtn" @click="onCommentSubmit">确认</el-button>
           <el-button size="mini" @click="onRateClose">取消</el-button>
         </div>
-      </el-dialog>
+      </el-dialog> -->
       <!-- 完工报告  -->
       <el-dialog
         v-el-drag-dialog
@@ -330,46 +339,17 @@
           :data="reportData"
         ></Report>
       </el-dialog>
-      <el-dialog
-        v-el-drag-dialog
+      <!-- 分析报表 -->
+      <my-dialog
+        ref="analysisDialog"
         width="983px"
-        class="dialog-mini"
-        :close-on-click-modal="false"
         title="分析报表"
-        :modal="false"
-        :modal-append-to-body="false"
-        :visible.sync="dialogAnalysisVisible"
       >
-        <Analysis
+         <Analysis
           ref="report"
           :data="analysisData"
         ></Analysis>
-      </el-dialog>
-      <!-- <el-dialog
-        v-el-drag-dialog
-        width="983px"
-        class="dialog-mini"
-        :close-on-click-modal="false"
-        title="分析报表"
-        :modal-append-to-body="false"
-        :visible.sync="dialog123"
-      >
-        12312313
-        <el-button @click="dialog1234 = true">点击点击</el-button>
-        <el-dialog
-          v-el-drag-dialog
-          width="300px"
-          class="dialog-mini"
-          :append-to-body="true" 
-          :close-on-click-modal="false"
-          title="分析"
-          :modal-append-to-body="false"
-          :visible.sync="dialog1234" 
-          >
-          1234123456
-        </el-dialog>
-      </el-dialog>
-      <el-button @click="dialog123 = true">按钮</el-button> -->
+      </my-dialog>
     </div>
   </div>
 </template>
@@ -411,6 +391,12 @@ export default {
     ]),
     isCallCenter () { // 是否是呼叫中心
       return this.$store.state.user.userInfoAll.roles.some(item => item === '呼叫中心')
+    },
+    commentBtnList () {
+      return [
+        { btnText: '确认', handleClick: this.onCommentSubmit, loading: this.loadingBtn },
+        { btnText: '取消', handleClick: this.onRateClose, className: 'close' }
+      ]
     },
     searchConfig () {
       return [
@@ -614,7 +600,6 @@ export default {
       newCommentList: {}, // 用于存放修改后的评分列表
       isView: false, // 评分标识(是否是查看)
       advancedVisible: false, // 高级搜索是否展示
-      dialogAnalysisVisible: false,
       analysisData: []
     };
   },
@@ -848,9 +833,9 @@ export default {
             currentUser,
             materialCode,
             manufacturerSerialNumber,
-            status,
-            themeList
-          } = serviceWorkOrders[0]
+            themeList,
+            status
+          } = this.processServiceOrders(serviceWorkOrders)
           item.fromTheme = fromTheme
           item.themeList = themeList
           item.priority = priority
@@ -864,6 +849,21 @@ export default {
         return item
       })
       this.list = resultArr
+    },
+    processStatusText (serviceWorkOrders) {
+      if (serviceWorkOrders && serviceWorkOrders.length === 1) {
+        return serviceWorkOrders[0].status
+      }
+      let result = []
+      serviceWorkOrders.forEach(serviceOrder => {
+        result.push(serviceOrder.status)
+      })
+      let processing = result.some(item => item <= 6) // 有正在处理的服务单
+      if (processing) {
+        return Math.max.apply(null, result.filter(item => item <= 6)) // 优先级越大优先展示
+      } else {
+        return Math.min.apply(null, result.filter(item => item >= 7)) // 已访问 优先于 已回访
+      }
     },
     getList() {
       this.listLoading = true;
@@ -1047,7 +1047,7 @@ export default {
           return this.$message.error('暂无数据')
         }
         this.analysisData = res.data
-        this.dialogAnalysisVisible = true
+        this.$refs.analysisDialog.open()
       }).catch(() => {
         this.$message.error('暂无数据')
       })
@@ -1068,7 +1068,8 @@ export default {
           }
           this.isView = false
           this.commentList = this._normalizeCommentList(res, row)
-          this.dialogRateVisible = true
+          // this.dialogRateVisible = true
+          this.$refs.commentDialog.open()
           this.isRateAToBody = Boolean(isInTable) // 判断是否将dialog插入到body中
         }).catch(err => {
           this.$message.error(err.message)
@@ -1105,13 +1106,16 @@ export default {
     },
     onRateClose () {
       this.dialogRateVisible = false
+      this.loadingBtn = false
+      this.$refs.commentDialog.close()
       if (!this.isView) { // 关闭弹窗时，清空数据
         this.$refs.rateRoot.resetInfo()
       }
     },
     onCommentSubmit () { // 提交评价
       if (this.isView) { // 如果是查看操作，则直接关闭弹窗
-        return this.dialogRateVisible = false
+        // return this.dialogRateVisible = false
+        return this.$refs.commentDialog.close()
       }
       let { productQuality, servicePrice, technicianEvaluates } = this.commentList
       let isValid = true
@@ -1131,7 +1135,8 @@ export default {
           this.$message.success('评价成功')
           this.$refs.rateRoot.resetInfo()
           this.loadingBtn = false
-          this.dialogRateVisible = false
+          // this.dialogRateVisible = false
+          this.$refs.commentDialog.close()
           this.dialogFormView = false
           this.getList()
         }).catch(() => {

@@ -76,7 +76,6 @@
 <script>
 import { mapGetters, mapActions } from 'vuex'
 import Hamburger from '@/components/Hamburger'
-import MyDialog from '@/components/Dialog'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import logo from '@/assets/logo_new.png?imageView2/1/w/80/h/80'
@@ -123,7 +122,6 @@ export default {
   components: {
     Hamburger,
     MessageList,
-    MyDialog,
     zxform,
     zxchat
   },

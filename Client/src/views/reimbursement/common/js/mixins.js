@@ -25,44 +25,10 @@ export let tableMixin = {
         toPay: '支付',
         paid: '已支付'
       },
-      submissionColumns: [ // 表格配置(我的提交)
-        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleJump: this.getDetail },
-        { label: '报销状态', prop: 'remburseStatusText', width: 100 },
-        { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleJump: this._openServiceOrder },
-        { label: '呼叫主题', prop: 'fromTheme', width: 250 },
-        { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
-        { label: '客户名称', prop: 'terminalCustomer', width: 170 },
-        { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
-        { label: '总天数', prop: 'days', width: 60, align: 'right' },
-        { label: '出发日期', prop: 'businessTripDate', width: 85 },
-        { label: '结束日期', prop: 'endDate', width: 85 },
-        { label: '报销部门', prop: 'orgName', width: 70 },
-        { label: '报销人', prop: 'userName', width: 70 },
-        // { label: '劳务关系', prop: 'serviceRelations', width: 100 },
-        { label: '业务员', prop: 'salesMan', width: 80 },
-        { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
-        { label: '填报日期', prop: 'fillTime', width: 85 },
-        { label: '备注', prop: 'remark' }
-      ],
-      processedColumns: [ // 不同的表格配置(我的提交除外的其它模块表格)
-        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleJump: this.getDetail },
-        // { label: '服务ID', prop: 'serviceOrderSapId', width: 80 },
-        { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
-        { label: '客户名称', prop: 'terminalCustomer', width: 170 },
-        { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
-        { label: '总天数', prop: 'days', width: 60, align: 'right' },
-        { label: '出发日期', prop: 'businessTripDate', width: 85 },
-        { label: '结束日期', prop: 'endDate', width: 85 },
-        { label: '报销部门', prop: 'orgName', width: 70 },
-        { label: '报销人', prop: 'userName', width: 70 },
-        // { label: '劳务关系', prop: 'serviceRelations', width: 100 },
-        { label: '业务员', prop: 'salesMan', width: 80 },
-        // { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
-        { label: '填报日期', prop: 'fillTime', width: 85 }
-      ],
       toPayColumns: [
-        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleJump: this.getDetail },
-        { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleJump: this._openServiceOrder },
+        { type: 'selection', 'reserve-selection': false },
+        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleClick: this.getDetail, options: { type: 'view' } },
+        { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleClick: this._openServiceOrder, options: { type: 'view' } },
         { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
         { label: '客户名称', prop: 'terminalCustomer', width: 170 },
         { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
@@ -73,7 +39,6 @@ export let tableMixin = {
         { label: '报销人', prop: 'userName', width: 70 },
         { label: '劳务关系', prop: 'serviceRelations', width: 100 },
         { label: '业务员', prop: 'salesMan', width: 80 },
-        // { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
         { label: '填报日期', prop: 'fillTime', width: 85 }
       ],
       tableData: [],
@@ -95,6 +60,23 @@ export let tableMixin = {
       originUserId: this.$store.state.user.userInfoAll.userId, // 当前用户的ID
       reimburseStatus: 0, // 报销状态
     }
+  },
+  computed: {
+    processedColumns () {
+      return [ // 不同的表格配置(我的提交除外的其它模块表格)
+        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleClick: this.getDetail, options: { type: this.isPaid ? 'view' : 'approve' } },
+        { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
+        { label: '客户名称', prop: 'terminalCustomer', width: 170 },
+        { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
+        { label: '总天数', prop: 'days', width: 60, align: 'right' },
+        { label: '出发日期', prop: 'businessTripDate', width: 85 },
+        { label: '结束日期', prop: 'endDate', width: 85 },
+        { label: '报销部门', prop: 'orgName', width: 70 },
+        { label: '报销人', prop: 'userName', width: 70 },
+        { label: '业务员', prop: 'salesMan', width: 80 },
+        { label: '填报日期', prop: 'fillTime', width: 85 }
+      ]
+    } 
   },
   methods: {
     _openServiceOrder (row) {
