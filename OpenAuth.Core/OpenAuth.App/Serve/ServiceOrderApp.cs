@@ -3855,7 +3855,8 @@ namespace OpenAuth.App
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId, u => new ServiceWorkOrder
             {
                 Status = 7,
-                ProcessDescription = workOrderInfo.ProcessDescription + content
+                ProcessDescription = workOrderInfo.ProcessDescription + content,
+                OrderTakeType = 7
             });
             await UnitWork.SaveAsync();
             await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = workOrderInfo.ServiceOrderId, Content = content, AppUserId = request.CurrentUserId });
