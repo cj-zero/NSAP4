@@ -971,7 +971,7 @@
 </template>
 
 <script>
-import { addOrder, getOrder, updateOrder, approve, isSole, getHistoryReimburseInfo } from '@/api/reimburse'
+import { addOrder, getOrder, updateOrder, approve, isSole, getHistoryReimburseInfo, getUserDetail } from '@/api/reimburse'
 import { getList as getAfterEvaluaton } from '@/api/serve/afterevaluation'
 import { getList } from '@/api/reimburse/mycost'
 import { getReportDetail } from '@/api/serve/callservesure'
@@ -1206,7 +1206,8 @@ export default {
         this.formData.orgName = val.orgName
         this.formData.serviceRelations = val.serviceRelations
         if (this.title === 'create') { // 只有才新建的时候才需要修改服务ID
-          this._getCustomerInfo()    
+          this._getCustomerInfo()
+          this._getSubsidies() // 获取出差补贴金额    
         }
         if (this.title === 'create' || this.title === 'edit') { // 只有在create或者edit的时候，才可以导入费用模板
           this._getCostList() // 获取费用模板
@@ -1349,10 +1350,10 @@ export default {
         { btnText: '取消', handleClick: this.closeDialog }
       ]
     },
-    travelMoney () {
-      // 以R或者M开头都是65
-      return  this.isROrM ? '65' : '50'
-    },
+    // travelMoney () {
+    //   // 以R或者M开头都是65
+    //   return  this.isROrM ? '65' : '50'
+    // },
     isROrM () { // 判断报销人部门是不是R/M
       return /^[R|M]/i.test(this.userOrgName)
     },
@@ -1378,6 +1379,15 @@ export default {
     }
   },
   methods: {
+    _getSubsidies () {
+      getUserDetail().then(res => {
+        this.travelMoney = res.data.subsidies
+        console.log(this.travelMoney, '出差补贴金额')
+      }).catch(err => {
+        this.travelMoney = ''
+        this.$message.error(err.message)
+      })
+    },
     historyCell ({ columnIndex }) {
       const grayList = [3, 4, 7, 8]
       return grayList.includes(columnIndex) ? { backgroundColor: '#fafafa' } : {}
@@ -2107,6 +2117,7 @@ export default {
           item.themeList = 
           JSON.parse(item.fromTheme.replace(TEXT_REG, ''))
             .map(item => item.description)
+          return item
         })
         console.log(result, 'result')
         this.customerInfoList = result

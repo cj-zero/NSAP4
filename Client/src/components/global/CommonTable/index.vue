@@ -34,7 +34,7 @@
         v-else-if="column.type === 'expand'"
       >
         <template slot-scope="scope">
-          <slot name="expand" :row="{ ...scope.row }"></slot>
+          <slot name="expand" :row="scope.row"></slot>
         </template>
       </el-table-column>
       <el-table-column
@@ -63,8 +63,7 @@
           </template>
           <!-- slot 可以再外部使用具名插槽 展示不同列的值 -->
           <template v-else-if="column.slotName">
-            <!-- <slot :name="column.slotName || 'default'" :row="{ ...scope.row, prop: column.prop, ...(column.options || {})}"></slot> -->
-            <slot :name="column.slotName || 'default'" :row="Object.assign(scope.row, { prop: column.prop }, (column.options || {}))"></slot>
+            <slot :name="column.slotName || 'default'" :index="scope.$index" :row="Object.assign(scope.row, { prop: column.prop })" :prop="column.prop"></slot>
           </template>
          
           <!-- 文本显示 -->
