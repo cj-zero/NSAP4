@@ -432,6 +432,56 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 获取用户信息
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetUserDetails(QueryReimburseServerOrderListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            if (loginUser.Account == Define.USERAPP)
+            {
+                loginUser = await GetUserId(Convert.ToInt32(request.AppId));
+            }
+
+            var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == loginUser.Id).Select(r => r.SecondId).ToListAsync();
+            var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => new { o.Name,o.CascadeId}).FirstOrDefaultAsync();
+            var CascadeId = orgname.CascadeId.ToString();
+            String[] split = CascadeId.Split(".");
+            int subsidies = 0;
+            if (split.Length > 3)
+            {
+                var orgid = split[0] +"."+ split[1] + "." + split[2] + "." + split[3] + ".";
+                var cascadeidname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.CascadeId.Equals(orgid)).Select(o => new { o.Name, o.CascadeId }).FirstOrDefaultAsync();
+                var idname = cascadeidname?.Name.Substring(0, 1);
+                if (cascadeidname?.Name.Substring(0,1) == "R" || cascadeidname?.Name.Substring(0,1) == "M")
+                {
+                    subsidies = 65;
+                }
+                else {
+                    subsidies = 50;
+                }
+            }
+            else
+            {
+                subsidies = 50;
+            }
+            var result = new TableData();
+            result.Data = new {
+                Name=loginUser.Name,
+                ServiceRelations= loginUser?.ServiceRelations == null ? "未录入" : loginUser.ServiceRelations,
+                OrgName =orgname.Name,
+                Subsidies= subsidies,
+            };
+            return result;
+        }
+
+        /// <summary>
         /// 加载报销单详情
         /// </summary>
         /// <param name="ReimburseInfoId"></param>

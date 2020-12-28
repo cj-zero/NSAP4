@@ -91,6 +91,27 @@ namespace OpenAuth.WebApi.Controllers.Serve
             return result;
         }
         /// <summary>
+        /// 获取用户信息
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetUserDetails([FromQuery] QueryReimburseServerOrderListReq request) 
+        {
+            var result = new TableData();
+            try
+            {
+                return await _reimburseinfoapp.GetUserDetails(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+        /// <summary>
         /// 获取报销单
         /// </summary>
         /// <returns></returns>
