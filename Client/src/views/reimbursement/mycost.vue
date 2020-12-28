@@ -18,10 +18,10 @@
         height="100%"
         @row-click="onRowClick"
       >
-        <template v-slot:order="{ row }" >
+        <template v-slot:order="{ row, index }" >
           <div class="link-container">
             <img :src="rightImg" @click.stop="getDetail({ ...row, type: 'view' })" class="pointer">
-            <span>{{ row.index + 1 }}</span>
+            <span>{{ index + 1 }}</span>
           </div>
         </template>
         <template v-slot:attachment="{ row }">

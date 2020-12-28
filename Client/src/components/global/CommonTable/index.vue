@@ -45,7 +45,7 @@
         <template slot="header" slot-scope="scope">
           <!-- 自定义表头 -->
           <template v-if="column.isCustomizeHeader">
-            <slot :name="`${column.prop}_header`" :row="{ ...scope, label: column.label }"></slot>
+            <slot :name="`${column.prop}_header`" :row="scope.row" :label="column.label"></slot>
           </template>
           <template v-else>
             {{ column.label }}
@@ -63,7 +63,7 @@
           </template>
           <!-- slot 可以再外部使用具名插槽 展示不同列的值 -->
           <template v-else-if="column.slotName">
-            <slot :name="column.slotName || 'default'" :index="scope.$index" :row="Object.assign(scope.row, { prop: column.prop })" :prop="column.prop"></slot>
+            <slot :name="column.slotName || 'default'" :index="scope.$index" :row="scope.row" :prop="column.prop"></slot>
           </template>
          
           <!-- 文本显示 -->
