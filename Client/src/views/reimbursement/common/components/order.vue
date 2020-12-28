@@ -120,9 +120,9 @@
                     <div class="form-theme-list">
                       <transition-group name="list" tag="ul">
                         <li class="form-theme-item" v-for="themeItem in formData.themeList" :key="themeItem.id" >
-                          <el-tooltip popper-class="form-theme-toolip" effect="dark" :content="themeItem.description" placement="top">
-                            <p class="text">{{ themeItem.description }}</p>
-                          </el-tooltip>
+                          <!-- <el-tooltip popper-class="form-theme-toolip" effect="dark" :content="themeItem.description" placement="top"> -->
+                            <p class="text" v-infotooltip.ellipsis="themeItem.description">{{ themeItem.description }}</p>
+                          <!-- </el-tooltip> -->
                         </li>
                       </transition-group>
                     </div>
@@ -322,7 +322,12 @@
                       :prop="'reimburseTravellingAllowances.' + scope.$index + '.'+ item.prop"
                       :rules="travelRules[item.prop] || { required: false }"
                     >
-                      <el-input v-model="scope.row[item.prop]" :disabled="item.disabled" :placeholder="item.placeholder"></el-input>
+                      <el-input 
+                        v-model="scope.row[item.prop]" 
+                        :disabled="item.disabled" 
+                        :placeholder="item.placeholder" 
+                        v-infotooltip:200.top-start>
+                      </el-input>
                     </el-form-item>
                   </template>
                   <template v-else-if="item.type === 'number'">
@@ -475,6 +480,7 @@
                       ref="trafficUploadFile"
                       :options="{ prop: item.prop, index: scope.$index, type: 'traffic' }" 
                       :ifShowTip="ifFormEdit"
+                      :isInline="isGeneralManager && isCustomerSupervisor"
                       @deleteFileList="deleteFileList"
                       :onAccept="onAccept"
                       :fileList="
@@ -618,6 +624,7 @@
                       :ifShowTip="ifFormEdit"
                       @deleteFileList="deleteFileList"
                       :onAccept="onAccept"
+                      :isInline="isGeneralManager || isCustomerSupervisor"
                       :fileList="
                         formData.reimburseAccommodationSubsidies[scope.$index] 
                           ? (item.prop === 'invoiceAttachment' 
@@ -757,6 +764,7 @@
                       :ifShowTip="ifFormEdit"
                       @deleteFileList="deleteFileList"
                       :onAccept="onAccept"
+                      :isInline="isGeneralManager && isCustomerSupervisor"
                       :fileList="
                         formData.reimburseOtherCharges[scope.$index] 
                           ? (item.prop === 'invoiceAttachment' 
@@ -822,7 +830,12 @@
         :data="customerInfoList"
         :columns="customerColumns"
         radioKey="id"
-      ></common-table>
+      >
+        <template v-slot:fromTheme="{ row }">
+           <!-- 呼叫主题显示 -->
+           <p class="text" v-infotooltip.top-start.ellipsis="row.themeList">{{ row.themeList.join(' ') }}</p>
+        </template>
+      </common-table>
       <pagination
         v-show="customerTotal > 0"
         :total="customerTotal"
@@ -843,6 +856,7 @@
         <common-table 
           ref="costTable"
           max-height="400px"
+          row-key="id"
           :data="costData"
           :columns="costColumns"
           :selectedList="selectedList"
@@ -959,18 +973,17 @@
         <date-picker v-model="currentTime" :markedDateList="formData.allDateList || []"></date-picker>
       </div>
     </template>
+    <PDF :pdfURL="pdfURL" :on-close="closePDF" v-if="pdfVisible" />
   </div>
 </template>
 
 <script>
-import { addOrder, getOrder, updateOrder, approve, isSole, getHistoryReimburseInfo } from '@/api/reimburse'
+import { addOrder, getOrder, updateOrder, approve, isSole, getHistoryReimburseInfo, getUserDetail } from '@/api/reimburse'
 import { getList as getAfterEvaluaton } from '@/api/serve/afterevaluation'
 import { getList } from '@/api/reimburse/mycost'
 import { getReportDetail } from '@/api/serve/callservesure'
 import upLoadFile from "@/components/upLoadFile";
-import Pagination from '@/components/Pagination'
-import MyDialog from '@/components/Dialog'
-import CommonTable from '@/components/CommonTable'
+import PDF from './pdf'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import Report from './report'
@@ -979,7 +992,7 @@ import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import AreaSelector from '@/components/AreaSelector'
 // import Bmap from '@/components/bmap'
 import { toThousands } from '@/utils/format'
-import { findIndex } from '@/utils/process'
+import { findIndex, accAdd } from '@/utils/process'
 import { deepClone } from '@/utils'
 import { formatDate } from '@/utils/date'
 import { travelRules, trafficRules, accRules, otherRules } from '../js/customerRules'
@@ -991,6 +1004,8 @@ import rightImg from '@/assets/table/right.png'
 import DatePicker from './DatePicker.vue'
 const PROGRESS_TEXT_LIST = ['提交', '客服审批', '财务初审', '财务复审', '总经理审批', '出纳'] // 进度条文本
 const AFTER_EVALUTION_KEY = ['responseSpeed', 'schemeEffectiveness', 'serviceAttitude', 'productQuality', 'servicePrice']
+const TEXT_REG = /[\r|\r\n|\n\t\v]/g
+
 const AFTER_EVALUTION_STATUS = {
   0: '未统计',
   1: '非常差',
@@ -1004,9 +1019,6 @@ export default {
   mixins: [categoryMixin, reportMixin, attachmentMixin, chatMixin],
   components: {
     upLoadFile,
-    Pagination,
-    MyDialog,
-    CommonTable,
     Report,
     Remark,
     AreaSelector,
@@ -1015,6 +1027,7 @@ export default {
     ElImageViewer,
     DatePicker,
     // Bmap
+    PDF
   },
   props: {
     title: {
@@ -1049,6 +1062,8 @@ export default {
   },
   data () {
     return {
+      pdfURL: '',
+      pdfVisible: false,
       // 费用详情
       expenseCategoryColumns: [
         { label: '#', type: 'index' },
@@ -1077,8 +1092,9 @@ export default {
       reportTableColumns: [
         { label: '制造商序列号', prop: 'manufacturerSerialNumber', width: 120 },
         { label: '物料编码', prop: 'materialCode', width: 120 },
-        { label: '问题类型', prop: 'troubleDescription', width: 180 },
-        { label: '解决方案', prop: 'processDescription', width: 180 }
+        // { label: '问题类型', prop: 'troubleDescription', width: 180 },
+        { label: '解决方案', prop: 'processDescription', width: 180 },
+        { label: "备注", prop: 'remark', width: 180 }
       ],
       reportDetailLoading: false,
       // 历史费用
@@ -1210,7 +1226,8 @@ export default {
         this.formData.orgName = val.orgName
         this.formData.serviceRelations = val.serviceRelations
         if (this.title === 'create') { // 只有才新建的时候才需要修改服务ID
-          this._getCustomerInfo()    
+          this._getCustomerInfo()
+          this._getSubsidies() // 获取出差补贴金额    
         }
         if (this.title === 'create' || this.title === 'edit') { // 只有在create或者edit的时候，才可以导入费用模板
           this._getCostList() // 获取费用模板
@@ -1267,11 +1284,6 @@ export default {
       handler () {
         // console.log(this.formData, 'formData last')
       }
-    }
-  },
-  provide () {
-    return {
-      userId: this.formData.createUserId
     }
   },
   computed: {
@@ -1361,10 +1373,10 @@ export default {
         { btnText: '取消', handleClick: this.closeDialog }
       ]
     },
-    travelMoney () {
-      // 以R或者M开头都是65
-      return  this.isROrM ? '65' : '50'
-    },
+    // travelMoney () {
+    //   // 以R或者M开头都是65
+    //   return  this.isROrM ? '65' : '50'
+    // },
     isROrM () { // 判断报销人部门是不是R/M
       return /^[R|M]/i.test(this.userOrgName)
     },
@@ -1439,7 +1451,17 @@ export default {
       }) 
       console.log('initMap', this.formData.pointArr)
     },
-    historyCell ({ columnIndex }) { // 历史费用样式
+    _getSubsidies () {
+      getUserDetail().then(res => {
+        this.travelMoney = res.data.subsidies
+        console.log(this.travelMoney, '出差补贴金额')
+      }).catch(err => {
+        this.travelMoney = ''
+        this.$message.error(err.message)
+      })
+    },
+    historyCell ({ columnIndex }) {
+
       const grayList = [3, 4, 7, 8]
       return grayList.includes(columnIndex) ? { backgroundColor: '#fafafa' } : {}
     },
@@ -1485,16 +1507,19 @@ export default {
         this.reportDetaiLoading = false
         console.log(res.result.data.filter(item => item.id), 'null')
         res.result.data.filter(item => item.id).forEach(item => {
-          let { troubleDescription, processDescription, serviceWorkOrders } = item
-          serviceWorkOrders.forEach(workOrderItem => {
-            let { manufacturerSerialNumber, materialCode } = workOrderItem
-            result.push({
-              manufacturerSerialNumber,
-              materialCode,
-              troubleDescription,
-              processDescription
+          let { processDescription, serviceWorkOrders, remark } = item
+          if (serviceWorkOrders) {
+            serviceWorkOrders.forEach(workOrderItem => {
+              let { manufacturerSerialNumber, materialCode } = workOrderItem
+              result.push({
+                manufacturerSerialNumber,
+                materialCode,
+                // troubleDescription,
+                processDescription,
+                remark
+              })
             })
-          })
+          }
         })
         this.reportTableData = result
         console.log(this.reportTableData, 'report list')
@@ -1548,10 +1573,18 @@ export default {
         if (/^image\/.*$/.test(fileType)) {
           this.previewImage(url) // 预览图片
         } else {
-          window.open(url)
+          if (this.isCustomerSupervisor || this.isGeneralManager) {
+            this.pdfVisible = true
+            this.pdfURL = url
+          } else {
+            window.open(url)
+          }
         }
       }
     }, 
+    closePDF () {
+      this.pdfVisible = false
+    },
     previewImage (url) { // 预览附件
       this.previewVisible = true
       this.previewImageUrl = url
@@ -1635,8 +1668,8 @@ export default {
       let result = 0
       result += data.reduce((prev, next) => {
         return next.isAdd 
-          ? prev + parseFloat(String(next.totalMoney || next.money || 0)) 
-          : prev + 0
+          ? accAdd(prev, parseFloat(String(next.totalMoney || next.money || 0)))
+          : prev
       }, 0)
       return this.isValidNumber(result) ? result : 0
     },
@@ -2189,9 +2222,17 @@ export default {
     _getCustomerInfo () {
       getOrder(this.listQuery).then(res => {
         let { data, count } = res
-        this.customerInfoList = data
+        let result = data.map(item => {
+          item.themeList = 
+          JSON.parse(item.fromTheme.replace(TEXT_REG, ''))
+            .map(item => item.description)
+          return item
+        })
+        console.log(result, 'result')
+        this.customerInfoList = result
         this.customerTotal = count
-      }).catch(() => {
+      }).catch((err) => {
+        console.error(err, 'err')
         this.$message.error('获取用户信息失败')
       })
     },

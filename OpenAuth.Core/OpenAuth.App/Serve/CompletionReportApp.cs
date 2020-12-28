@@ -64,6 +64,11 @@ namespace OpenAuth.App
             return result;
         }
 
+        /// <summary>
+        /// 添加服务行为报告单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
         public async Task Add(AddOrUpdateCompletionReportReq req)
         {
             //添加之前判断是否有报告提交记录 若有则删除之前的完工报告
@@ -98,13 +103,25 @@ namespace OpenAuth.App
             }
             if (req.IsRedeploy == 1)//若转派则将当前设备类型置为初始未派单状态
             {
+                //记录转派记录
+                var redeployInfo = new ServiceRedeploy
+                {
+                    ServiceOrderId = req.ServiceOrderId,
+                    MaterialType = req.MaterialType,
+                    TechnicianId = workOrderList.Select(s => s.CurrentUserId).FirstOrDefault(),
+                    CreateTime = DateTime.Now,
+                    WorkOrderIds = string.Join(",", workorder)
+                };
+                await UnitWork.AddAsync(redeployInfo);
+                await UnitWork.SaveAsync();
                 await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id),
                  o => new ServiceWorkOrder { Status = 1, OrderTakeType = 0, CurrentUser = string.Empty, CurrentUserId = 0, CurrentUserNsapId = string.Empty, BookingDate = null, VisitTime = null, ServiceMode = 0, CompletionReportId = string.Empty, TroubleDescription = string.Empty, ProcessDescription = string.Empty, IsCheck = 0, CompleteDate = null });
+                //删除相对应的流程数据
+                await UnitWork.DeleteAsync<ServiceFlow>(c => c.ServiceOrderId == req.ServiceOrderId && c.MaterialType == req.MaterialType);
             }
             //判断为非草稿提交 则修改对应状态和发送消息
             if (req.IsDraft == 0)
             {
-
                 await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id), s => new ServiceWorkOrder { Status = 7 });
                 await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
                 {
@@ -246,6 +263,7 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="serviceOrderId">服务单Id</param>
         /// <param name="currentUserId">当前技术员Id</param>
+        /// <param name="MaterialType">当前技术员Id</param>
         /// <returns></returns>
         public async Task<CompletionReportDetailsResp> GetCompletionReportDetails(int serviceOrderId, int currentUserId, string MaterialType)
         {
@@ -255,9 +273,9 @@ namespace OpenAuth.App
                       join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into abc
                       from b in abc.DefaultIfEmpty()
                       select new { a, b, c };
-            obj = obj.Where(o => o.a.ServiceOrderId == serviceOrderId && o.a.CurrentUserId == currentUserId)
-                     .WhereIf("其他设备".Equals(MaterialType), q => q.a.MaterialCode.Equals("其他设备"))
-                     .WhereIf(!"其他设备".Equals(MaterialType), q => q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-")) == MaterialType);
+            obj = obj.Where(o => o.c.ServiceOrderId == serviceOrderId && o.c.TechnicianId == currentUserId.ToString())
+                     .WhereIf("其他设备".Equals(MaterialType), q => q.c.MaterialCode.Equals("其他设备"))
+                     .WhereIf(!"其他设备".Equals(MaterialType), q => q.c.MaterialCode.Substring(0, q.c.MaterialCode.IndexOf("-")) == MaterialType);
             var query = await obj.Select(q => new
             {
                 q.b.U_SAP_ID,

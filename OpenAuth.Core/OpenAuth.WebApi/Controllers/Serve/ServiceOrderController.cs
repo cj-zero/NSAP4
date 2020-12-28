@@ -915,6 +915,36 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 技术员查看服务单单列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetTechnicianServiceOrderNew([FromQuery] TechnicianServiceWorkOrderReq req)
+        {
+
+            var result = new TableData();
+            try
+            {
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
+                parameters.Add("TechnicianId", req.TechnicianId);
+                parameters.Add("Type", req.Type);
+                parameters.Add("limit", req.limit);
+                parameters.Add("page", req.page);
+                parameters.Add("key", req.key);
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetTechnicianServiceOrderNew");
+                result = JsonConvert.DeserializeObject<TableData>(r);
+                //result = await _serviceOrderApp.GetTechnicianServiceOrder(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 获取技术员设备类型列表
         /// </summary>
         /// <returns></returns>

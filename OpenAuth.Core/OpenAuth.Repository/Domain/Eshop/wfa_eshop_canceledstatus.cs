@@ -32,6 +32,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         public int document_id { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? Line_idx { get; set; }
         /// <summary>
         /// 
         /// </summary>

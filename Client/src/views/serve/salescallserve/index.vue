@@ -843,9 +843,9 @@ export default {
             currentUser,
             materialCode,
             manufacturerSerialNumber,
-            status,
-            themeList
-          } = serviceWorkOrders[0]
+            themeList,
+            status
+          } = this.processServiceOrders(serviceWorkOrders)
           item.fromTheme = fromTheme
           item.themeList = themeList
           item.priority = priority

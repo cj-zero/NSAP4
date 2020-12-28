@@ -23,11 +23,9 @@ export let reportMixin = {
         let { status, fromType } = workOrder
         return Number(status) >= 7 && Number(fromType) !== 2 // 所有工单状态为已解决且呼叫类型不为在线解答
       })
-      console.log(this.userId, 'userId')
       if (hasFinished) {
         getReportDetail({
-          serviceOrderId,
-          userId: this.userId
+          serviceOrderId
         }).then(res => {
           this.reportData = this._normalizeReportData(res.result.data)
           if (this.reportData.length) {
@@ -171,6 +169,18 @@ export let tableMixin = {
       }
       let { priority } = val
       return PRIORITY_COLOR_MAP[priority]
+    },
+    processServiceOrders (serviceWorkOrders) { // 返回第一项展示的值
+      if (serviceWorkOrders && serviceWorkOrders.length === 1) {
+        return serviceWorkOrders[0]
+      }
+      let processing = serviceWorkOrders.some(item => item.status <= 6) // 判断有没有正在处理的服务单
+      let result = []
+      result = processing // 优先展示正再处理的工单状态
+        ? serviceWorkOrders.filter(item => item.status <= 6).sort((a, b) => b.status - a.status) // 优先级越大优先展示,大到小排序
+        : serviceWorkOrders.filter(item => item.status >= 7).sort((a, b) => a.status - b.status) // 已完成(7) 优先于 已回访(8) 小到大排序
+      // 取出结果的第一个数据
+      return result[0]
     }
   }
 }

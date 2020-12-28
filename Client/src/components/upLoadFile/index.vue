@@ -1,36 +1,5 @@
 <template>
   <div>
-    <!-- <el-upload
-      :action="action"
-      multiple
-      name="files"
-      :file-list="fileList"
-      class="img"
-      :before-upload="beforeUpload"
-      :headers="headers"
-      list-type="picture-card"
-      accpet="image/png, image/jpeg,image/jpg,image/webp,image/gif"
-      :auto-upload="true"
-      :width="setImage"
-      :on-success="successBack"
-      :on-remove="handleRemove"
-    >
-      <i slot="default" class="el-icon-plus"></i>
-      <div slot="file" slot-scope="{file}">
-        <img class="el-upload-list__item-thumbnail" :src="file.url" alt>
-        <span class="el-upload-list__item-actions" style="overflow-x:scroll;">
-          <span class="el-upload-list__item-preview" @click="handlePictureCardPreview(file)">
-            <i class="el-icon-zoom-in"></i>
-          </span>
-           <span v-if="!disabled" class="el-upload-list__item-delete" @click="handleDownload(file)">
-            <i class="el-icon-download"></i>
-          </span>
-          <span v-if="!disabled" class="el-upload-list__item-delete" @click="handleRemove(file)">
-            <i class="el-icon-delete"></i>
-          </span> -->
-        <!-- </span>
-      </div>
-    </el-upload> -->
     <template v-if="uploadType === 'image'">
       <el-upload 
         ref="img"
@@ -99,15 +68,32 @@
       :on-close="closeViewer"
     >
     </el-image-viewer>
+    <!-- pdf展示 -->
+    <el-row 
+      v-if="pdfVisible"
+      class="pdf-outer-wrapper" 
+      type="flex" 
+      justify="center" 
+      align="middle"
+    >
+      <div class="pdf-mask"></div>
+      <i class="el-icon-circle-close close-pdf-btn" @click="closeViewer(true)"></i>
+      <div class="pdf-content-wrapper">
+        <vue-pdf :pdfURL="pdfURL"></vue-pdf>
+      </div>
+    </el-row>
   </div>
 </template>
+
 
 <script>
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import { downloadFile } from '@/utils/file'
+import VuePdf from '@/components/VuePdf'
 export default {
   components: {
-    ElImageViewer
+    ElImageViewer,
+    VuePdf
   },
   props: {
     uploadType: {
@@ -150,7 +136,8 @@ export default {
     },
     onAccept: { // 文件上传之前的校验函数
       type: Function
-    }
+    },
+    isInline: Boolean // 是否在当前页面加载pdf文件，false则直接新建浏览器窗口展示
   },
   updated () {
     console.log('updated')
@@ -167,7 +154,9 @@ export default {
       tokenValue: this.$store.state.user.token,
       pictures:[],
       newPictureList: [],
-      isShowTip: true // 是否展示tip
+      isShowTip: true, // 是否展示tip
+      pdfURL: '', // pdf路径
+      pdfVisible: false // pdf展示
     }
   },
   watch: {
@@ -193,8 +182,8 @@ export default {
     }
   },
   methods: {
-    closeViewer () {
-      this.dialogVisible = false
+    closeViewer (isPdf) {
+      isPdf ? this.pdfVisible = false : this.dialogVisible = false
     },
     handleRemove(file, fileList) {
       if (this.limit && fileList.length < this.limit) {
@@ -236,8 +225,14 @@ export default {
             this.dialogImageUrl = file.url
             this.dialogVisible = true
           } else {
-            window.open(file.url)
-            console.log(downloadFile)
+            if (fileType === 'application/pdf' && this.isInline) {
+              // 如果返回类型是pdf，并且是在当前页面弹窗展示
+              this.pdfVisible = true
+              this.pdfURL = url
+            } else {
+              window.open(file.url)
+              console.log(downloadFile)
+            }
           }
         }
       }
@@ -348,6 +343,37 @@ export default {
     right: 14px;
   }
   
+}
+/* pdf文件 */
+.pdf-outer-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20001;
+  .pdf-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, .5);
+  }
+  .close-pdf-btn {
+    position: absolute;
+    top: 40px;
+    right: 40px;
+    width: 40px;
+    height: 40px;
+    color: #fff;
+    font-size: 40px;
+    cursor: pointer;
+  }
+  .pdf-content-wrapper {
+    width: 520px;
+    height: 600px;
+  }
 }
 
 

@@ -82,11 +82,11 @@
             :columns="courierColumns"
             max-height="150px"
           >
-            <!-- 图片信息 -->
-            <template v-slot:expressInformation="{ row }">
+            <!-- 物流信息 -->
+            <template v-slot:expressInformation="{ row, index }">
               <el-row type="flex" align="middle">
-                <img style="width: 12px;height: 12px;" :src="rightImg" @click="getExpressInformation(row)" class="pointer">
-                <span>{{ courierList[row.index].expressInformation }}</span>
+                <img style="width: 12px;height: 12px;" :src="rightImg" @click="getExpressInformation(row, index)" class="pointer">
+                <span>{{ row.expressInformation }}</span>
               </el-row>
             </template>
           </common-table>
@@ -108,24 +108,24 @@
             :cell-style="cellStyle"
             :row-style="rowStyle">
             <!-- 核对设备 -->
-            <template v-slot:check="{ row }">
+            <template v-slot:check="{ index }">
               <el-button 
-                v-if="(status === 'view' && checkList[row.index].isPass !== 2) || status === 'toReturn'" 
+                v-if="(status === 'view' && checkList[index].isPass !== 2) || status === 'toReturn'" 
                 :disabled="status === 'view'"
                 type="success" 
                 size="mini" 
-                @click.stop="check(1, row.index)">通过</el-button>
+                @click.stop="check(1, index)">通过</el-button>
               <el-button 
                 :disabled="status === 'view'"
-                v-if="(status === 'view' && checkList[row.index].isPass !== 1) || status === 'toReturn'"
-                :type="checkList[row.index].isPass === 2 ? 'info' : 'danger'" 
+                v-if="(status === 'view' && checkList[index].isPass !== 1) || status === 'toReturn'"
+                :type="checkList[index].isPass === 2 ? 'info' : 'danger'" 
                 size="mini" 
-                @click.stop="check(2, row.index)">未通过</el-button>
+                @click.stop="check(2, index)">未通过</el-button>
             </template>
             <!-- 差错数量 -->
-            <template v-slot:wrongCount="{ row }">
+            <!-- <template v-slot:wrongCount="{ row, index }">
               <el-form-item 
-                :prop="'materialList.' + row.index + '.' + row.prop"
+                :prop="'materialList.' + index + '.' + 'wrongCount'"
                 :rules="{ required: checkList[row.index].isPass === 2 }">
                 <el-input-number 
                   :disabled="status === 'view'"
@@ -137,9 +137,9 @@
                 >
                 </el-input-number>
               </el-form-item>
-            </template>  
+            </template>   -->
             <!-- 收货备注 -->
-            <template v-slot:receiveRemark="{ row }">
+            <!-- <template v-slot:receiveRemark="{ row }">
               <el-form-item 
                 :prop="'materialList.' + row.index + '.' + row.prop"
                 :rules="{ required: checkList[row.index].isPass === 2 }">
@@ -151,7 +151,7 @@
                 >
                 </el-input>
               </el-form-item>
-            </template>
+            </template> -->
             <!-- 图片 -->
             <template v-slot:pictures="{ row }">
               <el-button 
@@ -202,10 +202,7 @@
 
 <script>
 import { saveReceiveInfo, accraditate, getExpressInfo } from '@/api/material/returnMaterial'
-import { configMixin, chatMixin } from '../js/mixins'
-import CommonTable from '@/components/CommonTable' // 对于不可编辑的表格
-// import MyDialog from '@/components/Dialog'
-// import UpLoadFile from '@/components/upLoadFile'
+import { configMixin, chatMixin } from '../../common/js/mixins'
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
@@ -214,9 +211,6 @@ import { processDownloadUrl } from '@/utils/file'
 export default {
   mixins: [configMixin, chatMixin],
   components: {
-    CommonTable,
-    // MyDialog,
-    // UpLoadFile,
     ElImageViewer,
     zxchat,
     zxform
@@ -392,17 +386,17 @@ export default {
       console.log(params)
       return isSave ? saveReceiveInfo(params) : accraditate(params)
     },
-    getExpressInformation (row) {
+    getExpressInformation (row, index) {
       console.log(row, 'row')
       if (!row.id) {
         return this.$message.error('无物流Id')
       }
       getExpressInfo({expressageId: row.id }).then(res => {
         let expressInformation = JSON.parse(res.data).data
-        this.courierList[row.index].expressInformation = expressInformation[expressInformation.length - 1].context
-        console.log(expressInformation, this.courierList[row.index].expressInformation, row.index)
+        this.courierList[index].expressInformation = expressInformation[expressInformation.length - 1].context
+        console.log(expressInformation, this.courierList[index].expressInformation, index)
       }).catch(err => {
-        this.courierList[row.index].expressInformation = ''
+        this.courierList[index].expressInformation = ''
         this.$message.error(err.message)
       })
     },

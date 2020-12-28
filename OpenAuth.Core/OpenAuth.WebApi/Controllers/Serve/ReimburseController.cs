@@ -330,7 +330,28 @@ namespace OpenAuth.WebApi.Controllers.Serve
         }
 
         /// <summary>
-        /// 导出Excel
+        /// 报表分析
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> AnalysisReport()
+        {
+            var result = new TableData();
+            try
+            {
+                return await _reimburseinfoapp.AnalysisReport();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 导出待支付Excel
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
@@ -342,6 +363,20 @@ namespace OpenAuth.WebApi.Controllers.Serve
 
             return File(data, "application/vnd.ms-excel");
         }
+
+        /// <summary>
+        /// 导出我的提交Excel
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> ExportLoad([FromQuery] QueryReimburseInfoListReq req)
+        {
+            var data = await _reimburseinfoapp.ExportLoad(req);
+
+            return File(data, "application/vnd.ms-excel");
+        }
+        
     }
 
 }

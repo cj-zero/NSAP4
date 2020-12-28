@@ -10,47 +10,43 @@
         </Search>
       </div>
     </sticky>
-    <div class="app-container">
-      <div class="bg-white">
-        <div class="content-wrapper">
+    <Layer>
+      <common-table 
+        height="100%"
+        ref="expressTable" 
+        :data="tableData" 
+        :columns="repairColumns" 
+        :loading="tableLoading"
+        @row-click="onRowClick">
+        <template v-slot:expand="{ row }">
           <common-table 
+            v-if="row.children && row.children.length"
+            style="width: calc(100% - 47px);margin-left: 47px;"
             height="100%"
-            ref="expressTable" 
-            :data="tableData" 
-            :columns="repairColumns" 
-            :loading="tableLoading"
+            :data="row.children" 
+            :columns="repairColumns.slice(1)" 
+            :row-style="rowStyle"
+            :stripe="false"
             @row-click="onRowClick">
-            <template v-slot:expand="{ row }">
-              <common-table 
-                v-if="row.children && row.children.length"
-                style="width: calc(100% - 47px);margin-left: 47px;"
-                height="100%"
-                :data="row.children" 
-                :columns="repairColumns.slice(1)" 
-                :row-style="rowStyle"
-                :stripe="false"
-                @row-click="onRowClick">
-                <template v-slot:attachment="{ row }">
-                  <AttachmentList :fileList="row.fileList">
-                  </AttachmentList>
-                </template>
-              </common-table>
-            </template>
             <template v-slot:attachment="{ row }">
               <AttachmentList :fileList="row.fileList">
               </AttachmentList>
             </template>
           </common-table>
-          <pagination
-            v-show="total>0"
-            :total="total"
-            :page.sync="listQuery.page"
-            :limit.sync="listQuery.limit"
-            @pagination="handleCurrentChange"
-          />
-        </div>
-      </div>
-    </div>    
+        </template>
+        <template v-slot:attachment="{ row }">
+          <AttachmentList :fileList="row.fileList">
+          </AttachmentList>
+        </template>
+      </common-table>
+      <pagination
+        v-show="total>0"
+        :total="total"
+        :page.sync="listQuery.page"
+        :limit.sync="listQuery.limit"
+        @pagination="handleCurrentChange"
+      />
+    </Layer>
     <my-dialog 
       ref="expressDialog"
       width="400px"
@@ -99,10 +95,6 @@
 <script>
 import { getReturnRepairList, withDrawExpress, getExpressInfo } from '@/api/serve/afterdelivery'
 import Search from '@/components/Search'
-import Sticky from '@/components/Sticky'
-import Pagination from '@/components/Pagination'
-import MyDialog from '@/components/Dialog'
-import CommonTable from '@/components/CommonTable'
 // import UploadFile from '@/components/upLoadFile'
 import AttachmentList from '@/components/AttachmentList'
 import TimeLine from './components/TimeLine'
@@ -118,10 +110,6 @@ export default {
   mixins: [chatMixin],
   components: {
     Search,
-    Sticky,
-    CommonTable,
-    Pagination,
-    MyDialog,
     zxform,
     zxchat,
     // UploadFile,

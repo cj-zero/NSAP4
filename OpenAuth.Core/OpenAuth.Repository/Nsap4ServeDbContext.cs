@@ -66,5 +66,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<Express> Expressages { get; set; }
         public virtual DbSet<ExpressPicture> Expressagepictures { get; set; }
         public virtual DbSet<ReturnRepair> Returnrepairs { get; set; }
+
+        public virtual DbSet<ServiceRedeploy> Serviceredeploys { get; set; }
     }
 }

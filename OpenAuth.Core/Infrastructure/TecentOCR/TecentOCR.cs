@@ -200,7 +200,7 @@ namespace Infrastructure.TecentOCR
                                 Type = (int)item.Type,
                                 Extend = extend,
                                 AmountWithOutTax = amountWithOutTax,
-                                SellerName =sellerName
+                                SellerName = sellerName
                             };
                             outData.Add(ticketInfo);
                         }
@@ -245,6 +245,10 @@ namespace Infrastructure.TecentOCR
                 if (e.ToString().Contains("InvoiceMismatch"))
                 {
                     result.Message = "发票数据不一致";
+                }
+                if (e.ToString().Contains("CountLimitError"))
+                {
+                    result.Message = "超过该张发票当日查验次数(请于次日再次查验)";
                 }
                 return result;
             }
