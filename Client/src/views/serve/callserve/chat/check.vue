@@ -163,7 +163,7 @@ export default {
             currentUserId: "", //App当前流程处理用户Id
             fromTheme: '',
             // fromTheme: fromTheme.replace(reg, '') || "", //呼叫主题
-            themeList: JSON.parse(fromTheme.replace(reg, '')).filter(item => item.description),
+            
             fromId: 1, //呼叫来源 1-电话 2-APP
             problemTypeId: problemTypeId || "", //问题类型Id
             problemTypeName: problemTypeName || "",
@@ -181,6 +181,11 @@ export default {
             solutionsubject: "", // 解决方案内容
             troubleDescription: "",
             processDescription: "",
+          }
+          try {
+            this.formData.themeList = JSON.parse(fromTheme.replace(reg, '')).filter(item => item.description)
+          } catch (err) {
+            this.formData.themeList = []
           }
           this.dialogFormVisible = true
         }

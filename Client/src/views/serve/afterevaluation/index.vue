@@ -11,99 +11,90 @@
         <!-- <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn> -->
       </div>
     </sticky>
-    <div class="app-container">
-      <div class="bg-white">
-        <div class="content-wrapper">
-          <el-table
-            ref="mainTable"
-            :data="checkList"
-            v-loading="listLoading"
-            border
-            fit
-            height="100%"
-            style="width: 100%;"
-            highlight-current-row
-            @current-change="handleSelectionChange"
-            @row-click="rowClick"
-          >
-            <!-- <el-table-column     v-for="(fruit,index) in formTheadOptions"  :key="`ind${index}`">
-                <el-radio v-model="fruit.id" ></el-radio>
-            </el-table-column>-->
-
-            <el-table-column
-              show-overflow-tooltip
-              v-for="(fruit,index) in formTheadOptions"
-              :align="fruit.align?fruit.align:'left'"
-              :key="`ind${index}`"
-              :sortable="fruit=='chaungjianriqi'?true:false"
-              style="background-color:silver;"
-              :label="fruit.label"
-              :width="fruit.width"
-            >
-              <template slot-scope="scope">
-                <div class="link-container" v-if="fruit.name === 'serviceOrderId'">
-                  <img :src="rightImg" @click="openTree(scope.row.serviceOrderId)" class="pointer">
-                  <span>{{ scope.row.u_SAP_ID }}</span>
-                </div>
-                <!-- <el-link
-                  v-if="fruit.name === 'serviceOrderId'"
-                  type="primary"
-                  @click="openTree(scope.row.serviceOrderId)"
-                >{{scope.row.serviceOrderId}}</el-link> -->
-                <span
-                  :class="colorClass[scope.row[fruit.name]]"
-                  v-if="fruit.name==='responseSpeed'||fruit.name==='schemeEffectiveness'||fruit.name==='serviceAttitude'||fruit.name==='productQuality'||fruit.name==='servicePrice'"
-                >{{backStatus(scope.row[fruit.name])}}</span>
-                <span
-                  v-if="fruit.name!=='serviceOrderId'&&fruit.name!=='responseSpeed'&&fruit.name!=='schemeEffectiveness'&&fruit.name!=='serviceAttitude'&&fruit.name!=='productQuality'&&fruit.name!=='servicePrice'"
-                >{{scope.row[fruit.name]}}</span>
-              </template>
-            </el-table-column>
-          </el-table>
-          <pagination
-            v-show="total>0"
-            :total="total"
-            :page.sync="listQuery.page"
-            :limit.sync="listQuery.limit"
-            @pagination="handleCurrentChange"
-          />
-        </div>
-        <!-- 只能查看的表单 -->
-        <el-dialog
-          v-el-drag-dialog
-          top="5vh"
-          width="1210px"
-          class="dialog-mini"
-          :modal-append-to-body="false"
-          title="服务单详情"
-          :destroy-on-close="true"
-          :close-on-click-modal="false"
-          :visible.sync="dialogFormView"
-          @open="openDetail"
-        >
-        <el-row :gutter="20" class="position-view">
-          <el-col :span="18" >
-            <zxform
-              :form="temp"
-              formName="查看"
-              labelposition="right"
-              labelwidth="72px"
-              :isCreate="false"
-              :refValue="dataForm"
-            ></zxform>
-          </el-col>
-          <el-col :span="6" class="lastWord">   
-            <zxchat :serveId='serveId' formName="查看"></zxchat>
-          </el-col>
-        </el-row>
-
-          <div slot="footer">
-            <el-button size="mini" @click="dialogFormView = false">取消</el-button>
-            <el-button size="mini" type="primary" @click="dialogFormView = false">确认</el-button>
+    <Layer>
+      <common-table
+        ref="mainTable"
+        :data="checkList"
+        :columns="formTheadOptions"
+        :loading="listLoading"
+        height="100%"
+        @current-change="handleSelectionChange"
+        @row-click="rowClick"
+      >
+        <template v-slot:serviceOrderId="{ row }">
+          <div class="link-container">
+            <img :src="rightImg" @click="openTree(row.serviceOrderId)" class="pointer">
+            <span>{{ row.u_SAP_ID }}</span>
           </div>
-        </el-dialog>
+        </template>
+        <template v-slot:responseSpeed="{ row }">
+          <span :class="colorClass[row.responseSpeed]">
+            {{ backStatus(row.responseSpeed) }}
+          </span>
+        </template>
+         <template v-slot:schemeEffectiveness="{ row }">
+           <span :class="colorClass[row.schemeEffectiveness]">
+            {{ backStatus(row.schemeEffectiveness) }}
+           </span>
+        </template>
+         <template v-slot:serviceAttitude="{ row }">
+           <span :class="colorClass[row.serviceAttitude]">
+            {{ backStatus(row.serviceAttitude) }}
+           </span>
+        </template>
+         <template v-slot:productQuality="{ row }">
+           <span :class="colorClass[row.productQuality]">
+             {{ backStatus(row.productQuality) }}
+           </span>
+        </template>
+         <template v-slot:servicePrice="{ row }">
+           <span :class="colorClass[row.servicePrice]">
+            {{ backStatus(row.servicePrice) }}
+          </span>
+        </template>
+      </common-table>
+      <pagination
+        v-show="total>0"
+        :total="total"
+        :page.sync="listQuery.page"
+        :limit.sync="listQuery.limit"
+        @pagination="handleCurrentChange"
+      />
+    </Layer>
+        <!-- 只能查看的表单 -->
+    <el-dialog
+      v-el-drag-dialog
+      top="5vh"
+      width="1210px"
+      class="dialog-mini"
+      :modal-append-to-body="false"
+      title="服务单详情"
+      :destroy-on-close="true"
+      :close-on-click-modal="false"
+      :visible.sync="dialogFormView"
+      @open="openDetail"
+    >
+    <el-row :gutter="20" class="position-view">
+      <el-col :span="18" >
+        <zxform
+          :form="temp"
+          formName="查看"
+          labelposition="right"
+          labelwidth="72px"
+          :isCreate="false"
+          :refValue="dataForm"
+        ></zxform>
+      </el-col>
+      <el-col :span="6" class="lastWord">   
+        <zxchat :serveId='serveId' formName="查看"></zxchat>
+      </el-col>
+    </el-row>
+
+      <div slot="footer">
+        <el-button size="mini" @click="dialogFormView = false">取消</el-button>
+        <el-button size="mini" type="primary" @click="dialogFormView = false">确认</el-button>
       </div>
-    </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -149,20 +140,20 @@ export default {
       ],
       formTheadOptions: [
         // { name: "id", label: "Id"},
-        { name: "serviceOrderId", label: "服务单号", width: "80px" },
-        { name: "customerId", label: "客户代码", width: "100px" },
-        { name: "cutomer", label: "客户名称", width: "100px" },
-        { name: "contact", label: "联系人", width: "100px" },
-        { name: "caontactTel", label: "联系电话" },
-        { name: "technician", label: "技术员" },
-        { name: "responseSpeed", label: "响应速度" },
-        { name: "schemeEffectiveness", label: "方案有效性", width: 90 },
-        { name: "serviceAttitude", label: "服务态度" },
-        { name: "productQuality", label: "产品质量" },
-        { name: "servicePrice", label: "服务价格" },
-        { name: "comment", label: "客户建议或意见", width: 108 },
-        { name: "visitPeople", label: "回访人" },
-        { name: "commentDate", label: "评价日期" },
+        { prop: "serviceOrderId", label: "服务单号", width: "80px", slotName: 'serviceOrderId' },
+        { prop: "customerId", label: "客户代码", width: "100px" },
+        { prop: "cutomer", label: "客户名称", width: "100px" },
+        { prop: "contact", label: "联系人", width: "100px" },
+        { prop: "caontactTel", label: "联系电话" },
+        { prop: "technician", label: "技术员" },
+        { prop: "responseSpeed", label: "响应速度", slotName: 'responseSpeed' },
+        { prop: "schemeEffectiveness", label: "方案有效性", width: 90, slotName: 'schemeEffectiveness' },
+        { prop: "serviceAttitude", label: "服务态度", slotName: 'serviceAttitude' },
+        { prop: "productQuality", label: "产品质量", slotName: 'productQuality' },
+        { prop: "servicePrice", label: "服务价格", slotName: 'servicePrice' },
+        { prop: "comment", label: "客户建议或意见", width: 108 },
+        { prop: "visitPeople", label: "回访人" },
+        { prop: "commentDate", label: "评价日期" },
       ],
       checkList: [],
       total: 0,
@@ -253,9 +244,9 @@ export default {
       Object.assign(this.listQuery, val)
       // this.listQuery.page = 1
     },
-    rowClick(row) {
-      this.$refs.mainTable.clearSelection();
-      this.$refs.mainTable.toggleRowSelection(row);
+    rowClick() {
+      // this.$refs.mainTable.clearSelection();
+      // this.$refs.mainTable.toggleRowSelection(row);
     },
     handleSelectionChange(val) {
       this.multipleSelection = val;
