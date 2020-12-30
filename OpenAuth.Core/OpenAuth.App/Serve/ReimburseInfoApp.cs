@@ -1200,6 +1200,56 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 删除报销单费用
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task DeleteCost(ReimburseRevocationReq req)
+        {
+            //1 出差补贴， 2 交通费用， 3住宿补贴， 4 其他费用
+            decimal money = 0;
+            List<ReimburseAttachment> ReimburseAttachments = new List<ReimburseAttachment>();
+            switch (req.ReimburseType)
+            {
+                case 1:
+                    var ReimburseTravellingAllowances = await UnitWork.Find<ReimburseTravellingAllowance>(r => r.Id.Equals(req.ReimburseCostId) && r.ReimburseInfoId.Equals(req.ReimburseInfoId)).FirstOrDefaultAsync();
+                    money =Convert.ToDecimal(ReimburseTravellingAllowances.Days * ReimburseTravellingAllowances.Money);
+                    ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId.Equals(ReimburseTravellingAllowances.Id) && r.ReimburseType == 1).ToListAsync();
+                    await UnitWork.DeleteAsync<ReimburseTravellingAllowance>(ReimburseTravellingAllowances);
+                    break;
+                case 2:
+                    var ReimburseFares = await UnitWork.Find<ReimburseFare>(r => r.Id.Equals(req.ReimburseCostId) && r.ReimburseInfoId.Equals(req.ReimburseInfoId)).FirstOrDefaultAsync();
+                    money = Convert.ToDecimal(ReimburseFares.Money);
+                    ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId.Equals(ReimburseFares.Id) && r.ReimburseType == 2).ToListAsync();
+                    await UnitWork.DeleteAsync<ReimburseFare>(ReimburseFares);
+                    break;
+                case 3:
+                    var ReimburseAccommodationSubsidies = await UnitWork.Find<ReimburseAccommodationSubsidy>(r => r.Id.Equals(req.ReimburseCostId) && r.ReimburseInfoId.Equals(req.ReimburseInfoId)).FirstOrDefaultAsync();
+                    money = Convert.ToDecimal(ReimburseAccommodationSubsidies.TotalMoney);
+                    ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId.Equals(ReimburseAccommodationSubsidies.Id) && r.ReimburseType == 3).ToListAsync();
+                    await UnitWork.DeleteAsync<ReimburseAccommodationSubsidy>(ReimburseAccommodationSubsidies);
+                    break;
+                case 4:
+                    var ReimburseOtherCharges = await UnitWork.Find<ReimburseOtherCharges>(r => r.Id.Equals(req.ReimburseCostId) && r.ReimburseInfoId.Equals(req.ReimburseInfoId)).FirstOrDefaultAsync();
+                    money = Convert.ToDecimal(ReimburseOtherCharges.Money);
+                    ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId.Equals(ReimburseOtherCharges.Id) && r.ReimburseType == 4).ToListAsync();
+                    await UnitWork.DeleteAsync<ReimburseOtherCharges>(ReimburseOtherCharges);
+                    break;
+                default:
+                    break;
+            }
+            await UnitWork.UpdateAsync<ReimburseInfo>(r => r.Id.Equals(req.ReimburseInfoId), r=>new ReimburseInfo
+            {
+                TotalMoney = r.TotalMoney-money
+            }) ;
+            if (ReimburseAttachments.Count > 0) 
+            {
+                await UnitWork.BatchDeleteAsync<ReimburseAttachment>(ReimburseAttachments.ToArray());
+            }
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
         /// 审批报销单 
         /// </summary>
         /// <param name="req"></param>
@@ -1279,6 +1329,7 @@ namespace OpenAuth.App
                         VerificationFinally = "1",
                         VerificationOpinion = "同意",
                     };
+                    eoh.ApprovalResult = "同意";
                     if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && obj.RemburseStatus == 4)
                     {
                         obj.RemburseStatus = 5;
@@ -1652,7 +1703,7 @@ namespace OpenAuth.App
                     {
                         SerialNumber = 2,
                         InvoiceTime = InvoiceTime,
-                        ExpendDetails = r.Days + "天",
+                        ExpendDetails =r.Money+"/天*"+r.Days + "天",
                         ExpendName = "住宿补贴",
                         Money = (decimal)r.TotalMoney
                     });
@@ -1664,7 +1715,7 @@ namespace OpenAuth.App
                 {
                     SerialNumber = 3,
                     InvoiceTime = "",
-                    ExpendDetails = Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Days + "天",
+                    ExpendDetails = Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Money+"/天*"+ Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Days + "天",
                     ExpendName = "出差补贴",
                     Money = Convert.ToDecimal(Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Days * Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Money)
                 });
