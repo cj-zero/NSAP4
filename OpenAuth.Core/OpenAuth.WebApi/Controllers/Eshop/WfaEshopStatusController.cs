@@ -32,7 +32,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpGet]
-        [AllowAnonymous]
+        //[AllowAnonymous]
         public async Task<TableData> GetOrderStatusByRegMobile([FromQuery] QryWfaEshopStatusListReq req)
         {
             var result = new TableData();
@@ -53,7 +53,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="DocumentId"></param>
         /// <returns></returns>
         [HttpGet]
-        [AllowAnonymous]
+        //[AllowAnonymous]
         public async Task<Response<WfaEshopStatusResp>> GetStatusInfoById(int DocumentId)
         {
             var result = new Response<WfaEshopStatusResp>();
