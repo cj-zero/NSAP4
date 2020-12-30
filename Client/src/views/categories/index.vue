@@ -51,7 +51,7 @@
       </el-main>
     </div>
     <el-dialog :destroy-on-close="true" class="dialog-mini custom-dialog user-dialog" width="400px" title="添加分组"
-      :visible.sync="addTypesDialog">
+      :visible.sync="addTypesDialog" :close-on-click-modal="false">
       <el-form ref="categoryTypeForm" :model="categoryTypesInfo" :rules="categoryRules" el="categorys-tayps-form" label-width="80px">
         <el-form-item prop="id" label="分类id">
           <el-input size="small" v-model="categoryTypesInfo.id"></el-input>
@@ -65,7 +65,7 @@
         <el-button size="small" type="primary" @click="handleAddCategories">确定</el-button>
       </div>
     </el-dialog>
-    <el-dialog v-el-drag-dialog   class="dialog-mini" width="500px" :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
+    <el-dialog v-el-drag-dialog   class="dialog-mini" width="500px" :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible" :close-on-click-modal="false">
       <el-form :rules="rules" ref="dataForm" :model="temp" label-position="right" label-width="100px">
         <el-form-item size="small" :label="'Id'" prop="id">
           <el-input v-model="temp.id" :disabled="true" placeholder="系统自动处理"></el-input>
@@ -91,7 +91,7 @@
         </el-form-item>
       
       <el-form-item size="small" :label="'排序号'">
-          <el-input-number v-model="temp.sortNo" :min="0" :max="10" ></el-input-number>
+          <el-input-number v-model="temp.sortNo" :min="0"></el-input-number>
       </el-form-item>
     
         <el-form-item size="small" :label="'描述'" prop="description">

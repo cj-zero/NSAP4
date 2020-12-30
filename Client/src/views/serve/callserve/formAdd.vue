@@ -795,7 +795,7 @@
     <!-- 呼叫主题弹窗 -->
     <my-dialog 
       ref="formTheme"
-      width="500px"
+      width="767px"
       title="呼叫主题"
       :btnList="themeBtnList"
       :append-to-body="true"
@@ -812,6 +812,7 @@
         <common-table 
           height="400px"
           :loading="themeLoading"
+          row-key="id"
           ref="formThemeTable" 
           :data="themeList" 
           :columns="columns" 
@@ -833,7 +834,6 @@
 <script>
 import { getSerialNumber } from "@/api/callserve";
 import { getListByType } from '@/api/serve/knowledge'
-import Pagination from "@/components/Pagination";
 import * as callservesure from "@/api/serve/callservesure";
 import fromfSN from "./fromfSN";
 import fromfSNC from "./fromfSNC";
@@ -847,10 +847,8 @@ import { reportMixin } from '../common/js/mixins'
 import elDragDialog from '@/directive/el-dragDialog'
 import { isCustomerCode } from '@/utils/validate'
 import { deepClone } from  '@/utils'
-import MyDialog from '@/components/Dialog'
-import CommonTable from '@/components/CommonTable'
 export default {
-  components: { fromfSN, problemtype, solution, Pagination, fromfSNC, Report, MyDialog, CommonTable },
+  components: { fromfSN, problemtype, solution, fromfSNC, Report },
   mixins: [reportMixin],
   provide() {
     let that = this;

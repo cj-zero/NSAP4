@@ -35,13 +35,23 @@ Vue.filter('m2DHM', m2DHM)
 // 全局指令
 import elDragDialog from '@/directive/el-dragDialog'
 import debounce from '@/directive/utils/debounce'
+import infoTooltip from '@/directive/info-tooltip'
 Vue.directive('elDragDialog', elDragDialog)
 Vue.directive('debounce', debounce)
+Vue.use(infoTooltip)
 // 全局组件
-import MyDialog from '@/components/Dialog'
-import SvgIcon from '@/components/SvgIcon'
-Vue.component('MyDialog', MyDialog)
-Vue.component(SvgIcon.name, SvgIcon)
+import GlobalComponent from '@/components/global'
+Vue.use(GlobalComponent)
+// import MyDialog from '@/components/Dialog'
+// import SvgIcon from '@/components/SvgIcon'
+// import Layer from '@/components/Layer'
+// import CommonTable from '@/components/CommonTable'
+// import Pagination from '@/components/Pagination'
+// Vue.component('Layer', Layer)
+// Vue.component('CommonTable', CommonTable)
+// Vue.component('Pagination', Pagination)
+// Vue.component('MyDialog', MyDialog)
+// Vue.component(SvgIcon.name, SvgIcon)
 // 引入PDFJS
 Vue.use(ElementUI, { locale })
 Vue.use(VueContextMenu)

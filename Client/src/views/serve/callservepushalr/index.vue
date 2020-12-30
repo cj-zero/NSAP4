@@ -58,60 +58,37 @@
         <el-col :span="21" class="fh">
           <div class="bg-white">
             <div class="content-wrapper">
-              <el-table
+              <common-table
                 ref="mainTable"
                 :key="key"
                 :data="list"
-                v-loading="listLoading"
-                border
-                fit
+                :columns="formTheadOptions"
+                :loading="listLoading"
                 height="100%"
                 tooltip-effect="dark"
-                style="width: 100%;"
-                highlight-current-row
                 @row-click="rowClick"
               >
-                <el-table-column
-                  :show-overflow-tooltip="fruit.name !== 'fromTheme'"
-                  v-for="(fruit,index) in formTheadOptions"
-                  :align="fruit.align?fruit.align:'left'"
-                  :header-align="fruit.align?fruit.align:'left'"
-                  :key="`ind${index}`"
-                  :sortable="fruit=='chaungjianriqi'?true:false"
-                  style="background-color:silver;"
-                  :label="fruit.label"
-                  :fixed="fruit.ifFixed"
-                  :width="fruit.width"
-                >
-                  <template slot-scope="scope">
-                    <div v-if="fruit.name === 'workOrderNumber'" class="link-container" >
-                      <img :src="rightImg" @click="openTree(scope.row.serviceOrderId)" class="pointer" />
-                      <span>{{ scope.row.workOrderNumber }}</span>
+                <template v-slot:orderNumber="{ row }">
+                  <div class="link-container" >
+                    <img :src="rightImg" @click="openTree(row.serviceOrderId)" class="pointer" />
+                    <span>{{ row.workOrderNumber }}</span>
+                  </div>
+                </template>
+                <template v-slot:fromTheme="{ row }">
+                  <el-tooltip placement="top-start">
+                    <div slot="content">
+                      <p v-for="(content, index) in row.themeList" :key="index">{{ content }}</p>
                     </div>
-                    <template v-else-if="fruit.name === 'fromTheme'">
-                      <el-tooltip placement="top-start">
-                        <div slot="content">
-                          <p v-for="(content, index) in scope.row.themeList" :key="index">{{ content }}</p>
-                        </div>
-                        <span style="white-space: nowrap;">{{ scope.row[fruit.name] }}</span>
-                      </el-tooltip>
-                    </template>
-                    <span
-                      v-else-if="fruit.name === 'status'"
-                      :class="processStatus(scope.row)"
-                    >{{statusOptions[scope.row[fruit.name]-1].label}}</span>
-                    <span v-else-if="fruit.name === 'customerId'">
-                      {{ scope.row.terminalCustomerId ? scope.row.terminalCustomerId : scope.row.customerId }}
-                    </span>
-                    <span v-else-if="fruit.name === 'customerName'">
-                      {{ scope.row.terminalCustomer ? scope.row.terminalCustomer : scope.row.customerName }}
-                    </span>
-                    <span v-else-if="fruit.name === 'fromType'">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
-                    <span v-else-if="fruit.name === 'priority'" :class="processPriorityStatus(scope.row)">{{priorityOptions[scope.row.priority - 1]}}</span>
-                    <span v-else>{{scope.row[fruit.name]}}</span>
-                  </template>
-                </el-table-column>
-              </el-table>
+                    <span style="white-space: nowrap;">{{ row.fromTheme }}</span>
+                  </el-tooltip>
+                </template>
+                <template v-slot:status="{ row }">
+                    <span :class="processStatus(row)">{{ statusOptions[row.status - 1].label }}</span>
+                </template>
+                <template v-slot:priority="{ row }">
+                  <span :class="processPriorityStatus(row)">{{ priorityOptions[row.priority - 1] }}</span>
+                </template>
+              </common-table>
               <pagination
                 v-show="total>0"
                 :total="total"
@@ -332,32 +309,33 @@ export default {
       hasAlreadNum: "", //已经接的单
       formTheadOptions: [
         {
-          name: "workOrderNumber",
+          prop: "workOrderNumber",
           label: "工单ID",
-          ifFixed: true,
+          fixed: true,
           align: "left",
+          slotName: 'orderNumber'
         },
-        { name: "priority", label: "优先级", width: 80 },
-        // { name: "fromType", label: "呼叫类型", width: "100px" },
-        { name: "status", label: "呼叫状态", width: 100 },
-        // { name: "", label: "费用审核" },
-        // { name: "customerId", label: "客户代码" },
-        { name: "customerName", label: "客户名称", width: 200 },
-        { name: "fromTheme", label: "呼叫主题", width: 275 },
-        { name: "createTime", label: "创建日期", width: 150 },
-        { name: "currentUser", label: "技术员", width: 80 },
+        { prop: "priority", label: "优先级", width: 80, slotName: 'priority' },
+        // { prop: "fromType", label: "呼叫类型", width: "100px" },
+        { prop: "status", label: "呼叫状态", width: 100, slotName: 'status' },
+        // { prop: "", label: "费用审核" },
+        // { prop: "customerId", label: "客户代码" },
+        { prop: "customerName", label: "客户名称", width: 200 },
+        { prop: "fromTheme", label: "呼叫主题", width: 275, 'show-overflow-tooltip': false, slotName: 'fromTheme' },
+        { prop: "createTime", label: "创建日期", width: 150 },
+        { prop: "currentUser", label: "技术员", width: 80 },
         {
-          name: "manufacturerSerialNumber",
+          prop: "manufacturerSerialNumber",
           label: "制造商序列号",
           width: "120px",
         },
-        { name: "materialCode", label: "物料编码", width: 150, },
-        { name: "materialDescription", label: "物料描述", width: 150, },
-        { name: "contacter", label: "联系人", width: 100 },
-        { name: "contactTel", label: "电话号码", width: 150 },
-        { name: "supervisor", label: "售后主管", width: 80 },
-        { name: "salesMan", label: "销售员", width: 80 },
-        { name: "recepUserName", label: "接单员", width: 100 },
+        { prop: "materialCode", label: "物料编码", width: 150, },
+        { prop: "materialDescription", label: "物料描述", width: 150, },
+        { prop: "contacter", label: "联系人", width: 100 },
+        { prop: "contactTel", label: "电话号码", width: 150 },
+        { prop: "supervisor", label: "售后主管", width: 80 },
+        { prop: "salesMan", label: "销售员", width: 80 },
+        { prop: "recepUserName", label: "接单员", width: 100 },
         // "serviceWorkOrderId": 1,
         // "problemTypeName": "数值异常",
         // "currentUserId": 1

@@ -65,12 +65,8 @@
 </template>
 
 <script>
-import CommonTable from '@/components/CommonTable'
 import { normalizeFormConfig } from '@/utils/format'
 export default {
-  components: {
-    CommonTable
-  },
   props: {
     status: String
   },

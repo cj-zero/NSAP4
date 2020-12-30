@@ -33,6 +33,16 @@ namespace OpenAuth.App.Response
         /// <returns></returns>
         public int Sex { get; set; }
 
+        /// <summary>
+        /// </summary>
+        /// <returns></returns>
+        public string ServiceRelations { get; set; }
+
+        /// <summary>
+        /// </summary>
+        /// <returns></returns>
+        public string CardNo { get; set; }
+
 
         /// <summary>
         /// 当前状态

@@ -32,106 +32,91 @@
         <permission-btn moduleName="solutions" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
     </sticky>
-    <div class="app-container">
-      <div class="bg-white">
-        <div class="content-wrapper">
-          <el-table
-            ref="mainTable"
-            :key="key"
-            :data="list"
-            v-loading="listLoading"
-            border
-            highlight-current-row
-            height="100%"
-            style="width: 100%;"
-            @row-click="rowClick"
-            @selection-change="handleSelectionChange"
-          >
-    
-            <el-table-column
-              show-overflow-tooltip
-              v-for="fruit in formTheadOptions"
-              :key="fruit.name"
-              :label="fruit.label"
-              :align="fruit.align"
-            >
-              <template slot-scope="scope">
-                <span v-if="fruit.name === 'status'" :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]">{{stateValue[scope.row[fruit.name]-1]}}</span>
-                <span v-if="fruit.name === 'subject'">{{scope.row[fruit.name]}}</span>
-                <span v-if="!(fruit.name ==='status'||fruit.name ==='subject')">{{scope.row[fruit.name]}}</span>
-              </template>
-            </el-table-column>
-          </el-table>
-          <pagination
-            v-show="total>0"
-            :total="total"
-            :page.sync="listQuery.page"
-            :limit.sync="listQuery.limit"
-            @pagination="handleCurrentChange"
-          />
-        </div>
-      </div>
-      <el-dialog
-        v-el-drag-dialog
-        class="dialog-mini"
-        width="500px"
-        :modal="false"
-        :destroy-on-close="true"
-        :close-on-click-modal="false"
-        :modal-append-to-body="false"
-        :title="textMap[dialogStatus]"
-        :visible.sync="dialogFormVisible"
+    <Layer>
+      <common-table
+        ref="mainTable"
+        :key="key"
+        :data="list"
+        :loading="listLoading"
+        :columns="formTheadOptions"
+        height="100%"
+        @row-click="rowClick"
+        @selection-change="handleSelectionChange"
       >
-        <el-form
-          :rules="rules"
-          ref="dataForm"
-          :model="temp"
-          label-position="right"
-          label-width="100px"
-        >
-          <el-form-item size="small" label="Id" prop="id">
-            <el-input disabled v-model="temp.id"></el-input>
-          </el-form-item>
-          <!-- <el-form-item size="small" label="SltCode">
-            <el-select class="filter-item" v-model="temp.sltCode" placeholder="Please select">
-              <el-option
-                v-for="item in  statusOptions"
-                :key="item.key"
-                :label="item.display_name"
-                :value="item.key"
-              ></el-option>
-            </el-select>
-          </el-form-item>-->
-          <el-form-item size="small" label="解决方案" prop="subject">
-            <el-input v-model="temp.subject"></el-input>
-          </el-form-item>
-          <el-form-item size="small" label="原因" prop="cause">
-            <el-input v-model="temp.cause"></el-input>
-          </el-form-item>
-          <el-form-item size="small" label="症状" prop="symptom">
-            <el-input v-model="temp.symptom"></el-input>
-          </el-form-item>
-          <el-form-item size="small" label="备注" prop="descriptio">
-            <el-input v-model="temp.descriptio"></el-input>
-          </el-form-item>
-          <el-form-item size="small" label="Status">
-            <el-select class="filter-item" v-model="temp.status" placeholder="Please select">
-              <el-option
-                v-for="item in  statusOptions"
-                :key="item.key"
-                :label="item.display_name"
-                :value="item.key"
-              ></el-option>
-            </el-select>
-          </el-form-item>
-        </el-form>
-        <div slot="footer">
-          <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
-          <el-button size="mini" v-if="dialogStatus=='create'" type="primary" @click="createData">确认</el-button>
-          <el-button size="mini" v-else type="primary" @click="updateData">确认</el-button>
-        </div>
-      </el-dialog>
-    </div>
+        <template v-slot:status="{ row }">
+          <span :class="[row.status === 1 ? 'greenWord' : (row.status === 2 ? 'orangeWord' : 'redWord' )]">
+            {{ stateValue[row.status - 1] }}
+          </span>
+        </template>
+      </common-table>
+      <pagination
+        v-show="total>0"
+        :total="total"
+        :page.sync="listQuery.page"
+        :limit.sync="listQuery.limit"
+        @pagination="handleCurrentChange"
+      />
+    </Layer>
+    <el-dialog
+      v-el-drag-dialog
+      class="dialog-mini"
+      width="500px"
+      :modal="false"
+      :destroy-on-close="true"
+      :close-on-click-modal="false"
+      :modal-append-to-body="false"
+      :title="textMap[dialogStatus]"
+      :visible.sync="dialogFormVisible"
+    >
+      <el-form
+        :rules="rules"
+        ref="dataForm"
+        :model="temp"
+        label-position="right"
+        label-width="100px"
+      >
+        <el-form-item size="small" label="Id" prop="id">
+          <el-input disabled v-model="temp.id"></el-input>
+        </el-form-item>
+        <!-- <el-form-item size="small" label="SltCode">
+          <el-select class="filter-item" v-model="temp.sltCode" placeholder="Please select">
+            <el-option
+              v-for="item in  statusOptions"
+              :key="item.key"
+              :label="item.display_name"
+              :value="item.key"
+            ></el-option>
+          </el-select>
+        </el-form-item>-->
+        <el-form-item size="small" label="解决方案" prop="subject">
+          <el-input v-model="temp.subject"></el-input>
+        </el-form-item>
+        <el-form-item size="small" label="原因" prop="cause">
+          <el-input v-model="temp.cause"></el-input>
+        </el-form-item>
+        <el-form-item size="small" label="症状" prop="symptom">
+          <el-input v-model="temp.symptom"></el-input>
+        </el-form-item>
+        <el-form-item size="small" label="备注" prop="descriptio">
+          <el-input v-model="temp.descriptio"></el-input>
+        </el-form-item>
+        <el-form-item size="small" label="Status">
+          <el-select class="filter-item" v-model="temp.status" placeholder="Please select">
+            <el-option
+              v-for="item in  statusOptions"
+              :key="item.key"
+              :label="item.display_name"
+              :value="item.key"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <div slot="footer">
+        <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
+        <el-button size="mini" v-if="dialogStatus=='create'" type="primary" @click="createData">确认</el-button>
+        <el-button size="mini" v-else type="primary" @click="updateData">确认</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -164,14 +149,14 @@ export default {
       ],
       formTheadOptions: [
         // { name: "id" ,label:'ID',align:'right'},
-        { name: "sltCode" ,label:'编号',align:'left' },
-        { name: "status" ,label:'状态' },
-        { name: "symptom" ,label:'症状' },
-        { name: "subject" ,label:'解决方案' },
-        { name: "cause"  ,label:'原因'},
-        { name: "descriptio"  ,label:'备注'},
-        { name: "updateUserName"  ,label:'更新人名字'},
-        { name: "createTime" ,label:'创建时间' }
+        { prop: "sltCode" ,label:'编号',align:'left' },
+        { prop: "status" ,label:'状态', slotName: 'status' },
+        { prop: "symptom" ,label:'症状' },
+        { prop: "subject" ,label:'解决方案' },
+        { prop: "cause"  ,label:'原因'},
+        { prop: "descriptio"  ,label:'备注'},
+        { prop: "updateUserName"  ,label:'更新人名字'},
+        { prop: "createTime" ,label:'创建时间' }
       ],
       headLabel: {
         id: "ID",

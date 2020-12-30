@@ -10,26 +10,22 @@
         </Search>
       </div>
     </sticky>
-    <div class="app-container">
-      <div class="bg-white">
-        <div class="content-wrapper">
-          <common-table 
-            height="100%"
-            ref="returnOrderTable" 
-            :data="tableData" 
-            :columns="returnOrderColumns" 
-            :loading="tableLoading">
-          </common-table>
-          <pagination
-            v-show="total>0"
-            :total="total"
-            :page.sync="listQuery.page"
-            :limit.sync="listQuery.limit"
-            @pagination="handleCurrentChange"
-          />
-        </div>
-      </div>
-    </div>    
+    <Layer>
+      <common-table 
+        height="100%"
+        ref="returnOrderTable" 
+        :data="tableData" 
+        :columns="returnOrderColumns" 
+        :loading="tableLoading">
+      </common-table>
+      <pagination
+        v-show="total>0"
+        :total="total"
+        :page.sync="listQuery.page"
+        :limit.sync="listQuery.limit"
+        @pagination="handleCurrentChange"
+      />
+    </Layer>
     <my-dialog 
       ref="returnOrderDialog"
       width="1100px"
@@ -71,11 +67,7 @@
 
 <script>
 import Search from '@/components/Search'
-import Sticky from '@/components/Sticky'
-import Pagination from '@/components/Pagination'
-import MyDialog from '@/components/Dialog'
-import CommonTable from '@/components/CommonTable'
-import ReturnOrder from '../common/components/ReturnOrder'
+import ReturnOrder from './components/ReturnOrder'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import {  quotationTableMixin, chatMixin, returnTableMixin } from '../common/js/mixins'
@@ -84,10 +76,6 @@ export default {
   mixins: [quotationTableMixin, chatMixin, returnTableMixin],
   components: {
     Search,
-    Sticky,
-    CommonTable,
-    Pagination,
-    MyDialog,
     ReturnOrder,
     zxform,
     zxchat
