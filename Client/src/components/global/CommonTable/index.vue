@@ -65,7 +65,15 @@
           <template v-else-if="column.slotName">
             <slot :name="column.slotName || 'default'" :index="scope.$index" :row="scope.row" :prop="column.prop"></slot>
           </template>
-         
+         <!-- 组件 -->
+         <template v-else-if="column.component">
+           <component
+              :is="transformComponent(column.component)"
+              v-model="scope.row[column.prop]"
+              v-bind="mergeComponentAttrs(column.component)"
+              v-on="(column.component.on || {})"
+            ></component>
+         </template>
           <!-- 文本显示 -->
           <template v-else>
             {{ scope.row[column.prop] }}
@@ -78,6 +86,7 @@
 
 <script>
 import { defaultTableConfig, defaultColumnConfig } from './default'
+import componentMap from '../componentMap'
 import rightImg from '@/assets/table/right.png'
 import { noop } from '@/utils/declaration'
 import { isFunction } from '@/utils/validate'
@@ -118,7 +127,7 @@ export default {
   },
   computed: {
     attrs () {
-      return Object.assign({}, defaultTableConfig, this.$attrs)
+      return this.mergeConfig(defaultTableConfig, this.$attrs)
     },
     selectionColumns () {
       return this.columns.some(item => item.type === 'selection')
@@ -136,6 +145,17 @@ export default {
     isFunction,
     _noop () {
       noop()
+    },
+    mergeConfig (defaultConfig = {}, customerConfig = {}) { // 用户自定义配置与默认配置合并
+      return Object.assign({}, defaultConfig, customerConfig)
+    },
+    transformComponent (component) {
+      return componentMap[component.tag].component
+    },
+    mergeComponentAttrs (component) {
+      let newComponent = componentMap[component.tag]
+      console.log(newComponent.attrs)
+      return this.mergeConfig(newComponent.attrs, component.attrs)
     },
     onRowClick (row) {
       if (this.radioKey) { // 点击行单选
@@ -179,7 +199,7 @@ export default {
       return row.selectable
     },
     mergeColumnConfig (column) { // 合并自定义配置与默认配置
-      return Object.assign({}, defaultColumnConfig, column)
+      return this.mergeConfig(defaultColumnConfig, column)
     }
   },
   created () {

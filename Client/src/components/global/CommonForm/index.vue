@@ -26,7 +26,7 @@
 <script>
 import { isFunction } from '@/utils/validate'
 import { formConfig, formItemConfig } from './default'
-import componentMap from './componentMap'
+import componentMap from '../componentMap'
 import MySelect from '@/components/Select'
 export default {
   name: 'CommonForm',
