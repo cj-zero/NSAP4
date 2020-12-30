@@ -90,39 +90,39 @@
             :columns="expressColumns"
             max-height="150px"
           >
-            <template v-slot:expressNumber="{ row }">
+            <template v-slot:expressNumber="{ row, index }">
               <el-form-item
-                :prop="'list.' + row.index + '.' + row.prop"
-                :rules="expressRules[row.prop]"
+                :prop="'list.' + index + '.' + 'expressNumber'"
+                :rules="expressRules['expressNumber']"
               >
-                <el-input size="mini" v-model="expressList[row.index].expressNumber" :disabled="isAddExpressInfo(row)"></el-input>
+                <el-input size="mini" v-model="row.expressNumber" :disabled="isAddExpressInfo(row)" v-infotooltip:200.top-start>></el-input>
               </el-form-item>
             </template>
             <!-- 物流信息 -->
-            <template v-slot:expressInformation="{ row }">
+            <template v-slot:expressInformation="{ row, index }">
               <el-form-item
-                :prop="'list.' + row.index + '.' + row.prop"
-                :rules="expressRules[row.prop]"
+                :prop="'list.' + index + '.' + 'expressInformation'"
+                :rules="expressRules['expressInformation']"
               >
                 <el-row>
-                  <img :src="rightImg" @click="_getExpressInfo(row)" class="search-icon">
-                  {{ expressList[row.index].expressInformation }}
+                  <img :src="rightImg" @click="_getExpressInfo(row, index)" class="search-icon">
+                  {{ row.expressInformation }}
                 </el-row>
               </el-form-item>
             </template>
             <template v-slot:remark="{ row }">
-              <el-input size="mini" v-model="expressList[row.index].remark" :disabled="isAddExpressInfo(row)"></el-input>
+              <el-input size="mini" v-model="row.remark" :disabled="isAddExpressInfo(row)" v-infotooltip:200.top-start>></el-input>
             </template>
-            <template v-slot:expressagePicture="{ row }">
+            <template v-slot:expressagePicture="{ row, index }">
               <UpLoadFile 
                 ref="uploadFile" 
                 uploadType="file" 
                 :limit="3" 
                 :ifShowTip="!isAddExpressInfo(row)"
                 :onAccept="onAccept"
-                :fileList="expressList[row.index].fileList || []"
+                :fileList="expressList[index].fileList || []"
                 @get-ImgList="getFileList" 
-                :options="{ index: row.index }" 
+                :options="{ index }" 
                 :disabled="isAddExpressInfo(row)"
               />
             </template> 
@@ -144,18 +144,18 @@
             ref="materialTable"
             :data="materialListData.list" 
             :columns="materialColumns">
-            <template v-slot:delivery="{ row }">
+            <template v-slot:delivery="{ row, index }">
               <el-form-item
-                :prop="'list.' + row.index + '.' + row.prop"
-                :rules="[{ required: !isOutboundAll(materialList[row.index]), trigger: ['change', 'blur'] }  ]"
+                :prop="'list.' + index + '.' + 'delivery'"
+                :rules="[{ required: !isOutboundAll(row), trigger: ['change', 'blur'] }  ]"
               >
                 <el-input-number 
                   size="mini"
                   :controls="false"
-                  v-model="materialList[row.index].delivery"
+                  v-model="row.delivery"
                   :mini="0"
-                  :max="materialList[row.index].count - materialList[row.index].sentQuantity"
-                  :disabled="isOutboundAll(materialList[row.index])"
+                  :max="row.count - row.sentQuantity"
+                  :disabled="isOutboundAll(row)"
                 >
                 </el-input-number>
               </el-form-item>
@@ -351,7 +351,7 @@ export default {
       console.log(data.count, data.sentQuantity, data.count - data.sentQuantity)
       return !(data.count - data.sentQuantity)
     },
-    _getExpressInfo (data) { // 查询物流信息
+    _getExpressInfo (data, index) { // 查询物流信息
       console.log(data)
       if (data.expressNumber === '') {
         return this.$message.error('请先填写快递单号')
@@ -360,9 +360,9 @@ export default {
       getExpressInfo({ trackNumber: data.expressNumber.trim() }).then(res => {
         console.log(res, 'res')
         let expressInfoList = JSON.parse(res.data).data
-        this.expressList[data.index].expressInformation = expressInfoList[expressInfoList.length - 1].context
+        this.expressList[index].expressInformation = expressInfoList[expressInfoList.length - 1].context
       }).catch(err => {
-        this.expressList[data.index].expressInformation = ''
+        this.expressList[index].expressInformation = ''
         this.$message.error(err.message)
       })
     },
