@@ -15,6 +15,13 @@ export function updateOrder(data) { // 新建报销单
     data
   })
 }
+export function getUserDetail (params) { // 获取用户详细信息 （部门、出差补贴金额）
+  return request({
+    url: '/serve/Reimburse/GetUserDetails',
+    method: 'get',
+    params
+  })
+}
 
 export function getOrder(params) { // 新建报销单获取当前用户客户代码
   return request({
@@ -29,6 +36,14 @@ export function getDetails(params) { // 新建报销单获取当前用户客户�
     url: '/serve/Reimburse/GetDetails',
     method: 'get',
     params
+  })
+}
+
+export function deleteCost (data) { // 删除费用
+  return request({
+    url: '/serve/Reimburse/DeleteCost',
+    method: 'post',
+    data
   })
 }
 

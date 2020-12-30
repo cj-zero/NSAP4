@@ -102,6 +102,11 @@ namespace OpenAuth.App.Request
         public DateTime? InvoiceTime { get; set; }
 
         /// <summary>
+        /// 开票单位
+        /// </summary>
+        public string SellerName { get; set; }
+
+        /// <summary>
         /// 附件表
         /// </summary>
         public virtual List<ReimburseAttachmentResp> ReimburseAttachments { get; set; }

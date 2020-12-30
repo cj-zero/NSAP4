@@ -34,9 +34,13 @@ module.exports = {
       console.log('compress')
       config.plugin('CompressionPlugin')
         .use(CompressionPlugin, [])
+        .end()
     }
-    config.plugin('HardSourceWebpackPlugin')
-      .use(HardSourceWebpackPlugin)
+    if (process.env.NODE_ENV === 'development') {
+      config.plugin('HardSourceWebpackPlugin')
+        .use(HardSourceWebpackPlugin)
+        .end()
+    }
     config.module
       .rule('svg')
       .exclude.add(resolve('src/icons'))

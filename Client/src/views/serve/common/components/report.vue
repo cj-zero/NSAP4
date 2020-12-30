@@ -4,7 +4,7 @@
       <el-tabs v-model="activeName" type="card" @tab-click="handleClick">
         <el-tab-pane 
           v-for="(item, index) in data"
-          :key="item.materialCodeTypeName"
+          :key="item.id"
           :label="item.materialCodeTypeName"
           :name="String(index)"
           :disabled="!item.id"
@@ -86,21 +86,14 @@
       </el-row>
       <el-row type="flex" justify="space-between">
         <el-col :span="12">
-          <el-table
-            v-if="showData.serviceWorkOrders && showData.serviceWorkOrders.length"
-            :data="showData.serviceWorkOrders"
-            size="mini"
-            border
-            max-height="150px"
-          >
-            <el-table-column
-              v-for="item in headOptions"
-              :key="item.name"
-              :label="item.name"
-              :width="item.width"
-              :prop="item.prop"
-            ></el-table-column>
-          </el-table>
+          <template v-if="showData.serviceWorkOrders && showData.serviceWorkOrders.length">
+            <common-table
+              :data="showData.serviceWorkOrders"
+              :columns="headOptions"
+              max-height="150px"
+            >
+            </common-table>
+          </template>
         </el-col>
         <el-col :span="6" v-if="!showData.isPhoneService">
           <el-form-item label="出差天数">
@@ -192,9 +185,9 @@ export default {
       labelWidth2: '100px',
       activeName: '0',
       headOptions:[
-        { name: '工单ID', prop: 'workOrderNumber' },
-        { name: '制造商序列号', prop: 'manufacturerSerialNumber' },
-        { name: '物料编码', prop: 'materialCode' }
+        { label: '工单ID', prop: 'workOrderNumber' },
+        { label: '制造商序列号', prop: 'manufacturerSerialNumber' },
+        { label: '物料编码', prop: 'materialCode' }
       ]
     }
   },

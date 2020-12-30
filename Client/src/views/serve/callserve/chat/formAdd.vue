@@ -371,7 +371,7 @@
     </el-dialog>
     <my-dialog 
       ref="formTheme"
-      width="500px"
+      width="767px"
       :btnList="themeBtnList"
       :append-to-body="true"
       @closed="closeFormTheme"
@@ -389,6 +389,7 @@
         :loading="themeLoading"
         ref="formThemeTable" 
         :data="themeList" 
+        row-key="id"
         :columns="columns" 
         :selectedList="selectedList"
         selectedKey="id"
@@ -410,9 +411,6 @@ import * as solutions from "@/api/solutions";
 import problemtype from "../problemtype";
 import solution from "../solution";
 import fromfSNC from '../fromfSNC'
-import Pagination from "@/components/Pagination";
-import MyDialog from '@/components/Dialog'
-import CommonTable from '@/components/CommonTable'
 import { solveTechApplyDevices } from '@/api/serve/technicianApply'
 import { getListByType } from '@/api/serve/knowledge'
 export default {
@@ -458,10 +456,7 @@ export default {
   components: {
     problemtype,
     solution,
-    fromfSNC,
-    Pagination,
-    MyDialog,
-    CommonTable
+    fromfSNC
   },
   watch: {
     formData: {

@@ -76,7 +76,7 @@ namespace OpenAuth.Repository.Domain
         [Description("客户名称")]
         public string card_name { get; set; }
         /// <summary>
-        /// 
+        /// 订单状态查询 (0 已提交 1 待发货 2 已发货 3 已完成）
         /// </summary>
         [Description("当前总状态")]
         public int? cur_status { get; set; }
@@ -95,6 +95,21 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("结束阶段状态")]
         public string complete_phase { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("提交阶段最新更新时间")]
+        public System.DateTime? order_lastdate { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("交货阶段最新更新时间")]
+        public System.DateTime? shipping_lastdate { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("结束阶段最新更新时间")]
+        public System.DateTime? complete_lastdate { get; set; }
         /// <summary>
         /// 
         /// </summary>

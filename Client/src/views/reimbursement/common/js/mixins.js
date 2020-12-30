@@ -25,44 +25,10 @@ export let tableMixin = {
         toPay: '支付',
         paid: '已支付'
       },
-      submissionColumns: [ // 表格配置(我的提交)
-        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleJump: this.getDetail },
-        { label: '报销状态', prop: 'remburseStatusText', width: 100 },
-        { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleJump: this._openServiceOrder },
-        { label: '呼叫主题', prop: 'fromTheme', width: 250 },
-        { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
-        { label: '客户名称', prop: 'terminalCustomer', width: 170 },
-        { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
-        { label: '总天数', prop: 'days', width: 60, align: 'right' },
-        { label: '出发日期', prop: 'businessTripDate', width: 85 },
-        { label: '结束日期', prop: 'endDate', width: 85 },
-        { label: '报销部门', prop: 'orgName', width: 70 },
-        { label: '报销人', prop: 'userName', width: 70 },
-        // { label: '劳务关系', prop: 'serviceRelations', width: 100 },
-        { label: '业务员', prop: 'salesMan', width: 80 },
-        { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
-        { label: '填报日期', prop: 'fillTime', width: 85 },
-        { label: '备注', prop: 'remark' }
-      ],
-      processedColumns: [ // 不同的表格配置(我的提交除外的其它模块表格)
-        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleJump: this.getDetail },
-        // { label: '服务ID', prop: 'serviceOrderSapId', width: 80 },
-        { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
-        { label: '客户名称', prop: 'terminalCustomer', width: 170 },
-        { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
-        { label: '总天数', prop: 'days', width: 60, align: 'right' },
-        { label: '出发日期', prop: 'businessTripDate', width: 85 },
-        { label: '结束日期', prop: 'endDate', width: 85 },
-        { label: '报销部门', prop: 'orgName', width: 70 },
-        { label: '报销人', prop: 'userName', width: 70 },
-        // { label: '劳务关系', prop: 'serviceRelations', width: 100 },
-        { label: '业务员', prop: 'salesMan', width: 80 },
-        // { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
-        { label: '填报日期', prop: 'fillTime', width: 85 }
-      ],
       toPayColumns: [
-        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleJump: this.getDetail },
-        { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleJump: this._openServiceOrder },
+        { type: 'selection', 'reserve-selection': false },
+        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleClick: this.getDetail, options: { type: 'view' } },
+        { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleClick: this._openServiceOrder, options: { type: 'view' } },
         { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
         { label: '客户名称', prop: 'terminalCustomer', width: 170 },
         { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
@@ -73,27 +39,12 @@ export let tableMixin = {
         { label: '报销人', prop: 'userName', width: 70 },
         { label: '劳务关系', prop: 'serviceRelations', width: 100 },
         { label: '业务员', prop: 'salesMan', width: 80 },
-        // { label: '服务报告', width: 70, handleClick: this.openReport, btnText: '查看' },
         { label: '填报日期', prop: 'fillTime', width: 85 }
       ],
       tableData: [],
       total: 0, // 表格数据的总数量
       dialogLoading: false, 
-      formQuery: { // 查询字段参数
-        mainId: '', // 报销单ID
-        createUserName: '',
-        terminalCustomer: '',
-        serviceOrderId: '',
-        orgName: '',
-        bearToPay: '',
-        responsibility: '',
-        staticDate: '',
-        endDate: '',
-        reimburseType: '',
-        completionStaticDate: '', // 完工报告出差开始日期
-        completionEndDate: '' // 完工报告出差结束日期
-        // serviceRelations: '' // 劳务关系
-      },
+      
       listQuery: { // 分页参数
         page: 1,
         limit: 50,
@@ -107,8 +58,25 @@ export let tableMixin = {
       baseURL: process.env.VUE_APP_BASE_API + "/files/Download", // 图片基地址
       tokenValue: this.$store.state.user.token,
       originUserId: this.$store.state.user.userInfoAll.userId, // 当前用户的ID
-      reimburseStatus: 0 // 报销状态
+      reimburseStatus: 0, // 报销状态
     }
+  },
+  computed: {
+    processedColumns () {
+      return [ // 不同的表格配置(我的提交除外的其它模块表格)
+        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleClick: this.getDetail, options: { type: this.isPaid ? 'view' : 'approve' } },
+        { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
+        { label: '客户名称', prop: 'terminalCustomer', width: 170 },
+        { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
+        { label: '总天数', prop: 'days', width: 60, align: 'right' },
+        { label: '出发日期', prop: 'businessTripDate', width: 85 },
+        { label: '结束日期', prop: 'endDate', width: 85 },
+        { label: '报销部门', prop: 'orgName', width: 70 },
+        { label: '报销人', prop: 'userName', width: 70 },
+        { label: '业务员', prop: 'salesMan', width: 80 },
+        { label: '填报日期', prop: 'fillTime', width: 85 }
+      ]
+    } 
   },
   methods: {
     _openServiceOrder (row) {
@@ -133,7 +101,6 @@ export let tableMixin = {
     _getList () { // 获取表格列表
       this.tableLoading = true
       getList({
-        ...this.formQuery,
         ...this.listQuery
       }).then(res => {
         let { data, count } = res
@@ -214,7 +181,6 @@ export let tableMixin = {
         } catch (err) {
           console.log(err, 'err')
         }
-        
         this.tableLoading = false
         this.$refs.myDialog.open()
       }).catch(() => {
@@ -253,7 +219,7 @@ export let tableMixin = {
     _generateApproveTable (data) { // 针对总经理审批页面
       console.log(data, 'generate')
       let result = []
-      let { 
+      let {
         reimburseTravellingAllowances,
         reimburseFares,
         reimburseAccommodationSubsidies,
@@ -296,7 +262,7 @@ export let tableMixin = {
         result.push({
           invoiceTime: this.processInvoiceTime(invoiceTime),
           expenseName: '出差补贴',
-          expenseDetail: `${toThousands(money / days)}元/天*${days}天`,
+          expenseDetail: `${toThousands(money)}元/天*${days}天`,
           money: money * days,
           remark
         })
@@ -460,7 +426,7 @@ export let categoryMixin = {
       iconList: [ // 操作配置
         { icon: 'el-icon-document-add', handleClick: this.addAndCopy, operationType: 'add' }, 
         { icon: 'el-icon-document-copy', handleClick: this.addAndCopy, operationType: 'copy' }, 
-        { icon: 'el-icon-delete', handleClick: this.delete }
+        { icon: 'el-icon-delete', handleClick: this.toDelete }
       ],
       rolesList: this.$store.state.user.userInfoAll.roles, // 当前用户的角色列表
       userOrgName: this.$store.state.user.userInfoAll.orgName, // 部门名称
@@ -575,34 +541,34 @@ export let categoryMixin = {
       return this.isGeneralManager && (this.title === 'approve' || this.title === 'view')
     },
     isEditItem () { // 审批的时候只有客服主管可以改 新增编辑都可以修改
-      return (this.title === 'view' || (this.title === 'approve' && !this.isCustomerSupervisor) || this.title === 'toPay')
+      return (this.title === 'view' || this.isProcessed || (this.title === 'approve' && !this.isCustomerSupervisor) || this.title === 'toPay')
     },
     formConfig () {
       return [
-        { label: '服务ID', prop: 'serviceOrderSapId', palceholder: '请选择', col: this.ifFormEdit ? 5 : 6, disabled: this.title !== 'create', readonly: true },
+        { label: '服务ID', prop: 'serviceOrderSapId', placeholder: '请选择', col: this.ifFormEdit ? 5 : 6, disabled: this.title !== 'create', readonly: true },
         { 
-          label: '报销类别', prop: 'reimburseType', palceholder: '请输入内容', 
+          label: '报销类别', prop: 'reimburseType', placeholder: '请输入内容', 
           col: this.ifFormEdit ? 5 : 6, type: 'select', options: this.reimburseTypeList, 
           disabled: this.isEditItem, width: '100%'
         },
-        // { label: '客户简称', prop: 'shortCustomerName', palceholder: '最长6个字', col: this.ifFormEdit ? 5 : 6, maxlength: 6, disabled: this.isEditItem, required: true },
-        { label: '费用承担', prop: 'bearToPay', palceholder: '请输入内容', 
+        // { label: '客户简称', prop: 'shortCustomerName', placeholder: '最长6个字', col: this.ifFormEdit ? 5 : 6, maxlength: 6, disabled: this.isEditItem, required: true },
+        { label: '费用承担', prop: 'bearToPay', placeholder: '请输入内容', 
           disabled: this.isProcessed || this.title === 'view' || !(this.isCustomerSupervisor && (this.title === 'create' || this.title === 'edit' || this.title === 'approve')), 
           col: this.ifFormEdit ? 5 : 6, type: 'select', options: this.expenseList, width: '100%'
         },
-        { label: '报销状态', prop: 'reimburseTypeText', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
-        { label: '客户代码', prop: 'terminalCustomerId', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        { label: '客户名称', prop: 'terminalCustomer', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 10 : 12 },
-        { label: '支付时间', prop: 'payTime', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
-        { label: '呼叫主题', prop: 'fromTheme', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 15 : 18 },
+        { label: '报销状态', prop: 'reimburseTypeText', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
+        { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '客户名称', prop: 'terminalCustomer', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 10 : 12 },
+        { label: '支付时间', prop: 'payTime', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
+        { label: '呼叫主题', prop: 'fromTheme', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 15 : 18 },
         { label: '服务报告', prop: 'report',  disabled: true, col: this.ifFormEdit ? 5 : 6, 
           type: 'button', btnText: '服务报告', handleClick: this.openReport, isEnd: true
         },
-        { label: '出发地点', prop: 'becity', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        { label: '到达地点', prop: 'destination', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        { label: '开始时间', prop: 'businessTripDate', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, width: '100%' },
-        { label: '结束时间', prop: 'endDate', palceholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true, width: '100%' },
-        { label: '备注', prop: 'remark', palceholder: '请输入内容', disabled: !this.ifFormEdit, col: this.ifFormEdit ? 15 : 18 }, 
+        { label: '出发地点', prop: 'becity', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '到达地点', prop: 'destination', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '开始时间', prop: 'businessTripDate', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, width: '100%' },
+        { label: '结束时间', prop: 'endDate', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true, width: '100%' },
+        { label: '备注', prop: 'remark', placeholder: '请输入内容', disabled: !this.ifFormEdit, col: this.ifFormEdit ? 15 : 18 }, 
         { label: '总金额', type: 'money', col: this.ifFormEdit ? 5 : 6 }
       ]
     },    
@@ -614,7 +580,7 @@ export let categoryMixin = {
       ]
       return (this.ifFormEdit !== undefined && !this.ifFormEdit) || this.ifFormEdit === undefined
         ? config
-        : [...config, { label: '操作', type: 'operation', iconList: [{ icon: 'el-icon-delete', handleClick: this.delete }], width: 150 }]
+        : [...config, { label: '操作', type: 'operation', iconList: [{ icon: 'el-icon-delete', handleClick: this.toDelete }], width: 150 }]
     },
     trafficConfig () {
       let config = [ // 交通配置
@@ -657,13 +623,15 @@ export let categoryMixin = {
         { placeholder: '客户代码/名称', prop: 'terminalCustomer', width: 150 },
         { placeholder: '服务ID', prop: 'serviceOrderId', width: 100 },
         { placeholder: '报销部门', prop: 'orgName', width: 100 },
+        { placeholder: '报销状态', prop: 'status', width: 100, type: 'select', 
+          options: [{ label: '全部', value: '' }, ...this.reimburseStatusList], isShow: !!this.isCustomerSupervisor && !!this.isSubmit && !this.listQuery.status },
         { placeholder: '费用承担', prop: 'bearToPay', width: 100, type: 'select', options: this.expenseList, isShow: !!this.isToPay },
         // { placeholder: '责任承担', prop: 'responsibility', width: 100, type: 'select', options: this.responsibilityList },
         { placeholder: '劳务关系', prop: 'serviceRelations', width: 120, type: 'select', options: this.serviceRelationsList, isShow: !!this.isToPay },
         { placeholder: '填报起始时间', prop: 'staticDate', type: 'date', width: 150 },
         { placeholder: '填报结束时间', prop: 'endDate', type: 'date', width: 150 },
-        { placeholder: '出差开始时间', prop: 'completionStaticDate', type: 'date', width: 150, isShow: !!this.isSubmit },
-        { placeholder: '出差结束时间', prop: 'completionEndDate', type: 'date', width: 150, isShow: !!this.isSubmit }    
+        { placeholder: '出差开始时间', prop: 'completionStaticDate', type: 'date', width: 150, isShow: !!this.isSubmit && !!this.isCustomerSupervisor },
+        { placeholder: '出差结束时间', prop: 'completionEndDate', type: 'date', width: 150, isShow: !!this.isSubmit && !!this.isCustomerSupervisor }    
       ]
     }
   }

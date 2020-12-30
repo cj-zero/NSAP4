@@ -165,41 +165,41 @@
                 <template v-slot:totalPrice_header>
                   <el-tooltip effect="dark" placement="top-end">
                     <div slot="content">{{ materialData.list | calcTotalItem(materialData.isProtected) | toThousands }}</div>
-                    <p class="text-overflow"> 小计 <span>{{ materialData.list | calcTotalItem(materialData.isProtected) | toThousands }}</span></p>
+                    <p class="text-overflow">小计 <span>{{ materialData.list | calcTotalItem(materialData.isProtected) | toThousands }}</span></p>
                   </el-tooltip>                     
                 </template>
                 <!-- 数量 -->
-                <template v-slot:count="{ row }">
+                <template v-slot:count="{ row, index }">
                   <el-form-item
-                    :prop="'list.' + row.index + '.' + row.prop"
-                    :rules="materialRules[row.prop]"
+                    :prop="'list.' + index + '.' + 'count'"
+                    :rules="materialRules['count']"
                   >
                     <el-input-number
                       size="mini"
                       style="width: 200px;"
                       :controls="false"
-                      v-model="materialData.list[row.index][row.prop]" 
+                      v-model="row.count" 
                       :precision="0"
                       :placeholder="`最大数量${row['maxQuantity']}`"
                       :max="+row['maxQuantity']"
                       :min="0"
-                      @focus="onCountFocus(row.index)"
+                      @focus="onCountFocus(index)"
                       @change="onCountChange"
                     ></el-input-number>
                   </el-form-item>
                 </template>
                 <!-- 备注 -->
                 <template v-slot:remark="{ row }">
-                  <el-input size="mini" v-model="materialData.list[row.index][row.prop]"></el-input>
+                  <el-input size="mini" v-model="row.remark"></el-input>
                 </template>
                 <!-- 折扣 -->
-                <template v-slot:discount="{ row }">
+                <template v-slot:discount="{ row, index }">
                   <el-select 
                     size="mini"
-                    v-model="materialData.list[row.index].discount" 
+                    v-model="row.discount" 
                     placeholder="请选择"
                     @change="onDiscountChange"
-                    @focus="onDiscountFocus(row.index)">
+                    @focus="onDiscountFocus(index)">
                     <el-option
                       v-for="item in discountList"
                       :key="item.value"
@@ -213,8 +213,8 @@
                   <span style="text-align: right;">{{ row.totalPrice | toThousands}}</span>
                 </template>
                 <!-- 操作 -->
-                <template v-slot:operation="{ row }">
-                  <div style="display: inline-block;" @click="deleteMaterialItem(row.index)">
+                <template v-slot:operation="{ index }">
+                  <div style="display: inline-block;" @click="deleteMaterialItem(index)">
                     <el-icon class="el-icon-delete icon-item"></el-icon>
                   </div>
                 </template>
@@ -253,10 +253,11 @@
                     max-height="200px" 
                     :data="item.quotationMaterials" 
                     :columns="materialTableColumns">
-                    <template v-slot:totalPrice_header="scope">
+                    <!-- 小计头部 -->
+                    <template v-slot:totalPrice_header>
                       <el-tooltip effect="dark" placement="top-end">
                         <div slot="content">{{ item.quotationMaterials | calcTotalItem(item.isProtected) | toThousands }}</div>
-                        <p class="text-overflow">{{ scope.row.label }} {{ item.quotationMaterials | calcTotalItem(item.isProtected) | toThousands }}</p>
+                        <p class="text-overflow">小计 {{ item.quotationMaterials | calcTotalItem(item.isProtected) | toThousands }}</p>
                       </el-tooltip>                      
                     </template>
                     <template v-slot:discount="{ row }">
@@ -413,9 +414,6 @@ import {
   // getQuotationMaterialCode,
   approveQuotationOrder
 } from '@/api/material/quotation'
-import CommonTable from '@/components/CommonTable' // 对于不可编辑的表格
-import MyDialog from '@/components/Dialog'
-import Pagination from '@/components/Pagination'
 import Remark from '@/views/reimbursement/common/components/remark'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
@@ -430,9 +428,6 @@ export default {
   inject: ['parentVm'],
   mixins: [configMixin, quotationOrderMixin, categoryMixin, chatMixin],
   components: {
-    CommonTable,
-    MyDialog,
-    Pagination,
     Remark,
     zxform,
     zxchat
@@ -518,6 +513,12 @@ export default {
       handler (val) {
         if (this.status !== 'create') {
           Object.assign(this.formData, val)
+          this.formData.quotationProducts = this.formData.quotationProducts.map(product => {
+            product.quotationMaterials.forEach(material => {
+              material.discount = String(Number(material.discount).toFixed(2)) // 保证discount是string类型，且跟字典对应上
+            })
+            return product
+          })
           this.currentSerialNumber = this.formData.quotationProducts[0].productCode
           // 构建selected Map
           if (this.status === 'edit') {

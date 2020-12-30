@@ -34,11 +34,7 @@
 </template>
 
 <script>
-import CommonTable from '@/components/CommonTable' // 对于不可编辑的表格
 export default {
-  components: {
-    CommonTable
-  },
   props: {
     formData: {
       type: Object,

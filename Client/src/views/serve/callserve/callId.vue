@@ -3,47 +3,19 @@
     <el-row type="flex" justify="center">
       <el-col>
         <p>此用户最近10个服务单</p>
-        <el-table
+        <common-table
           ref="mainTable"
           class="table_label"
           :data="toCallList.newestOrder"
-          v-loading="listLoading"
-          border
+          :loading="listLoading"
           max-height="400px"
-          fit
-          style="width: 100%;"
-          highlight-current-row>
-          <el-table-column
-            show-overflow-tooltip
-            v-for="(fruit,index) in orderList"
-            :align="fruit.align"
-            :key="`ind${index}`"
-            header-align="left"
-            :width="fruit.width"
-            :fixed="fruit.fixed"
-            style="background-color:silver;"
-            :label="fruit.label">
-            <template slot-scope="scope">
-              <el-link
-                v-if="fruit.name === 'id'"
-                type="primary"
-                @click="openTree(scope.row.id)"
-              >{{ scope.row.u_SAP_ID }}</el-link>
-              <span v-if="fruit.name === 'createTime'">
-                {{ scope.row.createTime }}
-              </span>
-              <!-- <span
-                v-if="fruit.name === 'status'"
-                :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-              >{{statusOptions[scope.row[fruit.name]].label}}</span>
-              <span v-if="fruit.name === 'fromType'&&!scope.row.serviceWorkOrders">{{scope.row[fruit.name]==1?'提交呼叫':"在线解答"}}</span>
-              <span v-if="fruit.name === 'priority'">{{priorityOptions[scope.row.priority]}}</span>
-              <span
-                v-if="fruit.name!='priority'&&fruit.name!='fromType'&&fruit.name!='status'&&fruit.name!='serviceOrderId'"
-              >{{scope.row[fruit.name]}}</span> -->
-            </template>
-          </el-table-column>
-        </el-table>
+          :columns="orderList"
+        >
+          <template v-slot:id="{ row }">
+            <el-link type="primary" @click="openTree(row.id)">{{ row.u_SAP_ID }}</el-link>
+          </template>
+        </common-table>
+        
       </el-col>
     </el-row>
   </div>
@@ -87,8 +59,8 @@ export default {
       },
       listLoading:false,
       orderList: [
-         { name: "id", label: "服务ID" ,fixed:true},
-         { name: "createTime", label: "创建日期" },
+         { prop: "id", label: "服务ID" ,fixed: true, slotName: 'id' },
+         { prop: "createTime", label: "创建日期" },
         // { name: "customer", label: "工单ID" ,align:'left'},
         // { name: "custmrName", label: "优先级" },
         // { name: "manufSN", label: "呼叫类型",width:'120px' },

@@ -6,12 +6,14 @@
       class="head-title-wrapper" 
       :class="{ 'general': title === 'approve' }"
     >
-      <p style="color: red;">报销单号: <span>{{ formData.mainId }}</span></p>
-      <p v-if="isGeneralStatus"><span>服务ID: {{ formData.serviceOrderSapId }}</span></p>
+      <p style="color: red;" v-if="formData.mainId">报销单号: <span>{{ formData.mainId }}</span></p>
+      <p class="pointer underline" @click="_openServiceOrHistory(true)" v-if="title === 'approve'">
+        <span>服务ID: {{ formData.serviceOrderSapId }}</span>
+      </p>
       <p>报销人: {{ formData.orgName }} <span>{{ formData.userName }}</span></p>
       <p v-if="!isGeneralStatus">部门: <span>{{ formData.orgName }}</span></p>
       <p v-if="!isGeneralStatus">劳务关系: <span>{{ formData.serviceRelations }}</span></p>
-      <p v-if="!isGeneralStatus">创建时间: <span v-if="formData.createTime">{{ formData.createTime.split(' ')[0] }}</span></p>
+      <p v-if="!isGeneralStatus">创建时间: <span>{{ formData.createTime && formData.createTime.split(' ')[0] }}</span></p>
     </el-row>
     <!-- 时间进度轴，仅总经理可看 timelineList -->
     <template v-if="title === 'approve'">
@@ -104,7 +106,7 @@
                 <template v-if="item.prop === 'serviceOrderSapId' && title !== 'create'">
                   <div class="link-container" style="display: inline-block">
                     <span>{{ item.label }}</span>
-                    <img :src="rightImg" @click="_openServiceOrder" class="pointer">
+                    <img :src="rightImg" @click="_openServiceOrHistory(false)" class="pointer">
                   </div>
                 </template>
                 <template v-else>
@@ -118,9 +120,9 @@
                     <div class="form-theme-list">
                       <transition-group name="list" tag="ul">
                         <li class="form-theme-item" v-for="themeItem in formData.themeList" :key="themeItem.id" >
-                          <el-tooltip popper-class="form-theme-toolip" effect="dark" :content="themeItem.description" placement="top">
-                            <p class="text">{{ themeItem.description }}</p>
-                          </el-tooltip>
+                          <!-- <el-tooltip popper-class="form-theme-toolip" effect="dark" :content="themeItem.description" placement="top"> -->
+                            <p class="text" v-infotooltip.ellipsis="themeItem.description">{{ themeItem.description }}</p>
+                          <!-- </el-tooltip> -->
                         </li>
                       </transition-group>
                     </div>
@@ -321,7 +323,12 @@
                       :prop="'reimburseTravellingAllowances.' + scope.$index + '.'+ item.prop"
                       :rules="travelRules[item.prop] || { required: false }"
                     >
-                      <el-input v-model="scope.row[item.prop]" :disabled="item.disabled" :placeholder="item.placeholder"></el-input>
+                      <el-input 
+                        v-model="scope.row[item.prop]" 
+                        :disabled="item.disabled" 
+                        :placeholder="item.placeholder" 
+                        v-infotooltip:200.top-start>
+                      </el-input>
                     </el-form-item>
                   </template>
                   <template v-else-if="item.type === 'number'">
@@ -474,6 +481,7 @@
                       ref="trafficUploadFile"
                       :options="{ prop: item.prop, index: scope.$index, type: 'traffic' }" 
                       :ifShowTip="ifFormEdit"
+                      :isInline="isGeneralManager && isCustomerSupervisor"
                       @deleteFileList="deleteFileList"
                       :onAccept="onAccept"
                       :fileList="
@@ -617,6 +625,7 @@
                       :ifShowTip="ifFormEdit"
                       @deleteFileList="deleteFileList"
                       :onAccept="onAccept"
+                      :isInline="isGeneralManager || isCustomerSupervisor"
                       :fileList="
                         formData.reimburseAccommodationSubsidies[scope.$index] 
                           ? (item.prop === 'invoiceAttachment' 
@@ -756,6 +765,7 @@
                       :ifShowTip="ifFormEdit"
                       @deleteFileList="deleteFileList"
                       :onAccept="onAccept"
+                      :isInline="isGeneralManager && isCustomerSupervisor"
                       :fileList="
                         formData.reimburseOtherCharges[scope.$index] 
                           ? (item.prop === 'invoiceAttachment' 
@@ -821,7 +831,12 @@
         :data="customerInfoList"
         :columns="customerColumns"
         radioKey="id"
-      ></common-table>
+      >
+        <template v-slot:fromTheme="{ row }">
+           <!-- 呼叫主题显示 -->
+           <p class="text" v-infotooltip.top-start.ellipsis="row.themeList">{{ row.themeList.join(' ') }}</p>
+        </template>
+      </common-table>
       <pagination
         v-show="customerTotal > 0"
         :total="customerTotal"
@@ -842,6 +857,7 @@
         <common-table 
           ref="costTable"
           max-height="400px"
+          row-key="id"
           :data="costData"
           :columns="costColumns"
           :selectedList="selectedList"
@@ -904,13 +920,13 @@
     <!-- 历史费用弹窗 -->
     <my-dialog
       ref="historyDialog"
-      width="1004px"
+      width="1025px"
       title="历史费用"
       top="200px"
       :append-to-body="true"
     >
       <!-- 历史费用 -->
-      <div style="width: 984px;">
+      <div>
         <common-table 
           class="history-table-wrapper"
           :data="historyCostData"
@@ -939,7 +955,7 @@
           </template>
           <!-- 其它费用 -->
           <template v-slot:other="{ row }">
-            {{ (row.otherChargesMoney / row.totalMoney) | toThousands }}
+            {{ row.otherChargesMoney | toThousands }}
           </template>
         </common-table>
       </div>    
@@ -951,18 +967,26 @@
       :on-close="closeViewer"
     >
     </el-image-viewer>
+    <PDF :pdfURL="pdfURL" :on-close="closePDF" v-if="pdfVisible" />
   </div>
 </template>
 
 <script>
-import { addOrder, getOrder, updateOrder, approve, isSole, getHistoryReimburseInfo } from '@/api/reimburse'
+import { 
+  addOrder,
+  getOrder, 
+  updateOrder, 
+  approve, 
+  isSole, 
+  getHistoryReimburseInfo, 
+  getUserDetail,
+  deleteCost
+} from '@/api/reimburse'
 import { getList as getAfterEvaluaton } from '@/api/serve/afterevaluation'
 import { getList } from '@/api/reimburse/mycost'
 import { getReportDetail } from '@/api/serve/callservesure'
 import upLoadFile from "@/components/upLoadFile";
-import Pagination from '@/components/Pagination'
-import MyDialog from '@/components/Dialog'
-import CommonTable from '@/components/CommonTable'
+import PDF from './pdf'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import Report from './report'
@@ -970,7 +994,7 @@ import Remark from './remark'
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import AreaSelector from '@/components/AreaSelector'
 import { toThousands } from '@/utils/format'
-import { findIndex } from '@/utils/process'
+import { findIndex, accAdd } from '@/utils/process'
 import { deepClone } from '@/utils'
 import { travelRules, trafficRules, accRules, otherRules } from '../js/customerRules'
 import { customerColumns, costColumns } from '../js/config'
@@ -980,11 +1004,7 @@ import { REIMBURSE_TYPE_MAP, IF_SHOW_MAP, REMARK_TEXT_MAP } from '../js/map'
 import rightImg from '@/assets/table/right.png'
 const PROGRESS_TEXT_LIST = ['提交', '客服审批', '财务初审', '财务复审', '总经理审批', '出纳'] // 进度条文本
 const AFTER_EVALUTION_KEY = ['responseSpeed', 'schemeEffectiveness', 'serviceAttitude', 'productQuality', 'servicePrice']
-// { label: '响应速度', prop: 'responseSpeed', width: 70 },
-//         { label: '方案有效性', prop: 'schemeEffectiveness', width: 80 },
-//         { label: '服务态度', prop: 'serviceAttitude', width: 70 },
-//         { label: '产品质量', prop: 'productQuality', width: 70 },
-//         { label: '服务价格', prop: 'servicePrice', width: 70 },
+const TEXT_REG = /[\r|\r\n|\n\t\v]/g
 const AFTER_EVALUTION_STATUS = {
   0: '未统计',
   1: '非常差',
@@ -998,15 +1018,13 @@ export default {
   mixins: [categoryMixin, reportMixin, attachmentMixin, chatMixin],
   components: {
     upLoadFile,
-    Pagination,
-    MyDialog,
-    CommonTable,
     Report,
     Remark,
     AreaSelector,
     zxform,
     zxchat,
-    ElImageViewer
+    ElImageViewer,
+    PDF
   },
   props: {
     title: {
@@ -1035,6 +1053,8 @@ export default {
   },
   data () {
     return {
+      pdfURL: '',
+      pdfVisible: false,
       // 费用详情
       expenseCategoryColumns: [
         { label: '#', type: 'index' },
@@ -1063,27 +1083,28 @@ export default {
       reportTableColumns: [
         { label: '制造商序列号', prop: 'manufacturerSerialNumber', width: 120 },
         { label: '物料编码', prop: 'materialCode', width: 120 },
-        { label: '问题类型', prop: 'troubleDescription', width: 180 },
-        { label: '解决方案', prop: 'processDescription', width: 180 }
+        // { label: '问题类型', prop: 'troubleDescription', width: 180 },
+        { label: '解决方案', prop: 'processDescription', width: 180 },
+        { label: "备注", prop: 'remark', width: 180 }
       ],
       reportDetailLoading: false,
       // 历史费用
       historyCostData: [],
       historyCostColumns: [
-        { label: '报销单号', prop: 'mainId', width: '80px' },
-        { label: '总天数', prop: 'days', align: 'right', width: '80px' },
-        { label: '总金额', prop: 'totalMoney', slotName: 'totalMoney', align: 'right', width: '100px', 'class-name': 'red' },
-        { label: '交通费用', prop: 'faresMoney', slotName: 'faresMoney', align: 'right', width: '100px' },
-        { label: '交通占比', prop: 'fmProportion', width: '70px', align: 'right' },
-        { label: '住宿补贴', prop: 'accommodationSubsidiesMoney', slotName: 'acc', align: 'right', width: '100px' },
-        { label: '住宿占比', prop: 'asProportion', width: '70px', align: 'right' },
-        { label: '出差补贴', prop: 'travellingAllowancesMoney', slotName: 'travel', align: 'right', width: '100px' },
-        { label: '出差占比', prop: 'taProportion', width: '70px', align: 'right' },
-        { label: '其他费用', prop: 'otherChargesMoney', slotName: 'other', align: 'right', width: '100px' },
-        { label: '其他占比', prop: 'ocProportion', width: '70px', align: 'right' },
+        { label: '报销单号', prop: 'mainId', width: '60px' },
+        { label: '总天数', prop: 'days', align: 'right', width: '50px' },
+        { label: '总金额', prop: 'totalMoney', slotName: 'totalMoney', align: 'right', width: '63px' },
+        { label: '交通费用', prop: 'faresMoney', slotName: 'faresMoney', align: 'right', width: '63px' },
+        { label: '交通占比', prop: 'fmProportion', width: '63px', align: 'right' },
+        { label: '住宿补贴', prop: 'accommodationSubsidiesMoney', slotName: 'acc', align: 'right', width: '63px' },
+        { label: '住宿占比', prop: 'asProportion', width: '63px', align: 'right' },
+        { label: '出差补贴', prop: 'travellingAllowancesMoney', slotName: 'travel', align: 'right', width: '63px' },
+        { label: '出差占比', prop: 'taProportion', width: '63px', align: 'right' },
+        { label: '其他费用', prop: 'otherChargesMoney', slotName: 'other', align: 'right', width: '63px' },
+        { label: '其他占比', prop: 'ocProportion', width: '63px', align: 'right' },
         { label: '出发时间', prop: 'businessTripDate', width: '126px' },
         { label: '结束时间', prop: 'endDate', width: '126px' },
-        { label: '报销人', prop: 'userName', width: '70px' }
+        { label: '报销人', prop: 'userName', width: '75px' }
       ],
       historyCostLoading: false,
       generalStyle: { // 总经理头部style
@@ -1141,7 +1162,6 @@ export default {
         reimburseOtherCharges: [],
         reimurseOperationHistories: [], // 操作记录 我的提交不可见
         isDraft: false, // 是否是草稿
-        delteReimburse: [], // 需要删除的行数据
         fileId: [], // 需要删除的附件ID
         myExpendsIds: [] // 需要删除的导入数据（我的费用ID）
       },
@@ -1195,7 +1215,8 @@ export default {
         this.formData.orgName = val.orgName
         this.formData.serviceRelations = val.serviceRelations
         if (this.title === 'create') { // 只有才新建的时候才需要修改服务ID
-          this._getCustomerInfo()    
+          this._getCustomerInfo()
+          this._getSubsidies() // 获取出差补贴金额    
         }
         if (this.title === 'create' || this.title === 'edit') { // 只有在create或者edit的时候，才可以导入费用模板
           this._getCostList() // 获取费用模板
@@ -1238,6 +1259,7 @@ export default {
         }
         if (this.title === 'create' || this.title === 'edit') { // 只有在create或者edit的时候，才可以导入费用模板
           this._getCostList() // 获取费用模板
+          this._getSubsidies() // 获取出差补贴金额 
         }
       }
     },
@@ -1338,10 +1360,10 @@ export default {
         { btnText: '取消', handleClick: this.closeDialog }
       ]
     },
-    travelMoney () {
-      // 以R或者M开头都是65
-      return  this.isROrM ? '65' : '50'
-    },
+    // travelMoney () {
+    //   // 以R或者M开头都是65
+    //   return  this.isROrM ? '65' : '50'
+    // },
     isROrM () { // 判断报销人部门是不是R/M
       return /^[R|M]/i.test(this.userOrgName)
     },
@@ -1367,14 +1389,28 @@ export default {
     }
   },
   methods: {
+    _getSubsidies () {
+      getUserDetail().then(res => {
+        this.travelMoney = res.data.subsidies
+        console.log(this.travelMoney, '出差补贴金额')
+      }).catch(err => {
+        this.travelMoney = ''
+        this.$message.error(err.message)
+      })
+    },
     historyCell ({ columnIndex }) {
       const grayList = [3, 4, 7, 8]
       return grayList.includes(columnIndex) ? { backgroundColor: '#fafafa' } : {}
     },
-    _openServiceOrder () { // 打开服务单详情
-      this.openServiceOrder(this.formData.serviceOrderId, () => this.orderLoading = true, () => this.orderLoading = false)
+    _openServiceOrHistory (isServe) { // 打开服务单详情或者打开历史费用
+      this.title === 'approve' && !isServe
+        ? this.openHistory()
+        : this.openServiceOrder(this.formData.serviceOrderId, () => this.orderLoading = true, () => this.orderLoading = false)
     },
     openHistory () { // 打开历史费用
+      if (this.historyCostData && !this.historyCostData.length) {
+        return this.$message.warning('暂无历史费用')
+      }
       this.$refs.historyDialog.open()
     },
     _getAfterEvaluation () { // 获取售后评价
@@ -1408,16 +1444,19 @@ export default {
         this.reportDetaiLoading = false
         console.log(res.result.data.filter(item => item.id), 'null')
         res.result.data.filter(item => item.id).forEach(item => {
-          let { troubleDescription, processDescription, serviceWorkOrders } = item
-          serviceWorkOrders.forEach(workOrderItem => {
-            let { manufacturerSerialNumber, materialCode } = workOrderItem
-            result.push({
-              manufacturerSerialNumber,
-              materialCode,
-              troubleDescription,
-              processDescription
+          let { processDescription, serviceWorkOrders, remark } = item
+          if (serviceWorkOrders) {
+            serviceWorkOrders.forEach(workOrderItem => {
+              let { manufacturerSerialNumber, materialCode } = workOrderItem
+              result.push({
+                manufacturerSerialNumber,
+                materialCode,
+                // troubleDescription,
+                processDescription,
+                remark
+              })
             })
-          })
+          }
         })
         this.reportTableData = result
         console.log(this.reportTableData, 'report list')
@@ -1434,6 +1473,22 @@ export default {
       }).then(res => {
         this.historyCostLoading = false
         this.historyCostData = res.data
+        // this.historyCostData = [{
+        //   mainId: '1',
+        //   days: '1',
+        //   totalMoney: 1000,
+        //   faresMoney: 1000,
+        //   fmProportion: '100.00%',
+        //   accommodationSubsidiesMoney: 1000,
+        //   asProportion: '100.00%',
+        //   travellingAllowancesMoney: 1000,
+        //   taProportion: '100.00%',
+        //   otherChargesMoney: 1000,
+        //   ocProportion: '100.00%',
+        //   businessTripDate: '2020-02-02 14:20:00',
+        //   endDate: '2020-02-02 14:20:00',
+        //   userName: '超级管理员'
+        // }]
         console.log(res, 'historyList')
       }).catch(err => {
         this.historyCostLoading = false
@@ -1455,10 +1510,18 @@ export default {
         if (/^image\/.*$/.test(fileType)) {
           this.previewImage(url) // 预览图片
         } else {
-          window.open(url)
+          if (this.isCustomerSupervisor || this.isGeneralManager) {
+            this.pdfVisible = true
+            this.pdfURL = url
+          } else {
+            window.open(url)
+          }
         }
       }
     }, 
+    closePDF () {
+      this.pdfVisible = false
+    },
     previewImage (url) { // 预览附件
       this.previewVisible = true
       this.previewImageUrl = url
@@ -1542,8 +1605,8 @@ export default {
       let result = 0
       result += data.reduce((prev, next) => {
         return next.isAdd 
-          ? prev + parseFloat(String(next.totalMoney || next.money || 0)) 
-          : prev + 0
+          ? accAdd(prev, parseFloat(String(next.totalMoney || next.money || 0)))
+          : prev
       }, 0)
       return this.isValidNumber(result) ? result : 0
     },
@@ -1955,31 +2018,49 @@ export default {
           })
       }
     },
-    delete (scope, data, type) {
+    toDelete (scope, data, type) {
+      this.$confirm('确认进行删除?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.delete(scope, data, type)
+      })
+    },
+    async delete (scope, data, type) {
       if (!this.ifFormEdit) return
       let { id, invoiceFileList, otherFileList } = scope.row
       if (id) { // 说明已经新建过的,新建过的表格数据 invoceFileList 或者otherFileList 是一定存在的
+        let params = {
+          reimburseInfoId: this.formData.id,
+          reimburseCostId: id,
+          reimburseType: REIMBURSE_TYPE_MAP[type],
+        }
         if (
           (invoiceFileList && invoiceFileList.length) ||
           (otherFileList && otherFileList.length)  
         ) {
           let data = invoiceFileList.length ? invoiceFileList : otherFileList
           if (data[0].reimburseId) { // 导入的数据reimburseId是为空的，所以不需要添加到delteReimburse中
-            this.formData.delteReimburse.push({
-              deleteId: id,
-              reimburseType: REIMBURSE_TYPE_MAP[type]
-            })
+            // this.formData.delteReimburse.push({
+            //   deleteId: id,
+            //   reimburseType: REIMBURSE_TYPE_MAP[type]
+            // })
+            await this.deleteCost(params)
           } else {
+            // 导入费用
             let index = findIndex(this.selectedList, item => item.id === id) // 找到当前删除行 对应导入之后的数据列表的索引值
             if (index !== -1) {
               this.selectedList.splice(index, 1) // 删除后，让导入的表格回复对应的可选状态
             }
           }
         } else {
-          this.formData.delteReimburse.push({
-            deleteId: id,
-            reimburseType: REIMBURSE_TYPE_MAP[type]
-          })
+          // 出差补贴
+          await this.deleteCost(params)
+          // this.formData.delteReimburse.push({
+          //   deleteId: id,
+          //   reimburseType: REIMBURSE_TYPE_MAP[type]
+          // })
         }
       } 
       scope.row.isAdd = false // 将行数据设置display: none
@@ -1989,6 +2070,15 @@ export default {
         this[IF_SHOW_MAP[type]] = true
         this.deleteTableList(type)
       }
+    },
+    async deleteCost (params) {
+      this.orderLoading = true
+      await deleteCost(params).catch(err => {
+        this.$message.error(err.message)
+        this.orderLoading = false
+      })
+      this.parentVm._getList()
+      this.orderLoading = false
     },
     deleteTableList (type) { // 当删除完之后需要清空数组，因为直接删除会导致回显
       switch (type) {
@@ -2061,9 +2151,17 @@ export default {
     _getCustomerInfo () {
       getOrder(this.listQuery).then(res => {
         let { data, count } = res
-        this.customerInfoList = data
+        let result = data.map(item => {
+          item.themeList = 
+          JSON.parse(item.fromTheme.replace(TEXT_REG, ''))
+            .map(item => item.description)
+          return item
+        })
+        console.log(result, 'result')
+        this.customerInfoList = result
         this.customerTotal = count
-      }).catch(() => {
+      }).catch((err) => {
+        console.error(err, 'err')
         this.$message.error('获取用户信息失败')
       })
     },
@@ -2294,7 +2392,6 @@ export default {
         reimburseOtherCharges: [],
         reimurseOperationHistories: [],
         isDraft: false, // 是否是草稿
-        delteReimburse: [], // 需要删除的行数据
         fileId: [], // 需要删除的附件ID
         myExpendsIds: [] // 需要删除的导入数据（我的费用ID）
       }
@@ -2333,6 +2430,7 @@ export default {
       }      
     },
     async submit (isDraft) { // 提交
+      let formData = deepClone(this.formData)
       let { 
         reimburseTravellingAllowances,
         reimburseAccommodationSubsidies, 
@@ -2341,11 +2439,11 @@ export default {
         reimburseAttachments,
         attachmentsFileList,
         totalMoney
-      } = this.formData
+      } = formData
       if (parseFloat(totalMoney) <= 0) {
         return Promise.reject({ message: '总金额不能为零' })
       }
-      this.formData.reimburseAttachments = [...reimburseAttachments, ...attachmentsFileList]
+      formData.reimburseAttachments = [...reimburseAttachments, ...attachmentsFileList]
       this.mergeFileList(reimburseAccommodationSubsidies)
       this.mergeFileList(reimburseOtherCharges)
       this.mergeFileList(reimburseFares)
@@ -2353,15 +2451,16 @@ export default {
       this.addSerialNumber(reimburseAccommodationSubsidies)
       this.addSerialNumber(reimburseOtherCharges)
       this.addSerialNumber(reimburseFares)
-      this.formData.myExpendsIds = this.selectedList.map(item => item.id)
+      formData.myExpendsIds = this.selectedList.map(item => item.id)
       let isValid = await this.checkData()
       if (!isValid) {
         return Promise.reject({ message: this.errMessage })
       }
-      this.formData.isDraft = isDraft ? true : false
-      return addOrder(this.formData)
+      formData.isDraft = isDraft ? true : false
+      return addOrder(formData)
     },
     async updateOrder (isDraft) { // 编辑
+      let formData = deepClone(this.formData)
       let { 
         reimburseTravellingAllowances,
         reimburseAccommodationSubsidies, 
@@ -2370,11 +2469,11 @@ export default {
         reimburseAttachments,
         attachmentsFileList,
         totalMoney
-      } = this.formData
+      } = formData
       if (parseFloat(totalMoney) <= 0) {
         return Promise.reject({ message: '总金额不能为零' })
       }
-      this.formData.reimburseAttachments = [...reimburseAttachments, ...attachmentsFileList]
+      formData.reimburseAttachments = [...reimburseAttachments, ...attachmentsFileList]
       this.mergeFileList(reimburseAccommodationSubsidies)
       this.mergeFileList(reimburseOtherCharges)
       this.mergeFileList(reimburseFares)
@@ -2382,13 +2481,13 @@ export default {
       this.addSerialNumber(reimburseAccommodationSubsidies)
       this.addSerialNumber(reimburseOtherCharges)
       this.addSerialNumber(reimburseFares)
-      this.formData.myExpendsIds = this.selectedList.map(item => item.id) // 导入的数据ID
+      formData.myExpendsIds = this.selectedList.map(item => item.id) // 导入的数据ID
       let isValid = await this.checkData()
       if (!isValid) {
         return Promise.reject({ message: this.errMessage })
       }
-      this.formData.isDraft = isDraft ? true : false
-      return updateOrder(this.formData)
+      formData.isDraft = isDraft ? true : false
+      return updateOrder(formData)
     },
     approve () {
       this._approve()
@@ -2526,7 +2625,7 @@ export default {
     top: -36px;
     left: 51px;
     &.general {
-      left: 500px;
+      left: 480px;
       span {
         font-weight: bold;
       }
@@ -2536,6 +2635,9 @@ export default {
       margin-right: 10px;
       font-size: 12px;
       font-weight: bold;
+      &.underline {
+        text-decoration: underline;
+      }
       span {
         font-weight: normal;
       }
@@ -2729,6 +2831,7 @@ export default {
     }
     /* 总经理审批总金额 */
     .general-total-money {
+      width: 992px;
       padding-right: 5px;
       margin: 10px 0;
       font-size: 12px;

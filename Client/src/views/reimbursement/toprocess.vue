@@ -3,66 +3,40 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
-          :listQuery="formQuery" 
           :config="searchConfig"
           @changeForm="onChangeForm" 
           @search="onSearch">
         </Search>
       </div>
     </sticky>
-      <div class="app-container">
+    <Layer>
+      <common-table
+        ref="table"
+        height="100%"
+        :data="tableData"
+        :columns="processedColumns"
+        :loading="tableLoading"
+        @row-click="onRowClick"
+      ></common-table>
+        <pagination
+          v-show="total>0"
+          :total="total"
+          :page.sync="listQuery.page"
+          :limit.sync="listQuery.limit"
+          @pagination="handleCurrentChange"
+        />
+    </Layer>
+      <!-- <div class="app-container">
         <div class="bg-white">
           <div class="content-wrapper">
-            <el-table 
-              ref="table"
-              :data="tableData" 
-              v-loading="tableLoading" 
-              size="mini"
-              border
-              fit
-              height="100%"
-              style="width: 100%;"
-              @row-click="onRowClick"
-              highlight-current-row
-              >
-              <el-table-column
-                v-for="item in processedColumns"
-                :key="item.prop"
-                :width="item.width"
-                :label="item.label"
-                :align="item.align || 'left'"
-                :sortable="item.isSort || false"
-                :type="item.originType || ''"
-                show-overflow-tooltip
-              >
-                <template slot-scope="scope" >
-                  <div class="link-container" v-if="item.type === 'link'">
-                    <img :src="rightImg" @click.stop="item.handleJump({ ...scope.row, ...{ type: 'approve' }})" class="pointer">
-                    <span>{{ scope.row[item.prop] }}</span>
-                  </div>
-                  <template v-else-if="item.type === 'operation'">
-                    <el-button 
-                      v-for="btnItem in item.actions"
-                      :key="btnItem.btnText"
-                      @click="btnItem.btnClick(scope.row)" 
-                      type="text" 
-                      :icon="item.icon || ''"
-                      :size="item.size || 'mini'"
-                    >{{ btnItem.btnText }}</el-button>
-                  </template>
-                  <template v-else-if="item.label === '服务报告'">
-                    <div class="link-container">
-                      <img :src="rightImg" @click="item.handleClick(scope.row, 'table')" class="pointer">
-                      <span>查看</span>
-                    </div>
-                  </template>
-                  <template v-else>
-                    {{ scope.row[item.prop] }}
-                  </template>
-                </template>    
-              </el-table-column>
-            </el-table>
-            <!-- <common-table :data="tableData" :columns="columns" :loading="tableLoading"></common-table> -->
+            <common-table
+            ref="table"
+            height="100%"
+            :data="tableData"
+            :columns="processedColumns"
+            :loading="tableLoading"
+            @row-click="onRowClick"
+          ></common-table>
             <pagination
               v-show="total>0"
               :total="total"
@@ -72,7 +46,7 @@
             />
           </div>
         </div>
-      </div>
+      </div> -->
       <!-- 审核弹窗 -->
       <my-dialog
         ref="myDialog"
@@ -80,7 +54,7 @@
         :width="dialogWidth"
         :btnList="btnList"
         @closed="closeDialog"
-        :title="textMap[title]"
+        title="进程"
         :loading="dialogLoading"
       >
         <order 
@@ -127,9 +101,6 @@
 
 <script>
 import Search from '@/components/Search'
-import Sticky from '@/components/Sticky'
-import Pagination from '@/components/Pagination'
-import MyDialog from '@/components/Dialog'
 import Order from './common/components/order'
 // import Report from './common/components/report'
 // import zxform from "@/views/serve/callserve/form";
@@ -141,10 +112,6 @@ export default {
   mixins: [tableMixin, categoryMixin, reportMixin, chatMixin],
   components: {
     Search,
-    Sticky,
-    // CommonTable,
-    Pagination,
-    MyDialog,
     Order,
     // Report,
     // zxform,
@@ -166,7 +133,7 @@ export default {
       ]
     },
     dialogWidth () {
-      return this.title === 'approve' ? '1015px' :'1206px'
+      return this.isGeneralManager ? '1015px' : '1130px'
     }
   },
   data () {

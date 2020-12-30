@@ -62,154 +62,123 @@
         <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
       </div>
     </sticky>
-    <div class="app-container">
-      <div class="bg-white">
-        <div class="content-wrapper">
-          <el-table
-            ref="mainTable"
-            class="table_label"
-            :key="key"
-            :data="list"
-            v-loading="listLoading"
-            border
-            height="100%"
-            style="width: 100%;"
-            highlight-current-row
-            @row-click="rowClick"
-          >
-            <el-table-column width="50">
-              <template slot-scope="scope">
-                <el-radio v-model="radio" :label="scope.row.id"></el-radio>
-              </template>
-            </el-table-column>
-            <el-table-column
-              show-overflow-tooltip
-              v-for="(fruit,index) in formTheadOptions"
-              :align="fruit.align"
-              :key="`ind${index}`"
-              header-align="left"
-              :sortable="fruit=='chaungjianriqi'?true:false"
-              style="background-color:silver;"
-              :label="fruit.label"
-              :width="fruit.width"
-            >
-              <template slot-scope="scope">
-                <!-- <span v-if="fruit.name === 'order'">{{ scope.$index + 1 }}</span> -->
-                <div class="link-container" 
-                  v-if="fruit.name === 'u_SAP_ID'">
-                  <img :src="rightImg" class="pointer" @click="openTree(scope.row.id)" />
-                  <span>{{ scope.row.u_SAP_ID }}</span>
-                </div>
-                <span
-                  v-if="fruit.name === 'status'"
-                  :class="[scope.row[fruit.name]===1?'orangeWord':(scope.row[fruit.name]===2?'greenWord':'redWord')]"
-                >{{stateValue[scope.row[fruit.name]-1]}}</span>
-                <span v-if="fruit.name === 'subject'">{{scope.row[fruit.name]}}</span>
-                <span
-                  v-if="!(fruit.name ==='status'||fruit.name ==='subject'||fruit.name ==='id' || fruit.name === 'u_SAP_ID')"
-                >{{scope.row[fruit.name]}}</span>
-              </template>
-            </el-table-column>
-          </el-table>
-          <pagination
-            v-show="total>0"
-            :total="total"
-            :page.sync="listQuery.page"
-            :limit.sync="listQuery.limit"
-            @pagination="handleCurrentChange"
-          />
-        </div>
-      </div>
+    <Layer>
+      <common-table
+        ref="mainTable"
+        class="table_label"
+        :key="key"
+        :data="list"
+        :columns="formTheadOptions"
+        :loading="listLoading"
+        height="100%"
+        @row-click="rowClick"
+        radioKey="id"
+      >
+        <template v-slot:id="{ row }">
+          <div class="link-container">
+            <img :src="rightImg" class="pointer" @click="openTree(row.id)" />
+            <span>{{ row.u_SAP_ID }}</span>
+          </div>
+        </template>
+        <template v-slot:status="{ row }">
+          <span :class="[row.status === 1 ? 'orangeWord' : (row.status === 2 ? 'greenWord' : 'redWord')]">
+            {{ stateValue[row.status - 1] }}
+          </span>
+        </template>
+      </common-table>
+      <pagination
+        v-show="total>0"
+        :total="total"
+        :page.sync="listQuery.page"
+        :limit.sync="listQuery.limit"
+        @pagination="handleCurrentChange"
+      />
+    </Layer>
       <!--   v-el-drag-dialog
       width="1000px"  新建呼叫服务单-->
-      <el-dialog
-        v-el-drag-dialog
-        width="1655px"
-        top="2vh"
-        class="dialog-mini"
-        :close-on-click-modal="false"
-        :modal-append-to-body="false"
-        :modal="false"
-        @open="openCustoner"
-        @close="closeCustoner"
-        :destroy-on-close="false"
-        :title="textMap[dialogStatus]"
-        :visible.sync="dialogFormVisible"
-      >
-        <el-row :gutter="20" type="flex" class="row-bg" justify="space-around">
-          <el-col :span="11">
-            <customerupload
-              style="position:sticky;top:0;"
-              :form="formValue"
-              :serviceOrderPictures="serviceOrderPictures"
-            ></customerupload>
-          </el-col>
-          <el-col :span="13">
-            <zxform
-              ref="confirmForm"
-              :form="temp"
-              formName="确认"
-              labelposition="right"
-              labelwidth="72px"
-              :isCreate="true"
-              :sure="sure"
-              :ifFirstLook="true"
-              :customer="customer"
-              :openTree="openTree"
-              @imgChange="onImgChange"
-              @close-Dia="closeDia"
-            ></zxform>
-          </el-col>
-        </el-row>
-        <div slot="footer">
-          <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
-          <!-- <el-button
-            size="mini"
-            v-if="dialogStatus=='create'"
-            type="primary"
-            :loading="loadingBtn"
-            @click="createData"
-          >确认</el-button>-->
-          <el-button size="mini" type="primary" :loading="loadingBtn" @click="updateData">确认</el-button>
-        </div>
-      </el-dialog>
-      <!-- 只能查看的表单 -->
-      <el-dialog
-        v-el-drag-dialog
-        width="800px"
-        class="dialog-mini"
-        title="服务单详情"
-        :destroy-on-close="true"
-        @open="openDetail"
-        :modal="false"
-        :close-on-click-modal="false"
-        :modal-append-to-body="false"
-        :visible.sync="dialogFormView"
-      >
-        <customerupload style="position:sticky;top:0;" :form="formValue"></customerupload>
-        <div slot="footer">
-          <el-button size="mini" @click="dialogFormView = false">取消</el-button>
-          <el-button size="mini" type="primary" @click="dialogFormView = false">确认</el-button>
-        </div>
-      </el-dialog>
-      <el-dialog
-        v-el-drag-dialog
-        :visible.sync="dialogTree"
-        :modal-append-to-body="false"
-        :modal="false"
-        :destroy-on-close="true"
-        center
-        :close-on-click-modal="false"
-        width="300px"
-        class="dialog-mini"
-      >
-        <treeList @close="dialogTree=false"></treeList>
-        <span slot="footer" class="dialog-footer">
-          <el-button @click="dialogTree = false">取 消</el-button>
-          <el-button type="primary" @click="dialogTree = false">确 定</el-button>
-        </span>
-      </el-dialog>
-    </div>
+    <el-dialog
+      v-el-drag-dialog
+      width="1655px"
+      top="2vh"
+      class="dialog-mini"
+      :close-on-click-modal="false"
+      :modal-append-to-body="false"
+      :modal="false"
+      @open="openCustoner"
+      @close="closeCustoner"
+      :destroy-on-close="false"
+      :title="textMap[dialogStatus]"
+      :visible.sync="dialogFormVisible"
+    >
+      <el-row :gutter="20" type="flex" class="row-bg" justify="space-around">
+        <el-col :span="11">
+          <customerupload
+            style="position:sticky;top:0;"
+            :form="formValue"
+            :serviceOrderPictures="serviceOrderPictures"
+          ></customerupload>
+        </el-col>
+        <el-col :span="13">
+          <zxform
+            ref="confirmForm"
+            :form="temp"
+            formName="确认"
+            labelposition="right"
+            labelwidth="72px"
+            :isCreate="true"
+            :sure="sure"
+            :ifFirstLook="true"
+            :customer="customer"
+            :openTree="openTree"
+            @imgChange="onImgChange"
+            @close-Dia="closeDia"
+          ></zxform>
+        </el-col>
+      </el-row>
+      <div slot="footer">
+        <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
+        <!-- <el-button
+          size="mini"
+          v-if="dialogStatus=='create'"
+          type="primary"
+          :loading="loadingBtn"
+          @click="createData"
+        >确认</el-button>-->
+        <el-button size="mini" type="primary" :loading="loadingBtn" @click="updateData">确认</el-button>
+      </div>
+    </el-dialog>
+    <!-- 只能查看的表单 -->
+    <el-dialog
+      v-el-drag-dialog
+      width="800px"
+      class="dialog-mini"
+      title="服务单详情"
+      :destroy-on-close="true"
+      @open="openDetail"
+      :modal="false"
+      :close-on-click-modal="false"
+      :modal-append-to-body="false"
+      :visible.sync="dialogFormView"
+    >
+      <customerupload style="position:sticky;top:0;" :form="formValue"></customerupload>
+    </el-dialog>
+    <el-dialog
+      v-el-drag-dialog
+      :visible.sync="dialogTree"
+      :modal-append-to-body="false"
+      :modal="false"
+      :destroy-on-close="true"
+      center
+      :close-on-click-modal="false"
+      width="300px"
+      class="dialog-mini"
+    >
+      <treeList @close="dialogTree=false"></treeList>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="dialogTree = false">取 消</el-button>
+        <el-button type="primary" @click="dialogTree = false">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -248,34 +217,35 @@ export default {
       sure: 0,
       rightImg,
       formTheadOptions: [
+        { type: 'radio', width: 50 },
         // { name: "id", label: "服务单ID", align: "left", width: "100px" },
-        { name: "u_SAP_ID", label: '服务单号', align: "left", width: "80" },
-        { name: "customerId", label: "客户代码", align: "left", width: "80" },
-        { name: "status", label: "状态", align: "left", width: "70px" },
+        { prop: "u_SAP_ID", label: '服务单号', align: "left", width: "80", slotName: 'id' },
+        { prop: "customerId", label: "客户代码", align: "left", width: "80" },
+        { prop: "status", label: "状态", align: "left", width: "70px", slotName: 'status' },
         {
-          name: "customerName",
+          prop: "customerName",
           label: "客户名称",
           align: "left",
           width: "220",
         },
-        { name: "createTime", label: "创建日期", align: "left", width: "135" },
+        { prop: "createTime", label: "创建日期", align: "left", width: "135" },
         {
-          name: "newestContacter",
+          prop: "newestContacter",
           label: "联系人",
           align: "left",
           width: "70",
         },
         {
-          name: "newestContactTel",
+          prop: "newestContactTel",
           label: "电话号码",
           align: "left",
           width: "100px",
         },
-        { name: "services", label: "服务内容", align: "left", width: "120" },
-        { name: "supervisor", label: "售后主管", align: "left", width: "80" },
-        { name: "salesMan", label: "销售员", align: "left", width: "70" },
-        { name: "manufSN", label: "制造商序列号", align: "left", width: 100 },
-        { name: "itemCode", label: "物料编码", align: "left" },
+        { prop: "services", label: "服务内容", align: "left", width: "120" },
+        { prop: "supervisor", label: "售后主管", align: "left", width: "80" },
+        { prop: "salesMan", label: "销售员", align: "left", width: "70" },
+        { prop: "manufSN", label: "制造商序列号", align: "left", width: 100 },
+        { prop: "itemCode", label: "物料编码", align: "left" },
       ],
       tableKey: 0,
       formValue: {},
