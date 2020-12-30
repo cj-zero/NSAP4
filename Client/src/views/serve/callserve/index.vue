@@ -20,14 +20,14 @@
           @click="handleFilter"
         >搜索</el-button> -->
         <Search 
-          :listQuery="listQuery" 
+          :listQuery="formQuery"
           :config="searchConfig"
           @changeForm="onChangeForm" 
           @search="onSearch"
           @advanced="onAdvanced"></Search>
         <permission-btn moduleName="callserve" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
         <Search 
-          :listQuery="listQuery" 
+          :listQuery="formQuery"
           :config="searchConfigAdv"
           @changeForm="onAdvChangeForm" 
           @search="onSearch"
@@ -531,13 +531,16 @@ export default {
       listLoading: true,
       showDescription: false,
       dialogFormView: false,
+      formQuery: {
+        QryState: ''
+      },
       listQuery: {
         // 查询条件
         page: 1,
         limit: 50,
         key: undefined,
         appId: undefined,
-        QryState: ''
+        
         // QryServiceOrderId: "" //查询服务单号查询条件
         // QryState: "", //呼叫状态查询条件
         // QryCustomer: "", //客户查询条件

@@ -4,7 +4,6 @@
       <div class="filter-container">
         <permission-btn moduleName="problemtypes" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
         <Search 
-          :listQuery="listQuerySearch" 
           :config="searchConfig"
           @changeForm="onChangeForm" 
           @search="onSearch"

@@ -3,7 +3,6 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
-          :listQuery="listQuery" 
           :config="searchConfig"
           @changeForm="onChangeForm" 
           @search="onSearch">

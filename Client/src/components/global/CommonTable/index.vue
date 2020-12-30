@@ -152,6 +152,9 @@ export default {
     getCurrentRow () {
       return this.currentRow
     },
+    toggleRowSelection (row) {
+      this.$refs.commonTable.toggleRowSelection(row)
+    },
     resetCurrentRow () { 
       this.currentRow = null
     },
