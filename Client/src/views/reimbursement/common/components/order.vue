@@ -196,7 +196,7 @@
               <template v-slot:expenseDetail="{ row }">
                 <div class="detail-content">
                   <div>
-                    <span style="display: inline-block;margin-right: 5px;">{{ row.sellerName }}</span>
+                    <span style="display: inline-block;margin-right: 5px;" v-if="row.sellerName">{{ row.sellerName }}</span>
                     <span style="display: inline-block;margin-right: 5px;">{{ row.expenseDetail }}</span>
                     <el-tooltip 
                       :content="row.remark">
