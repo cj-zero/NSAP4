@@ -196,6 +196,27 @@ namespace OpenAuth.WebApi.Controllers.Serve
 
             return result;
         }
+        /// <summary>
+        /// 删除报销费用
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> DeleteCost(ReimburseRevocationReq req) 
+        {
+            var result = new Response();
+            try
+            {
+                _reimburseinfoapp.DeleteCost(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
 
         /// <summary>
         /// 撤回操作
