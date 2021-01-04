@@ -17,7 +17,6 @@ export default {
     const allPlacements = ['top-start', 'top', 'right', 'bottom', 'left']
     Vue.directive('infotooltip', {
       bind(el, binding) {
-        console.log(el, binding)
         clearEvent(el)
         el._tipInstance = Tip()
         let { value, modifiers, arg } = binding
@@ -49,7 +48,6 @@ export default {
         }
         //鼠标移除执行的函数
         el._tipMouseleaveHandler = function(e) {
-          console.log(e, 'leave handler')
           e.stopPropagation()
           if (el._tipInstance) {
             el._tipInstance.handleMouseLeave() //隐藏元素

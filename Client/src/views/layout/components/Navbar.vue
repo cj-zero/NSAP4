@@ -145,7 +145,7 @@ export default {
       deep: true,
       immediate: true,
       handler (val) {
-        this.newMessageList = JSON.parse(JSON.stringfiy(val))
+        this.newMessageList = JSON.parse(JSON.stringify(val))
       }
     }
   },
