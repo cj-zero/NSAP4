@@ -474,7 +474,7 @@ export let categoryMixin = {
       iconList: [ // 操作配置
         { icon: 'el-icon-document-add', handleClick: this.addAndCopy, operationType: 'add' }, 
         { icon: 'el-icon-document-copy', handleClick: this.addAndCopy, operationType: 'copy' }, 
-        { icon: 'el-icon-delete', handleClick: this.delete }
+        { icon: 'el-icon-delete', handleClick: this.toDelete }
       ],
       rolesList: this.$store.state.user.userInfoAll.roles, // 当前用户的角色列表
       userOrgName: this.$store.state.user.userInfoAll.orgName, // 部门名称
@@ -628,7 +628,7 @@ export let categoryMixin = {
       ]
       return (this.ifFormEdit !== undefined && !this.ifFormEdit) || this.ifFormEdit === undefined
         ? config
-        : [...config, { label: '操作', type: 'operation', iconList: [{ icon: 'el-icon-delete', handleClick: this.delete }], width: 150 }]
+        : [...config, { label: '操作', type: 'operation', iconList: [{ icon: 'el-icon-delete', handleClick: this.toDelete }], width: 150 }]
     },
     trafficConfig () {
       let config = [ // 交通配置

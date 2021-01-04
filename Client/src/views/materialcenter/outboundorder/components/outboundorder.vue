@@ -111,7 +111,7 @@
               </el-form-item>
             </template>
             <template v-slot:remark="{ row }">
-              <el-input size="mini" v-model="row.remark" :disabled="isAddExpressInfo(row)" v-infotooltip:200.top-start>></el-input>
+              <el-input size="mini" v-model="row.remark" :disabled="isAddExpressInfo(row)" v-infotooltip:200.top-start></el-input>
             </template>
             <template v-slot:expressagePicture="{ row, index }">
               <UpLoadFile 

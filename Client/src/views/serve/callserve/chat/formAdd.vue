@@ -371,7 +371,7 @@
     </el-dialog>
     <my-dialog 
       ref="formTheme"
-      width="500px"
+      width="767px"
       :btnList="themeBtnList"
       :append-to-body="true"
       @closed="closeFormTheme"

@@ -432,6 +432,56 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 获取用户信息
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetUserDetails(QueryReimburseServerOrderListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            if (loginUser.Account == Define.USERAPP)
+            {
+                loginUser = await GetUserId(Convert.ToInt32(request.AppId));
+            }
+
+            var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == loginUser.Id).Select(r => r.SecondId).ToListAsync();
+            var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => new { o.Name,o.CascadeId}).FirstOrDefaultAsync();
+            var CascadeId = orgname.CascadeId.ToString();
+            String[] split = CascadeId.Split(".");
+            int subsidies = 0;
+            if (split.Length > 3)
+            {
+                var orgid = split[0] +"."+ split[1] + "." + split[2] + "." + split[3] + ".";
+                var cascadeidname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.CascadeId.Equals(orgid)).Select(o => new { o.Name, o.CascadeId }).FirstOrDefaultAsync();
+                var idname = cascadeidname?.Name.Substring(0, 1);
+                if (cascadeidname?.Name.Substring(0,1) == "R" || cascadeidname?.Name.Substring(0,1) == "M")
+                {
+                    subsidies = 65;
+                }
+                else {
+                    subsidies = 50;
+                }
+            }
+            else
+            {
+                subsidies = 50;
+            }
+            var result = new TableData();
+            result.Data = new {
+                Name=loginUser.Name,
+                ServiceRelations= loginUser?.ServiceRelations == null ? "未录入" : loginUser.ServiceRelations,
+                OrgName =orgname.Name,
+                Subsidies= subsidies,
+            };
+            return result;
+        }
+
+        /// <summary>
         /// 加载报销单详情
         /// </summary>
         /// <param name="ReimburseInfoId"></param>
@@ -1150,6 +1200,56 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 删除报销单费用
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task DeleteCost(ReimburseRevocationReq req)
+        {
+            //1 出差补贴， 2 交通费用， 3住宿补贴， 4 其他费用
+            decimal money = 0;
+            List<ReimburseAttachment> ReimburseAttachments = new List<ReimburseAttachment>();
+            switch (req.ReimburseType)
+            {
+                case 1:
+                    var ReimburseTravellingAllowances = await UnitWork.Find<ReimburseTravellingAllowance>(r => r.Id.Equals(req.ReimburseCostId) && r.ReimburseInfoId.Equals(req.ReimburseInfoId)).FirstOrDefaultAsync();
+                    money =Convert.ToDecimal(ReimburseTravellingAllowances.Days * ReimburseTravellingAllowances.Money);
+                    ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId.Equals(ReimburseTravellingAllowances.Id) && r.ReimburseType == 1).ToListAsync();
+                    await UnitWork.DeleteAsync<ReimburseTravellingAllowance>(ReimburseTravellingAllowances);
+                    break;
+                case 2:
+                    var ReimburseFares = await UnitWork.Find<ReimburseFare>(r => r.Id.Equals(req.ReimburseCostId) && r.ReimburseInfoId.Equals(req.ReimburseInfoId)).FirstOrDefaultAsync();
+                    money = Convert.ToDecimal(ReimburseFares.Money);
+                    ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId.Equals(ReimburseFares.Id) && r.ReimburseType == 2).ToListAsync();
+                    await UnitWork.DeleteAsync<ReimburseFare>(ReimburseFares);
+                    break;
+                case 3:
+                    var ReimburseAccommodationSubsidies = await UnitWork.Find<ReimburseAccommodationSubsidy>(r => r.Id.Equals(req.ReimburseCostId) && r.ReimburseInfoId.Equals(req.ReimburseInfoId)).FirstOrDefaultAsync();
+                    money = Convert.ToDecimal(ReimburseAccommodationSubsidies.TotalMoney);
+                    ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId.Equals(ReimburseAccommodationSubsidies.Id) && r.ReimburseType == 3).ToListAsync();
+                    await UnitWork.DeleteAsync<ReimburseAccommodationSubsidy>(ReimburseAccommodationSubsidies);
+                    break;
+                case 4:
+                    var ReimburseOtherCharges = await UnitWork.Find<ReimburseOtherCharges>(r => r.Id.Equals(req.ReimburseCostId) && r.ReimburseInfoId.Equals(req.ReimburseInfoId)).FirstOrDefaultAsync();
+                    money = Convert.ToDecimal(ReimburseOtherCharges.Money);
+                    ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId.Equals(ReimburseOtherCharges.Id) && r.ReimburseType == 4).ToListAsync();
+                    await UnitWork.DeleteAsync<ReimburseOtherCharges>(ReimburseOtherCharges);
+                    break;
+                default:
+                    break;
+            }
+            await UnitWork.UpdateAsync<ReimburseInfo>(r => r.Id.Equals(req.ReimburseInfoId), r=>new ReimburseInfo
+            {
+                TotalMoney = r.TotalMoney-money
+            }) ;
+            if (ReimburseAttachments.Count > 0) 
+            {
+                await UnitWork.BatchDeleteAsync<ReimburseAttachment>(ReimburseAttachments.ToArray());
+            }
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
         /// 审批报销单 
         /// </summary>
         /// <param name="req"></param>
@@ -1229,6 +1329,7 @@ namespace OpenAuth.App
                         VerificationFinally = "1",
                         VerificationOpinion = "同意",
                     };
+                    eoh.ApprovalResult = "同意";
                     if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && obj.RemburseStatus == 4)
                     {
                         obj.RemburseStatus = 5;
@@ -1602,7 +1703,7 @@ namespace OpenAuth.App
                     {
                         SerialNumber = 2,
                         InvoiceTime = InvoiceTime,
-                        ExpendDetails = r.Days + "天",
+                        ExpendDetails =r.Money+"/天*"+r.Days + "天",
                         ExpendName = "住宿补贴",
                         Money = (decimal)r.TotalMoney
                     });
@@ -1614,7 +1715,7 @@ namespace OpenAuth.App
                 {
                     SerialNumber = 3,
                     InvoiceTime = "",
-                    ExpendDetails = Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Days + "天",
+                    ExpendDetails = Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Money+"/天*"+ Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Days + "天",
                     ExpendName = "出差补贴",
                     Money = Convert.ToDecimal(Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Days * Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Money)
                 });

@@ -47,6 +47,17 @@ namespace OpenAuth.App.Request
         /// <returns></returns>
         public int Status { get; set; }
 
+        /// <summary>
+        /// 劳务关系
+        /// </summary>
+        /// <returns></returns>
+        public string ServiceRelations { get; set; }
+
+        /// <summary>
+        /// 银行卡号
+        /// </summary>
+        /// <returns></returns>
+        public string CardNo { get; set; }
 
         /// <summary>
         /// 所属组织Id，多个可用，分隔

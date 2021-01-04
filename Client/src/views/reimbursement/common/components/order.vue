@@ -978,7 +978,16 @@
 </template>
 
 <script>
-import { addOrder, getOrder, updateOrder, approve, isSole, getHistoryReimburseInfo, getUserDetail } from '@/api/reimburse'
+import { 
+  addOrder,
+  getOrder, 
+  updateOrder, 
+  approve, 
+  isSole, 
+  getHistoryReimburseInfo, 
+  getUserDetail,
+  deleteCost
+} from '@/api/reimburse'
 import { getList as getAfterEvaluaton } from '@/api/serve/afterevaluation'
 import { getList } from '@/api/reimburse/mycost'
 import { getReportDetail } from '@/api/serve/callservesure'
@@ -1171,7 +1180,6 @@ export default {
         reimburseOtherCharges: [],
         reimurseOperationHistories: [], // 操作记录 我的提交不可见
         isDraft: false, // 是否是草稿
-        delteReimburse: [], // 需要删除的行数据
         fileId: [], // 需要删除的附件ID
         myExpendsIds: [] // 需要删除的导入数据（我的费用ID）
       },
@@ -1273,6 +1281,7 @@ export default {
         }
         if (this.title === 'create' || this.title === 'edit') { // 只有在create或者edit的时候，才可以导入费用模板
           this._getCostList() // 获取费用模板
+          this._getSubsidies() // 获取出差补贴金额 
         }
       }
     },
@@ -2117,31 +2126,49 @@ export default {
           })
       }
     },
-    delete (scope, data, type) {
+    toDelete (scope, data, type) {
+      this.$confirm('确认进行删除?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.delete(scope, data, type)
+      })
+    },
+    async delete (scope, data, type) {
       if (!this.ifFormEdit) return
       let { id, invoiceFileList, otherFileList } = scope.row
       if (id) { // 说明已经新建过的,新建过的表格数据 invoceFileList 或者otherFileList 是一定存在的
+        let params = {
+          reimburseInfoId: this.formData.id,
+          reimburseCostId: id,
+          reimburseType: REIMBURSE_TYPE_MAP[type],
+        }
         if (
           (invoiceFileList && invoiceFileList.length) ||
           (otherFileList && otherFileList.length)  
         ) {
           let data = invoiceFileList.length ? invoiceFileList : otherFileList
           if (data[0].reimburseId) { // 导入的数据reimburseId是为空的，所以不需要添加到delteReimburse中
-            this.formData.delteReimburse.push({
-              deleteId: id,
-              reimburseType: REIMBURSE_TYPE_MAP[type]
-            })
+            // this.formData.delteReimburse.push({
+            //   deleteId: id,
+            //   reimburseType: REIMBURSE_TYPE_MAP[type]
+            // })
+            await this.deleteCost(params)
           } else {
+            // 导入费用
             let index = findIndex(this.selectedList, item => item.id === id) // 找到当前删除行 对应导入之后的数据列表的索引值
             if (index !== -1) {
               this.selectedList.splice(index, 1) // 删除后，让导入的表格回复对应的可选状态
             }
           }
         } else {
-          this.formData.delteReimburse.push({
-            deleteId: id,
-            reimburseType: REIMBURSE_TYPE_MAP[type]
-          })
+          // 出差补贴
+          await this.deleteCost(params)
+          // this.formData.delteReimburse.push({
+          //   deleteId: id,
+          //   reimburseType: REIMBURSE_TYPE_MAP[type]
+          // })
         }
       } 
       scope.row.isAdd = false // 将行数据设置display: none
@@ -2151,6 +2178,15 @@ export default {
         this[IF_SHOW_MAP[type]] = true
         this.deleteTableList(type)
       }
+    },
+    async deleteCost (params) {
+      this.orderLoading = true
+      await deleteCost(params).catch(err => {
+        this.$message.error(err.message)
+        this.orderLoading = false
+      })
+      this.parentVm._getList()
+      this.orderLoading = false
     },
     deleteTableList (type) { // 当删除完之后需要清空数组，因为直接删除会导致回显
       switch (type) {
@@ -2463,7 +2499,6 @@ export default {
         reimburseOtherCharges: [],
         reimurseOperationHistories: [],
         isDraft: false, // 是否是草稿
-        delteReimburse: [], // 需要删除的行数据
         fileId: [], // 需要删除的附件ID
         myExpendsIds: [] // 需要删除的导入数据（我的费用ID）
       }
@@ -2502,6 +2537,7 @@ export default {
       }      
     },
     async submit (isDraft) { // 提交
+      let formData = deepClone(this.formData)
       let { 
         reimburseTravellingAllowances,
         reimburseAccommodationSubsidies, 
@@ -2510,11 +2546,11 @@ export default {
         reimburseAttachments,
         attachmentsFileList,
         totalMoney
-      } = this.formData
+      } = formData
       if (parseFloat(totalMoney) <= 0) {
         return Promise.reject({ message: '总金额不能为零' })
       }
-      this.formData.reimburseAttachments = [...reimburseAttachments, ...attachmentsFileList]
+      formData.reimburseAttachments = [...reimburseAttachments, ...attachmentsFileList]
       this.mergeFileList(reimburseAccommodationSubsidies)
       this.mergeFileList(reimburseOtherCharges)
       this.mergeFileList(reimburseFares)
@@ -2522,15 +2558,16 @@ export default {
       this.addSerialNumber(reimburseAccommodationSubsidies)
       this.addSerialNumber(reimburseOtherCharges)
       this.addSerialNumber(reimburseFares)
-      this.formData.myExpendsIds = this.selectedList.map(item => item.id)
+      formData.myExpendsIds = this.selectedList.map(item => item.id)
       let isValid = await this.checkData()
       if (!isValid) {
         return Promise.reject({ message: this.errMessage })
       }
-      this.formData.isDraft = isDraft ? true : false
-      return addOrder(this.formData)
+      formData.isDraft = isDraft ? true : false
+      return addOrder(formData)
     },
     async updateOrder (isDraft) { // 编辑
+      let formData = deepClone(this.formData)
       let { 
         reimburseTravellingAllowances,
         reimburseAccommodationSubsidies, 
@@ -2539,11 +2576,11 @@ export default {
         reimburseAttachments,
         attachmentsFileList,
         totalMoney
-      } = this.formData
+      } = formData
       if (parseFloat(totalMoney) <= 0) {
         return Promise.reject({ message: '总金额不能为零' })
       }
-      this.formData.reimburseAttachments = [...reimburseAttachments, ...attachmentsFileList]
+      formData.reimburseAttachments = [...reimburseAttachments, ...attachmentsFileList]
       this.mergeFileList(reimburseAccommodationSubsidies)
       this.mergeFileList(reimburseOtherCharges)
       this.mergeFileList(reimburseFares)
@@ -2551,13 +2588,13 @@ export default {
       this.addSerialNumber(reimburseAccommodationSubsidies)
       this.addSerialNumber(reimburseOtherCharges)
       this.addSerialNumber(reimburseFares)
-      this.formData.myExpendsIds = this.selectedList.map(item => item.id) // 导入的数据ID
+      formData.myExpendsIds = this.selectedList.map(item => item.id) // 导入的数据ID
       let isValid = await this.checkData()
       if (!isValid) {
         return Promise.reject({ message: this.errMessage })
       }
-      this.formData.isDraft = isDraft ? true : false
-      return updateOrder(this.formData)
+      formData.isDraft = isDraft ? true : false
+      return updateOrder(formData)
     },
     approve () {
       this._approve()

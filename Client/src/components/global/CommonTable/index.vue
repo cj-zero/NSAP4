@@ -1,18 +1,18 @@
 <template>
   <el-table 
-    ref="commonTable"
+    ref="commonTable" 
     :data="data" 
     v-loading="loading" 
-    v-bind="attrs"
-    v-on="$listeners"
-    @row-click="onRowClick"
+    v-bind="attrs" 
+    v-on="$listeners" 
+    @row-click="onRowClick" 
     @selection-change="onSelectChange"
   >
     <template v-for="column in columns">
       <!-- 多选 -->
       <el-table-column 
         :key="column.prop"
-        type="selection" 
+        type="selection"
         v-if="column.type === 'selection'"
         v-bind="mergeColumnConfig(column)"
         :selectable="checkSelectable"
@@ -30,7 +30,7 @@
       <el-table-column
         :key="column.prop" 
         type="expand" 
-        v-bind="column"
+        v-bind="column" 
         v-else-if="column.type === 'expand'"
       >
         <template slot-scope="scope">
@@ -45,16 +45,16 @@
         <template slot="header" slot-scope="scope">
           <!-- 自定义表头 -->
           <template v-if="column.isCustomizeHeader">
-            <slot :name="`${column.prop}_header`" :row="scope.row" :label="column.label"></slot>
+            <slot :name="column.headerName || `${column.prop}_header`" :row="scope.row" :label="column.label"></slot>
           </template>
           <template v-else>
             {{ column.label }}
           </template>
         </template>
-        <template slot-scope="scope" >
+        <template slot-scope="scope">
           <!--  有箭头的操作 -->
-          <div class="link-container text-overflow" v-if="column.type === 'link'" style="width: 100%;"> 
-            <img :src="rightImg" @click="isFunction(column.handleClick) ? column.handleClick({ ...scope.row, ...(column.options || {})}) : _noop" class="pointer">
+          <div class="link-container text-overflow" v-if="column.type === 'link'" style="width: 100%;">
+            <img :src="rightImg" @click="isFunction(column.handleClick) ? column.handleClick({ ...scope.row, ...(column.options || {}) }) : _noop" class="pointer" />
             <span>{{ scope.row[column.prop] }}</span>
           </div>
           <!-- 单选 -->
@@ -65,19 +65,32 @@
           <template v-else-if="column.slotName">
             <slot :name="column.slotName || 'default'" :index="scope.$index" :row="scope.row" :prop="column.prop"></slot>
           </template>
-         
+          <!-- 表单组件 -->
+          <template v-else-if="column.component">
+            <!-- 当表格中字段很多且多数为表单元素的时候，不推荐使用slot，使用component选项能大大减少template代码量，可以配合在common-table外层套上el-form使用 -->
+            <el-form-item :prop="dataKey + '.' + scope.$index + '.' + column.prop" v-bind="column.component.itemAttrs">
+              <component
+                :is="transformComponent(column.component)"
+                v-model="scope.row[column.prop]"
+                v-bind="mergeComponentAttrs(column.component)"
+                v-on="column.component.on || {}"
+                v-infotooltip:200.top-start
+              ></component>
+            </el-form-item>
+          </template>
           <!-- 文本显示 -->
           <template v-else>
             {{ scope.row[column.prop] }}
           </template>
-        </template>    
+        </template>
       </el-table-column>
     </template>
-  </el-table>  
+  </el-table>
 </template>
 
 <script>
 import { defaultTableConfig, defaultColumnConfig } from './default'
+import componentMap from '../componentMap'
 import rightImg from '@/assets/table/right.png'
 import { noop } from '@/utils/declaration'
 import { isFunction } from '@/utils/validate'
@@ -90,9 +103,11 @@ export default {
         return []
       }
     },
-    columns: { 
-      // 表格数据示例 { label: '文本信息', prop: '数据字段', originType: 'selection表格自带的类型', 
-      //  type: '用户定义的类型', handleClick: '执行的function', width: '单元格宽度' }
+    dataKey: {
+      type: String,
+      default: 'list'
+    },
+    columns: {
       type: Array,
       default () {
         return []
@@ -118,7 +133,7 @@ export default {
   },
   computed: {
     attrs () {
-      return Object.assign({}, defaultTableConfig, this.$attrs)
+      return this.mergeConfig(defaultTableConfig, this.$attrs)
     },
     selectionColumns () {
       return this.columns.some(item => item.type === 'selection')
@@ -137,22 +152,37 @@ export default {
     _noop () {
       noop()
     },
+    mergeConfig (defaultConfig = {}, customerConfig = {}) {
+      // 用户自定义配置与默认配置合并
+      return Object.assign({}, defaultConfig, customerConfig)
+    },
+    transformComponent (component) {
+      return componentMap[component.tag].component
+    },
+    mergeComponentAttrs (component) {
+      let newComponent = componentMap[component.tag]
+      return this.mergeConfig(newComponent.attrs, component.attrs)
+    },
     onRowClick (row) {
-      if (this.radioKey) { // 点击行单选
+      if (this.radioKey) {
+        // 点击行单选
         this.radio = row[this.radioKey]
       }
-      if (this.selectionColumns && row.selectable) { // 点击行进行多选 选择
+      if (this.selectionColumns && row.selectable) {
+        // 点击行进行多选 选择
         this.$refs.commonTable.toggleRowSelection(row)
-      } 
+      }
       this.currentRow = row
       console.log(this.currentRow, 'currentRow')
       this.$emit('rowClick', this.currentRow)
-      // console.log(index, column, 'row click', radioKey, this.radio, Object.keys(row))
     },
     getCurrentRow () {
       return this.currentRow
     },
-    resetCurrentRow () { 
+    toggleRowSelection (row) {
+      this.$refs.commonTable.toggleRowSelection(row)
+    },
+    resetCurrentRow () {
       this.currentRow = null
     },
     getSelectionList () {
@@ -170,22 +200,16 @@ export default {
       this.$refs.commonTable.clearSelection()
     },
     checkSelectable (row) {
-      row.selectable = this.selectedList.length 
-        ? this.selectedList.every(item => item[this.selectedKey] !== row[this.selectedKey])
-        : true
+      row.selectable = this.selectedList.length ? this.selectedList.every(item => item[this.selectedKey] !== row[this.selectedKey]) : true
       return row.selectable
     },
-    mergeColumnConfig (column) { // 合并自定义配置与默认配置
-      return Object.assign({}, defaultColumnConfig, column)
+    mergeColumnConfig (column) {
+      // 合并自定义配置与默认配置
+      return this.mergeConfig(defaultColumnConfig, column)
     }
   },
-  created () {
-
-  },
-  mounted () {
-
-  },
+  created() {},
+  mounted() {}
 }
 </script>
-<style lang='scss' scoped>
-</style>
+<style lang="scss" scoped></style>

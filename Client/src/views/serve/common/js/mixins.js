@@ -91,6 +91,9 @@ export let dispatchMixin = { // 派单 转派
     _normalizeRightList (data) {
       let reg = /[\r|\r\n|\n\t\v]/g
       data.forEach(item => {
+        let { terminalCustomerId, terminalCustomer, customerId, customerName } = item
+        item.customerId = terminalCustomerId || customerId
+        item.customerName = terminalCustomer || customerName
         item.themeList = JSON.parse(item.fromTheme.replace(reg, '')).map(item => item.description)
         item.fromTheme = item.themeList.join(' ')
       })

@@ -11,7 +11,7 @@ export default {
   number: {
     component: 'el-input-number',
     attrs: {
-      width: '100%',
+      style: 'width: 100%',
       size: 'mini',
       clearable: true,
       placeholder: '请输入'
@@ -20,7 +20,7 @@ export default {
   select: {
     component: 'my-select',
     attrs: {
-      width: '100%',
+      style: 'width: 100%',
       size: 'mini',
       clearable: true,
       placeholder: '请输入'

@@ -39,6 +39,14 @@ export function getDetails(params) { // 新建报销单获取当前用户客户�
   })
 }
 
+export function deleteCost (data) { // 删除费用
+  return request({
+    url: '/serve/Reimburse/DeleteCost',
+    method: 'post',
+    data
+  })
+}
+
 export function getList (params) { // 加载表格数据
   return request({
     url: '/serve/Reimburse/Load',

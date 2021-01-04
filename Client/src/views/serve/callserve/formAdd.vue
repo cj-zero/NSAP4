@@ -795,7 +795,7 @@
     <!-- 呼叫主题弹窗 -->
     <my-dialog 
       ref="formTheme"
-      width="500px"
+      width="767px"
       title="呼叫主题"
       :btnList="themeBtnList"
       :append-to-body="true"
