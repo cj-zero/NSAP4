@@ -74,7 +74,7 @@
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex'
+import { mapState, mapGetters, mapActions } from 'vuex'
 import Hamburger from '@/components/Hamburger'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
@@ -84,12 +84,12 @@ import { readMessage } from '@/api/message'
 import { GetDetails } from '@/api/serve/callservesure'
 import { findIndex } from '@/utils/process'
 export default {
-  props: {
-    messageList: {
-      type: Array,
-      defualt: () => []
-    }
-  },
+  // props: {
+  //   messageList: {
+  //     type: Array,
+  //     defualt: () => []
+  //   }
+  // },
   data: function() {
     return {
       logo: logo,
@@ -127,6 +127,9 @@ export default {
   },
   computed: {
     ...mapGetters(['sidebar', 'isIdentityAuth', 'name', 'themeStatus']),
+    ...mapState('signalR', [
+      'messageList'
+    ]),
     transformList () {
       return this.newMessageList.filter(item => item.HasRead === !!this.currentIndex)
     },
@@ -142,8 +145,7 @@ export default {
       deep: true,
       immediate: true,
       handler (val) {
-        console.log(val,'messageList')
-        this.newMessageList = val
+        this.newMessageList = JSON.parse(JSON.stringfiy(val))
       }
     }
   },

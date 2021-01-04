@@ -21,15 +21,15 @@
                 <i :class="`iconfont icon-${child.meta.icon}`"></i>
                 <span v-if="child.meta&&child.meta.title" slot="title">{{child.meta.title}}</span>
                 <span class="notice-wrapper" 
-                  v-if="child.meta.title === '服务呼叫待确认' && vm.message.serviceOrderCount"
+                  v-if="child.meta.title === '服务呼叫待确认' && serviceOrderCount"
                 >
-                  {{vm.message.serviceOrderCount | process }}
+                  {{ serviceOrderCount | process }}
                 </span>
                 <span 
                   class="notice-wrapper" 
-                  v-if="child.meta.title === '服务呼叫未派单' && vm.message.serviceWorkOrderCount"
+                  v-if="child.meta.title === '服务呼叫未派单' && serviceWorkOrderCount"
                 >
-                  {{vm.message.serviceWorkOrderCount | process }}
+                  {{ serviceWorkOrderCount | process }}
                 </span>
               </div>
             </el-menu-item>
@@ -40,10 +40,15 @@
 </template>
 
 <script>
-// import { message } from '@/utils/signalR'
+import { mapState } from 'vuex'
 export default {
   name: 'SidebarItem',
-  inject: ['vm'],
+  computed: {
+    ...mapState('signalR', [
+      'serviceOrderCount',
+      'serviceWorkOrderCount'
+    ])
+  },
   props: {
     // route配置json
     item: {
