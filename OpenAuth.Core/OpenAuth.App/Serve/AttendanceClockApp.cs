@@ -195,20 +195,20 @@ namespace OpenAuth.App
                 .WhereIf(request.DateFrom != null && request.DateTo != null, u => u.ClockDate >= request.DateFrom && u.ClockDate < Convert.ToDateTime(request.DateTo).AddMinutes(1440))
                 ;
             // 主管只能看到本部门的技术员的打卡记录
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")) && !loginContext.Roles.Any(r => r.Name.Equals("考勤人员")))
             {
                 var userIds = _revelanceApp.Get(Define.USERORG, false, loginContext.Orgs.Select(o => o.Id).ToArray());
                 ClockModels = ClockModels.Where(q => userIds.Contains(q.UserId));
             }
-            var listobj = ClockModels.ToList();
-            listobj.ForEach(s => s.ClockDate = s.ClockDate + s.ClockTime);
+            var listobj = ClockModels.OrderBy(c => c.ClockDate).ThenBy(c => c.ClockTime).ToList();
+            //listobj.ForEach(s => s.ClockDate = s.ClockDate + s.ClockTime);
             #endregion
             // Name 姓名,org 部门,ClockDate 打卡日期,ClockTime,location 详细地址,VisitTo 拜访对象,Remark 备注
             var AttendanceClockList = listobj.Select(u => new
             {
                 姓名=u.Name,
                 部门=u.Org,
-                打卡日期=u.ClockDate,
+                打卡日期=(u.ClockDate + u.ClockTime).ToString("yyyy-MM-dd HH:mm:ss"),
                 详细地址=u.Location,
                 拜访对象=u.VisitTo,
                 备注=u.Remark
