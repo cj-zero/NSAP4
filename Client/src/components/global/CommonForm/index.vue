@@ -9,7 +9,15 @@
       <template v-for="(formInput, index) in formInputs">
         <el-row type="flex" :key="index">
           <el-col v-for="item in formInput" :key="item.attrs.prop" :span="item.span || 24">
-            <el-form v-bind="item.itemAttrs">
+            <!-- 插槽 -->
+            <slot
+              v-if="item.slotName"
+              :name="item.slotName" 
+              :form="form" 
+              :item="item">
+            </slot>
+            <!-- 表单组件 -->
+            <el-form v-bind="item.itemAttrs" v-else>
               <component
                 :is="item.tag"
                 v-model="form[item.attrs.prop]"
@@ -26,7 +34,7 @@
 <script>
 import { isFunction } from '@/utils/validate'
 import { formConfig, formItemConfig } from './default'
-import componentMap from './componentMap'
+import componentMap from '../componentMap'
 import MySelect from '@/components/Select'
 export default {
   name: 'CommonForm',

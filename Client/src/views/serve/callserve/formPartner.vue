@@ -87,7 +87,7 @@ export default {
       columns: [
         { type: 'radio', width: 50 },
         { prop: 'cardCode', label: '客户代码', width: 80 },
-        { prop: 'cardName', label: '客户名称', 'min-width': 80 },
+        { prop: 'cardName', label: '客户名称', width: 140 },
         { label: '状态冻结', width: 80, slotName: 'freezen' },
         { prop: 'cntctPrsn', label: '联系人', width: 80 },
         { label: '电话号码', slotName: 'phone', width: 110 },        

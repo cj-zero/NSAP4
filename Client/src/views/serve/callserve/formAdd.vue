@@ -691,7 +691,7 @@
       loading
       :modal="false"
       :visible.sync="solutionOpen"
-      width="1000px"
+      width="850px"
       :close-on-click-modal="false"
     >
       <solution

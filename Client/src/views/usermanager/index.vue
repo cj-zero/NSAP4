@@ -119,7 +119,7 @@
           </el-form-item>
           <el-form-item size="small" label="劳务关系">
             <el-select class="filter-item" v-model="temp.serviceRelations" placeholder="Please select">
-              <el-option v-for="item in serviceRelationsList" :key="item.dtValue" :label="item.name" :value="item.dtValue">
+              <el-option v-for="item in serviceRelationsList" :key="item.dtValue" :label="item.name" :value="item.name">
               </el-option>
             </el-select>
           </el-form-item>
