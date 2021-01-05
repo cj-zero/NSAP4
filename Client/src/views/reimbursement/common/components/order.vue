@@ -1322,7 +1322,10 @@ export default {
       return 0
     },
     totalMoney () {
-      return this.travelTotalMoney + this.trafficTotalMoney + this.accTotalMoney + this.otherTotalMoney
+      let moneyList = [this.travelTotalMoney, this.trafficTotalMoney, this.accTotalMoney, this.otherTotalMoney]
+      return moneyList.reduce((prev, next) => {
+        return accAdd(prev, next)
+      }, 0)
     },
     normalConfig () {
       let noneSlotConfig = this.formConfig.filter(item => item.type !== 'slot')
