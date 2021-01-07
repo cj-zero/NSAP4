@@ -1,0 +1,26 @@
+/* 百度地图自定义样式 */
+/* 动画 */
+@keyframes bmap-fade {
+  from {
+      opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  to {
+      opacity: 0;
+  }
+}
+
+.bmap-single {
+  width: 20px;
+  height: 20px;
+  background: url('../assets/bmap/invoice-track.png') no-repeat center / contain;
+  cursor: pointer;
+}
+.bmap-multiple {
+  width: 20px;
+  height: 20px;
+  background: url('../assets/bmap/move-track.png') no-repeat center / contain;
+  cursor: pointer;
+}

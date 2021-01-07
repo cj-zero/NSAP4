@@ -263,14 +263,22 @@ export let tableMixin = {
         reimburseOtherCharges,
       } = data
       // 交通
-      reimburseFares.forEach(item => {
+      let arr = ['2020-12-24', '2020-12-25', '2020-12-26']
+      reimburseFares.forEach((item, index) => {
         let { 
-          invoiceTime, transport, from, to, money, 
+          transport, from, to, money, 
           reimburseAttachments, invoiceNumber, remark,
-          fromLng, fromLat, toLng, toLat 
+          fromLng, fromLat, toLng, toLat, id
         } = item
         result.push({
-          invoiceTime: this.processInvoiceTime(invoiceTime),
+          id,
+          isTraffic: true,
+          fromLng, 
+          fromLat, 
+          toLng, 
+          toLat,
+          // invoiceTime: this.processInvoiceTime(invoiceTime),
+          invoiceTime: arr[index % 3],
           expenseName: this.transportationMap[transport],
           expenseDetail: from + '-' + to,
           money,
@@ -281,18 +289,20 @@ export let tableMixin = {
           otherFileList: this.getOtherFileList(reimburseAttachments)
         })
         console.log('item')
-        if (fromLng) {
+        if (fromLng && toLng) { // 只有两个坐标都有值时才加到数组中
           pointArr.push({ lng: fromLng, lat: fromLat })
+          pointArr.push({ lng: toLng, lat: toLat, id }) // id用来标记终点标识
         }
-        if(toLng) {
-          pointArr.push({ lng: toLng, lat: toLat })
-        }
+        // if(toLng) {
+        //   pointArr.push({ lng: toLng, lat: toLat })
+        // }
       })
       // 住宿
       reimburseAccommodationSubsidies.forEach(item => {
         let { invoiceTime, days, totalMoney, reimburseAttachments, invoiceNumber, remark } = item
         result.push({
-          invoiceTime: this.processInvoiceTime(invoiceTime),
+          // invoiceTime: this.processInvoiceTime(invoiceTime),
+          invoiceTime: invoiceTime || '2020-12-26',
           expenseName: '住宿补贴',
           expenseDetail: `${toThousands(totalMoney / days)}元/天*${days}天`,
           money: totalMoney,
@@ -307,7 +317,8 @@ export let tableMixin = {
       reimburseTravellingAllowances.forEach(item => {
         let { invoiceTime, days, money, remark } = item
         result.push({
-          invoiceTime: this.processInvoiceTime(invoiceTime),
+          // invoiceTime: this.processInvoiceTime(invoiceTime),
+          invoiceTime: invoiceTime || '2020-12-28',
           expenseName: '出差补贴',
           expenseDetail: `${toThousands(money)}元/天*${days}天`,
           money: money * days,
