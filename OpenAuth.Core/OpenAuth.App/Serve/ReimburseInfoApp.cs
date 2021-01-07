@@ -461,34 +461,47 @@ namespace OpenAuth.App
             {
                 loginUser = await GetUserId(Convert.ToInt32(request.AppId));
             }
-
+            decimal subsidies = 0;
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == loginUser.Id).Select(r => r.SecondId).ToListAsync();
-            var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => new { o.Name,o.CascadeId}).FirstOrDefaultAsync();
-            var CascadeId = orgname.CascadeId.ToString();
-            String[] split = CascadeId.Split(".");
-            int subsidies = 0;
-            if (split.Length > 3)
+            var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).ToListAsync();
+            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_TravellingAllowance") && orgname.Contains(u.Name)).Select(u => new { u.Name, u.DtValue}).ToListAsync();
+            if (CategoryList != null && CategoryList.Count() >= 1)
             {
-                var orgid = split[0] +"."+ split[1] + "." + split[2] + "." + split[3] + ".";
-                var cascadeidname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.CascadeId.Equals(orgid)).Select(o => new { o.Name, o.CascadeId }).FirstOrDefaultAsync();
-                var idname = cascadeidname?.Name.Substring(0, 1);
-                if (cascadeidname?.Name.Substring(0,1) == "R" || cascadeidname?.Name.Substring(0,1) == "M")
-                {
-                    subsidies = 65;
-                }
-                else {
-                    subsidies = 50;
-                }
+                subsidies = Convert.ToDecimal(CategoryList.FirstOrDefault().DtValue);
             }
-            else
+            else 
             {
                 subsidies = 50;
             }
+
+            #region
+            //var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => new { o.Name,o.CascadeId}).FirstOrDefaultAsync();
+            //var CascadeId = orgname.CascadeId.ToString();
+            //String[] split = CascadeId.Split(".");
+            //int subsidies = 0;
+            //if (split.Length > 3)
+            //{
+            //    var orgid = split[0] +"."+ split[1] + "." + split[2] + "." + split[3] + ".";
+            //    var cascadeidname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.CascadeId.Equals(orgid)).Select(o => new { o.Name, o.CascadeId }).FirstOrDefaultAsync();
+            //    var idname = cascadeidname?.Name.Substring(0, 1);
+            //    if (cascadeidname?.Name.Substring(0,1) == "R" || cascadeidname?.Name.Substring(0,1) == "M")
+            //    {
+            //        subsidies = 65;
+            //    }
+            //    else {
+            //        subsidies = 50;
+            //    }
+            //}
+            //else
+            //{
+            //    subsidies = 50;
+            //}
+            #endregion
             var result = new TableData();
             result.Data = new {
                 Name=loginUser.Name,
                 ServiceRelations= loginUser?.ServiceRelations == null ? "未录入" : loginUser.ServiceRelations,
-                OrgName =orgname.Name,
+                OrgName =orgname.FirstOrDefault(),
                 Subsidies= subsidies,
             };
             return result;
