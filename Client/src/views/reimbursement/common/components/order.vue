@@ -1452,9 +1452,10 @@ export default {
       map.clearOverlays();                        //清除地图上所有的覆盖物  
       // 生成坐标点
       this.createPointArr(this.formData.pointArr)
-      this.ifCreateDrivePath = false // 标识绘制全路径
-      this.ifCreatePath = false // 标识绘制最后一条路径
+      this.ifCreateDrivePath = false // 标识是否绘制全路径
+      this.ifCreatePath = false // 标识是否绘制最后一条路径
       this.ifDateClick = false // 标识通过点击日期进行绘制
+      this.isSearchCompelete = false // 标识绘制全路径是否检索完成
       this.createDrivePath()
       console.log('initMap', this.formData.pointArr)
     },
@@ -1521,11 +1522,8 @@ export default {
       } else {
         this.removeOverlay()
       }
-      // if (!isDateClick && this.ifDateClick) { // 如果点击图标之前，有通过点击日期生成的路径，先进行移除
-      //   this.removeOverlay()
-      // }
       this.ifCreateDrivePath = isDateClick ? false : !this.ifCreateDrivePath
-      let driving = new this._BMap.DrivingRoute(this._map);    //创建驾车实例  
+      let driving = this.driving = new this._BMap.DrivingRoute(this._map);    //创建驾车实例  
       for (let i = 0; i < this.trackPoint.length; i++) {
         if(i !== this.trackPoint.length - 1){
           driving.search(this.trackPoint[i], this.trackPoint[i+1])
@@ -1536,6 +1534,8 @@ export default {
           this._map.addOverlay(marker)
         }
       }
+      this.isSearchCompelete = false
+      let successCount = 0
       driving.setSearchCompleteCallback(() => {  
         try {
           let pts = driving.getResults().getPlan(0).getRoute(0).getPath()   //通过驾车实例，获得一系列点的数组 
@@ -1563,6 +1563,10 @@ export default {
           })
           this._map.addOverlay(polyline)
           this._map.setViewport(this.trackPoint)
+          successCount++
+          if (successCount === this.trackPoint.length - 1) { // 全部都检索完成了
+            this.isSearchCompelete = true
+          }
         } catch (err) {
           console.log(err)
         }
@@ -1667,7 +1671,7 @@ export default {
       console.log(isAll ? 'multiple click' : 'SINGLE')
       this.createPointArr(this.formData.pointArr)
       this.expenseCategoryList = this.formData.expenseCategoryList
-      isAll ? this.createDrivePath() : this.createLastPath()
+      isAll ? this.isSearchCompelete && this.createDrivePath() : this.createLastPath()
     },
     createPathControl () { // 创建路径控件
       let that = this
@@ -1788,18 +1792,20 @@ export default {
         }
       })
       this.createPointArr(pointList)
-      this.createDrivePath(true)
+      if (this.isSearchCompelete) {
+        this.createDrivePath(true)
+      }
+      
       console.log(date, 'date ondatepicker', dateTime, this.expenseCategoryList)
     },
     onExpenseClick (row) { // 点击交通发票绘制当前发票的路径
       let { fromLng, fromLat, toLng, toLat, id } = row
-      
       if (!fromLng || !toLng) {
         return this.$message.warning('当前发票，为获取到坐标点')
       }
       // 找到当前交通发票的索引号,用于地图展示
       this.bmapIndex = findIndex(this.expenseCategoryList, item => item.id === id) + 1
-      if (this._map) {
+      if (this._map && this.isSearchCompelete) {
         let pointArr = [{ lng: fromLng, lat: fromLat }, { lng: toLng, lat: toLat }]
         this.createPointArr(pointArr)
         this.createCurrentPath()
