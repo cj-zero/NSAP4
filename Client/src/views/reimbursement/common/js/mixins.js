@@ -41,6 +41,19 @@ export let tableMixin = {
         { label: '业务员', prop: 'salesMan', width: 80 },
         { label: '填报日期', prop: 'fillTime', width: 85 }
       ],
+      processedColumns: [ // 不同的表格配置(我的提交除外的其它模块表格)
+        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleClick: this.getDetail, options: { type: 'approve' } },
+        { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
+        { label: '客户名称', prop: 'terminalCustomer', width: 170 },
+        { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
+        { label: '总天数', prop: 'days', width: 60, align: 'right' },
+        { label: '出发日期', prop: 'businessTripDate', width: 85 },
+        { label: '结束日期', prop: 'endDate', width: 85 },
+        { label: '报销部门', prop: 'orgName', width: 70 },
+        { label: '报销人', prop: 'userName', width: 70 },
+        { label: '业务员', prop: 'salesMan', width: 80 },
+        { label: '填报日期', prop: 'fillTime', width: 85 }
+      ],
       tableData: [],
       total: 0, // 表格数据的总数量
       dialogLoading: false, 
@@ -60,23 +73,6 @@ export let tableMixin = {
       originUserId: this.$store.state.user.userInfoAll.userId, // 当前用户的ID
       reimburseStatus: 0, // 报销状态
     }
-  },
-  computed: {
-    processedColumns () {
-      return [ // 不同的表格配置(我的提交除外的其它模块表格)
-        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleClick: this.getDetail, options: { type: this.isPaid ? 'view' : 'approve' } },
-        { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
-        { label: '客户名称', prop: 'terminalCustomer', width: 170 },
-        { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
-        { label: '总天数', prop: 'days', width: 60, align: 'right' },
-        { label: '出发日期', prop: 'businessTripDate', width: 85 },
-        { label: '结束日期', prop: 'endDate', width: 85 },
-        { label: '报销部门', prop: 'orgName', width: 70 },
-        { label: '报销人', prop: 'userName', width: 70 },
-        { label: '业务员', prop: 'salesMan', width: 80 },
-        { label: '填报日期', prop: 'fillTime', width: 85 }
-      ]
-    } 
   },
   methods: {
     _openServiceOrder (row) {
