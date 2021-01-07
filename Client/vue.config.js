@@ -36,11 +36,11 @@ module.exports = {
         .use(CompressionPlugin, [])
         .end()
     }
-    // if (process.env.NODE_ENV === 'development') {
-    //   config.plugin('HardSourceWebpackPlugin')
-    //     .use(HardSourceWebpackPlugin)
-    //     .end()
-    // }
+    if (process.env.NODE_ENV === 'development') {
+      config.plugin('HardSourceWebpackPlugin')
+        .use(HardSourceWebpackPlugin)
+        .end()
+    }
     config.module
       .rule('svg')
       .exclude.add(resolve('src/icons'))

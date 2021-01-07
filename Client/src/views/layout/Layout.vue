@@ -19,7 +19,6 @@
 import { Navbar, Sidebar, AppMain, TagsView } from './components'
 import ResizeMixin from './mixin/ResizeHandler'
 import { getToken } from '@/utils/auth' // 验权
-// import initSignalR from '@/utils/signalR'
 import { sendPendingNumber, getMessageWeb } from '@/api/message'
 import { mapActions } from 'vuex'
 export default {
@@ -57,9 +56,6 @@ export default {
     }
   },
   mounted () {
-    // initSignalR.call(this, getToken(), () => {
-      
-    // })
     let params = {
       token: getToken(),
       callbck: () => {
