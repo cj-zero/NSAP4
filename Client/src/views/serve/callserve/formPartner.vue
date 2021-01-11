@@ -1,6 +1,25 @@
 <template>
   <div>
-    <el-table
+    <common-table
+      :data="partnerList"
+      height="500"
+      :columns="columns"
+      :loading="parLoading"
+      ref="singleTable"
+      @current-change="getPartner"
+      radioKey="cardCode"
+    >
+      <template v-slot:freezen="{ row }">
+        <span :class="[row.frozenFor=='N'?'greenColro':'redColor']">{{row.frozenFor=="N"?"正常":'冻结'}}</span>
+      </template>
+      <template v-slot:balance="{ row }">
+         <span :class="[row.balance>=0?'':'redColor']">{{row.balance}}</span>
+      </template>
+      <template v-slot:phone="{ row }">
+        {{ row.cellular ? row.cellular : row.phone1 }}
+      </template>
+    </common-table>
+    <!-- <el-table
       :data="partnerList"
       border
       height="500"
@@ -42,7 +61,7 @@
       <el-table-column prop="address" align="left" label="开票地址" min-width="180"></el-table-column>
       <el-table-column prop="address2" label="收货地址" min-width="180"></el-table-column>
       <el-table-column prop="u_FPLB" align="left" width="120px" label="发票类别"></el-table-column>
-    </el-table>
+    </el-table> -->
 
     <!-- <el-dialog :modal-append-to-body='false'
           :append-to-body="true" title="最近服务单情况" width="90%" @open="openDialog" :visible.sync="dialogCallId">
@@ -65,6 +84,21 @@ export default {
 
   data() {
     return {
+      columns: [
+        { type: 'radio', width: 50 },
+        { prop: 'cardCode', label: '客户代码', width: 80 },
+        { prop: 'cardName', label: '客户名称', width: 140 },
+        { label: '状态冻结', width: 80, slotName: 'freezen' },
+        { prop: 'cntctPrsn', label: '联系人', width: 80 },
+        { label: '电话号码', slotName: 'phone', width: 110 },        
+        { prop: 'slpName', label: '销售员', width: 100 },
+        { prop: 'technician', label: '售后主管' },
+        { prop: 'currency', label: '货币种类', width: 100 },
+        { label: '科目余额', width: 120, slotName: 'balance', align: 'right' },
+        { prop: 'address', label: '开票地址', 'min-width': 180 },
+        { prop: 'address2', label: '收货地址', 'min-width': 180 },
+        { prop: 'u_FPLB', label: '发票类别', width: 120 }
+      ],
       currentRow: [], //选择项
       dialogPartner: "",
       dialogCallId: false,

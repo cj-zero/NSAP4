@@ -41,6 +41,19 @@ export let tableMixin = {
         { label: '业务员', prop: 'salesMan', width: 80 },
         { label: '填报日期', prop: 'fillTime', width: 85 }
       ],
+      processedColumns: [ // 不同的表格配置(我的提交除外的其它模块表格)
+        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleClick: this.getDetail, options: { type: 'approve' } },
+        { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
+        { label: '客户名称', prop: 'terminalCustomer', width: 170 },
+        { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
+        { label: '总天数', prop: 'days', width: 60, align: 'right' },
+        { label: '出发日期', prop: 'businessTripDate', width: 85 },
+        { label: '结束日期', prop: 'endDate', width: 85 },
+        { label: '报销部门', prop: 'orgName', width: 70 },
+        { label: '报销人', prop: 'userName', width: 70 },
+        { label: '业务员', prop: 'salesMan', width: 80 },
+        { label: '填报日期', prop: 'fillTime', width: 85 }
+      ],
       tableData: [],
       total: 0, // 表格数据的总数量
       dialogLoading: false, 
@@ -60,23 +73,6 @@ export let tableMixin = {
       originUserId: this.$store.state.user.userInfoAll.userId, // 当前用户的ID
       reimburseStatus: 0, // 报销状态
     }
-  },
-  computed: {
-    processedColumns () {
-      return [ // 不同的表格配置(我的提交除外的其它模块表格)
-        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleClick: this.getDetail, options: { type: this.isPaid ? 'view' : 'approve' } },
-        { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
-        { label: '客户名称', prop: 'terminalCustomer', width: 170 },
-        { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
-        { label: '总天数', prop: 'days', width: 60, align: 'right' },
-        { label: '出发日期', prop: 'businessTripDate', width: 85 },
-        { label: '结束日期', prop: 'endDate', width: 85 },
-        { label: '报销部门', prop: 'orgName', width: 70 },
-        { label: '报销人', prop: 'userName', width: 70 },
-        { label: '业务员', prop: 'salesMan', width: 80 },
-        { label: '填报日期', prop: 'fillTime', width: 85 }
-      ]
-    } 
   },
   methods: {
     _openServiceOrder (row) {
@@ -242,10 +238,11 @@ export let tableMixin = {
       })
       // 住宿
       reimburseAccommodationSubsidies.forEach(item => {
-        let { invoiceTime, days, totalMoney, reimburseAttachments, invoiceNumber, remark } = item
+        let { invoiceTime, days, totalMoney, reimburseAttachments, invoiceNumber, remark, sellerName } = item
         result.push({
           invoiceTime: this.processInvoiceTime(invoiceTime),
           expenseName: '住宿补贴',
+          sellerName,
           expenseDetail: `${toThousands(totalMoney / days)}元/天*${days}天`,
           money: totalMoney,
           remark,
@@ -425,7 +422,7 @@ export let categoryMixin = {
       iconList: [ // 操作配置
         { icon: 'el-icon-document-add', handleClick: this.addAndCopy, operationType: 'add' }, 
         { icon: 'el-icon-document-copy', handleClick: this.addAndCopy, operationType: 'copy' }, 
-        { icon: 'el-icon-delete', handleClick: this.delete }
+        { icon: 'el-icon-delete', handleClick: this.toDelete }
       ],
       rolesList: this.$store.state.user.userInfoAll.roles, // 当前用户的角色列表
       userOrgName: this.$store.state.user.userInfoAll.orgName, // 部门名称
@@ -579,7 +576,7 @@ export let categoryMixin = {
       ]
       return (this.ifFormEdit !== undefined && !this.ifFormEdit) || this.ifFormEdit === undefined
         ? config
-        : [...config, { label: '操作', type: 'operation', iconList: [{ icon: 'el-icon-delete', handleClick: this.delete }], width: 150 }]
+        : [...config, { label: '操作', type: 'operation', iconList: [{ icon: 'el-icon-delete', handleClick: this.toDelete }], width: 150 }]
     },
     trafficConfig () {
       let config = [ // 交通配置
@@ -701,7 +698,7 @@ export const attachmentMixin = {
     },
     _setCurrentRow (currentRow, data) { // 识别发票凭据后，对表格行进行赋值
       console.log('setCurrentRow')
-      let { invoiceNo, invoiceDate, money, isAcc, isValidInvoice } = data
+      let { invoiceNo, invoiceDate, money, isAcc, isValidInvoice, sellerName = '' } = data
       if (isAcc) { // 住宿表格行数据
         currentRow.totalMoney = money
         currentRow.money = (currentRow.totalMoney / (currentRow.days || 1)).toFixed(2)
@@ -714,6 +711,7 @@ export const attachmentMixin = {
       this.$set(currentRow, 'isValidInvoice', isValidInvoice) // 判断发票是否正确，如果是正确的话就不给修改，不正确就给修改
       currentRow.maxMoney = money
       currentRow.invoiceNumber = invoiceNo
+      currentRow.sellerName = sellerName
       currentRow.invoiceTime = invoiceDate.match(invoiceTimeReg) ? RegExp.$_ : ''
     },
     _setAttachmentList ({ data, index, prop, reimburseType, val }) { // 设置通过上传获取到的附件列表
@@ -756,6 +754,7 @@ export const attachmentMixin = {
                 invoiceNo: '',
                 money: '',
                 isAcc,
+                sellerName: '',
                 invoiceDate: '',
                 isValidInvoice: false
               })
@@ -764,19 +763,14 @@ export const attachmentMixin = {
             this.$message.error('识别失败,请上传至其它附件列表')
             resolve(false)
           } else {
-            let { invoiceNo, invoiceDate, amountWithTax, isValidate, isUsed, notPassReason, type, extendInfo
-            
-            
-            
-            
-            
-            } = res.data[0]
+            let { invoiceNo, invoiceDate, amountWithTax, isValidate, isUsed, notPassReason, type, extendInfo, sellerName } = res.data[0]
             if (!isValidate || (isValidate && isUsed)) { // 识别失败
               this.$nextTick(() => {
                 this._setCurrentRow(currentRow, {
                   invoiceNo: '',
                   money: '',
                   isAcc,
+                  sellerName: '',
                   invoiceDate: '',
                   isValidInvoice: false
                 })
@@ -794,6 +788,7 @@ export const attachmentMixin = {
                   money: amountWithTax,
                   isAcc,
                   invoiceDate,
+                  sellerName,
                   isValidInvoice: true
                 })
               })
@@ -807,6 +802,7 @@ export const attachmentMixin = {
               invoiceNo:'',
               money: '',
               isAcc,
+              sellerName: '',
               invoiceDate: '',
               isValidInvoice: false
             })

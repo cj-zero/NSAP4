@@ -3,6 +3,7 @@ import Vuex from 'vuex'
 import getters from './getters'
 import { vuexOidcCreateStoreModule } from 'vuex-oidc'
 import modules from './merge'
+console.log(process.env.VUE_APP_OIDC_AUTHORITY, 'authority')
 Vue.use(Vuex)
 const store = new Vuex.Store({
   modules: {

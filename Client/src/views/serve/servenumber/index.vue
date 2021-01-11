@@ -36,59 +36,25 @@
         <permission-btn moduleName="servenumber" size="mini" v-on:btn-event="onBtnClicked"></permission-btn> 
       </div>
     </sticky>
-    <div class="app-container">
-      <div class="bg-white">
-        <div class="content-wrapper">
-          <el-table
-            ref="mainTable"
-            class="table_label"
-            :key="key"
-            :data="list"
-            v-loading="listLoading"
-            border
-            height="100%"
-            fit
-            style="width: 100%;"
-            highlight-current-row
-          >
-            <el-table-column
-              show-overflow-tooltip
-              v-for="(fruit,index) in formTheadOptions"
-              :align="fruit.align"
-              :key="`ind${index}`"
-              header-align="left"
-              :width="fruit.width"
-              :fixed="fruit.fixed"
-              :sortable="fruit=='chaungjianriqi'?true:false"
-              style="background-color:silver;"
-              :label="fruit.label"
-            >
-              <template slot-scope="scope">
-                <!-- <el-link
-                  v-if="fruit.name === 'id'"
-                  type="primary"
-                  @click="openTree(scope.row.id)"
-                >{{scope.row.id}}</el-link>
-                <span
-                  v-if="fruit.name === 'status'"
-                  :class="[scope.row[fruit.name]===1?'orangeWord':(scope.row[fruit.name]===2?'greenWord':'redWord')]"
-                >{{stateValue[scope.row[fruit.name]-1]}}</span> -->
-                <span v-if="fruit.name === 'serveId'">{{ scope.$index + 1}}</span>
-                <span v-else
-                >{{scope.row[fruit.name]}}</span>
-              </template>
-            </el-table-column>
-          </el-table>
-          <pagination
-            v-show="total>0"
-            :total="total"
-            :page.sync="listQuery.page"
-            :limit.sync="listQuery.limit"
-            @pagination="handleCurrentChange"
-          />
-        </div>
-      </div>
-    </div>
+    <Layer>
+      <common-table
+        ref="mainTable"
+        class="table_label"
+        :key="key"
+        :data="list"
+        :loading="listLoading"
+        height="100%"
+        :columns="formTheadOptions"
+      >
+      </common-table>
+      <pagination
+        v-show="total>0"
+        :total="total"
+        :page.sync="listQuery.page"
+        :limit.sync="listQuery.limit"
+        @pagination="handleCurrentChange"
+      />
+    </Layer>
   </div>
 </template>
 
@@ -115,22 +81,22 @@ export default {
       multipleSelection: [], // 列表checkbox选中的值
       key: 1, // table key
       formTheadOptions: [
-         { name: "serveId", label: "编号" ,fixed:true, width: '50px' },
-        { name: "customer", label: "客户代码" ,align:'left'},
-        { name: "custmrName", label: "客户名称", width: 180 },
-        { name: "manufSN", label: "制造商序列号",width:'120px' },
-        // { name: "internalSN", label: "内部序列号", width: '120px' },
-        { name: "itemCode", label: "物料编码", width: 150 },
-        { name: "itemName", label: "物料描述", width: 180 },
-        { name: "manufDate", label: "制造日期" },
-        { name: "deliveryNo", label: "交货单号" },
-        { name: "dlvryDate", label: "交货日期" },
-        { name: "contractId", label: "合同号" },
-        { name: "serviceFee", label: "服务费" },
-        { name: "slpName", label: "销售员" },
-        { name: "cntrctStrt", label: "合同开始时间",width:'110px' },
-        { name: "cntrctEnd", label: "合同结束时间",width:'110px' },
-        { name: "createDate", label: "创建时间" }
+        { type: 'index', label: "编号" ,fixed: true, width: '50px' },
+        { prop: "customer", label: "客户代码" ,align:'left'},
+        { prop: "custmrName", label: "客户名称", width: 180 },
+        { prop: "manufSN", label: "制造商序列号",width:'120px' },
+        // { prop: "internalSN", label: "内部序列号", width: '120px' },
+        { prop: "itemCode", label: "物料编码", width: 150 },
+        { prop: "itemName", label: "物料描述", width: 180 },
+        { prop: "manufDate", label: "制造日期" },
+        { prop: "deliveryNo", label: "交货单号" },
+        { prop: "dlvryDate", label: "交货日期" },
+        { prop: "contractId", label: "合同号" },
+        { prop: "serviceFee", label: "服务费" },
+        { prop: "slpName", label: "销售员" },
+        { prop: "cntrctStrt", label: "合同开始时间",width:'110px' },
+        { prop: "cntrctEnd", label: "合同结束时间",width:'110px' },
+        { prop: "createDate", label: "创建时间" }
       ],
 
       tableKey: 0,

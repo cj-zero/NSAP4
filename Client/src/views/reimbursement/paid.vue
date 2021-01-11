@@ -14,7 +14,7 @@
         ref="table"
         height="100%"
         :data="tableData"
-        :columns="processedColumns"
+        :columns="paidColumns"
         :loading="tableLoading"
       ></common-table>
       <pagination
@@ -71,7 +71,7 @@
         <Report :data="reportData" ref="report"/>
       </my-dialog> -->
        <!-- 只能查看的表单 -->
-      <!-- <my-dialog
+      <my-dialog
         ref="serviceDetail"
         width="1210px"
         title="服务单详情"
@@ -79,7 +79,6 @@
         <el-row :gutter="20" class="position-view">
           <el-col :span="18" >
             <zxform
-              :form="temp"
               formName="查看"
               labelposition="right"
               labelwidth="72px"
@@ -92,7 +91,7 @@
             <zxchat :serveId='serveId' formName="报销"></zxchat>
           </el-col>
         </el-row>
-      </my-dialog> -->
+      </my-dialog>
   </div>
 </template>
 
@@ -100,8 +99,8 @@
 import Search from '@/components/Search'
 import Order from './common/components/order'
 // import Report from './common/components/report'
-// import zxform from "@/views/serve/callserve/form";
-// import zxchat from '@/views/serve/callserve/chat/index'
+import zxform from "@/views/serve/callserve/form";
+import zxchat from '@/views/serve/callserve/chat/index'
 import { tableMixin, categoryMixin, reportMixin, chatMixin } from './common/js/mixins'
 
 export default {
@@ -111,8 +110,8 @@ export default {
     Search,
     Order,
     // Report,
-    // zxform,
-    // zxchat
+    zxform,
+    zxchat
   },
   computed: {
     searchConfig () {
@@ -131,7 +130,21 @@ export default {
     return {
       customerInfo: {}, // 当前报销人的id， 名字
       categoryList: [], // 字典数组
-      isPaid: true // 已经支付标识变量
+      isPaid: true, // 已经支付标识变量
+      paidColumns: [ // 不同的表格配置(我的提交除外的其它模块表格)
+        { label: '报销单号', prop: 'mainIdText', type: 'link', width: 70, handleClick: this.getDetail, options: { type: 'view' } },
+        { label: '服务ID', prop: 'serviceOrderSapId', width: 80, type: 'link', handleClick: this._openServiceOrder, options: { type: 'view' } },
+        { label: '客户代码', prop: 'terminalCustomerId', width: 75 },
+        { label: '客户名称', prop: 'terminalCustomer', width: 170 },
+        { label: '总金额', prop: 'totalMoney', width: 100, align: 'right' },
+        { label: '总天数', prop: 'days', width: 60, align: 'right' },
+        { label: '出发日期', prop: 'businessTripDate', width: 85 },
+        { label: '结束日期', prop: 'endDate', width: 85 },
+        { label: '报销部门', prop: 'orgName', width: 70 },
+        { label: '报销人', prop: 'userName', width: 70 },
+        { label: '业务员', prop: 'salesMan', width: 80 },
+        { label: '填报日期', prop: 'fillTime', width: 85 }
+      ]
     }
   },
   methods: {

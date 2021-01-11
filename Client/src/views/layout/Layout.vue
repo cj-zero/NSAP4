@@ -2,7 +2,7 @@
 	<div class="app-wrapper" :class="classObj">
 		<el-container class="flex-column">
 			<el-header height="45px">
-				<navbar :messageList="message.messageList"></navbar>
+				<navbar></navbar>
 			</el-header>
 			<el-container class="flex-row flex-item">
 				<sidebar class="sidebar-container"></sidebar>
@@ -19,8 +19,8 @@
 import { Navbar, Sidebar, AppMain, TagsView } from './components'
 import ResizeMixin from './mixin/ResizeHandler'
 import { getToken } from '@/utils/auth' // 验权
-import initSignalR from '@/utils/signalR'
 import { sendPendingNumber, getMessageWeb } from '@/api/message'
+import { mapActions } from 'vuex'
 export default {
   name: 'layout',
   components: {
@@ -30,11 +30,11 @@ export default {
     TagsView
   },
   mixins: [ResizeMixin],
-  provide () {
-    return {
-      vm: this
-    }
-  },
+  // provide () {
+  //   return {
+  //     vm: this
+  //   }
+  // },
   computed: {
     sidebar() {
       return this.$store.state.app.sidebar
@@ -53,20 +53,22 @@ export default {
   },
   data () {
     return {
-      message: {
-        serviceOrderCount: 0,
-        serviceWorkOrderCount: 0,
-        messageList: []
-      }
     }
   },
   mounted () {
-    initSignalR.call(this, getToken(), () => {
-      sendPendingNumber()
-      getMessageWeb()
-    })
+    let params = {
+      token: getToken(),
+      callbck: () => {
+        sendPendingNumber()
+        getMessageWeb()
+      }
+    }
+    this.initSignalR(params)
   },
   methods: {
+    ...mapActions('signalR', [
+      'initSignalR'
+    ]),
     handleClickOutside() {
       this.$store.dispatch('CloseSideBar', { withoutAnimation: false })
     }

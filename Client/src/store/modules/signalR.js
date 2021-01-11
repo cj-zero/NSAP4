@@ -1,9 +1,44 @@
+import Vue from 'vue'
+export default {
+  namespaced: true,
+  state: {
+    messageList: [],
+    serviceOrderCount: 0,
+    serviceWorkOrderCount: 0
+  },
+  mutations: {
+    receiveMessage (state, payload) { // 
+      let { user, message } = payload
+      Vue.prototype.$notify.info({
+        title: `来自${user}的消息`,
+        message,
+        duration: 0
+      })
+    },
+    setMessageList (state, messageList) {
+      state.messageList = messageList
+    },
+    setServiceOrderCount (state, serviceOrderCount) { // 待确认工单数量
+      state.serviceOrderCount = serviceOrderCount
+    },
+    setServiceWordOrderCount (state, serviceWorkOrderCount) {// 未派单的工单那数量
+      state.serviceWorkOrderCount = serviceWorkOrderCount
+    }
+  },
+  actions: {
+    initSignalR ({ commit }, payload) {
+      let { token, callBack } = payload
+      initSignalR(commit, token, callBack)
+    }
+  }
+}
+
 /**
  * 相关文档地址: https://docs.microsoft.com/zh-cn/aspnet/core/signalr/javascript-client?view=aspnetcore-3.1
  */
 
 let hasConnected = false
-function initSignalR (token = '', callBack) { 
+function initSignalR (commit, token = '', callBack) { 
   if (hasConnected) {
     return
   }
@@ -32,48 +67,29 @@ function initSignalR (token = '', callBack) {
   })
   // 消息
   connection.on("ReceiveMessage", (user, message) => {
-    // console.log(user, message, 'user')
-    this.$notify.info({
-      title: `来自${user}的消息`,
-      message,
-      duration: 0
-    })
+    commit('receiveMessage', { user, message })
   })
   // 系统消息
   connection.on("SystemMessage", (user, message) => {
-    // console.log(user, message, 'user')
-    this.$notify.info({
-      title: `来自${user}的消息`,
-      message,
-      duration: 0
-    })
+    commit('receiveMessage', { user, message })
   })
   // ServiceOrderMessage
   connection.on('ServiceOrderMessage', (user, message) => {
     console.log('ServiceOrderMessage', user, message)
-    this.message.messageList = message
+    commit('setMessageList', message)
   })
-  // 工单数量 (服务呼叫模块)
-  // connection.on('PendingNumber', (user, message) => {
-  //   if (typeof message === 'string') {
-  //     try {
-  //       message = JSON.parse(message)
-  //     } catch (e) {
-  //       // TODO
-  //     }
-  //   }
-  //   console.log('pendingNumber', message)
-  //   this.message = message
-  // })
-  connection.on('ServiceOrderCount', (user, message) => {
+  connection.on('ServiceOrderCount', (user, message) => { // 服务待确认工单数量
     console.log('ServiceOrderCount')
-    this.message.serviceOrderCount = message
+    commit('setServiceOrderCount', message)
   })
-  connection.on('ServiceWordOrderCount', (user, message) => {
+  connection.on('ServiceWordOrderCount', (user, message) => { // 服务未呼叫工单数量
     console.log('ServiceWordOrderCount')
-    this.message.serviceWorkOrderCount = message
+    commit('setServiceWordOrderCount', message)
+    // this.message.serviceWorkOrderCount = messag
   })
+
   // 连接完成
+
   connection.on('Connected', () => {
     callBack && callBack()
     hasConnected = true
@@ -91,10 +107,3 @@ function initSignalR (token = '', callBack) {
     connection.start().catch(err => console.error(err))
     */
 }
-
-// let messageReceive = {
-//   // serviceWorkOrder
-// }
-// export messageReceive
-
-export default initSignalR

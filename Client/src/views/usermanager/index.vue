@@ -117,6 +117,15 @@
             <el-input type="textarea" :autosize="{ minRows: 2, maxRows: 4}" placeholder="Please input" v-model="temp.description">
             </el-input>
           </el-form-item>
+          <el-form-item size="small" label="劳务关系">
+            <el-select class="filter-item" v-model="temp.serviceRelations" placeholder="Please select">
+              <el-option v-for="item in serviceRelationsList" :key="item.dtValue" :label="item.name" :value="item.name">
+              </el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item size="small" label="银行卡号">
+            <el-input v-model="temp.cardNo" placeholder="请填写银行卡号"></el-input>
+          </el-form-item>
         </el-form>
         <div slot="footer">
           <el-button size="mini" @click="dialogFormVisible = false">取消</el-button>
@@ -146,6 +155,7 @@
   import {
     listToTreeSelect
   } from '@/utils'
+  import { getCategoryNameList } from '@/api/directory'
   import * as accsssObjs from '@/api/accessObjs'
   import * as users from '@/api/users'
   import * as apiRoles from '@/api/roles'
@@ -212,8 +222,11 @@
           account: '',
           name: '',
           password: '',
-          status: 0
+          status: 0,
+          cardNo: '',
+          serviceRelations: ''
         },
+        serviceRelationsList: [],
         dialogFormVisible: false,
         dialogStatus: '',
         textMap: {
@@ -274,6 +287,7 @@
     },
     created() {
       this.getList()
+      this.getCategoryNameList()
     },
     mounted() {
       var _this = this // 记录vuecomponent
@@ -291,6 +305,14 @@
       })
     },
     methods: {
+      getCategoryNameList () {
+        getCategoryNameList({ ids: ['SYS_ServiceRelations'] }).then(res => {
+          console.log(res, 'res')
+          this.serviceRelationsList = res.data
+        }).catch(err => {
+          this.$message.error(err.message || '获取劳务关系列表失败')
+        })
+      },
       rowClick(row) {
         this.$refs.mainTable.clearSelection()
         this.$refs.mainTable.toggleRowSelection(row)
@@ -448,6 +470,8 @@
                 type: 'success',
                 duration: 2000
               })
+            }).catch(err => {
+              this.$message.error(err.message)
             })
           }
         })

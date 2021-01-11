@@ -6,35 +6,16 @@
         <el-button type="primary" size="mini" icon="el-icon-search" @click="handleSearch" style="margin-right: 10px">搜索</el-button>
       </el-row>
       <div class="bg-white" style="margin-top: 20px;">
-        <el-table
+        <common-table 
           ref="mainTable"
           :key="key"
           :data="list"
+          :columns="formTheadOptions"
           v-loading="listLoading"
-          border
-          fit
-          highlight-current-row
-          style="width: 100%;"
+          max-height="400px"
           @row-click="rowClick"
         >
-          <el-table-column
-            show-overflow-tooltip
-            v-for="fruit in defaultFormThead"
-            align="left"
-            :width="headWidth[fruit]"
-            :key="fruit"
-            :label="headLabel[fruit]"
-          >
-            <template slot-scope="scope">
-              <span
-                v-if="fruit === 'status'"
-                :class="[scope.row[fruit]===1?'greenWord':(scope.row[fruit]===2?'orangeWord':'redWord')]"
-              >{{stateValue[scope.row[fruit]-1]}}</span>
-              <span v-if="fruit === 'subject'">{{scope.row[fruit]}}</span>
-              <span v-if="!(fruit ==='status'||fruit ==='subject')">{{scope.row[fruit]}}</span>
-            </template>
-          </el-table-column>
-        </el-table>
+        </common-table>
         <pagination
           v-show="total>0"
           :total="total"
@@ -78,10 +59,10 @@ export default {
       key: 1, // table key
       defaultFormThead: ["sltCode", "symptom", "subject"],
       formTheadOptions: [
-        { name: "id", label: "ID" },
-        { name: "sltCode", label: "编号" },
-        { name: "symptom", label: "症状" },
-        { name: "subject", label: "解决方案" }
+        // { name: "id", label: "ID" },
+        { prop: "sltCode", label: "编号", width: 50 },
+        { prop: "symptom", label: "症状", width: 200 },
+        { prop: "subject", label: "解决方案" }
       ],
       // this.dialogTable = true;
       query: '', // 查询字符串

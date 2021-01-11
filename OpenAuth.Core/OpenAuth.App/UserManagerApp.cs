@@ -57,6 +57,8 @@ namespace OpenAuth.App
                                user.CreateTime,
                                user.TypeId,
                                user.TypeName,
+                               user.ServiceRelations,
+                               user.CardNo,
                                r.Key,
                                r.SecondId,
                                OrgId = o.Id,
@@ -92,8 +94,9 @@ namespace OpenAuth.App
                 Status = u.First().Status,
                 CreateTime = u.First().CreateTime,
                 CreateUser = u.First().CreateId,
-                OrganizationIds = string.Join(",", u.Select(x => x.OrgId))
-                ,
+                ServiceRelations=u.First()?.ServiceRelations,
+                CardNo=u.First()?.CardNo,
+                OrganizationIds = string.Join(",", u.Select(x => x.OrgId)),
                 Organizations = string.Join(",", u.Select(x => x.OrgName))
 
             });
@@ -138,7 +141,9 @@ namespace OpenAuth.App
                     BizCode = requser.BizCode,
                     Name = requser.Name,
                     Sex = requser.Sex,
-                    Status = requser.Status
+                    Status = requser.Status,
+                    ServiceRelations =request.ServiceRelations,
+                    CardNo = request.CardNo
                 });
                 if (!string.IsNullOrEmpty(requser.Password))  //密码为空的时候，不做修改
                 {

@@ -3,7 +3,6 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
-          :listQuery="listQuery" 
           :config="searchConfig"
           @changeForm="onChangeForm" 
           @search="onSearch">
@@ -11,64 +10,39 @@
         <!-- <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn> -->
       </div>
     </sticky>
-    <div class="app-container">
-      <div class="bg-white">
-        <div class="content-wrapper">
-          <el-table
-            ref="mainTable"
-            :data="checkList"
-            v-loading="listLoading"
-            border
-            fit
-            height="100%"
-            style="width: 100%;"
-            highlight-current-row
-            @current-change="handleSelectionChange"
-            @row-click="rowClick"
-          >
-            <el-table-column
-              show-overflow-tooltip
-              v-for="(fruit,index) in formTheadOptions"
-              :align="fruit.align?fruit.align:'left'"
-              :key="`ind${index}`"
-              :sortable="fruit=='chaungjianriqi'?true:false"
-              style="background-color:silver;"
-              :label="fruit.label"
-              :width="fruit.width"
-            >
-              <template slot-scope="scope">
-                <!-- <span
-                  v-if="fruit.name === 'status'"
-                  :class="[scope.row[fruit.name]===1?'greenWord':(scope.row[fruit.name]===2?'orangeWord':'redWord')]"
-                >{{stateValue[scope.row[fruit.name]-1]}}</span> -->
-                <div class="link-container" 
-                  v-if="fruit.name === 'attendanceClockPictures' && scope.row[fruit.name] && scope.row[fruit.name].length"
-                >
-                  <img :src="rightImg" @click="toView(scope.row[fruit.name])" class="pointer">
-                  <span>查看</span>
-                </div>
-                <span
-                  v-if="fruit.name !== 'attendanceClockPictures'"
-                >{{scope.row[fruit.name]}}</span>
-              </template>
-            </el-table-column>
-          </el-table>
-          <pagination
-            v-show="total>0"
-            :total="total"
-            :page.sync="listQuery.page"
-            :limit.sync="listQuery.limit"
-            @pagination="handleCurrentChange"
-          />
-        </div>
-      </div>
-      <el-image-viewer
-        v-if="previewVisible"
-        :url-list="[previewUrl]"
-        :on-close="closeViewer"
+    <Layer>
+      <common-table
+        ref="mainTable"
+        :data="checkList"
+        :columns="formTheadOptions"
+        v-loading="listLoading"
+        height="100%"
+        @current-change="handleSelectionChange"
+        @row-click="rowClick"
       >
-      </el-image-viewer>
-    </div>
+        <template v-slot:pictures="{ row }">
+          <div class="link-container" 
+            v-if="row.attendanceClockPictures && row.attendanceClockPictures.length"
+          >
+            <img :src="rightImg" @click="toView(row.attendanceClockPictures)" class="pointer">
+            <span>查看</span>
+          </div>
+        </template>
+      </common-table>
+      <pagination
+        v-show="total>0"
+        :total="total"
+        :page.sync="listQuery.page"
+        :limit.sync="listQuery.limit"
+        @pagination="handleCurrentChange"
+      />
+    </Layer>
+    <el-image-viewer
+      v-if="previewVisible"
+      :url-list="[previewUrl]"
+      :on-close="closeViewer"
+    >
+    </el-image-viewer>
   </div>
 </template>
 
@@ -115,16 +89,16 @@ export default {
       multipleSelection: [], // 列表checkbox选中的值
       formTheadOptions: [
         // { name: "id", label: "Id"},
-        { name: "name", label: "姓名" ,width:'80px'},
-        // { name: "org", label: "职位",width:'100px' },
-        { name: "org", label: "部门" ,width:'100px'},
-        // { name: "clockTime", label: "打卡时间" ,width:'100px'},
-         { name: "clockDate", label: "打卡日期", width: '150' },
-        { name: "location", label: "地址", width: 360 },
-        // { name: "specificLocation", label: "详细地址" },
-        { name: "visitTo", label: "拜访对象", width: 100 },
-        { name: "remark", label: "备注" },
-        { name: "attendanceClockPictures", label: "图片" }
+        { prop: "name", label: "姓名" ,width:'80px'},
+        // { prop: "org", label: "职位",width:'100px' },
+        { prop: "org", label: "部门" ,width:'100px'},
+        // { prop: "clockTime", label: "打卡时间" ,width:'100px'},
+         { prop: "clockDate", label: "打卡日期", width: '150' },
+        { prop: "location", label: "地址", width: 360 },
+        // { prop: "specificLocation", label: "详细地址" },
+        { prop: "visitTo", label: "拜访对象", width: 100 },
+        { prop: "remark", label: "备注" },
+        { prop: "attendanceClockPictures", label: "图片", slotName: 'pictures' }
       ],
       checkList:[],
       total: 0,

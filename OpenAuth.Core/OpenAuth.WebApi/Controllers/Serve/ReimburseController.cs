@@ -91,6 +91,27 @@ namespace OpenAuth.WebApi.Controllers.Serve
             return result;
         }
         /// <summary>
+        /// 获取用户信息
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetUserDetails([FromQuery] QueryReimburseServerOrderListReq request) 
+        {
+            var result = new TableData();
+            try
+            {
+                return await _reimburseinfoapp.GetUserDetails(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+        /// <summary>
         /// 获取报销单
         /// </summary>
         /// <returns></returns>
@@ -166,6 +187,27 @@ namespace OpenAuth.WebApi.Controllers.Serve
             try
             {
                 _reimburseinfoapp.UpDate(obj);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+        /// <summary>
+        /// 删除报销费用
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> DeleteCost(ReimburseRevocationReq req) 
+        {
+            var result = new Response();
+            try
+            {
+                _reimburseinfoapp.DeleteCost(req);
             }
             catch (Exception ex)
             {

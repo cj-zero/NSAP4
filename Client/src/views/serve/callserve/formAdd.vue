@@ -691,7 +691,7 @@
       loading
       :modal="false"
       :visible.sync="solutionOpen"
-      width="1000px"
+      width="850px"
       :close-on-click-modal="false"
     >
       <solution
@@ -795,7 +795,7 @@
     <!-- 呼叫主题弹窗 -->
     <my-dialog 
       ref="formTheme"
-      width="500px"
+      width="767px"
       title="呼叫主题"
       :btnList="themeBtnList"
       :append-to-body="true"

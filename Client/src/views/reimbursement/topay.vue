@@ -124,15 +124,6 @@ export default {
       this.currentFormQuery = val
       Object.assign(this.listQuery, val)
     },
-    rowStyle ({ row, rowIndex }) {
-      row.index = rowIndex
-    },
-    // onRowClick (row) {
-    //   this.$refs.table.toggleRowSelection(row)
-    // },
-    // handleSelectionChange (val) {
-    //   this.selectList = val
-    // },
     _pay () {
       this.selectList = this.$refs.table.getSelectionList()
       if (!this.selectList.length) {
