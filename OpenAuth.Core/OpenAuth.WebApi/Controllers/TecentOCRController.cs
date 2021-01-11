@@ -1,7 +1,9 @@
 ﻿using Infrastructure;
+using Infrastructure.HuaweiOCR;
 using Infrastructure.TecentOCR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.Extensions.Options;
 using OpenAuth.App;
 using OpenAuth.App.Request;
 using SharpDX.Direct3D11;
@@ -21,13 +23,17 @@ namespace OpenAuth.WebApi.Controllers
     public class TecentOCRController : ControllerBase
     {
         private readonly TecentOCR _tecentOCR;
+        private readonly HuaweiOCR _huaweiOCR;
         private readonly FileApp _fileapp;
         private ReimburseInfoApp _reimburseInfoApp;
         private MyExpendsApp _myExpendsApp;
+        private IOptions<AppSetting> _appConfiguration;
 
-        public TecentOCRController(TecentOCR tecentOCR, FileApp fileApp, ReimburseInfoApp reimburseInfoApp, MyExpendsApp myExpendsApp)
+        public TecentOCRController(TecentOCR tecentOCR, FileApp fileApp, ReimburseInfoApp reimburseInfoApp, MyExpendsApp myExpendsApp, IOptions<AppSetting> appConfiguration, HuaweiOCR huaweiOCR)
         {
+            _appConfiguration = appConfiguration;
             _tecentOCR = tecentOCR;
+            _huaweiOCR = huaweiOCR;
             _fileapp = fileApp;
             _reimburseInfoApp = reimburseInfoApp;
             _myExpendsApp = myExpendsApp;
@@ -48,10 +54,10 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Result> TecentInvoiceOCR(TecentOCRReq request)
+        public async Task<Infrastructure.TecentOCR.Result> TecentInvoiceOCR(TecentOCRReq request)
         {
             List<object> outData = new List<object>();
-            var result = new Result();
+            var result = new Infrastructure.TecentOCR.Result();
             try
             {
                 //获取文件详情
@@ -78,7 +84,7 @@ namespace OpenAuth.WebApi.Controllers
                 fileStream.Read(bt, 0, bt.Length);
                 string base64Str = Convert.ToBase64String(bt);
                 //1.识别发票
-                var r = new Result();
+                var r = new Infrastructure.TecentOCR.Result();
                 //1.1判断是否为PDF文件 若将PDF转为图片格式后进行识别
                 if (".PDF".Equals(file.Extension, StringComparison.OrdinalIgnoreCase))
                 {
@@ -106,14 +112,25 @@ namespace OpenAuth.WebApi.Controllers
                     result.Message = $"fileId:{request.FileId} is more than 7M";
                     return result;
                 }
-                //图片格式文件识别使用混贴MixedInvoiceOCR进行识别
-                var invoiceRequest = new MixedInvoiceOCRRequest
+                if ("Huawei".Equals(_appConfiguration.Value.OcrType))
                 {
-                    Types = request.Types,
-                    ImageUrl = string.Empty,
-                    ImageBase64 = base64Str
-                };
-                r = _tecentOCR.MixedInvoiceOCR(invoiceRequest);
+                    var huaweiOcrRequest = new HuaweiOCRRequest
+                    {
+                        image = base64Str
+                    };
+                    r = _huaweiOCR.CommonInvoiceOCR(huaweiOcrRequest);
+                }
+                else
+                {
+                    //图片格式文件识别使用混贴MixedInvoiceOCR进行识别
+                    var invoiceRequest = new MixedInvoiceOCRRequest
+                    {
+                        Types = request.Types,
+                        ImageUrl = string.Empty,
+                        ImageBase64 = base64Str
+                    };
+                    r = _tecentOCR.MixedInvoiceOCR(invoiceRequest);
+                }
 
                 if (r.Code == 200 && r.Data != null && r.Data.Count > 0)
                 {
