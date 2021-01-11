@@ -112,8 +112,10 @@ namespace OpenAuth.WebApi.Controllers
                     result.Message = $"fileId:{request.FileId} is more than 7M";
                     return result;
                 }
+                string ocrPlatform = "Tecent";
                 if ("Huawei".Equals(_appConfiguration.Value.OcrType))
                 {
+                    ocrPlatform = "Huawei";
                     var huaweiOcrRequest = new HuaweiOCRRequest
                     {
                         image = base64Str
@@ -146,6 +148,7 @@ namespace OpenAuth.WebApi.Controllers
                         invoiceresponse.ExtendInfo = item.Extend;
                         invoiceresponse.InvoiceDate = item.InvoiceDate;
                         invoiceresponse.SellerName = item.SellerName;
+                        invoiceresponse.OcrPlatform = ocrPlatform;
                         //判断若未识别出发票号码则直接返回
                         if (string.IsNullOrEmpty(item.InvoiceNo))
                         {
@@ -219,7 +222,7 @@ namespace OpenAuth.WebApi.Controllers
                 else
                 {
                     result.Code = 500;
-                    result.Message = "识别失败";
+                    result.Message = "识别失败。" + r.Message;
                 }
                 result.Data = outData;
             }

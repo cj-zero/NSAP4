@@ -121,7 +121,7 @@ namespace Infrastructure.HuaweiOCR
                                     invoiceCode = content?.code;
                                     invoiceNo = content?.number;
                                     invoiceDate = GetDateFormat(content?.date + " " + content?.time);
-                                    amountWithTax = decimal.Parse(content?.cashier.Replace("￥", string.Empty));
+                                    amountWithTax = decimal.Parse(content?.amount.Replace("￥", string.Empty).Replace("元", string.Empty));
                                     extend.ServiceName = "交通费";
                                     extend.OriginationStation = content?.entry;
                                     extend.ArrivalStation = content?.exit;
@@ -157,7 +157,9 @@ namespace Infrastructure.HuaweiOCR
                     //Console.WriteLine((int)resp.StatusCode + " " + resp.StatusDescription);
                     var reader = new StreamReader(resp.GetResponseStream());
                     result.Code = 201;
-                    result.Message = reader.ReadToEnd();
+                    var errResult = reader.ReadToEnd();
+                    Status status = JsonConvert.DeserializeObject<Status>(errResult);
+                    result.Message = status?.error_msg;
                     return result;
                 }
                 else
