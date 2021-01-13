@@ -1,12 +1,12 @@
 <template>
   <div class="quotation-wrapper" :class="{ uneditable: ifNotEdit }" v-loading="contentLoading">
     <el-row type="flex" class="title-wrapper">
-      <p class="bold id" v-if="formData.salesOrderId && isSales">销售单号：<span>{{ formData.salesOrderId }}</span></p>
-      <p class="bold id">{{ isSales ? '报价单号' : '领料单号' }}: <span>{{ formData.id || '' }}</span></p>
+      <p class="bold id" v-if="formData.salesOrderId && isSales">销售订单：<span>{{ formData.salesOrderId }}</span></p>
+      <p class="bold id" v-if="!isSales">{{ isSales ? '报价单号' : '领料单号' }}: <span>{{ formData.id || '' }}</span></p>
       <p class="bold">申请人: <span>{{ formData.createUser || createUser }}</span></p>
       <p>创建时间: <span>{{ formData.createTime || createTime }}</span></p>
       <p>销售员: <span>{{ formData.salesMan }}</span></p>
-      <p class="bold id" v-if="formData.salesOrderId && !isSales">销售单号：<span>{{ formData.salesOrderId }}</span></p>
+      <p class="bold id" v-if="formData.salesOrderId && !isSales">销售订单：<span>{{ formData.salesOrderId }}</span></p>
     </el-row>
     <!-- 主题内容 -->
     <el-scrollbar class="scroll-bar">
@@ -89,7 +89,7 @@
           <div class="serial-wrapper">
             <el-row type="flex" justify="space-between">
               <div class="form-wrapper">
-                <el-form :model="listQuerySearial" size="mini" :disabled="ifNotEdit">
+                <el-form :model="listQuerySearial" size="mini">
                   <el-row type="flex">
                     <el-col>
                       <el-form-item>
@@ -153,7 +153,6 @@
               size="mini" 
               :show-message="false"
               class="form-wrapper"
-              :disabled="ifNotEdit"
             >
               <common-table
                 class="material-table-wrapper"
@@ -223,8 +222,8 @@
           </div>
         </template>
         <!-- 预览 -->
-        <template v-else>
-          <div class="preview-wrapper">
+       <!-- <template v-else>
+           <div class="preview-wrapper">
             <ul class="preview-list-wrapper">
               <li 
                 class="preview-item"
@@ -246,14 +245,12 @@
                       <el-input class="input-item" size="mini" v-model="item.warrantyExpirationTime"></el-input>
                     </el-form-item>
                   </el-form>
-                  <!-- <div class="total-money">总金额: {{ item.quotationMaterials | calcTotalItem | toThousands }}</div> -->
                 </el-row>
                 <div>
                   <common-table 
                     max-height="200px" 
                     :data="item.quotationMaterials" 
                     :columns="materialTableColumns">
-                    <!-- 小计头部 -->
                     <template v-slot:totalPrice_header>
                       <el-tooltip effect="dark" placement="top-end">
                         <div slot="content">{{ item.quotationMaterials | calcTotalItem(item.isProtected) | toThousands }}</div>
@@ -271,12 +268,13 @@
               </li>
             </ul>
           </div>
-        </template>
+        </template> -->
         <el-row justify="end" class="quotation-total-money">
           <p>总计：{{ totalMoney | toThousands }}</p>
         </el-row>
       </template>
-      <template v-else>
+      <!-- 不是新建状态并且处于预览状态 -->
+      <template v-if="status !== 'create' && isPreview">
         <!-- 审批/销售订单出现 -->
         <!-- 物料汇总表格 -->
         <div class="material-summary-wrapper">
@@ -487,24 +485,37 @@ export default {
       handler (val) {
         console.log(val, 'newVal')
         if (val) {
+          // if (this.isReceive) {
+          
           if (this.isReceive) {
             if (this.status === 'create') {
               this._resetMaterialInfo() // 新建的时候,清除所有的跟物料相关的数据
-            }
-            if (this.status !== 'view') {
-              this.listQuerySearial.page = 1
-              this.listQuerySearial.limit = 50
-              this._getSerialNumberList()
             } else {
-              // 查看时直接预览
+              // 查看加编辑
               this.isPreview = true
             }
-          } else {
-            // 审批/销售订单
-            // 获取服务单的所有报价零件
-            this._normalizeMaterialSummaryList()
-            // this._getQuotationMaterialCode()
+            this.listQuerySearial.page = 1
+            this.listQuerySearial.limit = 50
+            this._getSerialNumberList()
           }
+          // if (this.status !== 'view') {
+          //   this.listQuerySearial.page = 1
+          //   this.listQuerySearial.limit = 50
+          //   this._getSerialNumberList()
+          // } else {
+          //   // 查看时直接预览
+          //   this.isPreview = true
+          // }
+          if (this.status !== 'create') {
+            this._normalizeMaterialSummaryList()
+          }
+          // }
+          // } else {
+          //   // 审批/销售订单
+          //   // 获取服务单的所有报价零件
+          //   this._normalizeMaterialSummaryList()
+          //   // this._getQuotationMaterialCode()
+          // }
         }
       }
     },
@@ -1161,6 +1172,9 @@ export default {
 <style lang='scss' scoped>
 .quotation-wrapper {
   position: relative;
+  ::v-deep .el-form-item__label {
+    padding-right: 4px;
+  }
   ::v-deep .el-form-item--mini.el-form-item, .el-form-item--small.el-form-item {
     margin-bottom: 5px;
   }

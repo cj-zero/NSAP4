@@ -74,10 +74,10 @@ export default {
     formConfig () {
       let config  = [
         { label: '客户代码', prop: 'terminalCustomerId', col: 8, disabled: true },
-        { label: '客户名称', prop: 'terminalCustomer', col: 16, disabled: true, isEnd: true },
+        { label: '客户名称', prop: 'terminalCustomer', col: 8, disabled: true },
+        { label: '保修时间日期', prop: 'warrntyDate', placeholder: '请输入内容', col: 8, isEnd: true  },
         { label: '备注', prop: 'remark', placeholder: '请输入', col: 24, disabled: true, isEnd: true },
         { label: '交货日期', prop: 'deliveryDate', placeholder: '请输入内容', col: 8, type: 'date', disabled: this.status === 'view'  },
-        { label: '保修时间日期', prop: 'warrntyDate', placeholder: '请输入内容', col: 8, type: 'date', disabled: this.status === 'view'  },
       ]
       return normalizeFormConfig(config)
     }
@@ -94,6 +94,7 @@ export default {
       // 操作记录
       historyTableData: [],
       historyColumns: [
+        { label: '#', type: 'index', width: 50 },
         { label: '操作记录', width: 200 },
         { label: '操作人', width: 100 },
         { label: '操作时间', width: 100 }

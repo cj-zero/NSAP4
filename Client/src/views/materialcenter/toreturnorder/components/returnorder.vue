@@ -1,7 +1,7 @@
 <template>
   <div class="quotation-wrapper" v-loading="returnLoading">
     <el-row type="flex" class="title-wrapper">
-      <p class="bold id">退料单号: <span>{{ formData.returnNoteCode || '' }}</span></p>
+      <p class="bold id">退料订单: <span>{{ formData.returnNoteCode || '' }}</span></p>
       <p class="bold">服务ID： {{ formData.serviceOrderSapId }}</p>
       <p class="bold">申请人: <span>{{ formData.createUser }}</span></p>
       <p>销售员: <span>{{ formData.salMan }}</span></p>
@@ -9,16 +9,24 @@
     </el-row>
     <!-- 主题内容 -->
     <el-scrollbar class="scroll-bar">
-      <el-form
+    <common-form 
+      ref="form"
+      class="my-form-wrapper"
+      :model="formData" 
+      label-width="60px" 
+      :formItems="formItems" 
+      :columnNumber="5"
+    > 
+    </common-form>
+      <!-- <el-form
         :model="formData"
         ref="form"
         class="my-form-wrapper" 
-        label-width="80px"
+        label-width="60px"
         size="mini"
         label-position="right"
         :show-message="false"
       >
-        <!-- 普通控件 -->
         <el-row 
           type="flex" 
           v-for="(config, index) in formatReturnConfig"
@@ -71,8 +79,9 @@
             </el-form-item>
           </el-col>
         </el-row>
-      </el-form>
+      </el-form> -->
       <div class="courier-wrapper">
+        <h2 class="title-text">快递信息</h2>
         <!-- 物流表格 -->
         <div class="courier-table-wrapper">
           <common-table
@@ -86,7 +95,7 @@
             <template v-slot:expressInformation="{ row, index }">
               <el-row type="flex" align="middle">
                 <img style="width: 12px;height: 12px;" :src="rightImg" @click="getExpressInformation(row, index)" class="pointer">
-                <span>{{ row.expressInformation }}</span>
+                <span class="text-overflow">{{ row.expressInformation }}</span>
               </el-row>
             </template>
           </common-table>
@@ -95,6 +104,8 @@
       </div>
       <!-- 物料表格 -->
       <div class="material-wrapper">
+        <h2 class="title-text">物料信息</h2>  
+        <!-- 物料信息 -->
         <el-form 
           ref="materialForm"
           :model="materialFormData" 
@@ -110,14 +121,12 @@
             <!-- 核对设备 -->
             <template v-slot:check="{ index }">
               <el-button 
-                v-if="(status === 'view' && checkList[index].isPass !== 2) || status === 'toReturn'" 
                 :disabled="status === 'view'"
                 type="success" 
                 size="mini" 
                 @click.stop="check(1, index)">通过</el-button>
               <el-button 
                 :disabled="status === 'view'"
-                v-if="(status === 'view' && checkList[index].isPass !== 1) || status === 'toReturn'"
                 :type="checkList[index].isPass === 2 ? 'info' : 'danger'" 
                 size="mini" 
                 @click.stop="check(2, index)">未通过</el-button>
@@ -258,24 +267,6 @@ export default {
       return {
         materialList: this.materialList
       }
-    },
-    materialColumns () {
-      let config = [
-        { label: '物料编码', prop: 'materialCode' },
-        { label: '物料描述', prop: 'materialDescription' },
-        { label: '本次退还数量', prop: 'count', align: 'right' },
-        { label: '需退总计', prop: 'totalCount', align: 'right' },
-        { label: '图片', slot: 'pictures' },
-        { label: '发货备注', prop: 'shippingRemark' },
-        { label: '核对验收', slotName: 'check', width: '150px' }
-      ]
-      return config
-      // return this.isReturn 
-      //   ?  config 
-      //   : config.concat([
-      //     { label: '差错数量', prop: 'wrongCount', type: 'slot', slotName: 'wrongCount' },
-      //     { label: '收货备注', prop: 'receivingRemark', type: 'slot', slotName: 'receiveRemark' }
-      //   ])
     }
   },
     
@@ -301,13 +292,32 @@ export default {
       courierColumns: [
         { label: '快递单号', prop: 'expressNumber', width: '100px' },
         { label: '物流信息', prop: 'expressInformation', slotName: 'expressInformation' },
+        { label: '退货备注', prop: 'tuihuo', slotName: 'tuihuo' },
+        { label: '签收备注', prop: 'qianshou', slotName: '签收'}
         // { label: '备注', type: 'slot', slotName: 'remark', prop: 'remark', width: '150px' },
         // { label: '图片', type: 'slot', slotName: 'pictures', prop: 'pictures', width: '100px' }
       ],
       // 物料表格
       materialList: [],
+      materialColumns: [
+        { label: '#', type: 'index' },
+        { label: '物料编码', prop: 'materialCode' },
+        { label: '物料描述', prop: 'materialDescription' },
+        { label: '本次退还数量', prop: 'count', align: 'right' },
+        { label: '需退总计', prop: 'totalCount', align: 'right' },
+        { label: '图片', slot: 'pictures' },
+        { label: '寄回备注', prop: 'shippingRemark' },
+        { label: '核对验收', slotName: 'check', width: '150px' }
+      ],
       checkList: [], // 验收收货记录列表
-      returnLoading: false
+      returnLoading: false,
+      formItems: [
+        { span: 4, attrs: { prop: 'serviceOrderId', disabled: true }, itemAttrs: { label: '服务ID' } },
+        { span: 4, attrs: { prop: 'terminalCustomerId', disabled: true }, itemAttrs: { label: '客户代码' } },
+        { span: 8, attrs: { prop: 'terminalCustomer', disabled: true }, itemAttrs: { label: '客户名称' } },
+        { span: 4, attrs: { prop: 'contact', disabled: true }, itemAttrs: { label: '联系人' } },
+        { span: 4, attrs: { prop: 'number', disabled: true }, itemAttrs: { label: '电话' } },
+      ]
     }
   },
   methods: {
@@ -472,6 +482,11 @@ export default {
       }
     }
   }
+  .title-text {
+    margin-bottom: 5px;
+    font-size: 18px;
+    color: #eee;
+  }
   /* 表单表格内容 */
   .scroll-bar {
     &.el-scrollbar {
@@ -485,7 +500,7 @@ export default {
     }
     /* 物流表格 */
     .courier-wrapper {
-      display: flex;
+      // display: flex;
       margin-top: 10px;
       .courier-table-wrapper {
         width: 700px;

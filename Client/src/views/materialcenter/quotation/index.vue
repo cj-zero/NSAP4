@@ -34,6 +34,7 @@
       :title="`${textMap[status]}报价单`"
       :btnList="btnList"
       @closed="close"
+      :destroy-on-close="true"
     >
       <quotation-order 
         ref="quotationOrder" 
@@ -98,19 +99,24 @@ export default {
         { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
         { type: 'button', btnText: '新建', handleClick: this.openMaterialOrder, isSpecial: true, options: { isReceive: true } },
-        { type: 'button', btnText: '编辑', handleClick: this._getQuotationDetail, isSpecial: true, options: { status: 'edit', isReceive: true } },
+        // { type: 'button', btnText: '编辑', handleClick: this._getQuotationDetail, isSpecial: true, options: { status: 'edit', isReceive: true } },
         { type: 'button', btnText: '打印', handleClick: this.print, isSpecial: true },     
         { type: 'button', btnText: '删除', handleClick: this.deleteOrder, style: { backgroundColor: '#f56c6c', color: '#fff' } },
       ]
     }, // 搜索配置
     btnList () {
       return [
-        { btnText: '预览', handleClick: this.togglePreview, isShow: !this.isPreviewing && this.status !== 'view' },
-        { btnText: '返回', handleClick: this.togglePreview, isShow: this.isPreviewing },
-        { btnText: '提交', handleClick: this.submit, isShow: this.status !== 'view' },
-        { btnText: '草稿', handleClick: this.submit, options: { isDraft: true }, isShow: this.status !== 'view' },
+        // { btnText: '预览', handleClick: this.togglePreview, isShow: !this.isPreviewing && this.status !== 'view' },
+        // { btnText: '返回', handleClick: this.togglePreview, isShow: this.isPreviewing },
+        { btnText: '提交', handleClick: this.submit, isShow: this.isShowOperateBtn },
+        { btnText: '存为草稿', handleClick: this.submit, options: { isDraft: true }, isShow: this.isShowOperateBtn },
+        { btnText: '返回', handleClick: this.togglePreview, isShow: !this.isPreviewing && this.isShowEditBtn },
+        { btnText: '编辑', handleClick: this.togglePreview, isShow: this.isPreviewing && this.isShowEditBtn },
         { btnText: '关闭', handleClick: this.close, className: 'close' }      
       ]
+    },
+    isShowOperateBtn () {
+      return this.status === 'create' || (!this.isPreviewing && this.isShowEditBtn)
     }
   },
   data () {
@@ -124,6 +130,7 @@ export default {
         { label: '已领料', name: '3' },
         { label: '已驳回', name: '4' }
       ],
+      isShowEditBtn: true, // 是否出现编辑按钮
       formQuery: {
         quotationId: '', // 领料单号
         cardCode: '', // 客户
@@ -155,7 +162,7 @@ export default {
       ],
       customerList: [], // 用户服务单列表
       status: 'create', // 报价单状态
-      isPreviewing: false, // 处于预览状态
+      isPreviewing: true, // 处于预览状态
       currentRow: null, // 当前点击行
       detailInfo: null // 详情信息
     } 
@@ -179,6 +186,7 @@ export default {
         this.customerList = res.data
         if (this.customerList && this.customerList.length) {
           this.status = 'create'
+          this.isShowEditBtn = false
           return this.$refs.quotationDialog.open()
         } 
         this.$message.warning('无服务单数据')
@@ -206,6 +214,9 @@ export default {
           this.$message.error(err.message)
         })
       })
+    },
+    changeToEdit () {
+      this.$refs.quotationOrder.changeToEdit()
     },
     onTabChange (name) {
       this.listQuery.startType = name

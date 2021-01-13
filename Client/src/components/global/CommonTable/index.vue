@@ -71,7 +71,7 @@
             <el-form-item :prop="dataKey + '.' + scope.$index + '.' + column.prop" v-bind="column.component.itemAttrs">
               <component
                 :is="transformComponent(column.component)"
-                v-model="scope.row[column.prop]"
+                v-model="scope.row[column.prop || (column.component.attrs || {}).prop]"
                 v-bind="mergeComponentAttrs(column.component)"
                 v-on="column.component.on || {}"
                 v-infotooltip:200.top-start

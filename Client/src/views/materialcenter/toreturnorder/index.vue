@@ -90,13 +90,13 @@ export default {
         { prop: 'beginDate', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endDate', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
-        { type: 'button', btnText: '退料', handleClick: this._getReturnNoteDetail, options: { status: 'toReturn'}, isSpecial: true },
+        // { type: 'button', btnText: '退料', handleClick: this._getReturnNoteDetail, options: { status: 'toReturn'}, isSpecial: true },
       ]
     }, // 搜索配置
     btnList () {
       return [
-        { btnText: '验收', handleClick: this.checkOrSave, isShow: this.status !== 'view' },
-        { btnText: '保存', handleClick: this.checkOrSave, isShow: this.status !== 'view', options: { isSave: true } },
+        { btnText: '验收', handleClick: this.checkOrSave },
+        { btnText: '保存', handleClick: this.checkOrSave, options: { isSave: true } },
         { btnText: '关闭', handleClick: this.close, className: 'close' }      
       ]
     }

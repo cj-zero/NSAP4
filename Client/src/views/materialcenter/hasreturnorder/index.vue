@@ -30,9 +30,9 @@
     <my-dialog 
       ref="returnOrderDialog"
       width="1100px"
-      title="退料单详情"
+      title="物料结算单"
       :btnList="btnList"
-      @closed="close"
+      :destroy-on-close="true"
     >
       <detail 
         ref="returnOrder" 

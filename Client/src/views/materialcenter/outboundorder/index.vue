@@ -13,9 +13,9 @@
     <Layer>
       <common-table 
         height="100%"
-        ref="quotationTable" 
-        :data="tableData" 
-        :columns="quotationColumns" 
+        ref="quotationTable"
+        :data="tableData"
+        :columns="quotationColumns"
         :loading="tableLoading">
       </common-table>
       <pagination
@@ -30,9 +30,11 @@
       ref="quotationDialog"
       width="1100px"
       :loading="dialogLoading"
-      title="出库单详情"
+      title="审批出库单"
       :btnList="btnList"
+      :append-to-body="true"
       @closed="close"
+      :destroy-on-close="true"
     >
       <outbound-order 
         ref="outboundOrder" 
@@ -72,8 +74,12 @@ import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import { getQuotationList } from '@/api/material/quotation'
 import {  quotationTableMixin, chatMixin, categoryMixin } from '../common/js/mixins'
+import elDragDialog from "@/directive/el-dragDialog";
 export default {
   name: 'outBoundOrder',
+  directives: {
+    elDragDialog
+  },
   mixins: [quotationTableMixin, chatMixin, categoryMixin],
   components: {
     Search,
@@ -92,12 +98,12 @@ export default {
         { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
         { type: 'button', btnText: '打印', handleClick: this.print, isSpecial: true },     
-        { type: 'button', btnText: '出库', handleClick: this._getQuotationDetail, options: { status: 'outbound'}, isSpecial: true },
+        // { type: 'button', btnText: '出库', handleClick: this._getQuotationDetail, options: { status: 'outbound'}, isSpecial: true },
       ]
     }, // 搜索配置
     btnList () {
       return [
-        { btnText: '保存', handleClick: this.updateMaterial, isShow: this.status !== 'view' },
+        { btnText: '保存', handleClick: this.updateMaterial },
         { btnText: '关闭', handleClick: this.close, className: 'close' }      
       ]
     }

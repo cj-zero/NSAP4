@@ -39,14 +39,26 @@ export const quotationTableMixin = {
     },
     _getQuotationDetail (data) {
       let quotationId
-      let { status, isReceive, isSalesOrder } = data
+      let { status, isReceive, isSalesOrder, quotationStatus } = data
       this.isReceive = !!isReceive
       if (isSalesOrder && !data.salesOrderId) {
         return this.$message.warning('无销售单号')
       }
-       if (status === 'view') {
+       if (status !== 'create') {
         quotationId = data.id
+        console.log(quotationStatus, 'quotationStatus')
+        if (quotationStatus > 3) {
+          this.isShowEditBtn = false // 新建报价单页面，判断是不是可以编辑报价单
+        } else if (status === 'pay') { // 财务付款审批
+          console.log('pay')
+          if (quotationStatus === 9 && this.isMaterialFinancial) {
+            return this.$message.warning('需要客户签字')
+          } else if (!this.isMaterialFinancial && quotationStatus === 10) {
+            return this.$message.warning('当前状态不可审批')
+          }
+        }
       } else {
+        this.isShowEditBtn = false
         let currentRow = this.$refs.quotationTable.getCurrentRow()
         if (!currentRow) {
           return this.$message.warning('请先选择数据')
@@ -55,6 +67,7 @@ export const quotationTableMixin = {
         quotationStatus = +quotationStatus
         if (status === 'edit') {
           if (quotationStatus > 3) {
+
             return this.$message.warning('当前状态不可编辑')
           }
         } else if (status === 'pay') { // 财务付款审批
@@ -177,24 +190,40 @@ export const configMixin = { // 表单配置
     formConfig () { // 头部表单配置
       return this.isOutbound || this.status === 'outbound' // 出库单
         ? [
-        { label: '服务ID', prop: 'serviceOrderSapId', placeholder: '请选择', col: 6, readonly: true, disabled: !this.ifEdit },
-        { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请选择', col: 6, disabled: true },
-        { label: '客户名称', prop: 'terminalCustomer', placeholder: '请选择', col: 12, disabled: true, isEnd: true },
-        { label: '开票地址', prop: 'shippingAddress', placeholder: '请选择', col: 24, disabled: !this.ifEdit, isEnd: true },
-        { label: '收货地址', prop: 'collectionAddress', placeholder: '请选择', col: 24, disabled: !this.ifEdit, isEnd: true },
-        { label: '备注', prop: 'remark', placeholder: '请填写', col: 24, disabled: !this.ifEdit, isEnd: true },
+        { label: '服务ID', prop: 'serviceOrderSapId', placeholder: '请选择', col: 5, readonly: true, disabled: true },
+        { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请选择', col: 5, disabled: true },
+        { label: '客户名称', prop: 'terminalCustomer', placeholder: '请选择', col: 5, disabled: true },
+        { label: '联系人', prop: 'person', placeholder: '请填写', col: 5},
+        { label: '电话', prop: 'tel', placeholder: '请填写', col: 4, isEnd: true },
+        // { label: '开票地址', prop: 'shippingAddress', placeholder: '请选择', col: 20, disabled: true, isEnd: true },
+        { label: '客户地址', prop: 'shippingAddress', col: 20, disabled: true },
+        { label: '交货日期', prop: 'jh', col: 4, disabled: true, isEnd: true },
+        // { label: '收货地址', prop: 'collectionAddress', placeholder: '请选择', col: 20, disabled: true, isEnd: true },
+        { label: '交货地址', prop: 'collectionAddress', col: 20, disabled: true },
+        { label: '验收期限', prop: 'ys', col: 4, disabled: true, isEnd: true },
+        { label: '备注', prop: 'remark', placeholder: '请填写', col: 24, disabled: true, isEnd: true }
       ]
       : this.isSales || this.status === 'pay' ? // 销售单
       [
-        { label: '服务ID', prop: 'serviceOrderSapId', placeholder: '请选择', col: 6, readonly: true, disabled: !this.ifEdit },
-        { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请选择', col: 6, disabled: true },
-        { label: '客户名称', prop: 'terminalCustomer', placeholder: '请选择', col: 12, disabled: true, isEnd: true },
-        { label: '开票地址', prop: 'shippingAddress', placeholder: '请选择', col: 18, disabled: !this.ifEdit },
-        { label: '开票单位', prop: 'invoiceCompany', placeholder: '请选择', col: 6, 
-          type: 'select', options: this.invoiceCompanyList, isEnd: true, disabled: true },
-        { label: '收货地址', prop: 'collectionAddress', placeholder: '请选择', col: 18, disabled: !this.ifEdit },
-        { label: '发货方式', prop: 'deliveryMethod', placeholder: '请选择', col: 6, type: 'select', options: this.deliveryMethodList, disabled: !this.ifEdit, isEnd: true },
-        { label: '备注', prop: 'remark', placeholder: '请填写', col: 18, disabled: !this.ifEdit },
+        { label: '服务ID', prop: 'serviceOrderSapId', placeholder: '请选择', col: 3, readonly: true, disabled: !this.ifEdit },
+        { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请选择', col: 3, disabled: true },
+        { label: '客户名称', prop: 'terminalCustomer', placeholder: '请选择', col: 3, disabled: true },
+        { label: '联系人', prop: 'con', placeholder: '请填写', col: 3 },
+        { label: '电话', prop: 'person', placeholder: '请填写', col: 3 },
+        { label: '冻结状态', prop: 'dj', placeholder: '请填写', col: 3 },
+        { label: '科目余额', prop: 'yue', placeholder: '请填写', col: 3 },
+        { label: '付款条件', prop: 'tj', placeholder: '请填写', col: 3, isEnd: true },
+        { label: '收货地址', prop: 'collectionAddress', placeholder: '请选择', col: 12, disabled: !this.ifEdit },
+        { label: '业务伙伴货币', prop: 'yewuhuobi', col: 3, disabled: !this.ifEdit },
+        // { label: '开票地址', prop: 'shippingAddress', placeholder: '请选择', col: 18, disabled: !this.ifEdit },
+        { label: '开票单位', prop: 'invoiceCompany', placeholder: '请选择', col: 3, 
+          type: 'select', options: this.invoiceCompanyList, disabled: true },
+        {label: '交货日期', prop: 'jhdate', col: 3, disabled: !this.ifEdit },
+        { label: '验收期限', prop: 'ysqixina', col: 3, disabled: !this.ifEdit, isEnd: true },
+        { label: '交货地址', prop: 'jiaohuodizhi', col: 12, disabled: !this.ifEdit },
+        // { label: '收货地址', prop: 'collectionAddress', placeholder: '请选择', col: 18, disabled: !this.ifEdit },
+        // { label: '发货方式', prop: 'deliveryMethod', placeholder: '请选择', col: 6, type: 'select', options: this.deliveryMethodList, disabled: !this.ifEdit, isEnd: true },
+        { label: '备注', prop: 'remark', placeholder: '请填写', col: 12, disabled: !this.ifEdit },
       ] 
       :
       [ // 报价单
@@ -210,17 +239,15 @@ export const configMixin = { // 表单配置
       ] 
     },
     returnFormConfig () { // 退料单表单
-      return this.isReturn 
-        ? [
-            { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请选择', col: 8, disabled: true },
-            { label: '客户名称', prop: 'terminalCustomer', placeholder: '请选择', col: 16, disabled: true, isEnd: true },
-          ]
-        : [
-            { label: '客户代码', prop: 'terminalCustomerId', col: 8, disabled: true },
-            { label: '客户名称', prop: 'terminalCustomer', col: 16, disabled: true, isEnd: true },
-            // { label: '退货备注', prop: 'terminalCustomer', placeholder: '请输入', col: 24, disabled: true, isEnd: true },
-            { label: '签收备注', prop: 'remark', placeholder: '请输入内容', col: 24, disabled: this.status !== 'toReturn' , isEnd: true },
-          ]
+      return [
+        { label: '服务ID', prop: 'serviceOrderId', col: 4, disabled: true },
+        { label: '客户代码', prop: 'terminalCustomerId', col: 4, disabled: true },
+        { label: '客户名称', prop: 'terminalCustomer', col: 8, disabled: true },
+        { label: '联系人', prop: 'contact', col: 4, disabled: true },
+        { label: '电话', prop: 'number', col: 4, disabled: true }
+        // { label: '退货备注', prop: 'terminalCustomer', placeholder: '请输入', col: 24, disabled: true, isEnd: true },
+        // { label: '签收备注', prop: 'remark', placeholder: '请输入内容', col: 24, disabled: this.status !== 'toReturn' , isEnd: true },
+      ]
     },
     formatFormConfig () {
       return normalizeFormConfig(this.formConfig)
@@ -312,12 +339,15 @@ export const returnTableMixin = { // 退料表格
         endDate: '' // 创建结束
       },
       returnOrderColumns: [
-        { label: '退料单号', prop: 'id', handleClick: this._getReturnNoteDetail, options: { status: 'view' }, type: 'link'},
+        { label: '退料单号', prop: 'id', handleClick: this._getReturnNoteDetail, type: 'link'},
         { label: '客户代码', prop: 'customerId' },
         { label: '客户名称', prop: 'customerName' },
         { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link' },
         { label: '申请人', prop: 'createUser' },
         { label: '创建时间', prop: 'createDate' },
+        { label: '总金额', prop: 'totalMoney' },
+        { label: '备注', prop: 'remark' },
+        { label: '状态', prop: 'status' }
       ],
       dialogLoading: false,
       tableLoading: false,
@@ -343,16 +373,17 @@ export const returnTableMixin = { // 退料表格
     _getReturnNoteDetail (data) { // 获取退料单详情
       let id
       let { status } = data
-      if (status === 'view') {
-        id = data.id
-      } else {
-        let currentRow = this.$refs.returnOrderTable.getCurrentRow()
-        console.log(currentRow, 'currentRow')
-        if (!currentRow) {
-          return this.$message.warning('请先选择数据')
-        }
-        id = currentRow.id
-      }
+      // if (status === 'view') {
+      //   id = data.id
+      // } else {
+      //   let currentRow = this.$refs.returnOrderTable.getCurrentRow()
+      //   console.log(currentRow, 'currentRow')
+      //   if (!currentRow) {
+      //     return this.$message.warning('请先选择数据')
+      //   }
+      //   id = currentRow.id
+      // }
+      id = data.id
       console.log(status, 'status', id)
       this.tableLoading = true
       getReturnNoteDetail({

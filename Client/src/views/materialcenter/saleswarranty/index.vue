@@ -124,13 +124,13 @@ export default {
       tableData: tableData.array,
       total: 0,
       salesColumns: [
-        { label: '销售单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'view' }, type: 'link'},
-        { label: '客户代码', prop: 'termianalCustomer', handleClick: this._openServiceOrder, type: 'link', options: { isInTable: true } },
-        { label: '客户名称', prop: 'terminalCustomerId' },
-        { label: '销售员', prop: 'salesMan' },
-        { label: '交货日期', prop: 'deliveryDate' },
-        { label: '保修日期', prop: 'warrantyDate' },
-        { label: '备注', prop: 'remark' },
+        { label: '销售单号', prop: 'id', handleClick: this._getQuotationDetail, type: 'link', width: 140 },
+        { label: '客户代码', prop: 'termianalCustomer', handleClick: this._openServiceOrder, type: 'link', options: { isInTable: true }, width: 100 },
+        { label: '客户名称', prop: 'terminalCustomerId', width: 160 },
+        { label: '销售员', prop: 'salesMan', width: 70 },
+        { label: '交货日期', prop: 'deliveryDate', width: 100 },
+        { label: '保修日期', prop: 'warrantyDate', width: 100 },
+        { label: '备注', prop: 'remark', width: 200 },
         { label: '操作', type: 'slot', slotName: 'btnList' }
       ],
       customerList: [], // 用户服务单列表

@@ -17,13 +17,13 @@
               :item="item">
             </slot>
             <!-- 表单组件 -->
-            <el-form v-bind="item.itemAttrs" v-else>
+            <el-form-item v-bind="item.itemAttrs" v-else>
               <component
                 :is="item.tag"
                 v-model="form[item.attrs.prop]"
                 v-bind="item.attrs"
               ></component>
-            </el-form>
+            </el-form-item>
           </el-col>
         </el-row>
       </template>
@@ -126,6 +126,12 @@ export default {
           ? isRender(this.form)
           : isRender
         : true
+    },
+    resetFields () {
+      this.$refs.form.resetFields()
+    },
+    clearValidate () {
+      this.$refs.form.clearValidate()
     }
   },
   created () {

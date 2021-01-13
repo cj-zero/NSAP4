@@ -93,18 +93,18 @@ export default {
         { prop: 'startCreateTime', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
-        { type: 'button', btnText: this.searchBtnText, handleClick: this._getQuotationDetail, options: { status: 'pay' }, isSpecial: true },
+        // { type: 'button', btnText: this.searchBtnText, handleClick: this._getQuotationDetail, options: { status: 'pay' }, isSpecial: true },
       ]
     }, // 搜索配置
     btnList () {
       // 弹窗按钮
       return [
         { btnText: this.isMaterialFinancial ? '确认收款' : '审批', handleClick: this.pay,
-          options: { type: this.isMaterialFinancial ? 'pay' : 'agree' }, isShow: this.status !== 'view' 
+          options: { type: this.isMaterialFinancial ? 'pay' : 'agree' }
         },
-        { btnText: '驳回', handleClick: this.pay, options: { type: 'reject' }, isShow: this.status !== 'view' && !this.isMaterialFinancial },
+        { btnText: '驳回', handleClick: this.pay, options: { type: 'reject' }, isShow: !this.isMaterialFinancial },
         { btnText: '关闭', handleClick: this.close, className: 'close' }      
-      ]
+      ] 
     },
     searchBtnText () {
       return this.isMaterialFinancial ? '收款' : '审批'
@@ -130,15 +130,15 @@ export default {
       tableData: [],
       total: 0,
       quotationColumns: [
-        { label: '销售单号', prop: 'salesOrderId', handleClick: this._getQuotationDetail, options: { status: 'view', isSalesOrder: true }, type: 'link'},
+        { label: '销售订单', prop: 'salesOrderId', handleClick: this._getQuotationDetail, options: { status: 'pay', isSalesOrder: true }, type: 'link'},
         { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link' },
-        { label: '报价单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'view', isReceive: true }, type: 'link' },
+        // { label: '报价单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'view', isReceive: true }, type: 'link' },
         { label: '客户代码', prop: 'terminalCustomerId' },
         { label: '客户名称', prop: 'terminalCustomer' },
-        { label: '总金额', prop: 'totalMoney', align: 'right' },
         { label: '申请人', prop: 'createUser' },
-        { label: '备注', prop: 'remark' },
         { label: '创建时间', prop: 'createTime' },
+        { label: '总金额', prop: 'totalMoney', align: 'right' },
+        { label: '备注', prop: 'remark' },
         { label: '状态', prop: 'quotationStatusText' }
       ],
       status: 'create', // 报价单状态
