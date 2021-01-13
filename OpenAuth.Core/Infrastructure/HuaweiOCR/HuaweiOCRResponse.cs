@@ -32,7 +32,7 @@ namespace Infrastructure.HuaweiOCR
 
         public string code { get; set; }
 
-        public string checkcode { get; set; }
+        public string check_code { get; set; }
 
         public string number { get; set; }
 
