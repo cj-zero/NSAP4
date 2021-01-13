@@ -77,7 +77,7 @@ namespace Infrastructure.HuaweiOCR
                                     amountWithTax = decimal.Parse(content?.total.Replace("￥", string.Empty));
                                     companyName = content?.buyer_name;
                                     companyTaxCode = content?.buyer_id;
-                                    checkCode = content?.checkcode;
+                                    checkCode = content?.check_code;
                                     extend.ServiceName = item.content?.item_list[0]?.name;
                                     amountWithOutTax = decimal.Parse(content?.subtotal_amount.Replace("￥", string.Empty));
                                     sellerName = content.seller_name;
