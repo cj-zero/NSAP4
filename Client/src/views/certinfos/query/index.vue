@@ -78,7 +78,7 @@ export default {
         // { label: '', name: 'radio', width: '50' },
         { label: '序号',  name: 'order', width: '50' },
         { label: '证书编号', name: 'certNo', width: '120' },
-        { label: '型号规格', name: 'model', width: '100' },
+        { label: '型号规格', name: 'model', width: '180' },
         { label: '出厂编号', name: 'sn', width: '100' },
         { label: '资产编号', name: 'assetNo', width: '100' },
         { label: '校准日期', name: 'calibrationDate', width: '165' },
@@ -92,12 +92,17 @@ export default {
   },
   methods: {
     _getQueryList () { // 获取表格列表
+      this.isLoading = true
       queryLoad(this.pageConfig).then(res => {
         this.totalCount = res.count
         this.tableData = res.data.map(item => {
           item.calibrationDate = this.formatDate(item.calibrationDate)
           return item
         })
+        this.isLoading = false
+      }).cach(err => {
+        this.isLoading = false
+        this.$message.error(err.message)
       })
     }
   },

@@ -712,7 +712,7 @@ export const attachmentMixin = {
       currentRow.maxMoney = money
       currentRow.invoiceNumber = invoiceNo
       currentRow.sellerName = sellerName
-      currentRow.invoiceTime = invoiceDate.match(invoiceTimeReg) ? RegExp.$_ : ''
+      currentRow.invoiceTime = (invoiceDate.match(invoiceTimeReg) ? RegExp.$_ : '').trim()
     },
     _setAttachmentList ({ data, index, prop, reimburseType, val }) { // 设置通过上传获取到的附件列表
       let resultArr = []
