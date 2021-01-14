@@ -28,7 +28,7 @@
       <!-- 审核弹窗 -->
       <my-dialog
         ref="myDialog"
-        width="1206px"
+        width="1351px"
         @closed="closeDialog"
         :title="textMap[title]"
         :btnList="btnList"

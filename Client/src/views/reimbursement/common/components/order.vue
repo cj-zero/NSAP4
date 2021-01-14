@@ -494,6 +494,22 @@
                     ">
                     </upLoadFile>
                   </template>
+                  <template v-else-if="item.type === 'date'">
+                    <el-form-item 
+                      :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
+                      :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }">
+                      <el-date-picker
+                         class="invoice-time"
+                        size="mini"
+                        v-model="scope.row[item.prop]"
+                        type="datetime"
+                        style="width: 100%;"
+                        value-format="yyyy-MM-dd HH:mm:ss"
+                        :clearable="false"
+                        placeholder="选择日期时间">
+                      </el-date-picker>
+                    </el-form-item>
+                  </template>
                   <template v-else-if="item.type === 'operation'">
                     <template v-for="iconItem in item.iconList">
                       <i 
@@ -612,6 +628,22 @@
                         >
                         </el-option>
                       </el-select>
+                    </el-form-item>
+                  </template>
+                  <template v-else-if="item.type === 'date'">
+                    <el-form-item 
+                      :prop="'reimburseAccommodationSubsidies.' + scope.$index + '.'+ item.prop"
+                      :rules="scope.row.isAdd ? (accRules[item.prop] || { required: false }) : { required: false }">
+                      <el-date-picker
+                         class="invoice-time"
+                        size="mini"
+                        v-model="scope.row[item.prop]"
+                        type="datetime"
+                        style="width: 100%;"
+                        value-format="yyyy-MM-dd HH:mm:ss"
+                        :clearable="false"
+                        placeholder="选择日期时间">
+                      </el-date-picker>
                     </el-form-item>
                   </template>
                   <template v-else-if="item.type === 'upload'">
@@ -752,6 +784,22 @@
                         >
                         </el-option>
                       </el-select>
+                    </el-form-item>
+                  </template>
+                  <template v-else-if="item.type === 'date'">
+                    <el-form-item 
+                      :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
+                      :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }">
+                      <el-date-picker
+                         class="invoice-time"
+                        size="mini"
+                        v-model="scope.row[item.prop]"
+                        type="datetime"
+                        style="width: 100%;"
+                        value-format="yyyy-MM-dd HH:mm:ss"
+                        :clearable="false"
+                        placeholder="选择日期时间">
+                      </el-date-picker>
                     </el-form-item>
                   </template>
                   <template v-else-if="item.type === 'upload'">
@@ -1979,6 +2027,7 @@ export default {
             transport: operationType === 'add' ? '' : row.transport,
             from: operationType === 'add' ? '' : row.from,
             to: operationType === 'add' ? '' : row.to,
+            invoiceTime: '',
             money: '',
             maxMoney: '',
             remark: operationType === 'add' ? '' : row.remark,
@@ -1995,6 +2044,7 @@ export default {
             isAdd: true,
             days: operationType === 'add' ? '' : row.days,
             money: '',
+            invoiceTime: '',
             totalMoney: '',
             maxMoney: '',
             remark: operationType === 'add' ? '' : row.remark,
@@ -2011,6 +2061,7 @@ export default {
             isAdd: true,
             expenseCategory: operationType === 'add' ? '' : row.expenseCategory,
             money: '',
+            invoiceTime: '',
             maxMoney: '',
             remark: operationType === 'add' ? '' : row.remark,
             invoiceNumber: '',
@@ -2863,6 +2914,18 @@ export default {
   ::v-deep .el-form-item--mini.el-form-item, .el-form-item--small.el-form-item {
     margin-bottom: 5px;
   }
+  /* 发票时间日期选择器 */
+  .invoice-time {
+    color: red;
+    &::v-deep {
+      > input {
+        padding: 0 5px !important;
+      }
+      .el-input__prefix {
+        display: none;
+      }
+    }
+  }
   ::v-deep .el-input__icon {
     &.success {
       color: rgba(0, 128, 0, 1);
@@ -2954,15 +3017,15 @@ export default {
       }
     }
     &.acc {
-      width: 1077px;
+      width: 1222px;
       &.uneditable {
-        width: 916px;
+        width: 1061px;
       }
     }
     &.other {
-      width: 1014px;
+      width: 1159px;
       &.uneditable {
-        width: 846px;
+        width: 991px;
       }
     }
     margin-bottom: 5px;
