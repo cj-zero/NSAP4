@@ -172,7 +172,8 @@ namespace OpenAuth.App
                 ExpenseCategory = obj.ExpenseCategory,
                 UpdateTime = DateTime.Now,
                 UpdateUserId = user.Id,
-                UpdateUserName = user.Name
+                UpdateUserName = user.Name,
+                InvoiceTime = obj.InvoiceTime
                 //todo:补充或调整自己需要的字段
             });
 
