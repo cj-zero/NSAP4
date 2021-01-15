@@ -199,7 +199,8 @@
               <template v-slot:expenseDetail="{ row }">
                 <div class="detail-content">
                   <div>
-                    <span>{{ row.expenseDetail }}</span>
+                    <span style="display: inline-block;margin-right: 5px;" v-if="row.sellerName">{{ row.sellerName }}</span>
+                    <span style="display: inline-block;margin-right: 5px;">{{ row.expenseDetail }}</span>
                     <el-tooltip 
                       :content="row.remark">
                       <i class="remark el-icon-chat-dot-round" v-if="row.remark"></i>
@@ -494,6 +495,22 @@
                     ">
                     </upLoadFile>
                   </template>
+                  <template v-else-if="item.type === 'date'">
+                    <el-form-item 
+                      :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
+                      :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }">
+                      <el-date-picker
+                        class="invoice-time"
+                        size="mini"
+                        v-model="scope.row[item.prop]"
+                        type="datetime"
+                        style="width: 100%;"
+                        value-format="yyyy-MM-dd HH:mm:ss"
+                        :clearable="false"
+                        placeholder="选择日期时间">
+                      </el-date-picker>
+                    </el-form-item>
+                  </template>
                   <template v-else-if="item.type === 'operation'">
                     <template v-for="iconItem in item.iconList">
                       <i 
@@ -612,6 +629,22 @@
                         >
                         </el-option>
                       </el-select>
+                    </el-form-item>
+                  </template>
+                  <template v-else-if="item.type === 'date'">
+                    <el-form-item 
+                      :prop="'reimburseAccommodationSubsidies.' + scope.$index + '.'+ item.prop"
+                      :rules="scope.row.isAdd ? (accRules[item.prop] || { required: false }) : { required: false }">
+                      <el-date-picker
+                        class="invoice-time"
+                        size="mini"
+                        v-model="scope.row[item.prop]"
+                        type="datetime"
+                        style="width: 100%;"
+                        value-format="yyyy-MM-dd HH:mm:ss"
+                        :clearable="false"
+                        placeholder="选择日期时间">
+                      </el-date-picker>
                     </el-form-item>
                   </template>
                   <template v-else-if="item.type === 'upload'">
@@ -752,6 +785,22 @@
                         >
                         </el-option>
                       </el-select>
+                    </el-form-item>
+                  </template>
+                  <template v-else-if="item.type === 'date'">
+                    <el-form-item 
+                      :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
+                      :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }">
+                      <el-date-picker
+                        class="invoice-time"
+                        size="mini"
+                        v-model="scope.row[item.prop]"
+                        type="datetime"
+                        style="width: 100%;"
+                        value-format="yyyy-MM-dd HH:mm:ss"
+                        :clearable="false"
+                        placeholder="选择日期时间">
+                      </el-date-picker>
                     </el-form-item>
                   </template>
                   <template v-else-if="item.type === 'upload'">
@@ -1360,7 +1409,10 @@ export default {
       return 0
     },
     totalMoney () {
-      return this.travelTotalMoney + this.trafficTotalMoney + this.accTotalMoney + this.otherTotalMoney
+      let moneyList = [this.travelTotalMoney, this.trafficTotalMoney, this.accTotalMoney, this.otherTotalMoney]
+      return moneyList.reduce((prev, next) => {
+        return accAdd(prev, next)
+      }, 0)
     },
     normalConfig () {
       let noneSlotConfig = this.formConfig.filter(item => item.type !== 'slot')
@@ -2434,6 +2486,7 @@ export default {
             transport: operationType === 'add' ? '' : row.transport,
             from: operationType === 'add' ? '' : row.from,
             to: operationType === 'add' ? '' : row.to,
+            invoiceTime: '',
             money: '',
             maxMoney: '',
             remark: operationType === 'add' ? '' : row.remark,
@@ -2450,6 +2503,7 @@ export default {
             isAdd: true,
             days: operationType === 'add' ? '' : row.days,
             money: '',
+            invoiceTime: '',
             totalMoney: '',
             maxMoney: '',
             remark: operationType === 'add' ? '' : row.remark,
@@ -2466,6 +2520,7 @@ export default {
             isAdd: true,
             expenseCategory: operationType === 'add' ? '' : row.expenseCategory,
             money: '',
+            invoiceTime: '',
             maxMoney: '',
             remark: operationType === 'add' ? '' : row.remark,
             invoiceNumber: '',
@@ -2575,6 +2630,7 @@ export default {
           invoiceNo: '',
           money: '',
           invoiceDate: '',
+          sellerName: '',
           isAcc,
           isValidInvoice: false
         })
@@ -3265,18 +3321,6 @@ export default {
       }
       .table-container {
         overflow: visible;
-        .upload-number-wrapper {
-          margin-left: 18px;
-          ::v-deep .el-upload-list {
-            .el-upload-list__item-name {
-              padding-left: 0 !important;
-              margin-bottom: 0 !important;
-            }
-            label {
-              display: none !important;
-            }
-          }
-        }
         .detail-content {
           position: relative;
           display: inline-block;
@@ -3296,6 +3340,9 @@ export default {
         .invoice-number-wrapper {
           position: relative;
         }
+      }
+      ::v-deep .cell {
+        line-height: 16px;
       }
       ::v-deep .el-table__header {
         border-collapse: collapse;
@@ -3350,6 +3397,18 @@ export default {
   }
   ::v-deep .el-form-item--mini.el-form-item, .el-form-item--small.el-form-item {
     margin-bottom: 5px;
+  }
+  /* 发票时间日期选择器 */
+  .invoice-time {
+    color: red;
+    &::v-deep {
+      > input {
+        padding: 0 5px !important;
+      }
+      .el-input__prefix {
+        display: none;
+      }
+    }
   }
   ::v-deep .el-input__icon {
     &.success {
@@ -3442,15 +3501,15 @@ export default {
       }
     }
     &.acc {
-      width: 1077px;
+      width: 1222px;
       &.uneditable {
-        width: 916px;
+        width: 1061px;
       }
     }
     &.other {
-      width: 1014px;
+      width: 1159px;
       &.uneditable {
-        width: 846px;
+        width: 991px;
       }
     }
     margin-bottom: 5px;

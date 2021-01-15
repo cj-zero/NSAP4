@@ -9,13 +9,21 @@
       <template v-for="(formInput, index) in formInputs">
         <el-row type="flex" :key="index">
           <el-col v-for="item in formInput" :key="item.attrs.prop" :span="item.span || 24">
-            <el-form v-bind="item.itemAttrs">
+            <!-- 插槽 -->
+            <slot
+              v-if="item.slotName"
+              :name="item.slotName" 
+              :form="form" 
+              :item="item">
+            </slot>
+            <!-- 表单组件 -->
+            <el-form-item v-bind="item.itemAttrs" v-else>
               <component
                 :is="item.tag"
                 v-model="form[item.attrs.prop]"
                 v-bind="item.attrs"
               ></component>
-            </el-form>
+            </el-form-item>
           </el-col>
         </el-row>
       </template>

@@ -67,6 +67,11 @@ namespace Infrastructure.TecentOCR
         /// 扩展信息
         /// </summary>
         public ExtendInfo ExtendInfo { get; set; }
+
+        /// <summary>
+        /// 票据识别平台
+        /// </summary>
+        public string OcrPlatform { get; set; }
     }
 
 

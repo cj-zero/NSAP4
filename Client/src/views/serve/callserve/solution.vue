@@ -60,8 +60,8 @@ export default {
       defaultFormThead: ["sltCode", "symptom", "subject"],
       formTheadOptions: [
         // { name: "id", label: "ID" },
-        { prop: "sltCode", label: "编号" },
-        { prop: "symptom", label: "症状" },
+        { prop: "sltCode", label: "编号", width: 50 },
+        { prop: "symptom", label: "症状", width: 200 },
         { prop: "subject", label: "解决方案" }
       ],
       // this.dialogTable = true;

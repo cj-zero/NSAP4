@@ -39,7 +39,7 @@
     </Layer>
     <my-dialog
       ref="myDialog"
-      :width="this.title === 'view' ? '1206px' : '1336px'"
+      :width="this.title === 'view' ? '1351px' : '1481px'"
       :btnList="btnList"
       @closed="closeDialog"
       :title="textMap[title]"
