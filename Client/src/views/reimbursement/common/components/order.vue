@@ -499,7 +499,7 @@
                       :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
                       :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }">
                       <el-date-picker
-                         class="invoice-time"
+                        class="invoice-time"
                         size="mini"
                         v-model="scope.row[item.prop]"
                         type="datetime"
@@ -635,7 +635,7 @@
                       :prop="'reimburseAccommodationSubsidies.' + scope.$index + '.'+ item.prop"
                       :rules="scope.row.isAdd ? (accRules[item.prop] || { required: false }) : { required: false }">
                       <el-date-picker
-                         class="invoice-time"
+                        class="invoice-time"
                         size="mini"
                         v-model="scope.row[item.prop]"
                         type="datetime"
@@ -791,7 +791,7 @@
                       :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
                       :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }">
                       <el-date-picker
-                         class="invoice-time"
+                        class="invoice-time"
                         size="mini"
                         v-model="scope.row[item.prop]"
                         type="datetime"
