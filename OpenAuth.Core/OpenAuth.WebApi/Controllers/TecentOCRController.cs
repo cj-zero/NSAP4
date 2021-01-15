@@ -121,6 +121,18 @@ namespace OpenAuth.WebApi.Controllers
                         image = base64Str
                     };
                     r = _huaweiOCR.CommonInvoiceOCR(huaweiOcrRequest);
+                    if (r.Code == 201)//华为云识别失败 则用腾讯云进行识别
+                    {
+                        ocrPlatform = "Huawei-Tecent";
+                        //图片格式文件识别使用混贴MixedInvoiceOCR进行识别
+                        var invoiceRequest = new MixedInvoiceOCRRequest
+                        {
+                            Types = request.Types,
+                            ImageUrl = string.Empty,
+                            ImageBase64 = base64Str
+                        };
+                        r = _tecentOCR.MixedInvoiceOCR(invoiceRequest);
+                    }
                 }
                 else
                 {
