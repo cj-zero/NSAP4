@@ -67,8 +67,11 @@ namespace Infrastructure.Export
                 {
                     byte[] buffur = new byte[fs.Length];
                     fs.Read(buffur, 0, (int)fs.Length);
+                    fs.Close();
+                    File.Delete(fileName);
                     return buffur;
                 };
+               
                 #endregion
             }
 
