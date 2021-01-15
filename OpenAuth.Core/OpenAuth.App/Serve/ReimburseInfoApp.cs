@@ -27,7 +27,6 @@ namespace OpenAuth.App
         private object lockObj = new object();
 
         //报销单据类型(0 报销单，1 出差补贴， 2 交通费用， 3 住宿补贴， 4 其他费用, 5 我的费用)
-
         /// <summary>
         /// 加载列表
         /// </summary>
@@ -60,6 +59,7 @@ namespace OpenAuth.App
                 var orgids = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.Name.Contains(request.OrgName)).Select(o => o.Id).ToListAsync();
                 OrgUserIds.AddRange(await UnitWork.Find<Relevance>(r => orgids.Contains(r.SecondId) && r.Key == Define.USERORG).Select(r => r.FirstId).ToListAsync());
             }
+            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ServiceRelations") && u.Enable==false).Select(u => u.Name).ToListAsync();
 
             var result = new TableData();
             var objs = UnitWork.Find<ReimburseInfo>(null).Include(r => r.ReimburseTravellingAllowances);
@@ -67,7 +67,7 @@ namespace OpenAuth.App
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId), r => r.ServiceOrderSapId.ToString().Contains(request.ServiceOrderId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.BearToPay), r => r.BearToPay.Contains(request.BearToPay))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.Responsibility), r => r.Responsibility.Contains(request.Responsibility))
-                      .WhereIf(request.StaticDate != null, r => r.CreateTime > request.StaticDate)
+                      .WhereIf(request.StartDate != null, r => r.CreateTime > request.StartDate)
                       .WhereIf(request.EndDate != null, r => r.CreateTime < Convert.ToDateTime(request.EndDate).AddMinutes(1440))
                       //.WhereIf(!string.IsNullOrWhiteSpace(request.IsDraft.ToString()), r => r.IsDraft == request.IsDraft)
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ReimburseType), r => r.ReimburseType.Equals(request.ReimburseType))
@@ -75,8 +75,18 @@ namespace OpenAuth.App
                       .WhereIf(!string.IsNullOrWhiteSpace(request.OrgName), r => OrgUserIds.Contains(r.CreateUserId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.TerminalCustomer), r => ServiceOrderIds.Contains(r.ServiceOrderId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceRelations), r => r.ServiceRelations.Contains(request.ServiceRelations))
-                      .WhereIf(!string.IsNullOrWhiteSpace(request.Status), r => r.RemburseStatus.Equals(int.Parse(request.Status)));
-
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.Status), r => r.RemburseStatus.Equals(int.Parse(request.Status)))
+                      .WhereIf(request.PaymentStartDate !=null ,r=>r.PayTime > request.PaymentStartDate)
+                      .WhereIf(request.PaymentEndDate != null, r => r.PayTime <Convert.ToDateTime(request.PaymentEndDate).AddDays(1))
+                      ;
+            if (CategoryList != null && CategoryList.Where(c => c.Equals("All")).Count() >= 1)
+            {
+                ReimburseInfos = ReimburseInfos.Where(r => CategoryList.Contains(r.ServiceRelations));
+            }
+            else 
+            {
+                ReimburseInfos = ReimburseInfos.Where(r => r.ServiceRelations.Equals(loginContext.User.ServiceRelations));
+            }
             if (!string.IsNullOrWhiteSpace(request.RemburseStatus))
             {
                 switch (request.RemburseStatus)
@@ -221,10 +231,10 @@ namespace OpenAuth.App
             var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceMode == 1 && c.IsReimburse==2).ToListAsync();
             var CompletionReportList = new List<CompletionReport>();
-            if (request.CompletionStaticDate != null || request.CompletionEndDate != null) 
+            if (request.CompletionStartDate != null || request.CompletionEndDate != null) 
             {
                 var CompletionReportGroupBy = CompletionReports.GroupBy(c => c.ServiceOrderId).Select(c => c).ToList();
-                CompletionReportGroupBy = CompletionReportGroupBy.Where(c => c.Min(m => m.BusinessTripDate) > request.CompletionStaticDate && c.Max(m=>m.EndDate)<= Convert.ToDateTime(request.CompletionEndDate).AddDays(1)).ToList();
+                CompletionReportGroupBy = CompletionReportGroupBy.Where(c => c.Min(m => m.BusinessTripDate) > request.CompletionStartDate && c.Max(m=>m.EndDate)<= Convert.ToDateTime(request.CompletionEndDate).AddDays(1)).ToList();
                 ServiceOrderIds = CompletionReportGroupBy.Select(c =>(int)c.Key).ToList();
                 CompletionReportGroupBy.ForEach(f=> CompletionReportList.AddRange(f.ToList()));
             }
@@ -1812,7 +1822,7 @@ namespace OpenAuth.App
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId), r => r.ServiceOrderSapId.ToString().Contains(request.ServiceOrderId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.BearToPay), r => r.BearToPay.Contains(request.BearToPay))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.Responsibility), r => r.Responsibility.Contains(request.Responsibility))
-                      .WhereIf(request.StaticDate != null, r => r.CreateTime > request.StaticDate)
+                      .WhereIf(request.StartDate != null, r => r.CreateTime > request.StartDate)
                       .WhereIf(request.EndDate != null, r => r.CreateTime < Convert.ToDateTime(request.EndDate).AddMinutes(1440))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ReimburseType), r => r.ReimburseType.Equals(request.ReimburseType))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId))
@@ -1867,7 +1877,7 @@ namespace OpenAuth.App
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId), r => r.ServiceOrderSapId.ToString().Contains(request.ServiceOrderId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.BearToPay), r => r.BearToPay.Contains(request.BearToPay))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.Responsibility), r => r.Responsibility.Contains(request.Responsibility))
-                      .WhereIf(request.StaticDate != null, r => r.CreateTime > request.StaticDate)
+                      .WhereIf(request.StartDate != null, r => r.CreateTime > request.StartDate)
                       .WhereIf(request.EndDate != null, r => r.CreateTime < Convert.ToDateTime(request.EndDate).AddMinutes(1440))
                       //.WhereIf(!string.IsNullOrWhiteSpace(request.IsDraft.ToString()), r => r.IsDraft == request.IsDraft)
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ReimburseType), r => r.ReimburseType.Equals(request.ReimburseType))
@@ -1875,7 +1885,20 @@ namespace OpenAuth.App
                       .WhereIf(!string.IsNullOrWhiteSpace(request.OrgName), r => OrgUserIds.Contains(r.CreateUserId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.TerminalCustomer), r => ServiceOrderIds.Contains(r.ServiceOrderId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceRelations), r => r.ServiceRelations.Contains(request.ServiceRelations))
-                      .WhereIf(!string.IsNullOrWhiteSpace(request.Status), r => r.RemburseStatus.Equals(request.Status));
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.Status), r => r.RemburseStatus.Equals(request.Status))
+                      .WhereIf(request.PaymentStartDate != null, r => r.PayTime > request.PaymentStartDate)
+                      .WhereIf(request.PaymentEndDate != null, r => r.PayTime < Convert.ToDateTime(request.PaymentEndDate).AddDays(1));
+            
+            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ServiceRelations") && u.Enable == false).Select(u => u.Name).ToListAsync();
+
+            if (CategoryList != null && CategoryList.Where(c => c.Equals("All")).Count() >= 1)
+            {
+                ReimburseInfos = ReimburseInfos.Where(r => CategoryList.Contains(r.ServiceRelations));
+            }
+            else
+            {
+                ReimburseInfos = ReimburseInfos.Where(r => r.ServiceRelations.Equals(loginContext.User.ServiceRelations));
+            }
 
             if (!string.IsNullOrWhiteSpace(request.RemburseStatus))
             {
@@ -1938,7 +1961,7 @@ namespace OpenAuth.App
                 部门 = r.f.Name,
                 金额=r.a.TotalMoney
             }).ToList();
-            if (request.CompletionStaticDate != null) ReimburseRespList=ReimburseRespList.Where(r => Convert.ToDateTime(r.出差开始时间) >= request.CompletionStaticDate).ToList();
+            if (request.CompletionStartDate != null) ReimburseRespList=ReimburseRespList.Where(r => Convert.ToDateTime(r.出差开始时间) >= request.CompletionStartDate).ToList();
             if (request.CompletionEndDate != null) ReimburseRespList = ReimburseRespList.Where(r => Convert.ToDateTime(r.出差结束时间) < Convert.ToDateTime(request.CompletionEndDate).AddDays(1)).ToList();
             var bytes = await ExportAllHandler.ExporterExcel(ReimburseRespList);
             return bytes;

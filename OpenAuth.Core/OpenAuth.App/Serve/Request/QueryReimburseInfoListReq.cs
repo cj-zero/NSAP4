@@ -56,7 +56,7 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 填报开始日期
         /// </summary>
-        public DateTime? StaticDate { get; set; }
+        public DateTime? StartDate { get; set; }
 
         /// <summary>
         /// 填报结束日期
@@ -94,12 +94,23 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 完工报告开始日期
         /// </summary>
-        public DateTime? CompletionStaticDate { get; set; }
+        public DateTime? CompletionStartDate { get; set; }
 
         /// <summary>
         /// 完工报告出差结束日期
         /// </summary>
         public DateTime? CompletionEndDate { get; set; }
+
+
+        /// <summary>
+        /// 支付日期开始
+        /// </summary>
+        public DateTime? PaymentStartDate { get; set; }
+
+        /// <summary>
+        /// 支付日期结束
+        /// </summary>
+        public DateTime? PaymentEndDate { get; set; }
 
         //todo:添加自己的请求字段
     }
