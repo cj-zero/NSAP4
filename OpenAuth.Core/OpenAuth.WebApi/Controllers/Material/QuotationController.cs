@@ -55,7 +55,7 @@ namespace OpenAuth.WebApi.Controllers.Material
             var result = new TableData();
             try
             {
-                return await _app.ApprovalPendingLoad(request);
+                //return await _app.ApprovalPendingLoad(request);
             }
             catch (Exception ex)
             {
@@ -225,7 +225,11 @@ namespace OpenAuth.WebApi.Controllers.Material
             var result = new Response();
             try
             {
-                await _app.Add(obj);
+                var Message = await _app.Add(obj);
+                if (!string.IsNullOrWhiteSpace(Message)) 
+                {
+                    result.Message = Message;
+                }
             }
             catch (Exception ex)
             {
@@ -247,7 +251,11 @@ namespace OpenAuth.WebApi.Controllers.Material
             var result = new Response();
             try
             {
-                await _app.Update(obj);
+                var Message = await _app.Update(obj);
+                if (!string.IsNullOrWhiteSpace(Message))
+                {
+                    result.Message = Message;
+                }
             }
             catch (Exception ex)
             {
