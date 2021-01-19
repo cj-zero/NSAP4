@@ -16,8 +16,8 @@ namespace OpenAuth.Repository.Domain
         public MaterialPrice()
         {
           this.MaterialCode= string.Empty;
-          this.CreateId= string.Empty;
-          this.CreateName= string.Empty;
+          this.CreateUser= string.Empty;
+          this.CreateUserId= string.Empty;
           this.CreateTime= DateTime.Now;
         }
 
@@ -27,6 +27,7 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("物料编号")]
         public string MaterialCode { get; set; }
+
         /// <summary>
         /// 固定价格模式
         /// </summary>
@@ -41,16 +42,18 @@ namespace OpenAuth.Repository.Domain
         /// 创建人id
         /// </summary>
         [Description("创建人id")]
-        public string CreateId { get; set; }
+        public string CreateUserId { get; set; }
         /// <summary>
         /// 创建人姓名
         /// </summary>
         [Description("创建人姓名")]
-        public string CreateName { get; set; }
+        public string CreateUser { get; set; }
+
         /// <summary>
         /// 创建时间
         /// </summary>
         [Description("创建时间")]
         public System.DateTime CreateTime { get; set; }
+
     }
 }

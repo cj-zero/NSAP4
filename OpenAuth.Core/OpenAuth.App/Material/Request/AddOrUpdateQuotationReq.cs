@@ -115,12 +115,12 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         /// 报价单设备列表
         /// </summary>
-        public virtual List<QuotationProduct> QuotationProducts { get; set; }
+        public virtual List<QuotationProductRep> QuotationProducts { get; set; }
 
         /// <summary>
         /// 报价单零件合并列表
         /// </summary>
-
+        /// 
         public virtual List<QuotationMergeMaterial> QuotationMergeMaterials { get; set; }
 
         /// <summary>

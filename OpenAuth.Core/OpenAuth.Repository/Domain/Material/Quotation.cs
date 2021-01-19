@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using OpenAuth.Repository.Core;
+using OpenAuth.Repository.Domain.Material;
 
 namespace OpenAuth.Repository.Domain
 {
@@ -171,7 +172,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 物料报价单物料列表
         /// </summary>
-        //public virtual List<QuotationMaterial> QuotationMaterials { get; set; }
+        public virtual List<QuotationMergeMaterial> QuotationMergeMaterials { get; set; }
 
         /// <summary>
         /// 报价单设备列表
@@ -183,7 +184,10 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public virtual List<QuotationOperationHistory> QuotationOperationHistorys { get; set; }
 
-
+        /// <summary>
+        /// 报价单图片
+        /// </summary>
+        public virtual List<QuotationPicture> QuotationPictures { get; set; }
 
         public override void GenerateDefaultKeyVal()
         {
