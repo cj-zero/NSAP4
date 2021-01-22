@@ -26,17 +26,20 @@ export let trafficRules = { // 交通
   from: [ { required: true, trigger: ['blur', 'change'] } ],
   to: [ { required: true, trigger: ['blur', 'change'] } ],
   money: [ { required: true, trigger: ['blur', 'change'], validator: validateMoney } ],
-  invoiceNumber: [ { required: true, trigger: ['blur', 'change'] } ]
+  invoiceNumber: [ { required: true, trigger: ['blur', 'change'] } ],
+  invoiceTime: [ { required: true, trigger: ['blur', 'change'] } ]
 }
 
 export let accRules = { // 住宿
   days: { required: true, trigger: 'change', validator: validateMoney } ,
   totalMoney: [ { required: true, trigger: 'blur', validator: validateMoney } ],
-  invoiceNumber: [ { required: true, trigger: ['blur', 'change'] } ]
+  invoiceNumber: [ { required: true, trigger: ['blur', 'change'] } ],
+  invoiceTime: [ { required: true, trigger: ['blur', 'change'] } ]
 }
 
 export let otherRules = { // 其他
   expenseCategory: [ { required: true, trigger: 'change' } ],
   money: [{ required: true, trigger: 'blur', validator: validateMoney }],
-  invoiceNumber: [ { required: true, trigger: ['blur', 'change'] } ]
+  invoiceNumber: [ { required: true, trigger: ['blur', 'change'] } ],
+  invoiceTime: [ { required: true, trigger: ['blur', 'change'] } ]
 }
