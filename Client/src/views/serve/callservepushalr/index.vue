@@ -613,10 +613,11 @@ export default {
             }
           })
           .catch((error) => {
-            this.$message({
-              type: "danger",
-              message: `${error}`,
-            });
+            this.$message.error(error.message)
+            // this.$message({
+            //   type: "danger",
+            //   message: `${error}`,
+            // });
             this.listLoading = false;
             this.loadingBtn = false
           });
