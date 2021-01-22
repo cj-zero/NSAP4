@@ -8,16 +8,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OpenAuth.App.Nwcali
 {
     public class NwcaliCertApp : OnlyUnitWorkBaeApp
     {
+        static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
         public NwcaliCertApp(IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
         {
         }
-
+        
         public async Task AddAsync(NwcaliBaseInfo baseInfo)
         {
             var loginContext = _auth.GetCurrentUser();
@@ -37,15 +39,23 @@ namespace OpenAuth.App.Nwcali
                     throw new CommonException("系统不存在当前校准人账号信息，请联系相关人员录入信息。", 400100);
                 baseInfo.OperatorId = u.Id;
             }
-            baseInfo.CertificateNumber = await CertificateNoGenerate("O");
-            baseInfo.CreateTime = DateTime.Now;
-            baseInfo.CreateUser = user.Name;
-            baseInfo.CreateUserId = user.Id;
-            var testerModel = await UnitWork.Find<OINS>(o => o.manufSN.Equals(baseInfo.TesterSn)).Select(o=>o.itemCode).FirstOrDefaultAsync();
-            if (testerModel != null)
-                baseInfo.TesterModel = testerModel;
-            await UnitWork.AddAsync(baseInfo);
-            await UnitWork.SaveAsync();
+            await semaphoreSlim.WaitAsync();
+            try
+            {
+                baseInfo.CertificateNumber = await CertificateNoGenerate("O");
+                baseInfo.CreateTime = DateTime.Now;
+                baseInfo.CreateUser = user.Name;
+                baseInfo.CreateUserId = user.Id;
+                var testerModel = await UnitWork.Find<OINS>(o => o.manufSN.Equals(baseInfo.TesterSn)).Select(o => o.itemCode).FirstOrDefaultAsync();
+                if (testerModel != null)
+                    baseInfo.TesterModel = testerModel;
+                await UnitWork.AddAsync(baseInfo);
+                await UnitWork.SaveAsync();
+            }
+            finally
+            {
+                semaphoreSlim.Release();
+            }
         }
 
         public async Task<NwcaliBaseInfo> GetInfo(string certNo)
