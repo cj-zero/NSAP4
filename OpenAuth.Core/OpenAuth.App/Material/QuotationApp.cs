@@ -19,6 +19,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Npoi.Mapper;
 using OpenAuth.Repository.Domain.Material;
+using System.IO;
+using Infrastructure.Export;
+using DinkToPdf;
 
 namespace OpenAuth.App.Material
 {
@@ -577,11 +580,16 @@ namespace OpenAuth.App.Material
             }
 
             QuotationObj.IsProtected = true;
+            QuotationObj.TotalCostPrice = 0;
             QuotationObj.QuotationProducts.ForEach(q =>
             {
                 if (!(bool)q.IsProtected)
                 {
                     QuotationObj.IsProtected = false;
+                }
+                else
+                {
+                    q.QuotationMaterials.ForEach(m => QuotationObj.TotalCostPrice +=m.UnitPrice * m.Count);
                 }
             });
             var dbContext = UnitWork.GetDbContext<Quotation>();
@@ -1379,6 +1387,27 @@ namespace OpenAuth.App.Material
             //result.Count = await QuotationMergeMaterials.CountAsync();
             result.Data = await QuotationMergeMaterials.ToListAsync();
             return result;
+        }
+
+        /// <summary>
+        /// 打印销售订单
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        /// <returns></returns>
+        public async Task<byte[]> PrintSalesOrder(int QuotationId)
+        {
+            var model = await UnitWork.Find<Quotation>(null).ToListAsync();
+            var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "SalesOrderHeader.html");
+            var footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "SalesOrderFooter.html");
+            var datas = await ExportAllHandler.Exporterpdf(model, "PrintSalesOrder.cshtml", pdf =>
+            {
+                pdf.IsWriteHtml = true;
+                pdf.PaperKind = PaperKind.A4;
+                pdf.Orientation = Orientation.Portrait;
+                pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+                pdf.FooterSettings = new FooterSettings() { FontSize = 6, Line = false, Spacing = 2.812, HtmUrl = footerUrl };
+            });
+            return datas;
         }
 
         #region 判断是否是保内

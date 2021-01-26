@@ -9,6 +9,9 @@ using OpenAuth.App.Serve;
 
 namespace OpenAuth.WebApi.Controllers.Serve
 {
+    /// <summary>
+    /// 推送消息
+    /// </summary>
     [Route("api/serve/[controller]/[action]")]
     [ApiController]
     public class ServiceOrderPushNotificationController : ControllerBase

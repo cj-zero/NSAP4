@@ -182,7 +182,14 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("提交对象")]
         public int ErpOrApp { get; set; }
+
+        /// <summary>
+        ///成本总价
+        /// </summary>
+        [Description("成本总价")]
+        public decimal? TotalCostPrice { get; set; }
         
+
         /// <summary>
         /// 物流表
         /// </summary>

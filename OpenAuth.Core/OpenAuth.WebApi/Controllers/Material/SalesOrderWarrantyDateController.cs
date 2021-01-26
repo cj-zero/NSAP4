@@ -11,6 +11,9 @@ using System.Threading.Tasks;
 
 namespace OpenAuth.WebApi.Controllers.Material
 {
+    /// <summary>
+    /// 销售单保修时间
+    /// </summary>
     [Route("api/Material/[controller]/[action]")]
     [ApiController]
     public class SalesOrderWarrantyDateController : ControllerBase

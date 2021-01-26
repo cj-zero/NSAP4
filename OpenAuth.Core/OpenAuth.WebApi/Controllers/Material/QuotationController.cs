@@ -354,7 +354,11 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return result;
         }
-
+        /// <summary>
+        /// 获取合并后信息
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
         [HttpGet]
         public async Task<TableData> GetMergeMaterial([FromQuery]QueryQuotationListReq req) 
         {
@@ -370,6 +374,16 @@ namespace OpenAuth.WebApi.Controllers.Material
                 result.Message = ex.Message;
             }
             return result;
+        }
+        /// <summary>
+        /// 打印销售订单
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> PrintSalesOrder(int QuotationId) 
+        {
+            return File(await _app.PrintSalesOrder(QuotationId), "application/pdf");
         }
 
     }
