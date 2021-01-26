@@ -99,5 +99,10 @@ namespace OpenAuth.Repository.Domain
         [Description("退料图片")]
         public List<ReturnNoteMaterialPicture> ReturnNoteMaterialPictures { get; set; }
 
+        /// <summary>
+        /// 物流Id
+        /// </summary>
+        [Description("物流Id")]
+        public string ExpressId { get; set; }
     }
 }

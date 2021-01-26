@@ -58,6 +58,18 @@ namespace OpenAuth.Repository.Domain
         public string Remark { get; set; }
 
         /// <summary>
+        ///运费
+        /// </summary>
+        [Description("运费")]
+        public decimal Freight { get; set; }
+
+        /// <summary>
+        ///创建时间
+        /// </summary>
+        [Description("创建时间")]
+        public DateTime CreateTime { get; set; }
+
+        /// <summary>
         /// 物流图片
         /// </summary>
         public virtual List<ExpressagePicture> ExpressagePicture { get; set; }
