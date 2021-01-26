@@ -133,6 +133,22 @@
                     </el-select>
                   </el-form-item>
                 </template>
+                <template v-else-if="item.type === 'date'">
+                  <el-form-item 
+                    :prop="'list.' + scope.$index + '.'+ item.prop"
+                    :rules="rules[item.prop] || { required: false }">
+                    <el-date-picker
+                      class="invoice-time"
+                      size="mini"
+                      v-model="scope.row[item.prop]"
+                      type="datetime"
+                      style="width: 100%;"
+                      value-format="yyyy-MM-dd HH:mm:ss"
+                      :clearable="false"
+                      placeholder="选择日期时间">
+                    </el-date-picker>
+                  </el-form-item>
+                </template>
                 <template v-else-if="item.type === 'upload'">   
                   <upLoadFile  
                     @get-ImgList="getImgList" 
@@ -307,6 +323,7 @@ export default {
           to: '',
           money: '',
           maxMoney: '',
+          invoiceTime: '',
           invoiceNumber: '',
           remark: '',
           // createTime: '',
@@ -407,6 +424,7 @@ export default {
       this.currentType = type
       this.rules = RULES_MAP[type]
       this.config = this[CONFIG_MAP[type]]
+      console.log(this.rules, this.config, 'rules')
       this.formData.list[0].reimburseType = type + 1
     },
     onRowClick () {
@@ -577,6 +595,7 @@ export default {
             : (this.currentType === ACC_TYPE ? totalMoney : money),
           maxMoney: type ? maxMoney : '',
           invoiceNumber: '',
+          invoiceTime: '',
           remark: type ? remark : '',
           days: '',
           totalMoney: type === ACC_TYPE ? money : '',
@@ -652,6 +671,18 @@ export default {
       color: rgba(255, 165, 0, 1);
     }
   }
+  /* 发票时间日期选择器 */
+  .invoice-time {
+    color: red;
+    &::v-deep {
+      > input {
+        padding: 0 5px !important;
+      }
+      .el-input__prefix {
+        display: none;
+      }
+    }
+  }
   .select-list-wrapper {
     position: relative;
     
@@ -718,10 +749,10 @@ export default {
         }
       }
       &.acc {
-        width: 916px;
+        width: 1061px;
       }
       &.other {
-        width: 846px;
+        width: 991px;
       }
       .money-class {
         ::v-deep input {

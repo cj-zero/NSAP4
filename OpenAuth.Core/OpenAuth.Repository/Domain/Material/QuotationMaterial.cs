@@ -88,7 +88,7 @@ namespace OpenAuth.Repository.Domain
         ///最大数量
         /// </summary>
         [Description("最大数量")]
-        public int? MaxQuantity { get; set; }
+        public decimal? MaxQuantity { get; set; }
 
         /// <summary>
         ///折扣

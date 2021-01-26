@@ -29,6 +29,7 @@ namespace OpenAuth.Repository.Domain
         [Description("报价单id")]
         [Browsable(false)]
         public int? QuotationId { get; set; }
+
         /// <summary>
         /// 物料编码
         /// </summary>
@@ -76,5 +77,17 @@ namespace OpenAuth.Repository.Domain
         [Description("包内保外")]
         public bool? IsProtected { get; set; }
 
+        /// <summary>
+        /// 毛利
+        /// </summary>
+        [Description("毛利")]
+        public decimal? Margin { get; set; }
+
+
+        /// <summary>
+        /// 折扣
+        /// </summary>
+        [Description("折扣")]
+        public decimal? Discount { get; set; }
     }
 }

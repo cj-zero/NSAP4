@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using OpenAuth.Repository.Core;
+using OpenAuth.Repository.Domain.Material;
 
 namespace OpenAuth.Repository.Domain
 {
@@ -61,17 +62,23 @@ namespace OpenAuth.Repository.Domain
         ///运费
         /// </summary>
         [Description("运费")]
-        public decimal Freight { get; set; }
+        public decimal? Freight { get; set; }
 
         /// <summary>
         ///创建时间
         /// </summary>
         [Description("创建时间")]
-        public DateTime CreateTime { get; set; }
+        public DateTime? CreateTime { get; set; }
+        
 
         /// <summary>
         /// 物流图片
         /// </summary>
         public virtual List<ExpressagePicture> ExpressagePicture { get; set; }
+
+        /// <summary>
+        /// 物料操作
+        /// </summary>
+        public virtual List<LogisticsRecord> LogisticsRecords { get; set; }
     }
 }

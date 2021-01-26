@@ -6,6 +6,7 @@ import { toThousands } from '@/utils/format'
 import { getList, getDetails } from '@/api/reimburse'
 import { identifyInvoice } from '@/api/reimburse' // 票据识别
 import { chatMixin } from '@/mixins/serve'
+import Day from 'dayjs'
 export { chatMixin }
 // import imageConversion from 'image-conversion'
 export let tableMixin = {
@@ -584,9 +585,10 @@ export let categoryMixin = {
         { label: '交通工具', prop: 'transport', type: 'select', options: this.transportationList, width: 135 },
         { label: '出发地', prop: 'from', type: 'input', width: 125, readonly: true },
         { label: '目的地', prop: 'to', type: 'input', width: 125, readonly: true },
+        { label: '发票时间', prop: 'invoiceTime', type: 'date', width: 160 },
         { label: '金额', prop: 'money', type: 'number', align: 'right', width: 120, placeholder: '大于0' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '不能为空' },
+        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 140, placeholder: '不能为空' },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 }
       ]
@@ -603,8 +605,9 @@ export let categoryMixin = {
       let config = [
         { label: '费用类别', prop: 'expenseCategory', type: 'select', width: 150, options: this.otherExpensesList },
         { label: '其他费用', prop: 'money', type: 'number', width: 120, align: 'right', placeholder: '大于0' },
+        { label: '发票时间', prop: 'invoiceTime', type: 'date', width: 160, placeholder: '请选择日期' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
-        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 155, placeholder: '不能为空' },
+        { label: '发票号码', type: 'input', prop: 'invoiceNumber', width: 140, placeholder: '不能为空' },
         { label: '发票附件', type: 'upload', prop: 'invoiceAttachment', width: 150 },
         { label: '其他附件', type: 'upload', prop: 'otherAttachment', width: 150 }
       ]
@@ -626,7 +629,9 @@ export let categoryMixin = {
         { placeholder: '劳务关系', prop: 'serviceRelations', width: 120, type: 'select', options: this.serviceRelationsList, isShow: !!this.isToPay },
         { placeholder: '填报起始时间', prop: 'staticDate', type: 'date', width: 150 },
         { placeholder: '填报结束时间', prop: 'endDate', type: 'date', width: 150 },
-        { placeholder: '出差开始时间', prop: 'completionStaticDate', type: 'date', width: 150, isShow: !!this.isSubmit && !!this.isCustomerSupervisor },
+        { placeholder: '支付起始时间', prop: 'paymentStartDate', type: 'date', width: 150 },
+        { placeholder: '支付结束时间', prop: 'paymentEndDate', type: 'date', width: 150 },
+        { placeholder: '出差开始时间', prop: 'completionStartDate', type: 'date', width: 150, isShow: !!this.isSubmit && !!this.isCustomerSupervisor },
         { placeholder: '出差结束时间', prop: 'completionEndDate', type: 'date', width: 150, isShow: !!this.isSubmit && !!this.isCustomerSupervisor }    
       ]
     }
@@ -712,7 +717,9 @@ export const attachmentMixin = {
       currentRow.maxMoney = money
       currentRow.invoiceNumber = invoiceNo
       currentRow.sellerName = sellerName
-      currentRow.invoiceTime = (invoiceDate.match(invoiceTimeReg) ? RegExp.$_ : '').trim()
+      let time = (invoiceDate.match(invoiceTimeReg) ? RegExp.$_ : '').trim()
+      currentRow.invoiceTime = time ? Day(time).format('YYYY-MM-DD HH:mm:ss') : ''
+      console.log(currentRow.invoiceTime, 'invoiceTime')
     },
     _setAttachmentList ({ data, index, prop, reimburseType, val }) { // 设置通过上传获取到的附件列表
       let resultArr = []
