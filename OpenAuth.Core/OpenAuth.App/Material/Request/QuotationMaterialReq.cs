@@ -7,7 +7,7 @@ using System.Text;
 namespace OpenAuth.App.Material.Request
 {
     [AutoMapTo(typeof(QuotationMaterial))]
-    public class QuotationMaterialRep
+    public class QuotationMaterialReq
     {
         /// <summary>
         ///物料报价单Id
@@ -56,7 +56,7 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         ///最大数量
         /// </summary>
-        public int? MaxQuantity { get; set; }
+        public decimal? MaxQuantity { get; set; }
 
         /// <summary>
         ///折扣

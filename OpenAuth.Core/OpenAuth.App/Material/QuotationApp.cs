@@ -96,7 +96,7 @@ namespace OpenAuth.App.Material
                 q.b.TerminalCustomerId,
                 q.a.TotalMoney,
                 q.a.CreateUser,
-                q.a.Reamrk,
+                q.a.Remark,
                 q.a.SalesOrderId,
                 CreateTime = q.a.CreateTime.ToString("yyyy-MM-dd"),
                 q.a.QuotationStatus,
@@ -195,15 +195,13 @@ namespace OpenAuth.App.Material
                 loginUser = await GetUserId(Convert.ToInt32(request.AppId));
             }
             var result = new TableData();
-
             var ServiceOrders = from a in UnitWork.Find<ServiceOrder>(null)
                                 join b in UnitWork.Find<ServiceWorkOrder>(null) on a.Id equals b.ServiceOrderId
-                                select new { a, b };
-
+                                select new { a, b};
+            ServiceOrders = ServiceOrders.WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId.ToString()), s => s.a.Id.Equals(request.ServiceOrderId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderSapId.ToString()), s => s.a.U_SAP_ID.Equals(request.ServiceOrderSapId));
             var ServiceOrderList = (await ServiceOrders.Where(s => s.b.CurrentUserNsapId.Equals(loginUser.Id)).ToListAsync()).GroupBy(s => s.a.Id).Select(s => s.First());
-
             var CustomerIds = ServiceOrderList.Select(s => s.a.CustomerId).ToList();
-
             var CardAddress = from a in UnitWork.Find<OCRD>(null)
                               join c in UnitWork.Find<OCRY>(null) on a.Country equals c.Code into ac
                               from c in ac.DefaultIfEmpty()
@@ -221,7 +219,6 @@ namespace OpenAuth.App.Material
                 BillingAddress = $"{ q.a.ZipCode ?? "" }{ q.c.Name ?? "" }{ q.d.Name ?? "" }{ q.a.City ?? ""}{ q.a.Building ?? "" }",
                 DeliveryAddress = $"{ q.a.MailZipCod ?? "" }{ q.e.Name ?? "" }{ q.d.Name ?? "" }{ q.a.MailCity ?? "" }{ q.a.MailBuildi ?? "" }"
             }).ToListAsync();
-
             result.Data = ServiceOrderList.Skip((request.page - 1) * request.limit)
                 .Take(request.limit).Select(q => new
                 {
@@ -272,18 +269,12 @@ namespace OpenAuth.App.Material
                 #region 获取交货创建时间
                 var MnfSerials = ServiceWorkOrderList.Select(s => s.ManufacturerSerialNumber).ToList();
 
-                StringBuilder MnfSerialStr = new StringBuilder();
-                MnfSerials.ForEach(item =>
-                {
-                    MnfSerialStr.Append("'" + item + "',");
-                });
-
                 var manufacturerSerialNumber = from a in UnitWork.Find<OITL>(null)
                                                join b in UnitWork.Find<ITL1>(null) on new { a.LogEntry, a.ItemCode } equals new { b.LogEntry, b.ItemCode } into ab
                                                from b in ab.DefaultIfEmpty()
                                                join c in UnitWork.Find<OSRN>(null) on new { b.ItemCode, SysNumber = b.SysNumber.Value } equals new { c.ItemCode, c.SysNumber } into bc
                                                from c in bc.DefaultIfEmpty()
-                                               where (a.DocType == 15 || a.DocType == 59) && c.MnfSerial.Contains(MnfSerialStr.ToString().Substring(0, MnfSerialStr.Length - 1))
+                                               where (a.DocType == 15 || a.DocType == 59) && MnfSerials.Contains(c.MnfSerial)
                                                select new { c.MnfSerial, a.DocEntry, a.BaseEntry, a.DocType, a.CreateDate, a.BaseType };
                 #region 暂时废弃
                 //var Equipments = from a in manufacturerSerialNumber
@@ -308,12 +299,12 @@ namespace OpenAuth.App.Material
 
                 var MnfSerialList = await manufacturerSerialNumber.ToListAsync();
                 var docdate = await manufacturerSerialNumber.Where(m => m.BaseType == 17).ToListAsync();
-                var SalesOrderIds = docdate.Select(d => d.DocEntry).ToList();
+                var SalesOrderIds = docdate.Select(d => d.BaseEntry).ToList();
                 var SalesOrderWarrantyDates = await UnitWork.Find<SalesOrderWarrantyDate>(s => SalesOrderIds.Contains(s.SalesOrderId) && s.IsPass == true).ToListAsync();
                 var IsProtecteds = docdate.Select(e => new
                 {
                     MnfSerial = e.MnfSerial,
-                    DocDate = SalesOrderWarrantyDates.Where(s => s.SalesOrderId.Equals(e.DocEntry)).Count() > 0 ? SalesOrderWarrantyDates.Where(s => s.SalesOrderId.Equals(e.DocEntry)).FirstOrDefault()?.WarrantyPeriod : Convert.ToDateTime(e.CreateDate).AddMonths(13)
+                    DocDate = SalesOrderWarrantyDates.Where(s => s.SalesOrderId.Equals(e.BaseEntry)).Count() > 0 ? SalesOrderWarrantyDates.Where(s => s.SalesOrderId.Equals(e.BaseEntry)).FirstOrDefault()?.WarrantyPeriod : Convert.ToDateTime(e.CreateDate).AddMonths(13)
                 }).ToList();
                 #endregion
 
@@ -438,27 +429,29 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var Quotations = await UnitWork.Find<Quotation>(q => q.Id.Equals(QuotationId)).Include(q=>q.QuotationPictures).Include(q => q.QuotationProducts).ThenInclude(p => p.QuotationMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
-            if (loginContext.Roles.Any(r => r.Name.Equals("售后主管")))
-            {
-                Quotations.IsRead = 1;
-                await UnitWork.UpdateAsync<Quotation>(Quotations);
-            }
+            var Quotations = await UnitWork.Find<Quotation>(q => q.Id.Equals(QuotationId)).Include(q => q.QuotationPictures).Include(q => q.QuotationProducts).ThenInclude(p => p.QuotationMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
 
             var result = new TableData();
             var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(Quotations.ServiceOrderId)).Select(s => new { s.Id, s.U_SAP_ID, s.TerminalCustomer, s.TerminalCustomerId, s.SalesMan, s.NewestContacter, s.NewestContactTel }).FirstOrDefaultAsync();
             var CustomerInformation = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(ServiceOrders.TerminalCustomerId)).Select(o => new { o.BackOrder, frozenFor = o.frozenFor == "N" ? "正常" : "冻结" }).FirstOrDefaultAsync();
             var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(QuotationId)).ToListAsync();
-           
+
             if (Quotations.Status == 2)
             {
-                var ExpressageList = await UnitWork.Find<Expressage>(e => e.QuotationId.Equals(Quotations.Id)).Include(e => e.ExpressagePicture).ToListAsync();
+                var ExpressageList = await UnitWork.Find<Expressage>(e => e.QuotationId.Equals(Quotations.Id)).Include(e => e.ExpressagePicture).Include(e => e.LogisticsRecords).ToListAsync();
+                List<LogisticsRecord> LogisticsRecords = new List<LogisticsRecord>();
+
                 var fileids = new List<string>();
                 foreach (var item in ExpressageList)
                 {
                     fileids.AddRange(item.ExpressagePicture.Select(p => p.PictureId).ToList());
+                    LogisticsRecords.AddRange(item.LogisticsRecords.ToList());
                 }
-                var file = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
+
+                var files = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
+                var MergeMaterials = from a in QuotationMergeMaterials
+                                     join b in LogisticsRecords on a.Id equals b.QuotationMaterialId
+                                     select new { a, b };
 
                 var Expressages = ExpressageList.Select(e => new
                 {
@@ -467,15 +460,25 @@ namespace OpenAuth.App.Material
                         p.PictureId,
                         p.Id,
                         p.ExpressageId,
-                        FileName = file.FirstOrDefault(f => f.Id.Equals(p.PictureId))?.FileName,
-                        FileType = file.FirstOrDefault(f => f.Id.Equals(p.PictureId))?.FileType,
+                        FileName = files.FirstOrDefault(f => f.Id.Equals(p.PictureId))?.FileName,
+                        FileType = files.FirstOrDefault(f => f.Id.Equals(p.PictureId))?.FileType,
                     }),
                     e.ExpressInformation,
                     e.ExpressNumber,
                     e.Id,
+                    e.Freight,
                     e.QuotationId,
                     e.Remark,
-                    e.ReturnNoteId
+                    e.ReturnNoteId,
+                    LogisticsRecords = MergeMaterials.Where(m => m.b.ExpressageId.Equals(e.Id)).Select(m => new
+                    {
+                        m.a.MaterialCode,
+                        m.a.MaterialDescription,
+                        m.a.Count,
+                        m.a.Unit,
+                        m.a.SentQuantity,
+                        m.b.Quantity
+                    }).ToList()
                 }).ToList();
                 result.Data = new
                 {
@@ -514,7 +517,7 @@ namespace OpenAuth.App.Material
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var result = new TableData();
-            var Quotations = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(ServiceOrderId) && q.IsRead == 0 && q.ErpOrApp == 2).ToListAsync();
+            var Quotations = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(ServiceOrderId) && q.ErpOrApp == 2).ToListAsync();
             var QuotationIds = Quotations.Select(q => q.Id).ToList();
             var QuotationProducts = await UnitWork.Find<QuotationProduct>(q => QuotationIds.Contains((int)q.QuotationId)).Include(q => q.QuotationMaterials).ToListAsync();
             Quotations.ForEach(q => q.QuotationProducts = QuotationProducts.Where(p => p.QuotationId.Equals(q.Id)).ToList());
@@ -656,31 +659,39 @@ namespace OpenAuth.App.Material
                     QuotationObj.QuotationProducts.Where(q => q.IsProtected == false).ToList().ForEach(q => QuotationMaterialsF.AddRange(q.QuotationMaterials));
 
                     var MaterialsT = from a in QuotationMaterialsT
-                                     group a by new { a.MaterialCode, a.MaterialDescription, a.Unit, a.UnitPrice } into g
+                                     group a by new { a.MaterialCode, a.MaterialDescription, a.Unit, a.SalesPrice, a.UnitPrice, a.Discount } into g
                                      select new QueryQuotationMergeMaterialListReq
                                      {
                                          MaterialCode = g.Key.MaterialCode,
                                          MaterialDescription = g.Key.MaterialDescription,
                                          Unit = g.Key.Unit,
-                                         SalesPrice = g.Key.UnitPrice,
+                                         SalesPrice = 0,
+                                         CostPrice = 0,
                                          Count = g.Sum(a => a.Count),
-                                         TotalPrice = g.Sum(a => a.TotalPrice),
+                                         TotalPrice = 0,//g.Sum(a => a.TotalPrice)
                                          IsProtected = true,
-                                         QuotationId = QuotationObj.Id
+                                         QuotationId = QuotationObj.Id,
+                                         Margin = 0,
+                                         Discount = g.Key.Discount,
+                                         SentQuantity = 0
                                      };
 
                     var MaterialsF = from a in QuotationMaterialsF
-                                     group a by new { a.MaterialCode, a.MaterialDescription, a.Unit, a.UnitPrice } into g
+                                     group a by new { a.MaterialCode, a.MaterialDescription, a.Unit, a.SalesPrice, a.UnitPrice, a.Discount } into g
                                      select new QueryQuotationMergeMaterialListReq
                                      {
                                          MaterialCode = g.Key.MaterialCode,
                                          MaterialDescription = g.Key.MaterialDescription,
                                          Unit = g.Key.Unit,
-                                         SalesPrice = g.Key.UnitPrice,
+                                         SalesPrice = g.Key.SalesPrice,
+                                         CostPrice = g.Key.UnitPrice,
                                          Count = g.Sum(a => a.Count),
-                                         TotalPrice = g.Sum(a => a.TotalPrice),
+                                         TotalPrice = (g.Key.SalesPrice * g.Sum(a => a.Count)) * g.Key.Discount,//g.Sum(a => a.TotalPrice)
                                          IsProtected = false,
-                                         QuotationId = QuotationObj.Id
+                                         QuotationId = QuotationObj.Id,
+                                         Margin = ((g.Key.SalesPrice * g.Sum(a => a.Count)) * g.Key.Discount) - (g.Key.UnitPrice * g.Sum(a => a.Count)),
+                                         Discount = g.Key.Discount,
+                                         SentQuantity = 0
                                      };
 
                     var QuotationMergeMaterialList = MaterialsT.ToList();
@@ -765,7 +776,7 @@ namespace OpenAuth.App.Material
                             DeliveryMethod = QuotationObj.DeliveryMethod,
                             InvoiceCompany = QuotationObj.InvoiceCompany,
                             TotalMoney = QuotationObj.TotalMoney,
-                            Reamrk = QuotationObj.Reamrk,
+                            Remark = QuotationObj.Remark,
                             IsDraft = QuotationObj.IsDraft,
                             IsProtected = QuotationObj.IsProtected,
                             Status = QuotationObj.Status,
@@ -824,12 +835,12 @@ namespace OpenAuth.App.Material
                             DeliveryMethod = QuotationObj.DeliveryMethod,
                             InvoiceCompany = QuotationObj.InvoiceCompany,
                             TotalMoney = QuotationObj.TotalMoney,
-                            Reamrk = QuotationObj.Reamrk,
+                            Remark = QuotationObj.Remark,
                             IsDraft = QuotationObj.IsDraft,
                             IsProtected = QuotationObj.IsProtected,
                             Status = QuotationObj.Status,
                             FlowInstanceId = FlowInstanceId,
-                            SalesOrderId = new Random().Next(1,9999)
+                            SalesOrderId = new Random().Next(1, 9999)
                             //todo:要修改的字段赋值
                         });
                         await UnitWork.AddAsync<QuotationOperationHistory>(new QuotationOperationHistory
@@ -844,46 +855,7 @@ namespace OpenAuth.App.Material
 
                     }
 
-                    #region 合并零件表
-                    List<QuotationMaterial> QuotationMaterialsT = new List<QuotationMaterial>();
-                    QuotationObj.QuotationProducts.Where(q => q.IsProtected == true).ToList().ForEach(q => QuotationMaterialsT.AddRange(q.QuotationMaterials));
-                    List<QuotationMaterial> QuotationMaterialsF = new List<QuotationMaterial>();
-                    QuotationObj.QuotationProducts.Where(q => q.IsProtected == false).ToList().ForEach(q => QuotationMaterialsF.AddRange(q.QuotationMaterials));
 
-                    var MaterialsT = from a in QuotationMaterialsT
-                                     group a by new { a.MaterialCode, a.MaterialDescription, a.Unit, a.UnitPrice } into g
-                                     select new QueryQuotationMergeMaterialListReq
-                                     {
-                                         MaterialCode = g.Key.MaterialCode,
-                                         MaterialDescription = g.Key.MaterialDescription,
-                                         Unit = g.Key.Unit,
-                                         SalesPrice = g.Key.UnitPrice,
-                                         Count = g.Sum(a => a.Count),
-                                         TotalPrice = g.Sum(a => a.TotalPrice),
-                                         IsProtected = true,
-                                         QuotationId = QuotationObj.Id
-                                     };
-
-                    var MaterialsF = from a in QuotationMaterialsF
-                                     group a by new { a.MaterialCode, a.MaterialDescription, a.Unit, a.UnitPrice } into g
-                                     select new QueryQuotationMergeMaterialListReq
-                                     {
-                                         MaterialCode = g.Key.MaterialCode,
-                                         MaterialDescription = g.Key.MaterialDescription,
-                                         Unit = g.Key.Unit,
-                                         SalesPrice = g.Key.UnitPrice,
-                                         Count = g.Sum(a => a.Count),
-                                         TotalPrice = g.Sum(a => a.TotalPrice),
-                                         IsProtected = false,
-                                         QuotationId = QuotationObj.Id
-                                     };
-
-                    var QuotationMergeMaterialList = MaterialsT.ToList();
-                    QuotationMergeMaterialList.AddRange(MaterialsF.ToList());
-                    var QuotationMergeMaterialListMap = QuotationMergeMaterialList.MapToList<QuotationMergeMaterial>();
-                    await UnitWork.BatchAddAsync<QuotationMergeMaterial>(QuotationMergeMaterialListMap.ToArray());
-                    await UnitWork.SaveAsync();
-                    #endregion
 
                     #region 删除
 
@@ -899,6 +871,14 @@ namespace OpenAuth.App.Material
                         }
                         await UnitWork.BatchDeleteAsync<QuotationProduct>(QuotationProducts.ToArray());
                     }
+
+                    var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(QuotationObj.Id)).ToListAsync();
+
+                    if (QuotationMergeMaterials != null && QuotationMergeMaterials.Count > 0)
+                    {
+                        await UnitWork.BatchDeleteAsync<QuotationMergeMaterial>(QuotationMergeMaterials.ToArray());
+                    }
+
                     await UnitWork.SaveAsync();
 
                     #endregion
@@ -917,6 +897,55 @@ namespace OpenAuth.App.Material
 
                     #endregion
 
+                    #region 合并零件表
+                    List<QuotationMaterial> QuotationMaterialsT = new List<QuotationMaterial>();
+                    QuotationObj.QuotationProducts.Where(q => q.IsProtected == true).ToList().ForEach(q => QuotationMaterialsT.AddRange(q.QuotationMaterials));
+                    List<QuotationMaterial> QuotationMaterialsF = new List<QuotationMaterial>();
+                    QuotationObj.QuotationProducts.Where(q => q.IsProtected == false).ToList().ForEach(q => QuotationMaterialsF.AddRange(q.QuotationMaterials));
+
+                    var MaterialsT = from a in QuotationMaterialsT
+                                     group a by new { a.MaterialCode, a.MaterialDescription, a.Unit, a.SalesPrice, a.UnitPrice, a.Discount } into g
+                                     select new QueryQuotationMergeMaterialListReq
+                                     {
+                                         MaterialCode = g.Key.MaterialCode,
+                                         MaterialDescription = g.Key.MaterialDescription,
+                                         Unit = g.Key.Unit,
+                                         SalesPrice = 0,
+                                         CostPrice = 0,
+                                         Count = g.Sum(a => a.Count),
+                                         TotalPrice = 0,//g.Sum(a => a.TotalPrice)
+                                         IsProtected = true,
+                                         QuotationId = QuotationObj.Id,
+                                         Margin = 0,
+                                         Discount = g.Key.Discount,
+                                         SentQuantity = 0
+                                     };
+
+                    var MaterialsF = from a in QuotationMaterialsF
+                                     group a by new { a.MaterialCode, a.MaterialDescription, a.Unit, a.SalesPrice, a.UnitPrice, a.Discount } into g
+                                     select new QueryQuotationMergeMaterialListReq
+                                     {
+                                         MaterialCode = g.Key.MaterialCode,
+                                         MaterialDescription = g.Key.MaterialDescription,
+                                         Unit = g.Key.Unit,
+                                         SalesPrice = g.Key.SalesPrice,
+                                         CostPrice = g.Key.UnitPrice,
+                                         Count = g.Sum(a => a.Count),
+                                         TotalPrice = (g.Key.SalesPrice * g.Sum(a => a.Count)) * g.Key.Discount,//g.Sum(a => a.TotalPrice)
+                                         IsProtected = false,
+                                         QuotationId = QuotationObj.Id,
+                                         Margin = ((g.Key.SalesPrice * g.Sum(a => a.Count)) * g.Key.Discount) - (g.Key.UnitPrice * g.Sum(a => a.Count)),
+                                         Discount = g.Key.Discount,
+                                         SentQuantity = 0
+                                     };
+
+                    var QuotationMergeMaterialList = MaterialsT.ToList();
+                    QuotationMergeMaterialList.AddRange(MaterialsF.ToList());
+                    var QuotationMergeMaterialListMap = QuotationMergeMaterialList.MapToList<QuotationMergeMaterial>();
+                    await UnitWork.BatchAddAsync<QuotationMergeMaterial>(QuotationMergeMaterialListMap.ToArray());
+                    await UnitWork.SaveAsync();
+                    #endregion
+
                     await transaction.CommitAsync();
                 }
                 catch (Exception ex)
@@ -932,34 +961,102 @@ namespace OpenAuth.App.Material
         /// 修改报价单物料，物流
         /// </summary>
         /// <param name="obj"></param>
-        public async Task UpdateMaterial(AddOrUpdateQuotationReq obj)
+        public async Task<TableData> UpdateMaterial(AddOrUpdateQuotationReq obj)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var Expressageobj = new Expressage();
             var dbContext = UnitWork.GetDbContext<Quotation>();
+            List<LogisticsRecord> LogisticsRecords = new List<LogisticsRecord>();
             using (var transaction = dbContext.Database.BeginTransaction())
             {
                 try
                 {
-                    obj.Expressages = obj.Expressages.Where(e => string.IsNullOrWhiteSpace(e.Id)).ToList();
-                    obj.Expressages.ForEach(e => { e.ReturnNoteId = null; e.QuotationId = obj.Id; e.Id = Guid.NewGuid().ToString(); });
-                    var ExpressageMap = obj.Expressages.MapToList<Expressage>();
-                    await UnitWork.BatchAddAsync<Expressage>(ExpressageMap.ToArray());
-                    var QuotationMergeMaterialMap = obj.QuotationMergeMaterials.MapToList<QuotationMergeMaterial>();
-
-                    await UnitWork.BatchUpdateAsync<QuotationMergeMaterial>(QuotationMergeMaterialMap.ToArray());
+                    var ExpressageMap = obj.ExpressageReqs.MapTo<Expressage>();
+                    ExpressageMap.CreateTime = DateTime.Now;
+                    Expressageobj = await UnitWork.AddAsync<Expressage>(ExpressageMap);
+                    var ExpressagePictures = new List<ExpressagePicture>();
+                    obj.ExpressageReqs.ExpressagePictures.ForEach(p => ExpressagePictures.Add(new ExpressagePicture { ExpressageId = Expressageobj.Id, PictureId = p, Id = Guid.NewGuid().ToString() }));
+                    await UnitWork.BatchAddAsync<ExpressagePicture>(ExpressagePictures.ToArray());
+                    foreach (var item in obj.QuotationMergeMaterialReqs)
+                    {
+                        LogisticsRecords.Add(new LogisticsRecord
+                        {
+                            CreateTime = DateTime.Now,
+                            CreateUser = loginContext.User.Name,
+                            CreateUserId = loginContext.User.Id,
+                            Quantity = item.SentQuantity,
+                            QuotationId = item.QuotationId,
+                            QuotationMaterialId = item.Id,
+                            ExpressageId = Expressageobj.Id
+                        });
+                        if (item.SentQuantity > 0)
+                        {
+                            var QuotationMergeMaterialobj = await UnitWork.Find<QuotationMergeMaterial>(q => q.Id.Equals(item.Id)).FirstOrDefaultAsync();
+                            QuotationMergeMaterialobj.SentQuantity += item.SentQuantity;
+                            await UnitWork.UpdateAsync<QuotationMergeMaterial>(QuotationMergeMaterialobj);
+                        }
+                    }
+                    await UnitWork.BatchAddAsync<LogisticsRecord>(LogisticsRecords.ToArray());
                     await UnitWork.SaveAsync();
                     transaction.Commit();
                 }
                 catch (Exception ex)
                 {
                     transaction.Rollback();
-                    throw new Exception("添加报销单失败,请重试。" + ex.Message);
+                    throw new Exception("添加物流失败,请重试。" + ex.Message);
                 }
             }
+            var Expressages = await UnitWork.Find<Expressage>(e => e.QuotationId.Equals(obj.ExpressageReqs.QuotationId)).Include(e => e.ExpressagePicture).Include(e => e.LogisticsRecords).OrderByDescending(e=>e.CreateTime).ToListAsync();
+            LogisticsRecords = new List<LogisticsRecord>();
+            Expressages.ForEach(e => LogisticsRecords.AddRange(e.LogisticsRecords));
+            var QuotationMergeMaterialLists = await UnitWork.Find<QuotationMergeMaterial>(q =>q.QuotationId.Equals(obj.ExpressageReqs.QuotationId)).ToListAsync();
+
+            int isEXwarehouse = 0;
+            foreach (var item in QuotationMergeMaterialLists)
+            {
+                if (item.SentQuantity != item.Count) 
+                {
+                    isEXwarehouse++;
+                }
+            }
+            if (isEXwarehouse == 0) 
+            {
+                await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(obj.ExpressageReqs.QuotationId), q => new Quotation { QuotationStatus = 7 });
+                await UnitWork.SaveAsync();
+            }
+            var result = new TableData();
+            var MergeMaterials = from a in QuotationMergeMaterialLists
+                                 join b in LogisticsRecords on a.Id equals b.QuotationMaterialId
+                                 select new { a, b };
+            result.Data = new
+            {
+                start = isEXwarehouse == 0 ? 7 : 0,
+                Expressages= Expressages.Select(e => new
+                {
+                    e.ExpressagePicture,
+                    e.ExpressInformation,
+                    e.ExpressNumber,
+                    e.Id,
+                    e.Freight,
+                    e.QuotationId,
+                    e.Remark,
+                    e.ReturnNoteId,
+                    LogisticsRecords = MergeMaterials.Where(m => m.b.ExpressageId.Equals(e.Id)).Select(m => new
+                    {
+                        m.a.MaterialCode,
+                        m.a.MaterialDescription,
+                        m.a.Count,
+                        m.a.Unit,
+                        m.a.SentQuantity,
+                        m.b.Quantity
+                    }).ToList()
+                }).ToList()
+            };
+            return result;
         }
 
         /// <summary>
@@ -1029,7 +1126,7 @@ namespace OpenAuth.App.Material
                     {
                         obj.QuotationStatus = 6;
                         obj.Status = 2;
-                        _flowInstanceApp.Verification(VerificationReqModle);
+                        //_flowInstanceApp.Verification(VerificationReqModle);
                     }
                 }
                 else if (loginContext.Roles.Any(r => r.Name.Equals("物料财务")) && obj.QuotationStatus == 5)
@@ -1044,7 +1141,7 @@ namespace OpenAuth.App.Material
                 }
             }
             await UnitWork.UpdateAsync<Quotation>(obj);
-            if (req.PictureIds != null && req.PictureIds.Count > 0) 
+            if (req.PictureIds != null && req.PictureIds.Count > 0)
             {
                 List<QuotationPicture> QuotationPictures = new List<QuotationPicture>();
                 req.PictureIds.ForEach(p => QuotationPictures.Add(new QuotationPicture { Id = Guid.NewGuid().ToString(), PictureId = p, QuotationId = obj.Id }));
@@ -1171,7 +1268,7 @@ namespace OpenAuth.App.Material
 
             #region 判断是否存在相同物料
             List<string> MaterialCode = new List<string>();
-            List<QuotationMaterialRep> QuotationMaterialReps = new List<QuotationMaterialRep>();
+            List<QuotationMaterialReq> QuotationMaterialReps = new List<QuotationMaterialReq>();
             List<QuotationMergeMaterial> QuotationMergeMaterials = new List<QuotationMergeMaterial>();
             StringBuilder MaterialName = new StringBuilder();
 
@@ -1186,7 +1283,7 @@ namespace OpenAuth.App.Material
             {
                 Quotations.ForEach(q => QuotationMergeMaterials.AddRange(q.QuotationMergeMaterials.Where(m => MaterialCode.Contains(m.MaterialCode)).ToList()));
             }
-            if (QuotationMergeMaterials !=null && QuotationMergeMaterials.Count>0) 
+            if (QuotationMergeMaterials != null && QuotationMergeMaterials.Count > 0)
             {
                 var MaterialCodeCount = QuotationMergeMaterials.GroupBy(q => q.MaterialCode).Select(q => new { q.Key, Count = q.Select(s => s.Count).Sum() });
                 foreach (var item in MaterialCodeCount)
@@ -1266,6 +1363,22 @@ namespace OpenAuth.App.Material
             });
 
             return quotationObj;
+        }
+
+        /// <summary>
+        /// 获取合并后数据
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetMergeMaterial(QueryQuotationListReq req)
+        {
+            var result = new TableData();
+
+            var QuotationMergeMaterials = UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(req.QuotationId))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.MaterialCode), q => req.MaterialCode.Contains(q.MaterialCode));
+            //result.Count = await QuotationMergeMaterials.CountAsync();
+            result.Data = await QuotationMergeMaterials.ToListAsync();
+            return result;
         }
 
         #region 判断是否是保内

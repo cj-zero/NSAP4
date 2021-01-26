@@ -36,11 +36,10 @@ namespace OpenAuth.Repository.Domain
             this.ServiceOrderId = 0;
             this.IsProtected = false;
             this.IsDraft = false;
-            this.Reamrk = "";
+            this.Remark = "";
             this.ShippingAddress = "";
             this.CollectionAddress = "";
             this.QuotationStatus = 0;
-            this.IsRead = 0;
             this.ErpOrApp = 1;
 
         }
@@ -132,7 +131,7 @@ namespace OpenAuth.Repository.Domain
         ///备注
         /// </summary>
         [Description("备注")]
-        public string Reamrk { get; set; }
+        public string Remark { get; set; }
 
         /// <summary>
         ///收货地址
@@ -153,10 +152,30 @@ namespace OpenAuth.Repository.Domain
         public int? QuotationStatus { get; set; }
 
         /// <summary>
-        ///已读未读
+        ///领料方式
         /// </summary>
-        [Description("已读未读")]
-        public int IsRead { get; set; }
+        [Description("领料方式")]
+        public string AcquisitionWay { get; set; }
+
+        /// <summary>
+        ///货币方式
+        /// </summary>
+        [Description("货币方式")]
+        public string MoneyMeans { get; set; }
+
+        /// <summary>
+        ///交货日期
+        /// </summary>
+        [Description("交货日期")]
+        public DateTime? DeliveryDate { get; set; }
+
+        /// <summary>
+        ///验收期限
+        /// </summary>
+        [Description("验收期限")]
+        public int? AcceptancePeriod { get; set; }
+        
+
 
         /// <summary>
         ///提交对象1-ERP 2-APP

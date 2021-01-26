@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OpenAuth.Repository.Core;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -24,6 +25,13 @@ namespace OpenAuth.Repository.Domain.Material
         public int? QuotationId { get; set; }
 
         /// <summary>
+        /// 快递Id
+        /// </summary>
+        [Description("快递Id")]
+        public string ExpressageId { get; set; }
+        
+
+        /// <summary>
         /// 物料id
         /// </summary>
         [Description("物料id")]
@@ -45,13 +53,13 @@ namespace OpenAuth.Repository.Domain.Material
         /// 创建人
         /// </summary>
         [Description("创建人")]
-        public DateTime? CreateUser { get; set; }
+        public string CreateUser { get; set; }
 
         /// <summary>
         /// 创建人id
         /// </summary>
         [Description("创建人id")]
-        public DateTime? CreateUserId { get; set; }
+        public string CreateUserId { get; set; }
 
     }
 }

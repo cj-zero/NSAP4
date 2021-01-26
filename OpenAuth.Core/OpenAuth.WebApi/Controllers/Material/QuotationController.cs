@@ -271,12 +271,12 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// </summary>
         /// <param name="obj"></param>
         [HttpPost]
-        public async Task<Response> UpdateMaterial(AddOrUpdateQuotationReq obj)
+        public async Task<TableData> UpdateMaterial(AddOrUpdateQuotationReq obj)
         {
-            var result = new Response();
+            var result = new TableData();
             try
             {
-                await _app.UpdateMaterial(obj);
+               return await _app.UpdateMaterial(obj);
             }
             catch (Exception ex)
             {
@@ -345,6 +345,23 @@ namespace OpenAuth.WebApi.Controllers.Material
                 var file = Request.Form.Files[0];
                 var handler = new ExcelHandler(file.OpenReadStream());
                 await _app.ImportMaterialPrice(handler);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        [HttpGet]
+        public async Task<TableData> GetMergeMaterial([FromQuery]QueryQuotationListReq req) 
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetMergeMaterial(req);
             }
             catch (Exception ex)
             {

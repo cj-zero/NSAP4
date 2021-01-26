@@ -7,7 +7,7 @@ using System.Text;
 namespace OpenAuth.App.Material.Request
 {
     [AutoMapTo(typeof(QuotationProduct))]
-    public class QuotationProductRep
+    public class QuotationProductReq
     {
         /// <summary>
         ///物料报价单Id
@@ -43,6 +43,6 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         /// 物料报价单物料列表
         /// </summary>
-        public virtual List<QuotationMaterialRep> QuotationMaterials { get; set; }
+        public virtual List<QuotationMaterialReq> QuotationMaterials { get; set; }
     }
 }
