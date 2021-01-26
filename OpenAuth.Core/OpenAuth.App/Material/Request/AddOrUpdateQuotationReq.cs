@@ -95,7 +95,7 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         ///备注
         /// </summary>
-        public string Reamrk { get; set; }
+        public string Remark { get; set; }
 
         /// <summary>
         ///收货地址
@@ -108,6 +108,26 @@ namespace OpenAuth.App.Material.Request
         public string CollectionAddress { get; set; }
 
         /// <summary>
+        ///领料方式
+        /// </summary>
+        public string AcquisitionWay { get; set; }
+
+        /// <summary>
+        ///货币方式
+        /// </summary>
+        public string MoneyMeans { get; set; }
+
+        /// <summary>
+        ///交货日期
+        /// </summary>
+        public DateTime? DeliveryDate { get; set; }
+
+        /// <summary>
+        ///验收期限
+        /// </summary>
+        public int? AcceptancePeriod { get; set; }
+
+        /// <summary>
         ///删除报价单
         /// </summary>
         public List<int> QuotationIds { get; set; }
@@ -115,18 +135,17 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         /// 报价单设备列表
         /// </summary>
-        public virtual List<QuotationProduct> QuotationProducts { get; set; }
+        public virtual List<QuotationProductReq> QuotationProducts { get; set; }
 
         /// <summary>
         /// 报价单零件合并列表
         /// </summary>
-
-        public virtual List<QuotationMergeMaterial> QuotationMergeMaterials { get; set; }
+        public virtual List<QuotationMergeMaterialReq> QuotationMergeMaterialReqs { get; set; }
 
         /// <summary>
         /// 物流表
         /// </summary>
-        public virtual List<ExpressageReq> Expressages { get; set; }
+        public virtual ExpressageReq ExpressageReqs { get; set; }
 
     }
 }

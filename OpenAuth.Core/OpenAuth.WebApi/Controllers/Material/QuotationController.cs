@@ -55,7 +55,7 @@ namespace OpenAuth.WebApi.Controllers.Material
             var result = new TableData();
             try
             {
-                return await _app.ApprovalPendingLoad(request);
+                //return await _app.ApprovalPendingLoad(request);
             }
             catch (Exception ex)
             {
@@ -225,7 +225,11 @@ namespace OpenAuth.WebApi.Controllers.Material
             var result = new Response();
             try
             {
-                await _app.Add(obj);
+                var Message = await _app.Add(obj);
+                if (!string.IsNullOrWhiteSpace(Message)) 
+                {
+                    result.Message = Message;
+                }
             }
             catch (Exception ex)
             {
@@ -247,7 +251,11 @@ namespace OpenAuth.WebApi.Controllers.Material
             var result = new Response();
             try
             {
-                await _app.Update(obj);
+                var Message = await _app.Update(obj);
+                if (!string.IsNullOrWhiteSpace(Message))
+                {
+                    result.Message = Message;
+                }
             }
             catch (Exception ex)
             {
@@ -263,12 +271,12 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// </summary>
         /// <param name="obj"></param>
         [HttpPost]
-        public async Task<Response> UpdateMaterial(AddOrUpdateQuotationReq obj)
+        public async Task<TableData> UpdateMaterial(AddOrUpdateQuotationReq obj)
         {
-            var result = new Response();
+            var result = new TableData();
             try
             {
-                await _app.UpdateMaterial(obj);
+               return await _app.UpdateMaterial(obj);
             }
             catch (Exception ex)
             {
@@ -345,6 +353,37 @@ namespace OpenAuth.WebApi.Controllers.Material
                 result.Message = ex.Message;
             }
             return result;
+        }
+        /// <summary>
+        /// 获取合并后信息
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetMergeMaterial([FromQuery]QueryQuotationListReq req) 
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetMergeMaterial(req);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 打印销售订单
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> PrintSalesOrder(int QuotationId) 
+        {
+            return File(await _app.PrintSalesOrder(QuotationId), "application/pdf");
         }
 
     }
