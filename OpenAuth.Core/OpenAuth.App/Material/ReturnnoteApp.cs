@@ -337,7 +337,7 @@ namespace OpenAuth.App
             };
             outData.Add("mainInfo", mainInfo);
             //获取物流信息
-            var expressList = await UnitWork.Find<Expressage>(w => w.ReturnNoteId == Id).OrderByDescending(o => o.CreateTime).Select(s => new { s.ExpressNumber, s.ExpressInformation, s.Remark }).ToListAsync();
+            var expressList = await UnitWork.Find<Expressage>(w => w.ReturnNoteId == Id).OrderByDescending(o => o.CreateTime).Select(s => new { s.ExpressNumber, s.ExpressInformation, s.Remark,s.Id }).ToListAsync();
             outData.Add("expressList", expressList);
             //获取退料单中所有的物流集合
             var query = from a in UnitWork.Find<ReturnnoteMaterial>(null)
