@@ -1231,6 +1231,29 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// 技术员结束维修
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> TechicianEndRepair(TechicianEndRepairReq request)
+        {
+            var result = new Response();
+            try
+            {
+                var parameters = new { request.MaterialType, request.ServiceOrderId, request.CurrentUserId };
+                var r = await _httpClienService.Post(parameters, "api/serve/ServiceOrder/TechicianEndRepair");
+                result = JsonConvert.DeserializeObject<Response>(r);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
         #endregion
 
         #region<<Admin/Supervisor>>

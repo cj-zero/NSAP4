@@ -337,7 +337,7 @@ namespace OpenAuth.App
             };
             outData.Add("mainInfo", mainInfo);
             //获取物流信息
-            var expressList = await UnitWork.Find<Expressage>(w => w.ReturnNoteId == Id).OrderByDescending(o => o.CreateTime).Select(s => new { s.ExpressNumber, s.ExpressInformation, s.Remark,s.Id }).ToListAsync();
+            var expressList = await UnitWork.Find<Expressage>(w => w.ReturnNoteId == Id).OrderByDescending(o => o.CreateTime).Select(s => new { s.ExpressNumber, s.ExpressInformation, s.Remark, s.Id }).ToListAsync();
             outData.Add("expressList", expressList);
             //获取退料单中所有的物流集合
             var query = from a in UnitWork.Find<ReturnnoteMaterial>(null)
@@ -347,7 +347,7 @@ namespace OpenAuth.App
                         from c in abc.DefaultIfEmpty()
                         where a.ReturnNoteId == Id
                         orderby b.CreateTime
-                        select new { a.MaterialCode, a.MaterialDescription, a.Count, a.Check, a.ReceivingRemark, a.ShippingRemark, b.Id, c.PictureId };
+                        select new { a.MaterialCode, a.MaterialDescription, a.Count, a.Check, a.ReceivingRemark, a.ShippingRemark, ExpressId = b.Id, c.PictureId, a.Id };
             var detailList = (await query.ToListAsync()).GroupBy(g => g.Id).Select(s => new { s.Key, detail = s.ToList() }).ToList();
             outData.Add("materialList", detailList);
             result.Data = outData;
