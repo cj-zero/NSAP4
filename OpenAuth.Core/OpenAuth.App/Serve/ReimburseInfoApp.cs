@@ -1745,13 +1745,15 @@ namespace OpenAuth.App
                     });
                 });
             }
+            var BusinessTripDate = Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(Reimburse.ServiceOrderId)).Min(c => c.BusinessTripDate));
+            var EndDate = Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(Reimburse.ServiceOrderId)).Max(c => c.EndDate));
             if (Reimburse.ReimburseTravellingAllowances != null && Reimburse.ReimburseTravellingAllowances.Count > 0)
             {
                 ReimburseCostList.Add(new ReimburseCost
                 {
                     SerialNumber = 3,
-                    InvoiceTime = "",
-                    ExpendDetails = Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Money+"/天*"+ Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Days + "天",
+                    InvoiceTime = Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Days > 1 ? BusinessTripDate.ToString("MM-dd") + " — " + EndDate.ToString("MM-dd") : BusinessTripDate.ToString("yyyy-MM-dd"),
+                    ExpendDetails = Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Money + "/天*" + Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Days + "天",
                     ExpendName = "出差补贴",
                     Money = Convert.ToDecimal(Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Days * Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Money)
                 });

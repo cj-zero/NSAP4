@@ -254,10 +254,14 @@ export let tableMixin = {
         })
       })
       // 出差
+      let { businessTripDate, endDate } = data
       reimburseTravellingAllowances.forEach(item => {
-        let { invoiceTime, days, money, remark } = item
+        let { days, money, remark } = item
+        let invoiceTime = days > 1 
+          ? `${Day(businessTripDate).format('MM-DD')} — ${Day(endDate).format('MM-DD')}`
+          : Day(businessTripDate).format('YYYY-MM-DD') 
         result.push({
-          invoiceTime: this.processInvoiceTime(invoiceTime),
+          invoiceTime,
           expenseName: '出差补贴',
           expenseDetail: `${toThousands(money)}元/天*${days}天`,
           money: money * days,
