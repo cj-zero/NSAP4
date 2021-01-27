@@ -43,6 +43,17 @@
         ///包内保外
         /// </summary>
         public bool? IsProtected { get; set; }
+
+        /// <summary>
+        /// 毛利
+        /// </summary>
+        public decimal? Margin { get; set; }
+
+
+        /// <summary>
+        /// 折扣
+        /// </summary>
+        public decimal? Discount { get; set; }
         //todo:添加自己的请求字段
     }
 }

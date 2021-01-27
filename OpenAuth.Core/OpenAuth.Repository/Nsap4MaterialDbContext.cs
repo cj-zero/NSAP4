@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.Material;
 
 namespace OpenAuth.Repository
 {
@@ -42,7 +43,14 @@ namespace OpenAuth.Repository
         public virtual DbSet<QuotationOperationHistory> QuotationOperationHistories { get; set; }
 
         public virtual DbSet<MaterialPrice> MaterialPrices { get; set; }
-        
+
+        public virtual DbSet<MaterialsSettlement> MaterialsSettlements{ get; set; }
+
+        public virtual DbSet<SalesOrderWarrantyDateRecord> SalesOrderWarrantyDateRecords { get; set; }
+
+        public virtual DbSet<QuotationPicture> QuotationPictures { get; set; }
+
+        public virtual DbSet<LogisticsRecord> LogisticsRecords { get; set; }
         #endregion
     }
 }

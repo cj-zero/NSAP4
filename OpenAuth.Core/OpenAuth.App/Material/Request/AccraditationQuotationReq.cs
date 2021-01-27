@@ -30,5 +30,10 @@ namespace OpenAuth.App.Material.Request
         /// 是否驳回
         /// </summary>
         public bool IsReject { get; set; }
+
+        /// <summary>
+        /// 销售订单图片
+        /// </summary>
+        public List<string> PictureIds { get; set; }
     }
 }
