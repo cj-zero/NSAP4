@@ -63,8 +63,8 @@ namespace OpenAuth.App
             }
             else
             {
-                await UnitWork.UpdateAsync<ReturnNote>(w => w.Id == returnNoteId, u => new ReturnNote { IsLast = req.IsLastReturn });
                 returnNoteId = returnNoteInfo.Id;
+                await UnitWork.UpdateAsync<ReturnNote>(w => w.Id == returnNoteId, u => new ReturnNote { IsLast = req.IsLastReturn });
             }
             await UnitWork.SaveAsync();
             //2.添加退料明细信息
@@ -183,9 +183,8 @@ namespace OpenAuth.App
                 VerificationFinally = "1",
                 VerificationOpinion = "同意",
             });
-            //判断是否最后一次退料并且所有退料都已核验通过
-            var isExistLast = (await UnitWork.Find<ReturnNote>(w => w.ServiceOrderSapId == returnNote.ServiceOrderSapId && w.CreateUserId == returnNote.CreateUserId && returnNote.Status == 2 && returnNote.IsLast == 1).ToListAsync()).Count;
-            if (isExistLast > 0)
+            //判断是否最后一次退料并且所有退料都已核验
+            if (returnNote.IsLast == 1 && returnNote.Status == 2)
             {
                 //更新退料单为可结算状态
                 await UnitWork.UpdateAsync<ReturnNote>(w => w.ServiceOrderSapId == returnNote.ServiceOrderSapId && w.CreateUserId == returnNote.CreateUserId, u => new ReturnNote { IsCanClear = 1 });
@@ -300,12 +299,16 @@ namespace OpenAuth.App
               .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate), q => q.CreateTime < Convert.ToDateTime(req.EndDate))
               .WhereIf(!string.IsNullOrWhiteSpace(req.Status), q => q.Status == Convert.ToInt32(req.Status))
               .OrderBy(s => s.Id).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
+            //获取出库单Id集合
+            List<int> stockOutIds = returnNote.Select(s => s.StockOutId).Distinct().ToList();
+            //获取出库单成本总额
+            var stkOutList = await UnitWork.Find<Quotation>(w => stockOutIds.Contains(w.Id)).ToListAsync();
             //获取服务单列表
             var serviceOrderList = await UnitWork.Find<ServiceOrder>(null)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.SapId), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.SapId)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.Customer), q => q.CustomerName.Equals(req.Customer))
                 .ToListAsync();
-            var returnNoteList = returnNote.Select(s => new { s.Id, CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerName).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.MM.dd"), s.ServiceOrderSapId, s.IsCanClear, s.Remark }).ToList();
+            var returnNoteList = returnNote.Select(s => new { s.Id, CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerName).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.MM.dd"), s.ServiceOrderSapId, s.IsCanClear, s.Remark, Fprice = stkOutList.Where(w => w.Id == s.StockOutId).FirstOrDefault()?.TotalCostPrice }).ToList();
             result.Data = returnNoteList;
             return result;
         }
@@ -376,7 +379,11 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.SapId), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.SapId)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.Customer), q => q.CustomerName.Contains(req.Customer) || q.CustomerId.Contains(req.Customer))
                 .ToListAsync();
-            var returnNoteList = returnNote.Select(s => new { CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerName).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.mm.dd"), s.ServiceOrderSapId, s.CreateUserId, s.Id }).ToList().GroupBy(g => new { g.Id }).Select(s => new { s.Key, detail = s.ToList() }).ToList();
+            //获取退料单Id集合
+            List<int> returnNoteIds = returnNote.Select(s => s.Id).Distinct().ToList();
+            //计算剩余未结清金额
+            var notClearAmountList = (await UnitWork.Find<ReturnnoteMaterial>(w => returnNoteIds.Contains((int)w.ReturnNoteId)).ToListAsync()).GroupBy(g => g.ReturnNoteId).Select(s => new { s.Key, totalprice = s.Sum(p => p.CostPrice * (p.TotalCount - p.Count)) }).ToList();
+            var returnNoteList = returnNote.Select(s => new { CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerName).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.mm.dd"), s.ServiceOrderSapId, s.CreateUserId, s.Id, notClearAmount = notClearAmountList.Where(w => w.Key == s.Id).FirstOrDefault()?.totalprice }).ToList().GroupBy(g => new { g.Id }).Select(s => new { s.Key, detail = s.ToList() }).ToList();
             result.Data = returnNoteList;
             return result;
         }
@@ -384,10 +391,9 @@ namespace OpenAuth.App
         /// <summary>
         /// 获取退料结算详情(ERP)
         /// </summary>
-        /// <param name="serviceSapId"></param>
-        /// <param name="createrId"></param>
+        /// <param name="Id">退料单Id</param>
         /// <returns></returns>
-        public async Task<TableData> GetClearReturnNoteDetail(int serviceSapId, string createrId)
+        public async Task<TableData> GetClearReturnNoteDetail(int Id)
         {
             Dictionary<string, dynamic> outData = new Dictionary<string, dynamic>();
             var loginContext = _auth.GetCurrentUser();
@@ -396,40 +402,34 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var result = new TableData();
+            //获取退料主表信息
+            var returnNoteInfo = await UnitWork.Find<ReturnNote>(w => w.Id == Id).FirstOrDefaultAsync();
+            outData.Add("CreateTime", returnNoteInfo.CreateTime.ToString("yyyy-MM-dd HH:mm"));
+            outData.Add("CreateUser", returnNoteInfo.CreateUser);
+            outData.Add("ReturnNoteId", returnNoteInfo.Id);
+            outData.Add("StockOutId", returnNoteInfo.StockOutId);
             //获取当前服务单信息
-            var serviceOrderInfo = await UnitWork.Find<ServiceOrder>(w => w.U_SAP_ID == serviceSapId).FirstOrDefaultAsync();
+            var serviceOrderInfo = await UnitWork.Find<ServiceOrder>(w => w.U_SAP_ID == returnNoteInfo.ServiceOrderSapId).FirstOrDefaultAsync();
             outData.Add("U_SAP_ID", serviceOrderInfo.U_SAP_ID);
             outData.Add("SalesMan", serviceOrderInfo.SalesMan);
             outData.Add("CustomerId", serviceOrderInfo.CustomerId);
             outData.Add("CustomerName", serviceOrderInfo.CustomerName);
             outData.Add("Contacter", serviceOrderInfo.Contacter);
             outData.Add("ContactTel", serviceOrderInfo.ContactTel);
-            //获取退料主表信息
-            var returnNoteInfo = await UnitWork.Find<ReturnNote>(w => w.ServiceOrderSapId == serviceSapId && w.CreateUserId == createrId).FirstOrDefaultAsync();
-            outData.Add("CreateTime", returnNoteInfo.CreateTime.ToString("yyyy-MM-dd HH:mm"));
-            outData.Add("CreateUser", returnNoteInfo.CreateUser);
-            outData.Add("ReturnNoteId", returnNoteInfo.Id);
-            outData.Add("StockOutId", returnNoteInfo.StockOutId);
-            //获取退料单中所有的物流集合
-            var query = from a in UnitWork.Find<ReturnnoteMaterial>(null)
-                        join b in UnitWork.Find<Expressage>(null) on a.ExpressId equals b.Id into ab
-                        from b in ab.DefaultIfEmpty()
-                        where a.ReturnNoteId == returnNoteInfo.Id
-                        orderby b.CreateTime
-                        select new { a.MaterialCode, a.MaterialDescription, a.Count, b.ExpressagePicture, a.Check, a.ReceivingRemark, a.ShippingRemark, b.ExpressNumber, b.Id, b.ExpressInformation, b.Remark };
-            var detailList = (await query.ToListAsync()).GroupBy(g => g.Id).Select(s => new { s.Key, detail = s.ToList() }).ToList();
-
-            //var expressList = await UnitWork.Find<Expressage>(w => w.ReturnNoteId == returnNoteInfo.Id).OrderByDescending(o => o.CreateTime).Select(s => new { s.ExpressNumber, s.ExpressInformation, s.Remark }).ToListAsync();
-            //outData.Add("ExpressList", returnNoteInfo.Id);
-            //var MaterialList = (await UnitWork.Find<ReturnnoteMaterial>(w => returnNoteIds.Contains((int)w.ReturnNoteId)).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new
-            //{
-            //    MaterialCode = s.Key,
-            //    MaterDescription = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().MaterialDescription,
-            //    AlreadyReturnQty = s.Where(w => w.MaterialCode == s.Key).Sum(k => k.Count),
-            //    TotalReturnCount = s.Where(w => w.MaterialCode == s.Key).Sum(k => k.TotalCount),
-            //    CostPrice = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().CostPrice
-            //}).ToList();
-            outData.Add("DetailList", detailList);
+            //计算剩余未结清金额
+            var notClearAmount = (await UnitWork.Find<ReturnnoteMaterial>(w => w.ReturnNoteId == returnNoteInfo.Id).ToListAsync()).GroupBy(g => g.ReturnNoteId).Select(s => new { s.Key, totalprice = s.Sum(p => p.CostPrice * (p.TotalCount - p.Count)) }).FirstOrDefault().totalprice;
+            outData.Add("NotClearAmount", notClearAmount);
+            //获取物料信息
+            var MaterialList = (await UnitWork.Find<ReturnnoteMaterial>(w => w.ReturnNoteId == returnNoteInfo.Id).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new
+            {
+                MaterialCode = s.Key,
+                MaterDescription = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().MaterialDescription,
+                AlreadyReturnQty = s.Where(w => w.MaterialCode == s.Key).Sum(k => k.Count),
+                TotalReturnCount = s.Where(w => w.MaterialCode == s.Key).Sum(k => k.TotalCount),
+                NotClearAmount = s.Where(w => w.MaterialCode == s.Key).Sum(k => k.CostPrice * (k.TotalCount - k.Count)),
+                Status = s.Where(w => w.MaterialCode == s.Key).Sum(k => k.CostPrice * (k.TotalCount - k.Count)) > 0 ? "未清" : "已清"
+            }).ToList();
+            outData.Add("DetailList", MaterialList);
             result.Data = outData;
             return result;
         }

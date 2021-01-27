@@ -154,7 +154,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 验收
         /// </summary>
-        /// <param name="returnMaterialReq"></param>
+        /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
         public async Task<Response> Accraditation(ReturnNoteAuditReq req)
@@ -198,16 +198,15 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 获取退料结算详情
         /// </summary>
-        /// <param name="serviceSapId"></param>
-        /// <param name="createrId"></param>
+        /// <param name="Id">退料单Id</param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetClearReturnNoteDetail(int serviceSapId, string createrId)
+        public async Task<TableData> GetClearReturnNoteDetail(int Id)
         {
             var result = new TableData();
             try
             {
-                result = await _returnnoteApp.GetClearReturnNoteDetail(serviceSapId, createrId);
+                result = await _returnnoteApp.GetClearReturnNoteDetail(Id);
             }
             catch (Exception ex)
             {
