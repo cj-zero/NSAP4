@@ -639,6 +639,28 @@ namespace NSAP.App.WebApi.Controllers
 
             return result;
         }
+
+        /// <summary>
+        /// 获取技术员单据数量列表
+        /// </summary>
+        /// <param name="CurrentUserId"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> TechicianEndRepair(TechicianEndRepairReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.TechicianEndRepair(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
         #endregion
 
         #region<<Admin/Supervisor>>

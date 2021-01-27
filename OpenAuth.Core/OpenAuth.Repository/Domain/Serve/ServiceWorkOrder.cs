@@ -242,6 +242,12 @@ namespace OpenAuth.Repository.Domain
         public System.DateTime? CompleteDate { get; set; }
 
         /// <summary>
+        /// 是否中途结束维修 1是 0否
+        /// </summary>
+        [Description("是否中途结束维修 1是 0否")]
+        public int IsStopOrder { get; set; }
+
+        /// <summary>
         /// 技术员留言消息
         /// </summary>
         [Description("技术员留言消息")]
