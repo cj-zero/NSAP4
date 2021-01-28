@@ -961,7 +961,7 @@ namespace OpenAuth.WebApi.Controllers
             #endregion
 
             #region 签名
-            var us = await _userSignApp.Load(new QueryUserSignListReq { });
+            var us = await _userSignApp.GetUserSignList(new QueryUserSignListReq { });
             var calibrationTechnician = us.Data.FirstOrDefault(u => u.UserName.Equals(baseInfo.Operator));
             if (calibrationTechnician != null)
             {

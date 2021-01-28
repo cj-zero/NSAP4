@@ -3515,6 +3515,29 @@ namespace OpenAuth.App
             result.Data = new { pendingQty, goingQty, finishQty, reimburseQty = doorQty - isReimburseQty };
             return result;
         }
+
+        /// <summary>
+        /// 技术员结束维修
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task TechicianEndRepair(TechicianEndRepairReq request)
+        {
+            var orderIds = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId && s.CurrentUserId == request.CurrentUserId)
+              .WhereIf("其他设备".Equals(request.MaterialType), a => a.MaterialCode == "其他设备")
+              .WhereIf(!"其他设备".Equals(request.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == request.MaterialType)
+              .ToListAsync()).Select(s => s.Id).ToList();
+            List<int> workOrderIds = new List<int>();
+            foreach (var id in orderIds)
+            {
+                workOrderIds.Add(id);
+            }
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId && s.CurrentUserId == request.CurrentUserId && orderIds.Contains(s.Id), e => new ServiceWorkOrder
+            {
+                IsStopOrder = 1
+            });
+            await UnitWork.SaveAsync();
+        }
         #endregion
 
         #region<<Admin/Supervisor>>

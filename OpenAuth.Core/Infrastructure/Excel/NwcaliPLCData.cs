@@ -20,10 +20,10 @@ namespace Infrastructure.Excel
         public string Mode { get; set; }
 
         [Column(4)]
-        public int Range { get; set; }
+        public double Range { get; set; }
 
         [Column(5)]
-        public int Point { get; set; }
+        public double Point { get; set; }
 
         [Column(6)]
         public double Commanded_Value { get; set; }
@@ -32,7 +32,7 @@ namespace Infrastructure.Excel
         public double Measured_Value { get; set; }
 
         [Column(8)]
-        public int Scale { get; set; }
+        public double Scale { get; set; }
 
         [Column(9)]
         public double Standard_Value { get; set; }

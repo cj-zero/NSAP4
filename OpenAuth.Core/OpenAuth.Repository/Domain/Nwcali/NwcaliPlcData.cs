@@ -71,7 +71,7 @@ namespace OpenAuth.Repository.Domain
         /// 
         /// </summary>
         [Description("")]
-        public int Point { get; set; }
+        public double Point { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -86,7 +86,7 @@ namespace OpenAuth.Repository.Domain
         /// 
         /// </summary>
         [Description("")]
-        public int Scale { get; set; }
+        public double Scale { get; set; }
         /// <summary>
         /// 
         /// </summary>

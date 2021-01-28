@@ -683,7 +683,7 @@ export default {
         page: 1,
         limit: 20,
         key: '',
-        type: 7
+        type: 4
       }
     },
     _getFormThemeList () {

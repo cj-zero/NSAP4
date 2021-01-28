@@ -11,8 +11,8 @@ const serverConf = {
   },
   actions: {
     // 获取服务器是否启用了Identity
-    GetIdentityAuth({ commit, state,reject }) {
-      return new Promise((resolve) => {
+    GetIdentityAuth({ commit, state }) {
+      return new Promise((resolve, reject) => {
         if (state.isIdentityAuth !== undefined) {
           resolve(state.isIdentityAuth)
           return

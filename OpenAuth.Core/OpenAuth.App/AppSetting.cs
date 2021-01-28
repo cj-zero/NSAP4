@@ -53,5 +53,10 @@
         /// App 售后服务地址
         /// </summary>
         public string AppServerUrl { get; set; }
+
+        /// <summary>
+        /// 票据识别类型 腾讯/华为
+        /// </summary>
+        public string OcrType { get; set; }
     }
 }

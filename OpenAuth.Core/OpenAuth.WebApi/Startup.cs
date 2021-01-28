@@ -9,6 +9,7 @@ using Infrastructure;
 using Infrastructure.AutoMapper;
 using Infrastructure.Exceptions;
 using Infrastructure.Extensions.AutofacManager;
+using Infrastructure.HuaweiOCR;
 using Infrastructure.TecentOCR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
@@ -189,6 +190,7 @@ namespace OpenAuth.WebApi
             });
             services.AddSingleton<HttpClienService>();
             services.AddSingleton<TecentOCR>();
+            services.AddSingleton<HuaweiOCR>();
         }
 
         public void ConfigureContainer(ContainerBuilder builder)
