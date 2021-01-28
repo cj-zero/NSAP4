@@ -7,11 +7,11 @@
       :class="{ 'general': title === 'approve' }"
     >
       <p style="color: red;" v-if="formData.mainId">报销单号: <span>{{ formData.mainId }}</span></p>
-      <p class="pointer underline" @click="_openServiceOrHistory(true)" v-if="title === 'approve'">
+      <p class="pointer underline" @click="_openServiceOrHistory(true)" v-if="title === 'approve' && !isGeneralManager">
         <span>服务ID: {{ formData.serviceOrderSapId }}</span>
       </p>
       <p>报销人: {{ formData.orgName }} <span>{{ formData.userName }}</span></p>
-      <p v-if="!isGeneralStatus">部门: <span>{{ formData.orgName }}</span></p>
+      <!-- <p v-if="!isGeneralStatus">部门: <span>{{ formData.orgName }}</span></p> -->
       <p v-if="!isGeneralStatus">劳务关系: <span>{{ formData.serviceRelations }}</span></p>
       <p v-if="!isGeneralStatus">创建时间: <span>{{ formData.createTime && formData.createTime.split(' ')[0] }}</span></p>
     </el-row>
