@@ -22,6 +22,7 @@ using OpenAuth.Repository.Domain.Material;
 using System.IO;
 using Infrastructure.Export;
 using DinkToPdf;
+using DotNetCore.CAP;
 
 namespace OpenAuth.App.Material
 {
@@ -33,6 +34,8 @@ namespace OpenAuth.App.Material
         private readonly FlowInstanceApp _flowInstanceApp;
 
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
+
+        private ICapPublisher _capBus;
 
         /// <summary>
         /// 加载列表
@@ -605,60 +608,15 @@ namespace OpenAuth.App.Material
                     QuotationObj.QuotationStatus = 3;
                     QuotationObj = await UnitWork.AddAsync<Quotation, int>(QuotationObj);
                     await UnitWork.SaveAsync();
-
-                    if (!obj.IsDraft)
+                    await UnitWork.AddAsync<QuotationOperationHistory>(new QuotationOperationHistory
                     {
-                        //创建物料报价单审批流程
-                        var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("物料报价单"));
-                        var afir = new AddFlowInstanceReq();
-                        afir.SchemeId = mf.FlowSchemeId;
-                        afir.FrmType = 2;
-                        afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
-                        afir.CustomName = $"物料报价单" + DateTime.Now;
-                        afir.OrgId = "";
-                        bool IsProtected = false;
-                        obj.QuotationProducts.ForEach(q =>
-                        {
-                            if (q.IsProtected == true) IsProtected = (bool)q.IsProtected;
-                        });
-                        QuotationObj.QuotationStatus = 4;
-                        afir.FrmData = "{ \"QuotationId\":\"" + QuotationObj.Id + "\"}";
-
-                        #region//保内保外
-                        //if (!(bool)QuotationObj.IsProtected)
-                        //{
-                        //    //保外申请报价单
-                        //    QuotationObj.QuotationStatus = 4;
-                        //    if (IsProtected)
-                        //    {
-                        //        afir.FrmData = "{ \"QuotationId\":\"" + QuotationObj.Id + "\",\"IsProtected\":\"0\",\"IsRead\":\"1\"}";
-                        //    }
-                        //    else
-                        //    {
-                        //        afir.FrmData = "{ \"QuotationId\":\"" + QuotationObj.Id + "\",\"IsProtected\":\"0\",\"IsRead\":\"0\"}";
-                        //    }
-                        //}
-                        //else
-                        //{
-                        //    //保内申请报价单
-
-                        //    afir.FrmData = "{ \"QuotationId\":\"" + QuotationObj.Id + "\",\"IsProtected\":\"1\",\"IsRead\":\"0\"}";
-                        //}
-                        #endregion
-
-                        var FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(afir);
-                        QuotationObj.FlowInstanceId = FlowInstanceId;
-                        await UnitWork.UpdateAsync<Quotation>(QuotationObj);
-                        await UnitWork.AddAsync<QuotationOperationHistory>(new QuotationOperationHistory
-                        {
-                            Action = "提交报价单",
-                            CreateUser = loginUser.Name,
-                            CreateUserId = loginUser.Id,
-                            CreateTime = DateTime.Now,
-                            QuotationId = QuotationObj.Id
-                        });
-                        await UnitWork.SaveAsync();
-                    }
+                        Action = "提交报价单",
+                        CreateUser = loginUser.Name,
+                        CreateUserId = loginUser.Id,
+                        CreateTime = DateTime.Now,
+                        QuotationId = QuotationObj.Id
+                    });
+                    await UnitWork.SaveAsync();
 
                     #region 合并零件表
                     List<QuotationMaterial> QuotationMaterialsT = new List<QuotationMaterial>();
@@ -953,6 +911,13 @@ namespace OpenAuth.App.Material
                     await UnitWork.BatchAddAsync<QuotationMergeMaterial>(QuotationMergeMaterialListMap.ToArray());
                     await UnitWork.SaveAsync();
                     #endregion
+                    if (!obj.IsDraft) 
+                    {
+                        #region 同步到SAP 并拿到服务单主键
+
+                        _capBus.Publish("Serve.SellOrder.Create", obj.Id);
+                        #endregion
+                    }
 
                     await transaction.CommitAsync();
                 }
@@ -1447,10 +1412,11 @@ namespace OpenAuth.App.Material
         //}
         #endregion
 
-        public QuotationApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
+        public QuotationApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, ICapPublisher capBus, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
         {
             _flowInstanceApp = flowInstanceApp;
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
+            _capBus = capBus;
         }
 
     }
