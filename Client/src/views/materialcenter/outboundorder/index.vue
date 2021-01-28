@@ -17,6 +17,9 @@
         :data="tableData"
         :columns="quotationColumns"
         :loading="tableLoading">
+        <template v-slot:totalMoney="{ row }">
+          <p v-infotooltip.top-start.ellipsis>{{ row.totalMoney | toThousands }}</p>
+        </template>
       </common-table>
       <pagination
         v-show="total>0"
@@ -28,19 +31,22 @@
     </Layer>
     <my-dialog 
       ref="quotationDialog"
-      width="1100px"
+      width="1180px"
       :loading="dialogLoading"
-      title="审批出库单"
+      title="物料出库单"
       :btnList="btnList"
       :append-to-body="true"
       @closed="close"
       :destroy-on-close="true"
+      top="100px"
+      @opened="onOpened"
     >
       <outbound-order 
         ref="outboundOrder" 
         :detailInfo="detailInfo"
         :categoryList="categoryList"
-        :status="status"></outbound-order>
+        :status="status">
+      </outbound-order>
     </my-dialog>
     <!-- 只能查看的表单 -->
     <my-dialog
@@ -72,7 +78,7 @@ import Search from '@/components/Search'
 import OutboundOrder from './components/outboundorder'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
-import { getQuotationList } from '@/api/material/quotation'
+import { getQuotationList, updateOutboundOrder } from '@/api/material/quotation'
 import {  quotationTableMixin, chatMixin, categoryMixin } from '../common/js/mixins'
 import elDragDialog from "@/directive/el-dragDialog";
 export default {
@@ -103,7 +109,7 @@ export default {
     }, // 搜索配置
     btnList () {
       return [
-        { btnText: '保存', handleClick: this.updateMaterial },
+        // { btnText: '保存', handleClick: this.updateMaterial },
         { btnText: '关闭', handleClick: this.close, className: 'close' }      
       ]
     }
@@ -132,7 +138,7 @@ export default {
         { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link' },
         { label: '客户代码', prop: 'terminalCustomerId' },
         { label: '客户名称', prop: 'terminalCustomer' },
-        { label: '总金额', prop: 'totalMoney' },
+        { label: '总金额(￥)', prop: 'totalMoney', align: 'right', slotName: 'totalMoney' },
         { label: '申请人', prop: 'createUser' },
         { label: '备注', prop: 'remark' },
         { label: '创建时间', prop: 'createTime' },
@@ -150,30 +156,33 @@ export default {
         this.tableData = data
         this.total = count
         this.tableLoading = false
-        this.$refs.quotationTable.resetCurrentRow()
-        console.log('_getList', this.$refs.quotationTable.getCurrentRow())
       }).catch(err => {
         this.$message.error(err.message)
         this.tableLoading = false
       })
     },
     updateMaterial () {
-      this.dialogLoading = true
-      this.$refs.outboundOrder.updateMaterial().then(res => {
-        console.log(res, 'res')
-        this.$message.success('保存成功')
-        this._getList()
-        this.close()
-        this.dialogLoading = false
-      }).catch(err => {
-        this.dialogLoading = false
-        this.$message.error(typeof err === 'object' ? err.message : '保存失败')
+      this.$refs.outboundOrder.updateMaterial(params => {
+        this.dialogLoading = true
+        updateOutboundOrder(params).then(res => {
+          console.log(res, 'res')
+          this.$message.success('保存成功')
+          this._getList()
+          this.close()
+          this.dialogLoading = false
+        }).catch(err => {
+          this.dialogLoading = false
+          this.$message.error(typeof err === 'object' ? err.message : '保存失败')
+        })
       })
     },
     close () {
       this.$refs.outboundOrder.resetInfo()
       this.$refs.quotationDialog.close()
     },
+    onOpened () {
+      this.$refs.outboundOrder.openedFn()
+    }
   },
   created () {
     this._getList()

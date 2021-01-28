@@ -11,13 +11,16 @@
         </Search>
       </div>
     </sticky>
-    <Layer>
+    <Layer> 
       <common-table 
         height="100%"
         ref="quotationTable" 
         :data="tableData" 
         :columns="quotationColumns" 
         :loading="tableLoading">
+        <template v-slot:totalMoney="{ row }">
+          <p v-infotooltip.ellipsis.top-start>{{ row.totalMoney | toThousands }}</p>
+        </template>
       </common-table>
       <pagination
         v-show="total>0"
@@ -29,12 +32,11 @@
     </Layer>
     <my-dialog 
       ref="quotationDialog"
-      width="1100px"
+      width="1180px"
       :loading="dialogLoading"
       :title="`${textMap[status]}报价单`"
       :btnList="btnList"
       @closed="close"
-      :destroy-on-close="true"
     >
       <quotation-order 
         ref="quotationOrder" 
@@ -87,7 +89,6 @@ export default {
     zxform,
     zxchat
   },
-  
   computed: {
     searchConfig () {
       return [
@@ -106,29 +107,23 @@ export default {
     }, // 搜索配置
     btnList () {
       return [
-        // { btnText: '预览', handleClick: this.togglePreview, isShow: !this.isPreviewing && this.status !== 'view' },
-        // { btnText: '返回', handleClick: this.togglePreview, isShow: this.isPreviewing },
-        { btnText: '提交', handleClick: this.submit, isShow: this.isShowOperateBtn },
-        { btnText: '存为草稿', handleClick: this.submit, options: { isDraft: true }, isShow: this.isShowOperateBtn },
-        { btnText: '返回', handleClick: this.togglePreview, isShow: !this.isPreviewing && this.isShowEditBtn },
+        { btnText: '保存', handleClick: this.submit, options: { isDraft: true }, isShow: this.isShowOperateBtn },
+        { btnText: '客户同意报价', handleClick: this.submit, isShow: this.isPreviewing && this.isShowEditBtn, className: 'outline' },
         { btnText: '编辑', handleClick: this.togglePreview, isShow: this.isPreviewing && this.isShowEditBtn },
         { btnText: '关闭', handleClick: this.close, className: 'close' }      
       ]
     },
-    isShowOperateBtn () {
+    isShowOperateBtn () { // 处于新增状态、或者在编辑的状态才展示
       return this.status === 'create' || (!this.isPreviewing && this.isShowEditBtn)
     }
   },
   data () {
     return {
-      // totalMoney: 0,
       initialName: '', // 初始标签的值
       texts: [ // 标签数组
         { label: '全部', name: '' },
         { label: '草稿箱', name: '1' },
-        { label: '申请中', name: '2' },
-        { label: '已领料', name: '3' },
-        { label: '已驳回', name: '4' }
+        { label: '申请中', name: '2' }
       ],
       isShowEditBtn: true, // 是否出现编辑按钮
       formQuery: {
@@ -154,7 +149,7 @@ export default {
         { label: '销售单号', prop: 'salesOrderId', handleClick: this._getQuotationDetail, options: { status: 'view', isSalesOrder: true }, type: 'link', width: 120 },
         { label: '客户代码', prop: 'terminalCustomerId' },
         { label: '客户名称', prop: 'terminalCustomer' },
-        { label: '单据总金额', prop: 'totalMoney', align: 'right' },
+        { label: '总金额（￥）', prop: 'totalMoney', align: 'right', slotName: 'totalMoney'},
         { label: '申请人', prop: 'createUser' },
         { label: '备注', prop: 'remark' },
         { label: '创建时间', prop: 'createTime' },
@@ -215,9 +210,6 @@ export default {
         })
       })
     },
-    changeToEdit () {
-      this.$refs.quotationOrder.changeToEdit()
-    },
     onTabChange (name) {
       this.listQuery.startType = name
       this.listQuery.page = 1
@@ -226,12 +218,14 @@ export default {
     submit (options) {
       let isDraft = !!options.isDraft
       this.dialogLoading = true
-      let isEdit = this.status === 'edit'
-      this.$refs.quotationOrder._operateOrder(isEdit, isDraft).then(() => {
+      this.$refs.quotationOrder._operateOrder(isDraft).then((res) => {
         this.dialogLoading = false
         this._getList()
         this.close()
-        this.$message.success(isDraft ? '存为草稿成功' : '提交成功')
+        if (res.message === '已存在多笔订单且库存数量不满足，请尽快付款。') {
+          this.$message.warning(res.message)
+        }
+        this.$delay(this.$message.success('保存成功'))
       }).catch(err => {
         this.$message.error(err.message)
         this.dialogLoading = false
@@ -242,7 +236,7 @@ export default {
       this.$refs.quotationOrder.togglePreview()
     },
     close () {
-      this.isPreviewing = false
+      this.isPreviewing = true
       this.$refs.quotationOrder.resetInfo()
       this.$refs.quotationDialog.close()
     }

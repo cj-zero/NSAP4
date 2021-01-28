@@ -11,12 +11,19 @@
       </div>
     </sticky>
     <Layer>
-      <common-table 
+      <common-table
+        class="table-wrapper"
         height="100%"
         ref="quotationTable" 
         :data="tableData" 
         :columns="quotationColumns" 
         :loading="tableLoading">
+        <template v-slot:contract="{ row }">
+          <span class="show-btn" @click="showContractPictures(row)">查看</span>
+        </template>
+        <template v-slot:totalMoney="{ row }">
+          <p v-infotooltip.top-start.ellipsis>{{ row.totalMoney | toThousands }}</p>
+        </template>
       </common-table>
       <pagination
         v-show="total>0"
@@ -28,9 +35,9 @@
     </Layer>
     <my-dialog 
       ref="quotationDialog"
-      width="1100px"
+      width="1180px"
       :loading="dialogLoading"
-      title="销售订单详情"
+      :title="`${textMap[status]}销售订单`"
       :btnList="btnList"
       @closed="close"
     >
@@ -64,6 +71,13 @@
         </el-col>
       </el-row>
     </my-dialog>
+    <!-- 预览合同图片 -->
+    <el-image-viewer
+      v-if="previewVisible"
+      :url-list="previewImageUrlList"
+      :on-close="closeViewer"
+    >
+    </el-image-viewer>
   </div>
 </template>
 
@@ -74,6 +88,8 @@ import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import { getQuotationList, getServiceOrderList } from '@/api/material/quotation'
 import {  quotationTableMixin, categoryMixin, chatMixin } from '../common/js/mixins'
+import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
+import { processDownloadUrl } from '@/utils/file'
 export default {
   name: 'materialSalesOrder',
   mixins: [quotationTableMixin, categoryMixin, chatMixin],
@@ -81,7 +97,8 @@ export default {
     Search,
     QuotationOrder,
     zxform,
-    zxchat
+    zxchat,
+    ElImageViewer
   },
   computed: {
     searchConfig () {
@@ -99,10 +116,14 @@ export default {
     btnList () {
       // 弹窗按钮
       return [
-        { btnText: this.isMaterialFinancial ? '确认收款' : '审批', handleClick: this.pay,
-          options: { type: this.isMaterialFinancial ? 'pay' : 'agree' }
+        // this.isMaterialFinancial 
+        {  btnText: '提交', isShow: this.status === 'upload', handleClick: this.pay },
+        { btnText: '确认收款', handleClick: this.pay, isShow: this.status === 'pay' && this.isMaterialFinancial,
+          options: { type: 'pay' }
         },
-        { btnText: '驳回', handleClick: this.pay, options: { type: 'reject' }, isShow: !this.isMaterialFinancial },
+        { btnText: '打印', handleClick: this.showContract, isShow: this.status !== 'upload', className: 'outline' },
+        { btnText: '查看合同', handleClick: this.showContract, isShow: this.status !== 'upload', className: 'outline' },
+        // { btnText: '驳回', handleClick: this.pay, options: { type: 'reject' }, isShow: !this.isMaterialFinancial },
         { btnText: '关闭', handleClick: this.close, className: 'close' }      
       ] 
     },
@@ -112,6 +133,9 @@ export default {
   },
   data () {
     return {
+      previewVisible: false,
+      previewImageUrlList: [],
+      isSales: true,
       formQuery: {
         quotationId: '', // 领料单号
         cardCode: '', // 客户
@@ -121,7 +145,7 @@ export default {
         endCreateTime: '' // 创建结束
       },
       listQuery: {
-        IsSalesOrderList: true,
+        startType: 2,
         page: 1,
         limit: 50,
       },
@@ -132,12 +156,12 @@ export default {
       quotationColumns: [
         { label: '销售订单', prop: 'salesOrderId', handleClick: this._getQuotationDetail, options: { status: 'pay', isSalesOrder: true }, type: 'link'},
         { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link' },
-        // { label: '报价单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'view', isReceive: true }, type: 'link' },
         { label: '客户代码', prop: 'terminalCustomerId' },
         { label: '客户名称', prop: 'terminalCustomer' },
         { label: '申请人', prop: 'createUser' },
         { label: '创建时间', prop: 'createTime' },
-        { label: '总金额', prop: 'totalMoney', align: 'right' },
+        { label: '总金额（￥）', prop: 'totalMoney', align: 'right', slotName: 'totalMoney' },
+        { label: '合同', slotName: 'contract' },
         { label: '备注', prop: 'remark' },
         { label: '状态', prop: 'quotationStatusText' }
       ],
@@ -174,6 +198,23 @@ export default {
     pay (options) {
       this.$refs.quotationOrder.beforeApprove(options.type)
     },
+    showContractPictures (row) { // 查看表格合同
+      console.log(row, 'row', processDownloadUrl)
+      let files = row.files.map(pictureItem => {
+        return processDownloadUrl(pictureItem.fileId)
+      })
+      if (!files.length) {
+        return this.$message.warning('暂无图片')
+      }
+      this.previewImageUrlList = files
+      this.previewVisible = true
+    },
+    closeViewer () {
+      this.previewVisible = false
+    },
+    showContract () { // 查看弹窗合同
+      this.$refs.quotationOrder.showContract()
+    },
     close () {
       this.$refs.quotationOrder.resetInfo()
       this.$refs.quotationDialog.close()
@@ -190,6 +231,12 @@ export default {
   ::v-deep .el-tabs__header {
     background-color: #fff;
     margin-bottom: 0;
+  }
+  .table-wrapper {
+    .show-btn {
+      color: #F8B500;
+      cursor: pointer;
+    }
   }
 }
 </style>

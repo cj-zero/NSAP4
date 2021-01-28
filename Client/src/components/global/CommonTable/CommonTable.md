@@ -16,11 +16,12 @@
 
 ### Table Methods
 
+**(在el-table的基础上，保留原方法，进行需求扩展)**
+
 |      方法名      |                             说明                             |  参数  |
 | :--------------: | :----------------------------------------------------------: | :----: |
 |  getCurrentRow   |                   获取表格当前点击的行数据                   | object |
 | getSelectionList | 获取表格多选的表格数据(**过滤掉已经选择过的数据**，**且默认支持翻页保留**) | array  |
-|  clearSelection  |                      清空表格多选的数据                      |   --   |
 | resetCurrentRow  |                   清空表格当前点击的行数据                   |   --   |
 
 ### Table-column-attributes

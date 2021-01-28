@@ -14,9 +14,9 @@
       <common-table 
         height="100%"
         ref="quotationTable" 
-        :data="tableData"
-        @row-click="onRowClick"
+        :data="tableData" 
         :columns="salesColumns" 
+        @row-click="onRowClick"
         :loading="tableLoading">
         <template v-slot:btnList="{ row }">
           <el-button size="mini" class="customer-btn-class" @click="openDialog(row)">保修</el-button>
@@ -84,10 +84,24 @@ import SalesOrder from './components/SalesOrder'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import { chatMixin } from '../common/js/mixins'
-import { getSalesOrderList, updateDate } from '@/api/material/warrantyDate'
+import { getSalesOrderList, approve } from '@/api/material/warrantyDate'
 import { formatDate } from '@/utils/date'
+// import Day from 'dayjs'
+// import Mock from 'mockjs'
+// const tableData = Mock.mock({
+//   "array|10": [{
+//     id: '@word',
+//     terminalCustomer: '@word',
+//     terminalCustomerId: '@word',
+//     salesMan: '@word',
+//     deliveryDate: '@date',
+//     warrantyDate: '@date',
+//     remark: '@word'
+//   }]
+// })
+// console.log(tableData, 'date')
 export default {
-  name: 'saleswarranty',
+  name: 'approvewarranty',
   mixins: [chatMixin],
   components: {
     Search,
@@ -106,8 +120,8 @@ export default {
     }, // 搜索配置
     btnList () {
       return [
-        { btnText: '确认', handleClick: this.updateDateClick },
-        // { btnText: '审批', handleClick: this.approveDateClick },
+        { btnText: '同意', handleClick: this.approveDateClick, options: { isPass: true } },
+        { btnText: '驳回', handleClick: this.approveDateClick, className: 'danger' },
         { btnText: '关闭', handleClick: this.close, className: 'close' }      
       ]
     }
@@ -154,6 +168,7 @@ export default {
           item.deliveryDate = formatDate(item.deliveryDate)
           return item
         })
+        this.tableData = data
         this.tableLoading = false
         console.log(res, 'res')
       }).catch(err => {
@@ -162,11 +177,16 @@ export default {
         this.$message.error(err.message)
       })
     },
-    updateDateClick () {
-      this.$refs.salesOrder.updateWarrantyDate(params => {
+    approveDateClick (optoins) {
+      let isPass = !!optoins.isPass
+      this.$refs.salesOrder.approveWarrantyDate(params => {
+        params = {
+          ...params,
+          isPass
+        }
         this.dialogLoading = true
-        updateDate(params).then(() => {
-          this.$message.success('修改成功')
+        approve(params).then(() => {
+          this.$message.success(params.isPass ? '审批成功' : '驳回成功')
           this.dialogLoading = false
           this._getList()
           this.close()
@@ -177,7 +197,7 @@ export default {
       })
     },
     onRowClick (row) {
-      this.currentRow = row
+      this.currentRow = JSON.parse(JSON.stringify(row))
     },
     onChangeForm (val) {
       Object.assign(this.listQuery, val)

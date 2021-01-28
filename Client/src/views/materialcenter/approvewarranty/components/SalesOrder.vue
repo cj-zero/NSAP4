@@ -68,7 +68,7 @@ export default {
         { slotName: 'name', attrs: { prop: 'customerName' }, itemAttrs: { label: '客户名称' } },
         { slotName: 'deliveryDate', attrs: { prop: 'deliveryDate' }, itemAttrs: { label: '交货日期' }, isEnd: true },
         { slotName: 'remark', attrs: { prop: 'remark' }, itemAttrs: { label: '备注' }, isEnd: true },
-        { tag: 'date', attrs: { prop: 'warrantyPeriod', 'value-format': 'yyyy-MM-dd', 'picker-options': { disabledDate: this.disabledDate } }, 
+        { tag: 'date', attrs: { prop: 'warrantyPeriod', 'value-format': 'yyyy-MM-dd', disabled: true }, 
           itemAttrs: { label: '保修时间', prop: 'warrantyPeriod', rules: [{ required: true }] }, isEnd: true 
         }
       ]
@@ -88,16 +88,6 @@ export default {
     }
   },
   methods: {
-    setFormData (currentRow) {
-      this.formData = JSON.parse(JSON.stringify(currentRow))
-      this.historyTableData = this.formData.salesOrderWarrantyDateRecords || []
-    },
-    disabledDate (date) {
-      if (this.formData.warrantyPeriod) {
-        return date.getTime() < new Date(this.formData.deliveryDate).getTime()
-      }
-      return true
-    },
     resetInfo () {
       this.reset()
       this.$nextTick(() => {
@@ -118,16 +108,21 @@ export default {
         width: 'auto'
       }
     },
-    updateWarrantyDate (callback) {
+    approveWarrantyDate (callback) { // 审批时间
       this.$refs.form.validate(isValid => {
         if (!isValid) {
           return this.$message.error('请将必填项填写完成')
         }
+        // 审批
         let { id, warrantyPeriod } = this.formData
-        // 修改
-        callback({
-          id,
-          warrantyPeriod
+        this.$confirm('是否继续操作?', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消'
+        }).then(() => {
+          callback({
+            id,
+            warrantyPeriod
+          })
         })
       })
     }
@@ -143,6 +138,16 @@ export default {
 <style lang='scss' scoped>
 .salerorder-detail-wrapper {
   position: relative;
+  ::v-deep {
+    .el-date-editor.el-input {
+      input {
+        padding: 0 5px !important;
+      }
+      span {
+        display: none;
+      }
+    }
+  }
   .head-title-wrapper {
     position: absolute;
     top: -41px;

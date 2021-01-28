@@ -16,19 +16,25 @@ export function getQuotationList(params) { // 加载报价单列表
   })
 }
 
-export function getMaterialList(params) { // 加载物料列表
+export function getMaterialList(params, _this) { // 加载物料列表
   return request({
     url: '/Material/Quotation/GetMaterialCodeList',
     method: 'get',
-    params
+    params,
+    cancelToken: new request.cancelToken(function executor(c) {
+      _this.cancelRequestMaterial = c // 用于取消上一次未响应的请求,已经响应的请求无法取消
+    })
   })
 }
 
-export function getSerialNumberList(params) { // 加载序列号设备列表
+export function getSerialNumberList(params, _this) { // 加载序列号设备列表
   return request({
     url: '/Material/Quotation/GetSerialNumberList',
     method: 'get',
-    params
+    params,
+    cancelToken: new request.cancelToken(function executor(c) {
+      _this.cancelRequestSerialList = c // 用于取消上一次未响应的请求,已经响应的请求无法取消
+    })
   })
 }
 
@@ -102,5 +108,13 @@ export function deleteOrder (data) { // 删除报价单
     url: '/Material/Quotation/Delete',
     method: 'post',
     data
+  })
+}
+
+export function getMergeMaterial (params) { // 获取合并物料 新增快递单时
+  return request({
+    url: '/Material/Quotation/GetMergeMaterial',
+    method: 'get',
+    params
   })
 }

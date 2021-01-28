@@ -8,13 +8,13 @@
     @row-click="onRowClick" 
     @selection-change="onSelectChange"
   >
-    <template v-for="column in columns">
+    <template v-for="column in newColumns">
       <!-- 多选 -->
       <el-table-column 
         :key="column.prop"
         type="selection"
         v-if="column.type === 'selection'"
-        v-bind="mergeColumnConfig(column)"
+        v-bind="column"
         :selectable="checkSelectable"
       >
       </el-table-column>
@@ -40,7 +40,7 @@
       <el-table-column
         v-else
         :key="column.prop"
-        v-bind="mergeColumnConfig(column)"
+        v-bind="column"
       >
         <template slot="header" slot-scope="scope">
           <!-- 自定义表头 -->
@@ -70,10 +70,10 @@
             <!-- 当表格中字段很多且多数为表单元素的时候，不推荐使用slot，使用component选项能大大减少template代码量，可以配合在common-table外层套上el-form使用 -->
             <el-form-item :prop="dataKey + '.' + scope.$index + '.' + column.prop" v-bind="column.component.itemAttrs">
               <component
-                :is="transformComponent(column.component)"
-                v-model="scope.row[column.prop || (column.component.attrs || {}).prop]"
-                v-bind="mergeComponentAttrs(column.component)"
-                v-on="column.component.on || {}"
+                :is="column.component.componentName"
+                v-model="scope.row[column.prop || column.component.attrs.prop]"
+                v-bind="column.component.attrs"
+                v-on="column.component.on"
                 v-infotooltip:200.top-start
               ></component>
             </el-form-item>
@@ -90,7 +90,7 @@
 
 <script>
 import { defaultTableConfig, defaultColumnConfig } from './default'
-import componentMap from '../componentMap'
+import { mergeConfig, getComponentName, mergeComponentAttrs } from '../mergeConfig'
 import rightImg from '@/assets/table/right.png'
 import { noop } from '@/utils/declaration'
 import { isFunction } from '@/utils/validate'
@@ -133,16 +133,25 @@ export default {
   },
   computed: {
     attrs () {
-      return this.mergeConfig(defaultTableConfig, this.$attrs)
+      return mergeConfig(defaultTableConfig, this.$attrs)
     },
     selectionColumns () {
       return this.columns.some(item => item.type === 'selection')
+    }
+  },
+  watch: {
+    columns: {
+      immediate: true,
+      handler () {
+        this.newColumns = this.normalizeColumns(this.columns)
+      }
     }
   },
   data () {
     return {
       rightImg,
       radio: '',
+      newColumns: [],
       currentRow: null,
       selectionList: [] // 多选的数据
     }
@@ -152,16 +161,18 @@ export default {
     _noop () {
       noop()
     },
-    mergeConfig (defaultConfig = {}, customerConfig = {}) {
-      // 用户自定义配置与默认配置合并
-      return Object.assign({}, defaultConfig, customerConfig)
-    },
-    transformComponent (component) {
-      return componentMap[component.tag].component
-    },
-    mergeComponentAttrs (component) {
-      let newComponent = componentMap[component.tag]
-      return this.mergeConfig(newComponent.attrs, component.attrs)
+    normalizeColumns (columns) {
+      return columns.map(column => {
+        column = mergeConfig(defaultColumnConfig, column)
+        if (column.component) {
+          let component = column.component
+          component.componentName = getComponentName(component)
+          component.attrs = mergeComponentAttrs(component)
+          component.itemAttrs = mergeComponentAttrs(component, 'itemAttrs')
+          component.on = mergeComponentAttrs(column.component, 'on')
+        }
+        return column
+      })
     },
     onRowClick (row) {
       if (this.radioKey) {
@@ -174,13 +185,9 @@ export default {
       }
       this.currentRow = row
       console.log(this.currentRow, 'currentRow')
-      this.$emit('rowClick', this.currentRow)
     },
     getCurrentRow () {
       return this.currentRow
-    },
-    toggleRowSelection (row) {
-      this.$refs.commonTable.toggleRowSelection(row)
     },
     resetCurrentRow () {
       this.currentRow = null
@@ -193,23 +200,22 @@ export default {
     },
     onSelectChange (val) {
       this.selectionList = val
-      this.$emit('selectChange', val)
-      console.log(val, 'selection')
-    },
-    clearSelection () {
-      this.$refs.commonTable.clearSelection()
     },
     checkSelectable (row) {
       row.selectable = this.selectedList.length ? this.selectedList.every(item => item[this.selectedKey] !== row[this.selectedKey]) : true
       return row.selectable
-    },
-    mergeColumnConfig (column) {
-      // 合并自定义配置与默认配置
-      return this.mergeConfig(defaultColumnConfig, column)
     }
   },
   created() {},
-  mounted() {}
+  mounted() {
+    this.$nextTick(() => {
+      Object.keys(this.$refs.commonTable.$options.methods).forEach(methodName => {
+        if (methodName in this) return
+        console.log(methodName, 'methodName')
+        this[methodName] = this.$refs.commonTable[methodName]
+      })
+    })
+  }
 }
 </script>
 <style lang="scss" scoped></style>

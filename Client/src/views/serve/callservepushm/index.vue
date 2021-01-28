@@ -532,7 +532,10 @@ export default {
         this.listLoading = true;
         this.loadingBtn = true
         callservepushm
-          .nSAPSendOrders(this.params)
+          .nSAPSendOrders({
+            ...this.params,
+            type: 0,
+          })
           .then((res) => {
             if (res.code == 200) {
               this.dataForm = res.result;
