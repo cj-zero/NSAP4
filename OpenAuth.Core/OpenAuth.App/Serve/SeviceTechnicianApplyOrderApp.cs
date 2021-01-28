@@ -283,7 +283,7 @@ namespace OpenAuth.App
         {
             //添加工单时先判断当前服务单下是否已存在该设备
             var IsExist = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId && s.ManufacturerSerialNumber == request.ManufacturerSerialNumber && s.MaterialCode == request.MaterialCode).ToListAsync()).Count;
-            if (IsExist > 0)
+            if (IsExist > 0 && request.MaterialCode != "无序列号")
             {
                 throw new CommonException("当前设备已存在,请勿重复添加", 50001);
             }

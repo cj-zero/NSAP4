@@ -51,20 +51,22 @@ namespace OpenAuth.App
             {
                 throw new CommonException("已完成退料，无法继续退料", Define.IS_Return_Finish);
             }
+            //计算本次退料单 金额总和
+            var totalAmt = await UnitWork.Find<Quotation>(w => req.StockOutIds.Contains(w.Id)).SumAsync(s => s.TotalMoney);
             int returnNoteId = 0;
             //判断是否已有退料单 若有则不新增
             var returnNoteInfo = await UnitWork.Find<ReturnNote>(w => w.CreateUserId == userInfo.Id && w.ServiceOrderSapId == req.SapId).FirstOrDefaultAsync();
             if (returnNoteInfo == null)
             {
                 //1.新增退料单主表
-                var newNoteInfo = new ReturnNote { ServiceOrderId = req.ServiceOrderId, ServiceOrderSapId = req.SapId, Status = 1, CreateTime = DateTime.Now, CreateUserId = userInfo.Id, CreateUser = userInfo.Name, IsLast = req.IsLastReturn, StockOutId = req.StockOutId };
-                var o = await UnitWork.AddAsync<ReturnNote, int>(newNoteInfo);
-                returnNoteId = o.Id;
+                var newNoteInfo = new ReturnNote { ServiceOrderId = req.ServiceOrderId, ServiceOrderSapId = req.SapId, Status = 1, CreateTime = DateTime.Now, CreateUserId = userInfo.Id, CreateUser = userInfo.Name, StockOutId = string.Join(",", req.StockOutIds), TotalMoney = totalAmt };
+                await UnitWork.AddAsync<ReturnNote, int>(newNoteInfo);
+                await UnitWork.SaveAsync();
+                returnNoteId = newNoteInfo.Id;
             }
             else
             {
                 returnNoteId = returnNoteInfo.Id;
-                await UnitWork.UpdateAsync<ReturnNote>(w => w.Id == returnNoteId, u => new ReturnNote { IsLast = req.IsLastReturn });
             }
             await UnitWork.SaveAsync();
             //2.添加退料明细信息
@@ -78,7 +80,7 @@ namespace OpenAuth.App
                     MaterialDescription = item.MaterialDescription,
                     Count = item.ReturnQty,
                     TotalCount = item.TotalQty,
-                    Check = 0,
+                    Check = item.ReturnQty > 0 ? 0 : 1,
                     CostPrice = item.CostPrice
                 };
                 var detail = await UnitWork.AddAsync<ReturnnoteMaterial, int>(newDetailInfo);
@@ -153,6 +155,7 @@ namespace OpenAuth.App
                     FlowInstanceId = flowinstanceid
                 });
             }
+            await UnitWork.UpdateAsync<ReturnNote>(w => w.Id == returnNoteId, u => new ReturnNote { IsLast = req.IsLastReturn, TotalMoney = totalAmt });
             await UnitWork.SaveAsync();
         }
 
@@ -299,16 +302,12 @@ namespace OpenAuth.App
               .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate), q => q.CreateTime < Convert.ToDateTime(req.EndDate))
               .WhereIf(!string.IsNullOrWhiteSpace(req.Status), q => q.Status == Convert.ToInt32(req.Status))
               .OrderBy(s => s.Id).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
-            //获取出库单Id集合
-            List<int> stockOutIds = returnNote.Select(s => s.StockOutId).Distinct().ToList();
-            //获取出库单成本总额
-            var stkOutList = await UnitWork.Find<Quotation>(w => stockOutIds.Contains(w.Id)).ToListAsync();
             //获取服务单列表
             var serviceOrderList = await UnitWork.Find<ServiceOrder>(null)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.SapId), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.SapId)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.Customer), q => q.CustomerName.Equals(req.Customer))
                 .ToListAsync();
-            var returnNoteList = returnNote.Select(s => new { s.Id, CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerName).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.MM.dd"), s.ServiceOrderSapId, s.IsCanClear, s.Remark, Fprice = stkOutList.Where(w => w.Id == s.StockOutId).FirstOrDefault()?.TotalCostPrice }).ToList();
+            var returnNoteList = returnNote.Select(s => new { s.Id, CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerName).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.MM.dd"), s.ServiceOrderSapId, s.IsCanClear, s.Remark, s.TotalMoney }).ToList();
             result.Data = returnNoteList;
             return result;
         }
@@ -345,7 +344,7 @@ namespace OpenAuth.App
                         from b in ab.DefaultIfEmpty()
                         join c in UnitWork.Find<ReturnNoteMaterialPicture>(null) on a.Id equals c.ReturnnoteMaterialId into abc
                         from c in abc.DefaultIfEmpty()
-                        where a.ReturnNoteId == Id
+                        where a.ReturnNoteId == Id && a.Count > 0
                         orderby b.CreateTime
                         select new { a.MaterialCode, a.MaterialDescription, a.Count, a.Check, a.ReceivingRemark, a.ShippingRemark, ExpressId = b.Id, c.PictureId, a.Id };
             var detailList = (await query.ToListAsync()).GroupBy(g => g.ExpressId).Select(s => new { s.Key, detail = s.ToList() }).ToList();

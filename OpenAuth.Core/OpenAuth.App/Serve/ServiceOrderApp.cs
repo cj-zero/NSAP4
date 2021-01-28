@@ -2501,6 +2501,7 @@ namespace OpenAuth.App
                                 o.FromTheme,
                                 o.ManufacturerSerialNumber,
                                 o.MaterialCode,
+                                o.MaterialDescription,
                                 o.CurrentUserId,
                                 MaterialType = o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
                                 o.ProblemType,
@@ -3743,6 +3744,15 @@ namespace OpenAuth.App
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            if (req.Type == 0)
+            {
+                //判断当期单据是否已被派单 若已派单则提示做转派操作
+                var isSendOrder = (await UnitWork.Find<ServiceWorkOrder>(w => w.ServiceOrderId.ToString() == req.ServiceOrderId && req.QryMaterialTypes.Contains(w.MaterialCode == "无序列号" ? "无序列号" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-"))) && w.CurrentUserId > 0).ToListAsync())?.Count > 0 ? true : false;
+                if (isSendOrder)
+                {
+                    throw new CommonException("当前工单已被派单，如需继续派单请走转派流程", 60003);
+                }
             }
             var canSendOrder = await CheckCanTakeOrder(req.CurrentUserId);
             if (!canSendOrder)
