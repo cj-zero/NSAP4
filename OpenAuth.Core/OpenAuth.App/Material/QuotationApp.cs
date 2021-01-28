@@ -632,7 +632,7 @@ namespace OpenAuth.App.Material
                                          MaterialDescription = g.Key.MaterialDescription,
                                          Unit = g.Key.Unit,
                                          SalesPrice = 0,
-                                         CostPrice = 0,
+                                         CostPrice = g.Key.UnitPrice,
                                          Count = g.Sum(a => a.Count),
                                          TotalPrice = 0,//g.Sum(a => a.TotalPrice)
                                          IsProtected = true,
@@ -877,7 +877,7 @@ namespace OpenAuth.App.Material
                                          MaterialDescription = g.Key.MaterialDescription,
                                          Unit = g.Key.Unit,
                                          SalesPrice = 0,
-                                         CostPrice = 0,
+                                         CostPrice = g.Key.UnitPrice,
                                          Count = g.Sum(a => a.Count),
                                          TotalPrice = 0,//g.Sum(a => a.TotalPrice)
                                          IsProtected = true,
@@ -1227,6 +1227,7 @@ namespace OpenAuth.App.Material
                 loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
             }
             #region 判断技术员余额
+
             var Money = await UnitWork.Find<MaterialsSettlement>(m => m.ProposerId.Equals(loginUser.Id)).ToListAsync();
             if (Money != null && Money.Count > 0)
             {
@@ -1374,43 +1375,6 @@ namespace OpenAuth.App.Material
             });
             return datas;
         }
-
-        #region 判断是否是保内
-        /// <summary>
-        /// 判断是否是保内(暂弃)
-        /// </summary>
-        /// <param name="QuotationProducts"></param>
-        /// <returns></returns>
-        //private async Task<dynamic> JudgeIsProtected(List<string> MnfSerials)
-        //{
-        //    //      StringBuilder MnfSerial = new StringBuilder();
-        //    //      MnfSerials.ForEach(item =>
-        //    //      {
-        //    //          MnfSerial.Append("'" + item + "',");
-        //    //      });
-        //    //      var Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"SELECT d.DocEntry,c.MnfSerial
-        //    //      FROM oitl a left join itl1 b
-        //    //      on a.LogEntry = b.LogEntry and a.ItemCode = b.ItemCode 
-        //    //      left join osrn c on b.ItemCode = c.ItemCode and b.SysNumber = c.SysNumber
-        //    //left join odln d on a.DocEntry=d.DocEntry
-        //    //      where a.DocType =15 and c.MnfSerial in ({MnfSerial.ToString().Substring(0, MnfSerial.Length - 1)})").Select(s => new SysEquipmentColumn { MnfSerial = s.MnfSerial, DocEntry = s.DocEntry }).ToListAsync();
-
-        //    //      var DocEntryIds = Equipments.Select(e => e.DocEntry).ToList();
-
-        //    //      var buyopors = from a in UnitWork.Find<buy_opor>(null)
-        //    //                     join b in UnitWork.Find<sale_transport>(null) on a.DocEntry equals b.Buy_DocEntry
-        //    //                     where DocEntryIds.Contains(b.Base_DocEntry) && b.Base_DocType == 24
-        //    //                     select new { a, b };
-        //    //      var docdate = await buyopors.ToListAsync();
-        //    //      var IsProtecteds = Equipments.Select(e => new
-        //    //      {
-        //    //          MnfSerial = e.MnfSerial,
-        //    //          DocDate = Convert.ToDateTime(docdate.Where(d => d.b.Base_DocEntry.Equals(e.DocEntry)).FirstOrDefault()?.a.DocDate).AddYears(1)
-        //    //      }).ToList();
-
-        //    return null;
-        //}
-        #endregion
 
         public QuotationApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, ICapPublisher capBus, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
         {
