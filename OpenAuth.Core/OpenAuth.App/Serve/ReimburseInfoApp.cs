@@ -448,7 +448,7 @@ namespace OpenAuth.App
                 s.b.Destination,
                 BusinessTripDate = CompletionReports.Where(c => c.ServiceOrderId.Equals(s.a.Id) && c.ServiceMode == 1).Min(c => c.BusinessTripDate),
                 EndDate = CompletionReports.Where(c => c.ServiceOrderId.Equals(s.a.Id) && c.ServiceMode == 1).Max(c => c.EndDate),
-                MaterialCode = s.b.MaterialCode == "其他设备" ? "其他设备" : s.b.MaterialCode.Substring(0, s.b.MaterialCode.IndexOf("-"))
+                MaterialCode = s.b.MaterialCode == "无序列号" ? "无序列号" : s.b.MaterialCode.Substring(0, s.b.MaterialCode.IndexOf("-"))
             }).ToList();
             result.Count = ServiceOrderLists.Count();
             return result;
@@ -635,7 +635,7 @@ namespace OpenAuth.App
                 Destination = completionreport.Destination,
                 BusinessTripDate = CompletionReports.Min(c => c.BusinessTripDate),
                 EndDate = CompletionReports.Max(c => c.EndDate),
-                MaterialCode = completionreport.MaterialCode == "其他设备" ? "其他设备" : completionreport.MaterialCode.Substring(0, completionreport.MaterialCode.IndexOf("-"))
+                MaterialCode = completionreport.MaterialCode == "无序列号" ? "无序列号" : completionreport.MaterialCode.Substring(0, completionreport.MaterialCode.IndexOf("-"))
 
             };
 

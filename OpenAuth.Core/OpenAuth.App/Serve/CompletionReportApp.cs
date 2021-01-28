@@ -73,8 +73,8 @@ namespace OpenAuth.App
         {
             //添加之前判断是否有报告提交记录 若有则删除之前的完工报告
             var everCompletionReport = await UnitWork.Find<CompletionReport>(w => w.ServiceOrderId == req.ServiceOrderId && w.TechnicianId == req.CurrentUserId.ToString())
-                .WhereIf("其他设备".Equals(req.MaterialType), a => a.MaterialCode == "其他设备")
-                .WhereIf(!"其他设备".Equals(req.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == req.MaterialType)
+                .WhereIf("无序列号".Equals(req.MaterialType), a => a.MaterialCode == "无序列号")
+                .WhereIf(!"无序列号".Equals(req.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == req.MaterialType)
                 .FirstOrDefaultAsync();
             var obj = req.MapTo<CompletionReport>();
 
@@ -93,8 +93,8 @@ namespace OpenAuth.App
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
             var workOrderList = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId)
-    .WhereIf("其他设备".Equals(req.MaterialType), a => a.MaterialCode == "其他设备")
-    .WhereIf(!"其他设备".Equals(req.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == req.MaterialType)
+    .WhereIf("无序列号".Equals(req.MaterialType), a => a.MaterialCode == "无序列号")
+    .WhereIf(!"无序列号".Equals(req.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == req.MaterialType)
     .ToListAsync());
             List<int> workorder = new List<int>();
             foreach (var item in workOrderList)
@@ -213,8 +213,8 @@ namespace OpenAuth.App
             var thisworkdetail = new CompletionReportDetailsResp();
             //先查找是否之前填过完工报告（草稿）若有则拉取草稿报告单 否则取默认带出的数据
             var everCompletionReport = await UnitWork.Find<CompletionReport>(w => w.ServiceOrderId == serviceOrderId && w.TechnicianId == currentUserId.ToString())
-               .WhereIf("其他设备".Equals(MaterialType), a => a.MaterialCode == "其他设备")
-               .WhereIf(!"其他设备".Equals(MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == MaterialType)
+               .WhereIf("无序列号".Equals(MaterialType), a => a.MaterialCode == "无序列号")
+               .WhereIf(!"无序列号".Equals(MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == MaterialType)
                .FirstOrDefaultAsync();
             if (everCompletionReport != null)
             {
@@ -227,8 +227,8 @@ namespace OpenAuth.App
                           from b in ab.DefaultIfEmpty()
                           select new { a, b };
                 obj = obj.Where(o => o.b.Id == serviceOrderId && o.a.CurrentUserId == currentUserId)
-                    .WhereIf("其他设备".Equals(MaterialType), q => q.a.MaterialCode.Equals("其他设备"))
-                    .WhereIf(!"其他设备".Equals(MaterialType), q => q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-")) == MaterialType);
+                    .WhereIf("无序列号".Equals(MaterialType), q => q.a.MaterialCode.Equals("无序列号"))
+                    .WhereIf(!"无序列号".Equals(MaterialType), q => q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-")) == MaterialType);
                 var query = await obj.Select(q => new
                 {
                     q.b.U_SAP_ID,
@@ -274,8 +274,8 @@ namespace OpenAuth.App
                       from b in abc.DefaultIfEmpty()
                       select new { a, b, c };
             obj = obj.Where(o => o.c.ServiceOrderId == serviceOrderId && o.c.TechnicianId == currentUserId.ToString())
-                     .WhereIf("其他设备".Equals(MaterialType), q => q.c.MaterialCode.Equals("其他设备"))
-                     .WhereIf(!"其他设备".Equals(MaterialType), q => q.c.MaterialCode.Substring(0, q.c.MaterialCode.IndexOf("-")) == MaterialType);
+                     .WhereIf("无序列号".Equals(MaterialType), q => q.c.MaterialCode.Equals("无序列号"))
+                     .WhereIf(!"无序列号".Equals(MaterialType), q => q.c.MaterialCode.Substring(0, q.c.MaterialCode.IndexOf("-")) == MaterialType);
             var query = await obj.Select(q => new
             {
                 q.b.U_SAP_ID,
@@ -343,7 +343,7 @@ namespace OpenAuth.App
             }
 
             var CompletionReportResps = CompletionReports.MapToList<CompletionReportDetailsResp>();
-            var Materialworks = ServiceWorkOrders.Select(w => w.MaterialCode == "其他设备" ? "其他设备" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-"))).ToList();
+            var Materialworks = ServiceWorkOrders.Select(w => w.MaterialCode == "无序列号" ? "无序列号" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-"))).ToList();
 
             Materialworks = Materialworks.Distinct().ToList();
             var MaterialTypes = await UnitWork.Find<MaterialType>(m => Materialworks.Contains(m.TypeAlias)).ToListAsync();
@@ -363,17 +363,17 @@ namespace OpenAuth.App
                     c.TroubleDescription = worklist.FirstOrDefault().TroubleDescription;
                     c.U_SAP_ID = U_SAP_ID.ToString();
                 }
-                c.MaterialCodeTypeName = c.MaterialCode == "其他设备" ? "其他设备" : MaterialTypes.FirstOrDefault(m => m.TypeAlias.Equal(c.MaterialCode.Substring(0, c.MaterialCode.IndexOf("-")))).TypeName;
+                c.MaterialCodeTypeName = c.MaterialCode == "无序列号" ? "无序列号" : MaterialTypes.FirstOrDefault(m => m.TypeAlias.Equal(c.MaterialCode.Substring(0, c.MaterialCode.IndexOf("-")))).TypeName;
             });
 
-            Materialworks = ServiceWorkOrders.Where(s => string.IsNullOrWhiteSpace(s.CompletionReportId)).Select(w => w.MaterialCode == "其他设备" ? "其他设备" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-"))).ToList();
+            Materialworks = ServiceWorkOrders.Where(s => string.IsNullOrWhiteSpace(s.CompletionReportId)).Select(w => w.MaterialCode == "无序列号" ? "无序列号" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-"))).ToList();
 
             Materialworks = Materialworks.Distinct().ToList();
             foreach (var item in Materialworks)
             {
                 CompletionReportResps.Add(new CompletionReportDetailsResp
                 {
-                    MaterialCodeTypeName = item == "其他设备" ? "其他设备" : MaterialTypes.FirstOrDefault(m => m.TypeAlias.Equal(item)).TypeName
+                    MaterialCodeTypeName = item == "无序列号" ? "无序列号" : MaterialTypes.FirstOrDefault(m => m.TypeAlias.Equal(item)).TypeName
                 });
             }
             result.Data = CompletionReportResps;
@@ -423,7 +423,7 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             //获取技术员Id
-            int? TechnicianId = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == ServiceOrderId).ToListAsync()).Where(s => "其他设备".Equals(MaterialType) ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == MaterialType).FirstOrDefault()?.CurrentUserId;
+            int? TechnicianId = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == ServiceOrderId).ToListAsync()).Where(s => "无序列号".Equals(MaterialType) ? s.MaterialCode == "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == MaterialType).FirstOrDefault()?.CurrentUserId;
             var query = from a in UnitWork.Find<AppUserMap>(null)
                         join b in UnitWork.Find<User>(null) on a.UserID equals b.Id into ab
                         from b in ab.DefaultIfEmpty()

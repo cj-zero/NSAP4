@@ -173,7 +173,7 @@ namespace OpenAuth.App
             //仓库验货
             await SaveReceiveInfo(req);
             //验收通过
-            await UnitWork.UpdateAsync<ReturnNote>(r => r.FlowInstanceId == returnNote.FlowInstanceId, u => new ReturnNote { Status = 2, Remark = req.Remark });
+            await UnitWork.UpdateAsync<ReturnNote>(r => r.Id == req.Id, u => new ReturnNote { Status = 2, Remark = req.Remark });
             //流程通过
             _flowInstanceApp.Verification(new VerificationReq
             {
@@ -187,7 +187,7 @@ namespace OpenAuth.App
             if (returnNote.IsLast == 1 && returnNote.Status == 2)
             {
                 //更新退料单为可结算状态
-                await UnitWork.UpdateAsync<ReturnNote>(w => w.ServiceOrderSapId == returnNote.ServiceOrderSapId && w.CreateUserId == returnNote.CreateUserId, u => new ReturnNote { IsCanClear = 1 });
+                await UnitWork.UpdateAsync<ReturnNote>(w => w.Id == req.Id, u => new ReturnNote { IsCanClear = 1 });
             }
             await UnitWork.SaveAsync();
         }
@@ -348,7 +348,7 @@ namespace OpenAuth.App
                         where a.ReturnNoteId == Id
                         orderby b.CreateTime
                         select new { a.MaterialCode, a.MaterialDescription, a.Count, a.Check, a.ReceivingRemark, a.ShippingRemark, ExpressId = b.Id, c.PictureId, a.Id };
-            var detailList = (await query.ToListAsync()).GroupBy(g => g.Id).Select(s => new { s.Key, detail = s.ToList() }).ToList();
+            var detailList = (await query.ToListAsync()).GroupBy(g => g.ExpressId).Select(s => new { s.Key, detail = s.ToList() }).ToList();
             outData.Add("materialList", detailList);
             result.Data = outData;
             return result;
@@ -383,7 +383,7 @@ namespace OpenAuth.App
             List<int> returnNoteIds = returnNote.Select(s => s.Id).Distinct().ToList();
             //计算剩余未结清金额
             var notClearAmountList = (await UnitWork.Find<ReturnnoteMaterial>(w => returnNoteIds.Contains((int)w.ReturnNoteId)).ToListAsync()).GroupBy(g => g.ReturnNoteId).Select(s => new { s.Key, totalprice = s.Sum(p => p.CostPrice * (p.TotalCount - p.Count)) }).ToList();
-            var returnNoteList = returnNote.Select(s => new { CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerName).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.mm.dd"), s.ServiceOrderSapId, s.CreateUserId, s.Id, notClearAmount = notClearAmountList.Where(w => w.Key == s.Id).FirstOrDefault()?.totalprice }).ToList().GroupBy(g => new { g.Id }).Select(s => new { s.Key, detail = s.ToList() }).ToList();
+            var returnNoteList = returnNote.Select(s => new { CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerName).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.mm.dd"), s.ServiceOrderSapId, s.CreateUserId, s.Id, notClearAmount = notClearAmountList.Where(w => w.Key == s.Id).FirstOrDefault()?.totalprice, Status = notClearAmountList.Where(w => w.Key == s.Id).FirstOrDefault()?.totalprice > 0 ? "未清" : "已清", s.Remark }).ToList().GroupBy(g => new { g.Id }).Select(s => new { s.Key, detail = s.ToList() }).ToList();
             result.Data = returnNoteList;
             return result;
         }
