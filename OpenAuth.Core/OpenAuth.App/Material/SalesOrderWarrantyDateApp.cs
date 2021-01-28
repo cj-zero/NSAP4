@@ -35,13 +35,13 @@ namespace OpenAuth.App.Material
             }
             TableData result = new TableData();
 
-            var SalesOrderWarrantyDates = UnitWork.Find<SalesOrderWarrantyDate>(null).Include(s=>s.SalesOrderWarrantyDateRecords)
+            var SalesOrderWarrantyDates = UnitWork.Find<SalesOrderWarrantyDate>(null).Include(s => s.SalesOrderWarrantyDateRecords)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.Customer), q => q.CustomerId.Contains(req.Customer) || q.CustomerName.Contains(req.Customer))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()), q => q.SalesOrderId.Equals(req.SalesOrderId))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.SalesMan), q => q.SalesOrderName.Equals(req.SalesMan));
+                .WhereIf(!string.IsNullOrWhiteSpace(req.SalesMan), q => q.SalesOrderName.Equals(req.SalesMan))
+                .Where(q => q.SalesOrderName.Equals(loginContext.User.Name));
             result.Count = await SalesOrderWarrantyDates.CountAsync();
             result.Data = await SalesOrderWarrantyDates.Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
-
             return result;
         }
         #region 添加
@@ -87,7 +87,7 @@ namespace OpenAuth.App.Material
             await UnitWork.UpdateAsync<SalesOrderWarrantyDate>(s => s.Id.Equals(req.Id), s => new SalesOrderWarrantyDate
             {
                 WarrantyPeriod = req.WarrantyPeriod,
-                IsPass=false
+                IsPass = false
             });
             await UnitWork.AddAsync<SalesOrderWarrantyDateRecord>(new SalesOrderWarrantyDateRecord
             {
@@ -116,13 +116,13 @@ namespace OpenAuth.App.Material
             }
             await UnitWork.UpdateAsync<SalesOrderWarrantyDate>(s => s.Id.Equals(req.Id), s => new SalesOrderWarrantyDate
             {
-                IsPass=req.IsPass
+                IsPass = req.IsPass
             });
             await UnitWork.AddAsync<SalesOrderWarrantyDateRecord>(new SalesOrderWarrantyDateRecord
             {
                 Id = Guid.NewGuid().ToString(),
                 SalesOrderWarrantyDateId = req.Id,
-                Action = (bool)req.IsPass?"通过" :"驳回",
+                Action = (bool)req.IsPass ? "通过" : "驳回",
                 CreateTime = DateTime.Now,
                 CreateUser = loginContext.User.Name,
                 CreateUserId = loginContext.User.Id
@@ -132,20 +132,35 @@ namespace OpenAuth.App.Material
 
         }
 
-        //保修时间同步
-        //private async Task<TableData> GetSalesOrder(SalesOrderWarrantyDateReq req)
-        //{
-        //    TableData result = new TableData();
-        //    var query = from a in UnitWork.Find<ORDR>(null)
-        //                join b in UnitWork.Find<OSLP>(null) on a.SlpCode equals b.SlpCode
-        //                join c in UnitWork.Find<ODLN>(null) on a.DocEntry equals c.DocEntry
-        //                select new { a, b,c };
-        //    query = query.WhereIf(!string.IsNullOrWhiteSpace(req.Customer), q => q.a.CardCode.Contains(req.Customer) || q.a.CardName.Contains(req.Customer))
-        //                .WhereIf(!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()), q => q.a.DocEntry.Equals(req.SalesOrderId))
-        //                .WhereIf(!string.IsNullOrWhiteSpace(req.SalesMan), q => q.b.SlpName.Equals(req.SalesMan));
-        //    result.Data = await query.ToListAsync();
-        //    return null;
-        //}
+        /// <summary>
+        /// 保修时间同步
+        /// </summary>
+        /// <param name="DocEntry"></param>
+        /// <returns></returns>
+        public async Task SynchronizationSalesOrder()
+        {
+            var docEntry = await UnitWork.Find<SalesOrderWarrantyDate>(null).OrderByDescending(s => s.SalesOrderId).Select(s => s.SalesOrderId).FirstOrDefaultAsync();
+            var query = from a in UnitWork.Find<ORDR>(null)
+                        join b in UnitWork.Find<OSLP>(null) on a.SlpCode equals b.SlpCode
+                        join c in UnitWork.Find<ODLN>(null) on a.DocEntry equals c.DocEntry
+                        select new { a, b, c };
+            docEntry = docEntry == null?0:docEntry;
+            var model = await query.Where(q => q.a.DocEntry > docEntry).ToListAsync();
+
+            var salesOrderWarrantyDates = model.Select(m => new SalesOrderWarrantyDate
+            {
+                SalesOrderId = m.a.DocEntry,
+                CustomerId = m.a.CardCode,
+                CustomerName = m.a.CardName,
+                SalesOrderName = m.b.SlpName,
+                DeliveryDate = m.c.CreateDate,
+                CreateTime = DateTime.Now,
+                WarrantyPeriod = Convert.ToDateTime(m.c.CreateDate).AddMonths(13),
+                IsPass = true
+            }).ToList();
+            await UnitWork.BatchAddAsync<SalesOrderWarrantyDate>(salesOrderWarrantyDates.ToArray());
+            await UnitWork.SaveAsync();
+        }
 
     }
 }
