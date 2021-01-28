@@ -14,7 +14,8 @@
       <common-table 
         height="100%"
         ref="quotationTable" 
-        :data="tableData" 
+        :data="tableData"
+        @row-click="onRowClick"
         :columns="salesColumns" 
         :loading="tableLoading">
         <template v-slot:btnList="{ row }">
@@ -33,11 +34,24 @@
       ref="salesOrderDialog"
       width="1100px"
       :loading="dialogLoading"
-      title="出库单详情"
       :btnList="btnList"
       :onClosed="close"
     >
-      <SalesOrder ref="salesOrder" />
+      <template v-slot:title>
+        <div class="my-dialog-icon"></div>
+        <span class="my-dialog-title">修改保修时间</span>
+        <el-row type="flex" align="middle" v-if="currentRow" style="margin-left: 20px;">
+          <p class="my-dialog-item">
+            <span>销售单号</span>
+            <span>{{ currentRow.salesOrderId }}</span>
+          </p>
+          <p class="my-dialog-item">
+            <span>销售员</span>
+            <span>{{ currentRow.salesOrderName }}</span>
+          </p>
+        </el-row>
+      </template>
+      <SalesOrder ref="salesOrder" :currentRow="currentRow" />
     </my-dialog>
     <!-- 只能查看的表单 -->
     <my-dialog
@@ -70,19 +84,8 @@ import SalesOrder from './components/SalesOrder'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import { chatMixin } from '../common/js/mixins'
-import Mock from 'mockjs'
-const tableData = Mock.mock({
-  "array|10": [{
-    id: '@word',
-    terminalCustomer: '@word',
-    terminalCustomerId: '@word',
-    salesMan: '@word',
-    deliveryDate: '@date',
-    warrantyDate: '@date',
-    remark: '@word'
-  }]
-})
-console.log(tableData, 'date')
+import { getSalesOrderList, updateDate } from '@/api/material/warrantyDate'
+import { formatDate } from '@/utils/date'
 export default {
   name: 'saleswarranty',
   mixins: [chatMixin],
@@ -95,15 +98,16 @@ export default {
   computed: {
     searchConfig () {
       return [
-        { prop: 'quotationId', placeholder: '销售单号', width: 100 },
-        { prop: 'cardCode', placeholder: '客户', width: 100 },
-        { prop: 'serviceOrderSapId', placeholder: '销售员', width: 100 },
+        { prop: 'salesOrderId', placeholder: '销售单号', width: 100 },
+        { prop: 'customer', placeholder: '客户', width: 100 },
+        { prop: 'salesMan', placeholder: '销售员', width: 100 },
         { type: 'search' }
       ]
     }, // 搜索配置
     btnList () {
       return [
-        { btnText: '保存', handleClick: this.updateMaterial, isShow: this.status !== 'view' },
+        { btnText: '确认', handleClick: this.updateDateClick },
+        // { btnText: '审批', handleClick: this.approveDateClick },
         { btnText: '关闭', handleClick: this.close, className: 'close' }      
       ]
     }
@@ -121,42 +125,59 @@ export default {
       },
       dialogLoading: false,
       tableLoading: false,
-      tableData: tableData.array,
+      tableData:  [],
       total: 0,
       salesColumns: [
-        { label: '销售单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'view' }, type: 'link'},
-        { label: '客户代码', prop: 'termianalCustomer', handleClick: this._openServiceOrder, type: 'link', options: { isInTable: true } },
-        { label: '客户名称', prop: 'terminalCustomerId' },
-        { label: '销售员', prop: 'salesMan' },
-        { label: '交货日期', prop: 'deliveryDate' },
-        { label: '保修日期', prop: 'warrantyDate' },
-        { label: '备注', prop: 'remark' },
-        { label: '操作', type: 'slot', slotName: 'btnList' }
+        { label: '销售单号', prop: 'salesOrderId', handleClick: this.openSalesOrder, type: 'link', width: 100 },
+        { label: '客户代码', prop: 'customerId', width: 100 },
+        { label: '客户名称', prop: 'customerName', width: 200 },
+        { label: '销售员', prop: 'salesOrderName', width: 70 },
+        { label: '交货日期', prop: 'deliveryDate', width: 100 },
+        { label: '保修日期', prop: 'warrantyPeriod', width: 100 },
+        { label: '备注', prop: 'remark', width: 200 }
       ],
-      customerList: [], // 用户服务单列表
-      status: 'outbound', // 报价单状态
-      detailInfo: null // 详情信息
+      currentRow: null
     } 
   },
   methods: {
-    openDialog () {
+    openSalesOrder (data) {
+      this.currentRow = data
       this.$refs.salesOrderDialog.open()
     },
     _getList () {
-      
-    },
-    updateMaterial () {
-      this.dialogLoading = true
-      this.$refs.outboundOrder.updateMaterial().then(res => {
+      this.tableLoading = true
+      getSalesOrderList(this.listQuery).then(res => {
+        let { data, count } = res
+        this.total = count
+        this.tableData = data.map(item => {
+          item.warrantyPeriod = formatDate(item.warrantyPeriod)
+          item.deliveryDate = formatDate(item.deliveryDate)
+          return item
+        })
+        this.tableLoading = false
         console.log(res, 'res')
-        this.$message.success('保存成功')
-        this._getList()
-        this.close()
-        this.dialogLoading = false
       }).catch(err => {
-        this.dialogLoading = false
-        this.$message.error(typeof err === 'object' ? err.message : '保存失败')
+        this.tableData = []
+        this.tableLoading = false
+        this.$message.error(err.message)
       })
+    },
+    updateDateClick () {
+      this.$refs.salesOrder.updateWarrantyDate(params => {
+        this.dialogLoading = true
+        updateDate(params).then(() => {
+          this.$message.success('修改成功')
+          this.dialogLoading = false
+          this._getList()
+          this.close()
+        }).catch(err => {
+          this.$message.error(err.message)
+          this.dialogLoading = false
+        })
+      })
+    },
+    onRowClick (row) {
+      this.currentRow = row
     },
     onChangeForm (val) {
       Object.assign(this.listQuery, val)

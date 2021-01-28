@@ -51,16 +51,29 @@ namespace OpenAuth.App
             {
                 throw new CommonException("已完成退料，无法继续退料", Define.IS_Return_Finish);
             }
-            //1.新增退料单主表
-            var newNoteInfo = new ReturnNote { ServiceOrderId = req.ServiceOrderId, ServiceOrderSapId = req.SapId, Status = 1, CreateTime = DateTime.Now, CreateUserId = userInfo.Id, CreateUser = userInfo.Name, IsLast = req.IsLastReturn };
-            var o = await UnitWork.AddAsync<ReturnNote, int>(newNoteInfo);
+            int returnNoteId = 0;
+            //判断是否已有退料单 若有则不新增
+            var returnNoteInfo = await UnitWork.Find<ReturnNote>(w => w.CreateUserId == userInfo.Id && w.ServiceOrderSapId == req.SapId).FirstOrDefaultAsync();
+            if (returnNoteInfo == null)
+            {
+                //1.新增退料单主表
+                var newNoteInfo = new ReturnNote { ServiceOrderId = req.ServiceOrderId, ServiceOrderSapId = req.SapId, Status = 1, CreateTime = DateTime.Now, CreateUserId = userInfo.Id, CreateUser = userInfo.Name, IsLast = req.IsLastReturn, StockOutId = req.StockOutId };
+                var o = await UnitWork.AddAsync<ReturnNote, int>(newNoteInfo);
+                returnNoteId = o.Id;
+            }
+            else
+            {
+                returnNoteId = returnNoteInfo.Id;
+                await UnitWork.UpdateAsync<ReturnNote>(w => w.Id == returnNoteId, u => new ReturnNote { IsLast = req.IsLastReturn });
+            }
             await UnitWork.SaveAsync();
             //2.添加退料明细信息
+            List<string> detaiList = new List<string>();
             foreach (ReturnMaterialDetail item in req.ReturnMaterialDetail)
             {
                 var newDetailInfo = new ReturnnoteMaterial
                 {
-                    ReturnNoteId = o.Id,
+                    ReturnNoteId = returnNoteId,
                     MaterialCode = item.MaterialCode,
                     MaterialDescription = item.MaterialDescription,
                     Count = item.ReturnQty,
@@ -70,51 +83,76 @@ namespace OpenAuth.App
                 };
                 var detail = await UnitWork.AddAsync<ReturnnoteMaterial, int>(newDetailInfo);
                 await UnitWork.SaveAsync();
+                detaiList.Add(detail.Id);
                 //3.添加退料物料图片
-                var newPictureInfo = new ReturnNoteMaterialPicture { ReturnnoteMaterialId = detail.Id, PictureId = item.PictureId };
-                await UnitWork.AddAsync(newPictureInfo);
-                await UnitWork.SaveAsync();
+                if (!string.IsNullOrEmpty(item.PictureId))
+                {
+                    var newPictureInfo = new ReturnNoteMaterialPicture { ReturnnoteMaterialId = detail.Id, PictureId = item.PictureId };
+                    await UnitWork.AddAsync(newPictureInfo);
+                    await UnitWork.SaveAsync();
+                }
             }
             //4.添加物流信息
+            string expressId = string.Empty;
             if (!string.IsNullOrEmpty(req.TrackNumber))
             {
                 var result = await _expressageApp.GetExpressInfo(req.TrackNumber);
                 if (result.Code == 200)
                 {
                     var response = (string)result.Data;
-                    var expressageInfo = await UnitWork.Find<Expressage>(w => w.ReturnNoteId == o.Id).FirstOrDefaultAsync();
+                    var expressageInfo = await UnitWork.Find<Expressage>(w => w.ReturnNoteId == returnNoteId && w.ExpressNumber == req.TrackNumber).FirstOrDefaultAsync();
                     if (expressageInfo == null)
                     {
                         var express = new Expressage
                         {
                             QuotationId = null,
-                            ReturnNoteId = o.Id,
+                            ReturnNoteId = returnNoteId,
                             ExpressNumber = req.TrackNumber,
                             ExpressInformation = response
                         };
                         await UnitWork.AddAsync(express);
+                        expressId = express.Id;
                     }
                     else
                     {
+                        expressId = expressageInfo.Id;
                         await UnitWork.UpdateAsync<Expressage>(w => w.Id == expressageInfo.Id, u => new Expressage { ExpressInformation = response });
                     }
                 }
             }
-            //创建物料报价单审批流程
-            var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("待退料单"));
-            var afir = new AddFlowInstanceReq();
-            afir.SchemeId = mf.FlowSchemeId;
-            afir.FrmType = 2;
-            afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
-            afir.CustomName = $"退料单审批" + DateTime.Now;
-            afir.OrgId = "";
-            //保外申请报价单
-            afir.FrmData = $"{{\"ReturnnoteId\":\"{o.Id}\"}}";
-            var flowinstanceid = await _flowInstanceApp.CreateInstanceAndGetIdAsync(afir);
-            await UnitWork.UpdateAsync<ReturnNote>(r => r.Id == o.Id, r => new ReturnNote
+            else
             {
-                FlowInstanceId = flowinstanceid
-            });
+                var express = new Expressage
+                {
+                    QuotationId = null,
+                    ReturnNoteId = returnNoteId,
+                    ExpressNumber = "无",
+                    ExpressInformation = string.Empty,
+                    CreateTime = DateTime.Now
+                };
+                await UnitWork.AddAsync(express);
+                expressId = express.Id;
+            }
+            //5.反写ExpressId至退料明细
+            await UnitWork.UpdateAsync<ReturnnoteMaterial>(w => detaiList.Contains(w.Id), u => new ReturnnoteMaterial { ExpressId = expressId });
+            //创建物料报价单审批流程
+            if (req.IsLastReturn == 1)
+            {
+                var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("待退料单"));
+                var afir = new AddFlowInstanceReq();
+                afir.SchemeId = mf.FlowSchemeId;
+                afir.FrmType = 2;
+                afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
+                afir.CustomName = $"退料单审批" + DateTime.Now;
+                afir.OrgId = "";
+                //保外申请报价单
+                afir.FrmData = $"{{\"ReturnnoteId\":\"{returnNoteId}\"}}";
+                var flowinstanceid = await _flowInstanceApp.CreateInstanceAndGetIdAsync(afir);
+                await UnitWork.UpdateAsync<ReturnNote>(r => r.Id == returnNoteId, r => new ReturnNote
+                {
+                    FlowInstanceId = flowinstanceid
+                });
+            }
             await UnitWork.SaveAsync();
         }
 
@@ -145,10 +183,8 @@ namespace OpenAuth.App
                 VerificationFinally = "1",
                 VerificationOpinion = "同意",
             });
-            //判断是否最后一次退料并且所有退料单据都已核验通过
-            var isExistLast = (await UnitWork.Find<ReturnNote>(w => w.ServiceOrderSapId == returnNote.ServiceOrderSapId && w.CreateUserId == returnNote.CreateUserId && returnNote.Status == 2 && returnNote.IsLast == 1).ToListAsync()).Count;
-            var isExist = (await UnitWork.Find<ReturnNote>(w => w.ServiceOrderSapId == returnNote.ServiceOrderSapId && w.CreateUserId == returnNote.CreateUserId && returnNote.Status == 1).ToListAsync()).Count;
-            if (isExist == 0 && isExistLast > 0)
+            //判断是否最后一次退料并且所有退料都已核验
+            if (returnNote.IsLast == 1 && returnNote.Status == 2)
             {
                 //更新退料单为可结算状态
                 await UnitWork.UpdateAsync<ReturnNote>(w => w.ServiceOrderSapId == returnNote.ServiceOrderSapId && w.CreateUserId == returnNote.CreateUserId, u => new ReturnNote { IsCanClear = 1 });
@@ -206,7 +242,7 @@ namespace OpenAuth.App
                         from d in abcd.DefaultIfEmpty()
                         where a.ServiceOrderId == ServiceOrderId && a.CreateUserId == userInfo.Id
                         select new { a, b, c, d };
-            var returnNoteList = (await query.Select(s => new { s.b.MaterialCode, s.b.Id, s.b.Count, s.b.TotalCount, s.c.PictureId, s.b.Check, returnNoteId = s.a.Id, s.b.WrongCount, s.b.ReceivingRemark, s.b.ShippingRemark, s.d.ExpressNumber, s.a.Status, s.a.IsLast, s.a.Remark }).OrderByDescending(o => o.returnNoteId).ToListAsync()).GroupBy(g => g.returnNoteId).Select(s => new { ReturnNoteId = s.Key, Detail = s.ToList() }).ToList();
+            var returnNoteList = await query.Select(s => new { s.b.MaterialCode, s.b.Id, s.b.Count, s.b.TotalCount, s.c.PictureId, s.b.Check, returnNoteId = s.a.Id, s.b.WrongCount, s.b.ReceivingRemark, s.b.ShippingRemark, s.d.ExpressNumber, s.a.Status, s.a.IsLast, s.a.Remark }).OrderByDescending(o => o.returnNoteId).ToListAsync();
             result.Data = returnNoteList;
             return result;
         }
@@ -243,7 +279,7 @@ namespace OpenAuth.App
         }
 
         /// <summary>
-        /// 获取退料单列表
+        /// 获取退料单列表(ERP)
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
@@ -263,24 +299,28 @@ namespace OpenAuth.App
               .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate), q => q.CreateTime < Convert.ToDateTime(req.EndDate))
               .WhereIf(!string.IsNullOrWhiteSpace(req.Status), q => q.Status == Convert.ToInt32(req.Status))
               .OrderBy(s => s.Id).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
+            //获取出库单Id集合
+            List<int> stockOutIds = returnNote.Select(s => s.StockOutId).Distinct().ToList();
+            //获取出库单成本总额
+            var stkOutList = await UnitWork.Find<Quotation>(w => stockOutIds.Contains(w.Id)).ToListAsync();
             //获取服务单列表
             var serviceOrderList = await UnitWork.Find<ServiceOrder>(null)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.SapId), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.SapId)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.Customer), q => q.CustomerName.Equals(req.Customer))
                 .ToListAsync();
-            var returnNoteList = returnNote.Select(s => new { s.Id, CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerName).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.MM.dd"), s.ServiceOrderSapId }).ToList();
+            var returnNoteList = returnNote.Select(s => new { s.Id, CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerName).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.MM.dd"), s.ServiceOrderSapId, s.IsCanClear, s.Remark, Fprice = stkOutList.Where(w => w.Id == s.StockOutId).FirstOrDefault()?.TotalCostPrice }).ToList();
             result.Data = returnNoteList;
             return result;
         }
 
         /// <summary>
-        /// 获取退料单详情（nsap）
+        /// 获取退料单详情(ERP)
         /// </summary>
         /// <param name="Id"></param>
         /// <returns></returns>
         public async Task<TableData> GetReturnNoteDetail(int Id)
         {
-            Dictionary<string, object> outDta = new Dictionary<string, object>();
+            Dictionary<string, object> outData = new Dictionary<string, object>();
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
@@ -293,28 +333,29 @@ namespace OpenAuth.App
             var serviceOrder = await UnitWork.Find<ServiceOrder>(w => w.Id == returnNote.ServiceOrderId && w.U_SAP_ID == returnNote.ServiceOrderSapId).FirstOrDefaultAsync();
             var mainInfo = new Dictionary<string, object>()
             {
-                {"returnNoteCode" ,returnNote.Id},{"creater",returnNote.CreateUser },{ "createTime",returnNote.CreateTime },{"salMan",serviceOrder.SalesMan},{ "serviceSapId",serviceOrder.U_SAP_ID},{ "customerCode",serviceOrder.CustomerId},{ "customerName",serviceOrder.CustomerName},{ "status",returnNote.Status},{ "isLast",returnNote.IsLast},{ "remark",(string.IsNullOrEmpty(returnNote.Remark)? string.Empty:returnNote.Remark)}
+                {"returnNoteCode" ,returnNote.Id},{"creater",returnNote.CreateUser },{ "createTime",returnNote.CreateTime },{"salMan",serviceOrder.SalesMan},{ "serviceSapId",serviceOrder.U_SAP_ID},{ "customerCode",serviceOrder.CustomerId},{ "customerName",serviceOrder.CustomerName},{ "status",returnNote.Status},{ "isLast",returnNote.IsLast},{ "remark",(string.IsNullOrEmpty(returnNote.Remark)? string.Empty:returnNote.Remark)},{ "stockOutId",returnNote.StockOutId},{ "contacter",serviceOrder.Contacter},{"contacterTel",serviceOrder.ContactTel }
             };
-            outDta.Add("mainInfo", mainInfo);
+            outData.Add("mainInfo", mainInfo);
             //获取物流信息
-            var expressList = await UnitWork.Find<Expressage>(w => w.ReturnNoteId == Id).ToListAsync();
-            outDta.Add("expressList", expressList);
-            //获取退料列表
-            var query = from a in UnitWork.Find<ReturnNote>(null)
-                        join b in UnitWork.Find<ReturnnoteMaterial>(null) on a.Id equals b.ReturnNoteId into ab
+            var expressList = await UnitWork.Find<Expressage>(w => w.ReturnNoteId == Id).OrderByDescending(o => o.CreateTime).Select(s => new { s.ExpressNumber, s.ExpressInformation, s.Remark, s.Id }).ToListAsync();
+            outData.Add("expressList", expressList);
+            //获取退料单中所有的物流集合
+            var query = from a in UnitWork.Find<ReturnnoteMaterial>(null)
+                        join b in UnitWork.Find<Expressage>(null) on a.ExpressId equals b.Id into ab
                         from b in ab.DefaultIfEmpty()
-                        join c in UnitWork.Find<ReturnNoteMaterialPicture>(null) on b.Id equals c.ReturnnoteMaterialId into abc
+                        join c in UnitWork.Find<ReturnNoteMaterialPicture>(null) on a.Id equals c.ReturnnoteMaterialId into abc
                         from c in abc.DefaultIfEmpty()
-                        where a.Id == Id
-                        select new { a, b, c };
-            var returnNoteList = await query.Select(s => new { s.b.MaterialCode, s.b.MaterialDescription, s.b.Id, s.b.Count, s.b.TotalCount, s.c.PictureId, s.b.Check, returnNoteId = s.a.Id, s.b.WrongCount, s.b.ReceivingRemark, s.b.ShippingRemark }).OrderByDescending(o => o.returnNoteId).ToListAsync();
-            outDta.Add("returnNoteList", returnNoteList);
-            result.Data = outDta;
+                        where a.ReturnNoteId == Id
+                        orderby b.CreateTime
+                        select new { a.MaterialCode, a.MaterialDescription, a.Count, a.Check, a.ReceivingRemark, a.ShippingRemark, ExpressId = b.Id, c.PictureId, a.Id };
+            var detailList = (await query.ToListAsync()).GroupBy(g => g.Id).Select(s => new { s.Key, detail = s.ToList() }).ToList();
+            outData.Add("materialList", detailList);
+            result.Data = outData;
             return result;
         }
 
         /// <summary>
-        /// 获取退料结算列表
+        /// 获取退料结算列表(ERP)
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
@@ -338,18 +379,21 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.SapId), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.SapId)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.Customer), q => q.CustomerName.Contains(req.Customer) || q.CustomerId.Contains(req.Customer))
                 .ToListAsync();
-            var returnNoteList = returnNote.Select(s => new { CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerName).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.mm.dd"), s.ServiceOrderSapId, s.CreateUserId }).ToList().GroupBy(g => new { g.ServiceOrderSapId, g.CreateUserId }).Select(s => new { s.Key.ServiceOrderSapId, s.Key.CreateUserId, detail = s.ToList() }).ToList();
+            //获取退料单Id集合
+            List<int> returnNoteIds = returnNote.Select(s => s.Id).Distinct().ToList();
+            //计算剩余未结清金额
+            var notClearAmountList = (await UnitWork.Find<ReturnnoteMaterial>(w => returnNoteIds.Contains((int)w.ReturnNoteId)).ToListAsync()).GroupBy(g => g.ReturnNoteId).Select(s => new { s.Key, totalprice = s.Sum(p => p.CostPrice * (p.TotalCount - p.Count)) }).ToList();
+            var returnNoteList = returnNote.Select(s => new { CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerName).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.mm.dd"), s.ServiceOrderSapId, s.CreateUserId, s.Id, notClearAmount = notClearAmountList.Where(w => w.Key == s.Id).FirstOrDefault()?.totalprice }).ToList().GroupBy(g => new { g.Id }).Select(s => new { s.Key, detail = s.ToList() }).ToList();
             result.Data = returnNoteList;
             return result;
         }
 
         /// <summary>
-        /// 获取退料结算详情
+        /// 获取退料结算详情(ERP)
         /// </summary>
-        /// <param name="serviceSapId"></param>
-        /// <param name="createrId"></param>
+        /// <param name="Id">退料单Id</param>
         /// <returns></returns>
-        public async Task<TableData> GetClearReturnNoteDetail(int serviceSapId, string createrId)
+        public async Task<TableData> GetClearReturnNoteDetail(int Id)
         {
             Dictionary<string, dynamic> outData = new Dictionary<string, dynamic>();
             var loginContext = _auth.GetCurrentUser();
@@ -358,27 +402,34 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var result = new TableData();
-            //获取当前服务单该申请人的所有退料单
-            var returnNoteIds = await UnitWork.Find<ReturnNote>(w => w.ServiceOrderSapId == serviceSapId && w.CreateUserId == createrId).Select(s => s.Id).ToListAsync();
+            //获取退料主表信息
+            var returnNoteInfo = await UnitWork.Find<ReturnNote>(w => w.Id == Id).FirstOrDefaultAsync();
+            outData.Add("CreateTime", returnNoteInfo.CreateTime.ToString("yyyy-MM-dd HH:mm"));
+            outData.Add("CreateUser", returnNoteInfo.CreateUser);
+            outData.Add("ReturnNoteId", returnNoteInfo.Id);
+            outData.Add("StockOutId", returnNoteInfo.StockOutId);
             //获取当前服务单信息
-            var serviceOrderInfo = await UnitWork.Find<ServiceOrder>(w => w.U_SAP_ID == serviceSapId).FirstOrDefaultAsync();
+            var serviceOrderInfo = await UnitWork.Find<ServiceOrder>(w => w.U_SAP_ID == returnNoteInfo.ServiceOrderSapId).FirstOrDefaultAsync();
             outData.Add("U_SAP_ID", serviceOrderInfo.U_SAP_ID);
             outData.Add("SalesMan", serviceOrderInfo.SalesMan);
             outData.Add("CustomerId", serviceOrderInfo.CustomerId);
             outData.Add("CustomerName", serviceOrderInfo.CustomerName);
-            //获取退料主表信息
-            var returnNoteInfo = await UnitWork.Find<ReturnNote>(w => w.CreateUserId == createrId && w.ServiceOrderSapId == serviceSapId).OrderBy(o => o.Id).FirstOrDefaultAsync();
-            outData.Add("CreateTime", returnNoteInfo.CreateTime.ToString("yyyy-MM-dd HH:mm"));
-            outData.Add("CreateUser", returnNoteInfo.CreateUser);
-            var MaterialList = (await UnitWork.Find<ReturnnoteMaterial>(w => returnNoteIds.Contains((int)w.ReturnNoteId)).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new
+            outData.Add("Contacter", serviceOrderInfo.Contacter);
+            outData.Add("ContactTel", serviceOrderInfo.ContactTel);
+            //计算剩余未结清金额
+            var notClearAmount = (await UnitWork.Find<ReturnnoteMaterial>(w => w.ReturnNoteId == returnNoteInfo.Id).ToListAsync()).GroupBy(g => g.ReturnNoteId).Select(s => new { s.Key, totalprice = s.Sum(p => p.CostPrice * (p.TotalCount - p.Count)) }).FirstOrDefault().totalprice;
+            outData.Add("NotClearAmount", notClearAmount);
+            //获取物料信息
+            var MaterialList = (await UnitWork.Find<ReturnnoteMaterial>(w => w.ReturnNoteId == returnNoteInfo.Id).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new
             {
                 MaterialCode = s.Key,
                 MaterDescription = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().MaterialDescription,
                 AlreadyReturnQty = s.Where(w => w.MaterialCode == s.Key).Sum(k => k.Count),
                 TotalReturnCount = s.Where(w => w.MaterialCode == s.Key).Sum(k => k.TotalCount),
-                CostPrice = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().CostPrice
+                NotClearAmount = s.Where(w => w.MaterialCode == s.Key).Sum(k => k.CostPrice * (k.TotalCount - k.Count)),
+                Status = s.Where(w => w.MaterialCode == s.Key).Sum(k => k.CostPrice * (k.TotalCount - k.Count)) > 0 ? "未清" : "已清"
             }).ToList();
-            outData.Add("MaterialList", MaterialList);
+            outData.Add("DetailList", MaterialList);
             result.Data = outData;
             return result;
         }

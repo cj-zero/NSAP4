@@ -43,8 +43,13 @@ namespace OpenAuth.App.Material.Request
         public string Remark { get; set; }
 
         /// <summary>
+        ///运费
+        /// </summary>
+        public string Freight { get; set; }
+        
+        /// <summary>
         /// 物流图片
         /// </summary>
-        public virtual List<ExpressagePicture> ExpressagePicture { get; set; }
+        public virtual List<string> ExpressagePictures { get; set; }
     }
 }

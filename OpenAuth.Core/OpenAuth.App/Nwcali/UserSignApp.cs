@@ -80,6 +80,27 @@ namespace OpenAuth.App
             await UnitWork.DeleteAsync<UserSign>(u => ids.Contains(u.Id));
         }
 
+        /// <summary>
+        /// 加载所有用户签名
+        /// </summary>
+        public async Task<TableData<List<UserSign>>> GetUserSignList(QueryUserSignListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var result = new TableData<List<UserSign>>();
+            var objs = UnitWork.Find<UserSign>(null);
+            if (!string.IsNullOrEmpty(request.key))
+            {
+                objs = objs.Where(u => u.UserName.Contains(request.key));
+            }
+            result.Data = await objs.OrderBy(u => u.Id).ToListAsync();
+            return result;
+        }
+
         public UserSignApp(IUnitWork unitWork, RevelanceManagerApp app, IAuth auth) : base(unitWork,auth)
         {
             _revelanceApp = app;

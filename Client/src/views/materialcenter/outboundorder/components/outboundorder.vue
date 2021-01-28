@@ -1,169 +1,91 @@
 <template>
   <div class="quotation-wrapper" v-loading="loading">
     <el-row type="flex" class="title-wrapper">
-      <p class="bold id">出库单号: <span>{{ formData.id || '' }}</span></p>
-      <p class="bold">申请人: <span>{{ formData.createUser }}</span></p>
-      <p>创建时间: <span>{{ formData.createTime }}</span></p>
-      <p>销售员: <span>{{ formData.salesMan }}</span></p>
-      <p class="bold id">销售单号：<span>{{ formData.salesOrderId }}</span></p>
+      <p><span>出库订单</span><span>{{ formData.id || '' }}</span></p>
+      <p><span>申请人</span><span>{{ formData.createUser }}</span></p>
+      <p><span>创建时间</span><span>{{ formData.createTime }}</span></p>
+      <p><span>销售员</span><span>{{ formData.salesMan }}</span></p>
     </el-row>
     <!-- 主题内容 -->
     <el-scrollbar class="scroll-bar">
-      <el-form
+      <common-form
         :model="formData"
+        :formItems="formItems"
         ref="form"
-        class="my-form-wrapper" 
-        label-width="80px"
-        size="mini"
+        class="my-form-wrapper my-form-view"
+        label-width="60px"
         :disabled="true"
         label-position="right"
         :show-message="false"
+        :isCustomerEnd="true"
       >
-        <!-- 普通控件 -->
-        <el-row 
-          type="flex" 
-          v-for="(config, index) in formatFormConfig"
-          :key="index">
-          <el-col 
-            :span="item.col"
-            v-for="item in config"
-            :key="item.prop"
-          >
-            <el-form-item
-              :prop="item.prop"
-              :rules="rules[item.prop] || { required: false }">
-              <span slot="label">
-                <template v-if="item.prop === 'serviceOrderSapId'">
-                  <div class="link-container" style="display: inline-block">
-                    <span>{{ item.label }}</span>
-                    <img :src="rightImg" @click="_openServiceOrder" class="pointer">
-                  </div>
-                </template>
-                <template v-else>
-                  <span>{{ item.label }}</span>
-                </template>
-              </span>
-              <template v-if="!item.type">
-                <el-input 
-                  v-model="formData[item.prop]" 
-                  :style="{ width: item.width + 'px' }"
-                  :maxlength="item.maxlength"
-                  :disabled="item.disabled"
-                  :readonly="item.readonly"
-                  @focus="onServiceIdFocus(item.prop)"
-                  >
-                  <i :class="item.icon" v-if="item.icon"></i>
-                </el-input>
-              </template>
-              <template v-else-if="item.type === 'select'">
-                <el-select 
-                  clearable
-                  :style="{ width: item.width }"
-                  v-model="formData[item.prop]" 
-                  :placeholder="item.placeholder"
-                  :disabled="item.disabled">
-                  <el-option
-                    v-for="(item,index) in item.options"
-                    :key="index"
-                    :label="item.label"
-                    :value="item.value"
-                  ></el-option>
-                </el-select>
-              </template>
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
+      </common-form>
+      <div class="divider"></div>
       <div class="courier-wrapper">
+        <el-row class="title" type="flex" justify="space-between" align="middle">
+          <el-row type="felx" align="middle">
+            <span class="line"></span>
+            <span class="text">物流信息</span>
+          </el-row>
+          <el-button class="add-btn" type="primary" size="mini" @click="addExpressInfo" v-if="Number(formData.quotationStatus) !== 7">新增</el-button>
+        </el-row>
         <!-- 物流表格 -->
-        <el-form 
-          ref="expressInfo"
-          :model="expressListData" 
-          :show-message="false"
-          size="mini">
-        <!-- <el-form :model="courierAllList"> -->
-          <div class="courier-table-wrapper">
-            <common-table
-            class="courier-table"
-            ref="courierTable"
-            :data="expressListData.list" 
-            :columns="expressColumns"
-            max-height="150px"
-          >
-            <template v-slot:expressNumber="{ row, index }">
-              <el-form-item
-                :prop="'list.' + index + '.' + 'expressNumber'"
-                :rules="expressRules['expressNumber']"
-              >
-                <el-input size="mini" v-model="row.expressNumber" :disabled="isAddExpressInfo(row)" v-infotooltip:200.top-start>></el-input>
-              </el-form-item>
-            </template>
-            <!-- 物流信息 -->
-            <template v-slot:expressInformation="{ row, index }">
-              <el-form-item
-                :prop="'list.' + index + '.' + 'expressInformation'"
-                :rules="expressRules['expressInformation']"
-              >
-                <el-row>
-                  <img :src="rightImg" @click="_getExpressInfo(row, index)" class="search-icon">
-                  {{ row.expressInformation }}
-                </el-row>
-              </el-form-item>
-            </template>
-            <template v-slot:remark="{ row }">
-              <el-input size="mini" v-model="row.remark" :disabled="isAddExpressInfo(row)" v-infotooltip:200.top-start></el-input>
-            </template>
-            <template v-slot:expressagePicture="{ row, index }">
-              <UpLoadFile 
-                ref="uploadFile" 
-                uploadType="file" 
-                :limit="3" 
-                :ifShowTip="!isAddExpressInfo(row)"
-                :onAccept="onAccept"
-                :fileList="expressList[index].fileList || []"
-                @get-ImgList="getFileList" 
-                :options="{ index }" 
-                :disabled="isAddExpressInfo(row)"
-              />
-            </template> 
-          </common-table>
-          </div>
-        </el-form>
-        <div>
-          <el-button class="add-courier-btn" size="mini" @click="addCourier" v-if="status !== 'view'">新增快递</el-button>
-        </div>
+        <common-table
+          class="courier-table table-wrapper"
+          ref="courierTable"
+          :data="expressList" 
+          :columns="expressColumns"
+          max-height="150px"
+          @row-click="onExpressRowClick"
+        >
+          <template v-slot:expressInformation="{ row }">
+            <el-row v-infotooltip.top-start.ellipsis>
+              <img :src="rightImg" @click="_getExpressInfo(row)" class="search-icon">
+              <span>{{ row.expressInformation }}</span>
+            </el-row>
+          </template>
+          <template v-slot:freight="{ row }">
+            <span style="text-align: right"></span>{{ row.freight | toThousands }}
+          </template>
+          <template v-slot:picture="{ row }">
+            <span class="picture"  @click="showExpressPicture(row)">查看</span>
+          </template>
+        </common-table>
+        <el-row type="flex" class="freight" justify="end">
+          <span class="title">总计</span>
+          <p v-infotooltip.ellipsis.top-start class="money">￥{{ freightTotal | toThousands }}</p>
+        </el-row>
       </div>
+      <div class="divider"></div>
       <!-- 物料表格 -->
       <div class="material-wrapper">
-        <el-form 
-          ref="materialForm"
-          :model="materialListData" 
-          :show-message="false"
-          size="mini">
-          <common-table 
-            ref="materialTable"
-            :data="materialListData.list" 
-            :columns="materialColumns">
-            <template v-slot:delivery="{ row, index }">
-              <el-form-item
-                :prop="'list.' + index + '.' + 'delivery'"
-                :rules="[{ required: !isOutboundAll(row), trigger: ['change', 'blur'] }  ]"
-              >
-                <el-input-number 
-                  size="mini"
-                  :controls="false"
-                  v-model="row.delivery"
-                  :mini="0"
-                  :max="row.count - row.sentQuantity"
-                  :disabled="isOutboundAll(row)"
-                >
-                </el-input-number>
-              </el-form-item>
-            </template>  
-          </common-table>
-        </el-form>
+        <el-row type="flex" class="title" align="middle">
+          <i class="line"></i>
+          <span class="text">物料信息</span>
+        </el-row>
+        <common-table 
+          class="table-wrapper"
+          ref="materialTable"
+          :data="materialList" 
+          :columns="materialColumns"
+        >
+        </common-table>
       </div>
     </el-scrollbar>
+    <!-- 新增快递弹窗 -->
+    <my-dialog
+      v-loading="expressDialogLoading"
+      ref="expressInfoDialog"
+      title="新增快递信息"
+      width="800px"
+      top="10%"
+      :append-to-body="true"
+      :btnList="btnList"
+      @closed="closeExpressDialog"
+      @opened="onExpressInfoOpen"
+    >
+      <AddExpressInfo ref="addExpressInfo" :formData="formData" @addExpressInfo="onAddExpressInfo" />
+    </my-dialog>
     <!-- 只能查看的表单 -->
     <my-dialog
       ref="serviceDetail"
@@ -187,26 +109,42 @@
         </el-col>
       </el-row>
     </my-dialog>
+    <el-image-viewer
+      v-if="previewVisible"
+      :url-list="previewImageUrlList"
+      :on-close="closeViewer"
+    >
+    </el-image-viewer>
   </div>
 </template>
 
 <script>
-import { getExpressInfo, updateOutboundOrder } from '@/api/material/quotation'
+import { getExpressInfo } from '@/api/material/quotation'
 import { configMixin, chatMixin, categoryMixin } from '../../common/js/mixins'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
-// import Pagination from '@/components/Pagination'
-import UpLoadFile from '@/components/upLoadFile'
+import elDragDialog from "@/directive/el-dragDialog";
+import AddExpressInfo from './AddExpressInfo'
+import { processDownloadUrl } from '@/utils/file'
+import { findIndex, accAdd } from '@/utils/process'
+// import { toThousands } from '@/utils/format'
+import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import rightImg from '@/assets/table/right.png'
-import { isImage, processDownloadUrl } from '@/utils/file'
 export default {
   mixins: [configMixin, chatMixin, categoryMixin],
+  provide () {
+    return {
+      parentVm: this
+    }
+  },
+  directives: {
+    elDragDialog
+  },
   components: {
-    // Pagination,
-    UpLoadFile,
     zxform,
-    zxchat
-    // AreaSelector
+    zxchat,
+    AddExpressInfo,
+    ElImageViewer
   },
   props: {
     detailInfo: {
@@ -227,58 +165,43 @@ export default {
       immediate: true,
       handler (val) {
         Object.assign(this.formData, val)
-        this.expressList = val.expressages.map(item => {
-          item.fileList = item.expressagePicture.map(item => {
-            item.url = processDownloadUrl(item.pictureId)
-            item.name = item.fileName
-            return item
-          })
-          return item
-        })
-        this.initalExpressList = this.expressList.map(item => item.id) // 添加过的物流信息不能修改
-        this.materialList = val.quotationMergeMaterials.map(item => {
-          item.sentQuantity = Number(item.sentQuantity)
-          return item
-        })
+        this.currentIndex = 0
+        this.expressList = val.expressages
+        // this.materialList = val.quotationMergeMaterials.map(item => {
+        //   item.sentQuantity = Number(item.sentQuantity)
+        //   item.delivery = item.delivery || 0
+        //   return item
+        // })
         console.log(val, this.expressList, 'detail info')
       }
     }
   },
   computed: {
-    courierAllList () {
-      return {
-        expressList: this.expressList
+    materialList () {
+      console.log(this.currentIndex, this.expressList, 'computed')
+      if (this.expressList[this.currentIndex]) {
+        return this.expressList[this.currentIndex].logisticsRecords
       }
+      return []
     },
-    materialListData () { // 物料表单数据
-      return {
-        list: this.materialList
+    freightTotal () { // 总运费
+      if (this.expressList && this.expressList.length) {
+        return this.expressList.reduce((prev, expressInfo) => {
+          return accAdd(prev, expressInfo.freight)
+        }, 0)
       }
-    },
-    expressListData () { // 物流表单数据
-      return {
-        list: this.expressList
-      }
-    },
-    materialColumns () {
-      let columns = [
-        { label: '序号', type: 'index' },
-        { label: '物料编码', prop: 'materialCode' },
-        { label: '物料描述', prop: 'materialDescription' },
-        { label: '总数量', prop: 'count', align: 'right' },
-        { label: '单位', prop: 'unit', align: 'right' },
-        { label: '已出库', prop: 'sentQuantity', align: 'right' }
-      ]
-      console.log(this.status)
-      return this.status === 'view' ? columns : columns.concat([{ label: '出库数量', prop: 'delivery', slotName: 'delivery' }])
+      return 0
     }
   },
   data () {
     return {
+      currentIndex: 0,
       loading: false,
       isOutbound: true,
       fileList: [],
       rightImg,
+      pictureList: [], // 快递图片列表
+      addVisible: false,
       formData: {
         // id: '',  报价单号
         salesOrderId: '', // 销售单号
@@ -308,6 +231,8 @@ export default {
       materialRules: {
         delivery: [{ required: true, trigger: ['change', 'blur'] }]
       },
+      // 新增快递弹窗
+      expressDialogLoading: false,
       // 物流表格
       expressLoading: false,
       expressList: [],
@@ -316,13 +241,29 @@ export default {
         // expressInformation: [{ required: true }]
       },
       expressColumns: [
-        { label: '快递单号', type: 'slot', slotName: 'expressNumber', prop: 'expressNumber', width: '100px' },
-        { label: '物流信息', type: 'slot', slotName: 'expressInformation', prop: 'expressInformation' },
-        { label: '备注', type: 'slot', slotName: 'remark', prop: 'remark', width: '150px' },
-        { label: '图片', type: 'slot', slotName: 'expressagePicture', prop: 'expressagePicture', width: '200px' }
+        { label: '#', type: 'index', width: 50 },
+        { label: '快递单号', prop: 'expressNumber', width: '100px' },
+        { label: '物流信息', prop: 'expressInformation', slotName: 'expressInformation', width: 200, 'show-overflow-tooltip': false },
+        { label: '运费￥', prop: 'freight', slotName: 'freight', align: 'right', width: 100, 'show-overflow-tooltip': false },
+        { label: '图片', type: 'slot', slotName: 'picture', prop: 'expressagePicture', width: 70 }
       ],
       // 物料表格
-      materialList: []
+      materialLoading: false,
+      btnList: [
+        { btnText: '提交', handleClick: this.submitExpressInfo },
+        { btnText: '关闭', class: 'close', handleClick: this.closeExpressDialog }
+      ],
+      materialColumns: [
+        { label: '序号', type: 'index' },
+        { label: '物料编码', prop: 'materialCode' },
+        { label: '物料描述', prop: 'materialDescription' },
+        { label: '总数量', prop: 'count', align: 'right' },
+        { label: '单位', prop: 'unit', align: 'right' },
+        { label: '已出库', prop: 'sentQuantity', align: 'right' },
+        { label: '出库数量', prop: 'quantity', align: 'right' }
+      ],
+      previewVisible: false,
+      previewImageUrlList: [] // 用来展示图片
     }
   },
   methods: {
@@ -333,108 +274,104 @@ export default {
       console.log(this.formData.serviceOrderId, this.formData)
       this.openServiceOrder(this.formData.serviceOrderId, () => this.loading = true, () => this.loading = false)
     },
-    addCourier () { // 增加快递
-      this.expressList.push({
-        expressNumber: '',
-        expressInformation: '',
-        expressagePicture: [],
-        fileList: [],
-        remark: ''
-      })
+    closeViewer () {
+      this.previewVisible = false
     },
-    isAddExpressInfo (row) {
-      let { id } = row
-      console.log(row, this.initalExpressList, 'isadd')
-      return id ? this.initalExpressList.includes(id) : false
+    addExpressInfo () { // 增加快递
+      this.$refs.expressInfoDialog.open()      
     },
-    isOutboundAll (data) { // 判断是否物料的是否已经出料完成
-      console.log(data.count, data.sentQuantity, data.count - data.sentQuantity)
-      return !(data.count - data.sentQuantity)
+    openedFn () { // 打开弹窗后 默认展示第一条物流信息
+      if (this.expressList && this.expressList.length) {
+        this.$nextTick(() => {
+          console.log('setCurrent parent mounted')
+          this.$refs.courierTable.setCurrentRow(this.expressList[0])
+        })
+      }
     },
-    _getExpressInfo (data, index) { // 查询物流信息
+    onExpressRowClick (row) {
+      this.currentIndex = findIndex(this.expressList, item => item.id === row.id)
+      console.log(this.currentIndex, 'rowclick')
+    },
+    showExpressPicture (row) {
+      let { expressagePicture } = row
+      let pictureList = expressagePicture.map(item => processDownloadUrl(item.pictureId))
+      if (!pictureList.length) {
+        return this.$message.warning('暂无快递图片')
+      }
+      this.previewImageUrlList = pictureList
+      this.previewVisible = true
+    },
+    onAddExpressInfo ({ expressages, start }) { // 监听到提交成功之后
+      this.expressList = expressages
+      this.formData.quotationStatus = start
+      // 每次都添加完默认展示最新的物料数据
+      this.currentIndex = 0
+      this.$refs.courierTable.setCurrentRow(this.expressList[this.currentIndex])
+      console.log(this.currentIndex, this.expressList)
+    },
+    onExpressInfoOpen () {
+      this.$refs.addExpressInfo.getMergeMaterial()
+    },
+    submitExpressInfo () {
+      this.$refs.addExpressInfo.submit()
+    },
+    closeExpressDialog () {
+      this.$refs.expressInfoDialog.close()
+      this.$refs.addExpressInfo.close()
+    },
+    _getExpressInfo (data) { // 查询物流信息
       console.log(data)
-      if (data.expressNumber === '') {
-        return this.$message.error('请先填写快递单号')
+      let { expressNumber } = data
+      if (expressNumber === '') {
+        return this.$message.error('快递单号为空，无法查询')
       }
       // YT4851790722587
-      getExpressInfo({ trackNumber: data.expressNumber.trim() }).then(res => {
+      getExpressInfo({ trackNumber: expressNumber.trim() }).then(res => {
         console.log(res, 'res')
-        let expressInfoList = JSON.parse(res.data).data
-        this.expressList[index].expressInformation = expressInfoList[expressInfoList.length - 1].context
+        let expressList = JSON.parse(res.data).data
+        data.expressInformation = expressList[expressList.length - 1].context
       }).catch(err => {
-        this.expressList[index].expressInformation = ''
+        // data.expressInformation = ''
         this.$message.error(err.message)
       })
     },
-    getFileList (value, { index }) {
-      this.expressList[index].expressagePicture = value
-      console.log(this.expressList[index].expressagePicture, 'fileList')
-    },
-    onAccept (file) { // 限制发票文件上传的格式
-      let { type } = file
-      // console.log(size, 'file size')
-      let isValid = isImage(type)
-      if (!isValid) {
-        this.$delay(() => this.$message.error('文件格式只能为图片'))
-        return false
-      }
-      return true
-    },
     resetFile () { // 清空文件列表
-    console.log(this.$refs.uploadFile, this.$refs.uploadFile.length)
       if (this.$refs.uploadFile) {
         this.$refs.uploadFile.clearFiles()
       }
     },
     resetInfo () {
       this.resetFile()
+      this.reset()
     },
     _normalizeExpressList (list) { // 格式化物流列表
       list.forEach(item => {
         item.expressNumber = item.expressNumber.trim()
       })
-    },
-    _normalizeQuotationMergeMaterials (list) {
-      list.forEach(item => {
-        console.log(item, item.sentQuantity, item.delivery)
-        item.sentQuantity += item.delivery || 0
-      })
-    },
-    async updateMaterial () {
-      if (!this.expressList.length) {
-        return Promise.reject({ message: '至少填写一个快递' })
-      }
-      let isExpressValid = await this.$refs.expressInfo.validate()
-      let isMaterialValid = await this.$refs.materialForm.validate()
-      if (isExpressValid && isMaterialValid) {
-        this._normalizeExpressList(this.expressList)
-        this._normalizeQuotationMergeMaterials(this.materialList)
-        let params = {
-          id: this.formData.id,
-          quotationMergeMaterials: this.materialList,
-          expressages: this.expressList
-        }
-        console.log(params, 'params')
-        return updateOutboundOrder(params)
-      }
-      else {
-        return Promise.reject({ message: '请将必填项填写' })
-      }
-    },
+    }
   },
   created () {
 
   },
   mounted () {
-
+    console.log('outbound mounted')
   },
 }
 </script>
 <style lang='scss' scoped>
 .quotation-wrapper {
   position: relative;
+  font-size: 12px;
+  .divider {
+    height: 1px;
+    margin: 15px auto;
+    background: #E6E6E6;
+  }
   ::v-deep .el-form-item--mini.el-form-item, .el-form-item--small.el-form-item {
     margin-bottom: 5px;
+  }
+  ::v-deep .el-form-item__label {
+    padding-right: 4px;
   }
   ::v-deep .el-input.is-disabled .el-input__inner {
     background-color: #fff;
@@ -455,21 +392,19 @@ export default {
   /* 表头文案 */
   > .title-wrapper { 
     position: absolute;
-    top: -48px;
-    left: 95px;
+    top: -51px;
+    left: 113px;
     height: 40px;
     line-height: 40px;
-    > p {
-      min-width: 55px;
+    p { 
       margin-right: 10px;
-      &.id {
-        color: red;
+      font-size: 12px;
+      span:nth-child(1) {
+        color: #BFBFBF;
+        margin-right: 10px;
       }
-      &.bold {
-        font-weight: bold;
-      }
-      span {
-        font-weight: normal;
+      span:nth-child(2) {
+        color: #222222;
       }
     }
   }
@@ -484,29 +419,80 @@ export default {
         }
       }
     }
-    /* 物流表格 */
-    .courier-wrapper {
-      display: flex;
-      margin-top: 10px;
-      .courier-table-wrapper {
-        width: 800px;
-        // max-height: 100px;
-        margin-right: 20px;
-        .courier-table {
-          height: auto !important;
-          .search-icon {
-            cursor: pointer;
+    .my-form-wrapper {
+      ::v-deep {
+        .el-date-editor.el-input {
+          input {
+            padding: 0 5px !important;
+          }
+          span {
+            display: none;
           }
         }
+        .el-input-number input {
+          text-align: left;
+        }
       }
-      .add-courier-btn {
+    }
+    .courier-wrapper, .material-wrapper, .material-content-wrapper {
+      .table-wrapper {
+        margin-top: 10px;
+      }
+      .title {
+        .line {
+          display: inline-block;
+          width: 4px;
+          height: 18px;
+          margin-right: 8px;
+          background: #F8B500;
+
+        }
+        .text {
+          font-size: 18px;
+          font-weight: 800;
+          color: #222222;
+        }
+      }
+    }
+    /* 物流表格 */
+    .courier-wrapper {
+      // display: flex;
+      margin-top: 10px;
+      > .title {
+        width: 522px;
+      }
+      .courier-table {
+        width: 522px;
+        .search-icon {
+          cursor: pointer;
+        }
+        .picture {
+          color: rgba(247, 195, 56, 1);
+          cursor: pointer;
+        }
+      }
+      .add-btn {
+        width: 64px;
         color: #fff;
-        background-color: rgba(248, 181, 0, 1);
+        background: #F8B500;
+        border-color: transparent;
+        border-radius: 4px;
+      }
+      /* 总运费 */
+      .freight {
+        width: 450px;
+        font-weight: bold;
+        .title {
+          margin-right: 24px;
+        }
+        .money {
+          max-width: 350px;
+        }
       }
     }
     /* 物料表格 */
     .material-wrapper {
-      margin-top: 10px;
+      margin-top: 20px;
     }
   }
 }

@@ -20,6 +20,7 @@
                 <div>
                   <p>序列号: {{ item.manufSN }}</p>
                   <p>物料编码: {{ item.itemCode }}</p>
+                  <p>物料描述：{{ item.materialDescription }}</p>
                 </div>
               </el-row>
             </div>

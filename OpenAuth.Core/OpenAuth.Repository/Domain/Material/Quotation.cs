@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using OpenAuth.Repository.Core;
+using OpenAuth.Repository.Domain.Material;
 
 namespace OpenAuth.Repository.Domain
 {
@@ -35,11 +36,10 @@ namespace OpenAuth.Repository.Domain
             this.ServiceOrderId = 0;
             this.IsProtected = false;
             this.IsDraft = false;
-            this.Reamrk = "";
+            this.Remark = "";
             this.ShippingAddress = "";
             this.CollectionAddress = "";
             this.QuotationStatus = 0;
-            this.IsRead = 0;
             this.ErpOrApp = 1;
 
         }
@@ -131,7 +131,7 @@ namespace OpenAuth.Repository.Domain
         ///备注
         /// </summary>
         [Description("备注")]
-        public string Reamrk { get; set; }
+        public string Remark { get; set; }
 
         /// <summary>
         ///收货地址
@@ -152,17 +152,44 @@ namespace OpenAuth.Repository.Domain
         public int? QuotationStatus { get; set; }
 
         /// <summary>
-        ///已读未读
+        ///领料方式
         /// </summary>
-        [Description("已读未读")]
-        public int IsRead { get; set; }
+        [Description("领料方式")]
+        public string AcquisitionWay { get; set; }
+
+        /// <summary>
+        ///货币方式
+        /// </summary>
+        [Description("货币方式")]
+        public string MoneyMeans { get; set; }
+
+        /// <summary>
+        ///交货日期
+        /// </summary>
+        [Description("交货日期")]
+        public DateTime? DeliveryDate { get; set; }
+
+        /// <summary>
+        ///验收期限
+        /// </summary>
+        [Description("验收期限")]
+        public int? AcceptancePeriod { get; set; }
+        
+
 
         /// <summary>
         ///提交对象1-ERP 2-APP
         /// </summary>
         [Description("提交对象")]
         public int ErpOrApp { get; set; }
+
+        /// <summary>
+        ///成本总价
+        /// </summary>
+        [Description("成本总价")]
+        public decimal? TotalCostPrice { get; set; }
         
+
         /// <summary>
         /// 物流表
         /// </summary>
@@ -171,7 +198,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 物料报价单物料列表
         /// </summary>
-        //public virtual List<QuotationMaterial> QuotationMaterials { get; set; }
+        public virtual List<QuotationMergeMaterial> QuotationMergeMaterials { get; set; }
 
         /// <summary>
         /// 报价单设备列表
@@ -183,7 +210,10 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public virtual List<QuotationOperationHistory> QuotationOperationHistorys { get; set; }
 
-
+        /// <summary>
+        /// 报价单图片
+        /// </summary>
+        public virtual List<QuotationPicture> QuotationPictures { get; set; }
 
         public override void GenerateDefaultKeyVal()
         {

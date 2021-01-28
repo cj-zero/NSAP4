@@ -57,6 +57,12 @@ namespace OpenAuth.Repository.Domain
         public int ServiceOrderSapId { get; set; }
 
         /// <summary>
+        ///出库单Id
+        /// </summary>
+        [Description("出库单Id")]
+        public int StockOutId { get; set; }
+
+        /// <summary>
         ///创建人名
         /// </summary>
         [Description("创建人名")]

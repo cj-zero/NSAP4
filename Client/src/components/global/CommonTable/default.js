@@ -4,7 +4,9 @@ export const defaultTableConfig = {
   fit: true,
   size: 'mini',
   // 'row-class-name': tableRowClassName,
-  'highlight-current-row': true
+  'highlight-current-row': true,
+  'header-row-style': headerRowStyle,
+  'header-cell-style': headerRowStyle
 }
 
 
@@ -12,7 +14,11 @@ export const defaultTableConfig = {
 //   // 把每一行的index加到row中
 //   row.index = rowIndex
 // }
-
+function headerRowStyle () {
+  return {
+    backgroundColor: '#DEDEDE'
+  }
+}
 export const defaultColumnConfig = {
   'show-overflow-tooltip': true,
   'reserve-selection': true

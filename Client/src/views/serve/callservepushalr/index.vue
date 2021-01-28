@@ -592,7 +592,10 @@ export default {
       } else {
         this.loadingBtn = true
         callservepushm
-          .nSAPSendOrders(this.params)
+          .nSAPSendOrders({
+            ...this.params,
+            type: 1
+          })
           .then((res) => {
             if (res.code == 200) {
               this.dataForm = res.result;
@@ -613,10 +616,11 @@ export default {
             }
           })
           .catch((error) => {
-            this.$message({
-              type: "danger",
-              message: `${error}`,
-            });
+            this.$message.error(error.message)
+            // this.$message({
+            //   type: "danger",
+            //   message: `${error}`,
+            // });
             this.listLoading = false;
             this.loadingBtn = false
           });

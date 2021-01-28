@@ -17,6 +17,12 @@
         :data="tableData" 
         :columns="returnOrderColumns" 
         :loading="tableLoading">
+        <template v-slot:totalMoney="{ row }">
+          <p v-infotooltip.top-start.ellipsis>{{ Number(row.fprice) | toThousands }}</p>
+        </template>
+        <template  v-slot:status="{ row }"> 
+          {{ row.isClear ? '疫情' : '为情' }}
+        </template>
       </common-table>
       <pagination
         v-show="total>0"
@@ -33,6 +39,7 @@
       title="退料单详情"
       :btnList="btnList"
       @closed="close"
+      @opened="onOpened"
     >
       <return-Order 
         ref="returnOrder" 
@@ -89,14 +96,13 @@ export default {
         { prop: 'createName', placeholder: '申请人', width: 100 },
         { prop: 'beginDate', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endDate', placeholder: '创建结束日期', type: 'date', width: 150 },
-        { type: 'search' },
-        { type: 'button', btnText: '退料', handleClick: this._getReturnNoteDetail, options: { status: 'toReturn'}, isSpecial: true },
+        { type: 'search' }
       ]
     }, // 搜索配置
     btnList () {
       return [
-        { btnText: '验收', handleClick: this.checkOrSave, isShow: this.status !== 'view' },
-        { btnText: '保存', handleClick: this.checkOrSave, isShow: this.status !== 'view', options: { isSave: true } },
+        { btnText: '验收', handleClick: this.checkOrSave, isShow: this.detailInfo && this.detailInfo.mainInfo.isLast === 1 },
+        { btnText: '保存', handleClick: this.checkOrSave, options: { isSave: true } },
         { btnText: '关闭', handleClick: this.close, className: 'close' }      
       ]
     }
@@ -145,6 +151,9 @@ export default {
     close () {
       this.$refs.returnOrder.resetInfo()
       this.$refs.returnOrderDialog.close()
+    },
+    onOpened () {
+      this.$refs.returnOrder.openedFn()
     }
   },
   mounted () {

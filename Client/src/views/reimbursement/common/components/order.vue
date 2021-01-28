@@ -7,11 +7,11 @@
       :class="{ 'general': title === 'approve' }"
     >
       <p style="color: red;" v-if="formData.mainId">报销单号: <span>{{ formData.mainId }}</span></p>
-      <p class="pointer underline" @click="_openServiceOrHistory(true)" v-if="title === 'approve'">
+      <p class="pointer underline" @click="_openServiceOrHistory(true)" v-if="title === 'approve' && !isGeneralManager">
         <span>服务ID: {{ formData.serviceOrderSapId }}</span>
       </p>
       <p>报销人: {{ formData.orgName }} <span>{{ formData.userName }}</span></p>
-      <p v-if="!isGeneralStatus">部门: <span>{{ formData.orgName }}</span></p>
+      <!-- <p v-if="!isGeneralStatus">部门: <span>{{ formData.orgName }}</span></p> -->
       <p v-if="!isGeneralStatus">劳务关系: <span>{{ formData.serviceRelations }}</span></p>
       <p v-if="!isGeneralStatus">创建时间: <span>{{ formData.createTime && formData.createTime.split(' ')[0] }}</span></p>
     </el-row>
@@ -1057,7 +1057,7 @@ import AreaSelector from '@/components/AreaSelector'
 import { toThousands } from '@/utils/format'
 import { findIndex, accAdd } from '@/utils/process'
 import { deepClone } from '@/utils'
-import { formatDate } from '@/utils/date'
+import { formatDate, collections } from '@/utils/date'
 import { travelRules, trafficRules, accRules, otherRules } from '../js/customerRules'
 import { customerColumns, costColumns } from '../js/config'
 import { noop } from '@/utils/declaration'
@@ -1338,7 +1338,8 @@ export default {
           // this.addSerialNumber(this.expenseCategoryList)
           if (this.formData.businessTripDate) {
             this.currentTime = new Date(formatDate(this.formData.businessTripDate))
-            this.nextTime = new Date(+this.currentTime + 24 * 60 * 60 * 1000)
+            this.nextTime = new Date(collections.addMonth(this.formData.businessTripDate, 1))
+            // this.nextTime = new Date(+this.currentTime + 24 * 60 * 60 * 1000)
             this.timeList = [this.currentTime, this.nextTime]
           }
           this.timelineList = this._normalizeTimelineList(this.formData.reimurseOperationHistories)
@@ -3114,8 +3115,8 @@ export default {
   /* 总经理头部时间进度条 */
   .timeline-progress-wrapper {
     position: absolute;
-    left: 61px;
-    top: -37px;
+    left: 71px;
+    top: -43px;
     width: 400px;
     height: 5px;
     background-color: rgba(206, 206, 206, 1);
@@ -3160,8 +3161,8 @@ export default {
   /* 头部 */
   .head-title-wrapper {
     position: absolute;
-    top: -36px;
-    left: 51px;
+    top: -41px;
+    left: 76px;
     &.general {
       left: 480px;
       span {

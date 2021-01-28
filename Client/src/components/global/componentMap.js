@@ -5,7 +5,6 @@ export default {
       width: '100%',
       size: 'mini',
       clearable: true,
-      placeholder: '请输入'
     }
   },
   number: {
@@ -14,7 +13,6 @@ export default {
       style: 'width: 100%',
       size: 'mini',
       clearable: true,
-      placeholder: '请输入'
     }
   },
   select: {
@@ -23,16 +21,24 @@ export default {
       style: 'width: 100%',
       size: 'mini',
       clearable: true,
-      placeholder: '请输入'
+      placeholder: ''
     }
   },
   date: {
     component: 'el-date-picker',
     attrs: {
-      width: '100%',
+      style: 'width: 100%',
+      clearable: false,
+      type: 'date'   
+    }
+  },
+  area: {
+    component: 'my-area-selector',
+    attrs: {
+      style: 'width: 100%',
       size: 'mini',
-      clearable: true,
-      placeholder: '请输入'
+      readonly: true,
+      clearable: false
     }
   }
 }

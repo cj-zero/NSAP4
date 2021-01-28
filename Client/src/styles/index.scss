@@ -10,6 +10,7 @@
 @import "./reset.scss";
 @import "./dialog.scss";
 @import "./font-face.scss";
+@import "./form.scss";
 body {
   height: 100%;
   -moz-osx-font-smoothing: grayscale;
@@ -316,35 +317,53 @@ table thead th {
       color: #fff;
     }
   }
+  .el-dialog__headerbtn {
+    top: 10px;
+    color: #333;
+    right: 11.5px;
+  }
+  // .el-dialog__header {
+  //   height: 35px;
+  //   line-height: 35px;
+  //   border-radius: 4px 4px 0 0;
+  //   border-bottom: 1px solid #eee;
+  //   overflow: hidden;
+  //   background-color: rgba(239, 239, 239, 1);
+  //   padding: 0 20px !important;
+  //   .el-dialog__title {
+  //     line-height: 34px;
+  //     font-size: 14px;
+  //     color: #333;
+  //   }
+    
+  // }
+  // .el-dialog__footer {
+  //   height: 50px;
+  //   width: 100%;
+  //   text-align: right;
+  //   padding: 0px 10px !important;
+  //   border-top: 1px solid #eee;
+  //   border-radius: 0 0 4px 4px;
+  //   background-color: #f8f8f8;
+  //   line-height: 50px;
+  // }
+  
   .el-dialog__header {
-    height: 35px;
-    line-height: 35px;
-    border-radius: 4px 4px 0 0;
-    border-bottom: 1px solid #eee;
     overflow: hidden;
-    background-color: rgba(239, 239, 239, 1);
-    padding: 0 20px !important;
+    padding: 10px 0 !important;
+    margin: 0 20px !important;
+    border-bottom: 1px solid #f2f2f3;
     .el-dialog__title {
-      line-height: 34px;
-      font-size: 14px;
+      // line-height: 34px;
+      font-size: 18px;
       color: #333;
-    }
-    .el-dialog__headerbtn {
-      color: #333;
-      top: 11.5px;
-      right: 11.5px;
     }
   }
   .el-dialog__footer {
-    height: 50px;
-    width: 100%;
-    text-align: right;
-    padding: 0px 10px !important;
-    border-top: 1px solid #eee;
-    border-radius: 0 0 4px 4px;
-    background-color: #f8f8f8;
-    line-height: 50px;
+    padding: 10px 20px;
+    box-shadow: 0 -2px 1px 0px #eee, 0 2px 1px 0px #eee;
   }
+  
   .el-dialog__body {
     padding: 10px !important;
     .el-form {

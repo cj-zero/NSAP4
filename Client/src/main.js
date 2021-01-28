@@ -15,6 +15,9 @@ import App from './App'
 import router from './router'
 import store from './store'
 
+// 全局mixin
+import GlobalMixin from '@/mixins/global'
+
 import '@/icons' // icon
 import '@/permission' // permission control
 import '@/assets/public/css/iconfont/iconfont.css'
@@ -63,7 +66,7 @@ VueAMap.initAMapApiLoader({
   v: '1.4.4'
 });
 
-
+Vue.mixin(GlobalMixin)
 Vue.config.productionTip = false
 Vue.prototype.$layer = layer(Vue, {
   msgtime: 3

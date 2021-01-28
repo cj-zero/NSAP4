@@ -31,7 +31,7 @@
       ref="quotationDialog"
       width="1100px"
       :loading="dialogLoading"
-      :title="`${textMap[status]}报价单`"
+      title="审批报价单"
       :btnList="btnList"
       @closed="close"
     >
@@ -95,14 +95,14 @@ export default {
         { prop: 'startCreateTime', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
-        { type: 'button', btnText: '审批', handleClick: this._getQuotationDetail, options: { status: 'approve' }, isSpecial: true, isShow: this.isToProcess },
+        // { type: 'button', btnText: '审批', handleClick: this._getQuotationDetail, options: { status: 'approve' }, isSpecial: true, isShow: this.isToProcess },
       ]
     }, // 搜索配置
     btnList () {
       // 弹窗按钮
       return [
-        { btnText: '同意', handleClick: this.approve, options: { type: 'agree' }, isShow: this.status !== 'view' },
-        { btnText: '驳回', handleClick: this.approve, options: { type: 'reject' }, isShow: this.status !== 'view' },
+        { btnText: '同意', handleClick: this.approve, options: { type: 'agree' }, isShow: this.isToProcess },
+        { btnText: '驳回', handleClick: this.approve, options: { type: 'reject' }, isShow: this.isToProcess },
         { btnText: '关闭', handleClick: this.close, className: 'close' }      
       ]
     }
@@ -134,7 +134,7 @@ export default {
       tableData: [],
       total: 0,
       quotationColumns: [
-        { label: '领料单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'view' }, type: 'link'},
+        { label: '领料单号', prop: 'id', handleClick: this._getQuotationDetail, type: 'link'},
         { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link' },
         { label: '销售单号', prop: 'salesOrderId', handleClick: this._getQuotationDetail, options: { status: 'view', isSalesOrder: true }, type: 'link'},
         { label: '客户代码', prop: 'terminalCustomerId' },
@@ -157,6 +157,7 @@ export default {
         this.tableData = this._normalizeList(data)
         this.total = count
         this.tableLoading = false
+        console.log(this.$refs.quotationTable, 'ref')
         this.$refs.quotationTable.resetCurrentRow()
       }).catch(err => {
         this.$message.error(err.message)
