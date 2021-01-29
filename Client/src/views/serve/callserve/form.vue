@@ -870,6 +870,13 @@ export default {
         onSearchComplete: onSearchComplete.bind(this)
       })
       address = address.replace(/^中国/i, '') // 如果以中国开头会直接搜索北京市
+        // C00550 深圳市新威尔电子有限公司
+        // C37852 东莞新威检测技术有限公司
+      let lowerId = this.form.terminalCustomerId.toLowerCase()
+      let isOurCompany = ['C00550', 'C37852'].map(item => item.toLowerCase()).includes(lowerId)
+      if (isOurCompany) {
+        address = lowerId === 'c00550' ? '深圳市新威尔电子有限公司' : '东莞新威检测技术有限公司'
+      }
       console.log(address, 'address')
       local.search(address)
       function onSearchComplete () {
@@ -1159,7 +1166,7 @@ export default {
           }
         );
         
-        console.log(chec, this.isValid, 'chec')
+        console.log(chec, this.isValid, 'chec', this.formName, this.$route.path)
         if (chec && this.isValid) {
           if (this.$route.path === "/serve/callserve") {
             if (this.formName === '新建') {
@@ -1581,8 +1588,8 @@ export default {
   position: relative;
   .info-wrapper {
       position: absolute;
-      top: -36px;
-      left: 108px;
+      top: -41px;
+      left: 135px;
       font-size: 12px;
       font-weight: bold;
       line-height: normal;

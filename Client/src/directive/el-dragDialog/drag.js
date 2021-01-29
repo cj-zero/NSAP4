@@ -3,7 +3,7 @@ export default{
     const dialogHeaderEl = el.querySelector('.el-dialog__header')
     const dragDom = el.querySelector('.el-dialog')
     dialogHeaderEl.style.cssText += ';cursor:move;'
-    dragDom.style.cssText += ';top:0px;'
+    // dragDom.style.cssText += ';top:0px;'
 
     // 获取原有属性 ie dom元素.currentStyle 火狐谷歌 window.getComputedStyle(dom元素, null);
     const getStyle = (function() {
@@ -13,7 +13,6 @@ export default{
         return (dom, attr) => getComputedStyle(dom, false)[attr]
       }
     })()
-
     dialogHeaderEl.onmousedown = (e) => {
       console.log(e, 'mousedown')
       // 鼠标按下，计算当前元素距离可视区的距离
@@ -66,8 +65,6 @@ export default{
 
         // 移动当前元素
         dragDom.style.cssText += `;left:${left + styL}px;top:${top + styT}px;`
-
-        // emit onDrag event
         vnode.child.$emit('dragDialog')
       }
 

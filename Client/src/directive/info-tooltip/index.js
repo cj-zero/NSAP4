@@ -14,7 +14,7 @@ function clearEvent(el) {
 export default {
   install(Vue) {
     // tip 的展示方向
-    const allPlacements = ['top-start', 'top', 'right', 'bottom', 'left']
+    const allPlacements = ['middle', 'top-start', 'top', 'right', 'bottom', 'left']
     Vue.directive('infotooltip', {
       bind(el, binding) {
         clearEvent(el)
@@ -27,6 +27,7 @@ export default {
           const limitPlacementQueue = allPlacements.filter(placement => modifiers[placement])
           //设置显示位置，默认为top
           tooltip.placement = limitPlacementQueue.length ? limitPlacementQueue[0] : 'top'
+          console.log(tooltip.placement, 'placement')
           // 判断是否有限制最大宽度
           if (arg) {
             tooltip.tooltipStyle.maxWidth = arg + 'px'
