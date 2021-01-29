@@ -806,7 +806,6 @@ namespace OpenAuth.App.Material
                             IsProtected = QuotationObj.IsProtected,
                             Status = QuotationObj.Status,
                             FlowInstanceId = FlowInstanceId,
-                            SalesOrderId = new Random().Next(1, 9999)
                             //todo:要修改的字段赋值
                         });
                         await UnitWork.AddAsync<QuotationOperationHistory>(new QuotationOperationHistory
@@ -924,7 +923,7 @@ namespace OpenAuth.App.Material
                 catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
-                    throw new Exception("添加报销单失败,请重试。" + ex.Message);
+                    throw new Exception("添加报价单失败,请重试。" + ex.Message);
                 }
                 return Message;
             }
@@ -1227,16 +1226,14 @@ namespace OpenAuth.App.Material
                 loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
             }
             #region 判断技术员余额
+            var ReturnNoteList = await UnitWork.Find<ReturnNote>(r => r.CreateUserId.Equals(loginUser.Id)).Include(r => r.ReturnnoteMaterials).ToListAsync();
 
-            var Money = await UnitWork.Find<MaterialsSettlement>(m => m.ProposerId.Equals(loginUser.Id)).ToListAsync();
-            if (Money != null && Money.Count > 0)
+            List<ReturnnoteMaterial> returnnoteMaterials = new List<ReturnnoteMaterial>();
+            ReturnNoteList.ForEach(r => returnnoteMaterials.AddRange(r.ReturnnoteMaterials));
+            var totalprice = returnnoteMaterials.Sum(p => p.CostPrice * (p.TotalCount - p.Count));
+            if (totalprice > 4000)
             {
-                var TotalMoney = Money.Sum(m => m.TotalMoney);
-                var Totalpayamount = Money.Sum(m => m.Totalpayamount);
-                if ((TotalMoney - Totalpayamount) > 4000)
-                {
-                    throw new Exception("欠款已超出额度，不可领料。");
-                }
+                throw new Exception("欠款已超出额度，不可领料。");
             }
             #endregion
 
