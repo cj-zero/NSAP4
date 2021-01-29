@@ -187,7 +187,7 @@ namespace OpenAuth.App
                 VerificationOpinion = "同意",
             });
             //判断是否最后一次退料并且所有退料都已核验
-            if (returnNote.IsLast == 1 && returnNote.Status == 2)
+            if (returnNote.IsLast == 1)
             {
                 //更新退料单为可结算状态
                 await UnitWork.UpdateAsync<ReturnNote>(w => w.Id == req.Id, u => new ReturnNote { IsCanClear = 1 });
@@ -424,8 +424,8 @@ namespace OpenAuth.App
                 MaterialCode = s.Key,
                 MaterDescription = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().MaterialDescription,
                 AlreadyReturnQty = s.Where(w => w.MaterialCode == s.Key).Sum(k => k.Count),
-                TotalReturnCount = s.Where(w => w.MaterialCode == s.Key).Sum(k => k.TotalCount),
-                NotClearAmount = s.Where(w => w.MaterialCode == s.Key).Sum(k => k.CostPrice * (k.TotalCount - k.Count)),
+                TotalReturnCount = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().TotalCount,
+                NotClearAmount = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().CostPrice * (s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().TotalCount - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.Count)),
                 Status = s.Where(w => w.MaterialCode == s.Key).Sum(k => k.CostPrice * (k.TotalCount - k.Count)) > 0 ? "未清" : "已清"
             }).ToList();
             outData.Add("DetailList", MaterialList);
