@@ -24,6 +24,7 @@
       style="margin-top: 10px;"
       :data="formData.DetailList"
       :columns="materialColumns"
+      max-height="300px"
     >
       <template v-slot:notClearAmount="{ row }">
         <p v-infotooltip.top-start.ellipsis>{{ row.notClearAmount | toThousands }}</p>
@@ -58,18 +59,18 @@ export default {
   data () {
     return {
       formItems: [
-        { span: 4, attrs: { prop: 'U_SAP_ID', disabled: true }, itemAttrs: { label: '服务ID' } },
-        { span: 4, attrs: { prop: 'CustomerId', disabled: true }, itemAttrs: { label: '客户代码' } },
-        { span: 8, attrs: { prop: 'CustomerName', disabled: true }, itemAttrs: { label: '客户名称' } },
-        { span: 4, attrs: { prop: 'Contacter', disabled: true }, itemAttrs: { label: '联系人' } },
-        { span: 4, attrs: { prop: 'ContactTel', disabled: true }, itemAttrs: { label: '电话' } },
+        { tag: 'text', span: 4, attrs: { prop: 'U_SAP_ID', disabled: true }, itemAttrs: { label: '服务ID' } },
+        { tag: 'text', span: 4, attrs: { prop: 'CustomerId', disabled: true }, itemAttrs: { label: '客户代码' } },
+        { tag: 'text', span: 8, attrs: { prop: 'CustomerName', disabled: true }, itemAttrs: { label: '客户名称' } },
+        { tag: 'text', span: 4, attrs: { prop: 'Contacter', disabled: true }, itemAttrs: { label: '联系人' } },
+        { tag: 'text', span: 4, attrs: { prop: 'ContactTel', disabled: true }, itemAttrs: { label: '电话' } },
       ],
       materialColumns: [
         { label: '物料编码', prop: 'materialCode' },
         { label: '物料描述', prop: 'materDescription' },
         { label: '已退数量', prop: 'alreadyReturnQty', align: 'right' },
         { label: '需退总计', prop: 'totalReturnCount', align: 'right' },
-        { label: '未记小清(￥)', prop: 'notClearAmount', align: 'right', slotName: 'notClearAmount' },
+        { label: '未清小计(￥)', prop: 'notClearAmount', align: 'right', slotName: 'notClearAmount' },
         { label: '状态', prop: 'status' }
       ]
     }

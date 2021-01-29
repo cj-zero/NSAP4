@@ -6,26 +6,26 @@
  * @param {*} decimalNumber 保留小数位数
  */
 export function toThousands (val, range =  3, separator = ',', decimalNumber = 2) { // 千分位化
-  let [integer, decimal] = String(Number(val)).split('.')
+  let [integer, decimal] = Number(val).toFixed(decimalNumber).split('.')
   let result = '', j = 1
   for (let i = integer.length - 1; i >= 0; i--) {
     result = integer[i] + result
     if (i !== integer.length - 1 && integer[i - 1]) {
-      if (j % range === 0) {
+      if (j % range === 0 && integer[i - 1] !== '-') {
         result = separator + result
       }
     }
     j++
   }
-  return result + (decimal ? '.' + addZero(decimal, decimalNumber) : '.00')
-}
+  return result + '.' + decimal
+} 
 
 /**
  * 
  * @param {*} str 值
  * @param {*} number 保留多少位数,不够则补零
  */
-function addZero (str, number) {
+export function addZero (str, number) {
   let result = ''
   let arr = str.split('')
   for (let i = 0; i < number; i++) {

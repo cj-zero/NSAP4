@@ -18,10 +18,10 @@
         :columns="returnOrderColumns" 
         :loading="tableLoading">
         <template v-slot:totalMoney="{ row }">
-          <p v-infotooltip.top-start.ellipsis>{{ Number(row.fprice) | toThousands }}</p>
+          <p v-infotooltip.top-start.ellipsis>{{ Number(row.totalMoney) | toThousands }}</p>
         </template>
         <template  v-slot:status="{ row }"> 
-          {{ row.isClear ? '疫情' : '为情' }}
+          {{ row.isCanClear ? '已清' : '未清' }}
         </template>
       </common-table>
       <pagination
@@ -77,7 +77,7 @@ import Search from '@/components/Search'
 import ReturnOrder from './components/Order'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
-import {  quotationTableMixin, chatMixin, returnTableMixin } from '../common/js/mixins'
+import { quotationTableMixin, chatMixin, returnTableMixin } from '../common/js/mixins'
 export default {
   name: 'materialToReturnOrder',
   mixins: [quotationTableMixin, chatMixin, returnTableMixin],

@@ -208,13 +208,12 @@ export default {
   },
   created() {},
   mounted() {
-    this.$nextTick(() => {
+    setTimeout(() => {
       Object.keys(this.$refs.commonTable.$options.methods).forEach(methodName => {
         if (methodName in this) return
-        console.log(methodName, 'methodName')
         this[methodName] = this.$refs.commonTable[methodName]
       })
-    })
+    }, 20)
   }
 }
 </script>

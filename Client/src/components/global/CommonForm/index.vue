@@ -164,13 +164,13 @@ export default {
 
   },
   mounted () {
-    this.$nextTick(() => {
+    setTimeout(() => {
       // 将el-form上所有的方法都定义到当前的common-form组件上
       Object.keys(this.$refs.form.$options.methods).forEach(methodName => {
         if (methodName in this) return
         this[methodName] = this.$refs.form[methodName]
       })
-    })
+    }, 20)
   },
 }
 </script>

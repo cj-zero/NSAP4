@@ -247,18 +247,18 @@ export default {
         { label: '物料描述', prop: 'materialDescription' },
         { label: '本次退还数量', prop: 'count', align: 'right' },
         // { label: '需退总计', prop: 'totalCount', align: 'right' },
-        { label: '图片', slotMame: 'pictures' },
+        { label: '图片', slotName: 'pictures' },
         { label: '寄回备注', prop: 'shippingRemark' },
         { label: '核对验收', slotName: 'check', width: '150px' }
       ],
       checkList: [], // 验收收货记录列表
       returnLoading: false,
       formItems: [
-        { span: 4, attrs: { prop: 'serviceSapId', disabled: true }, itemAttrs: { label: '服务ID' } },
-        { span: 4, attrs: { prop: 'terminalCustomerId', disabled: true }, itemAttrs: { label: '客户代码' } },
-        { span: 8, attrs: { prop: 'terminalCustomer', disabled: true }, itemAttrs: { label: '客户名称' } },
-        { span: 4, attrs: { prop: 'contacter', disabled: true }, itemAttrs: { label: '联系人' } },
-        { span: 4, attrs: { prop: 'contacterTel', disabled: true }, itemAttrs: { label: '电话' } },
+        { tag: 'text', span: 4, attrs: { prop: 'serviceSapId', disabled: true }, itemAttrs: { label: '服务ID' } },
+        { tag: 'text', span: 4, attrs: { prop: 'terminalCustomerId', disabled: true }, itemAttrs: { label: '客户代码' } },
+        { tag: 'text', span: 8, attrs: { prop: 'terminalCustomer', disabled: true }, itemAttrs: { label: '客户名称' } },
+        { tag: 'text', span: 4, attrs: { prop: 'contacter', disabled: true }, itemAttrs: { label: '联系人' } },
+        { tag: 'text', span: 4, attrs: { prop: 'contacterTel', disabled: true }, itemAttrs: { label: '电话' } },
       ]
     }
   },
