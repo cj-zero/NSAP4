@@ -10,7 +10,7 @@
         <el-row type="flex" :key="rowIndex" :style="rowStyle(formInput, rowIndex)">
           <el-col 
             v-for="(item, colIndex) in formInput" 
-            :key="item.attrs.prop" 
+            :key="`${rowIndex}_${colIndex}`" 
             :span="item.span || 24" 
             :style="cellStyle(item, colIndex)">
             <!-- 插槽 -->

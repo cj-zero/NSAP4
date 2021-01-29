@@ -301,7 +301,7 @@ export const returnTableMixin = { // 退料表格
         { label: '创建时间', prop: 'createDate' },
         { label: '总金额', prop: 'totalMoney', slotName: 'totalMoney', align: 'right' },
         { label: '备注', prop: 'remark' },
-        { label: '状态', slotName: 'status' }
+        // { label: '状态', slotName: 'status' }
       ],
       dialogLoading: false,
       tableLoading: false,

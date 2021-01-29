@@ -20,9 +20,6 @@
         <template v-slot:totalMoney="{ row }">
           <p v-infotooltip.top-start.ellipsis>{{ Number(row.totalMoney) | toThousands }}</p>
         </template>
-        <template  v-slot:status="{ row }"> 
-          {{ row.isCanClear ? '已清' : '未清' }}
-        </template>
       </common-table>
       <pagination
         v-show="total>0"

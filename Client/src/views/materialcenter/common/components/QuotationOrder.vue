@@ -957,7 +957,6 @@ export default {
       this.reset()
       console.log(this.formData, this.formData.serviceOrderSapId)
       this.$nextTick(() => {
-        this.$refs.form.resetFields()
         this.$refs.form.clearValidate()
       })
     },
