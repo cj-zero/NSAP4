@@ -39,7 +39,11 @@ namespace OpenAuth.App.Material
                 .WhereIf(!string.IsNullOrWhiteSpace(req.Customer), q => q.CustomerId.Contains(req.Customer) || q.CustomerName.Contains(req.Customer))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()), q => q.SalesOrderId.Equals(req.SalesOrderId))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.SalesMan), q => q.SalesOrderName.Equals(req.SalesMan))
-                .Where(q => q.SalesOrderName.Equals(loginContext.User.Name));
+               ;
+            if (!loginContext.Roles.Any(r => r.Name.Equals("总助")))
+            {
+                SalesOrderWarrantyDates = SalesOrderWarrantyDates.Where(q => q.SalesOrderName.Equals(loginContext.User.Name));
+            }
             result.Count = await SalesOrderWarrantyDates.CountAsync();
             result.Data = await SalesOrderWarrantyDates.Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
             return result;

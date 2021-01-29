@@ -53,6 +53,9 @@ export function isNumber (val) {
   return typeof val === 'number' && !isNaN(val)
 }
 
+export function isIntegerNumber (val) {
+  return isNumber(val) && (val % 1 === 0)
+}
 export function isObjectLike(value) {
   return !!value && typeof value == 'object'
 }

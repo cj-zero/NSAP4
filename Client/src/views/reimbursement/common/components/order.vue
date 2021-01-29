@@ -2630,8 +2630,8 @@ export default {
   /* 总经理头部时间进度条 */
   .timeline-progress-wrapper {
     position: absolute;
-    left: 61px;
-    top: -37px;
+    left: 71px;
+    top: -43px;
     width: 400px;
     height: 5px;
     background-color: rgba(206, 206, 206, 1);
@@ -2676,8 +2676,8 @@ export default {
   /* 头部 */
   .head-title-wrapper {
     position: absolute;
-    top: -36px;
-    left: 51px;
+    top: -41px;
+    left: 76px;
     &.general {
       left: 480px;
       span {

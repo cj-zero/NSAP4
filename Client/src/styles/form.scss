@@ -1,0 +1,22 @@
+/* 定义全局的el-form及其子表单元素的样式 */
+/* 用来处理表单不能编辑的情况 */
+/* 把element-ui 表单组件的默认边框 底色 颜色的修改 */
+
+.my-form-view { 
+  .el-input {
+    cursor: default !important;
+    span {
+      display: none !important;
+    }
+  }
+  .el-input__inner {
+    @include text-overflow;
+    border: none !important;
+    color: #222222 !important;
+    background-color: transparent !important;
+    cursor: default !important;
+  }
+  label {
+    color: #BFBFBF !important;
+  }
+}

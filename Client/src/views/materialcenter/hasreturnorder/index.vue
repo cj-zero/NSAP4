@@ -18,6 +18,9 @@
         :data="tableData" 
         :columns="returnOrderColumns" 
         :loading="tableLoading">
+        <template v-slot:notClearAmoun="{ row }">
+          <p v-infotooltip.ellipsis.top-start>{{ row.notClearAmount | toThousands }}</p>
+        </template>
       </common-table>
       <pagination
         v-show="total>0"
@@ -30,9 +33,9 @@
     <my-dialog 
       ref="returnOrderDialog"
       width="1100px"
-      title="退料单详情"
+      title="物料结算单"
       :btnList="btnList"
-      @closed="close"
+      :destroy-on-close="true"
     >
       <detail 
         ref="returnOrder" 
@@ -99,11 +102,15 @@ export default {
       total: 0,
       currnetRow: null,
       returnOrderColumns: [
-        { label: '服务ID', type: 'link', handleClick: this.preview, prop: 'serviceOrderSapId' },
+        { label: '结算订单', type: 'link', handleClick: this.preview, prop: 'id' },
+        { label: '服务ID', type: 'link', handleClick: this._openServiceOrder, prop: 'serviceOrderSapId' },
         { label: '客户代码', prop: 'customerId' },
         { label: '客户名称', prop: 'customerName' },
         { label: '申请人', prop: 'createUser' },
         { label: '创建时间', prop: 'createDate' },
+        { label: '总金额', prop: 'notClearAmount', slotName: 'notClearAmoun', align: 'right' },
+        { label: '备注', prop: 'remark' },
+        { label: '状态', prop: 'status' },
       ],
       status: '', // 报价单状态
       formData: null, // 详情信息
@@ -113,8 +120,7 @@ export default {
         { prop: 'createrName', placeholder: '申请人', width: 100 },
         { prop: 'beginDate', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endDate', placeholder: '创建结束日期', type: 'date', width: 150 },
-        { type: 'search' },
-        { type: 'button', btnText: '查看', handleClick: this.preview }
+        { type: 'search' }
       ],
       btnList: [
         { btnText: '关闭', handleClick: this.close, className: 'close' }      
@@ -145,16 +151,15 @@ export default {
     },
     _normalizeList (list) {
       return list.map(item => {
-        return { ...item, ...item.detail[0] }
+        return { ...item.detail[0] }
       })
     },
     close () {
       this.$refs.returnOrderDialog.close()
     },
     preview (row) {
-      let { serviceOrderSapId: serviceSapId, createUserId: createrId } = row
       this.tableLoading = true
-      getClearReturnNoteDetail({ serviceSapId, createrId }).then(res => {
+      getClearReturnNoteDetail({ id: row.id }).then(res => {
         this.formData = res.data
         this.$refs.returnOrderDialog.open()
         this.tableLoading = false
