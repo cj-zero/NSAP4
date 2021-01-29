@@ -136,10 +136,12 @@ export default {
     },
     createComputedInput (formItem) {
       let component = { ...formItem }
-      component.componentName = getComponentName(component) // 组件名称
-      component.attrs = mergeComponentAttrs(component) // 组件属性
-      component.itemAttrs = mergeConfig(formItemConfig, component.itemAttrs)  // el-form-item属性
-      component.on = mergeComponentAttrs(component, 'on') // 组件事件
+      if (component.tag) {
+        component.componentName = getComponentName(component) // 组件名称
+        component.attrs = mergeComponentAttrs(component) // 组件属性
+        component.itemAttrs = mergeConfig(formItemConfig, component.itemAttrs)  // el-form-item属性
+        component.on = mergeComponentAttrs(component, 'on') // 组件事件
+      }
       return component
     },
     isRender (isRender) { // 是否渲染当前formITEM
