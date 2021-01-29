@@ -142,8 +142,8 @@ namespace OpenAuth.App
                         from c in abc.DefaultIfEmpty()
                         select new { a, b, c };
             var queryStatus = query.Where(q => q.b.U_SAP_ID == request.SapOrderId)
-                .WhereIf("其他设备".Equals(request.MaterialType), q => q.c.MaterialCode == "其他设备")
-                .WhereIf(!"其他设备".Equals(request.MaterialType), q => q.c.MaterialCode.Substring(0, q.c.MaterialCode.IndexOf("-")) == request.MaterialType);
+                .WhereIf("无序列号".Equals(request.MaterialType), q => q.c.MaterialCode == "无序列号")
+                .WhereIf(!"无序列号".Equals(request.MaterialType), q => q.c.MaterialCode.Substring(0, q.c.MaterialCode.IndexOf("-")) == request.MaterialType);
             var status = await queryStatus.Select(s => s.c.Status).Distinct().FirstOrDefaultAsync();
             result.Add("status", status);
             var list = new List<OrderLogListResp>();

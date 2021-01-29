@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("ODLN")]
-    public partial class ODLN : Entity
+    public partial class ODLN 
     {
         public ODLN()
         {

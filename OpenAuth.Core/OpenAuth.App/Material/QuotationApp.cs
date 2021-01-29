@@ -22,6 +22,7 @@ using OpenAuth.Repository.Domain.Material;
 using System.IO;
 using Infrastructure.Export;
 using DinkToPdf;
+using DotNetCore.CAP;
 
 namespace OpenAuth.App.Material
 {
@@ -33,6 +34,8 @@ namespace OpenAuth.App.Material
         private readonly FlowInstanceApp _flowInstanceApp;
 
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
+
+        private ICapPublisher _capBus;
 
         /// <summary>
         /// 加载列表
@@ -262,7 +265,7 @@ namespace OpenAuth.App.Material
             }
             var result = new TableData();
 
-            var ServiceWorkOrderList = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.Equals(request.ServiceOrderId) && s.CurrentUserNsapId.Equals(loginUser.Id) && !s.MaterialCode.Equals("其他设备"))
+            var ServiceWorkOrderList = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.Equals(request.ServiceOrderId) && s.CurrentUserNsapId.Equals(loginUser.Id) && !s.MaterialCode.Equals("无序列号"))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.MaterialType), s => s.MaterialCode.Substring(0, 2) == request.MaterialType)
                 .WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers), s => s.ManufacturerSerialNumber.Contains(request.ManufacturerSerialNumbers))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.MaterialCode), s => s.MaterialCode.Contains(request.MaterialCode))
@@ -605,60 +608,15 @@ namespace OpenAuth.App.Material
                     QuotationObj.QuotationStatus = 3;
                     QuotationObj = await UnitWork.AddAsync<Quotation, int>(QuotationObj);
                     await UnitWork.SaveAsync();
-
-                    if (!obj.IsDraft)
+                    await UnitWork.AddAsync<QuotationOperationHistory>(new QuotationOperationHistory
                     {
-                        //创建物料报价单审批流程
-                        var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("物料报价单"));
-                        var afir = new AddFlowInstanceReq();
-                        afir.SchemeId = mf.FlowSchemeId;
-                        afir.FrmType = 2;
-                        afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
-                        afir.CustomName = $"物料报价单" + DateTime.Now;
-                        afir.OrgId = "";
-                        bool IsProtected = false;
-                        obj.QuotationProducts.ForEach(q =>
-                        {
-                            if (q.IsProtected == true) IsProtected = (bool)q.IsProtected;
-                        });
-                        QuotationObj.QuotationStatus = 4;
-                        afir.FrmData = "{ \"QuotationId\":\"" + QuotationObj.Id + "\"}";
-
-                        #region//保内保外
-                        //if (!(bool)QuotationObj.IsProtected)
-                        //{
-                        //    //保外申请报价单
-                        //    QuotationObj.QuotationStatus = 4;
-                        //    if (IsProtected)
-                        //    {
-                        //        afir.FrmData = "{ \"QuotationId\":\"" + QuotationObj.Id + "\",\"IsProtected\":\"0\",\"IsRead\":\"1\"}";
-                        //    }
-                        //    else
-                        //    {
-                        //        afir.FrmData = "{ \"QuotationId\":\"" + QuotationObj.Id + "\",\"IsProtected\":\"0\",\"IsRead\":\"0\"}";
-                        //    }
-                        //}
-                        //else
-                        //{
-                        //    //保内申请报价单
-
-                        //    afir.FrmData = "{ \"QuotationId\":\"" + QuotationObj.Id + "\",\"IsProtected\":\"1\",\"IsRead\":\"0\"}";
-                        //}
-                        #endregion
-
-                        var FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(afir);
-                        QuotationObj.FlowInstanceId = FlowInstanceId;
-                        await UnitWork.UpdateAsync<Quotation>(QuotationObj);
-                        await UnitWork.AddAsync<QuotationOperationHistory>(new QuotationOperationHistory
-                        {
-                            Action = "提交报价单",
-                            CreateUser = loginUser.Name,
-                            CreateUserId = loginUser.Id,
-                            CreateTime = DateTime.Now,
-                            QuotationId = QuotationObj.Id
-                        });
-                        await UnitWork.SaveAsync();
-                    }
+                        Action = "提交报价单",
+                        CreateUser = loginUser.Name,
+                        CreateUserId = loginUser.Id,
+                        CreateTime = DateTime.Now,
+                        QuotationId = QuotationObj.Id
+                    });
+                    await UnitWork.SaveAsync();
 
                     #region 合并零件表
                     List<QuotationMaterial> QuotationMaterialsT = new List<QuotationMaterial>();
@@ -674,7 +632,7 @@ namespace OpenAuth.App.Material
                                          MaterialDescription = g.Key.MaterialDescription,
                                          Unit = g.Key.Unit,
                                          SalesPrice = 0,
-                                         CostPrice = 0,
+                                         CostPrice = g.Key.UnitPrice,
                                          Count = g.Sum(a => a.Count),
                                          TotalPrice = 0,//g.Sum(a => a.TotalPrice)
                                          IsProtected = true,
@@ -848,7 +806,6 @@ namespace OpenAuth.App.Material
                             IsProtected = QuotationObj.IsProtected,
                             Status = QuotationObj.Status,
                             FlowInstanceId = FlowInstanceId,
-                            SalesOrderId = new Random().Next(1, 9999)
                             //todo:要修改的字段赋值
                         });
                         await UnitWork.AddAsync<QuotationOperationHistory>(new QuotationOperationHistory
@@ -919,7 +876,7 @@ namespace OpenAuth.App.Material
                                          MaterialDescription = g.Key.MaterialDescription,
                                          Unit = g.Key.Unit,
                                          SalesPrice = 0,
-                                         CostPrice = 0,
+                                         CostPrice = g.Key.UnitPrice,
                                          Count = g.Sum(a => a.Count),
                                          TotalPrice = 0,//g.Sum(a => a.TotalPrice)
                                          IsProtected = true,
@@ -953,13 +910,20 @@ namespace OpenAuth.App.Material
                     await UnitWork.BatchAddAsync<QuotationMergeMaterial>(QuotationMergeMaterialListMap.ToArray());
                     await UnitWork.SaveAsync();
                     #endregion
+                    if (!obj.IsDraft) 
+                    {
+                        #region 同步到SAP 并拿到服务单主键
+
+                        _capBus.Publish("Serve.SellOrder.Create", obj.Id);
+                        #endregion
+                    }
 
                     await transaction.CommitAsync();
                 }
                 catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
-                    throw new Exception("添加报销单失败,请重试。" + ex.Message);
+                    throw new Exception("添加报价单失败,请重试。" + ex.Message);
                 }
                 return Message;
             }
@@ -1262,15 +1226,14 @@ namespace OpenAuth.App.Material
                 loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
             }
             #region 判断技术员余额
-            var Money = await UnitWork.Find<MaterialsSettlement>(m => m.ProposerId.Equals(loginUser.Id)).ToListAsync();
-            if (Money != null && Money.Count > 0)
+            var ReturnNoteList = await UnitWork.Find<ReturnNote>(r => r.CreateUserId.Equals(loginUser.Id)).Include(r => r.ReturnnoteMaterials).ToListAsync();
+
+            List<ReturnnoteMaterial> returnnoteMaterials = new List<ReturnnoteMaterial>();
+            ReturnNoteList.ForEach(r => returnnoteMaterials.AddRange(r.ReturnnoteMaterials));
+            var totalprice = returnnoteMaterials.Sum(p => p.CostPrice * (p.TotalCount - p.Count));
+            if (totalprice > 4000)
             {
-                var TotalMoney = Money.Sum(m => m.TotalMoney);
-                var Totalpayamount = Money.Sum(m => m.Totalpayamount);
-                if ((TotalMoney - Totalpayamount) > 4000)
-                {
-                    throw new Exception("欠款已超出额度，不可领料。");
-                }
+                throw new Exception("欠款已超出额度，不可领料。");
             }
             #endregion
 
@@ -1410,47 +1373,11 @@ namespace OpenAuth.App.Material
             return datas;
         }
 
-        #region 判断是否是保内
-        /// <summary>
-        /// 判断是否是保内(暂弃)
-        /// </summary>
-        /// <param name="QuotationProducts"></param>
-        /// <returns></returns>
-        //private async Task<dynamic> JudgeIsProtected(List<string> MnfSerials)
-        //{
-        //    //      StringBuilder MnfSerial = new StringBuilder();
-        //    //      MnfSerials.ForEach(item =>
-        //    //      {
-        //    //          MnfSerial.Append("'" + item + "',");
-        //    //      });
-        //    //      var Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"SELECT d.DocEntry,c.MnfSerial
-        //    //      FROM oitl a left join itl1 b
-        //    //      on a.LogEntry = b.LogEntry and a.ItemCode = b.ItemCode 
-        //    //      left join osrn c on b.ItemCode = c.ItemCode and b.SysNumber = c.SysNumber
-        //    //left join odln d on a.DocEntry=d.DocEntry
-        //    //      where a.DocType =15 and c.MnfSerial in ({MnfSerial.ToString().Substring(0, MnfSerial.Length - 1)})").Select(s => new SysEquipmentColumn { MnfSerial = s.MnfSerial, DocEntry = s.DocEntry }).ToListAsync();
-
-        //    //      var DocEntryIds = Equipments.Select(e => e.DocEntry).ToList();
-
-        //    //      var buyopors = from a in UnitWork.Find<buy_opor>(null)
-        //    //                     join b in UnitWork.Find<sale_transport>(null) on a.DocEntry equals b.Buy_DocEntry
-        //    //                     where DocEntryIds.Contains(b.Base_DocEntry) && b.Base_DocType == 24
-        //    //                     select new { a, b };
-        //    //      var docdate = await buyopors.ToListAsync();
-        //    //      var IsProtecteds = Equipments.Select(e => new
-        //    //      {
-        //    //          MnfSerial = e.MnfSerial,
-        //    //          DocDate = Convert.ToDateTime(docdate.Where(d => d.b.Base_DocEntry.Equals(e.DocEntry)).FirstOrDefault()?.a.DocDate).AddYears(1)
-        //    //      }).ToList();
-
-        //    return null;
-        //}
-        #endregion
-
-        public QuotationApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
+        public QuotationApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, ICapPublisher capBus, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
         {
             _flowInstanceApp = flowInstanceApp;
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
+            _capBus = capBus;
         }
 
     }

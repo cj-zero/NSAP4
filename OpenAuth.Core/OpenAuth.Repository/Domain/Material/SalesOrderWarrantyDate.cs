@@ -19,9 +19,7 @@ namespace OpenAuth.Repository.Domain
           this.CustomerName= string.Empty;
           this.Remark= string.Empty;
           this.DeliveryDate= DateTime.Now;
-          this.CreateUserId= string.Empty;
           this.CreateTime= DateTime.Now;
-          this.CreateUser= string.Empty;
         }
         /// <summary>
         /// 销售订单id
@@ -70,17 +68,6 @@ namespace OpenAuth.Repository.Domain
         [Description("销售人名称")]
         public string SalesOrderName { get; set; }
 
-        /// <summary>
-        /// 创建人名称
-        /// </summary>
-        [Description("创建人名称")]
-        public string CreateUser { get; set; }
-
-        /// <summary>
-        /// 创建人Id
-        /// </summary>
-        [Description("创建人Id")]
-        public string CreateUserId { get; set; }
         /// <summary>
         /// 是否通过
         /// </summary>

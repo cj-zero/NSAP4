@@ -1355,8 +1355,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Response<bool>();
             try
             {
-                var parameters = new { req.ServiceOrderId, req.QryMaterialTypes, req.CurrentUserId };
-                var r = await _httpClienService.Post(parameters, "api/serve/ServiceOrder/SendOrders");
+                var r = await _httpClienService.Post(req, "api/serve/ServiceOrder/SendOrders");
                 result = JsonConvert.DeserializeObject<Response<bool>>(r);
                 //await _serviceOrderApp.SendOrders(req);
                 //result.Result = true;

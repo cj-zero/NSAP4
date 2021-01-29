@@ -17,9 +17,9 @@ namespace OpenAuth.App.Material.Request
         public int SapId { get; set; }
 
         /// <summary>
-        /// 出库单Id
+        /// 出库单Id集合
         /// </summary>
-        public int StockOutId { get; set; }
+        public List<int> StockOutIds { get; set; }
 
         /// <summary>
         /// 当前登陆者用户Id

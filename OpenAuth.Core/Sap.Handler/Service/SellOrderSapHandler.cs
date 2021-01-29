@@ -3,9 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 using SAPbobsCOM;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Sap.Handler.Service
@@ -24,331 +26,216 @@ namespace Sap.Handler.Service
         [CapSubscribe("Serve.SellOrder.Create")]
         public async Task HandleSellOrder(int theQuotationId)
         {
-            var query = await UnitWork.Find<Quotation>(q => q.Id.Equals(theQuotationId)).AsNoTracking()
-               .Include(q=>q.QuotationProducts).ThenInclude(q=>q.QuotationMaterials).Include(q=>q.QuotationMergeMaterials).FirstOrDefaultAsync();
+            StringBuilder allerror = new StringBuilder();
+            int eCode;
+            string eMesg;
+            string docNum = string.Empty;
+            var quotation = await UnitWork.Find<Quotation>(q => q.Id.Equals(theQuotationId)).AsNoTracking()
+               .Include(q => q.QuotationProducts).ThenInclude(q => q.QuotationMaterials).Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(quotation.ServiceOrderId)).FirstOrDefaultAsync();
+            try
+            {
+                if (quotation != null)
+                {
+                    SAPbobsCOM.Documents dts = (SAPbobsCOM.Documents)company.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oOrders);
 
-            SAPbobsCOM.Documents dts = (SAPbobsCOM.Documents)company.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oOrders);
+                    //#region [添加主表信息]
 
-            //#region [添加主表信息]
+                    dts.CardCode = serviceOrder.TerminalCustomerId; //客户id
 
-            //DataTable dtRowsConn = AidTool.GetConnection(model.SboId);
+                    dts.Comments = quotation.Remark; //备注
 
-            //if (dtRowsConn.Rows.Count > 0)
-            //{
+                    //dts.ContactPersonCode = int.Parse(model.CntctCode == "" ? "0" : model.CntctCode);//联系人代码
 
-            //    sboname = dtRowsConn.Rows[0][0].ToString();
+                    //dts.SalesPersonCode = int.Parse(model.SlpCode == "" ? "-1" : model.SlpCode); //销售人代码
 
-            //    sqlconn = dtRowsConn.Rows[0][1].ToString();
+                    //dts.NumAtCard = model.NumAtCard;
 
-            //}
+                    //dts.PayToCode = model.PayToCode;//支付代码
 
-            //dts.CardCode = model.CardCode;
+                    //dts.ShipToCode = model.ShipToCode;//购物代码
 
-            //dts.Comments = model.Comments;
+                    //dts.DocCurrency = quotation.MoneyMeans == "1" ? "RMB" : "";//货币
 
-            //dts.ContactPersonCode = int.Parse(model.CntctCode == "" ? "0" : model.CntctCode);
+                    //dts.DocDate = DateTime.Parse(model.DocDate);
 
-            //dts.SalesPersonCode = int.Parse(model.SlpCode == "" ? "-1" : model.SlpCode);
+                    dts.DocDueDate =Convert.ToDateTime(quotation.DeliveryDate).AddDays((double)quotation.AcceptancePeriod);
 
-            //dts.NumAtCard = model.NumAtCard;
+                    //if (!string.IsNullOrEmpty(model.TrnspCode))
 
-            //dts.PayToCode = model.PayToCode;
+                    //{
 
-            //dts.ShipToCode = model.ShipToCode;
+                    //    dts.TransportationCode = Convert.ToInt32(model.TrnspCode);
 
-            //dts.DocCurrency = model.DocCur;
+                    //}
 
-            //dts.DocDate = DateTime.Parse(model.DocDate);
+                    //if (!string.IsNullOrEmpty(quotation.AcquisitionWay))
 
-            //dts.DocDueDate = DateTime.Parse(model.DocDueDate);
+                    //{
 
-            //if (!string.IsNullOrEmpty(model.TrnspCode))
+                    //    dts.DocumentsOwner = Convert.ToInt32(quotation.AcquisitionWay);
 
-            //{
+                    //}
 
-            //    dts.TransportationCode = Convert.ToInt32(model.TrnspCode);
+                    //if (model.PartSupply == "true" || model.PartSupply == "Y")
 
-            //}
+                    //{
 
-            //if (!string.IsNullOrEmpty(model.OwnerCode))
+                    //    
 
-            //{
+                    //}
+                    //else
 
-            //    dts.DocumentsOwner = Convert.ToInt32(model.OwnerCode);
+                    //{
 
-            //}
+                    //    dts.PartialSupply = BoYesNoEnum.tNO;
 
-            //if (model.PartSupply == "true" || model.PartSupply == "Y")
+                    //}
+                    dts.PartialSupply = BoYesNoEnum.tYES;
 
-            //{
 
-            //    dts.PartialSupply = BoYesNoEnum.tYES;
 
-            //}
+                    //if (!string.IsNullOrEmpty(quotation.InvoiceCompany) && quotation.InvoiceCompany != "") //发票类别
 
-            //else
+                    //{
 
-            //{
+                    //    dts.UserFields.Fields.Item("U_FPLB").Value = quotation.InvoiceCompany;
 
-            //    dts.PartialSupply = BoYesNoEnum.tNO;
+                    //}
 
-            //}
+                    //if (!string.IsNullOrEmpty(model.U_SL) && model.U_SL != "") //税率
 
-            //if (!string.IsNullOrEmpty(model.U_FPLB) && model.U_FPLB != "")
+                    //{
 
-            //{
+                    //    dts.UserFields.Fields.Item("U_SL").Value = model.U_SL;
 
-            //    dts.UserFields.Fields.Item("U_FPLB").Value = model.U_FPLB;
+                    //}
 
-            //}
+                    //if (!string.IsNullOrEmpty(model.U_YWY) && model.U_YWY != "")//差旅费
 
-            //if (!string.IsNullOrEmpty(model.U_SL) && model.U_SL != "")
+                    //{
 
-            //{
+                    //    dts.UserFields.Fields.Item("U_YWY").Value = model.U_YWY;
 
-            //    dts.UserFields.Fields.Item("U_SL").Value = model.U_SL;
+                    //}
 
-            //}
+                    dts.DocType = BoDocumentTypes.dDocument_Items;//单据类型
 
-            //if (!string.IsNullOrEmpty(model.U_YWY) && model.U_YWY != "")
 
-            //{
 
-            //    dts.UserFields.Fields.Item("U_YWY").Value = model.U_YWY;
+                    dts.Address2 = quotation.ShippingAddress;      //收货方
 
-            //}
+                    dts.Address = quotation.CollectionAddress;       //收款方
 
-            //if (!string.IsNullOrEmpty(model.DocType))
+                    //if (!string.IsNullOrEmpty(model.GroupNum))
 
-            //{
+                    //{
 
-            //    if (model.DocType == "I")
+                    //    dts.PaymentGroupCode = int.Parse(model.GroupNum);   //付款条款
 
-            //        dts.DocType = BoDocumentTypes.dDocument_Items;
+                    //}
 
-            //    if (model.DocType == "S")
+                    //dts.Indicator = model.Indicator;    // 标识
 
-            //        dts.DocType = BoDocumentTypes.dDocument_Service;
+                    //dts.PaymentMethod = quotation.DeliveryMethod;    //付款方式
 
-            //}
+                    //dts.FederalTaxID = model.LicTradNum;  //国税编号
 
-            //else { dts.DocType = BoDocumentTypes.dDocument_Items; }
+                    dts.Project = "";
 
+                    //dts.DiscountPercent = double.Parse(!string.IsNullOrEmpty(model.DiscPrcnt) ? model.DiscPrcnt : "0.00");
 
+                    dts.DocTotal = double.Parse(!string.IsNullOrWhiteSpace(quotation.TotalMoney.ToString()) ? quotation.TotalMoney.ToString() : "0.00");
 
-            //dts.Address2 = model.Address2;      //收货方
+                    //errorMsg += string.Format("调用接口添加销售订单主数据[{0}]", jobID);
 
-            //dts.Address = model.Address;        //收款方
+                    //#endregion
 
-            //if (!string.IsNullOrEmpty(model.CustomFields) && model.CustomFields != "{}")
+                    #region [添加行明细]
+                    foreach (QuotationMergeMaterial dln1 in quotation.QuotationMergeMaterials)
 
-            //{
+                    {
 
-            //    string[] filesName = model.CustomFields.Replace(",", "，").Replace("≮0≯", ",").Split(',');
+                        dts.Lines.ItemCode = dln1.MaterialCode.Replace("&#92;", "■");
 
-            //    string[] filesValue = "".Split(',');
+                        dts.Lines.ItemDescription = dln1.MaterialDescription;
 
-            //    for (int i = 0; i < filesName.Length; i++)
+                        dts.Lines.Quantity = string.IsNullOrWhiteSpace(dln1.Count.ToString()) ? '1' : double.Parse(dln1.Count.ToString());
 
-            //    {
+                        dts.Lines.WarehouseCode = "37"; //仓库编号默认37仓
 
-            //        filesValue = filesName[i].Replace(":", "：").Replace("≮1≯", ":").Split(':');
+                        //if (!string.IsNullOrEmpty(dln1.BaseLine))
 
-            //        if (AidTool.IsExistCustomFields("ORDR", filesValue[0], sqlconn) && !string.IsNullOrEmpty(filesValue[1]))
+                        //{
 
-            //        {
+                        //    dts.Lines.BaseEntry = int.Parse(dln1.BaseEntry == "" ? "-1" : dln1.BaseEntry); //报价单号
 
-            //            dts.UserFields.Fields.Item(filesValue[0]).Value = filesValue[1];
+                        //    dts.Lines.BaseLine = int.Parse(dln1.BaseLine);
 
-            //        }
+                        //    dts.Lines.BaseType = 23;//-1
 
-            //    }
+                        //}
 
-            //}
+                        //dts.Lines.SalesPersonCode = int.Parse(model.SlpCode == "" ? "-1" : model.SlpCode); //销售员编号
 
-            //if (!string.IsNullOrEmpty(model.GroupNum))
+                        dts.Lines.UnitPrice = double.Parse(string.IsNullOrWhiteSpace(dln1.SalesPrice.ToString()) ? "0" : dln1.SalesPrice.ToString());            //单价
 
-            //{
+                        dts.Lines.Price = double.Parse(string.IsNullOrWhiteSpace(dln1.SalesPrice.ToString()) ? "0" : dln1.SalesPrice.ToString());
 
-            //    dts.PaymentGroupCode = int.Parse(model.GroupNum);   //付款条款
+                        dts.Lines.DiscountPercent = string.IsNullOrWhiteSpace(dln1.Discount.ToString()) ? 0.00 : double.Parse(dln1.Discount.ToString());//折扣率
 
-            //}
+                        dts.Lines.LineTotal = string.IsNullOrWhiteSpace(dln1.TotalPrice.ToString()) ? 0.00 : double.Parse(dln1.TotalPrice.ToString());//总计
 
-            //dts.Indicator = model.Indicator;    // 标识
+                        //dts.Lines.DiscountPercent = double.Parse(dln1.DiscPrcnt == "" ? "0" : dln1.DiscPrcnt);     //折扣
 
-            //dts.PaymentMethod = model.PeyMethod;    //付款方式
+                        //if (!string.IsNullOrEmpty(dln1.U_PDXX) && (dln1.U_PDXX == "AC220" || dln1.U_PDXX == "AC380" || dln1.U_PDXX == "AC110"))
 
-            //dts.FederalTaxID = model.LicTradNum;  //国税编号
+                        //{
 
-            //dts.Project = "";
+                        //    dts.Lines.UserFields.Fields.Item("U_PDXX").Value = dln1.U_PDXX;//配电选项
 
-            //dts.DiscountPercent = double.Parse(!string.IsNullOrEmpty(model.DiscPrcnt) ? model.DiscPrcnt : "0.00");
+                        //}
 
-            //dts.DocTotal = double.Parse(!string.IsNullOrEmpty(model.DocTotal) ? model.DocTotal : "0.00");
+                        dts.Lines.VatGroup = "X0";
 
-            ////拟取消订单号
+                        //dts.Lines.UserFields.Fields.Item("U_ZS").Value = dln1.U_ZS;//赠送
 
-            //if (!string.IsNullOrEmpty(model.U_New_ORDRID) && model.U_New_ORDRID != "")
+                        dts.Lines.Add();
 
-            //{
+                    }
 
-            //    dts.UserFields.Fields.Item("U_New_ORDRID").Value = model.U_New_ORDRID;
+                    #endregion
 
-            //}
+                    var res = dts.Add();
+                    if (res != 0)
+                    {
+                        company.GetLastError(out eCode, out eMesg);
+                        allerror.Append("添加销售订单到SAP时异常！错误代码：" + eCode + "错误信息：" + eMesg);
+                    }
+                    else
+                    {
+                        company.GetNewObjectCode(out docNum);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                allerror.Append("调用SBO接口添加销售订单时异常：" + e.ToString() + "");
+            }
 
-            ////关联商城订单号
+            if (!string.IsNullOrEmpty(docNum))
+            {
+                //如果同步成功则修改SellOrder
+                await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(quotation.Id), q => new Quotation { 
+                    SalesOrderId=int.Parse(docNum)
+                });
+                Log.Logger.Warning($"同步成功，SAP_ID：{docNum}", typeof(SellOrderSapHandler));
+            }
+            if (!string.IsNullOrWhiteSpace(allerror.ToString()))
+            {
+                Log.Logger.Error(allerror.ToString(), typeof(SellOrderSapHandler));
+            }
 
-            //if (!string.IsNullOrEmpty(model.U_EshopNo))
-
-            //{
-
-            //    dts.UserFields.Fields.Item("U_EshopNo").Value = model.U_EshopNo;
-
-            //}
-
-            //errorMsg += string.Format("调用接口添加销售订单主数据[{0}]", jobID);
-
-            //#endregion
-
-            //#region [添加行明细]
-
-            //if (model.DocType == "I")
-
-            //{
-
-            //    foreach (billSalesDetails dln1 in model.billSalesDetails)
-
-            //    {
-
-            //        dts.Lines.ItemCode = dln1.ItemCode.Replace("&#92;", "■");
-
-            //        dts.Lines.ItemDescription = dln1.Dscription;
-
-            //        dts.Lines.Quantity = string.IsNullOrEmpty(dln1.Quantity) ? '1' : double.Parse(dln1.Quantity);
-
-            //        dts.Lines.WarehouseCode = dln1.WhsCode == "" ? "01" : dln1.WhsCode;
-
-
-
-            //        if (!string.IsNullOrEmpty(dln1.BaseLine))
-
-            //        {
-
-            //            dts.Lines.BaseEntry = int.Parse(dln1.BaseEntry == "" ? "-1" : dln1.BaseEntry);
-
-            //            dts.Lines.BaseLine = int.Parse(dln1.BaseLine);
-
-            //            dts.Lines.BaseType = 23;
-
-            //        }
-
-            //        dts.Lines.SalesPersonCode = int.Parse(model.SlpCode == "" ? "-1" : model.SlpCode);
-
-            //        dts.Lines.UnitPrice = double.Parse(string.IsNullOrWhiteSpace(dln1.PriceBefDi) ? "0" : dln1.PriceBefDi);            //单价
-
-            //        dts.Lines.Price = double.Parse(string.IsNullOrWhiteSpace(dln1.PriceBefDi) ? "0" : dln1.PriceBefDi);
-
-            //        dts.Lines.DiscountPercent = string.IsNullOrWhiteSpace(dln1.DiscPrcnt) ? 0.00 : double.Parse(dln1.DiscPrcnt);
-
-            //        dts.Lines.LineTotal = string.IsNullOrWhiteSpace(dln1.LineTotal) ? 0.00 : double.Parse(dln1.LineTotal);
-
-            //        string DiscountPercent = "";
-
-            //        if (dln1.DiscPrcnt == null)
-
-            //        {
-
-            //            DiscountPercent = "0";
-
-            //        }
-
-            //        else
-
-            //        {
-
-            //            if (dln1.DiscPrcnt == "")
-
-            //            {
-
-            //                DiscountPercent = "0";
-
-            //            }
-
-            //            else
-
-            //            {
-
-            //                DiscountPercent = dln1.DiscPrcnt;
-
-            //            }
-
-            //        }
-
-            //        dts.Lines.DiscountPercent = double.Parse(DiscountPercent);     //折扣
-
-            //        //dts.Lines.DiscountPercent = double.Parse(dln1.DiscPrcnt == "" ? "0" : dln1.DiscPrcnt);     //折扣
-
-            //        if (!string.IsNullOrEmpty(dln1.U_PDXX) && (dln1.U_PDXX == "AC220" || dln1.U_PDXX == "AC380" || dln1.U_PDXX == "AC110"))
-
-            //        {
-
-            //            dts.Lines.UserFields.Fields.Item("U_PDXX").Value = dln1.U_PDXX;
-
-            //        }
-
-            //        dts.Lines.VatGroup = "X0";
-
-            //        dts.Lines.UserFields.Fields.Item("U_ZS").Value = dln1.U_ZS;
-
-            //        dts.Lines.UserFields.Fields.Item("U_RelDoc").Value = dln1.U_RelDoc.Trim();
-
-            //        dts.Lines.Add();
-
-            //    }
-
-
-
-            //}
-
-            //else
-
-            //{
-
-            //    foreach (billSalesAcctCode oact in model.billSalesAcctCode)
-
-            //    {
-
-            //        if (!string.IsNullOrEmpty(oact.BaseEntry))
-
-            //        {
-
-            //            dts.Lines.BaseEntry = int.Parse(oact.BaseEntry == "" ? "-1" : oact.BaseEntry);
-
-            //            dts.Lines.BaseLine = int.Parse(oact.BaseLine);
-
-            //            dts.Lines.BaseType = 23;
-
-            //        }
-
-            //        dts.Lines.AccountCode = oact.AcctCode;
-
-            //        dts.Lines.ItemDescription = oact.Details;
-
-            //        dts.Lines.UnitPrice = double.Parse(oact.Price == "" ? "0" : oact.Price);            //单价
-
-            //        dts.Lines.DiscountPercent = double.Parse(oact.DiscPrcnt == "" ? "0" : oact.DiscPrcnt);     //折扣
-
-            //        dts.Lines.VatGroup = "X0";
-
-            //        dts.Lines.Add();
-
-            //    }
-
-            //}
-
-            //#endregion
-
-            //res = dts.Add();
         }
 
     }
