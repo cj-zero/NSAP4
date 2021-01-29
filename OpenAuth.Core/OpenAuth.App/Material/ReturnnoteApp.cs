@@ -234,19 +234,19 @@ namespace OpenAuth.App
             {
                 throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
             }
+            var returnNote = await UnitWork.Find<ReturnNote>(w => w.CreateUserId == userInfo.Id && w.ServiceOrderId == ServiceOrderId).FirstOrDefaultAsync();
             var result = new TableData();
             //获取退料列表
-            var query = from a in UnitWork.Find<ReturnNote>(null)
-                        join b in UnitWork.Find<ReturnnoteMaterial>(null) on a.Id equals b.ReturnNoteId into ab
+            var query = from a in UnitWork.Find<ReturnnoteMaterial>(null)
+                        join b in UnitWork.Find<Expressage>(null) on a.ExpressId equals b.Id into ab
                         from b in ab.DefaultIfEmpty()
-                        join c in UnitWork.Find<ReturnNoteMaterialPicture>(null) on b.Id equals c.ReturnnoteMaterialId into abc
+                        join c in UnitWork.Find<ReturnNoteMaterialPicture>(null) on a.Id equals c.ReturnnoteMaterialId into abc
                         from c in abc.DefaultIfEmpty()
-                        join d in UnitWork.Find<Expressage>(null) on a.Id equals d.ReturnNoteId into abcd
-                        from d in abcd.DefaultIfEmpty()
-                        where a.ServiceOrderId == ServiceOrderId && a.CreateUserId == userInfo.Id
-                        select new { a, b, c, d };
-            var returnNoteList = await query.Select(s => new { s.b.MaterialCode, s.b.Id, s.b.Count, s.b.TotalCount, s.c.PictureId, s.b.Check, returnNoteId = s.a.Id, s.b.WrongCount, s.b.ReceivingRemark, s.b.ShippingRemark, s.d.ExpressNumber, s.a.Status, s.a.IsLast, s.a.Remark }).OrderByDescending(o => o.returnNoteId).ToListAsync();
-            result.Data = returnNoteList;
+                        where a.ReturnNoteId == returnNote.Id && a.Count > 0
+                        orderby b.CreateTime
+                        select new { a.MaterialCode, a.MaterialDescription, a.Count, a.TotalCount, a.WrongCount, b.ExpressNumber, a.Check, a.ReceivingRemark, a.ShippingRemark, ExpressId = b.Id, c.PictureId, a.Id };
+            var detailList = (await query.ToListAsync()).GroupBy(g => new { g.ExpressId, g.ExpressNumber }).Select(s => new { s.Key.ExpressId, s.Key.ExpressNumber, returnNote.IsLast, returnNote.Status, returnNote.Remark, detail = s.ToList() }).ToList();
+            result.Data = detailList;
             return result;
         }
 
@@ -346,7 +346,7 @@ namespace OpenAuth.App
                         from c in abc.DefaultIfEmpty()
                         where a.ReturnNoteId == Id && a.Count > 0
                         orderby b.CreateTime
-                        select new { a.MaterialCode, a.MaterialDescription, a.Count, a.Check, a.ReceivingRemark, a.ShippingRemark, ExpressId = b.Id, c.PictureId, a.Id };
+                        select new { a.MaterialCode, a.MaterialDescription, a.Count, a.Check, a.ReceivingRemark, a.ShippingRemark, ExpressId = b.Id, c.PictureId, a.Id, a.WrongCount };
             var detailList = (await query.ToListAsync()).GroupBy(g => g.ExpressId).Select(s => new { s.Key, detail = s.ToList() }).ToList();
             outData.Add("materialList", detailList);
             result.Data = outData;
@@ -381,8 +381,9 @@ namespace OpenAuth.App
             //获取退料单Id集合
             List<int> returnNoteIds = returnNote.Select(s => s.Id).Distinct().ToList();
             //计算剩余未结清金额
-            var notClearAmountList = (await UnitWork.Find<ReturnnoteMaterial>(w => returnNoteIds.Contains((int)w.ReturnNoteId)).ToListAsync()).GroupBy(g => g.ReturnNoteId).Select(s => new { s.Key, totalprice = s.Sum(p => p.CostPrice * (p.TotalCount - p.Count)) }).ToList();
-            var returnNoteList = returnNote.Select(s => new { CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerName).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.mm.dd"), s.ServiceOrderSapId, s.CreateUserId, s.Id, notClearAmount = notClearAmountList.Where(w => w.Key == s.Id).FirstOrDefault()?.totalprice, Status = notClearAmountList.Where(w => w.Key == s.Id).FirstOrDefault()?.totalprice > 0 ? "未清" : "已清", s.Remark }).ToList().GroupBy(g => new { g.Id }).Select(s => new { s.Key, detail = s.ToList() }).ToList();
+            var notClearAmountList = (await UnitWork.Find<ReturnnoteMaterial>(w => returnNoteIds.Contains((int)w.ReturnNoteId) && w.Check == 1).ToListAsync()).GroupBy(g => new { g.ReturnNoteId, g.MaterialCode }).Select(s => new { s.Key.ReturnNoteId, s.Key.MaterialCode, Count = s.Sum(s => s.Count), TotalWrongCount = s.Sum(s => s.WrongCount), Costprice = s.ToList().FirstOrDefault().CostPrice, TotalCount = s.ToList().FirstOrDefault().TotalCount }).ToList();
+            var AmountList = notClearAmountList.GroupBy(g => g.ReturnNoteId).Select(s => new { s.Key, Amount = s.Sum(s => s.Costprice * (s.TotalCount - s.Count + s.TotalWrongCount)) }).ToList();
+            var returnNoteList = returnNote.Select(s => new { CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerName).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.mm.dd"), s.ServiceOrderSapId, s.CreateUserId, s.Id, notClearAmount = Math.Round((decimal)AmountList.Where(w => w.Key == s.Id).FirstOrDefault().Amount, 2), Status = Math.Round((decimal)AmountList.Where(w => w.Key == s.Id).FirstOrDefault().Amount, 2) > 0 ? "未清" : "已清", s.Remark }).ToList().GroupBy(g => new { g.Id }).Select(s => new { s.Key, detail = s.ToList() }).ToList();
             result.Data = returnNoteList;
             return result;
         }
@@ -416,18 +417,19 @@ namespace OpenAuth.App
             outData.Add("Contacter", serviceOrderInfo.Contacter);
             outData.Add("ContactTel", serviceOrderInfo.ContactTel);
             //计算剩余未结清金额
-            var notClearAmount = (await UnitWork.Find<ReturnnoteMaterial>(w => w.ReturnNoteId == returnNoteInfo.Id).ToListAsync()).GroupBy(g => g.ReturnNoteId).Select(s => new { s.Key, totalprice = s.Sum(p => p.CostPrice * (p.TotalCount - p.Count)) }).FirstOrDefault().totalprice;
-            outData.Add("NotClearAmount", notClearAmount);
+            decimal? notClearAmount = 0;
             //获取物料信息
-            var MaterialList = (await UnitWork.Find<ReturnnoteMaterial>(w => w.ReturnNoteId == returnNoteInfo.Id).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new
+            var MaterialList = (await UnitWork.Find<ReturnnoteMaterial>(w => w.ReturnNoteId == returnNoteInfo.Id && w.Check == 1).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new
             {
                 MaterialCode = s.Key,
                 MaterDescription = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().MaterialDescription,
                 AlreadyReturnQty = s.Where(w => w.MaterialCode == s.Key).Sum(k => k.Count),
                 TotalReturnCount = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().TotalCount,
-                NotClearAmount = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().CostPrice * (s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().TotalCount - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.Count)),
+                NotClearAmount = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().CostPrice * (s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().TotalCount - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.Count) + s.Where(w => w.MaterialCode == s.Key).Sum(k => k.WrongCount)),
                 Status = s.Where(w => w.MaterialCode == s.Key).Sum(k => k.CostPrice * (k.TotalCount - k.Count)) > 0 ? "未清" : "已清"
             }).ToList();
+            MaterialList.ForEach(f => notClearAmount += f.NotClearAmount);
+            outData.Add("NotClearAmount", Math.Round((decimal)notClearAmount, 2));
             outData.Add("DetailList", MaterialList);
             result.Data = outData;
             return result;
