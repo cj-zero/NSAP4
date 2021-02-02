@@ -1,0 +1,78 @@
+﻿@using OpenAuth.App.Material.Response
+<!DOCTYPE html>
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        body {
+            width: 1000px;
+            margin: 0 auto;
+            margin-top: 10px;
+            font-size: 13.5px;
+            color: #7F7F7F;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        #tablebor {
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+
+        .TH td {
+            border-style: solid;
+            border-width: 1px;
+        }
+
+        #divtitle {
+            margin: 0 auto;
+        }
+
+        hr {
+            margin-top: 80px;
+            height: 0px;
+            border-top: 1px solid #808A87;
+            border-right: 0px;
+            border-bottom: 0px;
+            border-left: 0px;
+        }
+
+        #divcode {
+            height: 50px;
+            width: 1000px;
+            margin: 0 auto;
+            border: 1px solid #808A87;
+        }
+    </style>
+</head>
+
+<body>
+    @{decimal TotalPrice = 0;}
+    <table style="width:1000px">
+        @{int number = 0;}
+        @foreach (var item in Model.Data)
+        {
+            <tr>
+                <td style="width: 30px;" align="left">@{++number;} @number </td>
+                <td style="width: 100px;" align="left">&nbsp; @item.MaterialCode</td>
+                <td style="width: 400px;" align="left">&nbsp; @item.MaterialDescription</td>
+                <td style="width: 50px;" align="left">&nbsp; @item.Count</td>
+                <td style="width: 40px; " align="left">&nbsp;@item.Unit</td>
+                <td style="width: 50px; " align="right">@item.SalesPrice &nbsp;</td>
+                <td style="width: 50px; " align="right">@item.TotalPrice.ToString("N") @{TotalPrice += item.TotalPrice;}&nbsp;</td>
+            </tr>
+        }
+
+    </table>
+    <div style=" float: right; width: 375px;">
+        <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;总计金额 </span>
+        <span style="float: right;">RMB @TotalPrice.ToString("N")</span>
+    </div>
+</body>

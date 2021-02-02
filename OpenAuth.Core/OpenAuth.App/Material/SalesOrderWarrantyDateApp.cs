@@ -38,8 +38,11 @@ namespace OpenAuth.App.Material
             var SalesOrderWarrantyDates = UnitWork.Find<SalesOrderWarrantyDate>(null).Include(s => s.SalesOrderWarrantyDateRecords)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.Customer), q => q.CustomerId.Contains(req.Customer) || q.CustomerName.Contains(req.Customer))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()), q => q.SalesOrderId.Equals(req.SalesOrderId))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.SalesMan), q => q.SalesOrderName.Equals(req.SalesMan))
-               ;
+                .WhereIf(!string.IsNullOrWhiteSpace(req.SalesMan), q => q.SalesOrderName.Equals(req.SalesMan));
+            if (req.State!=null&&req.State == 2) 
+            {
+                SalesOrderWarrantyDates = SalesOrderWarrantyDates.Where(q => q.IsPass==false);
+            }
             if (!loginContext.Roles.Any(r => r.Name.Equals("总助")))
             {
                 SalesOrderWarrantyDates = SalesOrderWarrantyDates.Where(q => q.SalesOrderName.Equals(loginContext.User.Name));
@@ -48,33 +51,6 @@ namespace OpenAuth.App.Material
             result.Data = await SalesOrderWarrantyDates.Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
             return result;
         }
-        #region 添加
-        /// <summary>
-        /// 添加
-        /// </summary>
-        /// <param name="req"></param>
-        /// <returns></returns>
-        //public async Task Add(AddOrUpdatesalesorderwarrantydateReq req)
-        //{
-        //    var loginContext = _auth.GetCurrentUser();
-        //    if (loginContext == null)
-        //    {
-        //        throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-        //    }
-        //    var SalesOrderWarrantyDateMap = req.MapTo<SalesOrderWarrantyDate>();
-        //    var SalesOrderWarrantyDates = await UnitWork.AddAsync<SalesOrderWarrantyDate>(SalesOrderWarrantyDateMap);
-        //    await UnitWork.AddAsync<SalesOrderWarrantyDateRecord>(new SalesOrderWarrantyDateRecord
-        //    {
-        //        Id = Guid.NewGuid().ToString(),
-        //        SalesOrderWarrantyDateId = SalesOrderWarrantyDates.Id,
-        //        Action = loginContext.User.Name + "修改保修时间为" + req.WarrantyPeriod,
-        //        CreateTime = DateTime.Now,
-        //        CreateUser = loginContext.User.Name,
-        //        CreateUserId = loginContext.User.Id
-        //    });
-        //    await UnitWork.SaveAsync();
-        //}
-        #endregion
 
         /// <summary>
         /// 修改

@@ -1,56 +1,62 @@
 ﻿<!DOCTYPE html>
-<style>
-    * {
-        padding: 0;
-        margin: 0;
-    }
+<html lang="en">
 
-    body {
-        width: 1000px;
-        margin: 0 auto;
-        margin-top: 10px;
-        font-size: 13.5px;
-        font-family: "微软雅黑";
-        color: #7F7F7F;
-    }
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
 
-    table {
-        border-collapse: collapse;
-    }
+        body {
+            width: 1000px;
+            margin: 0 auto;
+            margin-top: 10px;
+            font-size: 13.5px;
+            color: #7F7F7F;
+        }
 
-    #tablebor {
-        margin: 0 auto;
-        border-collapse: collapse;
-    }
+        table {
+            border-collapse: collapse;
+        }
 
-    .TH td {
-        border-style: solid;
-        border-width: 1px;
-    }
+        #tablebor {
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
 
-    #divtitle {
-        margin: 0 auto;
-    }
+        .TH td {
+            border-style: solid;
+            border-width: 1px;
+        }
 
-    hr {
-        margin-top: 80px;
-        height: 0px;
-        border-top: 1px solid #808A87;
-        border-right: 0px;
-        border-bottom: 0px;
-        border-left: 0px;
-    }
+        #divtitle {
+            margin: 0 auto;
+        }
 
-    #divcode {
-        height: 50px;
-        width: 1000px;
-        margin: 0 auto;
-        border: 1px solid #808A87;
-    }
-</style>
-<header class="header">
+        hr {
+            margin-top: 80px;
+            height: 0px;
+            border-top: 1px solid #808A87;
+            border-right: 0px;
+            border-bottom: 0px;
+            border-left: 0px;
+        }
+
+        #divcode {
+            height: 50px;
+            width: 1000px;
+            margin: 0 auto;
+            border: 1px solid #808A87;
+        }
+    </style>
+
+</head>
+<body>
     <div style=" width: 1000px; margin: 0 auto;">
-        <div id="divtitle" style=" width: 1000px; height:60px; margin-top:-20px;">
+        <div id="divtitle" style=" width: 1000px; height:60px;">
             <div style="float:left; width: 240px; ">
                 <img color="#6F6F6F" style="width: 120px;height: 45px; float: left; margin-left:10px;" src="logo.png" />
             </div>
@@ -58,30 +64,30 @@
                 <span style="font-size: 42px;">销售合同</span>
             </div>
             <div style="float:left;width: 180px;  ">
-                <p>单号：SE-<span style="font-size: 30px; font-weight: 900;">999999</span></p>
-                <p style="margin-top: 5px; ">日　期：2021.01.24</p>
-                <p style="margin-top: 7px; ">销售：吴剑标</p>
+                <p>单号：SE-<span style="font-size: 30px; font-weight: 900;">@Model.SalesOrderId</span></p>
+                <p style="margin-top: 5px; ">日　期：@Model.CreateTime</p>
+                <p style="margin-top: 7px; ">销售：@Model.SalesUser</p>
             </div>
             <div style="float:right; width: 240px; ">
-                <img color="#6F6F6F" style="width: 120px;height: 45px; float: right; margin-right: 20px;" src="logo.png" />
+                <img color="#6F6F6F" style="width: 90px;height:90px; float: right; margin-top: -20px;" src="@Model.QRcode" />
             </div>
         </div>
 
         <table style="margin-top: 30px;" id="divcode">
             <tr>
                 <td align="left" style="width: 55pt; ">&nbsp;客户代码：</td>
-                <td align="left" style="width: 40pt; ">C20855</td>
+                <td align="left" style="width: 40pt; ">@Model.CustomerId</td>
                 <td align="left" style="width: 55pt; ">客户名称：</td>
-                <td align="left" style="width: 200pt;">test</td>
+                <td align="left" style="width: 200pt;">@Model.CustomerName</td>
                 <td align="left" style="width: 35pt;">&nbsp;联系人：</td>
-                <td align="left" style="width: 40pt; ">test</td>
+                <td align="left" style="width: 40pt; ">@Model.NewestContacter</td>
                 <td align="left" style="width: 30pt; ">&nbsp;电话：</td>
-                <td align="left" style="width: 55pt; ">test</td>
+                <td align="left" style="width: 55pt; ">@Model.NewestContactTel</td>
             </tr>
             <tr>
                 <td>&nbsp;客户地址：</td>
                 <td colspan="5">
-                    test
+                    @Model.CollectionAddress
                 </td>
                 <td>&nbsp;手机：</td>
                 <td>
@@ -91,38 +97,35 @@
             <tr>
                 <td>&nbsp;交货地址：</td>
                 <td style="width: 550pt;" colspan="7">
-                    test
+                    @Model.ShippingAddress
                 </td>
             </tr>
         </table>
         <table style="margin-top: 2px;" id="divcode">
             <tr>
                 <td align="left" style="width: 55pt; ">&nbsp;付款条件：</td>
-                <td align="left" style="width: 40pt; ">test</td>
+                <td align="left" style="width: 55pt; ">@Model.DeliveryMethod</td>
                 <td align="left" style="width: 55pt; "></td>
                 <td align="left" style="width: 375pt;"></td>
                 <td align="left" style="width: 55pt;">&nbsp;交货日期：</td>
-                <td align="left" style="width: 40pt; ">test</td>
+                <td align="left" style="width: 55pt; ">@Model.DeliveryDate</td>
                 <td align="left" style="width: 30pt; "></td>
                 <td align="left" style="width: 55pt; "></td>
             </tr>
             <tr>
                 <td align="left">&nbsp;交货方式：</td>
-                <td align="left"></td>
+                <td align="left">@Model.AcquisitionWay</td>
                 <td align="left"></td>
                 <td align="left"></td>
                 <td align="left">&nbsp;验收日期：</td>
-                <td align="left">test</td>
+                <td align="left">@Model.AcceptancePeriod</td>
                 <td align="left"></td>
                 <td align="left"></td>
             </tr>
             <tr>
                 <td>&nbsp;备注：</td>
                 <td style="width: 500pt;" colspan="3">
-                    1.保修期：1.1 产品免费保修期自验收合格之日起一年(非正常使用损坏除外，夹具等易损件更换需收取成本费；对于需方自行改装供方设备
-                    或者采购非供方销售的物料，均不在供方免保范围)。免费保修期届满，供方收取维修服务费及更换零件所需成本费用。<br>
-                    1.2 未经供方书面同意，需方擅自将本合同产品转售给任何第三方或将本合同产品送至合同约定送货地址以外的地址，供方不提供保修期内
-                    的免费售后服务
+                    @Model.Remark
                 </td>
                 <td align="left" style="width: 55pt;">&nbsp;&nbsp;&nbsp;客户PO：</td>
                 <td>
@@ -134,9 +137,9 @@
         </table>
         <table style="margin-top:2px; width:1000px;">
             <tr class="TH">
-                <td style="width: 40px;" align="left"># </td>
+                <td style="width: 30px;" align="left"># </td>
                 <td style="width: 100px;" align="left">&nbsp; 物料编码</td>
-                <td style="width: 200px;" align="left">&nbsp; 物料描述</td>
+                <td style="width: 400px;" align="left">&nbsp; 物料描述</td>
                 <td style="width: 50px;" align="left">&nbsp; 数量</td>
                 <td style="width: 50px; " align="left">&nbsp;单位</td>
                 <td style="width: 50px; " align="right">单价 &nbsp;</td>
@@ -144,4 +147,4 @@
             </tr>
         </table>
     </div>
-</header>
+</body>

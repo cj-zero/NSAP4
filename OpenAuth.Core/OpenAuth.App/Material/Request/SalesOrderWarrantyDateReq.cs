@@ -11,7 +11,10 @@ namespace OpenAuth.App.Material.Request
         /// 销售单号
         /// </summary>
         public int? SalesOrderId { get; set; }
-
+        /// <summary>
+        /// 状态
+        /// </summary>
+        public int? State { get; set; }
         /// <summary>
         /// 客户
         /// </summary>

@@ -1,6 +1,7 @@
 ﻿using DotNetCore.CAP;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.Repository.Interface;
 using SAPbobsCOM;
 using Serilog;
@@ -33,6 +34,7 @@ namespace Sap.Handler.Service
             var quotation = await UnitWork.Find<Quotation>(q => q.Id.Equals(theQuotationId)).AsNoTracking()
                .Include(q => q.QuotationProducts).ThenInclude(q => q.QuotationMaterials).Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
             var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(quotation.ServiceOrderId)).FirstOrDefaultAsync();
+            var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Name.Equals(serviceOrder.NewestContacter)).FirstOrDefaultAsync();
             try
             {
                 if (quotation != null)
@@ -45,7 +47,7 @@ namespace Sap.Handler.Service
 
                     dts.Comments = quotation.Remark; //备注
 
-                    //dts.ContactPersonCode = int.Parse(model.CntctCode == "" ? "0" : model.CntctCode);//联系人代码
+                    dts.ContactPersonCode = int.Parse(string.IsNullOrWhiteSpace(oCPR.CntctCode.ToString()) ? "0" : oCPR.CntctCode.ToString());//联系人代码
 
                     //dts.SalesPersonCode = int.Parse(model.SlpCode == "" ? "-1" : model.SlpCode); //销售人代码
 
@@ -59,7 +61,7 @@ namespace Sap.Handler.Service
 
                     //dts.DocDate = DateTime.Parse(model.DocDate);
 
-                    dts.DocDueDate =Convert.ToDateTime(quotation.DeliveryDate).AddDays((double)quotation.AcceptancePeriod);
+                    dts.DocDueDate =Convert.ToDateTime(quotation.DeliveryDate).AddDays(quotation.AcceptancePeriod==null?0: (double)quotation.AcceptancePeriod);
 
                     //if (!string.IsNullOrEmpty(model.TrnspCode))
 

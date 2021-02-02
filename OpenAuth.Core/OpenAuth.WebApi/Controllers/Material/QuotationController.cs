@@ -381,10 +381,37 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <param name="QuotationId"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> PrintSalesOrder(int QuotationId) 
+        public async Task<IActionResult> PrintSalesOrder(int QuotationId)
         {
-            return File(await _app.PrintSalesOrder(QuotationId), "application/pdf");
-        }
+            try
+            {
+                return File(await _app.PrintSalesOrder(QuotationId), "application/pdf");
+            }
+            catch (Exception e)
+            {
 
+                throw new Exception(e.Message);
+            }
+           
+        }
+        /// <summary>
+        /// 打印销售订单
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> PrintQuotation(int QuotationId)
+        {
+            try
+            {
+                return File(await _app.PrintQuotation(QuotationId), "application/pdf");
+            }
+            catch (Exception e)
+            {
+
+                throw new Exception(e.Message);
+            }
+        }
+        
     }
 }
