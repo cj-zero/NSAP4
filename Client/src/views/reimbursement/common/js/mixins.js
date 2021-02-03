@@ -260,12 +260,12 @@ export let tableMixin = {
         reimburseOtherCharges,
       } = data
       // 交通
-      let arr = ['2020-12-24', '2020-12-25', '2020-12-26']
-      reimburseFares.forEach((item, index) => {
+      // let arr = ['2020-12-24', '2020-12-25', '2020-12-26']
+      reimburseFares.forEach((item) => {
         let { 
           transport, from, to, money, 
           reimburseAttachments, invoiceNumber, remark,
-          fromLng, fromLat, toLng, toLat, id
+          fromLng, fromLat, toLng, toLat, id, invoiceTime
         } = item
         result.push({
           id,
@@ -274,8 +274,8 @@ export let tableMixin = {
           fromLat, 
           toLng, 
           toLat,
-          // invoiceTime: this.processInvoiceTime(invoiceTime),
-          invoiceTime: arr[index % 3],
+          invoiceTime: this.processInvoiceTime(invoiceTime),
+          // invoiceTime: arr[index % 3],
           expenseName: this.transportationMap[transport],
           expenseDetail: from + '-' + to,
           money,
@@ -290,16 +290,13 @@ export let tableMixin = {
           pointArr.push({ lng: fromLng, lat: fromLat })
           pointArr.push({ lng: toLng, lat: toLat, id }) // id用来标记终点标识
         }
-        // if(toLng) {
-        //   pointArr.push({ lng: toLng, lat: toLat })
-        // }
       })
       // 住宿
       reimburseAccommodationSubsidies.forEach(item => {
         let { invoiceTime, days, totalMoney, reimburseAttachments, invoiceNumber, remark, sellerName } = item
         result.push({
-          // invoiceTime: this.processInvoiceTime(invoiceTime),
-          invoiceTime: invoiceTime || '2020-12-26',
+          invoiceTime: this.processInvoiceTime(invoiceTime),
+          // invoiceTime: invoiceTime || '2020-12-26',
           expenseName: '住宿补贴',
           sellerName,
           expenseDetail: `${toThousands(totalMoney / days)}元/天*${days}天`,
@@ -316,12 +313,12 @@ export let tableMixin = {
       reimburseTravellingAllowances.forEach(item => {
         let { days, money, remark } = item
         let invoiceTime = days > 1 
-          ? `${Day(businessTripDate).format('MM-DD')} — ${Day(endDate).format('MM-DD')}`
-          : Day(businessTripDate).format('YYYY-MM-DD') 
+          ? `${formatDate(businessTripDate, 'MM-DD')} — ${formatDate(endDate, 'MM-DD')}`
+          : formatDate(businessTripDate)
         result.push({
           // invoiceTime: this.processInvoiceTime(invoiceTime),
-          invoiceTime: invoiceTime || '2020-12-28',
-          // invoiceTime,
+          // invoiceTime: invoiceTime || '2020-12-28',
+          invoiceTime,
           expenseName: '出差补贴',
           expenseDetail: `${toThousands(money)}元/天*${days}天`,
           money: money * days,

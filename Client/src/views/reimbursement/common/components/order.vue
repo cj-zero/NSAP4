@@ -7,13 +7,13 @@
       :class="{ 'general': title === 'approve' }"
     >
       <p style="color: red;" v-if="formData.mainId">报销单号: <span>{{ formData.mainId }}</span></p>
-      <p class="pointer underline" @click="_openServiceOrHistory(true)" v-if="title === 'approve' && !isGeneralManager">
-        <span>服务ID: {{ formData.serviceOrderSapId }}</span>
+      <p :class="{ 'pointer underline': !isGeneralManager }" @click="_openServiceOrHistory(true)" v-if="title === 'approve'">
+        服务ID: <span>{{ formData.serviceOrderSapId }}</span>
       </p>
       <p>报销人: {{ formData.orgName }} <span>{{ formData.userName }}</span></p>
       <!-- <p v-if="!isGeneralStatus">部门: <span>{{ formData.orgName }}</span></p> -->
-      <p v-if="!isGeneralStatus">劳务关系: <span>{{ formData.serviceRelations }}</span></p>
-      <p v-if="!isGeneralStatus">创建时间: <span>{{ formData.createTime && formData.createTime.split(' ')[0] }}</span></p>
+      <p>劳务关系: <span>{{ formData.serviceRelations }}</span></p>
+      <p>创建时间: <span>{{ formData.createTime && formData.createTime.split(' ')[0] }}</span></p>
     </el-row>
     <!-- 时间进度轴，仅总经理可看 timelineList -->
     <template v-if="title === 'approve'">
@@ -40,7 +40,7 @@
         <el-form
         :model="formData"
         ref="form"
-        class="general-form-wrapper"
+        class="general-form-wrapper manager"
         :class="{ 'uneditable': !this.ifFormEdit }"
         :disabled="disabled"
         :label-width="labelWidth"
@@ -50,30 +50,34 @@
         >
           <el-row type="flex" class="item">
             <div>
-              <span class="first-item">客户代码</span>
-              <img :src="rightImg" @click="openHistory" class="pointer">
+              <img :src="rightImg" @click="openHistory" class="pointer" style="margin-left: -13px;">
+              <span class="first-item title">客户代码</span>
               <span>{{ formData.terminalCustomerId }}</span>
             </div>
             <div>
               <el-row type="flex" align="start">
-                <span >客户名称</span>
+                <span class="title">客户名称</span>
                 <p class="content">{{ formData.terminalCustomer }}</p>
               </el-row>
             </div>
-            <div>
+            <!-- <div>
               <el-row type="flex" align="start">
                 <span>客户地址</span>
                 <p class="content-long">{{ formData.completeAddress }}</p>
               </el-row>
-            </div>
+            </div> -->
           </el-row>
           <el-row type="flex" class="item">
             <div>
-              <span class="first-item">出差事由</span>
+              <span class="first-item title">出差事由</span>
               <div v-if="formData.themeList && formData.themeList.length">
                 <p v-for="item in formData.themeList.slice(0, 2)" :key="item.description">{{ item.description }}</p>
               </div>
             </div>
+          </el-row>
+           <el-row class="item">
+              <span class="title">备注</span>
+              <p class="content">{{ formData.remark }}</p>
           </el-row>
         </el-form>
       </div>
@@ -1642,7 +1646,7 @@ export default {
       })
     },
     createMarkerLabel (text, position, offset) {
-      let defaultOffset = new this._BMap.Size(text >= 10 ? -8 : -6, -14)
+      let defaultOffset = new this._BMap.Size(text >= 10 ? -8 : -5, -14)
       offset = offset || defaultOffset
       let label = new this._BMap.Label(text, { position, offset })
       label.setStyle({
@@ -1665,15 +1669,14 @@ export default {
 			// 实现初始化方法  
 			FlashOverlay.prototype.initialize = function () {
 				// 创建div元素，作为自定义覆盖物的容器
-				var div = document.createElement("div")
+        var div = document.createElement("div")
 				div.style.position = "absolute"
 				// 可以根据参数设置元素外观
-				// div.classList.add('ao')
+        // div.classList.add('ao')
+        div.classList.add('bmap-wave')
 				div.style.width = this._width + "px"
 				div.style.height = this._height + "px"
-				div.style.background = 'red'
-				// div.style.borderRadius = '50%'
-				div.style.animation = 'bmap-fade 2s linear infinite'
+        
 				// 将div添加到覆盖物容器中
 				that._map.getPanes().markerPane.appendChild(div)
 				// 保存div实例
@@ -1772,18 +1775,6 @@ export default {
         that.singleClick = () => that.showPath()
         on(multiple, 'click', that.multipleClick)
         on(single, 'click', that.singleClick)
-        // multiple.onclick = () => { // 展示最新的一条路径, 及formData.pointArr的后两个点
-        //   console.log('mul click')
-        //   that.createPointArr(that.formData.pointArr)
-        //   that.expenseCategoryList = that.formData.expenseCategoryList
-        //   that.createDrivePath()
-				// }
-				// single.onclick = () => { // 展示最新的一条路径, 及formData.pointArr的后两个点
-        //   console.log('single click')
-        //   that.createPointArr(that.formData.pointArr)
-        //   that.expenseCategoryList = that.formData.expenseCategoryList
-        //   that.createLastPath()
-				// }
 				// 添加DOM元素到地图中   
 				that._map.getContainer().appendChild(container)
 				// 将DOM元素返回  
@@ -1878,9 +1869,13 @@ export default {
       return grayList.includes(columnIndex) ? { backgroundColor: '#fafafa' } : {}
     },
     _openServiceOrHistory (isServe) { // 打开服务单详情或者打开历史费用
-      this.title === 'approve' && !isServe
-        ? this.openHistory()
-        : this.openServiceOrder(this.formData.serviceOrderId, () => this.orderLoading = true, () => this.orderLoading = false)
+      if (this.title === 'approve' && !isServe) {
+        this.openHistory()
+      } else {
+        if (!this.isGeneralManager) {
+          this.openServiceOrder(this.formData.serviceOrderId, () => this.orderLoading = true, () => this.orderLoading = false)
+        }
+      } 
     },
     openHistory () { // 打开历史费用
       if (this.historyCostData && !this.historyCostData.length) {
@@ -3166,19 +3161,21 @@ export default {
     &.general {
       left: 480px;
       span {
-        font-weight: bold;
+        // font-weight: bold;
       }
     }
     p {
       min-width: 65px;
       margin-right: 10px;
       font-size: 12px;
-      font-weight: bold;
+      // font-weight: bold;
+      color: #BFBFBF;
       &.underline {
         text-decoration: underline;
       }
       span {
         font-weight: normal;
+        color: #222;
       }
     }
   }
@@ -3277,7 +3274,10 @@ export default {
       margin-top: 10px;
       .general-form-wrapper {
         padding: 5px;
-        border: 1px solid #000;
+        &.manager {
+          padding: 14px;
+        }
+        // border: 1px solid #000;
         .item {
           margin-bottom: 10px;
           .first-item {
@@ -3285,6 +3285,10 @@ export default {
           }
           &:nth-last-child(1) {
             margin-bottom: 0;
+          }
+          .title {
+            margin-right: 5px;
+            color: #BFBFBF;
           }
         }
         .content {
@@ -3296,7 +3300,7 @@ export default {
         div {
           display: flex;
           min-width: 120px;
-          margin-right: 5px;
+          margin-right: 35px;
           font-size: 12px;
           font-weight: bold;
           span {
