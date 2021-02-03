@@ -217,7 +217,9 @@ namespace OpenAuth.App.nwcali
                 AssetStatus = obj.AssetStatus,
                 OrgName = obj.OrgName,
                 AssetInspectWay = obj.AssetInspectWay,
-                AssetImage =obj.AssetImage
+                AssetImage =obj.AssetImage,
+                AssetTCF=obj.AssetTCF,
+                AssetInspectDataOne=obj.AssetInspectDataOne,
             });
             if (obj.AssetCategorys != null && obj.AssetCategorys.Count > 0)
             {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Infrastructure;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Server.IIS.Core;
 using Microsoft.EntityFrameworkCore;
 using NPOI.SS.Formula.Atp;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Nwcali.Request;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
@@ -267,102 +269,117 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        public async Task CertVerification(CertVerificationReq req)
+        public async Task<string> CertVerification(List<CertVerificationReq> request)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var certInfo = await Repository.Find(c => c.Id.Equals(req.CertInfoId)).FirstOrDefaultAsync();
+            StringBuilder Message = new StringBuilder();
+            foreach (var req in request)
+            {
+                var certInfo = await Repository.Find(c => c.Id.Equals(req.CertInfoId)).FirstOrDefaultAsync();
+                var baseInfo = await UnitWork.Find<NwcaliBaseInfo>(null).FirstOrDefaultAsync(c => c.Id == req.CertInfoId);
+                try
+                {
+                    if (certInfo is null && baseInfo is null)
+                        throw new CommonException("证书不存在", 80001);
+                    var id = certInfo is null ? baseInfo.Id : certInfo.Id;
+                    var certNo = certInfo is null ? baseInfo.CertificateNumber : certInfo.CertNo;
+                    var b = await CheckCanOperation(id, loginContext.User.Name);
+                    if (!b)
+                    {
+                        throw new CommonException("您无法操作此步骤。", 80011);
+                    }
+                    var flowInstanceId = certInfo is null ? baseInfo.FlowInstanceId : certInfo.FlowInstanceId;
+                    var flowInstance = await UnitWork.FindSingleAsync<FlowInstance>(c => c.Id == flowInstanceId);
+                    var operatorName = certInfo is null ? baseInfo.Operator : certInfo.Operator;
+                    if (flowInstance.ActivityName.Equals("待送审") && !operatorName.Equals(loginContext.User.Name))
+                    {
+                        throw new CommonException("您无法操作此步骤。", 80011);
+                    }
+                    var list = new List<WordModel>();
+                    switch (req.Verification.VerificationFinally)
+                    {
+                        case "1":
+                            #region 签名
+                            if (flowInstance.ActivityName.Equals("待送审"))
+                            {
+                                _flowInstanceApp.Verification(req.Verification);
+                                await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
+                                {
+                                    CertInfoId = id,
+                                    Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}送审证书。"
+                                });
+                                //await UnitWork.UpdateAsync<Certinfo>(c => c.Id.Equals(req.CertInfoId), o => new Certinfo { Operator = loginContext.User.Name, OperatorId = loginContext.User.Id });
+                                //await UnitWork.SaveAsync();
+                            }
+                            else if (flowInstance.ActivityName.Equals("待审核"))
+                            {
+                                _flowInstanceApp.Verification(req.Verification);
+                                await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
+                                {
+                                    CertInfoId = id,
+                                    Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}审批通过。"
+                                });
+                                await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { TechnicalManager = loginContext.User.Name, TechnicalManagerId = loginContext.User.Id });
+                                await UnitWork.SaveAsync();
+                            }
+                            else if (flowInstance.ActivityName.Equals("待批准"))
+                            {
+                                _flowInstanceApp.Verification(req.Verification);
+                                await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
+                                {
+                                    CertInfoId = id,
+                                    Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}批准证书。"
+                                });
+                                await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { ApprovalDirector = loginContext.User.Name, ApprovalDirectorId = loginContext.User.Id });
+                                await UnitWork.SaveAsync();
+                            }
+                            #endregion
+                            break;
+                        case "2":
+                            _flowInstanceApp.Verification(req.Verification);
+                            await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
+                            {
+                                CertInfoId = id,
+                                Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}不同意证书。"
+                            });
+                            break;
+                        case "3":
+                            _flowInstanceApp.Verification(req.Verification);
+                            await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
+                            {
+                                CertInfoId = id,
+                                Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}驳回证书。"
+                            });
+                            await _flowInstanceApp.DeleteAsync(f => f.Id == req.Verification.FlowInstanceId);
+                            var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name == "校准证书");
+                            var flowInstanceRequest = new AddFlowInstanceReq();
+                            flowInstanceRequest.SchemeId = mf.FlowSchemeId;
+                            flowInstanceRequest.FrmType = 2;
+                            flowInstanceRequest.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
+                            flowInstanceRequest.CustomName = $"校准证书{certNo}审批";
+                            flowInstanceRequest.FrmData = $"{{\"certNo\":\"{certNo}\",\"cert\":[{{\"key\":\"{DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString()}\",\"url\":\"/Cert/DownloadCertPdf/{certNo}\",\"percent\":100,\"status\":\"success\",\"isImg\":false}}]}}";
+                            var newFlowId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(flowInstanceRequest);
+                            await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { FlowInstanceId = newFlowId });
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                catch (Exception e)
+                {
 
-            var baseInfo = await UnitWork.Find<NwcaliBaseInfo>(null).FirstOrDefaultAsync(c => c.Id == req.CertInfoId);
-            if (certInfo is null && baseInfo is null)
-                throw new CommonException("证书不存在", 80001);
-            var id = certInfo is null ? baseInfo.Id : certInfo.Id;
-            var certNo = certInfo is null ? baseInfo.CertificateNumber : certInfo.CertNo;
-            var b = await CheckCanOperation(id, loginContext.User.Name);
-            if (!b)
-            {
-                throw new CommonException("您无法操作此步骤。", 80011);
+                    Message.Append("报错编号"+baseInfo.CertificateNumber +"报错信息："+ e.Message);
+                }
+                if (request.Count > 1) 
+                {
+                    await Task.Delay(30000);
+                }
             }
-            var flowInstanceId = certInfo is null ? baseInfo.FlowInstanceId : certInfo.FlowInstanceId;
-            var flowInstance = await UnitWork.FindSingleAsync<FlowInstance>(c => c.Id == flowInstanceId);
-            var operatorName = certInfo is null ? baseInfo.Operator : certInfo.Operator;
-            if (flowInstance.ActivityName.Equals("待送审") && !operatorName.Equals(loginContext.User.Name))
-            {
-                throw new CommonException("您无法操作此步骤。", 80011);
-            }
-            var list = new List<WordModel>();
-            switch (req.Verification.VerificationFinally)
-            {
-                case "1":
-                    #region 签名
-                    if (flowInstance.ActivityName.Equals("待送审"))
-                    {
-                        _flowInstanceApp.Verification(req.Verification);
-                        await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
-                        {
-                            CertInfoId = id,
-                            Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}送审证书。"
-                        });
-                        //await UnitWork.UpdateAsync<Certinfo>(c => c.Id.Equals(req.CertInfoId), o => new Certinfo { Operator = loginContext.User.Name, OperatorId = loginContext.User.Id });
-                        //await UnitWork.SaveAsync();
-                    }
-                    else if (flowInstance.ActivityName.Equals("待审核"))
-                    {
-                        _flowInstanceApp.Verification(req.Verification);
-                        await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
-                        {
-                            CertInfoId = id,
-                            Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}审批通过。"
-                        });
-                        await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { TechnicalManager = loginContext.User.Name, TechnicalManagerId = loginContext.User.Id });
-                        await UnitWork.SaveAsync();
-                    }
-                    else if (flowInstance.ActivityName.Equals("待批准"))
-                    {
-                        _flowInstanceApp.Verification(req.Verification);
-                        await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
-                        {
-                            CertInfoId = id,
-                            Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}批准证书。"
-                        });
-                        await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { ApprovalDirector = loginContext.User.Name, ApprovalDirectorId = loginContext.User.Id });
-                        await UnitWork.SaveAsync();
-                    }
-                    #endregion
-                    break;
-                case "2":
-                    _flowInstanceApp.Verification(req.Verification);
-                    await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
-                    {
-                        CertInfoId = id,
-                        Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}不同意证书。"
-                    });
-                    break;
-                case "3":
-                    _flowInstanceApp.Verification(req.Verification);
-                    await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
-                    {
-                        CertInfoId = id,
-                        Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}驳回证书。"
-                    });
-                    await _flowInstanceApp.DeleteAsync(f => f.Id == req.Verification.FlowInstanceId);
-                    var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name == "校准证书");
-                    var request = new AddFlowInstanceReq();
-                    request.SchemeId = mf.FlowSchemeId;
-                    request.FrmType = 2;
-                    request.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
-                    request.CustomName = $"校准证书{certNo}审批";
-                    request.FrmData = $"{{\"certNo\":\"{certNo}\",\"cert\":[{{\"key\":\"{DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString()}\",\"url\":\"/Cert/DownloadCertPdf/{certNo}\",\"percent\":100,\"status\":\"success\",\"isImg\":false}}]}}";
-                    var newFlowId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(request);
-                    await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { FlowInstanceId = newFlowId });
-                    break;
-                default:
-                    break;
-            }
-
+            return string.IsNullOrWhiteSpace(Message.ToString()) ? "审批成功" : Message.ToString();
         }
 
         public void Add(AddOrUpdateCertinfoReq req)
@@ -443,6 +460,44 @@ namespace OpenAuth.App
         {
             var objs = await UnitWork.Find<Category>(c=> Model.Contains(c.Name) && c.TypeId.Equals("SYS_CalibrationCertificateType")).FirstOrDefaultAsync();
             return objs;
+        }
+
+        /// <summary>
+        /// 获取物料信息
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetMaterialCode(QueryMaterialCodeReq req)
+        {
+            var result = new TableData();
+
+            var query = from a in UnitWork.Find<PcPlc>(null)
+                        join b in UnitWork.Find<NwcaliBaseInfo>(null) on a.NwcaliBaseInfoId equals b.Id into ab
+                        from b in ab.DefaultIfEmpty()
+                        where req.plcGuid.Contains(a.Guid)
+                        select new { id = a.Id, plcGuid = a.Guid, materialCode = b.TesterModel };
+
+            result.Data = await query.ToListAsync();
+            return result;
+        }
+
+        /// <summary>
+        /// 获取证书信息
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetCertificate(QueryMaterialCodeReq req)
+        {
+            var result = new TableData();
+
+            var query = from a in UnitWork.Find<PcPlc>(null)
+                        join b in UnitWork.Find<NwcaliBaseInfo>(null) on a.NwcaliBaseInfoId equals b.Id into ab
+                        from b in ab.DefaultIfEmpty()
+                        where req.plcGuid.Contains(a.Guid)
+                        select new { id=a.Id,plcGuid=a.Guid,certNo=b.CertificateNumber, calibrationDate=a.CalibrationDate,b.Operator, expirationDate=a.ExpirationDate };
+
+            result.Data = await query.ToListAsync();
+            return result;
         }
 
         public CertinfoApp(IUnitWork unitWork, IRepository<Certinfo> repository,
