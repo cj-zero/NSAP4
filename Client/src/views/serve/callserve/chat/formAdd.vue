@@ -274,9 +274,10 @@
         </el-row>
         <el-row type="flex">
           <span class="add">新增</span>
-          <div>
+          <div style="max-width: 216px;">
             <p>序列号: {{ info.manufSN }}</p>
             <p>物料编码: {{ info.itemCode }}</p>
+            <p>物料描述： {{ info.materialDescription }}</p>
           </div>
         </el-row>
       </div>

@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <div class="bg-white">
-      <search @search="onSearch"></search>
+      <search @search="onSearch" type="query"></search>
       <common-table
         :tableData="tableData"
         :headOptions="headOptions"
@@ -100,7 +100,7 @@ export default {
           return item
         })
         this.isLoading = false
-      }).cach(err => {
+      }).catch(err => {
         this.isLoading = false
         this.$message.error(err.message)
       })

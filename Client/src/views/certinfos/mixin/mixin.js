@@ -18,7 +18,7 @@ export let certVerMixin = { // 审核操作mixin
       }
       direction === 'left' ? (this.isLeftSend = true) : (this.isRightSend = true)
       let { id, flowInstanceId } = data
-      certVerificate({
+      certVerificate([{
         certInfoId: id,
         verification: {
           flowInstanceId,
@@ -27,7 +27,7 @@ export let certVerMixin = { // 审核操作mixin
           nodeRejectStep: '',
           nodeRejectType: 0
         }
-      }).then(() => {
+      }]).then(() => {
         this.$message({
           message: `${message}成功`
         })
@@ -57,10 +57,51 @@ export let commonMixin = {
       visible: false, // 弹窗
       currentCertNo: '', // 当前的证书编号
       currentData: {}, // 当前弹窗项的数据
-      isLoading: true
+      isLoading: true,
+      selectList: [],
+      isBtnLock: false // 防止重复点击批量
     }
   },
   methods: {
+    _certVerificateList (list) { // 批量审批
+      if (this.isBtnLock) return
+      list = list.map(item => {
+        let { id, flowInstanceId } = item
+        return {
+          certInfoId: id,
+          verification: {
+            flowInstanceId,
+            verificationFinally: '1',
+            verificationOpinion: ''
+          }
+        }
+      })
+      this.isBtnLock = true
+      this.$confirm('确定一键审核？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消'
+      }).then(() => {
+        this.isLoading = true
+        certVerificate(list).then(res => {
+          this.$message.success(res.message)
+          this._loadApprover()
+          this.isBtnLock = false
+        }).catch(err => {
+          this.isBtnLock = false
+          this.$message.error(err.message)
+          this.isLoading = false
+        })
+      })
+    },
+    onApprove () {
+      if (!this.selectList.length) {
+        return this.$message.warning('请先选择数据')
+      }
+      this._certVerificateList(this.selectList)
+    },
+    onSelection (val) {
+      this.selectList = val
+    },
     handleChange (pageConfig) { // 分页
       this.pageConfig = Object.assign({}, this.pageConfig, pageConfig)
       this.type === 'query' ? this._getQueryList() : this._loadApprover()

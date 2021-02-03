@@ -41,12 +41,11 @@ export const quotationTableMixin = {
     },
     _getQuotationDetail (data) {
       let quotationId
-      // let { status, isReceive, isSalesOrder, quotationStatus } = data
-      let { status, isReceive, quotationStatus } = data
+      let { status, isReceive, isSalesOrder, quotationStatus } = data
       this.isReceive = !!isReceive // 判断销售订单还是报价单
-      // if (isSalesOrder && !data.salesOrderId) {
-      //   return this.$message.warning('无销售单号')
-      // }
+      if (isSalesOrder && !data.salesOrderId) {
+        return this.$message.warning('无销售单号')
+      }
        if (status !== 'create') { // 要么编辑要么查看报价单
         quotationId = data.id
         console.log(quotationStatus, 'quotationStatus')
@@ -224,28 +223,6 @@ export const configMixin = { // 表单配置
         { tag: 'text', span: 12, attrs: { prop: 'remark', disabled: !this.ifEdit }, itemAttrs: { prop: 'remark', label: '备注' } }
       ]
     },
-    // formConfig () { // 头部表单配置
-    //   return [
-    //     { label: '服务ID', prop: 'serviceOrderSapId', placeholder: '请选择', col: 5, readonly: true, disabled: true },
-    //     { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请选择', col: 5, disabled: true },
-    //     { label: '客户名称', prop: 'terminalCustomer', placeholder: '请选择', col: 5, disabled: true },
-    //     { label: '联系人', prop: 'newestContacter', placeholder: '请填写', col: 5},
-    //     { label: '电话', prop: 'newestContactTel', placeholder: '请填写', col: 4, isEnd: true },
-    //     { label: '科目余额', prop: 'balance', placeholder: '请填写', disabled: true },
-    //     { label: '付款条件', prop: 'deliveryMethod', placeholder: '请选择', col: 6, type: 'select', disabled: !this.ifEdit, isEnd: true },
-    //     // { label: '开票地址', prop: 'shippingAddress', placeholder: '请选择', col: 20, disabled: true, isEnd: true },
-    //     { label: '客户地址', prop: 'shippingAddress', col: 20, disabled: true },
-    //     { label: '业务伙伴币', prop: 'moneyMeans', type: 'select', options: this.deliveryMethodList, disabled: !this.ifEdit },
-    //     { label: '交货日期', prop: 'deliveryDate', col: 4, disabled: true, isEnd: true },
-    //     { label: '开票单位', prop: 'invoiceCompany', placeholder: '请选择', col: 6, 
-    //       type: 'select', options: this.invoiceCompanyList, isEnd: true, disabled: !(this.status === 'create' && this.isPreview) },
-    //     { label: '交货日期', prop: 'deliveryDate' },
-    //     { label: '验收期限', prop: 'acceptancePeriod', isEnd: true },
-    //     // { label: '收货地址', prop: 'collectionAddress', placeholder: '请选择', col: 20, disabled: true, isEnd: true },
-    //     { label: '交货地址', prop: 'collectionAddress', col: 20, disabled: true },
-    //     { label: '备注', prop: 'remark', placeholder: '请填写', col: 24, disabled: true, isEnd: true }
-    //   ]
-    // },
     returnFormConfig () { // 退料单表单
       return [
         { label: '服务ID', prop: 'serviceOrderId', col: 4, disabled: true },
@@ -381,10 +358,10 @@ export const uploadFileMixin = {
     onAccept (file) { // 限制发票文件上传的格式
       let { type } = file
       let imgReg = /^image\/\w+/i
-      let isFitType = imgReg.test(type)
+      let isFitType = imgReg.test(type) || type === 'application/pdf'
       return new Promise((resolve, reject) => {
         if (!isFitType) {
-          this.$message.error('文件格式只能为图片')
+          this.$message.error('文件格式只能为图片或者为PDF文件')
           reject(false)
         } else {
           resolve()

@@ -1,50 +1,79 @@
 <template>
-  <div class="area-selector-wrap">
-    <i class="el-icon-close close-btn" @click="closeSelector"></i>
-    <!-- 选项 -->
-    <ul class="tab-list">
-      <li 
-        v-for="(item, index) in tabList" 
-        :key="item.areaName" 
-        @click="selectTab(item, index)"
-        :class="{ active: index === activeIndex }"
-      >{{ item.areaName }}</li>
-    </ul>
-    <!-- 选择列表 -->
-    <el-scrollbar>
-      <ul class="select-list">
-        <li 
-          v-for="item in selectList" 
-          :key="item.areaName" 
-          @click="selectItem(item)"
-          :class="{ active: includesName(item.areaName) }">{{ item.areaName }}</li>
-      </ul>
-    </el-scrollbar>
+  <div class="area-selector-wrapper" v-click-outside="hidePannel" :key="key">
+    <el-input v-bind="$attrs" v-on="$listeners" :value="value" @click.native.stop="togglePannel"></el-input>
+    <el-collapse-transition>
+      <div class="area-selector-wrap" v-show="isShow" :style="areaStyle">
+        <i class="el-icon-close close-btn" @click="hidePannel"></i>
+        <!-- 选项 -->
+        <ul class="tab-list">
+          <li 
+            v-for="(item, index) in tabList" 
+            :key="item.areaName"
+            @click="selectTab(item, index)"
+            :class="{ active: index === activeIndex }"
+          >{{ item.areaName }}</li>
+        </ul>
+        <!-- 选择列表 -->
+        <el-scrollbar>
+          <ul class="select-list">
+            <li 
+              v-for="item in selectList" 
+              :key="item.areaName" 
+              @click="selectItem(item)"
+              :class="{ active: includesName(item.areaName) }">{{ item.areaName }}</li>
+          </ul>
+        </el-scrollbar>
+      </div>
+    </el-collapse-transition>
   </div>
 </template>
 
 <script>
-// import addressList from './address'
 import { removeLocalStorage, hasLocalStorage, setSessionStorage, hasSessionStorage, setObject, getObject } from  '@/utils/storage'
 import { getAreaList } from '@/api/serve/area'
+import ClickOutside from 'element-ui/src/utils/clickoutside'
 export default {
+  name: 'TestArea',
+  inject: {
+    elForm: {
+      default: ''
+    }
+  },
+  directives: {
+    ClickOutside
+  },
   props: {
     options: {
       type: Object,
       default () {
         return {}
       }
+    },
+    value: {
+      type: String,
+      default: ''
+    },
+    processValue: { // 自定义地址的返回值
+      type: Function
+    },
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  },
+  computed: {
+    selectDisabled () {
+      return this.disabled || (this.elForm || {}).disabled;
     }
   },
   data () {
     return {
-      addressList: [],
+      key: 0,
+      isShow: false,
       tabList: [{
         areaName: '请选择'
       }], // 所有选项卡的列表
       selectList: [], // 当前选择的列表
-      currentTab: '', // 当前选中的选项卡
-      overseasList: [], // 海外国家列表
       activeIndex: 0, // 当前选中的选项卡
       currentIndex: 0,
       currentItem: {}, // 当前选择的数据
@@ -52,11 +81,27 @@ export default {
       city: '', // 对应level3
       district: '', // 街道 对应level4
       currentLevel: 1, // 默认level1
-      isFirst: true, // 默认是第一次加载
-      cancelRequestFn: null // 取消请求
+      cancelRequestFn: null, // 取消请求
+      areaStyle: {} // 位置
     }
   },
   methods: {
+    togglePannel (e) {
+      let { left, top } = e.target.getBoundingClientRect()
+      // 设置位置
+      this.areaStyle = { left: left + 'px', top: top + 'px' }
+      console.log(this.elForm, 'elForm', this.selectDisabled, top , left)
+      if (!this.selectDisabled) {
+        this.isShow = !this.isShow
+      }
+    },
+    hidePannel () {
+      this.isShow = false
+      this.$emit("close", this.options)
+    },
+    defaultProcessValue ({ province, city, district }) { // 默认返回的地址格式
+      return province + city + district
+    },
     selectTab (item, index) {
       let { pid } = item
       console.log(item, 'item')
@@ -74,13 +119,16 @@ export default {
       this.tabList[this.currentIndex].areaName = areaName
       this.handleSelect(areaName)
       if (Number(areaLevel) === 3) {
-        this.$emit('change', {
+        let params = {
           province: this.province || '',
           city: this.city || '',
           district: this.district || '',
           ...this.options
-        })
-        return this.closeSelector()
+        }
+        let processValueFn = this.processValue || this.defaultProcessValue
+        console.log(processValueFn(params), 'value')
+        this.$emit('input', processValueFn(params))
+        this.hidePannel()
       }
       console.log(item)
     },
@@ -103,9 +151,6 @@ export default {
     includesName (name) {
       let { province, city, district } = this
       return [province, city, district].includes(name)
-    },
-    closeSelector () {
-      this.$emit("close", this.options)
     },
     _normalizeAddressList (id, isReset) { // id: 根据id查询省市区 isRest: 根据省市区是否发生变化
       if (getObject('addressInfo', id)) { // 如果数据已经缓存则直接取缓存的数据
@@ -136,12 +181,17 @@ export default {
             this.activeIndex++
             this.currentIndex++ 
           }
-          this.isFirst = false
         })
       }
     }
   },
   watch: {
+    value (newVal) {
+      if (!newVal) {
+        this.reset()
+        this._normalizeAddressList('')
+      }
+    },
     province () {
       let { id, areaLevel } = this.currentItem
       if (Number(areaLevel) !== 3) {
@@ -190,20 +240,26 @@ export default {
 }
 </script>
 <style lang='scss' scoped>
-.area-selector-wrap {
+.area-selector-wrapper {
   position: relative;
+}
+.area-selector-wrap {
+  position: fixed;
+  z-index: 99999;
   box-sizing: border-box;
   overflow: hidden;
   width: 640px;
-  margin: 10px 0;
+  margin: 5px 0;
   padding: 10px;
   border: 1px solid #e4e7ed;
   border-radius: 4px;
   background-color: #fff;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 1);
   font-size: 12px;
+  transform: translate3d(0, 28px, 0);
   .close-btn {
     position: absolute;
+    top: 10px;
     right: 10px;
     cursor: pointer;
   }
@@ -213,7 +269,8 @@ export default {
     margin: 0;
   }
   .tab-list {
-    margin-top: 5px;
+    // margin-top: 5px;
+    // margin: 10px;
     // border-bottom: 2px solid #e4393c;
     & > li {
       display: inline-block;
@@ -242,6 +299,7 @@ export default {
   .select-list {
     display: flex;
     flex-wrap: wrap;
+    // margin: 0 10px;
     // overflow-y: auto;
     // max-height: 300px;
     & > li {

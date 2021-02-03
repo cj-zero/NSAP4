@@ -1051,7 +1051,7 @@ export default {
       let promiseList = [], otherIndex = 0, hasOther = false
       for (let i = 0; i < manufSNList.length; i++) {
         let manufSN = manufSNList[i]
-        if (manufSN !== '其他设备') {
+        if (manufSN !== '其他设备' || manufSN !== '无序列号') {
           promiseList.push(getSerialNumber({
             ...listQuery,
             CardCode,
@@ -1088,10 +1088,10 @@ export default {
             targetList[0].editTrue = false
           }
           targetList.splice(otherIndex, 0, {
-            manufacturerSerialNumber: "其他设备",
+            manufacturerSerialNumber: "无序列号",
             editTrue: otherIndex === 0,
             internalSerialNumber: "",
-            materialCode: "其他设备",
+            materialCode: "无序列号",
             materialDescription: "",
             feeType: 1,
             fromTheme:  "",

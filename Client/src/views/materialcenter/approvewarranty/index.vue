@@ -136,6 +136,7 @@ export default {
       listQuery: {
         page: 1,
         limit: 50,
+        state: 2
       },
       dialogLoading: false,
       tableLoading: false,

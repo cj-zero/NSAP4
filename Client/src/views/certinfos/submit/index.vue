@@ -1,14 +1,16 @@
 <template>
   <div class="app-container">
     <div class="bg-white">
-      <search @search="onSearch" :type="type"></search>
+      <search @search="onSearch" :type="type" @approve="onApprove"></search>
       <common-table
+        ref="table"
         :isLoading="isLoading"
         :tableData="tableData"
         :headOptions="headOptions"
         :type="type"
         @openDetail="onOpenDetail"
         @handleSubmit="onHandleSubmit"
+        @selectionChange="onSelection"
       >
       </common-table>
       <pagination
@@ -89,6 +91,7 @@ export default {
         })
         this.totalCount = res.count
         this.isLoading = false
+        this.$refs.table.clearSelection()
       }).catch(() => {
         this.isLoading = false
       })

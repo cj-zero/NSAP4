@@ -1,5 +1,5 @@
 <template>
-    <el-dialog
+  <el-dialog
     class="my-dialog-wrapper"
     v-el-drag-dialog
     v-loading.fullscreen="loading"
@@ -32,7 +32,6 @@
           >{{ btnItem.btnText }}</el-button>
         </template>
       </slot>
-      
     </div>
   </el-dialog> 
   <!-- </div> -->
