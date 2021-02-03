@@ -294,14 +294,14 @@ export const returnTableMixin = { // 退料表格
       ],
       returnOrderColumns: [
         { label: '退料单号', prop: 'id', handleClick: this._getReturnNoteDetail, type: 'link'},
+        { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link' },
         { label: '客户代码', prop: 'customerId' },
         { label: '客户名称', prop: 'customerName' },
-        { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link' },
         { label: '申请人', prop: 'createUser' },
         { label: '创建时间', prop: 'createDate' },
-        { label: '总金额', prop: 'fprice', slotName: 'totalMoney', align: 'right' },
+        { label: '总金额', prop: 'totalMoney', slotName: 'totalMoney', align: 'right' },
         { label: '备注', prop: 'remark' },
-        { label: '状态', slotName: 'status' }
+        // { label: '状态', slotName: 'status' }
       ],
       dialogLoading: false,
       tableLoading: false,

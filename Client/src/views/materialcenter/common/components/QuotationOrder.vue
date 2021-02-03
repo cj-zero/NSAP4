@@ -433,9 +433,9 @@ export default {
     },
     'formData.serviceOrderSapId': {
       immediate: true,
-      handler (val) {
+      handler (val, oldVal) {
         console.log(val, 'newVal')
-        if (val) {
+        if (val !== oldVal && val) {
           // if (this.isReceive) {
           if (this.isReceive) {
             if (this.status === 'create') {
@@ -860,7 +860,7 @@ export default {
       }
     },
     _normalizeMaterialSummaryList () {
-      console.log(this.formData.quotationMergeMaterials)
+
       this.materialSummaryList = this.formData.quotationMergeMaterials.map((item, index) => {
         let { count, costPrice } = item
         item.index = index
@@ -955,8 +955,8 @@ export default {
     resetInfo () { // 每次关闭弹窗
       // 预览数据
       this.reset()
+      console.log(this.formData, this.formData.serviceOrderSapId)
       this.$nextTick(() => {
-        this.$refs.form.resetFields()
         this.$refs.form.clearValidate()
       })
     },

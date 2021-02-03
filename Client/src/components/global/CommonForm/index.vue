@@ -10,7 +10,7 @@
         <el-row type="flex" :key="rowIndex" :style="rowStyle(formInput, rowIndex)">
           <el-col 
             v-for="(item, colIndex) in formInput" 
-            :key="item.attrs.prop" 
+            :key="`${rowIndex}_${colIndex}`" 
             :span="item.span || 24" 
             :style="cellStyle(item, colIndex)">
             <!-- 插槽 -->
@@ -136,10 +136,12 @@ export default {
     },
     createComputedInput (formItem) {
       let component = { ...formItem }
-      component.componentName = getComponentName(component) // 组件名称
-      component.attrs = mergeComponentAttrs(component) // 组件属性
-      component.itemAttrs = mergeConfig(formItemConfig, component.itemAttrs)  // el-form-item属性
-      component.on = mergeComponentAttrs(component, 'on') // 组件事件
+      if (component.tag) {
+        component.componentName = getComponentName(component) // 组件名称
+        component.attrs = mergeComponentAttrs(component) // 组件属性
+        component.itemAttrs = mergeConfig(formItemConfig, component.itemAttrs)  // el-form-item属性
+        component.on = mergeComponentAttrs(component, 'on') // 组件事件
+      }
       return component
     },
     isRender (isRender) { // 是否渲染当前formITEM
@@ -164,13 +166,13 @@ export default {
 
   },
   mounted () {
-    this.$nextTick(() => {
+    setTimeout(() => {
       // 将el-form上所有的方法都定义到当前的common-form组件上
       Object.keys(this.$refs.form.$options.methods).forEach(methodName => {
         if (methodName in this) return
         this[methodName] = this.$refs.form[methodName]
       })
-    })
+    }, 20)
   },
 }
 </script>

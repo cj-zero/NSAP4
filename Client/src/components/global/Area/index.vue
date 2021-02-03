@@ -1,6 +1,6 @@
 <template>
   <div class="area-selector-wrapper" v-click-outside="hidePannel" :key="key">
-    <el-input v-bind="$attrs" v-on="$listeners" :value="value" @focus="showPannel"></el-input>
+    <el-input v-bind="$attrs" v-on="$listeners" :value="value" @click.native.stop="showPannel"></el-input>
     <my-transition>
       <div class="area-selector-wrap" v-show="isShow">
         <i class="el-icon-close close-btn" @click="hidePannel"></i>
@@ -34,6 +34,11 @@ import { getAreaList } from '@/api/serve/area'
 import ClickOutside from 'element-ui/src/utils/clickoutside'
 export default {
   name: 'my-area-selector',
+  inject: {
+    elForm: {
+      default: ''
+    }
+  },
   directives: {
     ClickOutside
   },
@@ -50,6 +55,15 @@ export default {
     },
     processValue: { // 自定义地址的返回值
       type: Function
+    },
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  },
+  computed: {
+    selectDisabled () {
+      return this.disabled || (this.elForm || {}).disabled;
     }
   },
   data () {
@@ -73,7 +87,10 @@ export default {
   },
   methods: {
     showPannel () {
-      this.isShow = true
+      console.log(this.elForm, 'elForm', this.selectDisabled)
+      if (!this.selectDisabled) {
+        this.isShow = !this.isShow
+      }
     },
     hidePannel () {
       this.isShow = false
@@ -170,6 +187,7 @@ export default {
     value (newVal) {
       if (!newVal) {
         this.reset()
+        this._normalizeAddressList('')
       }
     },
     province () {

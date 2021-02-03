@@ -35,7 +35,7 @@ namespace OpenAuth.App
         public async Task ApplyNewOrErrorDevices(ApplyNewOrErrorDevicesReq request)
         {
             //获取当前服务单下的所有设备类型集合
-            var materialType = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId).Select(s => new { materialType = "其他设备".Equals(s.MaterialCode) ? "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) }).ToListAsync();
+            var materialType = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId).Select(s => new { materialType = "无序列号".Equals(s.MaterialCode) ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) }).ToListAsync();
             var materialTypes = materialType.Select(s => s.materialType).Distinct().ToList();
             //发送消息至聊天室
             string head = "技术员核对设备有误提交给呼叫中心的信息";
@@ -46,7 +46,7 @@ namespace OpenAuth.App
                 foreach (Device item in request.Devices)
                 {
                     SeviceTechnicianApplyOrder obj = new SeviceTechnicianApplyOrder();
-                    var editMaterialType = "其他设备".Equals(item.newCode) ? "其他设备" : item.newCode.Substring(0, item.newCode.IndexOf("-"));
+                    var editMaterialType = "无序列号".Equals(item.newCode) ? "无序列号" : item.newCode.Substring(0, item.newCode.IndexOf("-"));
                     //判断当前编辑的设备类型是否在服务单中 若存在则直接取该设备类型的相关操作信息 不存在则默认为未派单
                     if (materialTypes.Contains(editMaterialType))
                     {
@@ -63,8 +63,8 @@ namespace OpenAuth.App
                             //获取当前设备类型服务信息
                             var currentMaterialTypeInfo = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == request.AppUserId && s.ServiceOrderId == request.ServiceOrderId)
                             .Include(s => s.ProblemType)
-                            .WhereIf("其他设备".Equals(editMaterialType), a => a.MaterialCode == "其他设备")
-                            .WhereIf(!"其他设备".Equals(editMaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == editMaterialType)
+                            .WhereIf("无序列号".Equals(editMaterialType), a => a.MaterialCode == "无序列号")
+                            .WhereIf(!"无序列号".Equals(editMaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == editMaterialType)
                             .FirstOrDefaultAsync();
                             obj.Status = currentMaterialTypeInfo.Status;
                             obj.OrderTakeType = currentMaterialTypeInfo.OrderTakeType;
@@ -116,8 +116,8 @@ namespace OpenAuth.App
                                 //获取当前设备类型服务信息
                                 var currentMaterialTypeInfo = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == request.AppUserId && s.ServiceOrderId == request.ServiceOrderId)
                                     .Include(s => s.ProblemType)
-                                    .WhereIf("其他设备".Equals(editMaterialType), a => a.MaterialCode == "其他设备")
-                                    .WhereIf(!"其他设备".Equals(editMaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == editMaterialType)
+                                    .WhereIf("无序列号".Equals(editMaterialType), a => a.MaterialCode == "无序列号")
+                                    .WhereIf(!"无序列号".Equals(editMaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == editMaterialType)
                                     .FirstOrDefaultAsync();
                                 obj.Status = currentMaterialTypeInfo.Status;
                                 obj.OrderTakeType = currentMaterialTypeInfo.OrderTakeType;
@@ -152,7 +152,7 @@ namespace OpenAuth.App
                 head = "请呼叫中心核对客户新设备信息";
                 foreach (NewDevice item in request.NewDevices)
                 {
-                    var newMaterialType = "其他设备".Equals(item.ItemCode) ? "其他设备" : item.ItemCode.Substring(0, item.ItemCode.IndexOf("-"));
+                    var newMaterialType = "无序列号".Equals(item.ItemCode) ? "无序列号" : item.ItemCode.Substring(0, item.ItemCode.IndexOf("-"));
                     //判断当前新增的设备类型是否在服务单中 若存在则直接取该设备类型的相关操作信息 不存在则默认为未派单
                     SeviceTechnicianApplyOrder obj = new SeviceTechnicianApplyOrder();
                     obj.MaterialType = request.MaterialType;
@@ -171,8 +171,8 @@ namespace OpenAuth.App
                         //获取当前设备类型服务信息
                         var currentMaterialTypeInfo = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == request.AppUserId && s.ServiceOrderId == request.ServiceOrderId)
                             .Include(s => s.ProblemType)
-                            .WhereIf("其他设备".Equals(newMaterialType), a => a.MaterialCode == "其他设备")
-                            .WhereIf(!"其他设备".Equals(newMaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == newMaterialType)
+                            .WhereIf("无序列号".Equals(newMaterialType), a => a.MaterialCode == "无序列号")
+                            .WhereIf(!"无序列号".Equals(newMaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == newMaterialType)
                             .FirstOrDefaultAsync();
                         obj.Status = currentMaterialTypeInfo.Status;
                         obj.OrderTakeType = currentMaterialTypeInfo.OrderTakeType;
@@ -214,13 +214,14 @@ namespace OpenAuth.App
             {
                 o.MaterialCode,
                 o.ManufacturerSerialNumber,
-                MaterialType = "其他设备".Equals(req.MaterialType) ? "其他设备" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
+                o.MaterialDescription,
+                MaterialType = "无序列号".Equals(req.MaterialType) ? "无序列号" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
                 o.Status,
                 o.Id,
                 o.IsCheck,
                 o.OrderTakeType
             });
-            var checkData = await queryOrder.Where(s => req.MaterialType == "其他设备" ? s.MaterialCode == "其他设备" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType).OrderByDescending(o => o.Id).ToListAsync();
+            var checkData = await queryOrder.Where(s => req.MaterialType == "无序列号" ? s.MaterialCode == "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == req.MaterialType).OrderByDescending(o => o.Id).ToListAsync();
             data.Add("checkData", checkData);
             var query = UnitWork.Find<SeviceTechnicianApplyOrder>(s => s.TechnicianId == req.TechnicianId && s.ServiceOrderId == req.ServiceOrderId && s.MaterialType == req.MaterialType && s.IsSolved == 0);
             var newData = await query.OrderByDescending(o => o.CreateTime).Select(s => new
@@ -234,8 +235,8 @@ namespace OpenAuth.App
                 s.Id
             }).ToListAsync();
             data.Add("newData", newData);
-            //判断服务单是否已存在其他设备的设备类型 若有则再添加新设备时不显示其他设备
-            var otherMaterialInfo = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId&&"其他设备".Equals(s.MaterialCode)).ToListAsync();
+            //判断服务单是否已存在无序列号的设备类型 若有则再添加新设备时不显示无序列号
+            var otherMaterialInfo = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && "无序列号".Equals(s.MaterialCode)).ToListAsync();
             var isShowOtherMaterial = otherMaterialInfo != null && otherMaterialInfo?.Count > 0 ? 0 : 1;
             data.Add("isShowOtherMaterial", isShowOtherMaterial);
             result.Data = data;
@@ -258,7 +259,7 @@ namespace OpenAuth.App
                 throw new CommonException("该服务单查询到无效的工单号，请确认", 09091);
             }
             //获取当前的服务单设备类型集合
-            var MaterialTypes = (await UnitWork.Find<ServiceWorkOrder>(a => a.ServiceOrderId == ApplyInfo.ServiceOrderId).ToListAsync()).GroupBy(g => "其他设备".Equals(g.MaterialCode) ? "其他设备" : g.MaterialCode.Substring(0, g.MaterialCode.IndexOf("-"))).Select(s => s.Key).ToArray();
+            var MaterialTypes = (await UnitWork.Find<ServiceWorkOrder>(a => a.ServiceOrderId == ApplyInfo.ServiceOrderId).ToListAsync()).GroupBy(g => "无序列号".Equals(g.MaterialCode) ? "无序列号" : g.MaterialCode.Substring(0, g.MaterialCode.IndexOf("-"))).Select(s => s.Key).ToArray();
             switch (req.SolveType)
             {
                 //修改
@@ -282,18 +283,18 @@ namespace OpenAuth.App
         {
             //添加工单时先判断当前服务单下是否已存在该设备
             var IsExist = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId && s.ManufacturerSerialNumber == request.ManufacturerSerialNumber && s.MaterialCode == request.MaterialCode).ToListAsync()).Count;
-            if (IsExist > 0)
+            if (IsExist > 0 && request.MaterialCode != "无序列号")
             {
                 throw new CommonException("当前设备已存在,请勿重复添加", 50001);
             }
             //在这个服务单下新建一个工单
             await _serviceOrderApp.AddWorkOrder(request);
             //判断当前设备的设备类型是否已存在服务单中
-            var materialType = "其他设备".Equals(request.MaterialCode) ? "其他设备" : request.MaterialCode.Substring(0, request.MaterialCode.IndexOf("-"));
+            var materialType = "无序列号".Equals(request.MaterialCode) ? "无序列号" : request.MaterialCode.Substring(0, request.MaterialCode.IndexOf("-"));
             //获取当前设备类型是否已被某个技术员接单 有则查出该技术员
             var workOrderInfo = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId)
-                .WhereIf(materialType.Equals("其他设备"), a => a.ManufacturerSerialNumber == "其他设备")
-                .WhereIf(!materialType.Equals("其他设备"), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == materialType)
+                .WhereIf(materialType.Equals("无序列号"), a => a.ManufacturerSerialNumber == "无序列号")
+                .WhereIf(!materialType.Equals("无序列号"), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == materialType)
                 .FirstOrDefaultAsync();
             var TechnicianId = workOrderInfo.CurrentUserId;
             //如果已经存在当前设备类型并且已经派给了某个技术员了则将新建的工单派给这个设备类型的技术员

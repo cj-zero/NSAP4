@@ -103,7 +103,7 @@ export default {
       currnetRow: null,
       returnOrderColumns: [
         { label: '结算订单', type: 'link', handleClick: this.preview, prop: 'id' },
-        { label: '服务ID', type: 'link', handleClick: this.preview, prop: 'serviceOrderSapId' },
+        { label: '服务ID', type: 'link', handleClick: this._openServiceOrder, prop: 'serviceOrderSapId' },
         { label: '客户代码', prop: 'customerId' },
         { label: '客户名称', prop: 'customerName' },
         { label: '申请人', prop: 'createUser' },
@@ -120,8 +120,7 @@ export default {
         { prop: 'createrName', placeholder: '申请人', width: 100 },
         { prop: 'beginDate', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endDate', placeholder: '创建结束日期', type: 'date', width: 150 },
-        { type: 'search' },
-        { type: 'button', btnText: '查看', handleClick: this.preview }
+        { type: 'search' }
       ],
       btnList: [
         { btnText: '关闭', handleClick: this.close, className: 'close' }      

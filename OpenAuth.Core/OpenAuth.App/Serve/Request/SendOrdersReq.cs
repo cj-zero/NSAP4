@@ -14,5 +14,10 @@ namespace OpenAuth.App.Request
 
         [Required]
         public int CurrentUserId { get; set; }
+
+        /// <summary>
+        /// 派单类型 0正常派单 1转派
+        /// </summary>
+        public int Type { get; set; }
     }
 }

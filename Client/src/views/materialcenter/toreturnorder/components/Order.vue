@@ -73,21 +73,16 @@
               @click.stop="check(row, 2)">未通过</el-button>
           </template>
           <!-- 差错数量 -->
-          <!-- <template v-slot:wrongCount="{ row, index }">
-            <el-form-item 
-              :prop="'materialList.' + index + '.' + 'wrongCount'"
-              :rules="{ required: checkList[row.index].isPass === 2 }">
-              <el-input-number 
-                :disabled="status === 'view'"
-                size="mini"
-                :controls="false"
-                v-model="materialList[row.index].wrongCount"
-                :mini="0"
-                :max="materialList[row.index].totalCount - materialList[row.index].count"
-              >
-              </el-input-number>
-            </el-form-item>
-          </template>   -->
+          <template v-slot:wrongCount="{ row }">
+            <el-input-number 
+              size="mini"
+              :controls="false"
+              v-model="row.wrongCount"
+              :mini="0"
+              :max="row.count"
+            >
+            </el-input-number>
+          </template>  
           <!-- 收货备注 -->
           <!-- <template v-slot:receiveRemark="{ row }">
             <el-form-item 
@@ -247,18 +242,18 @@ export default {
         { label: '物料描述', prop: 'materialDescription' },
         { label: '本次退还数量', prop: 'count', align: 'right' },
         // { label: '需退总计', prop: 'totalCount', align: 'right' },
-        { label: '图片', slotMame: 'pictures' },
+        { label: '图片', slotName: 'pictures' },
         { label: '寄回备注', prop: 'shippingRemark' },
+        { label: '出错数量', prop: 'wrongCount', slotName: 'wrongCount', align: 'right' },
         { label: '核对验收', slotName: 'check', width: '150px' }
       ],
-      checkList: [], // 验收收货记录列表
       returnLoading: false,
       formItems: [
-        { span: 4, attrs: { prop: 'serviceSapId', disabled: true }, itemAttrs: { label: '服务ID' } },
-        { span: 4, attrs: { prop: 'terminalCustomerId', disabled: true }, itemAttrs: { label: '客户代码' } },
-        { span: 8, attrs: { prop: 'terminalCustomer', disabled: true }, itemAttrs: { label: '客户名称' } },
-        { span: 4, attrs: { prop: 'contacter', disabled: true }, itemAttrs: { label: '联系人' } },
-        { span: 4, attrs: { prop: 'contacterTel', disabled: true }, itemAttrs: { label: '电话' } },
+        { tag: 'text', span: 4, attrs: { prop: 'serviceSapId', disabled: true }, itemAttrs: { label: '服务ID' } },
+        { tag: 'text', span: 4, attrs: { prop: 'terminalCustomerId', disabled: true }, itemAttrs: { label: '客户代码' } },
+        { tag: 'text', span: 8, attrs: { prop: 'terminalCustomer', disabled: true }, itemAttrs: { label: '客户名称' } },
+        { tag: 'text', span: 4, attrs: { prop: 'contacter', disabled: true }, itemAttrs: { label: '联系人' } },
+        { tag: 'text', span: 4, attrs: { prop: 'contacterTel', disabled: true }, itemAttrs: { label: '电话' } },
       ]
     }
   },
@@ -317,11 +312,11 @@ export default {
     },
     generateReturnMaterials (data) { // 生成退料处理列表
       return data.map(item => {
-        let { id, check: isPass, receivingRemark: receiveRemark } = item
+        let { id, check: isPass, receivingRemark: receiveRemark, wrongCount = 0 } = item
         return {
           id,
           isPass, // check: 0 未处理 1 通过 2 未通过
-          wrongCount: 0,
+          wrongCount,
           receiveRemark
         }
       })
@@ -356,11 +351,12 @@ export default {
       })
     },
     resetInfo () {
+      this.checkList = []
       this.reset()
     }
   },
   created () {
-
+    this.checkList = [] // 验收收货记录列表
   },
   mounted () {
 
@@ -380,6 +376,9 @@ export default {
   }
   ::v-deep .el-input-number {
     width: 100%;
+    input {
+      text-align: right;
+    }
   }
   ::v-deep .el-input.is-disabled .el-input__inner {
     background-color: #fff;

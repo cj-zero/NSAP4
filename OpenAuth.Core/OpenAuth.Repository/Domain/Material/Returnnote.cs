@@ -31,7 +31,7 @@ namespace OpenAuth.Repository.Domain
 
         }
 
-        public int Id { get; set; }
+        //public int Id { get; set; }
         /// <summary>
         ///创建时间
         /// </summary>
@@ -60,7 +60,7 @@ namespace OpenAuth.Repository.Domain
         ///出库单Id
         /// </summary>
         [Description("出库单Id")]
-        public int StockOutId { get; set; }
+        public string StockOutId { get; set; }
 
         /// <summary>
         ///创建人名
@@ -97,6 +97,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("签收备注")]
         public string Remark { get; set; }
+
+        /// <summary>
+        /// 出库单总金额
+        /// </summary>
+        [Description("出库单总金额")]
+        public decimal? TotalMoney { get; set; }
 
         /// <summary>
         /// 物流表

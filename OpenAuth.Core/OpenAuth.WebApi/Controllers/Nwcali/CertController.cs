@@ -331,7 +331,7 @@ namespace OpenAuth.WebApi.Controllers
             if (certNos is null || certNos.Count() == 0)
             {
                 var data = await _nwcaliCertApp.GetPcPlcs(plcGuid);
-                return Ok(certNos);
+                return Ok(data);
             }
             return Ok(certNos);
         }
