@@ -6,11 +6,12 @@
       class="head-title-wrapper" 
       :class="{ 'general': title === 'approve' }"
     >
+      
       <p style="color: red;" v-if="formData.mainId">报销单号: <span>{{ formData.mainId }}</span></p>
       <p :class="{ 'pointer underline': !isGeneralManager }" @click="_openServiceOrHistory(true)" v-if="title === 'approve'">
         服务ID: <span>{{ formData.serviceOrderSapId }}</span>
       </p>
-      <p>报销人: {{ formData.orgName }} <span>{{ formData.userName }}</span></p>
+      <p>报销人:<span>{{ formData.orgName }} {{ formData.userName }}</span></p>
       <!-- <p v-if="!isGeneralStatus">部门: <span>{{ formData.orgName }}</span></p> -->
       <p>劳务关系: <span>{{ formData.serviceRelations }}</span></p>
       <p>创建时间: <span>{{ formData.createTime && formData.createTime.split(' ')[0] }}</span></p>
@@ -1845,7 +1846,7 @@ export default {
     onExpenseClick (row) { // 点击交通发票绘制当前发票的路径
       let { fromLng, fromLat, toLng, toLat, id } = row
       if (!fromLng || !toLng) {
-        return this.$message.warning('当前发票，为获取到坐标点')
+        return this.$message.warning('当前发票，未获取到坐标点')
       }
       // 找到当前交通发票的索引号,用于地图展示
       this.bmapIndex = findIndex(this.expenseCategoryList, item => item.id === id) + 1
@@ -3319,7 +3320,7 @@ export default {
     .general-table-wrapper {
       // padding-right: 10px;
       // width: 828px;
-      width: 993px;
+      width: 1029px;
       margin-top: 5px;
       ::v-deep .cell {
         line-height: 16px;
@@ -3374,7 +3375,7 @@ export default {
     }
     /* 总经理审批总金额 */
     .general-total-money {
-      width: 992px;
+      width: 1027px;
       padding-right: 5px;
       margin: 10px 0;
       font-size: 12px;

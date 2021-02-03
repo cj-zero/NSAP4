@@ -138,7 +138,7 @@ export default {
       ]
     },
     dialogWidth () {
-      return this.isGeneralManager ? '1015px' : '1130px'
+      return this.isGeneralManager ? '1050px' : '1130px'
     }
   },
   data () {
