@@ -1228,9 +1228,10 @@ namespace OpenAuth.App.Material
             #region 判断技术员余额
             var ReturnNoteList = await UnitWork.Find<ReturnNote>(r => r.CreateUserId.Equals(loginUser.Id)).Include(r => r.ReturnnoteMaterials).ToListAsync();
 
-            List<ReturnnoteMaterial> returnnoteMaterials = new List<ReturnnoteMaterial>();
-            ReturnNoteList.ForEach(r => returnnoteMaterials.AddRange(r.ReturnnoteMaterials));
-            var totalprice = returnnoteMaterials.Sum(p => p.CostPrice * (p.TotalCount - p.Count));
+            List<int> returnNoteIds = ReturnNoteList.Select(s => s.Id).Distinct().ToList();
+            //计算剩余未结清金额
+            var notClearAmountList = (await UnitWork.Find<ReturnnoteMaterial>(w => returnNoteIds.Contains((int)w.ReturnNoteId) && w.Check == 1).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new { s.Key, Count = s.Sum(s => s.Count), TotalWrongCount = s.Sum(s => s.WrongCount), Costprice = s.ToList().FirstOrDefault().CostPrice, TotalCount = s.ToList().FirstOrDefault().TotalCount }).ToList();
+            var totalprice = notClearAmountList.Sum(s => s.Costprice * (s.TotalCount - s.Count + s.TotalWrongCount));
             if (totalprice > 4000)
             {
                 throw new Exception("欠款已超出额度，不可领料。");
