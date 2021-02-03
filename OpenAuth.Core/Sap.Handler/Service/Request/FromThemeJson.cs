@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Sap.Handler.Service
+namespace Sap.Handler.Service.Request
 {
     public class FromThemeJson
     {

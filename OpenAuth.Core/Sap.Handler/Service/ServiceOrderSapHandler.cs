@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using OpenAuth.Repository.Domain.Sap;
 using System.Reactive;
+using Sap.Handler.Service.Request;
 
 namespace Sap.Handler.Service
 {
