@@ -310,7 +310,7 @@ namespace OpenAuth.App.Material
 						where d.WhsCode=37").WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
                         .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
 
-            if (Equipments == null && Equipments.Count() <= 0)
+            if (Equipments == null || Equipments.Count() <= 0)
             {
                 Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"select a.* ,c.lastPurPrc from (select a.Father as MnfSerial,a.Code as ItemCode,a.U_Desc as ItemName,a.U_DUnit as BuyUnitMsr,b.OnHand,b.WhsCode,a.Quantity
                         from ITT1 a join OITW b on a.Code=b.ItemCode  where a.Father='{request.MaterialCode}' and b.WhsCode=37) a join OITM c on c.ItemCode=a.ItemCode")
@@ -858,6 +858,8 @@ namespace OpenAuth.App.Material
             LogisticsRecords = new List<LogisticsRecord>();
             Expressages.ForEach(e => LogisticsRecords.AddRange(e.LogisticsRecords));
             var QuotationMergeMaterialLists = await UnitWork.Find<QuotationMergeMaterial>(q =>q.QuotationId.Equals(obj.ExpressageReqs.QuotationId)).ToListAsync();
+
+            _capBus.Publish("Serve.SalesOfDelivery.Create", obj);
 
             int isEXwarehouse = 0;
             foreach (var item in QuotationMergeMaterialLists)
