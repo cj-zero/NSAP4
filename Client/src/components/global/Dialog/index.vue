@@ -138,6 +138,7 @@ export default {
       border-bottom: 1px solid #f2f2f3;
       .el-dialog__headerbtn {
         top: 10px;
+        right: 7px;
       }
     }
     .el-dialog__footer {

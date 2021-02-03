@@ -54,6 +54,7 @@
       top="10px"
       :width="dialogWidth"
       @closed="closeDialog"
+      @opened="onOpened"
       title="进程"
       :loading="dialogLoading"
       :btnList="btnList"
@@ -108,11 +109,11 @@ import Order from './common/components/order'
 // import Report from './common/components/report'
 // import zxform from "@/views/serve/callserve/form";
 // import zxchat from '@/views/serve/callserve/chat/index'
-import { tableMixin, categoryMixin, reportMixin, chatMixin } from './common/js/mixins'
+import { tableMixin, categoryMixin, reportMixin, chatMixin, processMixin } from './common/js/mixins'
 
 export default {
   name: 'processed',
-  mixins: [tableMixin, categoryMixin, reportMixin, chatMixin],
+  mixins: [tableMixin, categoryMixin, reportMixin, chatMixin, processMixin],
   components: {
     Search,
     Order,

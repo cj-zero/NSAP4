@@ -49,9 +49,13 @@ export default {
     }
   },
   async mounted () {
+    console.log('bmap mounted')
     try {
       // await remoteLoad(`https://api.map.baidu.com/api?v=1.0&type=webgl&ak=${this.MapKey}`)
-      await loadBMap(this.MapKey) //加载引入BMap
+      if (!window.BMap) {
+        console.log(window.BMap)
+        await loadBMap(this.MapKey) //加载引入BMap
+      }
       this.initMap()
     } catch (err) {
       console.log(err)
