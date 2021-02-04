@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
@@ -44,12 +45,12 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> CertVerification(CertVerificationReq req)
+        public async Task<Response> CertVerification(List<CertVerificationReq> req)
         {
             var result = new Response();
             try
             {
-                await _app.CertVerification(req);
+                result.Message = await _app.CertVerification(req);
             }
             catch(Exception ex)
             {

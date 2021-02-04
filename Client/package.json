@@ -7,6 +7,7 @@
     "serve": "vue-cli-service serve",
     "report": "vue-cli-service build --report",
     "dev": "vue-cli-service serve --mode dev",
+    "max": "vue-cli-service serve --mode max",
     "build": "vue-cli-service build --mode prod",
     "lint": "vue-cli-service lint"
   },

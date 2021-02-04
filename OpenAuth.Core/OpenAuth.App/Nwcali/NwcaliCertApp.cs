@@ -46,9 +46,9 @@ namespace OpenAuth.App.Nwcali
                 baseInfo.CreateTime = DateTime.Now;
                 baseInfo.CreateUser = user.Name;
                 baseInfo.CreateUserId = user.Id;
-                var testerModel = await UnitWork.Find<OINS>(o => o.manufSN.Equals(baseInfo.TesterSn)).Select(o => o.itemCode).FirstOrDefaultAsync();
-                if (testerModel != null)
-                    baseInfo.TesterModel = testerModel;
+                var testerModel = await UnitWork.Find<OINS>(o => o.manufSN.Equals(baseInfo.TesterSn)).Select(o => o.itemCode).ToListAsync();
+                if (testerModel != null && testerModel.Count == 1)
+                    baseInfo.TesterModel = testerModel.FirstOrDefault();
                 await UnitWork.AddAsync(baseInfo);
                 await UnitWork.SaveAsync();
             }

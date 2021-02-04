@@ -15,7 +15,9 @@ using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Nwcali;
 using OpenAuth.App.Nwcali.Models;
+using OpenAuth.App.Nwcali.Request;
 using OpenAuth.App.Request;
+using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -981,6 +983,48 @@ namespace OpenAuth.WebApi.Controllers
             return model;
         }
 
+        /// <summary>
+        /// 获取设备类型
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> GetMaterialCode(QueryMaterialCodeReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _certinfoApp.GetMaterialCode(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取证书信息
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> GetCertificate(QueryMaterialCodeReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _certinfoApp.GetCertificate(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+        
 
         /// <summary>
         /// 将日期转成英文格式

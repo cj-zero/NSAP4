@@ -173,11 +173,11 @@
                     :action="action"
                     :headers="headers"
                     :limit="1"
-                    :disabled="openDialogType === '编辑' || openDialogType === '查看'"
+                    :disabled="openDialogType === '查看'"
                     :on-success="handleSuccessAssetInspectDataOne"
                     :on-remove="handleRemoveAssetInspectDataOne"
                   >
-                    <el-button type="primary" size="mini" :disabled="openDialogType === '编辑' || openDialogType === '查看'">添加技术指标</el-button>
+                    <el-button type="primary" size="mini" :disabled="openDialogType === '查看'">添加技术指标</el-button>
                   </el-upload>
                 </el-form-item>
               </el-col>
@@ -205,11 +205,11 @@
                     :action="action"
                     :headers="headers"
                     :limit="1"
-                    :disabled="openDialogType === '编辑' || openDialogType === '查看'"
+                    :disabled="openDialogType === '查看'"
                     :on-success="handleSuccessAssetTCF"
                     :on-remove="handleRemoveAssetTCF"
                   >
-                    <el-button type="primary" size="mini" :disabled="openDialogType === '编辑' || openDialogType === '查看'">添加技术文件</el-button>
+                    <el-button type="primary" size="mini" :disabled="openDialogType === '查看'">添加技术文件</el-button>
                   </el-upload>
                 </el-form-item>
               </el-col>

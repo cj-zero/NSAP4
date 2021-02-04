@@ -61,8 +61,8 @@ namespace OpenAuth.App
                 case 4://跳转核对设备页面
                     await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.User.Id && s.FlowNum == 5, o => new ServiceFlow { IsProceed = 1 });
                     break;
-                case 7://跳转服务报告单页面 2020.12.10 写报告单暂时将是否领料一起点亮 后期领料流程发布后需移除
-                    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.User.Id && (s.FlowNum == 3 || s.FlowNum == 6), o => new ServiceFlow { IsProceed = 1 });
+                case 7://跳转服务报告单页面
+                    await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.User.Id && (s.FlowNum == 3), o => new ServiceFlow { IsProceed = 1 });
                     break;
                 case 8://跳转是否领料页面
                     await UnitWork.UpdateAsync<ServiceFlow>(s => s.ServiceOrderId == request.ServiceOrderId && s.MaterialType == request.MaterialType && s.Creater == userInfo.User.Id && s.FlowNum == 6, o => new ServiceFlow { IsProceed = 1 });
@@ -282,7 +282,7 @@ namespace OpenAuth.App
                     name = "是否领料";
                     break;
                 case 7:
-                    name = "物料进度";
+                    name = "领料";
                     break;
                 case 8:
                     name = "退料";
