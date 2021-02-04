@@ -219,6 +219,7 @@ export default {
 .date-picker-wrapper {
   // width: 200px;
   position: relative;
+  width: 500px;
   box-sizing: border-box;
   padding: 0 10px;
   font-size: 12px;
@@ -228,12 +229,20 @@ export default {
   .content-wrapper {
     display: flex;
     position: relative;
+      & > div {
+      flex: 1;
+      &.line {
+        flex: 0 0 2px;
+      }
+    }
   }
+  
   .line {
     position: absolute;
     top: 0;
     bottom: 0;
     left: 50%;
+    flex: 2px;
     width: 2px;
     margin: 0 1px;
     background-color: #eee;

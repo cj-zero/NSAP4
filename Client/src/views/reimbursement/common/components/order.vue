@@ -34,7 +34,7 @@
       </div>
     </template>
     
-    <el-scrollbar class="scroll-bar">
+    <el-scrollbar class="scroll-bar" :wrapStyle="wrapStyle">
 
       <!-- 总经理审批查看 -->
       <div class="general-order-wrapper" v-if="isGeneralStatus">
@@ -78,7 +78,7 @@
           </el-row>
            <el-row class="item">
               <span class="title">备注</span>
-              <p class="content">{{ formData.remark }}</p>
+              <p>{{ formData.remark }}</p>
           </el-row>
         </el-form>
       </div>
@@ -1366,6 +1366,9 @@ export default {
     }
   },
   computed: {
+    wrapStyle () {
+      return this.title === 'approve' ? [{ height: '700px' }] : [{ maxHeight: '700px' }]
+    },
     ifFormEdit () { // 是否可以编辑
       return this.title === 'view'
         ? false
@@ -3054,15 +3057,15 @@ export default {
   /* 日历样式 */
   #date-picker-wrapper {
     position: absolute;
-    top: -43px;
-    left: -10px;
+    top: -52px;
+    left: -12px;
     transform: translate3d(-100%, 0, 0);
   }
   /* 地图样式 */
   #map-container {
     position: absolute;
-    top: 212px;
-    left: -12px;
+    top: 200px;
+    left: -11px;
     transform: translate3d(-100%, 0, 0);
     
   }
@@ -3258,7 +3261,7 @@ export default {
     &.el-scrollbar {
        ::v-deep {
         .el-scrollbar__wrap {
-          max-height: 700px; // 最大高度
+          // max-height: 700px; // 最大高度
           overflow-x: hidden; // 隐藏横向滚动栏
           margin-bottom: 0 !important;
         }
