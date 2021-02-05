@@ -873,7 +873,7 @@ namespace OpenAuth.App
                 && (string.IsNullOrWhiteSpace(req.QryFromTheme) || a.FromTheme.Contains(req.QryFromTheme))
                 && (req.CompleteDate == null || (a.CompleteDate > req.CompleteDate))
                 && (req.EndCompleteDate == null || (a.CompleteDate < Convert.ToDateTime(req.EndCompleteDate).AddDays(1)))
-                ).ToList()
+                ).OrderBy(a=>a.Status).ToList()
             });
 
             result.Data = await resultsql.Skip((req.page - 1) * req.limit)
