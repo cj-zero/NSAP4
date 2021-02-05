@@ -7,7 +7,17 @@
     v-loading="isLoading"
     :row-style="rowStyle"
     height="100%"
+    @selection-change="handleSelectionChange"
+    row-key="id"
+    ref="commonTable"
   >
+    <el-table-column
+      v-if="type !== 'query'"
+      type="selection"
+      :reserve-selection="true"
+      :selectable="selectable"
+    >
+    </el-table-column>
     <el-table-column   
       v-for="item in headOptions"
       :key="item.label"
@@ -101,6 +111,14 @@ export default {
   }
   },
   methods: {
+    clearSelection () {
+      this.$refs.commonTable.clearSelection()
+      this.selectList = []
+    },
+    selectable (row) {
+      console.log(row.activityName !== '待审核', 'selectable')
+      return this.type === 'review' || (this.type === 'submit' && row.activityName !== '待审核')
+    },
     rowStyle ({ rowIndex }) {
       return rowIndex % 2 === 0 ? {
         'background-color' : '#eee'
@@ -111,6 +129,9 @@ export default {
       return {
         color: colorList[text]
       }
+    },
+    handleSelectionChange (val) {
+      this.$emit('selectionChange', val)
     },
     onRowClick (row)  {
       this.radio = row.zsOrder

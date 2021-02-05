@@ -1,5 +1,5 @@
 <template>
-    <el-dialog
+  <el-dialog
     class="my-dialog-wrapper"
     v-el-drag-dialog
     v-loading.fullscreen="loading"
@@ -32,7 +32,6 @@
           >{{ btnItem.btnText }}</el-button>
         </template>
       </slot>
-      
     </div>
   </el-dialog> 
   <!-- </div> -->
@@ -139,6 +138,7 @@ export default {
       border-bottom: 1px solid #f2f2f3;
       .el-dialog__headerbtn {
         top: 10px;
+        right: 7px;
       }
     }
     .el-dialog__footer {

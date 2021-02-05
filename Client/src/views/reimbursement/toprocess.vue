@@ -54,6 +54,7 @@
         :width="dialogWidth"
         :btnList="btnList"
         @closed="closeDialog"
+        @opened="onOpened"
         title="进程"
         :loading="dialogLoading"
       >
@@ -105,11 +106,11 @@ import Order from './common/components/order'
 // import Report from './common/components/report'
 // import zxform from "@/views/serve/callserve/form";
 // import zxchat from '@/views/serve/callserve/chat/index'
-import { tableMixin, categoryMixin, reportMixin, chatMixin } from './common/js/mixins'
+import { tableMixin, categoryMixin, reportMixin, chatMixin, processMixin } from './common/js/mixins'
 
 export default {
   name: 'toProcess',
-  mixins: [tableMixin, categoryMixin, reportMixin, chatMixin],
+  mixins: [tableMixin, categoryMixin, reportMixin, chatMixin, processMixin],
   components: {
     Search,
     Order,
@@ -133,7 +134,7 @@ export default {
       ]
     },
     dialogWidth () {
-      return this.isGeneralManager ? '1015px' : '1130px'
+      return this.isGeneralManager ? '1050px' : '1130px'
     }
   },
   data () {
@@ -179,3 +180,5 @@ export default {
   }
 }
 </style>
+
+

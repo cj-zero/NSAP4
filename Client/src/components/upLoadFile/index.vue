@@ -245,6 +245,9 @@ export default {
       a.click()
     },
     beforeUpload (file) {
+      if (this.onAccept) { // 自定义上传之前的回调函数P
+        return this.onAccept(file, { prop: this.options.prop })
+      }
       let testmsg = /^image\/(jpeg|png|jpg)$/.test(file.type)
       if (!testmsg) {
         this.$message.error('上传图片格式不对!')

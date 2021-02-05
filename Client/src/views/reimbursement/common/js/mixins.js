@@ -8,6 +8,8 @@ import { identifyInvoice } from '@/api/reimburse' // 票据识别
 import { chatMixin } from '@/mixins/serve'
 import Day from 'dayjs'
 export { chatMixin }
+import { loadBMap } from '@/utils/remoteLoad'
+import { formatDate } from '@/utils/date'
 // import imageConversion from 'image-conversion'
 export let tableMixin = {
   provide () {
@@ -172,19 +174,54 @@ export let tableMixin = {
           if (this.title === 'approve') {
             // 用于总经理审批页面的表格数据
             this._generateApproveTable(this.detailData)
+            this.detailData.allDateList = this._processDateList(this.detailData)
+            console.log(this.detailData.allDateList)
           }
           this._normalizeDetail(this.detailData)
-          
+          this.$refs.myDialog.open()
         } catch (err) {
           console.log(err, 'err')
         }
         this.tableLoading = false
-        this.$refs.myDialog.open()
       }).catch(() => {
         this.tableLoading = false
         this.$message.error('获取详情失败')
       })
     },
+    _processDateList (data) {
+      let { businessTripDate, endDate } = data
+      let result = []
+      let startDate = +new Date(formatDate(businessTripDate))
+      endDate = +new Date(formatDate(endDate))
+      let oneDay = 24 * 60 * 60 * 1000 // 一天多少毫秒
+      while (startDate <= endDate) {  // 把中间的时间段都放进来
+        let newDate = formatDate(startDate)
+        result.push(newDate)
+        startDate += oneDay
+      }
+      return result
+    },
+    // _processDateList (dateList) { // 处理完工报告时间
+    //   let result = []
+    //   dateList.forEach(date => {
+    //     let { businessTripDate, endDate } = date
+    //     if (businessTripDate && endDate) {
+    //       let startDate = +new Date(formatDate(businessTripDate))
+    //       let endDate = +new Date(formatDate(businessTripDate))
+    //       let oneDay = 24 * 60 * 60 * 1000
+    //       while (startDate <= endDate) { // 把中间的时间段都放进来
+    //         let newDate = formatDate(startDate)
+    //         result.push(newDate)
+    //         startDate += oneDay
+    //       }
+    //     } else if (businessTripDate) {
+    //       result.push(formatDate(businessTripDate))
+    //     } else if (endDate) {
+    //       result.push(formatDate(endDate))
+    //     }
+    //   })
+    //   return result
+    // },
     isValidInvoice (attachmentList) { // 判断有没有发票附件
       return attachmentList.some(item => {
         return item.attachmentType === 2
@@ -215,18 +252,30 @@ export let tableMixin = {
     },
     _generateApproveTable (data) { // 针对总经理审批页面
       console.log(data, 'generate')
-      let result = []
-      let {
+      let result = [], pointArr = []
+      let { 
         reimburseTravellingAllowances,
         reimburseFares,
         reimburseAccommodationSubsidies,
         reimburseOtherCharges,
       } = data
       // 交通
-      reimburseFares.forEach(item => {
-        let { invoiceTime, transport, from, to, money, reimburseAttachments, invoiceNumber, remark } = item
+      // let arr = ['2020-12-24', '2020-12-25', '2020-12-26']
+      reimburseFares.forEach((item) => {
+        let { 
+          transport, from, to, money, 
+          reimburseAttachments, invoiceNumber, remark,
+          fromLng, fromLat, toLng, toLat, id, invoiceTime
+        } = item
         result.push({
+          id,
+          isTraffic: true,
+          fromLng, 
+          fromLat, 
+          toLng, 
+          toLat,
           invoiceTime: this.processInvoiceTime(invoiceTime),
+          // invoiceTime: arr[index % 3],
           expenseName: this.transportationMap[transport],
           expenseDetail: from + '-' + to,
           money,
@@ -236,12 +285,18 @@ export let tableMixin = {
           invoiceFileList: this.getInvoiceFileList(reimburseAttachments),
           otherFileList: this.getOtherFileList(reimburseAttachments)
         })
+        console.log('item')
+        if (fromLng && toLng) { // 只有两个坐标都有值时才加到数组中
+          pointArr.push({ lng: fromLng, lat: fromLat })
+          pointArr.push({ lng: toLng, lat: toLat, id }) // id用来标记终点标识
+        }
       })
       // 住宿
       reimburseAccommodationSubsidies.forEach(item => {
         let { invoiceTime, days, totalMoney, reimburseAttachments, invoiceNumber, remark, sellerName } = item
         result.push({
           invoiceTime: this.processInvoiceTime(invoiceTime),
+          // invoiceTime: invoiceTime || '2020-12-26',
           expenseName: '住宿补贴',
           sellerName,
           expenseDetail: `${toThousands(totalMoney / days)}元/天*${days}天`,
@@ -258,9 +313,11 @@ export let tableMixin = {
       reimburseTravellingAllowances.forEach(item => {
         let { days, money, remark } = item
         let invoiceTime = days > 1 
-          ? `${Day(businessTripDate).format('MM-DD')} — ${Day(endDate).format('MM-DD')}`
-          : Day(businessTripDate).format('YYYY-MM-DD') 
+          ? `${formatDate(businessTripDate, 'MM-DD')} — ${formatDate(endDate, 'MM-DD')}`
+          : formatDate(businessTripDate)
         result.push({
+          // invoiceTime: this.processInvoiceTime(invoiceTime),
+          // invoiceTime: invoiceTime || '2020-12-28',
           invoiceTime,
           expenseName: '出差补贴',
           expenseDetail: `${toThousands(money)}元/天*${days}天`,
@@ -289,6 +346,7 @@ export let tableMixin = {
       let dataWithoutInvoiceTime = result.filter(item => !item.invoiceTime)
       // 交通-住宿-出差-其它
       data.expenseCategoryList = dataWithInvoiceTime.concat(dataWithoutInvoiceTime)
+      data.pointArr = pointArr
       console.log(result, 'result')
       // data.expenseCategoryList = result
     },
@@ -896,3 +954,15 @@ export const attachmentMixin = {
   }
 }
 
+export const processMixin = {
+  methods: {
+    async onOpened () {
+      if (!window.BMap) {
+        await loadBMap('uGyEag9q02RPI81dcfk7h7vT8tUovWfG')
+        console.log(window.BMap)
+      }
+      console.log('order opened')
+      this.$refs.order.initMap()
+    },
+  }
+}

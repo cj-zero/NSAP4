@@ -684,7 +684,7 @@ export default {
       }, 0)
     },
     grossProfit () { // 毛利率
-      if (this.costPirceTotal === 0) {
+      if (this.grossProfitTotal === 0 || this.summaryTotalPrice === 0) { // 总毛利为零时， 毛利率为零
         return 0 
       }
       return (this.grossProfitTotal / this.summaryTotalPrice) * 100

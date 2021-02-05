@@ -738,7 +738,7 @@
           <i class="el-icon-search el-input__icon" slot="suffix"></i>
         </el-input>
 
-        <el-checkbox v-model="inputname" v-show="!isEditOperation && !hasCreateOtherOrder">其他设备</el-checkbox>
+        <el-checkbox v-model="inputname" v-show="!isEditOperation">无序列号</el-checkbox>
       </div>
       <fromfSN
         v-if="!isEditOperation"
@@ -1306,7 +1306,7 @@ export default {
     },
     isOther (val) {
       // 工单是否为其他设备
-      return val === '其他设备'
+      return val === '其他设备' || val === '无序列号'
     },
     onFromTypeChange (index) {
       console.log(index, 'index')
@@ -1439,10 +1439,10 @@ export default {
             //是否有新增其他设备选项
             this.inputname = false
             this.formListStart.push({
-              manufSN: "其他设备",
+              manufSN: "无序列号",
               editTrue: false,
               internalSN: "",
-              itemCode: "其他设备",
+              itemCode: "无序列号",
               itemName: "",
               feeType: 1,
               fromTheme: "",
@@ -1500,10 +1500,10 @@ export default {
             if (this.inputname) {
               this.inputname = false
               this.formListStart={
-                manufSN: "其他设备",
+                manufSN: "无序列号",
                 editTrue: false,
                 internalSN: "",
-                itemCode: "其他设备",
+                itemCode: "无序列号",
                 itemName: "",
                 feeType: 1,
                 fromTheme:  "",
@@ -1538,10 +1538,10 @@ export default {
             if (this.inputname) {
               this.inputname = false
               this.formListStart.push({
-                manufSN: "其他设备",
+                manufSN: "无序列号",
                 editTrue: false,
                 internalSN: "",
-                itemCode: "其他设备",
+                itemCode: "无序列号",
                 materialDescription: "",
                 feeType: feeType || 1,
                 fromTheme: fromTheme || "",

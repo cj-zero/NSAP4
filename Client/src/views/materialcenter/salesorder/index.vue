@@ -16,7 +16,8 @@
         height="100%"
         ref="quotationTable" 
         :data="tableData" 
-        :columns="quotationColumns" 
+        :columns="quotationColumns"
+        @row-click="onRowClick" 
         :loading="tableLoading">
         <template v-slot:contract="{ row }">
           <span class="show-btn" @click="showContractPictures(row)">查看</span>
@@ -72,12 +73,18 @@
       </el-row>
     </my-dialog>
     <!-- 预览合同图片 -->
-    <el-image-viewer
+    <!-- <el-image-viewer
       v-if="previewVisible"
       :url-list="previewImageUrlList"
       :on-close="closeViewer"
     >
-    </el-image-viewer>
+    </el-image-viewer> -->
+    <file-viewer 
+      v-if="previewVisible"
+      :file-list="previewFileList"
+      :on-close="closeViewer"
+    >
+    </file-viewer>
   </div>
 </template>
 
@@ -88,7 +95,7 @@ import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import { getQuotationList, getServiceOrderList } from '@/api/material/quotation'
 import {  quotationTableMixin, categoryMixin, chatMixin } from '../common/js/mixins'
-import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
+// import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import { processDownloadUrl } from '@/utils/file'
 export default {
   name: 'materialSalesOrder',
@@ -98,7 +105,7 @@ export default {
     QuotationOrder,
     zxform,
     zxchat,
-    ElImageViewer
+    // ElImageViewer
   },
   computed: {
     searchConfig () {
@@ -122,7 +129,7 @@ export default {
           options: { type: 'pay' }
         },
         { btnText: '打印', handleClick: this.showContract, isShow: this.status !== 'upload', className: 'outline' },
-        { btnText: '查看合同', handleClick: this.showContract, isShow: this.status !== 'upload', className: 'outline' },
+        { btnText: '查看合同', handleClick: this.showContractPictures, options: { isInTable: false }, isShow: this.status !== 'upload', className: 'outline' },
         // { btnText: '驳回', handleClick: this.pay, options: { type: 'reject' }, isShow: !this.isMaterialFinancial },
         { btnText: '关闭', handleClick: this.close, className: 'close' }      
       ] 
@@ -134,7 +141,7 @@ export default {
   data () {
     return {
       previewVisible: false,
-      previewImageUrlList: [],
+      previewFileList: [],
       isSales: true,
       formQuery: {
         quotationId: '', // 领料单号
@@ -146,6 +153,7 @@ export default {
       },
       listQuery: {
         startType: 2,
+        IsSalesOrderList: true,
         page: 1,
         limit: 50,
       },
@@ -166,7 +174,8 @@ export default {
         { label: '状态', prop: 'quotationStatusText' }
       ],
       status: 'create', // 报价单状态
-      detailInfo: null // 详情信息
+      detailInfo: null, // 详情信息
+      currentRow: null // 当前选中的行数据
     } 
   },
   methods: {
@@ -177,6 +186,7 @@ export default {
         this.tableData = this._normalizeList(data)
         this.total = count
         this.tableLoading = false
+        this.currentRow = null
         this.$refs.quotationTable.resetCurrentRow()
       }).catch(err => {
         this.$message.error(err.message)
@@ -198,22 +208,25 @@ export default {
     pay (options) {
       this.$refs.quotationOrder.beforeApprove(options.type)
     },
+    onRowClick (row) {
+      this.currentRow = row
+    },
     showContractPictures (row) { // 查看表格合同
       console.log(row, 'row', processDownloadUrl)
-      let files = row.files.map(pictureItem => {
-        return processDownloadUrl(pictureItem.fileId)
+      row = row.isInTable === false ? this.currentRow : row
+      let fileList = row.files.map(fileItem => {
+        fileItem.url = processDownloadUrl(fileItem.fileId)
+        return fileItem
       })
-      if (!files.length) {
-        return this.$message.warning('暂无图片')
+      if (!fileList.length) {
+        return this.$message.warning('暂无合同文件')
       }
-      this.previewImageUrlList = files
+      this.previewFileList = fileList
+      // this.previewImageUrlList = files
       this.previewVisible = true
     },
     closeViewer () {
       this.previewVisible = false
-    },
-    showContract () { // 查看弹窗合同
-      this.$refs.quotationOrder.showContract()
     },
     close () {
       this.$refs.quotationOrder.resetInfo()

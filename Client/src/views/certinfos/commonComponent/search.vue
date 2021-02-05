@@ -16,9 +16,6 @@
       <el-form-item label="校准人" v-if="type !== 'submit'">
         <el-input v-model="form.operator" style="width: 100px;"></el-input>
       </el-form-item>
-      <el-form-item>
-        <el-button type="primary" class="el-icon-search" size="mini" @click="search">搜索</el-button>
-      </el-form-item>
       <el-form-item label="校准日期">
         <el-date-picker
           style="width: 370px;"
@@ -31,6 +28,12 @@
           end-placeholder="结束日期"
           @change="onDateChange">
         </el-date-picker>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" class="el-icon-search" size="mini" @click="search">搜索</el-button>
+      </el-form-item>
+      <el-form-item v-if="type !== 'query'">
+        <el-button type="primary" size="mini" @click="approve">一键审批</el-button>
       </el-form-item>
     </el-form>
   </div>
@@ -62,6 +65,9 @@ export default {
   methods: {
     search () {
       this.$emit('search', this.form)
+    },
+    approve () {
+      this.$emit('approve')
     },
     onDateChange (val) {
       if (val) {

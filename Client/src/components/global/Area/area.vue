@@ -1,50 +1,60 @@
 <template>
-  <div class="area-selector-wrap">
-    <i class="el-icon-close close-btn" @click="closeSelector"></i>
-    <!-- 选项 -->
-    <ul class="tab-list">
-      <li 
-        v-for="(item, index) in tabList" 
-        :key="item.areaName" 
-        @click="selectTab(item, index)"
-        :class="{ active: index === activeIndex }"
-      >{{ item.areaName }}</li>
-    </ul>
-    <!-- 选择列表 -->
-    <el-scrollbar>
-      <ul class="select-list">
+  <!-- <el-collapse-transition> -->
+  <!-- 直接用的el-color-picker -->
+  <transition name="el-zoom-in-top" @after-leave="doDestroy">
+    <div class="area-selector-wrap" v-show="showPopper" :id="areaId">
+      <i class="el-icon-close close-btn" @click="hidePannel"></i>
+      <!-- 选项 -->
+      <ul class="tab-list">
         <li 
-          v-for="item in selectList" 
-          :key="item.areaName" 
-          @click="selectItem(item)"
-          :class="{ active: includesName(item.areaName) }">{{ item.areaName }}</li>
+          v-for="(item, index) in tabList" 
+          :key="item.areaName"
+          @click="selectTab(item, index)"
+          :class="{ active: index === activeIndex }"
+        >{{ item.areaName }}</li>
       </ul>
-    </el-scrollbar>
-  </div>
+      <!-- 选择列表 -->
+      <el-scrollbar>
+        <ul class="select-list">
+          <li 
+            v-for="item in selectList" 
+            :key="item.areaName" 
+            @click="selectItem(item)"
+            :class="{ active: includesName(item.areaName) }">{{ item.areaName }}</li>
+        </ul>
+      </el-scrollbar>
+    </div>
+  </transition>
+    
+  <!-- </el-collapse-transition> -->
 </template>
 
 <script>
-// import addressList from './address'
 import { removeLocalStorage, hasLocalStorage, setSessionStorage, hasSessionStorage, setObject, getObject } from  '@/utils/storage'
 import { getAreaList } from '@/api/serve/area'
+import Popper from 'element-ui/src/utils/vue-popper';
+import { generateId } from 'element-ui/src/utils/util';
 export default {
+  name: 'AreaDownPicker',
+  mixins: [Popper],
   props: {
     options: {
       type: Object,
       default () {
         return {}
       }
-    }
+    },
+    placement: {
+      default: 'bottom-start'
+    },
   },
   data () {
     return {
-      addressList: [],
+      areaId: `el-area-${generateId()}`,
       tabList: [{
         areaName: '请选择'
       }], // 所有选项卡的列表
       selectList: [], // 当前选择的列表
-      currentTab: '', // 当前选中的选项卡
-      overseasList: [], // 海外国家列表
       activeIndex: 0, // 当前选中的选项卡
       currentIndex: 0,
       currentItem: {}, // 当前选择的数据
@@ -52,11 +62,13 @@ export default {
       city: '', // 对应level3
       district: '', // 街道 对应level4
       currentLevel: 1, // 默认level1
-      isFirst: true, // 默认是第一次加载
-      cancelRequestFn: null // 取消请求
+      cancelRequestFn: null, // 取消请求
     }
   },
   methods: {
+    hidePannel () {
+      this.$emit('close', false)
+    },
     selectTab (item, index) {
       let { pid } = item
       console.log(item, 'item')
@@ -74,13 +86,15 @@ export default {
       this.tabList[this.currentIndex].areaName = areaName
       this.handleSelect(areaName)
       if (Number(areaLevel) === 3) {
-        this.$emit('change', {
+        let params = {
           province: this.province || '',
           city: this.city || '',
           district: this.district || '',
           ...this.options
-        })
-        return this.closeSelector()
+        }
+        console.log(this.options, 'options')
+        this.$emit('confirm', params)
+        this.hidePannel()
       }
       console.log(item)
     },
@@ -103,9 +117,6 @@ export default {
     includesName (name) {
       let { province, city, district } = this
       return [province, city, district].includes(name)
-    },
-    closeSelector () {
-      this.$emit("close", this.options)
     },
     _normalizeAddressList (id, isReset) { // id: 根据id查询省市区 isRest: 根据省市区是否发生变化
       if (getObject('addressInfo', id)) { // 如果数据已经缓存则直接取缓存的数据
@@ -136,15 +147,18 @@ export default {
             this.activeIndex++
             this.currentIndex++ 
           }
-          this.isFirst = false
         })
       }
+    },
+    resetInfo () {
+      this.reset()
+      this._normalizeAddressList('')
     }
   },
   watch: {
-    province () {
+    province (val) {
       let { id, areaLevel } = this.currentItem
-      if (Number(areaLevel) !== 3) {
+      if (Number(areaLevel) !== 3 && val) {
         if (this.tabList.length >= 2) {
           this.tabList = this.tabList.slice(0, 1)
           this.city = ''
@@ -185,17 +199,20 @@ export default {
     this._normalizeAddressList('')
   },
   mounted () {
-    
+    this.$parent.popperElm = this.popperElm = this.$el
+    this.referenceElm = this.$parent.$refs.reference.$el
   },
 }
 </script>
 <style lang='scss' scoped>
 .area-selector-wrap {
-  position: relative;
+  // position: fixed;
+  // z-index: 99999;
   box-sizing: border-box;
   overflow: hidden;
   width: 640px;
-  margin: 10px 0;
+  min-height: 277px;
+  margin: 5px 0;
   padding: 10px;
   border: 1px solid #e4e7ed;
   border-radius: 4px;
@@ -204,6 +221,7 @@ export default {
   font-size: 12px;
   .close-btn {
     position: absolute;
+    top: 10px;
     right: 10px;
     cursor: pointer;
   }
@@ -213,7 +231,8 @@ export default {
     margin: 0;
   }
   .tab-list {
-    margin-top: 5px;
+    // margin-top: 5px;
+    // margin: 10px;
     // border-bottom: 2px solid #e4393c;
     & > li {
       display: inline-block;
@@ -242,6 +261,7 @@ export default {
   .select-list {
     display: flex;
     flex-wrap: wrap;
+    // margin: 0 10px;
     // overflow-y: auto;
     // max-height: 300px;
     & > li {
@@ -259,3 +279,4 @@ export default {
   }
 }
 </style>
+

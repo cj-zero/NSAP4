@@ -20,7 +20,8 @@ export function certVerificate (data) { // 证书审批操作 (送审/审核)
   return request({
     url: '/Certinfos/CertVerification',
     method: 'post',
-    data
+    data,
+    timeout: 0
   })
 }
 

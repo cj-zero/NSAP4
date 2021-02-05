@@ -6,14 +6,15 @@
       class="head-title-wrapper" 
       :class="{ 'general': title === 'approve' }"
     >
+      
       <p style="color: red;" v-if="formData.mainId">报销单号: <span>{{ formData.mainId }}</span></p>
-      <p class="pointer underline" @click="_openServiceOrHistory(true)" v-if="title === 'approve' && !isGeneralManager">
-        <span>服务ID: {{ formData.serviceOrderSapId }}</span>
+      <p :class="{ 'pointer underline': !isGeneralManager }" @click="_openServiceOrHistory(true)" v-if="title === 'approve'">
+        服务ID: <span>{{ formData.serviceOrderSapId }}</span>
       </p>
-      <p>报销人: {{ formData.orgName }} <span>{{ formData.userName }}</span></p>
+      <p>报销人:<span>{{ formData.orgName }} {{ formData.userName }}</span></p>
       <!-- <p v-if="!isGeneralStatus">部门: <span>{{ formData.orgName }}</span></p> -->
-      <p v-if="!isGeneralStatus">劳务关系: <span>{{ formData.serviceRelations }}</span></p>
-      <p v-if="!isGeneralStatus">创建时间: <span>{{ formData.createTime && formData.createTime.split(' ')[0] }}</span></p>
+      <p>劳务关系: <span>{{ formData.serviceRelations }}</span></p>
+      <p>创建时间: <span>{{ formData.createTime && formData.createTime.split(' ')[0] }}</span></p>
     </el-row>
     <!-- 时间进度轴，仅总经理可看 timelineList -->
     <template v-if="title === 'approve'">
@@ -33,14 +34,14 @@
       </div>
     </template>
     
-    <el-scrollbar class="scroll-bar">
+    <el-scrollbar class="scroll-bar" :wrapStyle="wrapStyle">
 
       <!-- 总经理审批查看 -->
       <div class="general-order-wrapper" v-if="isGeneralStatus">
         <el-form
         :model="formData"
         ref="form"
-        class="general-form-wrapper"
+        class="general-form-wrapper manager"
         :class="{ 'uneditable': !this.ifFormEdit }"
         :disabled="disabled"
         :label-width="labelWidth"
@@ -50,30 +51,34 @@
         >
           <el-row type="flex" class="item">
             <div>
-              <span class="first-item">客户代码</span>
-              <img :src="rightImg" @click="openHistory" class="pointer">
+              <img :src="rightImg" @click="openHistory" class="pointer" style="margin-left: -13px;">
+              <span class="first-item title">客户代码</span>
               <span>{{ formData.terminalCustomerId }}</span>
             </div>
             <div>
               <el-row type="flex" align="start">
-                <span >客户名称</span>
+                <span class="title">客户名称</span>
                 <p class="content">{{ formData.terminalCustomer }}</p>
               </el-row>
             </div>
-            <div>
+            <!-- <div>
               <el-row type="flex" align="start">
                 <span>客户地址</span>
                 <p class="content-long">{{ formData.completeAddress }}</p>
               </el-row>
-            </div>
+            </div> -->
           </el-row>
           <el-row type="flex" class="item">
             <div>
-              <span class="first-item">出差事由</span>
+              <span class="first-item title">出差事由</span>
               <div v-if="formData.themeList && formData.themeList.length">
                 <p v-for="item in formData.themeList.slice(0, 2)" :key="item.description">{{ item.description }}</p>
               </div>
             </div>
+          </el-row>
+           <el-row class="item">
+              <span class="title">备注</span>
+              <p>{{ formData.remark }}</p>
           </el-row>
         </el-form>
       </div>
@@ -188,11 +193,12 @@
           <div class="general-table-wrapper" >
             <common-table
               class="table-container"
-              :data="formData.expenseCategoryList"
+              :data="expenseCategoryList"
               :columns="expenseCategoryColumns"
               max-height="400px"
               :header-cell-style="headerCellStyle"
               :cell-style="cellStyle"
+              @row-click="onExpenseClick"
             >
               <!-- 费用详情 -->
               <template v-slot:expenseDetail="{ row }">
@@ -1015,6 +1021,15 @@
       :on-close="closeViewer"
     >
     </el-image-viewer>
+    <!-- 百度地图实例化 -->
+    <template v-if="title === 'approve'">
+      <div id="date-picker-wrapper">
+        <date-picker v-model="timeList" :markedDateList="formData.allDateList || []" @click="onDatePicker"></date-picker>
+      </div>
+      <div id="map-container" style="width:500px;height:550px;"></div>
+      <!-- 控件提示信息 -->
+      <div class="control-info" v-show="isShowControl" :style="controlInfoStyle">{{ controlInfo }}</div>
+    </template>
     <PDF :pdfURL="pdfURL" :on-close="closePDF" v-if="pdfVisible" />
   </div>
 </template>
@@ -1030,6 +1045,8 @@ import {
   getUserDetail,
   deleteCost
 } from '@/api/reimburse'
+import markerIcon from '@/assets/bmap/marker.png'
+import { on, off } from '@/utils/dom'
 import { getList as getAfterEvaluaton } from '@/api/serve/afterevaluation'
 import { getList } from '@/api/reimburse/mycost'
 import { getReportDetail } from '@/api/serve/callservesure'
@@ -1041,18 +1058,22 @@ import Report from './report'
 import Remark from './remark'
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import AreaSelector from '@/components/AreaSelector'
+// import Bmap from '@/components/bmap'
 import { toThousands } from '@/utils/format'
 import { findIndex, accAdd } from '@/utils/process'
 import { deepClone } from '@/utils'
+import { formatDate, collections } from '@/utils/date'
 import { travelRules, trafficRules, accRules, otherRules } from '../js/customerRules'
 import { customerColumns, costColumns } from '../js/config'
 import { noop } from '@/utils/declaration'
 import { categoryMixin, reportMixin, attachmentMixin, chatMixin } from '../js/mixins'
 import { REIMBURSE_TYPE_MAP, IF_SHOW_MAP, REMARK_TEXT_MAP } from '../js/map'
 import rightImg from '@/assets/table/right.png'
+import DatePicker from './DatePicker.vue'
 const PROGRESS_TEXT_LIST = ['提交', '客服审批', '财务初审', '财务复审', '总经理审批', '出纳'] // 进度条文本
 const AFTER_EVALUTION_KEY = ['responseSpeed', 'schemeEffectiveness', 'serviceAttitude', 'productQuality', 'servicePrice']
 const TEXT_REG = /[\r|\r\n|\n\t\v]/g
+
 const AFTER_EVALUTION_STATUS = {
   0: '未统计',
   1: '非常差',
@@ -1072,12 +1093,20 @@ export default {
     zxform,
     zxchat,
     ElImageViewer,
+    DatePicker,
+    // Bmap
     PDF
   },
   props: {
     title: {
       type: String,
       default: ''
+    },
+    BMap: {
+      type: Object
+    },
+    map: {
+      type: Object
     },
     isProcessed: Boolean, // 是否已经处理
     customerInfo: {
@@ -1250,7 +1279,14 @@ export default {
       remarkType: '', // 
       remarkText: '', // 弹窗备注
       remarkLoading: false,
-      prevAreaData: null // 上一次点击地址框的是时候，交通表格的行数据
+      prevAreaData: null, // 上一次点击地址框的是时候，交通表格的行数据
+      currentTime: new Date(), // 完工报告首日期
+      nextTime: new Date(),
+      timeList: [],
+      expenseCategoryList: [], // 发票详情列表
+      controlInfo: '', // 自定义控件的提示文案
+      controlInfoStyle: '', // 控制自定义控件的位置
+      isShowControl: false // 控制自定义控件的显示和隐藏
     }
   },
   watch: {
@@ -1303,6 +1339,14 @@ export default {
           this._getAfterEvaluation() // 获取售后评价
           this._getReportDetail() // 获取服务报告
           this._getHistoryCost() // 获取历史费用
+          this.expenseCategoryList = this.formData.expenseCategoryList
+          // this.addSerialNumber(this.expenseCategoryList)
+          if (this.formData.businessTripDate) {
+            this.currentTime = new Date(formatDate(this.formData.businessTripDate))
+            this.nextTime = new Date(collections.addMonth(this.formData.businessTripDate, 1))
+            // this.nextTime = new Date(+this.currentTime + 24 * 60 * 60 * 1000)
+            this.timeList = [this.currentTime, this.nextTime]
+          }
           this.timelineList = this._normalizeTimelineList(this.formData.reimurseOperationHistories)
         }
         if (this.title === 'create' || this.title === 'edit') { // 只有在create或者edit的时候，才可以导入费用模板
@@ -1322,6 +1366,9 @@ export default {
     }
   },
   computed: {
+    wrapStyle () {
+      return this.title === 'approve' ? [{ height: '700px' }] : [{ maxHeight: '700px' }]
+    },
     ifFormEdit () { // 是否可以编辑
       return this.title === 'view'
         ? false
@@ -1439,24 +1486,400 @@ export default {
       return 0
     }
   },
+  mounted () {
+    console.log('order mounted')
+  },
+  destroyed () {
+    off(this.multiple, 'mouseenter', this.multipleEnter)
+    off(this.single, 'mouseenter', this.singleEnter)
+    off(this.multiple, 'mouseleave', this.hideControlInfo)
+    off(this.single, 'mouseleave', this.hideControlInfo)
+    off(this.single, 'click', this.singleClick)
+    off(this.multiple, 'click', this.multipleClick)
+  },
   methods: {
+    initMap () { // 初始化地图
+      let BMap = this._BMap = global.BMap
+      let map = this._map = new BMap.Map("map-container", { enableMapClick: false })  //新建地图实例，enableMapClick:false ：禁用地图默认点击弹框
+      let point = new BMap.Point(113.30765, 23.12005);
+      map.addControl(new BMap.NavigationControl({
+          anchor: window.BMAP_ANCHOR_BOTTOM_RIGHT,
+          type: window.BMAP_NAVIGATION_CONTROL_ZOOM,
+          offset: new BMap.Size(10, 20)
+      }))
+      map.addControl(this.createPathControl())
+      map.centerAndZoom(point, 18)
+      map.enableScrollWheelZoom() // 滚轮缩放
+      map.clearOverlays();                        //清除地图上所有的覆盖物  
+      // 生成坐标点
+      this.createPointArr(this.formData.pointArr)
+      this.ifCreateDrivePath = false // 标识是否绘制全路径
+      this.ifCreatePath = false // 标识是否绘制最后一条路径
+      this.ifDateClick = false // 标识通过点击日期进行绘制
+      this.isSearchCompelete = false // 标识绘制全路径是否检索完成
+      this.createDrivePath()
+      console.log('initMap', this.formData.pointArr)
+    },
+    createLastPath () { // 绘制最后一条线
+      if (this.ifCreatePath) {
+        this.ifCreatePath = !this.ifCreatePath
+        return this.removeOverlay(true)
+      }
+      this.removeOverlay(true)
+      this.ifCreatePath = !this.ifCreatePath
+      let icon = new this._BMap.Icon(
+        markerIcon,
+        new this._BMap.Size(25, 25)
+      )
+      icon.setImageSize(new this._BMap.Size(25, 25))
+      for (let i = 0; i < this.trackPoint.length; i++) {
+        
+        // 最后一个点 闪烁
+        
+        
+        let id = this.formData.pointArr[i].id
+        if (id) {
+          let index = findIndex(this.formData.expenseCategoryList, item => item.id === id)
+          let marker = new this._BMap.Marker(this.trackPoint[i], {
+            icon,
+            offset: new this._BMap.Size(0, -5)
+          })
+          marker.setZIndex(1000)
+          marker.isLast = true
+          this._map.addOverlay(marker) 
+          let label = this.createMarkerLabel(index + 1, this.trackPoint[i])
+          label.setZIndex(10001)
+          label.isLast = true
+          this._map.addOverlay(label)
+        }
+        this._map.getViewport(this.trackPoint)
+      }
+      // let icons = this.createArrow()
+      let polyline = new this._BMap.Polyline(this.trackPoint.slice(-2), {
+        strokeColor: '#419fff',
+        strokeWeight:2 ,//宽度
+        strokeOpacity:0.8,//折线的透明度，取值范围0 - 1
+        enableEditing: false,//是否启用线编辑，默认为false
+        enableClicking: false,//是否响应点击事件，默认为true
+        // icons: [icons]
+      })
+      polyline.isLast = true
+      this._map.addOverlay(polyline)
+      this._map.setViewport(this.trackPoint)
+      
+    },
+    createDrivePath (isDateClick) { // 创建trackPoint数组的所有路径
+      if (!isDateClick && this.ifCreateDrivePath) {
+        // 如果已经绘制过了，再次调用就移除
+        this.ifCreateDrivePath = !this.ifCreateDrivePath
+        return this.removeOverlay()
+      }
+      if (!this.trackPoint || !this.trackPoint.length) { // 数组坐标为空
+        return this._map.clearOverlays()
+      }
+      if (isDateClick) { // 点击日期创建途径
+        this.ifDateClick = true
+        this._map.clearOverlays()
+      } else {
+        this.removeOverlay()
+      }
+      this.ifCreateDrivePath = isDateClick ? false : !this.ifCreateDrivePath
+      let driving = this.driving = new this._BMap.DrivingRoute(this._map);    //创建驾车实例  
+      for (let i = 0; i < this.trackPoint.length; i++) {
+        if(i !== this.trackPoint.length - 1){
+          driving.search(this.trackPoint[i], this.trackPoint[i+1])
+        }
+        if (i === this.trackPoint.length - 1) {
+          let marker =  this.createFlash(this.trackPoint[i], 10, 10)
+          marker.setZIndex(999)
+          this._map.addOverlay(marker)
+        }
+      }
+      this.isSearchCompelete = false
+      let successCount = 0
+      driving.setSearchCompleteCallback(() => {  
+        try {
+          let pts = driving.getResults().getPlan(0).getRoute(0).getPath()   //通过驾车实例，获得一系列点的数组 
+          // pts = pts.reduce((prev, next) => {
+          //   let last = prev[prev.length - 1]
+          //   if (last) {
+          //       let { lng, lat } = last
+          //       let { lng: nextLng, lat: nextLat } = next
+          //       let isValid = !(lng === nextLng && lat === nextLat)
+          //       if (isValid) {
+          //         prev.push(next)
+          //       }
+          //   } else {
+          //       prev.push(next)
+          //   }
+          //   return prev
+          // }, []) 
+          let polyline = new this._BMap.Polyline(pts, {
+            strokeColor: '#1bac2e',
+            strokeWeight: 8 ,//宽度
+            strokeOpacity:0.8,//折线的透明度，取值范围0 - 1
+            enableEditing: false, // 是否启用线编辑，默认为false
+            enableClicking: false, // 是否响应点击事件，默认为true,
+            // icons: [icons]
+          })
+          this._map.addOverlay(polyline)
+          this._map.setViewport(this.trackPoint)
+          successCount++
+          if (successCount === this.trackPoint.length - 1) { // 全部都检索完成了
+            this.isSearchCompelete = true
+          }
+        } catch (err) {
+          console.log(err)
+        }
+      })
+    },
+    createArrow () {
+      let sy = new this._BMap.Symbol(window.BMap_Symbol_SHAPE_BACKWARD_OPEN_ARROW, {
+        scale: 0.6,//图标缩放大小
+        strokeColor:'#fff',//设置矢量图标的线填充颜色
+        strokeWeight: 2,//设置线宽
+      })
+      let icons = new this._BMap.IconSequence(sy, '100%', '10%', false)//设置为true，可以对轨迹进行编辑
+      return icons
+    },
+    removeOverlay (isLast) {
+      let allOverlayList = this._map.getOverlays()
+      allOverlayList = allOverlayList.filter(overlay => overlay.isLast === isLast || overlay.isCurrent)
+      allOverlayList.forEach(overlay => {
+        this._map.removeOverlay(overlay)
+      })
+    },
+    createMarkerLabel (text, position, offset) {
+      let defaultOffset = new this._BMap.Size(text >= 10 ? -8 : -5, -14)
+      offset = offset || defaultOffset
+      let label = new this._BMap.Label(text, { position, offset })
+      label.setStyle({
+        color: "#fff",
+        border: "none",
+        fontSize: "12px",
+        background: "rgba(0,0,0,0)"
+      })
+      return label
+    },
+    createFlash (center, width, height) { // 创建一个闪烁点
+      let that = this
+      function FlashOverlay(center, width, height) {
+				this._center = center
+        this._width = width
+        this._height = height
+			}
+			// 继承API的BMap.Overlay
+			FlashOverlay.prototype = new that._BMap.Overlay()
+			// 实现初始化方法  
+			FlashOverlay.prototype.initialize = function () {
+				// 创建div元素，作为自定义覆盖物的容器
+        var div = document.createElement("div")
+				div.style.position = "absolute"
+				// 可以根据参数设置元素外观
+        // div.classList.add('ao')
+        div.classList.add('bmap-wave')
+				div.style.width = this._width + "px"
+				div.style.height = this._height + "px"
+        
+				// 将div添加到覆盖物容器中
+				that._map.getPanes().markerPane.appendChild(div)
+				// 保存div实例
+				this._ele = div;
+				// 需要将div元素作为方法的返回值，当调用该覆盖物的show、
+				// hide方法，或者对覆盖物进行移除时，API都将操作此元素。
+				return div
+			}
+			FlashOverlay.prototype.draw = function () {
+				// 根据地理坐标转换为像素坐标，并设置给容器    
+				var position = that._map.pointToOverlayPixel(this._center)
+				console.log(this._center, position)
+				this._ele.style.left = position.x - this._width / 2 + "px"
+				this._ele.style.top = position.y - this._height / 2 + "px"
+      }
+      FlashOverlay.prototype.setZIndex = function (zIndex) {
+        if (this._ele) {
+          this._ele.style.zIndex = zIndex
+        }
+      }
+      FlashOverlay.prototype.show = function () {
+				if (this._ele) {
+					this._ele.style.display = "";
+				}
+			}
+			// 实现隐藏方法  
+			FlashOverlay.prototype.hide = function () {
+				if (this._ele) {
+					this._ele.style.display = "none";
+				}
+			}
+      return new FlashOverlay(center, width, height)
+    },
+    showControlInfo (text, e) {
+      if (this.isShowControl) {
+        return
+      }
+      this.isShowControl = true
+      const { left, top } = e.target.getBoundingClientRect()
+      this.controlInfo = text
+      this.controlInfoStyle = { left: -60 + left + 'px', top: top + 'px' }
+      console.log(text, 'text', left, top, e, this.controlInfoStyle)
+    },
+    hideControlInfo () {
+      this.isShowControl = false
+    },
+    showPath (isAll) {
+      console.log(isAll ? 'multiple click' : 'SINGLE')
+      this.createPointArr(this.formData.pointArr)
+      this.expenseCategoryList = this.formData.expenseCategoryList
+      isAll ? this.isSearchCompelete && this.createDrivePath() : this.createLastPath()
+    },
+    createPathControl () { // 创建路径控件
+      let that = this
+      function PathControl () {
+				// 设置默认停靠位置和偏移量  
+				this.defaultAnchor = window.BMAP_ANCHOR_BOTTOM_RIGHT
+				this.defaultOffset = new that._BMap.Size(10, 70)
+			}
+			// 通过JavaScript的prototype属性继承于BMap.Control   
+			PathControl.prototype = new that._BMap.Control()
+
+			// 自定义控件必须实现initialize方法，并且将控件的DOM元素返回   
+			// 在本方法中创建个div元素作为控件的容器，并将其添加到地图容器中   
+			PathControl.prototype.initialize = function () {
+				// 创建一个DOM元素   
+				let container = document.createElement('div') // 容器
+				let multiple = document.createElement('div') // 展示所有路径
+				let single = document.createElement('div') // 展示某一段路径
+        let line = document.createElement('div') // 分割线
+        // 地图样式定义在/styles/bmap.scss下
+				multiple.className = 'bmap-multiple'
+        single.className = 'bmap-single'
+        // 分割线样式
+        line.style.height = '1px'
+        line.style.margin = '4px 0'
+        line.style.backgroundColor = 'gray'
+        // 容器样式
+				container.style.padding = '5px'
+				container.style.boxShadow = '0px 0px 1px 1px rgba(0, 0, 0, .3)'
+        container.style.borderRadius = '4px'
+        container.style.backgroundColor = '#fff'
+        // 容器添加子元素
+				container.appendChild(multiple)
+				container.appendChild(line)
+        container.appendChild(single)
+        that.multiple = multiple
+        that.single = single
+        that.multipleEnter = e => that.showControlInfo('运动轨迹', e) 
+        that.singleEnter = e => that.showControlInfo('发票轨迹', e)
+        on(multiple, 'mouseenter', e => that.multipleEnter(e))
+        on(single, 'mouseenter', e => that.singleEnter(e))
+        on(multiple, 'mouseleave', that.hideControlInfo)
+        on(single, 'mouseleave', that.hideControlInfo)
+        that.multipleClick = () => that.showPath(true)
+        that.singleClick = () => that.showPath()
+        on(multiple, 'click', that.multipleClick)
+        on(single, 'click', that.singleClick)
+				// 添加DOM元素到地图中   
+				that._map.getContainer().appendChild(container)
+				// 将DOM元素返回  
+				return container
+			}
+			// 创建控件实例    
+			return new PathControl();
+    },
+    createCurrentPath () { // 绘制当前发票的路径
+      this.ifCreateDrivePath = false
+      this.ifCreatePath = false
+      this.ifDateClick = false
+      this._map.clearOverlays() // 清空画布上所有的覆盖物
+      // let icons = this.createArrow()
+      let polyline = new this._BMap.Polyline(this.trackPoint, {
+        strokeWeight: 4 ,//宽度
+        strokeOpacity:0.8,//折线的透明度，取值范围0 - 1
+        enableEditing: false,//是否启用线编辑，默认为false
+        enableClicking: false,//是否响应点击事件，默认为true
+        // icons: [icons]
+      })
+      this._map.addOverlay(polyline)
+      let icon = new this._BMap.Icon(
+        markerIcon,
+        new this._BMap.Size(25, 25)
+      )
+      icon.setImageSize(new this._BMap.Size(25, 25))
+      let marker = new this._BMap.Marker(this.trackPoint[1], {
+        icon,
+        offset: new this._BMap.Size(0, -5)
+      })
+      // marker.setTop(true)
+      let label = this.createMarkerLabel(this.bmapIndex, this.trackPoint[1], new this._BMap.Size(this.bmapIndex >= 10 ? -8 : -6, -14))
+      marker.isCurrent = true
+      label.isCurrent = true
+      this._map.addOverlay(marker)
+      this._map.addOverlay(label)
+      this._map.setViewport(this.trackPoint)
+    },
+    createPointArr (pointArr) { // 创建更新绘图坐标点
+      this.trackPoint = [];
+      for (let i = 0, j = pointArr.length; i < j; i++) {
+        this.trackPoint.push(new this._BMap.Point(pointArr[i].lng, pointArr[i].lat));
+      }
+    },
+    onDatePicker (date) { // 点击日历，右侧详情筛选对应的日期，地图也将包含的交通发票进行地图绘制
+      let dateTime = formatDate(date)
+      this.expenseCategoryList = this.formData.expenseCategoryList.filter(item => {
+        // 存在发票时间 并且日期跟选择的日期相同
+        return item.invoiceTime && formatDate(item.invoiceTime) === dateTime
+      })
+      let trafficList = this.expenseCategoryList.filter(item => item.isTraffic) // 找到交通发票列表
+      let pointList = []
+      trafficList.forEach(item => {
+        let { fromLng, fromLat, toLng, toLat } = item
+        if (fromLng && toLng) {
+          pointList.push({ lng: fromLng, lat: fromLat })
+          pointList.push({ lng: toLng, lat: toLat })
+        }
+      })
+      this.createPointArr(pointList)
+      if (this.isSearchCompelete) {
+        this.createDrivePath(true)
+      }
+      
+      console.log(date, 'date ondatepicker', dateTime, this.expenseCategoryList)
+    },
+    onExpenseClick (row) { // 点击交通发票绘制当前发票的路径
+      let { fromLng, fromLat, toLng, toLat, id } = row
+      if (!fromLng || !toLng) {
+        return this.$message.warning('当前发票，未获取到坐标点')
+      }
+      // 找到当前交通发票的索引号,用于地图展示
+      this.bmapIndex = findIndex(this.expenseCategoryList, item => item.id === id) + 1
+      if (this._map && this.isSearchCompelete) {
+        let pointArr = [{ lng: fromLng, lat: fromLat }, { lng: toLng, lat: toLat }]
+        this.createPointArr(pointArr)
+        this.createCurrentPath()
+      } 
+    },
     _getSubsidies () {
       getUserDetail().then(res => {
         this.travelMoney = res.data.subsidies
-        console.log(this.travelMoney, '出差补贴金额')
       }).catch(err => {
         this.travelMoney = ''
         this.$message.error(err.message)
       })
     },
     historyCell ({ columnIndex }) {
+
       const grayList = [3, 4, 7, 8]
       return grayList.includes(columnIndex) ? { backgroundColor: '#fafafa' } : {}
     },
     _openServiceOrHistory (isServe) { // 打开服务单详情或者打开历史费用
-      this.title === 'approve' && !isServe
-        ? this.openHistory()
-        : this.openServiceOrder(this.formData.serviceOrderId, () => this.orderLoading = true, () => this.orderLoading = false)
+      if (this.title === 'approve' && !isServe) {
+        this.openHistory()
+      } else {
+        if (!this.isGeneralManager) {
+          this.openServiceOrder(this.formData.serviceOrderId, () => this.orderLoading = true, () => this.orderLoading = false)
+        }
+      } 
     },
     openHistory () { // 打开历史费用
       if (this.historyCostData && !this.historyCostData.length) {
@@ -1996,6 +2419,14 @@ export default {
     onAreaChange (val) {
       let { province, city, district, prop, index } = val
       let currentRow = this.formData.reimburseFares[index]
+      if (province === '香港特别行政区' || province === '澳门特别行政区') { // 特殊处理
+        city = ''
+      }
+      // 获取对应的坐标点
+      this._getPosition(`${province}${city}${district}`.replace('海外', ''), {
+        currentRow,
+        prop
+      })
       const countryList = ['北京市', '天津市', '上海市', '重庆市']
       let result = ''
       result = countryList.includes(province)
@@ -2005,6 +2436,34 @@ export default {
           : city + district
       currentRow[prop] = result
       this.prevAreaData = null
+    },
+    _getPosition (address, { currentRow, prop}) {
+      let local = new global.BMap.LocalSearch(this.map, { //智能搜索
+        onSearchComplete: onSearchComplete.bind(this)
+      })
+      address = address.replace(/^中国/i, '') // 如果以中国开头会直接搜索北京市
+      console.log(address, 'address')
+      local.search(address)
+      let result
+      function onSearchComplete () {
+        if (!local.getResults().getPoi(0)) {
+          result = { lng: '', lat: '' }
+        } else {
+          console.log(local.getResults().getPoi(0), 'position')
+          let { point} = local.getResults().getPoi(0) //获取第一个智能搜索的结果
+          let { lat, lng } = point
+          console.log(lat, lng)
+          result = point
+        }
+        let { lat, lng } = result
+        if (prop === 'from') {
+          currentRow.fromLng = lng
+          currentRow.fromLat = lat
+        } else {
+          currentRow.toLng = lng
+          currentRow.toLat = lat
+        }
+      }
     },
     changeAddr (scope) { // 交通表格 交换出发地和目的地
       if (!this.ifFormEdit) return
@@ -2595,6 +3054,31 @@ export default {
 <style lang='scss' scoped>
 .order-wrapper {
   position: relative;
+  /* 日历样式 */
+  #date-picker-wrapper {
+    position: absolute;
+    top: -52px;
+    left: -12px;
+    transform: translate3d(-100%, 0, 0);
+  }
+  /* 地图样式 */
+  #map-container {
+    position: absolute;
+    top: 200px;
+    left: -11px;
+    transform: translate3d(-100%, 0, 0);
+    
+  }
+  .control-info {
+    position: fixed;
+    z-index: 100000;
+    left: 0;
+    top: 0;
+    font-size: 12px;
+    border: 1px solid #000;
+    background-color: #fff;
+  }
+  /* 地图自定义控件的样式 */
   .success {
     font-size: 14px;
     color: rgba(0, 128, 0, 1);
@@ -2681,19 +3165,21 @@ export default {
     &.general {
       left: 480px;
       span {
-        font-weight: bold;
+        // font-weight: bold;
       }
     }
     p {
       min-width: 65px;
       margin-right: 10px;
       font-size: 12px;
-      font-weight: bold;
+      // font-weight: bold;
+      color: #BFBFBF;
       &.underline {
         text-decoration: underline;
       }
       span {
         font-weight: normal;
+        color: #222;
       }
     }
   }
@@ -2775,7 +3261,7 @@ export default {
     &.el-scrollbar {
        ::v-deep {
         .el-scrollbar__wrap {
-          max-height: 700px; // 最大高度
+          // max-height: 700px; // 最大高度
           overflow-x: hidden; // 隐藏横向滚动栏
           margin-bottom: 0 !important;
         }
@@ -2792,7 +3278,10 @@ export default {
       margin-top: 10px;
       .general-form-wrapper {
         padding: 5px;
-        border: 1px solid #000;
+        &.manager {
+          padding: 14px;
+        }
+        // border: 1px solid #000;
         .item {
           margin-bottom: 10px;
           .first-item {
@@ -2800,6 +3289,10 @@ export default {
           }
           &:nth-last-child(1) {
             margin-bottom: 0;
+          }
+          .title {
+            margin-right: 5px;
+            color: #BFBFBF;
           }
         }
         .content {
@@ -2811,7 +3304,7 @@ export default {
         div {
           display: flex;
           min-width: 120px;
-          margin-right: 5px;
+          margin-right: 35px;
           font-size: 12px;
           font-weight: bold;
           span {
@@ -2830,7 +3323,7 @@ export default {
     .general-table-wrapper {
       // padding-right: 10px;
       // width: 828px;
-      width: 993px;
+      width: 1029px;
       margin-top: 5px;
       ::v-deep .cell {
         line-height: 16px;
@@ -2885,7 +3378,7 @@ export default {
     }
     /* 总经理审批总金额 */
     .general-total-money {
-      width: 992px;
+      width: 1027px;
       padding-right: 5px;
       margin: 10px 0;
       font-size: 12px;
