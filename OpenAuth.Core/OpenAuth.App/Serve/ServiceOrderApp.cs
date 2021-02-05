@@ -1479,6 +1479,7 @@ namespace OpenAuth.App
             //删除相对应的流程数据
             await UnitWork.DeleteAsync<ServiceFlow>(c => c.ServiceOrderId == serviceOrderId);
             await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"呼叫中心{loginContext.User.Name}一键重派单据", ActionType = "一键重派", ServiceOrderId = serviceOrderId });
+            await UnitWork.SaveAsync();
         }
         #endregion
 
