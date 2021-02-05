@@ -155,7 +155,7 @@ namespace OpenAuth.App.Material
             }
             var result = new TableData();
             var ServiceOrders = from a in UnitWork.Find<ServiceOrder>(null)
-                                join b in UnitWork.Find<ServiceWorkOrder>(null) on a.Id equals b.ServiceOrderId
+                                join b in UnitWork.Find<ServiceWorkOrder>(s=>s.Status<7) on a.Id equals b.ServiceOrderId
                                 select new { a, b};
             ServiceOrders = ServiceOrders.WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId.ToString()), s => s.a.Id.Equals(request.ServiceOrderId))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderSapId.ToString()), s => s.a.U_SAP_ID.Equals(request.ServiceOrderSapId));
