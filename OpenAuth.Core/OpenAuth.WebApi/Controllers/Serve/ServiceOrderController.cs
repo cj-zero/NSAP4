@@ -618,7 +618,7 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="ServiceOrderId"></param>
         /// <returns></returns>
-        [HttpPost]
+        [HttpGet]
         public async Task<Response> OneKeyResetServiceOrder(int ServiceOrderId)
         {
 
