@@ -897,7 +897,11 @@ namespace OpenAuth.App
                             });
                             UnitWork.Save();
                         }
-
+                        //反写完工报告
+                        var CompletionReports = UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == obj.ServiceOrderId && c.CreateUserId == obj.CreateUserId).ToList();
+                        CompletionReports.ForEach(c => c.IsReimburse = 2);
+                        UnitWork.BatchUpdate<CompletionReport>(CompletionReports.ToArray());
+                        UnitWork.Save();
                     }
 
                     #region 暂时废弃
