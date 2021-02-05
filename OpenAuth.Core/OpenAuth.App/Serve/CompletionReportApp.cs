@@ -219,6 +219,12 @@ namespace OpenAuth.App
             if (everCompletionReport != null)
             {
                 thisworkdetail = everCompletionReport.MapTo<CompletionReportDetailsResp>();
+                //获取工单中的问题类型和解决方案
+                var troubleAndProcessInfo = await UnitWork.Find<ServiceWorkOrder>(w => w.ServiceOrderId == serviceOrderId && w.CurrentUserId == currentUserId)
+               .WhereIf("无序列号".Equals(MaterialType), a => a.MaterialCode == "无序列号")
+               .WhereIf(!"无序列号".Equals(MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == MaterialType).FirstOrDefaultAsync();
+                thisworkdetail.TroubleDescription = troubleAndProcessInfo?.TroubleDescription;
+                thisworkdetail.ProcessDescription = troubleAndProcessInfo?.ProcessDescription;
             }
             else
             {

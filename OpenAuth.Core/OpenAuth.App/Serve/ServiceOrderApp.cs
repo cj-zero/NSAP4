@@ -873,7 +873,7 @@ namespace OpenAuth.App
                 && (string.IsNullOrWhiteSpace(req.QryFromTheme) || a.FromTheme.Contains(req.QryFromTheme))
                 && (req.CompleteDate == null || (a.CompleteDate > req.CompleteDate))
                 && (req.EndCompleteDate == null || (a.CompleteDate < Convert.ToDateTime(req.EndCompleteDate).AddDays(1)))
-                ).OrderBy(a=>a.Status).ToList()
+                ).OrderBy(a => a.Status).ToList()
             });
 
             result.Data = await resultsql.Skip((req.page - 1) * req.limit)
@@ -1454,6 +1454,31 @@ namespace OpenAuth.App
             .Take(req.limit).ToListAsync();
             result.Count = query.Count();
             return result;
+        }
+
+        /// <summary>
+        /// 一键重派
+        /// </summary>
+        /// <param name="serviceOrderId"></param>
+        /// <returns></returns>
+        public async Task OneKeyResetServiceOrder(int serviceOrderId)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //判断当前服务单是否已重派过
+            var isExist = await UnitWork.Find<ServiceOrderLog>(w => w.ServiceOrderId == serviceOrderId && w.ActionType == "一键重派").FirstOrDefaultAsync() == null ? false : true;
+            if (isExist)
+            {
+                throw new CommonException("您已重派过该服务单，请勿重复操作", 60019);
+            }
+            //重置工单状态为已排配
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(w => w.ServiceOrderId == serviceOrderId, u => new ServiceWorkOrder { Status = 2, OrderTakeType = 0, BookingDate = null, VisitTime = null, ServiceMode = 0, CompletionReportId = string.Empty, TroubleDescription = string.Empty, ProcessDescription = string.Empty, IsCheck = 0, CompleteDate = null });
+            //删除相对应的流程数据
+            await UnitWork.DeleteAsync<ServiceFlow>(c => c.ServiceOrderId == serviceOrderId);
+            await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"呼叫中心{loginContext.User.Name}一键重派单据", ActionType = "一键重派", ServiceOrderId = serviceOrderId });
         }
         #endregion
 
