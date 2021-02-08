@@ -616,16 +616,16 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 一键重派
         /// </summary>
-        /// <param name="ServiceOrderId"></param>
+        /// <param name="req"></param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<Response> OneKeyResetServiceOrder(int ServiceOrderId)
+        [HttpPost]
+        public async Task<Response> OneKeyResetServiceOrder(OneKeyResetServiceOrderReq req)
         {
 
             var result = new Response();
             try
             {
-                await _serviceOrderApp.OneKeyResetServiceOrder(ServiceOrderId);
+                await _serviceOrderApp.OneKeyResetServiceOrder(req);
             }
             catch (Exception ex)
             {
