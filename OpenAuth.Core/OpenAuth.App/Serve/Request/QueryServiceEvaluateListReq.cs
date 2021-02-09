@@ -14,13 +14,13 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string CustomerId { get; set; }
         /// <summary>
-        /// 技术员NSAP的Id
+        /// 技术员
         /// </summary>
-        public string TechnicianId { get; set; }
+        public string Technician { get; set; }
         /// <summary>
-        /// 回访人Id
+        /// 回访人
         /// </summary>
-        public string VisitPeopleId { get; set; }
+        public string VisitPeople { get; set; }
         /// <summary>
         /// 开始日期
         /// </summary>

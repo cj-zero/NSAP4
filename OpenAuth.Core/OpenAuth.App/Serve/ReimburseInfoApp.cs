@@ -1393,7 +1393,7 @@ namespace OpenAuth.App
                         .Include(r => r.ReimurseOperationHistories)
                         .WhereIf(!string.IsNullOrWhiteSpace(UserId), r => r.CreateUserId.Equals(UserId))
                         .FirstOrDefaultAsync();
-            if (Reimburse != null)
+            if (Reimburse != null && Reimburse.MainId==0)
             {
                 var files = await UnitWork.Find<ReimburseAttachment>(null).ToListAsync();
                 var delfiles = files.Where(f => f.ReimburseId.Equals(Reimburse.Id) && f.ReimburseType == 0).ToList();
@@ -1436,7 +1436,7 @@ namespace OpenAuth.App
             }
             else
             {
-                throw new CommonException("只能删除未提交的报销单！", Define.INVALID_InvoiceNumber);
+                throw new CommonException("只能删除未提交和未生成报销单号的报销单！", Define.INVALID_InvoiceNumber);
             }
         }
 
