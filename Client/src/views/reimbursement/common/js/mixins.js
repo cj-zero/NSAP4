@@ -656,7 +656,7 @@ export let categoryMixin = {
       ]
       return (this.ifFormEdit !== undefined && !this.ifFormEdit) || this.ifFormEdit === undefined // 不可编辑状态并且是报销单页面(不影响我的费用配置)
         ? config 
-        : [...config, { label: '操作', type: 'operation', iconList: [{ icon: 'el-icon-sort rotate', handleClick: this.changeAddr }, ...this.iconList], width: 130 }] // 交通配置        
+        : [...config, { label: '操作', type: 'operation', iconList: [{ icon: 'el-icon-sort rotate', handleClick: this.changeAddr }, ...this.iconList], width: 150 }] // 交通配置        
     },
     accommodationConfig () {
       return (this.ifFormEdit !== undefined && !this.ifFormEdit) || this.ifFormEdit === undefined

@@ -99,8 +99,8 @@ export default {
       return [
         ...this.commonSearch,
         { type: 'search' },
-        { type: 'button', handleClick: this._pay, btnText: '支付', isSpecial: true, options:  { type: 'toPay' } },
-        { type: 'button', handleClick: this._export, btnText: '导出', isSpecial: true }
+        { type: 'button', handleClick: this._pay, btnText: '支付', isSpecial: true, options:  { type: 'toPay' }, isShow: this.isCN },
+        { type: 'button', handleClick: this._export, btnText: '导出', isSpecial: true, isShow: this.isCN }
       ]
     }, // 搜索配置
     btnList () {
@@ -108,6 +108,11 @@ export default {
         { btnText: '确认支付', handleClick: this.toPay, isShow: this.title !== 'view' },
         { btnText: '关闭', handleClick: this.closeDialog, className: 'close' }
       ]
+    },
+    isCN () { // 出纳角色
+      return this.rolesList && this.rolesList.length
+        ? this.rolesList.some(item => item === '出纳')
+        : false
     }
   },
   data () {

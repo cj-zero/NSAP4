@@ -238,13 +238,13 @@ export default {
   }
   
   .line {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 50%;
-    flex: 2px;
-    width: 2px;
-    margin: 0 1px;
+    // position: absolute;
+    // top: 0;
+    // bottom: 0;
+    // left: 50%;
+    flex: 1px;
+    width: 1px;
+    margin: 0 3px;
     background-color: #eee;
   }
   .control-pannel {

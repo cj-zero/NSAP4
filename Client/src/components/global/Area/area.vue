@@ -1,52 +1,42 @@
 <template>
-  <!-- <el-collapse-transition> -->
-  <!-- 直接用的el-color-picker -->
-  <transition name="el-zoom-in-top" @after-leave="doDestroy">
-    <div class="area-selector-wrap" v-show="showPopper" :id="areaId">
-      <i class="el-icon-close close-btn" @click="hidePannel"></i>
-      <!-- 选项 -->
-      <ul class="tab-list">
+  <div class="area-selector-wrap" :id="areaId">
+    <i class="el-icon-close close-btn" @click="hidePannel"></i>
+    <!-- 选项 -->
+    <ul class="tab-list">
+      <li 
+        v-for="(item, index) in tabList" 
+        :key="item.areaName"
+        @click="selectTab(item, index)"
+        :class="{ active: index === activeIndex }"
+      >{{ item.areaName }}</li>
+    </ul>
+    <!-- 选择列表 -->
+    <el-scrollbar>
+      <ul class="select-list">
         <li 
-          v-for="(item, index) in tabList" 
-          :key="item.areaName"
-          @click="selectTab(item, index)"
-          :class="{ active: index === activeIndex }"
-        >{{ item.areaName }}</li>
+          v-for="item in selectList" 
+          :key="item.areaName" 
+          @click="selectItem(item)"
+          :class="{ active: includesName(item.areaName) }">{{ item.areaName }}</li>
       </ul>
-      <!-- 选择列表 -->
-      <el-scrollbar>
-        <ul class="select-list">
-          <li 
-            v-for="item in selectList" 
-            :key="item.areaName" 
-            @click="selectItem(item)"
-            :class="{ active: includesName(item.areaName) }">{{ item.areaName }}</li>
-        </ul>
-      </el-scrollbar>
-    </div>
-  </transition>
-    
-  <!-- </el-collapse-transition> -->
+    </el-scrollbar>
+  </div>
 </template>
 
 <script>
 import { removeLocalStorage, hasLocalStorage, setSessionStorage, hasSessionStorage, setObject, getObject } from  '@/utils/storage'
 import { getAreaList } from '@/api/serve/area'
-import Popper from 'element-ui/src/utils/vue-popper';
+// import Popper from 'element-ui/src/utils/vue-popper';
 import { generateId } from 'element-ui/src/utils/util';
 export default {
   name: 'AreaDownPicker',
-  mixins: [Popper],
   props: {
     options: {
       type: Object,
       default () {
         return {}
       }
-    },
-    placement: {
-      default: 'bottom-start'
-    },
+    }
   },
   data () {
     return {
@@ -206,8 +196,10 @@ export default {
 </script>
 <style lang='scss' scoped>
 .area-selector-wrap {
-  // position: fixed;
-  // z-index: 99999;
+  position: absolute;
+  z-index: 999;
+  top: 100%;
+  left: 0;
   box-sizing: border-box;
   overflow: hidden;
   width: 640px;

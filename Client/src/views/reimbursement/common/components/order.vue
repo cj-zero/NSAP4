@@ -2468,10 +2468,14 @@ export default {
     changeAddr (scope) { // 交通表格 交换出发地和目的地
       if (!this.ifFormEdit) return
       let { row, $index: index } = scope
-      let { from, to } = row
+      let { from, to, fromLng, fromLat } = row
       let data = this.formData.reimburseFares[index]
       data.from = to
       data.to = from
+      data.fromLng = data.toLng
+      data.fromLat = data.toLat
+      data.toLng = fromLng
+      data.toLat = fromLat
     },
     addAndCopy (scope, data, type, operationType) {
       if (!this.ifFormEdit) return
@@ -3504,21 +3508,21 @@ export default {
   /* 各个表格的样式 */
   .form-item-wrapper {
     &.travel {
-      width: 571px;
+      width: 550px;
       &.uneditable {
-        width: 421px;
+        width: 400px;
       }
     }
     &.acc {
-      width: 1222px;
+      width: 1201px;
       &.uneditable {
-        width: 1061px;
+        width: 1041px;
       }
     }
     &.other {
-      width: 1159px;
+      width: 1138px;
       &.uneditable {
-        width: 991px;
+        width: 970px;
       }
     }
     margin-bottom: 5px;
