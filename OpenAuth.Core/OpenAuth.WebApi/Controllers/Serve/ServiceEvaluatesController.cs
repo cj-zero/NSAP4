@@ -97,8 +97,8 @@ namespace OpenAuth.WebApi.Controllers
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("ServiceOrderId", request.ServiceOrderId);
                 parameters.Add("CustomerId", request.CustomerId);
-                parameters.Add("TechnicianId", request.TechnicianId);
-                parameters.Add("VisitPeopleId", request.VisitPeopleId);
+                parameters.Add("Technician", request.Technician);
+                parameters.Add("VisitPeople", request.VisitPeople);
                 parameters.Add("DateFrom", request.DateFrom);
                 parameters.Add("DateTo", request.DateTo);
                 var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/AppEvaluateLoad");

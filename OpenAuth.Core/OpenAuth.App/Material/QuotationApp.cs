@@ -67,18 +67,25 @@ namespace OpenAuth.App.Material
             #region 页面条件
             switch (request.StartType)
             {
-                case 1://保存
-                    Quotations = Quotations.Where(q => q.IsDraft == true);
+                case 1://未出库
+                    Quotations = Quotations.Where(q =>q.QuotationStatus == 6);
                     break;
 
-                case 2://审批中
-                    Quotations = Quotations.Where(q => q.QuotationStatus > 3 && q.QuotationStatus < 6);
+                case 2://已出库
+                    Quotations = Quotations.Where(q => q.QuotationStatus == 7);
                     break;
             }
             #endregion
-            if (request.IsSalesOrderList!=null && (bool)request.IsSalesOrderList) 
+            if (request.IsSalesOrderList != null && (bool)request.IsSalesOrderList)
             {
-                if (!loginContext.Roles.Any(r => r.Name.Equals("物料财务"))) 
+                if (!loginContext.Roles.Any(r => r.Name.Equals("物料财务")))
+                {
+                    Quotations = Quotations.Where(q => q.CreateUserId.Equals(loginUser.Id));
+                }
+            }
+            else 
+            {
+                if (request.Status == null) 
                 {
                     Quotations = Quotations.Where(q => q.CreateUserId.Equals(loginUser.Id));
                 }
@@ -155,7 +162,7 @@ namespace OpenAuth.App.Material
             }
             var result = new TableData();
             var ServiceOrders = from a in UnitWork.Find<ServiceOrder>(null)
-                                join b in UnitWork.Find<ServiceWorkOrder>(null) on a.Id equals b.ServiceOrderId
+                                join b in UnitWork.Find<ServiceWorkOrder>(s=>s.Status<7) on a.Id equals b.ServiceOrderId
                                 select new { a, b};
             ServiceOrders = ServiceOrders.WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId.ToString()), s => s.a.Id.Equals(request.ServiceOrderId))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderSapId.ToString()), s => s.a.U_SAP_ID.Equals(request.ServiceOrderSapId));
@@ -608,6 +615,12 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(obj.ServiceOrderId)).FirstOrDefaultAsync();
+            var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Name.Equals(serviceOrder.NewestContacter)).ToListAsync();
+            if (oCPR == null || oCPR.Count > 1) 
+            {
+                throw new Exception("联系人错误，请联系该客户业务员或者呼叫中心解决");
+            }
             var Message = await Condition(obj);
             var QuotationObj = obj.MapTo<Quotation>();
             QuotationObj.ErpOrApp = 1;
@@ -625,6 +638,7 @@ namespace OpenAuth.App.Material
                     QuotationObj.IsProtected = false;
                 }
             });
+
             var dbContext = UnitWork.GetDbContext<Quotation>();
             using (var transaction = dbContext.Database.BeginTransaction())
             {

@@ -45,8 +45,8 @@ namespace OpenAuth.App
             var objs = query
                 .WhereIf(request.ServiceOrderId != null, s => s.b.U_SAP_ID == request.ServiceOrderId)
                 .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerId), s => s.a.CustomerId.Contains(request.CustomerId))
-                .WhereIf(!string.IsNullOrWhiteSpace(request.TechnicianId), s => s.a.TechnicianId.Equals(request.TechnicianId))
-                .WhereIf(!string.IsNullOrWhiteSpace(request.VisitPeopleId), s => s.a.VisitPeopleId.Equals(request.VisitPeopleId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.Technician), s => s.a.Technician.Contains(request.Technician))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.VisitPeople), s => s.a.VisitPeople.Contains(request.VisitPeople))
                 .WhereIf(request.DateFrom != null && request.DateTo != null, s => s.a.CommentDate >= request.DateFrom && s.a.CommentDate < Convert.ToDateTime(request.DateTo).AddMinutes(1440))
                 ;
             var ServiceEvaluates = objs.Select(s => new
@@ -117,8 +117,8 @@ namespace OpenAuth.App
             var objs = UnitWork.Find<ServiceEvaluate>(null)
                 .WhereIf(request.ServiceOrderId != null, s => s.ServiceOrderId == request.ServiceOrderId)
                 .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerId), s => s.CustomerId.Contains(request.CustomerId))
-                .WhereIf(!string.IsNullOrWhiteSpace(request.TechnicianId), s => s.TechnicianId.Equals(request.TechnicianId))
-                .WhereIf(!string.IsNullOrWhiteSpace(request.VisitPeopleId), s => s.VisitPeopleId.Equals(request.VisitPeopleId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.Technician), s => s.Technician.Contains(request.Technician))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.VisitPeople), s => s.VisitPeople.Contains(request.VisitPeople))
                 .WhereIf(request.DateFrom != null && request.DateTo != null, s => s.CommentDate >= request.DateFrom && s.CommentDate < Convert.ToDateTime(request.DateTo).AddMinutes(1440))
                 ;
             

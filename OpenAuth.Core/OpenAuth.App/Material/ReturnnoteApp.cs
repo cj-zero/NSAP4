@@ -121,6 +121,19 @@ namespace OpenAuth.App
                         await UnitWork.UpdateAsync<Expressage>(w => w.Id == expressageInfo.Id, u => new Expressage { ExpressInformation = response });
                     }
                 }
+                else
+                {
+                    var express = new Expressage
+                    {
+                        QuotationId = null,
+                        ReturnNoteId = returnNoteId,
+                        ExpressNumber = "无",
+                        ExpressInformation = string.Empty,
+                        CreateTime = DateTime.Now
+                    };
+                    await UnitWork.AddAsync(express);
+                    expressId = express.Id;
+                }
             }
             else
             {
