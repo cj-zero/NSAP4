@@ -49,6 +49,7 @@
       </div> -->
       <!-- 审核弹窗 -->
       <my-dialog
+        class="dialog-clss"
         ref="myDialog"
         top="10px"
         :width="dialogWidth"
@@ -177,6 +178,13 @@ export default {
   ::v-deep .el-tabs__header {
     background-color: #fff;
     margin-bottom: 0;
+  }
+}
+.dialog-clss {
+  ::v-deep {
+    .el-dialog {
+      left: 240px;
+    }
   }
 }
 </style>

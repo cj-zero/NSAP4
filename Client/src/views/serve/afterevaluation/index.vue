@@ -192,15 +192,15 @@ export default {
       searchConfig: [
         { width: 100, placeholder: '服务单号', prop: 'ServiceOrderId' },
         { width: 170, placeholder: '客户', prop: 'CustomerId' },
-        { width: 100, placeholder: '技术员', prop: 'TechnicianId' },
-        { width: 100, placeholder: '回访人', prop: 'VisitPeopleId' },
+        { width: 100, placeholder: '技术员', prop: 'Technician' },
+        { width: 100, placeholder: '回访人', prop: 'VisitPeople' },
         { width: 150, placeholder: '评价起始日期', prop: 'DateFrom', type: 'date' },
         { width: 150, placeholder: '评价结束日期', prop: 'DateTo', type: 'date' },
         { type: 'search' },
       ]
     };
   },
-
+ 
   created() {
     this.getList();
   },

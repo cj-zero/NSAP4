@@ -1,5 +1,6 @@
 <template>
   <div class="my-submission-wrapper">
+    <tab-list :initialName="initialName" :texts="texts" @tabChange="onTabChange"></tab-list>
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
@@ -74,6 +75,7 @@
 </template>
 
 <script>
+import TabList from '@/components/TabList'
 import Search from '@/components/Search'
 import OutboundOrder from './components/outboundorder'
 import zxform from "@/views/serve/callserve/form";
@@ -88,6 +90,7 @@ export default {
   },
   mixins: [quotationTableMixin, chatMixin, categoryMixin],
   components: {
+    TabList,
     Search,
     OutboundOrder,
     zxform,
@@ -116,6 +119,12 @@ export default {
   },
   data () {
     return {
+      initialName: '', // 初始标签的值
+      texts: [ // 标签数组
+        { label: '全部', name: '' },
+        { label: '未出库', name: '1' },
+        { label: '已出库', name: '2' }
+      ],
       formQuery: {
         quotationId: '', // 领料单号
         cardCode: '', // 客户
@@ -126,6 +135,7 @@ export default {
       },
       listQuery: {
         status: '2',
+        startType: '',
         page: 1,
         limit: 50,
       },
@@ -175,6 +185,11 @@ export default {
           this.$message.error(typeof err === 'object' ? err.message : '保存失败')
         })
       })
+    },
+    onTabChange (name) {
+      this.listQuery.startType = name
+      this.listQuery.page = 1
+      this._getList()
     },
     close () {
       this.$refs.outboundOrder.resetInfo()

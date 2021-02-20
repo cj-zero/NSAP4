@@ -122,7 +122,7 @@ export default {
         username: "",
         password: ""
       },
-      baseURL: process.env.VUE_APP_BASE_UPIMG_URL,
+      baseURL: process.env.VUE_APP_BASE_API,
       dialogQ: false,
       randomNum: "",
       loginRules: {
@@ -197,6 +197,7 @@ export default {
       if (this.dialogQ) {
         this.randomNum = Math.random() * 10;
         this.url = `${this.baseURL}/QrCode/Get?rd=${this.randomNum}`;
+        console.log(this.url, 'url')
         this.dialogQ = true;
         this.checkStatus();
       }else{

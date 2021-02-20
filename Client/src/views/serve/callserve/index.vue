@@ -283,7 +283,8 @@
         </el-row>
 
         <div slot="footer">
-          <el-button size="mini" @click="handlePhone(multipleSelection, true)" v-if="isCallCenter">回访</el-button>
+          <el-button size="mini" @click="openResendDialog(multipleSelection)" v-if="isCallCenter">一键重派</el-button>
+          <el-button size="mini" @click="handlePhone(multipleSelection, true)" v-if="isCallCenter" :loading="phoneLoading">回访</el-button>
           <el-button size="mini" @click="dialogFormView = false">取消</el-button>
           <el-button size="mini" type="primary" @click="dialogFormView = false">确认</el-button>
         </div>
@@ -350,6 +351,20 @@
           :data="analysisData"
         ></Analysis>
       </my-dialog>
+      <!-- 一键重派理由 -->
+      <my-dialog
+        ref="resendDialog"
+        width="400px"
+        element-loading-text="重派中"
+        v-loading="resendLoading"
+        append-to-body
+        top="20%"
+        title="重派理由"
+        :btnList="resendBtnList"
+        @closed="onResendClose"
+      >
+        <el-input type="textarea" v-model="resendReason"></el-input>
+      </my-dialog>
     </div>
   </div>
 </template>
@@ -396,6 +411,12 @@ export default {
       return [
         { btnText: '确认', handleClick: this.onCommentSubmit, loading: this.loadingBtn },
         { btnText: '取消', handleClick: this.onRateClose, className: 'close' }
+      ]
+    },
+    resendBtnList () {
+      return [
+        { btnText: '确定', handleClick: this.handleResend },
+        { btnText: '取消', handleClick: this.closeResend, className: 'close' }
       ]
     },
     searchConfig () {
@@ -603,7 +624,10 @@ export default {
       newCommentList: {}, // 用于存放修改后的评分列表
       isView: false, // 评分标识(是否是查看)
       advancedVisible: false, // 高级搜索是否展示
-      analysisData: []
+      analysisData: [],
+      resendLoading: false,
+      resendReason: '',
+      phoneLoading: false
     };
   },
   filters: {
@@ -853,21 +877,6 @@ export default {
       })
       this.list = resultArr
     },
-    processStatusText (serviceWorkOrders) {
-      if (serviceWorkOrders && serviceWorkOrders.length === 1) {
-        return serviceWorkOrders[0].status
-      }
-      let result = []
-      serviceWorkOrders.forEach(serviceOrder => {
-        result.push(serviceOrder.status)
-      })
-      let processing = result.some(item => item <= 6) // 有正在处理的服务单
-      if (processing) {
-        return Math.max.apply(null, result.filter(item => item <= 6)) // 优先级越大优先展示
-      } else {
-        return Math.min.apply(null, result.filter(item => item >= 7)) // 已访问 优先于 已回访
-      }
-    },
     getList() {
       this.listLoading = true;
       callservesure.rightList(this.listQuery).then(response => {
@@ -1054,6 +1063,40 @@ export default {
       }).catch(() => {
         this.$message.error('暂无数据')
       })
+    },
+    openResendDialog () {
+      let { serviceWorkOrders } = this.multipleSelection
+      let isValid = serviceWorkOrders.some(serviceWorkOrder => Number(serviceWorkOrder.status) === 7)
+      if (!isValid) {
+        return this.$message.warning('至少需要一个工单已完成才可重派')
+      }
+      this.$refs.resendDialog.open()
+    },
+    closeResend () {
+      this.$refs.resendDialog.close()
+    },
+    onResendClose () {
+      this.resendReason = ''
+      this.closeResend()
+    },
+    async handleResend () { // 一键重派
+      let { serviceOrderId } = this.multipleSelection
+      if (!this.resendReason) {
+        return this.$message.warning('重派理由为必填项')
+      }
+      this.resendLoading = true
+      await callservesure.resetServiceOrder({ 
+        serviceOrderId: Number(serviceOrderId),
+        message: this.resendReason
+      }).catch(err => {
+        this.resendLoading = false
+        this.$message.error(err.message)
+      })
+      this.resendLoading = false
+      this.onResendClose()
+      this.dialogFormView = false
+      this.$message.success('重派成功')
+      this.getList()
     },
     handlePhone (row, isInTable) { // 电话回访
       let { serviceOrderId, serviceWorkOrders } = row // 8 代表已回访

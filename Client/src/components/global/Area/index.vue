@@ -1,14 +1,16 @@
 <template>
   <div class="area-selector-wrapper" v-click-outside="hidePannel">
     <el-input ref="reference" v-bind="$attrs" v-on="$listeners" :value="value" @click.native.stop="togglePannel"></el-input>
-    <area-down-picker
-      ref="propper"
-      v-bind="$attrs"
-      v-model="isShow"
-      @confirm="onConfirm"
-      @close="onClose"
-    >
-    </area-down-picker>
+    <transition name="el-zoom-in-top">
+      <area-down-picker
+        ref="propper"
+        v-bind="$attrs"
+        v-show="isShow"
+        @confirm="onConfirm"
+        @close="onClose"
+      >
+      </area-down-picker>
+    </transition>
   </div>
 </template>
 
@@ -64,7 +66,6 @@ export default {
       }
     },
     hidePannel () {
-      // this.isShow = false
       this.isShow = false
       this.$emit("close", this.options)
     },

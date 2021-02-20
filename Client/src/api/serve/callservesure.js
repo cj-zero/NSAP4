@@ -171,3 +171,18 @@ export function getSMServiceWorkOrderList (params) { // 获取销售呼叫服务
   })
 }
 
+// export function resetServiceOrder (data) {
+//   return request({
+//     url: '/serve/ServiceOrder/OneKeyResetServiceOrder',
+//     method: 'post',
+//     data
+//   })
+// }
+
+export function resetServiceOrder (data) { // 一键重派服务单
+  return request({
+    url: '/serve/ServiceOrder/OneKeyResetServiceOrder',
+    method: 'post',
+    data
+  })
+}

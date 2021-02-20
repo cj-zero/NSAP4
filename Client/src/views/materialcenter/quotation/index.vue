@@ -1,6 +1,5 @@
 <template>
   <div class="my-submission-wrapper">
-    <tab-list :initialName="initialName" :texts="texts" @tabChange="onTabChange"></tab-list>
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
@@ -72,7 +71,6 @@
 </template>
 
 <script>
-import TabList from '@/components/TabList'
 import Search from '@/components/Search'
 import QuotationOrder from '../common/components/QuotationOrder'
 import zxform from "@/views/serve/callserve/form";
@@ -83,7 +81,6 @@ export default {
   name: 'quotation',
   mixins: [quotationTableMixin, categoryMixin, chatMixin],
   components: {
-    TabList,
     Search,
     QuotationOrder,
     zxform,
@@ -119,12 +116,6 @@ export default {
   },
   data () {
     return {
-      initialName: '', // 初始标签的值
-      texts: [ // 标签数组
-        { label: '全部', name: '' },
-        { label: '草稿箱', name: '1' },
-        { label: '申请中', name: '2' }
-      ],
       isShowEditBtn: true, // 是否出现编辑按钮
       formQuery: {
         quotationId: '', // 领料单号
@@ -135,7 +126,6 @@ export default {
         endCreateTime: '' // 创建结束
       },
       listQuery: {
-        startType: '',
         page: 1,
         limit: 50,
       },
@@ -210,11 +200,7 @@ export default {
         })
       })
     },
-    onTabChange (name) {
-      this.listQuery.startType = name
-      this.listQuery.page = 1
-      this._getList()
-    },
+    
     submit (options) {
       let isDraft = !!options.isDraft
       this.dialogLoading = true
