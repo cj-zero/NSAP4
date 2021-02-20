@@ -1474,12 +1474,14 @@ namespace OpenAuth.App
             {
                 throw new CommonException("您已重派过该服务单，请勿重复操作", 60019);
             }
+            var appUserId = (await UnitWork.Find<AppUserMap>(w => w.UserID == loginContext.User.Id).FirstOrDefaultAsync())?.AppUserId;
             //重置工单状态为已排配
             await UnitWork.UpdateAsync<ServiceWorkOrder>(w => w.ServiceOrderId == req.serviceOrderId, u => new ServiceWorkOrder { Status = 2, OrderTakeType = 0, BookingDate = null, VisitTime = null, ServiceMode = 0, CompletionReportId = string.Empty, TroubleDescription = string.Empty, ProcessDescription = string.Empty, IsCheck = 0, CompleteDate = null });
             //删除相对应的流程数据
             await UnitWork.DeleteAsync<ServiceFlow>(c => c.ServiceOrderId == req.serviceOrderId);
             var U_SAP_ID = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(req.serviceOrderId)).Select(s => s.U_SAP_ID).FirstOrDefaultAsync();
             await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"呼叫中心{loginContext.User.Name}一键重派服务单{U_SAP_ID}理由：{req.Message}", ActionType = "一键重派", ServiceOrderId = req.serviceOrderId });
+            await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = req.serviceOrderId, Content = $"呼叫中心{loginContext.User.Name}一键重派服务单{U_SAP_ID}理由：{req.Message}", AppUserId = (int)appUserId });
             await UnitWork.SaveAsync();
         }
         #endregion

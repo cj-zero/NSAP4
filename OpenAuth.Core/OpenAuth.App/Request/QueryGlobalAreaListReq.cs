@@ -7,5 +7,10 @@
         /// 地区ID
         /// </summary>
         public string ReqId { get; set; }
+
+        /// <summary>
+        /// 地区名称
+        /// </summary>
+        public string AreaName { get; set; }
     }
 }

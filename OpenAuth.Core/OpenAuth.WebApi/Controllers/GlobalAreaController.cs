@@ -13,7 +13,7 @@ namespace OpenAuth.WebApi.Controllers
     /// <summary>
     /// 地图
     /// </summary>
-    [Route("api/[controller]")]
+    [Route("api/[controller]/[action]")]
     [ApiController]
     public class GlobalAreaController : ControllerBase
     {
@@ -32,12 +32,32 @@ namespace OpenAuth.WebApi.Controllers
         /// 加载地图
         /// </summary>
         [HttpGet]
-        public TableData Load([FromQuery] QueryGlobalAreaListReq request)
+        public async Task<TableData> Load([FromQuery] QueryGlobalAreaListReq request)
         {
             var result = new TableData();
             try
             {
-                return _app.Load(request);
+                return await _app.Load(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 搜索地图
+        /// </summary>
+        [HttpGet]
+        public async Task<TableData> GetArea([FromQuery] QueryGlobalAreaListReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetArea(request);
             }
             catch (Exception ex)
             {
