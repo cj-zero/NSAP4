@@ -2,14 +2,20 @@
   <div class="area-selector-wrap">
     <i class="el-icon-close close-btn" @click="closeSelector"></i>
     <!-- 选项 -->
-    <ul class="tab-list">
-      <li 
-        v-for="(item, index) in tabList" 
-        :key="item.areaName" 
-        @click="selectTab(item, index)"
-        :class="{ active: index === activeIndex }"
-      >{{ item.areaName }}</li>
-    </ul>
+    <el-row type="flex" justify="space-between" align="middle">
+      <ul class="tab-list">
+        <li 
+          v-for="(item, index) in tabList" 
+          :key="item.areaName" 
+          @click="selectTab(item, index)"
+          :class="{ active: index === activeIndex }"
+        >{{ item.areaName }}</li>
+      </ul>
+      <div style="margin-right: 20px;">
+        <AreaSearch @selected="onSelected" />
+      </div>
+    </el-row>
+    
     <!-- 选择列表 -->
     <el-scrollbar>
       <ul class="select-list">
@@ -25,9 +31,13 @@
 
 <script>
 // import addressList from './address'
+import AreaSearch from '../AreaSearch'
 import { removeLocalStorage, hasLocalStorage, setSessionStorage, hasSessionStorage, setObject, getObject } from  '@/utils/storage'
 import { getAreaList } from '@/api/serve/area'
 export default {
+  components: {
+    AreaSearch
+  },
   props: {
     options: {
       type: Object,
@@ -57,22 +67,31 @@ export default {
     }
   },
   methods: {
-    selectTab (item, index) {
-      let { pid } = item
-      console.log(item, 'item')
-      this.activeIndex = index
-      this.currentIndex = index
-      this._normalizeAddressList(pid)
-      console.log(item)
-    },
-    selectItem (item) { 
-      let { areaName, areaLevel } = item
-      this.currentItem = item
-      if (this.currentIndex === 0) {
-        this.tabList[0].pid = ''
+    onSelected (areaInfo) {
+      const { areaList } = areaInfo
+      const lastAreaInfo = areaList.slice(-1)[0]
+      this.tabList = []
+      this.currentIndex = -1
+      this.activeIndex = areaList.length - 1
+      this.province = this.city = this.district = ''
+      const { areaLevel: LastAreaLevel, id: lastId, pid: lastPid } = lastAreaInfo
+      for (let i = 0; i < areaList.length; i++) {
+        const { areaName, pid } = areaList[i]
+        this.currentIndex++
+        this.handleSelect(areaName)
+        this.tabList.push({
+          areaName,
+          pid: i === 0 ? '' : pid
+        })
       }
-      this.tabList[this.currentIndex].areaName = areaName
-      this.handleSelect(areaName)
+      this.currentItem = lastAreaInfo
+      console.log(this.tabList, 'tabList')
+      console.log(this.activeIndex, 'activeIndex')
+      this.isSearch = true
+      this._normalizeAddressList(Number(LastAreaLevel) === 3 ? lastPid : lastId, true)
+      this.checkFinish(LastAreaLevel)
+    },
+    checkFinish (areaLevel) {
       if (Number(areaLevel) === 3) {
         this.$emit('change', {
           province: this.province || '',
@@ -82,6 +101,25 @@ export default {
         })
         return this.closeSelector()
       }
+    },
+    selectTab (item, index) {
+      let { pid } = item
+      console.log(item, 'item')
+      this.activeIndex = index
+      this.currentIndex = index
+      this._normalizeAddressList(pid)
+      console.log(item)
+    },
+    selectItem (item) { 
+      this.isSelect = true
+      let { areaName, areaLevel } = item
+      this.currentItem = item
+      if (this.currentIndex === 0) {
+        this.tabList[0].pid = ''
+      }
+      this.tabList[this.currentIndex].areaName = areaName
+      this.handleSelect(areaName)
+      this.checkFinish(areaLevel)
       console.log(item)
     },
     handleSelect (areaName) {
@@ -115,12 +153,12 @@ export default {
             areaName: '请选择',
             pid: id
           })
+          this.isSelect = false
           this.activeIndex++
           this.currentIndex++ 
         }
       } else {
         if (this.cancelRequestFn) {
-          console.log('11111')
           this.cancelRequestFn()
         }
         getAreaList({
@@ -135,16 +173,19 @@ export default {
             })
             this.activeIndex++
             this.currentIndex++ 
+            this.isSelect = false
           }
           this.isFirst = false
+        }).catch(() => {
+          this.isSelect = false
         })
       }
     }
   },
   watch: {
-    province () {
+    province (val) {
       let { id, areaLevel } = this.currentItem
-      if (Number(areaLevel) !== 3) {
+      if (Number(areaLevel) !== 3 && this.isSelect && val) {
         if (this.tabList.length >= 2) {
           this.tabList = this.tabList.slice(0, 1)
           this.city = ''
@@ -155,7 +196,7 @@ export default {
     },
     city (val) {
       let { id, areaLevel } = this.currentItem
-      if (Number(areaLevel) !== 3 && val) { 
+      if (Number(areaLevel) !== 3 && val && this.isSelect) { 
         if (this.tabList.length >= 3) {
           console.log('ciry', this.tabList.slice(0, 2))
           this.tabList = this.tabList.slice(0, 2)
@@ -167,7 +208,7 @@ export default {
     },
     district (val) {
       let { id, areaLevel } = this.currentItem
-      if (Number(areaLevel) !== 3 && val) { 
+      if (Number(areaLevel) !== 3 && val && this.isSelect) { 
         if (this.tabList.length >= 4) {
           this.tabList = this.tabList.slice(0, 4)
         }
@@ -204,10 +245,11 @@ export default {
   font-size: 12px;
   .close-btn {
     position: absolute;
+    z-index: 100;
     right: 10px;
     cursor: pointer;
   }
-  & > ul {
+  ul {
     list-style-type: none;
     padding: 0;
     margin: 0;
