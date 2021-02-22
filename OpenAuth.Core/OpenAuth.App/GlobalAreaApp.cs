@@ -53,7 +53,7 @@ namespace OpenAuth.App
                         areaId = item.Path.Split(',').ToList();
                     }
                     areaId.Add(item.Id);
-                    globalAreaGroup.Add(globalAreaAll.Where(g => areaId.Contains(g.Id)).ToList());
+                    globalAreaGroup.Add(globalAreaAll.Where(g => areaId.Contains(g.Id)).OrderBy(g=>g.AreaLevel).ToList());
                 }
                 result.Data = globalAreaGroup.ToList();
             }
