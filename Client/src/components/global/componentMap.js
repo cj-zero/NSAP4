@@ -32,8 +32,17 @@ export default {
       type: 'date'   
     }
   },
+  // area: {
+  //   component: 'my-area-selector',
+  //   attrs: {
+  //     style: 'width: 100%',
+  //     size: 'mini',
+  //     readonly: true,
+  //     clearable: false
+  //   }
+  // }
   area: {
-    component: 'my-area-selector',
+    component: 'my-new-area-selector',
     attrs: {
       style: 'width: 100%',
       size: 'mini',
