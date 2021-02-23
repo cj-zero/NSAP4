@@ -1800,22 +1800,7 @@ namespace OpenAuth.App
             {
                 user = await GetUserId(Convert.ToInt32(AppId));
             }
-            var Relations = "";
-            switch (user.ServiceRelations)
-            {
-                case "新威尔":
-                    Relations = "深圳市新威尔电子有限公司";
-                    break;
-                case "东莞新威":
-                    Relations = "东莞新威检测技术有限公司";
-                    break;
-                case "新能源":
-                    Relations = "深圳市新威新能源技术有限公司";
-                    break;
-                default:
-                    Relations = null;
-                    break;
-            }
+            var Relations = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ServiceRelations") && u.Name.Equals(user.ServiceRelations)).Select(u => u.Description).FirstOrDefaultAsync();
             if (!ServiceRelations.Equals(Relations))
             {
                 return false;
