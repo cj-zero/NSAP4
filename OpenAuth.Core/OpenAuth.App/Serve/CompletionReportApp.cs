@@ -76,6 +76,7 @@ namespace OpenAuth.App
                 .WhereIf("无序列号".Equals(req.MaterialType), a => a.MaterialCode == "无序列号")
                 .WhereIf(!"无序列号".Equals(req.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == req.MaterialType)
                 .FirstOrDefaultAsync();
+
             var obj = req.MapTo<CompletionReport>();
 
             obj.CreateTime = DateTime.Now;
@@ -84,6 +85,9 @@ namespace OpenAuth.App
             obj.CreateUserId = nsapInfo.User.Id;
             obj.IsReimburse = 1;
             obj.TechnicianId = req.CurrentUserId.ToString();
+
+            int reumburseCount=await UnitWork.Find<ReimburseInfo>(r => r.ServiceOrderId.Equals(obj.ServiceOrderId) && r.CreateUserId.Equals(nsapInfo.User.Id)).CountAsync();
+            obj.IsReimburse = reumburseCount > 0 ? 2 : 1;
             //obj.CreateUserName = user.Name;
             //todo:补充或调整自己需要的字段
             var o = await Repository.AddAsync(obj);
