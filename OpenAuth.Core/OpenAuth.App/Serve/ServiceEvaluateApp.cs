@@ -20,6 +20,7 @@ namespace OpenAuth.App
     public class ServiceEvaluateApp : OnlyUnitWorkBaeApp
     {
         private RevelanceManagerApp _revelanceApp;
+        private readonly ServiceOrderApp _serviceOrderApp;
 
         /// <summary>
         /// 加载列表
@@ -72,7 +73,7 @@ namespace OpenAuth.App
                 s.a.CreateUserId,
                 s.a.CreateUserName,
                 s.b.U_SAP_ID
-             });
+            });
             //if (!string.IsNullOrEmpty(request.key))
             //{
             //    objs = objs.Where(u => u.Id.Contains(request.key));
@@ -121,7 +122,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(request.VisitPeople), s => s.VisitPeople.Contains(request.VisitPeople))
                 .WhereIf(request.DateFrom != null && request.DateTo != null, s => s.CommentDate >= request.DateFrom && s.CommentDate < Convert.ToDateTime(request.DateTo).AddMinutes(1440))
                 ;
-            
+
             //if (!string.IsNullOrEmpty(request.key))
             //{
             //    objs = objs.Where(u => u.Id.Contains(request.key));
@@ -176,11 +177,12 @@ namespace OpenAuth.App
                 req.CustomerId = order.TerminalCustomerId;
                 req.Cutomer = order.TerminalCustomer;
             }
-            else 
+            else
             {
                 req.CustomerId = order.CustomerId;
                 req.Cutomer = order.CustomerName;
             }
+            var user = _auth.GetCurrentUser().User;
             foreach (var technicianEvaluates in req.TechnicianEvaluates)
             {
                 var obj = req.MapTo<ServiceEvaluate>();
@@ -198,7 +200,6 @@ namespace OpenAuth.App
                 //todo:补充或调整自己需要的字段
                 obj.CommentDate = DateTime.Now;
                 obj.CreateTime = DateTime.Now;
-                var user = _auth.GetCurrentUser().User;
                 obj.VisitPeople = user.Name == "APP" ? "" : user.Name;
                 obj.VisitPeopleId = user.Id;
                 obj.CreateUserId = user.Id;
@@ -209,6 +210,11 @@ namespace OpenAuth.App
             {
                 Status = 8
             });
+            if (!string.IsNullOrWhiteSpace(req.Comment))
+            {
+                var appUserid = (await UnitWork.Find<AppUserMap>(u => u.UserID.Equals(user.Id)).FirstOrDefaultAsync()).AppUserId;
+                await _serviceOrderApp.SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = (int)req.ServiceOrderId, Content = $"客户建议或意见：{req.Comment}", AppUserId = (int)appUserid });
+            }
             await UnitWork.SaveAsync();
         }
 
@@ -246,23 +252,24 @@ namespace OpenAuth.App
         public async Task<TableData> GetTechnicianName(int serviceOrderId)
         {
             var result = new TableData();
-            var WorkCount = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId && (s.Status < 7 || s.FromType==2)).CountAsync();
+            var WorkCount = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId && (s.Status < 7 || s.FromType == 2)).CountAsync();
             if (WorkCount <= 0)
             {
                 var model = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId).Select(s => new { s.CurrentUser, s.CurrentUserId }).Distinct().ToListAsync();
                 result.Data = model;
                 result.Count = model.Count;
             }
-            else 
+            else
             {
                 result.Data = null;
             }
             return result;
         }
         public ServiceEvaluateApp(IUnitWork unitWork,
-            RevelanceManagerApp app, IAuth auth) : base(unitWork, auth)
+            RevelanceManagerApp app, ServiceOrderApp serviceOrderApp, IAuth auth) : base(unitWork, auth)
         {
             _revelanceApp = app;
+            _serviceOrderApp = serviceOrderApp;
         }
     }
 }
