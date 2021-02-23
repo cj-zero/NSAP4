@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Options;
 using OpenAuth.App;
 using OpenAuth.App.Request;
+using OpenAuth.App.Serve.Response;
 using SharpDX.Direct3D11;
 using System;
 using System.Collections.Generic;
@@ -27,10 +28,9 @@ namespace OpenAuth.WebApi.Controllers
         private readonly FileApp _fileapp;
         private ReimburseInfoApp _reimburseInfoApp;
         private MyExpendsApp _myExpendsApp;
-        private CategoryApp _categoryApp;
         private IOptions<AppSetting> _appConfiguration;
 
-        public TecentOCRController(TecentOCR tecentOCR, FileApp fileApp, ReimburseInfoApp reimburseInfoApp, MyExpendsApp myExpendsApp, CategoryApp categoryApp, IOptions<AppSetting> appConfiguration, HuaweiOCR huaweiOCR)
+        public TecentOCRController(TecentOCR tecentOCR, FileApp fileApp, ReimburseInfoApp reimburseInfoApp, MyExpendsApp myExpendsApp, IOptions<AppSetting> appConfiguration, HuaweiOCR huaweiOCR)
         {
             _appConfiguration = appConfiguration;
             _tecentOCR = tecentOCR;
@@ -38,7 +38,6 @@ namespace OpenAuth.WebApi.Controllers
             _fileapp = fileApp;
             _reimburseInfoApp = reimburseInfoApp;
             _myExpendsApp = myExpendsApp;
-            _categoryApp = categoryApp;
         }
 
         /// <summary>
@@ -169,7 +168,7 @@ namespace OpenAuth.WebApi.Controllers
                         //判断劳务关系是否正确(增值税发票)
                         if (item.Type == 3)
                         {
-                            var validateResult = await _reimburseInfoApp.IsServiceRelations(request.AppUserId, item.CompanyName, item.CompanyTaxCode);
+                            IsServiceRelationsResp validateResult = await _reimburseInfoApp.IsServiceRelations(request.AppUserId, item.CompanyName, item.CompanyTaxCode);
                             if (!validateResult.ispass)
                             {
                                 invoiceresponse.IsValidate = 0;

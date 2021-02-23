@@ -1792,8 +1792,9 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="AppId"></param>
         /// <param name="ServiceRelations"></param>
+        /// <param name="CompanyTaxCode"></param>
         /// <returns></returns>
-        public async Task<dynamic> IsServiceRelations(string AppId, string ServiceRelations, string CompanyTaxCode)
+        public async Task<IsServiceRelationsResp> IsServiceRelations(string AppId, string ServiceRelations, string CompanyTaxCode)
         {
             var user = _auth.GetCurrentUser().User;
             if (user.Account == Define.USERAPP)
@@ -1805,23 +1806,14 @@ namespace OpenAuth.App
             var Relations = categoryList.Where(u => u.Name.Equals(user.ServiceRelations)).FirstOrDefault().Description;
             if (!ServiceRelations.Equals(Relations))
             {
-                return new {
-                    ispass = false,
-                    message = "发票抬头与本人劳务关系不一致，禁止报销"
-                };
+                return new IsServiceRelationsResp { ispass=false,message= "发票抬头与本人劳务关系不一致，禁止报销" };
             }
             var companyTaxCodes = categoryList.Select(c => c.DtCode).ToList();
             if (!companyTaxCodes.Contains(CompanyTaxCode)) 
             {
-                return new
-                {
-                    ispass = false,
-                    message = "发票抬头和系统维护的不一样，禁止报销"
-                };
+                return new IsServiceRelationsResp { ispass = false, message = "发票抬头和系统维护的不一样，禁止报销" };
             }
-            return new { 
-                ispass = true,
-            };
+            return new IsServiceRelationsResp { ispass = true};
         }
 
         /// <summary>
