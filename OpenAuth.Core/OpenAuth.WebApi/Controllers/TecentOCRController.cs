@@ -27,9 +27,10 @@ namespace OpenAuth.WebApi.Controllers
         private readonly FileApp _fileapp;
         private ReimburseInfoApp _reimburseInfoApp;
         private MyExpendsApp _myExpendsApp;
+        private CategoryApp _categoryApp;
         private IOptions<AppSetting> _appConfiguration;
 
-        public TecentOCRController(TecentOCR tecentOCR, FileApp fileApp, ReimburseInfoApp reimburseInfoApp, MyExpendsApp myExpendsApp, IOptions<AppSetting> appConfiguration, HuaweiOCR huaweiOCR)
+        public TecentOCRController(TecentOCR tecentOCR, FileApp fileApp, ReimburseInfoApp reimburseInfoApp, MyExpendsApp myExpendsApp, CategoryApp categoryApp, IOptions<AppSetting> appConfiguration, HuaweiOCR huaweiOCR)
         {
             _appConfiguration = appConfiguration;
             _tecentOCR = tecentOCR;
@@ -37,11 +38,8 @@ namespace OpenAuth.WebApi.Controllers
             _fileapp = fileApp;
             _reimburseInfoApp = reimburseInfoApp;
             _myExpendsApp = myExpendsApp;
+            _categoryApp = categoryApp;
         }
-        /// <summary>
-        /// 纳税人识别号（新威）
-        /// </summary>
-        public List<string> TaxCodeList = new List<string> { "91441900MA4X07PQ5X", "91440300755681916J", "91440300697120386E" };
 
         /// <summary>
         /// 文件后缀名集合
@@ -171,10 +169,11 @@ namespace OpenAuth.WebApi.Controllers
                         //判断劳务关系是否正确(增值税发票)
                         if (item.Type == 3)
                         {
-                            if (!await _reimburseInfoApp.IsServiceRelations(request.AppUserId, item.CompanyName))
+                            var validateResult = await _reimburseInfoApp.IsServiceRelations(request.AppUserId, item.CompanyName, item.CompanyTaxCode);
+                            if (!validateResult.ispass)
                             {
                                 invoiceresponse.IsValidate = 0;
-                                invoiceresponse.NotPassReason = "发票抬头与本人劳务关系不一致，禁止报销";
+                                invoiceresponse.NotPassReason = validateResult.message;
                                 outData.Add(invoiceresponse);
                                 result.Data = outData;
                                 return result;
@@ -194,32 +193,24 @@ namespace OpenAuth.WebApi.Controllers
                             //判断是否为当前公司的抬头且是增值税发票才进行验证
                             if (type == 3)
                             {
-                                if (TaxCodeList.Contains(item.CompanyTaxCode))
+                                // 3.核验发票(增值税发票) 校验码大于等于6位取后六位 小于6位则格式为 不含税金额 +  /  +五位校验码
+                                VatInvoiceVerifyRequest req = new VatInvoiceVerifyRequest
                                 {
-                                    // 3.核验发票(增值税发票) 校验码大于等于6位取后六位 小于6位则格式为 不含税金额 +  /  +五位校验码
-                                    VatInvoiceVerifyRequest req = new VatInvoiceVerifyRequest
-                                    {
-                                        InvoiceCode = item.InvoiceCode,
-                                        InvoiceNo = item.InvoiceNo,
-                                        InvoiceDate = item.InvoiceDate.Trim(),
-                                        Additional = item.CheckCode.Length > 6 ? item.CheckCode.Substring(item.CheckCode.Length - 6) : item.AmountWithOutTax + "/" + item.CheckCode
-                                    };
-                                    var response = _tecentOCR.VatInvoiceVerify(req);
-                                    //核验成功 返回核验结果
-                                    if (response.Code == 200 && response.Data != null)
-                                    {
-                                        invoiceresponse.IsValidate = 1;
-                                    }
-                                    else
-                                    {
-                                        invoiceresponse.IsValidate = 0;
-                                        invoiceresponse.NotPassReason = "核验失败：" + response.Message;
-                                    }
+                                    InvoiceCode = item.InvoiceCode,
+                                    InvoiceNo = item.InvoiceNo,
+                                    InvoiceDate = item.InvoiceDate.Trim(),
+                                    Additional = item.CheckCode.Length > 6 ? item.CheckCode.Substring(item.CheckCode.Length - 6) : item.AmountWithOutTax + "/" + item.CheckCode
+                                };
+                                var response = _tecentOCR.VatInvoiceVerify(req);
+                                //核验成功 返回核验结果
+                                if (response.Code == 200 && response.Data != null)
+                                {
+                                    invoiceresponse.IsValidate = 1;
                                 }
                                 else
                                 {
                                     invoiceresponse.IsValidate = 0;
-                                    invoiceresponse.NotPassReason = "发票抬头和系统维护的不一样，禁止报销";
+                                    invoiceresponse.NotPassReason = "核验失败：" + response.Message;
                                 }
                             }
                             else
