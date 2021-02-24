@@ -13,7 +13,7 @@
 </template>
 
 <script>
-import ClickOutside from 'element-ui/src/utils/clickoutside'
+import ClickOutside from 'element-ui/lib/utils/clickoutside'
 export default {
   name: 'my-new-area-selector',
   inject: {

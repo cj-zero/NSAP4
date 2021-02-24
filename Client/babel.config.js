@@ -9,5 +9,10 @@ module.exports = {
   ],
   plugins: [
     ...prodPlugins
-  ]
+  ],
+  env: {
+    "test": {
+      "plugins": ["transform-require-context"]
+    }
+  }
 }

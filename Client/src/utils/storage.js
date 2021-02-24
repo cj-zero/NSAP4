@@ -6,12 +6,10 @@ export function getLocalStorage (key) {
 }
 
 export function setLocalStorage (key, value) {
-  console.log('set', key, value)
   return storage.set(key, value)
 }
 
 export function hasLocalStorage (key) {
-  console.log('has', 'key')
   return storage.has(key)
 }
 export function removeLocalStorage (key) {
@@ -30,7 +28,6 @@ export function setSessionStorage (key, value) {
 }
 
 export function hasSessionStorage (key) {
-  console.log('has', 'key')
   return storage.session.has(key)
 }
 export function removeSessionStorage (key) {
