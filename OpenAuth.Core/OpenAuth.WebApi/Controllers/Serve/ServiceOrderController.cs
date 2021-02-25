@@ -634,6 +634,27 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// 撤回聊天室消息
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> RevocationMessage(SendServiceOrderMessageReq request)
+        {
+            var result = new Response();
+            try
+            {
+                result.Message = await _serviceOrderApp.RevocationMessage(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
         #endregion
 
         #region App售后接口 如无特殊情况勿动，修改请告知！！！

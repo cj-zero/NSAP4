@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
+using OpenAuth.App.Serve.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 using System;
@@ -26,11 +27,21 @@ namespace OpenAuth.App.Serve
 
         public async Task<dynamic> GetServiceOrderMessages(int serviceOrderId)
         {
-            var list = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == serviceOrderId && s.FroTechnicianName!="系统").Include(s=>s.ServiceOrderMessagePictures).OrderByDescending(s => s.CreateTime).ToListAsync();
-
+            var messageList = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == serviceOrderId && s.FroTechnicianName!="系统")
+                .Include(s=>s.ServiceOrderMessagePictures).ToListAsync();
+            var ids = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.Equals(serviceOrderId)).Select(s => s.Id).ToListAsync();
+            var ServiceOrderLogs = await UnitWork.Find<ServiceOrderLog>(s => s.ServiceOrderId.Equals(serviceOrderId) || ids.Contains((int)s.ServiceWorkOrderId)).ToListAsync();
+            ServiceOrderLogs = ServiceOrderLogs.GroupBy(o => new { o.Action, o.CreateTime }).Select(o => o.First()).ToList();
+            var loglist = ServiceOrderLogs.Select(s => new ServiceOrderMessage
+            {
+                CreateTime = s.CreateTime,
+                Replier ="系统",
+                Content = s.Action
+            });
+            messageList.AddRange(loglist);
             //var groupList = list.GroupBy(s => s.FroTechnicianName).ToList().Select(s => new { s.Key, Data = s.ToList() });
 
-            return list;
+            return messageList.OrderByDescending(s => s.CreateTime).ToList();
         }
 
         public async Task SendMessageToTechnician(SendMessageToTechnicianReq req)
