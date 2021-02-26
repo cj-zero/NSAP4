@@ -641,12 +641,12 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> RevocationMessage(SendServiceOrderMessageReq request)
+        public async Task<TableData> RevocationMessage(SendServiceOrderMessageReq request)
         {
-            var result = new Response();
+            var result = new TableData();
             try
             {
-                result.Message = await _serviceOrderApp.RevocationMessage(request);
+                return await _serviceOrderApp.RevocationMessage(request);
             }
             catch (Exception ex)
             {

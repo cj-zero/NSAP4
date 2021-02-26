@@ -1797,8 +1797,9 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        public async Task<string> RevocationMessage(SendServiceOrderMessageReq req)
+        public async Task<TableData> RevocationMessage(SendServiceOrderMessageReq req)
         {
+            TableData result = new TableData();
             string userId = string.Empty;
             string name = string.Empty;
             var loginContext = _auth.GetCurrentUser();
@@ -1806,32 +1807,35 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var loginUser = await UnitWork.Find<AppUserMap>(u => u.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync();
-            if (!string.IsNullOrWhiteSpace(req.AppUserId.ToString())) 
+            var loginUser = loginContext.User;
+            if (req.AppUserId!=0) 
             {
-                loginUser.AppUserId = req.AppUserId;
+                var UserId = (await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(req.AppUserId)).FirstOrDefaultAsync()).UserID;
+                loginUser= await UnitWork.Find<User>(u => u.Id.Equals(UserId)).FirstOrDefaultAsync();
             }
-            string message = "";
-            var messageObj=await UnitWork.Find<ServiceOrderMessage>(s => s.Id.Equals(req.MessageId) && s.AppUserId.Equals(loginUser.AppUserId)).FirstOrDefaultAsync();
+            var messageObj=await UnitWork.Find<ServiceOrderMessage>(s => s.Id.Equals(req.MessageId) && s.ReplierId.Equals(loginUser.Id)).FirstOrDefaultAsync();
             if (messageObj != null)
             {
-                if (Convert.ToDateTime(messageObj.CreateTime).AddDays(1) < DateTime.Now)
+                if (Convert.ToDateTime(messageObj.CreateTime).AddDays(1) > DateTime.Now)
                 {
-                    await UnitWork.DeleteAsync<ServiceOrderMessage>(s => s.Id.Equals(req.MessageId) && s.AppUserId.Equals(loginUser.AppUserId));
-                    await UnitWork.DeleteAsync<ServiceOrderMessageUser>(s => s.MessageId.Equals(req.MessageId));
+                    await UnitWork.DeleteAsync<ServiceOrderMessage>(messageObj);
+                    await UnitWork.DeleteAsync<ServiceOrderMessageUser>(s => s.MessageId.Equals(messageObj.Id));
                     await UnitWork.SaveAsync();
-                    message = "撤回成功";
+                    result.Code = 200;
+                    result.Message = "撤回成功";
                 }
                 else 
                 {
-                    message = "时间已超过二十四小时不可撤回";
+                    result.Code = 500;
+                    result.Message = "时间已超过二十四小时不可撤回";
                 }
             }
             else 
             {
-                message = "非本人消息不可撤销";
+                result.Code = 500;
+                result.Message = "非本人消息不可撤销";
             }
-            return message;
+            return result;
         }
 
         /// <summary>
@@ -1847,10 +1851,6 @@ namespace OpenAuth.App
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-            if (req.AppUserId == 0 && loginContext.User.Account != Define.USERAPP) 
-            {
-                req.AppUserId = (int)(await UnitWork.Find<AppUserMap>(u => u.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync()).AppUserId;
             }
             if (req.AppUserId == 0)
             {
