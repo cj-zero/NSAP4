@@ -43,7 +43,7 @@ export function remoteLoad (url, hasCallback) {
  * 动态加载百度地图api函数
  * @param {String} ak  百度地图AK，必传
  */
-export function loadBMap(ak) {
+export function loadBMap(ak, type) {
   return new Promise(function(resolve, reject) {
     if (typeof window.BMap !== 'undefined') {
       resolve(window.BMap)
@@ -55,8 +55,11 @@ export function loadBMap(ak) {
     }
     let script = document.createElement('script')
     script.type = 'text/javascript'
-    script.src =
-      'https://api.map.baidu.com/api?v=3.0&ak=' + ak + '&callback=onBMapCallback'
+    script.src = type === 'GL' 
+      ? 'https:api.map.baidu.com/api?type=webgl&v=1.0&ak=' + ak + '&callback=onBMapCallback'
+      : 'https://api.map.baidu.com/api?v=3.0&ak=' + ak + '&callback=onBMapCallback'
+      
+      
     script.onerror = reject
     document.head.appendChild(script)
   })
