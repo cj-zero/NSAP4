@@ -5,7 +5,7 @@
 				<navbar></navbar>
 			</el-header>
 			<el-container class="flex-row flex-item">
-				<sidebar class="sidebar-container"></sidebar>
+				<sidebar class="sidebar-container" style="border-right: none;"></sidebar>
 				<div class="main-container flex-item">
 					<tags-view class="custom-tags-view"></tags-view>
 					<app-main></app-main>

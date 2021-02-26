@@ -2,7 +2,7 @@
   <div style="width:100%;" class="message-wrapper">
     <template v-if="wordList && wordList.length">
       <el-form label-position="top" label-width="80px" class="chatForm">
-        <el-form-item label="留言">
+        <el-form-item :label="label">
           <el-scrollbar class="scroll-bar" v-loading="isLoading">
             <ul>
               <li 
@@ -38,32 +38,34 @@
         </el-form-item>
       </el-form>
     </template>
-    <template v-else>暂无留言噢~~</template>
-    <el-form class="content-wrapper" :disabled="isDisabled">
-      <p class="title">留言</p>
-      <el-input type="textarea" v-model="content" size="mini" :rows="2"></el-input>
-      <div class="btn-wrapper">
-        <el-button type="success" size="mini" @click="dialogVisible=true">上传图片</el-button>
-        <el-button type="primary" size="mini" @click="submitForm()" :loading="loadingBtn">确定</el-button>
+    <template v-else><div v-if="!type">暂无留言噢~~</div></template>
+    <template v-if="!type">
+      <el-form class="content-wrapper" :disabled="isDisabled">
+        <p class="title">留言</p>
+        <el-input type="textarea" v-model="content" size="mini" :rows="2"></el-input>
+        <div class="btn-wrapper">
+          <el-button type="success" size="mini" @click="dialogVisible=true">上传图片</el-button>
+          <el-button type="primary" size="mini" @click="submitForm()" :loading="loadingBtn">确定</el-button>
+        </div>
+      </el-form>
+      <div class="operation-wrapper" v-show="isVisible" :style="{ left: left + 'px', top: top + 'px' }">
+        <div @click="withDraw">撤回</div>
       </div>
-    </el-form>
-    <div class="operation-wrapper" v-show="isVisible" :style="{ left: left + 'px', top: top + 'px' }">
-      <div @click="withDraw">撤回</div>
-    </div>
-    <el-dialog title="提示" :visible.sync="dialogVisible" :append-to-body="true" width="500px">
-      <el-row :gutter="10" type="flex" style="margin:0 0 10px 0 ;" class="row-bg">
-        <el-col :span="4" style="line-height:40px;">
-          <div style="font-size:12px;color:#606266;width:100px;">上传图片</div>
-        </el-col>
-        <el-col :span="18">
-          <upLoadImage setImage="50px" @get-ImgList="getImgList"></upLoadImage>
-        </el-col>
-      </el-row>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="dialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="function(){dialogVisible = false,changeModel=true}">确 定</el-button>
-      </span>
-    </el-dialog>
+      <el-dialog title="提示" :visible.sync="dialogVisible" :append-to-body="true" width="500px">
+        <el-row :gutter="10" type="flex" style="margin:0 0 10px 0 ;" class="row-bg">
+          <el-col :span="4" style="line-height:40px;">
+            <div style="font-size:12px;color:#606266;width:100px;">上传图片</div>
+          </el-col>
+          <el-col :span="18">
+            <upLoadImage setImage="50px" @get-ImgList="getImgList"></upLoadImage>
+          </el-col>
+        </el-row>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="dialogVisible = false">取 消</el-button>
+          <el-button type="primary" @click="function(){dialogVisible = false,changeModel=true}">确 定</el-button>
+        </span>
+      </el-dialog>
+    </template>
   </div>
 </template>
 
@@ -73,7 +75,7 @@ import upLoadImage from "@/components/upLoadFile";
 import ImgList from '@/components/imgList'
 import ClickOutside from 'element-ui/lib/utils/clickoutside'
 export default {
-  props: ["serveId"],
+  props: ["serveId", "type"],
   directives: {
     ClickOutside
   },
@@ -123,8 +125,14 @@ export default {
       },
     },
   },
+  computed: {
+    label () {
+      return this.type ? '' : '留言'
+    }
+  },
   methods: {
     openMenu ({ tValue, index }, event) {
+      if (this.type) return
       this.isVisible = true
       this.tValue = tValue
       this.index = index

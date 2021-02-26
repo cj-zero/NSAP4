@@ -10,10 +10,10 @@
     <!-- <template v-show="currentName === 'message'"> -->
     <!-- 留言 -->
     <div class="content-wrapper" :class="{ reimburse: this.formName === '报销' }">
-      <Message :key="timer" :serveId="serveId" v-show="currentName === 'message'"></Message>
+      <Message :key="timer" :serveId="serveId" v-show="currentName === 'message'" :type="type"></Message>
       <!-- </template> -->
       <!-- 服务进度 -->
-      <Log v-show="currentName === 'progress'" :serveId="serveId"></Log>
+      <!-- <Log v-show="currentName === 'progress'" :serveId="serveId"></Log> -->
       <!-- 核对设备 -->
       <template v-if="formName === '编辑'">
         <check :sapOrderId="sapOrderId" :customerId="customerId" v-show="currentName === 'check'"></check>
@@ -27,13 +27,13 @@
 import TabList from './tabList'
 import Message from './message'
 import Check from './check'
-import Log from './log'
+// import Log from './log'
 export default {
   components: {
     TabList,
     Message,
     Check,
-    Log
+    // Log
   },
   props: {
     timer: null, // 用于重新渲染组件
@@ -57,7 +57,8 @@ export default {
   data () {
     return {
       currentName: 'message',
-      initialName: 'message'
+      initialName: 'message',
+      type: ''
     }
   },
   watch: {
@@ -65,8 +66,9 @@ export default {
       immediate: true,
       handler (val) {
         if (val === '报销') { // 报销模块
-          this.currentName = 'progress'
-          this.initialName = 'progress'
+          this.currentName = 'message'
+          this.initialName = 'message'
+          this.type = 'readonly'
         }
       }
     }
@@ -76,11 +78,11 @@ export default {
       let tabList = []
       if (this.formName) {
         if (this.formName === '报销') { // 报销模块只有服务进度
-          tabList = [{ label: '服务进度', name: 'progress' }]
+          tabList = [{ label: '服务进度', name: 'message' }]
         } else {
           tabList = [
             { label: '消息', name: 'message' },
-            { label: '服务进度', name: 'progress' }
+            // { label: '服务进度', name: 'progress' }
           ]
         }
         if (this.formName === '编辑') {
