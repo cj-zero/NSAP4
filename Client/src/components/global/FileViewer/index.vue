@@ -56,9 +56,9 @@
 </template>
 
 <script>
-import { on, off } from 'element-ui/src/utils/dom';
+import { on, off } from 'element-ui/lib/utils/dom';
 import PDF from '../../VuePdf'
-import { rafThrottle, isFirefox } from 'element-ui/src/utils/util';
+import { rafThrottle, isFirefox } from 'element-ui/lib/utils/util';
 const Mode = {
   CONTAIN: {
     name: 'contain',

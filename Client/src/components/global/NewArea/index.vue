@@ -1,23 +1,21 @@
 <template>
   <div class="area-selector-wrapper" v-click-outside="hidePannel">
     <el-input ref="reference" v-bind="$attrs" v-on="$listeners" :value="value" @click.native.stop="togglePannel"></el-input>
-    <transition name="el-zoom-in-top">
-      <area-down-picker
-        ref="propper"
-        v-bind="$attrs"
-        v-show="isShow"
-        @confirm="onConfirm"
-        @close="onClose"
-      >
-      </area-down-picker>
-    </transition>
+    <new-area-down-picker
+      ref="propper"
+      v-bind="$attrs"
+      v-model="isShow"
+      @confirm="onConfirm"
+      @close="onClose"
+      :placement="placement"
+    ></new-area-down-picker>
   </div>
 </template>
 
 <script>
 import ClickOutside from 'element-ui/lib/utils/clickoutside'
 export default {
-  name: 'my-area-selector',
+  name: 'my-new-area-selector',
   inject: {
     elForm: {
       default: ''
@@ -37,6 +35,10 @@ export default {
     disabled: {
       type: Boolean,
       default: false
+    },
+    placement: {
+      type: String,
+      default: 'bottom-start'
     }
   },
   computed: {

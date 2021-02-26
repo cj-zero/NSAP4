@@ -36,7 +36,6 @@
       :loading="dialogLoading"
       title="物料出库单"
       :btnList="btnList"
-      :append-to-body="true"
       @closed="close"
       :destroy-on-close="true"
       top="100px"

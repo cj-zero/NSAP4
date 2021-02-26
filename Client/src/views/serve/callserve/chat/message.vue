@@ -3,9 +3,12 @@
     <template v-if="wordList && wordList.length">
       <el-form label-position="top" label-width="80px" class="chatForm">
         <el-form-item label="留言">
-          <el-scrollbar class="scroll-bar">
+          <el-scrollbar class="scroll-bar" v-loading="isLoading">
             <ul>
-              <li v-for="tValue in wordList" :key="tValue.id">
+              <li 
+                v-for="(tValue, index) in wordList" :key="tValue.id" 
+                v-click-outside="hidePannel"
+                @contextmenu.prevent="openMenu({ tValue, index }, $event)" ref="wordItem">
                 <div class="otherWord">
                   <p class="content">
                     {{tValue.replier?tValue.replier:'未知发送者'}}
@@ -36,13 +39,16 @@
       </el-form>
     </template>
     <template v-else>暂无留言噢~~</template>
-    <div class="content-wrapper">
+    <el-form class="content-wrapper" :disabled="isDisabled">
       <p class="title">留言</p>
       <el-input type="textarea" v-model="content" size="mini" :rows="2"></el-input>
       <div class="btn-wrapper">
         <el-button type="success" size="mini" @click="dialogVisible=true">上传图片</el-button>
         <el-button type="primary" size="mini" @click="submitForm()" :loading="loadingBtn">确定</el-button>
       </div>
+    </el-form>
+    <div class="operation-wrapper" v-show="isVisible" :style="{ left: left + 'px', top: top + 'px' }">
+      <div @click="withDraw">撤回</div>
     </div>
     <el-dialog title="提示" :visible.sync="dialogVisible" :append-to-body="true" width="500px">
       <el-row :gutter="10" type="flex" style="margin:0 0 10px 0 ;" class="row-bg">
@@ -65,11 +71,20 @@
 import * as callserve from "@/api/callserve";
 import upLoadImage from "@/components/upLoadFile";
 import ImgList from '@/components/imgList'
+import ClickOutside from 'element-ui/lib/utils/clickoutside'
 export default {
   props: ["serveId"],
+  directives: {
+    ClickOutside
+  },
   components: { upLoadImage, ImgList },
   data() {
     return {
+      isVisible: false,
+      isLoading: false,
+      left: 0,
+      top: 0,
+      isDisabled: false,
       wordList: [],
       content: "", // 输入内容
       baseURL: process.env.VUE_APP_BASE_API + "/files/Download",
@@ -109,6 +124,39 @@ export default {
     },
   },
   methods: {
+    openMenu ({ tValue, index }, event) {
+      this.isVisible = true
+      this.tValue = tValue
+      this.index = index
+      const offsetLeft = event.target.getBoundingClientRect().left; // container margin left
+      const refOffset = this.$refs.wordItem[index].getBoundingClientRect().left
+      console.log(refOffset === offsetLeft, tValue)
+      this.left = event.clientX - 35; // 15: margin right
+      this.top = event.clientY - 15;
+    },
+    hidePannel () {
+      this.isVisible = false
+    },
+    async withDraw () {
+      if (!this.tValue) {
+        return this.$message.warning('没有消息ID')
+      }
+      this.isVisible = false
+      try {
+        this.isLoading = true
+        this.isDisabled = true
+        const data = await callserve.withDrawMessage({ messageId: this.tValue.id })
+        console.log(data, 'data')
+        this.wordList.splice(this.index, 1)
+        this.$message.success(data.message)
+        this.isLoading = false
+        this.isDisabled = false
+      } catch (err) {
+        this.$message.error(err.message)
+        this.isLoading = false
+        this.isDisabled = false
+      }
+    },
     getList() {
       callserve
         .GetServiceOrderMessages({ serviceOrderId: this.serveId })
@@ -210,7 +258,25 @@ export default {
     margin-top: 10px;
   }
 }
-
+.operation-wrapper {
+  position: fixed;
+  z-index: 10000;
+  left: 0;
+  top: 0;
+  width: 60px;
+  padding: 5px;
+  background: #fff;
+  border-radius: 4px;
+  color: #333;
+  box-shadow: 2px 2px 3px 0 rgba(0, 0, 0, 0.3);
+  div {
+    line-height: 30px;
+    height: 30px;
+    text-align: center;
+    background-color: #eee;
+    cursor: pointer;
+  }
+}
 ul {
   font-size: 13px;
   margin-top: -5px;

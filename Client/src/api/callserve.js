@@ -61,6 +61,14 @@ export function FACProductList(params) {
   })
 }
 
+export function withDrawMessage (data) {
+  return request({
+    url: '/serve/ServiceOrder/RevocationMessage',  //获取聊天列表
+    method: 'post',
+    data
+  })
+}
+
 export function SendMessageToTechnician(data) {
   return request({
     url: '/serve/ServiceOrderMessage/SendMessageToTechnician',  //发送聊天信息

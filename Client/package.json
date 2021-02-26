@@ -5,17 +5,19 @@
   "author": "yubaolee <yubaolee@163.com>",
   "scripts": {
     "serve": "vue-cli-service serve",
-    "report": "vue-cli-service build --report",
+    "build": "vue-cli-service build --mode prod",
+    "test:unit": "vue-cli-service test:unit",
+    "lint": "vue-cli-service lint",
     "dev": "vue-cli-service serve --mode dev",
     "max": "vue-cli-service serve --mode max",
-    "build": "vue-cli-service build --mode prod",
-    "lint": "vue-cli-service lint"
+    "report": "vue-cli-service build --report"
   },
   "dependencies": {
     "@microsoft/signalr": "^3.1.7",
     "@microsoft/signalr-protocol-msgpack": "^3.1.7",
     "@riophae/vue-treeselect": "0.0.36",
     "axios": "^0.19.0",
+    "babel-jest": "^26.6.3",
     "core-js": "^3.6.4",
     "dayjs": "^1.10.3",
     "element-ui": "^2.10.1",
@@ -48,9 +50,12 @@
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.3.0",
     "@vue/cli-plugin-eslint": "~4.3.0",
+    "@vue/cli-plugin-unit-jest": "^4.5.11",
     "@vue/cli-service": "~4.3.0",
+    "@vue/test-utils": "^1.0.3",
     "babel-eslint": "^10.1.0",
     "babel-plugin-transform-remove-console": "^6.9.4",
+    "babel-plugin-transform-require-context": "^0.1.1",
     "compression-webpack-plugin": "^6.1.1",
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.2.2",
@@ -75,7 +80,18 @@
     "parserOptions": {
       "parser": "babel-eslint"
     },
-    "rules": {}
+    "rules": {},
+    "overrides": [
+      {
+        "files": [
+          "**/__tests__/*.{j,t}s?(x)",
+          "**/tests/unit/**/*.spec.{j,t}s?(x)"
+        ],
+        "env": {
+          "jest": true
+        }
+      }
+    ]
   },
   "browserslist": [
     "> 1%",

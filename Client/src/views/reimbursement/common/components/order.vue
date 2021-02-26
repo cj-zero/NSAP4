@@ -246,10 +246,10 @@
           <!-- <el-button size="mini" @click="toggleAfterEva">售后评价</el-button> -->
         </div>
         <!-- 服务报告 -->
-        <div style="width: 984px;margin-top: 5px;">
+        <div style="width: 1030px;margin-top: 5px;">
           <h2 style="font-weight: bold;">服务报告</h2>
           <common-table 
-            style="width: 601px;margin-top: 5px;"
+            style="margin-top: 5px;"
             :data="reportTableData"
             :columns="reportTableColumns"
             max-height="300px"
@@ -1162,7 +1162,7 @@ export default {
         { label: '物料编码', prop: 'materialCode', width: 120 },
         // { label: '问题类型', prop: 'troubleDescription', width: 180 },
         { label: '解决方案', prop: 'processDescription', width: 180 },
-        { label: "备注", prop: 'remark', width: 180 }
+        { label: "备注", prop: 'remark', width: 609 }
       ],
       reportDetailLoading: false,
       // 历史费用
@@ -3070,7 +3070,8 @@ export default {
     position: absolute;
     top: 200px;
     left: -11px;
-    transform: translate3d(-100%, 0, 0);
+    margin-left: -500px;
+    // transform: translate3d(-100%, 0, 0);
     
   }
   .control-info {

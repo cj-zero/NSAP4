@@ -13,7 +13,7 @@
     <!-- 选择列表 -->
     <el-scrollbar>
       <ul class="select-list">
-        <li 
+        <li
           v-for="item in selectList" 
           :key="item.areaName" 
           @click="selectItem(item)"
@@ -27,7 +27,7 @@
 import { removeLocalStorage, hasLocalStorage, setSessionStorage, hasSessionStorage, setObject, getObject } from  '@/utils/storage'
 import { getAreaList } from '@/api/serve/area'
 // import Popper from 'element-ui/src/utils/vue-popper';
-import { generateId } from 'element-ui/src/utils/util';
+import { generateId } from 'element-ui/lib/utils/util';
 export default {
   name: 'AreaDownPicker',
   props: {
