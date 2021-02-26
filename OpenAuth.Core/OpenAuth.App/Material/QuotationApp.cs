@@ -324,7 +324,20 @@ namespace OpenAuth.App.Material
                     .WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
                     .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
             }
-
+            var quotations = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(request.ServiceOrderId)).Include(q => q.QuotationProducts).ThenInclude(q => q.QuotationMaterials).ToListAsync();
+            if (quotations != null && quotations.Count > 0) 
+            {
+                List<QuotationMaterial> quotationMaterials = new List<QuotationMaterial>();
+                quotations.ForEach(q =>
+                    q.QuotationProducts.Where(p => p.ProductCode.Equals(request.ManufacturerSerialNumbers)).ForEach(p=>
+                        quotationMaterials.AddRange(p.QuotationMaterials.ToList())
+                    )
+                );
+                Equipments.ForEach(e =>
+                      e.Quantity = e.Quantity - quotationMaterials.Where(q => q.MaterialCode.Equals(e.ItemCode)).Sum(q=>q.Count)
+                );
+            }
+            Equipments = Equipments.Where(e => e.Quantity > 0).ToList();
             var ItemCodes = Equipments.Select(e => e.ItemCode).ToList();
             var MaterialPrices = await UnitWork.Find<MaterialPrice>(m => ItemCodes.Contains(m.MaterialCode)).ToListAsync();
 

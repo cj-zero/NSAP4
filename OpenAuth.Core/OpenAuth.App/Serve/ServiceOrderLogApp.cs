@@ -112,7 +112,7 @@ namespace OpenAuth.App
         }
 
         /// <summary>
-        /// 根据服务单id查找关于该服务单日志 by zlg 2020.09.07
+        /// 根据服务单id查找关于该服务单日志
         /// </summary>
         /// <param name="ServiceOrderId"></param>
         /// <returns></returns>

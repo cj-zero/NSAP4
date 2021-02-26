@@ -1792,35 +1792,28 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="AppId"></param>
         /// <param name="ServiceRelations"></param>
+        /// <param name="CompanyTaxCode"></param>
         /// <returns></returns>
-        public async Task<bool> IsServiceRelations(string AppId, string ServiceRelations)
+        public async Task<IsServiceRelationsResp> IsServiceRelations(string AppId, string ServiceRelations, string CompanyTaxCode)
         {
             var user = _auth.GetCurrentUser().User;
             if (user.Account == Define.USERAPP)
             {
                 user = await GetUserId(Convert.ToInt32(AppId));
             }
-            var Relations = "";
-            switch (user.ServiceRelations)
-            {
-                case "新威尔":
-                    Relations = "深圳市新威尔电子有限公司";
-                    break;
-                case "东莞新威":
-                    Relations = "东莞新威检测技术有限公司";
-                    break;
-                case "新能源":
-                    Relations = "深圳市新威新能源技术有限公司";
-                    break;
-                default:
-                    Relations = null;
-                    break;
-            }
+            var categoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ServiceRelations"))
+                .Select(u => new {u.Name, u.DtCode,u.Description }).ToListAsync();
+            var Relations = categoryList.Where(u => u.Name.Equals(user.ServiceRelations)).FirstOrDefault().Description;
             if (!ServiceRelations.Equals(Relations))
             {
-                return false;
+                return new IsServiceRelationsResp { ispass=false,message= "发票抬头与本人劳务关系不一致，禁止报销" };
             }
-            return true;
+            var companyTaxCodes = categoryList.Select(c => c.DtCode).ToList();
+            if (!companyTaxCodes.Contains(CompanyTaxCode)) 
+            {
+                return new IsServiceRelationsResp { ispass = false, message = "发票抬头和系统维护的不一样，禁止报销" };
+            }
+            return new IsServiceRelationsResp { ispass = true};
         }
 
         /// <summary>

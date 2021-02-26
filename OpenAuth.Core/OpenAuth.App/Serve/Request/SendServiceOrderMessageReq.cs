@@ -23,5 +23,9 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string Content { get; set; }
 
+        /// <summary>
+        /// 聊天信息id
+        /// </summary>
+        public string MessageId { get; set; }
     }
 }

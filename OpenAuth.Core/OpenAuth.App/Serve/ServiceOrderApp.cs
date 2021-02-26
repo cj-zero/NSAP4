@@ -1474,14 +1474,17 @@ namespace OpenAuth.App
             {
                 throw new CommonException("您已重派过该服务单，请勿重复操作", 60019);
             }
+            var appUserId = (await UnitWork.Find<AppUserMap>(w => w.UserID == loginContext.User.Id).FirstOrDefaultAsync())?.AppUserId;
             //重置工单状态为已排配
             await UnitWork.UpdateAsync<ServiceWorkOrder>(w => w.ServiceOrderId == req.serviceOrderId, u => new ServiceWorkOrder { Status = 2, OrderTakeType = 0, BookingDate = null, VisitTime = null, ServiceMode = 0, CompletionReportId = string.Empty, TroubleDescription = string.Empty, ProcessDescription = string.Empty, IsCheck = 0, CompleteDate = null });
             //删除相对应的流程数据
             await UnitWork.DeleteAsync<ServiceFlow>(c => c.ServiceOrderId == req.serviceOrderId);
             var U_SAP_ID = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(req.serviceOrderId)).Select(s => s.U_SAP_ID).FirstOrDefaultAsync();
             await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"呼叫中心{loginContext.User.Name}一键重派服务单{U_SAP_ID}理由：{req.Message}", ActionType = "一键重派", ServiceOrderId = req.serviceOrderId });
+            await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = req.serviceOrderId, Content = $"呼叫中心{loginContext.User.Name}一键重派服务单{U_SAP_ID}理由：{req.Message}", AppUserId = (int)appUserId });
             await UnitWork.SaveAsync();
         }
+
         #endregion
 
         #region<<Common Methods>>
@@ -1789,6 +1792,47 @@ namespace OpenAuth.App
         #endregion
 
         #region<<Message>>
+        /// <summary>
+        /// 撤回聊天室消息
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<string> RevocationMessage(SendServiceOrderMessageReq req)
+        {
+            string userId = string.Empty;
+            string name = string.Empty;
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = await UnitWork.Find<AppUserMap>(u => u.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync();
+            if (!string.IsNullOrWhiteSpace(req.AppUserId.ToString())) 
+            {
+                loginUser.AppUserId = req.AppUserId;
+            }
+            string message = "";
+            var messageObj=await UnitWork.Find<ServiceOrderMessage>(s => s.Id.Equals(req.MessageId) && s.AppUserId.Equals(loginUser.AppUserId)).FirstOrDefaultAsync();
+            if (messageObj != null)
+            {
+                if (Convert.ToDateTime(messageObj.CreateTime).AddDays(1) < DateTime.Now)
+                {
+                    await UnitWork.DeleteAsync<ServiceOrderMessage>(s => s.Id.Equals(req.MessageId) && s.AppUserId.Equals(loginUser.AppUserId));
+                    await UnitWork.DeleteAsync<ServiceOrderMessageUser>(s => s.MessageId.Equals(req.MessageId));
+                    await UnitWork.SaveAsync();
+                    message = "撤回成功";
+                }
+                else 
+                {
+                    message = "时间已超过二十四小时不可撤回";
+                }
+            }
+            else 
+            {
+                message = "非本人消息不可撤销";
+            }
+            return message;
+        }
 
         /// <summary>
         /// 发送聊天室消息
@@ -1803,6 +1847,10 @@ namespace OpenAuth.App
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            if (req.AppUserId == 0 && loginContext.User.Account != Define.USERAPP) 
+            {
+                req.AppUserId = (int)(await UnitWork.Find<AppUserMap>(u => u.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync()).AppUserId;
             }
             if (req.AppUserId == 0)
             {

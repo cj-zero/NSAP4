@@ -21,7 +21,7 @@ namespace OpenAuth.App
             var loginUser = _auth.GetCurrentUser();
             var roles = loginUser.Roles;
 
-            if (roles.Exists(r => r.Name.Equals("系统管理员")))
+            if (roles.Exists(r => r.Name.Equals("系统管理员") || r.Name.Equals("ERP4.0人事管理")))
                 roles = UnitWork.Find<Role>(null).ToList();
 
             if (!string.IsNullOrEmpty(request.key))

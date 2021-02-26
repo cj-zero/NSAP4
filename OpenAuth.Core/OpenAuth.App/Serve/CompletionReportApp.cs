@@ -76,6 +76,7 @@ namespace OpenAuth.App
                 .WhereIf("无序列号".Equals(req.MaterialType), a => a.MaterialCode == "无序列号")
                 .WhereIf(!"无序列号".Equals(req.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == req.MaterialType)
                 .FirstOrDefaultAsync();
+
             var obj = req.MapTo<CompletionReport>();
 
             obj.CreateTime = DateTime.Now;
@@ -84,6 +85,9 @@ namespace OpenAuth.App
             obj.CreateUserId = nsapInfo.User.Id;
             obj.IsReimburse = 1;
             obj.TechnicianId = req.CurrentUserId.ToString();
+
+            int reumburseCount=await UnitWork.Find<ReimburseInfo>(r => r.ServiceOrderId.Equals(obj.ServiceOrderId) && r.CreateUserId.Equals(nsapInfo.User.Id)).CountAsync();
+            obj.IsReimburse = reumburseCount > 0 ? 2 : 1;
             //obj.CreateUserName = user.Name;
             //todo:补充或调整自己需要的字段
             var o = await Repository.AddAsync(obj);
@@ -101,6 +105,7 @@ namespace OpenAuth.App
             {
                 workorder.Add(item.Id);
             }
+            string logMessage = $"技术员:{nsapInfo.User.Name}完成了服务";
             if (req.IsRedeploy == 1)//若转派则将当前设备类型置为初始未派单状态
             {
                 //记录转派记录
@@ -118,6 +123,7 @@ namespace OpenAuth.App
                  o => new ServiceWorkOrder { Status = 1, OrderTakeType = 0, CurrentUser = string.Empty, CurrentUserId = 0, CurrentUserNsapId = string.Empty, BookingDate = null, VisitTime = null, ServiceMode = 0, CompletionReportId = string.Empty, TroubleDescription = string.Empty, ProcessDescription = string.Empty, IsCheck = 0, CompleteDate = null });
                 //删除相对应的流程数据
                 await UnitWork.DeleteAsync<ServiceFlow>(c => c.ServiceOrderId == req.ServiceOrderId && c.MaterialType == req.MaterialType);
+                logMessage = $"技术员: { nsapInfo.User.Name}申请转派该服务单并填写了完工报告";
             }
             //判断为非草稿提交 则修改对应状态和发送消息
             if (req.IsDraft == 0)
@@ -141,7 +147,7 @@ namespace OpenAuth.App
                     ServiceWorkOrder = string.Join(',', workorder.ToArray()),
                     MaterialType = req.MaterialType
                 });
-                await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员:{nsapInfo.User.Name}完成了服务", ActionType = "完成服务单", ServiceOrderId = req.ServiceOrderId, MaterialType = req.MaterialType });
+                await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = logMessage, ActionType = "完成服务单", ServiceOrderId = req.ServiceOrderId, MaterialType = req.MaterialType });
                 //反写完工报告Id至工单
                 await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id),
                     o => new ServiceWorkOrder { CompletionReportId = completionReportId, CompleteDate = DateTime.Now });
