@@ -16,6 +16,7 @@
     </template>
     <el-image-viewer
       v-if="dialogVisible"
+      :zIndex="99999"
       :url-list="[dialogImageUrl]"
       :on-close="closeViewer"
     >

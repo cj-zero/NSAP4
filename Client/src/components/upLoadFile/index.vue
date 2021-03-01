@@ -63,6 +63,7 @@
       </el-upload>
     </template>
     <el-image-viewer
+      :zIndex="99999"
       v-if="dialogVisible"
       :url-list="[dialogImageUrl]"
       :on-close="closeViewer"

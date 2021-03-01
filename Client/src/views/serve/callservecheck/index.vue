@@ -39,6 +39,7 @@
     </Layer>
     <el-image-viewer
       v-if="previewVisible"
+      :zIndex="99999"
       :url-list="[previewUrl]"
       :on-close="closeViewer"
     >

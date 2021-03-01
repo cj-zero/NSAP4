@@ -339,6 +339,7 @@
     <!-- 预览合同图片 -->
     <!-- 预览图片 -->
     <el-image-viewer
+      :zIndex="99999"
       v-if="previewVisible"
       :url-list="previewImageUrlList"
       :on-close="closeViewer"

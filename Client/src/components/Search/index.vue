@@ -35,6 +35,17 @@
           ></el-option>
         </el-select>
       </template>
+      <template v-else-if="item.type === 'upload'">
+        <el-upload
+          v-if="item.isShow === undefined ? true : item.isShow"
+          v-bind="item.attrs"
+          :key="index"
+        >
+          <slot>
+            <el-button size="mini" type="primary">{{ item.attrs.btnText || '点击上传'}}</el-button>
+          </slot>
+        </el-upload>
+      </template>
       <!-- 树状选择 -->
       <template v-else-if="item.type === 'tree'">
         <el-cascader

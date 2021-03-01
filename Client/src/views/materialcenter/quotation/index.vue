@@ -8,6 +8,17 @@
           @changeForm="onChangeForm" 
           @search="onSearch">
         </Search>
+        <!-- <el-upload
+          v-if="isCustomerServiceSupervisor"
+          style="display: inline-block"
+          :action="importMaterialAction"
+          name="files"
+          :show-file-list="false"
+          :on-success="onSuccess"
+          :on-error="onError"
+        >
+          <el-button size="mini" type="primary">上传物料信息</el-button>
+        </el-upload> -->
       </div>
     </sticky>
     <Layer> 
@@ -100,6 +111,20 @@ export default {
         // { type: 'button', btnText: '编辑', handleClick: this._getQuotationDetail, isSpecial: true, options: { status: 'edit', isReceive: true } },
         { type: 'button', btnText: '打印', handleClick: this.print, isSpecial: true },     
         { type: 'button', btnText: '删除', handleClick: this.deleteOrder, style: { backgroundColor: '#f56c6c', color: '#fff' } },
+        { 
+          type: 'upload',
+          isShow: this.isCustomerServiceSupervisor,
+          attrs: {
+            style: { display: 'inline-block' },
+            btnText: '上传物料信息', 
+            name: 'files',
+            headers: { "X-Token":this.$store.state.user.token },
+            action:  `${process.env.VUE_APP_BASE_API}/Material/Quotation/ImportMaterialPrice`, 
+            'show-file-list': false,
+            'on-success': this.onSuccess,
+            'on-error': this.onError
+          } 
+        }
       ]
     }, // 搜索配置
     btnList () {
@@ -112,10 +137,17 @@ export default {
     },
     isShowOperateBtn () { // 处于新增状态、或者在编辑的状态才展示
       return this.status === 'create' || (!this.isPreviewing && this.isShowEditBtn)
+    },
+    isCustomerServiceSupervisor () { // 判断是不是客服主管
+      return this.rolesList && this.rolesList.length
+        ? this.rolesList.some(item => item === '客服主管')
+        : false
     }
   },
   data () {
     return {
+      rolesList: this.$store.state.user.userInfoAll.roles, // 当前用户的角色列表
+      importMaterialAction: `${process.env.VUE_APP_BASE_API}/Material/Quotation/ImportMaterialPrice`,
       isShowEditBtn: true, // 是否出现编辑按钮
       formQuery: {
         quotationId: '', // 领料单号
@@ -153,6 +185,12 @@ export default {
     } 
   },
   methods: {
+    onSuccess () {
+      this.$message.success('上传成功')
+    },
+    onError () {
+      this.$message.error('上传失败')
+    },
     _getList () {
       this.tableLoading = true
       getQuotationList(this.listQuery).then(res => {

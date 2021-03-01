@@ -131,6 +131,7 @@
 }
 /* image-viewer组件 删除按钮样式 */
 .el-image-viewer__wrapper {
+  z-index: 9999px !important;
   .el-image-viewer__close {
     i {
       color: #fff;

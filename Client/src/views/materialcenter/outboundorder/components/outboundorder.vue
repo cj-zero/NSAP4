@@ -111,6 +111,7 @@
     </my-dialog>
     <el-image-viewer
       v-if="previewVisible"
+      :zIndex="99999"
       :url-list="previewImageUrlList"
       :on-close="closeViewer"
     >

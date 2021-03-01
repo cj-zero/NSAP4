@@ -21,6 +21,7 @@
         </div>
       </div>
       <el-image-viewer
+        :zIndex="99999"
         v-if="previewVisible"
         :url-list="[previewUrl]"
         :on-close="closeViewer"

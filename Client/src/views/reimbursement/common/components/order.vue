@@ -1017,6 +1017,7 @@
     <!-- 预览图片 -->
     <el-image-viewer
       v-if="previewVisible"
+      :zIndex="99999"
       :url-list="[previewImageUrl]"
       :on-close="closeViewer"
     >

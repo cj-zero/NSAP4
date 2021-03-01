@@ -36,12 +36,3 @@ export function getExpressInfo(params, _this) { // 获取物流信息
     })
   })
 }
-
-
-export function importX (data) {
-  return request({
-    url: '/Material/Quotation/ImportMaterialPrice',  
-    method: 'post',
-    data
-  })
-}
