@@ -64,24 +64,14 @@ namespace OpenAuth.App.Material
                                 .Where(q => ServiceOrderids.Contains(q.ServiceOrderId));
 
 
-            #region 页面条件
-            switch (request.StartType)
-            {
-                case 1://未出库
-                    Quotations = Quotations.Where(q =>q.QuotationStatus == 6);
-                    break;
-
-                case 2://已出库
-                    Quotations = Quotations.Where(q => q.QuotationStatus == 7);
-                    break;
-            }
-            #endregion
+            
             if (request.IsSalesOrderList != null && (bool)request.IsSalesOrderList)
             {
                 if (!loginContext.Roles.Any(r => r.Name.Equals("物料财务")))
                 {
                     Quotations = Quotations.Where(q => q.CreateUserId.Equals(loginUser.Id));
                 }
+                Quotations = Quotations.Where(q => q.QuotationStatus == 4);
             }
             else 
             {
@@ -89,6 +79,18 @@ namespace OpenAuth.App.Material
                 {
                     Quotations = Quotations.Where(q => q.CreateUserId.Equals(loginUser.Id));
                 }
+                #region 页面条件
+                switch (request.StartType)
+                {
+                    case 1://未出库
+                        Quotations = Quotations.Where(q => q.QuotationStatus == 6);
+                        break;
+
+                    case 2://已出库
+                        Quotations = Quotations.Where(q => q.QuotationStatus == 7);
+                        break;
+                }
+                #endregion
             }
             var QuotationDate = await Quotations.Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
@@ -1177,27 +1179,6 @@ namespace OpenAuth.App.Material
             }
             #endregion
             return null;
-        }
-
-        /// <summary>
-        /// 生成销售订单
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public async Task<string> CreateSalesOrder(AddOrUpdateQuotationReq obj)
-        {
-            var loginContext = _auth.GetCurrentUser();
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-            var loginUser = loginContext.User;
-            if (loginUser.Account == Define.USERAPP)
-            {
-                loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
-            }
-
-            return "1111";
         }
 
         /// <summary>
