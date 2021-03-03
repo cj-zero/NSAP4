@@ -24,7 +24,7 @@ module.exports = {
       //解决the request of a dependency is an expression
       exprContextCritical: false,
     },
-    devtool: process.NODE_ENV === 'development' ? 'eval-cheap-source-map' : 'hidden-source-map'
+    devtool: process.env.NODE_ENV === 'development' ? 'eval-cheap-source-map' : 'hidden-source-map'
   },
   // svg配置
   chainWebpack(config) {

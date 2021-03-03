@@ -81,7 +81,7 @@ export function addWorkOrder(data) {
 export function delWorkOrder(params) {    
   return request({ //删除一个工单
     url: '/serve/ServiceOrder/DeleteWorkOrder',
-    method: 'delete',
+    method: 'post',
     params
   })
 }
