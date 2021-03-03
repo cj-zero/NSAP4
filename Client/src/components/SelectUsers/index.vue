@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-input @focus="selectDialog = true" v-model="names"></el-input>
-    <el-dialog :destroy-on-close="true" class="dialog-mini custom-dialog user-dialog" width="850px" title="选择用户"
+    <el-dialog :destroy-on-close="true" class="dialog-mini custom-dialog user-dialog" width="850px" title="选择用户" :append-to-body="true"
       :visible.sync="selectDialog">
       <!-- 使用v-if的原因：dialog在关闭的时候会执行组件里面的mounted，所以需要关闭dialog时销毁子组件 -->
       <selectUsersCom ref="selectUser" :hiddenFooter="true" v-if="selectDialog" :selectUsers.sync="selectUserList" :orgId="orgId" :show.sync="selectDialog" :users.sync="selectUsers" :loginKey="'loginUser'" :userNames.sync="names"></selectUsersCom>

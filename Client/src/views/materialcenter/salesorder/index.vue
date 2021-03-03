@@ -152,7 +152,6 @@ export default {
         endCreateTime: '' // 创建结束
       },
       listQuery: {
-        startType: 2,
         IsSalesOrderList: true,
         page: 1,
         limit: 50,
