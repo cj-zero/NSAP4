@@ -547,6 +547,7 @@ namespace OpenAuth.App.Material
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var Message = await Condition(obj);
+           
             var QuotationObj = obj.MapTo<Quotation>();
             QuotationObj.ErpOrApp = 1;
             var loginUser = loginContext.User;
@@ -554,6 +555,12 @@ namespace OpenAuth.App.Material
             {
                 loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
                 QuotationObj.ErpOrApp = 2;
+            }
+            //判定人员是否有销售员code
+            var slpcode=(await UnitWork.Find<OSLP>(o => o.SlpName.Equals(loginUser.Name)).FirstOrDefaultAsync())?.SlpCode;
+            if (slpcode ==null || slpcode == 0) 
+            {
+                throw new Exception("暂无销售权限，请联系呼叫中心");
             }
 
             QuotationObj.IsProtected = true;

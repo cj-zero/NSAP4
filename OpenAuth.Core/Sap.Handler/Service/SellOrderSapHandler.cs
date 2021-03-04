@@ -35,6 +35,9 @@ namespace Sap.Handler.Service
                .Include(q => q.QuotationProducts).ThenInclude(q => q.QuotationMaterials).Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
             var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(quotation.ServiceOrderId)).FirstOrDefaultAsync();
             var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Name.Equals(serviceOrder.NewestContacter)).FirstOrDefaultAsync();
+            var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefaultAsync())?.SlpCode;
+            var ywy = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o=>o.SlpCode).FirstOrDefaultAsync();
+
             try
             {
                 if (quotation != null)
@@ -49,7 +52,7 @@ namespace Sap.Handler.Service
 
                     dts.ContactPersonCode = int.Parse(string.IsNullOrWhiteSpace(oCPR.CntctCode.ToString()) ? "0" : oCPR.CntctCode.ToString());//联系人代码
 
-                    //dts.SalesPersonCode = int.Parse(model.SlpCode == "" ? "-1" : model.SlpCode); //销售人代码
+                    dts.SalesPersonCode = (int)slpcode; //销售人代码
 
                     //dts.NumAtCard = model.NumAtCard;
 
@@ -113,13 +116,10 @@ namespace Sap.Handler.Service
 
                     //}
 
-                    //if (!string.IsNullOrEmpty(model.U_YWY) && model.U_YWY != "")//差旅费
-
-                    //{
-
-                    //    dts.UserFields.Fields.Item("U_YWY").Value = model.U_YWY;
-
-                    //}
+                    if (ywy != null) 
+                    {
+                        dts.UserFields.Fields.Item("U_YWY").Value = ywy.ToString();
+                    }
 
                     dts.DocType = BoDocumentTypes.dDocument_Items;//单据类型
 
