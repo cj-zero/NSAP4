@@ -75,9 +75,16 @@ namespace OpenAuth.App.Material
             }
             else 
             {
-                if (request.Status == null) 
+                if (request.Status == null)
                 {
                     Quotations = Quotations.Where(q => q.CreateUserId.Equals(loginUser.Id));
+                }
+                else 
+                {
+                    if (!loginContext.Roles.Any(r => r.Name.Equals("仓库")))
+                    {
+                        Quotations = Quotations.Where(q => q.CreateUserId.Equals(loginUser.Id));
+                    }
                 }
                 #region 页面条件
                 switch (request.StartType)
@@ -343,23 +350,49 @@ namespace OpenAuth.App.Material
             var ItemCodes = Equipments.Select(e => e.ItemCode).ToList();
             var MaterialPrices = await UnitWork.Find<MaterialPrice>(m => ItemCodes.Contains(m.MaterialCode)).ToListAsync();
 
-            Equipments.ForEach(e =>
+            
+
+            var EquipmentsList= Equipments.Skip((request.page - 1) * request.limit)
+                .Take(request.limit).ToList();
+            EquipmentsList.ForEach(e =>
             {
                 e.MnfSerial = request.ManufacturerSerialNumbers;
                 var Prices = MaterialPrices.Where(m => m.MaterialCode.Equals(e.ItemCode)).FirstOrDefault();
+                //4.0存在物料价格，取4.0的价格为售后结算价，不存在就当前进货价*1.2 为售后结算价。销售价均为售后结算价*3
                 if (Prices != null)
                 {
-                    e.lastPurPrc = Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
+                    e.UnitPrice = Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
+                    var s = e.UnitPrice.ToDouble().ToString();
+                    if (s.IndexOf(".") > 0)
+                    {
+                        s = s.Substring(s.IndexOf("."), s.Length - s.IndexOf("."));
+                        if (s.Length > 1)
+                        {
+                            int lengeth = s.Substring(1, s.Length - 1).Length;
+                            if (lengeth > 3) e.UnitPrice = e.UnitPrice + 0.005M;
+                        }
+                    }
+                    e.UnitPrice = Math.Round((decimal)e.UnitPrice, 2);
                 }
                 else
                 {
-                    e.lastPurPrc = e.lastPurPrc * 3;
+                    e.UnitPrice = e.lastPurPrc * 1.2M;
+                    var s = e.UnitPrice.ToDouble().ToString();
+                    if (s.IndexOf(".") > 0) 
+                    {
+                        s = s.Substring(s.IndexOf("."), s.Length - s.IndexOf("."));
+                        if (s.Length > 1)
+                        {
+                            int lengeth = s.Substring(1, s.Length - 1).Length;
+                            if (lengeth > 3) e.UnitPrice = e.UnitPrice + 0.005M;
+                        }
+                    }
+                    e.UnitPrice = Math.Round((decimal)e.UnitPrice, 2);
+
                 }
+                e.lastPurPrc = e.UnitPrice * 3;
             });
-
-            result.Data = Equipments.Skip((request.page - 1) * request.limit)
-                .Take(request.limit).ToList();
-
+            result.Data= EquipmentsList;
             result.Count = Equipments.Count();
             return result;
         }
