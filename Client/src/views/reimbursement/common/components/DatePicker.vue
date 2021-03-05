@@ -123,7 +123,7 @@ export default {
       let diff = week // 当前日期，跟第一个的差值个数
       let startDate = newDate
       for (let i = 0; i < diff; i++) { // 计算出第一个日期的值
-        startDate = new Date(+new Date(newDate) - (24 * 60 * 60 * 1000)) 
+        startDate = new Date(+new Date(newDate) - (24 * 60 * 60 * 1000 * (i + 1))) 
       }
       return startDate instanceof Date ? startDate : new Date(startDate)
     },

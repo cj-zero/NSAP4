@@ -88,6 +88,7 @@ import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import { getQuotationList, getServiceOrderList, deleteOrder } from '@/api/material/quotation'
 import {  quotationTableMixin, categoryMixin, chatMixin } from '../common/js/mixins'
+import { print } from '@/utils/utils'
 export default {
   name: 'quotation',
   mixins: [quotationTableMixin, categoryMixin, chatMixin],
@@ -185,6 +186,14 @@ export default {
     } 
   },
   methods: {
+    print () {
+      let currentRow = this.$refs.quotationTable.getCurrentRow()
+      if (!currentRow) {
+        return this.$message.warning('请先选择数据')
+      }
+      const { id } = currentRow
+      print('/Material/Quotation/PrintQuotation', { QuotationId: id })
+    },
     onSuccess () {
       this.$message.success('上传成功')
     },

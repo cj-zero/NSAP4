@@ -280,7 +280,7 @@
     <my-dialog 
       ref="materialDialog"
       title="物料编码"
-      width="580px"
+      width="680px"
       :btnList="materialBtnList"
       :append-to-body="true"
       @closed="closeMaterialDialog"
@@ -809,10 +809,11 @@ export default {
         }
       })
     },
-    _getMaterialList (manufacturerSerialNumber, materialCode) { // 获取物料列表
+    _getMaterialList () { // 获取物料列表
       if (this.cancelRequestMaterial) {
         this.cancelRequestMaterial('customer abort')
       }
+      const { manufacturerSerialNumber, materialCode } = this.currentSerialInfo
       this.materialLoading = true
       getMaterialList({
         ManufacturerSerialNumbers: manufacturerSerialNumber,
@@ -837,14 +838,14 @@ export default {
       this._getMaterialList()
     },
     openMaterialDialog (val) { // 添加物料
-      let { manufacturerSerialNumber, materialCode } = val
+      let { manufacturerSerialNumber } = val
       if (this.currentSerialNumber !== manufacturerSerialNumber) {
         this.listQueryMaterial.page = 1
         this.listQueryMaterial.limit = 20
         this.currentSerialNumber = manufacturerSerialNumber
         this.currentSerialInfo = val
       }
-      this._getMaterialList(manufacturerSerialNumber, materialCode)
+      this._getMaterialList()
       this.selectedMaterialList = this.selectedMap[this.currentSerialNumber] || []
       this.$refs.materialDialog.open()
     }, 
@@ -911,20 +912,19 @@ export default {
       return selectedList.map(selectItem => {
         let item = {}
         let { isProtected } = this.currentSerialInfo
-        let { itemCode, itemName, onHand, quantity,  buyUnitMsr, whsCode } = selectItem
+        let { itemCode, itemName, onHand, quantity,  buyUnitMsr, whsCode, unitPrice, lastPurPrc } = selectItem
         item.unit = buyUnitMsr
         item.materialDescription = itemName
         item.materialCode = itemCode
         item.remark = ''
-        item.unitPrice = 7
-        item.salesPrice = 3 * item.unitPrice
+        item.unitPrice = Number(unitPrice).toFixed(2)
+        item.salesPrice = Number(lastPurPrc).toFixed(2)
         item.discount = '1.00'
         item.count = 1
         item.onHand = onHand
         item.whsCode = whsCode
         item.maxQuantity = quantity
         item.maxQuantityText = Math.ceil(quantity)
-        console.log(item.maxQuantity, 'quantity', item.maxQuantityText)
         item.totalPrice = Number((!isProtected ? item.salesPrice * item.count : 0).toFixed(2))
         return item
       })
@@ -956,6 +956,9 @@ export default {
     resetInfo () { // 每次关闭弹窗
       // 预览数据
       this.reset()
+      if (this.$refs.uploadFile) {
+        this.$refs.uploadFile.clearFiles()
+      }
       console.log(this.formData, this.formData.serviceOrderSapId)
       this.$nextTick(() => {
         this.$refs.form.clearValidate()
