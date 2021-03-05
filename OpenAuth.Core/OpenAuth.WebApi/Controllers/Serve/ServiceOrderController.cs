@@ -134,8 +134,8 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        [HttpDelete]
-        public async Task<Response> DeleteWorkOrder([FromQuery] int id)
+        [HttpPost]
+        public async Task<Response> DeleteWorkOrder(int id)
         {
             var result = new Response();
             try

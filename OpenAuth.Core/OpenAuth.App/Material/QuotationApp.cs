@@ -64,31 +64,40 @@ namespace OpenAuth.App.Material
                                 .Where(q => ServiceOrderids.Contains(q.ServiceOrderId));
 
 
-            #region 页面条件
-            switch (request.StartType)
-            {
-                case 1://未出库
-                    Quotations = Quotations.Where(q =>q.QuotationStatus == 6);
-                    break;
-
-                case 2://已出库
-                    Quotations = Quotations.Where(q => q.QuotationStatus == 7);
-                    break;
-            }
-            #endregion
+            
             if (request.IsSalesOrderList != null && (bool)request.IsSalesOrderList)
             {
                 if (!loginContext.Roles.Any(r => r.Name.Equals("物料财务")))
                 {
                     Quotations = Quotations.Where(q => q.CreateUserId.Equals(loginUser.Id));
                 }
+                Quotations = Quotations.Where(q => q.QuotationStatus == 4);
             }
             else 
             {
-                if (request.Status == null) 
+                if (request.Status == null)
                 {
                     Quotations = Quotations.Where(q => q.CreateUserId.Equals(loginUser.Id));
                 }
+                else 
+                {
+                    if (!loginContext.Roles.Any(r => r.Name.Equals("仓库")))
+                    {
+                        Quotations = Quotations.Where(q => q.CreateUserId.Equals(loginUser.Id));
+                    }
+                }
+                #region 页面条件
+                switch (request.StartType)
+                {
+                    case 1://未出库
+                        Quotations = Quotations.Where(q => q.QuotationStatus == 6);
+                        break;
+
+                    case 2://已出库
+                        Quotations = Quotations.Where(q => q.QuotationStatus == 7);
+                        break;
+                }
+                #endregion
             }
             var QuotationDate = await Quotations.Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
@@ -341,23 +350,49 @@ namespace OpenAuth.App.Material
             var ItemCodes = Equipments.Select(e => e.ItemCode).ToList();
             var MaterialPrices = await UnitWork.Find<MaterialPrice>(m => ItemCodes.Contains(m.MaterialCode)).ToListAsync();
 
-            Equipments.ForEach(e =>
+            
+
+            var EquipmentsList= Equipments.Skip((request.page - 1) * request.limit)
+                .Take(request.limit).ToList();
+            EquipmentsList.ForEach(e =>
             {
                 e.MnfSerial = request.ManufacturerSerialNumbers;
                 var Prices = MaterialPrices.Where(m => m.MaterialCode.Equals(e.ItemCode)).FirstOrDefault();
+                //4.0存在物料价格，取4.0的价格为售后结算价，不存在就当前进货价*1.2 为售后结算价。销售价均为售后结算价*3
                 if (Prices != null)
                 {
-                    e.lastPurPrc = Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
+                    e.UnitPrice = Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
+                    var s = e.UnitPrice.ToDouble().ToString();
+                    if (s.IndexOf(".") > 0)
+                    {
+                        s = s.Substring(s.IndexOf("."), s.Length - s.IndexOf("."));
+                        if (s.Length > 1)
+                        {
+                            int lengeth = s.Substring(1, s.Length - 1).Length;
+                            if (lengeth > 3) e.UnitPrice = e.UnitPrice + 0.005M;
+                        }
+                    }
+                    e.UnitPrice = Math.Round((decimal)e.UnitPrice, 2);
                 }
                 else
                 {
-                    e.lastPurPrc = e.lastPurPrc * 3;
+                    e.UnitPrice = e.lastPurPrc * 1.2M;
+                    var s = e.UnitPrice.ToDouble().ToString();
+                    if (s.IndexOf(".") > 0) 
+                    {
+                        s = s.Substring(s.IndexOf("."), s.Length - s.IndexOf("."));
+                        if (s.Length > 1)
+                        {
+                            int lengeth = s.Substring(1, s.Length - 1).Length;
+                            if (lengeth > 3) e.UnitPrice = e.UnitPrice + 0.005M;
+                        }
+                    }
+                    e.UnitPrice = Math.Round((decimal)e.UnitPrice, 2);
+
                 }
+                e.lastPurPrc = e.UnitPrice * 3;
             });
-
-            result.Data = Equipments.Skip((request.page - 1) * request.limit)
-                .Take(request.limit).ToList();
-
+            result.Data= EquipmentsList;
             result.Count = Equipments.Count();
             return result;
         }
@@ -512,6 +547,7 @@ namespace OpenAuth.App.Material
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var Message = await Condition(obj);
+           
             var QuotationObj = obj.MapTo<Quotation>();
             QuotationObj.ErpOrApp = 1;
             var loginUser = loginContext.User;
@@ -519,6 +555,12 @@ namespace OpenAuth.App.Material
             {
                 loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
                 QuotationObj.ErpOrApp = 2;
+            }
+            //判定人员是否有销售员code
+            var slpcode=(await UnitWork.Find<OSLP>(o => o.SlpName.Equals(loginUser.Name)).FirstOrDefaultAsync())?.SlpCode;
+            if (slpcode ==null || slpcode == 0) 
+            {
+                throw new Exception("暂无销售权限，请联系呼叫中心");
             }
 
             QuotationObj.IsProtected = true;
@@ -1177,27 +1219,6 @@ namespace OpenAuth.App.Material
             }
             #endregion
             return null;
-        }
-
-        /// <summary>
-        /// 生成销售订单
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public async Task<string> CreateSalesOrder(AddOrUpdateQuotationReq obj)
-        {
-            var loginContext = _auth.GetCurrentUser();
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-            var loginUser = loginContext.User;
-            if (loginUser.Account == Define.USERAPP)
-            {
-                loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
-            }
-
-            return "1111";
         }
 
         /// <summary>
