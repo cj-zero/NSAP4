@@ -204,6 +204,11 @@ export const configMixin = { // 表单配置
         ? this.rolesList.some(item => item === '物料财务')
         : false
     },
+    isStorekeeper () { // 判断是不是仓库管理人员
+      return this.rolesList && this.rolesList.length
+        ? this.rolesList.some(item => item === '仓库')
+        : false
+    },
     formItems () { // 头部表单配置
       return [
         { tag: 'text', span: 3, attrs: { prop: 'serviceOrderSapId', readonly: true }, itemAttrs: { prop: 'serviceOrderSapId', label: '服务ID' }, on: { focus: this.onServiceIdFocus }},

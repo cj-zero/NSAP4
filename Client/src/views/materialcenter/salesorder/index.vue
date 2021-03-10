@@ -97,6 +97,7 @@ import { getQuotationList, getServiceOrderList } from '@/api/material/quotation'
 import {  quotationTableMixin, categoryMixin, chatMixin } from '../common/js/mixins'
 // import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import { processDownloadUrl } from '@/utils/file'
+import { print } from '@/utils/utils'
 export default {
   name: 'materialSalesOrder',
   mixins: [quotationTableMixin, categoryMixin, chatMixin],
@@ -117,6 +118,7 @@ export default {
         { prop: 'startCreateTime', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
+        { type: 'button', btnText: '打印', handleClick: this.print, isSpecial: true },
         // { type: 'button', btnText: this.searchBtnText, handleClick: this._getQuotationDetail, options: { status: 'pay' }, isSpecial: true },
       ]
     }, // 搜索配置
@@ -152,7 +154,6 @@ export default {
         endCreateTime: '' // 创建结束
       },
       listQuery: {
-        startType: 2,
         IsSalesOrderList: true,
         page: 1,
         limit: 50,
@@ -179,6 +180,16 @@ export default {
     } 
   },
   methods: {
+    print () { // 打印
+      if (!this.currentRow) {
+        return this.$message.warning('请先选择数据')
+      }
+      const { id } = this.currentRow
+      const params = {
+        QuotationId: id
+      }
+      print('/Material/Quotation/PrintSalesOrder', params)
+    },
     _getList () {
       this.tableLoading = true
       getQuotationList(this.listQuery).then(res => {

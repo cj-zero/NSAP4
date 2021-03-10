@@ -1123,6 +1123,7 @@ export default {
       return imgList;
     },
     async postServe() {
+      console.log('postServe', this.formName)
       //创建整个工单
       if (!this.form.serviceWorkOrders.length) {
         console.log('first error')
@@ -1135,11 +1136,11 @@ export default {
       }
       console.log('创建工单')
       if (!this.form.longitude) {
-        this.$emit("close-Dia", "N");
-        return this.$message({
+        this.$message({
           message: `请手动选择地址`,
           type: "error",
         });
+        return this.$emit("close-Dia", "N");
       }
       if (this.form.serviceWorkOrders.length >= 0) {
         try {
@@ -1207,6 +1208,10 @@ export default {
                   );
                 });
               });
+              if (!targetList.length) {
+                this.$message.error('未添加工单信息')
+                return this.$emit("close-Dia", "N");
+              }
               let promiseList = [];
               for (let i = 0; i < targetList.length; i++) {
                 let item = targetList[i];

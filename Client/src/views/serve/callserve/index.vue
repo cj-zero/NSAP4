@@ -842,14 +842,12 @@ export default {
         item.customerId = terminalCustomerId ? terminalCustomerId : customerId
         item.customerName = terminalCustomer ? terminalCustomer : customerName
         // ite
-        console.log(item.u_SAP_ID, 'usapid')
         if (serviceWorkOrders.length) {
           serviceWorkOrders.forEach(workItem => {
             workItem.recepUserName = recepUserName
             let theme = workItem.fromTheme
             let reg = /[\r|\r\n|\n\t\v]/g
             theme = theme.replace(reg, '')
-            console.log(theme)
             workItem.themeList = JSON.parse(theme).map(item => item.description.trim())
             workItem.fromTheme = workItem.themeList.join(' ')
           })

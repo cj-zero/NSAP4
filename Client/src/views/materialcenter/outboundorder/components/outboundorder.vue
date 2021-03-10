@@ -27,7 +27,13 @@
             <span class="line"></span>
             <span class="text">物流信息</span>
           </el-row>
-          <el-button class="add-btn" type="primary" size="mini" @click="addExpressInfo" v-if="Number(formData.quotationStatus) !== 7">新增</el-button>
+          <el-button 
+            class="add-btn" 
+            type="primary" 
+            size="mini" 
+            @click="addExpressInfo"
+            v-if="Number(formData.quotationStatus) !== 7 && this.isStorekeeper"
+          >新增</el-button>
         </el-row>
         <!-- 物流表格 -->
         <common-table
