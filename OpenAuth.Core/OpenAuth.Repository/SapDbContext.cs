@@ -42,6 +42,7 @@ namespace OpenAuth.Repository
             #endregion
             #region 销售订单
             modelBuilder.Entity<ORDR>().HasKey(o => o.DocEntry);
+            modelBuilder.Entity<RDR1>().HasKey(o => o.DocEntry);
             #endregion
 
             modelBuilder.Entity<OITL>().HasKey(o => o.LogEntry);
@@ -1971,7 +1972,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<RDN8> Rdn8s { get; set; }
         //public virtual DbSet<RDN9> Rdn9s { get; set; }
         //public virtual DbSet<RDOC> Rdocs { get; set; }
-        //public virtual DbSet<RDR1> Rdr1s { get; set; }
+        public virtual DbSet<RDR1> Rdr1s { get; set; }
         //public virtual DbSet<RDR10> Rdr10s { get; set; }
         //public virtual DbSet<RDR11> Rdr11s { get; set; }
         //public virtual DbSet<RDR12> Rdr12s { get; set; }

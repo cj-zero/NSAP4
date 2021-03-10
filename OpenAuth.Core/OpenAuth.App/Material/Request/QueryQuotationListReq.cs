@@ -74,9 +74,9 @@ namespace OpenAuth.App.Material.Request
         public int? Status { get; set; }
 
         /// <summary>
-        /// 是否查看销售订单
+        /// 页面状态 1报价单审批 2 销售单审批 3出库
         /// </summary>
-        public bool? IsSalesOrderList { get; set; }
+        public int? PageStart { get; set; }
 
 
     }

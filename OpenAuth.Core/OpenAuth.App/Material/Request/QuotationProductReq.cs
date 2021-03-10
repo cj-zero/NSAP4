@@ -32,7 +32,7 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         ///保修到期时间
         /// </summary>
-        public DateTime WarrantyExpirationTime { get; set; }
+        public DateTime? WarrantyExpirationTime { get; set; }
 
         /// <summary>
         ///保内保外

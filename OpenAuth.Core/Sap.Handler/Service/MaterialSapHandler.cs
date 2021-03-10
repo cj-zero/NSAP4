@@ -37,7 +37,9 @@ namespace Sap.Handler.Service
                     var quotation = await UnitWork.Find<Quotation>(q => q.Id.Equals(obj.QuotationMergeMaterialReqs.FirstOrDefault().QuotationId)).Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
                     var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(quotation.ServiceOrderId)).FirstOrDefaultAsync();
                     SAPbobsCOM.Documents dts = (SAPbobsCOM.Documents)company.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oDeliveryNotes);
-                    var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Name.Equals(serviceOrder.NewestContacter)).FirstOrDefaultAsync();
+                    var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active == "Y").FirstOrDefaultAsync();
+                    var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefaultAsync())?.SlpCode;
+                    var ordr = await UnitWork.Find<RDR1>(o => o.DocEntry.Equals(quotation.SalesOrderId)).Select(o => new { o.LineNum, o.ItemCode }).ToListAsync();
                     #region [添加主表信息]
 
                     //DataTable dtRowsConn = AidTool.GetConnection(model.SboId);
@@ -60,7 +62,7 @@ namespace Sap.Handler.Service
 
                     dts.ContactPersonCode = int.Parse(string.IsNullOrWhiteSpace(oCPR.CntctCode.ToString()) ? "0" : oCPR.CntctCode.ToString()); ;
 
-                    //dts.SalesPersonCode = int.Parse(model.SlpCode == "" ? "-1" : model.SlpCode);
+                    dts.SalesPersonCode = (int)slpcode;
 
                     //dts.NumAtCard = model.NumAtCard;
 
@@ -202,7 +204,7 @@ namespace Sap.Handler.Service
 
 
                     #region [添加行明细]
-                    int num = 0;
+                    //int num = 0;
                     foreach (var dln1 in obj.QuotationMergeMaterialReqs)
                     {
                         var materials = quotation.QuotationMergeMaterials.Where(q => q.Id.Equals(dln1.Id)).FirstOrDefault();
@@ -216,11 +218,11 @@ namespace Sap.Handler.Service
 
                         dts.Lines.BaseEntry = (int)quotation?.SalesOrderId;
 
-                        dts.Lines.BaseLine = ++num;
+                        dts.Lines.BaseLine = (int)ordr.Where(o=>o.ItemCode.Equals(materials.MaterialCode)).FirstOrDefault()?.LineNum;
 
                         dts.Lines.BaseType = 17;
 
-                        //dts.Lines.SalesPersonCode = int.Parse(model.SlpCode == "" ? "-1" : model.SlpCode);
+                        dts.Lines.SalesPersonCode = (int)slpcode;
 
                         dts.Lines.UnitPrice = string.IsNullOrWhiteSpace(materials.SalesPrice.ToString()) ? 0 : Convert.ToDouble(materials.SalesPrice);            //单价
 
