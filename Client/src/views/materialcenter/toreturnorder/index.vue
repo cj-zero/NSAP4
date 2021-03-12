@@ -35,7 +35,7 @@
       :loading="dialogLoading"
       title="退料单详情"
       :btnList="btnList"
-      @closed="close"
+      @closed="closed"
       @opened="onOpened"
     >
       <return-Order 
@@ -100,7 +100,7 @@ export default {
       return [
         { btnText: '验收', handleClick: this.checkOrSave, isShow: this.detailInfo && this.detailInfo.mainInfo.isLast === 1 },
         { btnText: '保存', handleClick: this.checkOrSave, options: { isSave: true } },
-        { btnText: '关闭', handleClick: this.close, className: 'close' }      
+        { btnText: '关闭', handleClick: this.handleClose, className: 'close' }      
       ]
     }
   },
@@ -123,7 +123,7 @@ export default {
       this.$refs.quotationOrder._operateOrder(isEdit, isDraft).then(() => {
         this.dialogLoading = false
         this._getList()
-        this.close()
+        this.handleClose()
         this.$message.success(isDraft ? '存为草稿成功' : '提交成功')
       }).catch(err => {
         this.$message.error(err.message)
@@ -145,9 +145,11 @@ export default {
         this.dialogLoading = false
       })
     },
-    close () {
-      this.$refs.returnOrder.resetInfo()
+    handleClose () {
       this.$refs.returnOrderDialog.close()
+    },
+    closed () {
+      this.$refs.returnOrder.resetInfo()
     },
     onOpened () {
       this.$refs.returnOrder.openedFn()

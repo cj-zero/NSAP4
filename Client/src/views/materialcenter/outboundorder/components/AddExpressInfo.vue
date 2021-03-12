@@ -1,10 +1,10 @@
 <template>
   <div class="add-express-info-wrapper">
     <el-form ref="expressForm" :model="expressFormData" size="mini" label-width="80px" :show-message="false" :rules="rules">
-      <el-form-item label="快递单号" :rules="[{ required: true }]" prop="number">
-        <el-input style="width: 200px;" size="mini" v-model.trim="expressFormData.number"></el-input>
+      <el-form-item :label="orderLabel" prop="number">
+        <el-input style="width: 200px;" size="mini" v-model.trim="expressFormData.number" :disabled="isPickUp"></el-input>
       </el-form-item>
-      <el-form-item label="运送费用" prop="freight">
+      <el-form-item label="运送费用" prop="freight" v-if="!isPickUp">
         <el-input-number 
           class="input-number" 
           style="width: 200px;" 
@@ -14,6 +14,9 @@
           :controls="false">
         </el-input-number>
       </el-form-item>
+      <!-- <el-form-item label="备注" prop="remark">
+        <el-input style="width: 200px;" size="mini" v-model.trim="expressFormData.remark"></el-input>
+      </el-form-item> -->
       <el-form-item label="图片">
         <upLoadFile
           @get-ImgList="getPictureList" 
@@ -56,6 +59,10 @@
 import UpLoadFile from '@/components/upLoadFile'
 import { updateOutboundOrder, getMergeMaterial } from '@/api/material/quotation'
 import { isImage } from '@/utils/file'
+function freightValidator (rule, value, callback) {
+  value = Number(value)
+  value > 0 ? callback() : callback(new Error('运费必须大于0'))
+}
 export default {
   components: {
     UpLoadFile
@@ -69,15 +76,26 @@ export default {
       }
     }
   },
+  computed: {
+    isPickUp () { // 判断是否自提
+      return this.formData.acquisitionWay === '1'
+    },
+    orderLabel () {
+      return (this.isPickUp ? '自提' : '快递') + '单号'
+    },
+    rules () {
+      return {
+        number: [{ required: !this.isPickUp }],
+        freight: [{ required: true, validator: freightValidator }]
+      }
+    },
+  },
   data () {
-    function freightValidator (rule, value, callback) {
-      value = Number(value)
-      value > 0 ? callback() : callback(new Error('运费必须大于0'))
-    }
     return {
       expressFormData: { // 新增快递信息
         number: '',
-        freight: undefined
+        freight: undefined,
+        // remark: ''
       },
       materialList: [],
       pictureList: [],
@@ -90,10 +108,6 @@ export default {
         { label: '已出库', prop: 'sentQuantity', align: 'right' },
         { label: '出库数量', prop: 'quantity', slotName: 'quantity' }
       ],
-      rules: {
-        number: [{ required: true }],
-        freight: [{ required: true, validator: freightValidator }]
-      },
       materialLoading: false
     }
   },

@@ -108,3 +108,20 @@ export function accAdd (num1, num2) {
   console.log(num1, num2, r1, 2, m)
   return (num1 * m + num2 * m) / m 
 }
+
+export function accMul(num1, num2) { 
+  let m = 0,
+    s1 = num1.toString(),
+    s2= num2.toString()
+  try{
+    m += s1.split(".")[1].length
+  } catch(e){
+    console.log(e)
+  } 
+  try{
+    m += s2.split(".")[1].length
+  } catch (e) {
+    console.log(e)
+  } 
+  return Number(s1.replace(".","")) * Number(s2.replace(".","")) / Math.pow(10,m) 
+} 
