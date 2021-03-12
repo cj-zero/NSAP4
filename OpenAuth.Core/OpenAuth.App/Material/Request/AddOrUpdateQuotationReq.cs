@@ -128,9 +128,15 @@ namespace OpenAuth.App.Material.Request
         public int? AcceptancePeriod { get; set; }
 
         /// <summary>
+        ///服务费
+        /// </summary>
+        public decimal? ServiceCharge { get; set; }
+
+        /// <summary>
         ///删除报价单
         /// </summary>
         public List<int> QuotationIds { get; set; }
+
 
         /// <summary>
         /// 报价单设备列表
@@ -146,6 +152,12 @@ namespace OpenAuth.App.Material.Request
         /// 物流表
         /// </summary>
         public virtual ExpressageReq ExpressageReqs { get; set; }
+
+        /// <summary>
+        /// 操作详情表
+        /// </summary>
+        public virtual List<QuotationOperationHistory> QuotationOperationHistorys { get; set; }
+        
 
     }
 }

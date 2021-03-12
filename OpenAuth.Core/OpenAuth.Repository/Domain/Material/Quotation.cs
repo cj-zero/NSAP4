@@ -188,6 +188,24 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("成本总价")]
         public decimal? TotalCostPrice { get; set; }
+
+        /// <summary>
+        ///服务费
+        /// </summary>
+        [Description("服务费")]
+        public decimal? ServiceCharge { get; set; }
+
+        /// <summary>
+        ///是否暂定
+        /// </summary>
+        [Description("是否暂定")]
+        public bool? Tentative { get; set; }
+
+        /// <summary>
+        ///电子签章流水号
+        /// </summary>
+        [Description("电子签章流水号")]
+        public string PrintNo { get; set; }
         
 
         /// <summary>

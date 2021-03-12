@@ -24,7 +24,6 @@ namespace OpenAuth.Repository.Domain
             this.ProductCode = string.Empty;
             this.MaterialCode = string.Empty;
             this.MaterialDescription = string.Empty;
-            this.WarrantyExpirationTime = DateTime.Now;
             this.IsProtected = false;
 
         }
@@ -57,7 +56,7 @@ namespace OpenAuth.Repository.Domain
         ///保修到期时间
         /// </summary>
         [Description("保修到期时间")]
-        public DateTime WarrantyExpirationTime { get; set; }
+        public DateTime? WarrantyExpirationTime { get; set; }
 
         /// <summary>
         ///保内保外
