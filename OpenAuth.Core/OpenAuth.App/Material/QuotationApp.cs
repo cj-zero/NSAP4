@@ -632,7 +632,21 @@ namespace OpenAuth.App.Material
             var QuotationIds = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(request.ServiceOrderId) && q.CreateUserId.Equals(loginUser.Id)).Select(q => q.Id).ToListAsync();
 
             var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => QuotationIds.Contains((int)q.QuotationId) && q.IsProtected == true).ToListAsync();
-            result.Data = QuotationMergeMaterials;
+            //获取当前服务单所有退料明细汇总
+            var query = from a in UnitWork.Find<ReturnnoteMaterial>(null)
+                        join b in UnitWork.Find<ReturnNote>(null) on a.ReturnNoteId equals b.Id into ab
+                        from b in ab.DefaultIfEmpty()
+                        where b.Id == request.ServiceOrderId && a.Count > 0
+                        select new { a.QuotationMaterialId, a.Count };
+            var returnMaterials = (await query.ToListAsync()).GroupBy(g => g.QuotationMaterialId).Select(s => new { Qty = s.Sum(s => s.Count), Id = s.Key }).ToList();
+            List<ReturnMaterialListResp> data = new List<ReturnMaterialListResp>();
+            foreach (var item in QuotationMergeMaterials)
+            {
+                var res = item.MapTo<ReturnMaterialListResp>();
+                res.SurplusQty = returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault() == null ? 0 : (int)returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault().Qty;
+                data.Add(res);
+            }
+            result.Data = data;
             return result;
         }
 
@@ -767,7 +781,7 @@ namespace OpenAuth.App.Material
                                              Discount = g.Key.Discount,
                                              SentQuantity = 0
                                          };
-                        
+
                         var QuotationMergeMaterialList = MaterialsT.ToList();
                         QuotationMergeMaterialList.AddRange(MaterialsF.ToList());
 
@@ -779,7 +793,7 @@ namespace OpenAuth.App.Material
                                 MaterialDescription = "服务费",
                                 Unit = "PCS",
                                 SalesPrice = QuotationObj.ServiceCharge,
-                                CostPrice =0,
+                                CostPrice = 0,
                                 Count = 1,
                                 TotalPrice = QuotationObj.ServiceCharge,
                                 IsProtected = false,
@@ -1077,7 +1091,7 @@ namespace OpenAuth.App.Material
             #region 判断库存量
             var mergeMaterialIds = obj.QuotationMergeMaterialReqs.Select(q => q.Id).ToList();
             var mergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => mergeMaterialIds.Contains(q.Id)).Select(q => q.MaterialCode).ToListAsync();
-            var onHand = await UnitWork.Find<OITW>(o => mergeMaterials.Contains(o.ItemCode)&&o.WhsCode=="37").Select(o => new { o.ItemCode, o.OnHand }).ToListAsync();
+            var onHand = await UnitWork.Find<OITW>(o => mergeMaterials.Contains(o.ItemCode) && o.WhsCode == "37").Select(o => new { o.ItemCode, o.OnHand }).ToListAsync();
             string message = null;
             onHand.Where(o => o.OnHand <= 0).ForEach(o =>
                  message += o.ItemCode + "  "
@@ -1097,10 +1111,10 @@ namespace OpenAuth.App.Material
                     await semaphoreSlim.WaitAsync();
                     try
                     {
-                        if (string.IsNullOrWhiteSpace(expressageMap.ExpressNumber)) 
+                        if (string.IsNullOrWhiteSpace(expressageMap.ExpressNumber))
                         {
                             var time = DateTime.Now;
-                            expressageMap.ExpressNumber = "ZT" + time.Year.ToString()+ time.Month.ToString() + time.Day.ToString() + time.Hour.ToString() + time.Minute.ToString() + time.Second.ToString();
+                            expressageMap.ExpressNumber = "ZT" + time.Year.ToString() + time.Month.ToString() + time.Day.ToString() + time.Hour.ToString() + time.Minute.ToString() + time.Second.ToString();
                         }
                     }
                     finally
@@ -1223,7 +1237,7 @@ namespace OpenAuth.App.Material
             else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) && obj.QuotationStatus == 5)
             {
                 qoh.Action = "总经理审批";
-                if ((bool)obj.IsProtected && obj.TotalMoney<=0)
+                if ((bool)obj.IsProtected && obj.TotalMoney <= 0)
                 {
                     if (req.IsTentative == true)
                     {
