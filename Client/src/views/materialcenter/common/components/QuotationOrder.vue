@@ -818,6 +818,8 @@ export default {
         { label: '物料描述', prop: 'materialDescription', width: 200 },
         { label: '数量', prop: 'count', align: 'right', width: 70 },
         { label: '最大数量', prop: 'maxQuantity', align: 'right' },
+        { label: '库存量', prop: 'warehouseQuantity' },
+        { label: '仓库', prop: 'warehouseNumber' },
         { label: '成本价(￥)', prop: 'unitPrice', align: 'right' },
         { label: '销售价(￥)', prop: 'salesPrice', align: 'right' },
         { label: '折扣(%)', prop: 'discount', slotName: 'discount', align: 'right' },
