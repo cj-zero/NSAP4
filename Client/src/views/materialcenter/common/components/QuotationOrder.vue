@@ -231,7 +231,7 @@
                       v-model="row.count"
                       :precision="0"
                       :placeholder="`最大数量${row['maxQuantity']}`"
-                      :max="+row['maxQuantityText']"
+                      :max="Math.ceil(row['maxQuantity'])"
                       :min="0"
                       @focus="onCountFocus(index)"
                       @change="onCountChange"
@@ -781,8 +781,8 @@ export default {
         { label: '物料描述', prop: 'materialDescription' },
         { label: '数量', prop: 'count', slotName: 'count', align: 'right' },
         { label: '最大数量', prop: 'maxQuantity', align: 'right', slotName: 'maxQuantity', 'show-overflow-tooltip': false },
-        { label: '库存量', prop: 'warehouseQuantity' },
-        { label: '仓库', prop: 'warehouseNumber' },
+        { label: '库存量', prop: 'warehouseQuantity', align: 'right' },
+        { label: '仓库', prop: 'warehouseNumber', align: 'right' },
         { label: '成本价(￥)', prop: 'unitPrice', align: 'right' },
         { label: '销售价(￥)', prop: 'salesPrice', align: 'right' },
         { label: '折扣(%)', prop: 'discount', slotName: 'discount', align: 'right' },
@@ -818,8 +818,8 @@ export default {
         { label: '物料描述', prop: 'materialDescription', width: 200 },
         { label: '数量', prop: 'count', align: 'right', width: 70 },
         { label: '最大数量', prop: 'maxQuantity', align: 'right' },
-        { label: '库存量', prop: 'warehouseQuantity' },
-        { label: '仓库', prop: 'warehouseNumber' },
+        { label: '库存量', prop: 'warehouseQuantity', align: 'right' },
+        { label: '仓库', prop: 'warehouseNumber', align: 'right' },
         { label: '成本价(￥)', prop: 'unitPrice', align: 'right' },
         { label: '销售价(￥)', prop: 'salesPrice', align: 'right' },
         { label: '折扣(%)', prop: 'discount', slotName: 'discount', align: 'right' },
@@ -1304,7 +1304,7 @@ export default {
         item.warehouseQuantity = onHand
         item.warehouseNumber = whsCode
         item.maxQuantity = quantity
-        item.maxQuantityText = Math.ceil(quantity)
+        // item.maxQuantityText = Math.ceil(quantity)
         item.totalPrice = Number((!isProtected ? item.salesPrice * item.count : 0).toFixed(2))
         item.replaceMaterialCode = replaceMaterialCode
         return item
