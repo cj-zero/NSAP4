@@ -741,21 +741,7 @@ namespace OpenAuth.App.Material
             var QuotationIds = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(request.ServiceOrderId) && q.CreateUserId.Equals(loginUser.Id)).Select(q => q.Id).ToListAsync();
 
             var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => QuotationIds.Contains((int)q.QuotationId) && q.IsProtected == true).ToListAsync();
-            //获取当前服务单所有退料明细汇总
-            var query = from a in UnitWork.Find<ReturnnoteMaterial>(null)
-                        join b in UnitWork.Find<ReturnNote>(null) on a.ReturnNoteId equals b.Id into ab
-                        from b in ab.DefaultIfEmpty()
-                        where b.Id == request.ServiceOrderId && a.Count > 0
-                        select new { a.QuotationMaterialId, a.Count };
-            var returnMaterials = (await query.ToListAsync()).GroupBy(g => g.QuotationMaterialId).Select(s => new { Qty = s.Sum(s => s.Count), Id = s.Key }).ToList();
-            List<ReturnMaterialListResp> data = new List<ReturnMaterialListResp>();
-            foreach (var item in QuotationMergeMaterials)
-            {
-                var res = item.MapTo<ReturnMaterialListResp>();
-                res.SurplusQty = returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault() == null ? 0 : (int)returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault().Qty;
-                data.Add(res);
-            }
-            result.Data = data;
+            result.Data = QuotationMergeMaterials;
             return result;
         }
 
