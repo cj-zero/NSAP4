@@ -21,5 +21,15 @@ namespace OpenAuth.App.Material.Request
         /// 出库数量
         /// </summary>
         public int? SentQuantity { get; set; }
+
+        /// <summary>
+        /// 入库数量
+        /// </summary>
+        public int? InventoryQuantity { get; set; }
+
+        /// <summary>
+        /// 仓库号
+        /// </summary>
+        public string WhsCode { get; set; }
     }
 }

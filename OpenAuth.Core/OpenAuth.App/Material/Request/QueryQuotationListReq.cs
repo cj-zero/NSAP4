@@ -64,6 +64,16 @@ namespace OpenAuth.App.Material.Request
         public string PartCode { get; set; }
 
         /// <summary>
+        /// 零件描述
+        /// </summary>
+        public string PartDescribe { get; set; }
+
+        /// <summary>
+        /// 被替换零件零件描述
+        /// </summary>
+        public string ReplacePartCode { get; set; }
+
+        /// <summary>
         /// 物料类型
         /// </summary>
         public string MaterialType { get; set; }

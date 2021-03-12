@@ -150,6 +150,28 @@ namespace OpenAuth.WebApi.Controllers.Material
         }
 
         /// <summary>
+        /// 按条件查询所有物料
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> MaterialCodeList([FromQuery] QueryQuotationListReq request) 
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.MaterialCodeList(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 报价单详情
         /// </summary>
         /// <returns></returns>
@@ -160,6 +182,28 @@ namespace OpenAuth.WebApi.Controllers.Material
             try
             {
                 return await _app.GetDetails(QuotationId);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 查询报价单详情物料
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetDetailsMaterial([FromQuery] QueryQuotationListReq request) 
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetDetailsMaterial(request);
             }
             catch (Exception ex)
             {
@@ -412,6 +456,6 @@ namespace OpenAuth.WebApi.Controllers.Material
                 throw new Exception(e.Message);
             }
         }
-        
+
     }
 }

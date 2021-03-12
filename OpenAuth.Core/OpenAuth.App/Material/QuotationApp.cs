@@ -509,6 +509,21 @@ namespace OpenAuth.App.Material
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var Quotations = await UnitWork.Find<Quotation>(q => q.Id.Equals(QuotationId)).Include(q => q.QuotationPictures).Include(q => q.QuotationProducts).ThenInclude(p => p.QuotationMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
+            var quotationsMap = Quotations.MapTo<AddOrUpdateQuotationReq>();
+            List<string> materialCodes = new List<string>();
+            Quotations.QuotationProducts.ForEach(q => {
+
+                materialCodes.AddRange(q.QuotationMaterials.Select(m => m.MaterialCode).ToList());
+            });
+            var ItemCodes= await UnitWork.Find<OITW>(o => materialCodes.Contains(o.ItemCode) && o.WhsCode=="37").Select(o=>new { o.ItemCode,o.WhsCode,o.OnHand}).ToListAsync();
+            quotationsMap.QuotationProducts.ForEach(p =>
+                p.QuotationMaterials.ForEach(m =>
+                    {
+                        m.WarehouseNumber = ItemCodes.Where(i => i.ItemCode.Equals(m.MaterialCode)).FirstOrDefault()?.WhsCode;
+                        m.WarehouseQuantity= ItemCodes.Where(i => i.ItemCode.Equals(m.MaterialCode)).FirstOrDefault()?.OnHand;
+                    }
+                )
+            );
 
             var result = new TableData();
             var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(Quotations.ServiceOrderId)).Select(s => new { s.Id, s.U_SAP_ID, s.TerminalCustomer, s.TerminalCustomerId, s.SalesMan, s.NewestContacter, s.NewestContactTel }).FirstOrDefaultAsync();
@@ -559,11 +574,11 @@ namespace OpenAuth.App.Material
                         m.b.Quantity
                     }).ToList()
                 }).ToList();
-                Quotations.QuotationOperationHistorys = Quotations.QuotationOperationHistorys.OrderBy(q => q.CreateTime).ToList();
+                quotationsMap.QuotationOperationHistorys = quotationsMap.QuotationOperationHistorys.OrderBy(q => q.CreateTime).ToList();
                 result.Data = new
                 {
                     Expressages,
-                    Quotations,
+                    Quotations=quotationsMap,
                     QuotationMergeMaterials,
                     ServiceOrders,
                     CustomerInformation
@@ -571,10 +586,10 @@ namespace OpenAuth.App.Material
             }
             else
             {
-                Quotations.QuotationOperationHistorys = Quotations.QuotationOperationHistorys.OrderBy(q => q.CreateTime).ToList();
+                quotationsMap.QuotationOperationHistorys = quotationsMap.QuotationOperationHistorys.OrderBy(q => q.CreateTime).ToList();
                 result.Data = new
                 {
-                    Quotations,
+                    Quotations=quotationsMap,
                     QuotationMergeMaterials,
                     ServiceOrders,
                     CustomerInformation
@@ -582,6 +597,100 @@ namespace OpenAuth.App.Material
             }
 
 
+            return result;
+        }
+
+        /// <summary>
+        /// 查询报价单详情物料
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetDetailsMaterial(QueryQuotationListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var Quotations = await UnitWork.Find<Quotation>(q => q.Id.Equals(request.QuotationId)).Include(q => q.QuotationPictures).Include(q => q.QuotationProducts).ThenInclude(p => p.QuotationMaterials).FirstOrDefaultAsync();
+            var result = new TableData();
+            if (!string.IsNullOrWhiteSpace(request.MaterialCode)) 
+            {
+                Quotations.QuotationProducts = Quotations.QuotationProducts.Where(q => q.MaterialCode.Contains(request.MaterialCode)).ToList();
+            }
+            if (!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers)) 
+            {
+                Quotations.QuotationProducts = Quotations.QuotationProducts.Where(q => q.ProductCode.Contains(request.ManufacturerSerialNumbers)).ToList();
+            }
+            result.Data = Quotations.QuotationProducts;
+
+            return result;
+        }
+
+        /// <summary>
+        /// 按条件查询所有物料
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> MaterialCodeList(QueryQuotationListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = new TableData();
+            var query = from a in UnitWork.Find<OITM>(null).WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), q => q.ItemCode.Contains(request.PartCode))
+                                .WhereIf(!string.IsNullOrWhiteSpace(request.PartDescribe), q => q.ItemName.Contains(request.PartDescribe))
+                                .WhereIf(!string.IsNullOrWhiteSpace(request.ReplacePartCode),q=>!q.ItemCode.Equals(request.ReplacePartCode))
+                        join b in UnitWork.Find<OITW>(null) on a.ItemCode equals b.ItemCode into ab
+                        from b in ab.DefaultIfEmpty()
+                        where b.WhsCode == "37"
+                        select new SysEquipmentColumn {ItemCode=a.ItemCode,ItemName=a.ItemName,lastPurPrc=a.LastPurPrc,BuyUnitMsr=a.SalUnitMsr,OnHand=b.OnHand,WhsCode=b.WhsCode };
+            result.Count = await query.CountAsync();
+
+            var Equipments = await query.Skip((request.page - 1) * request.limit)
+                .Take(request.limit).ToListAsync();
+            var ItemCodes = Equipments.Select(e => e.ItemCode).ToList();
+            var MaterialPrices = await UnitWork.Find<MaterialPrice>(m => ItemCodes.Contains(m.MaterialCode)).ToListAsync();
+            Equipments.ForEach(e =>
+            {
+                var Prices = MaterialPrices.Where(m => m.MaterialCode.Equals(e.ItemCode)).FirstOrDefault();
+                //4.0存在物料价格，取4.0的价格为售后结算价，不存在就当前进货价*1.2 为售后结算价。销售价均为售后结算价*3
+                if (Prices != null)
+                {
+                    e.UnitPrice = Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
+                    var s = e.UnitPrice.ToDouble().ToString();
+                    if (s.IndexOf(".") > 0)
+                    {
+                        s = s.Substring(s.IndexOf("."), s.Length - s.IndexOf("."));
+                        if (s.Length > 1)
+                        {
+                            int lengeth = s.Substring(1, s.Length - 1).Length;
+                            if (lengeth > 3) e.UnitPrice = e.UnitPrice + 0.005M;
+                        }
+                    }
+                    e.UnitPrice = Math.Round((decimal)e.UnitPrice, 2);
+                }
+                else
+                {
+                    e.UnitPrice = e.lastPurPrc * 1.2M;
+                    var s = e.UnitPrice.ToDouble().ToString();
+                    if (s.IndexOf(".") > 0)
+                    {
+                        s = s.Substring(s.IndexOf("."), s.Length - s.IndexOf("."));
+                        if (s.Length > 1)
+                        {
+                            int lengeth = s.Substring(1, s.Length - 1).Length;
+                            if (lengeth > 3) e.UnitPrice = e.UnitPrice + 0.005M;
+                        }
+                    }
+                    e.UnitPrice = Math.Round((decimal)e.UnitPrice, 2);
+
+                }
+                e.lastPurPrc = e.UnitPrice * 3;
+            });
+            result.Data = Equipments.ToList();
             return result;
         }
 
@@ -1549,7 +1658,7 @@ namespace OpenAuth.App.Material
         /// <summary>
         /// 获取合并后数据
         /// </summary>
-        /// <param name="QuotationId"></param>
+        /// <param name="req"></param>
         /// <returns></returns>
         public async Task<TableData> GetMergeMaterial(QueryQuotationListReq req)
         {
@@ -1573,7 +1682,6 @@ namespace OpenAuth.App.Material
             var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_AcquisitionWay") || u.TypeId.Equals("SYS_DeliveryMethod")).Select(u => new { u.Name, u.TypeId, u.DtValue, u.Description }).ToListAsync();
 
-
             var createTime = Convert.ToDateTime(model.QuotationOperationHistorys.Where(q => q.ApprovalStage.Equals(4)).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd");
             var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "SalesOrderHeader.html");
             var text = System.IO.File.ReadAllText(url);
@@ -1595,19 +1703,20 @@ namespace OpenAuth.App.Material
             var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"SalesOrderHeader{model.Id}.html");
             System.IO.File.WriteAllText(tempUrl, text);
             var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "SalesOrderFooter.html");
-            //var foottext = System.IO.File.ReadAllText(footUrl);
-            //string InvoiceCompany = "";
-            //if (Convert.ToInt32(model.InvoiceCompany) == 1)
-            //{
-            //    InvoiceCompany = "深圳市新威尔电子有限公司 交通银行股份有限公司深圳梅林支行   443066388018001726113";
-            //} else if (Convert.ToInt32(model.InvoiceCompany) == 2) 
-            //{
-            //    InvoiceCompany = "东莞新威检测技术有限公司 交通银行股份有限公司东莞塘厦支行   483007618018810043352";
-            //}
-            //foottext = foottext.Replace("@Model.Corporate", InvoiceCompany);
-            //foottext = foottext.Replace("@Model.PrintNo", model.PrintNo);
-            //var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"SalesOrderFooter{model.Id}.html");
-            //System.IO.File.WriteAllText(foottempUrl, foottext);
+            var foottext = System.IO.File.ReadAllText(footUrl);
+            string InvoiceCompany = "";
+            if (Convert.ToInt32(model.InvoiceCompany) == 1)
+            {
+                InvoiceCompany = "深圳市新威尔电子有限公司 交通银行股份有限公司深圳梅林支行   443066388018001726113";
+            }
+            else if (Convert.ToInt32(model.InvoiceCompany) == 2)
+            {
+                InvoiceCompany = "东莞新威检测技术有限公司 交通银行股份有限公司东莞塘厦支行   483007618018810043352";
+            }
+            foottext = foottext.Replace("@Model.Corporate", InvoiceCompany);
+            foottext = foottext.Replace("@Model.PrintNo", model.PrintNo);
+            var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"SalesOrderFooter{model.Id}.html");
+            System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.UTF8);
             var materials = model.QuotationMergeMaterials.Select(q => new PrintSalesOrderResp
             {
                 MaterialCode = q.MaterialCode,
@@ -1623,10 +1732,10 @@ namespace OpenAuth.App.Material
                 pdf.PaperKind = PaperKind.A4;
                 pdf.Orientation = Orientation.Portrait;
                 pdf.HeaderSettings = new HeaderSettings() { FontName = "宋体", FontSize = 6, HtmUrl = tempUrl };
-                pdf.FooterSettings = new FooterSettings() { HtmUrl = footUrl };
+                pdf.FooterSettings = new FooterSettings() { FontName = "宋体", FontSize = 6, HtmUrl = foottempUrl };
             });
             System.IO.File.Delete(tempUrl);
-            //System.IO.File.Delete(foottempUrl);
+            System.IO.File.Delete(foottempUrl);
             return datas;
         }
 

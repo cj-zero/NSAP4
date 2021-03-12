@@ -153,5 +153,11 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public virtual ExpressageReq ExpressageReqs { get; set; }
 
+        /// <summary>
+        /// 操作详情表
+        /// </summary>
+        public virtual List<QuotationOperationHistory> QuotationOperationHistorys { get; set; }
+        
+
     }
 }
