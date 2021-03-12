@@ -71,7 +71,17 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         ///仓库数量
         /// </summary>
-        public int? WarehouseQuantity { get; set; }
+        public decimal? WarehouseQuantity { get; set; }
+
+        /// <summary>
+        ///仓库编号
+        /// </summary>
+        public string WarehouseNumber { get; set; }
+
+        /// <summary>
+        ///被替换物料
+        /// </summary>
+        public string ReplaceMaterialCode { get; set; }
 
     }
 }
