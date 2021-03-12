@@ -7,6 +7,30 @@ export function getReturnNoteList(params) { // 获取退料单列表
     params
   })
 }
+
+
+export function getServiceOrderInfo (params, _this) {
+  return request({
+    url: '/ReturnNotes/GetServiceOrderInfo',
+    method: 'get',
+    params,
+    cancelToken: new request.cancelToken(function executor(c) {
+      _this.cancelRequestOrder = c // 用于取消上一次未响应的请求,已经响应的请求无法取消
+    })
+  })
+}
+
+export function getQuotationMaterialCode (params) { // 根据服务单ID 获取该服务单下的所有物料信息
+  return request({
+    url: '/Material/Quotation/GetQuotationMaterialCode',
+    method: 'get',
+    params,
+    // cancelToken: new request.cancelToken(function executor(c) {
+    //   _this.cancelRequestOrder = c // 用于取消上一次未响应的请求,已经响应的请求无法取消
+    // })
+  })
+}
+
 export function returnMaterials(data) { // 退料
   return request({
     url: '/ReturnNotes/ReturnMaterials',
