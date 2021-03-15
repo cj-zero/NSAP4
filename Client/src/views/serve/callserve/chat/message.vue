@@ -199,8 +199,8 @@ export default {
       this.serviceOrderMessagePictures = val;
     },
     submitForm() {
-      if (!this.content.trim()) {
-        return this.$message.error("留言内容不能为空");
+      if (!this.content.trim() && !this.serviceOrderMessagePictures.length) {
+        return this.$message.error("留言内容或图片不能为空");
       }
       this.loadingBtn = true
       callserve

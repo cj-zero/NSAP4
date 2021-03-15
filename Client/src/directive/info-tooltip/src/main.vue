@@ -7,8 +7,7 @@
         'infotooltip-row-tip-top': placement == 'top',
         'infotooltip-row-tip-left': placement == 'left',
         'infotooltip-row-tip-right': placement == 'right',
-        'infotooltip-row-tip-bottom': placement == 'bottom',
-        'infotooltip-row-tip-middle': placement == 'middle'
+        'infotooltip-row-tip-bottom': placement == 'bottom'
       }"
       :style="tooltipStyle"
       v-show="showPopper"
@@ -38,6 +37,10 @@ export default {
       default() {
         return {}
       }
+    },
+    visibleArrow: {
+      type: Boolean,
+      default: true
     },
     //定位方向 left|top|right|bottom
     placement: {
@@ -128,23 +131,16 @@ export default {
   }
 }
 
-.infotooltip-row-tip-middle {
+.infotooltip-row-tip-top {
   transform: translate3d(0, -10px, 0);
   &::after {
+    left: 50%;
     border-left: 8px solid transparent;
     border-right: 8px solid transparent;
     border-top: 8px solid #303133;
     bottom: -7px;
-    left: 50%;
     transform: translate3d(-50%, 0, 0);
   }
-}
-
-.infotooltip-row-tip-top::after {
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-top: 8px solid #303133;
-  bottom: -7px;
 }
 
 .infotooltip-row-tip-left::after {

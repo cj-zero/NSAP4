@@ -94,6 +94,7 @@ import { mergeConfig, getComponentName, mergeComponentAttrs } from '../mergeConf
 import rightImg from '@/assets/table/right.png'
 import { noop } from '@/utils/declaration'
 import { isFunction } from '@/utils/validate'
+import { flatten } from '@/utils/utils'
 export default {
   name: 'CommonTable',
   props: {
@@ -137,6 +138,9 @@ export default {
     },
     selectionColumns () {
       return this.columns.some(item => item.type === 'selection')
+    },
+    newSelectedList () {
+      return flatten(JSON.parse(JSON.stringify(this.selectedList)))
     }
   },
   watch: {
@@ -202,9 +206,11 @@ export default {
       this.selectionList = val
     },
     checkSelectable (row) {
-      row.selectable = this.selectedList.length ? this.selectedList.every(item => item[this.selectedKey] !== row[this.selectedKey]) : true
+      row.selectable = this.newSelectedList.length 
+        ? this.newSelectedList.every(item => item[this.selectedKey] !== row[this.selectedKey])
+        : true
       return row.selectable
-    }
+    },
   },
   created() {},
   mounted() {

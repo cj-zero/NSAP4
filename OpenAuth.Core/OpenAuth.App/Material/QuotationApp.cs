@@ -65,136 +65,139 @@ namespace OpenAuth.App.Material
                                 .WhereIf(request.EndCreateTime != null, q => q.CreateTime < request.EndCreateTime)
                                 .WhereIf(request.Status != null, q => q.Status == request.Status)
                                 .Where(q => ServiceOrderids.Contains(q.ServiceOrderId));
-
-            if (request.PageStart != null && request.PageStart == 1)
+            if (!loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && !loginUser.Account.Equals(Define.SYSTEM_USERNAME)) 
             {
-
-                if (loginContext.Roles.Any(r => r.Name.Equals("物料工程审批")))
+                if (request.PageStart != null && request.PageStart == 1)
                 {
-                    switch (request.StartType)
-                    {
-                        case 1:
-                            Quotations = Quotations.Where(q => q.QuotationStatus == 4);
-                            break;
 
-                        case 2:
-                            Quotations = Quotations.Where(q => q.QuotationStatus > 4);
-                            break;
-                        default:
-                            Quotations = Quotations.Where(q => q.QuotationStatus >= 4);
-                            break;
+                    if (loginContext.Roles.Any(r => r.Name.Equals("物料工程审批")))
+                    {
+                        switch (request.StartType)
+                        {
+                            case 1:
+                                Quotations = Quotations.Where(q => q.QuotationStatus == 4);
+                                break;
+
+                            case 2:
+                                Quotations = Quotations.Where(q => q.QuotationStatus > 4);
+                                break;
+                            default:
+                                Quotations = Quotations.Where(q => q.QuotationStatus >= 4);
+                                break;
+                        }
+                    }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
+                    {
+                        switch (request.StartType)
+                        {
+                            case 1:
+                                Quotations = Quotations.Where(q => q.QuotationStatus == 5);
+                                break;
+
+                            case 2:
+                                Quotations = Quotations.Where(q => q.QuotationStatus > 5);
+                                break;
+                            default:
+                                Quotations = Quotations.Where(q => q.QuotationStatus >= 5);
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        switch (request.StartType)
+                        {
+                            case 1:
+                                Quotations = Quotations.Where(q => q.QuotationStatus == 6 && q.CreateUserId.Equals(loginUser.Id));
+                                break;
+
+                            case 2:
+                                Quotations = Quotations.Where(q => q.QuotationStatus > 6 && q.CreateUserId.Equals(loginUser.Id));
+                                break;
+                            default:
+                                Quotations = Quotations.Where(q => q.QuotationStatus >= 6 && q.CreateUserId.Equals(loginUser.Id));
+                                break;
+                        }
+                    }
+
+                }
+                else if (request.PageStart != null && request.PageStart == 2)
+                {
+                    if (loginContext.Roles.Any(r => r.Name.Equals("物料财务")))
+                    {
+                        switch (request.StartType)
+                        {
+                            case 1:
+                                Quotations = Quotations.Where(q => q.QuotationStatus == 8);
+                                break;
+
+                            case 2:
+                                Quotations = Quotations.Where(q => q.QuotationStatus > 8);
+                                break;
+                            default:
+                                Quotations = Quotations.Where(q => q.QuotationStatus >= 8);
+                                break;
+                        }
+                    }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
+                    {
+                        switch (request.StartType)
+                        {
+                            case 1:
+                                Quotations = Quotations.Where(q => q.QuotationStatus == 9);
+                                break;
+
+                            case 2:
+                                Quotations = Quotations.Where(q => q.QuotationStatus > 9);
+                                break;
+                            default:
+                                Quotations = Quotations.Where(q => q.QuotationStatus >= 9);
+                                break;
+                        }
+
+                    }
+                    else
+                    {
+                        switch (request.StartType)
+                        {
+                            case 1:
+                                Quotations = Quotations.Where(q => q.QuotationStatus == 7 && q.CreateUserId.Equals(loginUser.Id));
+                                break;
+
+                            case 2:
+                                Quotations = Quotations.Where(q => q.QuotationStatus > 7 && q.CreateUserId.Equals(loginUser.Id));
+                                break;
+                            default:
+                                Quotations = Quotations.Where(q => q.QuotationStatus >= 7 && q.CreateUserId.Equals(loginUser.Id));
+                                break;
+                        }
                     }
                 }
-                else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
+                else if (request.PageStart != null && request.PageStart == 3)
                 {
+                    if (!loginContext.Roles.Any(r => r.Name.Equals("仓库")))
+                    {
+                        Quotations = Quotations.Where(q => q.CreateUserId.Equals(loginUser.Id));
+                    }
                     switch (request.StartType)
                     {
-                        case 1:
-                            Quotations = Quotations.Where(q => q.QuotationStatus == 5);
+                        case 1://未出库
+                            Quotations = Quotations.Where(q => q.QuotationStatus == 10);
                             break;
 
-                        case 2:
-                            Quotations = Quotations.Where(q => q.QuotationStatus > 5);
+                        case 2://已出库
+                            Quotations = Quotations.Where(q => q.QuotationStatus == 11);
                             break;
                         default:
-                            Quotations = Quotations.Where(q => q.QuotationStatus >= 5);
+                            Quotations = Quotations.Where(q => q.QuotationStatus >= 10);
                             break;
                     }
                 }
                 else
-                {
-                    switch (request.StartType)
-                    {
-                        case 1:
-                            Quotations = Quotations.Where(q => q.QuotationStatus == 6 && q.CreateUserId.Equals(loginUser.Id));
-                            break;
-
-                        case 2:
-                            Quotations = Quotations.Where(q => q.QuotationStatus > 6 && q.CreateUserId.Equals(loginUser.Id));
-                            break;
-                        default:
-                            Quotations = Quotations.Where(q => q.QuotationStatus >= 6 && q.CreateUserId.Equals(loginUser.Id));
-                            break;
-                    }
-                }
-
-            }
-            else if (request.PageStart != null && request.PageStart == 2)
-            {
-                if (loginContext.Roles.Any(r => r.Name.Equals("物料财务")))
-                {
-                    switch (request.StartType)
-                    {
-                        case 1:
-                            Quotations = Quotations.Where(q => q.QuotationStatus == 8);
-                            break;
-
-                        case 2:
-                            Quotations = Quotations.Where(q => q.QuotationStatus > 8);
-                            break;
-                        default:
-                            Quotations = Quotations.Where(q => q.QuotationStatus >= 8);
-                            break;
-                    }
-                }
-                else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
-                {
-                    switch (request.StartType)
-                    {
-                        case 1:
-                            Quotations = Quotations.Where(q => q.QuotationStatus == 9);
-                            break;
-
-                        case 2:
-                            Quotations = Quotations.Where(q => q.QuotationStatus > 9);
-                            break;
-                        default:
-                            Quotations = Quotations.Where(q => q.QuotationStatus >= 9);
-                            break;
-                    }
-
-                }
-                else
-                {
-                    switch (request.StartType)
-                    {
-                        case 1:
-                            Quotations = Quotations.Where(q => q.QuotationStatus == 7 && q.CreateUserId.Equals(loginUser.Id));
-                            break;
-
-                        case 2:
-                            Quotations = Quotations.Where(q => q.QuotationStatus > 7 && q.CreateUserId.Equals(loginUser.Id));
-                            break;
-                        default:
-                            Quotations = Quotations.Where(q => q.QuotationStatus >= 7 && q.CreateUserId.Equals(loginUser.Id));
-                            break;
-                    }
-                }
-            }
-            else if (request.PageStart != null && request.PageStart == 3)
-            {
-                if (!loginContext.Roles.Any(r => r.Name.Equals("仓库")))
                 {
                     Quotations = Quotations.Where(q => q.CreateUserId.Equals(loginUser.Id));
                 }
-                switch (request.StartType)
-                {
-                    case 1://未出库
-                        Quotations = Quotations.Where(q => q.QuotationStatus == 10);
-                        break;
-
-                    case 2://已出库
-                        Quotations = Quotations.Where(q => q.QuotationStatus == 11);
-                        break;
-                    default:
-                        Quotations = Quotations.Where(q => q.QuotationStatus >= 10);
-                        break;
-                }
             }
-            else
-            {
-                Quotations = Quotations.Where(q => q.CreateUserId.Equals(loginUser.Id));
-            }
+            
             var QuotationDate = await Quotations.Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
             List<string> fileids = new List<string>();
@@ -412,26 +415,7 @@ namespace OpenAuth.App.Material
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var result = new TableData();
-
-            var Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"select a.ItemCode,b.MnfSerial,c.ItemName,c.BuyUnitMsr,d.OnHand, d.WhsCode,a.BaseQty as Quantity ,c.lastPurPrc from WOR1 a 
-						join (SELECT a.BaseEntry,c.MnfSerial,a.BaseType
-            FROM oitl a left join itl1 b
-            on a.LogEntry = b.LogEntry and a.ItemCode = b.ItemCode 
-            left join osrn c on b.ItemCode = c.ItemCode and b.SysNumber = c.SysNumber
-            where a.DocType in (15, 59) and c.MnfSerial ='{request.ManufacturerSerialNumbers}' and a.BaseType=202) b on a.docentry = b.BaseEntry	
-						join OITM c on a.itemcode = c.itemcode
-						join OITW d on a.itemcode=d.itemcode 
-						where d.WhsCode=37").WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
-                        .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
-
-            if (Equipments == null || Equipments.Count() <= 0)
-            {
-                request.MaterialCode = request.MaterialCode.Replace("'", "''");
-                Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"select a.* ,c.lastPurPrc from (select a.Father as MnfSerial,a.Code as ItemCode,a.U_Desc as ItemName,a.U_DUnit as BuyUnitMsr,b.OnHand,b.WhsCode,a.Quantity
-                        from ITT1 a join OITW b on a.Code=b.ItemCode  where a.Father='{request.MaterialCode}' and b.WhsCode=37) a join OITM c on c.ItemCode=a.ItemCode")
-                    .WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
-                    .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
-            }
+            var Equipments =await EquipmentList(request);
             var quotations = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(request.ServiceOrderId)).Include(q => q.QuotationProducts).ThenInclude(q => q.QuotationMaterials).ToListAsync();
             if (quotations != null && quotations.Count > 0)
             {
@@ -497,6 +481,35 @@ namespace OpenAuth.App.Material
         }
 
         /// <summary>
+        /// 通用获取物料列表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        private async Task<List<SysEquipmentColumn>> EquipmentList(QueryQuotationListReq request) 
+        {
+            var Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"select a.ItemCode,b.MnfSerial,c.ItemName,c.BuyUnitMsr,d.OnHand, d.WhsCode,a.BaseQty as Quantity ,c.lastPurPrc from WOR1 a 
+						join (SELECT a.BaseEntry,c.MnfSerial,a.BaseType
+            FROM oitl a left join itl1 b
+            on a.LogEntry = b.LogEntry and a.ItemCode = b.ItemCode 
+            left join osrn c on b.ItemCode = c.ItemCode and b.SysNumber = c.SysNumber
+            where a.DocType in (15, 59) and c.MnfSerial ='{request.ManufacturerSerialNumbers}' and a.BaseType=202) b on a.docentry = b.BaseEntry	
+						join OITM c on a.itemcode = c.itemcode
+						join OITW d on a.itemcode=d.itemcode 
+						where d.WhsCode=37").WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
+                        .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
+
+            if (Equipments == null || Equipments.Count() <= 0)
+            {
+                request.MaterialCode = request.MaterialCode.Replace("'", "''");
+                Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"select a.* ,c.lastPurPrc from (select a.Father as MnfSerial,a.Code as ItemCode,a.U_Desc as ItemName,a.U_DUnit as BuyUnitMsr,b.OnHand,b.WhsCode,a.Quantity
+                        from ITT1 a join OITW b on a.Code=b.ItemCode  where a.Father='{request.MaterialCode}' and b.WhsCode=37) a join OITM c on c.ItemCode=a.ItemCode")
+                    .WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
+                    .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
+            }
+            return Equipments;
+        }
+
+        /// <summary>
         /// 获取报价单详情
         /// </summary>
         /// <param name="QuotationId"></param>
@@ -511,17 +524,16 @@ namespace OpenAuth.App.Material
             var Quotations = await UnitWork.Find<Quotation>(q => q.Id.Equals(QuotationId)).Include(q => q.QuotationPictures).Include(q => q.QuotationProducts).ThenInclude(p => p.QuotationMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
             var quotationsMap = Quotations.MapTo<AddOrUpdateQuotationReq>();
             List<string> materialCodes = new List<string>();
-            Quotations.QuotationProducts.ForEach(q =>
-            {
+            Quotations.QuotationProducts.ForEach(q => {
 
                 materialCodes.AddRange(q.QuotationMaterials.Select(m => m.MaterialCode).ToList());
             });
-            var ItemCodes = await UnitWork.Find<OITW>(o => materialCodes.Contains(o.ItemCode) && o.WhsCode == "37").Select(o => new { o.ItemCode, o.WhsCode, o.OnHand }).ToListAsync();
+            var ItemCodes= await UnitWork.Find<OITW>(o => materialCodes.Contains(o.ItemCode) && o.WhsCode=="37").Select(o=>new { o.ItemCode,o.WhsCode,o.OnHand}).ToListAsync();
             quotationsMap.QuotationProducts.ForEach(p =>
                 p.QuotationMaterials.ForEach(m =>
                     {
                         m.WarehouseNumber = ItemCodes.Where(i => i.ItemCode.Equals(m.MaterialCode)).FirstOrDefault()?.WhsCode;
-                        m.WarehouseQuantity = ItemCodes.Where(i => i.ItemCode.Equals(m.MaterialCode)).FirstOrDefault()?.OnHand;
+                        m.WarehouseQuantity= ItemCodes.Where(i => i.ItemCode.Equals(m.MaterialCode)).FirstOrDefault()?.OnHand;
                     }
                 )
             );
@@ -579,7 +591,7 @@ namespace OpenAuth.App.Material
                 result.Data = new
                 {
                     Expressages,
-                    Quotations = quotationsMap,
+                    Quotations=quotationsMap,
                     QuotationMergeMaterials,
                     ServiceOrders,
                     CustomerInformation
@@ -590,7 +602,7 @@ namespace OpenAuth.App.Material
                 quotationsMap.QuotationOperationHistorys = quotationsMap.QuotationOperationHistorys.OrderBy(q => q.CreateTime).ToList();
                 result.Data = new
                 {
-                    Quotations = quotationsMap,
+                    Quotations=quotationsMap,
                     QuotationMergeMaterials,
                     ServiceOrders,
                     CustomerInformation
@@ -615,11 +627,11 @@ namespace OpenAuth.App.Material
             }
             var Quotations = await UnitWork.Find<Quotation>(q => q.Id.Equals(request.QuotationId)).Include(q => q.QuotationPictures).Include(q => q.QuotationProducts).ThenInclude(p => p.QuotationMaterials).FirstOrDefaultAsync();
             var result = new TableData();
-            if (!string.IsNullOrWhiteSpace(request.MaterialCode))
+            if (!string.IsNullOrWhiteSpace(request.MaterialCode)) 
             {
                 Quotations.QuotationProducts = Quotations.QuotationProducts.Where(q => q.MaterialCode.Contains(request.MaterialCode)).ToList();
             }
-            if (!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers))
+            if (!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers)) 
             {
                 Quotations.QuotationProducts = Quotations.QuotationProducts.Where(q => q.ProductCode.Contains(request.ManufacturerSerialNumbers)).ToList();
             }
@@ -640,14 +652,17 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var equipmentList = await EquipmentList(request);
+            var codeList = equipmentList.Select(e => e.ItemCode).ToList();
             var result = new TableData();
             var query = from a in UnitWork.Find<OITM>(null).WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), q => q.ItemCode.Contains(request.PartCode))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.PartDescribe), q => q.ItemName.Contains(request.PartDescribe))
-                                .WhereIf(!string.IsNullOrWhiteSpace(request.ReplacePartCode), q => !q.ItemCode.Equals(request.ReplacePartCode))
+                                .WhereIf(!string.IsNullOrWhiteSpace(request.ReplacePartCode),q=>!q.ItemCode.Equals(request.ReplacePartCode))
+                                .WhereIf(codeList.Count>0,q => !codeList.Contains(q.ItemCode))
                         join b in UnitWork.Find<OITW>(null) on a.ItemCode equals b.ItemCode into ab
                         from b in ab.DefaultIfEmpty()
                         where b.WhsCode == "37"
-                        select new SysEquipmentColumn { ItemCode = a.ItemCode, ItemName = a.ItemName, lastPurPrc = a.LastPurPrc, BuyUnitMsr = a.SalUnitMsr, OnHand = b.OnHand, WhsCode = b.WhsCode };
+                        select new SysEquipmentColumn {ItemCode=a.ItemCode,ItemName=a.ItemName,lastPurPrc=a.LastPurPrc,BuyUnitMsr=a.SalUnitMsr,OnHand=b.OnHand,WhsCode=b.WhsCode };
             result.Count = await query.CountAsync();
 
             var Equipments = await query.Skip((request.page - 1) * request.limit)
@@ -742,21 +757,7 @@ namespace OpenAuth.App.Material
             var QuotationIds = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(request.ServiceOrderId) && q.CreateUserId.Equals(loginUser.Id)).Select(q => q.Id).ToListAsync();
 
             var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => QuotationIds.Contains((int)q.QuotationId) && q.IsProtected == true).ToListAsync();
-            //获取当前服务单所有退料明细汇总
-            var query = from a in UnitWork.Find<ReturnnoteMaterial>(null)
-                        join b in UnitWork.Find<ReturnNote>(null) on a.ReturnNoteId equals b.Id into ab
-                        from b in ab.DefaultIfEmpty()
-                        where b.Id == request.ServiceOrderId && a.Count > 0
-                        select new { a.QuotationMaterialId, a.Count };
-            var returnMaterials = (await query.ToListAsync()).GroupBy(g => g.QuotationMaterialId).Select(s => new { Qty = s.Sum(s => s.Count), Id = s.Key }).ToList();
-            List<ReturnMaterialListResp> data = new List<ReturnMaterialListResp>();
-            foreach (var item in QuotationMergeMaterials)
-            {
-                var res = item.MapTo<ReturnMaterialListResp>();
-                res.SurplusQty = (int)item.Count - (returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault() == null ? 0 : (int)returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault().Qty);
-                data.Add(res);
-            }
-            result.Data = data;
+            result.Data = QuotationMergeMaterials;
             return result;
         }
 
@@ -900,7 +901,7 @@ namespace OpenAuth.App.Material
                             QuotationMergeMaterialList.Add(new QueryQuotationMergeMaterialListReq
                             {
                                 MaterialCode = "S111-SERVICE-GSF",
-                                MaterialDescription = "服务费",
+                                MaterialDescription = "维修费",
                                 Unit = "PCS",
                                 SalesPrice = QuotationObj.ServiceCharge,
                                 CostPrice = 0,
@@ -1052,6 +1053,7 @@ namespace OpenAuth.App.Material
                             IsDraft = QuotationObj.IsDraft,
                             IsProtected = QuotationObj.IsProtected,
                             Status = 1,
+                            ServiceCharge= QuotationObj.ServiceCharge
                             //todo:要修改的字段赋值
                         });
                         await UnitWork.SaveAsync();
@@ -1109,7 +1111,7 @@ namespace OpenAuth.App.Material
                             QuotationMergeMaterialList.Add(new QueryQuotationMergeMaterialListReq
                             {
                                 MaterialCode = "S111-SERVICE-GSF",
-                                MaterialDescription = "服务费",
+                                MaterialDescription = "维修费",
                                 Unit = "PCS",
                                 SalesPrice = QuotationObj.ServiceCharge,
                                 CostPrice = 0,
@@ -1160,6 +1162,7 @@ namespace OpenAuth.App.Material
                             IsDraft = QuotationObj.IsDraft,
                             IsProtected = QuotationObj.IsProtected,
                             Status = 1,
+                            ServiceCharge = QuotationObj.ServiceCharge
                             //FlowInstanceId = FlowInstanceId,
                             //todo:要修改的字段赋值
                         });

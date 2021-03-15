@@ -35,7 +35,7 @@
       width="1100px"
       :loading="dialogLoading"
       :btnList="btnList"
-      :onClosed="close"
+      @closed="closed"
     >
       <template v-slot:title>
         <div class="my-dialog-icon"></div>
@@ -108,7 +108,7 @@ export default {
       return [
         { btnText: '确认', handleClick: this.updateDateClick },
         // { btnText: '审批', handleClick: this.approveDateClick },
-        { btnText: '关闭', handleClick: this.close, className: 'close' }      
+        { btnText: '关闭', handleClick: this.handleClose, className: 'close' }      
       ]
     }
   },
@@ -169,7 +169,7 @@ export default {
           this.$message.success('修改成功')
           this.dialogLoading = false
           this._getList()
-          this.close()
+          this.handleClose()
         }).catch(err => {
           this.$message.error(err.message)
           this.dialogLoading = false
@@ -191,9 +191,11 @@ export default {
         this.limit = limit
         this._getList()
     },
-    close () {
-      this.$refs.salesOrder.resetInfo()
+    handleClose () {
       this.$refs.salesOrderDialog.close()
+    },
+    closed () {
+      this.$refs.salesOrder.resetInfo()
     },
   },
   created () {

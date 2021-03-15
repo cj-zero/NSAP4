@@ -1,6 +1,6 @@
 <template>
   <div class="remark-wrapper">
-    <span class="title">驳回原因：</span>
+    <span class="title" v-if="isShowTitle">驳回原因：</span>
     <div class="right-wrapper">
       <el-input type="textarea" v-model="text" :placeholder="placeholder" @input="onInput"></el-input>
       <el-tag
@@ -20,6 +20,9 @@
 
 export default {
   props: {
+    isShowTitle: {
+      type: Boolean
+    },
     maxLength: {
       type: [String, Number],
       default: 0
@@ -68,6 +71,7 @@ export default {
     font-size: 12px;
   }
   .right-wrapper {
+    flex: 1;
     .tag-item {
       margin: 5px 5px 0 0;
       cursor: pointer;

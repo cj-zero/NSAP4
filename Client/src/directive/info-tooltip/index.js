@@ -14,7 +14,7 @@ function clearEvent(el) {
 export default {
   install(Vue) {
     // tip 的展示方向
-    const allPlacements = ['middle', 'top-start', 'top', 'right', 'bottom', 'left']
+    const allPlacements = ['top-start', 'top', 'right', 'bottom', 'left']
     Vue.directive('infotooltip', {
       bind(el, binding) {
         clearEvent(el)

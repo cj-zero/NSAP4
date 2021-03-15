@@ -38,17 +38,17 @@
       ref="quotationDialog"
       width="1180px"
       :loading="dialogLoading"
-      :title="`${textMap[status]}销售订单`"
+      :title="`${dialogTitle}销售订单`"
       :btnList="btnList"
-      @closed="close"
+      @closed="closed"
     >
       <quotation-order 
         ref="quotationOrder" 
         :detailInfo="detailInfo"
         :categoryList="categoryList"
         :isSales="true"
-        :status="status"
-        :isReceive="isReceive"></quotation-order>
+        :isSalesOrder="true"
+        :status="status"></quotation-order>
     </my-dialog>
     <!-- 只能查看的表单 -->
     <my-dialog
@@ -94,13 +94,13 @@ import QuotationOrder from '../common/components/QuotationOrder'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import { getQuotationList, getServiceOrderList } from '@/api/material/quotation'
-import {  quotationTableMixin, categoryMixin, chatMixin } from '../common/js/mixins'
+import {  quotationTableMixin, categoryMixin, chatMixin, rolesMixin } from '../common/js/mixins'
 // import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import { processDownloadUrl } from '@/utils/file'
 import { print } from '@/utils/utils'
 export default {
   name: 'materialSalesOrder',
-  mixins: [quotationTableMixin, categoryMixin, chatMixin],
+  mixins: [quotationTableMixin, categoryMixin, chatMixin, rolesMixin],
   components: {
     Search,
     QuotationOrder,
@@ -126,24 +126,41 @@ export default {
       // 弹窗按钮
       return [
         // this.isMaterialFinancial 
-        {  btnText: '提交', isShow: this.status === 'upload', handleClick: this.pay },
-        { btnText: '确认收款', handleClick: this.pay, isShow: this.status === 'pay' && this.isMaterialFinancial,
+        {  btnText: '提交', isShow: this.status === 'upload', handleClick: this.approve, options: { type: 'upload' }},
+        { btnText: '确认收款', handleClick: this.approve, isShow: this.status === 'pay' && this.isMaterialFinancial,
           options: { type: 'pay' }
         },
-        { btnText: '打印', handleClick: this.showContract, isShow: this.status !== 'upload', className: 'outline' },
-        { btnText: '查看合同', handleClick: this.showContractPictures, options: { isInTable: false }, isShow: this.status !== 'upload', className: 'outline' },
-        // { btnText: '驳回', handleClick: this.pay, options: { type: 'reject' }, isShow: !this.isMaterialFinancial },
-        { btnText: '关闭', handleClick: this.close, className: 'close' }      
+        { btnText: '打印', handleClick: this.print, isShow: this.isMaterialFinancial, className: 'outline' },
+        { btnText: '查看合同', handleClick: this.showContractPictures, options: { isInTable: false }, 
+          isShow: !this.isProtected && this.quotationStatus >= 8, className: 'outline' 
+        },
+        { btnText: '同意', handleClick: this.approve, isShow: this.status === 'approveSales' && this.isGeneralManager, options: { type: 'agree' } },
+        { btnText: '待定', handleClick: this.approve, options: { type: 'reject' }, 
+          isShow: ((this.status === 'approveSales' && this.isGeneralManager) || (this.isMaterialFinancial && this.status === 'pay')), 
+        },
+        { btnText: '关闭', handleClick: this.handleClose, className: 'close' }      
       ] 
+    },
+    isShowPayBtn () {
+      return this.status !== 'upload' && this.status !== 'approveSales'
     },
     searchBtnText () {
       return this.isMaterialFinancial ? '收款' : '审批'
+    },
+    dialogTitle () {
+      return (
+        (this.isTechnical && this.quotationStatus >= 8) || 
+        (this.isMaterialFinancial && this.quotationStatus >= 9) ||
+        (this.isGeneralManager && this.quotationStatus >= 10)
+      ) ? '查看' : this.textMap[this.status]
     }
   },
   data () {
     return {
+      quotationStatus: 0,
       previewVisible: false,
       previewFileList: [],
+      isProtected: false, // 判断当前销售单是保内还是保外
       isSales: true,
       formQuery: {
         quotationId: '', // 领料单号
@@ -155,6 +172,7 @@ export default {
       },
       listQuery: {
         IsSalesOrderList: true,
+        pageStart: 2,
         page: 1,
         limit: 50,
       },
@@ -216,7 +234,7 @@ export default {
         this.$message.error(err.message)
       })
     },
-    pay (options) {
+    approve (options) {
       this.$refs.quotationOrder.beforeApprove(options.type)
     },
     onRowClick (row) {
@@ -239,9 +257,11 @@ export default {
     closeViewer () {
       this.previewVisible = false
     },
-    close () {
-      this.$refs.quotationOrder.resetInfo()
+    handleClose () {
       this.$refs.quotationDialog.close()
+    },
+    closed () {
+      this.$refs.quotationOrder.resetInfo()
     }
   },
   created () {

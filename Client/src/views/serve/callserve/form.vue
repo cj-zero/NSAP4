@@ -1209,7 +1209,7 @@ export default {
                 });
               });
               if (!targetList.length) {
-                this.$message.error('未添加工单信息')
+                // this.$message.error('未添加工单信息')
                 return this.$emit("close-Dia", "N");
               }
               let promiseList = [];
