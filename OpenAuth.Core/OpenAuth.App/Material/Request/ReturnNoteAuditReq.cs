@@ -7,6 +7,11 @@ namespace OpenAuth.App.Material.Request
     public class ReturnNoteAuditReq
     {
         /// <summary>
+        /// 物流单Id
+        /// </summary>
+        public string ExpressageId { get; set; }
+
+        /// <summary>
         /// 退料单Id
         /// </summary>
         public int Id { get; set; }
@@ -26,11 +31,6 @@ namespace OpenAuth.App.Material.Request
         /// 是否通过 2未通过 1通过
         /// </summary>
         public int IsPass { get; set; }
-
-        /// <summary>
-        /// 差错数量
-        /// </summary>
-        public int WrongCount { get; set; }
 
         /// <summary>
         /// 收货备注

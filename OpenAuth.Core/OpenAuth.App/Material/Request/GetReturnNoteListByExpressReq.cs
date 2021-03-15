@@ -5,7 +5,7 @@ using System.Text;
 
 namespace OpenAuth.App.Material.Request
 {
-    public class GetReturnNoteListReq : PageReq
+    public class GetReturnNoteListByExpressReq : PageReq
     {
         /// <summary>
         /// 退料订单Id
@@ -38,8 +38,13 @@ namespace OpenAuth.App.Material.Request
         public string EndDate { get; set; }
 
         /// <summary>
-        /// 退料单状态  1未完成退料 2已完成退料
+        /// 物流单状态  0待收货 1待检验 2待入库
         /// </summary>
         public string Status { get; set; }
+
+        /// <summary>
+        /// 物流单号
+        /// </summary>
+        public string TrackNumber { get; set; }
     }
 }

@@ -29,7 +29,8 @@ namespace OpenAuth.Repository.Domain
             this.Check = 0;
             this.MaterialDescription = "";
             this.TotalCount = 0;
-            this.WrongCount = 0;
+            this.GoodQty = 0;
+            this.SecondQty = 0;
 
         }
         /// <summary>
@@ -88,10 +89,16 @@ namespace OpenAuth.Repository.Domain
         public int? TotalCount { get; set; }
 
         /// <summary>
-        ///差错数量
+        ///良品数量
         /// </summary>
-        [Description("差错数量")]
-        public int? WrongCount { get; set; }
+        [Description("良品数量")]
+        public int? GoodQty { get; set; }
+
+        /// <summary>
+        ///次品数量
+        /// </summary>
+        [Description("次品数量")]
+        public int? SecondQty { get; set; }
 
         /// <summary>
         ///退料图片
@@ -104,5 +111,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("物流Id")]
         public string ExpressId { get; set; }
+
+        /// <summary>
+        /// 领料明细Id
+        /// </summary>
+        [Description("领料明细Id")]
+        public string QuotationMaterialId { get; set; }
     }
 }

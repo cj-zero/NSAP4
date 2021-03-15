@@ -26,13 +26,13 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="returnMaterialReq"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> ReturnMaterials(ReturnMaterialReq returnMaterialReq)
+        public async Task<TableData> ReturnMaterials(ReturnMaterialReq returnMaterialReq)
         {
-            var result = new Response();
+            var result = new TableData();
             try
             {
                 await _returnnoteApp.ReturnMaterials(returnMaterialReq);
-
+                result.Data = returnMaterialReq;
             }
             catch (Exception ex)
             {
@@ -216,6 +216,69 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 获取服务单详情(ERP)
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetServiceOrderInfo([FromQuery] PageReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _returnnoteApp.GetServiceOrderInfo(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取退料单详情（根据物流单号）
+        /// </summary>
+        /// <param name="ExpressageId">物流单Id</param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetReturnNoteDetailByExpress(string ExpressageId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _returnnoteApp.GetReturnNoteDetailByExpress(ExpressageId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 品质检验
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> CheckOutMaterials(CheckOutMaterialsReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                await _returnnoteApp.CheckOutMaterials(req);
+                result.Data = req;
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
         public ReturnNotesController(ReturnNoteApp app)
         {
             _returnnoteApp = app;

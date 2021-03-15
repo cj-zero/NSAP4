@@ -37,6 +37,16 @@ namespace OpenAuth.App.Material.Request
         public int IsLastReturn { get; set; }
 
         /// <summary>
+        /// 运费
+        /// </summary>
+        public decimal Freight { get; set; }
+
+        /// <summary>
+        /// 物流图片
+        /// </summary>
+        public string ExpressPictureId { get; set; }
+
+        /// <summary>
         /// 退料详情
         /// </summary>
         public List<ReturnMaterialDetail> ReturnMaterialDetail { get; set; }
@@ -44,6 +54,11 @@ namespace OpenAuth.App.Material.Request
 
     public class ReturnMaterialDetail
     {
+        /// <summary>
+        /// 领料明细Id
+        /// </summary>
+        public string QuotationMaterialId { get; set; }
+
         /// <summary>
         /// 物料编码
         /// </summary>
