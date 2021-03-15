@@ -206,7 +206,19 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("电子签章流水号")]
         public string PrintNo { get; set; }
-        
+
+        /// <summary>
+        ///收货详细地址
+        /// </summary>
+        [Description("收货详细地址")]
+        public string ShippingDA { get; set; }
+
+        /// <summary>
+        ///收款详细地址
+        /// </summary>
+        [Description("收款详细地址")]
+        public string CollectionDA { get; set; }
+
 
         /// <summary>
         /// 物流表

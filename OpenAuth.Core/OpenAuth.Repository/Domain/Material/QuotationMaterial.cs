@@ -107,6 +107,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("被替换物料")]
         public string ReplaceMaterialCode { get; set; }
-        
+
+        /// <summary>
+        ///是否新物料
+        /// </summary>
+        [Description("是否新物料")]
+        public bool NewMaterialCode { get; set; }
+
     }
 }

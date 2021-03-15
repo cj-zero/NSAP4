@@ -83,5 +83,11 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public string ReplaceMaterialCode { get; set; }
 
+
+        /// <summary>
+        ///是否新物料
+        /// </summary>
+        public bool NewMaterialCode { get; set; }
+
     }
 }
