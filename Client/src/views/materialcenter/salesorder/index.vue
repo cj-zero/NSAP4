@@ -152,7 +152,7 @@ export default {
         (this.isTechnical && this.quotationStatus >= 8) || 
         (this.isMaterialFinancial && this.quotationStatus >= 9) ||
         (this.isGeneralManager && this.quotationStatus >= 10)
-      ) ? '查看' : this.textMap[this.status]
+      ) ? '查看' : (this.textMap[this.status] || '查看')
     }
   },
   data () {

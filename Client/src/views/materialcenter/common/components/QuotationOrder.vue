@@ -1640,12 +1640,12 @@ export default {
             }
           }
           .total-line {
-            margin-right: 355px;
+            margin-right: 270px;
             text-align: right;
             font-weight: bold;
             color: #000;
             & > p {
-              width: 120px;
+              width: 86px;
             }
           }
         }
