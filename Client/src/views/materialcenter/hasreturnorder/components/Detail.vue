@@ -4,7 +4,7 @@
     <el-row type="flex" align="middle" class="head-title-wrapper">
       <p><span>结算订单</span><span>{{ formData.ReturnNoteId }}</span></p>
       <p><span>申请人</span> <span>{{ formData.CreateUser }}</span></p>
-      <p><span>创建时间</span><span>{{ formData.CreateTime }}</span></p>
+      <p><span>创建时间</span><span>{{ formData.CreateTime | formatDateFilter }}</span></p>
       <p><span>销售员</span><span>{{ formData.SalesMan }}</span></p>
     </el-row>
     <!-- 表单 -->
@@ -40,11 +40,17 @@
 <script>
 import { accAdd } from '@/utils/process'
 import { isNumber } from '@/utils/validate'
+import { formatDate } from '@/utils/date'
 export default {
   props: {
     formData: {
       type: Object,
       default: () => {}
+    }
+  },
+  filters: {
+    formatDateFilter (val) {
+      return val ? formatDate(val, 'YYYY.MM.DD HH:mm:ss') : ''
     }
   },
   computed: {

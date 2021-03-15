@@ -5,7 +5,7 @@
       <p><span>服务ID</span>{{ formData.serviceOrderSapId }}</p>
       <p><span>申请人</span><span>{{ formData.createUser }}</span></p>
       <p><span>销售员</span><span>{{ formData.salMan }}</span></p>
-      <p><span>创建时间</span><span>{{ formData.createTime }}</span></p>
+      <p><span>创建时间</span><span>{{ formData.createTime | formatDateFilter }}</span></p>
     </el-row>
     <!-- 主题内容 -->
     <el-scrollbar class="scroll-bar">
@@ -153,6 +153,7 @@ import zxchat from '@/views/serve/callserve/chat/index'
 import rightImg from '@/assets/table/right.png'
 import { processDownloadUrl } from '@/utils/file'
 import { findIndex } from '@/utils/process'
+import { formatDate } from '@/utils/date'
 export default {
   mixins: [chatMixin],
   components: {
@@ -160,6 +161,11 @@ export default {
     zxchat,
     zxform
     // AreaSelector
+  },
+  filters: {
+    formatDateFilter (val) {
+      return val ? formatDate(val, 'YYYY.MM.DD HH:mm:ss') : ''
+    }
   },
   props: {
     detailInfo: {

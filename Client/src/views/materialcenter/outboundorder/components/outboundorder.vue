@@ -3,7 +3,7 @@
     <el-row type="flex" class="title-wrapper">
       <p><span>出库订单</span><span>{{ formData.id || '' }}</span></p>
       <p><span>申请人</span><span>{{ formData.createUser }}</span></p>
-      <p><span>创建时间</span><span>{{ formData.createTime }}</span></p>
+      <p><span>创建时间</span><span>{{ formData.createTime | formatDateFilter }}</span></p>
       <p><span>销售员</span><span>{{ formData.salesMan }}</span></p>
     </el-row>
     <!-- 主题内容 -->
@@ -32,7 +32,7 @@
             type="primary" 
             size="mini" 
             @click="addExpressInfo"
-            v-if="Number(formData.quotationStatus) !== 7 && this.isStorekeeper"
+            v-if="Number(formData.quotationStatus) !== 11 && this.isStorekeeper"
           >新增</el-button>
         </el-row>
         <!-- 物流表格 -->
@@ -82,7 +82,7 @@
     <my-dialog
       v-loading="expressDialogLoading"
       ref="expressInfoDialog"
-      title="新增快递信息"
+      :title="`新增${title}信息`"
       width="800px"
       top="10%"
       :append-to-body="true"
@@ -127,18 +127,19 @@
 
 <script>
 import { getExpressInfo } from '@/api/material/quotation'
-import { configMixin, chatMixin, categoryMixin } from '../../common/js/mixins'
+import { configMixin, chatMixin, categoryMixin, rolesMixin } from '../../common/js/mixins'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import elDragDialog from "@/directive/el-dragDialog";
 import AddExpressInfo from './AddExpressInfo'
 import { processDownloadUrl } from '@/utils/file'
 import { findIndex, accAdd } from '@/utils/process'
+import { formatDate } from '@/utils/date'
 // import { toThousands } from '@/utils/format'
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import rightImg from '@/assets/table/right.png'
 export default {
-  mixins: [configMixin, chatMixin, categoryMixin],
+  mixins: [configMixin, chatMixin, categoryMixin, rolesMixin],
   provide () {
     return {
       parentVm: this
@@ -160,6 +161,11 @@ export default {
     },
     status: String,
     categoryList: Array
+  },
+  filters: {
+    formatDateFilter (val) {
+      return val ? formatDate(val, 'YYYY.MM.DD HH:mm:ss') : ''
+    }
   },
   watch: {
     expressList: {
@@ -184,6 +190,21 @@ export default {
     }
   },
   computed: {
+    title () {
+      return this.formData.acquisitionWay === '1' ? '自提' : '快递'
+    },
+    descriptionTitle () {
+      return this.formData.acquisitionWay === '1' ? '物料状态' : '物流信息'
+    },
+    expressColumns () {
+      return  [
+        { label: '#', type: 'index', width: 50 },
+        { label: `${this.title}单号`, prop: 'expressNumber', width: '100px' },
+        { label: this.descriptionTitle, prop: 'expressInformation', slotName: 'expressInformation', width: 200, 'show-overflow-tooltip': false },
+        { label: '运费￥', prop: 'freight', slotName: 'freight', align: 'right', width: 100, 'show-overflow-tooltip': false },
+        { label: '图片', type: 'slot', slotName: 'picture', prop: 'expressagePicture', width: 70 }
+      ]
+    },
     materialList () {
       console.log(this.currentIndex, this.expressList, 'computed')
       if (this.expressList[this.currentIndex]) {
@@ -214,6 +235,7 @@ export default {
         salesOrderId: '', // 销售单号
         serviceOrderSapId: '', // NSAP ID
         serviceOrderId: '', 
+        acquisitionWay: '', // 
         createUser: '',
         terminalCustomer: '', // 客户名称
         terminalCustomerId: '', // 客户代码
@@ -247,13 +269,6 @@ export default {
         expressNumber: [{ required: true, trigger: ['change', 'blur'] }],
         // expressInformation: [{ required: true }]
       },
-      expressColumns: [
-        { label: '#', type: 'index', width: 50 },
-        { label: '快递单号', prop: 'expressNumber', width: '100px' },
-        { label: '物流信息', prop: 'expressInformation', slotName: 'expressInformation', width: 200, 'show-overflow-tooltip': false },
-        { label: '运费￥', prop: 'freight', slotName: 'freight', align: 'right', width: 100, 'show-overflow-tooltip': false },
-        { label: '图片', type: 'slot', slotName: 'picture', prop: 'expressagePicture', width: 70 }
-      ],
       // 物料表格
       materialLoading: false,
       btnList: [

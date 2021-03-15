@@ -4,8 +4,18 @@ import { getQuotationDetail } from '@/api/material/quotation' // 报价单详情
 import { getReturnNoteList, getReturnNoteDetail } from '@/api/material/returnMaterial' // 退料
 import { normalizeFormConfig } from '@/utils/format'
 import { processDownloadUrl } from '@/utils/file'
+import { isMatchRole } from '@/utils/utils'
 import { chatMixin } from '@/mixins/serve'
 export { chatMixin }
+// import { noop } from '@/utils/declaration'
+const statusMap = {
+  4: 'approve',
+  5: 'approve',
+  6: 'custom', // 客户确认
+  7: 'upload', // 技术员回传文件并且是保外
+  8: 'pay', // 财务审批阶段
+  9: 'approveSales' // 总经理审批阶段
+}
 export const quotationTableMixin = {
   provide () {
     return {
@@ -20,19 +30,20 @@ export const quotationTableMixin = {
         upload: '审批',
         view: '查看',
         approve: '审批',
-        pay: '审批'
+        pay: '审批',
+        approveSales: '审批'
       }),
+      isView: false, // 判断是不是查看的方式打开物料单弹窗
       isReceive: true, // 用来区分  报价单->true /(待处理、销售订单模块->false)
       categoryList: [], // 分类列表
       rolesList: this.$store.state.user.userInfoAll.roles, // 当前用户的角色列表
-      originUserId: this.$store.state.user.userInfoAll.userId // 当前用户的ID
+      originUserId: this.$store.state.user.userInfoAll.userId, // 当前用户的ID
+      quotationStatus: -1 // 报价单状态
     }
   },
   computed: {
-    isMaterialFinancial () { // 判断是不是物料财务
-      return this.rolesList && this.rolesList.length
-        ? this.rolesList.some(item => item === '物料财务')
-        : false
+    dialogTitle () {
+      return this.quotationStatus === 6 ? '审批' : (this.isView ? '查看' : this.textMap[this.status])
     }
   },
   methods: {
@@ -41,32 +52,28 @@ export const quotationTableMixin = {
     },
     _getQuotationDetail (data) {
       let quotationId
-      let { status, isReceive, isSalesOrder, quotationStatus } = data
+      let { status, isReceive, isSalesOrder, quotationStatus, isView, isProtected } = data
       this.isReceive = !!isReceive // 判断销售订单还是报价单
+      this.hasEditBtn = !!data.hasEditBtn
+      this.isSalesOrder = !!isSalesOrder
+      this.isView = !!isView
+      this.isProtected = !!isProtected
       if (isSalesOrder && !data.salesOrderId) {
         return this.$message.warning('无销售单号')
       }
-       if (status !== 'create') { // 要么编辑要么查看报价单
+      this.quotationStatus = +quotationStatus
+       if (status !== 'create') { // 要么编辑要么查看报价单d
         quotationId = data.id
-        console.log(quotationStatus, 'quotationStatus')
         quotationStatus = +quotationStatus
         this.isShowEditBtn = true
         if (quotationStatus >= 4) { // 4开始就已经提交物料单 不可编辑 销售订单已经成立
           status = 'view'
           this.isShowEditBtn = false // 新建报价单页面，判断是不是可以编辑报价单
-          if (this.isSales) {
-            if (quotationStatus === 4) { // 技术员回传文件
-              status = 'upload'
-              console.log(quotationStatus)
-            } else if (quotationStatus === 5) { // 财务审批阶段
-              status = 'pay'
-              console.log(quotationStatus)
-            }
-          }
-          if (this.isOutbound) {
+          status = statusMap[quotationStatus]
+          if (this.isOutbound) { // 出库状态
             status = 'outbound'
           }
-        } else {
+        } else if (quotationStatus <= 3) { // 未提交 撤回 驳回 阶段
           // 进行编辑报价物料单的
           // this.status = 'edit'
           status = 'edit'
@@ -127,15 +134,19 @@ export const quotationTableMixin = {
   }
 }
 
-const IDS = ['SYS_QuotationStatus', 'SYS_InvoiceCompany', 'SYS_DeliveryMethod', 'SYS_MaterialDiscount', 'SYS_AcquisitionWay', 'SYS_MoneyMeans']
+const IDS = ['SYS_QuotationStatus', 'SYS_InvoiceCompany', 'SYS_DeliveryMethod', 'SYS_MaterialDiscount', 'SYS_AcquisitionWay', 'SYS_MoneyMeans', 'SYS_MaterialsCommonlyRejected']
 const SYS_QuotationStatus = 'SYS_QuotationStatus'
 const SYS_InvoiceCompany = 'SYS_InvoiceCompany'
 const SYS_DeliveryMethod = 'SYS_DeliveryMethod'
 const SYS_MaterialDiscount = 'SYS_MaterialDiscount'
 const SYS_AcquisitionWay = 'SYS_AcquisitionWay'
 const SYS_MoneyMeans = 'SYS_MoneyMeans'
+const SYS_MaterialsCommonlyRejected = 'SYS_MaterialsCommonlyRejected'
 export const categoryMixin = {
   computed: {
+    reimburseTagList () {
+      return this.buildSelectList(this.categoryList.filter(item => item.typeId === SYS_MaterialsCommonlyRejected), true)
+    },
     quotationStatusMap () {
       return this.buildMap(this.categoryList.filter(item => item.typeId === SYS_QuotationStatus))
     },
@@ -173,17 +184,31 @@ export const categoryMixin = {
       } 
       return result
     },
-    buildSelectList (list) {
+    buildSelectList (list, isName = false ) {
       return list.map(item => {
         let { name: label, dtValue: value } = item
         return {
           label,
-          value
+          value: isName ? label : value
         }
       })
     },
   }
 }
+export const rolesMixin = {
+  data () {
+    return {
+      rolesList: this.$store.state.user.userInfoAll.roles, // 当前用户的角色列表
+      isCustomerServiceSupervisor: isMatchRole('客服主管'),
+      isMaterialFinancial: isMatchRole('物料财务'),
+      isStorekeeper: isMatchRole('仓库'),
+      isTechnical: isMatchRole('售后技术员'),
+      isGeneralManager: isMatchRole('总经理'),
+      isMaterialsEngineer: isMatchRole('物料工程审批')
+    }
+  }
+}
+
 export const configMixin = { // 表单配置
   data () {
     return {
@@ -199,16 +224,6 @@ export const configMixin = { // 表单配置
     ifEdit () {
       return this.status === 'create' || this.status === 'edit'
     },
-    isMaterialFinancial () { // 判断是不是物料财务
-      return this.rolesList && this.rolesList.length
-        ? this.rolesList.some(item => item === '物料财务')
-        : false
-    },
-    isStorekeeper () { // 判断是不是仓库管理人员
-      return this.rolesList && this.rolesList.length
-        ? this.rolesList.some(item => item === '仓库')
-        : false
-    },
     formItems () { // 头部表单配置
       return [
         { tag: 'text', span: 3, attrs: { prop: 'serviceOrderSapId', readonly: true }, itemAttrs: { prop: 'serviceOrderSapId', label: '服务ID' }, on: { focus: this.onServiceIdFocus }},
@@ -216,16 +231,16 @@ export const configMixin = { // 表单配置
         { tag: 'text', span: 6, attrs: { prop: 'terminalCustomer', disabled: true }, itemAttrs: { prop: 'terminalCustomer', label: '客户名称' } },
         { tag: 'text', span: 3, attrs: { prop: 'newestContacter', disabled: true }, itemAttrs: { prop: 'newestContacter', label: '联系人',  } },
         { tag: 'text', span: 3, attrs: { prop: 'newestContactTel', disabled: true }, itemAttrs: { prop: 'newestContactTel', label: '电话', 'label-width': '80px' } },
-        { tag: 'date', span: 3, attrs: { prop: 'deliveryDate', disabled: !this.ifEdit, 'value-format': 'yyyy-MM-dd' }, itemAttrs: { prop: 'deliveryDate', label: '交货日期' } },
+        { tag: 'date', span: 3, attrs: { prop: 'deliveryDate', disabled: !this.ifEdit, 'value-format': 'yyyy-MM-dd', format: 'yyyy.MM.dd' }, itemAttrs: { prop: 'deliveryDate', label: '交货日期' } },
         { tag: 'number', span: 3, attrs: { prop: 'acceptancePeriod', disabled: !this.ifEdit, min: 7, max: 30, controls: false }, itemAttrs: { prop: 'acceptancePeriod', label: '验收期限' }, isEnd: true },
         { tag: 'area', span: 12, attrs: { prop: 'shippingAddress', disabled: !this.ifEdit }, itemAttrs: { prop: 'shippingAddress', label: '客户地址' } },
         { tag: 'select', span: 3, attrs: { prop: 'acquisitionWay', disabled: !this.ifEdit, options: this.acquisitionWayList }, itemAttrs: { prop: 'acquisitionWay', label: '领料方式' } },
         { tag: 'select', span: 3, attrs: { prop: 'moneyMeans', disabled: !this.ifEdit, options: this.moneyMeansList }, itemAttrs: { prop: 'moneyMeans', label: '业务伙伴货币', 'label-width': '80px' } },
-        { tag: 'select', span: 3, attrs: { prop: 'invoiceCompany', disabled: !this.ifEdit, options: this.invoiceCompanyList }, 
-          itemAttrs: { prop: 'invoiceCompany', label: '开票单位' } },
-        { tag: 'select', span: 3, attrs: { prop: 'deliveryMethod', disabled: !this.ifEdit, options: this.deliveryMethodList,  }, itemAttrs: { prop: 'deliveryMethod', label: '付款条件' }, isEnd: true },
+        { tag: 'select', span: 6, attrs: { prop: 'deliveryMethod', disabled: !this.ifEdit, options: this.deliveryMethodList,  }, itemAttrs: { prop: 'deliveryMethod', label: '付款条件' }, isEnd: true },
         { tag: 'area', span: 12, attrs: { prop: 'collectionAddress', disabled: !this.ifEdit }, itemAttrs: { prop: 'collectionAddress', label: '交货地址' } },
-        { tag: 'text', span: 12, attrs: { prop: 'remark', disabled: !this.ifEdit }, itemAttrs: { prop: 'remark', label: '备注' } }
+        { tag: 'text', span: 6, attrs: { prop: 'remark', disabled: !this.ifEdit }, itemAttrs: { prop: 'remark', label: '备注' } },
+        { tag: 'select', span: 6, attrs: { prop: 'invoiceCompany', disabled: !this.ifEdit, options: this.invoiceCompanyList }, 
+          itemAttrs: { prop: 'invoiceCompany', label: '开票单位' } },
       ]
     },
     returnFormConfig () { // 退料单表单

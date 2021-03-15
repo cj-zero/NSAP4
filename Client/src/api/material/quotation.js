@@ -8,11 +8,16 @@ export function getQuotationList(params) { // 加载报价单列表
   })
 }
  
- export function getServiceOrderList(params) { // 加载服务单列表
+ export function getServiceOrderList(params, _this) { // 加载服务单列表
   return request({
     url: '/Material/Quotation/GetServiceOrderList',
     method: 'get',
-    params
+    params,
+    cancelToken: new request.cancelToken(function executor(c) {
+      if (_this) {
+        _this.cancelRequestCustom = c
+      }
+    })
   })
 }
 
@@ -23,6 +28,28 @@ export function getMaterialList(params, _this) { // 加载物料列表
     params,
     cancelToken: new request.cancelToken(function executor(c) {
       _this.cancelRequestMaterial = c // 用于取消上一次未响应的请求,已经响应的请求无法取消
+    })
+  })
+}
+
+export function getDetailsMaterial (params, _this) { // 获取审批的页面物料表格
+  return request({
+    url: '/Material/Quotation/GetDetailsMaterial',
+    method: 'get',
+    params,
+    cancelToken: new request.cancelToken(function executor(c) {
+      _this.cancelRequestMaterial = c // 用于取消上一次未响应的请求,已经响应的请求无法取消
+    })
+  })
+}
+
+export function getAllMaterialList(params, _this) { // 查询所有的物料列表（选择替换物料的时候使用）
+  return request({
+    url: '/Material/Quotation/MaterialCodeList',
+    method: 'get',
+    params,
+    cancelToken: new request.cancelToken(function executor(c) {
+      _this.cancelRequestAllMaterial = c // 用于取消上一次未响应的请求,已经响应的请求无法取消
     })
   })
 }

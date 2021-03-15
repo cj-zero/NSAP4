@@ -1,6 +1,5 @@
 <template>
   <div class="my-submission-wrapper">
-    <tab-list :initialName="initialName" :texts="texts" @tabChange="onTabChange"></tab-list>
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
@@ -12,12 +11,17 @@
       </div>
     </sticky>
     <Layer>
-      <common-table 
+      <common-table
+        class="table-wrapper"
         height="100%"
-        ref="quotationTable"
-        :data="tableData"
+        ref="quotationTable" 
+        :data="tableData" 
         :columns="quotationColumns"
+        @row-click="onRowClick" 
         :loading="tableLoading">
+        <template v-slot:contract="{ row }">
+          <span class="show-btn" @click="showContractPictures(row)">查看</span>
+        </template>
         <template v-slot:totalMoney="{ row }">
           <p v-infotooltip.top-start.ellipsis>{{ row.totalMoney | toThousands }}</p>
         </template>
@@ -34,19 +38,16 @@
       ref="quotationDialog"
       width="1180px"
       :loading="dialogLoading"
-      title="物料出库单"
+      :title="`${title}物料领料单`"
       :btnList="btnList"
       @closed="closed"
-      :destroy-on-close="true"
-      top="100px"
-      @opened="onOpened"
     >
-      <outbound-order 
-        ref="outboundOrder" 
+      <quotation-order 
+        ref="quotationOrder" 
         :detailInfo="detailInfo"
         :categoryList="categoryList"
-        :status="status">
-      </outbound-order>
+        :status="status"
+        :isReceive="isReceive"></quotation-order>
     </my-dialog>
     <!-- 只能查看的表单 -->
     <my-dialog
@@ -70,59 +71,82 @@
         </el-col>
       </el-row>
     </my-dialog>
+    <!-- 预览合同图片 -->
+    <!-- <el-image-viewer
+      v-if="previewVisible"
+      :url-list="previewImageUrlList"
+      :on-close="closeViewer"
+    >
+    </el-image-viewer> -->
+    <file-viewer 
+      v-if="previewVisible"
+      :file-list="previewFileList"
+      :on-close="closeViewer"
+    >
+    </file-viewer>
   </div>
 </template>
 
 <script>
-import TabList from '@/components/TabList'
 import Search from '@/components/Search'
-import OutboundOrder from './components/outboundorder'
+import QuotationOrder from '../common/components/QuotationOrder'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import { getQuotationList } from '@/api/material/quotation'
-import {  quotationTableMixin, chatMixin, categoryMixin } from '../common/js/mixins'
-import elDragDialog from "@/directive/el-dragDialog";
+import {  quotationTableMixin, categoryMixin, chatMixin, rolesMixin } from '../common/js/mixins'
+// import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
+const statusOptions = [
+  { label: '全部', value: '' },
+  { label: '未审批', value: 1 },
+  { label: '审批', value: 2 }
+]
 export default {
-  name: 'outBoundOrder',
-  directives: {
-    elDragDialog
-  },
-  mixins: [quotationTableMixin, chatMixin, categoryMixin],
+  name: 'materialSalesOrder',
+  mixins: [quotationTableMixin, categoryMixin, chatMixin, rolesMixin],
   components: {
-    TabList,
     Search,
-    OutboundOrder,
+    QuotationOrder,
     zxform,
     zxchat
+    // ElImageViewer
   },
   computed: {
     searchConfig () {
       return [
-        { prop: 'quotationId', placeholder: '出库单号', width: 100 },
+        { prop: 'startType', placeholder: '请选择', type: 'select', options: statusOptions },
+        { prop: 'quotationId', placeholder: '领料单号', width: 100 },
         { prop: 'cardCode', placeholder: '客户名称', width: 100 },
         { prop: 'serviceOrderSapId', placeholder: '服务ID', width: 100 },
         { prop: 'createUser', placeholder: '申请人', width: 100 },
         { prop: 'startCreateTime', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
-        { type: 'search' },
-        // { type: 'button', btnText: '打印', handleClick: this.print, isSpecial: true },     
-        // { type: 'button', btnText: '出库', handleClick: this._getQuotationDetail, options: { status: 'outbound'}, isSpecial: true },
+        { type: 'search' }
       ]
     }, // 搜索配置
     btnList () {
+      // 弹窗按钮
       return [
+        // this.isMaterialFinancial 
+        {  btnText: '同意', isShow: this.isValid, handleClick: this.agree },
+        { btnText: '驳回', handleClick: this.reject, isShow: this.isValid, options: { type: 'reject' }},
         { btnText: '关闭', handleClick: this.handleClose, className: 'close' }      
-      ]
+      ] 
+    },
+    searchBtnText () {
+      return this.isMaterialFinancial ? '收款' : '审批'
+    },
+    isValid () {
+      return (this.isMaterialsEngineer && this.quotationStatus === 4) || (this.isGeneralManager && this.quotationStatus === 5)
+    },
+    title () {
+      return this.isValid ? '审批' : '查看'
     }
   },
   data () {
     return {
-      initialName: '', // 初始标签的值
-      texts: [ // 标签数组
-        { label: '全部', name: '' },
-        { label: '未出库', name: '1' },
-        { label: '已出库', name: '2' }
-      ],
+      quotationStatus: 0, // 当前物料单状态
+      previewVisible: false,
+      previewFileList: [],
       formQuery: {
         quotationId: '', // 领料单号
         cardCode: '', // 客户
@@ -132,9 +156,8 @@ export default {
         endCreateTime: '' // 创建结束
       },
       listQuery: {
-        status: '2',
         startType: '',
-        pageStart: 3,
+        pageStart: 1,
         page: 1,
         limit: 50,
       },
@@ -143,18 +166,19 @@ export default {
       tableData: [],
       total: 0,
       quotationColumns: [
-        { label: '出库单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'view' }, type: 'link'},
+        { label: '领料单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'approve' }, type: 'link'},
         { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link' },
         { label: '客户代码', prop: 'terminalCustomerId' },
         { label: '客户名称', prop: 'terminalCustomer' },
-        { label: '总金额(￥)', prop: 'totalMoney', align: 'right', slotName: 'totalMoney' },
         { label: '申请人', prop: 'createUser' },
-        { label: '备注', prop: 'remark' },
         { label: '创建时间', prop: 'createTime' },
+        { label: '总金额（￥）', prop: 'totalMoney', align: 'right', slotName: 'totalMoney' },
+        { label: '备注', prop: 'remark' },
+        { label: '状态', prop: 'quotationStatusText' }
       ],
-      customerList: [], // 用户服务单列表
-      status: 'outbound', // 报价单状态
-      detailInfo: null // 详情信息
+      status: 'approve', // 报价单状态
+      detailInfo: null, // 详情信息
+      currentRow: null // 当前选中的行数据
     } 
   },
   methods: {
@@ -162,27 +186,33 @@ export default {
       this.tableLoading = true
       getQuotationList(this.listQuery).then(res => {
         let { count, data } = res
-        this.tableData = data
+        this.tableData = this._normalizeList(data)
         this.total = count
         this.tableLoading = false
+        this.currentRow = null
+        this.$refs.quotationTable.resetCurrentRow()
       }).catch(err => {
         this.$message.error(err.message)
         this.tableLoading = false
       })
     },
-    onTabChange (name) {
-      this.listQuery.startType = name
-      this.listQuery.page = 1
-      this._getList()
+    agree (options) {
+      this.$refs.quotationOrder.beforeApprove(options.type)
+    },
+    reject (options) {
+      this.$refs.quotationOrder.beforeApprove(options.type)
+    },
+    onRowClick (row) {
+      this.currentRow = row
+    },
+    closeViewer () {
+      this.previewVisible = false
     },
     handleClose () {
       this.$refs.quotationDialog.close()
     },
     closed () {
-      this.$refs.outboundOrder.resetInfo()
-    },
-    onOpened () {
-      this.$refs.outboundOrder.openedFn()
+      this.$refs.quotationOrder.resetInfo()
     }
   },
   created () {
@@ -196,6 +226,12 @@ export default {
   ::v-deep .el-tabs__header {
     background-color: #fff;
     margin-bottom: 0;
+  }
+  .table-wrapper {
+    .show-btn {
+      color: #F8B500;
+      cursor: pointer;
+    }
   }
 }
 </style>
