@@ -237,6 +237,27 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 获取退料单列表(ERP 仓库收货/品质入库/仓库入库)
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetReturnNoteListByExpress([FromQuery] GetReturnNoteListByExpressReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _returnnoteApp.GetReturnNoteListByExpress(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 获取退料单详情（根据物流单号）
         /// </summary>
         /// <param name="ExpressageId">物流单Id</param>
@@ -269,6 +290,29 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 await _returnnoteApp.CheckOutMaterials(req);
+                result.Data = req;
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 仓库入库
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> WarehousePutMaterialsIn(WarehousePutMaterialsInReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                await _returnnoteApp.WarehousePutMaterialsIn(req);
                 result.Data = req;
             }
             catch (Exception ex)
