@@ -101,5 +101,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("销售价")]
         public decimal? SalesPrice { get; set; }
+
+        /// <summary>
+        ///被替换物料
+        /// </summary>
+        [Description("被替换物料")]
+        public string ReplaceMaterialCode { get; set; }
+        
     }
 }

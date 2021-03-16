@@ -64,6 +64,16 @@ namespace OpenAuth.App.Material.Request
         public string PartCode { get; set; }
 
         /// <summary>
+        /// 零件描述
+        /// </summary>
+        public string PartDescribe { get; set; }
+
+        /// <summary>
+        /// 被替换零件零件描述
+        /// </summary>
+        public string ReplacePartCode { get; set; }
+
+        /// <summary>
         /// 物料类型
         /// </summary>
         public string MaterialType { get; set; }
@@ -74,9 +84,9 @@ namespace OpenAuth.App.Material.Request
         public int? Status { get; set; }
 
         /// <summary>
-        /// 是否查看销售订单
+        /// 页面状态 1报价单审批 2 销售单审批 3出库
         /// </summary>
-        public bool? IsSalesOrderList { get; set; }
+        public int? PageStart { get; set; }
 
 
     }
