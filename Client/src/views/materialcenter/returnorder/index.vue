@@ -41,6 +41,7 @@
       <return-Order 
         ref="returnOrder"
         orderType="returnOrder"
+        :isCreated="isCreated"
         :detailInfo="detailInfo"
         :status="status"
         ></return-Order>
@@ -76,6 +77,7 @@ import ReturnOrder from '../common/components/ReturnOrder'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import { quotationTableMixin, chatMixin, returnTableMixin } from '../common/js/mixins'
+import { getServiceOrderInfo } from '@/api/material/returnMaterial'
 export default {
   name: 'materialToReturnOrder',
   mixins: [quotationTableMixin, chatMixin, returnTableMixin],
@@ -113,14 +115,27 @@ export default {
         page: 1,
         limit: 50,
       },
+      isCreated: false,
       status: '', // 报价单状态
       detailInfo: null // 详情信息
     } 
   },
   methods: {
-    createOrder () { // 新建退料单
-      this.isCreate = true
-      this.$refs.returnOrderDialog.open()
+    async createOrder () { // 新建退料单
+      this.isCreated = true
+      try {
+        const { data } = await getServiceOrderInfo({
+          page: 1,
+          limit: 1
+        })
+        if (data && data.length) {
+          this.$refs.returnOrderDialog.open()
+        } else {
+          this.$message.warning('服务单列表为空')
+        }
+      } catch (err) {
+        this.$message.error(err.message)
+      }
     },
     submit (options) {
       let isDraft = !!options.isDraft

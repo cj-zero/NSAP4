@@ -12,9 +12,10 @@
         :model="formData"
         :formItems="formItems"
         ref="form"
-        class="my-form-wrapper my-form-view"
+        class="my-form-wrapper"
+        :class="{ 'my-form-view': !isCreated }"
         label-width="60px"
-        :disabled="!isCraeted"
+        :disabled="!isCreated"
         label-position="right"
         :show-message="false"
         :isCustomerEnd="true"
@@ -92,7 +93,7 @@
     <my-dialog 
       ref="orderListDialog"
       title="退料服务单"
-      width="500px"
+      width="700px"
       :append-to-body="true"
       :btnList="orderBtnList"
       @closed="closeOrderDialog"
@@ -103,7 +104,7 @@
         height="400px"
         :data="orderList"
         :columns="orderColumns"
-        radioKey="serviceOrderId"
+        radioKey="u_SAP_ID"
       >
       </common-table>
       <pagination
@@ -163,7 +164,7 @@
 
 <script>
 import { getExpressInfo } from '@/api/material/quotation'
-import { getServiceOrderInfo, getQuotationMaterialCode } from '@/api/material/returnMaterial'
+import { getServiceOrderInfo } from '@/api/material/returnMaterial'
 import { chatMixin, rolesMixin } from '../../common/js/mixins'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
@@ -219,7 +220,7 @@ export default {
     ElImageViewer
   },
   props: {
-    isCraeted: {
+    isCreated: {
       type: Boolean
     },
     orderType: {
@@ -303,13 +304,12 @@ export default {
         serviceOrderSapId: '', // NSAP ID
         serviceOrderId: '', 
         createUser: '',
-        serviceCharge: undefined, // 服务费
-        terminalCustomer: '', // 客户名称
-        terminalCustomerId: '', // 客户代码
+        u_SAP_ID: '',
+        customerName: '', // 客户名称
+        customerId: '', // 客户代码
         salesMan: '', // 销售员
-        totalMoney: 0, // 总金额
-        newestContactTel: '', // 电话
-        newestContacter: '' // 联系人
+        contactTel: '', // 电话
+        contacter: '' // 联系人
       }, 
       formItems1: [
         { span: 4, attrs: { prop: 'U_SAP_ID' }, itemAttrs: { label: '服务ID' } },
@@ -319,18 +319,19 @@ export default {
         { span: 4, attrs: { prop: 'number' }, itemAttrs: { label: '电话' } },
       ],
       formItems: [
-        { tag: 'text', span: 3, attrs: { prop: 'serviceOrderSapId', readonly: true }, itemAttrs: { prop: 'serviceOrderSapId', label: '服务ID' }, on: { focus: this.onServiceIdFocus }},
-        { tag: 'text', span: 3, attrs: { prop: 'terminalCustomerId', disabled: true }, itemAttrs: { prop: 'terminalCustomerId', label: '客户代码' } },
-        { tag: 'text', span: 6, attrs: { prop: 'terminalCustomer', disabled: true }, itemAttrs: { prop: 'terminalCustomer', label: '客户名称' } },
-        { tag: 'text', span: 3, attrs: { prop: 'newestContacter', disabled: true }, itemAttrs: { prop: 'newestContacter', label: '联系人',  } },
-        { tag: 'text', span: 3, attrs: { prop: 'newestContactTel', disabled: true }, itemAttrs: { prop: 'newestContactTel', label: '电话', 'label-width': '80px' } },
+        { tag: 'text', span: 3, attrs: { prop: 'u_SAP_ID', readonly: true }, itemAttrs: { prop: 'u_SAP_ID', label: '服务ID' }, on: { focus: this.onServiceIdFocus }},
+        { tag: 'text', span: 6, attrs: { prop: 'customerId', disabled: true }, itemAttrs: { prop: 'customerId', label: '客户代码' } },
+        { tag: 'text', span: 6, attrs: { prop: 'customerName', disabled: true }, itemAttrs: { prop: 'customerName', label: '客户名称' } },
+        { tag: 'text', span: 3, attrs: { prop: 'contactr', disabled: true }, itemAttrs: { prop: 'contactr', label: '联系人',  } },
+        { tag: 'text', span: 6, attrs: { prop: 'contactTel', disabled: true }, itemAttrs: { prop: 'contactTel', label: '电话' } },
       ],
       rules: {
+        'u_SAP_ID': [{ required: true }],
         serviceOrderSapId: [{ required: true }],
-        terminalCustomerId: [{ required: true }],
-        terminalCustomer: [{ required: true }],
-        newestContacter: [{ required: true }],
-        newestContactTel: [{ required: true }]
+        customerId: [{ required: true }],
+        customerName: [{ required: true }],
+        contacter: [{ required: true }],
+        contactTel: [{ required: true }]
       },
       //物料表格
       materialRules: {
@@ -354,7 +355,7 @@ export default {
       // 退料服务单列表
       orderList: [],
       orderColumns: [
-        { label: 40, type: 'radio' },
+        { label: '#', type: 'radio', width: 50 },
         { label: '服务Id', prop: 'u_SAP_ID' },
         { label: '客户代码', prop: 'customerId' },
         { label: '客户名称', prop: 'customerName' },
@@ -395,7 +396,12 @@ export default {
       this.previewVisible = false
     },
     addExpressInfo () { // 增加快递
-      this.$refs.expressInfoDialog.open()      
+      if (this.orderType === 'returnOrder') { // 退料
+        if (!this.formData.serviceOrderId) {
+          return this.$message.warning('请先选择服务单')
+        }
+        this.$refs.expressInfoDialog.open()
+      }
     },
     showMaterialPicture (row) {
       console.log(row, 'row')
@@ -410,7 +416,15 @@ export default {
       if (!currentRow) {
         return this.$message.warning('请先选择数据')
       }
-      const { }
+      const { id, contactTel, contacter, customerId, customerName, u_SAP_ID } = currentRow
+      this.formData.u_SAP_ID = u_SAP_ID
+      this.formData.serviceOrderId = id 
+      this.formData.contactTel = contactTel
+      this.formData.contacter = contacter
+      this.formData.customerId = customerId
+      this.formData.customerName = customerName
+      this.$refs.orderListDialog.close()
+      this.listQueryOrder = { page: 1, limit: 20 }
     },
     closeOrderDialog () {
       this.listQueryOrder = {
@@ -448,7 +462,7 @@ export default {
       console.log(this.currentIndex, this.expressList)
     },
     onExpressInfoOpen () {
-      this.$refs.addExpressInfo.getMergeMaterial()
+      this.$refs.addExpressInfo.onOpened()
     },
     submitExpressInfo () {
       this.$refs.addExpressInfo.submit()

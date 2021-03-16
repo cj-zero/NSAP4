@@ -2,10 +2,10 @@
 export const ADD_RETURN_COLUMNS =  [
   { label: '序号', type: 'index' },
   { label: '物料编码', prop: 'materialCode' },
-  { label: '物料描述', prop: 'materialDescription' },
+  { label: '物料描述', prop: 'materialDescription', width: 120 },
   { label: '需退总计', prop: 'count', align: 'right' },
-  { label: '剩余需退', prop: 'unit', align: 'right' },
-  { label: '退回数量', slotName: 'returnCount' },
+  { label: '剩余需退', prop: 'surplusQty', align: 'right' },
+  { label: '退回数量', slotName: 'returnQty' },
   { label: '图片', prop: 'quantity', slotName: 'upload' }
 ] 
 
