@@ -335,7 +335,7 @@ namespace OpenAuth.App.Material
             }
             var result = new TableData();
 
-            var ServiceWorkOrderList = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.Equals(request.ServiceOrderId) && s.CurrentUserNsapId.Equals(loginUser.Id) && !s.MaterialCode.Equals("无序列号"))
+            var ServiceWorkOrderList = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.Equals(request.ServiceOrderId) && s.CurrentUserNsapId.Equals(loginUser.Id))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.MaterialType), s => s.MaterialCode.Substring(0, 2) == request.MaterialType)
                 .WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers), s => s.ManufacturerSerialNumber.Contains(request.ManufacturerSerialNumbers))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.MaterialCode), s => s.MaterialCode.Contains(request.MaterialCode))
@@ -496,6 +496,7 @@ namespace OpenAuth.App.Material
 						join OITM c on a.itemcode = c.itemcode
 						join OITW d on a.itemcode=d.itemcode 
 						where d.WhsCode=37").WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
+                        .WhereIf(!string.IsNullOrWhiteSpace(request.PartDescribe), s => request.PartDescribe.Contains(s.ItemName))
                         .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
 
             if (Equipments == null || Equipments.Count() <= 0)
@@ -504,6 +505,7 @@ namespace OpenAuth.App.Material
                 Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"select a.* ,c.lastPurPrc from (select a.Father as MnfSerial,a.Code as ItemCode,a.U_Desc as ItemName,a.U_DUnit as BuyUnitMsr,b.OnHand,b.WhsCode,a.Quantity
                         from ITT1 a join OITW b on a.Code=b.ItemCode  where a.Father='{request.MaterialCode}' and b.WhsCode=37) a join OITM c on c.ItemCode=a.ItemCode")
                     .WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
+                    .WhereIf(!string.IsNullOrWhiteSpace(request.PartDescribe), s => request.PartDescribe.Contains(s.ItemName))
                     .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
             }
             return Equipments;
@@ -1068,7 +1070,10 @@ namespace OpenAuth.App.Material
                             IsDraft = QuotationObj.IsDraft,
                             IsProtected = QuotationObj.IsProtected,
                             Status = 1,
-                            ServiceCharge = QuotationObj.ServiceCharge
+                            ServiceCharge = QuotationObj.ServiceCharge,
+                            CollectionDA=QuotationObj.CollectionDA,
+                            ShippingDA=QuotationObj.ShippingDA,
+                            AcquisitionWay = QuotationObj.AcquisitionWay,
                             //todo:要修改的字段赋值
                         });
                         await UnitWork.SaveAsync();
@@ -1177,7 +1182,11 @@ namespace OpenAuth.App.Material
                             IsDraft = QuotationObj.IsDraft,
                             IsProtected = QuotationObj.IsProtected,
                             Status = 1,
-                            ServiceCharge = QuotationObj.ServiceCharge
+                            ServiceCharge = QuotationObj.ServiceCharge,
+                            CollectionDA = QuotationObj.CollectionDA,
+                            ShippingDA = QuotationObj.ShippingDA,
+                            AcquisitionWay=QuotationObj.AcquisitionWay,
+                            
                             //FlowInstanceId = FlowInstanceId,
                             //todo:要修改的字段赋值
                         });
@@ -1354,7 +1363,7 @@ namespace OpenAuth.App.Material
 
             QuotationOperationHistory qoh = new QuotationOperationHistory();
 
-            var obj = await UnitWork.Find<Quotation>(q => q.Id == req.Id).Include(q => q.QuotationProducts).FirstOrDefaultAsync();
+            var obj = await UnitWork.Find<Quotation>(q => q.Id == req.Id).Include(q => q.QuotationProducts).Include(q=>q.QuotationMergeMaterials).FirstOrDefaultAsync();
 
             qoh.ApprovalStage = obj.QuotationStatus;
             if (loginContext.Roles.Any(r => r.Name.Equals("物料工程审批")) && obj.QuotationStatus == 4)
@@ -1421,6 +1430,10 @@ namespace OpenAuth.App.Material
                 qoh.Action = "总经理审批";
                 obj.QuotationStatus = 10;
                 obj.Status = 2;
+                if (obj.QuotationMergeMaterials.Where(q => !q.MaterialCode.Equals("S111-SERVICE-GSF")).Count() <= 0) 
+                {
+                    obj.QuotationStatus = 11;
+                }
             }
             else
             {
@@ -1750,8 +1763,8 @@ namespace OpenAuth.App.Material
                 pdf.IsWriteHtml = true;
                 pdf.PaperKind = PaperKind.A4;
                 pdf.Orientation = Orientation.Portrait;
-                pdf.HeaderSettings = new HeaderSettings() { FontName = "宋体", FontSize = 6, HtmUrl = tempUrl };
-                pdf.FooterSettings = new FooterSettings() { FontName = "宋体", FontSize = 6, HtmUrl = foottempUrl };
+                pdf.HeaderSettings = new HeaderSettings() { FontName = "华文宋体", FontSize = 9, HtmUrl = tempUrl };
+                pdf.FooterSettings = new FooterSettings() { FontName = "华文宋体", FontSize = 9, HtmUrl = foottempUrl };
             });
             System.IO.File.Delete(tempUrl);
             System.IO.File.Delete(foottempUrl);
