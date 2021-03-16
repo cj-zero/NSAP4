@@ -16,9 +16,9 @@
         :formItems="formItems"
         ref="form"
         class="my-form-wrapper"
-        :class="{ 'my-form-view': isPreview }"
+        :class="{ 'my-form-view': !ifEdit && isPreview }"
         label-width="60px"
-        :disabled="isPreview"
+        :disabled="!ifEdit"
         label-position="right"
         :show-message="false"
         :isCustomerEnd="true"
@@ -741,11 +741,14 @@ export default {
         totalMoney: 0, // 总金额
         newestContactTel: '', // 电话
         newestContacter: '', // 联系人
-        acceptancePeriod: '', // 验收期限
+        acceptancePeriod: 7, // 验收期限
         deliveryDate: '', // 交货日期
         moneyMeans: '', // 货币方式
         acquisitionWay: '', // 领料方式
-        quotationProducts: [] // 报价单产品表
+        quotationProducts: [], // 报价单产品表
+        remark: '',// 备注
+        shippingDA: '',
+        collectionDA: ''
       }, 
       // 表单规则
       formRules: {

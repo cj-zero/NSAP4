@@ -221,8 +221,8 @@ export const configMixin = { // 表单配置
     }
   },
   computed: {
-    ifEdit () {
-      return this.status === 'create' || this.status === 'edit'
+    ifEdit () { // 表单是否可以编辑
+      return this.status === 'create' || (this.status === 'edit' && this.hasEditBtn)
     },
     formItems () { // 头部表单配置
       return [
