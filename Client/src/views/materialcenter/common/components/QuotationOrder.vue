@@ -44,7 +44,7 @@
       <!-- 工程和总经理审批报价单 -->
       <template v-if="ifShowSerialTable">
         <div class="approve-class">
-          <el-form class="approve-search-wrapper" :inline="true" :model="listQueryApprove" size="mini">
+          <el-form v-if="formData.quotationProducts.length" class="approve-search-wrapper" :inline="true" :model="listQueryApprove" size="mini">
             <el-form-item label="序列号">
               <el-input v-model.trim="listQueryApprove.manufacturerSerialNumbers" @keyup.enter.native="_getSerialDetail"></el-input>
             </el-form-item>
@@ -68,8 +68,9 @@
               >
                 <template v-slot:materialCode="{ row }">
                   <el-row type="flex" align="middle">
-                    <span v-infotooltip.top-start.ellipsis :class="{ 'has-icon': row.replaceMaterialCode }">{{ row.materialCode }}</span>
+                    <span v-infotooltip.top-start.ellipsis :class="{ 'has-icon': row.replaceMaterialCode || row.newMaterialCode }">{{ row.materialCode }}</span>
                     <svg-icon iconClass="replace" v-if="row.replaceMaterialCode"></svg-icon>
+                    <svg-icon iconClass="new-material" v-if="row.newMaterialCode"></svg-icon>
                   </el-row>
                 </template>
                 <!-- 折扣 -->
@@ -90,7 +91,7 @@
           <!-- 工程总经理审批报价单才出现 -->
           <el-row class="info-wrapper" type="flex" justify="end" align="middle">
             <div>
-              <span class="title">服务费</span>
+              <span class="title">维修费</span>
               <span>￥{{ formData.serviceCharge | toThousands }}</span>
             </div>
             <div>
@@ -177,10 +178,8 @@
                     <el-input-number 
                       v-model="formData.serviceCharge"
                       :controls="false"
-                      @change="onServiceChargeBlur" 
                       :min="0"
-                      placeholder="50的倍数"
-                      :precision="0"
+                      :precision="2"
                       size="mini"
                     ></el-input-number>
                   </el-form-item>
@@ -195,9 +194,10 @@
           <div class="divider"></div>
           <!-- 物料填写表格 -->
           <div class="material-wrapper">
-            <el-row type="flex" style="width: 200px;margin-bottom: 10px;">
+            <el-row type="flex" style="margin-bottom: 10px;" align="middle">
               <span style="margin-right: 12px;color: #BFBFBF;">序列号</span>
-              <span>{{ currentSerialNumber }}</span>
+              <span style="margin-right: 10px;">{{ currentSerialNumber }}</span>
+              <el-button size="mini" type="primary" :disabled="!currentSerialNumber" @click.native="customAddMaterial">新增物料</el-button>
             </el-row>
             <el-form 
               ref="materialForm" 
@@ -214,8 +214,9 @@
               >
                 <template v-slot:materialCode="{ row }">
                   <el-row type="flex" align="middle">
-                    <span v-infotooltip.top-start.ellipsis :class="{ 'has-icon': row.replaceMaterialCode }">{{ row.materialCode }}</span>
+                    <span v-infotooltip.top.ellipsis :class="{ 'has-icon': row.replaceMaterialCode || row.newMaterialCode }">{{ row.materialCode }}</span>
                     <svg-icon iconClass="replace" v-if="row.replaceMaterialCode"></svg-icon>
+                    <svg-icon iconClass="new-material" v-if="row.newMaterialCode"></svg-icon>
                   </el-row>
                 </template>
                 <!-- 数量 -->
@@ -231,7 +232,7 @@
                       v-model="row.count"
                       :precision="0"
                       :placeholder="`最大数量${row['maxQuantity']}`"
-                      :max="Math.ceil(row['maxQuantity'])"
+                      :max="row.newMaterialCode ? Infinity : Math.ceil(row['maxQuantity'])"
                       :min="0"
                       @focus="onCountFocus(index)"
                       @change="onCountChange"
@@ -369,6 +370,26 @@
       @closed="closeMaterialDialog"
       :destroy-on-close="true"
     >
+      <el-row type="flex" justify="space-between">
+        <div class="form-wrapper">
+          <el-form :model="listQueryMaterial" size="mini" :inline="true">
+            <el-form-item label="物料编码">
+              <el-input 
+                style="width: 150px;"
+                @keyup.enter.native="_getMaterialList" 
+                v-model.trim="listQueryMaterial.partCode">
+              </el-input>
+            </el-form-item>
+            <el-form-item label="物料描述">
+              <el-input 
+                style="width: 150px; margin-left: 10px;"
+                @keyup.enter.native="_getMaterialList" 
+                v-model.trim="listQueryMaterial.partDescribe">
+              </el-input>
+            </el-form-item>
+          </el-form>
+        </div>
+      </el-row>
       <common-table  
         ref="materialTable" 
         row-key="itemCode"
@@ -386,6 +407,13 @@
           </el-icon>
         </template>
       </common-table>
+      <pagination
+        v-show="materialCount > 0"
+        :total="materialCount"
+        :page.sync="listQueryMaterial.page"
+        :limit.sync="listQueryMaterial.limit"
+        @pagination="handleMaterialChange"
+      />
       <template v-if="replacedList && replacedList.length">
         <el-divider></el-divider>
         <span style="margin-top: 10px;">替换物料</span>
@@ -399,13 +427,6 @@
           <!-- </template> -->
         </common-table>
       </template>
-      <pagination
-        v-show="materialCount > 0"
-        :total="materialCount"
-        :page.sync="listQueryMaterial.page"
-        :limit.sync="listQueryMaterial.limit"
-        @pagination="handleMaterialChange"
-      />
     </my-dialog>
     <!-- 替换的物料 -->
     <my-dialog
@@ -419,19 +440,19 @@
     >
       <el-form :model="listQueryReplace" :inline="true" size="mini">
         <el-form-item label="物料编码">
-          <el-input v-model.trim="listQueryReplace.partCode" @keyup.native="_getAllMaterialList"></el-input>
+          <el-input v-model.trim="listQueryReplace.partCode" @keyup.enter.native="_getAllMaterialList"></el-input>
         </el-form-item>
         <el-form-item label="物料描述">
-          <el-input v-model.trim="listQueryReplace.partDescribe" @keyup.native="_getAllMaterialList"></el-input>
+          <el-input v-model.trim="listQueryReplace.partDescribe" @keyup.enter.native="_getAllMaterialList"></el-input>
         </el-form-item>
         <el-button size="mini" @click.native="_getAllMaterialList" type="primary">搜索</el-button>
       </el-form>
-      <common-table  
+      <common-table
         v-loading="replaceLoading"
         style="margin-top: 10px;"
         ref="replaceTable"
         height="400px"
-        :data="replaceList" 
+        :data="replaceList"
         radioKey="itemCode"
         :columns="replaceColumns">
       </common-table>
@@ -443,6 +464,45 @@
         @pagination="handleReplaceChange"
       />
     </my-dialog>
+    <!-- 自定义新增物料弹窗 -->
+    <my-dialog
+      ref="replaceAddDialog"
+      title="选择新增的物料"
+      width="760px"
+      :btnList="replaceBtnList"
+      :append-to-body="true"
+      @closed="onReplaceClosed"
+      :destroy-on-close="true"
+    >
+      <el-form :model="listQueryReplace" :inline="true" size="mini">
+        <el-form-item label="物料编码">
+          <el-input v-model.trim="listQueryReplace.partCode" @keyup.enter.native="_getAllMaterialList"></el-input>
+        </el-form-item>
+        <el-form-item label="物料描述">
+          <el-input v-model.trim="listQueryReplace.partDescribe" @keyup.enter.native="_getAllMaterialList"></el-input>
+        </el-form-item>
+        <el-button size="mini" @click.native="_getAllMaterialList" type="primary">搜索</el-button>
+      </el-form>
+      <common-table
+        v-loading="replaceLoading"
+        style="margin-top: 10px;"
+        ref="replaceAddTable"
+        height="400px"
+        :data="replaceList"
+        row-key="itemCode"
+        :selectedList="selectedMaterialList"
+        selectedKey="itemCode"
+        :columns="replaceAddColumns">
+      </common-table>
+      <pagination
+        v-show="replaceCount > 0"
+        :total="replaceCount"
+        :page.sync="listQueryReplace.page"
+        :limit.sync="listQueryReplace.limit"
+        @pagination="handleReplaceChange"
+      />
+    </my-dialog>
+    
     <!-- 驳回理由弹窗 -->
     <my-dialog
       ref="remarkDialog"
@@ -628,7 +688,13 @@ export default {
             })
             return product
           })
-          this.currentSerialNumber = this.formData.quotationProducts[0].productCode   
+          if (this.formData.quotationProducts.length) {
+            const { materialCode, productCode } = this.formData.quotationProducts[0]
+            this.currentSerialNumber = productCode
+            this.listQueryReplace.manufacturerSerialNumber = productCode
+            this.listQueryReplace.materialCode = materialCode
+          }
+
           // 构建selected Map
           if (this.status === 'edit') {
             for (let i = 0; i < this.formData.quotationProducts.length; i++) {
@@ -643,15 +709,15 @@ export default {
     }
   },
   data () {
-    const SERVICE_CHARGE_VALIDATOR = function (rule, value, callback) { // 服务费校验规则
-      value = Number(value)
-      if (!isNaN(value) && value % 50 !== 0) {
-        console.log('error')
-        callback(new Error())
-      } else {
-        callback();
-      }
-    }
+    // const SERVICE_CHARGE_VALIDATOR = function (rule, value, callback) { // 服务费校验规则
+    //   value = Number(value)
+    //   if (!isNaN(value) && value % 50 !== 0) {
+    //     console.log('error')
+    //     callback(new Error())
+    //   } else {
+    //     callback();
+    //   }
+    // }
     return {
       // 合同图片
       previewImageUrlList: [], // 合同图片列表
@@ -698,7 +764,7 @@ export default {
         collectionAddress: [{ required: true, trigger: ['change', 'blur'] }]
       },
       serviceRules: {
-        serviceCharge: [{ validator: SERVICE_CHARGE_VALIDATOR, trigger: ['change', 'blur'] }],
+        // serviceCharge: [{ validator: SERVICE_CHARGE_VALIDATOR, trigger: ['change', 'blur'] }],
       },
       // createTime: timeToFormat('yyyy-MM-dd HH:mm'),
       // 操作记录
@@ -719,7 +785,9 @@ export default {
       materialLoading: false,
       listQueryMaterial: {
         page: 1,
-        limit: 20
+        limit: 20,
+        partCode: '',
+        partDescribe: ''
       },
       materialBtnList: [
         { btnText: '确定', handleClick: this.selectMaterial },
@@ -764,6 +832,16 @@ export default {
         { label: '成本价(￥)', prop: 'unitPrice', align: 'right' },
         { label: '销售价(￥)', prop: 'lastPurPrc', align: 'right' }
       ],
+      replaceAddColumns: [
+        { type: 'selection', width: 40 },
+        { label: '物料编码', prop: 'itemCode', width: 100 },
+        { label: '物料描述', prop: 'itemName' },
+        { label: '零件规格', prop: 'buyUnitMsr', width: 100, align: 'right' },
+        { label: '库存量', prop: 'onHand', width: 100, align: 'right' },
+        { label: '仓库号', prop: 'whsCode', width: 100, align: 'right' },
+        { label: '成本价(￥)', prop: 'unitPrice', align: 'right' },
+        { label: '销售价(￥)', prop: 'lastPurPrc', align: 'right' }
+      ],
       listQueryReplace: {
         partCode: '',
         partDescribe: '',
@@ -777,7 +855,7 @@ export default {
       // 根据设备序列号生成的物料表格
       materialConfig:[
         { label: '序号', type: 'index' },
-        { label: '物料编码', prop: 'materialCode', slotName: 'materialCode' },
+        { label: '物料编码', prop: 'materialCode', slotName: 'materialCode', 'show-overflow-tooltip': false },
         { label: '物料描述', prop: 'materialDescription' },
         { label: '数量', prop: 'count', slotName: 'count', align: 'right' },
         { label: '最大数量', prop: 'maxQuantity', align: 'right', slotName: 'maxQuantity', 'show-overflow-tooltip': false },
@@ -882,6 +960,8 @@ export default {
         manufacturerSerialNumbers: '',
         materialCode: ''
       },
+      // 用来判断是打开替换物料弹窗还是新增物料弹窗
+      isCustomAdd: false,
       cancelRequestCustom: null, // 用来取消用户信息列表请求
       cancelRequestMaterial: null, // 用来取消物料列表的请求，防止数紊乱
       cancelRequestSerialList: null, // 用来取消通过客户代码获取的设备序列号列表请求
@@ -965,10 +1045,14 @@ export default {
   },
   methods: {
     isIntegerNumber,
+    customAddMaterial () { // 自定义新增物料
+      this.isCustomAdd = true
+      this.selectedMaterialList = this.selectedMap[this.currentSerialNumber] || []
+      this.$nextTick(() => {
+        this.$refs.replaceAddDialog.open()
+      })
+    },
     async _getSerialDetail () {
-      // if (!manufacturerSerialNumbers && !materialCode) {
-      //   return this.$message.warning('请输入设备序列号或物料编码')
-      // }
       if (this.cancelRequestApprove) {
         this.cancelRequestApprove('customer abort')
       }
@@ -986,13 +1070,6 @@ export default {
           this.serialLoading = false
           this.$message.error(err.message)
         }
-      }
-    },
-    onServiceChargeBlur () {
-      let value = Number(this.formData.serviceCharge)
-      console.log(value, 'value')
-      if (!isNaN(value) && value % 50 !== 0) {
-        this.$message.error('服务费必须为50的倍数')
       }
     },
     closeViewer () { // 关闭合同图片
@@ -1024,6 +1101,8 @@ export default {
     onSerialRowClick (val) { // 点击序列号表格 展示对应的物料表格
       this.currentSerialNumber = val.manufacturerSerialNumber
       this.currentSerialInfo = val
+      this.listQueryReplace.manufacturerSerialNumber = val.manufacturerSerialNumber
+      this.listQueryReplace.materialCode = val.materialCode
     },
     onServiceIdFocus () {
       if (this.status === 'create') {
@@ -1076,26 +1155,47 @@ export default {
         return this.$message.warning('当前物料已选中，不可进行替换操作')
       }
       this.currentReplaced = row // 当前被替换的元素
-      this.$refs.replaceDialog.open()
+      this.isCustomAdd = false
+      this.$nextTick(() => {
+        this.$refs.replaceDialog.open()
+      })
+      
     },
     deleteReplaceMaterial (index) {
       this.replacedList.splice(index, 1)
     },
     selectReplace () {
-      const currentRow = this.$refs.replaceTable.getCurrentRow()
-      if (!currentRow) {
-        return this.$message.warning('请先选择替换物料')
+      if (this.isCustomAdd) {
+        let list = this.$refs.replaceAddTable.getSelectionList()
+        if (list && !list.length) {
+          return this.$message.warning('请先选择新增物料')
+        }
+        list = list.map(item => {
+          item.newMaterialCode = true
+          return item
+        })
+        this._mergeSelectedList(list)
+        this.closeReplaceDialog()
+      } else {
+        const currentRow = this.$refs.replaceTable.getCurrentRow()
+        if (!currentRow) {
+          return this.$message.warning('请先选择替换物料')
+        }
+        const selectedList = flatten(this.selectedMaterialList)
+        if (selectedList.some(item => item.itemCode === currentRow.itemCode)) {
+          return this.$message.warning('不能选择重复的物料编码!!')
+        }
+        // 将跟当前选中的物料编码中对应选项禁选
+        const selectionList = this.$refs.materialTable.getSelectionList()
+        const matchRow = selectionList.find(item => item.itemCode === currentRow.itemCode)
+        matchRow && this.$refs.materialTable.toggleRowSelection(matchRow, false)
+        const { itemCode, quantity } = this.currentReplaced
+        const newSelectedList = JSON.parse(JSON.stringify(this.selectedMaterialList))
+        newSelectedList.push([{ itemCode }, { itemCode: currentRow.itemCode }])
+        this.selectedMaterialList = newSelectedList
+        this.replacedList.push({ ...currentRow, replaceMaterialCode: itemCode, quantity })
+        this.closeReplaceDialog()
       }
-      // 将跟当前选中的物料编码中对应选项禁选
-      const selectionList = this.$refs.materialTable.getSelectionList()
-      const matchRow = selectionList.find(item => item.itemCode === currentRow.itemCode)
-      matchRow && this.$refs.materialTable.toggleRowSelection(matchRow, false)
-      const { itemCode, quantity } = this.currentReplaced
-      const newSelectedList = JSON.parse(JSON.stringify(this.selectedMaterialList))
-      newSelectedList.push([{ itemCode }, { itemCode: currentRow.itemCode }])
-      this.selectedMaterialList = newSelectedList
-      this.replacedList.push({ ...currentRow, replaceMaterialCode: itemCode, quantity })
-      this.closeReplaceDialog()
     },
     handleReplaceChange ({ page, limit }) {
       this.listQueryReplace.page = page
@@ -1103,23 +1203,22 @@ export default {
       this._getAllMaterialList()
     },
     closeReplaceDialog () {
-      this.$refs.replaceDialog.close()
+      this.isCustomAdd ? this.$refs.replaceAddDialog.close() : this.$refs.replaceDialog.close()
     },
     onReplaceClosed () {
       this.replaceList = []
-      this.listQueryReplace = {
-        partCode: '',
-        partDescribe: '',
-        page: 1,
-        limit: 20
-      }
+      this.replaceCount = 0
+      this.listQueryReplace.partCode = ''
+      this.listQueryReplace.partDescribe = ''
+      this.listQueryReplace.page = 1
+      this.listQueryReplace.limit = 20
     },
     _getAllMaterialList () { // 获取当前服务单下所有设备的所有物料
       if (this.cancelRequestAllMaterial) {
         this.cancelRequestAllMaterial('customer abort')
       }
       const { partCode, partDescribe } = this.listQueryReplace
-      const itemCode = this.currentReplaced.itemCode
+      const itemCode = this.isCustomAdd ? '' : this.currentReplaced.itemCode
       if (!partCode && !partDescribe) {
         return this.$message.warning('请输入物料编码或物料描述')
       }
@@ -1137,8 +1236,9 @@ export default {
           this.$message.error(err.message)
         }
       }).finally(() => {
-        this.$refs.replaceTable.resetRadio()
-        this.$refs.replaceTable.resetCurrentRow()
+        const { replaceTable } = this.$refs
+        replaceTable && replaceTable.resetRadio()
+        replaceTable && replaceTable.resetCurrentRow()
       })
     },
     _getServiceOrderList () { // 获取用户信息列表
@@ -1217,6 +1317,7 @@ export default {
       this._getMaterialList()
     },
     openMaterialDialog (val) { // 添加物料
+      this.isCustomAdd = false
       let { manufacturerSerialNumber } = val
       if (this.currentSerialNumber !== manufacturerSerialNumber) {
         this.listQueryMaterial.page = 1
@@ -1276,8 +1377,12 @@ export default {
       this.selectedMap = {}
       this.selectedMaterialList = []
       this.currentSerialNumber = ''
-      this.listQueryMaterial.page = 1
-      this.listQueryMaterial.limit = 20
+      this.listQueryMaterial = {
+        page: 1,
+        limit: 20,
+        partCode: '',
+        partDescribe: ''
+      }
     },
     selectMaterial () { // 选择弹窗物料
       let selectedList = this.$refs.materialTable.getSelectionList()
@@ -1292,7 +1397,7 @@ export default {
       return selectedList.map(selectItem => {
         let item = {}
         let { isProtected } = this.currentSerialInfo
-        let { itemCode, itemName, onHand, quantity,  buyUnitMsr, whsCode, unitPrice, lastPurPrc, replaceMaterialCode } = selectItem
+        let { itemCode, itemName, onHand, quantity,  buyUnitMsr, whsCode, unitPrice, lastPurPrc, replaceMaterialCode, newMaterialCode } = selectItem
         item.unit = buyUnitMsr
         item.materialDescription = itemName
         item.materialCode = itemCode
@@ -1307,6 +1412,7 @@ export default {
         // item.maxQuantityText = Math.ceil(quantity)
         item.totalPrice = Number((!isProtected ? item.salesPrice * item.count : 0).toFixed(2))
         item.replaceMaterialCode = replaceMaterialCode
+        item.newMaterialCode = !!newMaterialCode
         return item
       })
     },
@@ -1346,6 +1452,12 @@ export default {
     closeMaterialDialog () { // 关闭弹窗
       this.$refs.materialDialog.close()
       this.replacedList = []
+      this.listQueryMaterial = {
+        page: 1,
+        limit: 20,
+        partCode: '',
+        partDescribe: ''
+      }
     },
     resetInfo () { // 每次关闭弹窗
       // 预览数据
@@ -1428,16 +1540,21 @@ export default {
         return Promise.reject({ message: '服务费未按要求填写' })
       }
       // 判断物料列表
-      if (!this.formData.quotationProducts.length) {
-        return Promise.reject({ message: '零件物料不能为空' })
+      // 只有服务费
+      // 有物料零件没有服务费
+      // 有零件有服务费
+      if (!this.totalMoney && !this.formData.quotationProducts.length) {
+        return Promise.reject({ message: '服务费或物料零件数量不能为空' })
       }
-      let materialList = []
-      this.formData.quotationProducts.forEach(item => {
-        materialList.push(...item.quotationMaterials)
-      })
-      let isMaterialValid = materialList.every(item => item.count)
-      if (!isMaterialValid) {
-        return Promise.reject({ message: '零件数量不能为空' })
+      if (this.formData.quotationProducts.length) {
+        let materialList = []
+        this.formData.quotationProducts.forEach(item => {
+          materialList.push(...item.quotationMaterials)
+        })
+        let isMaterialValid = materialList.every(item => item.count)
+        if (!isMaterialValid) {
+          return Promise.reject({ message: '零件数量不能为空' })
+        }
       }
       console.log(this.formData.quotationProducts)
       return this.status !== 'create'
