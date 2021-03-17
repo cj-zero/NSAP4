@@ -97,8 +97,8 @@ import {  quotationTableMixin, categoryMixin, chatMixin, rolesMixin } from '../c
 // import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 const statusOptions = [
   { label: '全部', value: '' },
-  { label: '未审批', value: 1 },
-  { label: '审批', value: 2 }
+  { label: '未审批', value: '1' },
+  { label: '审批', value: '2' }
 ]
 export default {
   name: 'materialSalesOrder',
@@ -148,6 +148,7 @@ export default {
       previewVisible: false,
       previewFileList: [],
       formQuery: {
+        startType: '1',
         quotationId: '', // 领料单号
         cardCode: '', // 客户
         serviceOrderSapId: '', // 服务Id
@@ -156,7 +157,7 @@ export default {
         endCreateTime: '' // 创建结束
       },
       listQuery: {
-        startType: '',
+        startType: '1',
         pageStart: 1,
         page: 1,
         limit: 50,

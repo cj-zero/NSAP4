@@ -75,7 +75,7 @@
                 </template>
                 <!-- 折扣 -->
                 <template v-slot:discount="{ row }">
-                  {{ row.discount * 100 | toThousands }}%
+                  {{ row.discount }}%
                 </template>
                 <!-- 总价格 -->
                 <template v-slot:totalPrice="{ row }">
@@ -254,7 +254,7 @@
                 </template>
                 <!-- 折扣 -->
                 <template v-slot:discount="{ row, index }">
-                  <el-select 
+                  <!-- <el-select 
                     size="mini"
                     v-model="row.discount" 
                     placeholder="请选择"
@@ -266,7 +266,22 @@
                       :label="item.label"
                       :value="item.value">
                     </el-option>
-                  </el-select>
+                  </el-select> -->
+                  <el-form-item
+                    :prop="'list.' + index + '.' + 'discount'"
+                    :rules="materialRules['discount']"
+                  >
+                    <el-input-number 
+                      size="mini"
+                      v-model="row.discount" 
+                      placeholder="大于等于50"
+                      @change="onDiscountChange"
+                      @focus="onDiscountFocus(index)"
+                      :controls="false"
+                      :precision="2"
+                      :min="50"
+                    ></el-input-number>
+                  </el-form-item>
                 </template>
                 <!-- 总价格 -->
                 <template v-slot:totalPrice="{ row }">
@@ -305,7 +320,7 @@
               </el-row>
             </template>
             <template v-slot:discount="{ row }">
-              {{ (row.discount * 100) | toThousands }}%
+              {{ row.discount }}%
             </template>
           </common-table>
           <el-row type="flex" class="money-wrapper" justify="end">
@@ -873,7 +888,8 @@ export default {
       ],    
       // 物料填写表格列表 
       materialRules: {
-        count: [{ required: true }]
+        count: [{ required: true }],
+        discount: [{ required: true }]
       },
       // 物料汇总表格
       materialSummaryList: [],
@@ -1358,6 +1374,7 @@ export default {
     onDiscountChange (val) {
       let { list, isProtected } = this.materialData
       let data = list[this.materialItemIndex]
+      val = val / 100
       console.log(val, 'val')
       let { salesPrice, count } = data
       data.totalPrice = Number((!isProtected ? (val * salesPrice * count || 0) : 0).toFixed(2))
@@ -1373,7 +1390,7 @@ export default {
       let { list, isProtected } = this.materialData
       let data = list[this.materialItemIndex]
       let { salesPrice, discount } = data
-      data.totalPrice = Number((!isProtected ? (val * salesPrice * discount || 0) : 0).toFixed(2))
+      data.totalPrice = Number((!isProtected ? (val * salesPrice * (discount / 10) || 0) : 0).toFixed(2))
     },
     _resetMaterialInfo () { // 重置物料相关的变量和数据
       this.formData.quotationProducts = []
@@ -1405,15 +1422,16 @@ export default {
         item.materialDescription = itemName
         item.materialCode = itemCode
         item.remark = ''
-        item.unitPrice = Number(unitPrice).toFixed(2)
-        item.salesPrice = Number(lastPurPrc).toFixed(2)
-        item.discount = '1.00'
+        item.unitPrice = Number(unitPrice)
+        item.salesPrice = Number(lastPurPrc)
+        item.discount = 100
         item.count = 1
         item.warehouseQuantity = onHand
         item.warehouseNumber = whsCode
         item.maxQuantity = quantity
         // item.maxQuantityText = Math.ceil(quantity)
-        item.totalPrice = Number((!isProtected ? item.salesPrice * item.count : 0).toFixed(2))
+        
+        item.totalPrice = Number((!isProtected ? accMul(item.salesPrice, item.count) : 0).toFixed(2))
         item.replaceMaterialCode = replaceMaterialCode
         item.newMaterialCode = !!newMaterialCode
         return item
@@ -1550,13 +1568,24 @@ export default {
         return Promise.reject({ message: '服务费或物料零件数量不能为空' })
       }
       if (this.formData.quotationProducts.length) {
-        let materialList = []
-        this.formData.quotationProducts.forEach(item => {
-          materialList.push(...item.quotationMaterials)
-        })
-        let isMaterialValid = materialList.every(item => item.count)
-        if (!isMaterialValid) {
-          return Promise.reject({ message: '零件数量不能为空' })
+        console.log(this.formData.quotationProducts.length, length)
+        // let materialList = []
+        // this.formData.quotationProducts.forEach(item => {
+        //   materialList.push(...item.quotationMaterials)
+        // })
+        // let isMaterialValid = materialList.every(item => item.count)
+        // if (!isMaterialValid) {
+        //   return Promise.reject({ message: '零件数量不能为空' })
+        // }
+        let isValid = true
+        try {
+          await this.$refs.materialForm.validate()
+        } catch (err) {
+          isValid = false
+          console.log(err)
+        }
+        if (!isValid) {
+          return Promise.reject({ message: '零件数量或者折扣不能为空' })
         }
       }
       console.log(this.formData.quotationProducts)

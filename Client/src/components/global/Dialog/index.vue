@@ -10,9 +10,9 @@
   >
     <el-row type="flex" align="middle" class="title-wrapper" slot="title">
       <slot name="title">
-        <template v-if="attrs.title">
+        <template v-if="title">
           <div class="my-dialog-icon"></div>
-          <span class="my-dialog-title">{{ attrs.title }}</span>
+          <span class="my-dialog-title">{{ title }}</span>
         </template>
       </slot>
     </el-row>
@@ -47,6 +47,10 @@ export default {
     elDragDialog
   },
   props: {
+    title: {
+      type: String,
+      default: ''
+    },
     isShowBtn: {
       type: Boolean,
       default: true
@@ -133,6 +137,7 @@ export default {
   &::v-deep {
     .el-dialog__header {
       overflow: hidden;
+      min-height: 37px;
       padding: 10px 0 !important;
       margin: 0 10px !important;
       border-bottom: 1px solid #f2f2f3;
