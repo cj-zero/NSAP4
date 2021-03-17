@@ -445,32 +445,32 @@ namespace OpenAuth.App.Material
                 if (Prices != null)
                 {
                     e.UnitPrice = Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
-                    var s = e.UnitPrice.ToDouble().ToString();
-                    if (s.IndexOf(".") > 0)
-                    {
-                        s = s.Substring(s.IndexOf("."), s.Length - s.IndexOf("."));
-                        if (s.Length > 1)
-                        {
-                            int lengeth = s.Substring(1, s.Length - 1).Length;
-                            if (lengeth > 3) e.UnitPrice = e.UnitPrice + 0.005M;
-                        }
-                    }
-                    e.UnitPrice = Math.Round((decimal)e.UnitPrice, 2);
+                    //var s = e.UnitPrice.ToDouble().ToString();
+                    //if (s.IndexOf(".") > 0)
+                    //{
+                    //    s = s.Substring(s.IndexOf("."), s.Length - s.IndexOf("."));
+                    //    if (s.Length > 1)
+                    //    {
+                    //        int lengeth = s.Substring(1, s.Length - 1).Length;
+                    //        if (lengeth > 3) e.UnitPrice = e.UnitPrice + 0.005M;
+                    //    }
+                    //}
+                    e.UnitPrice = Math.Round((decimal)e.UnitPrice, 4);
                 }
                 else
                 {
                     e.UnitPrice = e.lastPurPrc * 1.2M;
-                    var s = e.UnitPrice.ToDouble().ToString();
-                    if (s.IndexOf(".") > 0)
-                    {
-                        s = s.Substring(s.IndexOf("."), s.Length - s.IndexOf("."));
-                        if (s.Length > 1)
-                        {
-                            int lengeth = s.Substring(1, s.Length - 1).Length;
-                            if (lengeth > 3) e.UnitPrice = e.UnitPrice + 0.005M;
-                        }
-                    }
-                    e.UnitPrice = Math.Round((decimal)e.UnitPrice, 2);
+                    //var s = e.UnitPrice.ToDouble().ToString();
+                    //if (s.IndexOf(".") > 0)
+                    //{
+                    //    s = s.Substring(s.IndexOf("."), s.Length - s.IndexOf("."));
+                    //    if (s.Length > 1)
+                    //    {
+                    //        int lengeth = s.Substring(1, s.Length - 1).Length;
+                    //        if (lengeth > 3) e.UnitPrice = e.UnitPrice + 0.005M;
+                    //    }
+                    //}
+                    e.UnitPrice = Math.Round((decimal)e.UnitPrice, 4);
 
                 }
                 e.lastPurPrc = e.UnitPrice * 3;
@@ -655,13 +655,13 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var equipmentList = await EquipmentList(request);
-            var codeList = equipmentList.Select(e => e.ItemCode).ToList();
+            //var equipmentList = await EquipmentList(request);
+            //var codeList = equipmentList.Select(e => e.ItemCode).ToList();
             var result = new TableData();
             var query = from a in UnitWork.Find<OITM>(null).WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), q => q.ItemCode.Contains(request.PartCode))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.PartDescribe), q => q.ItemName.Contains(request.PartDescribe))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.ReplacePartCode), q => !q.ItemCode.Equals(request.ReplacePartCode))
-                                .WhereIf(codeList.Count > 0, q => !codeList.Contains(q.ItemCode))
+                                //.WhereIf(codeList.Count > 0, q => !codeList.Contains(q.ItemCode))
                         join b in UnitWork.Find<OITW>(null) on a.ItemCode equals b.ItemCode into ab
                         from b in ab.DefaultIfEmpty()
                         where b.WhsCode == "37"
@@ -818,7 +818,7 @@ namespace OpenAuth.App.Material
                     QuotationObj.IsProtected = false;
                     foreach (var item in q.QuotationMaterials)
                     {
-                        QuotationObj.TotalMoney += item.SalesPrice * item.Count;
+                        QuotationObj.TotalMoney += Math.Round(Convert.ToDecimal((item.SalesPrice * item.Count) * (item.Discount / 100)), 2);
                     }
                 }
                 else
@@ -994,7 +994,7 @@ namespace OpenAuth.App.Material
                     QuotationObj.IsProtected = false;
                     foreach (var item in q.QuotationMaterials)
                     {
-                        QuotationObj.TotalMoney += item.SalesPrice * item.Count;
+                        QuotationObj.TotalMoney += Math.Round(Convert.ToDecimal((item.SalesPrice * item.Count) * (item.Discount / 100)), 2);
                     }
                 }
                 else
@@ -1733,20 +1733,25 @@ namespace OpenAuth.App.Material
             text = text.Replace("@Model.AcceptancePeriod", Convert.ToDateTime(model?.DeliveryDate).AddDays(model.AcceptancePeriod == null ? 0 : (double)model.AcceptancePeriod).ToString("yyyy.MM.dd"));
             text = text.Replace("@Model.Remark", model?.Remark);
             var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"SalesOrderHeader{model.Id}.html");
-            System.IO.File.WriteAllText(tempUrl, text);
+            System.IO.File.WriteAllText(tempUrl, text, Encoding.UTF8);
             var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "SalesOrderFooter.html");
             var foottext = System.IO.File.ReadAllText(footUrl);
-            string InvoiceCompany = "";
+            string InvoiceCompany = "", Location="", website = "";
             if (Convert.ToInt32(model.InvoiceCompany) == 1)
             {
-                InvoiceCompany = "深圳市新威尔电子有限公司 交通银行股份有限公司深圳梅林支行   443066388018001726113";
+                InvoiceCompany = "深圳市新威尔电子有限公司 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 交通银行股份有限公司&nbsp;&nbsp;深圳梅林支行 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;443066388018001726113";
+                Location = "深圳市福田区梅林街道梅都社区中康路 128 号卓越梅林中心广场(北区)3 号楼 1206 电话：0755-83108866 免费服务专线：800-830-8866";
+                website = "www.neware.com.cn";
             }
             else if (Convert.ToInt32(model.InvoiceCompany) == 2)
             {
-                InvoiceCompany = "东莞新威检测技术有限公司 交通银行股份有限公司东莞塘厦支行   483007618018810043352";
+                InvoiceCompany = "东莞新威检测技术有限公司 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 交通银行股份有限公司 &nbsp;&nbsp; 东莞塘厦支行 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;483007618018810043352";
+                Location = "广东省东莞市塘厦镇龙安路5号5栋101室";
             }
             foottext = foottext.Replace("@Model.Corporate", InvoiceCompany);
             foottext = foottext.Replace("@Model.PrintNo", model.PrintNo);
+            foottext = foottext.Replace("@Model.Location", Location);
+            foottext = foottext.Replace("@Model.Website", website);
             var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"SalesOrderFooter{model.Id}.html");
             System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.UTF8);
             var materials = model.QuotationMergeMaterials.Select(q => new PrintSalesOrderResp
