@@ -38,8 +38,8 @@ namespace OpenAuth.App.Material.Request
         public string EndDate { get; set; }
 
         /// <summary>
-        /// 退料单状态  1未完成退料 2已完成退料
+        /// 报价订单Id
         /// </summary>
-        public string Status { get; set; }
+        public string QutationId { get; set; }
     }
 }

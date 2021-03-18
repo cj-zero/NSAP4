@@ -46,5 +46,10 @@ namespace OpenAuth.App.Material.Request
         /// 物流单号
         /// </summary>
         public string TrackNumber { get; set; }
+
+        /// <summary>
+        /// 报价单Id
+        /// </summary>
+        public string QutationId { get; set; }
     }
 }

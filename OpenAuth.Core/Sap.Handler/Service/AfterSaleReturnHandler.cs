@@ -34,8 +34,28 @@ namespace Sap.Handler.Service
             var eMesg = "";
             var docNum = "";
             SAPbobsCOM.Documents dts = (SAPbobsCOM.Documents)company.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oReturns);
-
-            var quotation = await UnitWork.Find<Quotation>(q => q.Id.Equals(obj.QuotationMergeMaterialReqs.FirstOrDefault().QuotationId)).AsNoTracking()
+            bool IsReturnNote = false;
+            string remark = string.Empty;
+            List<int> quotationIds = new List<int>();
+            int quotationId = (int)obj.QuotationMergeMaterialReqs.FirstOrDefault().QuotationId;
+            int returnNoteId = (int)obj.QuotationMergeMaterialReqs.FirstOrDefault().ReturnNoteId;
+            if (returnNoteId > 0)
+            {
+                var returnNoteInfo = await UnitWork.Find<ReturnNote>(w => w.Id == returnNoteId).FirstOrDefaultAsync();
+                remark = returnNoteInfo.Remark;
+                IsReturnNote = true;
+                string StockOutIds = (await UnitWork.Find<ReturnNote>(w => w.Id == returnNoteId).FirstOrDefaultAsync()).StockOutId;
+                var arr = StockOutIds.Split(",");
+                for (int i = 0; i < arr.Length; i++)
+                {
+                    quotationIds.Add(Convert.ToInt32(arr[i]));
+                }
+            }
+            else
+            {
+                quotationIds.Add(quotationId);
+            }
+            var quotation = await UnitWork.Find<Quotation>(q => quotationIds.Contains(q.Id)).AsNoTracking()
               .Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
             var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(quotation.ServiceOrderId)).FirstOrDefaultAsync();
             var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active == "Y").FirstOrDefaultAsync();
@@ -58,7 +78,7 @@ namespace Sap.Handler.Service
 
             dts.CardCode = serviceOrder.TerminalCustomerId;
 
-            dts.Comments = quotation.Remark; 
+            dts.Comments = IsReturnNote ? remark : quotation.Remark;
 
             dts.ContactPersonCode = int.Parse(string.IsNullOrWhiteSpace(oCPR.CntctCode.ToString()) ? "0" : oCPR.CntctCode.ToString());
 
@@ -161,9 +181,9 @@ namespace Sap.Handler.Service
 
 
 
-            dts.Address2 = quotation.ShippingAddress;      //收货方
+            dts.Address2 = IsReturnNote ? string.Empty : quotation.ShippingAddress;      //收货方
 
-            dts.Address = quotation.CollectionAddress;       //收款方
+            dts.Address = IsReturnNote ? string.Empty : quotation.CollectionAddress;       //收款方
 
             //if (!string.IsNullOrEmpty(model.CustomFields) && model.CustomFields != "{}")
 
@@ -214,13 +234,13 @@ namespace Sap.Handler.Service
             //#endregion
 
 
-           
+
             #region [添加行明细]
             //if (model.DocType == "I")
 
             //{
 
-            foreach (var item in  obj.QuotationMergeMaterialReqs)
+            foreach (var item in obj.QuotationMergeMaterialReqs)
             {
                 var QuotationMergeMaterial = quotation.QuotationMergeMaterials.Where(q => q.Id.Equals(item.Id)).FirstOrDefault();
 
@@ -240,7 +260,7 @@ namespace Sap.Handler.Service
 
                 //}
                 dts.Lines.BaseLine = (int)ordr.Where(o => o.ItemCode.Equals(QuotationMergeMaterial.MaterialCode)).FirstOrDefault()?.LineNum;
-             
+
                 dts.Lines.SalesPersonCode = (int)slpcode;
 
                 dts.Lines.ItemDescription = QuotationMergeMaterial.MaterialDescription;
@@ -253,7 +273,7 @@ namespace Sap.Handler.Service
 
                 dts.Lines.Price = Convert.ToDouble(QuotationMergeMaterial.CostPrice);            //单价;
 
-                dts.Lines.LineTotal = double.Parse(QuotationMergeMaterial.TotalPrice.ToString()) ;
+                dts.Lines.LineTotal = double.Parse(QuotationMergeMaterial.TotalPrice.ToString());
 
                 dts.Lines.WarehouseCode = item.WhsCode;
 
@@ -380,7 +400,7 @@ namespace Sap.Handler.Service
 
                 company.GetLastError(out eCode, out eMesg);
 
-                errorMsg += string.Format("添加销售退货时调接口发生异常[异常代码:{1},异常信息:{2}]",eCode, eMesg);
+                errorMsg += string.Format("添加销售退货时调接口发生异常[异常代码:{1},异常信息:{2}]", eCode, eMesg);
 
             }
             else

@@ -44,7 +44,7 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         /// 物流图片
         /// </summary>
-        public string ExpressPictureId { get; set; }
+        public List<string> ExpressPictureIds { get; set; }
 
         /// <summary>
         /// 退料详情
@@ -88,5 +88,10 @@ namespace OpenAuth.App.Material.Request
         /// 成本价
         /// </summary>
         public decimal CostPrice { get; set; }
+
+        /// <summary>
+        /// 剩余需退
+        /// </summary>
+        public int SurplusQty { get; set; }
     }
 }
