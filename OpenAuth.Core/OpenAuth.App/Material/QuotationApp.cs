@@ -816,18 +816,20 @@ namespace OpenAuth.App.Material
                 if (!(bool)q.IsProtected)
                 {
                     QuotationObj.IsProtected = false;
-                    foreach (var item in q.QuotationMaterials)
+                    q.QuotationMaterials.ForEach(m =>
                     {
-                        QuotationObj.TotalMoney += Math.Round(Convert.ToDecimal((item.SalesPrice * item.Count) * (item.Discount / 100)), 2);
-                    }
+                        m.TotalPrice = Math.Round(Convert.ToDecimal((m.SalesPrice * m.Count) * (m.Discount / 100)), 2);
+                        QuotationObj.TotalMoney += Math.Round(Convert.ToDecimal((m.SalesPrice * m.Count) * (m.Discount / 100)), 2);
+                    });
                 }
                 else
                 {
-                    foreach (var item in q.QuotationMaterials)
+                    q.QuotationMaterials.ForEach(m =>
                     {
-                        QuotationObj.TotalCostPrice += item.UnitPrice * item.Count;
-                    }
-                    q.QuotationMaterials.ForEach(q => q.SalesPrice = 0);
+                        m.SalesPrice = 0;
+                        m.TotalPrice = 0;
+                        QuotationObj.TotalCostPrice += m.UnitPrice * m.Count;
+                    });
                 }
             });
             if (QuotationObj.ServiceCharge != null && QuotationObj.ServiceCharge > 0)
@@ -992,18 +994,20 @@ namespace OpenAuth.App.Material
                 if (!(bool)q.IsProtected)
                 {
                     QuotationObj.IsProtected = false;
-                    foreach (var item in q.QuotationMaterials)
+                    q.QuotationMaterials.ForEach(m =>
                     {
-                        QuotationObj.TotalMoney += Math.Round(Convert.ToDecimal((item.SalesPrice * item.Count) * (item.Discount / 100)), 2);
-                    }
+                        m.TotalPrice = Math.Round(Convert.ToDecimal((m.SalesPrice * m.Count) * (m.Discount / 100)), 2);
+                        QuotationObj.TotalMoney += Math.Round(Convert.ToDecimal((m.SalesPrice * m.Count) * (m.Discount / 100)), 2);
+                    });
                 }
                 else
                 {
-                    foreach (var item in q.QuotationMaterials)
+                    q.QuotationMaterials.ForEach(m =>
                     {
-                        QuotationObj.TotalCostPrice += item.UnitPrice * item.Count;
-                    }
-                    q.QuotationMaterials.ForEach(q => q.SalesPrice = 0);
+                        m.SalesPrice = 0;
+                        m.TotalPrice = 0;
+                        QuotationObj.TotalCostPrice += m.UnitPrice * m.Count;
+                    });
                 }
             });
             if (QuotationObj.ServiceCharge != null && QuotationObj.ServiceCharge > 0)
@@ -1492,7 +1496,7 @@ namespace OpenAuth.App.Material
             qoh.CreateTime = DateTime.Now;
             qoh.QuotationId = obj.Id;
             qoh.Remark = req.Remark;
-            qoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalMinutes);
+            qoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds);
             await UnitWork.AddAsync<QuotationOperationHistory>(qoh);
             await UnitWork.SaveAsync();
         }
@@ -1768,8 +1772,8 @@ namespace OpenAuth.App.Material
                 pdf.IsWriteHtml = true;
                 pdf.PaperKind = PaperKind.A4;
                 pdf.Orientation = Orientation.Portrait;
-                pdf.HeaderSettings = new HeaderSettings() { FontName = "华文宋体", FontSize = 9, HtmUrl = tempUrl };
-                pdf.FooterSettings = new FooterSettings() { FontName = "华文宋体", FontSize = 9, HtmUrl = foottempUrl };
+                pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+                pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl };
             });
             System.IO.File.Delete(tempUrl);
             System.IO.File.Delete(foottempUrl);
