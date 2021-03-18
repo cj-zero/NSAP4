@@ -239,6 +239,9 @@
                     ></el-input-number>
                   </el-form-item>
                 </template>
+                <template v-slot:totalPrice="{ row }">
+                  <span v-infotooltip.top.ellipsis style="text-align: right;">{{ row.totalPrice | toThousands }}</span>
+                </template>
                 <template v-slot:maxQuantity="{ row }">
                   <el-row type="flex" justify="end" align="middle">
                     <span span v-infotooltip.top-start.ellipsis style="width: calc(100% - 12px); padding-right: 3px;">{{ row.maxQuantity }}</span>
@@ -278,15 +281,15 @@
                       @change="onDiscountChange"
                       @focus="onDiscountFocus(index)"
                       :controls="false"
-                      :precision="2"
+                      :precision="6"
                       :min="50"
                     ></el-input-number>
                   </el-form-item>
                 </template>
                 <!-- 总价格 -->
-                <template v-slot:totalPrice="{ row }">
+                <!-- <template v-slot:totalPrice="{ row }">
                   <span style="text-align: right;">{{ row.totalPrice | toThousands}}</span>
-                </template>
+                </template> -->
                 <!-- 操作 -->
                 <template v-slot:operation="{ index }">
                   <div style="display: inline-block;" @click="deleteMaterialItem(index)">
@@ -586,7 +589,7 @@ import zxchat from '@/views/serve/callserve/chat/index'
 import { configMixin, quotationOrderMixin, categoryMixin, chatMixin, uploadFileMixin, rolesMixin } from '../js/mixins'
 // import { timeToFormat } from "@/utils";
 import { formatDate } from '@/utils/date'
-import { findIndex, accAdd, accMul } from '@/utils/process'
+import { findIndex, accAdd, accMul, accDiv } from '@/utils/process'
 // import { toThousands } from '@/utils/format'
 import { isNumber, isIntegerNumber } from '@/utils/validate'
 import { flatten } from '@/utils/utils'
@@ -882,7 +885,7 @@ export default {
         { label: '成本价(￥)', prop: 'unitPrice', align: 'right' },
         { label: '销售价(￥)', prop: 'salesPrice', align: 'right' },
         { label: '折扣(%)', prop: 'discount', slotName: 'discount', align: 'right' },
-        { label: '小计(￥)', prop: 'totalPrice', disabled: true, align: 'right' },
+        { label: '小计(￥)', prop: 'totalPrice', disabled: true, align: 'right', slotName: 'totalPrice' },
         { label: '备注', slotName: 'remark', prop: 'remark' },
         { label: '操作', slotName: 'operation' }
       ],    
@@ -1374,7 +1377,7 @@ export default {
     onDiscountChange (val) {
       let { list, isProtected } = this.materialData
       let data = list[this.materialItemIndex]
-      val = val / 100
+      val = accDiv(val, 100)
       console.log(val, 'val')
       let { salesPrice, count } = data
       data.totalPrice = Number((!isProtected ? (val * salesPrice * count || 0) : 0).toFixed(2))
@@ -1390,7 +1393,7 @@ export default {
       let { list, isProtected } = this.materialData
       let data = list[this.materialItemIndex]
       let { salesPrice, discount } = data
-      data.totalPrice = Number((!isProtected ? (val * salesPrice * (discount / 100) || 0) : 0).toFixed(2))
+      data.totalPrice = Number((!isProtected ? (val * salesPrice * accDiv(discount, 100) || 0) : 0).toFixed(2))
     },
     _resetMaterialInfo () { // 重置物料相关的变量和数据
       this.formData.quotationProducts = []
@@ -1423,7 +1426,7 @@ export default {
         item.materialCode = itemCode
         item.remark = ''
         item.unitPrice = Number(unitPrice)
-        item.salesPrice = Number(lastPurPrc)
+        item.salesPrice = isProtected ? 0 : Number(lastPurPrc)
         item.discount = 100
         item.count = 1
         item.warehouseQuantity = onHand
