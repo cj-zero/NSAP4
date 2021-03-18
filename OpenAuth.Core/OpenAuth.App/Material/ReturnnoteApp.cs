@@ -674,7 +674,11 @@ namespace OpenAuth.App
             {
                 foreach (var item in req.putInMaterials)
                 {
-                    var putInMaterialInfo = new QuotationMergeMaterialReq { Id = item.MaterialId, InventoryQuantity = item.Qty, ReturnNoteId = req.ReturnNoteId, WhsCode = item.WhsCode.ToString() };
+                    if (item.Qty > 0)
+                    {
+                        var putInMaterialInfo = new QuotationMergeMaterialReq { Id = item.MaterialId, InventoryQuantity = item.Qty, ReturnNoteId = req.ReturnNoteId, WhsCode = item.WhsCode.ToString() };
+                        returnMergeMaterialReqs.Add(putInMaterialInfo);
+                    }
                     if (item.WhsCode == 37)
                     {
                         GoodDetailIds.Add(item.Id);
