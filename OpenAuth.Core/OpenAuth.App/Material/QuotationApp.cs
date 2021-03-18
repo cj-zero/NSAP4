@@ -762,13 +762,14 @@ namespace OpenAuth.App.Material
             var query = from a in UnitWork.Find<ReturnnoteMaterial>(null)
                         join b in UnitWork.Find<ReturnNote>(null) on a.ReturnNoteId equals b.Id into ab
                         from b in ab.DefaultIfEmpty()
-                        where b.Id == request.ServiceOrderId && a.Count > 0
+                        where b.ServiceOrderId == request.ServiceOrderId && a.Count > 0
                         select new { a.QuotationMaterialId, a.Count };
             var returnMaterials = (await query.ToListAsync()).GroupBy(g => g.QuotationMaterialId).Select(s => new { Qty = s.Sum(s => s.Count), Id = s.Key }).ToList();
             List<ReturnMaterialListResp> data = new List<ReturnMaterialListResp>();
             foreach (var item in QuotationMergeMaterials)
             {
                 var res = item.MapTo<ReturnMaterialListResp>();
+                int everQty = (int)(returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault() == null ? 0 : returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault()?.Qty);
                 res.SurplusQty = (int)item.Count - (returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault() == null ? 0 : (int)returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault().Qty);
                 data.Add(res);
             }
@@ -1587,8 +1588,8 @@ namespace OpenAuth.App.Material
 
             List<int> returnNoteIds = ReturnNoteList.Select(s => s.Id).Distinct().ToList();
             //计算剩余未结清金额
-            var notClearAmountList = (await UnitWork.Find<ReturnnoteMaterial>(w => returnNoteIds.Contains((int)w.ReturnNoteId) && w.Check == 1).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new { s.Key, Count = s.Sum(s => s.Count), TotalWrongCount = s.Sum(s => s.SecondQty), Costprice = s.ToList().FirstOrDefault().CostPrice, TotalCount = s.ToList().FirstOrDefault().TotalCount }).ToList();
-            var totalprice = notClearAmountList.Sum(s => s.Costprice * (s.TotalCount - s.Count + s.TotalWrongCount));
+            var notClearAmountList = (await UnitWork.Find<ReturnnoteMaterial>(w => returnNoteIds.Contains((int)w.ReturnNoteId) && w.Check == 1).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new { s.Key, GoodCount = s.Sum(s => s.GoodQty), SecondCount = s.Sum(s => s.SecondQty), Costprice = s.ToList().FirstOrDefault().CostPrice, TotalCount = s.ToList().FirstOrDefault().TotalCount }).ToList();
+            var totalprice = notClearAmountList.Sum(s => s.Costprice * (s.TotalCount - s.GoodCount - s.SecondCount));
             if (totalprice > 4000)
             {
                 throw new Exception("欠款已超出额度，不可领料。");

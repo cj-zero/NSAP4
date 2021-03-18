@@ -75,5 +75,15 @@ namespace OpenAuth.App.Material.Response
         /// 退料明细Id
         /// </summary>
         public string Id { get; set; }
+
+        /// <summary>
+        /// 良品是否入库
+        /// </summary>
+        public int IsGoodFinish { get; set; }
+
+        /// <summary>
+        /// 次品是否入库
+        /// </summary>
+        public int IsSecondFinish { get; set; }
     }
 }

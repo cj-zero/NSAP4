@@ -117,5 +117,17 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("领料明细Id")]
         public string QuotationMaterialId { get; set; }
+
+        /// <summary>
+        /// 是否入库（良品） 1已入库
+        /// </summary>
+        [Description("是否入库（良品） 1已入库")]
+        public int? IsGoodFinish { get; set; }
+
+        /// <summary>
+        /// 是否入库（次品） 1已入库
+        /// </summary>
+        [Description("是否入库（次品） 1已入库")]
+        public int? IsSecondFinish { get; set; }
     }
 }
