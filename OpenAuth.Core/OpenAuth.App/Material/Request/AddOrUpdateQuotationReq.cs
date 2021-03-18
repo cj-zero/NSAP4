@@ -91,6 +91,10 @@ namespace OpenAuth.App.Material.Request
         ///是否草稿状态
         /// </summary>
         public bool IsDraft { get; set; }
+        /// <summary>
+        ///报价单审批状态
+        /// </summary>
+        public int? QuotationStatus { get; set; }
 
         /// <summary>
         ///备注
@@ -145,6 +149,21 @@ namespace OpenAuth.App.Material.Request
         ///收款详细地址
         /// </summary>
         public string CollectionDA { get; set; }
+
+        /// <summary>
+        ///是否暂定
+        /// </summary>
+        public bool? Tentative { get; set; }
+
+        /// <summary>
+        ///提交对象1-ERP 2-APP
+        /// </summary>
+        public int ErpOrApp { get; set; }
+
+        /// <summary>
+        ///成本总价
+        /// </summary>
+        public decimal? TotalCostPrice { get; set; }
 
 
         /// <summary>

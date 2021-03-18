@@ -335,7 +335,7 @@ namespace OpenAuth.App.Material
             }
             var result = new TableData();
 
-            var ServiceWorkOrderList = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.Equals(request.ServiceOrderId) && s.CurrentUserNsapId.Equals(loginUser.Id) && !s.MaterialCode.Equals("无序列号"))
+            var ServiceWorkOrderList = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.Equals(request.ServiceOrderId) && s.CurrentUserNsapId.Equals(loginUser.Id))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.MaterialType), s => s.MaterialCode.Substring(0, 2) == request.MaterialType)
                 .WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers), s => s.ManufacturerSerialNumber.Contains(request.ManufacturerSerialNumbers))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.MaterialCode), s => s.MaterialCode.Contains(request.MaterialCode))
@@ -445,32 +445,32 @@ namespace OpenAuth.App.Material
                 if (Prices != null)
                 {
                     e.UnitPrice = Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
-                    var s = e.UnitPrice.ToDouble().ToString();
-                    if (s.IndexOf(".") > 0)
-                    {
-                        s = s.Substring(s.IndexOf("."), s.Length - s.IndexOf("."));
-                        if (s.Length > 1)
-                        {
-                            int lengeth = s.Substring(1, s.Length - 1).Length;
-                            if (lengeth > 3) e.UnitPrice = e.UnitPrice + 0.005M;
-                        }
-                    }
-                    e.UnitPrice = Math.Round((decimal)e.UnitPrice, 2);
+                    //var s = e.UnitPrice.ToDouble().ToString();
+                    //if (s.IndexOf(".") > 0)
+                    //{
+                    //    s = s.Substring(s.IndexOf("."), s.Length - s.IndexOf("."));
+                    //    if (s.Length > 1)
+                    //    {
+                    //        int lengeth = s.Substring(1, s.Length - 1).Length;
+                    //        if (lengeth > 3) e.UnitPrice = e.UnitPrice + 0.005M;
+                    //    }
+                    //}
+                    e.UnitPrice = Math.Round((decimal)e.UnitPrice, 4);
                 }
                 else
                 {
                     e.UnitPrice = e.lastPurPrc * 1.2M;
-                    var s = e.UnitPrice.ToDouble().ToString();
-                    if (s.IndexOf(".") > 0)
-                    {
-                        s = s.Substring(s.IndexOf("."), s.Length - s.IndexOf("."));
-                        if (s.Length > 1)
-                        {
-                            int lengeth = s.Substring(1, s.Length - 1).Length;
-                            if (lengeth > 3) e.UnitPrice = e.UnitPrice + 0.005M;
-                        }
-                    }
-                    e.UnitPrice = Math.Round((decimal)e.UnitPrice, 2);
+                    //var s = e.UnitPrice.ToDouble().ToString();
+                    //if (s.IndexOf(".") > 0)
+                    //{
+                    //    s = s.Substring(s.IndexOf("."), s.Length - s.IndexOf("."));
+                    //    if (s.Length > 1)
+                    //    {
+                    //        int lengeth = s.Substring(1, s.Length - 1).Length;
+                    //        if (lengeth > 3) e.UnitPrice = e.UnitPrice + 0.005M;
+                    //    }
+                    //}
+                    e.UnitPrice = Math.Round((decimal)e.UnitPrice, 4);
 
                 }
                 e.lastPurPrc = e.UnitPrice * 3;
@@ -496,6 +496,7 @@ namespace OpenAuth.App.Material
 						join OITM c on a.itemcode = c.itemcode
 						join OITW d on a.itemcode=d.itemcode 
 						where d.WhsCode=37").WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
+                        .WhereIf(!string.IsNullOrWhiteSpace(request.PartDescribe), s => request.PartDescribe.Contains(s.ItemName))
                         .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
 
             if (Equipments == null || Equipments.Count() <= 0)
@@ -504,6 +505,7 @@ namespace OpenAuth.App.Material
                 Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"select a.* ,c.lastPurPrc from (select a.Father as MnfSerial,a.Code as ItemCode,a.U_Desc as ItemName,a.U_DUnit as BuyUnitMsr,b.OnHand,b.WhsCode,a.Quantity
                         from ITT1 a join OITW b on a.Code=b.ItemCode  where a.Father='{request.MaterialCode}' and b.WhsCode=37) a join OITM c on c.ItemCode=a.ItemCode")
                     .WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
+                    .WhereIf(!string.IsNullOrWhiteSpace(request.PartDescribe), s => request.PartDescribe.Contains(s.ItemName))
                     .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
             }
             return Equipments;
@@ -653,13 +655,13 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var equipmentList = await EquipmentList(request);
-            var codeList = equipmentList.Select(e => e.ItemCode).ToList();
+            //var equipmentList = await EquipmentList(request);
+            //var codeList = equipmentList.Select(e => e.ItemCode).ToList();
             var result = new TableData();
             var query = from a in UnitWork.Find<OITM>(null).WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), q => q.ItemCode.Contains(request.PartCode))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.PartDescribe), q => q.ItemName.Contains(request.PartDescribe))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.ReplacePartCode), q => !q.ItemCode.Equals(request.ReplacePartCode))
-                                .WhereIf(codeList.Count > 0, q => !codeList.Contains(q.ItemCode))
+                                //.WhereIf(codeList.Count > 0, q => !codeList.Contains(q.ItemCode))
                         join b in UnitWork.Find<OITW>(null) on a.ItemCode equals b.ItemCode into ab
                         from b in ab.DefaultIfEmpty()
                         where b.WhsCode == "37"
@@ -817,7 +819,7 @@ namespace OpenAuth.App.Material
                     QuotationObj.IsProtected = false;
                     foreach (var item in q.QuotationMaterials)
                     {
-                        QuotationObj.TotalMoney += item.SalesPrice * item.Count;
+                        QuotationObj.TotalMoney += Math.Round(Convert.ToDecimal((item.SalesPrice * item.Count) * (item.Discount / 100)), 2);
                     }
                 }
                 else
@@ -993,7 +995,7 @@ namespace OpenAuth.App.Material
                     QuotationObj.IsProtected = false;
                     foreach (var item in q.QuotationMaterials)
                     {
-                        QuotationObj.TotalMoney += item.SalesPrice * item.Count;
+                        QuotationObj.TotalMoney += Math.Round(Convert.ToDecimal((item.SalesPrice * item.Count) * (item.Discount / 100)), 2);
                     }
                 }
                 else
@@ -1069,7 +1071,10 @@ namespace OpenAuth.App.Material
                             IsDraft = QuotationObj.IsDraft,
                             IsProtected = QuotationObj.IsProtected,
                             Status = 1,
-                            ServiceCharge = QuotationObj.ServiceCharge
+                            ServiceCharge = QuotationObj.ServiceCharge,
+                            CollectionDA=QuotationObj.CollectionDA,
+                            ShippingDA=QuotationObj.ShippingDA,
+                            AcquisitionWay = QuotationObj.AcquisitionWay,
                             //todo:要修改的字段赋值
                         });
                         await UnitWork.SaveAsync();
@@ -1178,7 +1183,11 @@ namespace OpenAuth.App.Material
                             IsDraft = QuotationObj.IsDraft,
                             IsProtected = QuotationObj.IsProtected,
                             Status = 1,
-                            ServiceCharge = QuotationObj.ServiceCharge
+                            ServiceCharge = QuotationObj.ServiceCharge,
+                            CollectionDA = QuotationObj.CollectionDA,
+                            ShippingDA = QuotationObj.ShippingDA,
+                            AcquisitionWay=QuotationObj.AcquisitionWay,
+                            
                             //FlowInstanceId = FlowInstanceId,
                             //todo:要修改的字段赋值
                         });
@@ -1355,7 +1364,7 @@ namespace OpenAuth.App.Material
 
             QuotationOperationHistory qoh = new QuotationOperationHistory();
 
-            var obj = await UnitWork.Find<Quotation>(q => q.Id == req.Id).Include(q => q.QuotationProducts).FirstOrDefaultAsync();
+            var obj = await UnitWork.Find<Quotation>(q => q.Id == req.Id).Include(q => q.QuotationProducts).Include(q=>q.QuotationMergeMaterials).FirstOrDefaultAsync();
 
             qoh.ApprovalStage = obj.QuotationStatus;
             if (loginContext.Roles.Any(r => r.Name.Equals("物料工程审批")) && obj.QuotationStatus == 4)
@@ -1422,6 +1431,10 @@ namespace OpenAuth.App.Material
                 qoh.Action = "总经理审批";
                 obj.QuotationStatus = 10;
                 obj.Status = 2;
+                if (obj.QuotationMergeMaterials.Where(q => !q.MaterialCode.Equals("S111-SERVICE-GSF")).Count() <= 0) 
+                {
+                    obj.QuotationStatus = 11;
+                }
             }
             else
             {
@@ -1721,20 +1734,25 @@ namespace OpenAuth.App.Material
             text = text.Replace("@Model.AcceptancePeriod", Convert.ToDateTime(model?.DeliveryDate).AddDays(model.AcceptancePeriod == null ? 0 : (double)model.AcceptancePeriod).ToString("yyyy.MM.dd"));
             text = text.Replace("@Model.Remark", model?.Remark);
             var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"SalesOrderHeader{model.Id}.html");
-            System.IO.File.WriteAllText(tempUrl, text);
+            System.IO.File.WriteAllText(tempUrl, text, Encoding.UTF8);
             var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "SalesOrderFooter.html");
             var foottext = System.IO.File.ReadAllText(footUrl);
-            string InvoiceCompany = "";
+            string InvoiceCompany = "", Location="", website = "";
             if (Convert.ToInt32(model.InvoiceCompany) == 1)
             {
-                InvoiceCompany = "深圳市新威尔电子有限公司 交通银行股份有限公司深圳梅林支行   443066388018001726113";
+                InvoiceCompany = "深圳市新威尔电子有限公司 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 交通银行股份有限公司&nbsp;&nbsp;深圳梅林支行 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;443066388018001726113";
+                Location = "深圳市福田区梅林街道梅都社区中康路 128 号卓越梅林中心广场(北区)3 号楼 1206 电话：0755-83108866 免费服务专线：800-830-8866";
+                website = "www.neware.com.cn";
             }
             else if (Convert.ToInt32(model.InvoiceCompany) == 2)
             {
-                InvoiceCompany = "东莞新威检测技术有限公司 交通银行股份有限公司东莞塘厦支行   483007618018810043352";
+                InvoiceCompany = "东莞新威检测技术有限公司 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 交通银行股份有限公司 &nbsp;&nbsp; 东莞塘厦支行 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;483007618018810043352";
+                Location = "广东省东莞市塘厦镇龙安路5号5栋101室";
             }
             foottext = foottext.Replace("@Model.Corporate", InvoiceCompany);
             foottext = foottext.Replace("@Model.PrintNo", model.PrintNo);
+            foottext = foottext.Replace("@Model.Location", Location);
+            foottext = foottext.Replace("@Model.Website", website);
             var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"SalesOrderFooter{model.Id}.html");
             System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.UTF8);
             var materials = model.QuotationMergeMaterials.Select(q => new PrintSalesOrderResp
@@ -1751,8 +1769,8 @@ namespace OpenAuth.App.Material
                 pdf.IsWriteHtml = true;
                 pdf.PaperKind = PaperKind.A4;
                 pdf.Orientation = Orientation.Portrait;
-                pdf.HeaderSettings = new HeaderSettings() { FontName = "宋体", FontSize = 6, HtmUrl = tempUrl };
-                pdf.FooterSettings = new FooterSettings() { FontName = "宋体", FontSize = 6, HtmUrl = foottempUrl };
+                pdf.HeaderSettings = new HeaderSettings() { FontName = "华文宋体", FontSize = 9, HtmUrl = tempUrl };
+                pdf.FooterSettings = new FooterSettings() { FontName = "华文宋体", FontSize = 9, HtmUrl = foottempUrl };
             });
             System.IO.File.Delete(tempUrl);
             System.IO.File.Delete(foottempUrl);
