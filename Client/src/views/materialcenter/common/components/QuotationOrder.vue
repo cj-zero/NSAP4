@@ -1390,7 +1390,7 @@ export default {
       let { list, isProtected } = this.materialData
       let data = list[this.materialItemIndex]
       let { salesPrice, discount } = data
-      data.totalPrice = Number((!isProtected ? (val * salesPrice * (discount / 10) || 0) : 0).toFixed(2))
+      data.totalPrice = Number((!isProtected ? (val * salesPrice * (discount / 100) || 0) : 0).toFixed(2))
     },
     _resetMaterialInfo () { // 重置物料相关的变量和数据
       this.formData.quotationProducts = []
