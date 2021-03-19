@@ -37,31 +37,39 @@ namespace Sap.Handler.Service
             bool IsReturnNote = false;
             string remark = string.Empty;
             List<int> quotationIds = new List<int>();
-            int quotationId = (int)obj.QuotationMergeMaterialReqs.FirstOrDefault().QuotationId;
-            int returnNoteId = (int)obj.QuotationMergeMaterialReqs.FirstOrDefault().ReturnNoteId;
+            int quotationId = obj.QuotationMergeMaterialReqs.FirstOrDefault().QuotationId == null ? 0 : (int)obj.QuotationMergeMaterialReqs.FirstOrDefault().QuotationId;
+            int returnNoteId = obj.QuotationMergeMaterialReqs.FirstOrDefault().ReturnNoteId == null ? 0 : (int)obj.QuotationMergeMaterialReqs.FirstOrDefault().ReturnNoteId;
+            double money = 0;
             if (returnNoteId > 0)
             {
                 var returnNoteInfo = await UnitWork.Find<ReturnNote>(w => w.Id == returnNoteId).FirstOrDefaultAsync();
                 remark = returnNoteInfo.Remark;
                 IsReturnNote = true;
+                money = (double)returnNoteInfo.TotalMoney;
                 string StockOutIds = (await UnitWork.Find<ReturnNote>(w => w.Id == returnNoteId).FirstOrDefaultAsync()).StockOutId;
                 var arr = StockOutIds.Split(",");
                 for (int i = 0; i < arr.Length; i++)
                 {
-                    quotationIds.Add(Convert.ToInt32(arr[i]));
+                    if (!quotationIds.Contains(Convert.ToInt32(arr[i])))
+                    {
+                        quotationIds.Add(Convert.ToInt32(arr[i]));
+                    }
                 }
             }
             else
             {
                 quotationIds.Add(quotationId);
             }
-            var quotation = await UnitWork.Find<Quotation>(q => quotationIds.Contains(q.Id)).AsNoTracking()
-              .Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
-            var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(quotation.ServiceOrderId)).FirstOrDefaultAsync();
+            var quotation = await UnitWork.Find<Quotation>(q => quotationIds.Contains(q.Id)).AsNoTracking().ToListAsync();
+            //获取所有领料清单
+            var qutationMaterials = await UnitWork.Find<QuotationMergeMaterial>(w => quotationIds.Contains((int)w.QuotationId)).ToListAsync();
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(quotation.FirstOrDefault().ServiceOrderId)).FirstOrDefaultAsync();
             var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active == "Y").FirstOrDefaultAsync();
-            var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefaultAsync())?.SlpCode;
+            var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.FirstOrDefault().CreateUser)).FirstOrDefaultAsync())?.SlpCode;
             var ywy = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o => o.SlpCode).FirstOrDefaultAsync();
-            var ordr = await UnitWork.Find<RDR1>(o => o.DocEntry.Equals(quotation.SalesOrderId)).Select(o => new { o.LineNum, o.ItemCode }).ToListAsync();
+            //获取所有领料单的销售单
+            var salesOrderIds = quotation.Select(s => s.SalesOrderId).Distinct().ToList();
+            var ordr = await UnitWork.Find<RDR1>(o => salesOrderIds.Contains(o.DocEntry)).Select(o => new { o.LineNum, o.ItemCode }).ToListAsync();
             //#region [添加主表信息]
 
             //DataTable dtRowsConn = AidTool.GetConnection(model.SboId);
@@ -78,7 +86,7 @@ namespace Sap.Handler.Service
 
             dts.CardCode = serviceOrder.TerminalCustomerId;
 
-            dts.Comments = IsReturnNote ? remark : quotation.Remark;
+            dts.Comments = IsReturnNote ? remark : quotation.FirstOrDefault().Remark;
 
             dts.ContactPersonCode = int.Parse(string.IsNullOrWhiteSpace(oCPR.CntctCode.ToString()) ? "0" : oCPR.CntctCode.ToString());
 
@@ -94,7 +102,7 @@ namespace Sap.Handler.Service
 
             //dts.DocDate = DateTime.Parse(model.DocDate);
 
-            dts.DocDueDate = Convert.ToDateTime(quotation.DeliveryDate).AddDays(quotation.AcceptancePeriod == null ? 0 : (double)quotation.AcceptancePeriod);
+            dts.DocDueDate = Convert.ToDateTime(quotation.FirstOrDefault().DeliveryDate).AddDays(quotation.FirstOrDefault().AcceptancePeriod == null ? 0 : (double)quotation.FirstOrDefault().AcceptancePeriod);
 
             //dts.TaxDate = DateTime.Parse(model.TaxDate);
 
@@ -139,7 +147,7 @@ namespace Sap.Handler.Service
 
             //}
 
-            dts.UserFields.Fields.Item("U_EshopNo").Value = quotation.SalesOrderId.ToString();
+            dts.UserFields.Fields.Item("U_EshopNo").Value = string.Join(",", salesOrderIds);
 
             //if (!string.IsNullOrEmpty(model.U_SL) && model.U_SL != "")
 
@@ -181,9 +189,9 @@ namespace Sap.Handler.Service
 
 
 
-            dts.Address2 = IsReturnNote ? string.Empty : quotation.ShippingAddress;      //收货方
+            dts.Address2 = IsReturnNote ? string.Empty : quotation.FirstOrDefault().ShippingAddress;      //收货方
 
-            dts.Address = IsReturnNote ? string.Empty : quotation.CollectionAddress;       //收款方
+            dts.Address = IsReturnNote ? string.Empty : quotation.FirstOrDefault().CollectionAddress;       //收款方
 
             //if (!string.IsNullOrEmpty(model.CustomFields) && model.CustomFields != "{}")
 
@@ -229,7 +237,7 @@ namespace Sap.Handler.Service
 
             //dts.DiscountPercent = double.Parse(!string.IsNullOrEmpty(model.DiscPrcnt) ? model.DiscPrcnt : "0.00");
 
-            dts.DocTotal = double.Parse(!string.IsNullOrWhiteSpace(quotation.TotalMoney.ToString()) ? quotation.TotalMoney.ToString() : "0.00");
+            dts.DocTotal = IsReturnNote ? money : double.Parse(!string.IsNullOrWhiteSpace(quotation.FirstOrDefault().TotalMoney.ToString()) ? quotation.FirstOrDefault().TotalMoney.ToString() : "0.00");
 
             //#endregion
 
@@ -242,7 +250,7 @@ namespace Sap.Handler.Service
 
             foreach (var item in obj.QuotationMergeMaterialReqs)
             {
-                var QuotationMergeMaterial = quotation.QuotationMergeMaterials.Where(q => q.Id.Equals(item.Id)).FirstOrDefault();
+                var QuotationMergeMaterial = qutationMaterials.Where(q => q.Id.Equals(item.Id)).FirstOrDefault();
 
                 errorMsg += string.Format("物料编码:[{0}]", QuotationMergeMaterial.MaterialCode);
 

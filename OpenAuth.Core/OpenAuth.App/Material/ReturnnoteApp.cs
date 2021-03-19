@@ -698,8 +698,10 @@ namespace OpenAuth.App
             await UnitWork.UpdateAsync<ReturnnoteMaterial>(w => SecondDetailIds.Contains(w.Id), u => new ReturnnoteMaterial { IsSecondFinish = 1 });
             await UnitWork.SaveAsync();
             //判断是否全部入库 仓库状态更新为已仓库入库
-            var count = (await UnitWork.Find<ReturnnoteMaterial>(w => w.ExpressId == req.ExpressageId && (w.IsGoodFinish == 0 && w.GoodQty > 0) || (w.IsSecondFinish == 0 && w.SecondQty > 0)).ToListAsync()).Count;
-            if (count == 0)
+            var returnnoteMaterials = await UnitWork.Find<ReturnnoteMaterial>(w => w.ExpressId == req.ExpressageId).ToListAsync();
+            var goodNotFinishCount = returnnoteMaterials.Where(w => w.GoodQty > 0 && w.IsGoodFinish == 0).ToList().Count;
+            var secondNotFinishCount = returnnoteMaterials.Where(w => w.SecondQty > 0 && w.IsSecondFinish == 0).ToList().Count;
+            if (secondNotFinishCount == 0 && goodNotFinishCount == 0)
             {
                 await UnitWork.UpdateAsync<Expressage>(w => w.Id == req.ExpressageId, u => new Expressage { Status = 3 });
             }
