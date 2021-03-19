@@ -6,5 +6,6 @@ namespace OpenAuth.App.SSO
     {
         public string ReturnUrl;
         public string Token;
+        public string Name;
     }
 }

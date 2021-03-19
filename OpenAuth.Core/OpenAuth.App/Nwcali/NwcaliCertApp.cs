@@ -34,10 +34,11 @@ namespace OpenAuth.App.Nwcali
             }
             else
             {
-                var u = await UnitWork.FindSingleAsync<User>(a => a.Name.Equals(baseInfo.Operator));
-                if (u is null)
-                    throw new CommonException("系统不存在当前校准人账号信息，请联系相关人员录入信息。", 400100);
-                baseInfo.OperatorId = u.Id;
+                //var u = await UnitWork.FindSingleAsync<User>(a => a.Name.Equals(baseInfo.Operator));
+                //if (u is null)
+                //    throw new CommonException("系统不存在当前校准人账号信息，请联系相关人员录入信息。", 400100);
+                //baseInfo.OperatorId = u.Id;
+                throw new CommonException("当前校准人信息与ERP账户信息不符，请确认后上传。", 400100);
             }
             await semaphoreSlim.WaitAsync();
             try
@@ -47,7 +48,7 @@ namespace OpenAuth.App.Nwcali
                 baseInfo.CreateUser = user.Name;
                 baseInfo.CreateUserId = user.Id;
                 var testerModel = await UnitWork.Find<OINS>(o => o.manufSN.Equals(baseInfo.TesterSn)).Select(o => o.itemCode).ToListAsync();
-                if (testerModel != null && testerModel.Count == 1)
+                if (testerModel != null && testerModel.Count == 1 && !testerModel.Contains("ZWJ"))
                     baseInfo.TesterModel = testerModel.FirstOrDefault();
                 await UnitWork.AddAsync(baseInfo);
                 await UnitWork.SaveAsync();

@@ -30,7 +30,7 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         ///开票单位 1 新威尔 2 新能源 3 东莞新威
         /// </summary>
-        public int? InvoiceCompany { get; set; }
+        public string InvoiceCompany { get; set; }
 
         /// <summary>
         ///SAP服务Id
@@ -70,7 +70,7 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         ///发货方式 1 款到发货 2 先票后货
         /// </summary>
-        public int? DeliveryMethod { get; set; }
+        public string DeliveryMethod { get; set; }
 
         /// <summary>
         ///创建人Id
@@ -91,6 +91,10 @@ namespace OpenAuth.App.Material.Request
         ///是否草稿状态
         /// </summary>
         public bool IsDraft { get; set; }
+        /// <summary>
+        ///报价单审批状态
+        /// </summary>
+        public int? QuotationStatus { get; set; }
 
         /// <summary>
         ///备注
@@ -136,6 +140,30 @@ namespace OpenAuth.App.Material.Request
         ///删除报价单
         /// </summary>
         public List<int> QuotationIds { get; set; }
+        /// <summary>
+        ///收货详细地址
+        /// </summary>
+        public string ShippingDA { get; set; }
+
+        /// <summary>
+        ///收款详细地址
+        /// </summary>
+        public string CollectionDA { get; set; }
+
+        /// <summary>
+        ///是否暂定
+        /// </summary>
+        public bool? Tentative { get; set; }
+
+        /// <summary>
+        ///提交对象1-ERP 2-APP
+        /// </summary>
+        public int ErpOrApp { get; set; }
+
+        /// <summary>
+        ///成本总价
+        /// </summary>
+        public decimal? TotalCostPrice { get; set; }
 
 
         /// <summary>

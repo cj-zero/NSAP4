@@ -475,7 +475,7 @@ namespace OpenAuth.App
                         join b in UnitWork.Find<NwcaliBaseInfo>(null) on a.NwcaliBaseInfoId equals b.Id into ab
                         from b in ab.DefaultIfEmpty()
                         where req.plcGuid.Contains(a.Guid)
-                        select new { id = a.Id, plcGuid = a.Guid, materialCode = b.TesterModel };
+                        select new { id = a.Id, plcGuid = a.Guid, materialCode = b.TesterModel, TesterSn=b.TesterSn };
 
             result.Data = await query.ToListAsync();
             return result;

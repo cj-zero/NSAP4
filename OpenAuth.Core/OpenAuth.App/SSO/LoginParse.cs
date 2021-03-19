@@ -86,6 +86,7 @@ namespace OpenAuth.App.SSO
                 result.Code = 200;
                 result.ReturnUrl = appInfo.ReturnUrl;
                 result.Token = currentSession.Token;
+                result.Name = userInfo.Name;
             }
             catch (Exception ex)
             {

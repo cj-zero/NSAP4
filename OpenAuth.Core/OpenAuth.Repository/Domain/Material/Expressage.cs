@@ -69,7 +69,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("创建时间")]
         public DateTime? CreateTime { get; set; }
-        
+
+        /// <summary>
+        ///物流处理状态
+        /// </summary>
+        [Description("物流处理状态")]
+        public int Status { get; set; }
 
         /// <summary>
         /// 物流图片
