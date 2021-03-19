@@ -139,6 +139,7 @@ export default {
         { btnText: '存为草稿', handleClick: this.submit, options: { isDraft: true }, isShow: this.isShowOperateBtn },
         { btnText: '提交审批', handleClick: this.submit, isShow: this.isShowOperateBtn },
         { btnText: '客户同意报价', handleClick: this.agree, isShow: this.quotationStatus === 6, className: 'outline' },
+        { btnText: '客户不同意报价', handleClick: this.agree, options: { type: 'reject' }, isShow: this.quotationStatus === 6, className: 'close' },
         // { btnText: '编辑', handleClick: this.togglePreview, isShow: this.isPreviewing && this.isShowEditBtn },
         { btnText: '关闭', handleClick: this.handleClose, className: 'close' }      
       ]
@@ -193,8 +194,9 @@ export default {
     } 
   },
   methods: {
-    agree () {
-      this.$refs.quotationOrder.beforeApprove('custome')
+    agree (options = {}) {
+      const type = options.type || 'cstome'
+      this.$refs.quotationOrder.beforeApprove(type)
     },
     edit (options) {
       let currentRow = this.$refs.quotationTable.getCurrentRow()
