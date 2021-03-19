@@ -31,7 +31,7 @@
     </Layer>
     <my-dialog 
       ref="returnOrderDialog"
-      width="950px"
+      width="1100px"
       :loading="dialogLoading"
       title="退料单详情"
       :btnList="btnList"
@@ -42,6 +42,7 @@
         ref="returnOrder" 
         :detailInfo="detailInfo"
         :status="status"
+        orderType="storage"
         ></return-Order>
     </my-dialog>
     <!-- 只能查看的表单 -->
@@ -71,7 +72,7 @@
 
 <script>
 import Search from '@/components/Search'
-import ReturnOrder from './components/Order'
+import ReturnOrder from '../common/components/ReturnOrder'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import { quotationTableMixin, chatMixin, returnTableMixin, afterReturnMixin } from '../common/js/mixins'
@@ -98,8 +99,6 @@ export default {
     }, // 搜索配置
     btnList () {
       return [
-        { btnText: '验收', handleClick: this.checkOrSave },
-        // { btnText: '保存', handleClick: this.checkOrSave, options: { isSave: true } },
         { btnText: '关闭', handleClick: this.handleClose, className: 'close' }      
       ]
     }
@@ -107,7 +106,7 @@ export default {
   data () {
     return {
       listQuery: {
-        status: 0,
+        status: '2',
         page: 1,
         limit: 50,
       },
@@ -149,6 +148,10 @@ export default {
       this.$refs.returnOrderDialog.close()
     },
     closed () {
+      if (this.$refs.returnOrder.hasBeenStorage) {
+        console.log(this.$refs.returnOrder.hasBeenStorage, 'this.$refs.returnOrder.hasBeenStorage')
+        this._getList()
+      }
       this.$refs.returnOrder.resetInfo()
     },
     onOpened () {

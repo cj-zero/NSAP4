@@ -148,7 +148,7 @@
                 :loading="serialLoading">
                 <template v-slot:materialCode="{ row }">
                   <el-row type="flex" align="middle">
-                    <span span v-infotooltip.top-start.ellipsis :class="{ 'has-icon': row.isProtected }">{{ row.materialCode }}</span>
+                    <span v-infotooltip.top-start.ellipsis :class="{ 'has-icon': row.isProtected }">{{ row.materialCode }}</span>
                     <svg-icon iconClass="warranty" v-if="row.isProtected"></svg-icon>
                   </el-row>
                 </template>
@@ -244,7 +244,7 @@
                 </template>
                 <template v-slot:maxQuantity="{ row }">
                   <el-row type="flex" justify="end" align="middle">
-                    <span span v-infotooltip.top-start.ellipsis style="width: calc(100% - 12px); padding-right: 3px;">{{ row.maxQuantity }}</span>
+                    <span v-infotooltip.top-start.ellipsis style="width: calc(100% - 12px); padding-right: 3px;">{{ row.maxQuantity }}</span>
                     <el-tooltip effect="dark" placement="top-end">
                       <div slot="content">领取的数量只能是整数，大于等于当前最大数量</div>
                       <i class="notice-icon el-icon-warning-outline" v-if="!isIntegerNumber(+row.maxQuantity)"></i>
@@ -702,7 +702,7 @@ export default {
           Object.assign(this.formData, val)
           this.formData.quotationProducts = this.formData.quotationProducts.map(product => {
             product.quotationMaterials.forEach(material => {
-              material.discount = String(Number(material.discount).toFixed(2)) // 保证discount是string类型，且跟字典对应上
+              material.discount = String(Number(material.discount).toFixed(6)) // 保证discount是string类型，且跟字典对应上
             })
             return product
           })
@@ -1365,10 +1365,10 @@ export default {
       }
     },
     _normalizeMaterialSummaryList () {
-
       this.materialSummaryList = this.formData.quotationMergeMaterials.map((item, index) => {
         let { count, costPrice } = item
         item.index = index
+        item.discount = String(Number(item.discount).toFixed(6))
         // item.grossProfit = salesPrice - costPrice // 总毛利
         item.totalCost = accMul(costPrice, count) // 总成本
         return item
@@ -1433,8 +1433,7 @@ export default {
         item.warehouseNumber = whsCode
         item.maxQuantity = quantity
         // item.maxQuantityText = Math.ceil(quantity)
-        
-        item.totalPrice = Number((!isProtected ? accMul(item.salesPrice, item.count) : 0).toFixed(2))
+        item.totalPrice = Number(!isProtected ? accMul(item.salesPrice, item.count) : 0).toFixed(2)
         item.replaceMaterialCode = replaceMaterialCode
         item.newMaterialCode = !!newMaterialCode
         return item

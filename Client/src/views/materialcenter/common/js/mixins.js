@@ -1,7 +1,7 @@
 import { getCategoryNameList } from '@/api/directory'
 import { getQuotationDetail } from '@/api/material/quotation' // 报价单详情
 // import { GetDetails } from '@/api/serve/callservesure' // 服务单
-import { getReturnNoteList, getReturnNoteDetail } from '@/api/material/returnMaterial' // 退料
+import { getReturnNoteListByExpress, getReturnNoteDetailByExpress } from '@/api/material/returnMaterial' // 退料
 import { normalizeFormConfig } from '@/utils/format'
 import { processDownloadUrl } from '@/utils/file'
 import { isMatchRole } from '@/utils/utils'
@@ -284,13 +284,10 @@ export const returnTableMixin = { // 退料表格
         beginDate: '', // 创建开始
         endDate: '' // 创建结束
       },
-      formItems: [
-        { span: 4, attrs: { prop: 'U_SAP_ID' }, itemAttrs: { label: '服务ID' } },
-        { span: 4, attrs: { prop: 'CustomerId' }, itemAttrs: { label: '客户代码' } },
-        { span: 8, attrs: { prop: 'CustomerName' }, itemAttrs: { label: '客户名称' } },
-        { span: 4, attrs: { prop: 'contact' }, itemAttrs: { label: '联系人' } },
-        { span: 4, attrs: { prop: 'number' }, itemAttrs: { label: '电话' } },
-      ],
+      dialogLoading: false,
+      tableLoading: false,
+      tableData: [],
+      total: 0,
       returnOrderColumns: [
         { label: '退料单号', prop: 'id', handleClick: this._getReturnNoteDetail, type: 'link'},
         { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link' },
@@ -298,54 +295,21 @@ export const returnTableMixin = { // 退料表格
         { label: '客户名称', prop: 'customerName' },
         { label: '申请人', prop: 'createUser' },
         { label: '创建时间', prop: 'createDate' },
-        { label: '总金额', prop: 'totalMoney', slotName: 'totalMoney', align: 'right' },
+        // { label: '总金额', prop: 'totalMoney', slotName: 'totalMoney', align: 'right' },
         { label: '备注', prop: 'remark' },
         // { label: '状态', slotName: 'status' }
       ],
-      dialogLoading: false,
-      tableLoading: false,
-      tableData: [],
-      total: 0,
     }
   },
   methods: {
-    _getList () { // 获取涂料单列表信息
-      this.tableLoading = true
-      getReturnNoteList(this.listQuery).then(res => {
-        let { count, data } = res
-        this.tableData = data
-        this.total = count
-        this.tableLoading = false
-        this.$refs.returnOrderTable.resetCurrentRow()
-        console.log('_getList', this.$refs.returnOrderTable.getCurrentRow())
-      }).catch(err => {
-        this.$message.error(err.message)
-        this.tableLoading = false
-      })
-    },
-    _getReturnNoteDetail (data) { // 获取退料单详情
-      let id
-      let { status } = data
-      id = data.id
-      console.log(status, 'status', id)
-      this.tableLoading = true
-      getReturnNoteDetail({
-        id
-      }).then(res => {
-        this.detailInfo = this._normalizeDetail(res.data)
-        this.$refs.returnOrderDialog.open()
-        this.tableLoading = false
-        this.status = status
-      }).catch(err => {
-        this.$message.error(err.message)
-        this.tableLoading = false
-      })
-    },
     _normalizeDetail (data) {
       let { expressList, mainInfo, materialList } = data
+      const isArray = Array.isArray(expressList)
+      expressList = isArray ? expressList : [expressList]
+
       expressList.forEach(expressInfo => {
         let { id, expressInformation } = expressInfo
-        let subMaterialList = materialList.filter(item => item.key === id)[0].detail
+        let subMaterialList = isArray ? materialList.filter(item => item.key === id)[0].detail : materialList
         try {
           let infoList = JSON.parse(expressInformation).data
           expressInfo.expressInformation = infoList[infoList.length - 1].context
@@ -389,6 +353,64 @@ export const uploadFileMixin = {
           resolve()
         }
       })
+    }
+  }
+}
+
+
+export const afterReturnMixin = { // 退料之后 (仓库)
+  data () {
+    return {
+      returnOrderColumns: [
+        { label: '退料单号', prop: 'id', handleClick: this._getReturnNoteDetail, type: 'link'},
+        { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link' },
+        { label: '快递单号', prop: 'expressNumber' },
+        { label: '客户代码', prop: 'customerId' },
+        { label: '客户名称', prop: 'customerName' },
+        { label: '申请人', prop: 'createUser' },
+        { label: '创建时间', prop: 'createDate' },
+        // { label: '总金额', prop: 'totalMoney', slotName: 'totalMoney', align: 'right' },
+        { label: '备注', prop: 'remark' },
+        // { label: '状态', slotName: 'status' }
+      ]
+    }
+  },
+  methods: {
+    async _getList () {
+      this.tableLoading = true
+      try {
+        const { data, count } = await getReturnNoteListByExpress(this.listQuery)
+        this.tableData = data
+        this.total = count
+        console.log(data, count)
+      } catch(err) {
+        this.tableData = []
+        this.total = 0
+        this.$message.error(err.message)
+      } finally {
+        this.tableLoading = false
+        console.log('finally')
+      }
+    },
+    async _getReturnNoteDetail (row) {
+      const { expressId } = row
+      if (!expressId) {
+        return this.$message.warning('无物流ID')
+      }
+      this.isCreated = false
+      this.tableLoading = true
+      try {
+        const { data } = await getReturnNoteDetailByExpress({ expressageId: expressId })
+        console.log(data, 'getDetail')
+        this.detailInfo = this._normalizeDetail(data)
+        this.$refs.returnOrderDialog.open()
+        console.log(data, 'detail')
+      } catch (err) {
+        this.$message.error(err.message)
+      } finally {
+        this.tableLoading = false
+      }
+      
     }
   }
 }

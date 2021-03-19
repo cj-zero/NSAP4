@@ -1128,7 +1128,7 @@ export default {
       if (!this.form.serviceWorkOrders.length) {
         console.log('first error')
         this.$message({
-          message: `请将必填项填写完整`,
+          message: `工单列表不能为空`,
           type: "error",
         });
         this.$emit("close-Dia", "N");
