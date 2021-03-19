@@ -27,7 +27,7 @@ export function toThousands (val, range =  3, separator = ',', decimalNumber = 2
  */
 export function addZero (str, number) {
   let result = ''
-  let arr = str.split('')
+  let arr = String(str).split('')
   for (let i = 0; i < number; i++) {
     result += arr[i] || 0
   }

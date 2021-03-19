@@ -91,6 +91,10 @@
           <!-- 工程总经理审批报价单才出现 -->
           <el-row class="info-wrapper" type="flex" justify="end" align="middle">
             <div>
+              <span class="title">记账成本</span>
+              <span>￥{{ formData.totalCostPrice | toThousands(3, ',', 4) }}</span>
+            </div>
+            <div>
               <span class="title">维修费</span>
               <span>￥{{ formData.serviceCharge | toThousands }}</span>
             </div>
@@ -347,7 +351,7 @@
               {{ row. createTime | formatDateFilter }}
             </template>
             <template v-slot:intervalTime="scope">
-              {{ scope.row.intervalTime | m2DHM }}
+              {{ scope.row.intervalTime | s2HMS }}
             </template>
           </common-table>
         </div>
@@ -595,6 +599,7 @@ import { isNumber, isIntegerNumber } from '@/utils/validate'
 import { flatten } from '@/utils/utils'
 import rightImg from '@/assets/table/right.png'
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
+import { s2HMS } from '@/filter/time'
 const NOT_EDIT_STATUS_LIST = ['edit', 'upload', 'pay'] // 不可编辑的状态 1.查看 2.审批 3.支付
 const CONFIRM_TYPE_MAP = {
   upload: '上传',
@@ -616,6 +621,7 @@ export default {
     // AreaSelector
   },
   filters: {
+    s2HMS,
     formatDateFilter (val) {
       return val ? formatDate(val, 'YYYY.MM.DD HH:mm:ss') : ''
     },
@@ -766,7 +772,8 @@ export default {
         quotationProducts: [], // 报价单产品表
         remark: '',// 备注
         shippingDA: '',
-        collectionDA: ''
+        collectionDA: '',
+        totalCostPrice: 0
       }, 
       // 表单规则
       formRules: {
