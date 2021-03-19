@@ -101,7 +101,9 @@ namespace OpenAuth.App
                     TotalCount = item.TotalQty,
                     Check = item.ReturnQty > 0 ? 0 : 1,
                     CostPrice = item.CostPrice,
-                    QuotationMaterialId = item.QuotationMaterialId
+                    QuotationMaterialId = item.QuotationMaterialId,
+                    IsGoodFinish = 0,
+                    IsSecondFinish = 0
                 };
                 var detail = await UnitWork.AddAsync<ReturnnoteMaterial, int>(newDetailInfo);
                 await UnitWork.SaveAsync();
@@ -454,7 +456,7 @@ namespace OpenAuth.App
             //计算剩余未结清金额
             var notClearAmountList = (await UnitWork.Find<ReturnnoteMaterial>(w => returnNoteIds.Contains((int)w.ReturnNoteId) && w.Check == 1).ToListAsync()).GroupBy(g => new { g.ReturnNoteId, g.MaterialCode }).Select(s => new { s.Key.ReturnNoteId, s.Key.MaterialCode, Count = s.Sum(s => s.Count), TotalPassCount = s.Sum(s => s.SecondQty + s.GoodQty), Costprice = s.ToList().FirstOrDefault().CostPrice, TotalCount = s.ToList().FirstOrDefault().TotalCount }).ToList();
             var AmountList = notClearAmountList.GroupBy(g => g.ReturnNoteId).Select(s => new { s.Key, Amount = s.Sum(s => s.Costprice * (s.TotalCount - s.TotalPassCount)) }).ToList();
-            var returnNoteList = returnNote.Select(s => new { CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.CustomerName).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.mm.dd"), s.ServiceOrderSapId, s.CreateUserId, s.Id, notClearAmount = Math.Round((decimal)AmountList.Where(w => w.Key == s.Id).FirstOrDefault().Amount, 2), Status = Math.Round((decimal)AmountList.Where(w => w.Key == s.Id).FirstOrDefault().Amount, 2) > 0 ? "未清" : "已清", s.Remark }).ToList().GroupBy(g => new { g.Id }).Select(s => new { s.Key, detail = s.ToList() }).ToList();
+            var returnNoteList = returnNote.Select(s => new { CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.TerminalCustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.TerminalCustomer).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.mm.dd"), s.ServiceOrderSapId, s.CreateUserId, s.Id, notClearAmount = Math.Round((decimal)AmountList.Where(w => w.Key == s.Id).FirstOrDefault().Amount, 2), Status = Math.Round((decimal)AmountList.Where(w => w.Key == s.Id).FirstOrDefault().Amount, 2) > 0 ? "未清" : "已清", s.Remark }).ToList().GroupBy(g => new { g.Id }).Select(s => new { s.Key, detail = s.ToList() }).ToList();
             result.Data = returnNoteList;
             return result;
         }
@@ -483,10 +485,10 @@ namespace OpenAuth.App
             var serviceOrderInfo = await UnitWork.Find<ServiceOrder>(w => w.U_SAP_ID == returnNoteInfo.ServiceOrderSapId).FirstOrDefaultAsync();
             outData.Add("U_SAP_ID", serviceOrderInfo.U_SAP_ID);
             outData.Add("SalesMan", serviceOrderInfo.SalesMan);
-            outData.Add("CustomerId", serviceOrderInfo.CustomerId);
-            outData.Add("CustomerName", serviceOrderInfo.CustomerName);
-            outData.Add("Contacter", serviceOrderInfo.Contacter);
-            outData.Add("ContactTel", serviceOrderInfo.ContactTel);
+            outData.Add("CustomerId", serviceOrderInfo.TerminalCustomerId);
+            outData.Add("CustomerName", serviceOrderInfo.TerminalCustomer);
+            outData.Add("Contacter", serviceOrderInfo.NewestContacter);
+            outData.Add("ContactTel", serviceOrderInfo.NewestContactTel);
             //计算剩余未结清金额
             decimal? notClearAmount = 0;
             //获取物料信息
@@ -694,14 +696,15 @@ namespace OpenAuth.App
             //更新退料明细状态
             await UnitWork.UpdateAsync<ReturnnoteMaterial>(w => GoodDetailIds.Contains(w.Id), u => new ReturnnoteMaterial { IsGoodFinish = 1 });
             await UnitWork.UpdateAsync<ReturnnoteMaterial>(w => SecondDetailIds.Contains(w.Id), u => new ReturnnoteMaterial { IsSecondFinish = 1 });
+            await UnitWork.SaveAsync();
             //判断是否全部入库 仓库状态更新为已仓库入库
-            var count = (await UnitWork.Find<ReturnnoteMaterial>(w => w.ReturnNoteId == req.ReturnNoteId && (w.IsGoodFinish == 0 && w.GoodQty > 0) || (w.IsSecondFinish == 0 && w.SecondQty > 0)).ToListAsync()).Count;
+            var count = (await UnitWork.Find<ReturnnoteMaterial>(w => w.ExpressId == req.ExpressageId && (w.IsGoodFinish == 0 && w.GoodQty > 0) || (w.IsSecondFinish == 0 && w.SecondQty > 0)).ToListAsync()).Count;
             if (count == 0)
             {
                 await UnitWork.UpdateAsync<Expressage>(w => w.Id == req.ExpressageId, u => new Expressage { Status = 3 });
             }
             //判断是否所有退料都已入库
-            var isExist = (await UnitWork.Find<Expressage>(w => w.ReturnNoteId == req.ReturnNoteId && w.Status == 3).ToListAsync()).Count > 0 ? false : true;
+            var isExist = (await UnitWork.Find<Expressage>(w => w.ReturnNoteId == req.ReturnNoteId && w.Status < 3).ToListAsync()).Count > 0 ? false : true;
             if (isExist)
             {
                 await UnitWork.UpdateAsync<ReturnNote>(w => w.Id == req.ReturnNoteId, u => new ReturnNote { IsCanClear = 1 });

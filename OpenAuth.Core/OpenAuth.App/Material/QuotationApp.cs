@@ -661,7 +661,7 @@ namespace OpenAuth.App.Material
             var query = from a in UnitWork.Find<OITM>(null).WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), q => q.ItemCode.Contains(request.PartCode))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.PartDescribe), q => q.ItemName.Contains(request.PartDescribe))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.ReplacePartCode), q => !q.ItemCode.Equals(request.ReplacePartCode))
-                                //.WhereIf(codeList.Count > 0, q => !codeList.Contains(q.ItemCode))
+                            //.WhereIf(codeList.Count > 0, q => !codeList.Contains(q.ItemCode))
                         join b in UnitWork.Find<OITW>(null) on a.ItemCode equals b.ItemCode into ab
                         from b in ab.DefaultIfEmpty()
                         where b.WhsCode == "37"
@@ -1076,8 +1076,8 @@ namespace OpenAuth.App.Material
                             IsProtected = QuotationObj.IsProtected,
                             Status = 1,
                             ServiceCharge = QuotationObj.ServiceCharge,
-                            CollectionDA=QuotationObj.CollectionDA,
-                            ShippingDA=QuotationObj.ShippingDA,
+                            CollectionDA = QuotationObj.CollectionDA,
+                            ShippingDA = QuotationObj.ShippingDA,
                             AcquisitionWay = QuotationObj.AcquisitionWay,
                             //todo:要修改的字段赋值
                         });
@@ -1190,8 +1190,8 @@ namespace OpenAuth.App.Material
                             ServiceCharge = QuotationObj.ServiceCharge,
                             CollectionDA = QuotationObj.CollectionDA,
                             ShippingDA = QuotationObj.ShippingDA,
-                            AcquisitionWay=QuotationObj.AcquisitionWay,
-                            
+                            AcquisitionWay = QuotationObj.AcquisitionWay,
+
                             //FlowInstanceId = FlowInstanceId,
                             //todo:要修改的字段赋值
                         });
@@ -1368,7 +1368,7 @@ namespace OpenAuth.App.Material
 
             QuotationOperationHistory qoh = new QuotationOperationHistory();
 
-            var obj = await UnitWork.Find<Quotation>(q => q.Id == req.Id).Include(q => q.QuotationProducts).Include(q=>q.QuotationMergeMaterials).FirstOrDefaultAsync();
+            var obj = await UnitWork.Find<Quotation>(q => q.Id == req.Id).Include(q => q.QuotationProducts).Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
 
             qoh.ApprovalStage = obj.QuotationStatus;
             if (loginContext.Roles.Any(r => r.Name.Equals("物料工程审批")) && obj.QuotationStatus == 4)
@@ -1435,7 +1435,7 @@ namespace OpenAuth.App.Material
                 qoh.Action = "总经理审批";
                 obj.QuotationStatus = 10;
                 obj.Status = 2;
-                if (obj.QuotationMergeMaterials.Where(q => !q.MaterialCode.Equals("S111-SERVICE-GSF")).Count() <= 0) 
+                if (obj.QuotationMergeMaterials.Where(q => !q.MaterialCode.Equals("S111-SERVICE-GSF")).Count() <= 0)
                 {
                     obj.QuotationStatus = 11;
                 }
@@ -1648,6 +1648,14 @@ namespace OpenAuth.App.Material
             }
             #endregion
 
+            #region 判断是否已经开始退料 则不允许领料
+            var isExist = (await UnitWork.Find<ReturnNote>(w => w.ServiceOrderId == obj.ServiceOrderId && w.CreateUserId == loginUser.Id).ToListAsync()).Count > 0 ? true : false;
+            if (isExist)
+            {
+                throw new Exception("该服务单已开始退料，不可领料。");
+            }
+            #endregion
+
             return null;
         }
 
@@ -1741,7 +1749,7 @@ namespace OpenAuth.App.Material
             System.IO.File.WriteAllText(tempUrl, text, Encoding.UTF8);
             var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "SalesOrderFooter.html");
             var foottext = System.IO.File.ReadAllText(footUrl);
-            string InvoiceCompany = "", Location="", website = "";
+            string InvoiceCompany = "", Location = "", website = "";
             if (Convert.ToInt32(model.InvoiceCompany) == 1)
             {
                 InvoiceCompany = "深圳市新威尔电子有限公司 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 交通银行股份有限公司&nbsp;&nbsp;深圳梅林支行 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;443066388018001726113";
