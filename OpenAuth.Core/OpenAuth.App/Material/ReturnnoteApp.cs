@@ -97,7 +97,7 @@ namespace OpenAuth.App
                     ReturnNoteId = returnNoteId,
                     MaterialCode = item.MaterialCode,
                     MaterialDescription = item.MaterialDescription,
-                    Count = item.ReturnQty,
+                    Count = item.ReturnQty == null ? 0 : item.ReturnQty,
                     TotalCount = item.TotalQty,
                     Check = item.ReturnQty > 0 ? 0 : 1,
                     CostPrice = item.CostPrice,
@@ -454,8 +454,9 @@ namespace OpenAuth.App
             //获取退料单Id集合
             List<int> returnNoteIds = returnNote.Select(s => s.Id).Distinct().ToList();
             //计算剩余未结清金额
-            var notClearAmountList = (await UnitWork.Find<ReturnnoteMaterial>(w => returnNoteIds.Contains((int)w.ReturnNoteId) && w.Check == 1).ToListAsync()).GroupBy(g => new { g.ReturnNoteId, g.MaterialCode }).Select(s => new { s.Key.ReturnNoteId, s.Key.MaterialCode, Count = s.Sum(s => s.Count), TotalPassCount = s.Sum(s => s.SecondQty + s.GoodQty), Costprice = s.ToList().FirstOrDefault().CostPrice, TotalCount = s.ToList().FirstOrDefault().TotalCount }).ToList();
+            var notClearAmountList = (await UnitWork.Find<ReturnnoteMaterial>(w => returnNoteIds.Contains((int)w.ReturnNoteId)).ToListAsync()).GroupBy(g => new { g.ReturnNoteId, g.MaterialCode }).Select(s => new { s.Key.ReturnNoteId, s.Key.MaterialCode, Count = s.Sum(s => s.Count), TotalPassCount = s.Sum(s => s.SecondQty + s.GoodQty), Costprice = s.ToList().FirstOrDefault().CostPrice, TotalCount = s.ToList().FirstOrDefault().TotalCount }).ToList();
             var AmountList = notClearAmountList.GroupBy(g => g.ReturnNoteId).Select(s => new { s.Key, Amount = s.Sum(s => s.Costprice * (s.TotalCount - s.TotalPassCount)) }).ToList();
+
             var returnNoteList = returnNote.Select(s => new { CustomerId = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.TerminalCustomerId).FirstOrDefault(), CustomerName = serviceOrderList.Where(w => w.Id == s.ServiceOrderId).Select(s => s.TerminalCustomer).FirstOrDefault(), s.ServiceOrderId, s.CreateUser, CreateDate = s.CreateTime.ToString("yyyy.mm.dd"), s.ServiceOrderSapId, s.CreateUserId, s.Id, notClearAmount = Math.Round((decimal)AmountList.Where(w => w.Key == s.Id).FirstOrDefault().Amount, 2), Status = Math.Round((decimal)AmountList.Where(w => w.Key == s.Id).FirstOrDefault().Amount, 2) > 0 ? "未清" : "已清", s.Remark }).ToList().GroupBy(g => new { g.Id }).Select(s => new { s.Key, detail = s.ToList() }).ToList();
             result.Data = returnNoteList;
             return result;
@@ -489,17 +490,31 @@ namespace OpenAuth.App
             outData.Add("CustomerName", serviceOrderInfo.TerminalCustomer);
             outData.Add("Contacter", serviceOrderInfo.NewestContacter);
             outData.Add("ContactTel", serviceOrderInfo.NewestContactTel);
+            //获取领料单详情
+            List<int> quotationIds = new List<int>();
+            if (!string.IsNullOrEmpty(returnNoteInfo.StockOutId))
+            {
+                var arr = returnNoteInfo.StockOutId.Split(",");
+                for (int i = 0; i < arr.Length; i++)
+                {
+                    if (!quotationIds.Contains(Convert.ToInt32(arr[i])))
+                    {
+                        quotationIds.Add(Convert.ToInt32(arr[i]));
+                    }
+                }
+            }
+            var qutationMaterials = (await UnitWork.Find<QuotationMergeMaterial>(q => quotationIds.Contains((int)q.QuotationId) && q.IsProtected == true).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new { s.Key, Qty = s.Sum(s => s.Count) }).ToList();
             //计算剩余未结清金额
             decimal? notClearAmount = 0;
             //获取物料信息
-            var MaterialList = (await UnitWork.Find<ReturnnoteMaterial>(w => w.ReturnNoteId == returnNoteInfo.Id && w.Check == 1).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new
+            var MaterialList = (await UnitWork.Find<ReturnnoteMaterial>(w => w.ReturnNoteId == returnNoteInfo.Id).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new
             {
                 MaterialCode = s.Key,
                 MaterDescription = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().MaterialDescription,
                 AlreadyReturnQty = s.Where(w => w.MaterialCode == s.Key).Sum(k => k.Count),
-                TotalReturnCount = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().TotalCount,
-                NotClearAmount = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().CostPrice * (s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().TotalCount - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.GoodQty) - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.SecondQty)),
-                Status = s.Where(w => w.MaterialCode == s.Key).Sum(k => k.CostPrice * (k.TotalCount - k.GoodQty - k.SecondQty)) > 0 ? "未清" : "已清"
+                TotalReturnCount = qutationMaterials.Where(w => w.Key == s.Key).FirstOrDefault().Qty,
+                NotClearAmount = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().CostPrice * (qutationMaterials.Where(w => w.Key == s.Key).FirstOrDefault().Qty - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.GoodQty) - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.SecondQty)),
+                Status = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().CostPrice * (qutationMaterials.Where(w => w.Key == s.Key).FirstOrDefault().Qty - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.GoodQty) - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.SecondQty)) > 0 ? "未清" : "已清"
             }).ToList();
             MaterialList.ForEach(f => notClearAmount += f.NotClearAmount);
             outData.Add("NotClearAmount", Math.Round((decimal)notClearAmount, 2));

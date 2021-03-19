@@ -5,7 +5,7 @@ using System.Text;
 
 namespace OpenAuth.App.Material.Response
 {
-    public class ReturnMaterialListResp : QuotationMaterial
+    public class ReturnMaterialListResp : QuotationMergeMaterial
     {
         /// <summary>
         /// 剩余需退

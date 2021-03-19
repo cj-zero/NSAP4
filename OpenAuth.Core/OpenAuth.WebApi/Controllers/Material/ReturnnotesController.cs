@@ -5,6 +5,7 @@ using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Material.Request;
+using OpenAuth.App.Material.Response;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
@@ -32,6 +33,15 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 await _returnnoteApp.ReturnMaterials(returnMaterialReq);
+                List<ReturnMaterialDetail> data = new List<ReturnMaterialDetail>();
+                foreach (var item in returnMaterialReq.ReturnMaterialDetail)
+                {
+                    if (item.ReturnQty > 0)
+                    {
+                        data.Add(item);
+                    }
+                }
+                returnMaterialReq.ReturnMaterialDetail = data;
                 result.Data = returnMaterialReq;
             }
             catch (Exception ex)
