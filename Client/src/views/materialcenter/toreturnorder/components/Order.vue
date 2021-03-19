@@ -40,6 +40,16 @@
                 <p v-infotooltip.top.start.ellipsis>{{ row.expressInformation }}</p>
               </el-row>
             </template>
+            <template v-slot:freight="{ row }">
+              <span style="text-align: right"></span>{{ row.freight | toThousands }}
+            </template>
+            <template v-slot:upload="{ row }">
+              <el-button 
+                size="mini" 
+                class="customer-btn-class"
+                @click="previewPicture(row)"
+              >查看</el-button>
+            </template>
           </common-table>
         </div>
       </div>
@@ -73,7 +83,7 @@
               @click.stop="check(row, 2)">未通过</el-button>
           </template>
           <!-- 差错数量 -->
-          <template v-slot:wrongCount="{ row }">
+          <!-- <template v-slot:wrongCount="{ row }">
             <el-input-number 
               size="mini"
               :controls="false"
@@ -82,7 +92,7 @@
               :max="row.count"
             >
             </el-input-number>
-          </template>  
+          </template>   -->
           <!-- 收货备注 -->
           <!-- <template v-slot:receiveRemark="{ row }">
             <el-form-item 
@@ -103,7 +113,7 @@
               v-if="row.pictureId" 
               size="mini" 
               class="customer-btn-class"
-              @click="previewPicture(row.pictureId)"
+              @click="previewPicture(row)"
             >查看</el-button>
           </template>
         </common-table>
@@ -136,7 +146,7 @@
     <el-image-viewer
       v-if="dialogVisible"
       :zIndex="99999"
-      :url-list="[dialogImageUrl]"
+      :url-list="dialogImageUrl"
       :on-close="closeViewer"
     >
     </el-image-viewer>
@@ -236,8 +246,8 @@ export default {
       expressColumns: [
         { label: '快递单号', prop: 'expressNumber', width: '100px' },
         { label: '物流信息', prop: 'expressInformation', slotName: 'expressInformation', 'show-overflow-tooltip': false },
-        { label: '退货备注', prop: 'tuihuo', slotName: 'tuihuo' },
-        { label: '签收备注', prop: 'qianshou', slotName: '签收'}
+        { label: '运费', prop: 'freight', width: 100, align: 'right', slotName: 'freight', 'show-overflow-tooltip': false },
+        { label: '图片', slotName: 'upload', width: 70 }
         // { label: '图片', type: 'slot', slotName: 'pictures', prop: 'pictures', width: '100px' }
       ],
       currentIndex: 0, // 当前点击的物流信息表格索引
@@ -248,11 +258,9 @@ export default {
         { label: '物料编码', prop: 'materialCode' },
         { label: '物料描述', prop: 'materialDescription' },
         { label: '本次退还数量', prop: 'count', align: 'right' },
-        // { label: '需退总计', prop: 'totalCount', align: 'right' },
         { label: '图片', slotName: 'pictures' },
-        { label: '寄回备注', prop: 'shippingRemark' },
-        { label: '出错数量', prop: 'wrongCount', slotName: 'wrongCount', align: 'right' },
-        { label: '核对验收', slotName: 'check', width: '150px' }
+        { label: '核对验收', slotName: 'check', width: '150px' },
+        { label: '收货备注', prop: 'shippingRemark' },
       ],
       returnLoading: false,
       formItems: [
@@ -265,8 +273,13 @@ export default {
     }
   },
   methods: {
-    previewPicture (pictureId) {
-      this.dialogImageUrl = processDownloadUrl(pictureId)
+    previewPicture (row) {
+      const { pictureId, expressagePicture } = row
+      if (expressagePicture) {
+        this.dialogImageUrl = expressagePicture.map(item => processDownloadUrl(item.pictureId))
+      } else if (pictureId) {
+        this.dialogImageUrl = [processDownloadUrl(pictureId)]
+      }
       this.dialogVisible = true
     },
     openedFn () {
@@ -336,12 +349,14 @@ export default {
       let returnMaterials = this.generateReturnMaterials(isSave ? this.checkList : this.allMaterialList)
       console.log(this.checkList, returnMaterials, isMaterialValid, 'checked')
       let params = {
+        expressageId: this.expressList[0].id,
         id: this.formData.returnNoteCode,
         returnMaterials,
         remark: this.formData.remark
       }
-      console.log(params)
-      return isSave ? saveReceiveInfo(params) : accraditate(params)
+      console.log(params, accraditate)
+      return saveReceiveInfo(params)
+      // return isSave ? saveReceiveInfo(params) : accraditate(params)
     },
     getExpressInformation (row) {
       console.log(row, 'row')
@@ -458,7 +473,7 @@ export default {
       // display: flex;
       margin-top: 10px;
       .courier-table-wrapper {
-        width: 700px;
+        // width: 700px;
         margin-top: 10px;
         // max-height: 100px;
         margin-right: 20px;

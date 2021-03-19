@@ -1,10 +1,16 @@
 <template>
-  <div class="quotation-wrapper" v-loading="loading">
+  <div 
+    class="quotation-wrapper" 
+    v-loading.fullscreen="loading" 
+    :element-loading-text="loadingText"
+    element-loading-spinner="el-icon-loading"
+    element-loading-background="rgba(0, 0, 0, 0.8)"
+  >
     <el-row type="flex" class="title-wrapper">
-      <p><span>出库订单</span><span>{{ formData.id || '' }}</span></p>
-      <p><span>申请人</span><span>{{ formData.createUser }}</span></p>
+      <p><span>退库订单</span><span>{{ formData.returnNoteCode || '' }}</span></p>
+      <p><span>申请人</span><span>{{ formData.creater }}</span></p>
       <p><span>创建时间</span><span>{{ formData.createTime | formatDateFilter }}</span></p>
-      <p><span>销售员</span><span>{{ formData.salesMan }}</span></p>
+      <p><span>销售员</span><span>{{ formData.salMan }}</span></p>
     </el-row>
     <!-- 主题内容 -->
     <el-scrollbar class="scroll-bar">
@@ -29,6 +35,7 @@
             <span class="text">物流信息</span>
           </el-row>
           <el-button 
+            v-if="isShowAddBtn"
             class="add-btn" 
             type="primary" 
             size="mini" 
@@ -38,12 +45,16 @@
         <!-- 物流表格 -->
         <common-table
           class="courier-table table-wrapper"
+          :class="{ 'courier-table': orderType === 'returnOrder' }"
           ref="courierTable"
           :data="expressList" 
           :columns="expressColumns"
           max-height="150px"
           @row-click="onExpressRowClick"
         >
+          <template v-slot:operation="{ row }">
+            <span class="picture" :class="{ 'finished': row.status === 1 }" @click="addExpressInfo">{{ formatOperationText(row) }}</span>
+          </template>
           <template v-slot:expressInformation="{ row }">
             <el-row v-infotooltip.top-start.ellipsis>
               <img :src="rightImg" @click="_getExpressInfo(row)" class="search-icon">
@@ -53,11 +64,11 @@
           <template v-slot:freight="{ row }">
             <span style="text-align: right"></span>{{ row.freight | toThousands }}
           </template>
-          <template v-slot:picture="{ row }">
+          <template v-slot:upload="{ row }">
             <span class="picture"  @click="showExpressPicture(row)">查看</span>
           </template>
         </common-table>
-        <el-row type="flex" class="freight" justify="end">
+        <el-row type="flex" class="freight" :class="{ 'quality': orderType === 'quality', 'storage': orderType === 'storage' }" justify="end">
           <span class="title">总计</span>
           <p v-infotooltip.ellipsis.top-start class="money">￥{{ freightTotal | toThousands }}</p>
         </el-row>
@@ -72,21 +83,26 @@
         <common-table 
           class="table-wrapper"
           ref="materialTable"
-          :data="materialList" 
+          :data="materialList"
+          max-height="250px"
           :columns="materialColumns"
         >
           <!-- 查看图片 -->
-          <template v-slot:picture="{ row }">
-            <el-button @click.native="showMaterialPicture(row)">查看按钮</el-button>
+          <template v-slot:upload="{ row }">
+            <span class="picture" @click="showMaterialPicture(row)">查看</span>
           </template>
           <!-- 入库模块 -->
-          <template v-slot:toPutGood>
-            好的
+          <template v-slot:toPutGood="{ row }">
+            <span :class="{ 'picture': !row.isGoodFinish }" @click="_storageMaterial(row, true)">{{ row.isGoodFinish ? 37 : (row.goodQty ? '入库' : '') }}</span>
           </template>
-          <template v-slot:toPutBad>
-            坏的
+          <template v-slot:toPutBad="{ row }">
+            <span :class="{ 'picture': !row.isSecondFinish }" @click="_storageMaterial(row, false)">{{ row.isSecondFinish ? 39 : (row.secondQty ? '入库' : '') }}</span>
           </template>
         </common-table>
+        <el-row type="flex" justify="end" v-if="orderType === 'storage' && (!ifPutAllGood || !ifPutAllSecond)" class="storage-btn-wrapper">
+          <span class="picture good" @click="_storageMaterial(expressList, true)" v-if="!ifPutAllGood">一键入库</span>
+          <span class="picture second" @click="_storageMaterial(expressList, false)" v-if="!ifPutAllSecond">一键入库</span>
+        </el-row>
       </div>
     </el-scrollbar>
     <!-- 退料列表搜索 -->
@@ -126,8 +142,14 @@
       :btnList="btnList"
       @closed="closeExpressDialog"
       @opened="onExpressInfoOpen"
+      :destroy-on-close="true"
     >
-      <AddExpressInfo ref="addExpressInfo" :formData="formData" @addExpressInfo="onAddExpressInfo" :orderType="orderType" />
+      <AddExpressInfo 
+        ref="addExpressInfo" 
+        :formData="formData" 
+        @addExpressInfo="onAddExpressInfo" 
+        :orderType="orderType" 
+        :expressList="expressList" />
     </my-dialog>
     <!-- 只能查看的表单 -->
     <my-dialog
@@ -164,7 +186,7 @@
 
 <script>
 import { getExpressInfo } from '@/api/material/quotation'
-import { getServiceOrderInfo } from '@/api/material/returnMaterial'
+import { getServiceOrderInfo, storageMaterial } from '@/api/material/returnMaterial'
 import { chatMixin, rolesMixin } from '../../common/js/mixins'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
@@ -177,39 +199,25 @@ import { formatDate } from '@/utils/date'
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import rightImg from '@/assets/table/right.png'
 import { 
-  SHOW_RETURN_COLUMNS, 
-  SHOW_QUALITY_COLUMNS,
-  SHOW_STORAGE_COLUMNS_TO_TEST,
-  SHOW_STORAGE_COLUMNS_FINISHED,
+  EXPRESS_COLUMNS_MAP,
+  TABLE_COLUMNS_MAP,
+  // STORAGE_COLUMNS_MAP,
   SHOW_STORAGE_COLUMNS_TO_PUT,
-  EXPRESS_RETURN_COLUMNS, 
-  EXPRESS_QUALITY_COLUMNS,
-  EXPRESS_STORAGE_COLUMNS
+  QUALITY_TEXT_MAP,
+  STORAGE_TEXT_MAP
 } from '../js/config'
-const EXPRESS_COLUMNS_MAP = { // 快递表格
-  returnOrder: EXPRESS_RETURN_COLUMNS,
-  quality: EXPRESS_QUALITY_COLUMNS,
-  storage: EXPRESS_STORAGE_COLUMNS
+const LOADING_TEXT_MAP = {
+  returnOrder: '退料中',
+  quality: '检测中',
+  storage: '入库中'
 }
-
-const TABLE_COLUMNS_MAP = { // 物料动态变化的表格
-  returnOrder: SHOW_RETURN_COLUMNS,
-  quality: SHOW_QUALITY_COLUMNS
-}
-
-const STORAGE_COLUMNS_MAP = {
-  test: SHOW_STORAGE_COLUMNS_TO_TEST,
-  finished: SHOW_STORAGE_COLUMNS_FINISHED,
-  put: SHOW_STORAGE_COLUMNS_TO_PUT
-}
-
 export default {
   mixins: [chatMixin, rolesMixin],
-  provide () {
-    return {
-      parentVm: this
-    }
-  },
+  // provide () {
+  //   return {
+  //     parentVm: this
+  //   }
+  // },
   directives: {
     elDragDialog
   },
@@ -249,15 +257,33 @@ export default {
       immediate: true,
       handler (val) {
         if (val) {
-          Object.assign(this.formData, val)
+          Object.assign(this.formData, val.mainInfo)
           this.currentIndex = 0
-          this.expressList = val.expressages
+          this.expressList = val.expressList
           console.log(val, this.expressList, 'detail info')
         }
       }
     }
   },
   computed: {
+    loadingText () {
+      return LOADING_TEXT_MAP[this.orderType]
+    },
+    isShowAddBtn () {
+      return this.orderType === 'returnOrder' && !this.formData.isLast
+    },
+    ifPutAllGood () { // 良品是否全部入库
+      return this.expressList.length ? this.expressList[0].materialList.every(item => {
+        const { isGoodFinish, goodQty } = item
+        return +isGoodFinish || !+goodQty
+      }) : false
+    },
+    ifPutAllSecond () { // 次品是否全部入库
+      return this.expressList.length ? this.expressList[0].materialList.every(item => {
+        const { isSecondFinish, secondQty } = item
+        return +isSecondFinish || !+secondQty
+      }) : false
+    },
     dialogTitle () {
       return this.orderType === 'returnOrder' ? '新增快递信息' : '待检物料'
     },
@@ -273,7 +299,7 @@ export default {
     materialList () {
       console.log(this.currentIndex, this.expressList, 'computed')
       if (this.expressList[this.currentIndex]) {
-        return this.expressList[this.currentIndex].logisticsRecords
+        return this.expressList[this.currentIndex].materialList
       }
       return []
     },
@@ -286,7 +312,7 @@ export default {
       return 0
     },
     materialColumns () {
-      return TABLE_COLUMNS_MAP[this.orderType] ? TABLE_COLUMNS_MAP[this.orderType] : STORAGE_COLUMNS_MAP[this.currnetRow.status]
+      return TABLE_COLUMNS_MAP[this.orderType] ? TABLE_COLUMNS_MAP[this.orderType] : SHOW_STORAGE_COLUMNS_TO_PUT
     }
   },
   data () {
@@ -300,35 +326,31 @@ export default {
       pictureList: [], // 快递图片列表
       addVisible: false,
       formData: {
+        returnNoteCode: '', // 退库单号
         salesOrderId: '', // 销售单号
-        serviceOrderSapId: '', // NSAP ID
+        serviceSapId: '', // NSAP ID
         serviceOrderId: '', 
-        createUser: '',
+        creater: '',
         u_SAP_ID: '',
         customerName: '', // 客户名称
-        customerId: '', // 客户代码
-        salesMan: '', // 销售员
-        contactTel: '', // 电话
-        contacter: '' // 联系人
+        customerCode: '', // 客户代码
+        salMan: '', // 销售员
+        contacterTel: '', // 电话
+        contacter: '', // 联系人
+        isLast: 0 // 判断是不是最后一次退料
       }, 
-      formItems1: [
-        { span: 4, attrs: { prop: 'U_SAP_ID' }, itemAttrs: { label: '服务ID' } },
-        { span: 4, attrs: { prop: 'CustomerId' }, itemAttrs: { label: '客户代码' } },
-        { span: 8, attrs: { prop: 'CustomerName' }, itemAttrs: { label: '客户名称' } },
-        { span: 4, attrs: { prop: 'contact' }, itemAttrs: { label: '联系人' } },
-        { span: 4, attrs: { prop: 'number' }, itemAttrs: { label: '电话' } },
-      ],
       formItems: [
-        { tag: 'text', span: 3, attrs: { prop: 'u_SAP_ID', readonly: true }, itemAttrs: { prop: 'u_SAP_ID', label: '服务ID' }, on: { focus: this.onServiceIdFocus }},
-        { tag: 'text', span: 6, attrs: { prop: 'customerId', disabled: true }, itemAttrs: { prop: 'customerId', label: '客户代码' } },
+        { tag: 'text', span: 3, attrs: { prop: 'serviceSapId', readonly: true }, itemAttrs: { prop: 'u_SAP_ID', label: '服务ID' }, on: { focus: this.onServiceIdFocus }},
+        { tag: 'text', span: 6, attrs: { prop: 'customerCode', disabled: true }, itemAttrs: { prop: 'customerCode', label: '客户代码' } },
         { tag: 'text', span: 6, attrs: { prop: 'customerName', disabled: true }, itemAttrs: { prop: 'customerName', label: '客户名称' } },
-        { tag: 'text', span: 3, attrs: { prop: 'contactr', disabled: true }, itemAttrs: { prop: 'contactr', label: '联系人',  } },
-        { tag: 'text', span: 6, attrs: { prop: 'contactTel', disabled: true }, itemAttrs: { prop: 'contactTel', label: '电话' } },
+        { tag: 'text', span: 3, attrs: { prop: 'contacter', disabled: true }, itemAttrs: { prop: 'contacter', label: '联系人',  } },
+        { tag: 'text', span: 6, attrs: { prop: 'contacterTel', disabled: true }, itemAttrs: { prop: 'contacterTel', label: '电话' } },
       ],
       rules: {
-        'u_SAP_ID': [{ required: true }],
-        serviceOrderSapId: [{ required: true }],
-        customerId: [{ required: true }],
+        // 'u_SAP_ID': [{ required: true }],
+        serviceOrderId: [{ required: true }],
+        serviceSapId: [{ required: true }],
+        customerCode: [{ required: true }],
         customerName: [{ required: true }],
         contacter: [{ required: true }],
         contactTel: [{ required: true }]
@@ -371,13 +393,17 @@ export default {
         { btnText: '确定', handleClick: this.confirmOrder }
       ],
       previewVisible: false,
-      previewImageUrlList: [] // 用来展示图片
+      previewImageUrlList: [], // 用来展示图片
+      hasBeenStorage: false // 判断是否调用过入库接口
     }
   },
   methods: {
     async onServiceIdFocus (prop) {
       console.log(prop)
-      try { 
+      if (this.expressList.length) {
+        return
+      }
+      try {  
         const { data, count } = await getServiceOrderInfo(this.listQueryOrder)
         this.orderList = data
         this.orderTotal = count
@@ -387,6 +413,11 @@ export default {
         this.orderTotal = 0
         this.$message.error(err)
       }
+    },
+    formatOperationText (row) {
+      const { status = 0 } = row
+      const text = this.orderType === 'quality' ? QUALITY_TEXT_MAP[status] : STORAGE_TEXT_MAP[status]
+      return text
     },
     _openServiceOrder () {
       console.log(this.formData.serviceOrderId, this.formData)
@@ -400,15 +431,21 @@ export default {
         if (!this.formData.serviceOrderId) {
           return this.$message.warning('请先选择服务单')
         }
-        this.$refs.expressInfoDialog.open()
       }
+      this.$refs.expressInfoDialog.open()
     },
     showMaterialPicture (row) {
       console.log(row, 'row')
+      let { pictureId } = row
+      if (!pictureId) {
+        return this.$message.warning('暂无快递图片')
+      }
+      let pictureList = [processDownloadUrl(pictureId)]
+      this.previewImageUrlList = pictureList
+      this.previewVisible = true
     },
     handleOrderCurrentChange (val) {
       Object.assign(this.listQueryOrder, val)
-      
     },
     confirmOrder () { // 选定需要退料的服务单
       console.log('confirm order')
@@ -417,11 +454,11 @@ export default {
         return this.$message.warning('请先选择数据')
       }
       const { id, contactTel, contacter, customerId, customerName, u_SAP_ID } = currentRow
-      this.formData.u_SAP_ID = u_SAP_ID
+      this.formData.serviceSapId = u_SAP_ID
       this.formData.serviceOrderId = id 
-      this.formData.contactTel = contactTel
+      this.formData.contacterTel = contactTel
       this.formData.contacter = contacter
-      this.formData.customerId = customerId
+      this.formData.customerCode = customerId
       this.formData.customerName = customerName
       this.$refs.orderListDialog.close()
       this.listQueryOrder = { page: 1, limit: 20 }
@@ -441,10 +478,11 @@ export default {
       }
     },
     onExpressRowClick (row) {
-      this.currentIndex = findIndex(this.expressList, item => item.id === row.id)
-      console.log(this.currentIndex, 'rowclick')
+      this.currentIndex = this.expressList.findIndex(item => item === row)
+      // this.currentIndex = findIndex(this.expressList, item => item.id === row.id)
+      console.log(this.currentIndex, 'rowclick', findIndex)
     },
-    showExpressPicture (row) {
+    showExpressPicture (row) { // 图片
       let { expressagePicture } = row
       let pictureList = expressagePicture.map(item => processDownloadUrl(item.pictureId))
       if (!pictureList.length) {
@@ -453,13 +491,125 @@ export default {
       this.previewImageUrlList = pictureList
       this.previewVisible = true
     },
-    onAddExpressInfo ({ expressages, start }) { // 监听到提交成功之后
-      this.expressList = expressages
-      this.formData.quotationStatus = start
+    onAddExpressInfo (expressages) { // 监听到提交成功之后
+      this.orderType === 'returnOrder' ? this.showReturnList(expressages) : this.showQualityList(expressages)
+      this.closeExpressDialog()
+    },
+    showReturnList (expressages) {
+      const { trackNumber: expressNumber, freight, returnMaterialDetail, expressPictureIds: list, isLastReturn } = expressages
+      this.formData.isLast = Number(isLastReturn)
+      let expressagePicture = list.map(pictureId => ({ pictureId }))
+      const materialList = returnMaterialDetail.map(item => {
+        const { materialCode, materialDescription, pictureId, returnQty: count, totalQty: totalCount, surplusQty } = item
+        return {
+          materialCode,
+          materialDescription,
+          pictureId,
+          count,
+          totalCount,
+          surplusQty
+        }
+      })
+      this.expressList.unshift({
+        expressNumber,
+        freight,
+        expressagePicture,
+        expressInformation: '',
+        materialList
+      })
+      // this.expressList = expressages
+      // this.formData.quotationStatus = start
       // 每次都添加完默认展示最新的物料数据
       this.currentIndex = 0
       this.$refs.courierTable.setCurrentRow(this.expressList[this.currentIndex])
-      console.log(this.currentIndex, this.expressList)
+      console.log(this.currentIndex, this.expressList, 'expressList', 'currentIndex')
+    },
+    showQualityList (expressages) {
+      const { checkOutMaterials } = expressages
+      const materialList = this.expressList[0].materialList
+      checkOutMaterials.forEach((item, index) => {
+        const { goodQty, secondQty } = item
+        materialList[index].goodQty = goodQty
+        materialList[index].secondQty = secondQty
+      })
+    },
+    async _storageMaterial (row, isGood) {
+      const key = isGood ? 'isGoodFinish' : 'isSecondFinish'
+      const text = isGood ? '良品' : '次品'
+      const whsCode = isGood ? 37 : 39
+      const isPutWidthOne = Array.isArray(row) // 是否一键入库
+      const expressageId = this.expressList[0].id
+      const returnNoteId = this.formData.returnNoteCode
+      const params = {
+        expressageId,
+        returnNoteId
+      }
+      if (isPutWidthOne) { // 一键入库
+        const materialList = this.expressList[0].materialList
+        const storageList = materialList.filter(item => {
+          const { goodQty, secondQty } = item
+          const count = isGood ? goodQty : secondQty
+          return count >= 1 && !(+item[key])
+        }) // 找到列表中没有入库的单
+        console.log(storageList, 'storageList')
+        
+        if (!storageList.length) {
+          return this.$message.warning(`没有可以入库的${text}`)
+        }
+        const putInMaterials = storageList.map(item => {
+          const { id, materialId, goodQty, secondQty } = item
+          const count = isGood ? goodQty : secondQty
+          return {
+            id,
+            materialId,
+            whsCode,
+            qty: count
+          }
+        })
+        params.putInMaterials = putInMaterials
+        console.log(storageList, params)
+      } else {
+        const { isGoodFinish, isSecondFinish, id, materialId, goodQty, secondQty } = row
+        const hasStoraged = isGood ? isGoodFinish : isSecondFinish
+        const count = isGood ? goodQty : secondQty
+        if (hasStoraged) {
+          return this.$message.warning(`当前${text}已经入库`)
+        }
+        if (!count) {
+          return this.$message.warning(`没有可以入库的${text}`)
+        }
+        const putInMaterials = [{
+          id,
+          materialId,
+          whsCode,
+          qty: count
+        }]
+        params.putInMaterials = putInMaterials
+        console.log(params, 'params')
+      }
+      this.loading = true
+      try {
+        await storageMaterial(params)
+        if (isPutWidthOne) {
+          this.expressList[0].materialList.forEach(item => {
+            const { goodQty, secondQty } = item
+            const count = isGood ? goodQty : secondQty
+            if (count) {
+              item[key] = 1
+            }
+          })
+        } else {
+          row[key] = 1
+        }
+        if (!this.hasBeenStorage) {
+          this.hasBeenStorage = true
+        }
+      } catch (err) {
+        this.$message.error(err.message)
+      } finally {
+        this.loading = false
+      }
+      console.log(row, isGood, storageMaterial, 'storageMaterial')
     },
     onExpressInfoOpen () {
       this.$refs.addExpressInfo.onOpened()
@@ -484,7 +634,7 @@ export default {
         data.expressInformation = expressList[expressList.length - 1].context
       }).catch(err => {
         // data.expressInformation = ''
-        this.$message.error(err.message)
+        this.$message.error(err ? err.message : '查询物流信息失败')
       })
     },
     resetFile () { // 清空文件列表
@@ -611,16 +761,19 @@ export default {
       // display: flex;
       margin-top: 10px;
       > .title {
-        width: 522px;
+        // width: 522px;
       }
       .courier-table {
-        width: 522px;
+        // width: 522px;
         .search-icon {
           cursor: pointer;
         }
         .picture {
           color: rgba(247, 195, 56, 1);
           cursor: pointer;
+        }
+        .finished {
+          color: #222;
         }
       }
       .add-btn {
@@ -632,7 +785,13 @@ export default {
       }
       /* 总运费 */
       .freight {
-        width: 450px;
+        margin-right: 70px;
+        &.quality {
+          margin-right: 120px;
+        } 
+        &.storage {
+          margin-right: 70px;
+        }
         font-weight: bold;
         .title {
           margin-right: 24px;
@@ -645,6 +804,23 @@ export default {
     /* 物料表格 */
     .material-wrapper {
       margin-top: 20px;
+      .storage-btn-wrapper {
+        position: relative;
+        height: 20px;
+        margin: 5px 0 10px 0;
+      }
+      .picture {
+        color: rgba(247, 195, 56, 1);
+        cursor: pointer;
+        &.good {
+          position: absolute;
+          right: 210px;
+        }
+        &.second {
+          position: absolute;
+          right: 30px;
+        }
+      }
     }
   }
 }

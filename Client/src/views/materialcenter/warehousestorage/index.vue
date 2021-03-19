@@ -42,7 +42,7 @@
         ref="returnOrder" 
         :detailInfo="detailInfo"
         :status="status"
-        :orderType="storage"
+        orderType="storage"
         ></return-Order>
     </my-dialog>
     <!-- 只能查看的表单 -->
@@ -75,10 +75,10 @@ import Search from '@/components/Search'
 import ReturnOrder from '../common/components/ReturnOrder'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
-import { quotationTableMixin, chatMixin, returnTableMixin } from '../common/js/mixins'
+import { quotationTableMixin, chatMixin, returnTableMixin, afterReturnMixin } from '../common/js/mixins'
 export default {
   name: 'materialToReturnOrder',
-  mixins: [quotationTableMixin, chatMixin, returnTableMixin],
+  mixins: [quotationTableMixin, chatMixin, returnTableMixin, afterReturnMixin],
   components: {
     Search,
     ReturnOrder,
@@ -99,8 +99,6 @@ export default {
     }, // 搜索配置
     btnList () {
       return [
-        { btnText: '验收', handleClick: this.checkOrSave, isShow: this.detailInfo && this.detailInfo.mainInfo.isLast === 1 },
-        { btnText: '保存', handleClick: this.checkOrSave, options: { isSave: true } },
         { btnText: '关闭', handleClick: this.handleClose, className: 'close' }      
       ]
     }
@@ -108,7 +106,7 @@ export default {
   data () {
     return {
       listQuery: {
-        status: '1',
+        status: '2',
         page: 1,
         limit: 50,
       },
@@ -150,6 +148,10 @@ export default {
       this.$refs.returnOrderDialog.close()
     },
     closed () {
+      if (this.$refs.returnOrder.hasBeenStorage) {
+        console.log(this.$refs.returnOrder.hasBeenStorage, 'this.$refs.returnOrder.hasBeenStorage')
+        this._getList()
+      }
       this.$refs.returnOrder.resetInfo()
     },
     onOpened () {

@@ -148,7 +148,7 @@
                 :loading="serialLoading">
                 <template v-slot:materialCode="{ row }">
                   <el-row type="flex" align="middle">
-                    <span span v-infotooltip.top-start.ellipsis :class="{ 'has-icon': row.isProtected }">{{ row.materialCode }}</span>
+                    <span v-infotooltip.top-start.ellipsis :class="{ 'has-icon': row.isProtected }">{{ row.materialCode }}</span>
                     <svg-icon iconClass="warranty" v-if="row.isProtected"></svg-icon>
                   </el-row>
                 </template>
@@ -241,7 +241,7 @@
                 </template>
                 <template v-slot:maxQuantity="{ row }">
                   <el-row type="flex" justify="end" align="middle">
-                    <span span v-infotooltip.top-start.ellipsis style="width: calc(100% - 12px); padding-right: 3px;">{{ row.maxQuantity }}</span>
+                    <span v-infotooltip.top-start.ellipsis style="width: calc(100% - 12px); padding-right: 3px;">{{ row.maxQuantity }}</span>
                     <el-tooltip effect="dark" placement="top-end">
                       <div slot="content">领取的数量只能是整数，大于等于当前最大数量</div>
                       <i class="notice-icon el-icon-warning-outline" v-if="!isIntegerNumber(+row.maxQuantity)"></i>
@@ -1413,7 +1413,7 @@ export default {
         item.warehouseNumber = whsCode
         item.maxQuantity = quantity
         // item.maxQuantityText = Math.ceil(quantity)
-        item.totalPrice = Number((!isProtected ? item.salesPrice * item.count : 0).toFixed(2))
+        item.totalPrice = Number(!isProtected ? item.salesPrice * item.count : 0).toFixed(2)
         item.replaceMaterialCode = replaceMaterialCode
         item.newMaterialCode = !!newMaterialCode
         return item

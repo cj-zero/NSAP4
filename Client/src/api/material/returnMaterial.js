@@ -75,7 +75,7 @@ export function accraditate(data) { // 验收仓库记录
 
 export function getReturnNoteListByExpress(params) { // 获取退料单列表(ERP 仓库收货/品质入库/仓库入库)
   return request({
-    url: '/ReturnNotes/GetReturnNoteListByExpress ',
+    url: '/ReturnNotes/GetReturnNoteListByExpress',
     method: 'get',
     params
   })
@@ -92,6 +92,14 @@ export function getReturnNoteDetailByExpress (params) { // 获取退料单详情
 export function checkOutMaterials (data) { // 品质检验
   return request({
     url: '/ReturnNotes/CheckOutMaterials',
+    method: 'post',
+    data
+  })
+}
+
+export function storageMaterial (data) { // 物料入库
+  return request({
+    url: '/ReturnNotes/WarehousePutMaterialsIn',
     method: 'post',
     data
   })

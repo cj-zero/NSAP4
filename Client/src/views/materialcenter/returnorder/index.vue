@@ -31,7 +31,7 @@
     </Layer>
     <my-dialog 
       ref="returnOrderDialog"
-      width="1100px"
+      width="950px"
       :loading="dialogLoading"
       title="退料单详情"
       :btnList="btnList"
@@ -59,7 +59,7 @@
             labelposition="right"
             labelwidth="72px"
             max-width="800px"
-            :isCreate="false"
+            :isCreate="isCreated"
             :refValue="dataForm"
           ></zxform>
         </el-col>
@@ -77,7 +77,7 @@ import ReturnOrder from '../common/components/ReturnOrder'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import { quotationTableMixin, chatMixin, returnTableMixin } from '../common/js/mixins'
-import { getServiceOrderInfo } from '@/api/material/returnMaterial'
+import { getServiceOrderInfo, getReturnNoteList, getReturnNoteDetail, } from '@/api/material/returnMaterial'
 export default {
   name: 'materialToReturnOrder',
   mixins: [quotationTableMixin, chatMixin, returnTableMixin],
@@ -86,6 +86,11 @@ export default {
     ReturnOrder,
     zxform,
     zxchat
+  },
+  provide() {
+    return {
+      parentVm: this
+    }
   },
   computed: {
     searchConfig () {
@@ -102,8 +107,6 @@ export default {
     }, // 搜索配置
     btnList () {
       return [
-        { btnText: '验收', handleClick: this.checkOrSave, isShow: this.detailInfo && this.detailInfo.mainInfo.isLast === 1 },
-        { btnText: '保存', handleClick: this.checkOrSave, options: { isSave: true } },
         { btnText: '关闭', handleClick: this.handleClose, className: 'close' }      
       ]
     }
@@ -111,7 +114,6 @@ export default {
   data () {
     return {
       listQuery: {
-        status: '1',
         page: 1,
         limit: 50,
       },
@@ -137,18 +139,39 @@ export default {
         this.$message.error(err.message)
       }
     },
-    submit (options) {
-      let isDraft = !!options.isDraft
-      this.dialogLoading = true
-      let isEdit = this.status === 'edit'
-      this.$refs.quotationOrder._operateOrder(isEdit, isDraft).then(() => {
-        this.dialogLoading = false
-        this._getList()
-        this.handleClose()
-        this.$message.success(isDraft ? '存为草稿成功' : '提交成功')
+    _getList () { // 获取涂料单列表信息
+      this.tableLoading = true
+      getReturnNoteList(this.listQuery).then(res => {
+        let { count, data } = res
+        this.tableData = data
+        this.total = count
+        this.tableLoading = false
+        this.$refs.returnOrderTable.resetCurrentRow()
+        console.log('_getList', this.$refs.returnOrderTable.getCurrentRow())
+      }).catch(err => {
+        this.tableData = []
+        this.total = 0
+        this.$message.error(err.message)
+        this.tableLoading = false
+      })
+    },
+    _getReturnNoteDetail (data) { // 获取退料单详情
+      let id
+      let { status } = data
+      id = data.id
+      console.log(status, 'status', id)
+      this.tableLoading = true
+      this.isCreated = false
+      getReturnNoteDetail({
+        id
+      }).then(res => {
+        this.detailInfo = this._normalizeDetail(res.data)
+        this.$refs.returnOrderDialog.open()
+        this.tableLoading = false
+        this.status = status
       }).catch(err => {
         this.$message.error(err.message)
-        this.dialogLoading = false
+        this.tableLoading = false
       })
     },
     checkOrSave (value) {

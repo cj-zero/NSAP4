@@ -31,7 +31,7 @@
     </Layer>
     <my-dialog 
       ref="returnOrderDialog"
-      width="1100px"
+      width="950px"
       :loading="dialogLoading"
       title="退料单详情"
       :btnList="btnList"
@@ -74,10 +74,10 @@ import Search from '@/components/Search'
 import ReturnOrder from './components/Order'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
-import { quotationTableMixin, chatMixin, returnTableMixin } from '../common/js/mixins'
+import { quotationTableMixin, chatMixin, returnTableMixin, afterReturnMixin } from '../common/js/mixins'
 export default {
   name: 'materialToReturnOrder',
-  mixins: [quotationTableMixin, chatMixin, returnTableMixin],
+  mixins: [quotationTableMixin, chatMixin, returnTableMixin, afterReturnMixin],
   components: {
     Search,
     ReturnOrder,
@@ -98,8 +98,8 @@ export default {
     }, // 搜索配置
     btnList () {
       return [
-        { btnText: '验收', handleClick: this.checkOrSave, isShow: this.detailInfo && this.detailInfo.mainInfo.isLast === 1 },
-        { btnText: '保存', handleClick: this.checkOrSave, options: { isSave: true } },
+        { btnText: '验收', handleClick: this.checkOrSave },
+        // { btnText: '保存', handleClick: this.checkOrSave, options: { isSave: true } },
         { btnText: '关闭', handleClick: this.handleClose, className: 'close' }      
       ]
     }
@@ -107,7 +107,7 @@ export default {
   data () {
     return {
       listQuery: {
-        status: '1',
+        status: 0,
         page: 1,
         limit: 50,
       },
