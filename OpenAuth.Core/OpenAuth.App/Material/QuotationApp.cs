@@ -905,10 +905,10 @@ namespace OpenAuth.App.Material
                                              SalesPrice = g.Key.SalesPrice,
                                              CostPrice = g.Key.UnitPrice,
                                              Count = g.Sum(a => a.Count),
-                                             TotalPrice = (g.Key.SalesPrice * g.Sum(a => a.Count)) * g.Key.Discount,//g.Sum(a => a.TotalPrice)
+                                             TotalPrice = (g.Key.SalesPrice * g.Sum(a => a.Count)) * (g.Key.Discount/100),//g.Sum(a => a.TotalPrice)
                                              IsProtected = false,
                                              QuotationId = QuotationObj.Id,
-                                             Margin = ((g.Key.SalesPrice * g.Sum(a => a.Count)) * g.Key.Discount) - (g.Key.UnitPrice * g.Sum(a => a.Count)),
+                                             Margin = ((g.Key.SalesPrice * g.Sum(a => a.Count)) * (g.Key.Discount/100)) - (g.Key.UnitPrice * g.Sum(a => a.Count)),
                                              Discount = g.Key.Discount,
                                              SentQuantity = 0
                                          };
@@ -930,7 +930,7 @@ namespace OpenAuth.App.Material
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
                                 Margin = QuotationObj.ServiceCharge,
-                                Discount = 1,
+                                Discount = 100,
                                 SentQuantity = 1
                             });
                         }
@@ -1121,10 +1121,10 @@ namespace OpenAuth.App.Material
                                              SalesPrice = g.Key.SalesPrice,
                                              CostPrice = g.Key.UnitPrice,
                                              Count = g.Sum(a => a.Count),
-                                             TotalPrice = (g.Key.SalesPrice * g.Sum(a => a.Count)) * g.Key.Discount,//g.Sum(a => a.TotalPrice)
+                                             TotalPrice = (g.Key.SalesPrice * g.Sum(a => a.Count)) * (g.Key.Discount/100),//g.Sum(a => a.TotalPrice)
                                              IsProtected = false,
                                              QuotationId = QuotationObj.Id,
-                                             Margin = ((g.Key.SalesPrice * g.Sum(a => a.Count)) * g.Key.Discount) - (g.Key.UnitPrice * g.Sum(a => a.Count)),
+                                             Margin = ((g.Key.SalesPrice * g.Sum(a => a.Count)) * (g.Key.Discount/100)) - (g.Key.UnitPrice * g.Sum(a => a.Count)),
                                              Discount = g.Key.Discount,
                                              SentQuantity = 0
                                          };
@@ -1145,7 +1145,7 @@ namespace OpenAuth.App.Material
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
                                 Margin = QuotationObj.ServiceCharge,
-                                Discount = 1,
+                                Discount = 100,
                                 SentQuantity = 1
                             });
                         }
@@ -1371,79 +1371,7 @@ namespace OpenAuth.App.Material
             var obj = await UnitWork.Find<Quotation>(q => q.Id == req.Id).Include(q => q.QuotationProducts).Include(q=>q.QuotationMergeMaterials).FirstOrDefaultAsync();
 
             qoh.ApprovalStage = obj.QuotationStatus;
-            if (loginContext.Roles.Any(r => r.Name.Equals("物料工程审批")) && obj.QuotationStatus == 4)
-            {
-                qoh.Action = "工程审批";
-                obj.QuotationStatus = 5;
-            }
-            else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) && obj.QuotationStatus == 5)
-            {
-                qoh.Action = "总经理审批";
-                if ((bool)obj.IsProtected && obj.TotalMoney <= 0)
-                {
-                    if (req.IsTentative == true)
-                    {
-                        obj.QuotationStatus = 5;
-                        obj.Tentative = true;
-                    }
-                    else
-                    {
-                        obj.Tentative = false;
-                        obj.QuotationStatus = 9;
-                        #region 同步到SAP 并拿到服务单主键
-                        _capBus.Publish("Serve.SellOrder.Create", obj.Id);
-                        #endregion
-                    }
-
-                }
-                else
-                {
-                    obj.QuotationStatus = 6;
-                }
-
-            }
-            else if (obj.CreateUserId.Equals(loginUser.Id) && obj.QuotationStatus == 6)
-            {
-                qoh.Action = "客户确认报价单";
-                obj.QuotationStatus = 7;
-                #region 同步到SAP 并拿到服务单主键
-
-                _capBus.Publish("Serve.SellOrder.Create", obj.Id);
-                #endregion
-            }
-            else if (obj.CreateUserId.Equals(loginUser.Id) && obj.QuotationStatus == 7)
-            {
-                qoh.Action = "销售订单成立";
-                obj.QuotationStatus = 8;
-            }
-            else if (loginContext.Roles.Any(r => r.Name.Equals("物料财务")) && obj.QuotationStatus == 8)
-            {
-                qoh.Action = "财务审批";
-                if (req.IsTentative == true)
-                {
-                    obj.QuotationStatus = 8;
-                    obj.Tentative = true;
-                }
-                else
-                {
-                    obj.QuotationStatus = 9;
-                }
-
-            }
-            else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) && obj.QuotationStatus == 9)
-            {
-                qoh.Action = "总经理审批";
-                obj.QuotationStatus = 10;
-                obj.Status = 2;
-                if (obj.QuotationMergeMaterials.Where(q => !q.MaterialCode.Equals("S111-SERVICE-GSF")).Count() <= 0) 
-                {
-                    obj.QuotationStatus = 11;
-                }
-            }
-            else
-            {
-                throw new Exception("暂无审批该流程权限，不可审批");
-            }
+            
             VerificationReq VerificationReqModle = new VerificationReq();
             if (req.IsReject)
             {
@@ -1464,6 +1392,79 @@ namespace OpenAuth.App.Material
             }
             else
             {
+                if (loginContext.Roles.Any(r => r.Name.Equals("物料工程审批")) && obj.QuotationStatus == 4)
+                {
+                    qoh.Action = "工程审批";
+                    obj.QuotationStatus = 5;
+                }
+                else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) && obj.QuotationStatus == 5)
+                {
+                    qoh.Action = "总经理审批";
+                    if ((bool)obj.IsProtected && obj.TotalMoney <= 0)
+                    {
+                        if (req.IsTentative == true)
+                        {
+                            obj.QuotationStatus = 5;
+                            obj.Tentative = true;
+                        }
+                        else
+                        {
+                            obj.Tentative = false;
+                            obj.QuotationStatus = 9;
+                            #region 同步到SAP 并拿到服务单主键
+                            _capBus.Publish("Serve.SellOrder.Create", obj.Id);
+                            #endregion
+                        }
+
+                    }
+                    else
+                    {
+                        obj.QuotationStatus = 6;
+                    }
+
+                }
+                else if (obj.CreateUserId.Equals(loginUser.Id) && obj.QuotationStatus == 6)
+                {
+                    qoh.Action = "客户确认报价单";
+                    obj.QuotationStatus = 7;
+                    #region 同步到SAP 并拿到服务单主键
+
+                    _capBus.Publish("Serve.SellOrder.Create", obj.Id);
+                    #endregion
+                }
+                else if (obj.CreateUserId.Equals(loginUser.Id) && obj.QuotationStatus == 7)
+                {
+                    qoh.Action = "销售订单成立";
+                    obj.QuotationStatus = 8;
+                }
+                else if (loginContext.Roles.Any(r => r.Name.Equals("物料财务")) && obj.QuotationStatus == 8)
+                {
+                    qoh.Action = "财务审批";
+                    if (req.IsTentative == true)
+                    {
+                        obj.QuotationStatus = 8;
+                        obj.Tentative = true;
+                    }
+                    else
+                    {
+                        obj.QuotationStatus = 9;
+                    }
+
+                }
+                else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) && obj.QuotationStatus == 9)
+                {
+                    qoh.Action = "总经理审批";
+                    obj.QuotationStatus = 10;
+                    obj.Status = 2;
+                    if (obj.QuotationMergeMaterials.Where(q => !q.MaterialCode.Equals("S111-SERVICE-GSF")).Count() <= 0)
+                    {
+                        obj.QuotationStatus = 11;
+                    }
+                }
+                else
+                {
+                    throw new Exception("暂无审批该流程权限，不可审批");
+                }
                 //VerificationReqModle = new VerificationReq
                 //{
                 //    NodeRejectStep = "",
@@ -1726,10 +1727,10 @@ namespace OpenAuth.App.Material
             text = text.Replace("@Model.CreateTime", createTime);
             text = text.Replace("@Model.SalesUser", model?.CreateUser.ToString());
             text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.Id.ToString()));
-            text = text.Replace("@Model.CustomerId", serverOrder?.CustomerId.ToString());
+            text = text.Replace("@Model.CustomerId", serverOrder?.TerminalCustomerId.ToString());
             text = text.Replace("@Model.CollectionAddress", model?.CollectionAddress.ToString());
             text = text.Replace("@Model.ShippingAddress", model?.ShippingAddress.ToString());
-            text = text.Replace("@Model.CustomerName", serverOrder?.CustomerName.ToString());
+            text = text.Replace("@Model.CustomerName", serverOrder?.TerminalCustomer.ToString());
             text = text.Replace("@Model.NewestContacter", serverOrder?.NewestContacter.ToString());
             text = text.Replace("@Model.NewestContactTel", serverOrder?.NewestContactTel.ToString());
             text = text.Replace("@Model.DeliveryMethod", CategoryList.Where(c => c.DtValue.Equals(model?.DeliveryMethod) && c.TypeId.Equals("SYS_AcquisitionWay")).FirstOrDefault()?.Name);
@@ -1738,7 +1739,7 @@ namespace OpenAuth.App.Material
             text = text.Replace("@Model.AcceptancePeriod", Convert.ToDateTime(model?.DeliveryDate).AddDays(model.AcceptancePeriod == null ? 0 : (double)model.AcceptancePeriod).ToString("yyyy.MM.dd"));
             text = text.Replace("@Model.Remark", model?.Remark);
             var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"SalesOrderHeader{model.Id}.html");
-            System.IO.File.WriteAllText(tempUrl, text, Encoding.UTF8);
+            System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
             var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "SalesOrderFooter.html");
             var foottext = System.IO.File.ReadAllText(footUrl);
             string InvoiceCompany = "", Location="", website = "";
@@ -1758,7 +1759,7 @@ namespace OpenAuth.App.Material
             foottext = foottext.Replace("@Model.Location", Location);
             foottext = foottext.Replace("@Model.Website", website);
             var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"SalesOrderFooter{model.Id}.html");
-            System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.UTF8);
+            System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
             var materials = model.QuotationMergeMaterials.Select(q => new PrintSalesOrderResp
             {
                 MaterialCode = q.MaterialCode,
@@ -1773,6 +1774,7 @@ namespace OpenAuth.App.Material
                 pdf.IsWriteHtml = true;
                 pdf.PaperKind = PaperKind.A4;
                 pdf.Orientation = Orientation.Portrait;
+                pdf.IsEnablePagesCount = true;
                 pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
                 pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl };
             });
