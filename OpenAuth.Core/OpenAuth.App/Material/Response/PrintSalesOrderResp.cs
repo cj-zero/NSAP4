@@ -30,5 +30,10 @@ namespace OpenAuth.App.Material.Response
         /// 总价
         /// </summary>
         public decimal TotalPrice { get; set; }
+
+        /// <summary>
+        /// 销售单号
+        /// </summary>
+        public string SalesOrder { get; set; }
     }
 }
