@@ -98,6 +98,11 @@ import {  quotationTableMixin, categoryMixin, chatMixin, rolesMixin } from '../c
 // import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import { processDownloadUrl } from '@/utils/file'
 import { print } from '@/utils/utils'
+const statusOptions = [
+  { label: '全部', value: '' },
+  { label: '未审批', value: '1' },
+  { label: '审批', value: '2' }
+]
 export default {
   name: 'materialSalesOrder',
   mixins: [quotationTableMixin, categoryMixin, chatMixin, rolesMixin],
@@ -111,6 +116,7 @@ export default {
   computed: {
     searchConfig () {
       return [
+        { prop: 'startType', placeholder: '请选择', type: 'select', options: statusOptions },
         { prop: 'quotationId', placeholder: '销售单号', width: 100 },
         { prop: 'cardCode', placeholder: '客户名称', width: 100 },
         { prop: 'serviceOrderSapId', placeholder: '服务ID', width: 100 },
@@ -152,7 +158,7 @@ export default {
         (this.isTechnical && this.quotationStatus >= 8) || 
         (this.isMaterialFinancial && this.quotationStatus >= 9) ||
         (this.isGeneralManager && this.quotationStatus >= 10)
-      ) ? '查看' : this.textMap[this.status]
+      ) ? '查看' : (this.textMap[this.status] || '查看')
     }
   },
   data () {
@@ -163,6 +169,7 @@ export default {
       isProtected: false, // 判断当前销售单是保内还是保外
       isSales: true,
       formQuery: {
+        startType: '1',
         quotationId: '', // 领料单号
         cardCode: '', // 客户
         serviceOrderSapId: '', // 服务Id
@@ -171,6 +178,7 @@ export default {
         endCreateTime: '' // 创建结束
       },
       listQuery: {
+        startType: '1',
         IsSalesOrderList: true,
         pageStart: 2,
         page: 1,

@@ -2,6 +2,7 @@
   <div class="quotation-wrapper" v-loading="loading">
     <el-row type="flex" class="title-wrapper">
       <p><span>出库订单</span><span>{{ formData.id || '' }}</span></p>
+      <p><span>销售订单</span><span>{{ formData.salesOrderId || '' }}</span></p>
       <p><span>申请人</span><span>{{ formData.createUser }}</span></p>
       <p><span>创建时间</span><span>{{ formData.createTime | formatDateFilter }}</span></p>
       <p><span>销售员</span><span>{{ formData.salesMan }}</span></p>

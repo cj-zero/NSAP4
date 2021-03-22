@@ -57,7 +57,7 @@ export function timeToFormat(format, date){
 return result
 }
 
-function isZero (num) {
+export function isZero (num) {
   return Number(num) < 10 ? '0' + num : num 
 }
 

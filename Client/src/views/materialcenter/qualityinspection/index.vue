@@ -31,7 +31,7 @@
     </Layer>
     <my-dialog 
       ref="returnOrderDialog"
-      width="950px"
+      width="1000px"
       :loading="dialogLoading"
       title="退料单详情"
       :btnList="btnList"
@@ -42,6 +42,7 @@
         ref="returnOrder" 
         :detailInfo="detailInfo"
         :status="status"
+        orderType="quality"
         ></return-Order>
     </my-dialog>
     <!-- 只能查看的表单 -->
@@ -71,7 +72,7 @@
 
 <script>
 import Search from '@/components/Search'
-import ReturnOrder from './components/Order'
+import ReturnOrder from '../common/components/ReturnOrder'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import { quotationTableMixin, chatMixin, returnTableMixin, afterReturnMixin } from '../common/js/mixins'
@@ -98,8 +99,6 @@ export default {
     }, // 搜索配置
     btnList () {
       return [
-        { btnText: '验收', handleClick: this.checkOrSave },
-        // { btnText: '保存', handleClick: this.checkOrSave, options: { isSave: true } },
         { btnText: '关闭', handleClick: this.handleClose, className: 'close' }      
       ]
     }
@@ -107,7 +106,7 @@ export default {
   data () {
     return {
       listQuery: {
-        status: 0,
+        status: '1',
         page: 1,
         limit: 50,
       },
@@ -116,35 +115,6 @@ export default {
     } 
   },
   methods: {
-    submit (options) {
-      let isDraft = !!options.isDraft
-      this.dialogLoading = true
-      let isEdit = this.status === 'edit'
-      this.$refs.quotationOrder._operateOrder(isEdit, isDraft).then(() => {
-        this.dialogLoading = false
-        this._getList()
-        this.handleClose()
-        this.$message.success(isDraft ? '存为草稿成功' : '提交成功')
-      }).catch(err => {
-        this.$message.error(err.message)
-        this.dialogLoading = false
-      })
-    },
-    checkOrSave (value) {
-      let { isSave } = value
-      this.dialogLoading = true
-      this.$refs.returnOrder.checkOrSave(isSave).then((res) => {
-        console.log('res', res)
-        this.$message.success(isSave ? '保存成功' : '验收成功')
-        this._getList()
-        this.close()
-        this.dialogLoading = false
-      }).catch(err => {
-        this.$message.error(err.message)
-        // this.close()
-        this.dialogLoading = false
-      })
-    },
     handleClose () {
       this.$refs.returnOrderDialog.close()
     },
