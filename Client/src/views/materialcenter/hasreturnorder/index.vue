@@ -108,9 +108,9 @@ export default {
         { label: '客户名称', prop: 'customerName' },
         { label: '申请人', prop: 'createUser' },
         { label: '创建时间', prop: 'createDate' },
-        // { label: '总金额', prop: 'notClearAmount', slotName: 'notClearAmoun', align: 'right' },
+        { label: '总金额', prop: 'notClearAmount', slotName: 'notClearAmoun', align: 'right' },
         { label: '备注', prop: 'remark' },
-        { label: '状态', prop: 'status' },
+        // { label: '状态', prop: 'status' },
       ],
       status: '', // 报价单状态
       formData: null, // 详情信息

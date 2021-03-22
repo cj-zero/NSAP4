@@ -355,6 +355,20 @@
             </template>
           </common-table>
         </div>
+        <div class="timeline-progress-wrapper" v-if="isTechnical">
+          <el-row class="content-wrapper" type="flex" align="middle" justify="space-between">
+            <template v-for="(item, index) in timeList">
+              <div class="content-item" :key="index">
+                <el-tooltip  palcement="top-center" :disabled="!item.isFinished" :content="item.createTime">
+                  <!-- <div> -->
+                    <i class="icon-status" :class="processStatusIcon(item)"></i>
+                  <!-- </div> -->
+                </el-tooltip>
+                <p class="text">{{ item.text }}</p>
+              </div>
+            </template>
+          </el-row>
+        </div>
       </template>
     </el-scrollbar>
     <!-- 客户弹窗 -->
@@ -729,6 +743,10 @@ export default {
             }
           }
         }
+        // 如果有历史记录的话
+        if (this.formData.quotationOperationHistorys && this.formData.quotationOperationHistorys.length) {
+          this.timeList = this._normalizeTimeList(this.formData.quotationOperationHistorys)
+        }
       }
     }
   },
@@ -743,6 +761,7 @@ export default {
     //   }
     // }
     return {
+      timeList: [],
       // 合同图片
       previewImageUrlList: [], // 合同图片列表
       previewVisible: false,
@@ -1073,6 +1092,64 @@ export default {
     }
   },
   methods: {
+    _normalizeTimeList (timeList) {
+      timeList = timeList.filter(item => item.approvalResult !== '暂定') // 把暂定的状态排除掉
+      const { quotationStatus, totalMoney } = this.formData
+      const HAS_TOTAL_MONEY_MAP = { // 有服务费的
+        4: -1,
+        5: -2,
+        6: -3,
+        7: -4,
+        8: -5,
+        9: -6,
+        10: -7,
+        11: -8
+      }
+      const NO_TOTAL_MONEY_MAP = { // 没服务费的
+        4: -1,
+        5: -2,
+        9: -3,
+        10: -4,
+        11: -5
+      }
+      const maxLen = Number(totalMoney) ? 9 : 6
+      const HAS_TOTAL_MONEY_TEXT = ['报价单提交审批', '工程审批', '总经理审批', '客户确认报价', '销售订单成立', '财务审批', '总经理审批', '待出库', '出库']
+      const NO_TOTAL_MONEY_TEXT = ['报价单提交审批', '工程审批', '总经理审批', '总经理审批', '待出库', '出库']
+      const TEXT_MAP = totalMoney ? HAS_TOTAL_MONEY_TEXT : NO_TOTAL_MONEY_TEXT
+      const TOTAL_MONEY_MAP = totalMoney ? HAS_TOTAL_MONEY_MAP : NO_TOTAL_MONEY_MAP
+      if (TOTAL_MONEY_MAP[quotationStatus]) {
+        const length = TOTAL_MONEY_MAP[quotationStatus]
+        timeList = this.setFinishedStatus(timeList.slice(length))
+      } else {
+        timeList = []
+      }
+      let isCurrent = !!timeList.length
+      while (timeList.length < maxLen) {
+        timeList.push({
+          isFinished: false,
+          isCurrent
+        })
+        isCurrent = false
+      }
+      timeList.forEach((item, index) => {
+        item.text = TEXT_MAP[index]
+      })
+      return timeList
+    },
+    setFinishedStatus (list) { // 设置状态
+      return list.map(item => {
+        item.isFinished = true // 完成(审批完的状态)
+        return item
+      })
+    },
+    processStatusIcon (item) { // 处理时间进度条icon
+      // iconfont icon-big-circle 阿里巴巴图标
+      return item.isFinished 
+        ? 'big el-icon-upload-success el-icon-circle-check success' 
+        : item.isCurrent
+          ? 'iconfont icon-big-circle warning'
+          : 'not-current'
+    },
     isIntegerNumber,
     customAddMaterial () { // 自定义新增物料
       this.isCustomAdd = true
@@ -1701,6 +1778,14 @@ export default {
     margin: 15px auto;
     background: #E6E6E6;
   }
+  .success {
+    font-size: 14px;
+    color: rgba(0, 128, 0, 1);
+  }
+  .warning {
+    font-size: 14px;
+    color: rgba(255, 165, 0, 1);
+  }
   /* 表头文案 */
   > .title-wrapper { 
     position: absolute;
@@ -1911,6 +1996,50 @@ export default {
     /* 操作记录表格 */
     .history-wrapper {
       margin-top: 10px;
+    }
+    .timeline-progress-wrapper {
+      position: relative;
+      width: 700px;
+      height: 5px;
+      margin: 10px 0 30px 40px;
+      background-color: rgba(206, 206, 206, 1);
+      .content-wrapper {
+        position: absolute;
+        z-index: 2;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: 0;
+        .content-item {
+          position: relative;
+          .icon-status {
+            display: inline-block;
+            font-size: 12px;
+            background-color: #fff;
+            border-radius: 50%;
+            &.big {
+              font-size: 13px;
+            }
+            &.not-current {
+              position: relative;
+              top: 1px;
+              width: 12px;
+              height: 12px;
+              background-color: rgba(206, 206, 206, 1);
+            }
+          }
+          .text {
+            position: absolute;
+            left: 0;
+            top: 17px;
+            font-size: 12px;
+            white-space: nowrap;
+            color: #000;
+            transform: translate3d(-36%, 0, 0);
+          }
+          // background-color: #fff;
+        }
+      }
     }
   }
 }
