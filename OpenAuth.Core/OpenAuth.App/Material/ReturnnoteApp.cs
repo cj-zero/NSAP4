@@ -355,7 +355,8 @@ namespace OpenAuth.App
             }
             var result = new TableData();
             //获取退料列表
-            var returnNote = await UnitWork.Find<ReturnNote>(null)
+            var returnNote = await UnitWork.Find<ReturnNote>(null).Include(i => i.Expressages)
+              .Where(w => !w.Expressages.All(a => a.Status == 3))
               .WhereIf(!string.IsNullOrWhiteSpace(req.Id), q => q.Id.Equals(Convert.ToInt32(req.Id)))
               .WhereIf(!string.IsNullOrWhiteSpace(req.CreaterName), q => q.CreateUser.Equals(req.CreaterName))
               .WhereIf(!string.IsNullOrWhiteSpace(req.BeginDate), q => q.CreateTime >= Convert.ToDateTime(req.BeginDate))
@@ -382,13 +383,13 @@ namespace OpenAuth.App
             string name = string.Empty;
             switch (status)
             {
-                case 1:
+                case 0:
                     name = "仓库收货";
                     break;
-                case 2:
+                case 1:
                     name = "品质检验";
                     break;
-                case 3:
+                case 2:
                     name = "仓库入库";
                     break;
                 default:
