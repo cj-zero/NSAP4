@@ -86,4 +86,11 @@ namespace OpenAuth.App.Material.Response
         /// </summary>
         public int IsSecondFinish { get; set; }
     }
+
+    public class ReturnNotClearAmt{ 
+    
+        public int ReturnNoteId { get; set; }
+
+        public decimal? Amt { get; set; }
+    }
 }
