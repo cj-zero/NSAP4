@@ -797,6 +797,75 @@ namespace NSAP.App.WebApi.Controllers
         }
         #endregion
 
+        #region<<SalesMan>>
+        /// <summary>
+        /// 获取业务员工单列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetSalesManServiceOrder([FromQuery] GetSalesManServiceOrderReq req)
+        {
+
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetSalesManServiceOrder(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取服务单设备类型列表（业务员查看）
+        /// </summary>
+        /// <param name="ServiceorderId"></param>
+        /// <param name="CurrentUserId"></param>
+        /// <param name="MaterialType"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> AppSalesManLoad(int ServiceorderId, int AppUserId, string MaterialType)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.AppSalesManLoad(ServiceorderId, AppUserId, MaterialType);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取业务员关联服务单据数量
+        /// </summary>
+        /// <param name="CurrentUserId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetSalesManServiceOrderCount(int AppUserId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetSalesManServiceOrderCount(AppUserId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+        #endregion
+
         #region<<Common Methods>>
         /// <summary>
         ///获取当前技术员剩余可接单数
