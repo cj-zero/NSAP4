@@ -439,7 +439,7 @@ namespace OpenAuth.WebApi.Controllers.Material
            
         }
         /// <summary>
-        /// 打印销售订单
+        /// 打印报价单
         /// </summary>
         /// <param name="QuotationId"></param>
         /// <returns></returns>
@@ -456,6 +456,25 @@ namespace OpenAuth.WebApi.Controllers.Material
                 throw new Exception(e.Message);
             }
         }
+        /// <summary>
+        /// 打印领料单
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> PrintPickingList(int QuotationId)
+        {
+            try
+            {
+                return File(await _app.PrintPickingList(QuotationId), "application/pdf");
+            }
+            catch (Exception e)
+            {
 
+                throw new Exception(e.Message);
+            }
+
+        }
+        
     }
 }

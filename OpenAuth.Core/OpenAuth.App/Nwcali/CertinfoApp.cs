@@ -59,6 +59,7 @@ namespace OpenAuth.App
                        .WhereIf(!string.IsNullOrWhiteSpace(request.AssetNo), u => u.AssetNo.Contains(request.AssetNo))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Model), u => u.TesterModel.Contains(request.Model))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Sn), u => u.TesterSn.Contains(request.Sn))
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), u => u.Operator.Contains(request.Operator))
                        .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.Time >= request.CalibrationDateFrom && u.Time <= request.CalibrationDateTo)
                 ;
             var certList = await certObjs.OrderByDescending(u => u.CreateTime)
@@ -97,6 +98,7 @@ namespace OpenAuth.App
                        .WhereIf(!string.IsNullOrWhiteSpace(request.AssetNo), u => u.AssetNo.Contains(request.AssetNo))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Model), u => u.Model.Contains(request.Model))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Sn), u => u.Sn.Contains(request.Sn))
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), u => u.Operator.Contains(request.Operator))
                        .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.CalibrationDate >= request.CalibrationDateFrom && u.CalibrationDate <= request.CalibrationDateTo)
                 ;
             var take = certList.Count == 0 ? request.limit : request.limit - certList.Count;
@@ -176,6 +178,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(request.AssetNo), u => u.AssetNo.Contains(request.AssetNo))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.Model), u => u.TesterModel.Contains(request.Model))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.Sn), u => u.TesterSn.Contains(request.Sn))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), u => u.Operator.Contains(request.Operator))
                 .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.Time >= request.CalibrationDateFrom && u.Time <= request.CalibrationDateTo)
                 ;
             if (request.FlowStatus == 1)
@@ -219,6 +222,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(request.AssetNo), u => u.AssetNo.Contains(request.AssetNo))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.Model), u => u.Model.Contains(request.Model))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.Sn), u => u.Sn.Contains(request.Sn))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), u => u.Operator.Contains(request.Operator))
                 .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.CalibrationDate >= request.CalibrationDateFrom && u.CalibrationDate <= request.CalibrationDateTo)
                 ;
             if (request.FlowStatus == 1)
