@@ -824,7 +824,7 @@ namespace NSAP.App.WebApi.Controllers
         /// 获取服务单设备类型列表（业务员查看）
         /// </summary>
         /// <param name="ServiceorderId"></param>
-        /// <param name="CurrentUserId"></param>
+        /// <param name="AppUserId"></param>
         /// <param name="MaterialType"></param>
         /// <returns></returns>
         [HttpGet]

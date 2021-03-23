@@ -1266,7 +1266,7 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var orgs = loginContext.Orgs.Select(o => o.Id).ToArray();
-            var tUsers = await UnitWork.Find<AppUserMap>(null).WhereIf(!loginContext.Roles.Any(a => a.Name == "管理员" || a.Name == "呼叫中心"), w => w.AppUserRole > 1).ToListAsync();
+            var tUsers = await UnitWork.Find<AppUserMap>(null).WhereIf(!loginContext.Roles.Any(a => a.Name == "管理员" || a.Name == "呼叫中心"), w => (w.AppUserRole == 1 || w.AppUserRole == 2)).ToListAsync();
             var ids = tUsers.Select(u => u.UserID);
             var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
             if (!loginContext.Roles.Any(a => a.Name == "管理员" || a.Name == "呼叫中心"))
@@ -2047,8 +2047,8 @@ namespace OpenAuth.App
             var queryService = from a in UnitWork.Find<ServiceWorkOrder>(null)
                                join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id
                                select new { a, b };
-
-            var serviceIdList = await queryService.Where(w => w.a.Status < 7 && (w.b.SupervisorId == nsapUserId || w.a.CurrentUserId == req.CurrentUserId)).ToListAsync();
+            //技术员 主管 业务员
+            var serviceIdList = await queryService.Where(w => w.b.SupervisorId == nsapUserId || w.a.CurrentUserId == req.CurrentUserId || w.b.SalesManId == nsapUserId).ToListAsync();
             if (serviceIdList != null)
             {
                 string serviceIds = string.Join(",", serviceIdList.Select(s => s.b.Id).Distinct().ToArray());
@@ -3984,8 +3984,8 @@ namespace OpenAuth.App
             var userId = (await UnitWork.FindSingleAsync<AppUserMap>(a => a.AppUserId == req.CurrentUserId)).UserID;
             //2.取出nSAP中该用户对应的部门信息
             var orgs = _revelanceApp.Get(Define.USERORG, true, userId).ToArray();
-            //3.取出nSAP用户与APP用户关联的用户信息（角色为技术员）
-            var tUsers = await UnitWork.Find<AppUserMap>(u => u.AppUserRole > 1 && req.TechnicianId > 0 ? u.AppUserId != req.TechnicianId : true).ToListAsync();
+            //3.取出nSAP用户与APP用户关联的用户信息（角色为技术员/售后主管）
+            var tUsers = await UnitWork.Find<AppUserMap>(u => (u.AppUserRole == 1 || u.AppUserRole == 2) && req.TechnicianId > 0 ? u.AppUserId != req.TechnicianId : true).ToListAsync();
             //4.获取定位信息（登录APP时保存的位置信息）
             var locations = (await UnitWork.Find<RealTimeLocation>(null).OrderByDescending(o => o.CreateTime).ToListAsync()).GroupBy(g => g.AppUserId).Select(s => s.First());
             //5.根据组织信息获取组织下的所有用户Id集合

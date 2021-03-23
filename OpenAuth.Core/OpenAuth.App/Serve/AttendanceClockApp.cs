@@ -45,12 +45,12 @@ namespace OpenAuth.App
                 throw new Exception("当前登录用户没有访问该模块字段的权限，请联系管理员配置");
             }
             var result = new TableData();
-            var objs = UnitWork.Find<AttendanceClock>(null).Include(a=>a.AttendanceClockPictures);
+            var objs = UnitWork.Find<AttendanceClock>(null).Include(a => a.AttendanceClockPictures);
             var ClockModels = objs.WhereIf(!string.IsNullOrEmpty(request.key), u => u.Id.Contains(request.key))
                 .WhereIf(!string.IsNullOrEmpty(request.Name), u => u.Name.Contains(request.Name))
                 .WhereIf(!string.IsNullOrEmpty(request.Org), u => u.Org.Contains(request.Org.ToUpper()))
                 .WhereIf(!string.IsNullOrEmpty(request.VisitTo), u => u.VisitTo.Contains(request.VisitTo))
-                .WhereIf(!string.IsNullOrWhiteSpace(request.Location),u=> u.Location.Contains(request.Location))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.Location), u => u.Location.Contains(request.Location))
                 .WhereIf(request.DateFrom != null && request.DateTo != null, u => u.ClockDate >= request.DateFrom && u.ClockDate < Convert.ToDateTime(request.DateTo).AddMinutes(1440))
                 ;
             // 主管只能看到本部门的技术员的打卡记录
@@ -92,7 +92,7 @@ namespace OpenAuth.App
                 throw new Exception("当前登录用户没有访问该模块字段的权限，请联系管理员配置");
             }
             var obj = await UnitWork.Find<AttendanceClock>(null).Include(a => a.AttendanceClockPictures).FirstOrDefaultAsync();
-            if(obj is null)
+            if (obj is null)
             {
                 throw new Exception("找不到打卡记录");
             }
@@ -119,7 +119,11 @@ namespace OpenAuth.App
             obj.Name = user.Name;
 
             var orgIds = _revelanceApp.Get(Define.USERORG, true, obj.UserId).ToList();
-            var org = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgIds.Contains(o.Id)).OrderByDescending(o=>o.CascadeId).FirstOrDefaultAsync();
+            var org = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgIds.Contains(o.Id)).OrderByDescending(o => o.CascadeId).FirstOrDefaultAsync();
+            if (org == null)
+            {
+                throw new CommonException("您未绑定部门，请联系管理员", 80002);
+            }
             obj.OrgId = org.Id;
             obj.Org = org.Name;
             var o = await Repository.AddAsync(obj);
@@ -206,12 +210,12 @@ namespace OpenAuth.App
             // Name 姓名,org 部门,ClockDate 打卡日期,ClockTime,location 详细地址,VisitTo 拜访对象,Remark 备注
             var AttendanceClockList = listobj.Select(u => new
             {
-                姓名=u.Name,
-                部门=u.Org,
-                打卡日期=(u.ClockDate + u.ClockTime).ToString("yyyy-MM-dd HH:mm:ss"),
-                详细地址=u.Location,
-                拜访对象=u.VisitTo,
-                备注=u.Remark
+                姓名 = u.Name,
+                部门 = u.Org,
+                打卡日期 = (u.ClockDate + u.ClockTime).ToString("yyyy-MM-dd HH:mm:ss"),
+                详细地址 = u.Location,
+                拜访对象 = u.VisitTo,
+                备注 = u.Remark
             }).ToList();
             return await ExportAllHandler.ExporterExcel(AttendanceClockList);
         }

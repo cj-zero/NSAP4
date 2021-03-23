@@ -1488,6 +1488,93 @@ namespace OpenAuth.WebApi.Controllers
 
         #endregion
 
+        #region<<SalesMan>>
+        /// <summary>
+        /// 获取业务员工单列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetSalesManServiceOrder([FromQuery] GetSalesManServiceOrderReq req)
+        {
+
+            var result = new TableData();
+            try
+            {
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
+                parameters.Add("AppUserId", req.AppUserId);
+                parameters.Add("Type", req.Type);
+
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetSalesManServiceOrder");
+                result = JsonConvert.DeserializeObject<TableData>(r);
+                //result = await _serviceOrderApp.GetSalesManServiceOrder(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取服务单设备类型列表（业务员查看）
+        /// </summary>
+        /// <param name="ServiceorderId"></param>
+        /// <param name="AppUserId"></param>
+        /// <param name="MaterialType"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> AppSalesManLoad(int ServiceorderId, int AppUserId, string MaterialType)
+        {
+            var result = new TableData();
+            try
+            {
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
+                parameters.Add("ServiceorderId", ServiceorderId);
+                parameters.Add("AppUserId", AppUserId);
+                parameters.Add("MaterialType", MaterialType);
+
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/AppSalesManLoad");
+                result = JsonConvert.DeserializeObject<TableData>(r);
+                //result = await _serviceOrderApp.AppSalesManLoad(ServiceorderId, AppUserId, MaterialType);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取业务员关联服务单据数量
+        /// </summary>
+        /// <param name="AppUserId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetSalesManServiceOrderCount(int AppUserId)
+        {
+            var result = new TableData();
+            try
+            {
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
+                parameters.Add("AppUserId", AppUserId);
+
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetSalesManServiceOrderCount");
+                result = JsonConvert.DeserializeObject<TableData>(r);
+                //result = await _serviceOrderApp.GetSalesManServiceOrderCount(AppUserId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+        #endregion
+
         #endregion
     }
 }
