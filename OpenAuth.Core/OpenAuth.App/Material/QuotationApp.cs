@@ -1221,19 +1221,19 @@ namespace OpenAuth.App.Material
         /// 撤回报价单
         /// </summary>
         /// <param name="QuotationId"></param>
-        public async Task Revocation(string QuotationId)
+        public async Task Revocation(int QuotationId)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var num=await UnitWork.Find<Quotation>(q=>q.Id==int.Parse(QuotationId)&& q.QuotationStatus<=5).CountAsync();
+            var num=await UnitWork.Find<Quotation>(q=>q.Id==QuotationId&& q.QuotationStatus<=5).CountAsync();
             if (num <= 0) 
             {
                 throw new Exception("该报价单状态不可撤销。");
             }
-            await UnitWork.UpdateAsync<Quotation>(q => q.Id== int.Parse(QuotationId), q => new Quotation
+            await UnitWork.UpdateAsync<Quotation>(q => q.Id== QuotationId, q => new Quotation
             {
                 QuotationStatus = 2,
                 FlowInstanceId = ""
@@ -1245,10 +1245,10 @@ namespace OpenAuth.App.Material
             qoh.CreateUser = loginContext.User.Name;
             qoh.CreateUserId = loginContext.User.Id;
             qoh.CreateTime = DateTime.Now;
-            qoh.QuotationId = int.Parse(QuotationId);
+            qoh.QuotationId = QuotationId;
             qoh.ApprovalResult = "撤回";
             qoh.Action = "撤回报价单";
-            qoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds);
+            qoh.IntervalTime = selqoh !=null?Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds):0;
             await UnitWork.AddAsync<QuotationOperationHistory>(qoh);
             await UnitWork.SaveAsync();
         }

@@ -316,12 +316,12 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// </summary>
         /// <param name="QuotationId"></param>
         [HttpPost]
-        public async Task<Response> Revocation(string QuotationId) 
+        public async Task<Response> Revocation(QueryQuotationListReq obj) 
         {
             var result = new Response();
             try
             {
-                await _app.Revocation(QuotationId);
+                await _app.Revocation((int)obj.QuotationId);
             }
             catch (Exception ex)
             {
