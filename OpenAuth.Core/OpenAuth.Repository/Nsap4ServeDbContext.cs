@@ -40,6 +40,10 @@ namespace OpenAuth.Repository
         public virtual DbSet<ServiceEvaluate> Serviceevaluates { get; set; }
         public virtual DbSet<RealTimeLocation> Realtimelocations { get; set; }
         public virtual DbSet<SeviceTechnicianApplyOrder> Sevicetechnicianapplyorders { get; set; }
+
+        public virtual DbSet<PersonProblemAndSolution> Personproblemandsolutions { get; set; }
+
+        public virtual DbSet<ServiceDailyReport> Servicedailyreports { get; set; }
         #region 报销
         public virtual DbSet<ReimburseAccommodationSubsidy> Reimburseaccommodationsubsidies { get; set; }
         public virtual DbSet<ReimburseAttachment> Reimburseattachments { get; set; }

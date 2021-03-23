@@ -310,7 +310,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
                 if (map != null)
                 {
                     //判断技术员和管理员角色不允许修改绑定关系
-                    if (map.AppUserRole > 1)
+                    if (map.AppUserRole == 2 || map.AppUserRole == 3)
                     {
                         throw new CommonException("当前帐号无法绑定", 90019);
                     }
@@ -335,7 +335,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
                 else
                 {
                     //判断技术员和管理员角色不允许修改绑定关系
-                    if (userMap.AppUserRole > 1)
+                    if (userMap.AppUserRole == 2 || userMap.AppUserRole == 3)
                     {
                         throw new CommonException("当前Erp帐号不可绑定", 90018);
                     }

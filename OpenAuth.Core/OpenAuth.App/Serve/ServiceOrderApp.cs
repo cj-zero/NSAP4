@@ -2695,7 +2695,7 @@ namespace OpenAuth.App
         }
 
         /// <summary>
-        /// 保存解决方案
+        /// 保存解决方案（2021.03.23 日报改版 废弃）
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
@@ -2929,7 +2929,7 @@ namespace OpenAuth.App
         }
 
         /// <summary>
-        /// 修改故障描述
+        /// 修改故障描述（2021.03.23 日报改版 废弃）
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
@@ -3597,23 +3597,196 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public async Task TechicianEndRepair(TechicianEndRepairReq request)
+        public async Task TechicianEndRepair(TechicianEndRepairReq req)
         {
-            var orderIds = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId && s.CurrentUserId == request.CurrentUserId)
-              .WhereIf("无序列号".Equals(request.MaterialType), a => a.MaterialCode == "无序列号")
-              .WhereIf(!"无序列号".Equals(request.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == request.MaterialType)
+            var orderIds = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId)
+              .WhereIf("无序列号".Equals(req.MaterialType), a => a.MaterialCode == "无序列号")
+              .WhereIf(!"无序列号".Equals(req.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == req.MaterialType)
               .ToListAsync()).Select(s => s.Id).ToList();
             List<int> workOrderIds = new List<int>();
             foreach (var id in orderIds)
             {
                 workOrderIds.Add(id);
             }
-            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == request.ServiceOrderId && s.CurrentUserId == request.CurrentUserId && orderIds.Contains(s.Id), e => new ServiceWorkOrder
+            await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && orderIds.Contains(s.Id), e => new ServiceWorkOrder
             {
                 IsStopOrder = 1
             });
             await UnitWork.SaveAsync();
         }
+
+
+        /// <summary>
+        /// 获取该技术员下的当前服务单所有设备
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetTechnicianServiceMaterials(GetTechnicianServiceMaterialsReq req)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var ManufacturerSerialNumbers = await UnitWork.Find<ServiceWorkOrder>(w => w.CurrentUserId == req.TechnicianId && w.ServiceOrderId == req.ServiceOrderId).Select(s => s.ManufacturerSerialNumber).ToListAsync();
+            result.Data = ManufacturerSerialNumbers;
+            return result;
+        }
+
+
+        /// <summary>
+        /// 技术员填写日报
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task AddDailyReport(AddDailyReportReq req)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.AppUserId).Include(i => i.User).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            //判断当天是否已经填写日报 再次填写则数据清空
+            var serviceDailyReport = await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId == req.ServiceOrderId && w.CreateUserId == userInfo.UserID && w.CreateTime.Value.Day == DateTime.Now.Day).ToListAsync();
+            if (serviceDailyReport.Count > 0)
+            {
+                await UnitWork.DeleteAsync(serviceDailyReport);
+            }
+            List<ServiceDailyReport> serviceDailyReports = new List<ServiceDailyReport>();
+            if (req.dailyResults != null)
+            {
+                foreach (var item in req.dailyResults)
+                {
+                    serviceDailyReports.Add(new ServiceDailyReport
+                    {
+                        ServiceOrderId = req.ServiceOrderId,
+                        ManufacturerSerialNumber = item.ManufacturerSerialNumber,
+                        TroubleDescription = item.TroubleDescription,
+                        ProcessDescription = item.ProcessDescription,
+                        CreateUserId = userInfo.UserID,
+                        CreaterName = userInfo.User.Name,
+                        CreateTime = DateTime.Now
+                    });
+                }
+                await UnitWork.BatchAddAsync(serviceDailyReports.ToArray());
+                await UnitWork.SaveAsync();
+            }
+        }
+
+        /// <summary>
+        /// 获取日报详情（根据日期过滤）
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetTechnicianDailyReport(GetTechnicianDailyReportReq req)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.TechnicianId).Include(i => i.User).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            //获取当前时间
+            var endDate = DateTime.Now;
+            //获取取当前月的第一天
+            DateTime startDate = new DateTime(endDate.Year, endDate.Month, 1);
+            //若传入了指定年月 则取这个年月的信息
+            if (string.IsNullOrEmpty(req.Date))
+            {
+                DateTime date = Convert.ToDateTime(req.Date);
+                startDate = new DateTime(date.Year, date.Month, 1);
+                endDate = new DateTime(date.Year, date.Month, DateTime.DaysInMonth(date.Year, date.Month));
+            }
+            //获取当月的所有日报信息
+            var dailyReports = (await UnitWork.Find<ServiceDailyReport>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId && w.CreateTime > startDate && w.CreateTime < endDate).ToListAsync()).Select(s => new { s.CreateTime, s.ManufacturerSerialNumber, TroubleDescription = GetServiceTroubleAndSolution(s.TroubleDescription), ProcessDescription = GetServiceTroubleAndSolution(s.ProcessDescription) }).ToList();
+            var data = dailyReports.GroupBy(g => g.CreateTime.ToString("yyyy-MM-dd")).Select(s => new { Date = s.Key, Detail = s.ToList() }).ToList();
+            result.Data = data;
+            return result;
+        }
+
+        private List<string> GetServiceTroubleAndSolution(string data)
+        {
+            List<string> result = new List<string>();
+            if (!string.IsNullOrEmpty(data))
+            {
+                JArray jArray = (JArray)JsonConvert.DeserializeObject(data);
+                foreach (var item in jArray)
+                {
+                    result.Add(item["description"].ToString());
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 自定义问题描述/解决方案
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task AddProblemOrSolution(AddProblemOrSolutionReq req)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.AppUserId).Include(i => i.User).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            var data = new PersonProblemAndSolution
+            {
+                Description = req.Description,
+                Type = req.Type,
+                CreaterId = userInfo.UserID,
+                CreateTime = DateTime.Now
+            };
+            await UnitWork.AddAsync(data);
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
+        /// 获取我自定义的问题描述和解决方案
+        /// </summary>
+        /// <param name="AppUserId"></param>
+        /// <param name="Type"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetMyProblemOrSolution(int AppUserId, int Type)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == AppUserId).Include(i => i.User).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            var data = await UnitWork.Find<PersonProblemAndSolution>(w => w.CreaterId == userInfo.UserID && w.Type == Type).Select(s => new { s.Description, s.Id }).ToListAsync();
+            result.Data = data;
+            return result;
+        }
+
         #endregion
 
         #region<<Admin/Supervisor>>
@@ -4125,7 +4298,7 @@ namespace OpenAuth.App
                     }),
                     s.ProblemTypeName,
                     ProblemType = s.ServiceWorkOrders.Select(s => s.ProblemType).FirstOrDefault(),
-                    ServiceFlows = s.ServiceFlows.Where(w => w.Creater == userInfo.UserID && w.ServiceOrderId == s.Id && w.FlowType == 1).ToList()
+                    ServiceFlows = s.ServiceFlows.Where(w => w.ServiceOrderId == s.Id && w.FlowType == 1).ToList()
                 });
 
             var result = new TableData();

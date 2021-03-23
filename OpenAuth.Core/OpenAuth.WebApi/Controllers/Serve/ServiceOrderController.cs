@@ -1295,6 +1295,132 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// 获取该技术员下的当前服务单所有设备
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetTechnicianServiceMaterials([FromQuery] GetTechnicianServiceMaterialsReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
+                parameters.Add("ServiceOrderId", req.ServiceOrderId);
+                parameters.Add("TechnicianId", req.TechnicianId);
+
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetTechnicianServiceMaterials");
+                result = JsonConvert.DeserializeObject<TableData>(r);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 技术员填写日报
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> AddDailyReport(AddDailyReportReq req)
+        {
+            var result = new Response();
+            try
+            {
+                var r = await _httpClienService.Post(req, "api/serve/ServiceOrder/AddDailyReport");
+                result = JsonConvert.DeserializeObject<Response>(r);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取日报详情（根据日期过滤）
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetTechnicianDailyReport([FromQuery] GetTechnicianDailyReportReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
+                parameters.Add("ServiceOrderId", req.ServiceOrderId);
+                parameters.Add("TechnicianId", req.TechnicianId);
+                parameters.Add("Date", req.Date);
+
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetTechnicianDailyReport");
+                result = JsonConvert.DeserializeObject<TableData>(r);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 自定义问题描述/解决方案
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> AddProblemOrSolution(AddProblemOrSolutionReq req)
+        {
+            var result = new Response();
+            try
+            {
+                var r = await _httpClienService.Post(req, "api/serve/ServiceOrder/AddProblemOrSolution");
+                result = JsonConvert.DeserializeObject<Response>(r);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取我自定义的问题描述和解决方案
+        /// </summary>
+        /// <param name="AppUserId"></param>
+        /// <param name="Type"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetMyProblemOrSolution(int AppUserId, int Type)
+        {
+            var result = new TableData();
+            try
+            {
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
+                parameters.Add("AppUserId", AppUserId);
+                parameters.Add("Type", Type);
+
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetMyProblemOrSolution");
+                result = JsonConvert.DeserializeObject<TableData>(r);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
         #endregion
 
         #region<<Admin/Supervisor>>

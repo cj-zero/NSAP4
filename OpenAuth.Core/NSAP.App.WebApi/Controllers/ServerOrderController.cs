@@ -661,6 +661,117 @@ namespace NSAP.App.WebApi.Controllers
 
             return result;
         }
+
+        /// <summary>
+        /// 获取该技术员下的当前服务单所有设备
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetTechnicianServiceMaterials([FromQuery] GetTechnicianServiceMaterialsReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetTechnicianServiceMaterials(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 技术员填写日报
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> AddDailyReport(AddDailyReportReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.AddDailyReport(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取日报详情（根据日期过滤）
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetTechnicianDailyReport([FromQuery] GetTechnicianDailyReportReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetTechnicianDailyReport(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        /// 自定义问题描述/解决方案
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> AddProblemOrSolution(AddProblemOrSolutionReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.AddProblemOrSolution(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取我自定义的问题描述和解决方案
+        /// </summary>
+        /// <param name="AppUserId"></param>
+        /// <param name="Type"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetMyProblemOrSolution(int AppUserId, int Type)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetMyProblemOrSolution(AppUserId, Type);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+
         #endregion
 
         #region<<Admin/Supervisor>>

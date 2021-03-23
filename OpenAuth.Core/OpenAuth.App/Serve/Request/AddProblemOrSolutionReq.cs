@@ -1,23 +1,24 @@
-﻿using OpenAuth.App.Request;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Text;
 
 namespace OpenAuth.App.Serve.Request
 {
-    public class GetSalesManServiceOrderReq : PageReq
+    public class AddProblemOrSolutionReq
     {
         /// <summary>
-        /// 业务员Id
+        /// 当前登陆者App用户Id
         /// </summary>
-        [Required]
         public int AppUserId { get; set; }
 
         /// <summary>
-        /// 状态类型 1-进行中 2已完成
+        /// 描述
         /// </summary>
-        [Required]
+        public string Description { get; set; }
+
+        /// <summary>
+        /// 类型 1问题描述 2解决方案
+        /// </summary>
         public int Type { get; set; }
     }
 }
