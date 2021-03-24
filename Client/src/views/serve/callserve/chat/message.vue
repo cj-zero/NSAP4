@@ -121,7 +121,9 @@ export default {
   watch: {
     serveId: {
       handler() {
-        this.getList()
+        if (this.serveId) {
+          this.getList()
+        }
       },
     },
   },

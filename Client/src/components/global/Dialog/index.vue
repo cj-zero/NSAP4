@@ -11,8 +11,10 @@
     <el-row type="flex" align="middle" class="title-wrapper" slot="title">
       <slot name="title">
         <template v-if="title">
-          <div class="my-dialog-icon"></div>
-          <span class="my-dialog-title">{{ title }}</span>
+          <el-row type="flex" align="middle" :style="titleStyle">
+            <div class="my-dialog-icon"></div>
+            <span class="my-dialog-title">{{ title }}</span>
+          </el-row>
         </template>
       </slot>
     </el-row>
@@ -22,8 +24,10 @@
         <template v-if="isShowBtn && newBtnList.length">
           <el-button
             v-for="btnItem in newBtnList"
-            class="btn-item customer-btn-class"
-            :class="btnItem.className"
+            class="btn-item"
+            :class="[btnItem.className, {
+              'customer-btn-class': !btnItem.type
+            }]"
             :key="btnItem.btnText"
             :type="btnItem.type || 'primary'"
             @click="btnItem.handleClick(btnItem.options || {})"
@@ -65,6 +69,12 @@ export default {
       type: Boolean,
       default: false
     },
+    titleStyle: {
+      type: Object,
+      default () {
+        return {}
+      }
+    }
   },
   computed: {
     attrs () {

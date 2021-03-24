@@ -65,6 +65,14 @@ export function getSerialNumberList(params, _this) { // 加载序列号设备列
   })
 }
 
+export function repealOrder (data) { // 撤销报价单
+  return request({
+    url: '/Material/Quotation/Revocation',
+    method: 'post',
+    data
+  })
+}
+
 export function AddQuotationOrder(data) { // 添加报价单
   return request({
     url: '/Material/Quotation/Add',

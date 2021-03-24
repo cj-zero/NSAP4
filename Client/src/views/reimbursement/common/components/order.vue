@@ -5,8 +5,8 @@
       type="flex" 
       class="head-title-wrapper" 
       :class="{ 'general': title === 'approve' }"
+      v-if="!isGeneralManager"
     >
-      
       <p style="color: red;" v-if="formData.mainId">报销单号: <span>{{ formData.mainId }}</span></p>
       <p :class="{ 'pointer underline': !isGeneralManager }" @click="_openServiceOrHistory(true)" v-if="title === 'approve'">
         服务ID: <span>{{ formData.serviceOrderSapId }}</span>
@@ -16,10 +16,22 @@
       <p>劳务关系: <span>{{ formData.serviceRelations }}</span></p>
       <p>创建时间: <span>{{ formData.createTime && formData.createTime.split(' ')[0] }}</span></p>
     </el-row>
+    <el-row v-else type="flex" class="head-title-wrapper general-manager">
+      <div style="margin-right: 15px;">
+        <p style="margin-bottom: 4px">报销ID: <span>{{ formData.mainId }}</span></p>
+        <p>服务ID: <span>{{ formData.serviceOrderSapId }}</span></p>
+      </div>
+      <div style="text-decoration: underline;">{{ formData.serviceRelations }}-{{ formData.orgName }}-{{ formData.userName }}</div>
+    </el-row>
     <!-- 时间进度轴，仅总经理可看 timelineList -->
     <template v-if="title === 'approve'">
-      <div class="timeline-progress-wrapper">
+      <div class="timeline-progress-wrapper" :class="{ 'isGeneral': isGeneralManager }">
         <el-row class="content-wrapper" type="flex" align="middle" justify="space-between">
+          <el-row type="flex" class="interval-content" v-if="isGeneralManager">
+            <template v-for="item in timelineList" >
+              <span class="interval-time success" :key="item.text">{{ item.intervalTime | m2DHM }}</span>
+            </template>
+          </el-row>
           <template v-for="item in timelineList">
             <div class="content-item" :key="item.text">
               <el-tooltip  palcement="top-center" :disabled="!item.isFinished" :content="item.createTime">
@@ -27,60 +39,109 @@
                   <i class="icon-status" :class="processStatusIcon(item)"></i>
                 <!-- </div> -->
               </el-tooltip>
-              <p class="text">{{ item.text }}</p>
+              <p :class="{ 'text': isGeneralManager, 'time': !isGeneralManager }">{{ item.text }}</p>
+              <div class="time" v-if="isGeneralManager">
+                <div>{{ item.ymd }}</div>
+                <div>{{ item.hms }}</div>
+              </div>
             </div>
           </template>
         </el-row>
       </div>
     </template>
-    
     <el-scrollbar class="scroll-bar" :wrapStyle="wrapStyle">
-
       <!-- 总经理审批查看 -->
       <div class="general-order-wrapper" v-if="isGeneralStatus">
-        <el-form
-        :model="formData"
-        ref="form"
-        class="general-form-wrapper manager"
-        :class="{ 'uneditable': !this.ifFormEdit }"
-        :disabled="disabled"
-        :label-width="labelWidth"
-        size="mini"
-        :label-position="labelPosition"
-        :show-message="false"
-        >
-          <el-row type="flex" class="item">
-            <div>
-              <img :src="rightImg" @click="openHistory" class="pointer" style="margin-left: -13px;">
-              <span class="first-item title">客户代码</span>
-              <span>{{ formData.terminalCustomerId }}</span>
-            </div>
-            <div>
-              <el-row type="flex" align="start">
-                <span class="title">客户名称</span>
-                <p class="content">{{ formData.terminalCustomer }}</p>
-              </el-row>
-            </div>
-            <!-- <div>
-              <el-row type="flex" align="start">
-                <span>客户地址</span>
-                <p class="content-long">{{ formData.completeAddress }}</p>
-              </el-row>
-            </div> -->
-          </el-row>
-          <el-row type="flex" class="item">
-            <div>
-              <span class="first-item title">出差事由</span>
-              <div v-if="formData.themeList && formData.themeList.length">
-                <p v-for="item in formData.themeList.slice(0, 2)" :key="item.description">{{ item.description }}</p>
-              </div>
-            </div>
-          </el-row>
-           <el-row class="item">
-              <span class="title">备注</span>
-              <p>{{ formData.remark }}</p>
-          </el-row>
-        </el-form>
+        <el-row type="flex" :gutter="20">
+          <el-col :span="12">
+            <h2 class="bold">基本信息</h2>
+            <el-form
+              style="margin-top: 5px;"
+              :model="formData"
+              ref="form"
+              class="general-form-wrapper manager"
+              :label-width="labelWidth"
+              size="mini"
+              :label-position="labelPosition"
+              :show-message="false"
+              >
+                <el-row type="flex" class="item">
+                  <div class="customer-id">
+                    <span class="title">客户代码</span>
+                    <span>{{ formData.terminalCustomerId }}</span>
+                  </div>
+                  <div>
+                    <el-row type="flex" align="start">
+                      <span class="title">客户名称</span>
+                      <p class="content">{{ formData.terminalCustomer }}</p>
+                    </el-row>
+                  </div>
+                  <!-- <div>
+                    <el-row type="flex" align="start">
+                      <span>客户地址</span>
+                      <p class="content-long">{{ formData.completeAddress }}</p>
+                    </el-row>
+                  </div> -->
+                </el-row>
+                <el-row type="flex" class="item">
+                  <span class="title">呼叫主题</span>
+                  <div v-if="formData.themeList && formData.themeList.length">
+                    <div class="theme-item" v-for="(item, index) in formData.themeList" :key="item.description">
+                      <div class="order-icon">{{ index + 1 }}</div>
+                      <span>{{ item.description }}</span>
+                    </div>
+                  </div>
+                </el-row>
+                <el-row type="flex" class="item">
+                  <span class="title">地址</span>
+                  <p>{{ formData.becity }}-{{ formData.destination }}</p>
+                </el-row>
+                <el-row type="flex" class="item">
+                  <span class="title">备注</span>
+                  <p>{{ formData.remark }}</p>
+                </el-row>
+              </el-form>
+          </el-col>
+          <el-col :span="12">
+            <el-row type="flex" justify="space-between">
+              <h2 class="bold">客户历史费用</h2>
+              <span class="underline pointer" @click="openHistory">查看更多</span>
+            </el-row>
+            <common-table 
+              style="margin-top: 5px;"
+              class="history-table-wrapper"
+              :data="historyCostData.slice(0, 3)"
+              :columns="lowHistoryCostColumns"
+              :stripe="false"
+              max-height="300px"
+              :loading="historyCostLoading"
+              :header-cell-style="historyCell"
+              :cell-style="historyCell"
+            >
+              <!-- 总金额 -->
+              <template v-slot:totalMoney="{ row }">
+                {{ row.totalMoney | toThousands }}
+              </template>
+              <!-- 交通费用 -->
+              <template v-slot:faresMoney="{ row }">
+                {{ row.faresMoney | toThousands }}
+              </template>
+              <!-- 住宿补贴 -->
+              <template v-slot:acc="{ row }">
+                {{ row.accommodationSubsidiesMoney | toThousands }}
+              </template>
+              <!-- 出差补贴 -->
+              <template v-slot:travel="{ row }">
+                {{ row.travellingAllowancesMoney | toThousands }}
+              </template>
+              <!-- 其它费用 -->
+              <template v-slot:other="{ row }">
+                {{ row.otherChargesMoney | toThousands }}
+              </template>
+            </common-table>
+          </el-col>
+        </el-row>
+        
       </div>
       <el-form
         v-else
@@ -189,7 +250,7 @@
       <template v-if="title === 'approve'">
         <!-- 费用详情 -->
         <div>
-           <h2 style="font-weight: bold;">费用详情</h2>
+          <h2 style="font-weight: bold;">费用详情</h2>
           <div class="general-table-wrapper" >
             <common-table
               class="table-container"
@@ -246,7 +307,7 @@
           <!-- <el-button size="mini" @click="toggleAfterEva">售后评价</el-button> -->
         </div>
         <!-- 服务报告 -->
-        <div style="width: 1030px;margin-top: 5px;">
+        <!-- <div style="width: 1030px;margin-top: 5px;">
           <h2 style="font-weight: bold;">服务报告</h2>
           <common-table 
             style="margin-top: 5px;"
@@ -256,20 +317,85 @@
             :loading="reportDetailLoading"
           >
           </common-table>
-        </div>
-        
-        <div style="margin-top: 5px;">
-          <h2 style="font-weight: bold;">售后评价</h2>
+        </div> -->
+        <div class="daily-report-wrapper">
+          <el-row class="title-wrapper" type="flex" justify="space-between" align="middle">
+            <h2 style="font-weight: bold;">工作日报</h2>
+            <div class="area">
+              <div>出发地点: <span>{{ formData.becity }}</span></div>
+              <div>到达地点: <span>{{ formData.destination }}</span></div>
+            </div>
+          </el-row>
           <common-table 
-            style="width: 778px;margin-top:"
+            style="margin-top: 10px;"
+            :data="[]"
+            :columns=" dailyReportColumns"
+            max-height="300px"
+          >
+          </common-table>
+        </div>
+        <div style="margin-top: 5px;">
+          <el-row type="flex" align="middle">
+            <h2 style="margin-right: 10px; font-weight: bold;">售后评价</h2>
+            总分
+            <el-rate
+              v-model="totalStart"
+              disabled
+              text-color="#ff9900"
+            ></el-rate>
+          </el-row>
+          <common-table 
+            style="margin-top: 10px;"
             :data="afterEvaluationList"
             :columns="afterEvaluationColumns"
             max-height="300px"
             :loading="afterEvaLoading"
           >
+            <template v-slot:responseSpeed="{ row }">
+              <el-rate
+                v-model="row.responseSpeed"
+                disabled
+                text-color="#ff9900"
+              >
+              </el-rate>
+            </template>
+            <template v-slot:schemeEffectiveness="{ row }">
+              <el-rate
+                v-model="row.schemeEffectiveness"
+                disabled
+                text-color="#ff9900"
+              >
+              </el-rate>
+            </template>
+            <template v-slot:serviceAttitude="{ row }">
+              <el-rate
+                v-model="row.serviceAttitude"
+                disabled
+                text-color="#ff9900"
+              >
+              </el-rate>
+            </template>
+            <template v-slot:productQuality="{ row }">
+              <el-rate
+                v-model="row.productQuality"
+                disabled
+                text-color="#ff9900"
+              >
+              </el-rate>
+            </template>
+            <template v-slot:servicePrice="{ row }">
+              <el-rate
+                v-model="row.servicePrice"
+                disabled
+                text-color="#ff9900"
+              >
+              </el-rate>
+            </template>
           </common-table>
         </div>
+        <div class="pay-time" v-if="formData.payTime">支付时间： <span>{{ formData.payTime }}</span></div>
       </template>
+      
       <template v-else>
         <!-- 附件上传 -->
         <el-row type="flex" class="upload-wrapper">
@@ -874,6 +1000,7 @@
     
     <!-- 客户选择列表 -->
     <my-dialog 
+      title="服务单列表"
       ref="customerDialog" 
       width="621px" 
       :append-to-body="true"
@@ -975,7 +1102,7 @@
     <my-dialog
       ref="historyDialog"
       width="1025px"
-      title="历史费用"
+      :title="historyTitle"
       top="200px"
       :append-to-body="true"
     >
@@ -1024,10 +1151,10 @@
     </el-image-viewer>
     <!-- 百度地图实例化 -->
     <template v-if="title === 'approve'">
-      <div id="date-picker-wrapper">
+      <div id="date-picker-wrapper" :class="{ 'general': isGeneralManager }">
         <date-picker v-model="timeList" :markedDateList="formData.allDateList || []" @click="onDatePicker"></date-picker>
       </div>
-      <div id="map-container" style="width:500px;height:550px;"></div>
+      <div id="map-container" :class="{ 'general': isGeneralManager }" style="width:500px;height:550px;"></div>
       <!-- 控件提示信息 -->
       <div class="control-info" v-show="isShowControl" :style="controlInfoStyle">{{ controlInfo }}</div>
     </template>
@@ -1069,20 +1196,21 @@ import { customerColumns, costColumns } from '../js/config'
 import { noop } from '@/utils/declaration'
 import { categoryMixin, reportMixin, attachmentMixin, chatMixin } from '../js/mixins'
 import { REIMBURSE_TYPE_MAP, IF_SHOW_MAP, REMARK_TEXT_MAP } from '../js/map'
+// import { m2DHM } from '@/filters/time'
 import rightImg from '@/assets/table/right.png'
 import DatePicker from './DatePicker.vue'
 const PROGRESS_TEXT_LIST = ['提交', '客服审批', '财务初审', '财务复审', '总经理审批', '出纳'] // 进度条文本
 const AFTER_EVALUTION_KEY = ['responseSpeed', 'schemeEffectiveness', 'serviceAttitude', 'productQuality', 'servicePrice']
 const TEXT_REG = /[\r|\r\n|\n\t\v]/g
 
-const AFTER_EVALUTION_STATUS = {
-  0: '未统计',
-  1: '非常差',
-  2: '差',
-  3: '一般',
-  4: '满意',
-  5: '非常满意'
-}
+// const AFTER_EVALUTION_STATUS = {
+//   0: '未统计',
+//   1: '非常差',
+//   2: '差',
+//   3: '一般',
+//   4: '满意',
+//   5: '非常满意'
+// }
 export default {
   inject: ['parentVm'],
   mixins: [categoryMixin, reportMixin, attachmentMixin, chatMixin],
@@ -1131,6 +1259,7 @@ export default {
   },
   data () {
     return {
+      historyTitle: '历史费用',
       pdfURL: '',
       pdfVisible: false,
       // 费用详情
@@ -1143,16 +1272,16 @@ export default {
         { label: '金额（元）', slotName: 'money', align: 'right' },
       ],
       // 售后评价
+      totalStart: 0,
       afterEvaluationList: [],
       afterEvaluationColumns: [
-        { label: '技术员', prop: 'technician', width: 50 },
-        { label: '响应速度', prop: 'responseSpeed', width: 70 },
-        { label: '方案有效性', prop: 'schemeEffectiveness', width: 80 },
-        { label: '服务态度', prop: 'serviceAttitude', width: 70 },
-        { label: '产品质量', prop: 'productQuality', width: 70 },
-        { label: '服务价格', prop: 'servicePrice', width: 70 },
-        { label: '客户建议或意见', prop: 'comment', width: 180 },
-        { label: '回访人', prop: 'visitPeople', width: 50 },
+        // { label: '技术员', prop: 'technician', width: 50 },
+        { label: '响应速度', prop: 'responseSpeed',  slotName: 'responseSpeed' },
+        { label: '方案有效性', prop: 'schemeEffectiveness', slotName: 'schemeEffectiveness' },
+        { label: '服务态度', prop: 'serviceAttitude',  slotName: 'serviceAttitude' },
+        { label: '产品质量', prop: 'productQuality',  slotName: 'productQuality' },
+        { label: '服务价格', prop: 'servicePrice',  slotName: 'servicePrice' },
+        { label: '回访人', prop: 'visitPeople' },
         { label: '评价日期', prop: 'commentDate', width: 137 }
       ],
       afterEvaLoading: false,
@@ -1164,6 +1293,18 @@ export default {
         // { label: '问题类型', prop: 'troubleDescription', width: 180 },
         { label: '解决方案', prop: 'processDescription', width: 180 },
         { label: "备注", prop: 'remark', width: 609 }
+      ],
+      dailyReportColumns: [
+        { type: 'index', label: '#' },
+        { label: '制造商序列号', prop: 'manufacturerSerialNumber', width: 120 },
+        { label: '物料编码', prop: 'materialCode', width: 120 },
+        { label: '风扇序列号', prop: '1', width: 120 },
+        { label: '电源序列号', prop: '2', width: 120 },
+        { label: '主板序列号', prop: '3', width: 120 },
+        // { label: '问题类型', prop: 'troubleDescription', width: 180 },
+        { label: '问题描述', prop: '5' },
+        { label: '解决方案', prop: 'processDescription' },
+        // { label: "备注", prop: 'remark', width: 609 }
       ],
       reportDetailLoading: false,
       // 历史费用
@@ -1183,6 +1324,15 @@ export default {
         { label: '出发时间', prop: 'businessTripDate', width: '126px' },
         { label: '结束时间', prop: 'endDate', width: '126px' },
         { label: '报销人', prop: 'userName', width: '75px' }
+      ],
+      lowHistoryCostColumns: [
+        { label: '报销单号', prop: 'mainId', width: '60px' },
+        { label: '总天数', prop: 'days', align: 'right' },
+        { label: '总金额', prop: 'totalMoney', slotName: 'totalMoney', align: 'right' },
+        { label: '交通费用', prop: 'faresMoney', slotName: 'faresMoney', align: 'right' },
+        { label: '住宿补贴', prop: 'accommodationSubsidiesMoney', slotName: 'acc', align: 'right' },
+        { label: '出差补贴', prop: 'travellingAllowancesMoney', slotName: 'travel', align: 'right' },
+        { label: '其他费用', prop: 'otherChargesMoney', slotName: 'other', align: 'right' },
       ],
       historyCostLoading: false,
       generalStyle: { // 总经理头部style
@@ -1894,13 +2044,19 @@ export default {
       }
       this.afterEvaLoading = true
       getAfterEvaluaton({
-        serviceOrderId: this.formData.serviceOrderSapId
+        serviceOrderId: this.formData.serviceOrderSapId,
+        isReimburse: true,
+        technician: this.formData.userName
       }).then(res => {
         res.data.forEach(item => {
-          AFTER_EVALUTION_KEY.forEach(key => {
-            item[key] = AFTER_EVALUTION_STATUS[item[key]]
-          })
+          this.totalStart += AFTER_EVALUTION_KEY.reduce((prev, next) => {
+            return prev + item[next]
+          }, 0)
         })
+        const length = res.data.length
+        console.log(this.totalStart, length, 'length')
+        this.totalStart = this.getTotalStart(this.totalStart / (length * 5))
+        console.log(this.totalStart, 'totalStart')
         this.afterEvaluationList = res.data
         this.afterEvaLoading = false
       }).catch(err => {
@@ -1908,6 +2064,18 @@ export default {
         this.afterEvaLoading = false
         console.log('afterEva')
       })
+    },
+    getTotalStart (totalStart) {
+      let str = String(totalStart)
+      const [interge, decimal] = str.split('.')
+      if (decimal) {
+        if (decimal > 0 && decimal < 5) {
+          return +interge + .5
+        } else if (decimal > 5 && decimal < 10) {
+          return +interge + 1
+        }
+      }
+      return +totalStart
     },
     _getReportDetail () { // 获取服务报告
       this.reportDetaiLoading = true
@@ -2037,11 +2205,21 @@ export default {
       } else {
         historyList = []
       }
+      historyList.forEach((item, index) => {
+        const { createTime } = item
+        const [ymd, hms] = createTime.split(' ')
+        item.ymd = ymd
+        item.hms = hms
+        item.intervalTime = historyList[index + 1] ? historyList[index + 1].intervalTime : ''
+      })
       let isCurrent = historyList.length ? true : false // 用来标识当前状态 当前进度后面的都是灰色按钮
       while (historyList.length < 6) { // 进度条一共六个状态
         historyList.push({
           isFinished: false, // 设置进度条未完成的状态
-          isCurrent
+          isCurrent,
+          intervalTime: '',
+          ymd: '',
+          hms: ''
         })
         isCurrent = false
       }
@@ -3059,12 +3237,16 @@ export default {
 <style lang='scss' scoped>
 .order-wrapper {
   position: relative;
+  font-size: 12px;
   /* 日历样式 */
   #date-picker-wrapper {
     position: absolute;
     top: -52px;
     left: -12px;
     transform: translate3d(-100%, 0, 0);
+    &.general {
+      top: -84px;
+    }
   }
   /* 地图样式 */
   #map-container {
@@ -3073,7 +3255,9 @@ export default {
     left: -11px;
     margin-left: -500px;
     // transform: translate3d(-100%, 0, 0);
-    
+    &.general {
+      top: 168px;
+    } 
   }
   .control-info {
     position: fixed;
@@ -3119,12 +3303,17 @@ export default {
   }
   /* 总经理头部时间进度条 */
   .timeline-progress-wrapper {
-    position: absolute;
-    left: 71px;
+    position: absolute;left: 71px;
     top: -43px;
+    
     width: 400px;
     height: 5px;
     background-color: rgba(206, 206, 206, 1);
+    &.isGeneral {
+      width: 580px;
+      left: 84px;
+      top: -55px;
+    }
     .content-wrapper {
       position: absolute;
       z-index: 2;
@@ -3132,6 +3321,25 @@ export default {
       right: 0;
       bottom: 0;
       top: 0;
+      .interval-content {
+        position: absolute;
+        z-index: 2;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: 0;
+        .interval-time {
+          position: relative;
+          top: -10px;
+          flex: 1;
+          font-size: 12px;
+          text-align: center;
+          color: #3ef551;
+          &:nth-last-child(1) {
+            display: none;
+          }
+        }
+      }
       .content-item {
         position: relative;
         .icon-status {
@@ -3153,10 +3361,20 @@ export default {
         .text {
           position: absolute;
           left: 0;
-          top: 17px;
+          top: -20px;
           font-size: 12px;
           white-space: nowrap;
           color: #000;
+          transform: translate3d(-36%, 0, 0);
+        }
+        .time {
+          position: absolute;
+          left: 0;
+          top: 17px;
+          font-size: 12px;
+          color: #000;
+          text-align: center;
+          white-space: nowrap;
           transform: translate3d(-36%, 0, 0);
         }
         // background-color: #fff;
@@ -3168,6 +3386,11 @@ export default {
     position: absolute;
     top: -41px;
     left: 76px;
+    &.general-manager {
+      left: 735px;
+      top: -66px;
+      font-size: 14px !important;
+    }
     &.general {
       left: 480px;
       span {
@@ -3290,15 +3513,27 @@ export default {
         // border: 1px solid #000;
         .item {
           margin-bottom: 10px;
-          .first-item {
-            flex: 0 0 50px;
-          }
           &:nth-last-child(1) {
             margin-bottom: 0;
           }
           .title {
+            flex: 0 0 50px;
             margin-right: 5px;
             color: #BFBFBF;
+          }
+          .theme-item {
+            display: inline-block;
+            margin-right: 0;
+            .order-icon {
+              display: inline-block;
+              width: 12px;
+              height: 13px;
+              font-size: 12px;
+              text-align: center;
+              line-height: 10px;
+              border: 1px solid black;
+              border-radius: 50%;
+            }
           }
         }
         .content {
@@ -3307,7 +3542,7 @@ export default {
         .content-long {
           max-width: 440px;
         }
-        div {
+        div.customer-id {
           display: flex;
           min-width: 120px;
           margin-right: 35px;
@@ -3323,6 +3558,14 @@ export default {
             }
           }
         }
+      }
+    }
+    /* 支付时间 */
+    .pay-time {
+      margin-top: 10px;
+      span {
+        margin-left: 10px;
+        color: #BFBFBF;
       }
     }
     /* 总经理审批表格 */
@@ -3431,6 +3674,22 @@ export default {
     }
     &.warning {
       color: rgba(255, 165, 0, 1);
+    }
+  }
+  /* 工作日报样式 */
+  .daily-report-wrapper {
+    margin: 10px 0;
+    .area {
+      div {
+        display: inline-block;
+        &:nth-child(1) {
+          margin-right: 20px;
+        }
+        span {
+          color: #BFBFBF;
+          margin-left: 10px;
+        }
+      }
     }
   }
   .upload-wrapper {

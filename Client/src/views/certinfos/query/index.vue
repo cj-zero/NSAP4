@@ -6,6 +6,7 @@
         :tableData="tableData"
         :headOptions="headOptions"
         :type="type"
+        :isLoading="isLoading"
         @openDetail="onOpenDetail"
       >
       </common-table>

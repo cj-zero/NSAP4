@@ -59,6 +59,7 @@
       title="进程"
       :loading="dialogLoading"
       :btnList="btnList"
+      :titleStyle="titleStyle"
     >
       <order 
         ref="order" 
@@ -134,12 +135,15 @@ export default {
       return [
         { btnText: '驳回到发起人', handleClick: this.reject, 
           // 总经理并且当前状态为待支付
-          isShow: this.isGeneralManager && this.reimburseStatus === 8, className: 'danger' },
+          isShow: this.isGeneralManager && this.reimburseStatus === 8, type: 'danger' },
         { btnText: '关闭', handleClick: this.closeDialog, className: 'close' }
       ]
     },
     dialogWidth () {
       return this.isGeneralManager ? '1050px' : '1130px'
+    },
+    titleStyle () {
+      return this.isGeneralManager ? { height: '55px !important' } : {}
     }
   },
   data () {
