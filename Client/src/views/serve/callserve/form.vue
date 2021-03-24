@@ -771,7 +771,8 @@ export default {
     refValue: {
       deep: true,
       handler(val) {
-        if (val) {
+        if (val && Object.keys(val).length > 0) {
+          console.log(val, 'refVALUE')
           this.form.serviceWorkOrders = []; // 清空数组
           this.form = Object.assign({}, this.form, val);
           this.form.createTime = this.form.createTime.slice(0, -3)

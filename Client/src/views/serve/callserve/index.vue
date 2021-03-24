@@ -299,6 +299,10 @@
       </el-dialog>
       <!-- 电话回访评价 -->
       <my-dialog
+        v-loading.fullscreen="commentLoading"
+         element-loading-text="提交评价中"
+        element-loading-spinner="el-icon-loading"
+        element-loading-background="rgba(0, 0, 0, 0.8)"
         ref="commentDialog"
         width="1015px"
         title="回访"
@@ -622,6 +626,7 @@ export default {
       isRateAToBody: false, // 是否将回访弹窗插入到body中
       commentList: {}, // 评价内容 (新增评价或者查看评价 都要用到)
       newCommentList: {}, // 用于存放修改后的评分列表
+      commentLoading: false,
       isView: false, // 评分标识(是否是查看)
       advancedVisible: false, // 高级搜索是否展示
       analysisData: [],
@@ -1173,19 +1178,20 @@ export default {
       if (!(isValid && productQuality && servicePrice)) {
         return this.$message.error('评分不能为零！')
       }
-      this.loadingBtn = true
+      this.commentLoading = true
+      this.commentList.evaluateType = 2
       afterEvaluation.addComment(this.commentList)
         .then(() => {
           this.$message.success('评价成功')
           this.$refs.rateRoot.resetInfo()
-          this.loadingBtn = false
           // this.dialogRateVisible = false
           this.$refs.commentDialog.close()
           this.dialogFormView = false
           this.getList()
-        }).catch(() => {
-          this.loadingBtn = false
-          this.$message.error('评价失败')
+        }).catch((err) => {
+          this.$message.error(err.message)
+        }).finally(() => {
+          this.commentLoading = false
         })
     },
     handleExcel () { // 导出表格

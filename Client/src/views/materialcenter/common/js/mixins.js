@@ -226,7 +226,8 @@ export const configMixin = { // 表单配置
     },
     formItems () { // 头部表单配置
       return [
-        { tag: 'text', span: 3, attrs: { prop: 'serviceOrderSapId', readonly: true }, itemAttrs: { prop: 'serviceOrderSapId', label: '服务ID' }, on: { focus: this.onServiceIdFocus }},
+        // { tag: 'text', span: 3, slotName: 'serviceOrderSapId', attrs: { prop: 'serviceOrderSapId', readonly: true }, itemAttrs: { prop: 'serviceOrderSapId', label: '服务ID' }, on: { focus: this.onServiceIdFocus }},
+        { span: 3, slotName: 'serviceOrderSapId' },
         { tag: 'text', span: 3, attrs: { prop: 'terminalCustomerId', disabled: true }, itemAttrs: { prop: 'terminalCustomerId', label: '客户代码' } },
         { tag: 'text', span: 6, attrs: { prop: 'terminalCustomer', disabled: true }, itemAttrs: { prop: 'terminalCustomer', label: '客户名称' } },
         { tag: 'text', span: 3, attrs: { prop: 'newestContacter', disabled: true }, itemAttrs: { prop: 'newestContacter', label: '联系人',  } },

@@ -56,6 +56,7 @@
         :btnList="btnList"
         @closed="closeDialog"
         @opened="onOpened"
+        :titleStyle="titleStyle"
         title="进程"
         :loading="dialogLoading"
       >
@@ -129,13 +130,16 @@ export default {
     }, // 搜索配置
     btnList () {
       return [
-        { btnText: '同意', handleClick: this.agree, isShow: this.title !== 'view' },
-        { btnText: '驳回到发起人', handleClick: this.reject, isShow: this.title !== 'view', className: 'danger' },
+        { btnText: '同意', handleClick: this.agree, isShow: this.title !== 'view', type: 'primary' },
+        { btnText: '驳回到发起人', handleClick: this.reject, isShow: this.title !== 'view', type: 'danger' },
         { btnText: '关闭', handleClick: this.closeDialog, className: 'close' }
       ]
     },
     dialogWidth () {
       return this.isGeneralManager ? '1050px' : '1130px'
+    },
+    titleStyle () {
+      return this.isGeneralManager ? { height: '55px !important' } : {}
     }
   },
   data () {
