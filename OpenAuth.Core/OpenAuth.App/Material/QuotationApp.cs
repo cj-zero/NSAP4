@@ -393,7 +393,7 @@ namespace OpenAuth.App.Material
                     MaterialCode = s.MaterialCode,
                     MaterialDescription = s.MaterialDescription,
                     IsProtected = IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).FirstOrDefault()?.DocDate > DateTime.Now ? true : false,
-                    DocDate = IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).FirstOrDefault()?.DocDate
+                    DocDate = IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).OrderByDescending(s=>s.DocDate).FirstOrDefault()?.DocDate
                 }).ToList();
             }
             else
@@ -542,9 +542,11 @@ namespace OpenAuth.App.Material
             );
 
             var result = new TableData();
-            var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(Quotations.ServiceOrderId)).Select(s => new { s.Id, s.U_SAP_ID, s.TerminalCustomer, s.TerminalCustomerId, s.SalesMan, s.NewestContacter, s.NewestContactTel }).FirstOrDefaultAsync();
+            var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(Quotations.ServiceOrderId)).Select(s => new { s.Id, s.U_SAP_ID, s.TerminalCustomer, s.TerminalCustomerId, s.SalesMan,s.SalesManId, s.NewestContacter, s.NewestContactTel }).FirstOrDefaultAsync();
             var CustomerInformation = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(ServiceOrders.TerminalCustomerId)).Select(o => new { o.BackOrder, frozenFor = o.frozenFor == "N" ? "正常" : "冻结" }).FirstOrDefaultAsync();
             var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(QuotationId)).ToListAsync();
+            var SecondId = (await UnitWork.Find<Relevance>(r => r.FirstId.Equals(quotationsMap.CreateUserId) && r.Key.Equals(Define.USERORG)).FirstOrDefaultAsync()).SecondId;
+            quotationsMap.OrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.Id.Equals(SecondId)).Select(o=>o.Name).FirstOrDefaultAsync();
 
             if (Quotations.Status == 2)
             {
@@ -562,7 +564,7 @@ namespace OpenAuth.App.Material
                 var MergeMaterials = from a in QuotationMergeMaterials
                                      join b in LogisticsRecords on a.Id equals b.QuotationMaterialId
                                      select new { a, b };
-
+                
                 var Expressages = ExpressageList.Select(e => new
                 {
                     ExpressagePicture = e.ExpressagePicture.Select(p => new
@@ -1912,7 +1914,7 @@ namespace OpenAuth.App.Material
                 System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
                 var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PickingListFooter.html");
                 var foottext = System.IO.File.ReadAllText(footUrl);
-                foottext = foottext.Replace("@Model.User", model?.CreateUser.ToString()); ;
+                foottext = foottext.Replace("@Model.User", loginContext.User.Name); 
                 var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PickingListFooter{model.Id}.html");
                 System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
                 var materials = model.QuotationMergeMaterials.Select(q => new PrintSalesOrderResp
@@ -1921,6 +1923,7 @@ namespace OpenAuth.App.Material
                     MaterialDescription = q.MaterialDescription,
                     Count = q.Count.ToString(),
                     Unit = q.Unit,
+                    ServiceOrderSapId=model.ServiceOrderSapId.ToString(),
                     SalesOrder = model.SalesOrderId.ToString()
                 });
                 var datas = await ExportAllHandler.Exporterpdf(materials, "PrintPickingList.cshtml", pdf =>

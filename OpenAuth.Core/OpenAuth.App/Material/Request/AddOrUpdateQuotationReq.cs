@@ -165,6 +165,10 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public decimal? TotalCostPrice { get; set; }
 
+        /// <summary>
+        ///部门名称
+        /// </summary>
+        public string OrgName { get; set; }
 
         /// <summary>
         /// 报价单设备列表
