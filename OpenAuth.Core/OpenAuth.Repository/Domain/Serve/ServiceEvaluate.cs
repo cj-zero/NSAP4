@@ -143,6 +143,13 @@ namespace OpenAuth.Repository.Domain
         [Description("创建人名称")]
         public string CreateUserName { get; set; }
 
+        /// <summary>
+        /// 评价人角色1.客户 2.呼叫中心 3.业务员
+        /// </summary>
+        [Description("评价人角色")]
+        public int? EvaluateType { get; set; }
+        
+
         public override void GenerateDefaultKeyVal()
         {
             //throw new NotImplementedException();

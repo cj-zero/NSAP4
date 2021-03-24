@@ -310,6 +310,28 @@ namespace OpenAuth.WebApi.Controllers.Material
             return result;
         }
 
+
+        /// <summary>
+        /// 撤回报价单
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        [HttpPost]
+        public async Task<Response> Revocation(QueryQuotationListReq obj) 
+        {
+            var result = new Response();
+            try
+            {
+                await _app.Revocation((int)obj.QuotationId);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
         /// <summary>
         /// 修改报价单物料，物流
         /// </summary>
@@ -439,7 +461,7 @@ namespace OpenAuth.WebApi.Controllers.Material
            
         }
         /// <summary>
-        /// 打印销售订单
+        /// 打印报价单
         /// </summary>
         /// <param name="QuotationId"></param>
         /// <returns></returns>
@@ -456,6 +478,25 @@ namespace OpenAuth.WebApi.Controllers.Material
                 throw new Exception(e.Message);
             }
         }
+        /// <summary>
+        /// 打印领料单
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> PrintPickingList(int QuotationId)
+        {
+            try
+            {
+                return File(await _app.PrintPickingList(QuotationId), "application/pdf");
+            }
+            catch (Exception e)
+            {
 
+                throw new Exception(e.Message);
+            }
+
+        }
+        
     }
 }

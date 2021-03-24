@@ -44,6 +44,10 @@ namespace OpenAuth.App.Request
         public string Comment { get; set; }
 
         /// <summary>
+        /// 回访角色 2.呼叫中心 3.业务员
+        /// </summary>
+        public int? EvaluateType { get; set; }
+        /// <summary>
         /// 技术员评价
         /// </summary>
         [Ignore]

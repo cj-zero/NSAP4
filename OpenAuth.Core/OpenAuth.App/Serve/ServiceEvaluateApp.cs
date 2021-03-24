@@ -78,14 +78,15 @@ namespace OpenAuth.App
             //{
             //    objs = objs.Where(u => u.Id.Contains(request.key));
             //}
-
-            // 主管只能看到本部门的技术员的评价
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
+            if (request.IsReimburse == null && !(bool)request.IsReimburse) 
             {
-                var userIds = _revelanceApp.Get(Define.USERORG, false, loginContext.Orgs.Select(o => o.Id).ToArray());
-                ServiceEvaluates = ServiceEvaluates.Where(q => userIds.Contains(q.TechnicianId));
+                // 主管只能看到本部门的技术员的评价
+                if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
+                {
+                    var userIds = _revelanceApp.Get(Define.USERORG, false, loginContext.Orgs.Select(o => o.Id).ToArray());
+                    ServiceEvaluates = ServiceEvaluates.Where(q => userIds.Contains(q.TechnicianId));
+                }
             }
-
             //var propertyStr = string.Join(',', properties.Select(u => u.Key));
             result.columnHeaders = properties;
             result.Data = ServiceEvaluates.OrderByDescending(u => u.CreateTime)
@@ -171,6 +172,16 @@ namespace OpenAuth.App
         }
         public async Task AppAdd(APPAddServiceEvaluateReq req)
         {
+            var user = _auth.GetCurrentUser().User;
+            if (req.EvaluateType == 3)
+            {
+                var appids = req.TechnicianEvaluates.Select(t => t.TechnicianAppId).ToList();
+                var num = await UnitWork.Find<ServiceEvaluate>(s => s.ServiceOrderId.Equals(req.ServiceOrderId) && s.CreateUserId.Equals(user.Id) && s.EvaluateType == 3 && appids.Contains(s.TechnicianAppId)).CountAsync();
+                if (num > 0)
+                {
+                    throw new Exception("已回访，请勿重复回访。");
+                }
+            }
             var order = await UnitWork.FindSingleAsync<ServiceOrder>(s => s.Id == req.ServiceOrderId);
             if (!string.IsNullOrWhiteSpace(order.TerminalCustomerId))
             {
@@ -182,7 +193,7 @@ namespace OpenAuth.App
                 req.CustomerId = order.CustomerId;
                 req.Cutomer = order.CustomerName;
             }
-            var user = _auth.GetCurrentUser().User;
+
             foreach (var technicianEvaluates in req.TechnicianEvaluates)
             {
                 var obj = req.MapTo<ServiceEvaluate>();
@@ -204,6 +215,7 @@ namespace OpenAuth.App
                 obj.VisitPeopleId = user.Id;
                 obj.CreateUserId = user.Id;
                 obj.CreateUserName = user.Name;
+                obj.EvaluateType = user.Name == "APP" ? 1 : req.EvaluateType;
                 await UnitWork.AddAsync<ServiceEvaluate, long>(obj);
             }
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId, o => new ServiceWorkOrder
@@ -245,24 +257,16 @@ namespace OpenAuth.App
             return await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId).Select(s => s.CurrentUserId.Value).Distinct().ToListAsync();
         }
         /// <summary>
-        /// 获取服务单下所有不重复的技术员  by zlg 2020.08.31
+        /// 获取服务单下所有不重复的技术员 
         /// </summary>
         /// <param name="serviceOrderId"></param>
         /// <returns></returns>
         public async Task<TableData> GetTechnicianName(int serviceOrderId)
         {
             var result = new TableData();
-            var WorkCount = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId && (s.Status < 7 || s.FromType == 2)).CountAsync();
-            if (WorkCount <= 0)
-            {
-                var model = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId).Select(s => new { s.CurrentUser, s.CurrentUserId }).Distinct().ToListAsync();
-                result.Data = model;
-                result.Count = model.Count;
-            }
-            else
-            {
-                result.Data = null;
-            }
+            var model = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == serviceOrderId && s.FromType == 1).Select(s => new { s.CurrentUser, s.CurrentUserId }).Distinct().ToListAsync();
+            result.Data = model;
+            result.Count = model.Count;
             return result;
         }
         public ServiceEvaluateApp(IUnitWork unitWork,

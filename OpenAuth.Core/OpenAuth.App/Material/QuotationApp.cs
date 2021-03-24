@@ -1218,6 +1218,42 @@ namespace OpenAuth.App.Material
         }
 
         /// <summary>
+        /// 撤回报价单
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        public async Task Revocation(int QuotationId)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var num=await UnitWork.Find<Quotation>(q=>q.Id==QuotationId&& q.QuotationStatus<=5).CountAsync();
+            if (num <= 0) 
+            {
+                throw new Exception("该报价单状态不可撤销。");
+            }
+            await UnitWork.UpdateAsync<Quotation>(q => q.Id== QuotationId, q => new Quotation
+            {
+                QuotationStatus = 2,
+                FlowInstanceId = ""
+            });
+            var delQuotationMergeMaterial = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(QuotationId)).ToListAsync();
+            await UnitWork.BatchDeleteAsync<QuotationMergeMaterial>(delQuotationMergeMaterial.ToArray());
+            var selqoh = await UnitWork.Find<QuotationOperationHistory>(r => r.QuotationId.Equals(QuotationId)).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
+            QuotationOperationHistory qoh = new QuotationOperationHistory();
+            qoh.CreateUser = loginContext.User.Name;
+            qoh.CreateUserId = loginContext.User.Id;
+            qoh.CreateTime = DateTime.Now;
+            qoh.QuotationId = QuotationId;
+            qoh.ApprovalResult = "撤回";
+            qoh.Action = "撤回报价单";
+            qoh.IntervalTime = selqoh !=null?Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds):0;
+            await UnitWork.AddAsync<QuotationOperationHistory>(qoh);
+            await UnitWork.SaveAsync();
+        }
+        
+        /// <summary>
         /// 修改报价单物料，物流
         /// </summary>
         /// <param name="obj"></param>
@@ -1227,6 +1263,10 @@ namespace OpenAuth.App.Material
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            if (!loginContext.Roles.Any(r => r.Name.Equals("仓库"))) 
+            {
+                throw new Exception("无仓库人员权限，不可出库。");
             }
             var expressageobj = new Expressage();
             var expressageMap = obj.ExpressageReqs.MapTo<Expressage>();
@@ -1734,7 +1774,7 @@ namespace OpenAuth.App.Material
             text = text.Replace("@Model.SalesOrderId", model.SalesOrderId.ToString());
             text = text.Replace("@Model.CreateTime", createTime);
             text = text.Replace("@Model.SalesUser", model?.CreateUser.ToString());
-            text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.Id.ToString()));
+            text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.SalesOrderId.ToString()));
             text = text.Replace("@Model.CustomerId", serverOrder?.TerminalCustomerId.ToString());
             text = text.Replace("@Model.CollectionAddress", model?.CollectionAddress.ToString());
             text = text.Replace("@Model.ShippingAddress", model?.ShippingAddress.ToString());
@@ -1841,6 +1881,65 @@ namespace OpenAuth.App.Material
             });
             System.IO.File.Delete(tempUrl);
             return datas;
+        }
+
+        /// <summary>
+        /// 打印交货单
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        /// <returns></returns>
+        public async Task<byte[]> PrintPickingList(int QuotationId)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(QuotationId) && q.QuotationStatus>=10).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
+            if (model != null)
+            {
+                var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
+                var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_AcquisitionWay") || u.TypeId.Equals("SYS_DeliveryMethod")).Select(u => new { u.Name, u.TypeId, u.DtValue, u.Description }).ToListAsync();
+
+                var createTime = Convert.ToDateTime(model.QuotationOperationHistorys.Where(q => q.ApprovalStage.Equals(4)).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd");
+                var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PickingListHeader.html");
+                var text = System.IO.File.ReadAllText(url);
+                text = text.Replace("@Model.PickingList", model.Id.ToString());
+                text = text.Replace("@Model.CreateTime", createTime);
+                text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.Id.ToString()));
+                text = text.Replace("@Model.OrgName", loginContext.Orgs.FirstOrDefault().Name);
+                var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PickingListHeader{model.Id}.html");
+                System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
+                var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PickingListFooter.html");
+                var foottext = System.IO.File.ReadAllText(footUrl);
+                foottext = foottext.Replace("@Model.User", model?.CreateUser.ToString()); ;
+                var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PickingListFooter{model.Id}.html");
+                System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
+                var materials = model.QuotationMergeMaterials.Select(q => new PrintSalesOrderResp
+                {
+                    MaterialCode = q.MaterialCode,
+                    MaterialDescription = q.MaterialDescription,
+                    Count = q.Count.ToString(),
+                    Unit = q.Unit,
+                    SalesOrder = model.SalesOrderId.ToString()
+                });
+                var datas = await ExportAllHandler.Exporterpdf(materials, "PrintPickingList.cshtml", pdf =>
+                {
+                    pdf.IsWriteHtml = true;
+                    pdf.PaperKind = PaperKind.A4;
+                    pdf.IsEnablePagesCount = true;
+                    pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+                    pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl,Right= "[page]/[toPage]" };
+                });
+                System.IO.File.Delete(tempUrl);
+                System.IO.File.Delete(foottempUrl);
+                return datas;
+            }
+            else 
+            {
+                throw new Exception("暂无此领料单，请核对后重试。");
+            }
+            
         }
 
         public QuotationApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, ICapPublisher capBus, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)

@@ -86,4 +86,27 @@ namespace OpenAuth.App.Material.Response
         /// </summary>
         public int IsSecondFinish { get; set; }
     }
+
+    public class ReturnNotClearAmt
+    {
+
+        public int ReturnNoteId { get; set; }
+
+        public decimal? Amt { get; set; }
+    }
+
+    public class QutationRequesQty
+    {
+
+        public int ReturnNoteId { get; set; }
+
+        public List<QutationMaterialQty> QutationMaterials { get; set; }
+    }
+
+    public class QutationMaterialQty
+    {
+        public string MaterialCode { get; set; }
+
+        public int? Qty { get; set; }
+    }
 }
