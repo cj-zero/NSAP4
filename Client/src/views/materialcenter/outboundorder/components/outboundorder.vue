@@ -20,6 +20,11 @@
         :show-message="false"
         :isCustomerEnd="true"
       >
+        <template v-slot:serviceOrderSapId>
+          <el-form-item label="服务ID">
+            <el-input v-infotooltip.top.ellipsis size="mini" v-model="formData.serviceOrderSapId" @focus="onServiceIdFocus"></el-input>
+          </el-form-item>
+        </template>
       </common-form>
       <div class="divider"></div>
       <div class="courier-wrapper">

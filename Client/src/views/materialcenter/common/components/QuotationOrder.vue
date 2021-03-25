@@ -3,7 +3,7 @@
     <el-row type="flex" class="title-wrapper">
       <p v-if="formData.salesOrderId && isSales"><span>销售订单</span><span>{{ formData.salesOrderId }}</span></p>
       <p v-if="!isSales"><span>{{ isSales ? '报价单号' : '领料单号' }}</span><span>{{ formData.id || '' }}</span></p>
-      <p><span>申请人</span><span>{{ formData.createUser || createUser }}</span></p>
+      <p><span>申请人</span><span v-if="formData.createUser">{{ formData.orgName }}-{{ formData.createUser || createUser }}</span></p>
       <p><span>创建时间</span><span>{{ formData.createTime | formatDateFilter }}</span></p>
       <p><span>销售员</span><span>{{ formData.salesMan }}</span></p>
       <p v-if="formData.salesOrderId && !isSales">销售订单：<span>{{ formData.salesOrderId }}</span></p>
@@ -35,7 +35,7 @@
                 <span>服务ID</span>
               </div>
             </span>
-            <el-input size="mini" v-model="formData.serviceOrderSapId" @focus="onServiceIdFocus"></el-input>
+            <el-input v-infotooltip.top.ellipsis size="mini" v-model="formData.serviceOrderSapId" @focus="onServiceIdFocus"></el-input>
           </el-form-item>
         </template>
       </common-form>
@@ -798,6 +798,7 @@ export default {
         serviceOrderSapId: '', // NSAP ID
         serviceOrderId: '', 
         createUser: '',
+        orgName: '',
         serviceCharge: undefined, // 服务费
         terminalCustomer: '', // 客户名称
         terminalCustomerId: '', // 客户代码
