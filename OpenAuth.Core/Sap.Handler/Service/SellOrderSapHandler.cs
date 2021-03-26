@@ -37,7 +37,8 @@ namespace Sap.Handler.Service
             var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active=="Y").FirstOrDefaultAsync();
             var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefaultAsync())?.SlpCode;
             var ywy = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o=>o.SlpCode).FirstOrDefaultAsync();
-
+            List<string> typeids = new List<string> { "SYS_MaterialInvoiceCategory", "SYS_MaterialTaxRate", "SYS_InvoiceCompany", "SYS_DeliveryMethod" };
+            var categoryList = await UnitWork.Find<Category>(c => typeids.Contains(c.TypeId)).ToListAsync();
             try
             {
                 if (quotation != null)
@@ -100,21 +101,21 @@ namespace Sap.Handler.Service
 
 
 
-                    //if (!string.IsNullOrEmpty(quotation.InvoiceCompany) && quotation.InvoiceCompany != "") //发票类别
+                    if (quotation.InvoiceCategory != null) //发票类别
 
-                    //{
+                    {
+                        var name = categoryList.Where(c => c.TypeId.Equals("SYS_MaterialInvoiceCategory") && c.DtValue.Equals(quotation.InvoiceCategory.ToString())).FirstOrDefault()?.Name;
+                        dts.UserFields.Fields.Item("U_FPLB").Value = name; 
 
-                    //    dts.UserFields.Fields.Item("U_FPLB").Value = quotation.InvoiceCompany;
+                    }
 
-                    //}
+                    if (quotation.TaxRate != null) //税率
 
-                    //if (!string.IsNullOrEmpty(model.U_SL) && model.U_SL != "") //税率
+                    {
 
-                    //{
+                        dts.UserFields.Fields.Item("U_SL").Value = categoryList.Where(c => c.TypeId.Equals("SYS_MaterialTaxRate") && c.DtValue.Equals(quotation.TaxRate.ToString())).FirstOrDefault()?.Name; 
 
-                    //    dts.UserFields.Fields.Item("U_SL").Value = model.U_SL;
-
-                    //}
+                    }
 
                     if (ywy != null) 
                     {
@@ -129,15 +130,15 @@ namespace Sap.Handler.Service
 
                     dts.Address = quotation.CollectionAddress;       //收款方
 
-                    //if (!string.IsNullOrEmpty(model.GroupNum))
+                    if (quotation.DeliveryMethod!=null &&!string.IsNullOrEmpty(quotation.DeliveryMethod))
 
-                    //{
+                    {
+                        var DeliveryMethod=categoryList.Where(c => c.TypeId.Equals("SYS_DeliveryMethod") && c.DtValue.Equals(quotation.DeliveryMethod.ToString())).FirstOrDefault()?.DtValue;
+                        dts.PaymentGroupCode = DeliveryMethod != null?int.Parse(DeliveryMethod): 2;  //付款条件
 
-                    //    dts.PaymentGroupCode = int.Parse(model.GroupNum);   //付款条款
+                    }
 
-                    //}
-
-                    //dts.Indicator = model.Indicator;    // 标识
+                    dts.Indicator = categoryList.Where(c => c.TypeId.Equals("SYS_InvoiceCompany") && c.DtValue.Equals(quotation.InvoiceCompany.ToString())).FirstOrDefault()?.DtCode ;    // 标识
 
                     //dts.PaymentMethod = quotation.DeliveryMethod;    //付款方式
 
