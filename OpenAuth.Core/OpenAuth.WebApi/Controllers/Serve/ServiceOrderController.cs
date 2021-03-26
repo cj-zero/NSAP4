@@ -655,6 +655,28 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+
+        /// <summary>
+        /// 获取服务单日报信息
+        /// </summary>
+        /// <param name="ServiceOrderId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetErpTechnicianDailyReport(int ServiceOrderId)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _serviceOrderApp.GetErpTechnicianDailyReport(ServiceOrderId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
         #endregion
 
         #region App售后接口 如无特殊情况勿动，修改请告知！！！

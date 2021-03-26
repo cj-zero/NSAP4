@@ -1485,6 +1485,28 @@ namespace OpenAuth.App
             await UnitWork.SaveAsync();
         }
 
+        /// <summary>
+        /// 获取服务单日报信息
+        /// </summary>
+        /// <param name="ServiceOrderId"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetErpTechnicianDailyReport(int ServiceOrderId)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当月的所有日报信息
+            var dailyReports = (await UnitWork.Find<ServiceDailyReport>(w => w.CreateUserId == loginContext.User.Id && w.ServiceOrderId == ServiceOrderId).ToListAsync()).Select(s => new ReportDetail { CreateTime = s.CreateTime, MaterialCode = s.MaterialCode, ManufacturerSerialNumber = s.ManufacturerSerialNumber, TroubleDescription = GetServiceTroubleAndSolution(s.TroubleDescription), ProcessDescription = GetServiceTroubleAndSolution(s.ProcessDescription) }).ToList();
+            var dailyReportDates = dailyReports.OrderBy(o => o.CreateTime).Select(s => s.CreateTime?.Date.ToString("yyyy-MM-dd")).Distinct().ToList();
+
+            var data = dailyReports.GroupBy(g => g.CreateTime?.Date).Select(s => new ReportResult { DailyDate = s.Key?.Date.ToString("yyyy-MM-dd"), ReportDetails = s.ToList() }).ToList();
+            result.Data = new DailyReportResp { DailyDates = dailyReportDates, ReportResults = data };
+            return result;
+        }
+
         #endregion
 
         #region<<Common Methods>>
