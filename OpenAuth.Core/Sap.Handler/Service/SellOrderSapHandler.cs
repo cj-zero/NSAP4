@@ -133,7 +133,7 @@ namespace Sap.Handler.Service
                     if (quotation.DeliveryMethod!=null &&!string.IsNullOrEmpty(quotation.DeliveryMethod))
 
                     {
-                        var DeliveryMethod=categoryList.Where(c => c.TypeId.Equals("SYS_DeliveryMethod") && c.DtValue.Equals(quotation.DeliveryMethod.ToString())).FirstOrDefault()?.DtValue;
+                        var DeliveryMethod=categoryList.Where(c => c.TypeId.Equals("SYS_DeliveryMethod") && c.DtValue.Equals(quotation.DeliveryMethod.ToString())).FirstOrDefault()?.DtCode;
                         dts.PaymentGroupCode = DeliveryMethod != null?int.Parse(DeliveryMethod): 2;  //付款条件
 
                     }
