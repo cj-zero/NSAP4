@@ -1,5 +1,5 @@
 <template>
-  <div class="my-submission-wrapper">
+  <div class="my-submission-wrapper" v-loading="operationLoading">
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
@@ -91,7 +91,7 @@ import Search from '@/components/Search'
 import QuotationOrder from '../common/components/QuotationOrder'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
-import { getQuotationList, getServiceOrderList, deleteOrder } from '@/api/material/quotation'
+import { getQuotationList, getServiceOrderList, deleteOrder, repealOrder } from '@/api/material/quotation'
 import {  quotationTableMixin, categoryMixin, chatMixin, rolesMixin } from '../common/js/mixins'
 import { print } from '@/utils/utils'
 export default {
@@ -117,6 +117,7 @@ export default {
         { type: 'button', btnText: '编辑', handleClick: this.edit, isSpecial: true, options: { isReceive: true }},
         // { type: 'button', btnText: '编辑', handleClick: this._getQuotationDetail, isSpecial: true, options: { status: 'edit', isReceive: true } },
         { type: 'button', btnText: '打印', handleClick: this.print, isSpecial: true },     
+        { type: 'button', btnText: '撤销', handleClick: this.repealOrder, style: { backgroundColor: '#f56c6c', color: '#fff' } },
         { type: 'button', btnText: '删除', handleClick: this.deleteOrder, style: { backgroundColor: '#f56c6c', color: '#fff' } },
         { 
           type: 'upload',
@@ -164,6 +165,7 @@ export default {
         startCreateTime: '', // 创建开始
         endCreateTime: '' // 创建结束
       },
+      operationLoading: false,
       listQuery: {
         page: 1,
         limit: 50,
@@ -264,15 +266,38 @@ export default {
         confirmButtonText: '确定',
         cancelButtonText: '取消'
       }).then(() => {
+        this.operationLoading = true
         deleteOrder({ quotationId: id }).then(() => {
           this.$message.success('删除成功')
           this._getList()
         }).catch(err => {
           this.$message.error(err.message)
-        })
+        }).finally(() => this.operationLoading = false)
       })
     },
-    
+    repealOrder () {
+      let currentRow = this.$refs.quotationTable.getCurrentRow()
+      if (!currentRow) {
+        return this.$message.warning('请先选择数据')
+      }
+      let { quotationStatus, id } = currentRow
+      const isValid = (+quotationStatus > 3 && +quotationStatus < 6)
+      if (!isValid) {
+        return this.$message.warning('当前报价单状态不可删除')
+      }
+      this.$confirm('确定撤销？', '提示消息', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消'
+      }).then(() => {
+        this.operationLoading = true
+        repealOrder({ quotationId: id }).then(() => {
+          this.$message.success('撤销成功')
+          this._getList()
+        }).catch(err => {
+          this.$message.error(err.message)
+        }).finally(() => this.operationLoading = false)
+      })
+    },
     submit (options) {
       let isDraft = !!options.isDraft
       this.dialogLoading = true

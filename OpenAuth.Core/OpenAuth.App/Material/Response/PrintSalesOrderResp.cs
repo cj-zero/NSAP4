@@ -35,5 +35,10 @@ namespace OpenAuth.App.Material.Response
         /// 销售单号
         /// </summary>
         public string SalesOrder { get; set; }
+
+        /// <summary>
+        /// 服务id
+        /// </summary>
+        public string ServiceOrderSapId { get; set; }
     }
 }

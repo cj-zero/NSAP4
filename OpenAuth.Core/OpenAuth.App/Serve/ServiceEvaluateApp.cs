@@ -78,14 +78,15 @@ namespace OpenAuth.App
             //{
             //    objs = objs.Where(u => u.Id.Contains(request.key));
             //}
-
-            // 主管只能看到本部门的技术员的评价
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
+            if (request.IsReimburse == null && !(bool)request.IsReimburse) 
             {
-                var userIds = _revelanceApp.Get(Define.USERORG, false, loginContext.Orgs.Select(o => o.Id).ToArray());
-                ServiceEvaluates = ServiceEvaluates.Where(q => userIds.Contains(q.TechnicianId));
+                // 主管只能看到本部门的技术员的评价
+                if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
+                {
+                    var userIds = _revelanceApp.Get(Define.USERORG, false, loginContext.Orgs.Select(o => o.Id).ToArray());
+                    ServiceEvaluates = ServiceEvaluates.Where(q => userIds.Contains(q.TechnicianId));
+                }
             }
-
             //var propertyStr = string.Join(',', properties.Select(u => u.Key));
             result.columnHeaders = properties;
             result.Data = ServiceEvaluates.OrderByDescending(u => u.CreateTime)

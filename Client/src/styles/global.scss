@@ -16,7 +16,12 @@
 .pointer {
   cursor: pointer;
 }
-
+.underline {
+  text-decoration: underline;
+}
+.bold {
+  font-weight: bold;
+}
 /* 按钮样式 */
 .customer-btn-class {
   background-color: #F8B500;

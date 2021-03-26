@@ -25,6 +25,19 @@
         :rules="formRules"
         :hide-required-asterisk="true"
       >
+        <template v-slot:serviceOrderSapId>
+          <el-form-item
+            prop="serviceOrderSapId"
+            :rules="formRules['serviceOrderSapId'] || { required: false }">
+            <span slot="label">
+              <div class="link-container" style="display: inline-block">
+                <img v-if="ifInApprovePage" :src="rightImg" @click="_openServiceOrder" class="pointer">
+                <span>服务ID</span>
+              </div>
+            </span>
+            <el-input size="mini" v-model="formData.serviceOrderSapId" @focus="onServiceIdFocus"></el-input>
+          </el-form-item>
+        </template>
       </common-form>
       <!-- 技术员回传文件 -->
       <el-row class="upload-file-wrapper" type="flex" v-if="status === 'upload' && isSales">
@@ -73,19 +86,25 @@
                     <svg-icon iconClass="new-material" v-if="row.newMaterialCode"></svg-icon>
                   </el-row>
                 </template>
+                <template v-slot:unitPrice="{ row }">
+                  {{ row.unitPrice | toThousands(3, ',', 4) }}
+                </template>
+                <template v-slot:salesPrice="{ row }">
+                  {{ row.salesPrice | toThousands(3, ',', 4) }}
+                </template>
                 <!-- 折扣 -->
                 <template v-slot:discount="{ row }">
                   {{ row.discount }}%
                 </template>
                 <!-- 总价格 -->
                 <template v-slot:totalPrice="{ row }">
-                  <span style="text-align: right;">{{ row.totalPrice | toThousands}}</span>
+                  <span style="text-align: right;">{{ row.totalPrice | toThousands }}</span>
                 </template>
               </common-table>
-              <el-row type="flex" justify="end" class="total-line">
+              <!-- <el-row type="flex" justify="end" class="total-line">
                 <p v-infotooltip.top-start.ellipsis>{{ item.quotationMaterials | calcTotalItem(false, 'unitPrice') | toThousands }}</p>
                 <p v-infotooltip.top-start.ellipsis>{{ item.quotationMaterials | calcTotalItem(item.isProtected, 'salesPrice') | toThousands }}</p>
-              </el-row>
+              </el-row> -->
             </li>
           </ul>
           <!-- 工程总经理审批报价单才出现 -->
@@ -243,6 +262,12 @@
                     ></el-input-number>
                   </el-form-item>
                 </template>
+                <template v-slot:unitPrice="{ row }">
+                  {{ row.unitPrice | toThousands(3, ',', 4) }}
+                </template>
+                <template v-slot:salesPrice="{ row }">
+                  {{ row.salesPrice | toThousands(3, ',', 4) }}
+                </template>
                 <template v-slot:totalPrice="{ row }">
                   <span v-infotooltip.top.ellipsis style="text-align: right;">{{ row.totalPrice | toThousands }}</span>
                 </template>
@@ -354,6 +379,20 @@
               {{ scope.row.intervalTime | s2HMS }}
             </template>
           </common-table>
+        </div>
+        <div class="timeline-progress-wrapper" v-if="isTechnical">
+          <el-row class="content-wrapper" type="flex" align="middle" justify="space-between">
+            <template v-for="(item, index) in timeList">
+              <div class="content-item" :key="index">
+                <el-tooltip  palcement="top-center" :disabled="!item.isFinished" :content="item.createTime">
+                  <!-- <div> -->
+                    <i class="icon-status" :class="processStatusIcon(item)"></i>
+                  <!-- </div> -->
+                </el-tooltip>
+                <p class="text">{{ item.text }}</p>
+              </div>
+            </template>
+          </el-row>
         </div>
       </template>
     </el-scrollbar>
@@ -560,7 +599,6 @@
         </el-col>
       </el-row>
     </my-dialog>
-    <!-- 预览合同图片 -->
     <!-- 预览图片 -->
     <el-image-viewer
       :zIndex="99999"
@@ -626,8 +664,9 @@ export default {
       return val ? formatDate(val, 'YYYY.MM.DD HH:mm:ss') : ''
     },
     calcTotalItem (val, isProtected, key = 'totalPrice') { // 计算每一个物料表格的总金额
+      console.log(val, isProtected, 'calcItem')
       return isProtected ? 0 : 
-        val.filter(item => isNumber(item[key]))
+        val.filter(item => isNumber(Number(item[key])))
           .reduce((prev, next) => accAdd(prev, next[key]), 0)
     },
     calcSerialTotalMoney (serialNumber, list) {
@@ -636,7 +675,7 @@ export default {
       })
       if (index !== -1 && !list[index].isProtected) { // 保外的才算钱
         return list[index].
-          quotationMaterials.filter(item => isNumber(item.totalPrice))
+          quotationMaterials.filter(item => isNumber(Number(item.totalPrice)))
           .reduce((prev, next) => accAdd(prev, next.totalPrice), 0)
       }
       return 0
@@ -729,6 +768,10 @@ export default {
             }
           }
         }
+        // 如果有历史记录的话
+        if (this.formData.quotationOperationHistorys && this.formData.quotationOperationHistorys.length) {
+          this.timeList = this._normalizeTimeList(this.formData.quotationOperationHistorys)
+        }
       }
     }
   },
@@ -743,6 +786,7 @@ export default {
     //   }
     // }
     return {
+      timeList: [],
       // 合同图片
       previewImageUrlList: [], // 合同图片列表
       previewVisible: false,
@@ -889,8 +933,8 @@ export default {
         { label: '最大数量', prop: 'maxQuantity', align: 'right', slotName: 'maxQuantity', 'show-overflow-tooltip': false },
         { label: '库存量', prop: 'warehouseQuantity', align: 'right' },
         { label: '仓库', prop: 'warehouseNumber', align: 'right' },
-        { label: '成本价(￥)', prop: 'unitPrice', align: 'right' },
-        { label: '销售价(￥)', prop: 'salesPrice', align: 'right' },
+        { label: '成本价(￥)', prop: 'unitPrice', align: 'right', slotName: 'unitPrice' },
+        { label: '销售价(￥)', prop: 'salesPrice', align: 'right', slotName: 'salesPrice' },
         { label: '折扣(%)', prop: 'discount', slotName: 'discount', align: 'right' },
         { label: '小计(￥)', prop: 'totalPrice', disabled: true, align: 'right', slotName: 'totalPrice' },
         { label: '备注', slotName: 'remark', prop: 'remark' },
@@ -927,8 +971,8 @@ export default {
         { label: '最大数量', prop: 'maxQuantity', align: 'right' },
         { label: '库存量', prop: 'warehouseQuantity', align: 'right' },
         { label: '仓库', prop: 'warehouseNumber', align: 'right' },
-        { label: '成本价(￥)', prop: 'unitPrice', align: 'right' },
-        { label: '销售价(￥)', prop: 'salesPrice', align: 'right' },
+        { label: '成本价(￥)', prop: 'unitPrice', align: 'right', slotName: 'unitPrice' },
+        { label: '销售价(￥)', prop: 'salesPrice', align: 'right', slotName: 'salesPrice' },
         { label: '折扣(%)', prop: 'discount', slotName: 'discount', align: 'right' },
         { label: '小计(￥)', prop: 'totalPrice', disabled: true, align: 'right' },
         { label: '备注', prop: 'remark' },
@@ -999,6 +1043,9 @@ export default {
     }
   },
   computed: {
+    ifInApprovePage () { // 是否在审批页面
+      return this.$route.path === '/materialcenter/salesorder/index' || this.$route.path === '/materialcenter/materialapprove/index'
+    },
     ifShowMergedTable () {
       return ((this.$route.path === '/materialcenter/quotation/index' && this.isSalesOrder) || 
         (this.$route.path === '/materialcenter/salesorder/index' && this.isTechnical)) && this.isPreview
@@ -1073,6 +1120,64 @@ export default {
     }
   },
   methods: {
+    _normalizeTimeList (timeList) {
+      timeList = timeList.filter(item => item.approvalResult !== '暂定') // 把暂定的状态排除掉
+      const { quotationStatus, totalMoney } = this.formData
+      const HAS_TOTAL_MONEY_MAP = { // 有服务费的
+        4: -1,
+        5: -2,
+        6: -3,
+        7: -4,
+        8: -5,
+        9: -6,
+        10: -7,
+        11: -8
+      }
+      const NO_TOTAL_MONEY_MAP = { // 没服务费的
+        4: -1,
+        5: -2,
+        9: -3,
+        10: -4,
+        11: -5
+      }
+      const maxLen = Number(totalMoney) ? 9 : 6
+      const HAS_TOTAL_MONEY_TEXT = ['报价单提交审批', '工程审批', '总经理审批', '客户确认报价', '销售订单成立', '财务审批', '总经理审批', '待出库', '出库']
+      const NO_TOTAL_MONEY_TEXT = ['报价单提交审批', '工程审批', '总经理审批', '总经理审批', '待出库', '出库']
+      const TEXT_MAP = totalMoney ? HAS_TOTAL_MONEY_TEXT : NO_TOTAL_MONEY_TEXT
+      const TOTAL_MONEY_MAP = totalMoney ? HAS_TOTAL_MONEY_MAP : NO_TOTAL_MONEY_MAP
+      if (TOTAL_MONEY_MAP[quotationStatus]) {
+        const length = TOTAL_MONEY_MAP[quotationStatus]
+        timeList = this.setFinishedStatus(timeList.slice(length))
+      } else {
+        timeList = []
+      }
+      let isCurrent = !!timeList.length
+      while (timeList.length < maxLen) {
+        timeList.push({
+          isFinished: false,
+          isCurrent
+        })
+        isCurrent = false
+      }
+      timeList.forEach((item, index) => {
+        item.text = TEXT_MAP[index]
+      })
+      return timeList
+    },
+    setFinishedStatus (list) { // 设置状态
+      return list.map(item => {
+        item.isFinished = true // 完成(审批完的状态)
+        return item
+      })
+    },
+    processStatusIcon (item) { // 处理时间进度条icon
+      // iconfont icon-big-circle 阿里巴巴图标
+      return item.isFinished 
+        ? 'big el-icon-upload-success el-icon-circle-check success' 
+        : item.isCurrent
+          ? 'iconfont icon-big-circle warning'
+          : 'not-current'
+    },
     isIntegerNumber,
     customAddMaterial () { // 自定义新增物料
       this.isCustomAdd = true
@@ -1121,7 +1226,7 @@ export default {
       let result = 0
       for (let i = 0; i < val.length; i++) {
         if (!val[i].isProtected) {
-          result += val[i].quotationMaterials.filter(item => isNumber(item.totalPrice))
+          result += val[i].quotationMaterials.filter(item => isNumber(Number(item.totalPrice)))
           .reduce((prev, next) => accAdd(prev, next.totalPrice), 0)
         }
       }
@@ -1441,6 +1546,7 @@ export default {
         item.maxQuantity = quantity
         // item.maxQuantityText = Math.ceil(quantity)
         item.totalPrice = Number(!isProtected ? accMul(item.salesPrice, item.count) : 0).toFixed(2)
+        console.log(item.totalPrice, 'totalPrice')
         item.replaceMaterialCode = replaceMaterialCode
         item.newMaterialCode = !!newMaterialCode
         return item
@@ -1701,6 +1807,14 @@ export default {
     margin: 15px auto;
     background: #E6E6E6;
   }
+  .success {
+    font-size: 14px;
+    color: rgba(0, 128, 0, 1);
+  }
+  .warning {
+    font-size: 14px;
+    color: rgba(255, 165, 0, 1);
+  }
   /* 表头文案 */
   > .title-wrapper { 
     position: absolute;
@@ -1911,6 +2025,50 @@ export default {
     /* 操作记录表格 */
     .history-wrapper {
       margin-top: 10px;
+    }
+    .timeline-progress-wrapper {
+      position: relative;
+      width: 700px;
+      height: 5px;
+      margin: 10px 0 30px 40px;
+      background-color: rgba(206, 206, 206, 1);
+      .content-wrapper {
+        position: absolute;
+        z-index: 2;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: 0;
+        .content-item {
+          position: relative;
+          .icon-status {
+            display: inline-block;
+            font-size: 12px;
+            background-color: #fff;
+            border-radius: 50%;
+            &.big {
+              font-size: 13px;
+            }
+            &.not-current {
+              position: relative;
+              top: 1px;
+              width: 12px;
+              height: 12px;
+              background-color: rgba(206, 206, 206, 1);
+            }
+          }
+          .text {
+            position: absolute;
+            left: 0;
+            top: 17px;
+            font-size: 12px;
+            white-space: nowrap;
+            color: #000;
+            transform: translate3d(-36%, 0, 0);
+          }
+          // background-color: #fff;
+        }
+      }
     }
   }
 }

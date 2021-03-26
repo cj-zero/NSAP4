@@ -297,22 +297,33 @@
         </span>
       </el-dialog>
       <!-- 电话回访评价 -->
-      <el-dialog
+      <my-dialog
+        v-loading.fullscreen="commentLoading"
+        element-loading-text="提交评价中"
+        element-loading-spinner="el-icon-loading"
+        element-loading-background="rgba(0, 0, 0, 0.8)"
+        ref="commentDialog"
+        width="1015px"
+        title="回访"
+        :btnList="commentBtnList"
+        @closed="onRateClose"
+      > 
+        <Rate :data="commentList" @changeComment="onChangeComment" :isView="isView" ref="rateRoot" />
+      </my-dialog>
+      <!-- <el-dialog
+        v-loading.fullscreen=""
         :visible.sync="dialogRateVisible"
         :close-on-click-modal="false"
         width="1015px"
         center
         v-el-drag-dialog
-        :modal="false"
-        :modal-append-to-body="false"
-        :append-to-body="isRateAToBody"
       >
         <Rate :data="commentList" @changeComment="onChangeComment" :isView="isView" ref="rateRoot" />
         <div slot="footer">
           <el-button size="mini" type="primary" :loading="loadingBtn" @click="onCommentSubmit">确认</el-button>
           <el-button size="mini" @click="onRateClose">取消</el-button>
         </div>
-      </el-dialog>
+      </el-dialog> -->
       <!-- 完工报告  -->
       <el-dialog
         v-el-drag-dialog
@@ -404,7 +415,7 @@ export default {
       instance: this
     }
   },
-  name: "callServer",
+  name: "salesCallServe",
   computed: {
     ...mapGetters([
       'formList'
@@ -436,7 +447,13 @@ export default {
         { width: 150, placeholder: '完工开始日期', prop: 'CompleteDate', type: 'date' },
         { width: 150, placeholder: '完工截止日期', prop: 'EndCompleteDate', type: 'date' },
       ]
-    }
+    },
+    commentBtnList () {
+      return [
+        { btnText: '确认', handleClick: this.onCommentSubmit, loading: this.loadingBtn },
+        { btnText: '取消', handleClick: this.onRateClose, className: 'close' }
+      ]
+    },
   },
   mixins: [chatMixin, reportMixin, tableMixin],
   components: {
@@ -610,6 +627,7 @@ export default {
       isRateAToBody: false, // 是否将回访弹窗插入到body中
       commentList: {}, // 评价内容 (新增评价或者查看评价 都要用到)
       newCommentList: {}, // 用于存放修改后的评分列表
+      commentLoading: false,
       isView: false, // 评分标识(是否是查看)
       advancedVisible: false, // 高级搜索是否展示
       dialogAnalysisVisible: false,
@@ -1050,14 +1068,14 @@ export default {
         this.$message.error('暂无数据')
       })
     },
-    handlePhone (row, isInTable) { // 电话回访
+    handlePhone (row) { // 电话回访
       let { serviceOrderId, serviceWorkOrders } = row // 8 代表已回访
       let hasVisit = serviceWorkOrders.every(item => { // 是否已经回访
         return Number(item.status) === 8
       })
       if (hasVisit) {
-        this.$message.warning('该服务单已评价')
-      } else {
+      //   this.$message.warning('该服务单已评价')
+      // } else {
         afterEvaluation.getTechnicianName({
           serviceOrderId
         }).then(res => {
@@ -1066,11 +1084,13 @@ export default {
           }
           this.isView = false
           this.commentList = this._normalizeCommentList(res, row)
-          this.dialogRateVisible = true
-          this.isRateAToBody = Boolean(isInTable) // 判断是否将dialog插入到body中
+          // this.dialogRateVisible = true
+          this.$refs.commentDialog.open()
         }).catch(err => {
           this.$message.error(err.message)
         })
+      } else {
+        this.$message.warning('必须在客户或呼叫中心回访，进行回访')
       }
     },
     _normalizeCommentList (res, row) {
@@ -1103,13 +1123,16 @@ export default {
     },
     onRateClose () {
       this.dialogRateVisible = false
+      this.loadingBtn = false
+      this.$refs.commentDialog.close()
       if (!this.isView) { // 关闭弹窗时，清空数据
         this.$refs.rateRoot.resetInfo()
       }
     },
     onCommentSubmit () { // 提交评价
       if (this.isView) { // 如果是查看操作，则直接关闭弹窗
-        return this.dialogRateVisible = false
+        // return this.dialogRateVisible = false
+        return this.$refs.commentDialog.close()
       }
       let { productQuality, servicePrice, technicianEvaluates } = this.commentList
       let isValid = true
@@ -1123,18 +1146,20 @@ export default {
       if (!(isValid && productQuality && servicePrice)) {
         return this.$message.error('评分不能为零！')
       }
-      this.loadingBtn = true
+      this.commentLoading = true
+      this.commentList.evaluateType = 3
       afterEvaluation.addComment(this.commentList)
         .then(() => {
           this.$message.success('评价成功')
           this.$refs.rateRoot.resetInfo()
-          this.loadingBtn = false
-          this.dialogRateVisible = false
+          // this.dialogRateVisible = false
+          this.$refs.commentDialog.close()
           this.dialogFormView = false
           this.getList()
-        }).catch(() => {
-          this.loadingBtn = false
-          this.$message.error('评价失败')
+        }).catch((err) => {
+          this.$message.error(err.message)
+        }).finally(() => {
+          this.commentLoading = false
         })
     },
     handleExcel () { // 导出表格

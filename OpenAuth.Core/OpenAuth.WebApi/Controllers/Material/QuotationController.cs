@@ -310,6 +310,28 @@ namespace OpenAuth.WebApi.Controllers.Material
             return result;
         }
 
+
+        /// <summary>
+        /// 撤回报价单
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        [HttpPost]
+        public async Task<Response> Revocation(QueryQuotationListReq obj) 
+        {
+            var result = new Response();
+            try
+            {
+                await _app.Revocation((int)obj.QuotationId);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
         /// <summary>
         /// 修改报价单物料，物流
         /// </summary>

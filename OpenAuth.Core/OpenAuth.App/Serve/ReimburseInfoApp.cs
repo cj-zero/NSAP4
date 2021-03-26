@@ -1896,7 +1896,9 @@ namespace OpenAuth.App
                                .Include(r => r.ReimburseTravellingAllowances)
                                .Include(r => r.ReimburseFares)
                                .Include(r => r.ReimburseAccommodationSubsidies)
-                               .Include(r => r.ReimburseOtherCharges).Skip((req.page - 1) * req.limit)
+                               .Include(r => r.ReimburseOtherCharges)
+                               .OrderByDescending(r=>r.MainId)
+                               .Skip((req.page - 1) * req.limit)
                                .Take(req.limit).ToListAsync();
 
             //List<string> site = new List<string>();
@@ -1939,7 +1941,7 @@ namespace OpenAuth.App
                 r.BusinessTripDate,
                 r.EndDate,
                 r.UserName
-            }).ToList();
+            }).OrderByDescending(r => r.MainId).ToList();
 
             return result;
 

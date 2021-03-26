@@ -29,5 +29,10 @@ namespace OpenAuth.App.Request
         /// 结束日期
         /// </summary>
         public DateTime? DateTo { get; set; }
+
+        /// <summary>
+        /// 是否报销查看
+        /// </summary>
+        public bool? IsReimburse { get; set; }
     }
 }
