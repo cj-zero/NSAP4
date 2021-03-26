@@ -256,6 +256,7 @@ namespace OpenAuth.WebApi.Controllers
         [HttpGet("{certNo}")]
         public async Task<Response<NwcaliBaseInfo>> GetBaseInfo(string certNo)
         {
+            certNo = Encryption.PrintDecrypt(certNo);
             var result = new Response<NwcaliBaseInfo>();
             var info = await _nwcaliCertApp.GetInfo(certNo);
             result.Result = info;
@@ -264,6 +265,7 @@ namespace OpenAuth.WebApi.Controllers
         [HttpGet("{certNo}")]
         public async Task<IActionResult> DownloadBaseInfo(string certNo)
         {
+            certNo = Encryption.PrintDecrypt(certNo);
             var cert = await _certinfoApp.GetAsync(c => c.CertNo.Equals(certNo));
             if (cert is null)
                 return new NotFoundResult();
@@ -274,6 +276,7 @@ namespace OpenAuth.WebApi.Controllers
         [HttpGet("{certNo}")]
         public async Task<IActionResult> DownloadCert(string certNo)
         {
+            certNo = Encryption.PrintDecrypt(certNo);
             var cert = await _certinfoApp.GetAsync(c => c.CertNo.Equals(certNo));
             if (cert is null)
                 return new NotFoundResult();
@@ -283,6 +286,7 @@ namespace OpenAuth.WebApi.Controllers
         [HttpGet("{certNo}")]
         public async Task<IActionResult> DownloadCertPdf(string certNo)
         {
+            certNo = Encryption.PrintDecrypt(certNo);
             var baseInfo = await _nwcaliCertApp.GetInfo(certNo);
             if (baseInfo != null)
             {
@@ -329,6 +333,7 @@ namespace OpenAuth.WebApi.Controllers
         [HttpGet("{plcGuid}")]
         public async Task<IActionResult> GetCertNoList(string plcGuid)
         {
+            plcGuid = Encryption.PrintDecrypt(plcGuid);
             var certNos = (await _certPlcApp.GetAllAsync(p => p.PlcGuid.Equals(plcGuid))).OrderByDescending(c => c.CertNo).Select(cp => new { cp.CertNo, cp.CalibrationDate, cp.ExpirationDate });
             if (certNos is null || certNos.Count() == 0)
             {

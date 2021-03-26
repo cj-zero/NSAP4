@@ -76,6 +76,7 @@ namespace OpenAuth.App
                 {
                     Id = c.Id,
                     CertNo = c.CertificateNumber,
+                    EncryptCertNo = Encryption.PrintEncrypt(c.CertificateNumber),
                     ActivityName = c.FlowInstance?.ActivityName,
                     IsFinish = c.FlowInstance?.IsFinish,
                     CreateTime = c.CreateTime,
@@ -120,6 +121,7 @@ namespace OpenAuth.App
                     {
                         Id = c.Id,
                         CertNo = c.CertNo,
+                        EncryptCertNo = Encryption.Encrypt(c.CertNo),
                         ActivityName = c.FlowInstance?.ActivityName,
                         IsFinish = c.FlowInstance?.IsFinish,
                         CreateTime = c.CreateTime,
@@ -479,7 +481,7 @@ namespace OpenAuth.App
                         join b in UnitWork.Find<NwcaliBaseInfo>(null) on a.NwcaliBaseInfoId equals b.Id into ab
                         from b in ab.DefaultIfEmpty()
                         where req.plcGuid.Contains(a.Guid)
-                        select new { id = a.Id, plcGuid = a.Guid, materialCode = b.TesterModel, TesterSn=b.TesterSn };
+                        select new { id = a.Id, plcGuid = a.Guid, materialCode = b.TesterModel, TesterSn=b.TesterSn ,EncryptionPlcGuid=Encryption.PrintEncrypt(a.Guid) };
 
             result.Data = await query.ToListAsync();
             return result;
@@ -498,7 +500,7 @@ namespace OpenAuth.App
                         join b in UnitWork.Find<NwcaliBaseInfo>(null) on a.NwcaliBaseInfoId equals b.Id into ab
                         from b in ab.DefaultIfEmpty()
                         where req.plcGuid.Contains(a.Guid)
-                        select new { id=a.Id,plcGuid=a.Guid,certNo=b.CertificateNumber, calibrationDate=a.CalibrationDate,b.Operator, expirationDate=a.ExpirationDate };
+                        select new { id=a.Id,plcGuid=a.Guid,certNo=b.CertificateNumber, calibrationDate=a.CalibrationDate,b.Operator, expirationDate=a.ExpirationDate, EncryptionPlcGuid = Encryption.PrintEncrypt(a.Guid), EncryptioncertNo=Encryption.PrintEncrypt(b.CertificateNumber) };
 
             result.Data = await query.ToListAsync();
             return result;

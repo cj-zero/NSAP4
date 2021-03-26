@@ -314,8 +314,8 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// </summary>
         /// <param name="ReimburseInfoId"></param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<FileResult> Print(int ReimburseInfoId)
+        [HttpGet("{ReimburseInfoId}")]
+        public async Task<FileResult> Print(string ReimburseInfoId)
         {
             try
             {
