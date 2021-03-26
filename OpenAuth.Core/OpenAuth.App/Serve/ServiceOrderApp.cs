@@ -3712,9 +3712,11 @@ namespace OpenAuth.App
                 endDate = new DateTime(date.Year, date.Month, DateTime.DaysInMonth(date.Year, date.Month));
             }
             //获取当月的所有日报信息
-            var dailyReports = (await UnitWork.Find<ServiceDailyReport>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId && w.CreateTime > startDate && w.CreateTime < endDate).ToListAsync()).Select(s => new { s.CreateTime, s.ManufacturerSerialNumber, TroubleDescription = GetServiceTroubleAndSolution(s.TroubleDescription), ProcessDescription = GetServiceTroubleAndSolution(s.ProcessDescription) }).ToList();
-            var data = dailyReports.GroupBy(g => g.CreateTime.ToString("yyyy-MM-dd")).Select(s => new { Date = s.Key, Detail = s.ToList() }).ToList();
-            result.Data = data;
+            var dailyReports = (await UnitWork.Find<ServiceDailyReport>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId && w.CreateTime > startDate && w.CreateTime < endDate).ToListAsync()).Select(s => new ReportDetail{ CreateTime=s.CreateTime, ManufacturerSerialNumber= s.ManufacturerSerialNumber, TroubleDescription = GetServiceTroubleAndSolution(s.TroubleDescription), ProcessDescription = GetServiceTroubleAndSolution(s.ProcessDescription) }).ToList();
+            var dailyReportDates = dailyReports.OrderBy(o => o.CreateTime).Select(s => s.CreateTime?.Date.ToString("yyyy-MM-dd")).Distinct().ToList();
+
+            var data = dailyReports.GroupBy(g => g.CreateTime?.Date).Select(s => new ReportResult { DailyDate = s.Key.ToString(), ReportDetail = s.FirstOrDefault() }).ToList();
+            result.Data = new DailyReportResp { DailyDates = dailyReportDates, ReportResults = data };
             return result;
         }
 
@@ -3787,6 +3789,221 @@ namespace OpenAuth.App
             return result;
         }
 
+        /// <summary>
+        /// 添加日费
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task AddDailyExpends(AddDailyExpendsReq req)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.AppUserId).Include(i => i.User).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            //判断当天是否已经填写日费 再次填写则数据清空
+            var serviceDailyExpend = await UnitWork.Find<ServiceDailyExpends>(w => w.ServiceOrderId == req.ServiceOrderId && w.CreateUserId == userInfo.UserID && w.CreateTime.Value.Day == DateTime.Now.Day).ToListAsync();
+            if (serviceDailyExpend.Count > 0)
+            {
+                //同步删除附件
+                var expendIds = serviceDailyExpend.Select(s => s.Id).ToList();
+                var serviceDailyAttachments = await UnitWork.Find<DailyAttachment>(w => expendIds.Contains(w.ExpendId)).ToListAsync();
+                if (serviceDailyAttachments != null)
+                {
+                    await UnitWork.BatchDeleteAsync(serviceDailyAttachments.ToArray());
+                }
+                await UnitWork.BatchDeleteAsync(serviceDailyExpend.ToArray());
+            }
+            //差旅费
+            if (req.travelExpense.Days == 1)
+            {
+                var travelExpenseInfo = new ServiceDailyExpends { ServiceOrderId = req.ServiceOrderId, CreateTime = DateTime.Now, CreateUserId = userInfo.User.Id, CreateUserName = userInfo.User.Name, DailyExpenseType = 1, SerialNumber = 1, Days = 1, Money = req.travelExpense.Money, Remark = req.travelExpense.Remark, TotalMoney = req.travelExpense.Money };
+                await UnitWork.AddAsync(travelExpenseInfo);
+                await UnitWork.SaveAsync();
+            }
+            //交通费
+            if (req.transportExpenses.Count > 0)
+            {
+                int i = 1;
+                foreach (var item in req.transportExpenses)
+                {
+                    var transportExpenseInfo = new ServiceDailyExpends { ServiceOrderId = req.ServiceOrderId, CreateTime = DateTime.Now, CreateUserId = userInfo.User.Id, CreateUserName = userInfo.User.Name, DailyExpenseType = 2, SerialNumber = i, Money = item.Money, InvoiceNumber = item.InvoiceNumber, Remark = item.Remark, From = item.From, To = item.To, InvoiceTime = item.InvoiceTime, TrafficType = item.TrafficType, FeeType = item.FeeType, Transport = item.Transport, TotalMoney = item.Money };
+                    var o = await UnitWork.AddAsync<ServiceDailyExpends, int>(transportExpenseInfo);
+                    if (item.dailyAttachments != null && item.dailyAttachments.Count > 0)
+                    {
+                        var dailyAttachments = item.dailyAttachments.MapToList<DailyAttachment>();
+                        dailyAttachments.ForEach(r => { r.ExpendId = o.Id; r.Type = 1; r.Id = Guid.NewGuid().ToString(); });
+                        await UnitWork.BatchAddAsync(dailyAttachments.ToArray());
+                    }
+                }
+                await UnitWork.SaveAsync();
+            }
+            //住宿费
+            if (req.hotelExpenses.Count > 0)
+            {
+                int i = 1;
+                foreach (var item in req.hotelExpenses)
+                {
+                    var hotelExpenseInfo = new ServiceDailyExpends { ServiceOrderId = req.ServiceOrderId, CreateTime = DateTime.Now, CreateUserId = userInfo.User.Id, CreateUserName = userInfo.User.Name, DailyExpenseType = 3, SerialNumber = i, Money = item.Money, InvoiceNumber = item.InvoiceNumber, Remark = item.Remark, InvoiceTime = item.InvoiceTime, FeeType = item.FeeType, Days = item.Days, TotalMoney = item.Days * item.Money };
+                    var o = await UnitWork.AddAsync<ServiceDailyExpends, int>(hotelExpenseInfo);
+                    if (item.dailyAttachments != null && item.dailyAttachments.Count > 0)
+                    {
+                        var dailyAttachments = item.dailyAttachments.MapToList<DailyAttachment>();
+                        dailyAttachments.ForEach(r => { r.ExpendId = o.Id; r.Type = 2; r.Id = Guid.NewGuid().ToString(); });
+                        await UnitWork.BatchAddAsync(dailyAttachments.ToArray());
+                    }
+                }
+                await UnitWork.SaveAsync();
+            }
+            //其他费用
+            if (req.otherExpenses.Count > 0)
+            {
+                int i = 1;
+                foreach (var item in req.otherExpenses)
+                {
+                    var otherExpenseInfo = new ServiceDailyExpends { ServiceOrderId = req.ServiceOrderId, CreateTime = DateTime.Now, CreateUserId = userInfo.User.Id, CreateUserName = userInfo.User.Name, DailyExpenseType = 4, SerialNumber = i, Money = item.Money, InvoiceNumber = item.InvoiceNumber, Remark = item.Remark, InvoiceTime = item.InvoiceTime, FeeType = item.FeeType, ExpenseCategory = item.ExpenseCategory, TotalMoney = item.Money };
+                    var o = await UnitWork.AddAsync<ServiceDailyExpends, int>(otherExpenseInfo);
+                    if (item.dailyAttachments != null && item.dailyAttachments.Count > 0)
+                    {
+                        var dailyAttachments = item.dailyAttachments.MapToList<DailyAttachment>();
+                        dailyAttachments.ForEach(r => { r.ExpendId = o.Id; r.Type = 3; r.Id = Guid.NewGuid().ToString(); });
+                        await UnitWork.BatchAddAsync(dailyAttachments.ToArray());
+                    }
+                }
+                await UnitWork.SaveAsync();
+            }
+        }
+
+        /// <summary>
+        /// 获取日费详情（根据日期过滤）
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetTechnicianDailyExpend(GetTechnicianDailyReportReq req)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.TechnicianId).Include(i => i.User).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            //获取当前时间
+            var endDate = DateTime.Now;
+            //获取取当前月的第一天
+            DateTime startDate = new DateTime(endDate.Year, endDate.Month, 1);
+            //若传入了指定年月 则取这个年月的信息
+            if (!string.IsNullOrEmpty(req.Date))
+            {
+                DateTime date = Convert.ToDateTime(req.Date);
+                startDate = new DateTime(date.Year, date.Month, 1);
+                endDate = new DateTime(date.Year, date.Month, DateTime.DaysInMonth(date.Year, date.Month));
+            }
+            //获取当月的所有日费信息
+            var dailyExpends = await UnitWork.Find<ServiceDailyExpends>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId && w.CreateTime > startDate && w.CreateTime < endDate).ToListAsync();
+            var dailyExpendDates = dailyExpends.OrderBy(o => o.CreateTime).Select(s => s.CreateTime?.Date.ToString("yyyy-MM-dd")).Distinct().ToList();
+            var data = dailyExpends.Where(w => w.CreateTime?.Date == Convert.ToDateTime(req.Date).Date).ToList();
+            List<TransportExpense> transportExpenses = new List<TransportExpense>();
+            List<HotelExpense> hotelExpenses = new List<HotelExpense>();
+            List<OtherExpense> otherExpenses = new List<OtherExpense>();
+            TravelExpense travelExpense = new TravelExpense();
+            foreach (var item in data)
+            {
+                switch (item.DailyExpenseType)
+                {
+                    case 1:
+                        travelExpense = item.MapTo<TravelExpense>();
+                        break;
+                    case 2:
+                        var transportExpenseInfo = item.MapTo<TransportExpense>();
+                        transportExpenses.Add(transportExpenseInfo);
+                        break;
+                    case 3:
+                        var hotelExpensesInfo = item.MapTo<HotelExpense>();
+                        hotelExpenses.Add(hotelExpensesInfo);
+                        break;
+                    case 4:
+                        var otherExpensesInfo = item.MapTo<OtherExpense>();
+                        otherExpenses.Add(otherExpensesInfo);
+                        break;
+                }
+            }
+            var dailyExpendResp = new DailyExpendResp { DailyDates = dailyExpendDates, TravelExpense = travelExpense, TransportExpenses = transportExpenses, HotelExpenses = hotelExpenses, OtherExpenses = otherExpenses };
+            result.Data = dailyExpendResp;
+            return result;
+        }
+
+
+        /// <summary>
+        /// 获取日费汇总列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetServiceDailyExpendSum(GetTechnicianDailyReportReq req)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.TechnicianId).Include(i => i.User).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            //获取服务单下的所有日费信息
+            var dailyExpendSums = await UnitWork.Find<ServiceDailyExpends>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId).ToListAsync();
+            //获取所有日费附件信息
+            var dailyExpendIds = dailyExpendSums.Select(s => s.Id).ToList();
+            var dailyAttachments = await UnitWork.Find<DailyAttachment>(w => dailyExpendIds.Contains(w.ExpendId)).ToListAsync();
+
+            var data = dailyExpendSums.Select(s => new { s.CreateTime, s.CreateUserId, s.CreateUserName, s.DailyExpenseType, s.Days, s.ExpenseCategory, s.FeeType, s.From, s.Id, s.InvoiceNumber, s.InvoiceTime, s.Money, s.Remark, s.SellerName, s.SerialNumber, s.ServiceOrderId, s.To, s.Transport, s.TrafficType, s.TotalMoney, DailyAttachments = dailyAttachments.Where(w => w.ExpendId == s.Id).ToList() }).OrderByDescending(o => o.CreateTime).ToList();
+            List<TransportExpense> transportExpenses = new List<TransportExpense>();
+            List<HotelExpense> hotelExpenses = new List<HotelExpense>();
+            List<OtherExpense> otherExpenses = new List<OtherExpense>();
+            int days = 0;
+            decimal? totalmoney = 0;
+            foreach (var item in data)
+            {
+                switch (item.DailyExpenseType)
+                {
+                    case 1:
+                        days++;
+                        totalmoney += item.Money;
+                        break;
+                    case 2:
+                        var transportExpenseInfo = item.MapTo<TransportExpense>();
+                        transportExpenses.Add(transportExpenseInfo);
+                        break;
+                    case 3:
+                        var hotelExpensesInfo = item.MapTo<HotelExpense>();
+                        hotelExpenses.Add(hotelExpensesInfo);
+                        break;
+                    case 4:
+                        var otherExpensesInfo = item.MapTo<OtherExpense>();
+                        otherExpenses.Add(otherExpensesInfo);
+                        break;
+                }
+            }
+            TravelExpense travelExpense = new TravelExpense { Days = days, Money = totalmoney };
+            var dailyExpendResp = new DailyExpendResp { TravelExpense = travelExpense, TransportExpenses = transportExpenses, HotelExpenses = hotelExpenses, OtherExpenses = otherExpenses };
+            result.Data = dailyExpendResp;
+            return result;
+        }
         #endregion
 
         #region<<Admin/Supervisor>>
@@ -4350,9 +4567,8 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="ServiceOrderId"></param>
         /// <param name="CurrentUserId"></param>
-        /// <param name="MaterialType"></param>
         /// <returns></returns>
-        public async Task<TableData> AppSalesManLoad(int ServiceOrderId, int CurrentUserId, string MaterialType)
+        public async Task<TableData> AppSalesManLoad(int ServiceOrderId, int CurrentUserId)
         {
             var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
@@ -4390,7 +4606,7 @@ namespace OpenAuth.App
                             NewestContacter = string.IsNullOrEmpty(a.NewestContacter) ? a.Contacter : a.NewestContacter,
                             NewestContactTel = string.IsNullOrEmpty(a.NewestContactTel) ? a.ContactTel : a.NewestContactTel,
                             AppCustId = a.AppUserId,
-                            ServiceWorkOrders = a.ServiceWorkOrders.Where(w => w.CurrentUserId == CurrentUserId && (string.IsNullOrEmpty(MaterialType) ? true : "无序列号".Equals(MaterialType) ? w.MaterialCode == "无序列号" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-")) == MaterialType)).Select(o => new
+                            ServiceWorkOrders = a.ServiceWorkOrders.Select(o => new
                             {
                                 o.Id,
                                 o.Status,
@@ -4443,8 +4659,7 @@ namespace OpenAuth.App
                         ServiceMode = s.ToList().Select(s => s.ServiceMode).Distinct().FirstOrDefault(),
                         flowinfo = flowList.Where(w => w.MaterialType == (string.IsNullOrEmpty(s.Key) ? "无序列号" : s.Key)).ToList()
                     }
-                    ).ToList(),
-                    flowInfo = flowList.Where(w => w.MaterialType == MaterialType).ToList()
+                    ).ToList()
                 });
             result.Count = count;
             result.Data = list;
