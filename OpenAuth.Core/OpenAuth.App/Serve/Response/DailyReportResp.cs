@@ -15,12 +15,14 @@ namespace OpenAuth.App.Serve.Response
     {
         public string DailyDate { get; set; }
 
-        public ReportDetail ReportDetail { get; set; }
+        public List<ReportDetail> ReportDetails { get; set; }
     }
 
     public class ReportDetail
     {
         public DateTime? CreateTime { get; set; }
+
+        public string MaterialCode { get; set; }
 
         public string ManufacturerSerialNumber { get; set; }
 

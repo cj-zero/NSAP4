@@ -3629,7 +3629,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var ManufacturerSerialNumbers = await UnitWork.Find<ServiceWorkOrder>(w => w.CurrentUserId == req.TechnicianId && w.ServiceOrderId == req.ServiceOrderId).Select(s => s.ManufacturerSerialNumber).ToListAsync();
+            var ManufacturerSerialNumbers = await UnitWork.Find<ServiceWorkOrder>(w => w.CurrentUserId == req.TechnicianId && w.ServiceOrderId == req.ServiceOrderId).Select(s => new { s.ManufacturerSerialNumber, s.MaterialCode }).ToListAsync();
             result.Data = ManufacturerSerialNumbers;
             return result;
         }
@@ -3655,8 +3655,8 @@ namespace OpenAuth.App
                 throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
             }
             //判断当天是否已经填写日报 再次填写则数据清空
-            var serviceDailyReport = await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId == req.ServiceOrderId && w.CreateUserId == userInfo.UserID && w.CreateTime.Value.Day == DateTime.Now.Day).ToListAsync();
-            if (serviceDailyReport.Count > 0)
+            var serviceDailyReport = await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId == req.ServiceOrderId && w.CreateUserId == userInfo.UserID && w.CreateTime.Value.Day == DateTime.Now.Day).FirstOrDefaultAsync();
+            if (serviceDailyReport != null)
             {
                 await UnitWork.DeleteAsync(serviceDailyReport);
             }
@@ -3668,6 +3668,7 @@ namespace OpenAuth.App
                     serviceDailyReports.Add(new ServiceDailyReport
                     {
                         ServiceOrderId = req.ServiceOrderId,
+                        MaterialCode = item.MaterialCode,
                         ManufacturerSerialNumber = item.ManufacturerSerialNumber,
                         TroubleDescription = item.TroubleDescription,
                         ProcessDescription = item.ProcessDescription,
@@ -3712,10 +3713,10 @@ namespace OpenAuth.App
                 endDate = new DateTime(date.Year, date.Month, DateTime.DaysInMonth(date.Year, date.Month));
             }
             //获取当月的所有日报信息
-            var dailyReports = (await UnitWork.Find<ServiceDailyReport>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId && w.CreateTime > startDate && w.CreateTime < endDate).ToListAsync()).Select(s => new ReportDetail{ CreateTime=s.CreateTime, ManufacturerSerialNumber= s.ManufacturerSerialNumber, TroubleDescription = GetServiceTroubleAndSolution(s.TroubleDescription), ProcessDescription = GetServiceTroubleAndSolution(s.ProcessDescription) }).ToList();
+            var dailyReports = (await UnitWork.Find<ServiceDailyReport>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId && w.CreateTime > startDate && w.CreateTime < endDate).ToListAsync()).Select(s => new ReportDetail { CreateTime = s.CreateTime, MaterialCode = s.MaterialCode, ManufacturerSerialNumber = s.ManufacturerSerialNumber, TroubleDescription = GetServiceTroubleAndSolution(s.TroubleDescription), ProcessDescription = GetServiceTroubleAndSolution(s.ProcessDescription) }).ToList();
             var dailyReportDates = dailyReports.OrderBy(o => o.CreateTime).Select(s => s.CreateTime?.Date.ToString("yyyy-MM-dd")).Distinct().ToList();
 
-            var data = dailyReports.GroupBy(g => g.CreateTime?.Date).Select(s => new ReportResult { DailyDate = s.Key.ToString(), ReportDetail = s.FirstOrDefault() }).ToList();
+            var data = dailyReports.GroupBy(g => g.CreateTime?.Date).Select(s => new ReportResult { DailyDate = s.Key?.Date.ToString("yyyy-MM-dd"), ReportDetails = s.ToList() }).ToList();
             result.Data = new DailyReportResp { DailyDates = dailyReportDates, ReportResults = data };
             return result;
         }
@@ -3972,18 +3973,18 @@ namespace OpenAuth.App
             var dailyAttachments = await UnitWork.Find<DailyAttachment>(w => dailyExpendIds.Contains(w.ExpendId)).ToListAsync();
 
             var data = dailyExpendSums.Select(s => new { s.CreateTime, s.CreateUserId, s.CreateUserName, s.DailyExpenseType, s.Days, s.ExpenseCategory, s.FeeType, s.From, s.Id, s.InvoiceNumber, s.InvoiceTime, s.Money, s.Remark, s.SellerName, s.SerialNumber, s.ServiceOrderId, s.To, s.Transport, s.TrafficType, s.TotalMoney, DailyAttachments = dailyAttachments.Where(w => w.ExpendId == s.Id).ToList() }).OrderByDescending(o => o.CreateTime).ToList();
+
             List<TransportExpense> transportExpenses = new List<TransportExpense>();
             List<HotelExpense> hotelExpenses = new List<HotelExpense>();
             List<OtherExpense> otherExpenses = new List<OtherExpense>();
-            int days = 0;
-            decimal? totalmoney = 0;
+            List<TravelExpense> travelExpenses = new List<TravelExpense>();
             foreach (var item in data)
             {
                 switch (item.DailyExpenseType)
                 {
                     case 1:
-                        days++;
-                        totalmoney += item.Money;
+                        var travelExpenseInfo = item.MapTo<TravelExpense>();
+                        travelExpenses.Add(travelExpenseInfo);
                         break;
                     case 2:
                         var transportExpenseInfo = item.MapTo<TransportExpense>();
@@ -3999,8 +4000,7 @@ namespace OpenAuth.App
                         break;
                 }
             }
-            TravelExpense travelExpense = new TravelExpense { Days = days, Money = totalmoney };
-            var dailyExpendResp = new DailyExpendResp { TravelExpense = travelExpense, TransportExpenses = transportExpenses, HotelExpenses = hotelExpenses, OtherExpenses = otherExpenses };
+            var dailyExpendResp = new DailyExpendResp { TravelExpenses = travelExpenses, TransportExpenses = transportExpenses, HotelExpenses = hotelExpenses, OtherExpenses = otherExpenses };
             result.Data = dailyExpendResp;
             return result;
         }
@@ -4505,6 +4505,7 @@ namespace OpenAuth.App
                     s.TerminalCustomer,
                     MaterialInfo = s.ServiceWorkOrders.Select(o => new
                     {
+                        o.CurrentUserId,
                         o.MaterialCode,
                         o.ManufacturerSerialNumber,
                         MaterialType = "无序列号".Equals(o.MaterialCode) ? "无序列号" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
@@ -4550,7 +4551,8 @@ namespace OpenAuth.App
                     MaterialTypeName = "无序列号".Equals(o.Key) ? "无序列号" : MaterialTypeModel.Where(a => a.TypeAlias == o.Key).FirstOrDefault().TypeName,
                     OrderTakeType = o.ToList().Select(s => s.OrderTakeType).Distinct().FirstOrDefault(),
                     ServiceMode = o.ToList().Select(s => s.ServiceMode).Distinct().FirstOrDefault(),
-                    flowInfo = s.ServiceFlows.Where(w => w.MaterialType.Equals(o.Key)).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToList()
+                    flowInfo = s.ServiceFlows.Where(w => w.MaterialType.Equals(o.Key)).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToList(),
+                    TechnicianId = o.ToList().Select(s => s.CurrentUserId).Distinct().FirstOrDefault()
                 }),
                 IsCanEvaluate = serviceEvaluates.Where(w => w.ServiceOrderId == s.Id).ToList().Count > 0 ? 1 : 0,
                 EvaluateId = serviceEvaluates.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).FirstOrDefault() == null ? 0 : serviceEvaluates.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).FirstOrDefault().Id

@@ -26,6 +26,11 @@ namespace OpenAuth.App.Serve.Request
     public class DailyResult
     {
         /// <summary>
+        /// 物料编码
+        /// </summary>
+        public string MaterialCode { get; set; }
+
+        /// <summary>
         /// 序列号
         /// </summary>
         public string ManufacturerSerialNumber { get; set; }

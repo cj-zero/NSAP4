@@ -18,6 +18,11 @@ namespace OpenAuth.App.Serve.Response
         public TravelExpense TravelExpense { get; set; }
 
         /// <summary>
+        /// 差旅费集合
+        /// </summary>
+        public List<TravelExpense> TravelExpenses { get; set; }
+
+        /// <summary>
         /// 交通费集合
         /// </summary>
         public List<TransportExpense> TransportExpenses { get; set; }
