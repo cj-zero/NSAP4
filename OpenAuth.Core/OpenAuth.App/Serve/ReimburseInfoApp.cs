@@ -275,6 +275,7 @@ namespace OpenAuth.App
             var ReimburseRespList= ReimburseResps.Select(r => new
             {
                 ReimburseResp = r.a,
+                EncrypReimburseId = Encryption.PrintEncrypt(r.a.Id.ToString()),
                 fillTime = r.a.CreateTime.ToString("yyyy-MM-dd"),
                 r.b.TerminalCustomerId,
                 r.b.TerminalCustomer,
@@ -1445,14 +1446,15 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="ReimburseInfoId"></param>
         /// <returns></returns>
-        public async Task<byte[]> Print(int ReimburseInfoId)
+        public async Task<byte[]> Print(string ReimburseInfoId)
         {
+            ReimburseInfoId = Encryption.PrintDecrypt(ReimburseInfoId);
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var Reimburse = await UnitWork.Find<ReimburseInfo>(r => r.Id == ReimburseInfoId)
+            var Reimburse = await UnitWork.Find<ReimburseInfo>(r => r.Id == int.Parse(ReimburseInfoId))
                         .Include(r => r.ReimburseTravellingAllowances)
                         .Include(r => r.ReimburseFares)
                         .Include(r => r.ReimburseAccommodationSubsidies)

@@ -208,10 +208,10 @@ namespace OpenAuth.App.Material
             var query = from a in QuotationDate
                         join b in ServiceOrders on a.ServiceOrderId equals b.Id
                         select new { a, b };
-
             result.Data = query.Select(q => new
             {
                 q.a.Id,
+                EncrypQuotationId = Encryption.PrintEncrypt(q.a.Id.ToString()),
                 q.a.ServiceOrderSapId,
                 q.a.ServiceOrderId,
                 q.b.TerminalCustomer,
@@ -335,7 +335,9 @@ namespace OpenAuth.App.Material
             }
             var result = new TableData();
 
-            var ServiceWorkOrderList = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.Equals(request.ServiceOrderId) && s.CurrentUserNsapId.Equals(loginUser.Id))
+            var ServiceWorkOrderList = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.Equals(request.ServiceOrderId))
+                .WhereIf(string.IsNullOrWhiteSpace(request.CreateUserId),s => s.CurrentUserNsapId.Equals(loginUser.Id))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserId), s => s.CurrentUserNsapId.Equals(request.CreateUserId))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.MaterialType), s => s.MaterialCode.Substring(0, 2) == request.MaterialType)
                 .WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers), s => s.ManufacturerSerialNumber.Contains(request.ManufacturerSerialNumbers))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.MaterialCode), s => s.MaterialCode.Contains(request.MaterialCode))
@@ -385,7 +387,7 @@ namespace OpenAuth.App.Material
                 #endregion
 
                 result.Data = ServiceWorkOrderList.Skip((request.page - 1) * request.limit)
-                .Take(request.limit).Select(s => new
+                .Take(request.limit).Select(s => new ProductCodeListResp
                 {
                     SalesOrder = MnfSerialList.Where(m => m.MnfSerial.Equals(s.ManufacturerSerialNumber) && m.BaseType == 17)?.Max(m => m.BaseEntry),
                     ProductionOrder = MnfSerialList.Where(m => m.MnfSerial.Equals(s.ManufacturerSerialNumber) && m.BaseType == 202)?.Max(m => m.BaseEntry),
@@ -393,12 +395,8 @@ namespace OpenAuth.App.Material
                     MaterialCode = s.MaterialCode,
                     MaterialDescription = s.MaterialDescription,
                     IsProtected = IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).FirstOrDefault()?.DocDate > DateTime.Now ? true : false,
-                    DocDate = IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).OrderByDescending(s=>s.DocDate).FirstOrDefault()?.DocDate
+                    DocDate = IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).OrderByDescending(s => s.DocDate).FirstOrDefault()?.DocDate
                 }).ToList();
-            }
-            else
-            {
-                result.Data = ServiceWorkOrderList;
             }
             result.Count = ServiceWorkOrderList.Count();
             return result;
@@ -542,12 +540,63 @@ namespace OpenAuth.App.Material
             );
 
             var result = new TableData();
-            var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(Quotations.ServiceOrderId)).Select(s => new { s.Id, s.U_SAP_ID, s.TerminalCustomer, s.TerminalCustomerId, s.SalesMan,s.SalesManId, s.NewestContacter, s.NewestContactTel }).FirstOrDefaultAsync();
+            var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(Quotations.ServiceOrderId)).Select(s => new { s.Id, s.U_SAP_ID, s.TerminalCustomer, s.TerminalCustomerId, s.SalesMan, s.SalesManId, s.NewestContacter, s.NewestContactTel }).FirstOrDefaultAsync();
             var CustomerInformation = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(ServiceOrders.TerminalCustomerId)).Select(o => new { o.BackOrder, frozenFor = o.frozenFor == "N" ? "正常" : "冻结" }).FirstOrDefaultAsync();
             var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(QuotationId)).ToListAsync();
             var SecondId = (await UnitWork.Find<Relevance>(r => r.FirstId.Equals(quotationsMap.CreateUserId) && r.Key.Equals(Define.USERORG)).FirstOrDefaultAsync()).SecondId;
-            quotationsMap.OrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.Id.Equals(SecondId)).Select(o=>o.Name).FirstOrDefaultAsync();
+            quotationsMap.OrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.Id.Equals(SecondId)).Select(o => o.Name).FirstOrDefaultAsync();
+            quotationsMap.QuotationOperationHistorys = quotationsMap.QuotationOperationHistorys.OrderBy(q => q.CreateTime).ToList();
 
+            if ((quotationsMap.ServiceCharge !=null &&quotationsMap.ServiceCharge > 0) || (quotationsMap.TravelExpense !=null &&quotationsMap.TravelExpense > 0))
+            {
+                List<ProductCodeListResp> serialNumberList = (await GetSerialNumberList(new QueryQuotationListReq { ServiceOrderId = quotationsMap.ServiceOrderId,CreateUserId= quotationsMap .CreateUserId})).Data;
+                var productCodeList = quotationsMap.QuotationProducts.Select(q => q.ProductCode).ToList();
+                var products = serialNumberList.Where(s => !productCodeList.Contains(s.ManufacturerSerialNumber)).Select(s => new QuotationProductReq
+                {
+                    MaterialCode = s.MaterialCode,
+                    ProductCode = s.ManufacturerSerialNumber,
+                    IsProtected = s.IsProtected,
+                    MaterialDescription = s.MaterialDescription,
+                    WarrantyExpirationTime = s.DocDate,
+                    QuotationMaterials = new List<QuotationMaterialReq>()
+                }).ToList();
+                quotationsMap.QuotationProducts.AddRange(products);
+                var count = quotationsMap.QuotationProducts.Count();
+                List<QuotationMaterialReq> QuotationMergeMaterial = new List<QuotationMaterialReq>();
+                if (quotationsMap.ServiceCharge != null && quotationsMap.ServiceCharge > 0)
+                {
+                    QuotationMergeMaterial.Add(new QuotationMaterialReq
+                    {
+                        MaterialCode = "S111-SERVICE-GSF",
+                        MaterialDescription = "维修费",
+                        Unit = "PCS",
+                        SalesPrice = quotationsMap.ServiceCharge / count,
+                        UnitPrice = quotationsMap.ServiceCharge / count,
+                        Count = 1,
+                        TotalPrice = quotationsMap.ServiceCharge / count,
+                        Discount = 100,
+                    });
+                }
+                if (quotationsMap.TravelExpense != null && quotationsMap.TravelExpense > 0)
+                {
+                    QuotationMergeMaterial.Add(new QuotationMaterialReq
+                    {
+                        MaterialCode = "S111-SERVICE-CLF",
+                        MaterialDescription = "差旅费",
+                        Unit = "PCS",
+                        SalesPrice = quotationsMap.TravelExpense / count,
+                        UnitPrice = quotationsMap.TravelExpense / count,
+                        Count = 1,
+                        TotalPrice = quotationsMap.TravelExpense / count,
+                        Discount = 100,
+                    });
+                    
+                }
+                quotationsMap.QuotationProducts.ForEach(q =>
+                {
+                    q.QuotationMaterials.AddRange(QuotationMergeMaterial.ToList());
+                });
+            }
             if (Quotations.Status == 2)
             {
                 var ExpressageList = await UnitWork.Find<Expressage>(e => e.QuotationId.Equals(Quotations.Id)).Include(e => e.ExpressagePicture).Include(e => e.LogisticsRecords).ToListAsync();
@@ -564,7 +613,7 @@ namespace OpenAuth.App.Material
                 var MergeMaterials = from a in QuotationMergeMaterials
                                      join b in LogisticsRecords on a.Id equals b.QuotationMaterialId
                                      select new { a, b };
-                
+
                 var Expressages = ExpressageList.Select(e => new
                 {
                     ExpressagePicture = e.ExpressagePicture.Select(p => new
@@ -592,7 +641,7 @@ namespace OpenAuth.App.Material
                         m.b.Quantity
                     }).ToList()
                 }).ToList();
-                quotationsMap.QuotationOperationHistorys = quotationsMap.QuotationOperationHistorys.OrderBy(q => q.CreateTime).ToList();
+
                 result.Data = new
                 {
                     Expressages,
@@ -604,7 +653,6 @@ namespace OpenAuth.App.Material
             }
             else
             {
-                quotationsMap.QuotationOperationHistorys = quotationsMap.QuotationOperationHistorys.OrderBy(q => q.CreateTime).ToList();
                 result.Data = new
                 {
                     Quotations = quotationsMap,
@@ -792,53 +840,13 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-
-            var Message = await Condition(obj);
-
-            var QuotationObj = obj.MapTo<Quotation>();
-            QuotationObj.PrintNo = Guid.NewGuid().ToString();
-            QuotationObj.Tentative = false;
-            QuotationObj.ErpOrApp = 1;
             var loginUser = loginContext.User;
             if (loginUser.Account == Define.USERAPP)
             {
                 loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
-                QuotationObj.ErpOrApp = 2;
             }
-            //判定人员是否有销售员code
-            var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(loginUser.Name)).FirstOrDefaultAsync())?.SlpCode;
-            if (slpcode == null || slpcode == 0)
-            {
-                throw new Exception("暂无销售权限，请联系呼叫中心");
-            }
-            QuotationObj.IsProtected = true;
-            QuotationObj.TotalMoney = 0;
-            QuotationObj.TotalCostPrice = 0;
-            QuotationObj.QuotationProducts.ForEach(q =>
-            {
-                if (!(bool)q.IsProtected)
-                {
-                    QuotationObj.IsProtected = false;
-                    q.QuotationMaterials.ForEach(m =>
-                    {
-                        m.TotalPrice = Math.Round(Convert.ToDecimal((m.SalesPrice * m.Count) * (m.Discount / 100)), 2);
-                        QuotationObj.TotalMoney += Math.Round(Convert.ToDecimal((m.SalesPrice * m.Count) * (m.Discount / 100)), 2);
-                    });
-                }
-                else
-                {
-                    q.QuotationMaterials.ForEach(m =>
-                    {
-                        m.SalesPrice = 0;
-                        m.TotalPrice = 0;
-                        QuotationObj.TotalCostPrice += m.UnitPrice * m.Count;
-                    });
-                }
-            });
-            if (QuotationObj.ServiceCharge != null && QuotationObj.ServiceCharge > 0)
-            {
-                QuotationObj.TotalMoney += QuotationObj.ServiceCharge;
-            }
+            var Message = await Condition(obj);
+            var QuotationObj = await CalculatePrice(obj);
             var dbContext = UnitWork.GetDbContext<Quotation>();
             using (var transaction = await dbContext.Database.BeginTransactionAsync())
             {
@@ -907,10 +915,10 @@ namespace OpenAuth.App.Material
                                              SalesPrice = g.Key.SalesPrice,
                                              CostPrice = g.Key.UnitPrice,
                                              Count = g.Sum(a => a.Count),
-                                             TotalPrice = (g.Key.SalesPrice * g.Sum(a => a.Count)) * (g.Key.Discount/100),//g.Sum(a => a.TotalPrice)
+                                             TotalPrice = (g.Key.SalesPrice * g.Sum(a => a.Count)) * (g.Key.Discount / 100),//g.Sum(a => a.TotalPrice)
                                              IsProtected = false,
                                              QuotationId = QuotationObj.Id,
-                                             Margin = ((g.Key.SalesPrice * g.Sum(a => a.Count)) * (g.Key.Discount/100)) - (g.Key.UnitPrice * g.Sum(a => a.Count)),
+                                             Margin = ((g.Key.SalesPrice * g.Sum(a => a.Count)) * (g.Key.Discount / 100)) - (g.Key.UnitPrice * g.Sum(a => a.Count)),
                                              Discount = g.Key.Discount,
                                              SentQuantity = 0
                                          };
@@ -932,6 +940,24 @@ namespace OpenAuth.App.Material
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
                                 Margin = QuotationObj.ServiceCharge,
+                                Discount = 100,
+                                SentQuantity = 1
+                            });
+                        }
+                        if (QuotationObj.TravelExpense != null && QuotationObj.TravelExpense > 0)
+                        {
+                            QuotationMergeMaterialList.Add(new QueryQuotationMergeMaterialListReq
+                            {
+                                MaterialCode = "S111-SERVICE-CLF",
+                                MaterialDescription = "差旅费",
+                                Unit = "PCS",
+                                SalesPrice = QuotationObj.TravelExpense,
+                                CostPrice = 0,
+                                Count = 1,
+                                TotalPrice = QuotationObj.TravelExpense,
+                                IsProtected = false,
+                                QuotationId = QuotationObj.Id,
+                                Margin = QuotationObj.TravelExpense,
                                 Discount = 100,
                                 SentQuantity = 1
                             });
@@ -972,51 +998,13 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-
-            var Message = await Condition(obj);
-            var QuotationObj = obj.MapTo<Quotation>();
-            QuotationObj.TotalMoney = 0;
-            QuotationObj.TotalCostPrice = 0;
-            QuotationObj.Tentative = false;
-            QuotationObj.ErpOrApp = 1;
             var loginUser = loginContext.User;
             if (loginUser.Account == Define.USERAPP)
             {
                 loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
-                QuotationObj.ErpOrApp = 2;
             }
-            //判定人员是否有销售员code
-            var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(loginUser.Name)).FirstOrDefaultAsync())?.SlpCode;
-            if (slpcode == null || slpcode == 0)
-            {
-                throw new Exception("暂无销售权限，请联系呼叫中心");
-            }
-            QuotationObj.IsProtected = true;
-            QuotationObj.QuotationProducts.ForEach(q =>
-            {
-                if (!(bool)q.IsProtected)
-                {
-                    QuotationObj.IsProtected = false;
-                    q.QuotationMaterials.ForEach(m =>
-                    {
-                        m.TotalPrice = Math.Round(Convert.ToDecimal((m.SalesPrice * m.Count) * (m.Discount / 100)), 2);
-                        QuotationObj.TotalMoney += Math.Round(Convert.ToDecimal((m.SalesPrice * m.Count) * (m.Discount / 100)), 2);
-                    });
-                }
-                else
-                {
-                    q.QuotationMaterials.ForEach(m =>
-                    {
-                        m.SalesPrice = 0;
-                        m.TotalPrice = 0;
-                        QuotationObj.TotalCostPrice += m.UnitPrice * m.Count;
-                    });
-                }
-            });
-            if (QuotationObj.ServiceCharge != null && QuotationObj.ServiceCharge > 0)
-            {
-                QuotationObj.TotalMoney += QuotationObj.ServiceCharge;
-            }
+            var Message = await Condition(obj);
+            var QuotationObj = await CalculatePrice(obj);
 
             var dbContext = UnitWork.GetDbContext<Quotation>();
             using (var transaction = dbContext.Database.BeginTransaction())
@@ -1123,10 +1111,10 @@ namespace OpenAuth.App.Material
                                              SalesPrice = g.Key.SalesPrice,
                                              CostPrice = g.Key.UnitPrice,
                                              Count = g.Sum(a => a.Count),
-                                             TotalPrice = (g.Key.SalesPrice * g.Sum(a => a.Count)) * (g.Key.Discount/100),//g.Sum(a => a.TotalPrice)
+                                             TotalPrice = (g.Key.SalesPrice * g.Sum(a => a.Count)) * (g.Key.Discount / 100),//g.Sum(a => a.TotalPrice)
                                              IsProtected = false,
                                              QuotationId = QuotationObj.Id,
-                                             Margin = ((g.Key.SalesPrice * g.Sum(a => a.Count)) * (g.Key.Discount/100)) - (g.Key.UnitPrice * g.Sum(a => a.Count)),
+                                             Margin = ((g.Key.SalesPrice * g.Sum(a => a.Count)) * (g.Key.Discount / 100)) - (g.Key.UnitPrice * g.Sum(a => a.Count)),
                                              Discount = g.Key.Discount,
                                              SentQuantity = 0
                                          };
@@ -1147,6 +1135,24 @@ namespace OpenAuth.App.Material
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
                                 Margin = QuotationObj.ServiceCharge,
+                                Discount = 100,
+                                SentQuantity = 1
+                            });
+                        }
+                        if (QuotationObj.TravelExpense != null && QuotationObj.TravelExpense > 0)
+                        {
+                            QuotationMergeMaterialList.Add(new QueryQuotationMergeMaterialListReq
+                            {
+                                MaterialCode = "S111-SERVICE-CLF",
+                                MaterialDescription = "差旅费",
+                                Unit = "PCS",
+                                SalesPrice = QuotationObj.TravelExpense,
+                                CostPrice = 0,
+                                Count = 1,
+                                TotalPrice = QuotationObj.TravelExpense,
+                                IsProtected = false,
+                                QuotationId = QuotationObj.Id,
+                                Margin = QuotationObj.TravelExpense,
                                 Discount = 100,
                                 SentQuantity = 1
                             });
@@ -1230,12 +1236,12 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var num=await UnitWork.Find<Quotation>(q=>q.Id==QuotationId&& q.QuotationStatus<=5).CountAsync();
-            if (num <= 0) 
+            var num = await UnitWork.Find<Quotation>(q => q.Id == QuotationId && q.QuotationStatus <= 5).CountAsync();
+            if (num <= 0)
             {
                 throw new Exception("该报价单状态不可撤销。");
             }
-            await UnitWork.UpdateAsync<Quotation>(q => q.Id== QuotationId, q => new Quotation
+            await UnitWork.UpdateAsync<Quotation>(q => q.Id == QuotationId, q => new Quotation
             {
                 QuotationStatus = 2,
                 FlowInstanceId = ""
@@ -1250,11 +1256,11 @@ namespace OpenAuth.App.Material
             qoh.QuotationId = QuotationId;
             qoh.ApprovalResult = "撤回";
             qoh.Action = "撤回报价单";
-            qoh.IntervalTime = selqoh !=null?Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds):0;
+            qoh.IntervalTime = selqoh != null ? Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds) : 0;
             await UnitWork.AddAsync<QuotationOperationHistory>(qoh);
             await UnitWork.SaveAsync();
         }
-        
+
         /// <summary>
         /// 修改报价单物料，物流
         /// </summary>
@@ -1266,7 +1272,7 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            if (!loginContext.Roles.Any(r => r.Name.Equals("仓库"))) 
+            if (!loginContext.Roles.Any(r => r.Name.Equals("仓库")))
             {
                 throw new Exception("无仓库人员权限，不可出库。");
             }
@@ -1413,7 +1419,7 @@ namespace OpenAuth.App.Material
             var obj = await UnitWork.Find<Quotation>(q => q.Id == req.Id).Include(q => q.QuotationProducts).Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
 
             qoh.ApprovalStage = obj.QuotationStatus;
-            
+
             VerificationReq VerificationReqModle = new VerificationReq();
             if (req.IsReject)
             {
@@ -1498,10 +1504,6 @@ namespace OpenAuth.App.Material
                     qoh.Action = "总经理审批";
                     obj.QuotationStatus = 10;
                     obj.Status = 2;
-                    if (obj.QuotationMergeMaterials.Where(q => !q.MaterialCode.Equals("S111-SERVICE-GSF")).Count() <= 0)
-                    {
-                        obj.QuotationStatus = 11;
-                    }
                 }
                 else
                 {
@@ -1699,6 +1701,12 @@ namespace OpenAuth.App.Material
             }
             #endregion
 
+            //判定人员是否有销售员code
+            var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(loginUser.Name)).FirstOrDefaultAsync())?.SlpCode;
+            if (slpcode == null || slpcode == 0)
+            {
+                throw new Exception("暂无销售权限，请联系呼叫中心");
+            }
             return null;
         }
 
@@ -1709,38 +1717,58 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         private async Task<Quotation> CalculatePrice(AddOrUpdateQuotationReq obj)
         {
-            var quotationObj = obj.MapTo<Quotation>();
-
-            List<string> itemCode = new List<string>();
-
-            foreach (var item in quotationObj.QuotationProducts)
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
             {
-                itemCode.AddRange(item.QuotationMaterials.Select(q => q.MaterialCode).ToList());
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var purchasePrice = await UnitWork.Find<OITM>(o => itemCode.Contains(o.ItemCode)).Select(o => new { o.ItemCode, o.LastPurPrc }).ToListAsync();
-            var materialPrices = await UnitWork.Find<MaterialPrice>(m => itemCode.Contains(m.MaterialCode)).ToListAsync();
-
-            var query = from a in materialPrices
-                        join b in purchasePrice on a.MaterialCode equals b.ItemCode
-                        select new { a, b };
-
-            quotationObj.QuotationProducts.ForEach(products =>
+            var loginUser = loginContext.User;
+            if (loginUser.Account == Define.USERAPP)
             {
-                products.QuotationMaterials.ForEach(materials =>
+                loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
+            }
+            
+            var QuotationObj = obj.MapTo<Quotation>();
+            QuotationObj.TotalMoney = 0;
+            QuotationObj.TotalCostPrice = 0;
+            QuotationObj.Tentative = false;
+            QuotationObj.ErpOrApp = 1;
+            if (loginUser.Account == Define.USERAPP)
+            {
+                loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
+                QuotationObj.ErpOrApp = 2;
+            }
+            QuotationObj.IsProtected = true;
+            QuotationObj.QuotationProducts.ForEach(q =>
+            {
+                if (!(bool)q.IsProtected)
                 {
-                    var materialCodes = query.Where(q => q.a.MaterialCode.Equals(materials.MaterialCode)).FirstOrDefault();
-                    if (materialCodes != null)
+                    QuotationObj.IsProtected = false;
+                    q.QuotationMaterials.ForEach(m =>
                     {
-                        var price = materialCodes.a?.SettlementPrice == null ? materialCodes.a.SettlementPriceModel * materialCodes.b.LastPurPrc : materialCodes.a?.SettlementPrice;
-                        materials.SalesPrice = (price * 3) * materials.Discount;
-                        materials.TotalPrice = materials.Count * materials.SalesPrice;
-                        materials.UnitPrice = price;
-                    }
-                });
-
+                        m.TotalPrice = Math.Round(Convert.ToDecimal((m.SalesPrice * m.Count) * (m.Discount / 100)), 2);
+                        QuotationObj.TotalMoney += Math.Round(Convert.ToDecimal((m.SalesPrice * m.Count) * (m.Discount / 100)), 2);
+                    });
+                }
+                else
+                {
+                    q.QuotationMaterials.ForEach(m =>
+                    {
+                        m.SalesPrice = 0;
+                        m.TotalPrice = 0;
+                        QuotationObj.TotalCostPrice += m.UnitPrice * m.Count;
+                    });
+                }
             });
-
-            return quotationObj;
+            if (QuotationObj.ServiceCharge != null && QuotationObj.ServiceCharge > 0)
+            {
+                QuotationObj.TotalMoney += QuotationObj.ServiceCharge;
+            }
+            if (QuotationObj.TravelExpense != null && QuotationObj.TravelExpense > 0)
+            {
+                QuotationObj.TotalMoney += QuotationObj.TravelExpense;
+            }
+            return QuotationObj;
         }
 
         /// <summary>
@@ -1764,9 +1792,10 @@ namespace OpenAuth.App.Material
         /// </summary>
         /// <param name="QuotationId"></param>
         /// <returns></returns>
-        public async Task<byte[]> PrintSalesOrder(int QuotationId)
+        public async Task<byte[]> PrintSalesOrder(string QuotationId)
         {
-            var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(QuotationId)).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
+            var quotationId = int.Parse(Encryption.PrintDecrypt(QuotationId));
+            var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(quotationId)).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
             var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_AcquisitionWay") || u.TypeId.Equals("SYS_DeliveryMethod")).Select(u => new { u.Name, u.TypeId, u.DtValue, u.Description }).ToListAsync();
 
@@ -1838,9 +1867,10 @@ namespace OpenAuth.App.Material
         /// </summary>
         /// <param name="QuotationId"></param>
         /// <returns></returns>
-        public async Task<byte[]> PrintQuotation(int QuotationId)
+        public async Task<byte[]> PrintQuotation(string QuotationId)
         {
-            var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(QuotationId)).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
+            var quotationId = int.Parse(Encryption.PrintDecrypt(QuotationId));
+            var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(quotationId)).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
             var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_AcquisitionWay") || u.TypeId.Equals("SYS_DeliveryMethod")).Select(u => new { u.Name, u.TypeId, u.DtValue, u.Description }).ToListAsync();
 
@@ -1890,14 +1920,15 @@ namespace OpenAuth.App.Material
         /// </summary>
         /// <param name="QuotationId"></param>
         /// <returns></returns>
-        public async Task<byte[]> PrintPickingList(int QuotationId)
+        public async Task<byte[]> PrintPickingList(string QuotationId)
         {
+            var quotationId = int.Parse(Encryption.PrintDecrypt(QuotationId));
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(QuotationId) && q.QuotationStatus>=10).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
+            var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(quotationId) && q.QuotationStatus >= 10).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
             if (model != null)
             {
                 var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
@@ -1914,7 +1945,7 @@ namespace OpenAuth.App.Material
                 System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
                 var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PickingListFooter.html");
                 var foottext = System.IO.File.ReadAllText(footUrl);
-                foottext = foottext.Replace("@Model.User", loginContext.User.Name); 
+                foottext = foottext.Replace("@Model.User", loginContext.User.Name);
                 var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PickingListFooter{model.Id}.html");
                 System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
                 var materials = model.QuotationMergeMaterials.Select(q => new PrintSalesOrderResp
@@ -1923,7 +1954,7 @@ namespace OpenAuth.App.Material
                     MaterialDescription = q.MaterialDescription,
                     Count = q.Count.ToString(),
                     Unit = q.Unit,
-                    ServiceOrderSapId=model.ServiceOrderSapId.ToString(),
+                    ServiceOrderSapId = model.ServiceOrderSapId.ToString(),
                     SalesOrder = model.SalesOrderId.ToString()
                 });
                 var datas = await ExportAllHandler.Exporterpdf(materials, "PrintPickingList.cshtml", pdf =>
@@ -1932,17 +1963,17 @@ namespace OpenAuth.App.Material
                     pdf.PaperKind = PaperKind.A4;
                     pdf.IsEnablePagesCount = true;
                     pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
-                    pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl,Right= "[page]/[toPage]" };
+                    pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl, Right = "[page]/[toPage]" };
                 });
                 System.IO.File.Delete(tempUrl);
                 System.IO.File.Delete(foottempUrl);
                 return datas;
             }
-            else 
+            else
             {
                 throw new Exception("暂无此领料单，请核对后重试。");
             }
-            
+
         }
 
         public QuotationApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, ICapPublisher capBus, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)

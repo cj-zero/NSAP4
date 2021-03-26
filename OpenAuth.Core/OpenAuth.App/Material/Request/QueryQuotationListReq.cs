@@ -42,6 +42,11 @@ namespace OpenAuth.App.Material.Request
         public string CreateUser { get; set; }
 
         /// <summary>
+        /// 申请人ID
+        /// </summary>
+        public string CreateUserId { get; set; }
+
+        /// <summary>
         /// 创建日期开始
         /// </summary>
         public DateTime? StartCreateTime { get; set; }

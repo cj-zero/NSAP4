@@ -446,8 +446,8 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// </summary>
         /// <param name="QuotationId"></param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<IActionResult> PrintSalesOrder(int QuotationId)
+        [HttpGet("{QuotationId}")]
+        public async Task<IActionResult> PrintSalesOrder(string QuotationId)
         {
             try
             {
@@ -465,8 +465,8 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// </summary>
         /// <param name="QuotationId"></param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<IActionResult> PrintQuotation(int QuotationId)
+        [HttpGet("{QuotationId}")]
+        public async Task<IActionResult> PrintQuotation(string QuotationId)
         {
             try
             {
@@ -483,8 +483,8 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// </summary>
         /// <param name="QuotationId"></param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<IActionResult> PrintPickingList(int QuotationId)
+        [HttpGet("{QuotationId}")]
+        public async Task<IActionResult> PrintPickingList(string QuotationId)
         {
             try
             {

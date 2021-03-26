@@ -219,6 +219,44 @@ namespace OpenAuth.Repository.Domain
         [Description("收款详细地址")]
         public string CollectionDA { get; set; }
 
+        /// <summary>
+        ///税率
+        /// </summary>
+        [Description("税率")]
+        public string TaxRate { get; set; }
+
+        /// <summary>
+        ///发票类别
+        /// </summary>
+        [Description("发票类别")]
+        public string InvoiceCategory { get; set; }
+
+        /// <summary>
+        ///差旅费
+        /// </summary>
+        [Description("差旅费")]
+        public decimal? TravelExpense { get; set; }
+
+        /// <summary>
+        ///预付百分比
+        /// </summary>
+        [Description("预付百分比")]
+        public decimal? Prepay { get; set; }
+        /// <summary>
+        ///发货前付款百分比
+        /// </summary>
+        [Description("发货前付款百分比")]
+        public decimal? CashBeforeFelivery { get; set; }
+        /// <summary>
+        ///收货后付款百分比
+        /// </summary>
+        [Description("收货后付款百分比")]
+        public decimal? PayOnReceipt { get; set; }
+        /// <summary>
+        ///质保后付款百分比
+        /// </summary>
+        [Description("质保后付款百分比")]
+        public decimal? PaymentAfterWarranty { get; set; }
 
         /// <summary>
         /// 物流表
