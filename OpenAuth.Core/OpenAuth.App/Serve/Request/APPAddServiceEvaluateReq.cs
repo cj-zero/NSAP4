@@ -11,6 +11,10 @@ namespace OpenAuth.App.Request
     public class APPAddServiceEvaluateReq
     {
         /// <summary>
+        /// 当前操作人App用户Id
+        /// </summary>
+        public int? AppUserId { get; set; }
+        /// <summary>
         /// 服务单Id
         /// </summary>
         public int? ServiceOrderId { get; set; }

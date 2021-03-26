@@ -44,6 +44,10 @@ namespace OpenAuth.App.Serve.Request
     public class TravelExpense
     {
         /// <summary>
+        /// 日期
+        /// </summary>
+        public DateTime? CreateTime { get; set; }
+        /// <summary>
         /// 天数
         /// </summary>
         public int? Days { get; set; }

@@ -78,7 +78,7 @@ namespace OpenAuth.App
             //{
             //    objs = objs.Where(u => u.Id.Contains(request.key));
             //}
-            if (request.IsReimburse == null && !(bool)request.IsReimburse) 
+            if (request.IsReimburse == null && !(bool)request.IsReimburse)
             {
                 // 主管只能看到本部门的技术员的评价
                 if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
@@ -173,14 +173,20 @@ namespace OpenAuth.App
         public async Task AppAdd(APPAddServiceEvaluateReq req)
         {
             var user = _auth.GetCurrentUser().User;
-            if (req.EvaluateType == 3)
+            //获取当前用户nsap用户信息
+            if (req.AppUserId > 0)
             {
-                var appids = req.TechnicianEvaluates.Select(t => t.TechnicianAppId).ToList();
-                var num = await UnitWork.Find<ServiceEvaluate>(s => s.ServiceOrderId.Equals(req.ServiceOrderId) && s.CreateUserId.Equals(user.Id) && s.EvaluateType == 3 && appids.Contains(s.TechnicianAppId)).CountAsync();
-                if (num > 0)
+                var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.AppUserId).Include(i => i.User).FirstOrDefaultAsync();
+                if (userInfo != null)
                 {
-                    throw new Exception("已回访，请勿重复回访。");
+                    user = userInfo.User;
                 }
+            }
+            var appids = req.TechnicianEvaluates.Select(t => t.TechnicianAppId).ToList();
+            var num = await UnitWork.Find<ServiceEvaluate>(s => s.ServiceOrderId.Equals(req.ServiceOrderId) && s.CreateUserId.Equals(user.Id) && s.EvaluateType == req.EvaluateType && appids.Contains(s.TechnicianAppId)).CountAsync();
+            if (num > 0)
+            {
+                throw new Exception("已回访，请勿重复回访。");
             }
             var order = await UnitWork.FindSingleAsync<ServiceOrder>(s => s.Id == req.ServiceOrderId);
             if (!string.IsNullOrWhiteSpace(order.TerminalCustomerId))
@@ -211,11 +217,11 @@ namespace OpenAuth.App
                 //todo:补充或调整自己需要的字段
                 obj.CommentDate = DateTime.Now;
                 obj.CreateTime = DateTime.Now;
-                obj.VisitPeople = user.Name == "APP" ? "" : user.Name;
+                obj.VisitPeople = user.Name == "App" ? "" : user.Name;
                 obj.VisitPeopleId = user.Id;
                 obj.CreateUserId = user.Id;
                 obj.CreateUserName = user.Name;
-                obj.EvaluateType = user.Name == "APP" ? 1 : req.EvaluateType;
+                obj.EvaluateType = req.EvaluateType == 0 ? 1 : req.EvaluateType;
                 await UnitWork.AddAsync<ServiceEvaluate, long>(obj);
             }
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId, o => new ServiceWorkOrder
