@@ -112,8 +112,8 @@ namespace Sap.Handler.Service
                     if (quotation.TaxRate != null) //税率
 
                     {
-
-                        dts.UserFields.Fields.Item("U_SL").Value = categoryList.Where(c => c.TypeId.Equals("SYS_MaterialTaxRate") && c.DtValue.Equals(quotation.TaxRate.ToString())).FirstOrDefault()?.Name; 
+                        var U_SL=categoryList.Where(c => c.TypeId.Equals("SYS_MaterialTaxRate") && c.DtValue.Equals(quotation.TaxRate.ToString())).FirstOrDefault()?.Name;
+                        dts.UserFields.Fields.Item("U_SL").Value = U_SL; 
 
                     }
 
@@ -179,7 +179,7 @@ namespace Sap.Handler.Service
 
                         //}
 
-                        //dts.Lines.SalesPersonCode = int.Parse(model.SlpCode == "" ? "-1" : model.SlpCode); //销售员编号
+                        dts.Lines.SalesPersonCode = (int)slpcode;; //销售员编号
 
                         dts.Lines.UnitPrice = double.Parse(string.IsNullOrWhiteSpace(dln1.SalesPrice.ToString()) ? "0" : dln1.SalesPrice.ToString());            //单价
 
@@ -189,7 +189,7 @@ namespace Sap.Handler.Service
 
                         dts.Lines.LineTotal = string.IsNullOrWhiteSpace(dln1.TotalPrice.ToString()) ? 0.00 : double.Parse(dln1.TotalPrice.ToString());//总计
 
-                        //dts.Lines.DiscountPercent = double.Parse(dln1.DiscPrcnt == "" ? "0" : dln1.DiscPrcnt);     //折扣
+                        dts.Lines.DiscountPercent = double.Parse(dln1.Discount == null ? "0" : (100 - dln1.Discount).ToString());     //折扣
 
                         //if (!string.IsNullOrEmpty(dln1.U_PDXX) && (dln1.U_PDXX == "AC220" || dln1.U_PDXX == "AC380" || dln1.U_PDXX == "AC110"))
 
