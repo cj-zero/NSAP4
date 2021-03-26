@@ -3728,7 +3728,7 @@ namespace OpenAuth.App
             //获取取当前月的第一天
             DateTime startDate = new DateTime(endDate.Year, endDate.Month, 1);
             //若传入了指定年月 则取这个年月的信息
-            if (string.IsNullOrEmpty(req.Date))
+            if (!string.IsNullOrEmpty(req.Date))
             {
                 DateTime date = Convert.ToDateTime(req.Date);
                 startDate = new DateTime(date.Year, date.Month, 1);
