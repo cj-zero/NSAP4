@@ -1,4 +1,5 @@
-﻿using OpenAuth.Repository.Domain;
+﻿using OpenAuth.App.Serve.Response;
+using OpenAuth.Repository.Domain;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -122,6 +123,9 @@ namespace OpenAuth.App.Serve.Request
         /// 附件集合
         /// </summary>
         public List<DailyAttachment> dailyAttachments { get; set; }
+
+
+        public List<ReimburseAttachmentResp> ReimburseAttachments { get; set; }
     }
 
     /// <summary>
@@ -168,6 +172,8 @@ namespace OpenAuth.App.Serve.Request
         /// 附件集合
         /// </summary>
         public List<DailyAttachment> dailyAttachments { get; set; }
+
+        public List<ReimburseAttachmentResp> ReimburseAttachments { get; set; }
     }
 
     /// <summary>
@@ -214,5 +220,7 @@ namespace OpenAuth.App.Serve.Request
         /// 附件集合
         /// </summary>
         public List<DailyAttachment> dailyAttachments { get; set; }
+
+        public List<ReimburseAttachmentResp> ReimburseAttachments { get; set; }
     }
 }

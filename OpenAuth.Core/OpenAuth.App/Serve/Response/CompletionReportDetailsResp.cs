@@ -132,7 +132,7 @@ namespace OpenAuth.App.Response
         /// 工单对应的 NSAP 技术员信息
         /// </summary>
         public UserView TheNsapUser { get; set; }
-        
+
         /// <summary>
         /// 工单对应留言信息
         /// </summary>
@@ -200,5 +200,10 @@ namespace OpenAuth.App.Response
         /// 责任环节
         /// </summary>
         public string Responsibility { get; set; }
+
+        /// <summary>
+        /// 日报数量
+        /// </summary>
+        public int DailyReportNum { get; set; }
     }
 }

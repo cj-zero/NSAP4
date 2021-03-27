@@ -3858,6 +3858,10 @@ namespace OpenAuth.App
                 foreach (var item in req.transportExpenses)
                 {
                     var transportExpenseInfo = new ServiceDailyExpends { ServiceOrderId = req.ServiceOrderId, CreateTime = DateTime.Now, CreateUserId = userInfo.User.Id, CreateUserName = userInfo.User.Name, DailyExpenseType = 2, SerialNumber = i, Money = item.Money, InvoiceNumber = item.InvoiceNumber, Remark = item.Remark, From = item.From, To = item.To, InvoiceTime = item.InvoiceTime, TrafficType = item.TrafficType, FeeType = item.FeeType, Transport = item.Transport, TotalMoney = item.Money };
+                    if (item.ReimburseAttachments != null)
+                    {
+                        transportExpenseInfo.ReimburseAttachment = JsonConvert.SerializeObject(item.ReimburseAttachments);
+                    }
                     var o = await UnitWork.AddAsync<ServiceDailyExpends, int>(transportExpenseInfo);
                     if (item.dailyAttachments != null && item.dailyAttachments.Count > 0)
                     {
@@ -3875,6 +3879,10 @@ namespace OpenAuth.App
                 foreach (var item in req.hotelExpenses)
                 {
                     var hotelExpenseInfo = new ServiceDailyExpends { ServiceOrderId = req.ServiceOrderId, CreateTime = DateTime.Now, CreateUserId = userInfo.User.Id, CreateUserName = userInfo.User.Name, DailyExpenseType = 3, SerialNumber = i, Money = item.Money, InvoiceNumber = item.InvoiceNumber, Remark = item.Remark, InvoiceTime = item.InvoiceTime, FeeType = item.FeeType, Days = item.Days, TotalMoney = item.Days * item.Money };
+                    if (item.ReimburseAttachments != null)
+                    {
+                        hotelExpenseInfo.ReimburseAttachment = JsonConvert.SerializeObject(item.ReimburseAttachments);
+                    }
                     var o = await UnitWork.AddAsync<ServiceDailyExpends, int>(hotelExpenseInfo);
                     if (item.dailyAttachments != null && item.dailyAttachments.Count > 0)
                     {
@@ -3892,6 +3900,10 @@ namespace OpenAuth.App
                 foreach (var item in req.otherExpenses)
                 {
                     var otherExpenseInfo = new ServiceDailyExpends { ServiceOrderId = req.ServiceOrderId, CreateTime = DateTime.Now, CreateUserId = userInfo.User.Id, CreateUserName = userInfo.User.Name, DailyExpenseType = 4, SerialNumber = i, Money = item.Money, InvoiceNumber = item.InvoiceNumber, Remark = item.Remark, InvoiceTime = item.InvoiceTime, FeeType = item.FeeType, ExpenseCategory = item.ExpenseCategory, TotalMoney = item.Money };
+                    if (item.ReimburseAttachments != null)
+                    {
+                        otherExpenseInfo.ReimburseAttachment = JsonConvert.SerializeObject(item.ReimburseAttachments);
+                    }
                     var o = await UnitWork.AddAsync<ServiceDailyExpends, int>(otherExpenseInfo);
                     if (item.dailyAttachments != null && item.dailyAttachments.Count > 0)
                     {
@@ -3951,19 +3963,22 @@ namespace OpenAuth.App
                         break;
                     case 2:
                         var transportExpenseInfo = item.MapTo<TransportExpense>();
+                        transportExpenseInfo.ReimburseAttachments = JsonConvert.DeserializeObject<List<ReimburseAttachmentResp>>(item.ReimburseAttachment);
                         transportExpenses.Add(transportExpenseInfo);
                         break;
                     case 3:
                         var hotelExpensesInfo = item.MapTo<HotelExpense>();
+                        hotelExpensesInfo.ReimburseAttachments = JsonConvert.DeserializeObject<List<ReimburseAttachmentResp>>(item.ReimburseAttachment);
                         hotelExpenses.Add(hotelExpensesInfo);
                         break;
                     case 4:
                         var otherExpensesInfo = item.MapTo<OtherExpense>();
+                        otherExpensesInfo.ReimburseAttachments = JsonConvert.DeserializeObject<List<ReimburseAttachmentResp>>(item.ReimburseAttachment);
                         otherExpenses.Add(otherExpensesInfo);
                         break;
                 }
             }
-            var dailyExpendResp = new DailyExpendResp { DailyDates = dailyExpendDates, TravelExpense = travelExpense, TransportExpenses = transportExpenses, HotelExpenses = hotelExpenses, OtherExpenses = otherExpenses };
+            var dailyExpendResp = new DailyExpendResp { DailyDates = dailyExpendDates, TravelExpense = travelExpense, TransportExpenses = transportExpenses, HotelExpenses = hotelExpenses, OtherExpenses = otherExpenses, IsFinish = data.Count > 0 };
             result.Data = dailyExpendResp;
             return result;
         }
@@ -3994,7 +4009,7 @@ namespace OpenAuth.App
             var dailyExpendIds = dailyExpendSums.Select(s => s.Id).ToList();
             var dailyAttachments = await UnitWork.Find<DailyAttachment>(w => dailyExpendIds.Contains(w.ExpendId)).ToListAsync();
 
-            var data = dailyExpendSums.Select(s => new { s.CreateTime, s.CreateUserId, s.CreateUserName, s.DailyExpenseType, s.Days, s.ExpenseCategory, s.FeeType, s.From, s.Id, s.InvoiceNumber, s.InvoiceTime, s.Money, s.Remark, s.SellerName, s.SerialNumber, s.ServiceOrderId, s.To, s.Transport, s.TrafficType, s.TotalMoney, DailyAttachments = dailyAttachments.Where(w => w.ExpendId == s.Id).ToList() }).OrderByDescending(o => o.CreateTime).ToList();
+            var data = dailyExpendSums.Select(s => new { s.CreateTime, s.CreateUserId, s.CreateUserName, s.DailyExpenseType, s.Days, s.ExpenseCategory, s.FeeType, s.From, s.Id, s.InvoiceNumber, s.InvoiceTime, s.Money, s.Remark, s.SellerName, s.SerialNumber, s.ServiceOrderId, s.To, s.Transport, s.TrafficType, s.TotalMoney, s.ReimburseAttachment, DailyAttachments = dailyAttachments.Where(w => w.ExpendId == s.Id).ToList() }).OrderByDescending(o => o.CreateTime).ToList();
 
             List<TransportExpense> transportExpenses = new List<TransportExpense>();
             List<HotelExpense> hotelExpenses = new List<HotelExpense>();
@@ -4010,14 +4025,17 @@ namespace OpenAuth.App
                         break;
                     case 2:
                         var transportExpenseInfo = item.MapTo<TransportExpense>();
+                        transportExpenseInfo.ReimburseAttachments = JsonConvert.DeserializeObject<List<ReimburseAttachmentResp>>(item.ReimburseAttachment);
                         transportExpenses.Add(transportExpenseInfo);
                         break;
                     case 3:
                         var hotelExpensesInfo = item.MapTo<HotelExpense>();
+                        hotelExpensesInfo.ReimburseAttachments = JsonConvert.DeserializeObject<List<ReimburseAttachmentResp>>(item.ReimburseAttachment);
                         hotelExpenses.Add(hotelExpensesInfo);
                         break;
                     case 4:
                         var otherExpensesInfo = item.MapTo<OtherExpense>();
+                        otherExpensesInfo.ReimburseAttachments = JsonConvert.DeserializeObject<List<ReimburseAttachmentResp>>(item.ReimburseAttachment);
                         otherExpenses.Add(otherExpensesInfo);
                         break;
                 }

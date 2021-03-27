@@ -36,5 +36,10 @@ namespace OpenAuth.App.Serve.Response
         /// 其他费用集合
         /// </summary>
         public List<OtherExpense> OtherExpenses { get; set; }
+
+        /// <summary>
+        /// 是否已填写完日费
+        /// </summary>
+        public bool IsFinish { get; set; }
     }
 }

@@ -128,5 +128,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("开票单位")]
         public string SellerName { get; set; }
+
+        /// <summary>
+        /// 报销附件集合
+        /// </summary>
+        [Description("报销附件集合")]
+        public string ReimburseAttachment { get; set; }
     }
 }
