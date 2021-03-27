@@ -37,7 +37,8 @@ namespace Sap.Handler.Service
             var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active=="Y").FirstOrDefaultAsync();
             var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefaultAsync())?.SlpCode;
             var ywy = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o=>o.SlpCode).FirstOrDefaultAsync();
-
+            List<string> typeids = new List<string> { "SYS_MaterialInvoiceCategory", "SYS_MaterialTaxRate", "SYS_InvoiceCompany", "SYS_DeliveryMethod" };
+            var categoryList = await UnitWork.Find<Category>(c => typeids.Contains(c.TypeId)).ToListAsync();
             try
             {
                 if (quotation != null)
@@ -100,21 +101,21 @@ namespace Sap.Handler.Service
 
 
 
-                    //if (!string.IsNullOrEmpty(quotation.InvoiceCompany) && quotation.InvoiceCompany != "") //发票类别
+                    if (quotation.InvoiceCategory != null) //发票类别
 
-                    //{
+                    {
+                        var name = categoryList.Where(c => c.TypeId.Equals("SYS_MaterialInvoiceCategory") && c.DtValue.Equals(quotation.InvoiceCategory.ToString())).FirstOrDefault()?.Name;
+                        dts.UserFields.Fields.Item("U_FPLB").Value = name; 
 
-                    //    dts.UserFields.Fields.Item("U_FPLB").Value = quotation.InvoiceCompany;
+                    }
 
-                    //}
+                    if (quotation.TaxRate != null) //税率
 
-                    //if (!string.IsNullOrEmpty(model.U_SL) && model.U_SL != "") //税率
+                    {
+                        var U_SL=categoryList.Where(c => c.TypeId.Equals("SYS_MaterialTaxRate") && c.DtValue.Equals(quotation.TaxRate.ToString())).FirstOrDefault()?.Name;
+                        dts.UserFields.Fields.Item("U_SL").Value = U_SL; 
 
-                    //{
-
-                    //    dts.UserFields.Fields.Item("U_SL").Value = model.U_SL;
-
-                    //}
+                    }
 
                     if (ywy != null) 
                     {
@@ -129,15 +130,15 @@ namespace Sap.Handler.Service
 
                     dts.Address = quotation.CollectionAddress;       //收款方
 
-                    //if (!string.IsNullOrEmpty(model.GroupNum))
+                    if (quotation.DeliveryMethod!=null &&!string.IsNullOrEmpty(quotation.DeliveryMethod))
 
-                    //{
+                    {
+                        var DeliveryMethod=categoryList.Where(c => c.TypeId.Equals("SYS_DeliveryMethod") && c.DtValue.Equals(quotation.DeliveryMethod.ToString())).FirstOrDefault()?.DtCode;
+                        dts.PaymentGroupCode = DeliveryMethod != null?int.Parse(DeliveryMethod): 2;  //付款条件
 
-                    //    dts.PaymentGroupCode = int.Parse(model.GroupNum);   //付款条款
+                    }
 
-                    //}
-
-                    //dts.Indicator = model.Indicator;    // 标识
+                    dts.Indicator = categoryList.Where(c => c.TypeId.Equals("SYS_InvoiceCompany") && c.DtValue.Equals(quotation.InvoiceCompany.ToString())).FirstOrDefault()?.DtCode ;    // 标识
 
                     //dts.PaymentMethod = quotation.DeliveryMethod;    //付款方式
 
@@ -178,7 +179,7 @@ namespace Sap.Handler.Service
 
                         //}
 
-                        //dts.Lines.SalesPersonCode = int.Parse(model.SlpCode == "" ? "-1" : model.SlpCode); //销售员编号
+                        dts.Lines.SalesPersonCode = (int)slpcode;; //销售员编号
 
                         dts.Lines.UnitPrice = double.Parse(string.IsNullOrWhiteSpace(dln1.SalesPrice.ToString()) ? "0" : dln1.SalesPrice.ToString());            //单价
 
@@ -188,7 +189,7 @@ namespace Sap.Handler.Service
 
                         dts.Lines.LineTotal = string.IsNullOrWhiteSpace(dln1.TotalPrice.ToString()) ? 0.00 : double.Parse(dln1.TotalPrice.ToString());//总计
 
-                        //dts.Lines.DiscountPercent = double.Parse(dln1.DiscPrcnt == "" ? "0" : dln1.DiscPrcnt);     //折扣
+                        dts.Lines.DiscountPercent = double.Parse(dln1.Discount == null ? "0" : (100 - dln1.Discount).ToString());     //折扣
 
                         //if (!string.IsNullOrEmpty(dln1.U_PDXX) && (dln1.U_PDXX == "AC220" || dln1.U_PDXX == "AC380" || dln1.U_PDXX == "AC110"))
 

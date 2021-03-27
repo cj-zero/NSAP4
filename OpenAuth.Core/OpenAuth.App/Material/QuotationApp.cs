@@ -202,12 +202,14 @@ namespace OpenAuth.App.Material
                 .Take(request.limit).ToListAsync();
             List<string> fileids = new List<string>();
             QuotationDate.ForEach(q => fileids.AddRange(q.QuotationPictures.Select(p => p.PictureId).ToList()));
-
+            
             var file = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
 
             var query = from a in QuotationDate
                         join b in ServiceOrders on a.ServiceOrderId equals b.Id
                         select new { a, b };
+            var terminalCustomerIds=query.Select(q => q.b.TerminalCustomerId).ToList();
+            var ocrds=await UnitWork.Find<OCRD>(o => terminalCustomerIds.Contains(o.CardCode)).ToListAsync();
             result.Data = query.Select(q => new
             {
                 q.a.Id,
@@ -224,6 +226,7 @@ namespace OpenAuth.App.Material
                 q.a.QuotationStatus,
                 q.a.Tentative,
                 q.a.IsProtected,
+                Balance=ocrds.Where(o=>o.CardCode.Equals(q.b.TerminalCustomerId)).FirstOrDefault()?.Balance,
                 files = q.a.QuotationPictures.Select(p => new
                 {
                     fileName = file.Where(f => f.Id.Equals(p.PictureId)).FirstOrDefault().FileName,

@@ -830,7 +830,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), q => q.Supervisor.Contains(req.QrySupervisor))
                 .Where(q => ids.Contains(q.Id) && q.Status == 2);
 
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.User.Account.Equals("wanghaitao") && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.User.Account.Equals("wanghaitao") && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")) && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看服务ID")))
             {
                 if (loginContext.Roles.Any(r => r.Name.Equals("售后文员")))
                 {
