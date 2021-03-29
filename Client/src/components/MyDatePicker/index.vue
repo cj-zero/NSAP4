@@ -9,7 +9,6 @@
       'range': isShowInput && isRange
     }"
     v-click-outside="hidePicker" 
-    :style="style" 
     @click.native="showPicker" 
     v-if="isShowInput" 
   >

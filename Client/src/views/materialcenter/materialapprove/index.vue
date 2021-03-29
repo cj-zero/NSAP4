@@ -22,8 +22,11 @@
         <template v-slot:contract="{ row }">
           <span class="show-btn" @click="showContractPictures(row)">查看</span>
         </template>
+        <template v-slot:balance="{ row }">
+          <p v-infotooltip.top.ellipsis>{{ row.balance | toThousands }}</p>
+        </template>
         <template v-slot:totalMoney="{ row }">
-          <p v-infotooltip.top-start.ellipsis>{{ row.totalMoney | toThousands }}</p>
+          <p v-infotooltip.top.ellipsis>{{ row.totalMoney | toThousands }}</p>
         </template>
       </common-table>
       <pagination
@@ -140,6 +143,30 @@ export default {
     },
     title () {
       return this.isValid ? '审批' : '查看'
+    },
+    quotationColumns () {
+      return this.isGeneralManager ? [
+        { label: '领料单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'approve' }, type: 'link'},
+        { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link' },
+        { label: '客户代码', prop: 'terminalCustomerId' },
+        { label: '客户名称', prop: 'terminalCustomer' },
+        { label: '申请人', prop: 'createUser' },
+        { label: '创建时间', prop: 'createTime' },
+        { label: '科目余额（￥）', slotName: 'balance', align: 'right' },
+        { label: '总金额（￥）', prop: 'totalMoney', align: 'right', slotName: 'totalMoney' },
+        { label: '备注', prop: 'remark' },
+        { label: '状态', prop: 'quotationStatusText' }
+      ] : [
+        { label: '领料单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'approve' }, type: 'link'},
+        { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link' },
+        { label: '客户代码', prop: 'terminalCustomerId' },
+        { label: '客户名称', prop: 'terminalCustomer' },
+        { label: '申请人', prop: 'createUser' },
+        { label: '创建时间', prop: 'createTime' },
+        { label: '总金额（￥）', prop: 'totalMoney', align: 'right', slotName: 'totalMoney' },
+        { label: '备注', prop: 'remark' },
+        { label: '状态', prop: 'quotationStatusText' }
+      ]
     }
   },
   data () {
@@ -166,17 +193,7 @@ export default {
       tableLoading: false,
       tableData: [],
       total: 0,
-      quotationColumns: [
-        { label: '领料单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'approve' }, type: 'link'},
-        { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link' },
-        { label: '客户代码', prop: 'terminalCustomerId' },
-        { label: '客户名称', prop: 'terminalCustomer' },
-        { label: '申请人', prop: 'createUser' },
-        { label: '创建时间', prop: 'createTime' },
-        { label: '总金额（￥）', prop: 'totalMoney', align: 'right', slotName: 'totalMoney' },
-        { label: '备注', prop: 'remark' },
-        { label: '状态', prop: 'quotationStatusText' }
-      ],
+      // quotationColumns: ,
       status: 'approve', // 报价单状态
       detailInfo: null, // 详情信息
       currentRow: null // 当前选中的行数据

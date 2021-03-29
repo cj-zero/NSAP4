@@ -121,6 +121,7 @@ export let chatMixin = { // 查看、编辑服务单时 右侧出现的聊天记
         if (res.code == 200) {
           this.dataForm1 = this._normalizeOrderDetail(res.result);
           this.serveId = serviceOrderId
+          this.isFinish = res.result.isFinish
           this.dialogFormView = true;
         }
       })

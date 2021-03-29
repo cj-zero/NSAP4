@@ -27,6 +27,7 @@
       >
         <template v-slot:serviceOrderSapId>
           <el-form-item
+            style="height: 18px;"
             prop="serviceOrderSapId"
             :rules="formRules['serviceOrderSapId'] || { required: false }">
             <span slot="label">
@@ -39,6 +40,28 @@
           </el-form-item>
         </template>
       </common-form>
+      <el-row class="prepay-wrapper" type="flex" align="middle" v-if="ifShowPrepaid" justify="end" :class="{ 'if-not-edit': !ifEdit }">
+        <template v-if="ifEdit">
+          <el-row type="flex" align="middle">
+            预付<el-input-number v-model="formData.prepay" :controls="false" :min="0"></el-input-number>%
+          </el-row>
+          <el-row type="flex" align="middle">
+            发货前<el-input-number v-model="formData.cashBeforeFelivery" :controls="false" :min="0"></el-input-number>%
+          </el-row>
+          <el-row type="flex" align="middle">
+            货到验收<el-input-number v-model="formData.payOnReceipt" :controls="false" :min="0"></el-input-number>%
+          </el-row>
+          <el-row type="flex" align="middle">
+            质保后<el-input-number v-model="formData.paymentAfterWarranty" :controls="false" :min="0"></el-input-number>%
+          </el-row>
+        </template>
+        <template v-else>
+          <span>预付{{ formData.prepay || 0 }}%</span>
+          <span>发货前{{ formData.cashBeforeFelivery || 0 }}%</span>
+          <span>货到验收{{ formData.payOnReceipt || 0 }}%</span>
+          <span>质保后{{ formData.paymentAfterWarranty || 0 }}%</span>
+        </template>
+      </el-row>
       <!-- 技术员回传文件 -->
       <el-row class="upload-file-wrapper" type="flex" v-if="status === 'upload' && isSales">
         <span class="title-text">附件</span>
@@ -81,7 +104,7 @@
               >
                 <template v-slot:materialCode="{ row }">
                   <el-row type="flex" align="middle">
-                    <span v-infotooltip.top-start.ellipsis :class="{ 'has-icon': row.replaceMaterialCode || row.newMaterialCode }">{{ row.materialCode }}</span>
+                    <span v-infotooltip.top.ellipsis :class="{ 'has-icon': row.replaceMaterialCode || row.newMaterialCode }">{{ row.materialCode }}</span>
                     <svg-icon iconClass="replace" v-if="row.replaceMaterialCode"></svg-icon>
                     <svg-icon iconClass="new-material" v-if="row.newMaterialCode"></svg-icon>
                   </el-row>
@@ -102,20 +125,16 @@
                 </template>
               </common-table>
               <!-- <el-row type="flex" justify="end" class="total-line">
-                <p v-infotooltip.top-start.ellipsis>{{ item.quotationMaterials | calcTotalItem(false, 'unitPrice') | toThousands }}</p>
-                <p v-infotooltip.top-start.ellipsis>{{ item.quotationMaterials | calcTotalItem(item.isProtected, 'salesPrice') | toThousands }}</p>
+                <p v-infotooltip.top.ellipsis>{{ item.quotationMaterials | calcTotalItem(false, 'unitPrice') | toThousands }}</p>
+                <p v-infotooltip.top.ellipsis>{{ item.quotationMaterials | calcTotalItem(item.isProtected, 'salesPrice') | toThousands }}</p>
               </el-row> -->
             </li>
           </ul>
           <!-- 工程总经理审批报价单才出现 -->
           <el-row class="info-wrapper" type="flex" justify="end" align="middle">
-            <div>
+            <div v-if="!isGeneralManager">
               <span class="title">记账成本</span>
               <span>￥{{ formData.totalCostPrice | toThousands(3, ',', 4) }}</span>
-            </div>
-            <div>
-              <span class="title">维修费</span>
-              <span>￥{{ formData.serviceCharge | toThousands }}</span>
             </div>
             <div>
               <span class="title">合计</span>
@@ -171,7 +190,7 @@
                 :loading="serialLoading">
                 <template v-slot:materialCode="{ row }">
                   <el-row type="flex" align="middle">
-                    <span v-infotooltip.top-start.ellipsis :class="{ 'has-icon': row.isProtected }">{{ row.materialCode }}</span>
+                    <div v-infotooltip.top.ellipsis :class="{ 'has-icon': row.isProtected }">{{ row.materialCode }}</div>
                     <svg-icon iconClass="warranty" v-if="row.isProtected"></svg-icon>
                   </el-row>
                 </template>
@@ -189,7 +208,7 @@
                 </template>
               </common-table>
               <el-row type="flex" class="money-line" justify="end" align="middle">
-                <el-form 
+                <!-- <el-form 
                   ref="serviceForm" 
                   :show-message="false"
                   :model="formData" 
@@ -206,10 +225,10 @@
                       size="mini"
                     ></el-input-number>
                   </el-form-item>
-                </el-form>
+                </el-form> -->
                 <div style="margin-left: 10px;">
                   <span class="title">合计</span>
-                  ￥{{ totalMoney | toThousands }}
+                  ￥{{ totalMaterialMoney | toThousands }}
                 </div>
               </el-row>
             </div>
@@ -273,7 +292,7 @@
                 </template>
                 <template v-slot:maxQuantity="{ row }">
                   <el-row type="flex" justify="end" align="middle">
-                    <span v-infotooltip.top-start.ellipsis style="width: calc(100% - 12px); padding-right: 3px;">{{ row.maxQuantity }}</span>
+                    <span v-infotooltip.top.ellipsis style="width: calc(100% - 12px); padding-right: 3px;">{{ row.maxQuantity }}</span>
                     <el-tooltip effect="dark" placement="top-end">
                       <div slot="content">领取的数量只能是整数，大于等于当前最大数量</div>
                       <i class="notice-icon el-icon-warning-outline" v-if="!isIntegerNumber(+row.maxQuantity)"></i>
@@ -332,6 +351,31 @@
               ￥{{ materialData.list | calcTotalItem(materialData.isProtected) | toThousands }}
             </el-row>
           </div>
+          <div class="divider"></div>
+          <!-- 服务费用和差旅费用 -->
+          <div class="service-travel-wrapper">
+            <common-table 
+              :data="serviceList"
+              :columns="serviceColumns"
+            >
+              <template v-slot:salesPrice="{ row }">
+                <el-input-number  
+                  style="width: 100%;"
+                  size="mini"
+                  :controls="false"
+                  :precision="2"
+                  :min="0"
+                  v-model="row.salesPrice">
+                </el-input-number>
+              </template>    
+            </common-table>
+            <el-row type="flex" align="middle" justify="end" style="margin-top: 10px;">
+              <div style="margin-left: 10px;">
+                <span class="title">合计</span>
+                ￥{{ totalMoney | toThousands }}
+              </div>
+            </el-row>
+          </div>
         </template>
       </template>
       <!-- 不是新建状和审批和编辑态并且处于预览状态 -->
@@ -347,7 +391,7 @@
             :loading="materialAllLoading">
             <template v-slot:materialCode="{ row }">
               <el-row type="flex" align="middle" >
-                <span v-infotooltip.top-start.ellipsis :class="{ 'has-icon': row.isProtected }">{{ row.materialCode }}</span>
+                <span v-infotooltip.top.ellipsis :class="{ 'has-icon': row.isProtected }">{{ row.materialCode }}</span>
                 <svg-icon iconClass="warranty" v-if="row.isProtected"></svg-icon>
               </el-row>
             </template>
@@ -356,10 +400,10 @@
             </template>
           </common-table>
           <el-row type="flex" class="money-wrapper" justify="end">
-            <p v-infotooltip.top-start.ellipsis>￥{{ summaryTotalPrice | toThousands }}</p>
-            <p v-infotooltip.top-start.ellipsis>￥{{ costPirceTotal | toThousands}}</p>
-            <p v-infotooltip.top-start.ellipsis>￥{{ grossProfitTotal | toThousands }}</p>
-            <p v-infotooltip.top-start.ellipsis>{{ grossProfit | toThousands }}%</p>
+            <p v-infotooltip.top.ellipsis>￥{{ summaryTotalPrice | toThousands }}</p>
+            <p v-infotooltip.top.ellipsis>￥{{ costPirceTotal | toThousands}}</p>
+            <p v-infotooltip.top.ellipsis>￥{{ grossProfitTotal | toThousands }}</p>
+            <p v-infotooltip.top.ellipsis>{{ grossProfit | toThousands }}%</p>
           </el-row>
         </div>
       </template>
@@ -647,6 +691,7 @@ const SUCCESS_TYPE_MAP = {
   upload: '提交',
   pay: '收款'
 }
+const PREPAY_LIST = ['prepay', 'paymentAfterWarranty', 'cashBeforeFelivery', 'payOnReceipt']
 export default {
   inject: ['parentVm'],
   mixins: [configMixin, quotationOrderMixin, categoryMixin, chatMixin, uploadFileMixin, rolesMixin],
@@ -745,6 +790,14 @@ export default {
         if (this.status !== 'create') {
           this.isPreview = true
           Object.assign(this.formData, val)
+          // 设置服务费和差旅费
+          const { serviceCharge, travelExpense, deliveryMethod } = this.formData
+          this.serviceList.forEach((item, index) => {
+            item.salesPrice = index === 0 ? serviceCharge : travelExpense
+          })
+          if (+deliveryMethod === 3) {
+            this.ifShowPrepaid = true
+          }
           this.formData.quotationProducts = this.formData.quotationProducts.map(product => {
             product.quotationMaterials.forEach(material => {
               material.discount = String(Number(material.discount).toFixed(6)) // 保证discount是string类型，且跟字典对应上
@@ -786,6 +839,7 @@ export default {
     //   }
     // }
     return {
+      ifShowPrepaid: false, // 付款条件为预付的选项
       timeList: [],
       // 合同图片
       previewImageUrlList: [], // 合同图片列表
@@ -799,7 +853,12 @@ export default {
         serviceOrderId: '', 
         createUser: '',
         orgName: '',
+        prepay: undefined, // 预付百分比
+        cashBeforeFelivery: undefined, // 发货前百分比
+        payOnReceipt: undefined, // 货到验货百分比
+        paymentAfterWarranty: undefined, // 质保后百分比
         serviceCharge: undefined, // 服务费
+        travelExpense: undefined, // 差旅费
         terminalCustomer: '', // 客户名称
         terminalCustomerId: '', // 客户代码
         shippingAddress: '', // 开票地址
@@ -832,7 +891,7 @@ export default {
         shippingAddress: [{ required: true, trigger: ['change', 'blur'] }],
         acquisitionWay: [{ required: true, trigger: ['change', 'blur'] }],
         moneyMeans: [{ required: true, trigger: ['change', 'blur'] }],
-        invoiceCompany: [{ required: true, trigger: ['change', 'blur'] }],
+        // invoiceCompany: [{ required: true, trigger: ['change', 'blur'] }],
         deliveryMethod: [{ required: true, trigger: ['change', 'blur'] }],
         collectionAddress: [{ required: true, trigger: ['change', 'blur'] }]
       },
@@ -849,6 +908,24 @@ export default {
         { label: '审批时长', prop: 'intervalTime', slotName: 'intervalTime' },
         { label: '审批结果', prop: 'approvalResult' },
         { label: '备注', prop: 'remark' }
+      ],
+      // 差旅费和服务费用
+      serviceList: [
+        { materialCode: 'S111-SERVICE-GSF', materialDescription: '服务费的物料编码对应的描述', discount: '100.00%', salesPrice: undefined },
+        { materialCode: 'S111-SERVICE-CLF', materialDescription: '差旅费的物料编码对应的描述', discount: '100.00%', salesPrice: undefined }
+      ],
+      serviceColumns: [
+        { type: 'index', label: '#' },
+        { label: '物料编码', prop: 'materialCode' },
+        { label: '物料描述', prop: 'materialDescription' },
+        { label: '数量' },
+        { label: '最大数量' },
+        { label: '当前库存' },
+        { label: '仓库' },
+        { label: '成本价(￥)', align: 'right' },
+        { label: '销售价(￥)', slotName: 'salesPrice', align: 'right' },
+        { label: '折扣(%)', align: 'right' },
+        { label: '小计(￥)', slotName: 'totalPrice', align: 'right' },
       ],
       // 物料弹窗列表
       materialList: [],
@@ -1071,13 +1148,20 @@ export default {
       console.log(this.status, 'status')
       return NOT_EDIT_STATUS_LIST.includes(this.status)
     },
-    totalMoney () { // 报价单总金额
+    totalMaterialMoney () {
       let value = 0
       if (this.formData.quotationProducts.length) {
         let val = this.formData.quotationProducts
         value = this._calcTotalMoney(val)
       } 
-      return value + Number(this.formData.serviceCharge || 0)
+      return value
+    },
+    totalMoney () { // 报价单总金额
+      const serviceOrTravelMoney = this.serviceList.reduce((prev, next) => {
+        return accAdd(prev, (isNumber(next.salesPrice) ? next.salesPrice : 0))
+      }, 0)
+      let totalMoney = accAdd(this.totalMaterialMoney, serviceOrTravelMoney)
+      return this.isGeneralManager ? accAdd(totalMoney, this.formData.totalCostPrice) : totalMoney
     },
     summaryTotalPrice () { // 汇总物料的销售总计
       return this.materialSummaryList.reduce((prev, next) => {
@@ -1180,6 +1264,17 @@ export default {
           : 'not-current'
     },
     isIntegerNumber,
+    onDeliveryMethodChange (val) { // 表单付款条件发生变化
+      console.log(val, 'deliveryMethodChange')
+      const isPrepare = Number(val) === 3
+      this.ifShowPrepaid = isPrepare
+      if (!isPrepare) {
+        this.formData.prepay = undefined
+        this.formData.cashBeforeFelivery = undefined
+        this.formData.payOnReceipt = undefined
+        this.formData.paymentAfterWarranty = undefined
+      }
+    },
     customAddMaterial () { // 自定义新增物料
       this.isCustomAdd = true
       this.selectedMaterialList = this.selectedMap[this.currentSerialNumber] || []
@@ -1230,6 +1325,16 @@ export default {
           result += val[i].quotationMaterials.filter(item => isNumber(Number(item.totalPrice)))
           .reduce((prev, next) => accAdd(prev, next.totalPrice), 0)
         }
+        // } else if (val[i].isProtected && (this.isGeneralManager || this.ifEdit)) {
+        //   result += val[i].quotationMaterials.filter(item => {
+        //     const { count, unitPrice } = item
+        //     return isNumber(accMul(count, unitPrice))
+        //   })
+        //   .reduce((prev, next) => {
+        //     const { count, unitPrice } = next
+        //     return accAdd(prev, accMul(count, unitPrice))
+        //   }, 0)
+        // }
       }
       return result
     },
@@ -1658,6 +1763,15 @@ export default {
       }
       return isFormValid
     },
+    checkPrepay () {
+      const totalPercent = PREPAY_LIST.reduce((prev, key) => {
+        const value = Number(this.formData[key])
+        console.log(value, 'checkPrepay')
+        return accAdd(prev, (isNumber(value) ? value : 0))
+      }, 0)
+      console.log(totalPercent, 'totalPercent')
+      return totalPercent === 100
+    },
     async _operateOrder (isDraft) { // 提交 存稿 针对于报价单
       // 判断表头表单
       console.log(this.formData.quotationProducts)
@@ -1666,15 +1780,12 @@ export default {
       if (!isFormValid) {
         return Promise.reject({ message: '表单未填写完成或格式错误' })
       }
-      let isServiceValid = true
-      try {
-        await this.$refs.serviceForm.validate()
-      } catch (err) {
-        console.log(err)
-        isServiceValid = false
+      let isPrepayValid = true
+      if (+this.formData.deliveryMethod === 3) { // 如果付款方式是预付
+        isPrepayValid = this.checkPrepay()
       }
-      if (!isServiceValid) {
-        return Promise.reject({ message: '服务费未按要求填写' })
+      if (!isPrepayValid) {
+        return Promise.reject({ message: '预付选项相加必须等于100' })
       }
       // 判断物料列表
       // 只有服务费
@@ -1704,7 +1815,15 @@ export default {
           return Promise.reject({ message: '零件数量或者折扣不能为空' })
         }
       }
-      console.log(this.formData.quotationProducts)
+      this.serviceList.forEach((item, index) => {
+        if (index === 0) {
+          this.formData.serviceCharge = item.salesPrice
+        } else {
+          this.formData.travelExpense = item.salesPrice
+        }
+      })
+      console.log(this.formData, 'formData')
+      console.log(updateQuotationOrder, AddQuotationOrder, isDraft)
       return this.status !== 'create'
         ? updateQuotationOrder({
             ...this.formData,
@@ -1872,6 +1991,31 @@ export default {
         }
       }
     }
+    /* 预付 */
+    .prepay-wrapper {
+      &.if-not-edit {
+        margin-right: 290px;
+        span {
+          margin-right: 10px;
+        }
+      }
+      &::v-deep {
+        div {
+          height: 20px;
+        }
+        .el-input-number {
+          width: 100px;
+          height: 20px;
+          input {
+            display: block;
+            width: 100px;
+            height: 20px;
+            text-align: right;
+            font-size: 12px;
+          }
+        }
+      }
+    }
     /* 物料顺序展示列表 */
     .approve-class {
       .approve-search-wrapper {
@@ -1991,6 +2135,14 @@ export default {
             color: #d0d0d0;
           }
         }
+      }
+    }
+    /* 服务费和差旅费 */
+    .service-travel-wrapper {
+      .title {
+        margin-right: 20px;
+        color: #d0d0d0;
+        font-weight: normal;
       }
     }
     /* 物料汇总表格 */

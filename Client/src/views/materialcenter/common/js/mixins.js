@@ -134,7 +134,8 @@ export const quotationTableMixin = {
   }
 }
 
-const IDS = ['SYS_QuotationStatus', 'SYS_InvoiceCompany', 'SYS_DeliveryMethod', 'SYS_MaterialDiscount', 'SYS_AcquisitionWay', 'SYS_MoneyMeans', 'SYS_MaterialsCommonlyRejected']
+const IDS = ['SYS_QuotationStatus', 'SYS_InvoiceCompany', 'SYS_DeliveryMethod', 'SYS_MaterialDiscount', 
+'SYS_AcquisitionWay', 'SYS_MoneyMeans', 'SYS_MaterialsCommonlyRejected', 'SYS_MaterialTaxRate', 'SYS_MaterialInvoiceCategory']
 const SYS_QuotationStatus = 'SYS_QuotationStatus'
 const SYS_InvoiceCompany = 'SYS_InvoiceCompany'
 const SYS_DeliveryMethod = 'SYS_DeliveryMethod'
@@ -142,6 +143,8 @@ const SYS_MaterialDiscount = 'SYS_MaterialDiscount'
 const SYS_AcquisitionWay = 'SYS_AcquisitionWay'
 const SYS_MoneyMeans = 'SYS_MoneyMeans'
 const SYS_MaterialsCommonlyRejected = 'SYS_MaterialsCommonlyRejected'
+const SYS_MaterialInvoiceCategory = 'SYS_MaterialInvoiceCategory' // 发票类别
+const SYS_MaterialTaxRate = 'SYS_MaterialTaxRate' // 税率
 export const categoryMixin = {
   computed: {
     reimburseTagList () {
@@ -152,6 +155,12 @@ export const categoryMixin = {
     },
     invoiceCompanyList () {
       return this.buildSelectList(this.categoryList.filter(item => item.typeId === SYS_InvoiceCompany))
+    },
+    invoiceCategoryList () {
+      return this.buildSelectList(this.categoryList.filter(item => item.typeId === SYS_MaterialInvoiceCategory))
+    },
+    taxRateList () {
+      return this.buildSelectList(this.categoryList.filter(item => item.typeId === SYS_MaterialTaxRate))
     },
     deliveryMethodList () {
       return this.buildSelectList(this.categoryList.filter(item => item.typeId === SYS_DeliveryMethod))
@@ -230,20 +239,25 @@ export const configMixin = { // 表单配置
         { span: 3, slotName: 'serviceOrderSapId' },
         { tag: 'text', span: 3, attrs: { prop: 'terminalCustomerId', disabled: true }, itemAttrs: { prop: 'terminalCustomerId', label: '客户代码' } },
         { tag: 'text', span: 6, attrs: { prop: 'terminalCustomer', disabled: true }, itemAttrs: { prop: 'terminalCustomer', label: '客户名称' } },
-        { tag: 'text', span: 3, attrs: { prop: 'newestContacter', disabled: true }, itemAttrs: { prop: 'newestContacter', label: '联系人',  } },
-        { tag: 'text', span: 3, attrs: { prop: 'newestContactTel', disabled: true }, itemAttrs: { prop: 'newestContactTel', label: '电话', 'label-width': '80px' } },
-        { tag: 'date', span: 3, attrs: { prop: 'deliveryDate', disabled: !this.ifEdit, 'value-format': 'yyyy-MM-dd', format: 'yyyy.MM.dd' }, itemAttrs: { prop: 'deliveryDate', label: '交货日期' } },
-        { tag: 'number', span: 3, attrs: { prop: 'acceptancePeriod', disabled: !this.ifEdit, min: 7, max: 30, controls: false }, itemAttrs: { prop: 'acceptancePeriod', label: '验收期限' }, isEnd: true },
+        { tag: 'text', span: 4, attrs: { prop: 'newestContacter', disabled: true }, itemAttrs: { prop: 'newestContacter', label: '联系人',  } },
+        { tag: 'text', span: 4, attrs: { prop: 'newestContactTel', disabled: true }, itemAttrs: { prop: 'newestContactTel', label: '电话' } },
+        { tag: 'select', span: 4, attrs: { prop: 'acquisitionWay', disabled: !this.ifEdit, options: this.acquisitionWayList }, itemAttrs: { prop: 'acquisitionWay', label: '领料方式' }, isEnd: true },
         { tag: 'area', span: 6, attrs: { prop: 'shippingAddress', disabled: !this.ifEdit }, itemAttrs: { prop: 'shippingAddress', label: '客户地址' } },
         { tag: 'text', span: 6, attrs: { prop: 'shippingDA', disabled: !this.ifEdit }, itemAttrs: { prop: 'shippingDA', label: '详细地址' } },
-        { tag: 'select', span: 3, attrs: { prop: 'acquisitionWay', disabled: !this.ifEdit, options: this.acquisitionWayList }, itemAttrs: { prop: 'acquisitionWay', label: '领料方式' } },
-        { tag: 'select', span: 3, attrs: { prop: 'moneyMeans', disabled: !this.ifEdit, options: this.moneyMeansList }, itemAttrs: { prop: 'moneyMeans', label: '业务伙伴货币', 'label-width': '80px' } },
-        { tag: 'select', span: 6, attrs: { prop: 'deliveryMethod', disabled: !this.ifEdit, options: this.deliveryMethodList,  }, itemAttrs: { prop: 'deliveryMethod', label: '付款条件' }, isEnd: true },
+        { tag: 'date', span: 4, attrs: { prop: 'deliveryDate', disabled: !this.ifEdit, 'value-format': 'yyyy-MM-dd', format: 'yyyy.MM.dd' }, itemAttrs: { prop: 'deliveryDate', label: '交货日期' } },
+        { tag: 'number', span: 4, attrs: { prop: 'acceptancePeriod', disabled: !this.ifEdit, min: 7, max: 30, controls: false }, itemAttrs: { prop: 'acceptancePeriod', label: '验收期限' } },
+        { tag: 'select', span: 4, attrs: { prop: 'moneyMeans', disabled: !this.ifEdit, options: this.moneyMeansList }, itemAttrs: { prop: 'moneyMeans', label: '业务货币' }, isEnd: true },
+        
         { tag: 'area', span: 6, attrs: { prop: 'collectionAddress', disabled: !this.ifEdit }, itemAttrs: { prop: 'collectionAddress', label: '交货地址' } },
         { tag: 'text', span: 6, attrs: { prop: 'collectionDA', disabled: !this.ifEdit }, itemAttrs: { prop: 'collectionDA', label: '详细地址' } },
-        { tag: 'text', span: 6, attrs: { prop: 'remark', disabled: !this.ifEdit }, itemAttrs: { prop: 'remark', label: '备注' } },
-        { tag: 'select', span: 6, attrs: { prop: 'invoiceCompany', disabled: !this.ifEdit, options: this.invoiceCompanyList }, 
+        { tag: 'select', span: 8, attrs: { prop: 'invoiceCompany', disabled: !this.ifEdit, options: this.invoiceCompanyList }, 
           itemAttrs: { prop: 'invoiceCompany', label: '开票单位' } },
+        { tag: 'select', span: 4, attrs: { prop: 'taxRate', disabled: !this.ifEdit, options: this.taxRateList }, 
+          itemAttrs: { prop: 'taxRate', label: '税率' }, isEnd: true },
+        { tag: 'text', span: 12, attrs: { prop: 'remark', disabled: !this.ifEdit }, itemAttrs: { prop: 'remark', label: '备注' } },
+        { tag: 'select', span: 8, attrs: { prop: 'deliveryMethod', disabled: !this.ifEdit, options: this.deliveryMethodList,  }, itemAttrs: { prop: 'deliveryMethod', label: '付款条件' }, on: { change: this.onDeliveryMethodChange } },
+        { tag: 'select', span: 4, attrs: { prop: 'invoiceCategory', disabled: !this.ifEdit, options: this.invoiceCategoryList,  }, itemAttrs: { prop: 'invoiceCategory', label: '发票类别' }, isEnd: true },
+        
       ]
     },
     returnFormConfig () { // 退料单表单

@@ -1,8 +1,15 @@
 import store from '@/store'
+import { isPlainObject } from './validate'
 import { serializeParams } from './process'
 
 export function print (url, params) {
-  const printUrl = `${process.env.VUE_APP_BASE_API}${url}?${serializeParams(params)}&X-token=${store.state.user.token}`
+  const serializedParams = isPlainObject(params) ? serializeParams(params) : params
+  let printUrl = ''
+  if (isPlainObject(params)) {
+    printUrl = `${process.env.VUE_APP_BASE_API}${url}?${serializedParams}&X-token=${store.state.user.token}`
+  } else {
+    printUrl = `${process.env.VUE_APP_BASE_API}${url}/${serializedParams}?X-token=${store.state.user.token}`
+  }
   window.open(printUrl, '_blank')
 }
 

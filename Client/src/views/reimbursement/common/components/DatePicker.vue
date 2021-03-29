@@ -3,6 +3,11 @@
     <input type="text" :value="prevValue" style="display: none;">
     <input type="text" :value="nextValue" style="display: none;" v-if="isRange">
     <template>
+      <el-row type="flex" align="middle" class="title-wrapper">
+        <p>开始日期</p>
+        <p>结束日期</p>
+        <svg-icon iconClass="flower" class="pointer icon" @click.native="$emit('expand-click')"></svg-icon>
+      </el-row>
       <div class="content-wrapper">
         <div class="left">
           <div class="control-pannel">
@@ -226,6 +231,20 @@ export default {
   border-radius: 2px;
   box-shadow: 0 0 1px 2px #eee;
   background-color: #fff;
+  .title-wrapper {
+    height: 20px;
+    line-height: 20px;
+    p {
+      flex: 1;
+      text-align: center;
+    }
+    .icon {
+      position: absolute;
+      right: 5px;
+      top: 5px;
+      font-size: 13px;
+    }
+  }
   .content-wrapper {
     display: flex;
     position: relative;

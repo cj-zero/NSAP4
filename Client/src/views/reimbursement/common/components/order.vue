@@ -29,14 +29,19 @@
         <el-row class="content-wrapper" type="flex" align="middle" justify="space-between">
           <el-row type="flex" class="interval-content" v-if="isGeneralManager">
             <template v-for="item in timelineList" >
-              <span class="interval-time success" :key="item.text">{{ item.intervalTime | m2DHM }}</span>
+              <span class="interval-time success" :key="item.text">{{ item.intervalTime | s2HMS }}</span>
             </template>
           </el-row>
-          <template v-for="item in timelineList">
+          <template v-for="(item, index) in timelineList">
             <div class="content-item" :key="item.text">
+              <div class="line" v-show="index !== 0" :class="{ 'finished': item.isFinished, 'current': item.isCurrent }"></div>
               <el-tooltip  palcement="top-center" :disabled="!item.isFinished" :content="item.createTime">
                 <!-- <div> -->
-                  <i class="icon-status" :class="processStatusIcon(item)"></i>
+                  <!-- <i class="icon-status" :class="processStatusIcon(item)"></i> -->
+                  <!-- <div class=""> -->
+                    <svg-icon class="icon-status finished" iconClass="white-tick" v-if="item.isFinished"></svg-icon>
+                    <div v-else class="icon-status" :class="{ 'not-current': !item.isCurrent }"></div>
+                  <!-- </div> -->
                 <!-- </div> -->
               </el-tooltip>
               <p :class="{ 'text': isGeneralManager, 'time': !isGeneralManager }">{{ item.text }}</p>
@@ -249,9 +254,20 @@
       </el-form>
       <template v-if="title === 'approve'">
         <!-- 费用详情 -->
-        <div>
-          <h2 style="font-weight: bold;">费用详情</h2>
-          <div class="general-table-wrapper" >
+        <div class="expense-detail-wrapper">
+          <el-row class="title-wrapper" type="flex" justify="space-between" align="middle" :class="{ 'gerneral': isGeneralManager }">
+            <h2 style="font-weight: bold;">费用详情</h2>
+            <!-- <div class="area">
+              <div>开始时间: <span>{{ formData.businessTripDate }}</span></div>
+              <div>结束时间: <span>{{ formData.endDate }}</span></div>
+            </div> -->
+             <div class="area">
+              <div>出发地点: <span>{{ formData.becity }}</span></div>
+              <div>到达地点: <span>{{ formData.destination }}</span></div>
+            </div>
+          </el-row>
+          <!-- 费用详情列表 -->
+          <div class="general-table-wrapper">
             <common-table
               class="table-container"
               :data="expenseCategoryList"
@@ -296,47 +312,57 @@
                   </el-tooltip>
                 </el-row>
               </template>
+              <!-- 费用归属 -->
+              <!-- <template v-slot:belongin="{ row }">
+                <div class="bold">
+                  <template v-if="row.type === 'totalMoney'">总金额</template>
+                  <template v-else-if="row.type === 'org'">部门</template>
+                  <template v-else-if="row.type === 'company'">公司</template>
+                  <template v-else>
+                    <el-cascader
+                      v-model="row.belongin"
+                      :options="[]"
+                      :props="{ checkStrictly: true }"
+                      clearable>
+                    </el-cascader>
+                  </template>
+                </div>
+              </template> -->
               <!-- 金额 -->
               <template v-slot:money="{ row }">
                 {{ row.money | toThousands }}
               </template>
             </common-table>
-           
           </div>
           <el-row type="flex" justify="end" class="general-total-money">总金额：{{ totalMoney | toThousands }}</el-row>
           <!-- <el-button size="mini" @click="toggleAfterEva">售后评价</el-button> -->
         </div>
-        <!-- 服务报告 -->
-        <!-- <div style="width: 1030px;margin-top: 5px;">
-          <h2 style="font-weight: bold;">服务报告</h2>
-          <common-table 
-            style="margin-top: 5px;"
-            :data="reportTableData"
-            :columns="reportTableColumns"
-            max-height="300px"
-            :loading="reportDetailLoading"
-          >
-          </common-table>
-        </div> -->
+
         <div class="daily-report-wrapper">
           <el-row class="title-wrapper" type="flex" justify="space-between" align="middle">
             <h2 style="font-weight: bold;">工作日报</h2>
-            <div class="area">
-              <div>出发地点: <span>{{ formData.becity }}</span></div>
-              <div>到达地点: <span>{{ formData.destination }}</span></div>
-            </div>
           </el-row>
           <common-table 
             style="margin-top: 10px;"
-            :data="[]"
-            :columns=" dailyReportColumns"
+            :data="reportTableData"
+            :columns="dailyReportColumns"
             max-height="300px"
           >
+            <template v-slot:troubleDescription="{ row }">
+              <div v-infotooltip:200.top.ellipsis>
+                {{ row.troubleDescription.join('/') }}
+              </div>
+            </template>
+            <template v-slot:processDescription="{ row }">
+              <div v-infotooltip:200.top.ellipsis>
+                {{ row.processDescription.join('/') }}
+              </div>
+            </template>
           </common-table>
         </div>
         <div style="margin-top: 5px;">
           <el-row type="flex" align="middle">
-            <h2 style="margin-right: 10px; font-weight: bold;">售后评价</h2>
+            <h2 style="margin-right: 10px; font-weight: bold;">服务评价</h2>
             总分
             <el-rate
               v-model="totalStart"
@@ -1151,12 +1177,14 @@
     </el-image-viewer>
     <!-- 百度地图实例化 -->
     <template v-if="title === 'approve'">
-      <div id="date-picker-wrapper" :class="{ 'general': isGeneralManager }">
-        <date-picker v-model="timeList" :markedDateList="formData.allDateList || []" @click="onDatePicker"></date-picker>
-      </div>
-      <div id="map-container" :class="{ 'general': isGeneralManager }" style="width:500px;height:550px;"></div>
-      <!-- 控件提示信息 -->
-      <div class="control-info" v-show="isShowControl" :style="controlInfoStyle">{{ controlInfo }}</div>
+      <el-row type="flex" justify="end" class="date-map-container" :class="{ 'general': isGeneralManager }">
+        <div id="date-picker-wrapper" >
+          <date-picker v-model="timeList" :markedDateList="reportDailyList || []" @click="onDatePicker" @expand-click="onExpandClick"></date-picker>
+        </div>
+        <div id="map-container" style="width:500px;height:550px;"></div>
+        <!-- 控件提示信息 -->
+        <div class="control-info" v-show="isShowControl" :style="controlInfoStyle">{{ controlInfo }}</div>
+      </el-row>
     </template>
     <PDF :pdfURL="pdfURL" :on-close="closePDF" v-if="pdfVisible" />
   </div>
@@ -1177,7 +1205,7 @@ import markerIcon from '@/assets/bmap/marker.png'
 import { on, off } from '@/utils/dom'
 import { getList as getAfterEvaluaton } from '@/api/serve/afterevaluation'
 import { getList } from '@/api/reimburse/mycost'
-import { getReportDetail } from '@/api/serve/callservesure'
+import { getDailyReport } from '@/api/serve/callservesure'
 import upLoadFile from "@/components/upLoadFile";
 import PDF from './pdf'
 import zxform from "@/views/serve/callserve/form";
@@ -1197,6 +1225,7 @@ import { noop } from '@/utils/declaration'
 import { categoryMixin, reportMixin, attachmentMixin, chatMixin } from '../js/mixins'
 import { REIMBURSE_TYPE_MAP, IF_SHOW_MAP, REMARK_TEXT_MAP } from '../js/map'
 // import { m2DHM } from '@/filters/time'
+import { s2HMS } from '@/filter/time'
 import rightImg from '@/assets/table/right.png'
 import DatePicker from './DatePicker.vue'
 const PROGRESS_TEXT_LIST = ['提交', '客服审批', '财务初审', '财务复审', '总经理审批', '出纳'] // 进度条文本
@@ -1225,6 +1254,9 @@ export default {
     DatePicker,
     // Bmap
     PDF
+  },
+  filters: {
+    s2HMS
   },
   props: {
     title: {
@@ -1269,6 +1301,7 @@ export default {
         { label: '费用名称', prop: 'expenseName' },
         { label: '费用详情', slotName: 'expenseDetail', 'show-overflow-tooltip': false },
         { label: '发票号码', slotName: 'invoiceNumber' },
+        // { label: '费用归属', slotName: 'belongin' },
         { label: '金额（元）', slotName: 'money', align: 'right' },
       ],
       // 售后评价
@@ -1296,14 +1329,12 @@ export default {
       ],
       dailyReportColumns: [
         { type: 'index', label: '#' },
-        { label: '制造商序列号', prop: 'manufacturerSerialNumber', width: 120 },
+        { label: '日期', prop: 'date', width: 110 },
         { label: '物料编码', prop: 'materialCode', width: 120 },
-        { label: '风扇序列号', prop: '1', width: 120 },
-        { label: '电源序列号', prop: '2', width: 120 },
-        { label: '主板序列号', prop: '3', width: 120 },
+        { label: '设备序列号', prop: 'manufacturerSerialNumber', width: 120 },
         // { label: '问题类型', prop: 'troubleDescription', width: 180 },
-        { label: '问题描述', prop: '5' },
-        { label: '解决方案', prop: 'processDescription' },
+        { label: '问题描述', slotName: 'troubleDescription', 'show-overflow-tooltip': false },
+        { label: '解决方案', slotName: 'processDescription', 'show-overflow-tooltip': false },
         // { label: "备注", prop: 'remark', width: 609 }
       ],
       reportDetailLoading: false,
@@ -1353,6 +1384,7 @@ export default {
       currentRow: '', // 当前选中的
       tableType: '', // 用来判断当前被点击的表格类型
       maxSize: 100, // 文件大小
+      reportDailyList: [], // 
       formData: { // 表单参数
         id: '',
         userName: '',
@@ -1486,18 +1518,19 @@ export default {
           
         // }
         if (this.title === 'approve') { // 审批的时候要告诉审批人 住宿金额补贴是否符合标准
-          this._checkAccMoney()
-          this._getAfterEvaluation() // 获取售后评价
-          this._getReportDetail() // 获取服务报告
-          this._getHistoryCost() // 获取历史费用
-          this.expenseCategoryList = this.formData.expenseCategoryList
-          // this.addSerialNumber(this.expenseCategoryList)
           if (this.formData.businessTripDate) {
             this.currentTime = new Date(formatDate(this.formData.businessTripDate))
             this.nextTime = new Date(collections.addMonth(this.formData.businessTripDate, 1))
             // this.nextTime = new Date(+this.currentTime + 24 * 60 * 60 * 1000)
             this.timeList = [this.currentTime, this.nextTime]
           }
+          this._checkAccMoney()
+          this._getAfterEvaluation() // 获取售后评价
+          this._getReportDetail() // 获取服务报告
+          this._getHistoryCost() // 获取历史费用
+          this.expenseCategoryList = this.formData.expenseCategoryList
+          // this.addSerialNumber(this.expenseCategoryList)
+          
           this.timelineList = this._normalizeTimelineList(this.formData.reimurseOperationHistories)
         }
         if (this.title === 'create' || this.title === 'edit') { // 只有在create或者edit的时候，才可以导入费用模板
@@ -1568,6 +1601,22 @@ export default {
       }
       return 0
     },
+    // companyMoney () { // 公司费用
+    //   return (this.formData.expenseCategoryList || []).reduce((prev, next) => {
+    //     const { belongin, money } = next
+    //     if (belongin && belongin.indexOf('公司') > -1) { // 如果是公司的话，归纳到公司费用里面
+    //       accAdd(prev, money)
+    //     }
+    //   }, 0)
+    // },
+    // orgMoney () { // 部门费用
+    //   return (this.formData.expenseCategoryList || []).reduce((prev, next) => {
+    //     const { belongin, money } = next
+    //     if (belongin && belongin.indexOf('公司') < -1) { // 如果是部门的话，归纳到部门费用里面
+    //       accAdd(prev, money)
+    //     }
+    //   }, 0)
+    // },
     totalMoney () {
       let moneyList = [this.travelTotalMoney, this.trafficTotalMoney, this.accTotalMoney, this.otherTotalMoney]
       return moneyList.reduce((prev, next) => {
@@ -1882,6 +1931,7 @@ export default {
       console.log(isAll ? 'multiple click' : 'SINGLE')
       this.createPointArr(this.formData.pointArr)
       this.expenseCategoryList = this.formData.expenseCategoryList
+      this.reportTableData = this.originReportTableData
       isAll ? this.isSearchCompelete && this.createDrivePath() : this.createLastPath()
     },
     createPathControl () { // 创建路径控件
@@ -1975,6 +2025,10 @@ export default {
         this.trackPoint.push(new this._BMap.Point(pointArr[i].lng, pointArr[i].lat));
       }
     },
+    onExpandClick () {
+      this.expenseCategoryList = this.formData.expenseCategoryList
+      this.reportTableData = this.originReportTableData
+    },
     onDatePicker (date) { // 点击日历，右侧详情筛选对应的日期，地图也将包含的交通发票进行地图绘制
       let dateTime = formatDate(date)
       this.expenseCategoryList = this.formData.expenseCategoryList.filter(item => {
@@ -1982,6 +2036,11 @@ export default {
         return item.invoiceTime && formatDate(item.invoiceTime) === dateTime
       })
       let trafficList = this.expenseCategoryList.filter(item => item.isTraffic) // 找到交通发票列表
+      // 日报
+      this.reportTableData = this.originReportTableData.filter(item => {
+        return item.dailyDate && formatDate(item.dailyDate) === dateTime
+      })
+      console.log(this.reportTableData, 'reportTable')
       let pointList = []
       trafficList.forEach(item => {
         let { fromLng, fromLat, toLng, toLat } = item
@@ -1994,7 +2053,6 @@ export default {
       if (this.isSearchCompelete) {
         this.createDrivePath(true)
       }
-      
       console.log(date, 'date ondatepicker', dateTime, this.expenseCategoryList)
     },
     onExpenseClick (row) { // 点击交通发票绘制当前发票的路径
@@ -2040,7 +2098,7 @@ export default {
     },
     _getAfterEvaluation () { // 获取售后评价
       if (!this.formData.serviceOrderSapId) {
-        return this.$message.error('没有服务ID，无法获取售后评价列表')
+        return this.$message.error('没有服务ID，无法获取服务评价列表')
       }
       this.afterEvaLoading = true
       getAfterEvaluaton({
@@ -2077,37 +2135,41 @@ export default {
       }
       return +totalStart
     },
-    _getReportDetail () { // 获取服务报告
+    async _getReportDetail () { // 获取服务报告
       this.reportDetaiLoading = true
-      getReportDetail({
-        serviceOrderId: this.formData.serviceOrderId,
-        userId: this.formData.createUserId
-      }).then(res => {
-        let result = []
-        this.reportDetaiLoading = false
-        console.log(res.result.data.filter(item => item.id), 'null')
-        res.result.data.filter(item => item.id).forEach(item => {
-          let { processDescription, serviceWorkOrders, remark } = item
-          if (serviceWorkOrders) {
-            serviceWorkOrders.forEach(workOrderItem => {
-              let { manufacturerSerialNumber, materialCode } = workOrderItem
-              result.push({
-                manufacturerSerialNumber,
-                materialCode,
-                // troubleDescription,
-                processDescription,
-                remark
+      try {
+        console.log(getDailyReport, collections)
+        const res = await getDailyReport({
+          serviceOrderId: this.formData.serviceOrderId
+        })
+        const { dailyDates, reportResults } = res.data
+        console.log(dailyDates, reportResults, 'report data')
+        this.originReportTableData = []
+        if (dailyDates.length) {
+          const firstTime = dailyDates[dailyDates.length - 1]
+          this.currentTime = new Date(formatDate(firstTime))
+          this.nextTime = new Date(collections.addMonth(firstTime, 1))
+          this.timeList = [this.currentTime, this.nextTime]
+          this.reportDailyList = dailyDates
+          console.log(this.reportDailyList, 'reportDailyList')
+          reportResults.forEach(item => {
+            const { dailyDate, reportDetails } = item
+            reportDetails.forEach((materialItem, index) => {
+              this.reportTableData.push({
+                date: index === 0 ? dailyDate : '',
+                dailyDate,
+                ...materialItem
               })
             })
-          }
-        })
-        this.reportTableData = result
-        console.log(this.reportTableData, 'report list')
-      }).catch(err => {
+          })
+          this.originReportTableData = this.reportTableData
+          console.log(this.reportTableData, 'reportTableDate')
+        }
+      } catch (err) {
+        this.$message.error(err)
+      } finally {
         this.reportDetaiLoading = false
-        this.$message.error(err.message)
-        console.log('reportTable')
-      })
+      }
     },
     _getHistoryCost () { // 获取历史费用
       this.historyCostLoading = true
@@ -3051,6 +3113,7 @@ export default {
       this.timelineList = []
       this.selectedList = []
       this.prevAreaData = null
+      this.reportTableData = []
       this.formData = { // 表单参数
         id: '',
         userName: '',
@@ -3239,26 +3302,25 @@ export default {
   position: relative;
   font-size: 12px;
   /* 日历样式 */
-  #date-picker-wrapper {
+  .date-map-container {
     position: absolute;
+    flex-direction: column;
+    flex-wrap: wrap;
     top: -52px;
     left: -12px;
-    transform: translate3d(-100%, 0, 0);
+    // transform: translate3d(-100%, 0, 0);
+    margin-left: -500px;
     &.general {
       top: -84px;
     }
+    #date-picker-wrapper {
+
+    }
+    /* 地图样式 */
+    #map-container {}
+    
   }
-  /* 地图样式 */
-  #map-container {
-    position: absolute;
-    top: 200px;
-    left: -11px;
-    margin-left: -500px;
-    // transform: translate3d(-100%, 0, 0);
-    &.general {
-      top: 168px;
-    } 
-  }
+  
   .control-info {
     position: fixed;
     z-index: 100000;
@@ -3303,14 +3365,13 @@ export default {
   }
   /* 总经理头部时间进度条 */
   .timeline-progress-wrapper {
-    position: absolute;left: 71px;
+    position: absolute;
+    left: 71px;
     top: -43px;
-    
     width: 400px;
-    height: 5px;
-    background-color: rgba(206, 206, 206, 1);
+    height: 1px;
     &.isGeneral {
-      width: 580px;
+      width: 690px;
       left: 84px;
       top: -55px;
     }
@@ -3330,38 +3391,67 @@ export default {
         top: 0;
         .interval-time {
           position: relative;
-          top: -10px;
+          top: -12px;
           flex: 1;
           font-size: 12px;
           text-align: center;
           color: #3ef551;
           &:nth-last-child(1) {
-            display: none;
+            opacity: 0;
           }
         }
       }
       .content-item {
+        display: flex;
+        align-items: center;
         position: relative;
+        flex: 1;
+        &:nth-child(1) {
+          .line {
+            opacity: 0;
+          }
+        }
+        .line {
+          position: absolute;
+          left: 0;
+          top: 6px;
+          width: 100%;
+          transform: translate3d(-100%, 0, 0);
+          height: 1px;
+          background-color: rgba(206, 206, 206, 1); 
+          &.finished {
+            background-color: #3fcf15;
+          }
+          &.current {
+            background: linear-gradient(to right, #3fcf15 50%, #ffa724 50%);
+          }
+        }
         .icon-status {
+          position: relative;
+          z-index: 100;
           display: inline-block;
+          width: 12px;
+          height: 12px;
+          line-height: 12px;
           font-size: 12px;
           background-color: #fff;
           border-radius: 50%;
-          &.big {
-            font-size: 13px;
+          border: 1px solid #ffa724;
+          &.finished {
+            border: none;
+            background-color: #3fcf15;
           }
           &.not-current {
-            position: relative;
-            top: 1px;
-            width: 12px;
-            height: 12px;
-            background-color: rgba(206, 206, 206, 1);
+            border: 1px solid rgba(206, 206, 206, 1);  
+          }
+          &.text-content {
+            border: 1px solid rgba(206, 206, 206, 1);  
           }
         }
         .text {
           position: absolute;
           left: 0;
-          top: -20px;
+          top: -22px;
           font-size: 12px;
           white-space: nowrap;
           color: #000;
@@ -3676,6 +3766,28 @@ export default {
       color: rgba(255, 165, 0, 1);
     }
   }
+  /* 费用详情 */
+  .expense-detail-wrapper {
+    margin-top: 10px;
+    .title-wrapper {
+      margin-right: 80px;
+      &.gerneral {
+        margin-right: 0;
+      }
+    }
+    .area {
+      div {
+        display: inline-block;
+        &:nth-child(1) {
+          margin-right: 20px;
+        }
+        span {
+          color: #BFBFBF;
+          margin-left: 10px;
+        }
+      }
+    }
+  } 
   /* 工作日报样式 */
   .daily-report-wrapper {
     margin: 10px 0;

@@ -22,6 +22,9 @@
         <template v-slot:contract="{ row }">
           <span class="show-btn" @click="showContractPictures(row)">查看</span>
         </template>
+        <template v-slot:balance="{ row }">
+          <p v-infotooltip.top.ellipsis>{{ row.balance | toThousands }}</p>
+        </template>
         <template v-slot:totalMoney="{ row }">
           <p v-infotooltip.top-start.ellipsis>{{ row.totalMoney | toThousands }}</p>
         </template>
@@ -159,6 +162,32 @@ export default {
         (this.isMaterialFinancial && this.quotationStatus >= 9) ||
         (this.isGeneralManager && this.quotationStatus >= 10)
       ) ? '查看' : (this.textMap[this.status] || '查看')
+    },
+    quotationColumns () {
+      return this.isGeneralManager ? [
+        { label: '销售订单', prop: 'salesOrderId', handleClick: this._getQuotationDetail, options: { status: 'pay', isSalesOrder: true }, type: 'link'},
+        { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link' },
+        { label: '客户代码', prop: 'terminalCustomerId' },
+        { label: '客户名称', prop: 'terminalCustomer' },
+        { label: '申请人', prop: 'createUser' },
+        { label: '创建时间', prop: 'createTime' },
+        { label: '科目余额（￥）', slotName: 'balance', align: 'right' },
+        { label: '总金额（￥）', prop: 'totalMoney', align: 'right', slotName: 'totalMoney' },
+        { label: '合同', slotName: 'contract' },
+        { label: '备注', prop: 'remark' },
+        { label: '状态', prop: 'quotationStatusText' }
+      ] : [
+        { label: '销售订单', prop: 'salesOrderId', handleClick: this._getQuotationDetail, options: { status: 'pay', isSalesOrder: true }, type: 'link'},
+        { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link' },
+        { label: '客户代码', prop: 'terminalCustomerId' },
+        { label: '客户名称', prop: 'terminalCustomer' },
+        { label: '申请人', prop: 'createUser' },
+        { label: '创建时间', prop: 'createTime' },
+        { label: '总金额（￥）', prop: 'totalMoney', align: 'right', slotName: 'totalMoney' },
+        { label: '合同', slotName: 'contract' },
+        { label: '备注', prop: 'remark' },
+        { label: '状态', prop: 'quotationStatusText' }
+      ]
     }
   },
   data () {
@@ -188,18 +217,6 @@ export default {
       tableLoading: false,
       tableData: [],
       total: 0,
-      quotationColumns: [
-        { label: '销售订单', prop: 'salesOrderId', handleClick: this._getQuotationDetail, options: { status: 'pay', isSalesOrder: true }, type: 'link'},
-        { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link' },
-        { label: '客户代码', prop: 'terminalCustomerId' },
-        { label: '客户名称', prop: 'terminalCustomer' },
-        { label: '申请人', prop: 'createUser' },
-        { label: '创建时间', prop: 'createTime' },
-        { label: '总金额（￥）', prop: 'totalMoney', align: 'right', slotName: 'totalMoney' },
-        { label: '合同', slotName: 'contract' },
-        { label: '备注', prop: 'remark' },
-        { label: '状态', prop: 'quotationStatusText' }
-      ],
       status: 'create', // 报价单状态
       detailInfo: null, // 详情信息
       currentRow: null // 当前选中的行数据
@@ -210,11 +227,8 @@ export default {
       if (!this.currentRow) {
         return this.$message.warning('请先选择数据')
       }
-      const { id } = this.currentRow
-      const params = {
-        QuotationId: id
-      }
-      print('/Material/Quotation/PrintSalesOrder', params)
+      const { encrypQuotationId } = this.currentRow
+      print('/Material/Quotation/PrintSalesOrder', encrypQuotationId)
     },
     _getList () {
       this.tableLoading = true

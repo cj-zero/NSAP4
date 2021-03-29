@@ -24,6 +24,14 @@ export function getWeek (value) {
   return WEEK_MAP[Day(value).day()]
 }
 
+export function getTimeStamp (date) {
+  return Day(date).valueOf()
+}
+
+export function toDate (date) {
+  return Day(date).toDate()
+}
+
 /* 定义 日期增加减少函数集合 */
 const collections = {}
 function setCollection () {

@@ -94,8 +94,10 @@ export let tableMixin = {
       if (!this.currentRow) {
         return this.$message.warning('请先选择报销单号')
       }
+      const { encrypReimburseId } = this.currentRow
       // console.log([printOrder, 'printOrder'])
-      window.open(`${process.env.VUE_APP_BASE_API}/serve/Reimburse/Print?ReimburseInfoId=${this.currentRow.id}&X-Token=${this.tokenValue}`)
+      // window.open(`${process.env.VUE_APP_BASE_API}/serve/Reimburse/Print?ReimburseInfoId=${this.currentRow.id}&X-Token=${this.tokenValue}`)
+      window.open(`${process.env.VUE_APP_BASE_API}/serve/Reimburse/Print/${encrypReimburseId}?X-Token=${this.tokenValue}`)
     },
     _getList () { // 获取表格列表
       this.tableLoading = true

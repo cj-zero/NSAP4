@@ -186,3 +186,16 @@ export function resetServiceOrder (data) { // 一键重派服务单
     data
   })
 }
+
+export function getDailyReport (params, _this) { // 获取技术员日报
+  return request({
+    url: '/serve/ServiceOrder/GetErpTechnicianDailyReport',
+    method: 'get',
+    params,
+    cancelToken: new request.cancelToken(function executor(c) {
+      if (_this) {
+        _this.cancelRequestFn = c
+      }
+    })
+  })
+}

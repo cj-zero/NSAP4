@@ -21,11 +21,17 @@
         :isCustomerEnd="true"
       >
         <template v-slot:serviceOrderSapId>
-          <el-form-item label="服务ID">
+          <el-form-item label="服务ID" style="height: 18px;">
             <el-input v-infotooltip.top.ellipsis size="mini" v-model="formData.serviceOrderSapId" @focus="onServiceIdFocus"></el-input>
           </el-form-item>
         </template>
       </common-form>
+      <el-row class="prepay-wrapper" type="flex" align="middle" v-if="ifShowPrepaid" justify="end">
+        <span>预付{{ formData.prepay || 0 }}%</span>
+        <span>发货前{{ formData.cashBeforeFelivery || 0 }}%</span>
+        <span>货到验收{{ formData.payOnReceipt || 0 }}%</span>
+        <span>质保后{{ formData.paymentAfterWarranty || 0 }}%</span>
+      </el-row>
       <div class="divider"></div>
       <div class="courier-wrapper">
         <el-row class="title" type="flex" justify="space-between" align="middle">
@@ -184,6 +190,11 @@ export default {
       immediate: true,
       handler (val) {
         Object.assign(this.formData, val)
+        const { deliveryMethod } = this.formData
+        if (+deliveryMethod === 3) {
+          this.ifShowPrepaid = true
+        }
+        // this.ifShowPrepaid = true
         this.currentIndex = 0
         this.expressList = val.expressages
         // this.materialList = val.quotationMergeMaterials.map(item => {
@@ -229,6 +240,7 @@ export default {
   },
   data () {
     return {
+      ifShowPrepaid: false,
       currentIndex: 0,
       loading: false,
       isOutbound: true,
@@ -302,6 +314,7 @@ export default {
       console.log(this.formData.serviceOrderId, this.formData)
       this.openServiceOrder(this.formData.serviceOrderId, () => this.loading = true, () => this.loading = false)
     },
+    onDeliveryMethodChange () {},
     closeViewer () {
       this.previewVisible = false
     },
@@ -444,6 +457,15 @@ export default {
           max-height: 600px; // 最大高度
           overflow-x: hidden; // 隐藏横向滚动栏
           margin-bottom: 0 !important;
+        }
+      }
+    }
+    .prepay-wrapper {
+      margin-right: 355px;
+      &.if-not-edit {
+        margin-right: 290px;
+        span {
+          margin-right: 10px;
         }
       }
     }

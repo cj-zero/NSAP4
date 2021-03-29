@@ -16,7 +16,7 @@
       <!-- <Log v-show="currentName === 'progress'" :serveId="serveId"></Log> -->
       <!-- 核对设备 -->
       <!-- 日报 -->
-      <!-- <Daily v-show="currentName === 'daily'"></Daily> -->
+      <Daily v-show="currentName === 'daily'" :serviceOrderId="serveId" v-bind="$attrs"></Daily>
       <template v-if="formName === '编辑'">
         <check :sapOrderId="sapOrderId" :customerId="customerId" v-show="currentName === 'check'"></check>
       </template>
@@ -29,14 +29,14 @@
 import TabList from './tabList'
 import Message from './message'
 import Check from './check'
-// import Daily from './daily'
+import Daily from './daily'
 // import Log from './log'
 export default {
   components: {
     TabList,
     Message,
     Check,
-    // Daily
+    Daily
     // Log
   },
   props: {
@@ -95,12 +95,12 @@ export default {
             name: 'check'
           })
         }
-        // if (this.formName === '查看') {
-        //   tabList.push({
-        //     label: '日报',
-        //     name: 'daily'
-        //   })
-        // }
+        if (this.formName === '查看') {
+          tabList.push({
+            label: '日报',
+            name: 'daily'
+          })
+        }
       }
       return tabList
     }
@@ -114,7 +114,7 @@ export default {
     }
   },
   created () {
-
+    console.log(this.$attrs.isFinish, 'isFinish')
   },
   mounted () {
 

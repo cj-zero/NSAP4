@@ -278,7 +278,7 @@
           ></zxform>
         </el-col>
           <el-col :span="6" class="lastWord">   
-            <zxchat :serveId='serveId' formName="查看"></zxchat>
+            <zxchat :serveId='serveId' formName="查看" :isFinish="isFinish"></zxchat>
           </el-col>
         </el-row>
 
@@ -478,6 +478,7 @@ export default {
       ParentHeadOptions: [
         { name: 'order', label: '序号', width: '38' },
         { name: "u_SAP_ID", label: "服务单号", align:'left', sortable:true, width: '60' },
+        { name: 'serviceCreateTime', label: '创建时间', align: 'left', width: '140' },
         { name: "priority", label: "优先级" ,align:'left', width: '50' },
         { name: "fromType", label: "呼叫类型", width: "60px",align:'left'  },
         { name: "status", label: "工单状态", align: 'left', width: '60' },
@@ -494,7 +495,6 @@ export default {
         { name: "supervisor", label: "售后主管" ,align:'left', width: '70' },
         { name: "salesMan", label: "销售员" ,align:'left', width: '55' },
         { name: "recepUserName", label: "接单员" ,align:'left', width: '85' },
-        { name: 'serviceCreateTime', label: '创建时间', align: 'left', width: '140' },
         { name: 'workOrderNumber', label: '工单数', align: 'left', width: '55' } 
       ],
       ChildheadOptions: [
@@ -608,6 +608,7 @@ export default {
         info: "查看服务呼叫单"
       },
       serveId:'', // 当前服务单ID
+      isFinish: false, // 当前服务单是否已经完成状态
       sapOrderId: '', // 当前NSAP_ID
       customerId: "", // 当前客户代码
       dialogPvVisible: false,
@@ -1023,7 +1024,9 @@ export default {
       callservesure.GetDetails(row.serviceOrderId).then(res => {
         if (res.code == 200) {
           this.dataForm1 = this._normalizeOrderDetail(res.result);
-          let { serviceOrderId, u_SAP_ID, customerId } = row
+          let { serviceOrderId, u_SAP_ID, customerId, isFinish } = row
+          this.isFinish = isFinish
+          console.log(isFinish, 'getDetail')
           this.serveId = serviceOrderId
           this.sapOrderId = u_SAP_ID
           this.customerId = customerId 

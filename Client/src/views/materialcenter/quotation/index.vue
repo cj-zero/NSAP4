@@ -216,8 +216,8 @@ export default {
       if (!currentRow) {
         return this.$message.warning('请先选择数据')
       }
-      const { id } = currentRow
-      print('/Material/Quotation/PrintQuotation', { QuotationId: id })
+      const { encrypQuotationId } = currentRow
+      print('/Material/Quotation/PrintQuotation', encrypQuotationId)
     },
     onSuccess () {
       this.$message.success('上传成功')
