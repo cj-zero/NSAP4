@@ -265,9 +265,9 @@ export let tableMixin = {
       // let arr = ['2020-12-24', '2020-12-25', '2020-12-26']
       reimburseFares.forEach((item) => {
         let { 
-          transport, from, to, money, 
+          transport, from, to, money,
           reimburseAttachments, invoiceNumber, remark,
-          fromLng, fromLat, toLng, toLat, id, invoiceTime
+          fromLng, fromLat, toLng, toLat, id, invoiceTime, expenseOrg
         } = item
         result.push({
           id,
@@ -285,7 +285,9 @@ export let tableMixin = {
           invoiceNumber,
           isValidInvoice: this.isValidInvoice(reimburseAttachments),
           invoiceFileList: this.getInvoiceFileList(reimburseAttachments),
-          otherFileList: this.getOtherFileList(reimburseAttachments)
+          otherFileList: this.getOtherFileList(reimburseAttachments),
+          expenseOrg: JSON.parse(expenseOrg || null),
+          type: 'traffic'
         })
         console.log('item')
         if (fromLng && toLng) { // 只有两个坐标都有值时才加到数组中
@@ -295,8 +297,9 @@ export let tableMixin = {
       })
       // 住宿
       reimburseAccommodationSubsidies.forEach(item => {
-        let { invoiceTime, days, totalMoney, reimburseAttachments, invoiceNumber, remark, sellerName } = item
+        let { id, invoiceTime, days, totalMoney, reimburseAttachments, invoiceNumber, remark, sellerName, expenseOrg } = item
         result.push({
+          id,
           invoiceTime: this.processInvoiceTime(invoiceTime),
           // invoiceTime: invoiceTime || '2020-12-26',
           expenseName: '住宿补贴',
@@ -307,29 +310,35 @@ export let tableMixin = {
           invoiceNumber,
           isValidInvoice: this.isValidInvoice(reimburseAttachments),
           invoiceFileList: this.getInvoiceFileList(reimburseAttachments),
-          otherFileList: this.getOtherFileList(reimburseAttachments)
+          otherFileList: this.getOtherFileList(reimburseAttachments),
+          expenseOrg: JSON.parse(expenseOrg || null),
+          type: 'acc'
         })
       })
       // 出差
       let { businessTripDate, endDate } = data
       reimburseTravellingAllowances.forEach(item => {
-        let { days, money, remark } = item
+        let { id, days, money, remark, expenseOrg } = item
         let invoiceTime = days > 1 
           ? `${formatDate(businessTripDate, 'MM-DD')} — ${formatDate(endDate, 'MM-DD')}`
           : formatDate(businessTripDate)
         result.push({
+          id,
           // invoiceTime: this.processInvoiceTime(invoiceTime),
           // invoiceTime: invoiceTime || '2020-12-28',
           invoiceTime,
           expenseName: '出差补贴',
           expenseDetail: `${toThousands(money)}元/天*${days}天`,
           money: money * days,
-          remark
+          remark,
+          expenseOrg: JSON.parse(expenseOrg || null),
+          type: 'travel'
         })
       })
       reimburseOtherCharges.forEach(item => {
-        let { invoiceTime, money, expenseCategory, remark, reimburseAttachments, invoiceNumber } = item
+        let { id, invoiceTime, money, expenseCategory, remark, reimburseAttachments, invoiceNumber, expenseOrg } = item
         result.push({
+          id,
           invoiceTime: this.processInvoiceTime(invoiceTime),
           expenseName: this.otherExpensesMap[expenseCategory],
           expenseDetail: '',
@@ -338,7 +347,9 @@ export let tableMixin = {
           invoiceNumber,
           isValidInvoice: this.isValidInvoice(reimburseAttachments),
           invoiceFileList: this.getInvoiceFileList(reimburseAttachments),
-          otherFileList: this.getOtherFileList(reimburseAttachments)
+          otherFileList: this.getOtherFileList(reimburseAttachments),
+          expenseOrg: JSON.parse(expenseOrg || null),
+          type: 'other'
         })
       })
       /* 日期从小到大， 没日期的话，交通费用→住宿补贴→出差补贴→其他费用 */
@@ -348,6 +359,8 @@ export let tableMixin = {
       let dataWithoutInvoiceTime = result.filter(item => !item.invoiceTime)
       // 交通-住宿-出差-其它
       data.expenseCategoryList = dataWithInvoiceTime.concat(dataWithoutInvoiceTime)
+      const retArr = ['company', 'org', 'totalMoney'].map(key => ({ moneyType: key }))
+      data.expenseCategoryList.push(...retArr)
       data.pointArr = pointArr
       console.log(result, 'result')
       // data.expenseCategoryList = result

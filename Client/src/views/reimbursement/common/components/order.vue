@@ -268,73 +268,86 @@
           </el-row>
           <!-- 费用详情列表 -->
           <div class="general-table-wrapper">
-            <common-table
-              class="table-container"
-              :data="expenseCategoryList"
-              :columns="expenseCategoryColumns"
-              max-height="400px"
-              :header-cell-style="headerCellStyle"
-              :cell-style="cellStyle"
-              @row-click="onExpenseClick"
-            >
-              <!-- 费用详情 -->
-              <template v-slot:expenseDetail="{ row }">
-                <div class="detail-content">
-                  <div>
-                    <span style="display: inline-block;margin-right: 5px;" v-if="row.sellerName">{{ row.sellerName }}</span>
-                    <span style="display: inline-block;margin-right: 5px;">{{ row.expenseDetail }}</span>
-                    <el-tooltip 
-                      :content="row.remark">
-                      <i class="remark el-icon-chat-dot-round" v-if="row.remark"></i>
+            <el-form ref="expenseForm" :model="expenseFormData" :show-message="false" size="mini">
+              <common-table
+                class="table-container"
+                :data="expenseFormData.expenseCategoryList"
+                :columns="expenseCategoryColumns"
+                max-height="400px"
+                :header-cell-style="headerCellStyle"
+                :cell-style="cellStyle"
+                @row-click="onExpenseClick"
+              >
+                <!-- 费用详情 -->
+                <template v-slot:expenseDetail="{ row }">
+                  <div class="detail-content">
+                    <div>
+                      <span style="display: inline-block;margin-right: 5px;" v-if="row.sellerName">{{ row.sellerName }}</span>
+                      <span style="display: inline-block;margin-right: 5px;">{{ row.expenseDetail }}</span>
+                      <el-tooltip 
+                        :content="row.remark">
+                        <i class="remark el-icon-chat-dot-round" v-if="row.remark"></i>
+                      </el-tooltip>
+                      <template v-if="row.otherFileList && normalizeOtherFileList(row).length">
+                        <div
+                          style="display: inline-block; margin-left: 2px;"
+                          v-for="(item, index) in normalizeOtherFileList(row)" 
+                          :key="item.id"
+                        >
+                          <!-- <span class="pointer" @click="openFile(item)">附件{{ index + 1 }}</span> -->
+                          <i class="el-icon-document pointer" @click="openFile(item)">{{ index + 1 }}</i>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+                <!-- 发票号码 -->
+                <template v-slot:invoiceNumber="{ row }">
+                  <el-row class="invoice-number-wrapper" type="flex" align="middle" v-if="row.invoiceNumber" justify="space-between">
+                    <el-row type="flex" align="middle">
+                      <img class="pointer" :src="rightImg" alt="" @click="openFile(row, true)">
+                      <span style="margin-right: 5px;">{{ row.invoiceNumber }}</span>
+                    </el-row>
+                    <el-tooltip content="无发票附件" :disabled="row.isValidInvoice">
+                      <i calss="invoice-icon" :class="[row.isValidInvoice ? 'el-icon-upload-success el-icon-circle-check success' : 'el-icon-warning-outline warning']"></i>
                     </el-tooltip>
-                    <template v-if="row.otherFileList && normalizeOtherFileList(row).length">
-                      <div
-                        style="display: inline-block; margin-left: 2px;"
-                        v-for="(item, index) in normalizeOtherFileList(row)" 
-                        :key="item.id"
-                      >
-                        <!-- <span class="pointer" @click="openFile(item)">附件{{ index + 1 }}</span> -->
-                        <i class="el-icon-document pointer" @click="openFile(item)">{{ index + 1 }}</i>
-                      </div>
+                  </el-row>
+                </template>
+                <!-- 费用归属 -->
+                <template v-slot:belongin="{ row, index }">
+                  <div class="bold">
+                    <template v-if="row.moneyType === 'totalMoney'">总金额</template>
+                    <template v-else-if="row.moneyType === 'org'">部门</template>
+                    <template v-else-if="row.moneyType === 'company'">公司</template>
+                    <template v-else-if="!row.moneyType">
+                      <el-form-item :prop="'expenseCategoryList.' + index + '.'+ 'expenseOrg'" :rules="expenseRules['expenseOrg']">
+                        <!-- <div @click.stop> -->
+                          <el-cascader
+                            :class="{ 'disabled': ifOrgDisabled }"
+                            :disabled="ifOrgDisabled"
+                            v-model="row.expenseOrg"
+                            :options="reimburseOrgsList"
+                            :props="{ checkStrictly: true }"
+                            clearable>
+                          </el-cascader>
+                        <!-- </div> -->
+                      </el-form-item>
                     </template>
                   </div>
-                </div>
-              </template>
-              <!-- 发票号码 -->
-              <template v-slot:invoiceNumber="{ row }">
-                <el-row class="invoice-number-wrapper" type="flex" align="middle" v-if="row.invoiceNumber" justify="space-between">
-                  <el-row type="flex" align="middle">
-                    <img class="pointer" :src="rightImg" alt="" @click="openFile(row, true)">
-                    <span style="margin-right: 5px;">{{ row.invoiceNumber }}</span>
-                  </el-row>
-                  <el-tooltip content="无发票附件" :disabled="row.isValidInvoice">
-                    <i calss="invoice-icon" :class="[row.isValidInvoice ? 'el-icon-upload-success el-icon-circle-check success' : 'el-icon-warning-outline warning']"></i>
-                  </el-tooltip>
-                </el-row>
-              </template>
-              <!-- 费用归属 -->
-              <!-- <template v-slot:belongin="{ row }">
-                <div class="bold">
-                  <template v-if="row.type === 'totalMoney'">总金额</template>
-                  <template v-else-if="row.type === 'org'">部门</template>
-                  <template v-else-if="row.type === 'company'">公司</template>
-                  <template v-else>
-                    <el-cascader
-                      v-model="row.belongin"
-                      :options="[]"
-                      :props="{ checkStrictly: true }"
-                      clearable>
-                    </el-cascader>
-                  </template>
-                </div>
-              </template> -->
-              <!-- 金额 -->
-              <template v-slot:money="{ row }">
-                {{ row.money | toThousands }}
-              </template>
-            </common-table>
+                </template>
+                <!-- 金额 -->
+                <template v-slot:money="{ row }">
+                  <div v-infotooltip:200.top.ellipsis>
+                    <template v-if="!row.moneyType">{{ row.money | toThousands }}</template>
+                    <template v-else-if="row.moneyType === 'org'">{{ orgMoney | toThousands }}</template>
+                    <template v-else-if="row.moneyType === 'company'">{{ companyMoney | toThousands }}</template>
+                    <template v-else-if="row.moneyType === 'totalMoney'">{{ totalMoney | toThousands }}</template>
+                  </div>
+                </template>
+              </common-table>
+            </el-form>
           </div>
-          <el-row type="flex" justify="end" class="general-total-money">总金额：{{ totalMoney | toThousands }}</el-row>
+          <!-- <el-row type="flex" justify="end" class="general-total-money">总金额：{{ totalMoney | toThousands }}</el-row> -->
           <!-- <el-button size="mini" @click="toggleAfterEva">售后评价</el-button> -->
         </div>
 
@@ -1023,7 +1036,6 @@
         </template>
       </template>
     </el-scrollbar>
-    
     <!-- 客户选择列表 -->
     <my-dialog 
       title="服务单列表"
@@ -1199,7 +1211,8 @@ import {
   isSole, 
   getHistoryReimburseInfo, 
   getUserDetail,
-  deleteCost
+  deleteCost,
+  getReimburseOrgs
 } from '@/api/reimburse'
 import markerIcon from '@/assets/bmap/marker.png'
 import { on, off } from '@/utils/dom'
@@ -1231,7 +1244,7 @@ import DatePicker from './DatePicker.vue'
 const PROGRESS_TEXT_LIST = ['提交', '客服审批', '财务初审', '财务复审', '总经理审批', '出纳'] // 进度条文本
 const AFTER_EVALUTION_KEY = ['responseSpeed', 'schemeEffectiveness', 'serviceAttitude', 'productQuality', 'servicePrice']
 const TEXT_REG = /[\r|\r\n|\n\t\v]/g
-
+const NOW_DATE = new Date()
 // const AFTER_EVALUTION_STATUS = {
 //   0: '未统计',
 //   1: '非常差',
@@ -1301,7 +1314,7 @@ export default {
         { label: '费用名称', prop: 'expenseName' },
         { label: '费用详情', slotName: 'expenseDetail', 'show-overflow-tooltip': false },
         { label: '发票号码', slotName: 'invoiceNumber' },
-        // { label: '费用归属', slotName: 'belongin' },
+        { label: '费用归属', slotName: 'belongin' },
         { label: '金额（元）', slotName: 'money', align: 'right' },
       ],
       // 售后评价
@@ -1465,11 +1478,15 @@ export default {
       prevAreaData: null, // 上一次点击地址框的是时候，交通表格的行数据
       currentTime: new Date(), // 完工报告首日期
       nextTime: new Date(),
-      timeList: [],
+      timeList: [NOW_DATE, (collections.addMonth(+NOW_DATE, 1)).toDate()],
       expenseCategoryList: [], // 发票详情列表
       controlInfo: '', // 自定义控件的提示文案
       controlInfoStyle: '', // 控制自定义控件的位置
-      isShowControl: false // 控制自定义控件的显示和隐藏
+      isShowControl: false, // 控制自定义控件的显示和隐藏
+      reimburseOrgsList: [], // 费用归属列表
+      expenseRules: {
+        expenseOrg: [ { required: true, trigger: ['blur', 'change'] } ],
+      }
     }
   },
   watch: {
@@ -1523,11 +1540,14 @@ export default {
             this.nextTime = new Date(collections.addMonth(this.formData.businessTripDate, 1))
             // this.nextTime = new Date(+this.currentTime + 24 * 60 * 60 * 1000)
             this.timeList = [this.currentTime, this.nextTime]
+          } else {
+            this.timeList = [NOW_DATE, (collections.addMonth(+NOW_DATE, 1)).toDate()]
           }
           this._checkAccMoney()
           this._getAfterEvaluation() // 获取售后评价
           this._getReportDetail() // 获取服务报告
           this._getHistoryCost() // 获取历史费用
+          this._getReimburseOrgs() // 查询费用归属列表
           this.expenseCategoryList = this.formData.expenseCategoryList
           // this.addSerialNumber(this.expenseCategoryList)
           
@@ -1550,6 +1570,14 @@ export default {
     }
   },
   computed: {
+    expenseFormData () { // 审批阶段费用详情form表单数据
+      return {
+        expenseCategoryList: this.expenseCategoryList || []
+      }
+    },
+    ifOrgDisabled () { // 客户审批阶段
+      return !(this.isCustomerSupervisor && this.$route.path === '/reimbursement/toProcess')
+    },
     wrapStyle () {
       return this.title === 'approve' ? [{ height: '700px' }] : [{ maxHeight: '700px' }]
     },
@@ -1601,22 +1629,20 @@ export default {
       }
       return 0
     },
-    // companyMoney () { // 公司费用
-    //   return (this.formData.expenseCategoryList || []).reduce((prev, next) => {
-    //     const { belongin, money } = next
-    //     if (belongin && belongin.indexOf('公司') > -1) { // 如果是公司的话，归纳到公司费用里面
-    //       accAdd(prev, money)
-    //     }
-    //   }, 0)
-    // },
-    // orgMoney () { // 部门费用
-    //   return (this.formData.expenseCategoryList || []).reduce((prev, next) => {
-    //     const { belongin, money } = next
-    //     if (belongin && belongin.indexOf('公司') < -1) { // 如果是部门的话，归纳到部门费用里面
-    //       accAdd(prev, money)
-    //     }
-    //   }, 0)
-    // },
+    companyMoney () { // 公司费用
+      return (this.formData.expenseCategoryList || []).reduce((prev, next) => {
+        const { expenseOrg, money } = next
+        // 如果是公司的话，归纳到公司费用里面
+        return accAdd(prev, (expenseOrg && expenseOrg.length && expenseOrg.indexOf('公司') > -1) ? money : 0)
+      }, 0)
+    },
+    orgMoney () { // 部门费用
+      return (this.formData.expenseCategoryList || []).reduce((prev, next) => {
+        const { expenseOrg, money } = next
+        // 如果是部门的话，归纳到部门费用里面
+         return accAdd(prev, (expenseOrg && expenseOrg.length && expenseOrg.indexOf('公司') === -1) ? money: 0)
+      }, 0)
+    },
     totalMoney () {
       let moneyList = [this.travelTotalMoney, this.trafficTotalMoney, this.accTotalMoney, this.otherTotalMoney]
       return moneyList.reduce((prev, next) => {
@@ -2169,6 +2195,17 @@ export default {
         this.$message.error(err)
       } finally {
         this.reportDetaiLoading = false
+      }
+    },
+    onCascaderInput (e) {
+      e.stopPropogation()
+    },
+    async _getReimburseOrgs () {
+      try {
+        const res = await getReimburseOrgs()
+        this.reimburseOrgsList = res.data
+      } catch (err) {
+        this.$message.error(err.message)
       }
     },
     _getHistoryCost () { // 获取历史费用
@@ -3074,13 +3111,6 @@ export default {
       this.$refs.form.validate(isValid => {
         if (isValid) {
           if (type !== 'reject') {
-            // this.$confirm(`${type === 'pay' ? '支付' : '同意'}此次报销?`, '提示', {
-            //   confirmButtonText: '确定',
-            //   cancelButtonText: '取消',
-            //   type: 'warning'
-            // }).then(() => {
-            //   this.approve()
-            // })
             this.approve()
           } else {
             this.$refs.approve.open() 
@@ -3109,53 +3139,7 @@ export default {
       this.$refs.form.clearValidate()
       this.$refs.form.resetFields()
       this.clearFile()
-      this.ifShowTraffic = this.ifShowOther = this.ifShowAcc = this.ifShowTravel = true
-      this.timelineList = []
-      this.selectedList = []
-      this.prevAreaData = null
-      this.reportTableData = []
-      this.formData = { // 表单参数
-        id: '',
-        userName: '',
-        createUserId: '',
-        orgName: '',
-        position: '',
-        serviceOrderId: '',
-        serviceOrderSapId: '',
-        terminalCustomerId: '',
-        terminalCustomer: '',
-        shortCustomerName: '',
-        becity: '',
-        destination: '',
-        businessTripDate: '',
-        endDate: '',
-        reimburseType: '',
-        reimburseTypeText: '',
-        projectName: '',
-        remburseStatus: '',
-        fromTheme: '',
-        themeList: [],
-        fillDate: '',
-        report: '',
-        bearToPay: '',
-        responsibility: '',
-        serviceRelations: '',
-        payTime: '',
-        remark: '',
-        totalMoney: 0,
-        attachmentsFileList: [],
-        reimburseAttachments: [],
-        reimburseTravellingAllowances: [],
-        reimburseFares: [],
-        reimburseAccommodationSubsidies: [],
-        reimburseOtherCharges: [],
-        reimurseOperationHistories: [],
-        isDraft: false, // 是否是草稿
-        fileId: [], // 需要删除的附件ID
-        myExpendsIds: [] // 需要删除的导入数据（我的费用ID）
-      }
-      this.listQuery = { page: 1, limit: 30 }
-      this.listQueryCost = { page: 1, limit: 30 }   
+      this.reset()
       if (this.$refs.remark) {
         this.$refs.remark.reset()
       }
@@ -3248,14 +3232,22 @@ export default {
       formData.isDraft = isDraft ? true : false
       return updateOrder(formData)
     },
+    mergeOrgList (type) { // 归类发票给归属
+      return this.formData.expenseCategoryList
+        .filter(item => item.type === type)
+        .map(item => {
+          const { id, expenseOrg: value } = item
+          return { id, value: JSON.stringify(value) }
+        })
+    },
     approve () {
       this._approve()
     },
     async _approve () {
-      this.$refs.form.validate(isValid => {
+      this.$refs.form.validate(async isValid => {
         if (!isValid) {
           return this.$message.error('格式错误或必填项未填写')
-        } 
+        }
         let data = this.formData
         let params = {
           id: data.id, 
@@ -3268,6 +3260,22 @@ export default {
           flowInstanceId: data.flowInstanceId, // 流程ID
           isReject: this.remarkType === 'reject'
         }
+        let isOrgValid = true
+        if (this.isCustomerSupervisor && this.remarkType !== 'reject') { // 如果是客服主管必填部门选项并且点击的是同意
+          try {
+            await this.$refs.expenseForm.validate()
+            params.travelOrgResults = this.mergeOrgList('travel')
+            params.transportOrgResults = this.mergeOrgList('traffic')
+            params.hotelOrgResults = this.mergeOrgList('acc')
+            params.otherOrgResults = this.mergeOrgList('other')
+          } catch (err) {
+            isOrgValid = false
+          }
+        }
+        if (!isOrgValid) {
+          return this.$message.error('费用详情列表的费用归属必填')
+        }
+        console.log(approve, params)
         this.remarkType === 'reject'
           ? this.remarkLoading = true
           : this.parentVm.openLoading()
@@ -3278,14 +3286,14 @@ export default {
               ? '驳回成功' 
               : (this.remarkType === 'agree' ? '审核成功' : '支付成功')
           })
-          this.parentVm._getList()
-          this.parentVm.closeDialog()
           if (this.remarkType === 'reject') {
             this.remarkLoading = false
             this.closeRemarkDialog()
           } else {
             this.parentVm.closeLoading()
           }
+          this.parentVm._getList()
+          this.parentVm.closeDialog()
         }).catch((err) => {
           this.remarkType === 'reject'
             ? this.remarkLoading = false
@@ -3662,13 +3670,32 @@ export default {
     .general-table-wrapper {
       // padding-right: 10px;
       // width: 828px;
-      width: 1029px;
+      // width: 1029px;
       margin-top: 5px;
       ::v-deep .cell {
         line-height: 16px;
       }
       .table-container {
         overflow: visible;
+        &::v-deep {
+          .el-cascader {
+            &.disabled {
+              input {
+                border: none;
+                background: transparent !important;
+                color: #606266 !important;
+                cursor: auto !important;
+              }
+              .el-input__suffix {
+                display: none;
+              }
+            }
+            input {
+              height: 28px;
+              line-height: 28px;
+            }
+          }
+        }
         .detail-content {
           position: relative;
           display: inline-block;
@@ -3769,12 +3796,12 @@ export default {
   /* 费用详情 */
   .expense-detail-wrapper {
     margin-top: 10px;
-    .title-wrapper {
-      margin-right: 80px;
-      &.gerneral {
-        margin-right: 0;
-      }
-    }
+    // .title-wrapper {
+    //   margin-right: 80px;
+    //   &.gerneral {
+    //     margin-right: 0;
+    //   }
+    // }
     .area {
       div {
         display: inline-block;

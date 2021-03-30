@@ -135,3 +135,11 @@ export function pay (data) { // 支付
     data
   })
 }
+
+export function getReimburseOrgs (params) { // 查询费用归属数据
+  return request({
+    url: '/serve/ServiceOrder/GetReimburseOrgs',
+    method: 'get',
+    params
+  })
+}
