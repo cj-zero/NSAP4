@@ -110,6 +110,7 @@ export default {
       if (this.cancelRequestFn) {
         this.cancelRequestFn()
       }
+      this.dailyList = []
       this.loading = true
       const { endDate, startDate } = params
       try {
@@ -126,23 +127,23 @@ export default {
             const lastDate = this.isFinish ? dailyDates[0] : NOW_DATE
             this.dateList = [toDate(firstDate), toDate(lastDate)]
           }
-          const list = []
-          const index = findIndex(reportResults, item => {
-            return item.dailyDate === formatDate(this.dateList[1])
-          })
-          if (index > - 1) {
-            const { reportDetails } = reportResults[index]
-            reportDetails.forEach(materialItem => {
-              list.push({
-                ...materialItem,
-                isActive: false
-              })
-            })
-          }
-          this.dailyList = list
-          // 如果服务单已经完成 日报初始-日报结束
-          // 服务单未完成 日报初始日期-当天
         }
+        const list = []
+        const index = findIndex(reportResults, item => {
+          return item.dailyDate === formatDate(this.dateList[1])
+        })
+        if (index > - 1) {
+          const { reportDetails } = reportResults[index]
+          reportDetails.forEach(materialItem => {
+            list.push({
+              ...materialItem,
+              isActive: false
+            })
+          })
+        }
+        this.dailyList = list  
+        // 如果服务单已经完成 日报初始-日报结束
+        // 服务单未完成 日报初始日期-当天
       } catch (err) {
         this.$message.error(err.message)
       } finally {

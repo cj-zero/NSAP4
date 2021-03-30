@@ -325,12 +325,12 @@
                     <el-input-number 
                       size="mini"
                       v-model="row.discount" 
-                      placeholder="大于等于50"
+                      placeholder="大于等于40"
                       @change="onDiscountChange"
                       @focus="onDiscountFocus(index)"
                       :controls="false"
                       :precision="6"
-                      :min="50"
+                      :min="40"
                     ></el-input-number>
                   </el-form-item>
                 </template>
