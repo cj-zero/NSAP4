@@ -497,7 +497,7 @@
                       <el-input 
                         v-model="scope.row[item.prop]" 
                         :type="item.type" :min="0" 
-                         
+                        :disabled="item.prop === 'money'"
                         @input="onTravelInput"
                         :class="{ 'money-class': item.prop === 'money' || item.prop === 'days' }"
                       ></el-input>
@@ -2323,8 +2323,10 @@ export default {
     getTotal (data, isTravel) { // 获取总金额
       let result = 0
       result += data.reduce((prev, next) => {
+        const { days } = next
+        const money = (isTravel ? days : 1) * (next.totalMoney || next.money || 0)
         return next.isAdd || isTravel
-          ? accAdd(prev, parseFloat(String(next.totalMoney || next.money || 0)))
+          ? accAdd(prev, parseFloat(String(money)))
           : prev
       }, 0)
       return this.isValidNumber(result) ? result : 0
