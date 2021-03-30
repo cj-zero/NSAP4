@@ -450,8 +450,8 @@
             size="mini" 
             :show-message="false"
             class="form-wrapper"
-            :disabled="!ifFormEdit"
-            :class="{ 'uneditable': !this.ifFormEdit }"
+            :disabled="title !== 'create'"
+            :class="{ 'uneditable': title !== 'create' }"
           >
             <div class="title-wrapper">
               <div class="number-count">总数量:{{ travelCount }}个</div>
@@ -497,7 +497,7 @@
                       <el-input 
                         v-model="scope.row[item.prop]" 
                         :type="item.type" :min="0" 
-                        :disabled="item.disabled" 
+                         
                         @input="onTravelInput"
                         :class="{ 'money-class': item.prop === 'money' || item.prop === 'days' }"
                       ></el-input>
@@ -1523,6 +1523,9 @@ export default {
             this.nextTime = new Date(collections.addMonth(this.formData.businessTripDate, 1))
             // this.nextTime = new Date(+this.currentTime + 24 * 60 * 60 * 1000)
             this.timeList = [this.currentTime, this.nextTime]
+          } else {
+            const NOW_DATE = new Date()
+            this.timeList = [NOW_DATE, (collections.addMonth(+NOW_DATE, 1)).toDate()]
           }
           this._checkAccMoney()
           this._getAfterEvaluation() // 获取售后评价
@@ -1576,7 +1579,7 @@ export default {
     travelTotalMoney () {
       let { reimburseTravellingAllowances } = this.formData
       if (reimburseTravellingAllowances.length) {
-        return this.getTotal(reimburseTravellingAllowances) * (reimburseTravellingAllowances[0].days || 0)
+        return this.getTotal(reimburseTravellingAllowances, true)
       }
       return 0
     },
@@ -2140,7 +2143,8 @@ export default {
       try {
         console.log(getDailyReport, collections)
         const res = await getDailyReport({
-          serviceOrderId: this.formData.serviceOrderId
+          serviceOrderId: this.formData.serviceOrderId,
+          reimburseId: this.formData.id
         })
         const { dailyDates, reportResults } = res.data
         console.log(dailyDates, reportResults, 'report data')
@@ -2316,10 +2320,10 @@ export default {
     noop () {
       noop() 
     },
-    getTotal (data) { // 获取总金额
+    getTotal (data, isTravel) { // 获取总金额
       let result = 0
       result += data.reduce((prev, next) => {
-        return next.isAdd 
+        return next.isAdd || isTravel
           ? accAdd(prev, parseFloat(String(next.totalMoney || next.money || 0)))
           : prev
       }, 0)
@@ -2573,6 +2577,9 @@ export default {
       this.currentProp = property
     },
     onTravelInput (value) {
+      if (this.title !== 'create') {
+        return
+      }
       let { businessTripDate, endDate } = this.formData
       let actDays = this.calculateDays(businessTripDate, endDate)
       if (actDays && value > actDays) { // 限制最大的天数
@@ -2777,6 +2784,9 @@ export default {
       }
     },
     toDelete (scope, data, type) {
+      if (this.title !== 'create' && type === 'travel') {
+        return
+      }
       this.$confirm('确认进行删除?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
