@@ -32,5 +32,7 @@ namespace OpenAuth.App.Interface
         /// </summary>
         /// <returns></returns>
         bool Logout();
+
+        UserAuthSession GetLoginInfo(string token = "");
     }
 }

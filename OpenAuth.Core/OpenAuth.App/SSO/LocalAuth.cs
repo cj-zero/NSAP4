@@ -180,5 +180,21 @@ namespace OpenAuth.App.SSO
                 return false;
             }
         }
+
+        public UserAuthSession GetLoginInfo(string token = "")
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(token))
+                {
+                    token = GetToken();
+                }
+                return _cacheContext.Get<UserAuthSession>(token);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }

@@ -213,7 +213,6 @@ namespace OpenAuth.App.Material
             result.Data = query.Select(q => new
             {
                 q.a.Id,
-                EncrypQuotationId = Encryption.PrintEncrypt(q.a.Id.ToString()),
                 q.a.ServiceOrderSapId,
                 q.a.ServiceOrderId,
                 q.b.TerminalCustomer,
@@ -1797,7 +1796,7 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         public async Task<byte[]> PrintSalesOrder(string QuotationId)
         {
-            var quotationId = int.Parse(Encryption.PrintDecrypt(QuotationId));
+            var quotationId = int.Parse(QuotationId);
             var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(quotationId)).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
             var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_AcquisitionWay") || u.TypeId.Equals("SYS_DeliveryMethod")).Select(u => new { u.Name, u.TypeId, u.DtValue, u.Description }).ToListAsync();
@@ -1872,7 +1871,7 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         public async Task<byte[]> PrintQuotation(string QuotationId)
         {
-            var quotationId = int.Parse(Encryption.PrintDecrypt(QuotationId));
+            var quotationId = int.Parse(QuotationId);
             var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(quotationId)).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
             var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_AcquisitionWay") || u.TypeId.Equals("SYS_DeliveryMethod")).Select(u => new { u.Name, u.TypeId, u.DtValue, u.Description }).ToListAsync();
@@ -1925,7 +1924,7 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         public async Task<byte[]> PrintPickingList(string QuotationId)
         {
-            var quotationId = int.Parse(Encryption.PrintDecrypt(QuotationId));
+            var quotationId = int.Parse(QuotationId);
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {

@@ -191,6 +191,7 @@ namespace OpenAuth.WebApi
             services.AddSingleton<HttpClienService>();
             services.AddSingleton<TecentOCR>();
             services.AddSingleton<HuaweiOCR>();
+            services.AddScoped<CertAuthFilter>();
         }
 
         public void ConfigureContainer(ContainerBuilder builder)

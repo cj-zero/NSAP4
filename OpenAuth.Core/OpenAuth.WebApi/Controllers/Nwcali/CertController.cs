@@ -13,12 +13,14 @@ using Infrastructure.Export;
 using Infrastructure.Wrod;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
+using OpenAuth.App.Interface;
 using OpenAuth.App.Nwcali;
 using OpenAuth.App.Nwcali.Models;
 using OpenAuth.App.Nwcali.Request;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
+using OpenAuth.WebApi.Model;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -31,6 +33,7 @@ namespace OpenAuth.WebApi.Controllers
     [ApiController]
     public class CertController : Controller
     {
+        private readonly IAuth _authUtil;
         private readonly CertinfoApp _certinfoApp;
         private readonly CertPlcApp _certPlcApp;
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
@@ -58,7 +61,7 @@ namespace OpenAuth.WebApi.Controllers
 
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
 
-        public CertController(CertinfoApp certinfoApp, CertPlcApp certPlcApp, ModuleFlowSchemeApp moduleFlowSchemeApp, FlowInstanceApp flowInstanceApp, NwcaliCertApp nwcaliCertApp, UserSignApp userSignApp, FileApp fileApp)
+        public CertController(CertinfoApp certinfoApp, CertPlcApp certPlcApp, ModuleFlowSchemeApp moduleFlowSchemeApp, FlowInstanceApp flowInstanceApp, NwcaliCertApp nwcaliCertApp, UserSignApp userSignApp, FileApp fileApp, IAuth authUtil)
         {
             _certinfoApp = certinfoApp;
             _certPlcApp = certPlcApp;
@@ -67,6 +70,7 @@ namespace OpenAuth.WebApi.Controllers
             _nwcaliCertApp = nwcaliCertApp;
             _userSignApp = userSignApp;
             _fileApp = fileApp;
+            _authUtil = authUtil;
         }
 
         [HttpPost]
@@ -252,42 +256,73 @@ namespace OpenAuth.WebApi.Controllers
             }
         }
 
-
-        [HttpGet("{certNo}")]
-        public async Task<Response<NwcaliBaseInfo>> GetBaseInfo(string certNo)
+        [ServiceFilter(typeof(CertAuthFilter))]
+        [HttpGet]
+        public async Task<Response<NwcaliBaseInfo>> GetBaseInfo(string serialNumber, string sign, string timespan)
         {
-            certNo = Encryption.PrintDecrypt(certNo);
             var result = new Response<NwcaliBaseInfo>();
-            var info = await _nwcaliCertApp.GetInfo(certNo);
+            var info = await _nwcaliCertApp.GetInfo(serialNumber);
             result.Result = info;
             return result;
         }
-        [HttpGet("{certNo}")]
-        public async Task<IActionResult> DownloadBaseInfo(string certNo)
+
+        [ServiceFilter(typeof(CertAuthFilter))]
+        [HttpGet]
+        public async Task<IActionResult> DownloadBaseInfo(string serialNumber, string sign, string timespan)
         {
-            certNo = Encryption.PrintDecrypt(certNo);
-            var cert = await _certinfoApp.GetAsync(c => c.CertNo.Equals(certNo));
+            var cert = await _certinfoApp.GetAsync(c => c.CertNo.Equals(serialNumber));
             if (cert is null)
                 return new NotFoundResult();
             var fileStream = new FileStream(cert.BaseInfoPath, FileMode.Open);
             return File(fileStream, "application/vnd.ms-excel");
         }
 
-        [HttpGet("{certNo}")]
-        public async Task<IActionResult> DownloadCert(string certNo)
+        [ServiceFilter(typeof(CertAuthFilter))]
+        [HttpGet]
+        public async Task<IActionResult> DownloadCert(string serialNumber, string sign, string timespan)
         {
-            certNo = Encryption.PrintDecrypt(certNo);
-            var cert = await _certinfoApp.GetAsync(c => c.CertNo.Equals(certNo));
+            var cert = await _certinfoApp.GetAsync(c => c.CertNo.Equals(serialNumber));
             if (cert is null)
                 return new NotFoundResult();
             var fileStream = new FileStream(cert.CertPath, FileMode.Open);
             return File(fileStream, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
         }
-        [HttpGet("{certNo}")]
-        public async Task<IActionResult> DownloadCertPdf(string certNo)
+
+        /// <summary>
+        /// 获取签名
+        /// </summary>
+        /// <param name="serialNumber"></param>
+        /// <param name="timespan"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetSign(string serialNumber, string timespan)
         {
-            certNo = Encryption.PrintDecrypt(certNo);
-            var baseInfo = await _nwcaliCertApp.GetInfo(certNo);
+            var result = new TableData();
+            try
+            {
+                Dictionary<string, string> keyValues = new Dictionary<string, string>();
+                keyValues.Add("SerialNumber", serialNumber);
+                keyValues.Add("TimeSpan", timespan);
+                var loginInfo = _authUtil.GetLoginInfo();
+                string appKey = loginInfo.Token;
+                keyValues.Add("Token", appKey);
+                result.Data = SignHelper.Sign(keyValues);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            //获取签名进行校验
+            return result;
+        }
+
+
+        [ServiceFilter(typeof(CertAuthFilter))]
+        [HttpGet]
+        public async Task<IActionResult> DownloadCertPdf(string serialNumber, string sign, string timespan)
+        {
+            var baseInfo = await _nwcaliCertApp.GetInfo(serialNumber);
             if (baseInfo != null)
             {
                 var model = await BuildModel(baseInfo);
@@ -310,7 +345,7 @@ namespace OpenAuth.WebApi.Controllers
             }
             else
             {
-                var cert = await _certinfoApp.GetAsync(c => c.CertNo.Equals(certNo));
+                var cert = await _certinfoApp.GetAsync(c => c.CertNo.Equals(serialNumber));
                 if (cert is null)
                     return new NotFoundResult();
                 if (!string.IsNullOrWhiteSpace(cert.PdfPath) && System.IO.File.Exists(cert.PdfPath))
@@ -330,14 +365,15 @@ namespace OpenAuth.WebApi.Controllers
             }
             return new NotFoundResult();
         }
-        [HttpGet("{plcGuid}")]
-        public async Task<IActionResult> GetCertNoList(string plcGuid)
+
+        [ServiceFilter(typeof(CertAuthFilter))]
+        [HttpGet]
+        public async Task<IActionResult> GetCertNoList(string serialNumber, string sign, string timespan)
         {
-            plcGuid = Encryption.PrintDecrypt(plcGuid);
-            var certNos = (await _certPlcApp.GetAllAsync(p => p.PlcGuid.Equals(plcGuid))).OrderByDescending(c => c.CertNo).Select(cp => new { cp.CertNo, cp.CalibrationDate, cp.ExpirationDate });
+            var certNos = (await _certPlcApp.GetAllAsync(p => p.PlcGuid.Equals(serialNumber))).OrderByDescending(c => c.CertNo).Select(cp => new { cp.CertNo, cp.CalibrationDate, cp.ExpirationDate });
             if (certNos is null || certNos.Count() == 0)
             {
-                var data = await _nwcaliCertApp.GetPcPlcs(plcGuid);
+                var data = await _nwcaliCertApp.GetPcPlcs(serialNumber);
                 return Ok(data);
             }
             return Ok(certNos);
@@ -415,9 +451,9 @@ namespace OpenAuth.WebApi.Controllers
             var tur_1 = (2 * vSpec / 1000) / (2 * u95_1);
             var tur_2 = (2 * vSpec / 1000) / (2 * u95_2);
             var tur_3 = (2 * vSpec / 1000) / (2 * u95_3);
-            model.TurTables.Add(new TurTable { Number = "1", Point = $"{vPoint[vPointIndex - 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_1.ToString("e3")+"V", TUR = tur_1.ToString("f2") });
-            model.TurTables.Add(new TurTable { Number = "2", Point = $"{vPoint[vPointIndex]}V", Spec = $"±{vSpec}mV", U95Standard = u95_2.ToString("e3")+"V", TUR = tur_2.ToString("f2") });
-            model.TurTables.Add(new TurTable { Number = "3", Point = $"{vPoint[vPointIndex + 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_3.ToString("e3")+"V", TUR = tur_3.ToString("f2") });
+            model.TurTables.Add(new TurTable { Number = "1", Point = $"{vPoint[vPointIndex - 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_1.ToString("e3") + "V", TUR = tur_1.ToString("f2") });
+            model.TurTables.Add(new TurTable { Number = "2", Point = $"{vPoint[vPointIndex]}V", Spec = $"±{vSpec}mV", U95Standard = u95_2.ToString("e3") + "V", TUR = tur_2.ToString("f2") });
+            model.TurTables.Add(new TurTable { Number = "3", Point = $"{vPoint[vPointIndex + 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_3.ToString("e3") + "V", TUR = tur_3.ToString("f2") });
             //电流
             var cPoint = turA.Select(v => v.TestPoint).Distinct().OrderBy(v => v).ToList();
             var cPointIndex = cPoint.IndexOf(cscale / 1000); //(cPoint.Count - 1) / 2;
@@ -431,7 +467,7 @@ namespace OpenAuth.WebApi.Controllers
                     U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
                 }
             }
-            else 
+            else
             {
                 U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).ToList();
             }
@@ -461,16 +497,16 @@ namespace OpenAuth.WebApi.Controllers
             }
             else
             {
-                U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex+1] && v.Tur != 0).ToList();
+                U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).ToList();
             }
             var u95_6 = 2 * Math.Sqrt(U95_6turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
             var tur_4 = (2 * cSpec) / (2 * u95_4 * 1000);
             var tur_5 = (2 * cSpec) / (2 * u95_5 * 1000);
             var tur_6 = (2 * cSpec) / (2 * u95_6 * 1000);
 
-            model.TurTables.Add(new TurTable { Number = "4", Point = $"{cPoint[cPointIndex - 1]}A", Spec = $"±{cSpec}mA", U95Standard = u95_4.ToString("e3")+"A", TUR = tur_4.ToString("f2") });
-            model.TurTables.Add(new TurTable { Number = "5", Point = $"{cPoint[cPointIndex]}A", Spec = $"±{cSpec}mA", U95Standard = u95_5.ToString("e3")+"A", TUR = tur_5.ToString("f2") });
-            model.TurTables.Add(new TurTable { Number = "6", Point = $"{cPoint[cPointIndex + 1]}A", Spec = $"±{cSpec}mA", U95Standard = u95_6.ToString("e3")+"A", TUR = tur_6.ToString("f2") });
+            model.TurTables.Add(new TurTable { Number = "4", Point = $"{cPoint[cPointIndex - 1]}A", Spec = $"±{cSpec}mA", U95Standard = u95_4.ToString("e3") + "A", TUR = tur_4.ToString("f2") });
+            model.TurTables.Add(new TurTable { Number = "5", Point = $"{cPoint[cPointIndex]}A", Spec = $"±{cSpec}mA", U95Standard = u95_5.ToString("e3") + "A", TUR = tur_5.ToString("f2") });
+            model.TurTables.Add(new TurTable { Number = "6", Point = $"{cPoint[cPointIndex + 1]}A", Spec = $"±{cSpec}mA", U95Standard = u95_6.ToString("e3") + "A", TUR = tur_6.ToString("f2") });
 
             #endregion
 
@@ -579,7 +615,7 @@ namespace OpenAuth.WebApi.Controllers
             currentUncertaintyBudgetTable.CombinedUncertaintySignificance = "100.000%";
             currentUncertaintyBudgetTable.CoverageFactor = baseInfo.K.ToString(); ;
             currentUncertaintyBudgetTable.ExpandedUncertainty = (baseInfo.K * combinedUncertaintyA).ToString("e3");
-            
+
             for (int i = 0; i < turA.Count; i++)
             {
                 var data = new UncertaintyBudgetTable.UncertaintyBudgetTableData();
@@ -1029,7 +1065,7 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
-        
+
 
         /// <summary>
         /// 将日期转成英文格式

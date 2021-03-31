@@ -276,7 +276,6 @@ namespace OpenAuth.App
             var ReimburseRespList = ReimburseResps.Select(r => new
             {
                 ReimburseResp = r.a,
-                EncrypReimburseId = Encryption.PrintEncrypt(r.a.Id.ToString()),
                 fillTime = r.a.CreateTime.ToString("yyyy-MM-dd"),
                 r.b.TerminalCustomerId,
                 r.b.TerminalCustomer,
