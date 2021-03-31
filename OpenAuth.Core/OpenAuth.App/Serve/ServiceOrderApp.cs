@@ -4013,14 +4013,19 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            //获取当前用户nsap用户信息
-            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.TechnicianId).Include(i => i.User).FirstOrDefaultAsync();
-            if (userInfo == null)
+            string userId = loginContext.User.Id;
+            if (req.TechnicianId > 0)
             {
-                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+                //获取当前用户nsap用户信息
+                var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.TechnicianId).Include(i => i.User).FirstOrDefaultAsync();
+                if (userInfo == null)
+                {
+                    throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+                }
+                userId = userInfo.UserID;
             }
             //获取服务单下的所有日费信息
-            var dailyExpendSums = await UnitWork.Find<ServiceDailyExpends>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId).ToListAsync();
+            var dailyExpendSums = await UnitWork.Find<ServiceDailyExpends>(w => w.CreateUserId == userId && w.ServiceOrderId == req.ServiceOrderId).ToListAsync();
             //获取所有日费附件信息
             var dailyExpendIds = dailyExpendSums.Select(s => s.Id).ToList();
             var dailyAttachments = await UnitWork.Find<DailyAttachment>(w => dailyExpendIds.Contains(w.ExpendId)).ToListAsync();
