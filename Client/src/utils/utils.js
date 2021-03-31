@@ -1,15 +1,41 @@
 import store from '@/store'
-import { isPlainObject } from './validate'
+// import { isPlainObject } from './validate'
 import { serializeParams } from './process'
-export function print (url, params) {
-  const serializedParams = isPlainObject(params) ? serializeParams(params) : params
-  let printUrl = ''
-  if (isPlainObject(params)) {
-    printUrl = `${process.env.VUE_APP_BASE_API}${url}?${serializedParams}&X-token=${store.state.user.token}`
-  } else {
-    printUrl = `${process.env.VUE_APP_BASE_API}${url}/${serializedParams}?X-token=${store.state.user.token}`
+import { getSign } from '@/api/users'
+import { Message } from 'element-ui'
+export async function print (url, params) {
+  const printUrl = await getPdfURL(url, params)
+  if (printUrl) {
+    window.open(printUrl, '_blank')
   }
-  window.open(printUrl, '_blank')
+  // const serializedParams = isPlainObject(params) ? serializeParams(params) : params
+  // let printUrl = ''
+  // if (isPlainObject(params)) {
+  //   printUrl = `${process.env.VUE_APP_BASE_API}${url}?${serializedParams}&X-token=${store.state.user.token}`
+  // } else {
+  //   printUrl = `${process.env.VUE_APP_BASE_API}${url}/${serializedParams}?X-token=${store.state.user.token}`
+  // }
+  // window.open(printUrl, '_blank')
+}
+export async function getPdfURL (url, params) {
+  console.log(url, 'url')
+  const { number } = params
+  const NOW_DATE = +new Date()
+  let pdfURL = ''
+  try {
+    const { data } = await getSign({ serialNumber: number, timespan: NOW_DATE })
+    params = {
+      serialNumber: number,
+      timespan: NOW_DATE,
+      sign: data,
+      'X-token': store.state.user.token
+    }
+    pdfURL = `${process.env.VUE_APP_BASE_API}${url}?${serializeParams(params)}`
+  } catch (err) {
+    Message.error(err.message)
+    pdfURL = ''
+  }
+  return pdfURL
 }
 
 export function isMatchRole (roleName) { // 当前用户是否拥有对应角色

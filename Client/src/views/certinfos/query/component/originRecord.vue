@@ -25,6 +25,7 @@
 
 <script>
 import { downloadFile } from '@/utils/file'
+import { getPdfURL } from '@/utils/utils'
 export default {
   props: {
     currentData: {
@@ -55,12 +56,15 @@ export default {
     }
   },
   methods: {
-    _downloadFile (type) {
+    async _downloadFile (type) {
       let url = type === 'word'
-        ? `${this.baseURL}/DownloadCert/`
-        : `${this.baseURL}/DownloadBaseInfo/`
+        ? `/Cert/DownloadCert`
+        : `/Cert/DownloadBaseInfo`
       console.log(url, url + this.currentData.certNo, 'url')
-      downloadFile(url + this.currentData.certNo + `?X-Token=${this.$store.state.user.token}`)
+      const pdfURL = await getPdfURL(url, { number: this.currentData.certNo })
+      // downloadFile(url + this.currentData.certNo + `?X-Token=${this.$store.state.user.token}`)
+      console.log(pdfURL, 'pdfURL')
+      downloadFile(pdfURL)
     }
   },
   created () {

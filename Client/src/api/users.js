@@ -86,3 +86,11 @@ export function getUserInfoAll(params) { // 获取用户的所有信息
     params
   })
 }
+
+export function getSign (params) { // 获取签名 用于打印或者查看(给用户看的所有单子)
+  return request({
+    url: 'Cert/GetSign', 
+    method: 'get',
+    params
+  })
+}
