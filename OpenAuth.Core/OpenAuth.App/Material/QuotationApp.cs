@@ -24,6 +24,7 @@ using Infrastructure.Export;
 using DinkToPdf;
 using DotNetCore.CAP;
 using System.Threading;
+using OpenAuth.Repository.Domain.NsapBone;
 
 namespace OpenAuth.App.Material
 {
@@ -1952,6 +1953,9 @@ namespace OpenAuth.App.Material
                 foottext = foottext.Replace("@Model.User", loginContext.User.Name);
                 var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PickingListFooter{model.Id}.html");
                 System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
+                var materialList = model.QuotationMergeMaterials.Select(m => m.MaterialCode).ToList();
+                var locationList = await UnitWork.Query<v_storeitemstock>(@$"select ItemCode,layer_no,unit_no,shelf_nm from v_storeitemstock").Where(v=> materialList.Contains(v.ItemCode)).Select(v => new v_storeitemstock { ItemCode = v.ItemCode, layer_no = v.shelf_nm +"-"+ v.layer_no + "-" + v.unit_no}).ToListAsync();
+                
                 var materials = model.QuotationMergeMaterials.Select(q => new PrintSalesOrderResp
                 {
                     MaterialCode = q.MaterialCode,
@@ -1959,8 +1963,10 @@ namespace OpenAuth.App.Material
                     Count = q.Count.ToString(),
                     Unit = q.Unit,
                     ServiceOrderSapId = model.ServiceOrderSapId.ToString(),
-                    SalesOrder = model.SalesOrderId.ToString()
+                    SalesOrder = model.SalesOrderId.ToString(),
+                    Location = locationList.Where(l => l.ItemCode.Equals(q.MaterialCode)).FirstOrDefault()?.layer_no
                 });
+               
                 var datas = await ExportAllHandler.Exporterpdf(materials, "PrintPickingList.cshtml", pdf =>
                 {
                     pdf.IsWriteHtml = true;

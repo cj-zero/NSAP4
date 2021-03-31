@@ -32,6 +32,11 @@ namespace OpenAuth.App.Material.Response
         public decimal TotalPrice { get; set; }
 
         /// <summary>
+        /// 库位
+        /// </summary>
+        public string Location { get; set; }
+
+        /// <summary>
         /// 销售单号
         /// </summary>
         public string SalesOrder { get; set; }
