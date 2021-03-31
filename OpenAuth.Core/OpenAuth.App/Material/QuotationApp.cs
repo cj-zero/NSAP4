@@ -1935,6 +1935,8 @@ namespace OpenAuth.App.Material
             {
                 var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
                 var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_AcquisitionWay") || u.TypeId.Equals("SYS_DeliveryMethod")).Select(u => new { u.Name, u.TypeId, u.DtValue, u.Description }).ToListAsync();
+                var SecondId = (await UnitWork.Find<Relevance>(r => r.FirstId.Equals(model.CreateUserId) && r.Key.Equals(Define.USERORG)).FirstOrDefaultAsync()).SecondId;
+                var orgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.Id.Equals(SecondId)).Select(o => o.Name).FirstOrDefaultAsync();
 
                 var createTime = Convert.ToDateTime(model.QuotationOperationHistorys.Where(q => q.ApprovalStage.Equals(4)).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd");
                 var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PickingListHeader.html");
@@ -1942,7 +1944,7 @@ namespace OpenAuth.App.Material
                 text = text.Replace("@Model.PickingList", model.Id.ToString());
                 text = text.Replace("@Model.CreateTime", createTime);
                 text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.Id.ToString()));
-                text = text.Replace("@Model.OrgName", loginContext.Orgs.FirstOrDefault().Name);
+                text = text.Replace("@Model.OrgName", orgName);
                 var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PickingListHeader{model.Id}.html");
                 System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
                 var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PickingListFooter.html");
