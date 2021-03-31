@@ -1123,7 +1123,50 @@ namespace OpenAuth.App
 
             if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && obj.RemburseStatus == 4)
             {
-
+                if (req.travelOrgResults != null)
+                {
+                    var travelExpendIds = req.travelOrgResults.Select(s => s.Id).ToList();
+                    var reimburseTravellingAllowances = await UnitWork.Find<ReimburseTravellingAllowance>(w => travelExpendIds.Contains(w.Id)).ToListAsync();
+                    foreach (var item in req.travelOrgResults)
+                    {
+                        var detail = reimburseTravellingAllowances.Where(w => w.Id == item.Id).FirstOrDefault();
+                        detail.ExpenseOrg = item.Value;
+                    }
+                    await UnitWork.BatchUpdateAsync(reimburseTravellingAllowances.ToArray());
+                }
+                if (req.transportOrgResults != null)
+                {
+                    var transportExpendIds = req.transportOrgResults.Select(s => s.Id).ToList();
+                    var reimburseFares = await UnitWork.Find<ReimburseFare>(w => transportExpendIds.Contains(w.Id)).ToListAsync();
+                    foreach (var item in req.transportOrgResults)
+                    {
+                        var detail = reimburseFares.Where(w => w.Id == item.Id).FirstOrDefault();
+                        detail.ExpenseOrg = item.Value;
+                    }
+                    await UnitWork.BatchUpdateAsync(reimburseFares.ToArray());
+                }
+                if (req.hotelOrgResults != null)
+                {
+                    var hotelExpendIds = req.hotelOrgResults.Select(s => s.Id).ToList();
+                    var reimburseAccommodationSubsidies = await UnitWork.Find<ReimburseAccommodationSubsidy>(w => hotelExpendIds.Contains(w.Id)).ToListAsync();
+                    foreach (var item in req.hotelOrgResults)
+                    {
+                        var detail = reimburseAccommodationSubsidies.Where(w => w.Id == item.Id).FirstOrDefault();
+                        detail.ExpenseOrg = item.Value;
+                    }
+                    await UnitWork.BatchUpdateAsync(reimburseAccommodationSubsidies.ToArray());
+                }
+                if (req.otherOrgResults != null)
+                {
+                    var otherExpendIds = req.otherOrgResults.Select(s => s.Id).ToList();
+                    var reimburseOtherCharges = await UnitWork.Find<ReimburseOtherCharges>(w => otherExpendIds.Contains(w.Id)).ToListAsync();
+                    foreach (var item in req.otherOrgResults)
+                    {
+                        var detail = reimburseOtherCharges.Where(w => w.Id == item.Id).FirstOrDefault();
+                        detail.ExpenseOrg = item.Value;
+                    }
+                    await UnitWork.BatchUpdateAsync(reimburseOtherCharges.ToArray());
+                }
                 eoh.Action = "客服主管审批";
             }
             else if (loginContext.Roles.Any(r => r.Name.Equals("财务初审")) && obj.RemburseStatus == 5)
@@ -1443,6 +1486,7 @@ namespace OpenAuth.App
             }
         }
 
+
         /// <summary>
         /// 打印报销单 
         /// </summary>
@@ -1450,7 +1494,6 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<byte[]> Print(string ReimburseInfoId)
         {
-            ReimburseInfoId = Encryption.PrintDecrypt(ReimburseInfoId);
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {

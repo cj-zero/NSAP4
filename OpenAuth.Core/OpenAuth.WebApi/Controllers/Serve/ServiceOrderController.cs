@@ -30,13 +30,15 @@ namespace OpenAuth.WebApi.Controllers
     {
         private readonly ServiceOrderApp _serviceOrderApp;
         private AppServiceOrderLogApp _appServiceOrderLogApp;
+        public readonly OrgManagerApp _orgmanagerapp;
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
         private readonly HttpClienService _httpClienService;
 
-        public ServiceOrderController(ServiceOrderApp serviceOrderApp, AppServiceOrderLogApp appServiceOrderLogApp, HttpClienService httpClienService)
+        public ServiceOrderController(ServiceOrderApp serviceOrderApp, AppServiceOrderLogApp appServiceOrderLogApp, HttpClienService httpClienService, OrgManagerApp orgmanagerapp)
         {
             _serviceOrderApp = serviceOrderApp;
             _appServiceOrderLogApp = appServiceOrderLogApp;
+            _orgmanagerapp = orgmanagerapp;
             _httpClienService = httpClienService;
         }
 
@@ -661,14 +663,17 @@ namespace OpenAuth.WebApi.Controllers
         /// 获取服务单日报信息
         /// </summary>
         /// <param name="ServiceOrderId"></param>
+        /// <param name="startDate"></param>
+        /// <param name="endDate"></param>
+        /// <param name="reimburseId"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetErpTechnicianDailyReport(int ServiceOrderId)
+        public async Task<TableData> GetErpTechnicianDailyReport(int ServiceOrderId, string startDate, string endDate, string reimburseId)
         {
             var result = new TableData();
             try
             {
-                return await _serviceOrderApp.GetErpTechnicianDailyReport(ServiceOrderId);
+                return await _serviceOrderApp.GetErpTechnicianDailyReport(ServiceOrderId, startDate, endDate, reimburseId);
             }
             catch (Exception ex)
             {
@@ -676,6 +681,17 @@ namespace OpenAuth.WebApi.Controllers
                 result.Message = ex.Message;
             }
             return result;
+        }
+
+        /// <summary>
+        /// 查询费用归属数据
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetReimburseOrgs()
+        {
+            return await _orgmanagerapp.GetReimburseOrgs();
         }
         #endregion
 
@@ -1729,6 +1745,9 @@ namespace OpenAuth.WebApi.Controllers
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("AppUserId", req.AppUserId);
                 parameters.Add("Type", req.Type);
+                parameters.Add("limit", req.limit);
+                parameters.Add("page", req.page);
+                parameters.Add("key", req.key);
 
                 var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetSalesManServiceOrder");
                 result = JsonConvert.DeserializeObject<TableData>(r);

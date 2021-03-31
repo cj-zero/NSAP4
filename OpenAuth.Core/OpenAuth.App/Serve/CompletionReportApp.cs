@@ -274,7 +274,7 @@ namespace OpenAuth.App
                 thisworkdetail.TechnicianName = thisworkdetail.TheNsapUser == null ? "" : thisworkdetail.TheNsapUser.Name;
             }
             //获取当前服务单的日报数量
-            int reportCount = (await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId == serviceOrderId && w.CreateUserId == userInfo.UserID).ToListAsync()).Count;
+            int reportCount = (await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId == serviceOrderId && w.CreateUserId == userInfo.UserID).Select(s => s.CreateTime.Value.Date).Distinct().ToListAsync()).Count;
             thisworkdetail.DailyReportNum = reportCount;
             return thisworkdetail;
         }
@@ -289,6 +289,12 @@ namespace OpenAuth.App
         public async Task<CompletionReportDetailsResp> GetCompletionReportDetails(int serviceOrderId, int currentUserId, string MaterialType)
         {
             var result = new TableData();
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == currentUserId).Include(i => i.User).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
             var obj = from c in UnitWork.Find<CompletionReport>(null)
                       join a in UnitWork.Find<ServiceWorkOrder>(null) on c.ServiceOrderId equals a.ServiceOrderId
                       join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into abc
@@ -335,6 +341,9 @@ namespace OpenAuth.App
                 var picfiles = await UnitWork.Find<UploadFile>(f => pics.Contains(f.Id)).ToListAsync();
                 thisworkdetail.Files.AddRange(picfiles.MapTo<List<UploadFileResp>>());
             }
+            //获取当前服务单的日报数量
+            int reportCount = (await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId == serviceOrderId && w.CreateUserId == userInfo.UserID).Select(s => s.CreateTime.Value.Date).Distinct().ToListAsync()).Count;
+            thisworkdetail.DailyReportNum = reportCount;
             return thisworkdetail;
         }
         /// <summary>

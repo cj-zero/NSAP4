@@ -32,19 +32,19 @@ namespace OpenAuth.App
             CaculateCascade(org);
 
             Repository.Add(org);
-            
+
             //如果当前账号不是SYSTEM，则直接分配
             var loginUser = _auth.GetCurrentUser();
             if (loginUser.User.Account != Define.SYSTEM_USERNAME)
             {
                 _revelanceApp.Assign(new AssignReq
                 {
-                    type=Define.USERORG,
+                    type = Define.USERORG,
                     firstId = loginContext.User.Id,
-                    secIds = new[]{org.Id}
+                    secIds = new[] { org.Id }
                 });
             }
-            
+
             return org.Id;
         }
 
@@ -82,7 +82,7 @@ namespace OpenAuth.App
             //用户角色与自己分配到的角色ID
             var ids =
                 UnitWork.Find<Relevance>(
-                    u =>u.FirstId == userId && u.Key == Define.USERORG).Select(u => u.SecondId).ToList();
+                    u => u.FirstId == userId && u.Key == Define.USERORG).Select(u => u.SecondId).ToList();
 
             if (!ids.Any()) return new List<OpenAuth.Repository.Domain.Org>();
             return UnitWork.Find<OpenAuth.Repository.Domain.Org>(u => ids.Contains(u.Id)).ToList();
@@ -97,12 +97,41 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var objs = UnitWork.Find<OpenAuth.Repository.Domain.Org>(null);
-            objs = objs.WhereIf(!string.IsNullOrWhiteSpace(name),u => u.Name.Contains(name.ToUpper()));
+            objs = objs.WhereIf(!string.IsNullOrWhiteSpace(name), u => u.Name.Contains(name.ToUpper()));
             result.Data = await objs.Select(u => new { u.Name, u.Id }).ToListAsync();
             return result;
         }
 
-        public OrgManagerApp(IUnitWork unitWork, IRepository<OpenAuth.Repository.Domain.Org> repository,IAuth auth, 
+        public async Task<TableData> GetReimburseOrgs()
+        {
+            var result = new TableData();
+            var objs = UnitWork.Find<OpenAuth.Repository.Domain.Org>(w => w.ParentName == "R研发部" || w.ParentName == "S售后部" || w.ParentName == "P生产部");
+            var data = await objs.Select(u => new ReimburseOrg { Label = u.Name, Value = u.Id, ParentName = u.ParentName }).ToListAsync();
+            var reimburseOrgResps = data.GroupBy(g => g.ParentName).Select(s => new ReimburseOrgResp { Label = GetOrgName(s.Key), Value = GetOrgName(s.Key), Children = s.ToList() }).ToList();
+            result.Data = reimburseOrgResps;
+            return result;
+        }
+
+        private string GetOrgName(string name)
+        {
+
+            string orgname = string.Empty;
+            switch (name)
+            {
+                case "R研发部":
+                    orgname = "研发部门";
+                    break;
+                case "S售后部":
+                    orgname = "售后部门";
+                    break;
+                case "P生产部":
+                    orgname = "生产部门";
+                    break;
+            }
+            return orgname;
+        }
+
+        public OrgManagerApp(IUnitWork unitWork, IRepository<OpenAuth.Repository.Domain.Org> repository, IAuth auth,
             RevelanceManagerApp revelanceApp) : base(unitWork, repository, auth)
         {
             _revelanceApp = revelanceApp;

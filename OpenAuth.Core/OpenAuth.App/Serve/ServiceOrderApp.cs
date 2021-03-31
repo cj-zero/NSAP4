@@ -105,7 +105,10 @@ namespace OpenAuth.App
                 .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.Solution)
                 .Include(s => s.ServiceOrderPictures).FirstOrDefaultAsync();
 
+            //判断所有工单是否都已完成
+            var notFinishcount = (await UnitWork.Find<ServiceWorkOrder>(w => w.ServiceOrderId == id && w.Status < 7).ToListAsync()).Count;
             var result = obj.MapTo<ServiceOrderDetailsResp>();
+            result.IsFinish = notFinishcount > 0 ? false : true;
             var serviceOrderPictures = obj.ServiceOrderPictures.Select(s => new { s.PictureId, s.PictureType }).ToList();
             var serviceOrderPictureIds = serviceOrderPictures.Select(s => s.PictureId).ToList();
             var files = await UnitWork.Find<UploadFile>(f => serviceOrderPictureIds.Contains(f.Id)).ToListAsync();
@@ -1489,8 +1492,11 @@ namespace OpenAuth.App
         /// 获取服务单日报信息
         /// </summary>
         /// <param name="ServiceOrderId"></param>
+        /// <param name="startDate"></param>
+        /// <param name="endDate"></param>
+        /// <param name="reimburseId"></param>
         /// <returns></returns>
-        public async Task<TableData> GetErpTechnicianDailyReport(int ServiceOrderId)
+        public async Task<TableData> GetErpTechnicianDailyReport(int ServiceOrderId, string startDate, string endDate, string reimburseId)
         {
             var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
@@ -1498,8 +1504,18 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            string creater = string.Empty;
+            if (!string.IsNullOrEmpty(reimburseId))
+            {
+                //获取该报销单的创建者Id
+                creater = (await UnitWork.Find<ReimburseInfo>(w => w.Id == Convert.ToInt32(reimburseId)).FirstOrDefaultAsync()).CreateUserId;
+            }
             //获取当月的所有日报信息
-            var dailyReports = (await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId == ServiceOrderId).ToListAsync()).Select(s => new ReportDetail { CreateTime = s.CreateTime, MaterialCode = s.MaterialCode, ManufacturerSerialNumber = s.ManufacturerSerialNumber, TroubleDescription = GetServiceTroubleAndSolution(s.TroubleDescription), ProcessDescription = GetServiceTroubleAndSolution(s.ProcessDescription) }).OrderByDescending(o => o.CreateTime).ToList();
+            var dailyReports = (await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId == ServiceOrderId)
+                .WhereIf(!string.IsNullOrEmpty(startDate), w => w.CreateTime.Value.Date >= Convert.ToDateTime(startDate).Date)
+                .WhereIf(!string.IsNullOrEmpty(endDate), w => w.CreateTime.Value.Date <= Convert.ToDateTime(endDate).Date)
+                .WhereIf(!string.IsNullOrEmpty(creater), w => w.CreateUserId == creater)
+                .ToListAsync()).Select(s => new ReportDetail { CreateTime = s.CreateTime, MaterialCode = s.MaterialCode, ManufacturerSerialNumber = s.ManufacturerSerialNumber, TroubleDescription = GetServiceTroubleAndSolution(s.TroubleDescription), ProcessDescription = GetServiceTroubleAndSolution(s.ProcessDescription) }).OrderByDescending(o => o.CreateTime).ToList();
             var dailyReportDates = dailyReports.OrderByDescending(o => o.CreateTime).Select(s => s.CreateTime?.Date.ToString("yyyy-MM-dd")).Distinct().ToList();
 
             var data = dailyReports.GroupBy(g => g.CreateTime?.Date).Select(s => new ReportResult { DailyDate = s.Key?.Date.ToString("yyyy-MM-dd"), ReportDetails = s.ToList() }).ToList();

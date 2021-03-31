@@ -37,5 +37,10 @@ namespace OpenAuth.App.Serve.Response
         /// 创建时间
         /// </summary>
         public DateTime? CreateTime { get; set; }
+
+        /// <summary>
+        /// 费用归属
+        /// </summary>
+        public string ExpenseOrg { get; set; }
     }
 }

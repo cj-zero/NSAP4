@@ -159,6 +159,10 @@ namespace OpenAuth.App.Response
         /// </summary>
         public int? FromId { get; set; }
 
+        /// <summary>
+        /// 是否全部填写了完工报告
+        /// </summary>
+        public bool IsFinish { get; set; }
 
 
         /// <summary>

@@ -58,5 +58,19 @@ namespace OpenAuth.App.Serve.Request
         /// 报销单多个Id
         /// </summary>
         public List<int> ReimburseId { get; set; }
+
+        public List<OrgResult> travelOrgResults { get; set; }
+        public List<OrgResult> transportOrgResults { get; set; }
+        public List<OrgResult> hotelOrgResults { get; set; }
+        public List<OrgResult> otherOrgResults { get; set; }
+
+    }
+
+    public class OrgResult
+    {
+
+        public int Id { get; set; }
+
+        public string Value { get; set; }
     }
 }

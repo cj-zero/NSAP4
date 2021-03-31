@@ -61,6 +61,12 @@ namespace OpenAuth.Repository.Domain
         [Description("创建时间")]
         public DateTime? CreateTime { get; set; }
 
+        /// <summary>
+        /// 费用归属
+        /// </summary>
+        [Description("费用归属")]
+        public string ExpenseOrg { get; set; }
+
         public override void GenerateDefaultKeyVal()
         {
         }
