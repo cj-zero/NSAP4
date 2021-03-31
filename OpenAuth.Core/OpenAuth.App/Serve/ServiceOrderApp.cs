@@ -3751,7 +3751,7 @@ namespace OpenAuth.App
                 endDate = new DateTime(date.Year, date.Month, DateTime.DaysInMonth(date.Year, date.Month));
             }
             //获取当月的所有日报信息
-            var dailyReports = (await UnitWork.Find<ServiceDailyReport>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId && w.CreateTime > startDate && w.CreateTime < endDate).ToListAsync()).Select(s => new ReportDetail { CreateTime = s.CreateTime, MaterialCode = s.MaterialCode, ManufacturerSerialNumber = s.ManufacturerSerialNumber, TroubleDescription = GetServiceTroubleAndSolution(s.TroubleDescription), ProcessDescription = GetServiceTroubleAndSolution(s.ProcessDescription) }).ToList();
+            var dailyReports = (await UnitWork.Find<ServiceDailyReport>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId && w.CreateTime >= startDate && w.CreateTime <= endDate).ToListAsync()).Select(s => new ReportDetail { CreateTime = s.CreateTime, MaterialCode = s.MaterialCode, ManufacturerSerialNumber = s.ManufacturerSerialNumber, TroubleDescription = GetServiceTroubleAndSolution(s.TroubleDescription), ProcessDescription = GetServiceTroubleAndSolution(s.ProcessDescription) }).ToList();
             var dailyReportDates = dailyReports.OrderBy(o => o.CreateTime).Select(s => s.CreateTime?.Date.ToString("yyyy-MM-dd")).Distinct().ToList();
 
             var data = dailyReports.GroupBy(g => g.CreateTime?.Date).Select(s => new ReportResult { DailyDate = s.Key?.Date.ToString("yyyy-MM-dd"), ReportDetails = s.ToList() }).ToList();
@@ -3963,7 +3963,7 @@ namespace OpenAuth.App
                 endDate = new DateTime(date.Year, date.Month, DateTime.DaysInMonth(date.Year, date.Month));
             }
             //获取当月的所有日费信息
-            var dailyExpends = await UnitWork.Find<ServiceDailyExpends>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId && w.CreateTime > startDate && w.CreateTime < endDate).ToListAsync();
+            var dailyExpends = await UnitWork.Find<ServiceDailyExpends>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId && w.CreateTime >= startDate && w.CreateTime <= endDate).ToListAsync();
             var dailyExpendDates = dailyExpends.OrderBy(o => o.CreateTime).Select(s => s.CreateTime?.Date.ToString("yyyy-MM-dd")).Distinct().ToList();
             var data = dailyExpends.Where(w => w.CreateTime?.Date == Convert.ToDateTime(req.Date).Date).ToList();
             List<TransportExpense> transportExpenses = new List<TransportExpense>();
