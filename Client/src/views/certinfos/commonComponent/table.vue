@@ -74,6 +74,7 @@
 const textMap = ['送审', '撤回'] // 分别对应所在下标
 import { certVerMixin } from '../mixin/mixin'
 import { downloadFile } from '@/utils/file'
+import { getPdfURL } from '@/utils/utils'
 const colorList = {
   '待送审': '#cd2b25',
   '待审核': '#15a8ac',
@@ -106,8 +107,7 @@ export default {
   },
   data () {
     return {
-      radio: '',
-      baseURL: `${process.env.VUE_APP_BASE_API}/Cert/DownloadCertPdf`,
+      radio: ''
   }
   },
   methods: {
@@ -143,8 +143,9 @@ export default {
     submit (row, type) { // type: 0： 送审 1：撤回
       this._certVerificate(row, type, textMap[type])
     },
-    download (row) {
-      let url = `${this.baseURL}/${row.certNo}?X-Token=${this.$store.state.user.token}`
+    async download (row) {
+      let url = await getPdfURL('/Cert/DownloadCertPdf', { number: row.certNo })
+      console.log(url, 'pdfURL')
       downloadFile(url)
     }
   },

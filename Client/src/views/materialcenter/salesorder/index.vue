@@ -227,8 +227,8 @@ export default {
       if (!this.currentRow) {
         return this.$message.warning('请先选择数据')
       }
-      const { encrypQuotationId } = this.currentRow
-      print('/Material/Quotation/PrintSalesOrder', encrypQuotationId)
+      const { id } = this.currentRow
+      print('/Material/Quotation/PrintSalesOrder', { number: id })
     },
     _getList () {
       this.tableLoading = true

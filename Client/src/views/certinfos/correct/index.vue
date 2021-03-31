@@ -50,8 +50,8 @@
                   <i class="el-icon-arrow-down el-icon--right"></i>
                 </el-button>
                 <el-dropdown-menu slot="dropdown">
-                  <el-dropdown-item :command="scope.row.encryptCertNo+1">下载证书基础信息</el-dropdown-item>
-                  <el-dropdown-item :command="scope.row.encryptCertNo+2">下载证书PDF</el-dropdown-item>
+                  <el-dropdown-item :command="scope.row.certNo+1">下载证书基础信息</el-dropdown-item>
+                  <el-dropdown-item :command="scope.row.certNo+2">下载证书PDF</el-dropdown-item>
                 </el-dropdown-menu>
               </el-dropdown>
 
@@ -210,18 +210,7 @@ export default {
       let num1 = result.slice(0, len - 1);
       let num2 = result.slice(len - 1, len);
       const url = Number(num2) === 1 ? '/Cert/DownloadBaseInfo' : '/Cert/DownloadCertPdf'
-      print(url, num1)
-        // ? `${process.env.VUE_APP_BASE_API}/Cert/DownloadBaseInfo/${num1}?X-Token=${this.$store.state.user.token}`
-        // : `${process.env.VUE_APP_BASE_API}/Cert/DownloadCertPdf/${num1}?X-Token=${this.$store.state.user.token}`;
-      // window
-      // if (num2 == 1) {
-        
-      //   window.location.href = 
-      // } else {
-      //   //  console.log(`${process.env.VUE_APP_BASE_API}/Cert/DownloadBaseInfo/${num1}?token=${this.$store.state.user.token}`)
-      //   console.log(num1, num2);
-      //   window.location.href = 
-      // }
+      print(url, { number: num1 })
     },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();

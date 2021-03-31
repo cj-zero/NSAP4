@@ -56,7 +56,6 @@ export default {
   data () {
     return {
       url: '',
-      // url: 'http://192.168.1.207:52789/api/Cert/DownloadCertPdf/NWO080091?X-Token=1723b9dc',
       numPages: 1,
       pageNum: 1, // 当前页数
       pageTotalNum: 1, // 总页数
