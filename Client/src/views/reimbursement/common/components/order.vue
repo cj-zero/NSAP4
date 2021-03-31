@@ -5,7 +5,7 @@
       type="flex" 
       class="head-title-wrapper" 
       :class="{ 'general': title === 'approve' }"
-      v-if="!isGeneralManager"
+      v-if="title !== 'approve'"
     >
       <p style="color: red;" v-if="formData.mainId">报销单号: <span>{{ formData.mainId }}</span></p>
       <p :class="{ 'pointer underline': !isGeneralManager }" @click="_openServiceOrHistory(true)" v-if="title === 'approve'">
@@ -25,7 +25,7 @@
     </el-row>
     <!-- 时间进度轴，仅总经理可看 timelineList -->
     <template v-if="title === 'approve'">
-      <div class="timeline-progress-wrapper" :class="{ 'isGeneral': isGeneralManager }">
+      <div class="timeline-progress-wrapper isGeneral">
         <el-row class="content-wrapper" type="flex" align="middle" justify="space-between">
           <el-row type="flex" class="interval-content" v-if="isGeneralManager">
             <template v-for="item in timelineList" >
@@ -44,8 +44,8 @@
                   <!-- </div> -->
                 <!-- </div> -->
               </el-tooltip>
-              <p :class="{ 'text': isGeneralManager, 'time': !isGeneralManager }">{{ item.text }}</p>
-              <div class="time" v-if="isGeneralManager">
+              <p class="text">{{ item.text }}</p>
+              <div class="time">
                 <div>{{ item.ymd }}</div>
                 <div>{{ item.hms }}</div>
               </div>
@@ -56,7 +56,7 @@
     </template>
     <el-scrollbar class="scroll-bar" :wrapStyle="wrapStyle">
       <!-- 总经理审批查看 -->
-      <div class="general-order-wrapper" v-if="isGeneralStatus">
+      <div class="general-order-wrapper" v-if="title === 'approve'">
         <el-row type="flex" :gutter="20">
           <el-col :span="12">
             <h2 class="bold">基本信息</h2>
@@ -146,7 +146,6 @@
             </common-table>
           </el-col>
         </el-row>
-        
       </div>
       <el-form
         v-else
@@ -262,6 +261,7 @@
               <div>结束时间: <span>{{ formData.endDate }}</span></div>
             </div> -->
              <div class="area">
+              <div v-if="ifShowAddTravelBtn"><el-button type="primary" @click="openTravelExpense" size="mini">新增差补</el-button></div>
               <div>出发地点: <span>{{ formData.becity }}</span></div>
               <div>到达地点: <span>{{ formData.destination }}</span></div>
             </div>
@@ -454,10 +454,9 @@
           </el-col>
         </el-row>
         <!-- 出差 -->
-        <div class="form-item-wrapper travel" :class="{ 'uneditable global-unused': !this.ifFormEdit }" v-if="ifCOrE || formData.reimburseTravellingAllowances.length">
-          <el-button v-if="ifShowTravel" @click="showForm(formData.reimburseTravellingAllowances, 'ifShowTravel')">添加出差补贴</el-button>
+        <div class="form-item-wrapper travel" :class="{ 'uneditable global-unused': !this.ifFormEdit }" v-if="title !== 'create' && formData.reimburseTravellingAllowances.length">
+          <!-- <el-button v-if="ifShowTravel" @click="showForm(formData.reimburseTravellingAllowances, 'ifShowTravel')">添加出差补贴</el-button> -->
           <el-form 
-            v-else
             ref="travelForm" 
             :model="formData" 
             size="mini" 
@@ -582,8 +581,7 @@
                           v-model.trim="scope.row[item.prop]" 
                           :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)" 
                           :readonly="item.readonly || false"
-                          :placeholder="item.placeholder"
-                          @focus="onAreaFocus({ prop: item.prop, index: scope.$index })">
+                          :placeholder="item.placeholder">
                           <el-tooltip
                             v-if="item.prop === 'invoiceNumber'"
                             :disabled="scope.row.isValidInvoice"
@@ -600,13 +598,22 @@
                             </i>
                           </el-tooltip>
                         </el-input>
-                        <template v-if="ifFormEdit && (item.prop === 'from' || item.prop === 'to')">  
-                          <div class="selector-wrapper" 
-                            v-show="(scope.row.ifFromShow && item.prop === 'from') || (scope.row.ifToShow && item.prop === 'to')">
-                            <AreaSelector @close="onCloseArea" @change="onAreaChange" :options="{ prop: item.prop, index: scope.$index }"/>
-                          </div>
-                        </template>
                       </div>                   
+                    </el-form-item>
+                  </template>
+                  <template v-else-if="item.type === 'area'">
+                    <el-form-item
+                      :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
+                      :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }"
+                    >
+                      <my-new-area-selector
+                        v-infotooltip.top.ellipsis
+                        class="my-area-selector"
+                        v-model="scope.row[item.prop]"
+                        :processValue="areaProcessValue"
+                        @change="onAreaChange" 
+                        :options="{ prop: item.prop, index: scope.$index }">
+                      </my-new-area-selector>
                     </el-form-item>
                   </template>
                   <template v-else-if="item.type === 'number'">
@@ -1091,6 +1098,20 @@
         @pagination="costCurrentChange"
       />
     </my-dialog>
+    <!-- 客服新增差补 -->
+    <my-dialog
+      v-loading.fullscreen="travelLoading"
+      title="新增出差补贴"
+      top="300px"
+      ref="travelExpenseDialog"
+      width="400px"
+      :btnList="travelBtnList"
+      :append-to-body="true"
+      @closed="travelClosed"
+    >
+      <div>请输入增补的天数</div>
+      <el-input-number size="mini" v-model="travelDays" :min="1" :precision="0" :controls="false"></el-input-number>
+    </my-dialog>
     <!-- 完工报告 -->
     <my-dialog
       width="983px"
@@ -1179,14 +1200,21 @@
         </common-table>
       </div>    
     </my-dialog>
+    <file-viewer
+      v-if="previewVisible"
+      :zIndex="99999"
+      :file-list="previewImageUrl"
+      :on-close="closeViewer"
+    >
+    </file-viewer>
     <!-- 预览图片 -->
-    <el-image-viewer
+    <!-- <el-image-viewer
       v-if="previewVisible"
       :zIndex="99999"
       :url-list="[previewImageUrl]"
       :on-close="closeViewer"
-    >
-    </el-image-viewer>
+    > -->
+    <!-- </el-image-viewer> -->
     <!-- 百度地图实例化 -->
     <template v-if="title === 'approve'">
       <el-row type="flex" justify="end" class="date-map-container" :class="{ 'general': isGeneralManager }">
@@ -1198,7 +1226,7 @@
         <div class="control-info" v-show="isShowControl" :style="controlInfoStyle">{{ controlInfo }}</div>
       </el-row>
     </template>
-    <PDF :pdfURL="pdfURL" :on-close="closePDF" v-if="pdfVisible" />
+    <!-- <PDF :pdfURL="pdfURL" :on-close="closePDF" v-if="pdfVisible" /> -->
   </div>
 </template>
 
@@ -1212,7 +1240,8 @@ import {
   getHistoryReimburseInfo, 
   getUserDetail,
   deleteCost,
-  getReimburseOrgs
+  getReimburseOrgs,
+  addTravellingAllowance
 } from '@/api/reimburse'
 import markerIcon from '@/assets/bmap/marker.png'
 import { on, off } from '@/utils/dom'
@@ -1220,13 +1249,12 @@ import { getList as getAfterEvaluaton } from '@/api/serve/afterevaluation'
 import { getList } from '@/api/reimburse/mycost'
 import { getDailyReport } from '@/api/serve/callservesure'
 import upLoadFile from "@/components/upLoadFile";
-import PDF from './pdf'
+// import PDF from './pdf'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import Report from './report'
 import Remark from './remark'
-import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
-import AreaSelector from '@/components/AreaSelector'
+// import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 // import Bmap from '@/components/bmap'
 import { toThousands } from '@/utils/format'
 import { findIndex, accAdd } from '@/utils/process'
@@ -1245,7 +1273,7 @@ const PROGRESS_TEXT_LIST = ['提交', '客服审批', '财务初审', '财务复
 const AFTER_EVALUTION_KEY = ['responseSpeed', 'schemeEffectiveness', 'serviceAttitude', 'productQuality', 'servicePrice']
 const TEXT_REG = /[\r|\r\n|\n\t\v]/g
 const NOW_DATE = new Date()
-console.log('123123', 'cccc')
+
 // const AFTER_EVALUTION_STATUS = {
 //   0: '未统计',
 //   1: '非常差',
@@ -1261,13 +1289,12 @@ export default {
     upLoadFile,
     Report,
     Remark,
-    AreaSelector,
     zxform,
     zxchat,
-    ElImageViewer,
+    // ElImageViewer,
     DatePicker,
     // Bmap
-    PDF
+    // PDF
   },
   filters: {
     s2HMS
@@ -1305,6 +1332,12 @@ export default {
   },
   data () {
     return {
+      travelDays: 1, // 增补天数
+      travelLoading: false,
+      newTravelInfo: {}, // 当前客服审批阶段，新增的出差补贴信息
+      travelBtnList: [
+        { btnText: '确认', handleClick: this.addTravelExpense, type: 'primary' }
+      ],
       historyTitle: '历史费用',
       pdfURL: '',
       pdfVisible: false,
@@ -1555,6 +1588,9 @@ export default {
           
           this.timelineList = this._normalizeTimelineList(this.formData.reimurseOperationHistories)
         }
+        if (this.isCustomerSupervisor) {
+          this._getSubsidies() // 获取出差补贴金额 
+        }
         if (this.title === 'create' || this.title === 'edit') { // 只有在create或者edit的时候，才可以导入费用模板
           this._getCostList() // 获取费用模板
           this._getSubsidies() // 获取出差补贴金额 
@@ -1572,6 +1608,9 @@ export default {
     }
   },
   computed: {
+    ifShowAddTravelBtn () {
+      return this.isCustomerSupervisor && this.$route.path === '/reimbursement/toProcess'
+    },
     expenseFormData () { // 审批阶段费用详情form表单数据
       return {
         expenseCategoryList: this.expenseCategoryList || []
@@ -1646,7 +1685,7 @@ export default {
       }, 0)
     },
     totalMoney () {
-      let moneyList = [this.travelTotalMoney, this.trafficTotalMoney, this.accTotalMoney, this.otherTotalMoney]
+      let moneyList = [this.travelTotalMoney, this.trafficTotalMoney, this.accTotalMoney, this.otherTotalMoney, (this.newTravelInfo.money || 0)]
       return moneyList.reduce((prev, next) => {
         return accAdd(prev, next)
       }, 0)
@@ -1669,12 +1708,12 @@ export default {
     rules () { // 报销单上面的表单规则
       return {
         serviceOrderSapId: [ { required: true } ],
-        reimburseType: [ { required: true, trigger: ['change', 'blur'] } ],
+        // reimburseType: [ { required: true, trigger: ['change', 'blur'] } ],
         // shortCustomerName: [{ required: true, trigger: 'blur' }],
         // projectName: [ { required: true, trigger: ['change', 'blur'] } ],
-        bearToPay: [ { required: this.isCustomerSupervisor, trigger: ['change', 'blur']} ],
+        // bearToPay: [ { required: this.isCustomerSupervisor, trigger: ['change', 'blur']} ],
         // responsibility: [ { required: true, trigger: ['change', 'blur'] } ],
-        serviceRelations: [ { required: true, trigger: ['change', 'blur'] } ]
+        // serviceRelations: [ { required: true, trigger: ['change', 'blur'] } ]
       }
     },
     remarkTitle () {
@@ -1760,11 +1799,8 @@ export default {
         new this._BMap.Size(25, 25)
       )
       icon.setImageSize(new this._BMap.Size(25, 25))
-      for (let i = 0; i < this.trackPoint.length; i++) {
-        
+      for (let i = 0; i < this.trackPoint.length; i++) {   
         // 最后一个点 闪烁
-        
-        
         let id = this.formData.pointArr[i].id
         if (id) {
           let index = findIndex(this.formData.expenseCategoryList, item => item.id === id)
@@ -1828,20 +1864,6 @@ export default {
       driving.setSearchCompleteCallback(() => {  
         try {
           let pts = driving.getResults().getPlan(0).getRoute(0).getPath()   //通过驾车实例，获得一系列点的数组 
-          // pts = pts.reduce((prev, next) => {
-          //   let last = prev[prev.length - 1]
-          //   if (last) {
-          //       let { lng, lat } = last
-          //       let { lng: nextLng, lat: nextLat } = next
-          //       let isValid = !(lng === nextLng && lat === nextLat)
-          //       if (isValid) {
-          //         prev.push(next)
-          //       }
-          //   } else {
-          //       prev.push(next)
-          //   }
-          //   return prev
-          // }, []) 
           let polyline = new this._BMap.Polyline(pts, {
             strokeColor: '#1bac2e',
             strokeWeight: 8 ,//宽度
@@ -2097,7 +2119,8 @@ export default {
       } 
     },
     _getSubsidies () {
-      getUserDetail().then(res => {
+      const params = this.title === 'create' ? {} : { userId: this.formData.createUserId }
+      getUserDetail(params).then(res => {
         this.travelMoney = res.data.subsidies
       }).catch(err => {
         this.travelMoney = ''
@@ -2105,7 +2128,6 @@ export default {
       })
     },
     historyCell ({ columnIndex }) {
-
       const grayList = [3, 4, 7, 8]
       return grayList.includes(columnIndex) ? { backgroundColor: '#fafafa' } : {}
     },
@@ -2117,6 +2139,47 @@ export default {
           this.openServiceOrder(this.formData.serviceOrderId, () => this.orderLoading = true, () => this.orderLoading = false)
         }
       } 
+    },
+    openTravelExpense () { // 新增差补
+      this.$refs.travelExpenseDialog.open()
+    },
+    async addTravelExpense () {
+      if (!this.travelDays) {
+        return this.$message.warning('请填写增补的天数')
+      }
+      this.travelLoading = true
+      try {
+        // 新增差补
+        const { data } = await addTravellingAllowance({
+          reimburseInfoId: this.formData.id,
+          days: this.travelDays,
+          money: this.travelMoney || 0,
+          isAdded: true
+        })
+     
+        const { id, money, days, createTime, remark, expenseOrg } = data
+        const item = {
+          id,
+          invoiceTime: formatDate(createTime),
+          expenseName: '出差补贴',
+          expenseDetail: `${toThousands(money)}元/天*${days}天`,
+          money: money * days,
+          remark,
+          expenseOrg: JSON.parse(expenseOrg || null),
+          type: 'travel'
+        }
+        this.newTravelInfo = item
+        this.expenseCategoryList.splice(-3, 0, item)
+        this.$refs.travelExpenseDialog.close()
+        console.log(data, 'data')
+      } catch (err) {
+        this.$message.error(err)
+      } finally {
+        this.travelLoading = false
+      }
+    },
+    travelClosed () {
+      this.travelDays = 1
     },
     openHistory () { // 打开历史费用
       if (this.historyCostData && !this.historyCostData.length) {
@@ -2253,10 +2316,10 @@ export default {
       if (file) {
         let { url, fileType } = file
         if (/^image\/.*$/.test(fileType)) {
-          this.previewImage(url) // 预览图片
+          this.previewImage(file) // 预览图片
         } else {
           if (this.isCustomerSupervisor || this.isGeneralManager) {
-            this.pdfVisible = true
+            this.previewImage(file)
             this.pdfURL = url
           } else {
             window.open(url)
@@ -2267,9 +2330,9 @@ export default {
     closePDF () {
       this.pdfVisible = false
     },
-    previewImage (url) { // 预览附件
+    previewImage (file) { // 预览附件
       this.previewVisible = true
-      this.previewImageUrl = url
+      this.previewImageUrl = [file]
     },
     closeViewer () {
       this.previewVisible = false
@@ -2681,28 +2744,19 @@ export default {
       this.currentProp = prop
       this.currentIndex = index
     },
-    onAreaFocus ({ prop, index }) { // 打开地址选择
-      if (this.prevAreaData) {
-        this.prevAreaData.ifFromShow = false
-        this.prevAreaData.ifToShow = false
-      }
-      if (prop === 'from' || prop === 'to') {
-        let currentRow = this.formData.reimburseFares[index]
-        prop === 'from'
-          ? this.$set(currentRow, 'ifFromShow', true)
-          : this.$set(currentRow, 'ifToShow', true)
-        this.prevAreaData = currentRow
-      }
-    },
-    onCloseArea (options) { // 关闭地址选择器
-      let { prop, index } = options
-      let currentRow = this.formData.reimburseFares[index]
-      prop === 'from'
-          ? this.$set(currentRow, 'ifFromShow', false)
-          : this.$set(currentRow, 'ifToShow', false)
-      this.prevAreaData = null
+    areaProcessValue ({ province, city, district }) {
+      console.log('processValue')
+      const countryList = ['北京市', '天津市', '上海市', '重庆市']
+      let result = ''
+      result = countryList.includes(province)
+        ? province + district
+        : (city === '自治区直辖县级行政区划' || city === '省直辖县级行政区划')
+          ? province + district
+          : city + district
+      return result
     },
     onAreaChange (val) {
+      console.log('onAreaChange')
       let { province, city, district, prop, index } = val
       let currentRow = this.formData.reimburseFares[index]
       if (province === '香港特别行政区' || province === '澳门特别行政区') { // 特殊处理
@@ -2713,15 +2767,6 @@ export default {
         currentRow,
         prop
       })
-      const countryList = ['北京市', '天津市', '上海市', '重庆市']
-      let result = ''
-      result = countryList.includes(province)
-        ? province + district
-        : (city === '自治区直辖县级行政区划' || city === '省直辖县级行政区划')
-          ? province + district
-          : city + district
-      currentRow[prop] = result
-      this.prevAreaData = null
     },
     _getPosition (address, { currentRow, prop}) {
       let local = new global.BMap.LocalSearch(this.map, { //智能搜索
@@ -3211,6 +3256,7 @@ export default {
         return Promise.reject({ message: this.errMessage })
       }
       formData.isDraft = isDraft ? true : false
+      delete formData.reimburseTravellingAllowances
       return addOrder(formData)
     },
     async updateOrder (isDraft) { // 编辑
@@ -3241,6 +3287,7 @@ export default {
         return Promise.reject({ message: this.errMessage })
       }
       formData.isDraft = isDraft ? true : false
+      delete formData.reimburseTravellingAllowances
       return updateOrder(formData)
     },
     mergeOrgList (type) { // 归类发票给归属
@@ -3255,63 +3302,63 @@ export default {
       this._approve()
     },
     async _approve () {
-      this.$refs.form.validate(async isValid => {
-        if (!isValid) {
-          return this.$message.error('格式错误或必填项未填写')
-        }
-        let data = this.formData
-        let params = {
-          id: data.id, 
-          shortCustomerName: data.shortCustomerName, 
+      // this.$refs.form.validate(async isValid => {
+      //   if (!isValid) {
+      //     return this.$message.error('格式错误或必填项未填写')
+      //   }
+      let data = this.formData
+      let params = {
+        id: data.id, 
+        shortCustomerName: data.shortCustomerName, 
           reimburseType: data.reimburseType, 
           projectName: data.projectName, 
           bearToPay: data.bearToPay, 
           responsibility: data.responsibility,
-          remark: this.remarkText,
-          flowInstanceId: data.flowInstanceId, // 流程ID
-          isReject: this.remarkType === 'reject'
+        remark: this.remarkText,
+        flowInstanceId: data.flowInstanceId, // 流程ID
+        isReject: this.remarkType === 'reject'
+      }
+      let isOrgValid = true
+      if (this.isCustomerSupervisor && this.remarkType !== 'reject') { // 如果是客服主管必填部门选项并且点击的是同意
+        try {
+          await this.$refs.expenseForm.validate()
+          params.travelOrgResults = this.mergeOrgList('travel')
+          params.transportOrgResults = this.mergeOrgList('traffic')
+          params.hotelOrgResults = this.mergeOrgList('acc')
+          params.otherOrgResults = this.mergeOrgList('other')
+        } catch (err) {
+          isOrgValid = false
         }
-        let isOrgValid = true
-        if (this.isCustomerSupervisor && this.remarkType !== 'reject') { // 如果是客服主管必填部门选项并且点击的是同意
-          try {
-            await this.$refs.expenseForm.validate()
-            params.travelOrgResults = this.mergeOrgList('travel')
-            params.transportOrgResults = this.mergeOrgList('traffic')
-            params.hotelOrgResults = this.mergeOrgList('acc')
-            params.otherOrgResults = this.mergeOrgList('other')
-          } catch (err) {
-            isOrgValid = false
-          }
-        }
-        if (!isOrgValid) {
-          return this.$message.error('费用详情列表的费用归属必填')
-        }
-        console.log(approve, params)
-        this.remarkType === 'reject'
-          ? this.remarkLoading = true
-          : this.parentVm.openLoading()
-        approve(params).then(() => {
-          this.$message({
-            type: 'success',
-            message: this.remarkType === 'reject' 
-              ? '驳回成功' 
-              : (this.remarkType === 'agree' ? '审核成功' : '支付成功')
-          })
-          if (this.remarkType === 'reject') {
-            this.remarkLoading = false
-            this.closeRemarkDialog()
-          } else {
-            this.parentVm.closeLoading()
-          }
-          this.parentVm._getList()
-          this.parentVm.closeDialog()
-        }).catch((err) => {
-          this.remarkType === 'reject'
-            ? this.remarkLoading = false
-            : this.parentVm.closeLoading()
-          this.$message.error(err.message)
+      }
+      if (!isOrgValid) {
+        return this.$message.error('费用详情列表的费用归属必填')
+      }
+      console.log(approve, params)
+      this.remarkType === 'reject'
+        ? this.remarkLoading = true
+        : this.parentVm.openLoading()
+      approve(params).then(() => {
+        this.$message({
+          type: 'success',
+          message: this.remarkType === 'reject' 
+            ? '驳回成功' 
+            : (this.remarkType === 'agree' ? '审核成功' : '支付成功')
         })
-      })       
+        if (this.remarkType === 'reject') {
+          this.remarkLoading = false
+          this.closeRemarkDialog()
+        } else {
+          this.parentVm.closeLoading()
+        }
+        this.parentVm._getList()
+        this.parentVm.closeDialog()
+      }).catch((err) => {
+        this.remarkType === 'reject'
+          ? this.remarkLoading = false
+          : this.parentVm.closeLoading()
+        this.$message.error(err.message)
+      })
+      // })       
     }
   }
 }
@@ -4010,6 +4057,14 @@ export default {
     }
     ::v-deep .el-table__fixed-right, .el-table__fixed {
       background-color: #fff;
+    }
+    .my-area-selector {
+      ::v-deep {
+        input {
+          height: 28px;
+          line-height: 28px;
+        }
+      }
     }
   }
   .icon-item {

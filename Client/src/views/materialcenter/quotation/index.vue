@@ -114,7 +114,7 @@ export default {
         { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
         { type: 'button', btnText: '新建', handleClick: this.openMaterialOrder, isSpecial: true, options: { isReceive: true } },
-        { type: 'button', btnText: '编辑', handleClick: this.edit, isSpecial: true, options: { isReceive: true }},
+        { type: 'button', btnText: '编辑', handleClick: this.edit, isSpecial: true, options: { isReceive: true, isUpdate: true }},
         // { type: 'button', btnText: '编辑', handleClick: this._getQuotationDetail, isSpecial: true, options: { status: 'edit', isReceive: true } },
         { type: 'button', btnText: '打印', handleClick: this.print, isSpecial: true },     
         { type: 'button', btnText: '撤销', handleClick: this.repealOrder, style: { backgroundColor: '#f56c6c', color: '#fff' } },

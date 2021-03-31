@@ -1,7 +1,6 @@
 import store from '@/store'
 import { isPlainObject } from './validate'
 import { serializeParams } from './process'
-
 export function print (url, params) {
   const serializedParams = isPlainObject(params) ? serializeParams(params) : params
   let printUrl = ''

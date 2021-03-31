@@ -67,7 +67,7 @@
                         :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)" 
                         :readonly="item.readonly || false"
                         :placeholder="item.placeholder"
-                        @focus="onAreaFocus({ prop: item.prop, index: scope.$index })">
+                      >
                         <el-tooltip
                           v-if="item.prop === 'invoiceNumber'"
                           :disabled="scope.row.isValidInvoice"
@@ -85,13 +85,22 @@
                           </i>
                         </el-tooltip>
                       </el-input>
-                      <template v-if="operation !== 'view' && (item.prop === 'from' || item.prop === 'to')">
-                        <div class="selector-wrapper" 
-                          v-show="(scope.row.ifFromShow && item.prop === 'from') || (scope.row.ifToShow && item.prop === 'to')">
-                          <AreaSelector @close="onCloseArea" @change="onAreaChange" :options="{ prop: item.prop, index: scope.$index }"/>
-                        </div>
-                      </template>
                     </div>
+                  </el-form-item>
+                </template>
+                <template v-else-if="item.type === 'area'">
+                  <el-form-item
+                    :prop="'list.' + scope.$index + '.'+ item.prop"
+                    :rules="rules[item.prop] || { required: false }"
+                  >
+                    <my-new-area-selector
+                      v-infotooltip.top.ellipsis
+                      class="my-area-selector"
+                      v-model="scope.row[item.prop]"
+                      :processValue="areaProcessValue"
+                      @change="onAreaChange" 
+                      :options="{ prop: item.prop, index: scope.$index }">
+                    </my-new-area-selector>
                   </el-form-item>
                 </template>
                 <template v-else-if="item.type === 'number'">
@@ -240,7 +249,6 @@ import { trafficRules, accRules, otherRules } from '../js/customerRules'
 import { categoryMixin, attachmentMixin } from '../js/mixins'
 import { addCost, updateCost } from '@/api/reimburse/mycost'
 import { timeToFormat } from '@/utils'
-import AreaSelector from '@/components/AreaSelector'
 const RULES_MAP = {
   1: trafficRules,
   2: accRules,
@@ -257,8 +265,7 @@ const ACC_TYPE = 2 // 住宿费用类型设为2
 export default {
   mixins: [categoryMixin, attachmentMixin],
   components: {
-    upLoadFile,
-    AreaSelector
+    upLoadFile
   },
   props: {
     detailData: {
@@ -282,6 +289,12 @@ export default {
     operation: {
       type: String,
       default: ''
+    },
+    BMap: {
+      type: Object
+    },
+    map: {
+      type: Object
     }
   },
   watch: {
@@ -481,39 +494,17 @@ export default {
     onFocus (val) {
       this.currentProp = val
     },
-    onAreaFocus ({ prop, index }) { // 打开地址选择
-      if (this.prevAreaData) {
-        this.prevAreaData.ifFromShow = false
-        this.prevAreaData.ifToShow = false
-      }
-      if (prop === 'from' || prop === 'to') {
-        let currentRow = this.formData.list[index]
-        prop === 'from'
-          ? this.$set(currentRow, 'ifFromShow', true)
-          : this.$set(currentRow, 'ifToShow', true)
-        this.prevAreaData = currentRow
-      }
-    },
-    onCloseArea (options) { // 关闭地址选择器
-      let { prop, index } = options
-      let currentRow = this.formData.list[index]
-      prop === 'from'
-          ? this.$set(currentRow, 'ifFromShow', false)
-          : this.$set(currentRow, 'ifToShow', false)
-      this.prevAreaData = null
-    },
     onAreaChange (val) {
       let { province, city, district, prop, index } = val
       let currentRow = this.formData.list[index]
-      const countryList = ['北京市', '天津市', '上海市', '重庆市']
-      let result = ''
-      result = countryList.includes(province)
-        ? province + district
-        : (city === '自治区直辖县级行政区划' || city === '省直辖县级行政区划')
-          ? province + district
-          : city + district
-      currentRow[prop] = result
-      this.prevAreaData = null
+      if (province === '香港特别行政区' || province === '澳门特别行政区') { // 特殊处理
+        city = ''
+      }
+      // 获取对应的坐标点
+      this._getPosition(`${province}${city}${district}`.replace('海外', ''), {
+        currentRow,
+        prop
+      })
     },
     onSelectClick (val) {
       this.currentProp = val.prop

@@ -143,3 +143,11 @@ export function getReimburseOrgs (params) { // 查询费用归属数据
     params
   })
 }
+
+export function addTravellingAllowance (data) { // 新增出差补贴
+  return request({
+    url: '/serve/Reimburse/AddTravellingAllowance',
+    method: 'post',
+    data
+  })
+}

@@ -47,7 +47,7 @@
             @error="handleImgError"
             @mousedown="handleMouseDown">
           <div class="pdf-wrapper" :key="file.url" v-else-if="i === index && isPDF(file.fileType)">
-            <PDF :pdfURL="file.url" :style="imgStyle" />
+            <PDF :pdfURL="file.url" :style="pdfStyle" />
           </div>
         </template>
       </div>
@@ -134,6 +134,18 @@ export default {
     },
     currentImg() {
       return this.urlList[this.index];
+    },
+    pdfStyle () {
+      const { scale, deg, offsetX, offsetY, enableTransition } = this.transform;
+      const style = {
+        transform: `scale(${scale}) rotate(${deg}deg)`,
+        transition: enableTransition ? 'transform .3s' : '',
+        'margin-left': `${offsetX}px`,
+        'margin-top': `${offsetY}px`
+      };
+      // style.maxHeight = '100%';
+      style.width = '1200px'
+      return style;
     },
     imgStyle() {
       const { scale, deg, offsetX, offsetY, enableTransition } = this.transform;
@@ -323,8 +335,8 @@ export default {
 </script>
 <style lang="scss" scoped>
 .pdf-wrapper {
-  width: 600px;
-  height: 700px;
+  width: 1200px;
+  height: 760px;
   padding: 20px;
 }
 </style>

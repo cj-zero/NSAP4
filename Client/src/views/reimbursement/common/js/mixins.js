@@ -316,17 +316,17 @@ export let tableMixin = {
         })
       })
       // 出差
-      let { businessTripDate, endDate } = data
+      // let { businessTripDate, endDate } = data
       reimburseTravellingAllowances.forEach(item => {
-        let { id, days, money, remark, expenseOrg } = item
-        let invoiceTime = days > 1 
-          ? `${formatDate(businessTripDate, 'MM-DD')} — ${formatDate(endDate, 'MM-DD')}`
-          : formatDate(businessTripDate)
+        let { id, days, money, remark, expenseOrg, createTime } = item
+        // let invoiceTime = days > 1 
+        //   ? `${formatDate(businessTripDate, 'MM-DD')} — ${formatDate(endDate, 'MM-DD')}`
+        //   : formatDate(businessTripDate)
         result.push({
           id,
           // invoiceTime: this.processInvoiceTime(invoiceTime),
           // invoiceTime: invoiceTime || '2020-12-28',
-          invoiceTime,
+          invoiceTime: formatDate(createTime),
           expenseName: '出差补贴',
           expenseDetail: `${toThousands(money)}元/天*${days}天`,
           money: money * days,
@@ -620,16 +620,19 @@ export let categoryMixin = {
     formConfig () {
       return [
         { label: '服务ID', prop: 'serviceOrderSapId', placeholder: '请选择', col: this.ifFormEdit ? 5 : 6, disabled: this.title !== 'create', readonly: true },
-        { 
-          label: '报销类别', prop: 'reimburseType', placeholder: '请输入内容', 
-          col: this.ifFormEdit ? 5 : 6, type: 'select', options: this.reimburseTypeList, 
-          disabled: this.isEditItem, width: '100%'
-        },
-        // { label: '客户简称', prop: 'shortCustomerName', placeholder: '最长6个字', col: this.ifFormEdit ? 5 : 6, maxlength: 6, disabled: this.isEditItem, required: true },
-        { label: '费用承担', prop: 'bearToPay', placeholder: '请输入内容', 
-          disabled: this.isProcessed || this.title === 'view' || !(this.isCustomerSupervisor && (this.title === 'create' || this.title === 'edit' || this.title === 'approve')), 
-          col: this.ifFormEdit ? 5 : 6, type: 'select', options: this.expenseList, width: '100%'
-        },
+        
+        { label: '出发地点', prop: 'becity', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        { label: '到达地点', prop: 'destination', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
+        // { 
+        //   label: '报销类别', prop: 'reimburseType', placeholder: '请输入内容', 
+        //   col: this.ifFormEdit ? 5 : 6, type: 'select', options: this.reimburseTypeList, 
+        //   disabled: this.isEditItem, width: '100%'
+        // },
+        // // { label: '客户简称', prop: 'shortCustomerName', placeholder: '最长6个字', col: this.ifFormEdit ? 5 : 6, maxlength: 6, disabled: this.isEditItem, required: true },
+        // { label: '费用承担', prop: 'bearToPay', placeholder: '请输入内容', 
+        //   disabled: this.isProcessed || this.title === 'view' || !(this.isCustomerSupervisor && (this.title === 'create' || this.title === 'edit' || this.title === 'approve')), 
+        //   col: this.ifFormEdit ? 5 : 6, type: 'select', options: this.expenseList, width: '100%'
+        // },
         { label: '报销状态', prop: 'reimburseTypeText', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true },
         { label: '客户代码', prop: 'terminalCustomerId', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
         { label: '客户名称', prop: 'terminalCustomer', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 10 : 12 },
@@ -638,10 +641,9 @@ export let categoryMixin = {
         { label: '服务报告', prop: 'report',  disabled: true, col: this.ifFormEdit ? 5 : 6, 
           type: 'button', btnText: '服务报告', handleClick: this.openReport, isEnd: true
         },
-        { label: '出发地点', prop: 'becity', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        { label: '到达地点', prop: 'destination', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6 },
-        { label: '开始时间', prop: 'businessTripDate', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, width: '100%' },
-        { label: '结束时间', prop: 'endDate', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true, width: '100%' },
+        
+        // { label: '开始时间', prop: 'businessTripDate', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, width: '100%' },
+        // { label: '结束时间', prop: 'endDate', placeholder: '请输入内容', disabled: true, col: this.ifFormEdit ? 5 : 6, isEnd: true, width: '100%' },
         { label: '备注', prop: 'remark', placeholder: '请输入内容', disabled: !this.ifFormEdit, col: this.ifFormEdit ? 15 : 18 }, 
         { label: '总金额', type: 'money', col: this.ifFormEdit ? 5 : 6 }
       ]
@@ -660,8 +662,8 @@ export let categoryMixin = {
       let config = [ // 交通配置
         { label: '交通类型', prop: 'trafficType', type: 'select', options: this.transportTypeList, width: 105 },
         { label: '交通工具', prop: 'transport', type: 'select', options: this.transportationList, width: 135 },
-        { label: '出发地', prop: 'from', type: 'input', width: 125, readonly: true },
-        { label: '目的地', prop: 'to', type: 'input', width: 125, readonly: true },
+        { label: '出发地', prop: 'from', type: 'area', width: 125, readonly: true },
+        { label: '目的地', prop: 'to', type: 'area', width: 125, readonly: true },
         { label: '发票时间', prop: 'invoiceTime', type: 'date', width: 160 },
         { label: '金额', prop: 'money', type: 'number', align: 'right', width: 120, placeholder: '大于0' },
         { label: '备注', prop: 'remark', type: 'input', width: 100 },
@@ -965,6 +967,45 @@ export const attachmentMixin = {
           item.id = 0
         }
       })
+    },
+    areaProcessValue ({ province, city, district }) {
+      console.log('processValue')
+      const countryList = ['北京市', '天津市', '上海市', '重庆市']
+      let result = ''
+      result = countryList.includes(province)
+        ? province + district
+        : (city === '自治区直辖县级行政区划' || city === '省直辖县级行政区划')
+          ? province + district
+          : city + district
+      return result
+    },
+    _getPosition (address, { currentRow, prop}) {
+      let local = new global.BMap.LocalSearch(this.map, { //智能搜索
+        onSearchComplete: onSearchComplete.bind(this)
+      })
+      address = address.replace(/^中国/i, '') // 如果以中国开头会直接搜索北京市
+      console.log(address, 'address')
+      local.search(address)
+      let result
+      function onSearchComplete () {
+        if (!local.getResults().getPoi(0)) {
+          result = { lng: '', lat: '' }
+        } else {
+          console.log(local.getResults().getPoi(0), 'position')
+          let { point} = local.getResults().getPoi(0) //获取第一个智能搜索的结果
+          let { lat, lng } = point
+          console.log(lat, lng)
+          result = point
+        }
+        let { lat, lng } = result
+        if (prop === 'from') {
+          currentRow.fromLng = lng
+          currentRow.fromLat = lat
+        } else {
+          currentRow.toLng = lng
+          currentRow.toLat = lat
+        }
+      }
     }
   }
 }
@@ -977,7 +1018,7 @@ export const processMixin = {
         console.log(window.BMap)
       }
       console.log('order opened')
-      this.$refs.order.initMap()
-    },
+     this.$refs.order.initMap()
+    }
   }
 }

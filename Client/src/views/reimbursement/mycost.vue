@@ -48,9 +48,12 @@
       :title="`${textMap[type]}费用模板`"
       :btnList="btnList"
       :loading="dialogLoading"
+      @opened="onOpened"
     >
       <cost-template 
         ref="cost"
+        :map="map"
+        :Bmap="BMap"
         :operation="type"
         :selectList="selectList" 
         :categoryList="categoryList"
@@ -63,6 +66,8 @@
       :on-close="closeViewer"
     >
     </el-image-viewer>
+    <!-- 百度地图实例化 -->
+    <Bmap @mapInitail="onMapInitail" />
   </div>
 </template>
 
@@ -76,6 +81,8 @@ import { categoryMixin } from './common/js/mixins'
 import { getList, getDetail, deleteCost } from '@/api/reimburse/mycost'
 import { toThousands } from '@/utils/format'
 import { downloadFile } from '@/utils/file'
+import { loadBMap } from '@/utils/remoteLoad'
+import Bmap from '@/components/bmap'
 const TRANSPORT_TYPE = 1 // 交通费用类型设为1
 const ACC_TYPE = 2 // 住宿费用类型设为2
 const OTHER_TYPE = 3 // 交通费用类型设为3
@@ -85,7 +92,8 @@ export default {
   components: {
     Search,
     CostTemplate,
-    ElImageViewer
+    ElImageViewer,
+    Bmap
   },
   computed: {
     btnList () {
@@ -97,6 +105,8 @@ export default {
   },
   data () {
     return {
+      map: null,
+      BMap: null,
       type: '', // 判断当前操作是新增还是编辑
       rightImg,
       formQuery: { // 查询字段参数
@@ -148,6 +158,13 @@ export default {
   methods: {
     closeViewer () {
       this.dialogVisible = false
+    },
+    async onOpened () {
+      if (!window.BMap) {
+        await loadBMap('uGyEag9q02RPI81dcfk7h7vT8tUovWfG')
+        console.log(window.BMap)
+      }
+      console.log('order opened')
     },
     _getList () {
       this.tableLoading = true
@@ -221,6 +238,11 @@ export default {
           message: '无发票附件'
         })
       }
+    },
+    onMapInitail ({ map, BMap }) {
+      this.map = map
+      this.BMap = BMap
+      console.log(map, BMap)
     },
     getDetail (val) { // 获取详情
       let { type } = val

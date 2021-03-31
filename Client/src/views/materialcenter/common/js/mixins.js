@@ -52,7 +52,7 @@ export const quotationTableMixin = {
     },
     _getQuotationDetail (data) {
       let quotationId
-      let { status, isReceive, isSalesOrder, quotationStatus, isView, isProtected } = data
+      let { status, isReceive, isSalesOrder, quotationStatus, isView, isProtected, isUpdate } = data
       this.isReceive = !!isReceive // 判断销售订单还是报价单
       this.hasEditBtn = !!data.hasEditBtn
       this.isSalesOrder = !!isSalesOrder
@@ -90,7 +90,8 @@ export const quotationTableMixin = {
       console.log(status, 'status', quotationId)
       this.tableLoading = true
       getQuotationDetail({
-        quotationId
+        quotationId,
+        isUpdate
       }).then(res => {
         console.log(res,' res')
         this.detailInfo = this._normalizeDetail(res.data)

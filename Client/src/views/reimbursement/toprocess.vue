@@ -52,7 +52,7 @@
         class="dialog-clss"
         ref="myDialog"
         top="10px"
-        :width="dialogWidth"
+        width="1050px"
         :btnList="btnList"
         @closed="closeDialog"
         @opened="onOpened"
@@ -135,11 +135,11 @@ export default {
         { btnText: '关闭', handleClick: this.closeDialog, className: 'close' }
       ]
     },
-    dialogWidth () {
-      return this.isGeneralManager ? '1050px' : '1130px'
-    },
+    // dialogWidth () {
+    //   return this.isGeneralManager ? '1050px' : '1130px'
+    // },
     titleStyle () {
-      return this.isGeneralManager ? { height: '55px !important' } : {}
+      return { height: '55px !important' }
     }
   },
   data () {

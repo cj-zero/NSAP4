@@ -77,6 +77,7 @@ export default {
     onConfirm (value) {
       let processValueFn = this.processValue || this.defaultProcessValue
       this.$emit('input', processValueFn(value))
+      this.$emit('change', { ...value, ...this.options})
       this.hidePannel()
     },
     onClose () {
