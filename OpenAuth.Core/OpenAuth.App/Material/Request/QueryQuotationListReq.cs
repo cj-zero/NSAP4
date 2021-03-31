@@ -93,6 +93,9 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public int? PageStart { get; set; }
 
-
+        /// <summary>
+        /// 是否修改
+        /// </summary>
+        public bool? IsUpdate { get; set; }
     }
 }

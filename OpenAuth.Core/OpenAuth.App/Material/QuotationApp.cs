@@ -517,14 +517,14 @@ namespace OpenAuth.App.Material
         /// </summary>
         /// <param name="QuotationId"></param>
         /// <returns></returns>
-        public async Task<TableData> GetDetails(int QuotationId)
+        public async Task<TableData> GetDetails(QueryQuotationListReq request)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var Quotations = await UnitWork.Find<Quotation>(q => q.Id.Equals(QuotationId)).Include(q => q.QuotationPictures).Include(q => q.QuotationProducts).ThenInclude(p => p.QuotationMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
+            var Quotations = await UnitWork.Find<Quotation>(q => q.Id.Equals(request.QuotationId)).Include(q => q.QuotationPictures).Include(q => q.QuotationProducts).ThenInclude(p => p.QuotationMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
             var quotationsMap = Quotations.MapTo<AddOrUpdateQuotationReq>();
             List<string> materialCodes = new List<string>();
             Quotations.QuotationProducts.ForEach(q =>
@@ -538,6 +538,9 @@ namespace OpenAuth.App.Material
                     {
                         m.WarehouseNumber = ItemCodes.Where(i => i.ItemCode.Equals(m.MaterialCode)).FirstOrDefault()?.WhsCode;
                         m.WarehouseQuantity = ItemCodes.Where(i => i.ItemCode.Equals(m.MaterialCode)).FirstOrDefault()?.OnHand;
+                        m.TotalPrice=m.TotalPrice == 0 ? Math.Round(Convert.ToDecimal((m.UnitPrice * 3 * (m.Discount / 100) * m.Count)), 2):m.TotalPrice;
+                        m.SalesPrice=m.SalesPrice==0? Math.Round(Convert.ToDecimal(m.UnitPrice * 3), 2) : m.SalesPrice;
+                        m.DiscountPrices= m.SalesPrice == 0 ? Math.Round(Convert.ToDecimal(m.UnitPrice * 3 * (m.Discount / 100)), 2) : m.SalesPrice;
                     }
                 )
             );
@@ -545,14 +548,14 @@ namespace OpenAuth.App.Material
             var result = new TableData();
             var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(Quotations.ServiceOrderId)).Select(s => new { s.Id, s.U_SAP_ID, s.TerminalCustomer, s.TerminalCustomerId, s.SalesMan, s.SalesManId, s.NewestContacter, s.NewestContactTel }).FirstOrDefaultAsync();
             var CustomerInformation = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(ServiceOrders.TerminalCustomerId)).Select(o => new { o.BackOrder, frozenFor = o.frozenFor == "N" ? "正常" : "冻结" }).FirstOrDefaultAsync();
-            var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(QuotationId)).ToListAsync();
+            var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(request.QuotationId)).ToListAsync();
             var SecondId = (await UnitWork.Find<Relevance>(r => r.FirstId.Equals(quotationsMap.CreateUserId) && r.Key.Equals(Define.USERORG)).FirstOrDefaultAsync()).SecondId;
             quotationsMap.OrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.Id.Equals(SecondId)).Select(o => o.Name).FirstOrDefaultAsync();
             quotationsMap.QuotationOperationHistorys = quotationsMap.QuotationOperationHistorys.OrderBy(q => q.CreateTime).ToList();
 
-            if ((quotationsMap.ServiceCharge !=null &&quotationsMap.ServiceCharge > 0) || (quotationsMap.TravelExpense !=null &&quotationsMap.TravelExpense > 0))
+            if (((quotationsMap.ServiceCharge !=null &&quotationsMap.ServiceCharge > 0) || (quotationsMap.TravelExpense !=null &&quotationsMap.TravelExpense > 0)) && (request.IsUpdate == null || request.IsUpdate == false))
             {
-                List<ProductCodeListResp> serialNumberList = (await GetSerialNumberList(new QueryQuotationListReq { ServiceOrderId = quotationsMap.ServiceOrderId,CreateUserId= quotationsMap .CreateUserId})).Data;
+                List<ProductCodeListResp> serialNumberList = (await GetSerialNumberList(new QueryQuotationListReq { ServiceOrderId = quotationsMap.ServiceOrderId,CreateUserId= quotationsMap .CreateUserId,limit=200})).Data;
                 var productCodeList = quotationsMap.QuotationProducts.Select(q => q.ProductCode).ToList();
                 var products = serialNumberList.Where(s => !productCodeList.Contains(s.ManufacturerSerialNumber)).Select(s => new QuotationProductReq
                 {
@@ -574,7 +577,6 @@ namespace OpenAuth.App.Material
                         MaterialDescription = "维修费",
                         Unit = "PCS",
                         SalesPrice = quotationsMap.ServiceCharge / count,
-                        UnitPrice = quotationsMap.ServiceCharge / count,
                         Count = 1,
                         TotalPrice = quotationsMap.ServiceCharge / count,
                         Discount = 100,
@@ -588,7 +590,6 @@ namespace OpenAuth.App.Material
                         MaterialDescription = "差旅费",
                         Unit = "PCS",
                         SalesPrice = quotationsMap.TravelExpense / count,
-                        UnitPrice = quotationsMap.TravelExpense / count,
                         Count = 1,
                         TotalPrice = quotationsMap.TravelExpense / count,
                         Discount = 100,
@@ -1067,8 +1068,13 @@ namespace OpenAuth.App.Material
                             Remark = QuotationObj.Remark,
                             IsDraft = QuotationObj.IsDraft,
                             IsProtected = QuotationObj.IsProtected,
+                            TravelExpense=QuotationObj.TravelExpense,
                             Status = 1,
                             ServiceCharge = QuotationObj.ServiceCharge,
+                            Prepay= QuotationObj.Prepay,
+                            PaymentAfterWarranty= QuotationObj.PaymentAfterWarranty,
+                            CashBeforeFelivery=QuotationObj.CashBeforeFelivery,
+                            PayOnReceipt =QuotationObj.PayOnReceipt,
                             CollectionDA = QuotationObj.CollectionDA,
                             ShippingDA = QuotationObj.ShippingDA,
                             AcquisitionWay = QuotationObj.AcquisitionWay,
@@ -1848,7 +1854,7 @@ namespace OpenAuth.App.Material
                 MaterialDescription = q.MaterialDescription,
                 Count = q.Count.ToString(),
                 Unit = q.Unit,
-                SalesPrice = Convert.ToDecimal(q.SalesPrice).ToString("N"),
+                SalesPrice = (Convert.ToDecimal(q.SalesPrice)*(q.Discount/100)).ToString("N"),
                 TotalPrice = (decimal)q.TotalPrice
             });
             var datas = await ExportAllHandler.Exporterpdf(materials, "PrintSalesOrder.cshtml", pdf =>
@@ -1903,7 +1909,7 @@ namespace OpenAuth.App.Material
                 MaterialDescription = q.MaterialDescription,
                 Count = q.Count.ToString(),
                 Unit = q.Unit,
-                SalesPrice = q.SalesPrice.ToString("N"),
+                SalesPrice = (q.SalesPrice * (q.Discount/100)).ToString("N"),
                 TotalPrice = (decimal)q.TotalPrice
             });
             var datas = await ExportAllHandler.Exporterpdf(materials, "PrintQuotation.cshtml", pdf =>

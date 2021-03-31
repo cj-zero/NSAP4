@@ -108,6 +108,11 @@ namespace OpenAuth.App
             var objs = UnitWork.Find<OpenAuth.Repository.Domain.Org>(w => w.ParentName == "R研发部" || w.ParentName == "S售后部" || w.ParentName == "P生产部");
             var data = await objs.Select(u => new ReimburseOrg { Label = u.Name, Value = u.Id, ParentName = u.ParentName }).ToListAsync();
             var reimburseOrgResps = data.GroupBy(g => g.ParentName).Select(s => new ReimburseOrgResp { Label = GetOrgName(s.Key), Value = GetOrgName(s.Key), Children = s.ToList() }).ToList();
+            reimburseOrgResps.Add(new ReimburseOrgResp
+            {
+                Label="公司",
+                Value= "7ff76fd2-56e4-4db3-be9c-2da2114e3f4e",
+            });
             result.Data = reimburseOrgResps;
             return result;
         }
