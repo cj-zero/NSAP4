@@ -3873,7 +3873,7 @@ namespace OpenAuth.App
                 int i = 1;
                 foreach (var item in req.transportExpenses)
                 {
-                    var transportExpenseInfo = new ServiceDailyExpends { ServiceOrderId = req.ServiceOrderId, CreateTime = DateTime.Now, CreateUserId = userInfo.User.Id, CreateUserName = userInfo.User.Name, DailyExpenseType = 2, SerialNumber = i, Money = item.Money, InvoiceNumber = item.InvoiceNumber, Remark = item.Remark, From = item.From, To = item.To, InvoiceTime = item.InvoiceTime, TrafficType = item.TrafficType, FeeType = item.FeeType, Transport = item.Transport, TotalMoney = item.Money };
+                    var transportExpenseInfo = new ServiceDailyExpends { ServiceOrderId = req.ServiceOrderId, CreateTime = DateTime.Now, CreateUserId = userInfo.User.Id, CreateUserName = userInfo.User.Name, DailyExpenseType = 2, SerialNumber = i, Money = item.Money, InvoiceNumber = item.InvoiceNumber, Remark = item.Remark, From = item.From, To = item.To, InvoiceTime = item.InvoiceTime, TrafficType = item.TrafficType, FeeType = item.FeeType, Transport = item.Transport, TotalMoney = item.Money, FromLat = item.FromLat, FromLng = item.FromLng, ToLat = item.ToLat, ToLng = item.ToLng };
                     if (item.ReimburseAttachments != null)
                     {
                         var fileIds = item.ReimburseAttachments.Select(s => s.FileId).ToList();
@@ -4051,7 +4051,7 @@ namespace OpenAuth.App
             var dailyExpendIds = dailyExpendSums.Select(s => s.Id).ToList();
             var dailyAttachments = await UnitWork.Find<DailyAttachment>(w => dailyExpendIds.Contains(w.ExpendId)).ToListAsync();
 
-            var data = dailyExpendSums.Select(s => new { s.CreateTime, s.CreateUserId, s.CreateUserName, s.DailyExpenseType, s.Days, s.ExpenseCategory, s.FeeType, s.From, s.Id, s.InvoiceNumber, s.InvoiceTime, s.Money, s.Remark, s.SellerName, s.SerialNumber, s.ServiceOrderId, s.To, s.Transport, s.TrafficType, s.TotalMoney, s.ReimburseAttachment, DailyAttachments = dailyAttachments.Where(w => w.ExpendId == s.Id).ToList() }).OrderByDescending(o => o.CreateTime).ToList();
+            var data = dailyExpendSums.Select(s => new { s.CreateTime, s.CreateUserId, s.CreateUserName, s.DailyExpenseType, s.Days, s.ExpenseCategory, s.FeeType, s.From, s.Id, s.InvoiceNumber, s.InvoiceTime, s.Money, s.Remark, s.SellerName, s.SerialNumber, s.ServiceOrderId, s.To, s.Transport, s.TrafficType, s.TotalMoney, s.ReimburseAttachment, s.FromLat, s.FromLng, s.ToLat, s.ToLng, DailyAttachments = dailyAttachments.Where(w => w.ExpendId == s.Id).ToList() }).OrderByDescending(o => o.CreateTime).ToList();
 
             List<TransportExpense> transportExpenses = new List<TransportExpense>();
             List<HotelExpense> hotelExpenses = new List<HotelExpense>();
