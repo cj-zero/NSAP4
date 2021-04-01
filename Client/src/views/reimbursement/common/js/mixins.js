@@ -387,7 +387,7 @@ export let tableMixin = {
         })
       data.reimburseAttachments = []
       if (reimburseTravellingAllowances && reimburseTravellingAllowances.length) {
-        reimburseTravellingAllowances[0].isAdd = true
+        reimburseTravellingAllowances.forEach(item => item.isAdd = true)
       }
       // 处理附件
       this._buildAttachment(reimburseFares)
@@ -399,7 +399,7 @@ export let tableMixin = {
         let { reimburseAttachments } = item
         item.invoiceFileList = this.getTargetAttachment(reimburseAttachments, 2)
         item.otherFileList = this.getTargetAttachment(reimburseAttachments, 1)
-        item.invoiceAttachment = [],
+        item.invoiceAttachment = []
         item.otherAttachment = []
         item.reimburseAttachments = []
         item.maxMoney = item.totalMoney || item.money
@@ -656,9 +656,7 @@ export let categoryMixin = {
         { label: '金额', prop: 'money', type: 'number', disabled: true, width: 150, align: 'right' },
         { label: '备注', prop: 'remark', type: 'input', width: 150 }
       ]
-      return (this.ifFormEdit !== undefined && !this.ifFormEdit) || this.ifFormEdit === undefined
-        ? config
-        : [...config, { label: '操作', type: 'operation', iconList: [{ icon: 'el-icon-delete', handleClick: this.toDelete }], width: 150 }]
+      return config
     },
     trafficConfig () {
       let config = [ // 交通配置

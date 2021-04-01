@@ -1,3 +1,5 @@
+import { isNumber } from "@/utils/validate"
+
 /**
  * 
  * @param {*} val 值
@@ -6,6 +8,9 @@
  * @param {*} decimalNumber 保留小数位数
  */
 export function toThousands (val, range =  3, separator = ',', decimalNumber = 2) { // 千分位化
+  if (val ===  null || !isNumber(Number(val))) {
+    return ''
+  }
   let [integer, decimal] = Number(val).toFixed(decimalNumber).split('.')
   let result = '', j = 1
   for (let i = integer.length - 1; i >= 0; i--) {

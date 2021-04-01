@@ -151,3 +151,16 @@ export function addTravellingAllowance (data) { // 新增出差补贴
     data
   })
 }
+
+export function getServiceDailyExpendSum (params, _this) { // 获取日费集合
+  return request({
+    url: '/serve/ServiceOrder/GetServiceDailyExpendSum',
+    method: 'get',
+    params,
+    cancelToken: new request.cancelToken(function executor(c) {
+      if (_this) {
+        _this.cancelRequestDailyExpend = c
+      }
+    })
+  })
+}

@@ -453,135 +453,308 @@
             </el-row>
           </el-col>
         </el-row>
-        <!-- 出差 -->
-        <div class="form-item-wrapper travel" :class="{ 'uneditable global-unused': !this.ifFormEdit }" v-if="title !== 'create' && formData.reimburseTravellingAllowances.length">
-          <!-- <el-button v-if="ifShowTravel" @click="showForm(formData.reimburseTravellingAllowances, 'ifShowTravel')">添加出差补贴</el-button> -->
-          <el-form 
-            ref="travelForm" 
-            :model="formData" 
-            size="mini" 
-            :show-message="false"
-            class="form-wrapper"
-            :disabled="title !== 'create'"
-            :class="{ 'uneditable': title !== 'create' }"
-          >
-            <div class="title-wrapper">
-              <div class="number-count">总数量:{{ travelCount }}个</div>
-              <div class="title">
-                <span>出差补贴</span>
-                <p class="total-money">小计: ￥{{ travelTotalMoney | toThousands }}</p>
-              </div>
-            </div>
-            <el-table 
-              border
-              :data="formData.reimburseTravellingAllowances"
-              @cell-click="onTravelCellClick"
+        <div v-loading="dailyExpendLoading">
+          <!-- 出差 -->
+          <div class="form-item-wrapper travel" :class="{ 'uneditable global-unused': !this.ifFormEdit }" v-if="formData.reimburseTravellingAllowances.length">
+            <!-- <el-button v-if="ifShowTravel" @click="showForm(formData.reimburseTravellingAllowances, 'ifShowTravel')">添加出差补贴</el-button> -->
+            <el-form 
+              ref="travelForm" 
+              :model="formData" 
+              size="mini" 
+              :show-message="false"
+              class="form-wrapper"
+              :disabled="true"
+              :class="{ 'uneditable': title !== 'create' }"
             >
-              <el-table-column
-                v-for="item in travelConfig"
-                :key="item.label"
-                :label="item.label"
-                :width="item.width"
-                :align="item.align || 'left'"
-                :prop="item.prop"
-                :fixed="item.fixed"
-                :resizable="false"
+              <div class="title-wrapper">
+                <div class="number-count">总数量:{{ travelCount }}个</div>
+                <div class="title">
+                  <span>出差补贴</span>
+                  <p class="total-money">小计: ￥{{ travelTotalMoney | toThousands }}</p>
+                </div>
+              </div>
+              <el-table 
+                border
+                :data="formData.reimburseTravellingAllowances"
+                @cell-click="onTravelCellClick"
               >
-                <template slot-scope="scope">
-                  <template v-if="item.type === 'input'">
-                    <el-form-item
-                      :prop="'reimburseTravellingAllowances.' + scope.$index + '.'+ item.prop"
-                      :rules="travelRules[item.prop] || { required: false }"
-                    >
-                      <el-input 
-                        v-model="scope.row[item.prop]" 
-                        :disabled="item.disabled" 
-                        :placeholder="item.placeholder" 
-                        v-infotooltip:200.top-start>
-                      </el-input>
-                    </el-form-item>
+                <el-table-column
+                  v-for="item in travelConfig"
+                  :key="item.label"
+                  :label="item.label"
+                  :width="item.width"
+                  :align="item.align || 'left'"
+                  :prop="item.prop"
+                  :fixed="item.fixed"
+                  :resizable="false"
+                >
+                  <template slot-scope="scope">
+                    <template v-if="item.type === 'input'">
+                      <el-form-item
+                        :prop="'reimburseTravellingAllowances.' + scope.$index + '.'+ item.prop"
+                        :rules="travelRules[item.prop] || { required: false }"
+                      >
+                        <el-input 
+                          v-model="scope.row[item.prop]" 
+                          :disabled="item.disabled" 
+                          :placeholder="item.placeholder" 
+                          v-infotooltip:200.top-start>
+                        </el-input>
+                      </el-form-item>
+                    </template>
+                    <template v-else-if="item.type === 'number'">
+                      <el-form-item
+                        :prop="'reimburseTravellingAllowances.' + scope.$index + '.'+ item.prop"
+                        :rules="travelRules[item.prop] || { required: false }"
+                      >
+                        <el-input 
+                          v-model="scope.row[item.prop]" 
+                          :type="item.type" :min="0" 
+                          :disabled="item.prop === 'money'"
+                          @input="onTravelInput"
+                          :class="{ 'money-class': item.prop === 'money' || item.prop === 'days' }"
+                        ></el-input>
+                      </el-form-item>
+                    </template>
+                    <!-- <template v-else-if="item.type === 'operation'">
+                      <template v-for="iconItem in item.iconList">
+                        <i 
+                          :key="iconItem.icon"
+                          :class="iconItem.icon" 
+                          class="icon-item"
+                          @click="iconItem.handleClick(scope, formData.reimburseTravellingAllowances, 'travel', iconItem.operationType)">
+                        </i>
+                      </template>
+                    </template> -->
                   </template>
-                  <template v-else-if="item.type === 'number'">
-                    <el-form-item
-                      :prop="'reimburseTravellingAllowances.' + scope.$index + '.'+ item.prop"
-                      :rules="travelRules[item.prop] || { required: false }"
-                    >
-                      <el-input 
-                        v-model="scope.row[item.prop]" 
-                        :type="item.type" :min="0" 
-                        :disabled="item.prop === 'money'"
-                        @input="onTravelInput"
-                        :class="{ 'money-class': item.prop === 'money' || item.prop === 'days' }"
-                      ></el-input>
-                    </el-form-item>
-                  </template>
-                  <template v-else-if="item.type === 'operation'">
-                    <template v-for="iconItem in item.iconList">
-                      <i 
-                        :key="iconItem.icon"
-                        :class="iconItem.icon" 
-                        class="icon-item"
-                        @click="iconItem.handleClick(scope, formData.reimburseTravellingAllowances, 'travel', iconItem.operationType)">
-                      </i>
+                </el-table-column>
+              </el-table>
+            </el-form>
+          </div>
+          <!-- 交通 -->
+          <div class="form-item-wrapper" v-if="ifCOrE || formData.reimburseFares.length">
+            <el-button v-if="ifShowTraffic && !formData.reimburseFares.length" @click="showForm(formData.reimburseFares, 'ifShowTraffic')">添加交通费用</el-button>
+            <el-form 
+              v-else
+              ref="trafficForm" 
+              :model="formData" 
+              size="mini" 
+              :show-message="false"
+              class="form-wrapper"
+              :disabled="!ifFormEdit"
+              :class="{ 'uneditable global-unused': !this.ifFormEdit }"
+            >
+              <div class="title-wrapper">
+                <div class="number-count">总数量:{{ trafficCount }}个</div>
+                <div class="title">
+                  <span>交通费用</span>
+                  <p class="total-money">小计: ￥{{ trafficTotalMoney | toThousands }}</p>
+                </div>
+              </div>
+              <el-table 
+                :row-style="rowStyle"
+                border
+                :data="formData.reimburseFares"
+                max-height="10000px"
+                @cell-click="onTrafficCellClick"
+              >
+                <el-table-column
+                  v-for="item in trafficConfig"
+                  :key="item.label"
+                  :label="item.label"
+                  :align="item.align || 'left'"
+                  :prop="item.prop"
+                  :width="item.width"
+                  :fixed="item.fixed"
+                  :resizable="false"
+                >
+                  <template slot-scope="scope">
+                    <template v-if="item.type === 'order'">
+                      {{ scope.$index + 1 }}
+                    </template>
+                    <template v-else-if="item.type === 'input'">
+                      <el-form-item
+                        :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
+                        :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }"
+                      >
+                        <div class="area-wrapper">
+                          <el-input 
+                            v-model.trim="scope.row[item.prop]" 
+                            :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)" 
+                            :readonly="item.readonly || false"
+                            :placeholder="item.placeholder">
+                            <el-tooltip
+                              v-if="item.prop === 'invoiceNumber'"
+                              :disabled="scope.row.isValidInvoice"
+                              slot="suffix"
+                              effect="dark"
+                              placement="top-start"
+                              :content="`${scope.row.isValidInvoice ? '' : '无发票附件'}`">
+                              <i 
+                                class="el-input__icon"
+                                :class="{
+                                  'el-icon-upload-success el-icon-circle-check success': scope.row.isValidInvoice,
+                                  'el-icon-warning-outline warning': !scope.row.isValidInvoice
+                                }">
+                              </i>
+                            </el-tooltip>
+                          </el-input>
+                        </div>                   
+                      </el-form-item>
+                    </template>
+                    <template v-else-if="item.type === 'area'">
+                      <el-form-item
+                        :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
+                        :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }"
+                      >
+                        <my-new-area-selector
+                          v-infotooltip.top.ellipsis
+                          class="my-area-selector"
+                          v-model="scope.row[item.prop]"
+                          :processValue="areaProcessValue"
+                          @change="onAreaChange" 
+                          :options="{ prop: item.prop, index: scope.$index }">
+                        </my-new-area-selector>
+                      </el-form-item>
+                    </template>
+                    <template v-else-if="item.type === 'number'">
+                      <el-form-item
+                        :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
+                        :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }"
+                      >
+                        <el-input 
+                          v-model="scope.row[item.prop]" 
+                          :type="item.type" 
+                          :disabled="item.disabled" 
+                          :min="0"
+                          :class="{ 'money-class': item.prop === 'money'}"
+                          @input="onTrafficInput" 
+                          @focus="onFocus({ prop: item.prop, index: scope.$index })"
+                          :placeholder="item.placeholder"></el-input>
+                      </el-form-item>
+                    </template>
+                    <template v-else-if="item.type === 'select'">
+                      <el-form-item
+                        :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
+                        :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }"
+                      >
+                        <el-select
+                          v-model="scope.row[item.prop]"
+                        >
+                          <el-option
+                            v-for="optionItem in item.options"
+                            :key="optionItem.label"
+                            :value="optionItem.value"
+                            :label="optionItem.label"
+                          >
+                          </el-option>
+                        </el-select>
+                      </el-form-item>
+                    </template>
+                    <template v-else-if="item.type === 'upload'">   
+                      <upLoadFile  
+                        :disabled="!ifFormEdit"
+                        @get-ImgList="getTrafficList" 
+                        :limit="item.prop === 'invoiceAttachment' ? 1 : 100" 
+                        uploadType="file" 
+                        ref="trafficUploadFile"
+                        :options="{ prop: item.prop, index: scope.$index, type: 'traffic' }" 
+                        :ifShowTip="ifFormEdit"
+                        :isInline="isGeneralManager && isCustomerSupervisor"
+                        @deleteFileList="deleteFileList"
+                        :onAccept="onAccept"
+                        :fileList="
+                          formData.reimburseFares[scope.$index] 
+                            ? (item.prop === 'invoiceAttachment' 
+                              ? formData.reimburseFares[scope.$index].invoiceFileList
+                              : formData.reimburseFares[scope.$index].otherFileList
+                            ) 
+                          : []
+                      ">
+                      </upLoadFile>
+                    </template>
+                    <template v-else-if="item.type === 'date'">
+                      <el-form-item 
+                        :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
+                        :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }">
+                        <el-date-picker
+                          class="invoice-time"
+                          size="mini"
+                          v-model="scope.row[item.prop]"
+                          type="datetime"
+                          style="width: 100%;"
+                          value-format="yyyy-MM-dd HH:mm:ss"
+                          :clearable="false"
+                          placeholder="选择日期时间">
+                        </el-date-picker>
+                      </el-form-item>
+                    </template>
+                    <template v-else-if="item.type === 'operation'">
+                      <template v-for="iconItem in item.iconList">
+                        <i 
+                          :key="iconItem.icon"
+                          :class="iconItem.icon" 
+                          class="icon-item"
+                          @click="iconItem.handleClick(scope, formData.reimburseFares, 'traffic', iconItem.operationType)">
+                        </i>
+                      </template>
                     </template>
                   </template>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-form>
-        </div>
-        <!-- 交通 -->
-        <div class="form-item-wrapper" v-if="ifCOrE || formData.reimburseFares.length">
-          <el-button v-if="ifShowTraffic" @click="showForm(formData.reimburseFares, 'ifShowTraffic')">添加交通费用</el-button>
-          <el-form 
+                </el-table-column>
+              </el-table>
+            </el-form>
+          </div>
+          <!-- 住宿 -->
+          <div class="form-item-wrapper acc" :class="{ 'uneditable global-unused': !this.ifFormEdit }" v-if="ifCOrE || formData.reimburseAccommodationSubsidies.length">
+            <el-button v-if="ifShowAcc && !formData.reimburseAccommodationSubsidies.length" @click="showForm(formData.reimburseAccommodationSubsidies, 'ifShowAcc')">添加住宿补贴</el-button>
+            <el-form 
             v-else
-            ref="trafficForm" 
+            ref="accForm" 
             :model="formData" 
             size="mini" 
             :show-message="false"
             class="form-wrapper"
             :disabled="!ifFormEdit"
-            :class="{ 'uneditable global-unused': !this.ifFormEdit }"
-          >
-            <div class="title-wrapper">
-              <div class="number-count">总数量:{{ trafficCount }}个</div>
-              <div class="title">
-                <span>交通费用</span>
-                <p class="total-money">小计: ￥{{ trafficTotalMoney | toThousands }}</p>
-              </div>
-            </div>
-            <el-table 
-              :row-style="rowStyle"
-              border
-              :data="formData.reimburseFares"
-              max-height="10000px"
-              @cell-click="onTrafficCellClick"
+            :class="{ 'uneditable': !this.ifFormEdit }"
             >
-              <el-table-column
-                v-for="item in trafficConfig"
-                :key="item.label"
-                :label="item.label"
-                :align="item.align || 'left'"
-                :prop="item.prop"
-                :width="item.width"
-                :fixed="item.fixed"
-                :resizable="false"
+              <div class="title-wrapper">
+                <div class="number-count">总数量:{{ accCount }}个</div>
+                <div class="title">
+                  <span>住宿补贴</span>
+                  <p class="total-money">小计: ￥{{ accTotalMoney | toThousands }}</p>
+                </div>
+              </div>
+              <el-table 
+                :row-style="rowStyle"
+                border
+                :data="formData.reimburseAccommodationSubsidies"
+                max-height="10000px"
+                @cell-click="onAccCellClick"
               >
-                <template slot-scope="scope">
-                  <template v-if="item.type === 'order'">
-                    {{ scope.$index + 1 }}
-                  </template>
-                  <template v-else-if="item.type === 'input'">
-                    <el-form-item
-                      :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
-                      :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }"
-                    >
-                      <div class="area-wrapper">
+                <el-table-column
+                  v-for="item in accommodationConfig"
+                  :key="item.label"
+                  :label="item.label"
+                  :align="item.align || 'left'"
+                  :prop="item.prop"
+                  :width="item.width"
+                  :fixed="item.fixed"
+                  :resizable="false"
+                >
+                  <template slot-scope="scope">
+                    <template v-if="item.type === 'order'">
+                      {{ scope.$index + 1 }}
+                    </template>
+                    <template v-else-if="item.type === 'input'">
+                      <el-form-item
+                        :prop="'reimburseAccommodationSubsidies.' + scope.$index + '.'+ item.prop"
+                        :rules="scope.row.isAdd ? (accRules[item.prop] || { required: false }) : { required: false }"
+                      >
                         <el-input 
                           v-model.trim="scope.row[item.prop]" 
+                          :placeholder="item.placeholder"
                           :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)" 
-                          :readonly="item.readonly || false"
-                          :placeholder="item.placeholder">
+                          @change="onChange">
                           <el-tooltip
                             v-if="item.prop === 'invoiceNumber'"
                             :disabled="scope.row.isValidInvoice"
@@ -598,424 +771,253 @@
                             </i>
                           </el-tooltip>
                         </el-input>
-                      </div>                   
-                    </el-form-item>
-                  </template>
-                  <template v-else-if="item.type === 'area'">
-                    <el-form-item
-                      :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
-                      :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }"
-                    >
-                      <my-new-area-selector
-                        v-infotooltip.top.ellipsis
-                        class="my-area-selector"
-                        v-model="scope.row[item.prop]"
-                        :processValue="areaProcessValue"
-                        @change="onAreaChange" 
-                        :options="{ prop: item.prop, index: scope.$index }">
-                      </my-new-area-selector>
-                    </el-form-item>
-                  </template>
-                  <template v-else-if="item.type === 'number'">
-                    <el-form-item
-                      :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
-                      :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }"
-                    >
-                      <el-input 
-                        v-model="scope.row[item.prop]" 
-                        :type="item.type" 
-                        :disabled="item.disabled" 
-                        :min="0"
-                        :class="{ 'money-class': item.prop === 'money'}"
-                        @input="onTrafficInput" 
-                        @focus="onFocus({ prop: item.prop, index: scope.$index })"
-                        :placeholder="item.placeholder"></el-input>
-                    </el-form-item>
-                  </template>
-                  <template v-else-if="item.type === 'select'">
-                    <el-form-item
-                      :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
-                      :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }"
-                    >
-                      <el-select
-                        v-model="scope.row[item.prop]"
+                      </el-form-item>
+                    </template>
+                    <template v-else-if="item.type === 'number'">
+                      <el-form-item
+                        :prop="'reimburseAccommodationSubsidies.' + scope.$index + '.'+ item.prop"
+                        :rules="scope.row.isAdd ? (accRules[item.prop] || { required: false }) : { required: false }"
                       >
-                        <el-option
-                          v-for="optionItem in item.options"
-                          :key="optionItem.label"
-                          :value="optionItem.value"
-                          :label="optionItem.label"
+                        <el-input 
+                          :class="{ 'money-class': item.prop === 'money' || item.prop === 'totalMoney' || item.prop === 'days' }"
+                          v-model="scope.row[item.prop]" 
+                          :type="item.type" 
+                          :disabled="item.disabled" 
+                          :min="0" 
+                          @change="onChange"
+                          @blur="onBlur"
+                          @input="onAccInput"
+                          @focus="onFocus({ prop: item.prop, index: scope.$index })"
+                          :placeholder="item.placeholder"></el-input>
+                      </el-form-item>
+                    </template>
+                    <template v-else-if="item.type === 'select'">
+                      <el-form-item
+                        :prop="'reimburseAccommodationSubsidies.' + scope.$index + '.'+ item.prop"
+                        :rules="scope.row.isAdd ? (accRules[item.prop] || { required: false }) : { required: false }"
+                      >
+                        <el-select
+                          v-model="scope.row[item.prop]"
                         >
-                        </el-option>
-                      </el-select>
-                    </el-form-item>
-                  </template>
-                  <template v-else-if="item.type === 'upload'">   
-                    <upLoadFile  
-                      :disabled="!ifFormEdit"
-                      @get-ImgList="getTrafficList" 
-                      :limit="item.prop === 'invoiceAttachment' ? 1 : 100" 
-                      uploadType="file" 
-                      ref="trafficUploadFile"
-                      :options="{ prop: item.prop, index: scope.$index, type: 'traffic' }" 
-                      :ifShowTip="ifFormEdit"
-                      :isInline="isGeneralManager && isCustomerSupervisor"
-                      @deleteFileList="deleteFileList"
-                      :onAccept="onAccept"
-                      :fileList="
-                        formData.reimburseFares[scope.$index] 
-                          ? (item.prop === 'invoiceAttachment' 
-                            ? formData.reimburseFares[scope.$index].invoiceFileList
-                            : formData.reimburseFares[scope.$index].otherFileList
-                          ) 
-                        : []
-                    ">
-                    </upLoadFile>
-                  </template>
-                  <template v-else-if="item.type === 'date'">
-                    <el-form-item 
-                      :prop="'reimburseFares.' + scope.$index + '.'+ item.prop"
-                      :rules="scope.row.isAdd ? (trafficRules[item.prop] || { required: false }) : { required: false }">
-                      <el-date-picker
-                        class="invoice-time"
-                        size="mini"
-                        v-model="scope.row[item.prop]"
-                        type="datetime"
-                        style="width: 100%;"
-                        value-format="yyyy-MM-dd HH:mm:ss"
-                        :clearable="false"
-                        placeholder="选择日期时间">
-                      </el-date-picker>
-                    </el-form-item>
-                  </template>
-                  <template v-else-if="item.type === 'operation'">
-                    <template v-for="iconItem in item.iconList">
-                      <i 
-                        :key="iconItem.icon"
-                        :class="iconItem.icon" 
-                        class="icon-item"
-                        @click="iconItem.handleClick(scope, formData.reimburseFares, 'traffic', iconItem.operationType)">
-                      </i>
+                          <el-option
+                            v-for="optionItem in item.options"
+                            :key="optionItem.label"
+                            :value="optionItem.value"
+                            :label="optionItem.label"
+                          >
+                          </el-option>
+                        </el-select>
+                      </el-form-item>
+                    </template>
+                    <template v-else-if="item.type === 'date'">
+                      <el-form-item 
+                        :prop="'reimburseAccommodationSubsidies.' + scope.$index + '.'+ item.prop"
+                        :rules="scope.row.isAdd ? (accRules[item.prop] || { required: false }) : { required: false }">
+                        <el-date-picker
+                          class="invoice-time"
+                          size="mini"
+                          v-model="scope.row[item.prop]"
+                          type="datetime"
+                          style="width: 100%;"
+                          value-format="yyyy-MM-dd HH:mm:ss"
+                          :clearable="false"
+                          placeholder="选择日期时间">
+                        </el-date-picker>
+                      </el-form-item>
+                    </template>
+                    <template v-else-if="item.type === 'upload'">
+                      <upLoadFile  
+                        :disabled="!ifFormEdit"
+                        @get-ImgList="getAccList" 
+                        :limit="item.prop === 'invoiceAttachment' ? 1 : 100" 
+                        uploadType="file" 
+                        ref="accUploadFile" 
+                        :options="{ prop: item.prop, index: scope.$index, isAcc: true, type: 'acc' }"
+                        :ifShowTip="ifFormEdit"
+                        @deleteFileList="deleteFileList"
+                        :onAccept="onAccept"
+                        :isInline="isGeneralManager || isCustomerSupervisor"
+                        :fileList="
+                          formData.reimburseAccommodationSubsidies[scope.$index] 
+                            ? (item.prop === 'invoiceAttachment' 
+                              ? formData.reimburseAccommodationSubsidies[scope.$index].invoiceFileList
+                              : formData.reimburseAccommodationSubsidies[scope.$index].otherFileList
+                            ) 
+                          : []
+                        ">
+                      </upLoadFile>
+                    </template>
+                    <template v-else-if="item.type === 'operation'">
+                      <template v-for="iconItem in item.iconList">
+                        <i 
+                          :key="iconItem.icon"
+                          :class="iconItem.icon" 
+                          class="icon-item"
+                          @click="iconItem.handleClick(scope, formData.reimburseAccommodationSubsidies, 'accommodation', iconItem.operationType)">
+                        </i>
+                      </template>
                     </template>
                   </template>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-form>
-        </div>
-        <!-- 住宿 -->
-        <div class="form-item-wrapper acc" :class="{ 'uneditable global-unused': !this.ifFormEdit }" v-if="ifCOrE || formData.reimburseAccommodationSubsidies.length">
-          <el-button v-if="ifShowAcc" @click="showForm(formData.reimburseAccommodationSubsidies, 'ifShowAcc')">添加住宿补贴</el-button>
-          <el-form 
-          v-else
-          ref="accForm" 
-          :model="formData" 
-          size="mini" 
-          :show-message="false"
-          class="form-wrapper"
-          :disabled="!ifFormEdit"
-          :class="{ 'uneditable': !this.ifFormEdit }"
-          >
-            <div class="title-wrapper">
-              <div class="number-count">总数量:{{ accCount }}个</div>
-              <div class="title">
-                <span>住宿补贴</span>
-                <p class="total-money">小计: ￥{{ accTotalMoney | toThousands }}</p>
-              </div>
-            </div>
-            <el-table 
-              :row-style="rowStyle"
-              border
-              :data="formData.reimburseAccommodationSubsidies"
-              max-height="10000px"
-              @cell-click="onAccCellClick"
+                </el-table-column>
+              </el-table>
+            </el-form>
+          </div>
+          <!-- 其它 -->
+          <div class="form-item-wrapper other" :class="{ 'uneditable global-unused': !this.ifFormEdit }" v-if="ifCOrE || formData.reimburseOtherCharges.length">
+            <el-button v-if="ifShowOther && !formData.reimburseOtherCharges.length" @click="showForm(formData.reimburseOtherCharges, 'ifShowOther')">添加其他费用</el-button>
+            <el-form 
+              v-else
+              ref="otherForm" 
+              :model="formData" 
+              size="mini" 
+              :show-message="false"
+              class="form-wrapper"
+              :disabled="!ifFormEdit"
+              :class="{ 'uneditable': !this.ifFormEdit }"
             >
-              <el-table-column
-                v-for="item in accommodationConfig"
-                :key="item.label"
-                :label="item.label"
-                :align="item.align || 'left'"
-                :prop="item.prop"
-                :width="item.width"
-                :fixed="item.fixed"
-                :resizable="false"
-              >
-                <template slot-scope="scope">
-                  <template v-if="item.type === 'order'">
-                    {{ scope.$index + 1 }}
-                  </template>
-                  <template v-else-if="item.type === 'input'">
-                    <el-form-item
-                      :prop="'reimburseAccommodationSubsidies.' + scope.$index + '.'+ item.prop"
-                      :rules="scope.row.isAdd ? (accRules[item.prop] || { required: false }) : { required: false }"
-                    >
-                      <el-input 
-                        v-model.trim="scope.row[item.prop]" 
-                        :placeholder="item.placeholder"
-                        :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)" 
-                        @change="onChange">
-                        <el-tooltip
-                          v-if="item.prop === 'invoiceNumber'"
-                          :disabled="scope.row.isValidInvoice"
-                          slot="suffix"
-                          effect="dark"
-                          placement="top-start"
-                          :content="`${scope.row.isValidInvoice ? '' : '无发票附件'}`">
-                          <i 
-                            class="el-input__icon"
-                            :class="{
-                              'el-icon-upload-success el-icon-circle-check success': scope.row.isValidInvoice,
-                              'el-icon-warning-outline warning': !scope.row.isValidInvoice
-                            }">
-                          </i>
-                        </el-tooltip>
-                      </el-input>
-                    </el-form-item>
-                  </template>
-                  <template v-else-if="item.type === 'number'">
-                    <el-form-item
-                      :prop="'reimburseAccommodationSubsidies.' + scope.$index + '.'+ item.prop"
-                      :rules="scope.row.isAdd ? (accRules[item.prop] || { required: false }) : { required: false }"
-                    >
-                      <el-input 
-                        :class="{ 'money-class': item.prop === 'money' || item.prop === 'totalMoney' || item.prop === 'days' }"
-                        v-model="scope.row[item.prop]" 
-                        :type="item.type" 
-                        :disabled="item.disabled" 
-                        :min="0" 
-                        @change="onChange"
-                        @blur="onBlur"
-                        @input="onAccInput"
-                        @focus="onFocus({ prop: item.prop, index: scope.$index })"
-                        :placeholder="item.placeholder"></el-input>
-                    </el-form-item>
-                  </template>
-                  <template v-else-if="item.type === 'select'">
-                    <el-form-item
-                      :prop="'reimburseAccommodationSubsidies.' + scope.$index + '.'+ item.prop"
-                      :rules="scope.row.isAdd ? (accRules[item.prop] || { required: false }) : { required: false }"
-                    >
-                      <el-select
-                        v-model="scope.row[item.prop]"
-                      >
-                        <el-option
-                          v-for="optionItem in item.options"
-                          :key="optionItem.label"
-                          :value="optionItem.value"
-                          :label="optionItem.label"
-                        >
-                        </el-option>
-                      </el-select>
-                    </el-form-item>
-                  </template>
-                  <template v-else-if="item.type === 'date'">
-                    <el-form-item 
-                      :prop="'reimburseAccommodationSubsidies.' + scope.$index + '.'+ item.prop"
-                      :rules="scope.row.isAdd ? (accRules[item.prop] || { required: false }) : { required: false }">
-                      <el-date-picker
-                        class="invoice-time"
-                        size="mini"
-                        v-model="scope.row[item.prop]"
-                        type="datetime"
-                        style="width: 100%;"
-                        value-format="yyyy-MM-dd HH:mm:ss"
-                        :clearable="false"
-                        placeholder="选择日期时间">
-                      </el-date-picker>
-                    </el-form-item>
-                  </template>
-                  <template v-else-if="item.type === 'upload'">
-                    <upLoadFile  
-                      :disabled="!ifFormEdit"
-                      @get-ImgList="getAccList" 
-                      :limit="item.prop === 'invoiceAttachment' ? 1 : 100" 
-                      uploadType="file" 
-                      ref="accUploadFile" 
-                      :options="{ prop: item.prop, index: scope.$index, isAcc: true, type: 'acc' }"
-                      :ifShowTip="ifFormEdit"
-                      @deleteFileList="deleteFileList"
-                      :onAccept="onAccept"
-                      :isInline="isGeneralManager || isCustomerSupervisor"
-                      :fileList="
-                        formData.reimburseAccommodationSubsidies[scope.$index] 
-                          ? (item.prop === 'invoiceAttachment' 
-                            ? formData.reimburseAccommodationSubsidies[scope.$index].invoiceFileList
-                            : formData.reimburseAccommodationSubsidies[scope.$index].otherFileList
-                          ) 
-                        : []
-                      ">
-                    </upLoadFile>
-                  </template>
-                  <template v-else-if="item.type === 'operation'">
-                    <template v-for="iconItem in item.iconList">
-                      <i 
-                        :key="iconItem.icon"
-                        :class="iconItem.icon" 
-                        class="icon-item"
-                        @click="iconItem.handleClick(scope, formData.reimburseAccommodationSubsidies, 'accommodation', iconItem.operationType)">
-                      </i>
-                    </template>
-                  </template>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-form>
-        </div>
-        <!-- 其它 -->
-        <div class="form-item-wrapper other" :class="{ 'uneditable global-unused': !this.ifFormEdit }" v-if="ifCOrE || formData.reimburseOtherCharges.length">
-          <el-button v-if="ifShowOther" @click="showForm(formData.reimburseOtherCharges, 'ifShowOther')">添加其他费用</el-button>
-          <el-form 
-            v-else
-            ref="otherForm" 
-            :model="formData" 
-            size="mini" 
-            :show-message="false"
-            class="form-wrapper"
-            :disabled="!ifFormEdit"
-            :class="{ 'uneditable': !this.ifFormEdit }"
-          >
-            <div class="title-wrapper">
-              <div class="number-count">总数量:{{ otherCount }}个</div>
-              <div class="title">
-                <span>其他费用</span>
-                <p class="total-money">小计: ￥{{ otherTotalMoney | toThousands }}</p>
+              <div class="title-wrapper">
+                <div class="number-count">总数量:{{ otherCount }}个</div>
+                <div class="title">
+                  <span>其他费用</span>
+                  <p class="total-money">小计: ￥{{ otherTotalMoney | toThousands }}</p>
+                </div>
               </div>
-            </div>
-            <el-table 
-              :row-style="rowStyle"
-              border
-              :data="formData.reimburseOtherCharges"
-              max-height="10000px"
-              @cell-click="onOtherCellClick"
-            >
-              <el-table-column
-                v-for="item in otherConfig"
-                :key="item.label"
-                :label="item.label"
-                :align="item.align || 'left'"
-                :prop="item.prop"
-                :width="item.width"
-                :fixed="item.fixed"
-                :resizable="false"
+              <el-table 
+                :row-style="rowStyle"
+                border
+                :data="formData.reimburseOtherCharges"
+                max-height="10000px"
+                @cell-click="onOtherCellClick"
               >
-                <template slot-scope="scope">
-                  <template v-if="item.type === 'order'">
-                    {{ scope.$index + 1 }}
-                  </template>
-                  <template v-else-if="item.type === 'input'">
-                    <el-form-item
-                      :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
-                      :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }"
-                    >
-                      <el-input 
-                        :placeholder="item.placeholder"
-                        v-model.trim="scope.row[item.prop]" 
-                        :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)"
+                <el-table-column
+                  v-for="item in otherConfig"
+                  :key="item.label"
+                  :label="item.label"
+                  :align="item.align || 'left'"
+                  :prop="item.prop"
+                  :width="item.width"
+                  :fixed="item.fixed"
+                  :resizable="false"
+                >
+                  <template slot-scope="scope">
+                    <template v-if="item.type === 'order'">
+                      {{ scope.$index + 1 }}
+                    </template>
+                    <template v-else-if="item.type === 'input'">
+                      <el-form-item
+                        :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
+                        :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }"
                       >
-                        <el-tooltip
-                          v-if="item.prop === 'invoiceNumber'"
-                          :disabled="scope.row.isValidInvoice"
-                          slot="suffix"
-                          effect="dark"
-                          placement="top-start"
-                          :content="`${scope.row.isValidInvoice ? '' : '无发票附件'}`">
-                          <i 
-                            class="el-input__icon"
-                            :class="{
-                              'el-icon-upload-success el-icon-circle-check success': scope.row.isValidInvoice,
-                              'el-icon-warning-outline warning': !scope.row.isValidInvoice
-                            }">
-                          </i>
-                        </el-tooltip>
-                      </el-input>
-                    </el-form-item>
-                  </template>
-                  <template v-else-if="item.type === 'number'">
-                    <el-form-item
-                      :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
-                      :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }"
-                    >
-                      <el-input 
-                        :class="{ 'money-class': item.prop === 'money'}"
-                        v-model="scope.row[item.prop]" 
-                        :type="item.type" 
-                        :disabled="item.disabled" 
-                        :min="0" 
-                        @focus="onFocus({ prop: item.prop, index: scope.$index })" 
-                        @input="onOtherInput"
-                        :placeholder="item.placeholder"></el-input>
-                    </el-form-item>
-                  </template>
-                  <template v-else-if="item.type === 'select'">
-                    <el-form-item
-                      :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
-                      :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }"
-                    >
-                      <el-select
-                        v-model="scope.row[item.prop]"
-                      >
-                        <el-option
-                          v-for="optionItem in item.options"
-                          :key="optionItem.label"
-                          :value="optionItem.value"
-                          :label="optionItem.label"
+                        <el-input 
+                          :placeholder="item.placeholder"
+                          v-model.trim="scope.row[item.prop]" 
+                          :disabled="item.disabled || (item.prop === 'invoiceNumber' && scope.row.isValidInvoice)"
                         >
-                        </el-option>
-                      </el-select>
-                    </el-form-item>
-                  </template>
-                  <template v-else-if="item.type === 'date'">
-                    <el-form-item 
-                      :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
-                      :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }">
-                      <el-date-picker
-                        class="invoice-time"
-                        size="mini"
-                        v-model="scope.row[item.prop]"
-                        type="datetime"
-                        style="width: 100%;"
-                        value-format="yyyy-MM-dd HH:mm:ss"
-                        :clearable="false"
-                        placeholder="选择日期时间">
-                      </el-date-picker>
-                    </el-form-item>
-                  </template>
-                  <template v-else-if="item.type === 'upload'">
-                    <upLoadFile  
-                      :disabled="!ifFormEdit"
-                      @get-ImgList="getOtherList" 
-                      :limit="item.prop === 'invoiceAttachment' ? 1 : 100" 
-                      uploadType="file" 
-                      ref="otherUploadFile" 
-                      :options="{ prop: item.prop, index: scope.$index, type: 'other' }"
-                      :ifShowTip="ifFormEdit"
-                      @deleteFileList="deleteFileList"
-                      :onAccept="onAccept"
-                      :isInline="isGeneralManager && isCustomerSupervisor"
-                      :fileList="
-                        formData.reimburseOtherCharges[scope.$index] 
-                          ? (item.prop === 'invoiceAttachment' 
-                            ? formData.reimburseOtherCharges[scope.$index].invoiceFileList
-                            : formData.reimburseOtherCharges[scope.$index].otherFileList
-                          ) 
-                        : []
-                    "></upLoadFile>
-                  </template>
-                  <template v-else-if="item.type === 'operation'">
-                    <template v-for="iconItem in item.iconList">
-                      <i 
-                        :key="iconItem.icon"
-                        :class="iconItem.icon" 
-                        class="icon-item"
-                        @click="iconItem.handleClick(scope, formData.reimburseOtherCharges, 'other', iconItem.operationType)">
-                      </i>
+                          <el-tooltip
+                            v-if="item.prop === 'invoiceNumber'"
+                            :disabled="scope.row.isValidInvoice"
+                            slot="suffix"
+                            effect="dark"
+                            placement="top-start"
+                            :content="`${scope.row.isValidInvoice ? '' : '无发票附件'}`">
+                            <i 
+                              class="el-input__icon"
+                              :class="{
+                                'el-icon-upload-success el-icon-circle-check success': scope.row.isValidInvoice,
+                                'el-icon-warning-outline warning': !scope.row.isValidInvoice
+                              }">
+                            </i>
+                          </el-tooltip>
+                        </el-input>
+                      </el-form-item>
+                    </template>
+                    <template v-else-if="item.type === 'number'">
+                      <el-form-item
+                        :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
+                        :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }"
+                      >
+                        <el-input 
+                          :class="{ 'money-class': item.prop === 'money'}"
+                          v-model="scope.row[item.prop]" 
+                          :type="item.type" 
+                          :disabled="item.disabled" 
+                          :min="0" 
+                          @focus="onFocus({ prop: item.prop, index: scope.$index })" 
+                          @input="onOtherInput"
+                          :placeholder="item.placeholder"></el-input>
+                      </el-form-item>
+                    </template>
+                    <template v-else-if="item.type === 'select'">
+                      <el-form-item
+                        :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
+                        :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }"
+                      >
+                        <el-select
+                          v-model="scope.row[item.prop]"
+                        >
+                          <el-option
+                            v-for="optionItem in item.options"
+                            :key="optionItem.label"
+                            :value="optionItem.value"
+                            :label="optionItem.label"
+                          >
+                          </el-option>
+                        </el-select>
+                      </el-form-item>
+                    </template>
+                    <template v-else-if="item.type === 'date'">
+                      <el-form-item 
+                        :prop="'reimburseOtherCharges.' + scope.$index + '.'+ item.prop"
+                        :rules="scope.row.isAdd ? (otherRules[item.prop] || { required: false }) : { required: false }">
+                        <el-date-picker
+                          class="invoice-time"
+                          size="mini"
+                          v-model="scope.row[item.prop]"
+                          type="datetime"
+                          style="width: 100%;"
+                          value-format="yyyy-MM-dd HH:mm:ss"
+                          :clearable="false"
+                          placeholder="选择日期时间">
+                        </el-date-picker>
+                      </el-form-item>
+                    </template>
+                    <template v-else-if="item.type === 'upload'">
+                      <upLoadFile  
+                        :disabled="!ifFormEdit"
+                        @get-ImgList="getOtherList" 
+                        :limit="item.prop === 'invoiceAttachment' ? 1 : 100" 
+                        uploadType="file" 
+                        ref="otherUploadFile" 
+                        :options="{ prop: item.prop, index: scope.$index, type: 'other' }"
+                        :ifShowTip="ifFormEdit"
+                        @deleteFileList="deleteFileList"
+                        :onAccept="onAccept"
+                        :isInline="isGeneralManager && isCustomerSupervisor"
+                        :fileList="
+                          formData.reimburseOtherCharges[scope.$index] 
+                            ? (item.prop === 'invoiceAttachment' 
+                              ? formData.reimburseOtherCharges[scope.$index].invoiceFileList
+                              : formData.reimburseOtherCharges[scope.$index].otherFileList
+                            ) 
+                          : []
+                      "></upLoadFile>
+                    </template>
+                    <template v-else-if="item.type === 'operation'">
+                      <template v-for="iconItem in item.iconList">
+                        <i 
+                          :key="iconItem.icon"
+                          :class="iconItem.icon" 
+                          class="icon-item"
+                          @click="iconItem.handleClick(scope, formData.reimburseOtherCharges, 'other', iconItem.operationType)">
+                        </i>
+                      </template>
                     </template>
                   </template>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-form>
-        </div> 
+                </el-table-column>
+              </el-table>
+            </el-form>
+          </div> 
+        </div>
       </template>
       <!-- 操作记录 -->
       <template v-if="!this.ifFormEdit && this.formData.reimurseOperationHistories.length">
@@ -1217,7 +1219,7 @@
     <!-- </el-image-viewer> -->
     <!-- 百度地图实例化 -->
     <template v-if="title === 'approve'">
-      <el-row type="flex" justify="end" class="date-map-container" :class="{ 'general': isGeneralManager }">
+      <el-row type="flex" justify="end" class="date-map-container">
         <div id="date-picker-wrapper" >
           <date-picker v-model="timeList" :markedDateList="reportDailyList || []" @click="onDatePicker" @expand-click="onExpandClick"></date-picker>
         </div>
@@ -1241,7 +1243,8 @@ import {
   getUserDetail,
   deleteCost,
   getReimburseOrgs,
-  addTravellingAllowance
+  addTravellingAllowance,
+  getServiceDailyExpendSum
 } from '@/api/reimburse'
 import markerIcon from '@/assets/bmap/marker.png'
 import { on, off } from '@/utils/dom'
@@ -1520,7 +1523,9 @@ export default {
       reimburseOrgsList: [], // 费用归属列表
       expenseRules: {
         expenseOrg: [ { required: true, trigger: ['blur', 'change'] } ],
-      }
+      },
+      cancelRequestDailyExpend: null, // 用来取消获取日费的请求方法
+      dailyExpendLoading: false
     }
   },
   watch: {
@@ -2281,22 +2286,6 @@ export default {
       }).then(res => {
         this.historyCostLoading = false
         this.historyCostData = res.data
-        // this.historyCostData = [{
-        //   mainId: '1',
-        //   days: '1',
-        //   totalMoney: 1000,
-        //   faresMoney: 1000,
-        //   fmProportion: '100.00%',
-        //   accommodationSubsidiesMoney: 1000,
-        //   asProportion: '100.00%',
-        //   travellingAllowancesMoney: 1000,
-        //   taProportion: '100.00%',
-        //   otherChargesMoney: 1000,
-        //   ocProportion: '100.00%',
-        //   businessTripDate: '2020-02-02 14:20:00',
-        //   endDate: '2020-02-02 14:20:00',
-        //   userName: '超级管理员'
-        // }]
         console.log(res, 'historyList')
       }).catch(err => {
         this.historyCostLoading = false
@@ -2543,7 +2532,7 @@ export default {
           }
         }
         let isValid = await this.$refs[ref].validate()
-        // console.log('valid', isValid, this.formData[data], ifInvoiceAttachment)
+        console.log('valid', isValid, ifInvoiceAttachment)
         return ref === 'travelForm' ? isValid : ifInvoiceAttachment && isValid
       }
     },
@@ -2744,17 +2733,6 @@ export default {
       this.currentProp = prop
       this.currentIndex = index
     },
-    areaProcessValue ({ province, city, district }) {
-      console.log('processValue')
-      const countryList = ['北京市', '天津市', '上海市', '重庆市']
-      let result = ''
-      result = countryList.includes(province)
-        ? province + district
-        : (city === '自治区直辖县级行政区划' || city === '省直辖县级行政区划')
-          ? province + district
-          : city + district
-      return result
-    },
     onAreaChange (val) {
       console.log('onAreaChange')
       let { province, city, district, prop, index } = val
@@ -2767,34 +2745,6 @@ export default {
         currentRow,
         prop
       })
-    },
-    _getPosition (address, { currentRow, prop}) {
-      let local = new global.BMap.LocalSearch(this.map, { //智能搜索
-        onSearchComplete: onSearchComplete.bind(this)
-      })
-      address = address.replace(/^中国/i, '') // 如果以中国开头会直接搜索北京市
-      console.log(address, 'address')
-      local.search(address)
-      let result
-      function onSearchComplete () {
-        if (!local.getResults().getPoi(0)) {
-          result = { lng: '', lat: '' }
-        } else {
-          console.log(local.getResults().getPoi(0), 'position')
-          let { point} = local.getResults().getPoi(0) //获取第一个智能搜索的结果
-          let { lat, lng } = point
-          console.log(lat, lng)
-          result = point
-        }
-        let { lat, lng } = result
-        if (prop === 'from') {
-          currentRow.fromLng = lng
-          currentRow.fromLat = lat
-        } else {
-          currentRow.toLng = lng
-          currentRow.toLat = lat
-        }
-      }
     },
     changeAddr (scope) { // 交通表格 交换出发地和目的地
       if (!this.ifFormEdit) return
@@ -3065,8 +3015,37 @@ export default {
         formData.destination = destination
         this._checkTravelDays(currentRow)
         this._checkAccMoney()
+        this._getServiceDailyExpendSum() // 获取报销单的日费
       }
       this.closeDialog()
+    },
+    async _getServiceDailyExpendSum () {
+      if (this.cancelRequestDailyExpend) {
+        this.cancelRequestDailyExpend()
+      }
+      try {
+        this.dailyExpendLoading = true
+        const { data } = await getServiceDailyExpendSum({ serviceOrderId: this.formData.serviceOrderId }, this)
+        const { travelExpenses, transportExpenses, hotelExpenses, otherExpenses } = data
+        travelExpenses.forEach(item => item.isAdd = true)
+        this.formData.reimburseTravellingAllowances = travelExpenses
+
+        this._buildAttachment(transportExpenses)
+        this._buildAttachment(hotelExpenses)
+        this._buildAttachment(otherExpenses)
+        this.formData.reimburseFares = transportExpenses
+        this.formData.reimburseAccommodationSubsidies = hotelExpenses
+        this.formData.reimburseOtherCharges = otherExpenses
+        console.log(data, 'dailyExpendSum')
+      } catch (err) {
+        this.formData.reimburseTravellingAllowances = []
+        this.formData.reimburseFares = []
+        this.formData.reimburseOtherCharges = []
+        this.formData.reimburseAccommodationSubsidies = []
+        this.$message.error(err.message)
+      } finally {
+        this.dailyExpendLoading = false
+      }
     },
     _checkTravelDays (currentRow) {
       let { businessTripDate, endDate } = currentRow
@@ -3136,9 +3115,9 @@ export default {
         this._addToTable(cloneSelectList) // 根据报销类型的不同插入到不同的表中
         this.closeCostDialog()
         this.costLoading = false
-      }).catch(() => {
+      }).catch((err) => {
         this.costLoading = false
-        this.$message.error('发票号码验证失败')
+        this.$message.error(err.message)
       })
     },
     _normalizeSelectList (selectList) {
@@ -3208,18 +3187,19 @@ export default {
     async checkData () { // 校验表单数据是否通过
       let isFormValid = true, isTravelValid = true, isTrafficValid = true, isAccValid = true, isOtherValid = true
       this.errMessage = '格式错误或必填项未填写'
+      const { reimburseTravellingAllowances, reimburseFares, reimburseOtherCharges, reimburseAccommodationSubsidies } = this.formData
       try {
         isFormValid = await this.validate('form')
-        if (!this.ifShowTravel) {
+        if (reimburseTravellingAllowances.length) {
           isTravelValid = await this.validate('travelForm', 'reimburseTravellingAllowances')
         }
-        if (!this.ifShowTraffic) {
+        if (reimburseFares.length) {
           isTrafficValid = await this.validate('trafficForm', 'reimburseFares')
         }
-        if (!this.ifShowAcc) {
+        if (reimburseAccommodationSubsidies.length) {
           isAccValid = await this.validate('accForm', 'reimburseAccommodationSubsidies')
         }
-        if (!this.ifShowOther) {
+        if (reimburseOtherCharges.length) {
           isOtherValid = await this.validate('otherForm', 'reimburseOtherCharges')
         }
         // console.log('checkData', isFormValid, isTravelValid, isTrafficValid, isAccValid, isOtherValid)
@@ -3255,8 +3235,8 @@ export default {
       if (!isValid) {
         return Promise.reject({ message: this.errMessage })
       }
-      formData.isDraft = isDraft ? true : false
-      delete formData.reimburseTravellingAllowances
+      formData.isDraft = !!isDraft
+      console.log(addOrder)
       return addOrder(formData)
     },
     async updateOrder (isDraft) { // 编辑
@@ -3286,8 +3266,8 @@ export default {
       if (!isValid) {
         return Promise.reject({ message: this.errMessage })
       }
-      formData.isDraft = isDraft ? true : false
-      delete formData.reimburseTravellingAllowances
+      formData.isDraft = !!isDraft
+      console.log(updateOrder)
       return updateOrder(formData)
     },
     mergeOrgList (type) { // 归类发票给归属
@@ -3310,10 +3290,10 @@ export default {
       let params = {
         id: data.id, 
         shortCustomerName: data.shortCustomerName, 
-          reimburseType: data.reimburseType, 
-          projectName: data.projectName, 
-          bearToPay: data.bearToPay, 
-          responsibility: data.responsibility,
+        reimburseType: data.reimburseType, 
+        projectName: data.projectName, 
+        bearToPay: data.bearToPay, 
+        responsibility: data.responsibility,
         remark: this.remarkText,
         flowInstanceId: data.flowInstanceId, // 流程ID
         isReject: this.remarkType === 'reject'
@@ -3372,13 +3352,11 @@ export default {
     position: absolute;
     flex-direction: column;
     flex-wrap: wrap;
-    top: -52px;
+    top: -84px;
     left: -12px;
     // transform: translate3d(-100%, 0, 0);
     margin-left: -500px;
-    &.general {
-      top: -84px;
-    }
+   
     #date-picker-wrapper {
 
     }
@@ -3966,10 +3944,7 @@ export default {
   /* 各个表格的样式 */
   .form-item-wrapper {
     &.travel {
-      width: 550px;
-      &.uneditable {
-        width: 400px;
-      }
+      width: 400px;
     }
     &.acc {
       width: 1201px;
