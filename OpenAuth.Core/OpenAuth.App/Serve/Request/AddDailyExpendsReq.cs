@@ -100,6 +100,26 @@ namespace OpenAuth.App.Serve.Request
         public string To { get; set; }
 
         /// <summary>
+        /// 出发地址经度
+        /// </summary>
+        public string FromLng { get; set; }
+
+        /// <summary>
+        /// 出发地址纬度
+        /// </summary>
+        public string FromLat { get; set; }
+
+        /// <summary>
+        /// 到达地址经度
+        /// </summary>
+        public string ToLng { get; set; }
+
+        /// <summary>
+        /// 到达地址纬度
+        /// </summary>
+        public string ToLat { get; set; }
+
+        /// <summary>
         /// 金额
         /// </summary>
         public decimal? Money { get; set; }
@@ -118,6 +138,11 @@ namespace OpenAuth.App.Serve.Request
         /// 开票日期
         /// </summary>
         public DateTime? InvoiceTime { get; set; }
+
+        /// <summary>
+        /// 总金额
+        /// </summary>
+        public decimal? TotalMoney { get; set; }
 
         /// <summary>
         /// 附件集合
@@ -169,6 +194,11 @@ namespace OpenAuth.App.Serve.Request
         public int? SerialNumber { get; set; }
 
         /// <summary>
+        /// 总金额
+        /// </summary>
+        public decimal? TotalMoney { get; set; }
+
+        /// <summary>
         /// 附件集合
         /// </summary>
         public List<DailyAttachment> dailyAttachments { get; set; }
@@ -215,6 +245,11 @@ namespace OpenAuth.App.Serve.Request
         /// 序号
         /// </summary>
         public int? SerialNumber { get; set; }
+
+        /// <summary>
+        /// 总金额
+        /// </summary>
+        public decimal? TotalMoney { get; set; }
 
         /// <summary>
         /// 附件集合

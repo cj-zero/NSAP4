@@ -3751,7 +3751,7 @@ namespace OpenAuth.App
                 endDate = new DateTime(date.Year, date.Month, DateTime.DaysInMonth(date.Year, date.Month));
             }
             //获取当月的所有日报信息
-            var dailyReports = (await UnitWork.Find<ServiceDailyReport>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId && w.CreateTime >= startDate && w.CreateTime <= endDate).ToListAsync()).Select(s => new ReportDetail { CreateTime = s.CreateTime, MaterialCode = s.MaterialCode, ManufacturerSerialNumber = s.ManufacturerSerialNumber, TroubleDescription = GetServiceTroubleAndSolution(s.TroubleDescription), ProcessDescription = GetServiceTroubleAndSolution(s.ProcessDescription) }).ToList();
+            var dailyReports = (await UnitWork.Find<ServiceDailyReport>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId && w.CreateTime.Value.Date >= startDate && w.CreateTime.Value.Date <= endDate).ToListAsync()).Select(s => new ReportDetail { CreateTime = s.CreateTime, MaterialCode = s.MaterialCode, ManufacturerSerialNumber = s.ManufacturerSerialNumber, TroubleDescription = GetServiceTroubleAndSolution(s.TroubleDescription), ProcessDescription = GetServiceTroubleAndSolution(s.ProcessDescription) }).ToList();
             var dailyReportDates = dailyReports.OrderBy(o => o.CreateTime).Select(s => s.CreateTime?.Date.ToString("yyyy-MM-dd")).Distinct().ToList();
 
             var data = dailyReports.GroupBy(g => g.CreateTime?.Date).Select(s => new ReportResult { DailyDate = s.Key?.Date.ToString("yyyy-MM-dd"), ReportDetails = s.ToList() }).ToList();
@@ -3873,10 +3873,17 @@ namespace OpenAuth.App
                 int i = 1;
                 foreach (var item in req.transportExpenses)
                 {
-                    var transportExpenseInfo = new ServiceDailyExpends { ServiceOrderId = req.ServiceOrderId, CreateTime = DateTime.Now, CreateUserId = userInfo.User.Id, CreateUserName = userInfo.User.Name, DailyExpenseType = 2, SerialNumber = i, Money = item.Money, InvoiceNumber = item.InvoiceNumber, Remark = item.Remark, From = item.From, To = item.To, InvoiceTime = item.InvoiceTime, TrafficType = item.TrafficType, FeeType = item.FeeType, Transport = item.Transport, TotalMoney = item.Money };
+                    var transportExpenseInfo = new ServiceDailyExpends { ServiceOrderId = req.ServiceOrderId, CreateTime = DateTime.Now, CreateUserId = userInfo.User.Id, CreateUserName = userInfo.User.Name, DailyExpenseType = 2, SerialNumber = i, Money = item.Money, InvoiceNumber = item.InvoiceNumber, Remark = item.Remark, From = item.From, To = item.To, InvoiceTime = item.InvoiceTime, TrafficType = item.TrafficType, FeeType = item.FeeType, Transport = item.Transport, TotalMoney = item.Money, FromLat = item.FromLat, FromLng = item.FromLng, ToLat = item.ToLat, ToLng = item.ToLng };
                     if (item.ReimburseAttachments != null)
                     {
-                        transportExpenseInfo.ReimburseAttachment = JsonConvert.SerializeObject(item.ReimburseAttachments);
+                        var fileIds = item.ReimburseAttachments.Select(s => s.FileId).ToList();
+                        var files = await UnitWork.Find<UploadFile>(w => fileIds.Contains(w.Id)).ToListAsync();
+                        var transportAttachments = item.ReimburseAttachments;
+                        foreach (var attach in transportAttachments)
+                        {
+                            attach.AttachmentName = files.Where(w => w.Id == attach.FileId).FirstOrDefault()?.FileName;
+                        }
+                        transportExpenseInfo.ReimburseAttachment = JsonConvert.SerializeObject(transportAttachments);
                     }
                     var o = await UnitWork.AddAsync<ServiceDailyExpends, int>(transportExpenseInfo);
                     if (item.dailyAttachments != null && item.dailyAttachments.Count > 0)
@@ -3897,7 +3904,14 @@ namespace OpenAuth.App
                     var hotelExpenseInfo = new ServiceDailyExpends { ServiceOrderId = req.ServiceOrderId, CreateTime = DateTime.Now, CreateUserId = userInfo.User.Id, CreateUserName = userInfo.User.Name, DailyExpenseType = 3, SerialNumber = i, Money = item.Money, InvoiceNumber = item.InvoiceNumber, Remark = item.Remark, InvoiceTime = item.InvoiceTime, FeeType = item.FeeType, Days = item.Days, TotalMoney = item.Days * item.Money };
                     if (item.ReimburseAttachments != null)
                     {
-                        hotelExpenseInfo.ReimburseAttachment = JsonConvert.SerializeObject(item.ReimburseAttachments);
+                        var fileIds = item.ReimburseAttachments.Select(s => s.FileId).ToList();
+                        var files = await UnitWork.Find<UploadFile>(w => fileIds.Contains(w.Id)).ToListAsync();
+                        var hotelAttachments = item.ReimburseAttachments;
+                        foreach (var attach in hotelAttachments)
+                        {
+                            attach.AttachmentName = files.Where(w => w.Id == attach.FileId).FirstOrDefault()?.FileName;
+                        }
+                        hotelExpenseInfo.ReimburseAttachment = JsonConvert.SerializeObject(hotelAttachments);
                     }
                     var o = await UnitWork.AddAsync<ServiceDailyExpends, int>(hotelExpenseInfo);
                     if (item.dailyAttachments != null && item.dailyAttachments.Count > 0)
@@ -3918,7 +3932,14 @@ namespace OpenAuth.App
                     var otherExpenseInfo = new ServiceDailyExpends { ServiceOrderId = req.ServiceOrderId, CreateTime = DateTime.Now, CreateUserId = userInfo.User.Id, CreateUserName = userInfo.User.Name, DailyExpenseType = 4, SerialNumber = i, Money = item.Money, InvoiceNumber = item.InvoiceNumber, Remark = item.Remark, InvoiceTime = item.InvoiceTime, FeeType = item.FeeType, ExpenseCategory = item.ExpenseCategory, TotalMoney = item.Money };
                     if (item.ReimburseAttachments != null)
                     {
-                        otherExpenseInfo.ReimburseAttachment = JsonConvert.SerializeObject(item.ReimburseAttachments);
+                        var fileIds = item.ReimburseAttachments.Select(s => s.FileId).ToList();
+                        var files = await UnitWork.Find<UploadFile>(w => fileIds.Contains(w.Id)).ToListAsync();
+                        var otherAttachments = item.ReimburseAttachments;
+                        foreach (var attach in otherAttachments)
+                        {
+                            attach.AttachmentName = files.Where(w => w.Id == attach.FileId).FirstOrDefault()?.FileName;
+                        }
+                        otherExpenseInfo.ReimburseAttachment = JsonConvert.SerializeObject(otherAttachments);
                     }
                     var o = await UnitWork.AddAsync<ServiceDailyExpends, int>(otherExpenseInfo);
                     if (item.dailyAttachments != null && item.dailyAttachments.Count > 0)
@@ -3963,7 +3984,7 @@ namespace OpenAuth.App
                 endDate = new DateTime(date.Year, date.Month, DateTime.DaysInMonth(date.Year, date.Month));
             }
             //获取当月的所有日费信息
-            var dailyExpends = await UnitWork.Find<ServiceDailyExpends>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId && w.CreateTime >= startDate && w.CreateTime <= endDate).ToListAsync();
+            var dailyExpends = await UnitWork.Find<ServiceDailyExpends>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId && w.CreateTime.Value.Date >= startDate && w.CreateTime.Value.Date <= endDate).ToListAsync();
             var dailyExpendDates = dailyExpends.OrderBy(o => o.CreateTime).Select(s => s.CreateTime?.Date.ToString("yyyy-MM-dd")).Distinct().ToList();
             var data = dailyExpends.Where(w => w.CreateTime?.Date == Convert.ToDateTime(req.Date).Date).ToList();
             List<TransportExpense> transportExpenses = new List<TransportExpense>();
@@ -4030,7 +4051,7 @@ namespace OpenAuth.App
             var dailyExpendIds = dailyExpendSums.Select(s => s.Id).ToList();
             var dailyAttachments = await UnitWork.Find<DailyAttachment>(w => dailyExpendIds.Contains(w.ExpendId)).ToListAsync();
 
-            var data = dailyExpendSums.Select(s => new { s.CreateTime, s.CreateUserId, s.CreateUserName, s.DailyExpenseType, s.Days, s.ExpenseCategory, s.FeeType, s.From, s.Id, s.InvoiceNumber, s.InvoiceTime, s.Money, s.Remark, s.SellerName, s.SerialNumber, s.ServiceOrderId, s.To, s.Transport, s.TrafficType, s.TotalMoney, s.ReimburseAttachment, DailyAttachments = dailyAttachments.Where(w => w.ExpendId == s.Id).ToList() }).OrderByDescending(o => o.CreateTime).ToList();
+            var data = dailyExpendSums.Select(s => new { s.CreateTime, s.CreateUserId, s.CreateUserName, s.DailyExpenseType, s.Days, s.ExpenseCategory, s.FeeType, s.From, s.Id, s.InvoiceNumber, s.InvoiceTime, s.Money, s.Remark, s.SellerName, s.SerialNumber, s.ServiceOrderId, s.To, s.Transport, s.TrafficType, s.TotalMoney, s.ReimburseAttachment, s.FromLat, s.FromLng, s.ToLat, s.ToLng, DailyAttachments = dailyAttachments.Where(w => w.ExpendId == s.Id).ToList() }).OrderByDescending(o => o.CreateTime).ToList();
 
             List<TransportExpense> transportExpenses = new List<TransportExpense>();
             List<HotelExpense> hotelExpenses = new List<HotelExpense>();
