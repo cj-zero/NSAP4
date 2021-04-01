@@ -177,12 +177,12 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetDetails(int QuotationId)
+        public async Task<TableData> GetDetails([FromQuery] QueryQuotationListReq request)
         {
             var result = new TableData();
             try
             {
-                return await _app.GetDetails(QuotationId);
+                return await _app.GetDetails(request);
             }
             catch (Exception ex)
             {

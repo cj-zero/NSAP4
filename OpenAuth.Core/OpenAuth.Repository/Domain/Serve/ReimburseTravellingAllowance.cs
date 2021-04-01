@@ -67,6 +67,12 @@ namespace OpenAuth.Repository.Domain
         [Description("费用归属")]
         public string ExpenseOrg { get; set; }
 
+        /// <summary>
+        /// 是否客服新增
+        /// </summary>
+        [Description("是否客服新增")]
+        public bool? IsAdded { get; set; }
+
         public override void GenerateDefaultKeyVal()
         {
         }

@@ -101,7 +101,7 @@ namespace Sap.Handler.Service
 
 
 
-                    if (quotation.InvoiceCategory != null) //发票类别
+                    if (!string.IsNullOrWhiteSpace(quotation.InvoiceCategory)) //发票类别
 
                     {
                         var name = categoryList.Where(c => c.TypeId.Equals("SYS_MaterialInvoiceCategory") && c.DtValue.Equals(quotation.InvoiceCategory.ToString())).FirstOrDefault()?.Name;
@@ -109,7 +109,7 @@ namespace Sap.Handler.Service
 
                     }
 
-                    if (quotation.TaxRate != null) //税率
+                    if (!string.IsNullOrWhiteSpace(quotation.TaxRate)) //税率
 
                     {
                         var U_SL=categoryList.Where(c => c.TypeId.Equals("SYS_MaterialTaxRate") && c.DtValue.Equals(quotation.TaxRate.ToString())).FirstOrDefault()?.Name;
@@ -117,7 +117,7 @@ namespace Sap.Handler.Service
 
                     }
 
-                    if (ywy != null) 
+                    if (!string.IsNullOrWhiteSpace(ywy.ToString())) 
                     {
                         dts.UserFields.Fields.Item("U_YWY").Value = ywy.ToString();
                     }
@@ -181,15 +181,15 @@ namespace Sap.Handler.Service
 
                         dts.Lines.SalesPersonCode = (int)slpcode;; //销售员编号
 
-                        dts.Lines.UnitPrice = double.Parse(string.IsNullOrWhiteSpace(dln1.SalesPrice.ToString()) ? "0" : dln1.SalesPrice.ToString());            //单价
+                        dts.Lines.UnitPrice = double.Parse(string.IsNullOrWhiteSpace(dln1.SalesPrice.ToString()) ? "0" : (dln1.SalesPrice*(dln1.Discount/100)).ToString());            //单价
 
-                        dts.Lines.Price = double.Parse(string.IsNullOrWhiteSpace(dln1.SalesPrice.ToString()) ? "0" : dln1.SalesPrice.ToString());
+                        dts.Lines.Price = double.Parse(string.IsNullOrWhiteSpace(dln1.SalesPrice.ToString()) ? "0" : (dln1.SalesPrice*(dln1.Discount/100)).ToString());
 
-                        dts.Lines.DiscountPercent = string.IsNullOrWhiteSpace(dln1.Discount.ToString()) ? 0.00 : double.Parse(dln1.Discount.ToString());//折扣率
+                        //dts.Lines.DiscountPercent = string.IsNullOrWhiteSpace(dln1.Discount.ToString()) ? 0.00 : double.Parse(dln1.Discount.ToString());//折扣率
 
                         dts.Lines.LineTotal = string.IsNullOrWhiteSpace(dln1.TotalPrice.ToString()) ? 0.00 : double.Parse(dln1.TotalPrice.ToString());//总计
 
-                        dts.Lines.DiscountPercent = double.Parse(dln1.Discount == null ? "0" : (100 - dln1.Discount).ToString());     //折扣
+                        //dts.Lines.DiscountPercent = double.Parse(dln1.Discount == null ? "0" : (100 - dln1.Discount).ToString());     //折扣
 
                         //if (!string.IsNullOrEmpty(dln1.U_PDXX) && (dln1.U_PDXX == "AC220" || dln1.U_PDXX == "AC380" || dln1.U_PDXX == "AC110"))
 

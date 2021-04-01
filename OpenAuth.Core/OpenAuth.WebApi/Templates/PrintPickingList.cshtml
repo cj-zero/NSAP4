@@ -40,7 +40,7 @@
                     <td style="width: 100px; " align="right" valign="top"></td>
                     <td style="width: 70px; " align="right" valign="top">@item.Count &nbsp;</td>
                     <td style="width: 100px;   " align="left" valign="top">&nbsp; @item.Unit</td>
-                    <td style="width: 50px; " align="right" valign="top">@{SalesOrderId = @item.SalesOrder; ServiceOrderSapId = @item.ServiceOrderSapId;}</td>
+                    <td style="width: 50px; " align="right" valign="top">@item.Location@{SalesOrderId = @item.SalesOrder; ServiceOrderSapId = @item.ServiceOrderSapId;}</td>
                 </tr>
     }
         </table>

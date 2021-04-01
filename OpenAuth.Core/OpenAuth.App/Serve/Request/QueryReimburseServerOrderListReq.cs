@@ -17,6 +17,12 @@ namespace OpenAuth.App.Serve.Request
         ///appid
         /// </summary>
         public int? AppId { get; set; }
+
+
+        /// <summary>
+        ///UserId
+        /// </summary>
+        public string UserId { get; set; }
         //todo:添加自己的请求字段
     }
 }

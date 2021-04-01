@@ -89,5 +89,10 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public bool NewMaterialCode { get; set; }
 
+        /// <summary>
+        ///折后价格
+        /// </summary>
+        public decimal? DiscountPrices { get; set; }
+
     }
 }

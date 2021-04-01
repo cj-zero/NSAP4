@@ -478,6 +478,10 @@ namespace OpenAuth.App
                 loginUser = await GetUserId(Convert.ToInt32(request.AppId));
             }
             decimal subsidies = 0;
+            if (request.UserId != null) 
+            {
+                loginUser.Id = request.UserId;
+            }
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == loginUser.Id).Select(r => r.SecondId).ToListAsync();
             var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).ToListAsync();
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_TravellingAllowance") && orgname.Contains(u.Name)).Select(u => new { u.Name, u.DtValue }).ToListAsync();
@@ -796,6 +800,35 @@ namespace OpenAuth.App
                     throw new Exception("添加报销单失败,请重试");
                 }
             }
+        }
+
+        /// <summary>
+        /// 新增出差补贴
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> AddTravellingAllowance(ReimburseTravellingAllowanceResp req) 
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            if (await UnitWork.Find<ReimburseTravellingAllowance>(r => r.ReimburseInfoId == req.ReimburseInfoId && r.IsAdded == true).CountAsync() > 0)
+            {
+                throw new Exception("已新增出差补贴，不可多次新建");
+            }
+            var result = new TableData();
+            if (req != null) 
+            {
+                var travellingAllowances =req.MapTo<ReimburseTravellingAllowance>();
+                travellingAllowances.CreateTime = DateTime.Now;
+                travellingAllowances.IsAdded = true;
+                travellingAllowances.ReimburseInfoId = (int)req.ReimburseInfoId;
+                result.Data=await UnitWork.AddAsync<ReimburseTravellingAllowance,int>(travellingAllowances);
+                await UnitWork.SaveAsync();
+            }
+            return result;
         }
 
         /// <summary>
@@ -1266,6 +1299,48 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 部门主管审批报销单 
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task SupervisorAccraditation(AccraditationReimburseInfoReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            ReimurseOperationHistory eoh = new ReimurseOperationHistory();
+
+            var obj = await UnitWork.Find<ReimburseInfo>(r => r.Id == req.Id).FirstOrDefaultAsync();
+
+            if (obj.RemburseStatus < 4 && obj.RemburseStatus>9)
+            {
+                throw new Exception("当前报销单状态，不可操作。");
+            }
+            if (req.IsReject)
+            {
+                List<string> ids = new List<string>();
+                ids.Add(obj.FlowInstanceId);
+                await _flowInstanceApp.DeleteAsync(ids.ToArray());
+                obj.RemburseStatus = 2;
+                obj.FlowInstanceId = "";
+                eoh.ApprovalResult = "驳回";
+            }
+            await UnitWork.UpdateAsync<ReimburseInfo>(obj);
+            var seleoh = await UnitWork.Find<ReimurseOperationHistory>(r => r.ReimburseInfoId.Equals(obj.Id)).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
+            eoh.CreateUser = loginContext.User.Name;
+            eoh.CreateUserId = loginContext.User.Id;
+            eoh.CreateTime = DateTime.Now;
+            eoh.ReimburseInfoId = obj.Id;
+            eoh.Remark = req.Remark;
+            eoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(seleoh.CreateTime)).TotalMinutes);
+            await UnitWork.AddAsync<ReimurseOperationHistory>(eoh);
+            await UnitWork.SaveAsync();
+
+        }
+
+        /// <summary>
         /// 批量审批报销单 
         /// </summary>
         /// <param name="req"></param>
@@ -1655,7 +1730,7 @@ namespace OpenAuth.App
             List<string> UserIds = new List<string>();
             List<int> ServiceOrderIds = new List<int>();
             List<string> OrgUserIds = new List<string>();
-            var users = await UnitWork.Find<User>(u => u.Status == 0).ToListAsync();
+            var users = await UnitWork.Find<User>(null).ToListAsync();
             if (!string.IsNullOrWhiteSpace(request.CreateUserName))
             {
                 UserIds.AddRange(users.Where(u => u.Name.Contains(request.CreateUserName)).Select(u => u.Id).ToList());
