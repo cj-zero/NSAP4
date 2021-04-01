@@ -111,7 +111,7 @@ namespace OpenAuth.App
             reimburseOrgResps.Add(new ReimburseOrgResp
             {
                 Label="公司",
-                Value= "7ff76fd2-56e4-4db3-be9c-2da2114e3f4e",
+                Value= "公司",
             });
             result.Data = reimburseOrgResps;
             return result;

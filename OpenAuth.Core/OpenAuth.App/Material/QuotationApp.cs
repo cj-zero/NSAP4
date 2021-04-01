@@ -580,6 +580,7 @@ namespace OpenAuth.App.Material
                         Count = 1,
                         TotalPrice = quotationsMap.ServiceCharge / count,
                         Discount = 100,
+                        DiscountPrices= quotationsMap.ServiceCharge / count
                     });
                 }
                 if (quotationsMap.TravelExpense != null && quotationsMap.TravelExpense > 0)
@@ -593,6 +594,7 @@ namespace OpenAuth.App.Material
                         Count = 1,
                         TotalPrice = quotationsMap.TravelExpense / count,
                         Discount = 100,
+                        DiscountPrices = quotationsMap.ServiceCharge / count
                     });
                     
                 }

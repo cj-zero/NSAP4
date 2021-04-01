@@ -814,6 +814,10 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            if (await UnitWork.Find<ReimburseTravellingAllowance>(r => r.ReimburseInfoId == req.ReimburseInfoId && r.IsAdded == true).CountAsync() > 0)
+            {
+                throw new Exception("已新增出差补贴，不可多次新建");
+            }
             var result = new TableData();
             if (req != null) 
             {
@@ -1726,7 +1730,7 @@ namespace OpenAuth.App
             List<string> UserIds = new List<string>();
             List<int> ServiceOrderIds = new List<int>();
             List<string> OrgUserIds = new List<string>();
-            var users = await UnitWork.Find<User>(u => u.Status == 0).ToListAsync();
+            var users = await UnitWork.Find<User>(null).ToListAsync();
             if (!string.IsNullOrWhiteSpace(request.CreateUserName))
             {
                 UserIds.AddRange(users.Where(u => u.Name.Contains(request.CreateUserName)).Select(u => u.Id).ToList());
