@@ -120,6 +120,11 @@ namespace OpenAuth.App.Serve.Request
         public DateTime? InvoiceTime { get; set; }
 
         /// <summary>
+        /// 总金额
+        /// </summary>
+        public decimal? TotalMoney { get; set; }
+
+        /// <summary>
         /// 附件集合
         /// </summary>
         public List<DailyAttachment> dailyAttachments { get; set; }
@@ -169,6 +174,11 @@ namespace OpenAuth.App.Serve.Request
         public int? SerialNumber { get; set; }
 
         /// <summary>
+        /// 总金额
+        /// </summary>
+        public decimal? TotalMoney { get; set; }
+
+        /// <summary>
         /// 附件集合
         /// </summary>
         public List<DailyAttachment> dailyAttachments { get; set; }
@@ -215,6 +225,11 @@ namespace OpenAuth.App.Serve.Request
         /// 序号
         /// </summary>
         public int? SerialNumber { get; set; }
+
+        /// <summary>
+        /// 总金额
+        /// </summary>
+        public decimal? TotalMoney { get; set; }
 
         /// <summary>
         /// 附件集合
