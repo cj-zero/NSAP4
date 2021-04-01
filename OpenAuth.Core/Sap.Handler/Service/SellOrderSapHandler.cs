@@ -148,7 +148,7 @@ namespace Sap.Handler.Service
 
                     //dts.DiscountPercent = double.Parse(!string.IsNullOrEmpty(model.DiscPrcnt) ? model.DiscPrcnt : "0.00");
 
-                    dts.DocTotal = double.Parse(!string.IsNullOrWhiteSpace(quotation.TotalMoney.ToString()) ? quotation.TotalMoney.ToString() : "0.00");
+                    dts.DocTotal = double.Parse(!string.IsNullOrWhiteSpace(quotation.TotalCostPrice.ToString()) ? quotation.TotalCostPrice.ToString() : "0.00");
 
                     //errorMsg += string.Format("调用接口添加销售订单主数据[{0}]", jobID);
 

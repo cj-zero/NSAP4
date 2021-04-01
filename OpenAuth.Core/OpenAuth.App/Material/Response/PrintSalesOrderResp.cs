@@ -29,7 +29,7 @@ namespace OpenAuth.App.Material.Response
         /// <summary>
         /// 总价
         /// </summary>
-        public decimal TotalPrice { get; set; }
+        public string TotalPrice { get; set; }
 
         /// <summary>
         /// 库位

@@ -94,5 +94,10 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public decimal? DiscountPrices { get; set; }
 
+        /// <summary>
+        ///物料状态 1-更换 2-购买 3-赠送
+        /// </summary>
+        public string MaterialType { get; set; }
+
     }
 }

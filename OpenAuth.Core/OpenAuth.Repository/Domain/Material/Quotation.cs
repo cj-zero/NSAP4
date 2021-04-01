@@ -257,6 +257,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("质保后付款百分比")]
         public decimal? PaymentAfterWarranty { get; set; }
+        /// <summary>
+        ///领料类型 ture 更换 false 购买
+        /// </summary>
+        [Description("领料类型")]
+
+        public bool?  IsMaterialType { get; set; }
 
         /// <summary>
         /// 物流表
