@@ -4308,8 +4308,10 @@ namespace OpenAuth.App
             }
             var u = await UnitWork.Find<AppUserMap>(s => s.AppUserId == req.CurrentUserId).Include(s => s.User).FirstOrDefaultAsync();
 
-            var quotationcount=await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(req.ServiceOrderId) && q.CreateUserId.Equals(u.UserID)).CountAsync();
-            if (quotationcount > 0) 
+            //获取当前设备类型的技术员Id
+            var erpUserIds = await UnitWork.Find<ServiceWorkOrder>(w => w.ServiceOrderId.ToString() == req.ServiceOrderId && req.QryMaterialTypes.Contains(w.MaterialCode == "无序列号" ? "无序列号" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-"))) && w.CurrentUserId > 0).Select(s => s.CurrentUserNsapId).Distinct().ToListAsync();
+            var quotationcount = await UnitWork.Find<Quotation>(q => q.ServiceOrderId == Convert.ToInt32(req.ServiceOrderId) && erpUserIds.Contains(q.CreateUserId)).CountAsync();
+            if (quotationcount > 0)
             {
                 throw new CommonException("技术员已领料，不可转派", 60004);
             }
@@ -4383,8 +4385,11 @@ namespace OpenAuth.App
                 throw new CommonException("技术员接单已经达到上限", 60001);
             }
             var u = await UnitWork.Find<AppUserMap>(s => s.AppUserId == req.TechnicianId).Include(s => s.User).FirstOrDefaultAsync();
+
             var ServiceOrderModel = await UnitWork.Find<ServiceOrder>(s => s.Id == Convert.ToInt32(req.ServiceOrderId)).FirstOrDefaultAsync();
-            var quotationcount = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(req.ServiceOrderId) && q.CreateUserId.Equals(u.UserID)).CountAsync();
+            //获取当前设备类型的技术员Id
+            var erpUserIds = await UnitWork.Find<ServiceWorkOrder>(w => w.ServiceOrderId.ToString() == req.ServiceOrderId && req.MaterialType.Contains(w.MaterialCode == "无序列号" ? "无序列号" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-"))) && w.CurrentUserId > 0).Select(s => s.CurrentUserNsapId).Distinct().ToListAsync();
+            var quotationcount = await UnitWork.Find<Quotation>(q => q.ServiceOrderId == Convert.ToInt32(req.ServiceOrderId) && erpUserIds.Contains(q.CreateUserId)).CountAsync();
             if (quotationcount > 0)
             {
                 throw new CommonException("技术员已领料，不可转派", 60004);
