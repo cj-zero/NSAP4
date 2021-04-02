@@ -129,5 +129,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("是否入库（次品） 1已入库")]
         public int? IsSecondFinish { get; set; }
+
+        /// <summary>
+        /// 折后价格
+        /// </summary>
+        [Description("折后价格")]
+        public decimal DiscountPrices { get; set; }
     }
 }
