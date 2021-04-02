@@ -328,6 +328,7 @@
                             v-model="row.expenseOrg"
                             :options="reimburseOrgsList"
                             :props="{ checkStrictly: true }"
+                            @change="onOrgChange({ row, index })"
                             clearable>
                           </el-cascader>
                         <!-- </div> -->
@@ -2147,6 +2148,16 @@ export default {
     },
     openTravelExpense () { // 新增差补
       this.$refs.travelExpenseDialog.open()
+    },
+    onOrgChange ({ row, index }) {
+      const { expenseOrg } = row
+      if (expenseOrg && expenseOrg.length) {
+        this.expenseCategoryList.forEach((item, i) => {
+          if (i > index) {
+            item.expenseOrg = deepClone(expenseOrg)
+          }
+        })
+      }
     },
     async addTravelExpense () {
       if (!this.travelDays) {

@@ -52,12 +52,13 @@ export const quotationTableMixin = {
     },
     _getQuotationDetail (data) {
       let quotationId
-      let { status, isReceive, isSalesOrder, quotationStatus, isView, isProtected, isUpdate } = data
+      let { status, isReceive, isSalesOrder, quotationStatus, isView, isProtected, isUpdate, isQuerySalesOrder, salesOrderId } = data
       this.isReceive = !!isReceive // 判断销售订单还是报价单
       this.hasEditBtn = !!data.hasEditBtn
       this.isSalesOrder = !!isSalesOrder
       this.isView = !!isView
       this.isProtected = !!isProtected
+      isQuerySalesOrder = !!isQuerySalesOrder
       if (isSalesOrder && !data.salesOrderId) {
         return this.$message.warning('无销售单号')
       }
@@ -89,10 +90,9 @@ export const quotationTableMixin = {
       }
       console.log(status, 'status', quotationId)
       this.tableLoading = true
-      getQuotationDetail({
-        quotationId,
-        isUpdate
-      }).then(res => {
+      // 判断是查询销售订单还是 报价单
+      const params = isQuerySalesOrder ? { salesOrderId, isUpdate } : { quotationId, isUpdate }
+      getQuotationDetail(params).then(res => {
         console.log(res,' res')
         this.detailInfo = this._normalizeDetail(res.data)
         this.$refs.quotationDialog.open()

@@ -165,7 +165,7 @@ export default {
     },
     quotationColumns () {
       return this.isGeneralManager ? [
-        { label: '销售订单', prop: 'salesOrderId', handleClick: this._getQuotationDetail, options: { status: 'pay', isSalesOrder: true }, type: 'link'},
+        { label: '销售订单', prop: 'salesOrderId', handleClick: this._getQuotationDetail, options: { status: 'pay', isSalesOrder: true, isQuerySalesOrder: true }, type: 'link'},
         { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link' },
         { label: '客户代码', prop: 'terminalCustomerId' },
         { label: '客户名称', prop: 'terminalCustomer' },

@@ -332,9 +332,9 @@
                 <template v-slot:salesPrice="{ row }">
                   <div v-infotooltip.top.ellipsis>{{ row.salesPrice | toThousands(3, ',', 4) }}</div>
                 </template>
-                <template v-slot:discountPrices="{ row }">
+                <!-- <template v-slot:discountPrices="{ row }">
                   <div v-infotooltip.top.ellipsis>{{ row.discountPrices | toThousands(3, ',', 4) }}</div>
-                </template>
+                </template> -->
                 <template v-slot:totalPrice="{ row }">
                   <span v-infotooltip.top.ellipsis style="text-align: right;">{{ row.totalPrice | toThousands }}</span>
                 </template>
@@ -351,37 +351,39 @@
                 <template v-slot:remark="{ row }">
                   <el-input size="mini" v-infotooltip.top.ellipsis v-model="row.remark"></el-input>
                 </template>
+                <template v-slot:discountPrices="{ row, index }">
+                  <el-form-item
+                    style="height: 28px;"
+                    :prop="'list.' + index + '.' + 'discountPrices'"
+                    :rules="materialRules['discountPrices']"
+                  >
+                    <el-input-number 
+                      v-infotooltip.top.ellipsis
+                      size="mini"
+                      v-model="row.discountPrices" 
+                      @change="onDiscountPricesChange(row)"
+                      @focus="onDiscountFocus(index)"
+                      :controls="false"
+                      :precision="4"
+                    ></el-input-number>
+                  </el-form-item>
+                  <!-- <div v-infotooltip.top.ellipsis>{{ row.discountPrices | toThousands(3, ',', 4) }}</div> -->
+                </template>
                 <!-- 折扣 -->
                 <template v-slot:discount="{ row, index }">
-                  <!-- <el-select 
-                    size="mini"
-                    v-model="row.discount" 
-                    placeholder="请选择"
-                    @change="onDiscountChange"
-                    @focus="onDiscountFocus(index)">
-                    <el-option
-                      v-for="item in discountList"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value">
-                    </el-option>
-                  </el-select> -->
                   <el-form-item
                     style="height: 28px;"
                     :prop="'list.' + index + '.' + 'discount'"
                     :rules="materialRules['discount']"
                   >
-                    <el-input-number 
+                    <el-input
                       v-infotooltip.top.ellipsis
                       size="mini"
                       v-model="row.discount" 
                       placeholder="大于等于40"
-                      @change="onDiscountChange"
+                      :readonly="true"
                       @focus="onDiscountFocus(index)"
-                      :controls="false"
-                      :precision="6"
-                      :min="40"
-                    ></el-input-number>
+                    ></el-input>
                   </el-form-item>
                 </template>
                 <!-- 总价格 -->
@@ -924,6 +926,16 @@ export default {
     //     callback();
     //   }
     // }
+    const DISCOUNT_VALIDATOR = function (rule, value, callback) {
+      value = Number(value)
+      console.log(value, 'value DISCOUNT_VALIDATOR')
+      if (!isNumber(value) || value < 40) {
+        // this.$message.error('折扣不能小于40')
+        callback(new Error())
+      } else {
+        callback();
+      }
+    }
     return {
       ifShowPrepaid: false, // 付款条件为预付的选项
       timeList: [],
@@ -1126,7 +1138,8 @@ export default {
       materialRules: {
         count: [{ required: true, trigger: ['change', 'blur'] }],
         materialType: [{ required: true, trigger: ['change', 'blur'] }],
-        discount: [{ required: true, trigger: ['change', 'blur'] }]
+        discount: [{ required: true, trigger: ['change', 'blur'], validator: DISCOUNT_VALIDATOR }],
+        discountPrices: [{ required: true, trigger: ['change', 'blur'] }]
       },
       // 物料汇总表格
       materialSummaryList: [],
@@ -1348,8 +1361,9 @@ export default {
       if (row.materialType === '3') {
         row.totalPrice = 0
       } else {
-        const { count, salesPrice, discount } = row
-        row.totalPrice = Number(((count * salesPrice * accDiv(discount, 100) || 0)).toFixed(2))
+        const { count, discountPrices } = row
+        // row.totalPrice = Number(((count * salesPrice * accDiv(discount, 100) || 0)).toFixed(2))
+        row.totalPrice = Number(accMul(count, discountPrices)).toFixed(2)
       }
       console.log(row, 'row change')
     },
@@ -1770,14 +1784,14 @@ export default {
         return item
       })
     },
-    onDiscountChange (val) {
-      let { list } = this.materialData
-      let data = list[this.materialItemIndex]
-      val = accDiv(val, 100)
-      console.log(val, 'val')
-      let { salesPrice, count, materialType } = data
-      const isMoney = materialType === '3'
-      data.totalPrice = Number((isMoney ? 0 : (val * salesPrice * count || 0)).toFixed(2))
+    onDiscountPricesChange (row) {
+      const { discountPrices, salesPrice } = row
+      if (discountPrices && salesPrice) {
+        row.discount = (accDiv(discountPrices, salesPrice) * 100).toFixed(6)
+        if (row.discount < 40) {
+          this.$message.warning('折扣不能小于40')
+        }
+      }
     },
     onDiscountFocus (index) {
       this.materialItemIndex = index
@@ -1789,9 +1803,10 @@ export default {
     onCountChange (val) {
       let { list } = this.materialData
       let data = list[this.materialItemIndex]
-      let { salesPrice, discount, materialType } = data
+      // let { salesPrice, discount, materialType, discountPrices } = data
+      const { discountPrices, materialType } = data
       const isMoney = materialType === '3'
-      data.totalPrice = Number((isMoney ? 0: (val * salesPrice * accDiv(discount, 100) || 0)).toFixed(2))
+      data.totalPrice = Number((isMoney ? 0: accMul(val, discountPrices) || 0).toFixed(2))
     },
     _resetMaterialInfo () { // 重置物料相关的变量和数据
       this.formData.quotationProducts = []
@@ -1826,7 +1841,7 @@ export default {
         item.remark = ''
         item.unitPrice = unitPrice
         item.salesPrice = lastPurPrc
-        item.discount = 100
+        item.discount = Number(100).toFixed(6)
         item.discountPrices = item.salesPrice * 1
         item.count = 1
         item.warehouseQuantity = onHand
@@ -1985,16 +2000,16 @@ export default {
           console.log(err)
         }
         if (!isValid) {
-          return Promise.reject({ message: '当前序列号下的物料数量、类型、折扣不能为空' })
+          return Promise.reject({ message: '当前序列号下的物料数量、类型、销售单价不能为空，折扣需大于等于40' })
         }
         console.log(this.formData.quotationProducts.length, length)
         for (let i = 0; i < this.formData.quotationProducts.length; i++) {
           const item = this.formData.quotationProducts[i]
           const { productCode, quotationMaterials } = item
           for (let j = 0; j < quotationMaterials.length; j++) {
-            const { materialType, count, discount } = quotationMaterials[j]
-            if (!materialType || !count || !discount) {
-              return Promise.reject({ message: `${productCode}设备序列号下第${j + 1}行物料数量、类型、折扣不能为空`})
+            const { materialType, count, discount, discountPrices } = quotationMaterials[j]
+            if (!materialType || !count || (discount < 40) || !discountPrices) {
+              return Promise.reject({ message: `${productCode}设备序列号下第${j + 1}行物料数量、类型、销售单价不能为空，折扣需大于等于40`})
             }
           }
         }
