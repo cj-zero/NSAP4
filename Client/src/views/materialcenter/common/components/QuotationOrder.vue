@@ -104,8 +104,8 @@
                 <template v-slot:materialCode="{ row }">
                   <el-row type="flex" align="middle">
                     <span v-infotooltip.top.ellipsis :class="{ 'has-icon': row.replaceMaterialCode || row.newMaterialCode }">{{ row.materialCode }}</span>
-                    <svg-icon iconClass="replace" v-if="row.replaceMaterialCode"></svg-icon>
-                    <svg-icon iconClass="new-material" v-if="row.newMaterialCode"></svg-icon>
+                    <svg-icon iconClass="replace" className="my-svg-icon" v-if="row.replaceMaterialCode"></svg-icon>
+                    <svg-icon iconClass="new-material" className="my-svg-icon" v-if="row.newMaterialCode"></svg-icon>
                   </el-row>
                 </template>
                 <template v-slot:materialType="{ row }">
@@ -278,8 +278,8 @@
                 <template v-slot:materialCode="{ row }">
                   <el-row type="flex" align="middle">
                     <span v-infotooltip.top.ellipsis :class="{ 'has-icon': row.replaceMaterialCode || row.newMaterialCode }">{{ row.materialCode }}</span>
-                    <svg-icon iconClass="replace" v-if="row.replaceMaterialCode"></svg-icon>
-                    <svg-icon iconClass="new-material" v-if="row.newMaterialCode"></svg-icon>
+                    <svg-icon iconClass="replace" className="my-svg-icon" v-if="row.replaceMaterialCode"></svg-icon>
+                    <svg-icon iconClass="new-material" className="my-svg-icon" v-if="row.newMaterialCode"></svg-icon>
                   </el-row>
                 </template>
                 <template v-slot:materialType="{ row, index }">
@@ -1840,6 +1840,7 @@ export default {
         item.materialCode = itemCode
         item.remark = ''
         item.unitPrice = unitPrice
+        console.log(lastPurPrc)
         item.salesPrice = lastPurPrc
         item.discount = Number(100).toFixed(6)
         item.discountPrices = item.salesPrice * 1
@@ -2008,7 +2009,7 @@ export default {
           const { productCode, quotationMaterials } = item
           for (let j = 0; j < quotationMaterials.length; j++) {
             const { materialType, count, discount, discountPrices } = quotationMaterials[j]
-            if (!materialType || !count || (discount < 40) || !discountPrices) {
+            if (!materialType || !count || (discount < 40) || discountPrices === undefined) {
               return Promise.reject({ message: `${productCode}设备序列号下第${j + 1}行物料数量、类型、销售单价不能为空，折扣需大于等于40`})
             }
           }
@@ -2121,6 +2122,12 @@ export default {
 .quotation-wrapper {
   position: relative;
   font-size: 12px;
+  .my-svg-icon {
+    position: absolute;
+    right: 0;
+    width: 14px;
+    height: 14px;
+  }
   .divider {
     height: 1px;
     margin: 15px auto;
@@ -2221,7 +2228,7 @@ export default {
         
       }
       .has-icon {
-        max-width: calc(100% - 12px); 
+        max-width: calc(100% - 14px); 
         padding-right: 3px;
       }
       .info-wrapper {
@@ -2287,7 +2294,7 @@ export default {
       .serial-table-wrapper {
         margin-top: 10px;
         .has-icon {
-          max-width: calc(100% - 12px); 
+          max-width: calc(100% - 14px); 
           padding-right: 3px;
         }
         .money-line {
@@ -2317,7 +2324,7 @@ export default {
           overflow: hidden;
           white-space: nowrap;
           .has-icon {
-            max-width: calc(100% - 12px); 
+            max-width: calc(100% - 14px); 
             padding-right: 3px;
           }
           .notice-icon {
@@ -2357,7 +2364,7 @@ export default {
           font-weight: bold;
         }
         .has-icon {
-          max-width: calc(100% - 12px); 
+          max-width: calc(100% - 14px); 
           padding-right: 3px;
         }
       }

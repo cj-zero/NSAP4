@@ -184,7 +184,7 @@ export default {
         { label: '总金额（￥）', prop: 'totalMoney', align: 'right', slotName: 'totalMoney'},
         { label: '申请人', prop: 'createUser' },
         { label: '备注', prop: 'remark' },
-        { label: '创建时间', prop: 'createTime' },
+        { label: '创建时间', prop: 'createTime', width: 150 },
         { label: '状态', prop: 'quotationStatusText' },
         { label: '是否待定', slotName: 'tentative' }
       ],

@@ -142,7 +142,7 @@ export default {
         { label: '单据总金额', prop: 'totalMoney', align: 'right' },
         { label: '申请人', prop: 'createUser' },
         { label: '备注', prop: 'remark' },
-        { label: '创建时间', prop: 'createTime' },
+        { label: '创建时间', prop: 'createTime', width: 150 },
         { label: '状态', prop: 'quotationStatusText' }
       ],
       status: 'create', // 报价单状态

@@ -120,7 +120,7 @@ export default {
     searchConfig () {
       return [
         { prop: 'startType', placeholder: '请选择', type: 'select', options: statusOptions },
-        { prop: 'quotationId', placeholder: '销售单号', width: 100 },
+        { prop: 'salesOrderId', placeholder: '销售单号', width: 100 },
         { prop: 'cardCode', placeholder: '客户名称', width: 100 },
         { prop: 'serviceOrderSapId', placeholder: '服务ID', width: 100 },
         { prop: 'createUser', placeholder: '申请人', width: 100 },
@@ -170,7 +170,7 @@ export default {
         { label: '客户代码', prop: 'terminalCustomerId' },
         { label: '客户名称', prop: 'terminalCustomer' },
         { label: '申请人', prop: 'createUser' },
-        { label: '创建时间', prop: 'createTime' },
+        { label: '创建时间', prop: 'createTime', width: 150 },
         { label: '总金额（￥）', prop: 'totalMoney', align: 'right', slotName: 'totalMoney' },
         { label: '科目余额（￥）', slotName: 'balance', align: 'right' },
         { label: '合同', slotName: 'contract' },
@@ -182,7 +182,7 @@ export default {
         { label: '客户代码', prop: 'terminalCustomerId' },
         { label: '客户名称', prop: 'terminalCustomer' },
         { label: '申请人', prop: 'createUser' },
-        { label: '创建时间', prop: 'createTime' },
+        { label: '创建时间', prop: 'createTime', width: 150 },
         { label: '总金额（￥）', prop: 'totalMoney', align: 'right', slotName: 'totalMoney' },
         { label: '合同', slotName: 'contract' },
         { label: '备注', prop: 'remark' },
@@ -199,7 +199,7 @@ export default {
       isSales: true,
       formQuery: {
         startType: '1',
-        quotationId: '', // 领料单号
+        salesOrderId: '', // 领料单号
         cardCode: '', // 客户
         serviceOrderSapId: '', // 服务Id
         createUser: '', // 申请人
