@@ -502,7 +502,7 @@ namespace OpenAuth.App
                             quotationIds.Add(Convert.ToInt32(arr[i]));
                         }
                     }
-                    var qutationMaterials = (await UnitWork.Find<QuotationMergeMaterial>(q => quotationIds.Contains((int)q.QuotationId) && q.IsProtected == true).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new QutationMaterialQty { MaterialCode = s.Key, Qty = s.Sum(s => s.Count) }).ToList();
+                    var qutationMaterials = (await UnitWork.Find<QuotationMergeMaterial>(q => quotationIds.Contains((int)q.QuotationId) && q.MaterialType == 2).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new QutationMaterialQty { MaterialCode = s.Key, Qty = s.Sum(s => s.Count) }).ToList();
                     qutationRequesQties.Add(new QutationRequesQty { ReturnNoteId = item.Id, QutationMaterials = qutationMaterials });
                 }
             }
@@ -566,7 +566,7 @@ namespace OpenAuth.App
                     }
                 }
             }
-            var qutationMaterials = (await UnitWork.Find<QuotationMergeMaterial>(q => quotationIds.Contains((int)q.QuotationId) && q.IsProtected == true).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new { s.Key, Qty = s.Sum(s => s.Count) }).ToList();
+            var qutationMaterials = (await UnitWork.Find<QuotationMergeMaterial>(q => quotationIds.Contains((int)q.QuotationId) && q.MaterialType == 2).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new { s.Key, Qty = s.Sum(s => s.Count) }).ToList();
             //计算剩余未结清金额
             decimal? notClearAmount = 0;
             //获取物料信息
@@ -603,7 +603,7 @@ namespace OpenAuth.App
             //查询当前技术员所有可退料服务Id
             var query = from a in UnitWork.Find<QuotationMergeMaterial>(null)
                         join b in UnitWork.Find<Quotation>(null) on a.QuotationId equals b.Id
-                        where b.CreateUserId == loginContext.User.Id && a.IsProtected == true
+                        where b.CreateUserId == loginContext.User.Id && a.MaterialType == 2
                         select new { b.ServiceOrderId };
             var serviceorderIds = (await query.ToListAsync()).Select(s => s.ServiceOrderId).Distinct().ToList();
             //排除已生成退料单的服务Id
