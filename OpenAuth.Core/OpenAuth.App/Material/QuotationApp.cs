@@ -65,6 +65,7 @@ namespace OpenAuth.App.Material
                                 .WhereIf(request.StartCreateTime != null, q => q.CreateTime > request.StartCreateTime)
                                 .WhereIf(request.EndCreateTime != null, q => q.CreateTime < request.EndCreateTime)
                                 .WhereIf(request.Status != null, q => q.Status == request.Status)
+                                .WhereIf(request.SalesOrderId!=null ,q=>q.SalesOrderId==request.SalesOrderId)
                                 .Where(q => ServiceOrderids.Contains(q.ServiceOrderId));
             if (!loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && !loginUser.Account.Equals(Define.SYSTEM_USERNAME))
             {
@@ -538,9 +539,10 @@ namespace OpenAuth.App.Material
                     {
                         m.WarehouseNumber = ItemCodes.Where(i => i.ItemCode.Equals(m.MaterialCode)).FirstOrDefault()?.WhsCode;
                         m.WarehouseQuantity = ItemCodes.Where(i => i.ItemCode.Equals(m.MaterialCode)).FirstOrDefault()?.OnHand;
-                        m.TotalPrice=m.TotalPrice == 0 ? Math.Round(Convert.ToDecimal((m.UnitPrice * 3 * (m.Discount / 100) * m.Count)), 2):m.TotalPrice;
-                        m.SalesPrice=m.SalesPrice==0? Math.Round(Convert.ToDecimal(m.UnitPrice * 3), 2) : m.SalesPrice;
-                        m.DiscountPrices= m.SalesPrice == 0 ? Math.Round(Convert.ToDecimal(m.UnitPrice * 3 * (m.Discount / 100)), 2) : m.SalesPrice;
+                        m.TotalPrice=m.TotalPrice == 0 && m.MaterialType!="3"? Math.Round(Convert.ToDecimal((m.UnitPrice * 3 * (m.Discount / 100) * m.Count)), 2):m.TotalPrice;
+                        m.SalesPrice=m.SalesPrice==0 && m.MaterialType != "3" ? Math.Round(Convert.ToDecimal(m.UnitPrice * 3), 2) : m.SalesPrice;
+                        if (m.DiscountPrices < 0) m.DiscountPrices = m.SalesPrice == 0 && m.MaterialType != "3" ? Math.Round(Convert.ToDecimal(m.UnitPrice * 3 * (m.Discount / 100)), 2) : Math.Round(Convert.ToDecimal(m.SalesPrice * (m.Discount / 100)), 2);
+
                     }
                 )
             );
@@ -580,7 +582,8 @@ namespace OpenAuth.App.Material
                         Count = 1,
                         TotalPrice = quotationsMap.ServiceCharge / count,
                         Discount = 100,
-                        DiscountPrices= quotationsMap.ServiceCharge / count
+                        DiscountPrices= quotationsMap.ServiceCharge / count,
+                        MaterialType="2"
                     });
                 }
                 if (quotationsMap.TravelExpense != null && quotationsMap.TravelExpense > 0)
@@ -594,7 +597,8 @@ namespace OpenAuth.App.Material
                         Count = 1,
                         TotalPrice = quotationsMap.TravelExpense / count,
                         Discount = 100,
-                        DiscountPrices = quotationsMap.ServiceCharge / count
+                        DiscountPrices = quotationsMap.TravelExpense / count,
+                        MaterialType = "2"
                     });
                     
                 }
@@ -735,32 +739,32 @@ namespace OpenAuth.App.Material
                 if (Prices != null)
                 {
                     e.UnitPrice = Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
-                    var s = e.UnitPrice.ToDouble().ToString();
-                    if (s.IndexOf(".") > 0)
-                    {
-                        s = s.Substring(s.IndexOf("."), s.Length - s.IndexOf("."));
-                        if (s.Length > 1)
-                        {
-                            int lengeth = s.Substring(1, s.Length - 1).Length;
-                            if (lengeth > 3) e.UnitPrice = e.UnitPrice + 0.005M;
-                        }
-                    }
-                    e.UnitPrice = Math.Round((decimal)e.UnitPrice, 2);
+                    //var s = e.UnitPrice.ToDouble().ToString();
+                    //if (s.IndexOf(".") > 0)
+                    //{
+                    //    s = s.Substring(s.IndexOf("."), s.Length - s.IndexOf("."));
+                    //    if (s.Length > 1)
+                    //    {
+                    //        int lengeth = s.Substring(1, s.Length - 1).Length;
+                    //        if (lengeth > 3) e.UnitPrice = e.UnitPrice + 0.005M;
+                    //    }
+                    //}
+                    e.UnitPrice = Math.Round((decimal)e.UnitPrice, 4);
                 }
                 else
                 {
                     e.UnitPrice = e.lastPurPrc * 1.2M;
-                    var s = e.UnitPrice.ToDouble().ToString();
-                    if (s.IndexOf(".") > 0)
-                    {
-                        s = s.Substring(s.IndexOf("."), s.Length - s.IndexOf("."));
-                        if (s.Length > 1)
-                        {
-                            int lengeth = s.Substring(1, s.Length - 1).Length;
-                            if (lengeth > 3) e.UnitPrice = e.UnitPrice + 0.005M;
-                        }
-                    }
-                    e.UnitPrice = Math.Round((decimal)e.UnitPrice, 2);
+                    //var s = e.UnitPrice.ToDouble().ToString();
+                    //if (s.IndexOf(".") > 0)
+                    //{
+                    //    s = s.Substring(s.IndexOf("."), s.Length - s.IndexOf("."));
+                    //    if (s.Length > 1)
+                    //    {
+                    //        int lengeth = s.Substring(1, s.Length - 1).Length;
+                    //        if (lengeth > 3) e.UnitPrice = e.UnitPrice + 0.005M;
+                    //    }
+                    //}
+                    e.UnitPrice = Math.Round((decimal)e.UnitPrice, 4);
 
                 }
                 e.lastPurPrc = e.UnitPrice * 3;
@@ -887,32 +891,12 @@ namespace OpenAuth.App.Material
                         #endregion
 
                         #region 合并零件表
-                        List<QuotationMaterial> QuotationMaterialsT = new List<QuotationMaterial>();
-                        QuotationObj.QuotationProducts.Where(q => q.IsProtected == true).ToList().ForEach(q => QuotationMaterialsT.AddRange(q.QuotationMaterials));
-                        List<QuotationMaterial> QuotationMaterialsF = new List<QuotationMaterial>();
-                        QuotationObj.QuotationProducts.Where(q => q.IsProtected == false).ToList().ForEach(q => QuotationMaterialsF.AddRange(q.QuotationMaterials));
+                        List<QuotationMaterial> QuotationMaterials = new List<QuotationMaterial>();
+                        QuotationObj.QuotationProducts.ToList().ForEach(q => QuotationMaterials.AddRange(q.QuotationMaterials));
 
 
-                        var MaterialsT = from a in QuotationMaterialsT
-                                         group a by new { a.MaterialCode, a.MaterialDescription, a.Unit, a.SalesPrice, a.UnitPrice, a.Discount } into g
-                                         select new QueryQuotationMergeMaterialListReq
-                                         {
-                                             MaterialCode = g.Key.MaterialCode,
-                                             MaterialDescription = g.Key.MaterialDescription,
-                                             Unit = g.Key.Unit,
-                                             SalesPrice = 0,
-                                             CostPrice = g.Key.UnitPrice,
-                                             Count = g.Sum(a => a.Count),
-                                             TotalPrice = 0,//g.Sum(a => a.TotalPrice)
-                                             IsProtected = true,
-                                             QuotationId = QuotationObj.Id,
-                                             Margin = 0,
-                                             Discount = g.Key.Discount,
-                                             SentQuantity = 0
-                                         };
-
-                        var MaterialsF = from a in QuotationMaterialsF
-                                         group a by new { a.MaterialCode, a.MaterialDescription, a.Unit, a.SalesPrice, a.UnitPrice, a.Discount } into g
+                        var MaterialsT = from a in QuotationMaterials
+                                         group a by new { a.MaterialCode, a.MaterialDescription, a.Unit, a.SalesPrice, a.UnitPrice, a.Discount, a.MaterialType, a.DiscountPrices } into g
                                          select new QueryQuotationMergeMaterialListReq
                                          {
                                              MaterialCode = g.Key.MaterialCode,
@@ -921,16 +905,17 @@ namespace OpenAuth.App.Material
                                              SalesPrice = g.Key.SalesPrice,
                                              CostPrice = g.Key.UnitPrice,
                                              Count = g.Sum(a => a.Count),
-                                             TotalPrice = (g.Key.SalesPrice * g.Sum(a => a.Count)) * (g.Key.Discount / 100),//g.Sum(a => a.TotalPrice)
+                                             TotalPrice = (g.Key.DiscountPrices * g.Sum(a => a.Count)),
                                              IsProtected = false,
                                              QuotationId = QuotationObj.Id,
-                                             Margin = ((g.Key.SalesPrice * g.Sum(a => a.Count)) * (g.Key.Discount / 100)) - (g.Key.UnitPrice * g.Sum(a => a.Count)),
+                                             Margin = (g.Key.DiscountPrices * g.Sum(a => a.Count)) - (g.Key.UnitPrice * g.Sum(a => a.Count)),
                                              Discount = g.Key.Discount,
-                                             SentQuantity = 0
+                                             SentQuantity = 0,
+                                             MaterialType=(int)g.Key.MaterialType,
+                                             DiscountPrices= g.Key.DiscountPrices
                                          };
 
                         var QuotationMergeMaterialList = MaterialsT.ToList();
-                        QuotationMergeMaterialList.AddRange(MaterialsF.ToList());
 
                         if (QuotationObj.ServiceCharge != null && QuotationObj.ServiceCharge > 0)
                         {
@@ -947,7 +932,8 @@ namespace OpenAuth.App.Material
                                 QuotationId = QuotationObj.Id,
                                 Margin = QuotationObj.ServiceCharge,
                                 Discount = 100,
-                                SentQuantity = 1
+                                SentQuantity = 0,
+                                MaterialType = 2
                             });
                         }
                         if (QuotationObj.TravelExpense != null && QuotationObj.TravelExpense > 0)
@@ -965,7 +951,8 @@ namespace OpenAuth.App.Material
                                 QuotationId = QuotationObj.Id,
                                 Margin = QuotationObj.TravelExpense,
                                 Discount = 100,
-                                SentQuantity = 1
+                                SentQuantity = 0,
+                                MaterialType = 2
                             });
                         }
                         var QuotationMergeMaterialListMap = QuotationMergeMaterialList.MapToList<QuotationMergeMaterial>();
@@ -1080,6 +1067,7 @@ namespace OpenAuth.App.Material
                             CollectionDA = QuotationObj.CollectionDA,
                             ShippingDA = QuotationObj.ShippingDA,
                             AcquisitionWay = QuotationObj.AcquisitionWay,
+                            IsMaterialType= QuotationObj.IsMaterialType
                             //todo:要修改的字段赋值
                         });
                         await UnitWork.SaveAsync();
@@ -1089,31 +1077,12 @@ namespace OpenAuth.App.Material
                     else
                     {
                         #region 合并零件表
-                        List<QuotationMaterial> QuotationMaterialsT = new List<QuotationMaterial>();
-                        QuotationObj.QuotationProducts.Where(q => q.IsProtected == true).ToList().ForEach(q => QuotationMaterialsT.AddRange(q.QuotationMaterials));
-                        List<QuotationMaterial> QuotationMaterialsF = new List<QuotationMaterial>();
-                        QuotationObj.QuotationProducts.Where(q => q.IsProtected == false).ToList().ForEach(q => QuotationMaterialsF.AddRange(q.QuotationMaterials));
+                        List<QuotationMaterial> QuotationMaterials = new List<QuotationMaterial>();
+                        QuotationObj.QuotationProducts.ToList().ForEach(q => QuotationMaterials.AddRange(q.QuotationMaterials));
 
-                        var MaterialsT = from a in QuotationMaterialsT
-                                         group a by new { a.MaterialCode, a.MaterialDescription, a.Unit, a.SalesPrice, a.UnitPrice, a.Discount } into g
-                                         select new QueryQuotationMergeMaterialListReq
-                                         {
-                                             MaterialCode = g.Key.MaterialCode,
-                                             MaterialDescription = g.Key.MaterialDescription,
-                                             Unit = g.Key.Unit,
-                                             SalesPrice = 0,
-                                             CostPrice = g.Key.UnitPrice,
-                                             Count = g.Sum(a => a.Count),
-                                             TotalPrice = 0,//g.Sum(a => a.TotalPrice)
-                                             IsProtected = true,
-                                             QuotationId = QuotationObj.Id,
-                                             Margin = 0,
-                                             Discount = g.Key.Discount,
-                                             SentQuantity = 0
-                                         };
 
-                        var MaterialsF = from a in QuotationMaterialsF
-                                         group a by new { a.MaterialCode, a.MaterialDescription, a.Unit, a.SalesPrice, a.UnitPrice, a.Discount } into g
+                        var MaterialsT = from a in QuotationMaterials
+                                         group a by new { a.MaterialCode, a.MaterialDescription, a.Unit, a.SalesPrice, a.UnitPrice, a.Discount, a.MaterialType, a.DiscountPrices } into g
                                          select new QueryQuotationMergeMaterialListReq
                                          {
                                              MaterialCode = g.Key.MaterialCode,
@@ -1122,16 +1091,18 @@ namespace OpenAuth.App.Material
                                              SalesPrice = g.Key.SalesPrice,
                                              CostPrice = g.Key.UnitPrice,
                                              Count = g.Sum(a => a.Count),
-                                             TotalPrice = (g.Key.SalesPrice * g.Sum(a => a.Count)) * (g.Key.Discount / 100),//g.Sum(a => a.TotalPrice)
+                                             TotalPrice = (g.Key.DiscountPrices * g.Sum(a => a.Count)),
                                              IsProtected = false,
                                              QuotationId = QuotationObj.Id,
-                                             Margin = ((g.Key.SalesPrice * g.Sum(a => a.Count)) * (g.Key.Discount / 100)) - (g.Key.UnitPrice * g.Sum(a => a.Count)),
+                                             Margin = (g.Key.DiscountPrices * g.Sum(a => a.Count)) - (g.Key.UnitPrice * g.Sum(a => a.Count)),
                                              Discount = g.Key.Discount,
-                                             SentQuantity = 0
+                                             SentQuantity = 0,
+                                             MaterialType = (int)g.Key.MaterialType,
+                                             DiscountPrices=g.Key.DiscountPrices
                                          };
 
                         var QuotationMergeMaterialList = MaterialsT.ToList();
-                        QuotationMergeMaterialList.AddRange(MaterialsF.ToList());
+
                         if (QuotationObj.ServiceCharge != null && QuotationObj.ServiceCharge > 0)
                         {
                             QuotationMergeMaterialList.Add(new QueryQuotationMergeMaterialListReq
@@ -1147,7 +1118,8 @@ namespace OpenAuth.App.Material
                                 QuotationId = QuotationObj.Id,
                                 Margin = QuotationObj.ServiceCharge,
                                 Discount = 100,
-                                SentQuantity = 1
+                                SentQuantity = 0,
+                                MaterialType = 2
                             });
                         }
                         if (QuotationObj.TravelExpense != null && QuotationObj.TravelExpense > 0)
@@ -1165,7 +1137,8 @@ namespace OpenAuth.App.Material
                                 QuotationId = QuotationObj.Id,
                                 Margin = QuotationObj.TravelExpense,
                                 Discount = 100,
-                                SentQuantity = 1
+                                SentQuantity = 0,
+                                MaterialType = 2
                             });
                         }
                         var QuotationMergeMaterialListMap = QuotationMergeMaterialList.MapToList<QuotationMergeMaterial>();
@@ -1205,12 +1178,17 @@ namespace OpenAuth.App.Material
                             Remark = QuotationObj.Remark,
                             IsDraft = QuotationObj.IsDraft,
                             IsProtected = QuotationObj.IsProtected,
+                            TravelExpense = QuotationObj.TravelExpense,
                             Status = 1,
                             ServiceCharge = QuotationObj.ServiceCharge,
+                            Prepay = QuotationObj.Prepay,
+                            PaymentAfterWarranty = QuotationObj.PaymentAfterWarranty,
+                            CashBeforeFelivery = QuotationObj.CashBeforeFelivery,
+                            PayOnReceipt = QuotationObj.PayOnReceipt,
                             CollectionDA = QuotationObj.CollectionDA,
                             ShippingDA = QuotationObj.ShippingDA,
                             AcquisitionWay = QuotationObj.AcquisitionWay,
-
+                            IsMaterialType = QuotationObj.IsMaterialType
                             //FlowInstanceId = FlowInstanceId,
                             //todo:要修改的字段赋值
                         });
@@ -1459,7 +1437,7 @@ namespace OpenAuth.App.Material
                 else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) && obj.QuotationStatus == 5)
                 {
                     qoh.Action = "总经理审批";
-                    if ((bool)obj.IsProtected && obj.TotalMoney <= 0)
+                    if ((bool)obj.IsMaterialType && ((obj.ServiceCharge==null&& obj.TravelExpense==null)||(obj.ServiceCharge <= 0 && obj.TravelExpense<=0)))
                     {
                         if (req.IsTentative == true)
                         {
@@ -1752,24 +1730,19 @@ namespace OpenAuth.App.Material
             QuotationObj.IsProtected = true;
             QuotationObj.QuotationProducts.ForEach(q =>
             {
-                if (!(bool)q.IsProtected)
+                q.QuotationMaterials.ForEach(m =>
                 {
-                    QuotationObj.IsProtected = false;
-                    q.QuotationMaterials.ForEach(m =>
+                    if (Convert.ToDouble(m.DiscountPrices / m.SalesPrice) < 0.4) 
                     {
-                        m.TotalPrice = Math.Round(Convert.ToDecimal((m.SalesPrice * m.Count) * (m.Discount / 100)), 2);
-                        QuotationObj.TotalMoney += Math.Round(Convert.ToDecimal((m.SalesPrice * m.Count) * (m.Discount / 100)), 2);
-                    });
-                }
-                else
-                {
-                    q.QuotationMaterials.ForEach(m =>
-                    {
-                        m.SalesPrice = 0;
-                        m.TotalPrice = 0;
-                        QuotationObj.TotalCostPrice += m.UnitPrice * m.Count;
-                    });
-                }
+                        throw new Exception("金额有误请重新输入");
+                    }
+
+                    m.SalesPrice = m.MaterialType != 3 ? m.SalesPrice : 0;
+                    m.DiscountPrices= m.MaterialType != 3 ? m.DiscountPrices : 0;
+                    m.TotalPrice = m.MaterialType!=3? Math.Round(Convert.ToDecimal(m.DiscountPrices * m.Count), 2):0;
+                    QuotationObj.TotalCostPrice += m.MaterialType != 3 ? Math.Round(Convert.ToDecimal(m.DiscountPrices * m.Count), 2):0;
+                    QuotationObj.TotalMoney += m.MaterialType != 3 ? Math.Round(Convert.ToDecimal(m.DiscountPrices * m.Count), 2):0;
+                });
             });
             if (QuotationObj.ServiceCharge != null && QuotationObj.ServiceCharge > 0)
             {
@@ -1856,8 +1829,8 @@ namespace OpenAuth.App.Material
                 MaterialDescription = q.MaterialDescription,
                 Count = q.Count.ToString(),
                 Unit = q.Unit,
-                SalesPrice = (Convert.ToDecimal(q.SalesPrice)*(q.Discount/100)).ToString("N"),
-                TotalPrice = (decimal)q.TotalPrice
+                SalesPrice = q.MaterialType == 1 ? "0" : q.Discount.ToString("N"),
+                TotalPrice = q.MaterialType == 1 ? "0" : q.TotalPrice.ToString("N")
             });
             var datas = await ExportAllHandler.Exporterpdf(materials, "PrintSalesOrder.cshtml", pdf =>
             {
@@ -1911,8 +1884,8 @@ namespace OpenAuth.App.Material
                 MaterialDescription = q.MaterialDescription,
                 Count = q.Count.ToString(),
                 Unit = q.Unit,
-                SalesPrice = (q.SalesPrice * (q.Discount/100)).ToString("N"),
-                TotalPrice = (decimal)q.TotalPrice
+                SalesPrice = q.MaterialType==1?"0":q.DiscountPrices.ToString("N"),
+                TotalPrice = q.MaterialType == 1 ? "0" : q.TotalPrice.ToString("N")
             });
             var datas = await ExportAllHandler.Exporterpdf(materials, "PrintQuotation.cshtml", pdf =>
             {
@@ -1971,7 +1944,7 @@ namespace OpenAuth.App.Material
                     Count = q.Count.ToString(),
                     Unit = q.Unit,
                     ServiceOrderSapId = model.ServiceOrderSapId.ToString(),
-                    SalesOrder = model.SalesOrderId.ToString(),
+                    SalesOrder = q.DiscountPrices.ToString(),
                     Location = locationList.Where(l => l.ItemCode.Equals(q.MaterialCode)).FirstOrDefault()?.layer_no
                 });
                

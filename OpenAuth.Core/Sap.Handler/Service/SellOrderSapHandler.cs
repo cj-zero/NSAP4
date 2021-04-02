@@ -181,9 +181,9 @@ namespace Sap.Handler.Service
 
                         dts.Lines.SalesPersonCode = (int)slpcode;; //销售员编号
 
-                        dts.Lines.UnitPrice = double.Parse(string.IsNullOrWhiteSpace(dln1.SalesPrice.ToString()) ? "0" : (dln1.SalesPrice*(dln1.Discount/100)).ToString());            //单价
+                        dts.Lines.UnitPrice = double.Parse(string.IsNullOrWhiteSpace(dln1.DiscountPrices.ToString()) ? "0" : dln1.DiscountPrices.ToString());            //单价
 
-                        dts.Lines.Price = double.Parse(string.IsNullOrWhiteSpace(dln1.SalesPrice.ToString()) ? "0" : (dln1.SalesPrice*(dln1.Discount/100)).ToString());
+                        dts.Lines.Price = double.Parse(string.IsNullOrWhiteSpace(dln1.DiscountPrices.ToString()) ? "0" : dln1.DiscountPrices.ToString());
 
                         //dts.Lines.DiscountPercent = string.IsNullOrWhiteSpace(dln1.Discount.ToString()) ? 0.00 : double.Parse(dln1.Discount.ToString());//折扣率
 

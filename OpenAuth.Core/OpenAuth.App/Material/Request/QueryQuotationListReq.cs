@@ -21,6 +21,12 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public int? QuotationId { get; set; }
 
+
+        /// <summary>
+        /// 销售单号
+        /// </summary>
+        public int? SalesOrderId { get; set; }
+
         /// <summary>
         /// 客户
         /// </summary>

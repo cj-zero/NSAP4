@@ -202,6 +202,12 @@ namespace OpenAuth.App.Material.Request
         public decimal? PaymentAfterWarranty { get; set; }
 
         /// <summary>
+        ///领料类型 ture 更换 false 购买
+        /// </summary>
+
+        public bool? IsMaterialType { get; set; }
+
+        /// <summary>
         /// 报价单设备列表
         /// </summary>
         public virtual List<QuotationProductReq> QuotationProducts { get; set; }
