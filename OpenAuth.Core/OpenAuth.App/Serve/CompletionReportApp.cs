@@ -88,6 +88,18 @@ namespace OpenAuth.App
 
             int reumburseCount = await UnitWork.Find<ReimburseInfo>(r => r.ServiceOrderId.Equals(obj.ServiceOrderId) && r.CreateUserId.Equals(nsapInfo.User.Id)).CountAsync();
             obj.IsReimburse = reumburseCount > 0 ? 2 : 1;
+            //获取出发日期与结束日期
+            //1.先判断是否填写了日报 若填写了日报则取日报的最小和最大日期作为参数
+            DateTime startDate = DateTime.Now;
+            DateTime endDate = DateTime.Now;
+            var dailyReports = await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId == obj.ServiceOrderId && w.CreateUserId == nsapInfo.User.Id).Select(s => s.CreateTime).ToListAsync();
+            if (dailyReports != null)
+            {
+                startDate = (DateTime)dailyReports.Min();
+                endDate = (DateTime)dailyReports.Max();
+            }
+            obj.BusinessTripDate = startDate;
+            obj.EndDate = endDate;
             //obj.CreateUserName = user.Name;
             //todo:补充或调整自己需要的字段
             var o = await Repository.AddAsync(obj);
