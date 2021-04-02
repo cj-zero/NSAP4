@@ -65,7 +65,7 @@ namespace Sap.Handler.Service
 
                     //dts.DocDate = DateTime.Parse(model.DocDate);
 
-                    dts.DocDueDate =Convert.ToDateTime(quotation.DeliveryDate).AddDays(quotation.AcceptancePeriod==null?0: (double)quotation.AcceptancePeriod);
+                    dts.DocDueDate =Convert.ToDateTime(quotation.DeliveryDate);
 
                     //if (!string.IsNullOrEmpty(model.TrnspCode))
 

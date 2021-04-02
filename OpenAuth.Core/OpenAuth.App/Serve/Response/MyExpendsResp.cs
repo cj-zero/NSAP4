@@ -83,6 +83,26 @@ namespace OpenAuth.App.Serve.Response
         public DateTime? invoiceTime { get; set; }
 
         /// <summary>
+        /// 出发地址经度
+        /// </summary>
+        public string FromLng { get; set; }
+
+        /// <summary>
+        /// 出发地址纬度
+        /// </summary>
+        public string FromLat { get; set; }
+
+        /// <summary>
+        /// 到达地址经度
+        /// </summary>
+        public string ToLng { get; set; }
+
+        /// <summary>
+        /// 到达地址纬度
+        /// </summary>
+        public string ToLat { get; set; }
+
+        /// <summary>
         /// 附件表
         /// </summary>
         public virtual List<ReimburseAttachmentResp> ReimburseAttachments { get; set; }

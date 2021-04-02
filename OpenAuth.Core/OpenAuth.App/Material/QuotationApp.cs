@@ -223,7 +223,7 @@ namespace OpenAuth.App.Material
                 q.a.CreateUser,
                 q.a.Remark,
                 q.a.SalesOrderId,
-                CreateTime = q.a.CreateTime.ToString("yyyy.MM.dd"),
+                q.a.CreateTime,
                 q.a.QuotationStatus,
                 q.a.Tentative,
                 q.a.IsProtected,
@@ -539,8 +539,8 @@ namespace OpenAuth.App.Material
                     {
                         m.WarehouseNumber = ItemCodes.Where(i => i.ItemCode.Equals(m.MaterialCode)).FirstOrDefault()?.WhsCode;
                         m.WarehouseQuantity = ItemCodes.Where(i => i.ItemCode.Equals(m.MaterialCode)).FirstOrDefault()?.OnHand;
-                        m.TotalPrice=m.TotalPrice == 0 && m.MaterialType!="3"? Math.Round(Convert.ToDecimal((m.UnitPrice * 3 * (m.Discount / 100) * m.Count)), 2):m.TotalPrice;
-                        m.SalesPrice=m.SalesPrice==0 && m.MaterialType != "3" ? Math.Round(Convert.ToDecimal(m.UnitPrice * 3), 2) : m.SalesPrice;
+                        m.TotalPrice=m.TotalPrice == 0 && string.IsNullOrWhiteSpace(m.MaterialType)? Math.Round(Convert.ToDecimal((m.UnitPrice * 3 * (m.Discount / 100) * m.Count)), 2):m.TotalPrice;
+                        m.SalesPrice=m.SalesPrice==0 && string.IsNullOrWhiteSpace(m.MaterialType) ? Math.Round(Convert.ToDecimal(m.UnitPrice * 3), 2) : m.SalesPrice;
                         if (m.DiscountPrices < 0) m.DiscountPrices = m.SalesPrice == 0 && m.MaterialType != "3" ? Math.Round(Convert.ToDecimal(m.UnitPrice * 3 * (m.Discount / 100)), 2) : Math.Round(Convert.ToDecimal(m.SalesPrice * (m.Discount / 100)), 2);
 
                     }
@@ -558,17 +558,20 @@ namespace OpenAuth.App.Material
             if (((quotationsMap.ServiceCharge !=null &&quotationsMap.ServiceCharge > 0) || (quotationsMap.TravelExpense !=null &&quotationsMap.TravelExpense > 0)) && (request.IsUpdate == null || request.IsUpdate == false))
             {
                 List<ProductCodeListResp> serialNumberList = (await GetSerialNumberList(new QueryQuotationListReq { ServiceOrderId = quotationsMap.ServiceOrderId,CreateUserId= quotationsMap .CreateUserId,limit=200})).Data;
-                var productCodeList = quotationsMap.QuotationProducts.Select(q => q.ProductCode).ToList();
-                var products = serialNumberList.Where(s => !productCodeList.Contains(s.ManufacturerSerialNumber)).Select(s => new QuotationProductReq
+                if (serialNumberList != null) 
                 {
-                    MaterialCode = s.MaterialCode,
-                    ProductCode = s.ManufacturerSerialNumber,
-                    IsProtected = s.IsProtected,
-                    MaterialDescription = s.MaterialDescription,
-                    WarrantyExpirationTime = s.DocDate,
-                    QuotationMaterials = new List<QuotationMaterialReq>()
-                }).ToList();
-                quotationsMap.QuotationProducts.AddRange(products);
+                    var productCodeList = quotationsMap.QuotationProducts.Select(q => q.ProductCode).ToList();
+                    var products = serialNumberList.Where(s => !productCodeList.Contains(s.ManufacturerSerialNumber)).Select(s => new QuotationProductReq
+                    {
+                        MaterialCode = s.MaterialCode,
+                        ProductCode = s.ManufacturerSerialNumber,
+                        IsProtected = s.IsProtected,
+                        MaterialDescription = s.MaterialDescription,
+                        WarrantyExpirationTime = s.DocDate,
+                        QuotationMaterials = new List<QuotationMaterialReq>()
+                    }).ToList();
+                    quotationsMap.QuotationProducts.AddRange(products);
+                }
                 var count = quotationsMap.QuotationProducts.Count();
                 List<QuotationMaterialReq> QuotationMergeMaterial = new List<QuotationMaterialReq>();
                 if (quotationsMap.ServiceCharge != null && quotationsMap.ServiceCharge > 0)
@@ -819,7 +822,7 @@ namespace OpenAuth.App.Material
             var result = new TableData();
             var QuotationIds = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(request.ServiceOrderId) && q.CreateUserId.Equals(loginUser.Id)).Select(q => q.Id).ToListAsync();
 
-            var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => QuotationIds.Contains((int)q.QuotationId) && q.IsProtected == true).ToListAsync();
+            var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => QuotationIds.Contains((int)q.QuotationId) && q.MaterialType==2).ToListAsync();
             //获取当前服务单所有退料明细汇总
             var query = from a in UnitWork.Find<ReturnnoteMaterial>(null)
                         join b in UnitWork.Find<ReturnNote>(null) on a.ReturnNoteId equals b.Id into ab
@@ -1732,7 +1735,7 @@ namespace OpenAuth.App.Material
             {
                 q.QuotationMaterials.ForEach(m =>
                 {
-                    if (Convert.ToDouble(m.DiscountPrices / m.SalesPrice) < 0.4) 
+                    if (m.SalesPrice != 0&&Convert.ToDouble(m.DiscountPrices / m.SalesPrice) < 0.4) 
                     {
                         throw new Exception("金额有误请重新输入");
                     }

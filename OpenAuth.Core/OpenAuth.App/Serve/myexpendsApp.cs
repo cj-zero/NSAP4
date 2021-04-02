@@ -93,7 +93,7 @@ namespace OpenAuth.App
                 FileType = file.FirstOrDefault(f => f.Id.Equals(r.FileId)).FileType,
                 AttachmentType = r.AttachmentType,
                 ReimburseId = r.ReimburseId,
-                ReimburseType = r.ReimburseType
+                ReimburseType = r.ReimburseType,
             }).ToList();
             result.Data = MyExpendsDetails;
             return result;

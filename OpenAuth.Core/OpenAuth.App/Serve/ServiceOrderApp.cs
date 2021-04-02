@@ -4307,6 +4307,12 @@ namespace OpenAuth.App
                 throw new CommonException("技术员接单已经达到上限", 60001);
             }
             var u = await UnitWork.Find<AppUserMap>(s => s.AppUserId == req.CurrentUserId).Include(s => s.User).FirstOrDefaultAsync();
+
+            var quotationcount=await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(req.ServiceOrderId) && q.CreateUserId.Equals(u.UserID)).CountAsync();
+            if (quotationcount > 0) 
+            {
+                throw new CommonException("技术员已领料，不可转派", 60004);
+            }
             var ServiceOrderModel = await UnitWork.Find<ServiceOrder>(s => s.Id == Convert.ToInt32(req.ServiceOrderId)).FirstOrDefaultAsync();
 
             var Model = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.ToString() == req.ServiceOrderId && req.QryMaterialTypes.Contains(s.MaterialCode == "无序列号" ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")))).Select(s => s.Id);
@@ -4378,7 +4384,11 @@ namespace OpenAuth.App
             }
             var u = await UnitWork.Find<AppUserMap>(s => s.AppUserId == req.TechnicianId).Include(s => s.User).FirstOrDefaultAsync();
             var ServiceOrderModel = await UnitWork.Find<ServiceOrder>(s => s.Id == Convert.ToInt32(req.ServiceOrderId)).FirstOrDefaultAsync();
-
+            var quotationcount = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(req.ServiceOrderId) && q.CreateUserId.Equals(u.UserID)).CountAsync();
+            if (quotationcount > 0)
+            {
+                throw new CommonException("技术员已领料，不可转派", 60004);
+            }
             var Model = UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId.ToString() == req.ServiceOrderId && req.MaterialType.Equals(s.MaterialCode == "无序列号" ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")))).Select(s => s.Id);
             var ids = await Model.ToListAsync();
             var canTransfer = await CheckCanTransfer(req.TechnicianId, Convert.ToInt32(req.ServiceOrderId), req.MaterialType, null);
