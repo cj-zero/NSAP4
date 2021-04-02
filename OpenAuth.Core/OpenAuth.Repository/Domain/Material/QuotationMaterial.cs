@@ -119,5 +119,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("物料状态")]
         public int?  MaterialType { get; set; }
+
+        /// <summary>
+        ///折后价格
+        /// </summary>
+        [Description("折后价格")]
+        public decimal? DiscountPrices { get; set; }
+        
     }
 }
