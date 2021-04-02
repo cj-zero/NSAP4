@@ -21,6 +21,12 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public int? QuotationId { get; set; }
 
+
+        /// <summary>
+        /// 销售单号
+        /// </summary>
+        public int? SalesOrderId { get; set; }
+
         /// <summary>
         /// 客户
         /// </summary>
@@ -40,6 +46,11 @@ namespace OpenAuth.App.Material.Request
         /// 申请人
         /// </summary>
         public string CreateUser { get; set; }
+
+        /// <summary>
+        /// 申请人ID
+        /// </summary>
+        public string CreateUserId { get; set; }
 
         /// <summary>
         /// 创建日期开始
@@ -88,6 +99,9 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public int? PageStart { get; set; }
 
-
+        /// <summary>
+        /// 是否修改
+        /// </summary>
+        public bool? IsUpdate { get; set; }
     }
 }

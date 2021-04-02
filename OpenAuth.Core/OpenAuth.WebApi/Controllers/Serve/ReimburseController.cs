@@ -7,6 +7,8 @@ using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.App.Serve.Request;
+using OpenAuth.App.Serve.Response;
+using OpenAuth.WebApi.Model;
 
 namespace OpenAuth.WebApi.Controllers.Serve
 {
@@ -96,7 +98,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetUserDetails([FromQuery] QueryReimburseServerOrderListReq request) 
+        public async Task<TableData> GetUserDetails([FromQuery] QueryReimburseServerOrderListReq request)
         {
             var result = new TableData();
             try
@@ -165,7 +167,28 @@ namespace OpenAuth.WebApi.Controllers.Serve
             var result = new Response();
             try
             {
-                 _reimburseinfoapp.Add(obj);
+                _reimburseinfoapp.Add(obj);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+        /// <summary>
+        /// 新增出差补贴
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> AddTravellingAllowance(ReimburseTravellingAllowanceResp obj) 
+        {
+            var result = new TableData();
+            try
+            {
+                return await _reimburseinfoapp.AddTravellingAllowance(obj);
             }
             catch (Exception ex)
             {
@@ -202,7 +225,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> DeleteCost(ReimburseRevocationReq req) 
+        public async Task<Response> DeleteCost(ReimburseRevocationReq req)
         {
             var result = new Response();
             try
@@ -314,12 +337,13 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// </summary>
         /// <param name="ReimburseInfoId"></param>
         /// <returns></returns>
+        [ServiceFilter(typeof(CertAuthFilter))]
         [HttpGet]
-        public async Task<FileResult> Print(int ReimburseInfoId)
+        public async Task<FileResult> Print(string serialNumber, string sign, string timespan)
         {
             try
             {
-                return File(await _reimburseinfoapp.Print(ReimburseInfoId), "application/pdf");
+                return File(await _reimburseinfoapp.Print(serialNumber), "application/pdf");
             }
             catch (Exception ex)
             {
@@ -418,7 +442,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
 
             return File(data, "application/vnd.ms-excel");
         }
-        
+
     }
 
 }

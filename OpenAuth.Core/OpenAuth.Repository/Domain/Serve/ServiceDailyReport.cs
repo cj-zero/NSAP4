@@ -30,6 +30,11 @@ namespace OpenAuth.Repository.Domain
         [Browsable(false)]
         public int? ServiceOrderId { get; set; }
         /// <summary>
+        /// 物料编码
+        /// </summary>
+        [Description("物料编码")]
+        public string MaterialCode { get; set; }
+        /// <summary>
         /// 制造商序列号
         /// </summary>
         [Description("制造商序列号")]

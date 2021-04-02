@@ -121,7 +121,11 @@ namespace OpenAuth.Repository.Domain
         [Description("到达地址纬度")]
         public string ToLat { get; set; }
 
-
+        /// <summary>
+        /// 费用归属
+        /// </summary>
+        [Description("费用归属")]
+        public string ExpenseOrg { get; set; }
 
         public override void GenerateDefaultKeyVal()
         {

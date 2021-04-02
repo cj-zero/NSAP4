@@ -86,8 +86,20 @@ namespace OpenAuth.App
             obj.IsReimburse = 1;
             obj.TechnicianId = req.CurrentUserId.ToString();
 
-            int reumburseCount=await UnitWork.Find<ReimburseInfo>(r => r.ServiceOrderId.Equals(obj.ServiceOrderId) && r.CreateUserId.Equals(nsapInfo.User.Id)).CountAsync();
+            int reumburseCount = await UnitWork.Find<ReimburseInfo>(r => r.ServiceOrderId.Equals(obj.ServiceOrderId) && r.CreateUserId.Equals(nsapInfo.User.Id)).CountAsync();
             obj.IsReimburse = reumburseCount > 0 ? 2 : 1;
+            //获取出发日期与结束日期
+            //1.先判断是否填写了日报 若填写了日报则取日报的最小和最大日期作为参数
+            DateTime startDate = DateTime.Now;
+            DateTime endDate = DateTime.Now;
+            var dailyReports = await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId == obj.ServiceOrderId && w.CreateUserId == nsapInfo.User.Id).Select(s => s.CreateTime).ToListAsync();
+            if (dailyReports != null)
+            {
+                startDate = (DateTime)dailyReports.Min();
+                endDate = (DateTime)dailyReports.Max();
+            }
+            obj.BusinessTripDate = startDate;
+            obj.EndDate = endDate;
             //obj.CreateUserName = user.Name;
             //todo:补充或调整自己需要的字段
             var o = await Repository.AddAsync(obj);
@@ -217,6 +229,12 @@ namespace OpenAuth.App
         public async Task<CompletionReportDetailsResp> GetOrderWorkInfoForAdd(int serviceOrderId, int currentUserId, string MaterialType)
         {
             var thisworkdetail = new CompletionReportDetailsResp();
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == currentUserId).Include(i => i.User).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
             //先查找是否之前填过完工报告（草稿）若有则拉取草稿报告单 否则取默认带出的数据
             var everCompletionReport = await UnitWork.Find<CompletionReport>(w => w.ServiceOrderId == serviceOrderId && w.TechnicianId == currentUserId.ToString())
                .WhereIf("无序列号".Equals(MaterialType), a => a.MaterialCode == "无序列号")
@@ -267,6 +285,9 @@ namespace OpenAuth.App
                 thisworkdetail.TheNsapUser = await _appUserMapApp.GetFirstNsapUser(theuserid);
                 thisworkdetail.TechnicianName = thisworkdetail.TheNsapUser == null ? "" : thisworkdetail.TheNsapUser.Name;
             }
+            //获取当前服务单的日报数量
+            int reportCount = (await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId == serviceOrderId && w.CreateUserId == userInfo.UserID).Select(s => s.CreateTime.Value.Date).Distinct().ToListAsync()).Count;
+            thisworkdetail.DailyReportNum = reportCount;
             return thisworkdetail;
         }
 
@@ -280,6 +301,12 @@ namespace OpenAuth.App
         public async Task<CompletionReportDetailsResp> GetCompletionReportDetails(int serviceOrderId, int currentUserId, string MaterialType)
         {
             var result = new TableData();
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == currentUserId).Include(i => i.User).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
             var obj = from c in UnitWork.Find<CompletionReport>(null)
                       join a in UnitWork.Find<ServiceWorkOrder>(null) on c.ServiceOrderId equals a.ServiceOrderId
                       join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into abc
@@ -326,6 +353,9 @@ namespace OpenAuth.App
                 var picfiles = await UnitWork.Find<UploadFile>(f => pics.Contains(f.Id)).ToListAsync();
                 thisworkdetail.Files.AddRange(picfiles.MapTo<List<UploadFileResp>>());
             }
+            //获取当前服务单的日报数量
+            int reportCount = (await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId == serviceOrderId && w.CreateUserId == userInfo.UserID).Select(s => s.CreateTime.Value.Date).Distinct().ToListAsync()).Count;
+            thisworkdetail.DailyReportNum = reportCount;
             return thisworkdetail;
         }
         /// <summary>

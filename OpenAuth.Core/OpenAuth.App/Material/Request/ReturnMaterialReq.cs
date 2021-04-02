@@ -93,5 +93,10 @@ namespace OpenAuth.App.Material.Request
         /// 剩余需退
         /// </summary>
         public int SurplusQty { get; set; }
+
+        /// <summary>
+        /// 折后价
+        /// </summary>
+        public decimal DiscountPrices { get; set; }
     }
 }

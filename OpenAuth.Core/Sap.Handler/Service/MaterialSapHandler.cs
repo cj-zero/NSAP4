@@ -74,7 +74,7 @@ namespace Sap.Handler.Service
 
                     //dts.DocDate = DateTime.Parse(model.DocDate);
 
-                    dts.DocDueDate = Convert.ToDateTime(quotation.DeliveryDate).AddDays(quotation.AcceptancePeriod == null ? 0 : (double)quotation.AcceptancePeriod);
+                    dts.DocDueDate = Convert.ToDateTime(quotation.DeliveryDate);
 
                     //dts.TaxDate = DateTime.Parse(model.TaxDate);
 
@@ -224,7 +224,7 @@ namespace Sap.Handler.Service
 
                         dts.Lines.SalesPersonCode = (int)slpcode;
 
-                        dts.Lines.UnitPrice = string.IsNullOrWhiteSpace(materials.SalesPrice.ToString()) ? 0 : Convert.ToDouble(materials.SalesPrice);            //单价
+                        dts.Lines.UnitPrice = string.IsNullOrWhiteSpace(materials.DiscountPrices.ToString()) ? 0 : Convert.ToDouble(materials.DiscountPrices);            //单价
 
                         dts.Lines.DiscountPercent = string.IsNullOrWhiteSpace(materials.Discount.ToString()) ? 0 : Convert.ToDouble(materials.Discount);     //折扣
 

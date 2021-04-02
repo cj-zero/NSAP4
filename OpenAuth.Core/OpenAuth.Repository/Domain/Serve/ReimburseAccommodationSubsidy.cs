@@ -88,8 +88,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("开票单位")]
         public string SellerName { get; set; }
-        
 
+        /// <summary>
+        /// 费用归属
+        /// </summary>
+        [Description("费用归属")]
+        public string ExpenseOrg { get; set; }
         public override void GenerateDefaultKeyVal()
         {
         }

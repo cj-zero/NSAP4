@@ -81,7 +81,7 @@ namespace OpenAuth.WebApi.Controllers
                 if (!_app.IsHaveNsapAccount(appuserId))
                 {
                     response.Code = 204;
-                    response.Message = "您还未开通nSAP访问权限";
+                    response.Message = "您还未绑定Erp4.0帐号";
                     return response;
                 }
                 //将信息存到redis中 5分钟有效期

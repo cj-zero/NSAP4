@@ -772,6 +772,69 @@ namespace NSAP.App.WebApi.Controllers
         }
 
 
+        /// <summary>
+        /// 添加日费
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> AddDailyExpends(AddDailyExpendsReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.AddDailyExpends(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取日费详情（根据日期过滤）
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetTechnicianDailyExpend([FromQuery] GetTechnicianDailyReportReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetTechnicianDailyExpend(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取日费汇总
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetServiceDailyExpendSum([FromQuery] GetTechnicianDailyReportReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetServiceDailyExpendSum(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
         #endregion
 
         #region<<Admin/Supervisor>>
@@ -936,15 +999,14 @@ namespace NSAP.App.WebApi.Controllers
         /// </summary>
         /// <param name="ServiceorderId"></param>
         /// <param name="AppUserId"></param>
-        /// <param name="MaterialType"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> AppSalesManLoad(int ServiceorderId, int AppUserId, string MaterialType)
+        public async Task<TableData> AppSalesManLoad(int ServiceorderId, int AppUserId)
         {
             var result = new TableData();
             try
             {
-                result = await _serviceOrderApp.AppSalesManLoad(ServiceorderId, AppUserId, MaterialType);
+                result = await _serviceOrderApp.AppSalesManLoad(ServiceorderId, AppUserId);
             }
             catch (Exception ex)
             {

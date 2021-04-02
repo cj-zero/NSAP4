@@ -54,6 +54,16 @@
         /// 折扣
         /// </summary>
         public decimal? Discount { get; set; }
+
+        /// <summary>
+        ///物料状态 1-更换 2-购买 3-领料
+        /// </summary>
+        public int MaterialType { get; set; }
+
+        /// <summary>
+        ///折后价格
+        /// </summary>
+        public decimal? DiscountPrices { get; set; }
         //todo:添加自己的请求字段
     }
 }

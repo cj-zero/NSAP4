@@ -15,6 +15,10 @@ namespace OpenAuth.App.Response
         /// </summary>
         public string CertNo { get; set; }
         /// <summary>
+        /// 证书编号
+        /// </summary>
+        public string EncryptCertNo { get; set; }
+        /// <summary>
         /// 证书审批状态
         /// </summary>
         public string ActivityName { get; set; }

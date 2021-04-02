@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App.Material;
 using OpenAuth.App.Material.Request;
 using OpenAuth.App.Response;
+using OpenAuth.WebApi.Model;
 
 namespace OpenAuth.WebApi.Controllers.Material
 {
@@ -50,7 +51,7 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// 待审批列表
         /// </summary>
         [HttpGet]
-        public async Task<TableData> ApprovalPendingLoad([FromQuery]  QueryQuotationListReq request) 
+        public async Task<TableData> ApprovalPendingLoad([FromQuery] QueryQuotationListReq request)
         {
             var result = new TableData();
             try
@@ -65,12 +66,12 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return result;
         }
-        
+
         /// <summary>
         /// 获取报价单流程
         /// </summary>
         [HttpGet]
-        public async Task<TableData> GetQuotationOperationHistory([FromQuery] QueryQuotationListReq request) 
+        public async Task<TableData> GetQuotationOperationHistory([FromQuery] QueryQuotationListReq request)
         {
             var result = new TableData();
             try
@@ -91,7 +92,7 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetServiceOrderList([FromQuery]QueryQuotationListReq request)
+        public async Task<TableData> GetServiceOrderList([FromQuery] QueryQuotationListReq request)
         {
             var result = new TableData();
             try
@@ -127,7 +128,7 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return result;
         }
-        
+
         /// <summary>
         /// 加载物料列表
         /// </summary>
@@ -155,7 +156,7 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> MaterialCodeList([FromQuery] QueryQuotationListReq request) 
+        public async Task<TableData> MaterialCodeList([FromQuery] QueryQuotationListReq request)
         {
             var result = new TableData();
             try
@@ -176,12 +177,12 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetDetails(int QuotationId)
+        public async Task<TableData> GetDetails([FromQuery] QueryQuotationListReq request)
         {
             var result = new TableData();
             try
             {
-                return await _app.GetDetails(QuotationId);
+                return await _app.GetDetails(request);
             }
             catch (Exception ex)
             {
@@ -198,7 +199,7 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetDetailsMaterial([FromQuery] QueryQuotationListReq request) 
+        public async Task<TableData> GetDetailsMaterial([FromQuery] QueryQuotationListReq request)
         {
             var result = new TableData();
             try
@@ -220,7 +221,7 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <param name="ServiceOrderId"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetUnreadQuotations(int ServiceOrderId) 
+        public async Task<TableData> GetUnreadQuotations(int ServiceOrderId)
         {
             var result = new TableData();
             try
@@ -242,7 +243,7 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetQuotationMaterialCode([FromQuery]QueryQuotationListReq request) 
+        public async Task<TableData> GetQuotationMaterialCode([FromQuery] QueryQuotationListReq request)
         {
             var result = new TableData();
             try
@@ -264,13 +265,13 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <param name="obj"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> Add(AddOrUpdateQuotationReq obj) 
+        public async Task<Response> Add(AddOrUpdateQuotationReq obj)
         {
             var result = new Response();
             try
             {
                 var Message = await _app.Add(obj);
-                if (!string.IsNullOrWhiteSpace(Message)) 
+                if (!string.IsNullOrWhiteSpace(Message))
                 {
                     result.Message = Message;
                 }
@@ -316,7 +317,7 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// </summary>
         /// <param name="QuotationId"></param>
         [HttpPost]
-        public async Task<Response> Revocation(QueryQuotationListReq obj) 
+        public async Task<Response> Revocation(QueryQuotationListReq obj)
         {
             var result = new Response();
             try
@@ -342,7 +343,7 @@ namespace OpenAuth.WebApi.Controllers.Material
             var result = new TableData();
             try
             {
-               return await _app.UpdateMaterial(obj);
+                return await _app.UpdateMaterial(obj);
             }
             catch (Exception ex)
             {
@@ -381,7 +382,7 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> Delete(QueryQuotationListReq req) 
+        public async Task<Response> Delete(QueryQuotationListReq req)
         {
             var result = new Response();
             try
@@ -426,7 +427,7 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetMergeMaterial([FromQuery]QueryQuotationListReq req) 
+        public async Task<TableData> GetMergeMaterial([FromQuery] QueryQuotationListReq req)
         {
             var result = new TableData();
             try
@@ -441,36 +442,44 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return result;
         }
+
         /// <summary>
         /// 打印销售订单
         /// </summary>
-        /// <param name="QuotationId"></param>
+        /// <param name="serialNumber"></param>
+        /// <param name="sign"></param>
+        /// <param name="timespan"></param>
         /// <returns></returns>
+        [ServiceFilter(typeof(CertAuthFilter))]
         [HttpGet]
-        public async Task<IActionResult> PrintSalesOrder(int QuotationId)
+        public async Task<IActionResult> PrintSalesOrder(string serialNumber, string sign, string timespan)
         {
             try
             {
-                return File(await _app.PrintSalesOrder(QuotationId), "application/pdf");
+                return File(await _app.PrintSalesOrder(serialNumber), "application/pdf");
             }
             catch (Exception e)
             {
 
                 throw new Exception(e.Message);
             }
-           
+
         }
+
         /// <summary>
         /// 打印报价单
         /// </summary>
-        /// <param name="QuotationId"></param>
+        /// <param name="serialNumber"></param>
+        /// <param name="sign"></param>
+        /// <param name="timespan"></param>
         /// <returns></returns>
+        [ServiceFilter(typeof(CertAuthFilter))]
         [HttpGet]
-        public async Task<IActionResult> PrintQuotation(int QuotationId)
+        public async Task<IActionResult> PrintQuotation(string serialNumber, string sign, string timespan)
         {
             try
             {
-                return File(await _app.PrintQuotation(QuotationId), "application/pdf");
+                return File(await _app.PrintQuotation(serialNumber), "application/pdf");
             }
             catch (Exception e)
             {
@@ -481,14 +490,17 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <summary>
         /// 打印领料单
         /// </summary>
-        /// <param name="QuotationId"></param>
+        /// <param name="serialNumber"></param>
+        /// <param name="sign"></param>
+        /// <param name="timespan"></param>
         /// <returns></returns>
+        [ServiceFilter(typeof(CertAuthFilter))]
         [HttpGet]
-        public async Task<IActionResult> PrintPickingList(int QuotationId)
+        public async Task<IActionResult> PrintPickingList(string serialNumber, string sign, string timespan)
         {
             try
             {
-                return File(await _app.PrintPickingList(QuotationId), "application/pdf");
+                return File(await _app.PrintPickingList(serialNumber), "application/pdf");
             }
             catch (Exception e)
             {
@@ -497,6 +509,6 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
 
         }
-        
+
     }
 }

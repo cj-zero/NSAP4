@@ -165,6 +165,47 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public decimal? TotalCostPrice { get; set; }
 
+        /// <summary>
+        ///部门名称
+        /// </summary>
+        public string OrgName { get; set; }
+
+        /// <summary>
+        ///税率
+        /// </summary>
+        public string TaxRate { get; set; }
+
+        /// <summary>
+        ///发票类别
+        /// </summary>
+        public string InvoiceCategory { get; set; }
+        /// <summary>
+        ///差旅费
+        /// </summary>
+        public decimal? TravelExpense { get; set; }
+
+        /// <summary>
+        ///预付百分比
+        /// </summary>
+        public decimal? Prepay { get; set; }
+        /// <summary>
+        ///发货前付款百分比
+        /// </summary>
+        public decimal? CashBeforeFelivery { get; set; }
+        /// <summary>
+        ///收货后付款百分比
+        /// </summary>
+        public decimal? PayOnReceipt { get; set; }
+        /// <summary>
+        ///质保后付款百分比
+        /// </summary>
+        public decimal? PaymentAfterWarranty { get; set; }
+
+        /// <summary>
+        ///领料类型 ture 更换 false 购买
+        /// </summary>
+
+        public bool? IsMaterialType { get; set; }
 
         /// <summary>
         /// 报价单设备列表

@@ -28,7 +28,7 @@
 
 <body>
     <div>
-        @{string SalesOrderId = "";}
+        @{string SalesOrderId = "", ServiceOrderSapId = "";}
         <table style="font-size:11pt; clear:both;">
             @{int number = 0;}
             @foreach (var item in Model.Data)
@@ -40,13 +40,13 @@
                     <td style="width: 100px; " align="right" valign="top"></td>
                     <td style="width: 70px; " align="right" valign="top">@item.Count &nbsp;</td>
                     <td style="width: 100px;   " align="left" valign="top">&nbsp; @item.Unit</td>
-                    <td style="width: 50px; " align="right" valign="top">@{SalesOrderId = @item.SalesOrder;}</td>
+                    <td style="width: 50px; " align="right" valign="top">@item.Location@{SalesOrderId = @item.SalesOrder; ServiceOrderSapId = @item.ServiceOrderSapId;}</td>
                 </tr>
-            }
+    }
         </table>
     </div>
-    <div style="width:300px; font-weight:900;font-size:15pt;">
-        出库原因：SE - @SalesOrderId
+    <div style="width:600px; font-weight:900;font-size:15pt;">
+        出库原因：SE - @SalesOrderId &nbsp;&nbsp;&nbsp;   ID - @ServiceOrderSapId
     </div>
 </body>
 

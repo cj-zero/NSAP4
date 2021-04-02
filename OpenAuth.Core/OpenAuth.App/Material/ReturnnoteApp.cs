@@ -97,13 +97,14 @@ namespace OpenAuth.App
                     ReturnNoteId = returnNoteId,
                     MaterialCode = item.MaterialCode,
                     MaterialDescription = item.MaterialDescription,
-                    Count = item.ReturnQty == null ? 0 : item.ReturnQty,
+                    Count = item.ReturnQty,
                     TotalCount = item.TotalQty,
                     Check = item.ReturnQty > 0 ? 0 : 1,
                     CostPrice = item.CostPrice,
                     QuotationMaterialId = item.QuotationMaterialId,
                     IsGoodFinish = 0,
-                    IsSecondFinish = 0
+                    IsSecondFinish = 0,
+                    DiscountPrices = item.DiscountPrices
                 };
                 var detail = await UnitWork.AddAsync<ReturnnoteMaterial, int>(newDetailInfo);
                 await UnitWork.SaveAsync();
@@ -116,7 +117,7 @@ namespace OpenAuth.App
                     await UnitWork.SaveAsync();
                 }
                 int everQty = (int)(returnMaterials.Where(w => w.Id == item.QuotationMaterialId).FirstOrDefault() == null ? 0 : returnMaterials.Where(w => w.Id == item.QuotationMaterialId).FirstOrDefault()?.Qty);
-                item.SurplusQty = (int)(item.TotalQty - everQty - item.ReturnQty);
+                item.SurplusQty = item.TotalQty - everQty - item.ReturnQty;
             }
             //4.添加物流信息
             string expressId = string.Empty;
@@ -501,7 +502,7 @@ namespace OpenAuth.App
                             quotationIds.Add(Convert.ToInt32(arr[i]));
                         }
                     }
-                    var qutationMaterials = (await UnitWork.Find<QuotationMergeMaterial>(q => quotationIds.Contains((int)q.QuotationId) && q.IsProtected == true).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new QutationMaterialQty { MaterialCode = s.Key, Qty = s.Sum(s => s.Count) }).ToList();
+                    var qutationMaterials = (await UnitWork.Find<QuotationMergeMaterial>(q => quotationIds.Contains((int)q.QuotationId) && q.MaterialType == 2).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new QutationMaterialQty { MaterialCode = s.Key, Qty = s.Sum(s => s.Count) }).ToList();
                     qutationRequesQties.Add(new QutationRequesQty { ReturnNoteId = item.Id, QutationMaterials = qutationMaterials });
                 }
             }
@@ -513,7 +514,7 @@ namespace OpenAuth.App
                 var MaterialList = (await UnitWork.Find<ReturnnoteMaterial>(w => w.ReturnNoteId == item).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new
                 {
                     MaterialCode = s.Key,
-                    NotClearAmount = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().CostPrice * (qutationRequesQties.Where(w => w.ReturnNoteId == item).FirstOrDefault().QutationMaterials.Where(w => w.MaterialCode == s.Key).FirstOrDefault().Qty - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.GoodQty) - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.SecondQty))
+                    NotClearAmount = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().DiscountPrices * (qutationRequesQties.Where(w => w.ReturnNoteId == item).FirstOrDefault().QutationMaterials.Where(w => w.MaterialCode == s.Key).FirstOrDefault().Qty - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.GoodQty) - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.SecondQty))
                 }).ToList();
                 MaterialList.ForEach(f => notClearAmount += f.NotClearAmount);
                 returnNotClearAmts.Add(new ReturnNotClearAmt { ReturnNoteId = item, Amt = notClearAmount });
@@ -565,7 +566,7 @@ namespace OpenAuth.App
                     }
                 }
             }
-            var qutationMaterials = (await UnitWork.Find<QuotationMergeMaterial>(q => quotationIds.Contains((int)q.QuotationId) && q.IsProtected == true).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new { s.Key, Qty = s.Sum(s => s.Count) }).ToList();
+            var qutationMaterials = (await UnitWork.Find<QuotationMergeMaterial>(q => quotationIds.Contains((int)q.QuotationId) && q.MaterialType == 2).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new { s.Key, Qty = s.Sum(s => s.Count) }).ToList();
             //计算剩余未结清金额
             decimal? notClearAmount = 0;
             //获取物料信息
@@ -575,8 +576,8 @@ namespace OpenAuth.App
                 MaterDescription = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().MaterialDescription,
                 AlreadyReturnQty = s.Where(w => w.MaterialCode == s.Key).Sum(k => k.Count),
                 TotalReturnCount = qutationMaterials.Where(w => w.Key == s.Key).FirstOrDefault().Qty,
-                NotClearAmount = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().CostPrice * (qutationMaterials.Where(w => w.Key == s.Key).FirstOrDefault().Qty - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.GoodQty) - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.SecondQty)),
-                Status = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().CostPrice * (qutationMaterials.Where(w => w.Key == s.Key).FirstOrDefault().Qty - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.GoodQty) - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.SecondQty)) > 0 ? "未清" : "已清"
+                NotClearAmount = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().DiscountPrices * (qutationMaterials.Where(w => w.Key == s.Key).FirstOrDefault().Qty - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.GoodQty) - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.SecondQty)),
+                Status = s.Where(w => w.MaterialCode == s.Key).FirstOrDefault().DiscountPrices * (qutationMaterials.Where(w => w.Key == s.Key).FirstOrDefault().Qty - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.GoodQty) - s.Where(w => w.MaterialCode == s.Key).Sum(k => k.SecondQty)) > 0 ? "未清" : "已清"
             }).ToList();
             MaterialList.ForEach(f => notClearAmount += f.NotClearAmount);
             outData.Add("NotClearAmount", Math.Round((decimal)notClearAmount, 2));
@@ -602,7 +603,7 @@ namespace OpenAuth.App
             //查询当前技术员所有可退料服务Id
             var query = from a in UnitWork.Find<QuotationMergeMaterial>(null)
                         join b in UnitWork.Find<Quotation>(null) on a.QuotationId equals b.Id
-                        where b.CreateUserId == loginContext.User.Id && a.IsProtected == true
+                        where b.CreateUserId == loginContext.User.Id && a.MaterialType == 2
                         select new { b.ServiceOrderId };
             var serviceorderIds = (await query.ToListAsync()).Select(s => s.ServiceOrderId).Distinct().ToList();
             //排除已生成退料单的服务Id

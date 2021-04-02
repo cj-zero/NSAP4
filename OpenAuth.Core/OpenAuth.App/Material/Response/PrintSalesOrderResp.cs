@@ -29,11 +29,21 @@ namespace OpenAuth.App.Material.Response
         /// <summary>
         /// 总价
         /// </summary>
-        public decimal TotalPrice { get; set; }
+        public string TotalPrice { get; set; }
+
+        /// <summary>
+        /// 库位
+        /// </summary>
+        public string Location { get; set; }
 
         /// <summary>
         /// 销售单号
         /// </summary>
         public string SalesOrder { get; set; }
+
+        /// <summary>
+        /// 服务id
+        /// </summary>
+        public string ServiceOrderSapId { get; set; }
     }
 }

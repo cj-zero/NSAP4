@@ -118,6 +118,29 @@ namespace OpenAuth.Repository.Domain
         public string UpdateUserName { get; set; }
         public string CreateUserId { get; set; }
         public string CreateUserName { get; set; }
+        /// <summary>
+        /// 出发地址经度
+        /// </summary>
+        [Description("出发地址经度")]
+        public string FromLng { get; set; }
+
+        /// <summary>
+        /// 出发地址纬度
+        /// </summary>
+        [Description("出发地址纬度")]
+        public string FromLat { get; set; }
+
+        /// <summary>
+        /// 到达地址经度
+        /// </summary>
+        [Description("到达地址经度")]
+        public string ToLng { get; set; }
+
+        /// <summary>
+        /// 到达地址纬度
+        /// </summary>
+        [Description("到达地址纬度")]
+        public string ToLat { get; set; }
 
         /// <summary>
         /// 是否删除

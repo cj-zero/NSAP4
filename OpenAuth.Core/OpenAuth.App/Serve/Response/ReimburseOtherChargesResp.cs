@@ -58,6 +58,11 @@ namespace OpenAuth.App.Serve.Response
         public DateTime? InvoiceTime { get; set; }
 
         /// <summary>
+        /// 费用归属
+        /// </summary>
+        public string ExpenseOrg { get; set; }
+
+        /// <summary>
         /// 附件
         /// </summary>
         public List<ReimburseAttachmentResp> ReimburseAttachments { get; set; }
