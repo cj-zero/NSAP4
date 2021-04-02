@@ -258,7 +258,7 @@ export const configMixin = { // 表单配置
         { tag: 'text', span: 12, attrs: { prop: 'remark', disabled: !this.ifEdit }, itemAttrs: { prop: 'remark', label: '备注' } },
         { tag: 'select', span: 8, attrs: { prop: 'deliveryMethod', disabled: !this.ifEdit, options: this.deliveryMethodList,  }, itemAttrs: { prop: 'deliveryMethod', label: '付款条件' }, on: { change: this.onDeliveryMethodChange } },
         { tag: 'select', span: 4, attrs: { prop: 'invoiceCategory', disabled: !this.ifEdit, options: this.invoiceCategoryList,  }, itemAttrs: { prop: 'invoiceCategory', label: '发票类别' }, isEnd: true },
-        
+        { tag: 'select', span: 4, attrs: { prop: 'isMaterialType', disabled: !this.ifEdit, options: this.materialTypeList, }, itemAttrs: { prop: 'isMaterialType', label: '物料类型' }, on: { change: this.onFormMaterialTypeChange }}
       ]
     },
     returnFormConfig () { // 退料单表单

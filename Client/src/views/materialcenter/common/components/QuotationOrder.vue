@@ -36,7 +36,7 @@
                 <span>服务ID</span>
               </div>
             </span>
-            <el-input v-infotooltip.top.ellipsis size="mini" v-model="formData.serviceOrderSapId" @focus="onServiceIdFocus"></el-input>
+            <el-input v-infotooltip.top.ellipsis size="mini" v-model="formData.serviceOrderSapId" @focus="onServiceIdFocus" :disabled="status !== 'create'"></el-input>
           </el-form-item>
         </template>
       </common-form>
@@ -108,48 +108,58 @@
                     <svg-icon iconClass="new-material" v-if="row.newMaterialCode"></svg-icon>
                   </el-row>
                 </template>
+                <template v-slot:materialType="{ row }">
+                  <div v-infotooltip.top.ellipsis>{{ materialTypeMap[row.materialType] }}</div>
+                </template>
                 <template v-slot:count="{ row }">
                   <div v-infotooltip.top.ellipsis class="bold">{{ row.count }}</div>
                 </template>
                 <template v-slot:unitPrice="{ row }">
-                  {{ row.unitPrice | toThousands(3, ',', 4) }}
+                  <div v-infotooltip.top.ellipsis>{{ row.unitPrice | toThousands(3, ',', 4) }}</div>
                 </template>
                 <template v-slot:salesPrice="{ row }">
-                  {{ row.salesPrice | toThousands(3, ',', 4) }}
+                  <div v-infotooltip.top.ellipsis>{{ row.salesPrice | toThousands(3, ',', 4) }}</div>
                 </template>
                 <template v-slot:discountPrices="{ row }">
                   <div v-infotooltip.top.ellipsis class="bold">{{ row.discountPrices | toThousands(3, ',', 4) }}</div>
                 </template>
                 <!-- 折扣 -->
                 <template v-slot:discount="{ row }">
-                  {{ row.discount }}%
+                  <div v-infotooltip.top.ellipsis>{{ row.discount }}%</div>
                 </template>
                 <!-- 总价格 -->
                 <template v-slot:totalPrice="{ row }">
-                  <div class="bold" v-infotooltip.top.ellipsis style="text-align: right;">{{ isInServiceOrTravel(row.materialCode) || isGeneralManager ? row.totalPrice : (item.isProtected ? 0 : row.totalPrice) | toThousands }}</div>
+                  <!-- <div class="bold" v-infotooltip.top.ellipsis style="text-align: right;">{{ isInServiceOrTravel(row.materialCode) || isGeneralManager ? row.totalPrice : (item.isProtected ? 0 : row.totalPrice) | toThousands }}</div> -->
+                  <div class="bold" v-infotooltip.top.ellipsis style="text-align: right;">{{ row.totalPrice | toThousands }}</div>
                 </template>
               </common-table>
               <!-- <el-row type="flex" justify="end" class="total-line">
                 <p v-infotooltip.top.ellipsis>{{ item.quotationMaterials | calcTotalItem(false, 'unitPrice') | toThousands }}</p>
                 <p v-infotooltip.top.ellipsis>{{ item.quotationMaterials | calcTotalItem(item.isProtected, 'salesPrice') | toThousands }}</p>
               </el-row> -->
-              <el-row class="info-wrapper" type="flex" justify="end" align="middle" style="margin-right: 104px;">
+              <el-row class="info-wrapper" type="flex" justify="end" align="middle" style="margin-right: 97px;">
+                <!-- <div v-if="!isGeneralManager"> -->
+                  <!-- <span class="title">应付</span> -->
+                  <!-- <span>{{ item.quotationMaterials | calcTotalItem(isGeneralManager ? false : item.isProtected) | toThousands }}</span> -->
+                  <!-- <span>{{ item.quotationMaterials | calcTotalItem('totalPrice', true) | toThousands }}</span> -->
+                <!-- </div> -->
                 <div>
                   <span class="title">合计</span>
-                  <span>￥{{ item.quotationMaterials | calcTotalItem(isGeneralManager ? false : item.isProtected) | toThousands }}</span>
+                  <!-- <span>{{ item.quotationMaterials | calcTotalItem(isGeneralManager ? false : item.isProtected) | toThousands }}</span> -->
+                  <span>{{ item.quotationMaterials | calcTotalItem | toThousands }}</span>
                 </div>
               </el-row>
             </li>
           </ul>
           <!-- 工程总经理审批报价单才出现 -->
-          <el-row class="info-wrapper" type="flex" justify="end" align="middle" style="margin-right: 104px;">
-            <!-- <div v-if="!isGeneralManager">
-              <span class="title">记账成本</span>
-              <span>￥{{ formData.totalCostPrice | toThousands(3, ',', 4) }}</span>
-            </div> -->
+          <el-row class="info-wrapper" type="flex" justify="end" align="middle" style="margin-right: 97px;">
+            <div v-if="!isGeneralManager">
+              <span class="title">应付</span>
+              <span>￥{{ formData.quotationProducts | calcTotalDealMoney | toThousands }}</span>
+            </div>
             <div>
               <span class="title">总计</span>
-              <span>￥{{ totalMoney | toThousands }}</span>
+              <span>{{ totalMoney | toThousands }}</span>
             </div>
           </el-row>
         </div>
@@ -239,7 +249,7 @@
                 </el-form> -->
                 <div style="margin-left: 10px;">
                   <span class="title">合计</span>
-                  ￥{{ totalMaterialMoney | toThousands }}
+                  {{ totalMaterialMoney | toThousands }}
                 </div>
               </el-row>
             </div>
@@ -272,13 +282,37 @@
                     <svg-icon iconClass="new-material" v-if="row.newMaterialCode"></svg-icon>
                   </el-row>
                 </template>
+                <template v-slot:materialType="{ row, index }">
+                  <el-form-item
+                    style="height: 28px;"
+                    :prop="'list.' + index + '.' + 'materialType'"
+                    :rules="materialRules['materialType']"
+                  >
+                    <el-select
+                      v-infotooltip.top.ellipsis
+                      v-model="row.materialType" 
+                      style="width: 100%;"
+                      clearable
+                      @change="onMaterialTypeChange(row, index)"
+                      placeholder="请选择">
+                      <el-option
+                        v-for="item in materialTypeOptions"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value">
+                      </el-option>
+                    </el-select>
+                  </el-form-item>
+                </template>
                 <!-- 数量 -->
                 <template v-slot:count="{ row, index }">
                   <el-form-item
+                    style="height: 28px;"
                     :prop="'list.' + index + '.' + 'count'"
                     :rules="materialRules['count']"
                   >
                     <el-input-number
+                      v-infotooltip.top.ellipsis
                       size="mini"
                       style="width: 200px;"
                       :controls="false"
@@ -293,10 +327,13 @@
                   </el-form-item>
                 </template>
                 <template v-slot:unitPrice="{ row }">
-                  {{ row.unitPrice | toThousands(3, ',', 4) }}
+                  <div v-infotooltip.top.ellipsis>{{ row.unitPrice | toThousands(3, ',', 4) }}</div>
                 </template>
                 <template v-slot:salesPrice="{ row }">
-                  {{ row.salesPrice | toThousands(3, ',', 4) }}
+                  <div v-infotooltip.top.ellipsis>{{ row.salesPrice | toThousands(3, ',', 4) }}</div>
+                </template>
+                <template v-slot:discountPrices="{ row }">
+                  <div v-infotooltip.top.ellipsis>{{ row.discountPrices | toThousands(3, ',', 4) }}</div>
                 </template>
                 <template v-slot:totalPrice="{ row }">
                   <span v-infotooltip.top.ellipsis style="text-align: right;">{{ row.totalPrice | toThousands }}</span>
@@ -312,7 +349,7 @@
                 </template>
                 <!-- 备注 -->
                 <template v-slot:remark="{ row }">
-                  <el-input size="mini" v-model="row.remark"></el-input>
+                  <el-input size="mini" v-infotooltip.top.ellipsis v-model="row.remark"></el-input>
                 </template>
                 <!-- 折扣 -->
                 <template v-slot:discount="{ row, index }">
@@ -330,10 +367,12 @@
                     </el-option>
                   </el-select> -->
                   <el-form-item
+                    style="height: 28px;"
                     :prop="'list.' + index + '.' + 'discount'"
                     :rules="materialRules['discount']"
                   >
                     <el-input-number 
+                      v-infotooltip.top.ellipsis
                       size="mini"
                       v-model="row.discount" 
                       placeholder="大于等于40"
@@ -359,7 +398,7 @@
             </el-form>
             <el-row class="subtotal-wrapper">
               <span class="title">合计</span>
-              ￥{{ materialData.list | calcTotalItem(materialData.isProtected) | toThousands }}
+              {{ materialData.list | calcTotalItem | toThousands }}
             </el-row>
           </div>
           <div class="divider"></div>
@@ -376,6 +415,7 @@
                   :controls="false"
                   :precision="2"
                   :min="0"
+                  :disabled="formData.isMaterialType === true"
                   v-model="row.salesPrice">
                 </el-input-number>
               </template>    
@@ -383,7 +423,7 @@
             <el-row type="flex" align="middle" justify="end" style="margin-top: 10px;">
               <div style="margin-left: 10px;">
                 <span class="title">合计</span>
-                ￥{{ totalMoney | toThousands }}
+                {{ totalMoney | toThousands }}
               </div>
             </el-row>
           </div>
@@ -407,13 +447,13 @@
               </el-row>
             </template>
             <template v-slot:discount="{ row }">
-              {{ row.discount }}%
+              <div v-infotooltip.top.ellipsis>{{ row.discount }}%</div>
             </template>
           </common-table>
           <el-row type="flex" class="money-wrapper" justify="end">
-            <p v-infotooltip.top.ellipsis>￥{{ summaryTotalPrice | toThousands }}</p>
-            <p v-infotooltip.top.ellipsis>￥{{ costPirceTotal | toThousands}}</p>
-            <p v-infotooltip.top.ellipsis>￥{{ grossProfitTotal | toThousands }}</p>
+            <p v-infotooltip.top.ellipsis>{{ summaryTotalPrice | toThousands }}</p>
+            <p v-infotooltip.top.ellipsis>{{ costPirceTotal | toThousands}}</p>
+            <p v-infotooltip.top.ellipsis>{{ grossProfitTotal | toThousands }}</p>
             <p v-infotooltip.top.ellipsis>{{ grossProfit | toThousands }}%</p>
           </el-row>
         </div>
@@ -723,25 +763,50 @@ export default {
     formatDateFilter (val) {
       return val ? formatDate(val, 'YYYY.MM.DD HH:mm:ss') : ''
     },
-    calcTotalItem (val, isProtected, key = 'totalPrice') { // 计算每一个物料表格的总金额
-      console.log(val, isProtected, 'calcItem')
-      return (isProtected 
-        ? val.filter(item => {
-            return isNumber(Number(item[key])) && isInServiceOrTravel(item.materialCode || '')
-          }) 
-          .reduce((prev, next) => accAdd(prev, next[key]), 0)
-        : 
-        val.filter(item => isNumber(Number(item[key])))
-          .reduce((prev, next) => accAdd(prev, next[key]), 0)
-      )
+    // calcTotalItem (val, isProtected, key = 'totalPrice') { // 计算每一个物料表格的总金额
+    //   console.log(val, isProtected, 'calcItem')
+    //   return (isProtected 
+    //     ? val.filter(item => {
+    //         return isNumber(Number(item[key])) && isInServiceOrTravel(item.materialCode || '')
+    //       }) 
+    //       .reduce((prev, next) => accAdd(prev, next[key]), 0)
+    //     : 
+    //     val.filter(item => isNumber(Number(item[key])))
+    //       .reduce((prev, next) => accAdd(prev, next[key]), 0)
+    //   )
+
+    // },
+    calcTotalItem (val, key = 'totalPrice', isDeal = false) { // 计算每一个物料表格的总金额
+     // isDeal 应付 只有购买的展示金额 更换的不展示金额
+      return val.filter(item =>  {
+        const { materialType } = item
+        return isNumber(Number(item[key])) && (isDeal ? materialType === '2' : materialType !== '3')
+      })
+      .reduce((prev, next) => accAdd(prev, next[key]), 0)
+    },
+    calcTotalDealMoney (val) {
+      let result = 0
+      for (let i = 0; i < val.length; i++) {
+        result += val[i].quotationMaterials.filter(item => {
+          const { materialType } = item
+          return (
+            isNumber(Number(item.totalPrice)) && 
+            (materialType === '2')
+          )})
+          .reduce((prev, next) => accAdd(prev, next.totalPrice), 0)
+      }
+      return result
     },
     calcSerialTotalMoney (serialNumber, list) {
       let index = findIndex(list, item => {
         return item.productCode === serialNumber
       })
-      if (index !== -1 && !list[index].isProtected) { // 保外的才算钱
+      if (index !== -1) { // 保外的才算钱
         return list[index].
-          quotationMaterials.filter(item => isNumber(Number(item.totalPrice)))
+          quotationMaterials.filter(item => {
+            const { totalPrice, materialType } = item
+            return isNumber(Number(totalPrice)) && materialType !== '3'
+          })
           .reduce((prev, next) => accAdd(prev, next.totalPrice), 0)
       }
       return 0
@@ -874,6 +939,7 @@ export default {
         serviceOrderId: '', 
         createUser: '',
         orgName: '',
+        isMaterialType: '',
         prepay: undefined, // 预付百分比
         cashBeforeFelivery: undefined, // 发货前百分比
         payOnReceipt: undefined, // 货到验货百分比
@@ -914,7 +980,8 @@ export default {
         moneyMeans: [{ required: true, trigger: ['change', 'blur'] }],
         // invoiceCompany: [{ required: true, trigger: ['change', 'blur'] }],
         deliveryMethod: [{ required: true, trigger: ['change', 'blur'] }],
-        collectionAddress: [{ required: true, trigger: ['change', 'blur'] }]
+        collectionAddress: [{ required: true, trigger: ['change', 'blur'] }],
+        isMaterialType: [{ required: true, trigger: ['change', 'blur'] }]
       },
       serviceRules: {
         // serviceCharge: [{ validator: SERVICE_CHARGE_VALIDATOR, trigger: ['change', 'blur'] }],
@@ -943,10 +1010,10 @@ export default {
         { label: '最大数量' },
         { label: '当前库存' },
         { label: '仓库' },
-        { label: '成本价(￥)', align: 'right' },
-        { label: '销售价(￥)', slotName: 'salesPrice', align: 'right' },
+        { label: '成本价', align: 'right' },
+        { label: '销售价', slotName: 'salesPrice', align: 'right' },
         { label: '折扣(%)', align: 'right' },
-        { label: '小计(￥)', slotName: 'totalPrice', align: 'right' },
+        { label: '小计', slotName: 'totalPrice', align: 'right' },
       ],
       // 物料弹窗列表
       materialList: [],
@@ -971,8 +1038,8 @@ export default {
         { label: '零件规格', prop: 'buyUnitMsr', width: 80, align: 'right' },
         { label: '库存量', prop: 'onHand', width: 100, align: 'right' },
         { label: '仓库号', prop: 'whsCode', width: 100, align: 'right' },
-        { label: '成本价(￥)', prop: 'unitPrice', align: 'right' },
-        { label: '销售价(￥)', prop: 'lastPurPrc', align: 'right' },
+        { label: '成本价', prop: 'unitPrice', align: 'right' },
+        { label: '销售价', prop: 'lastPurPrc', align: 'right' },
         { label: '替换', slotName: 'replaceBtn' }
       ],
       // 替换和被替换的物料的对比表格
@@ -984,8 +1051,8 @@ export default {
         { label: '零件规格', prop: 'buyUnitMsr', width: 80, align: 'right' },
         { label: '库存量', prop: 'onHand', width: 50, align: 'right' },
         { label: '仓库号', prop: 'whsCode', width: 100, align: 'right' },
-        { label: '成本价(￥)', prop: 'unitPrice', align: 'right' },
-        { label: '销售价(￥)', prop: 'lastPurPrc', align: 'right' },
+        { label: '成本价', prop: 'unitPrice', align: 'right' },
+        { label: '销售价', prop: 'lastPurPrc', align: 'right' },
         { label: '被替换的物料编码', prop: 'replaceMaterialCode' },
         // { label: '删除', slotName: 'deleteBtn' }
       ],
@@ -1000,8 +1067,8 @@ export default {
         { label: '零件规格', prop: 'buyUnitMsr', width: 100, align: 'right' },
         { label: '库存量', prop: 'onHand', width: 100, align: 'right' },
         { label: '仓库号', prop: 'whsCode', width: 100, align: 'right' },
-        { label: '成本价(￥)', prop: 'unitPrice', align: 'right' },
-        { label: '销售价(￥)', prop: 'lastPurPrc', align: 'right' }
+        { label: '成本价', prop: 'unitPrice', align: 'right' },
+        { label: '销售价', prop: 'lastPurPrc', align: 'right' }
       ],
       replaceAddColumns: [
         { type: 'selection', width: 40 },
@@ -1010,8 +1077,8 @@ export default {
         { label: '零件规格', prop: 'buyUnitMsr', width: 100, align: 'right' },
         { label: '库存量', prop: 'onHand', width: 100, align: 'right' },
         { label: '仓库号', prop: 'whsCode', width: 100, align: 'right' },
-        { label: '成本价(￥)', prop: 'unitPrice', align: 'right' },
-        { label: '销售价(￥)', prop: 'lastPurPrc', align: 'right' }
+        { label: '成本价', prop: 'unitPrice', align: 'right' },
+        { label: '销售价', prop: 'lastPurPrc', align: 'right' }
       ],
       listQueryReplace: {
         partCode: '',
@@ -1024,25 +1091,42 @@ export default {
         { btnText: '取消', handleClick: this.closeReplaceDialog }
       ],
       // 根据设备序列号生成的物料表格
+      // materialTypeOptions: [
+      //   { label: '赠送', value: '1' },
+      //   { label: '更换', value: '2' },
+      //   { label: '购买', value: '3' },
+      // ],
+      // materialTypeMap: {
+      //   1: '赠送',
+      //   2: '更换',
+      //   3: '购买'
+      // },
+      materialTypeList: [
+        { label: '更换', value: true },
+        { label: '购买', value: false }
+      ],
       materialConfig:[
         { label: '序号', type: 'index' },
+        { label: '类型', slotName: 'materialType' },
         { label: '物料编码', prop: 'materialCode', slotName: 'materialCode', 'show-overflow-tooltip': false },
         { label: '物料描述', prop: 'materialDescription' },
         { label: '数量', prop: 'count', slotName: 'count', align: 'right' },
         { label: '最大数量', prop: 'maxQuantity', align: 'right', slotName: 'maxQuantity', 'show-overflow-tooltip': false },
         { label: '库存量', prop: 'warehouseQuantity', align: 'right' },
         { label: '仓库', prop: 'warehouseNumber', align: 'right' },
-        { label: '成本价(￥)', prop: 'unitPrice', align: 'right', slotName: 'unitPrice' },
-        { label: '销售价(￥)', prop: 'salesPrice', align: 'right', slotName: 'salesPrice' },
+        { label: '成本价', prop: 'unitPrice', align: 'right', slotName: 'unitPrice', 'show-overflow-tooltip': false },
+        { label: '推荐单价', prop: 'salesPrice', align: 'right', slotName: 'salesPrice', 'show-overflow-tooltip': false },
         { label: '折扣(%)', prop: 'discount', slotName: 'discount', align: 'right' },
-        { label: '小计(￥)', prop: 'totalPrice', disabled: true, align: 'right', slotName: 'totalPrice' },
+        { label: '销售单价', prop: 'discountPrices', align: 'right', slotName: 'discountPrices', 'show-overflow-tooltip': false },
+        { label: '小计', prop: 'totalPrice', disabled: true, align: 'right', slotName: 'totalPrice' },
         { label: '备注', slotName: 'remark', prop: 'remark' },
         { label: '操作', slotName: 'operation' }
       ],    
       // 物料填写表格列表 
       materialRules: {
-        count: [{ required: true }],
-        discount: [{ required: true }]
+        count: [{ required: true, trigger: ['change', 'blur'] }],
+        materialType: [{ required: true, trigger: ['change', 'blur'] }],
+        discount: [{ required: true, trigger: ['change', 'blur'] }]
       },
       // 物料汇总表格
       materialSummaryList: [],
@@ -1052,28 +1136,29 @@ export default {
         { label: '物料描述', prop: 'materialDescription', width: 200 },
         { label: '数量', prop: 'count', align: 'right', width: 70 },
         // { label: '单价', prop: '', align: 'right' },
-        { label: '单价(￥)', prop: 'salesPrice', align: 'right', width: 100 },
-        { label: '折扣(%)', prop: 'discount', align: 'right', slotName: 'discount', width: 100 },
-        { label: '总计(￥)', prop: 'totalPrice', align: 'right', width: 100 },
-        { label: '成本价(￥)', prop: 'costPrice', align: 'right', width: 100 },
-        { label: '总成本(￥)', prop: 'totalCost', align: 'right', width: 100 },
-        { label: '总毛利(￥)', prop: 'margin', align: 'right', width: 100 },
+        { label: '单价', prop: 'salesPrice', align: 'right', width: 100 },
+        { label: '折扣(%)', prop: 'discount', align: 'right', slotName: 'discount', width: 100, 'show-overflow-tooltip': false },
+        { label: '总计', prop: 'totalPrice', align: 'right', width: 100 },
+        { label: '成本价', prop: 'costPrice', align: 'right', width: 100 },
+        { label: '总成本', prop: 'totalCost', align: 'right', width: 100 },
+        { label: '总毛利', prop: 'margin', align: 'right', width: 100 },
         { label: '毛利%', prop: 'profit', align: 'right', width: 80 }
       ],
       materialAllLoading: false,
       // 编辑查看状态、工程、总经理报价单、销售订单审批
       approveColumns: [
         { label: '序号', type: 'index', width: 50 },
+        { label: '类型', slotName: 'materialType', width: 50 },
         { label: '物料编码', width: 150, prop: 'materialCode', slotName: 'materialCode', 'show-overflow-tooltip': false },
         { label: '物料描述', prop: 'materialDescription', width: 200 },
-        { label: '数量', prop: 'count', align: 'right', width: 70, 'show-overflow-tooltip': false },
+        { label: '数量', prop: 'count', align: 'right', width: 70, slotName: 'count', 'show-overflow-tooltip': false },
         { label: '最大数量', prop: 'maxQuantity', align: 'right' },
         // { label: '库存量', prop: 'warehouseQuantity', align: 'right' },
         // { label: '仓库', prop: 'warehouseNumber', align: 'right' },
-        { label: '成本价', prop: 'unitPrice', align: 'right', slotName: 'unitPrice' },
-        { label: '推荐单价', prop: 'salesPrice', align: 'right', slotName: 'salesPrice' },
+        { label: '成本价', prop: 'unitPrice', align: 'right', slotName: 'unitPrice', 'show-overflow-tooltip': false },
+        { label: '推荐单价', prop: 'salesPrice', align: 'right', slotName: 'salesPrice', 'show-overflow-tooltip': false },
         { label: '销售单价', prop: 'discountPrices', align: 'right', slotName: 'discountPrices', 'show-overflow-tooltip': false },
-        { label: '折扣(%)', prop: 'discount', slotName: 'discount', align: 'right' },
+        { label: '折扣(%)', prop: 'discount', slotName: 'discount', align: 'right', 'show-overflow-tooltip': false },
         { label: '小计', prop: 'totalPrice', slotName: 'totalPrice', align: 'right', 'show-overflow-tooltip': false },
         { label: '备注', prop: 'remark' }
       ],
@@ -1108,7 +1193,7 @@ export default {
         { label: '保修到期', prop: 'docDate' },
         { label: '生产订单', prop: 'productionOrder' },
         { label: '销售订单', prop: 'salesOrder' },
-        { label: '小计￥', slotName: 'money', align: 'right' },
+        { label: '小计', slotName: 'money', align: 'right' },
         { label: '领取物料', slotName: 'btn' }
         // { label: '领取物料',  width: 100, type: 'operation',
         //   actions: [{ btnText: '领取', handleClick: this.openMaterialDialog }] 
@@ -1143,6 +1228,26 @@ export default {
     }
   },
   computed: {
+    materialTypeOptions () {
+      return (typeof this.formData.isMaterialType !== 'boolean' && !this.formData.isMaterialType)
+        ? []
+        : this.formData.isMaterialType 
+          ?[
+              { label: '更换', value: '1' },
+              { label: '赠送', value: '3' }
+            ]
+          : [
+              { label: '购买', value: '2' },
+              { label: '赠送', value: '3' },
+            ]
+    },
+    materialTypeMap () {
+      return (typeof this.formData.isMaterialType !== 'boolean' && !this.formData.isMaterialType)
+        ? {}
+        : this.formData.isMaterialType
+          ? { 1: '更换', 3: '赠送' }
+          : { 2: '购买', 3: '赠送'}
+    },
     ifInApprovePage () { // 是否在审批页面
       return this.$route.path === '/materialcenter/salesorder/index' || this.$route.path === '/materialcenter/materialapprove/index'
     },
@@ -1228,6 +1333,26 @@ export default {
   },
   methods: {
     isInServiceOrTravel,
+    onFormMaterialTypeChange (val) {
+      console.log(val, typeof val, 'onFormMaterialTypeChange')
+      this.clearAllMaterialType()
+      this.serviceList.forEach(item => item.salesPrice = undefined)
+    },
+    clearAllMaterialType () {
+      this.formData.quotationProducts.forEach(item => {
+        const { quotationMaterials } = item
+        quotationMaterials.forEach(item => item.materialType = '')
+      })
+    },
+    onMaterialTypeChange (row) {
+      if (row.materialType === '3') {
+        row.totalPrice = 0
+      } else {
+        const { count, salesPrice, discount } = row
+        row.totalPrice = Number(((count * salesPrice * accDiv(discount, 100) || 0)).toFixed(2))
+      }
+      console.log(row, 'row change')
+    },
     _normalizeTimeList (timeList) {
       timeList = timeList.filter(item => item.approvalResult !== '暂定') // 把暂定的状态排除掉
       const { quotationStatus, totalMoney } = this.formData
@@ -1341,24 +1466,53 @@ export default {
       this.pictureIds = ids
     },
     // 计算总金额
+    // _calcTotalMoney (val) {
+    //   let result = 0
+    //   for (let i = 0; i < val.length; i++) {
+    //     if (!val[i].isProtected) {
+    //       result += val[i].quotationMaterials.filter(item => {
+    //         const { materialCode } = item
+    //         console.log(item.totalPrice, 'no isProtected')
+    //         return isNumber(Number(item.totalPrice)) && NOT_MATERIAL_CODE_LIST.indexOf(materialCode) === -1
+    //       })
+    //       .reduce((prev, next) => accAdd(prev, next.totalPrice), 0)
+    //     } else if (val[i].isProtected && this.isGeneralManager) {
+    //       result += val[i].quotationMaterials.filter(item => {
+    //         const { materialCode } = item
+    //         console.log(item.totalPrice, 'isProtected')
+    //         return isNumber(Number(item.totalPrice)) && NOT_MATERIAL_CODE_LIST.indexOf(materialCode) === -1
+    //       })
+    //       .reduce((prev, next) => accAdd(prev, next.totalPrice), 0)
+    //     }
+    //   }
+    //   return result
+    // },
     _calcTotalMoney (val) {
       let result = 0
       for (let i = 0; i < val.length; i++) {
-        if (!val[i].isProtected) {
-          result += val[i].quotationMaterials.filter(item => {
-            const { materialCode } = item
-            console.log(item.totalPrice, 'no isProtected')
-            return isNumber(Number(item.totalPrice)) && NOT_MATERIAL_CODE_LIST.indexOf(materialCode) === -1
-          })
+        result += val[i].quotationMaterials.filter(item => {
+          const { materialCode, materialType } = item
+          return (
+            isNumber(Number(item.totalPrice)) && 
+            (NOT_MATERIAL_CODE_LIST.indexOf(materialCode) === -1 &&
+            materialType !== '3')
+          )})
           .reduce((prev, next) => accAdd(prev, next.totalPrice), 0)
-        } else if (val[i].isProtected && this.isGeneralManager) {
-          result += val[i].quotationMaterials.filter(item => {
-            const { materialCode } = item
-            console.log(item.totalPrice, 'isProtected')
-            return isNumber(Number(item.totalPrice)) && NOT_MATERIAL_CODE_LIST.indexOf(materialCode) === -1
-          })
-          .reduce((prev, next) => accAdd(prev, next.totalPrice), 0)
-        }
+        // if (!val[i].isProtected) {
+        //   result += val[i].quotationMaterials.filter(item => {
+        //     const { materialCode, materialType } = item
+        //     console.log(item.totalPrice, 'no isProtected')
+        //     return isNumber(Number(item.totalPrice)) && NOT_MATERIAL_CODE_LIST.indexOf(materialCode) === -1
+        //   })
+        //   .reduce((prev, next) => accAdd(prev, next.totalPrice), 0)
+        // } else if (val[i].isProtected && this.isGeneralManager) {
+        //   result += val[i].quotationMaterials.filter(item => {
+        //     const { materialCode } = item
+        //     console.log(item.totalPrice, 'isProtected')
+        //     return isNumber(Number(item.totalPrice)) && NOT_MATERIAL_CODE_LIST.indexOf(materialCode) === -1
+        //   })
+        //   .reduce((prev, next) => accAdd(prev, next.totalPrice), 0)
+        // }
       }
       return result
     },
@@ -1617,12 +1771,13 @@ export default {
       })
     },
     onDiscountChange (val) {
-      let { list, isProtected } = this.materialData
+      let { list } = this.materialData
       let data = list[this.materialItemIndex]
       val = accDiv(val, 100)
       console.log(val, 'val')
-      let { salesPrice, count } = data
-      data.totalPrice = Number((!isProtected ? (val * salesPrice * count || 0) : 0).toFixed(2))
+      let { salesPrice, count, materialType } = data
+      const isMoney = materialType === '3'
+      data.totalPrice = Number((isMoney ? 0 : (val * salesPrice * count || 0)).toFixed(2))
     },
     onDiscountFocus (index) {
       this.materialItemIndex = index
@@ -1632,10 +1787,11 @@ export default {
       this.materialItemIndex = index // 当前点击的物料表格的第几项
     },
     onCountChange (val) {
-      let { list, isProtected } = this.materialData
+      let { list } = this.materialData
       let data = list[this.materialItemIndex]
-      let { salesPrice, discount } = data
-      data.totalPrice = Number((!isProtected ? (val * salesPrice * accDiv(discount, 100) || 0) : 0).toFixed(2))
+      let { salesPrice, discount, materialType } = data
+      const isMoney = materialType === '3'
+      data.totalPrice = Number((isMoney ? 0: (val * salesPrice * accDiv(discount, 100) || 0)).toFixed(2))
     },
     _resetMaterialInfo () { // 重置物料相关的变量和数据
       this.formData.quotationProducts = []
@@ -1661,21 +1817,23 @@ export default {
     _normalizeSelectedList (selectedList) { // 格式化物料表格数据
       return selectedList.map(selectItem => {
         let item = {}
-        let { isProtected } = this.currentSerialInfo
+        // let { isProtected } = this.currentSerialInfo
         let { itemCode, itemName, onHand, quantity,  buyUnitMsr, whsCode, unitPrice, lastPurPrc, replaceMaterialCode, newMaterialCode } = selectItem
         item.unit = buyUnitMsr
+        item.materialType = ''
         item.materialDescription = itemName
         item.materialCode = itemCode
         item.remark = ''
-        item.unitPrice = Number(unitPrice)
-        item.salesPrice = isProtected ? 0 : Number(lastPurPrc)
+        item.unitPrice = unitPrice
+        item.salesPrice = lastPurPrc
         item.discount = 100
+        item.discountPrices = item.salesPrice * 1
         item.count = 1
         item.warehouseQuantity = onHand
         item.warehouseNumber = whsCode
         item.maxQuantity = quantity
         // item.maxQuantityText = Math.ceil(quantity)
-        item.totalPrice = Number(!isProtected ? accMul(item.salesPrice, item.count) : 0).toFixed(2)
+        item.totalPrice = Number(accMul(item.salesPrice, item.count)).toFixed(2)
         console.log(item.totalPrice, 'totalPrice')
         item.replaceMaterialCode = replaceMaterialCode
         item.newMaterialCode = !!newMaterialCode
@@ -1819,15 +1977,6 @@ export default {
         return Promise.reject({ message: '服务费或物料零件数量不能为空' })
       }
       if (this.formData.quotationProducts.length) {
-        console.log(this.formData.quotationProducts.length, length)
-        // let materialList = []
-        // this.formData.quotationProducts.forEach(item => {
-        //   materialList.push(...item.quotationMaterials)
-        // })
-        // let isMaterialValid = materialList.every(item => item.count)
-        // if (!isMaterialValid) {
-        //   return Promise.reject({ message: '零件数量不能为空' })
-        // }
         let isValid = true
         try {
           await this.$refs.materialForm.validate()
@@ -1836,7 +1985,18 @@ export default {
           console.log(err)
         }
         if (!isValid) {
-          return Promise.reject({ message: '零件数量或者折扣不能为空' })
+          return Promise.reject({ message: '当前序列号下的物料数量、类型、折扣不能为空' })
+        }
+        console.log(this.formData.quotationProducts.length, length)
+        for (let i = 0; i < this.formData.quotationProducts.length; i++) {
+          const item = this.formData.quotationProducts[i]
+          const { productCode, quotationMaterials } = item
+          for (let j = 0; j < quotationMaterials.length; j++) {
+            const { materialType, count, discount } = quotationMaterials[j]
+            if (!materialType || !count || !discount) {
+              return Promise.reject({ message: `${productCode}设备序列号下第${j + 1}行物料数量、类型、折扣不能为空`})
+            }
+          }
         }
       }
       this.serviceList.forEach((item, index) => {
