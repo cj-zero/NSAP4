@@ -1639,8 +1639,8 @@ namespace OpenAuth.App.Material
 
             List<int> returnNoteIds = ReturnNoteList.Select(s => s.Id).Distinct().ToList();
             //计算剩余未结清金额
-            var notClearAmountList = (await UnitWork.Find<ReturnnoteMaterial>(w => returnNoteIds.Contains((int)w.ReturnNoteId) && w.Check == 1).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new { s.Key, GoodCount = s.Sum(s => s.GoodQty), SecondCount = s.Sum(s => s.SecondQty), Costprice = s.ToList().FirstOrDefault().DiscountPrices, TotalCount = s.ToList().FirstOrDefault().TotalCount }).ToList();
-            var totalprice = notClearAmountList.Sum(s => s.Costprice * (s.TotalCount - s.GoodCount - s.SecondCount));
+            var notClearAmountList = (await UnitWork.Find<ReturnnoteMaterial>(w => returnNoteIds.Contains((int)w.ReturnNoteId) && w.Check == 1).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new { s.Key, GoodCount = s.Sum(s => s.GoodQty), SecondCount = s.Sum(s => s.SecondQty), DiscountPrices = s.ToList().FirstOrDefault().DiscountPrices, TotalCount = s.ToList().FirstOrDefault().TotalCount }).ToList();
+            var totalprice = notClearAmountList.Sum(s => s.DiscountPrices * (s.TotalCount - s.GoodCount - s.SecondCount));
             if (totalprice > 4000)
             {
                 throw new Exception("欠款已超出额度，不可领料。");
