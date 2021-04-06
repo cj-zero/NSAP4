@@ -1785,9 +1785,11 @@ export default {
       })
     },
     onDiscountPricesChange (row) {
-      const { discountPrices, salesPrice } = row
+      const { discountPrices, salesPrice, count, materialType } = row
       if (discountPrices && salesPrice) {
         row.discount = (accDiv(discountPrices, salesPrice) * 100).toFixed(6)
+        const isMoney = materialType === '3'
+        row.totalPrice = Number((isMoney ? 0: accMul(count, discountPrices) || 0).toFixed(2))
         if (row.discount < 40) {
           this.$message.warning('折扣不能小于40')
         }
