@@ -1112,6 +1112,12 @@ export default {
       if (hasVisit) {
         this.$message.warning('该服务单已评价')
       } else {
+        let hasFinished = serviceWorkOrders.every(item => { // 是否已经回访
+          return Number(item.status) === 7
+        })
+        if (!hasFinished) {
+          return this.$message.warning('请先完成服务单后，再进行回访')
+        }
         afterEvaluation.getTechnicianName({
           serviceOrderId
         }).then(res => {
