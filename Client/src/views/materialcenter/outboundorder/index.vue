@@ -43,6 +43,7 @@
     >
       <outbound-order 
         ref="outboundOrder" 
+        @addExpressInfo="onAddExpressInfo"
         :detailInfo="detailInfo"
         :categoryList="categoryList"
         :status="status">
@@ -157,7 +158,8 @@ export default {
       ],
       customerList: [], // 用户服务单列表
       status: 'outbound', // 报价单状态
-      detailInfo: null // 详情信息
+      detailInfo: null, // 详情信息
+      hasAdd: false
     } 
   },
   methods: {
@@ -189,7 +191,13 @@ export default {
     handleClose () {
       this.$refs.quotationDialog.close()
     },
+    onAddExpressInfo (val) {
+      this.hasAdd = val
+    },
     closed () {
+      if (this.hasAdd) {
+        this._getList()
+      }
       this.$refs.outboundOrder.resetInfo()
     },
     onOpened () {

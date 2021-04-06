@@ -207,6 +207,26 @@ export default {
     }
   },
   computed: {
+    materialTypeOptions () {
+      return (typeof this.formData.isMaterialType !== 'boolean' && !this.formData.isMaterialType)
+        ? []
+        : this.formData.isMaterialType 
+          ?[
+              { label: '更换', value: '1' },
+              { label: '赠送', value: '3' }
+            ]
+          : [
+              { label: '购买', value: '2' },
+              { label: '赠送', value: '3' },
+            ]
+    },
+    materialTypeMap () {
+      return (typeof this.formData.isMaterialType !== 'boolean' && !this.formData.isMaterialType)
+        ? {}
+        : this.formData.isMaterialType
+          ? { 1: '更换', 3: '赠送' }
+          : { 2: '购买', 3: '赠送'}
+    },
     title () {
       return this.formData.acquisitionWay === '1' ? '自提' : '快递'
     },
@@ -240,12 +260,17 @@ export default {
   },
   data () {
     return {
+      materialTypeList: [
+        { label: '更换', value: true },
+        { label: '购买', value: false }
+      ],
       ifShowPrepaid: false,
       currentIndex: 0,
       loading: false,
       isOutbound: true,
       fileList: [],
       rightImg,
+      hasAdd: false,
       pictureList: [], // 快递图片列表
       addVisible: false,
       formData: {
@@ -348,6 +373,7 @@ export default {
       // 每次都添加完默认展示最新的物料数据
       this.currentIndex = 0
       this.$refs.courierTable.setCurrentRow(this.expressList[this.currentIndex])
+      this.$emit('addExpressInfo', true)
       console.log(this.currentIndex, this.expressList)
     },
     onExpressInfoOpen () {
@@ -382,6 +408,7 @@ export default {
       }
     },
     resetInfo () {
+      this.$emit('addExpressInfo', false)
       this.resetFile()
       this.reset()
     },
