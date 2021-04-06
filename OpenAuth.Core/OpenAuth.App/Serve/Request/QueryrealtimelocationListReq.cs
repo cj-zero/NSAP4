@@ -2,6 +2,6 @@
 {
     public class QueryrealtimelocationListReq : PageReq
     {
-        //todo:添加自己的请求字段
+        public string UserId { get; set; }
     }
 }
