@@ -265,6 +265,14 @@ namespace OpenAuth.Repository.Domain
         public bool?  IsMaterialType { get; set; }
 
         /// <summary>
+        ///打印次数
+        /// </summary>
+        [Description("打印次数")]
+
+        public int? PrintTheNumber { get; set; }
+        
+
+        /// <summary>
         /// 物流表
         /// </summary>
         public virtual List<Expressage> Expressages { get; set; }

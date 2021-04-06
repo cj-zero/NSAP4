@@ -518,7 +518,7 @@ namespace OpenAuth.App.Material
         /// </summary>
         /// <param name="QuotationId"></param>
         /// <returns></returns>
-        public async Task<TableData> GetDetails(QueryQuotationListReq request)
+        public async Task<TableData> GetDetails(QueryQuotationListReq request) 
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -933,7 +933,8 @@ namespace OpenAuth.App.Material
                                 Margin = QuotationObj.ServiceCharge,
                                 Discount = 100,
                                 SentQuantity = 0,
-                                MaterialType = 2
+                                MaterialType = 2,
+                                DiscountPrices = QuotationObj.ServiceCharge
                             });
                         }
                         if (QuotationObj.TravelExpense != null && QuotationObj.TravelExpense > 0)
@@ -952,7 +953,8 @@ namespace OpenAuth.App.Material
                                 Margin = QuotationObj.TravelExpense,
                                 Discount = 100,
                                 SentQuantity = 0,
-                                MaterialType = 2
+                                MaterialType = 2,
+                                DiscountPrices = QuotationObj.TravelExpense
                             });
                         }
                         var QuotationMergeMaterialListMap = QuotationMergeMaterialList.MapToList<QuotationMergeMaterial>();
@@ -1119,7 +1121,8 @@ namespace OpenAuth.App.Material
                                 Margin = QuotationObj.ServiceCharge,
                                 Discount = 100,
                                 SentQuantity = 0,
-                                MaterialType = 2
+                                MaterialType = 2,
+                                DiscountPrices= QuotationObj.ServiceCharge
                             });
                         }
                         if (QuotationObj.TravelExpense != null && QuotationObj.TravelExpense > 0)
@@ -1138,7 +1141,8 @@ namespace OpenAuth.App.Material
                                 Margin = QuotationObj.TravelExpense,
                                 Discount = 100,
                                 SentQuantity = 0,
-                                MaterialType = 2
+                                MaterialType = 2,
+                                DiscountPrices = QuotationObj.TravelExpense
                             });
                         }
                         var QuotationMergeMaterialListMap = QuotationMergeMaterialList.MapToList<QuotationMergeMaterial>();
@@ -1269,7 +1273,7 @@ namespace OpenAuth.App.Material
             var expressageMap = obj.ExpressageReqs.MapTo<Expressage>();
             #region 判断库存量
             var mergeMaterialIds = obj.QuotationMergeMaterialReqs.Select(q => q.Id).ToList();
-            var mergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => mergeMaterialIds.Contains(q.Id)).Select(q => q.MaterialCode).ToListAsync();
+            var mergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => mergeMaterialIds.Contains(q.Id) && !q.MaterialCode.Equals("S111-SERVICE-GSF") && !q.MaterialCode.Equals("S111-SERVICE-CLF")).Select(q => q.MaterialCode).ToListAsync();
             var onHand = await UnitWork.Find<OITW>(o => mergeMaterials.Contains(o.ItemCode) && o.WhsCode == "37").Select(o => new { o.ItemCode, o.OnHand }).ToListAsync();
             string message = null;
             onHand.Where(o => o.OnHand <= 0).ForEach(o =>
@@ -1722,6 +1726,8 @@ namespace OpenAuth.App.Material
             QuotationObj.TotalCostPrice = 0;
             QuotationObj.Tentative = false;
             QuotationObj.ErpOrApp = 1;
+            QuotationObj.PrintNo = Guid.NewGuid().ToString();
+            QuotationObj.PrintTheNumber = 0;
             if (loginUser.Account == Define.USERAPP)
             {
                 loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
@@ -1732,7 +1738,7 @@ namespace OpenAuth.App.Material
             {
                 q.QuotationMaterials.ForEach(m =>
                 {
-                    if (Convert.ToDouble(m.DiscountPrices / m.SalesPrice) < 0.4) 
+                    if (m.MaterialType != 3 &&m.SalesPrice>0&&Convert.ToDouble(m.DiscountPrices / m.SalesPrice) < 0.4) 
                     {
                         throw new Exception("金额有误请重新输入");
                     }
@@ -1801,26 +1807,38 @@ namespace OpenAuth.App.Material
             text = text.Replace("@Model.DeliveryDate", Convert.ToDateTime(model?.DeliveryDate).ToString("yyyy.MM.dd"));
             text = text.Replace("@Model.AcceptancePeriod", Convert.ToDateTime(model?.DeliveryDate).AddDays(model.AcceptancePeriod == null ? 0 : (double)model.AcceptancePeriod).ToString("yyyy.MM.dd"));
             text = text.Replace("@Model.Remark", model?.Remark);
-            var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"SalesOrderHeader{model.Id}.html");
-            System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
-            var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "SalesOrderFooter.html");
-            var foottext = System.IO.File.ReadAllText(footUrl);
-            string InvoiceCompany = "", Location = "", website = "";
+            string InvoiceCompany = "", Location = "", website = "", seal = "",width="",height="";
+            
             if (Convert.ToInt32(model.InvoiceCompany) == 1)
             {
                 InvoiceCompany = "深圳市新威尔电子有限公司 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 交通银行股份有限公司&nbsp;&nbsp;深圳梅林支行 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;443066388018001726113";
                 Location = "深圳市福田区梅林街道梅都社区中康路 128 号卓越梅林中心广场(北区)3 号楼 1206 电话：0755-83108866 免费服务专线：800-830-8866";
-                website = "www.neware.com.cn";
+                website = "www.neware.com.cn &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+                seal = "新威尔";
+                width = "350px";
+                height = "350px";
             }
             else if (Convert.ToInt32(model.InvoiceCompany) == 2)
             {
                 InvoiceCompany = "东莞新威检测技术有限公司 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 交通银行股份有限公司 &nbsp;&nbsp; 东莞塘厦支行 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;483007618018810043352";
                 Location = "广东省东莞市塘厦镇龙安路5号5栋101室";
+                seal = "东莞新威";
+                width = "182px";
+                height = "193px";
+                text = text.Replace("@Model.logo", "hidden='hidden'");
             }
+            var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"SalesOrderHeader{model.Id}.html");
+            System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
+            var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "SalesOrderFooter.html");
+            var foottext = System.IO.File.ReadAllText(footUrl);
             foottext = foottext.Replace("@Model.Corporate", InvoiceCompany);
             foottext = foottext.Replace("@Model.PrintNo", model.PrintNo);
             foottext = foottext.Replace("@Model.Location", Location);
             foottext = foottext.Replace("@Model.Website", website);
+            foottext = foottext.Replace("@Model.PrintTheNumber", (model.PrintTheNumber+1).ToString());
+            foottext = foottext.Replace("@Model.seal", seal);
+            foottext = foottext.Replace("@Model.width", width);
+            foottext = foottext.Replace("@Model.height", height);
             var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"SalesOrderFooter{model.Id}.html");
             System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
             var materials = model.QuotationMergeMaterials.Select(q => new PrintSalesOrderResp
@@ -1829,9 +1847,9 @@ namespace OpenAuth.App.Material
                 MaterialDescription = q.MaterialDescription,
                 Count = q.Count.ToString(),
                 Unit = q.Unit,
-                SalesPrice = q.MaterialType == 1 ? "0" : q.Discount.ToString("N"),
-                TotalPrice = q.MaterialType == 1 ? "0" : q.TotalPrice.ToString("N")
-            });
+                SalesPrice = q.MaterialType == 1 ? 0.00M : (decimal)q.DiscountPrices,
+                TotalPrice = q.MaterialType == 1 ? 0.00M : (decimal)q.TotalPrice
+            }).ToList();
             var datas = await ExportAllHandler.Exporterpdf(materials, "PrintSalesOrder.cshtml", pdf =>
             {
                 pdf.IsWriteHtml = true;
@@ -1843,6 +1861,8 @@ namespace OpenAuth.App.Material
             });
             System.IO.File.Delete(tempUrl);
             System.IO.File.Delete(foottempUrl);
+            await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(quotationId), q => new Quotation { PrintTheNumber = q.PrintTheNumber + 1 });
+            await UnitWork.SaveAsync();
             return datas;
         }
 
@@ -1884,8 +1904,8 @@ namespace OpenAuth.App.Material
                 MaterialDescription = q.MaterialDescription,
                 Count = q.Count.ToString(),
                 Unit = q.Unit,
-                SalesPrice = q.MaterialType == 1 ? "0" : q.DiscountPrices.ToString("N"),
-                TotalPrice = q.MaterialType == 1 ? "0" : q.TotalPrice.ToString("N")
+                SalesPrice = q.MaterialType == 1 ? 0.00M : (decimal)q.DiscountPrices,
+                TotalPrice = q.MaterialType == 1 ? 0.00M : (decimal)q.TotalPrice
             });
             var datas = await ExportAllHandler.Exporterpdf(materials, "PrintQuotation.cshtml", pdf =>
             {
