@@ -37,7 +37,7 @@ namespace OpenAuth.App
                 throw new CommonException("当前用户未绑定App", Define.INVALID_TOKEN);
             }
             var result = new TableData();
-            var objs = await UnitWork.Find<RealTimeLocation>(w => w.AppUserId == (int)map.AppUserId).OrderByDescending(o => o.CreateTime).Select(s => new { s.Latitude, s.Longitude, s.CreateTime }).ToListAsync();
+            var objs = await UnitWork.Find<RealTimeLocation>(w => w.AppUserId == (int)map.AppUserId).OrderBy(o => o.CreateTime).Select(s => new { s.Latitude, s.Longitude, s.CreateTime }).ToListAsync();
             var data = objs.GroupBy(g => g.CreateTime.Date).Select(s => new { date = s.Key, list = s.ToList() }).ToList();
             result.Count = objs.Count();
             result.Data = data;
