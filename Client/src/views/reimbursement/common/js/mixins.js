@@ -167,7 +167,7 @@ export let tableMixin = {
       this.tableLoading = true
       getDetails({
         reimburseInfoId: id
-      }).then(res => {
+      }).then(async res => {
         let { reimburseResp } = res.data
         delete res.data.reimburseResp
         this.detailData = Object.assign({}, res.data, { ...reimburseResp })
@@ -178,12 +178,12 @@ export let tableMixin = {
           if (this.title === 'approve') {
             // 用于总经理审批页面的表格数据
             this._generateApproveTable(this.detailData)
-            this.detailData.allDateList = this._processDateList(this.detailData)
             console.log(this.detailData.allDateList)
           }
           this._normalizeDetail(this.detailData)
           this.$refs.myDialog.open()
         } catch (err) {
+          this.$message.error(err.message)
           console.log(err, 'err')
         }
         this.tableLoading = false
@@ -192,40 +192,6 @@ export let tableMixin = {
         this.$message.error('获取详情失败')
       })
     },
-    _processDateList (data) {
-      let { businessTripDate, endDate } = data
-      let result = []
-      let startDate = +new Date(formatDate(businessTripDate))
-      endDate = +new Date(formatDate(endDate))
-      let oneDay = 24 * 60 * 60 * 1000 // 一天多少毫秒
-      while (startDate <= endDate) {  // 把中间的时间段都放进来
-        let newDate = formatDate(startDate)
-        result.push(newDate)
-        startDate += oneDay
-      }
-      return result
-    },
-    // _processDateList (dateList) { // 处理完工报告时间
-    //   let result = []
-    //   dateList.forEach(date => {
-    //     let { businessTripDate, endDate } = date
-    //     if (businessTripDate && endDate) {
-    //       let startDate = +new Date(formatDate(businessTripDate))
-    //       let endDate = +new Date(formatDate(businessTripDate))
-    //       let oneDay = 24 * 60 * 60 * 1000
-    //       while (startDate <= endDate) { // 把中间的时间段都放进来
-    //         let newDate = formatDate(startDate)
-    //         result.push(newDate)
-    //         startDate += oneDay
-    //       }
-    //     } else if (businessTripDate) {
-    //       result.push(formatDate(businessTripDate))
-    //     } else if (endDate) {
-    //       result.push(formatDate(endDate))
-    //     }
-    //   })
-    //   return result
-    // },
     isValidInvoice (attachmentList) { // 判断有没有发票附件
       return attachmentList.some(item => {
         return item.attachmentType === 2
@@ -264,7 +230,6 @@ export let tableMixin = {
         reimburseOtherCharges,
       } = data
       // 交通
-      // let arr = ['2020-12-24', '2020-12-25', '2020-12-26']
       reimburseFares.forEach((item) => {
         let { 
           transport, from, to, money,
@@ -279,7 +244,6 @@ export let tableMixin = {
           toLng, 
           toLat,
           invoiceTime: this.processInvoiceTime(invoiceTime),
-          // invoiceTime: arr[index % 3],
           expenseName: this.transportationMap[transport],
           expenseDetail: from + '-' + to,
           money,
@@ -303,7 +267,6 @@ export let tableMixin = {
         result.push({
           id,
           invoiceTime: this.processInvoiceTime(invoiceTime),
-          // invoiceTime: invoiceTime || '2020-12-26',
           expenseName: '住宿补贴',
           sellerName,
           expenseDetail: `${toThousands(totalMoney / days)}元/天*${days}天`,
@@ -321,13 +284,8 @@ export let tableMixin = {
       // let { businessTripDate, endDate } = data
       reimburseTravellingAllowances.forEach(item => {
         let { id, days, money, remark, expenseOrg, createTime } = item
-        // let invoiceTime = days > 1 
-        //   ? `${formatDate(businessTripDate, 'MM-DD')} — ${formatDate(endDate, 'MM-DD')}`
-        //   : formatDate(businessTripDate)
         result.push({
           id,
-          // invoiceTime: this.processInvoiceTime(invoiceTime),
-          // invoiceTime: invoiceTime || '2020-12-28',
           invoiceTime: formatDate(createTime),
           expenseName: '出差补贴',
           expenseDetail: `${toThousands(money)}元/天*${days}天`,
@@ -1017,8 +975,10 @@ export const processMixin = {
         await loadBMap('uGyEag9q02RPI81dcfk7h7vT8tUovWfG')
         console.log(window.BMap)
       }
+      // 先获取坐标数组，再进行地图的初始化
+      await this.$refs.order._getPointArr()
       console.log('order opened')
-     this.$refs.order.initMap()
+      this.$refs.order.initMap()
     }
   }
 }
