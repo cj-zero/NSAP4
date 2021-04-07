@@ -25,6 +25,24 @@
             <el-input v-infotooltip.top.ellipsis size="mini" v-model="formData.serviceOrderSapId" @focus="onServiceIdFocus"></el-input>
           </el-form-item>
         </template>
+        <template v-slot:taxRate>
+          <el-form-item
+            label="税率"
+            style="height: 18px;"
+            prop="taxRate">
+            <div v-infotooltip.top.ellipsis>{{ taxRateMap[formData.taxRate] }}{{ formData.taxRate ? '%' : '' }}</div>
+            <el-input v-show="false" v-infotooltip.top.ellipsis size="mini" v-model="formData.taxRate"></el-input>
+          </el-form-item>
+        </template>
+        <template v-slot:acceptancePeriod>
+          <el-form-item
+            label="收货期限"
+            style="height: 18px;"
+            prop="acceptancePeriod">
+            <div v-infotooltip.top.ellipsis>{{ formData.acceptancePeriod }}{{ formData.acceptancePeriod ? '天' : '' }}</div>
+            <el-input v-show="false" v-infotooltip.top.ellipsis size="mini" v-model="formData.acceptancePeriod"></el-input>
+          </el-form-item>
+        </template>
       </common-form>
       <el-row class="prepay-wrapper" type="flex" align="middle" v-if="ifShowPrepaid" justify="end">
         <span>预付{{ formData.prepay || 0 }}%</span>

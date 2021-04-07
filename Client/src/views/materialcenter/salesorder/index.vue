@@ -147,7 +147,7 @@ export default {
         { btnText: '待定', handleClick: this.approve, options: { type: 'reject' }, 
           isShow: ((this.status === 'approveSales' && this.isGeneralManager) || (this.isMaterialFinancial && this.status === 'pay')), 
         },
-        { btnText: '关闭', handleClick: this.handleClose, className: 'close' }      
+        // { btnText: '关闭', handleClick: this.handleClose, className: 'close' }      
       ] 
     },
     isShowPayBtn () {

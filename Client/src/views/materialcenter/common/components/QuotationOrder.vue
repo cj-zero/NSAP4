@@ -39,6 +39,26 @@
             <el-input v-infotooltip.top.ellipsis size="mini" v-model="formData.serviceOrderSapId" @focus="onServiceIdFocus" :disabled="status !== 'create'"></el-input>
           </el-form-item>
         </template>
+        <template v-slot:taxRate>
+          <el-form-item
+            label="税率"
+            style="height: 18px;"
+            prop="taxRate"
+            :rules="formRules['taxRate'] || { required: false }">
+            <div v-infotooltip.top.ellipsis>{{ taxRateMap[formData.taxRate] }}{{ formData.taxRate ? '%' : '' }}</div>
+            <el-input v-show="false" v-infotooltip.top.ellipsis size="mini" v-model="formData.taxRate"></el-input>
+          </el-form-item>
+        </template>
+        <template v-slot:acceptancePeriod>
+          <el-form-item
+            label="收货期限"
+            style="height: 18px;"
+            prop="acceptancePeriod"
+            :rules="formRules['acceptancePeriod'] || { required: false }">
+            <div v-infotooltip.top.ellipsis>{{ formData.acceptancePeriod }}{{ formData.acceptancePeriod ? '天' : '' }}</div>
+            <el-input v-show="false" v-infotooltip.top.ellipsis size="mini" v-model="formData.acceptancePeriod"></el-input>
+          </el-form-item>
+        </template>
       </common-form>
       <el-row class="prepay-wrapper" type="flex" align="middle" v-if="ifShowPrepaid" justify="end" :class="{ 'if-not-edit': !ifEdit }">
         <template v-if="ifEdit">
@@ -96,6 +116,10 @@
                 <div>序列号<span>{{ item.productCode }}</span></div>
                 <div>物料编码<span>{{ item.materialCode }}</span></div>
                 <div v-if="item.warrantyExpirationTime">保修到期<span>{{ item.warrantyExpirationTime | formatDateFilter }}</span></div>
+              </el-row>
+              <el-row type="flex" style="margin: 6px 0;">
+                <div style="flex: 50px 0 0;color: #cbcbcb; margin-right: 10px;">呼叫主题</div>
+               <div style="max-width: 100%;" v-infotooltip.top.ellipsis>{{ item.fromTheme }}{{ item.fromTheme }}{{ item.fromTheme }}{{ item.fromTheme }}{{ item.fromTheme }}{{ item.fromTheme }}asdasdasdasdasdasdasdasdasdasdhasjdhjaskhdjkahskjdhjkashdkjhaskjdhaskjhdkjashdkjashdkjashkjdhaskjdhasjkdhasjkdhaskjdh</div>
               </el-row>
               <common-table
                 :data="item.quotationMaterials" 
@@ -406,10 +430,32 @@
           <div class="divider"></div>
           <!-- 服务费用和差旅费用 -->
           <div class="service-travel-wrapper">
+            <!-- <el-form
+              ref="serviceListForm"
+              :model="serviceData"
+              :show-message="false"
+            ></el-form> -->
             <common-table 
-              :data="serviceList"
+              :data="serviceData.serviceList"
               :columns="serviceColumns"
             >
+              <template v-slot:hours="{ row }">
+                <!-- <el-form-item
+                  :prop="'serviceList.' + index + '.hours'"
+                > -->
+                  <el-input-number  
+                    style="width: 100%;"
+                    size="mini"
+                    :controls="false"
+                    :min="0"
+                    :precision="0"
+                    @change="onServiceChange(row)"
+                    :disabled="formData.isMaterialType === true"
+                    v-model="row.hours">
+                  </el-input-number>
+                <!-- </el-form-item> -->
+                
+              </template>
               <template v-slot:salesPrice="{ row }">
                 <el-input-number  
                   style="width: 100%;"
@@ -417,10 +463,14 @@
                   :controls="false"
                   :precision="2"
                   :min="0"
+                  @change="onServiceChange(row)"
                   :disabled="formData.isMaterialType === true"
                   v-model="row.salesPrice">
                 </el-input-number>
-              </template>    
+              </template> 
+              <template v-slot:totalPrice="{ row }">
+                {{ row.totalPrice | toThousands }}
+              </template>   
             </common-table>
             <el-row type="flex" align="middle" justify="end" style="margin-top: 10px;">
               <div style="margin-left: 10px;">
@@ -879,14 +929,38 @@ export default {
           this.isPreview = true
           Object.assign(this.formData, val)
           // 设置服务费和差旅费
-          const { serviceCharge, travelExpense, deliveryMethod } = this.formData
+          const { 
+            serviceCharge = undefined, travelExpense = undefined, deliveryMethod, 
+            travelExpenseManHour = undefined, serviceChargeManHour = undefined } = this.formData
           this.serviceList.forEach((item, index) => {
             item.salesPrice = (index === 0) ? serviceCharge : travelExpense
+            item.hours = (index === 0) ? serviceChargeManHour : travelExpenseManHour
+            if (index === 0) {
+              item.totalPrice = serviceCharge && serviceChargeManHour 
+                ? accMul(serviceCharge, serviceChargeManHour).toFixed(2)
+                : 0
+            } else {
+              item.totalPrice = travelExpense && travelExpenseManHour 
+                ? accMul(travelExpense, travelExpenseManHour).toFixed(2)
+                : 0
+            }
           })
           if (+deliveryMethod === 3) {
             this.ifShowPrepaid = true
           }
           this.formData.quotationProducts = this.formData.quotationProducts.map(product => {
+            const { fromTheme } = product
+            try {
+              let newFromTheme = JSON.parse(fromTheme)
+              let str = ''
+              newFromTheme.forEach((item, index) => {
+                const { description } = item
+                str += `${index}、${description}`
+              })
+              product.fromTheme = str
+            } catch {
+              product.fromTheme = ''
+            }
             product.quotationMaterials.forEach(material => {
               material.discount = String(Number(material.discount).toFixed(6)) // 保证discount是string类型，且跟字典对应上
             })
@@ -951,13 +1025,17 @@ export default {
         serviceOrderId: '', 
         createUser: '',
         orgName: '',
+        invoiceCategory: '',
+        taxRate: '',
         isMaterialType: '',
         prepay: undefined, // 预付百分比
         cashBeforeFelivery: undefined, // 发货前百分比
         payOnReceipt: undefined, // 货到验货百分比
         paymentAfterWarranty: undefined, // 质保后百分比
         serviceCharge: undefined, // 服务费
+        serviceChargeManHour: undefined, // 服务费公式
         travelExpense: undefined, // 差旅费
+        travelExpenseManHour: undefined, // 差旅费工时
         terminalCustomer: '', // 客户名称
         terminalCustomerId: '', // 客户代码
         shippingAddress: '', // 开票地址
@@ -1011,14 +1089,14 @@ export default {
       ],
       // 差旅费和服务费用
       serviceList: [
-        { materialCode: 'S111-SERVICE-GSF', materialDescription: '服务费的物料编码对应的描述', discount: '100.00%', salesPrice: undefined },
-        { materialCode: 'S111-SERVICE-CLF', materialDescription: '差旅费的物料编码对应的描述', discount: '100.00%', salesPrice: undefined }
+        { materialCode: 'S111-SERVICE-GSF', materialDescription: '服务费的物料编码对应的描述', discount: '100.00%', salesPrice: undefined, hours: undefined, totalPrice: undefined },
+        { materialCode: 'S111-SERVICE-CLF', materialDescription: '差旅费的物料编码对应的描述', discount: '100.00%', salesPrice: undefined, hours: undefined, totalPrice: undefined }
       ],
       serviceColumns: [
         { type: 'index', label: '#' },
         { label: '物料编码', prop: 'materialCode' },
         { label: '物料描述', prop: 'materialDescription' },
-        { label: '数量' },
+        { label: '工时', prop: 'hours', slotName: 'hours', align: 'right' },
         { label: '最大数量' },
         { label: '当前库存' },
         { label: '仓库' },
@@ -1241,6 +1319,11 @@ export default {
     }
   },
   computed: {
+    serviceData () {
+      return {
+        serviceList: this.serviceList || []
+      }
+    },
     materialTypeOptions () {
       return (typeof this.formData.isMaterialType !== 'boolean' && !this.formData.isMaterialType)
         ? []
@@ -1298,7 +1381,8 @@ export default {
     },
     totalMoney () { // 报价单总金额
       const serviceOrTravelMoney = this.serviceList.reduce((prev, next) => {
-        return accAdd(prev, (isNumber(next.salesPrice) ? next.salesPrice : 0))
+        console.log('servicemoney', prev, next)
+        return accAdd(prev, (isNumber(Number(next.totalPrice)) ? Number(next.totalPrice) : 0))
       }, 0)
       let totalMoney = accAdd(this.totalMaterialMoney, serviceOrTravelMoney)
       return totalMoney
@@ -1346,10 +1430,22 @@ export default {
   },
   methods: {
     isInServiceOrTravel,
+    onServiceChange (row) {
+      const { hours, salesPrice } = row
+      if (hours && salesPrice) {
+        row.totalPrice = Number(hours * salesPrice).toFixed(2)
+      } else {
+        row.totalPrice = 0
+      }
+    },
     onFormMaterialTypeChange (val) {
       console.log(val, typeof val, 'onFormMaterialTypeChange')
       this.clearAllMaterialType()
-      this.serviceList.forEach(item => item.salesPrice = undefined)
+      this.serviceList.forEach(item => {
+        item.salesPrice = undefined
+        item.hours = undefined
+        item.totalPrice = undefined
+      })
     },
     clearAllMaterialType () {
       this.formData.quotationProducts.forEach(item => {
@@ -2020,8 +2116,10 @@ export default {
       this.serviceList.forEach((item, index) => {
         if (index === 0) {
           this.formData.serviceCharge = item.salesPrice
+          this.formData.serviceChargeManHour = item.hours
         } else {
           this.formData.travelExpense = item.salesPrice
+          this.formData.travelExpenseManHour = item.hours
         }
       })
       console.log(this.formData, 'formData')
