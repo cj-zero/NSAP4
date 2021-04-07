@@ -26,14 +26,15 @@ namespace OpenAuth.WebApi.Controllers
         /// 获取定位信息
         /// </summary>
         /// <param name="UserId"></param>
+        /// <param name="ServiceOrderId"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> Load(string UserId)
+        public async Task<TableData> Load(int ServiceOrderId, string UserId)
         {
             var result = new TableData();
             try
             {
-                result = await _realTimeLocationApp.Load(UserId);
+                result = await _realTimeLocationApp.Load(ServiceOrderId, UserId);
 
             }
             catch (Exception ex)
