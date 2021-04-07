@@ -232,6 +232,7 @@ namespace Sap.Handler.Service
                 await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(quotation.Id), q => new Quotation { 
                     SalesOrderId=int.Parse(docNum)
                 });
+                await UnitWork.SaveAsync();
                 Log.Logger.Warning($"同步成功，SAP_ID：{docNum}", typeof(SellOrderSapHandler));
             }
             if (!string.IsNullOrWhiteSpace(allerror.ToString()))

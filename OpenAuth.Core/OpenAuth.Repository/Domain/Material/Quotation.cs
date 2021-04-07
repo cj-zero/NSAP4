@@ -270,7 +270,21 @@ namespace OpenAuth.Repository.Domain
         [Description("打印次数")]
 
         public int? PrintTheNumber { get; set; }
-        
+
+        /// <summary>
+        ///维修费工时
+        /// </summary>
+        [Description("维修费工时")]
+
+        public int? ServiceChargeManHour { get; set; }
+
+        /// <summary>
+        ///差旅费工时
+        /// </summary>
+        [Description("差旅费工时")]
+
+        public int? TravelExpenseManHour { get; set; }
+
 
         /// <summary>
         /// 物流表
