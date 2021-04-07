@@ -1770,7 +1770,8 @@ export default {
   methods: {
     async _getPointArr () { // 获取技术员的所有行程坐标点
       try {
-        const { data } = await getRealTimeLocations({ userId: 'da87be59-bc11-11ea-9a77-484d7ed41e22' || this.formData.createUserId })
+        const { createUserId, serviceOrderId } = this.formData
+        const { data } = await getRealTimeLocations({ userId: createUserId, serviceOrderId })
         console.log(data, 'pointArr')
         this.realTimeLocationsList = data || []
         this.pointArr = []
@@ -1788,7 +1789,19 @@ export default {
     createPointArr (pointArr) { // 创建更新绘图坐标点
       const trackPoint = [];
       for (let i = 0, j = pointArr.length; i < j; i++) {
-        trackPoint.push(new this._BMap.Point(pointArr[i].longitude, pointArr[i].latitude))
+        const { longitude, latitude } = pointArr[i]
+        let nextLat, nextLng
+        if (i < pointArr.length - 1) {
+          const { longitude, latitude } = pointArr[i + 1]
+          nextLng = longitude
+          nextLat = latitude
+        }
+        if (!longitude || !latitude) {
+          console.log('error location')
+        }
+        if ((longitude && latitude) && (nextLng !== longitude && nextLat !== latitude)) {
+          trackPoint.push(new this._BMap.Point(longitude, latitude))
+        }
       }
       return trackPoint
     },
@@ -1802,7 +1815,7 @@ export default {
           offset: new BMap.Size(10, 20)
       }))
       map.addControl(this.createPathControl())
-      map.centerAndZoom(point, 18)
+      map.centerAndZoom(point, 20)
       map.enableScrollWheelZoom() // 滚轮缩放
       map.clearOverlays();                        //清除地图上所有的覆盖物  
       // 生成坐标点
@@ -1812,15 +1825,18 @@ export default {
       console.log('initMap', this.formData.pointArr)
     },
     createDrivePath () { // 创建trackPoint日报的数组的所有路径 
-      if (!this.trackPoint && !this.trackPoint.length) {
-        return
+      if (!this.trackPoint || (this.trackPoint && !this.trackPoint.length)) {
+        return this.$message.warning('无实时位置信息')
       }
+      const icons = [this.createArrow()]
+      // this.trackPoint = this.trackPoint.slice(0, 10)
       let polyline = new this._BMap.Polyline(this.trackPoint, {
         strokeColor: '#1bac2e',
-        strokeWeight: 2 ,//宽度
+        strokeWeight: 4 ,//宽度
         strokeOpacity: 0.8,//折线的透明度，取值范围0 - 1
         enableEditing: false, // 是否启用线编辑，默认为false
         enableClicking: false, // 是否响应点击事件，默认为true,
+        icons
       })
       this._map.addOverlay(polyline)
       let marker =  this.createFlash(this.trackPoint[this.trackPoint.length - 1], 10, 10)
@@ -1835,9 +1851,9 @@ export default {
       let sy = new this._BMap.Symbol(window.BMap_Symbol_SHAPE_BACKWARD_OPEN_ARROW, {
         scale: 0.6,//图标缩放大小
         strokeColor:'#fff',//设置矢量图标的线填充颜色
-        strokeWeight: 2,//设置线宽
+        strokeWeight: 1.5,//设置线宽
       })
-      let icons = new this._BMap.IconSequence(sy, '100%', '10%', false)//设置为true，可以对轨迹进行编辑
+      let icons = new this._BMap.IconSequence(sy, '100%', '10%')//设置为true，可以对轨迹进行编辑
       return icons
     },
     removeOverlay (isCurrent) {
@@ -2012,14 +2028,16 @@ export default {
     },
     createCurrentPath () { // 绘制当前发票的路径
       if (!this.invoiceTrackPoint || (this.invoiceTrackPoint && !this.invoiceTrackPoint.length)) {
-        return
+        return this.$message.warning('无发票位置信息')
       }
       // this._map.clearOverlays() // 清空画布上所有的覆盖物
+      const icons = [this.createArrow()]
       let polyline = new this._BMap.Polyline(this.invoiceTrackPoint, {
         strokeWeight: 4 ,//宽度
         strokeOpacity:0.8,//折线的透明度，取值范围0 - 1
         enableEditing: false,//是否启用线编辑，默认为false
         enableClicking: false,//是否响应点击事件，默认为true
+        icons
       })
       polyline.isCurrent = true
       this._map.addOverlay(polyline)
@@ -2406,7 +2424,7 @@ export default {
       return style
     },
     cellStyle ({ row }) {
-      const backgroudStyle = row.isHighlight ? { backgroundColor: '#f8b500' } : {}
+      const backgroudStyle = row.isHighlight ? { backgroundColor: 'rgba(248, 181, 0, .2)' } : {}
       console.log(row, row.isHighlight, backgroudStyle, 'backgroundColor')
       return {
         border: 'none',
@@ -2414,7 +2432,7 @@ export default {
       }
     },
     reportCellStyle ({ row }) {
-      const backgroudStyle = row.isHighlight ? { backgroundColor: '#f8b500' } : {}
+      const backgroudStyle = row.isHighlight ? { backgroundColor: 'rgba(248, 181, 0, .2)' } : {}
       return {
         ...backgroudStyle
       }
@@ -3189,6 +3207,13 @@ export default {
       this.$refs.form.resetFields()
       this.clearFile()
       this.reset()
+      this.invoiceTrackPoint = []
+      this.trackPoint = []
+      this.pointArr = []
+      this.realTimeLocationsList = []
+      this.currentDaily = null
+      this.ifCreateDrivePath = false
+      this.ifCreateCurrentPath = false
       if (this.$refs.remark) {
         this.$refs.remark.reset()
       }
