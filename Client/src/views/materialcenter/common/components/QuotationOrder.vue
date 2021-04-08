@@ -119,7 +119,7 @@
               </el-row>
               <el-row type="flex" style="margin: 6px 0;">
                 <div style="flex: 50px 0 0;color: #cbcbcb; margin-right: 10px;">呼叫主题</div>
-               <div style="max-width: 100%;" v-infotooltip.top.ellipsis>{{ item.fromTheme }}{{ item.fromTheme }}{{ item.fromTheme }}{{ item.fromTheme }}{{ item.fromTheme }}{{ item.fromTheme }}asdasdasdasdasdasdasdasdasdasdhasjdhjaskhdjkahskjdhjkashdkjhaskjdhaskjhdkjashdkjashdkjashkjdhaskjdhasjkdhasjkdhaskjdh</div>
+               <div style="max-width: 100%;" v-infotooltip.top.ellipsis>{{ item.fromTheme }}</div>
               </el-row>
               <common-table
                 :data="item.quotationMaterials" 
