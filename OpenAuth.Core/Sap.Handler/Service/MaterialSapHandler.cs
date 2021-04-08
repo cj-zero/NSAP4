@@ -40,6 +40,9 @@ namespace Sap.Handler.Service
                     var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active == "Y").FirstOrDefaultAsync();
                     var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefaultAsync())?.SlpCode;
                     var ordr = await UnitWork.Find<RDR1>(o => o.DocEntry.Equals(quotation.SalesOrderId)).Select(o => new { o.LineNum, o.ItemCode }).ToListAsync();
+                    var ywy = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o => o.SlpCode).FirstOrDefaultAsync();
+                    List<string> typeids = new List<string> { "SYS_MaterialInvoiceCategory", "SYS_MaterialTaxRate", "SYS_InvoiceCompany", "SYS_DeliveryMethod" };
+                    var categoryList = await UnitWork.Find<Category>(c => typeids.Contains(c.TypeId)).ToListAsync();
                     #region [添加主表信息]
 
                     //DataTable dtRowsConn = AidTool.GetConnection(model.SboId);
@@ -135,6 +138,26 @@ namespace Sap.Handler.Service
 
                     //}
 
+                    if (!string.IsNullOrWhiteSpace(ywy.ToString()))
+                    {
+                        dts.UserFields.Fields.Item("U_YWY").Value = ywy.ToString();
+                    }
+                    if (!string.IsNullOrWhiteSpace(quotation.InvoiceCategory)) //发票类别
+
+                    {
+                        var name = categoryList.Where(c => c.TypeId.Equals("SYS_MaterialInvoiceCategory") && c.DtValue.Equals(quotation.InvoiceCategory.ToString())).FirstOrDefault()?.Name;
+                        dts.UserFields.Fields.Item("U_FPLB").Value = name;
+
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(quotation.TaxRate)) //税率
+
+                    {
+                        var U_SL = categoryList.Where(c => c.TypeId.Equals("SYS_MaterialTaxRate") && c.DtValue.Equals(quotation.TaxRate.ToString())).FirstOrDefault()?.Name;
+                        dts.UserFields.Fields.Item("U_SL").Value = U_SL;
+
+                    }
+
                     //if (!string.IsNullOrEmpty(model.DocType))
 
                     //{
@@ -188,6 +211,16 @@ namespace Sap.Handler.Service
                     //    dts.PaymentGroupCode = int.Parse(model.GroupNum);   //付款条款
 
                     //}
+                    if (quotation.DeliveryMethod != null && !string.IsNullOrEmpty(quotation.DeliveryMethod))
+
+                    {
+                        var DeliveryMethod = categoryList.Where(c => c.TypeId.Equals("SYS_DeliveryMethod") && c.DtValue.Equals(quotation.DeliveryMethod.ToString())).FirstOrDefault()?.DtCode;
+                        dts.PaymentGroupCode = DeliveryMethod != null ? int.Parse(DeliveryMethod) : 2;  //付款条件
+
+                    }
+
+                    dts.Indicator = categoryList.Where(c => c.TypeId.Equals("SYS_InvoiceCompany") && c.DtValue.Equals(quotation.InvoiceCompany.ToString())).FirstOrDefault()?.DtCode;    // 标识
+
 
                     //dts.Indicator = model.Indicator;    // 标识
 
@@ -226,7 +259,10 @@ namespace Sap.Handler.Service
 
                         dts.Lines.UnitPrice = string.IsNullOrWhiteSpace(materials.DiscountPrices.ToString()) ? 0 : Convert.ToDouble(materials.DiscountPrices);            //单价
 
-                        dts.Lines.DiscountPercent = string.IsNullOrWhiteSpace(materials.Discount.ToString()) ? 0 : Convert.ToDouble(materials.Discount);     //折扣
+                        dts.Lines.Price = double.Parse(string.IsNullOrWhiteSpace(materials.DiscountPrices.ToString()) ? "0" : materials.DiscountPrices.ToString());
+
+                        dts.Lines.LineTotal = string.IsNullOrWhiteSpace(materials.TotalPrice.ToString()) ? 0.00 : double.Parse(materials.TotalPrice.ToString());//总计
+                        //dts.Lines.DiscountPercent = string.IsNullOrWhiteSpace(materials.Discount.ToString()) ? 0 : Convert.ToDouble(materials.Discount);     //折扣
 
                         //if (!string.IsNullOrEmpty(dln1.U_PDXX) && (dln1.U_PDXX == "AC220" || dln1.U_PDXX == "AC380" || dln1.U_PDXX == "AC110"))
 

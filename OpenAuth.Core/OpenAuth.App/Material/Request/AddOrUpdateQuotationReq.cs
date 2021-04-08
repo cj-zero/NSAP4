@@ -208,6 +208,18 @@ namespace OpenAuth.App.Material.Request
         public bool? IsMaterialType { get; set; }
 
         /// <summary>
+        ///维修费工时
+        /// </summary>
+
+        public int? ServiceChargeManHour { get; set; }
+
+        /// <summary>
+        ///差旅费工时
+        /// </summary>
+
+        public int? TravelExpenseManHour { get; set; }
+
+        /// <summary>
         /// 报价单设备列表
         /// </summary>
         public virtual List<QuotationProductReq> QuotationProducts { get; set; }

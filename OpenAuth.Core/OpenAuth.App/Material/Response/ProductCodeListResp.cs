@@ -14,5 +14,7 @@ namespace OpenAuth.App.Material.Response
         public string MaterialDescription { get; set; }
         public bool IsProtected { get; set; }
         public DateTime? DocDate { get; set; }
+
+        public string FromTheme { get; set; }
     }
 }

@@ -24,36 +24,51 @@ namespace OpenAuth.App
         /// <summary>
         /// 加载列表
         /// </summary>
-        public TableData Load(QueryrealtimelocationListReq request)
+        public async Task<TableData> Load(int ServiceOrderId, string UserId)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-
-            var properties = loginContext.GetProperties("realtimelocation");
-
-            if (properties == null || properties.Count == 0)
+            var map = await UnitWork.Find<AppUserMap>(w => w.UserID == UserId).FirstOrDefaultAsync();
+            if (map == null)
             {
-                throw new Exception("当前登录用户没有访问该模块字段的权限，请联系管理员配置");
+                throw new CommonException("当前用户未绑定App", Define.INVALID_TOKEN);
             }
+            string startDate = string.Empty;
+            string endDate = string.Empty;
+            //获取当前服务单下技术员填写的日报信息
+            var dailyReports = await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId == ServiceOrderId && w.CreateUserId == UserId).Select(s => s.CreateTime).ToListAsync();
+            if (dailyReports != null)
+            {
+                startDate = dailyReports.Min()?.ToString("yyyy-MM-dd 00:00:00");
+                endDate = dailyReports.Max()?.ToString("yyyy-MM-dd 23:59:59");
+            }
+            else
+            {
+                //获取完工报告下的出差开始时间与出差结束时间
+                var completeReports = await UnitWork.Find<CompletionReport>(w => w.ServiceOrderId == ServiceOrderId && w.CreateUserId == UserId).FirstOrDefaultAsync();
+                if (completeReports != null)
+                {
+                    if (completeReports.BusinessTripDate == null || completeReports.EndDate == null)
+                    {
+                        startDate = completeReports.CreateTime?.ToString("yyyy-MM-dd 00:00:00");
+                        endDate = completeReports.CreateTime?.ToString("yyyy-MM-dd 23:59:59");
+                    }
+                    else
+                    {
+                        startDate = completeReports.BusinessTripDate?.ToString("yyyy-MM-dd 00:00:00");
+                        endDate = completeReports.EndDate?.ToString("yyyy-MM-dd 23:59:59");
+                    }
 
-
+                }
+            }
             var result = new TableData();
-            var objs = UnitWork.Find<RealTimeLocation>(null);
-            if (!string.IsNullOrEmpty(request.key))
-            {
-                objs = objs.Where(u => u.Id == int.Parse(request.key));
-            }
-
-
-            var propertyStr = string.Join(',', properties.Select(u => u.Key));
-            result.columnHeaders = properties;
-            result.Data = objs.OrderBy(u => u.Id)
-                .Skip((request.page - 1) * request.limit)
-                .Take(request.limit).Select($"new ({propertyStr})");
+            var objs = await UnitWork.Find<RealTimeLocation>(w => w.AppUserId == (int)map.AppUserId && w.CreateTime >= Convert.ToDateTime(startDate) && w.CreateTime <= Convert.ToDateTime(endDate)).OrderBy(o => o.CreateTime).Select(s => new { s.Latitude, s.Longitude, s.CreateTime }).ToListAsync();
+            var data = objs.GroupBy(g => g.CreateTime.Date).Select(s => new { date = s.Key, list = s.ToList() }).ToList();
             result.Count = objs.Count();
+            result.Data = data;
             return result;
         }
 
