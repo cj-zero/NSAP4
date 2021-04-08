@@ -39,6 +39,10 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public bool? IsProtected { get; set; }
 
+        /// <summary>
+        ///呼叫主题
+        /// </summary>
+        public string FromTheme { get; set; }
 
         /// <summary>
         /// 物料报价单物料列表

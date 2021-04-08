@@ -270,6 +270,7 @@
           <div class="general-table-wrapper">
             <el-form ref="expenseForm" :model="expenseFormData" :show-message="false" size="mini">
               <common-table
+                ref="expenseTable"
                 class="table-container"
                 :data="expenseFormData.expenseCategoryList"
                 :columns="expenseCategoryColumns"
@@ -361,6 +362,7 @@
             :data="reportTableData"
             :columns="dailyReportColumns"
             max-height="300px"
+            :cell-style="reportCellStyle"
           >
             <template v-slot:troubleDescription="{ row }">
               <div v-infotooltip:200.top.ellipsis>
@@ -385,6 +387,7 @@
             ></el-rate>
           </el-row>
           <common-table 
+            ref="dailyReport"
             style="margin-top: 10px;"
             :data="afterEvaluationList"
             :columns="afterEvaluationColumns"
@@ -1247,6 +1250,7 @@ import {
   addTravellingAllowance,
   getServiceDailyExpendSum
 } from '@/api/reimburse'
+import { getRealTimeLocations } from '@/api/location'
 import markerIcon from '@/assets/bmap/marker.png'
 import { on, off } from '@/utils/dom'
 import { getList as getAfterEvaluaton } from '@/api/serve/afterevaluation'
@@ -1526,7 +1530,7 @@ export default {
         expenseOrg: [ { required: true, trigger: ['blur', 'change'] } ],
       },
       cancelRequestDailyExpend: null, // 用来取消获取日费的请求方法
-      dailyExpendLoading: false
+      dailyExpendLoading: false,
     }
   },
   watch: {
@@ -1575,15 +1579,8 @@ export default {
           
         // }
         if (this.title === 'approve') { // 审批的时候要告诉审批人 住宿金额补贴是否符合标准
-          if (this.formData.businessTripDate) {
-            this.currentTime = new Date(formatDate(this.formData.businessTripDate))
-            this.nextTime = new Date(collections.addMonth(this.formData.businessTripDate, 1))
-            // this.nextTime = new Date(+this.currentTime + 24 * 60 * 60 * 1000)
-            this.timeList = [this.currentTime, this.nextTime]
-          } else {
-            const date = new Date()
-            this.timeList = [date, (collections.addMonth(+date, 1)).toDate()]
-          }
+          const date = new Date()
+          this.timeList = [date, (collections.addMonth(+date, 1)).toDate()]
           this._checkAccMoney()
           this._getAfterEvaluation() // 获取售后评价
           this._getReportDetail() // 获取服务报告
@@ -1771,6 +1768,43 @@ export default {
     off(this.multiple, 'click', this.multipleClick)
   },
   methods: {
+    async _getPointArr () { // 获取技术员的所有行程坐标点
+      try {
+        const { createUserId, serviceOrderId } = this.formData
+        const { data } = await getRealTimeLocations({ userId: createUserId, serviceOrderId })
+        console.log(data, 'pointArr')
+        this.realTimeLocationsList = data || []
+        this.pointArr = []
+        data.forEach(item => {
+          const { list } = item
+          this.pointArr.push(...list)
+        })
+        console.log(this.pointArr, 'pointArr')
+      } catch (err) {
+        this.realTimeLocationsList = []
+        this.pointArr = []
+        this.$message.error(err.message)
+      }
+    },
+    createPointArr (pointArr) { // 创建更新绘图坐标点
+      const trackPoint = [];
+      for (let i = 0, j = pointArr.length; i < j; i++) {
+        const { longitude, latitude } = pointArr[i]
+        let nextLat, nextLng
+        if (i < pointArr.length - 1) {
+          const { longitude, latitude } = pointArr[i + 1]
+          nextLng = longitude
+          nextLat = latitude
+        }
+        if (!longitude || !latitude) {
+          console.log('error location')
+        }
+        if ((longitude && latitude) && (nextLng !== longitude && nextLat !== latitude)) {
+          trackPoint.push(new this._BMap.Point(longitude, latitude))
+        }
+      }
+      return trackPoint
+    },
     initMap () { // 初始化地图
       let BMap = this._BMap = global.BMap
       let map = this._map = new BMap.Map("map-container", { enableMapClick: false })  //新建地图实例，enableMapClick:false ：禁用地图默认点击弹框
@@ -1781,127 +1815,54 @@ export default {
           offset: new BMap.Size(10, 20)
       }))
       map.addControl(this.createPathControl())
-      map.centerAndZoom(point, 18)
+      map.centerAndZoom(point, 20)
       map.enableScrollWheelZoom() // 滚轮缩放
       map.clearOverlays();                        //清除地图上所有的覆盖物  
       // 生成坐标点
-      this.createPointArr(this.formData.pointArr)
-      this.ifCreateDrivePath = false // 标识是否绘制全路径
-      this.ifCreatePath = false // 标识是否绘制最后一条路径
-      this.ifDateClick = false // 标识通过点击日期进行绘制
-      this.isSearchCompelete = false // 标识绘制全路径是否检索完成
+      this.trackPoint = this.createPointArr(this.pointArr)
+      console.log(this.trackPoint, 'trackPoint')
       this.createDrivePath()
       console.log('initMap', this.formData.pointArr)
     },
-    createLastPath () { // 绘制最后一条线
-      if (this.ifCreatePath) {
-        this.ifCreatePath = !this.ifCreatePath
-        return this.removeOverlay(true)
+    createDrivePath () { // 创建trackPoint日报的数组的所有路径 
+      if (!this.trackPoint || (this.trackPoint && !this.trackPoint.length)) {
+        return this.$message.warning('无实时位置信息')
       }
-      this.removeOverlay(true)
-      this.ifCreatePath = !this.ifCreatePath
-      let icon = new this._BMap.Icon(
-        markerIcon,
-        new this._BMap.Size(25, 25)
-      )
-      icon.setImageSize(new this._BMap.Size(25, 25))
-      for (let i = 0; i < this.trackPoint.length; i++) {   
-        // 最后一个点 闪烁
-        let id = this.formData.pointArr[i].id
-        if (id) {
-          let index = findIndex(this.formData.expenseCategoryList, item => item.id === id)
-          let marker = new this._BMap.Marker(this.trackPoint[i], {
-            icon,
-            offset: new this._BMap.Size(0, -5)
-          })
-          marker.setZIndex(1000)
-          marker.isLast = true
-          this._map.addOverlay(marker) 
-          let label = this.createMarkerLabel(index + 1, this.trackPoint[i])
-          label.setZIndex(10001)
-          label.isLast = true
-          this._map.addOverlay(label)
-        }
-        this._map.getViewport(this.trackPoint)
-      }
-      // let icons = this.createArrow()
-      let polyline = new this._BMap.Polyline(this.trackPoint.slice(-2), {
-        strokeColor: '#419fff',
-        strokeWeight:2 ,//宽度
-        strokeOpacity:0.8,//折线的透明度，取值范围0 - 1
-        enableEditing: false,//是否启用线编辑，默认为false
-        enableClicking: false,//是否响应点击事件，默认为true
-        // icons: [icons]
+      const icons = [this.createArrow()]
+      // this.trackPoint = this.trackPoint.slice(0, 10)
+      let polyline = new this._BMap.Polyline(this.trackPoint, {
+        strokeColor: '#1bac2e',
+        strokeWeight: 4 ,//宽度
+        strokeOpacity: 0.8,//折线的透明度，取值范围0 - 1
+        enableEditing: false, // 是否启用线编辑，默认为false
+        enableClicking: false, // 是否响应点击事件，默认为true,
+        icons
       })
-      polyline.isLast = true
       this._map.addOverlay(polyline)
+      let marker =  this.createFlash(this.trackPoint[this.trackPoint.length - 1], 10, 10)
+      marker.setZIndex(999)
+      this._map.addOverlay(marker)
+      console.log(this.trackPoint, 'trackPoint set view port')
       this._map.setViewport(this.trackPoint)
-      
-    },
-    createDrivePath (isDateClick) { // 创建trackPoint数组的所有路径
-      if (!isDateClick && this.ifCreateDrivePath) {
-        // 如果已经绘制过了，再次调用就移除
-        this.ifCreateDrivePath = !this.ifCreateDrivePath
-        return this.removeOverlay()
-      }
-      if (!this.trackPoint || !this.trackPoint.length) { // 数组坐标为空
-        return this._map.clearOverlays()
-      }
-      if (isDateClick) { // 点击日期创建途径
-        this.ifDateClick = true
-        this._map.clearOverlays()
-      } else {
-        this.removeOverlay()
-      }
-      this.ifCreateDrivePath = isDateClick ? false : !this.ifCreateDrivePath
-      let driving = this.driving = new this._BMap.DrivingRoute(this._map);    //创建驾车实例  
-      for (let i = 0; i < this.trackPoint.length; i++) {
-        if(i !== this.trackPoint.length - 1){
-          driving.search(this.trackPoint[i], this.trackPoint[i+1])
-        }
-        if (i === this.trackPoint.length - 1) {
-          let marker =  this.createFlash(this.trackPoint[i], 10, 10)
-          marker.setZIndex(999)
-          this._map.addOverlay(marker)
-        }
-      }
-      this.isSearchCompelete = false
-      let successCount = 0
-      driving.setSearchCompleteCallback(() => {  
-        try {
-          let pts = driving.getResults().getPlan(0).getRoute(0).getPath()   //通过驾车实例，获得一系列点的数组 
-          let polyline = new this._BMap.Polyline(pts, {
-            strokeColor: '#1bac2e',
-            strokeWeight: 8 ,//宽度
-            strokeOpacity:0.8,//折线的透明度，取值范围0 - 1
-            enableEditing: false, // 是否启用线编辑，默认为false
-            enableClicking: false, // 是否响应点击事件，默认为true,
-            // icons: [icons]
-          })
-          this._map.addOverlay(polyline)
-          this._map.setViewport(this.trackPoint)
-          successCount++
-          if (successCount === this.trackPoint.length - 1) { // 全部都检索完成了
-            this.isSearchCompelete = true
-          }
-        } catch (err) {
-          console.log(err)
-        }
-      })
+      this.ifCreateDrivePath = true
+      this.currentMapType = 'all'
     },
     createArrow () {
       let sy = new this._BMap.Symbol(window.BMap_Symbol_SHAPE_BACKWARD_OPEN_ARROW, {
         scale: 0.6,//图标缩放大小
         strokeColor:'#fff',//设置矢量图标的线填充颜色
-        strokeWeight: 2,//设置线宽
+        strokeWeight: 1.5,//设置线宽
       })
-      let icons = new this._BMap.IconSequence(sy, '100%', '10%', false)//设置为true，可以对轨迹进行编辑
+      let icons = new this._BMap.IconSequence(sy, '100%', '10%')//设置为true，可以对轨迹进行编辑
       return icons
     },
-    removeOverlay (isLast) {
+    removeOverlay (isCurrent) {
       let allOverlayList = this._map.getOverlays()
-      allOverlayList = allOverlayList.filter(overlay => overlay.isLast === isLast || overlay.isCurrent)
-      allOverlayList.forEach(overlay => {
+      allOverlayList = allOverlayList.filter(overlay => !!overlay.isCurrent === !!isCurrent)
+      allOverlayList.forEach((overlay, index) => {
+        if (index === 0) { // 只需要重置一次， 重置当前发票路径或者当前实时坐标路径
+          isCurrent ? this.ifCreateCurrentPath = false : this.ifCreateDrivePath = false
+        }
         this._map.removeOverlay(overlay)
       })
     },
@@ -1983,12 +1944,33 @@ export default {
     hideControlInfo () {
       this.isShowControl = false
     },
-    showPath (isAll) {
-      console.log(isAll ? 'multiple click' : 'SINGLE')
-      this.createPointArr(this.formData.pointArr)
-      this.expenseCategoryList = this.formData.expenseCategoryList
-      this.reportTableData = this.originReportTableData
-      isAll ? this.isSearchCompelete && this.createDrivePath() : this.createLastPath()
+    togglePath (isCurrent) {
+      console.log(isCurrent ? 'SINGLE' : 'multiple click')
+      let allOverlayList = this._map.getOverlays()
+      allOverlayList = allOverlayList.filter(overlay => !!overlay.isCurrent === !!isCurrent)
+      if (!isCurrent) { // 如果地图上有覆盖物
+        if (allOverlayList.length) {
+          if (this.currentMapType === 'all') {
+            this.removeOverlay(false)
+          } else {
+            this._map.setViewport(this.trackPoint)
+            this.currentMapType = 'all'
+          }
+        } else {
+          this.createDrivePath()
+        }
+      } else {
+        if (allOverlayList.length) {
+          if (this.currentMapType === 'current') {
+            this.removeOverlay(true)
+          } else {
+            this._map.setViewport(this.invoiceTrackPoint)
+            this.currentMapType = 'current'
+          }
+        } else {
+          this.createCurrentPath()
+        }
+      }
     },
     createPathControl () { // 创建路径控件
       let that = this
@@ -2032,8 +2014,8 @@ export default {
         on(single, 'mouseenter', e => that.singleEnter(e))
         on(multiple, 'mouseleave', that.hideControlInfo)
         on(single, 'mouseleave', that.hideControlInfo)
-        that.multipleClick = () => that.showPath(true)
-        that.singleClick = () => that.showPath()
+        that.multipleClick = () => that.togglePath()
+        that.singleClick = () => that.togglePath(true)
         on(multiple, 'click', that.multipleClick)
         on(single, 'click', that.singleClick)
 				// 添加DOM元素到地图中   
@@ -2045,82 +2027,114 @@ export default {
 			return new PathControl();
     },
     createCurrentPath () { // 绘制当前发票的路径
-      this.ifCreateDrivePath = false
-      this.ifCreatePath = false
-      this.ifDateClick = false
-      this._map.clearOverlays() // 清空画布上所有的覆盖物
-      // let icons = this.createArrow()
-      let polyline = new this._BMap.Polyline(this.trackPoint, {
+      if (!this.invoiceTrackPoint || (this.invoiceTrackPoint && !this.invoiceTrackPoint.length)) {
+        return this.$message.warning('无发票位置信息')
+      }
+      // this._map.clearOverlays() // 清空画布上所有的覆盖物
+      const icons = [this.createArrow()]
+      let polyline = new this._BMap.Polyline(this.invoiceTrackPoint, {
         strokeWeight: 4 ,//宽度
         strokeOpacity:0.8,//折线的透明度，取值范围0 - 1
         enableEditing: false,//是否启用线编辑，默认为false
         enableClicking: false,//是否响应点击事件，默认为true
-        // icons: [icons]
+        icons
       })
+      polyline.isCurrent = true
       this._map.addOverlay(polyline)
       let icon = new this._BMap.Icon(
         markerIcon,
         new this._BMap.Size(25, 25)
       )
       icon.setImageSize(new this._BMap.Size(25, 25))
-      let marker = new this._BMap.Marker(this.trackPoint[1], {
+      let marker = new this._BMap.Marker(this.invoiceTrackPoint[1], {
         icon,
         offset: new this._BMap.Size(0, -5)
       })
       // marker.setTop(true)
-      let label = this.createMarkerLabel(this.bmapIndex, this.trackPoint[1], new this._BMap.Size(this.bmapIndex >= 10 ? -8 : -6, -14))
+      let label = this.createMarkerLabel(this.bmapIndex, this.invoiceTrackPoint[1], new this._BMap.Size(this.bmapIndex >= 10 ? -8 : -6, -14))
       marker.isCurrent = true
       label.isCurrent = true
       this._map.addOverlay(marker)
       this._map.addOverlay(label)
-      this._map.setViewport(this.trackPoint)
-    },
-    createPointArr (pointArr) { // 创建更新绘图坐标点
-      this.trackPoint = [];
-      for (let i = 0, j = pointArr.length; i < j; i++) {
-        this.trackPoint.push(new this._BMap.Point(pointArr[i].lng, pointArr[i].lat));
-      }
+      this._map.setViewport(this.invoiceTrackPoint)
+      this.ifCreateCurrentPath = true
+      this.currentMapType = 'current'
     },
     onExpandClick () {
-      this.expenseCategoryList = this.formData.expenseCategoryList
-      this.reportTableData = this.originReportTableData
+      this.expenseCategoryList.forEach(item => item.isHighlight = false)
+      this.reportTableData.forEach(item => item.isHighlight = false)
+      this.removeOverlay()
+      this.trackPoint = this.createPointArr(this.pointArr)
+      this.createDrivePath()
+    },
+    setCurrentRow () {
+      // this.$refs.expenseTable.setCurrentRow(this.expenseCategoryList[3])
+      this.expenseCategoryList.forEach((item) => {
+        // 存在发票时间 并且日期跟选择的日期相同
+        const isHighlight = true
+        // this.$set(item, 'isHighlight', true)
+        item.isHighlight = isHighlight
+      })
     },
     onDatePicker (date) { // 点击日历，右侧详情筛选对应的日期，地图也将包含的交通发票进行地图绘制
       let dateTime = formatDate(date)
-      this.expenseCategoryList = this.formData.expenseCategoryList.filter(item => {
+      // 高亮费用详情
+      this.expenseCategoryList.forEach(item => {
         // 存在发票时间 并且日期跟选择的日期相同
-        return item.invoiceTime && formatDate(item.invoiceTime) === dateTime
+        const isHighlight = item.invoiceTime && formatDate(item.invoiceTime) === dateTime
+        this.$set(item, 'isHighlight', isHighlight)
       })
-      let trafficList = this.expenseCategoryList.filter(item => item.isTraffic) // 找到交通发票列表
-      // 日报
-      this.reportTableData = this.originReportTableData.filter(item => {
-        return item.dailyDate && formatDate(item.dailyDate) === dateTime
+      // 高亮日报
+      this.reportTableData.forEach(item => {
+        const isHighlight = item.dailyDate && formatDate(item.dailyDate) === dateTime
+        this.$set(item, 'isHighlight', isHighlight)
       })
-      console.log(this.reportTableData, 'reportTable')
-      let pointList = []
-      trafficList.forEach(item => {
-        let { fromLng, fromLat, toLng, toLat } = item
-        if (fromLng && toLng) {
-          pointList.push({ lng: fromLng, lat: fromLat })
-          pointList.push({ lng: toLng, lat: toLat })
-        }
-      })
-      this.createPointArr(pointList)
-      if (this.isSearchCompelete) {
-        this.createDrivePath(true)
+      
+      // 找到交通发票列表，并设置发票轨迹
+      // let trafficList = this.expenseCategoryList.filter(item => {
+      //   const isHighlight = item.invoiceTime && formatDate(item.invoiceTime) === dateTime
+      //   return isHighlight && item.isTraffic
+      // }) 
+      // const invoicePointArr = []
+      // trafficList.forEach(item => {
+      //   let { fromLng, fromLat, toLng, toLat } = item
+      //   if (fromLng && toLng) {
+      //     pointList.push({ longitude: fromLng, latitude: fromLat })
+      //     pointList.push({ longitude: toLng, latitude: toLat })
+      //   }
+      // })
+      // this.invoiceTrackPoint = this.createPointArr(invoicePointArr) // 发票轨迹
+      // 添加app轨迹
+      this.invoiceTrackPoint = []
+      this._map.clearOverlays()
+      const pointArr = this.realTimeLocationsList.filter(item => formatDate(item.date) === dateTime)
+      if (pointArr.length) {
+        this.currentDaily = formatDate(pointArr[0].date) 
+        this.trackPoint = this.createPointArr(pointArr[0].list)
+        this.createDrivePath()
+      } else {
+        this.trackPoint = []
       }
-      console.log(date, 'date ondatepicker', dateTime, this.expenseCategoryList)
     },
     onExpenseClick (row) { // 点击交通发票绘制当前发票的路径
-      let { fromLng, fromLat, toLng, toLat, id } = row
-      if (!fromLng || !toLng) {
-        return this.$message.warning('当前发票，未获取到坐标点')
-      }
+      let { fromLng, fromLat, toLng, toLat, id, invoiceTime } = row
       // 找到当前交通发票的索引号,用于地图展示
       this.bmapIndex = findIndex(this.expenseCategoryList, item => item.id === id) + 1
-      if (this._map && this.isSearchCompelete) {
-        let pointArr = [{ lng: fromLng, lat: fromLat }, { lng: toLng, lat: toLat }]
-        this.createPointArr(pointArr)
+      if (this._map) {
+        this._map.clearOverlays()
+        const pointArr = this.realTimeLocationsList.filter(item => formatDate(item.date) === formatDate(invoiceTime))
+        if (pointArr.length) {
+          this.trackPoint = this.createPointArr(pointArr[0].list)
+          this.createDrivePath()
+        } else {
+          this.trackPoint = []
+        }
+        if (!fromLng || !toLng) {
+          this.invoiceTrackPoint = []
+          return this.$message.warning('当前发票，未获取到坐标点')
+        }
+        const invoicePointArr = [{ longitude: fromLng, latitude: fromLat }, { longitude: toLng, latitude: toLat }]
+        this.invoiceTrackPoint = this.createPointArr(invoicePointArr) || []
         this.createCurrentPath()
       } 
     },
@@ -2252,7 +2266,6 @@ export default {
         })
         const { dailyDates, reportResults } = res.data
         console.log(dailyDates, reportResults, 'report data')
-        this.originReportTableData = []
         if (dailyDates.length) {
           const firstTime = dailyDates[dailyDates.length - 1]
           this.currentTime = new Date(formatDate(firstTime))
@@ -2270,7 +2283,6 @@ export default {
               })
             })
           })
-          this.originReportTableData = this.reportTableData
           console.log(this.reportTableData, 'reportTableDate')
         }
       } catch (err) {
@@ -2411,9 +2423,18 @@ export default {
       }
       return style
     },
-    cellStyle () {
+    cellStyle ({ row }) {
+      const backgroudStyle = row.isHighlight ? { backgroundColor: 'rgba(248, 181, 0, .2)' } : {}
+      console.log(row, row.isHighlight, backgroudStyle, 'backgroundColor')
       return {
-        border: 'none'
+        border: 'none',
+        ...backgroudStyle
+      }
+    },
+    reportCellStyle ({ row }) {
+      const backgroudStyle = row.isHighlight ? { backgroundColor: 'rgba(248, 181, 0, .2)' } : {}
+      return {
+        ...backgroudStyle
       }
     },
     noop () {
@@ -3186,6 +3207,13 @@ export default {
       this.$refs.form.resetFields()
       this.clearFile()
       this.reset()
+      this.invoiceTrackPoint = []
+      this.trackPoint = []
+      this.pointArr = []
+      this.realTimeLocationsList = []
+      this.currentDaily = null
+      this.ifCreateDrivePath = false
+      this.ifCreateCurrentPath = false
       if (this.$refs.remark) {
         this.$refs.remark.reset()
       }

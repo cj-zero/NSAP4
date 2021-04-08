@@ -131,8 +131,7 @@ export default {
       return [
         // this.isMaterialFinancial 
         {  btnText: '同意', isShow: this.isValid, handleClick: this.agree },
-        { btnText: '驳回', handleClick: this.reject, isShow: this.isValid, options: { type: 'reject' }},
-        { btnText: '关闭', handleClick: this.handleClose, className: 'close' }      
+        { btnText: '驳回', handleClick: this.reject, isShow: this.isValid, options: { type: 'reject' }},     
       ] 
     },
     searchBtnText () {

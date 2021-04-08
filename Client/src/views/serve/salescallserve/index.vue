@@ -1090,7 +1090,7 @@ export default {
           this.$message.error(err.message)
         })
       } else {
-        this.$message.warning('必须在客户或呼叫中心回访，进行回访')
+        this.$message.warning('必须在客户或呼叫中心回访后，进行回访')
       }
     },
     _normalizeCommentList (res, row) {
