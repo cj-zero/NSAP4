@@ -16,7 +16,7 @@ namespace OpenAuth.App.Serve.Request
         /// <summary>
         /// 技术员App用户Id
         /// </summary>
-        public int AppUserId { get; set; }
+        public int? AppUserId { get; set; }
 
         /// <summary>
         /// 差旅费

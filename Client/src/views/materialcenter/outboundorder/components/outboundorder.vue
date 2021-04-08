@@ -25,6 +25,24 @@
             <el-input v-infotooltip.top.ellipsis size="mini" v-model="formData.serviceOrderSapId" @focus="onServiceIdFocus"></el-input>
           </el-form-item>
         </template>
+        <template v-slot:taxRate>
+          <el-form-item
+            label="税率"
+            style="height: 18px;"
+            prop="taxRate">
+            <div v-infotooltip.top.ellipsis>{{ taxRateMap[formData.taxRate] }}{{ formData.taxRate ? '%' : '' }}</div>
+            <el-input v-show="false" v-infotooltip.top.ellipsis size="mini" v-model="formData.taxRate"></el-input>
+          </el-form-item>
+        </template>
+        <template v-slot:acceptancePeriod>
+          <el-form-item
+            label="收货期限"
+            style="height: 18px;"
+            prop="acceptancePeriod">
+            <div v-infotooltip.top.ellipsis>{{ formData.acceptancePeriod }}{{ formData.acceptancePeriod ? '天' : '' }}</div>
+            <el-input v-show="false" v-infotooltip.top.ellipsis size="mini" v-model="formData.acceptancePeriod"></el-input>
+          </el-form-item>
+        </template>
       </common-form>
       <el-row class="prepay-wrapper" type="flex" align="middle" v-if="ifShowPrepaid" justify="end">
         <span>预付{{ formData.prepay || 0 }}%</span>
@@ -207,6 +225,26 @@ export default {
     }
   },
   computed: {
+    materialTypeOptions () {
+      return (typeof this.formData.isMaterialType !== 'boolean' && !this.formData.isMaterialType)
+        ? []
+        : this.formData.isMaterialType 
+          ?[
+              { label: '更换', value: '1' },
+              { label: '赠送', value: '3' }
+            ]
+          : [
+              { label: '购买', value: '2' },
+              { label: '赠送', value: '3' },
+            ]
+    },
+    materialTypeMap () {
+      return (typeof this.formData.isMaterialType !== 'boolean' && !this.formData.isMaterialType)
+        ? {}
+        : this.formData.isMaterialType
+          ? { 1: '更换', 3: '赠送' }
+          : { 2: '购买', 3: '赠送'}
+    },
     title () {
       return this.formData.acquisitionWay === '1' ? '自提' : '快递'
     },
@@ -240,12 +278,17 @@ export default {
   },
   data () {
     return {
+      materialTypeList: [
+        { label: '更换', value: true },
+        { label: '购买', value: false }
+      ],
       ifShowPrepaid: false,
       currentIndex: 0,
       loading: false,
       isOutbound: true,
       fileList: [],
       rightImg,
+      hasAdd: false,
       pictureList: [], // 快递图片列表
       addVisible: false,
       formData: {
@@ -348,6 +391,7 @@ export default {
       // 每次都添加完默认展示最新的物料数据
       this.currentIndex = 0
       this.$refs.courierTable.setCurrentRow(this.expressList[this.currentIndex])
+      this.$emit('addExpressInfo', true)
       console.log(this.currentIndex, this.expressList)
     },
     onExpressInfoOpen () {
@@ -382,6 +426,7 @@ export default {
       }
     },
     resetInfo () {
+      this.$emit('addExpressInfo', false)
       this.resetFile()
       this.reset()
     },
