@@ -284,7 +284,7 @@ export default {
         // 证书编号发生变化就重新加载PDF
         if (this.currentData.certNo) {
           this.reset()
-          this.pdfURL = await getPdfURL('/Cert/DownloadCertPdf', { number: this.currentData.certNo })
+          this.pdfURL = await getPdfURL('/Cert/DownloadCertPdf', { serialNumber: this.currentData.certNo })
           this.timestamp = +new Date()
           this.getNumPages(this.pdfURL)
         }

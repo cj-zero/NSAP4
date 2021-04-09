@@ -144,7 +144,7 @@ export default {
       this._certVerificate(row, type, textMap[type])
     },
     async download (row) {
-      let url = await getPdfURL('/Cert/DownloadCertPdf', { number: row.certNo })
+      let url = await getPdfURL('/Cert/DownloadCertPdf', { serialNumber: row.certNo })
       console.log(url, 'pdfURL')
       downloadFile(url)
     }
