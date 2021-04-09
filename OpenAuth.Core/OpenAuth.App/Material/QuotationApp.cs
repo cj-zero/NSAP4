@@ -2055,7 +2055,7 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            int PrintWarehouse = 3;
+            int PrintWarehouse = 3;string Action = "技术员打印";
             if (IsTrue != null && (bool)IsTrue)
             {
                 await PrintPickingList(new List<QuotationMergeMaterialReq> { new QuotationMergeMaterialReq { QuotationId = int.Parse(QuotationId) } });
@@ -2063,9 +2063,17 @@ namespace OpenAuth.App.Material
             }
             var b = await RedisHelper.GetAsync<byte[]>(QuotationId);
             await RedisHelper.DelAsync(QuotationId);
-            await UnitWork.UpdateAsync<Quotation>(q => q.Id ==int.Parse(QuotationId) && (q.PrintWarehouse==1 || q.PrintWarehouse!=3), q => new Quotation { PrintWarehouse = PrintWarehouse });
-            await UnitWork.UpdateAsync<QuotationOperationHistory>(new QuotationOperationHistory { 
-                Action="打印",
+            var IsPrintWarehouse=(await UnitWork.Find<Quotation>(q => q.Id == int.Parse(QuotationId)).FirstOrDefaultAsync())?.PrintWarehouse;
+            if (IsPrintWarehouse == null ||(IsPrintWarehouse!=3 && IsPrintWarehouse!= PrintWarehouse)) 
+            {
+                await UnitWork.UpdateAsync<Quotation>(q => q.Id == int.Parse(QuotationId), q => new Quotation { PrintWarehouse = PrintWarehouse });
+            }
+            if (loginContext.Roles.Any(r => r.Name.Equals("仓库"))) 
+            {
+                Action = "仓库打印";
+            }
+            await UnitWork.AddAsync<QuotationOperationHistory>(new QuotationOperationHistory { 
+                Action= Action,
                 ApprovalStage=-1,
                 CreateTime=DateTime.Now,
                 CreateUser= loginContext.User.Name,
