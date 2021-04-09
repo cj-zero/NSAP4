@@ -250,6 +250,7 @@ namespace OpenAuth.App
                .WhereIf(!"无序列号".Equals(MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == MaterialType).FirstOrDefaultAsync();
                 thisworkdetail.TroubleDescription = troubleAndProcessInfo?.TroubleDescription;
                 thisworkdetail.ProcessDescription = troubleAndProcessInfo?.ProcessDescription;
+                thisworkdetail.ServiceMode = troubleAndProcessInfo?.ServiceMode;
             }
             else
             {
