@@ -93,7 +93,7 @@ namespace OpenAuth.App
             DateTime startDate = DateTime.Now;
             DateTime endDate = DateTime.Now;
             var dailyReports = await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId == obj.ServiceOrderId && w.CreateUserId == nsapInfo.User.Id).Select(s => s.CreateTime).ToListAsync();
-            if (dailyReports != null)
+            if (dailyReports != null && dailyReports.Count > 0)
             {
                 startDate = (DateTime)dailyReports.Min();
                 endDate = (DateTime)dailyReports.Max();
