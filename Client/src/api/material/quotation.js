@@ -153,3 +153,11 @@ export function getMergeMaterial (params) { // 获取合并物料 新增快递�
     params
   })
 }
+
+export function printPickingList (data) { // 打印出库单前置接口
+  return request({
+    url: '/Material/Quotation/printPickingList',
+    method: 'post',
+    data
+  })
+}

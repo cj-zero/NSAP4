@@ -1,6 +1,6 @@
 <template>
-  <div class="add-express-info-wrapper">
-    <el-form ref="expressForm" :model="expressFormData" size="mini" label-width="80px" :show-message="false" :rules="rules">
+  <div class="add-express-info-wrapper" v-loading.fullscreen="expressLoading">
+    <el-form ref="expressForm" :model="expressFormData" size="mini" label-width="80px" :show-message="false" :rules="rules" v-if="isExpressage">
       <el-form-item :label="orderLabel" prop="number">
         <el-input style="width: 200px;" size="mini" v-model.trim="expressFormData.number" :disabled="isPickUp"></el-input>
       </el-form-item>
@@ -57,8 +57,11 @@
 
 <script>
 import UpLoadFile from '@/components/upLoadFile'
-import { updateOutboundOrder, getMergeMaterial } from '@/api/material/quotation'
+import { updateOutboundOrder, getMergeMaterial, printPickingList } from '@/api/material/quotation'
 import { isImage } from '@/utils/file'
+// import { print } from '@/utils/utils'
+// import { getSign } from '@/api/users'
+import { serializeParams } from '@/utils/process'
 function freightValidator (rule, value, callback) {
   value = Number(value)
   value > 0 ? callback() : callback(new Error('运费必须大于0'))
@@ -69,6 +72,10 @@ export default {
   },
   inject: ['parentVm'],
   props: {
+    isExpressage: { // 判断是不是新增快递
+      type: Boolean,
+      default: true
+    },
     formData: {
       type: Object,
       default () {
@@ -92,6 +99,7 @@ export default {
   },
   data () {
     return {
+      expressLoading: false,
       expressFormData: { // 新增快递信息
         number: '',
         freight: undefined,
@@ -160,7 +168,11 @@ export default {
         if (this.pictureList && !this.pictureList.length) {
           return this.$message.warning('至少上传一张图片！')
         }
-        if (!this.validateMaterial()) {
+        this.operate()
+      })
+    },
+    async operate () {
+      if (!this.validateMaterial()) {
           return this.$message.warning('至少出库一个物料！')
         }
         let quotationMergeMaterialReqs = this.materialList.map(item => {
@@ -173,11 +185,27 @@ export default {
           expressNumber: this.expressFormData.number,
           freight: this.expressFormData.freight
         }
-        let params = {
-          quotationMergeMaterialReqs,
-          expressageReqs
+        let params = this.isExpressage  
+          ? { quotationMergeMaterialReqs, expressageReqs } 
+          : { quotationMergeMaterialReqs }
+
+        if (!this.isExpressage) { // 如果是打印操作
+          this.expressLoading = true
+          try {
+            // const { data } = await getSign({ serialNumber: this.formData.id, timespan: NOW_DATE })
+            await printPickingList(params.quotationMergeMaterialReqs)
+            const url = '/Material/Quotation/PrintPicking'
+            const printParams = { serialNumber: this.formData.id, 'X-token': this.$store.state.user.token, isTrue: false }
+            window.open(`${process.env.VUE_APP_BASE_API}${url}?${serializeParams(printParams)}`)
+          } catch (err) {
+            this.$message.error(err.message)
+          } finally {
+            this.expressLoading = false
+          }
+          return
         }
         console.log(params, 'params', this.parentVm.expressDialogLoading, updateOutboundOrder)
+        // 新增物料操作
         this.parentVm.expressDialogLoading = true
         updateOutboundOrder({
           quotationMergeMaterialReqs,
@@ -191,7 +219,6 @@ export default {
           this.$message.error(err.message)
           this.parentVm.expressDialogLoading = false
         })
-      })
     },
     close () {
       this.$refs.expressForm.resetFields()

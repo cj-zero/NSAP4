@@ -19,16 +19,16 @@ export async function print (url, params) {
 }
 export async function getPdfURL (url, params) {
   console.log(url, 'url')
-  const { number } = params
+  const { serialNumber } = params
   const NOW_DATE = +new Date()
   let pdfURL = ''
   try {
-    const { data } = await getSign({ serialNumber: number, timespan: NOW_DATE })
+    const { data } = await getSign({ serialNumber, timespan: NOW_DATE })
     params = {
-      serialNumber: number,
       timespan: NOW_DATE,
       sign: data,
-      'X-token': store.state.user.token
+      'X-token': store.state.user.token,
+      ...params
     }
     pdfURL = `${process.env.VUE_APP_BASE_API}${url}?${serializeParams(params)}`
   } catch (err) {

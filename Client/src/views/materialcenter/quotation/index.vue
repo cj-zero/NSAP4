@@ -217,7 +217,7 @@ export default {
         return this.$message.warning('请先选择数据')
       }
       const { id } = currentRow
-      print('/Material/Quotation/PrintQuotation', { number: id })
+      print('/Material/Quotation/PrintQuotation', { serialNumber: id })
     },
     onSuccess () {
       this.$message.success('上传成功')
