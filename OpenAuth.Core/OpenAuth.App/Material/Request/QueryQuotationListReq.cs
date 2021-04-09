@@ -21,7 +21,11 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public int? QuotationId { get; set; }
 
-
+        /// <summary>
+        /// 打印报价单号
+        /// </summary>
+        public string serialNumber { get; set; }
+        
         /// <summary>
         /// 销售单号
         /// </summary>
@@ -103,5 +107,10 @@ namespace OpenAuth.App.Material.Request
         /// 是否修改
         /// </summary>
         public bool? IsUpdate { get; set; }
-    }
+
+        /// <summary>
+        /// 打印物料id
+        /// </summary>
+        public List<QuotationMergeMaterialReq> QuotationMergeMaterialReqs { get; set; }
+}
 }
