@@ -285,6 +285,12 @@ namespace OpenAuth.Repository.Domain
 
         public int? TravelExpenseManHour { get; set; }
 
+        /// <summary>
+        ///仓库打印次数
+        /// </summary>
+        [Description("仓库打印次数")]
+        public int? PrintWarehouse { get; set; }
+
 
         /// <summary>
         /// 物流表
