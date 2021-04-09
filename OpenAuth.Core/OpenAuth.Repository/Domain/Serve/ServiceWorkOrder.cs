@@ -230,7 +230,7 @@ namespace OpenAuth.Repository.Domain
         public int IsCheck { get; set; }
 
         /// <summary>
-        /// 服务方式 1上门服务 2电话服务
+        /// 服务方式 1上门服务 2电话服务 3返厂维修
         /// </summary>
         [Description("服务方式")]
         public int? ServiceMode { get; set; }
