@@ -193,6 +193,7 @@ namespace OpenAuth.App.Material
                             Quotations = Quotations.Where(q => q.QuotationStatus >= 10);
                             break;
                     }
+                    Quotations = Quotations.Where(q => q.IsMaterialType != null);
                 }
                 else
                 {
@@ -2021,7 +2022,7 @@ namespace OpenAuth.App.Material
                     Count = q.Count.ToString(),
                     Unit = q.Unit,
                     ServiceOrderSapId = model.ServiceOrderSapId.ToString(),
-                    SalesOrder = q.DiscountPrices.ToString(),
+                    SalesOrder = model.SalesOrderId.ToString(),
                     Location = locationList.Where(l => l.ItemCode.Equals(q.MaterialCode)).FirstOrDefault()?.layer_no
                 });
 
