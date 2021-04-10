@@ -874,6 +874,7 @@ namespace OpenAuth.App.Material
                     QuotationObj.CreateUserId = loginUser.Id;
                     QuotationObj.Status = 1;
                     QuotationObj.QuotationStatus = 3;
+                    QuotationObj.PrintWarehouse = 1;
                     QuotationObj = await UnitWork.AddAsync<Quotation, int>(QuotationObj);
                     await UnitWork.SaveAsync();
                     if (!obj.IsDraft)
