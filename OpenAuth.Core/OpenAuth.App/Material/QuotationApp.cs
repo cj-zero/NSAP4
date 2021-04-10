@@ -193,7 +193,7 @@ namespace OpenAuth.App.Material
                             Quotations = Quotations.Where(q => q.QuotationStatus >= 10);
                             break;
                     }
-                    Quotations = Quotations.Where(q => q.IsMaterialType != null);
+                    Quotations = Quotations.Where(q => (q.IsMaterialType != null || q.QuotationStatus==11));
                 }
                 else
                 {
