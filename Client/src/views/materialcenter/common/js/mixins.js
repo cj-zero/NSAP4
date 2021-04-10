@@ -219,7 +219,8 @@ export const rolesMixin = {
       isStorekeeper: isMatchRole('仓库'),
       isTechnical: isMatchRole('售后技术员'),
       isGeneralManager: isMatchRole('总经理'),
-      isMaterialsEngineer: isMatchRole('物料工程审批')
+      isMaterialsEngineer: isMatchRole('物料工程审批'),
+      isMaterialInspection: isMatchRole('物料稽查')
     }
   }
 }
