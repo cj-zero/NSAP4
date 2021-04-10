@@ -934,7 +934,7 @@ namespace OpenAuth.App
             {
                 query = query.Where(q => q.a.Status > 1);
             }
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.User.Account.Equals("lijianmei"))
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-派送服务ID")))
             {
                 if (loginContext.Roles.Any(r => r.Name.Equals("售后主管")))
                 {
