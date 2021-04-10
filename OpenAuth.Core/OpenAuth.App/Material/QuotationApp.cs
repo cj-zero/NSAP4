@@ -176,7 +176,7 @@ namespace OpenAuth.App.Material
                 }
                 else if (request.PageStart != null && request.PageStart == 3)
                 {
-                    if (!loginContext.Roles.Any(r => r.Name.Equals("仓库")) && !loginContext.Roles.Any(r => r.Name.Equals("仓库核查")))
+                    if (!loginContext.Roles.Any(r => r.Name.Equals("仓库")))
                     {
                         Quotations = Quotations.Where(q => q.CreateUserId.Equals(loginUser.Id));
                     }
@@ -197,7 +197,10 @@ namespace OpenAuth.App.Material
                 }
                 else
                 {
-                    Quotations = Quotations.Where(q => q.CreateUserId.Equals(loginUser.Id));
+                    if (!loginContext.Roles.Any(r => r.Name.Equals("物料稽查"))) 
+                    {
+                        Quotations = Quotations.Where(q => q.CreateUserId.Equals(loginUser.Id));
+                    }
                 }
             }
 
