@@ -51,7 +51,7 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         ///数量
         /// </summary>
-        public int? Count { get; set; }
+        public decimal? Count { get; set; }
 
         /// <summary>
         ///最大数量

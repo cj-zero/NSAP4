@@ -48,7 +48,7 @@ namespace OpenAuth.App
         private readonly SignalRMessageApp _signalrmessage;
         private readonly ServiceFlowApp _serviceFlowApp;
         public ServiceOrderApp(IUnitWork unitWork,
-            RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, SignalRMessageApp signalrmessage, ServiceFlowApp serviceFlowApp) : base(unitWork, auth)
+             RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, SignalRMessageApp signalrmessage, ServiceFlowApp serviceFlowApp) : base(unitWork, auth)
         {
             _appConfiguration = appConfiguration;
             _revelanceApp = app;
@@ -620,7 +620,7 @@ namespace OpenAuth.App
             {
                 query = query.Where(q => q.a.Status > 1);
             }
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.User.Account.Equals("lijianmei"))
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-派送服务ID")))
             {
                 if (loginContext.Roles.Any(r => r.Name.Equals("售后主管")))
                 {
@@ -934,7 +934,7 @@ namespace OpenAuth.App
             {
                 query = query.Where(q => q.a.Status > 1);
             }
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.User.Account.Equals("lijianmei"))
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-派送服务ID")))
             {
                 if (loginContext.Roles.Any(r => r.Name.Equals("售后主管")))
                 {
@@ -3828,6 +3828,29 @@ namespace OpenAuth.App
             return result;
         }
 
+
+        /// <summary>
+        /// 获取用户差旅费
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        private async Task<decimal> GetUserSubsides(string userId)
+        {
+            decimal subsidies = 0;
+            var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == userId).Select(r => r.SecondId).ToListAsync();
+            var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).ToListAsync();
+            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_TravellingAllowance") && orgname.Contains(u.Name)).Select(u => new { u.Name, u.DtValue }).ToListAsync();
+            if (CategoryList != null && CategoryList.Count() >= 1)
+            {
+                subsidies = Convert.ToDecimal(CategoryList.FirstOrDefault().DtValue);
+            }
+            else
+            {
+                subsidies = 50;
+            }
+            return subsidies;
+        }
+
         /// <summary>
         /// 添加日费
         /// </summary>
@@ -3863,7 +3886,9 @@ namespace OpenAuth.App
             //差旅费
             if (req.travelExpense.Days == 1)
             {
-                var travelExpenseInfo = new ServiceDailyExpends { ServiceOrderId = req.ServiceOrderId, CreateTime = DateTime.Now, CreateUserId = userInfo.User.Id, CreateUserName = userInfo.User.Name, DailyExpenseType = 1, SerialNumber = 1, Days = 1, Money = req.travelExpense.Money, Remark = req.travelExpense.Remark, TotalMoney = req.travelExpense.Money };
+                //获取当前用户的差旅补贴值
+                var subsidies = await GetUserSubsides(userInfo.UserID);
+                var travelExpenseInfo = new ServiceDailyExpends { ServiceOrderId = req.ServiceOrderId, CreateTime = DateTime.Now, CreateUserId = userInfo.User.Id, CreateUserName = userInfo.User.Name, DailyExpenseType = 1, SerialNumber = 1, Days = 1, Money = subsidies, Remark = req.travelExpense.Remark, TotalMoney = subsidies };
                 await UnitWork.AddAsync(travelExpenseInfo);
                 await UnitWork.SaveAsync();
             }
@@ -4014,6 +4039,12 @@ namespace OpenAuth.App
                         otherExpenses.Add(otherExpensesInfo);
                         break;
                 }
+            }
+            if (travelExpense.Money == null)
+            {
+                //获取当前用户的差旅补贴值
+                var subsidies = await GetUserSubsides(userInfo.UserID);
+                travelExpense = new TravelExpense { CreateTime = DateTime.Now, Days = 0, Money = subsidies, Remark = string.Empty };
             }
             var dailyExpendResp = new DailyExpendResp { DailyDates = dailyExpendDates, TravelExpense = travelExpense, TransportExpenses = transportExpenses, HotelExpenses = hotelExpenses, OtherExpenses = otherExpenses, IsFinish = data.Count > 0 };
             result.Data = dailyExpendResp;

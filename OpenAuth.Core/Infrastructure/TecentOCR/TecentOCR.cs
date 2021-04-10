@@ -112,7 +112,7 @@ namespace Infrastructure.TecentOCR
                         {
                             string invoiceCode = string.Empty;
                             string invoiceNo = string.Empty;
-                            string invoiceDate = string.Empty;
+                            string invoiceDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                             decimal amountWithTax = decimal.Zero;
                             string checkCode = string.Empty;
                             string companyName = string.Empty;

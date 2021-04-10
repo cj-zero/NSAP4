@@ -826,6 +826,8 @@ namespace OpenAuth.App
                 travellingAllowances.IsAdded = true;
                 travellingAllowances.ReimburseInfoId = (int)req.ReimburseInfoId;
                 result.Data=await UnitWork.AddAsync<ReimburseTravellingAllowance,int>(travellingAllowances);
+                var TotalMoney = travellingAllowances.Days * travellingAllowances.Money;
+                await UnitWork.UpdateAsync<ReimburseInfo>(r => r.Id == req.ReimburseInfoId, r=>new ReimburseInfo{ TotalMoney= r.TotalMoney + TotalMoney });
                 await UnitWork.SaveAsync();
             }
             return result;
@@ -1560,7 +1562,6 @@ namespace OpenAuth.App
             }
         }
 
-
         /// <summary>
         /// 打印报销单 
         /// </summary>
@@ -1676,14 +1677,16 @@ namespace OpenAuth.App
             var EndDate = Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(Reimburse.ServiceOrderId)).Max(c => c.EndDate));
             if (Reimburse.ReimburseTravellingAllowances != null && Reimburse.ReimburseTravellingAllowances.Count > 0)
             {
-                ReimburseCostList.Add(new ReimburseCost
-                {
-                    SerialNumber = 3,
-                    InvoiceTime = Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Days > 1 ? BusinessTripDate.ToString("MM-dd") + " — " + EndDate.ToString("MM-dd") : BusinessTripDate.ToString("yyyy-MM-dd"),
-                    ExpendDetails = Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Money + "/天*" + Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Days + "天",
-                    ExpendName = "出差补贴",
-                    Money = Convert.ToDecimal(Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Days * Reimburse.ReimburseTravellingAllowances.FirstOrDefault()?.Money)
-                });
+                Reimburse.ReimburseTravellingAllowances.ForEach(r =>
+                    ReimburseCostList.Add(new ReimburseCost
+                    {
+                        SerialNumber = 3,
+                        InvoiceTime = Convert.ToDateTime(r.CreateTime).ToString("yyyy.MM.dd"),
+                        ExpendDetails = r?.Money + "/天*" + r?.Days + "天",
+                        ExpendName = "出差补贴",
+                        Money = Convert.ToDecimal(r?.Days * r?.Money)
+                    })
+                );
             }
             var logopath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "logo.png");
             var logostr = "";

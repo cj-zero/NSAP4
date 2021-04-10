@@ -490,24 +490,40 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <summary>
         /// 打印领料单
         /// </summary>
-        /// <param name="serialNumber"></param>
-        /// <param name="sign"></param>
-        /// <param name="timespan"></param>
+        /// <param name="req"></param>
         /// <returns></returns>
-        [ServiceFilter(typeof(CertAuthFilter))]
-        [HttpGet]
-        public async Task<IActionResult> PrintPickingList(string serialNumber, string sign, string timespan)
+        [HttpPost]
+        public async Task<Response> PrintPickingList(List<QuotationMergeMaterialReq> req)
         {
+            var result = new Response();
             try
             {
-                return File(await _app.PrintPickingList(serialNumber), "application/pdf");
+                await _app.PrintPickingList(req);
             }
             catch (Exception e)
             {
-
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 打印领料单
+        /// </summary>
+        /// <param name="serialNumber"></param>
+        /// <param name="IsTrue"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> PrintPicking(string serialNumber,bool? IsTrue)
+        {
+            try
+            {
+                return File(await _app.PrintPickingList(serialNumber, IsTrue), "application/pdf");
+            }
+            catch (Exception e)
+            {
                 throw new Exception(e.Message);
             }
-
         }
 
     }

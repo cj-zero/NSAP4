@@ -78,7 +78,12 @@ namespace OpenAuth.App
                 .FirstOrDefaultAsync();
 
             var obj = req.MapTo<CompletionReport>();
-
+            var workOrderList = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId)
+.WhereIf("无序列号".Equals(req.MaterialType), a => a.MaterialCode == "无序列号")
+.WhereIf(!"无序列号".Equals(req.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == req.MaterialType)
+.ToListAsync());
+            //获取最新的工单服务方式 这么做的原因是因为一键重派后可能拉取之前的完工报告的服务方式 而重派之后做单时选了其他的服务方式
+            obj.ServiceMode = workOrderList.FirstOrDefault()?.ServiceMode;
             obj.CreateTime = DateTime.Now;
             //获取当前登陆者的nsap用户Id
             var nsapInfo = (await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.CurrentUserId).Include(a => a.User).FirstOrDefaultAsync());
@@ -93,7 +98,7 @@ namespace OpenAuth.App
             DateTime startDate = DateTime.Now;
             DateTime endDate = DateTime.Now;
             var dailyReports = await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId == obj.ServiceOrderId && w.CreateUserId == nsapInfo.User.Id).Select(s => s.CreateTime).ToListAsync();
-            if (dailyReports != null)
+            if (dailyReports != null && dailyReports.Count > 0)
             {
                 startDate = (DateTime)dailyReports.Min();
                 endDate = (DateTime)dailyReports.Max();
@@ -108,10 +113,6 @@ namespace OpenAuth.App
             pictures.ForEach(r => r.CompletionReportId = o.Id);
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
-            var workOrderList = (await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId)
-    .WhereIf("无序列号".Equals(req.MaterialType), a => a.MaterialCode == "无序列号")
-    .WhereIf(!"无序列号".Equals(req.MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == req.MaterialType)
-    .ToListAsync());
             List<int> workorder = new List<int>();
             foreach (var item in workOrderList)
             {
@@ -249,6 +250,7 @@ namespace OpenAuth.App
                .WhereIf(!"无序列号".Equals(MaterialType), b => b.MaterialCode.Substring(0, b.MaterialCode.IndexOf("-")) == MaterialType).FirstOrDefaultAsync();
                 thisworkdetail.TroubleDescription = troubleAndProcessInfo?.TroubleDescription;
                 thisworkdetail.ProcessDescription = troubleAndProcessInfo?.ProcessDescription;
+                thisworkdetail.ServiceMode = troubleAndProcessInfo?.ServiceMode;
             }
             else
             {
