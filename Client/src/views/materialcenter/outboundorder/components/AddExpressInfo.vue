@@ -44,7 +44,7 @@
             :controls="false"
             v-model="row.quantity"
             :min="0"
-            :max="row.count - row.sentQuantity"
+            :max="calcMaxCount(row)"
             style="width: 100%;"
             :disabled="isOutboundAll(row)"
           >
@@ -113,6 +113,7 @@ export default {
         { label: '物料描述', prop: 'materialDescription' },
         { label: '总数量', prop: 'count', align: 'right' },
         { label: '单位', prop: 'unit', align: 'right' },
+        { label: '库存数量', prop: 'warehouseQuantity', align: 'right' },
         { label: '已出库', prop: 'sentQuantity', align: 'right' },
         { label: '出库数量', prop: 'quantity', slotName: 'quantity' }
       ],
@@ -124,8 +125,10 @@ export default {
       this.materialLoading = true
       getMergeMaterial({ quotationId: this.formData.id }).then(res => {
         this.materialList = res.data.map(item => {
+          const { sentQuantity, count, warehouseQuantity } = item
           item.sentQuantity = Number(item.sentQuantity)
-          item.quantity = item.quantity || 0
+          const diff = count - sentQuantity
+          item.quantity = Number(diff <= warehouseQuantity ? diff : warehouseQuantity)
           return item
         })
         this.materialLoading = false
@@ -133,6 +136,11 @@ export default {
         this.$message.error(err.message)
         this.materialLoading = false
       })
+    },
+    calcMaxCount (row) {
+      const { count, sentQuantity, warehouseQuantity } = row
+      const diff = count - sentQuantity
+      return diff <= warehouseQuantity ? diff : warehouseQuantity
     },
     validateMaterial () { // 只要有一个物料没有全部出库并且出库数量时大于0的 就可以提交
       return this.materialList.some(item => { 
@@ -142,8 +150,8 @@ export default {
       })
     },
     isOutboundAll (data) { // 判断是否物料的是否已经出料完成
-      console.log(data.count, data.sentQuantity, data.count - data.sentQuantity)
-      return !(data.count - data.sentQuantity)
+      const { count, sentQuantity, warehouseQuantity } = data
+      return (count - sentQuantity === 0) || ((count - sentQuantity) && warehouseQuantity === 0)
     },
     onAccept (file) { // 限制发票文件上传的格式
       let { type } = file
@@ -172,8 +180,9 @@ export default {
       })
     },
     async operate () {
+      const text = this.isExpressage ? '出库' : '打印'
       if (!this.validateMaterial()) {
-          return this.$message.warning('至少出库一个物料！')
+          return this.$message.warning(`至少${text}一个物料！`)
         }
         let quotationMergeMaterialReqs = this.materialList.map(item => {
           let { id, quantity } = item
@@ -197,6 +206,7 @@ export default {
             const url = '/Material/Quotation/PrintPicking'
             const printParams = { serialNumber: this.formData.id, 'X-token': this.$store.state.user.token, isTrue: false }
             window.open(`${process.env.VUE_APP_BASE_API}${url}?${serializeParams(printParams)}`)
+            this.formData.row.printWarehouse = 3
           } catch (err) {
             this.$message.error(err.message)
           } finally {

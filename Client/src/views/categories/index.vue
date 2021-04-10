@@ -51,7 +51,7 @@
       </el-main>
     </div>
     <el-dialog :destroy-on-close="true" class="dialog-mini custom-dialog user-dialog" width="400px" title="添加分组"
-      :visible.sync="addTypesDialog" :close-on-click-modal="false">
+      :visible.sync="addTypesDialog" :close-on-click-modal="false" @closed="onAddClosed">
       <el-form ref="categoryTypeForm" :model="categoryTypesInfo" :rules="categoryRules" el="categorys-tayps-form" label-width="80px">
         <el-form-item prop="id" label="分类id">
           <el-input size="small" v-model="categoryTypesInfo.id"></el-input>
@@ -239,6 +239,12 @@ export default {
     this.loadCategoryTypes()
   },
   methods: {
+    onAddClosed () {
+      this.categoryTypesInfo = {
+        id: '',
+        name: ''
+      }
+    },
     getAllCategories() {
       this.listQuery.TypeId = ''
       this.listQuery.page = 1
@@ -327,6 +333,7 @@ export default {
     },
     handleCreate() { // 弹出添加框
       this.resetTemp()
+      this.temp.typeId = this.listQuery.TypeId
       this.dialogStatus = 'create'
       this.dialogFormVisible = true
       this.$nextTick(() => {
@@ -421,15 +428,23 @@ export default {
         return
       }
       const ids = [this.listQuery.TypeId]
-      categorys.delType(ids).then(() => {
-        this.$notify({
-          title: '成功',
-          message: '删除成功',
-          type: 'success',
-          duration: 2000
-        })
-        this.categoryTypes = this.categoryTypes.filter(item => (item.id !== this.listQuery.TypeId))
+      this.$confirm('确定删除该字典分类?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        categorys.delType(ids).then(() => {
+          this.$notify({
+            title: '成功',
+            message: '删除成功',
+            type: 'success',
+            duration: 2000
+          })
+          this.categoryTypes = this.categoryTypes.filter(item => (item.id !== this.listQuery.TypeId))
+          this.$message.success('删除成功')
+        }).catch(err => this.$message.error(err.message))
       })
+      
     },
     // 搜索分类
     handleSearchCategoryTypes() {
@@ -440,6 +455,7 @@ export default {
     loadCategoryTypes() {
       categorys.loadType(this.typesListQuery).then(res => {
         this.categoryTypes = [...res.data]
+        console.log( this.categoryTypes, 'this.categoryTypes')
       })
     },
     handleNodeClick(val) {

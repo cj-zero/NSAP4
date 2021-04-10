@@ -1097,7 +1097,7 @@ export default {
         { type: 'index', label: '#' },
         { label: '物料编码', prop: 'materialCode' },
         { label: '物料描述', prop: 'materialDescription' },
-        { label: '工时', prop: 'hours', slotName: 'hours', align: 'right' },
+        { label: '工时(H)', prop: 'hours', slotName: 'hours', align: 'right' },
         { label: '最大数量' },
         { label: '当前库存' },
         { label: '仓库' },

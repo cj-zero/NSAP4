@@ -84,7 +84,6 @@ export default {
       if (this.popperJS) {
         this.doDestroy()
       }
-      console.log(this.handleMouseEnter, 'enter')
       this.showPopper = true
     },
     //隐藏tooltip

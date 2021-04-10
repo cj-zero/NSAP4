@@ -25,26 +25,6 @@
         @pagination="handleCurrentChange"
       />
     </Layer>
-      <!-- <div class="app-container">
-        <div class="bg-white">
-          <div class="content-wrapper">
-            <common-table
-              ref="table"
-              height="100%"
-              :data="tableData"
-              :columns="processedColumns"
-              :loading="tableLoading"
-            ></common-table>
-            <pagination
-              v-show="total>0"
-              :total="total"
-              :page.sync="listQuery.page"
-              :limit.sync="listQuery.limit"
-              @pagination="handleCurrentChange"
-            />
-          </div>
-        </div>
-      </div> -->
       <!-- 审核弹窗 -->
       <my-dialog
         ref="myDialog"
@@ -52,7 +32,6 @@
         @closed="closeDialog"
         :title="textMap[title]"
         :loading="dialogLoading"
-        :btnList="btnList"
       >
         <order 
           ref="order" 
@@ -119,12 +98,7 @@ export default {
         ...this.commonSearch,
         { type: 'search' }
       ]
-    }, // 搜索配置
-    btnList () {
-      return [
-        { btnText: '关闭', handleClick: this.closeDialog, className: 'close' }
-      ]
-    } 
+    }, // 搜索配置 
   },
   data () {
     return {
@@ -153,7 +127,6 @@ export default {
     },
     closeDialog () {
       this.$refs.order.resetInfo()
-      this.$refs.myDialog.close()
     }
   },
   created () {

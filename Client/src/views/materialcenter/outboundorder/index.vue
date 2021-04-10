@@ -21,6 +21,9 @@
         <template v-slot:totalMoney="{ row }">
           <p v-infotooltip.top-start.ellipsis>{{ row.totalMoney | toThousands }}</p>
         </template>
+        <template v-slot:printStatus="{ row }">
+          {{ printStatusMap[row.printWarehouse] }}
+        </template>
         <template v-slot:status="{ row }">
           {{ quotationStatusMap[row.quotationStatus] }}
         </template>
@@ -36,7 +39,7 @@
     <my-dialog
       title="打印出库单"
       ref="expressInfoDialog"
-      width="600px"
+      width="700px"
       :btnList="expressInfoBtnList"
       @opened="onExpressageOpened"
     >
@@ -122,7 +125,7 @@ export default {
         { prop: 'startCreateTime', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
-        { type: 'button', btnText: this.printText, handleClick: this.print, isSpecial: true },   
+        { type: 'button', btnText: this.printText, handleClick: this.print, isSpecial: true, isShow: this.isStorekeeper || this.isTechnical },   
         // { type: 'button', btnText: '打印', handleClick: this.print, isSpecial: true },     
         // { type: 'button', btnText: '出库', handleClick: this._getQuotationDetail, options: { status: 'outbound'}, isSpecial: true },
       ]
@@ -166,6 +169,7 @@ export default {
       total: 0,
       quotationColumns: [
         { label: '出库单号', prop: 'id', handleClick: this._getQuotationDetail, options: { status: 'view' }, type: 'link'},
+        { label: '打印状态', slotName: 'printStatus' },
         { label: '销售单号', prop: 'salesOrderId' },
         { label: '服务ID', prop: 'serviceOrderSapId', handleClick: this._openServiceOrder, type: 'link' },
         { label: '客户代码', prop: 'terminalCustomerId' },
@@ -174,7 +178,7 @@ export default {
         { label: '申请人', prop: 'createUser' },
         { label: '备注', prop: 'remark' },
         { label: '创建时间', prop: 'createTime', width: 150 },
-        { label: '状态', prop: 'status', slotName: 'status' }
+        { label: '出库单状态', prop: 'status', slotName: 'status' }
       ],
       customerList: [], // 用户服务单列表
       status: 'outbound', // 报价单状态
@@ -194,12 +198,15 @@ export default {
         const url = '/Material/Quotation/PrintPicking'
         const printParams = { serialNumber: id, 'X-token': this.$store.state.user.token, isTrue: true }
         window.open(`${process.env.VUE_APP_BASE_API}${url}?${serializeParams(printParams)}`)
+        if (Number(currentRow.printWarehouse) === 1) {
+          currentRow.printWarehouse = 2
+        }
         return
       }
       if (+quotationStatus === 11) {
         return this.$message.warning('所有物料已出库，不支持打印')
       }
-      this.formData = { id }
+      this.formData = { id, row: currentRow }
       this.$refs.expressInfoDialog.open()
     },
     onExpressageOpened () {

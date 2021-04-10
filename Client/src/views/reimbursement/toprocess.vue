@@ -26,27 +26,6 @@
           @pagination="handleCurrentChange"
         />
     </Layer>
-      <!-- <div class="app-container">
-        <div class="bg-white">
-          <div class="content-wrapper">
-            <common-table
-            ref="table"
-            height="100%"
-            :data="tableData"
-            :columns="processedColumns"
-            :loading="tableLoading"
-            @row-click="onRowClick"
-          ></common-table>
-            <pagination
-              v-show="total>0"
-              :total="total"
-              :page.sync="listQuery.page"
-              :limit.sync="listQuery.limit"
-              @pagination="handleCurrentChange"
-            />
-          </div>
-        </div>
-      </div> -->
       <!-- 审核弹窗 -->
       <my-dialog
         class="dialog-clss"
@@ -131,8 +110,7 @@ export default {
     btnList () {
       return [
         { btnText: '同意', handleClick: this.agree, isShow: this.title !== 'view', type: 'primary' },
-        { btnText: '驳回到发起人', handleClick: this.reject, isShow: this.title !== 'view', type: 'danger' },
-        { btnText: '关闭', handleClick: this.closeDialog, className: 'close' }
+        { btnText: '驳回到发起人', handleClick: this.reject, isShow: this.title !== 'view', type: 'danger' }
       ]
     },
     // dialogWidth () {
@@ -159,12 +137,8 @@ export default {
     reject () { // 驳回
       this.$refs.order.openRemarkDialog('reject')
     },
-    operate () { // 操作成功 驳回/同意
-      this.closeDialog()
-    },
     closeDialog () {
       this.$refs.order.resetInfo()
-      this.$refs.myDialog.close()
     }
   },
   created () {

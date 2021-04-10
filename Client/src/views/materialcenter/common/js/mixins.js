@@ -52,7 +52,7 @@ export const quotationTableMixin = {
     },
     _getQuotationDetail (data) {
       let quotationId
-      let { status, isReceive, isSalesOrder, quotationStatus, isView, isProtected, isUpdate } = data
+      let { status, isReceive, isSalesOrder, isView, isProtected, isUpdate } = data
       this.isReceive = !!isReceive // 判断销售订单还是报价单
       this.hasEditBtn = !!data.hasEditBtn
       this.isSalesOrder = !!isSalesOrder
@@ -61,9 +61,25 @@ export const quotationTableMixin = {
       if (isSalesOrder && !data.salesOrderId) {
         return this.$message.warning('无销售单号')
       }
-      this.quotationStatus = +quotationStatus
-       if (status !== 'create') { // 要么编辑要么查看报价单d
+      if (status !== 'create') { // 要么编辑要么查看报价单d
         quotationId = data.id
+      } else {
+        // 创建物料报价单
+        this.isShowEditBtn = false
+        let currentRow = this.$refs.quotationTable.getCurrentRow()
+        if (!currentRow) {
+          return this.$message.warning('请先选择数据')
+        }
+        quotationId = currentRow.id
+      }
+      this.tableLoading = true
+      // 判断是查询销售订单还是 报价单
+      const params = { quotationId, isUpdate }
+      getQuotationDetail(params).then(res => {
+        console.log(res,' res')
+        this.detailInfo = this._normalizeDetail(res.data)
+        let { quotationStatus } = this.detailInfo
+        this.quotationStatus = +quotationStatus
         quotationStatus = +quotationStatus
         this.isShowEditBtn = true
         if (quotationStatus >= 4) { // 4开始就已经提交物料单 不可编辑 销售订单已经成立
@@ -74,26 +90,9 @@ export const quotationTableMixin = {
             status = 'outbound'
           }
         } else if (quotationStatus <= 3) { // 未提交 撤回 驳回 阶段
-          // 进行编辑报价物料单的
-          // this.status = 'edit'
           status = 'edit'
         }
-      } else {
         // 创建物料报价单
-        this.isShowEditBtn = false
-        let currentRow = this.$refs.quotationTable.getCurrentRow()
-        if (!currentRow) {
-          return this.$message.warning('请先选择数据')
-        }
-        quotationId = currentRow.id
-      }
-      console.log(status, 'status', quotationId)
-      this.tableLoading = true
-      // 判断是查询销售订单还是 报价单
-      const params = { quotationId, isUpdate }
-      getQuotationDetail(params).then(res => {
-        console.log(res,' res')
-        this.detailInfo = this._normalizeDetail(res.data)
         this.$refs.quotationDialog.open()
         this.tableLoading = false
         this.status = status
@@ -134,7 +133,7 @@ export const quotationTableMixin = {
   }
 }
 
-const IDS = ['SYS_QuotationStatus', 'SYS_InvoiceCompany', 'SYS_DeliveryMethod', 'SYS_MaterialDiscount', 
+const IDS = ['SYS_QuotationStatus', 'SYS_InvoiceCompany', 'SYS_DeliveryMethod', 'SYS_MaterialDiscount', 'SYS_PrintWarehouse',
 'SYS_AcquisitionWay', 'SYS_MoneyMeans', 'SYS_MaterialsCommonlyRejected', 'SYS_MaterialTaxRate', 'SYS_MaterialInvoiceCategory']
 const SYS_QuotationStatus = 'SYS_QuotationStatus'
 const SYS_InvoiceCompany = 'SYS_InvoiceCompany'
@@ -145,6 +144,7 @@ const SYS_MoneyMeans = 'SYS_MoneyMeans'
 const SYS_MaterialsCommonlyRejected = 'SYS_MaterialsCommonlyRejected'
 const SYS_MaterialInvoiceCategory = 'SYS_MaterialInvoiceCategory' // 发票类别
 const SYS_MaterialTaxRate = 'SYS_MaterialTaxRate' // 税率
+const SYS_PrintWarehouse = 'SYS_PrintWarehouse' // 出库单打印状态
 export const categoryMixin = {
   computed: {
     reimburseTagList () {
@@ -177,6 +177,9 @@ export const categoryMixin = {
     moneyMeansList () {
       return this.buildSelectList(this.categoryList.filter(item => item.typeId === SYS_MoneyMeans))
     },
+    printStatusMap () {
+      return this.buildMap(this.categoryList.filter(item => item.typeId === SYS_PrintWarehouse))
+    }
   },
   methods: {
     _getCategoryNameList () { // 获取字典分类信息
