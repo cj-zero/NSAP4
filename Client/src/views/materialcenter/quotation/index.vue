@@ -113,12 +113,12 @@ export default {
         { prop: 'startCreateTime', placeholder: '创建开始日期', type: 'date', width: 150 },
         { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
         { type: 'search' },
-        { type: 'button', btnText: '新建', handleClick: this.openMaterialOrder, isSpecial: true, options: { isReceive: true } },
-        { type: 'button', btnText: '编辑', handleClick: this.edit, isSpecial: true, options: { isReceive: true, isUpdate: true }},
+        { type: 'button', btnText: '新建', handleClick: this.openMaterialOrder, isSpecial: true, options: { isReceive: true }, isShow: !this.isMaterialInspection },
+        { type: 'button', btnText: '编辑', handleClick: this.edit, isSpecial: true, options: { isReceive: true, isUpdate: true }, isShow: !this.isMaterialInspection },
         // { type: 'button', btnText: '编辑', handleClick: this._getQuotationDetail, isSpecial: true, options: { status: 'edit', isReceive: true } },
-        { type: 'button', btnText: '打印', handleClick: this.print, isSpecial: true },     
-        { type: 'button', btnText: '撤销', handleClick: this.repealOrder, style: { backgroundColor: '#f56c6c', color: '#fff' } },
-        { type: 'button', btnText: '删除', handleClick: this.deleteOrder, style: { backgroundColor: '#f56c6c', color: '#fff' } },
+        { type: 'button', btnText: '打印', handleClick: this.print, isSpecial: true, isShow: !this.isMaterialInspection },     
+        { type: 'button', btnText: '撤销', handleClick: this.repealOrder, style: { backgroundColor: '#f56c6c', color: '#fff' }, isShow: !this.isMaterialInspection },
+        { type: 'button', btnText: '删除', handleClick: this.deleteOrder, style: { backgroundColor: '#f56c6c', color: '#fff' }, isShow: !this.isMaterialInspection },
         { 
           type: 'upload',
           isShow: this.isCustomerServiceSupervisor,
@@ -217,7 +217,7 @@ export default {
         return this.$message.warning('请先选择数据')
       }
       const { id } = currentRow
-      print('/Material/Quotation/PrintQuotation', { number: id })
+      print('/Material/Quotation/PrintQuotation', { serialNumber: id })
     },
     onSuccess () {
       this.$message.success('上传成功')

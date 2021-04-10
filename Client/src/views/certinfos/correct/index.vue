@@ -210,7 +210,7 @@ export default {
       let num1 = result.slice(0, len - 1);
       let num2 = result.slice(len - 1, len);
       const url = Number(num2) === 1 ? '/Cert/DownloadBaseInfo' : '/Cert/DownloadCertPdf'
-      print(url, { number: num1 })
+      print(url, { serialNumber: num1 })
     },
     rowClick(row) {
       this.$refs.mainTable.clearSelection();

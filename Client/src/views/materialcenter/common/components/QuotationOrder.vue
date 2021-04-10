@@ -183,7 +183,7 @@
             </div>
             <div>
               <span class="title">总计</span>
-              <span>{{ totalMoney | toThousands }}</span>
+              <span>{{ formData.totalMoney | toThousands }}</span>
             </div>
           </el-row>
         </div>
@@ -317,6 +317,7 @@
                       v-model="row.materialType" 
                       style="width: 100%;"
                       clearable
+                      no-data-text="请先选择物料类型"
                       @change="onMaterialTypeChange(row, index)"
                       placeholder="请选择">
                       <el-option
@@ -527,7 +528,7 @@
             </template>
           </common-table>
         </div>
-        <div class="timeline-progress-wrapper" v-if="isTechnical">
+        <div class="timeline-progress-wrapper" v-if="isTechnical" :class="{ pay: !formData.isMaterialType }">
           <el-row class="content-wrapper" type="flex" align="middle" justify="space-between">
             <template v-for="(item, index) in timeList">
               <div class="content-item" :key="index">
@@ -933,16 +934,16 @@ export default {
             serviceCharge = undefined, travelExpense = undefined, deliveryMethod, 
             travelExpenseManHour = undefined, serviceChargeManHour = undefined } = this.formData
           this.serviceList.forEach((item, index) => {
-            item.salesPrice = (index === 0) ? serviceCharge : travelExpense
-            item.hours = (index === 0) ? serviceChargeManHour : travelExpenseManHour
+            item.salesPrice = ((index === 0) ? serviceCharge : travelExpense) ||  undefined
+            item.hours = ((index === 0) ? serviceChargeManHour : travelExpenseManHour) || undefined
             if (index === 0) {
               item.totalPrice = serviceCharge && serviceChargeManHour 
                 ? accMul(serviceCharge, serviceChargeManHour).toFixed(2)
-                : 0
+                : undefined
             } else {
               item.totalPrice = travelExpense && travelExpenseManHour 
                 ? accMul(travelExpense, travelExpenseManHour).toFixed(2)
-                : 0
+                : undefined
             }
           })
           if (+deliveryMethod === 3) {
@@ -955,7 +956,7 @@ export default {
               let str = ''
               newFromTheme.forEach((item, index) => {
                 const { description } = item
-                str += `${index}、${description}`
+                str += `${index + 1}.${description}`
               })
               product.fromTheme = str
             } catch {
@@ -1068,7 +1069,7 @@ export default {
         shippingAddress: [{ required: true, trigger: ['change', 'blur'] }],
         acquisitionWay: [{ required: true, trigger: ['change', 'blur'] }],
         moneyMeans: [{ required: true, trigger: ['change', 'blur'] }],
-        // invoiceCompany: [{ required: true, trigger: ['change', 'blur'] }],
+        invoiceCompany: [{ required: true, trigger: ['change', 'blur'] }],
         deliveryMethod: [{ required: true, trigger: ['change', 'blur'] }],
         collectionAddress: [{ required: true, trigger: ['change', 'blur'] }],
         isMaterialType: [{ required: true, trigger: ['change', 'blur'] }]
@@ -1096,7 +1097,7 @@ export default {
         { type: 'index', label: '#' },
         { label: '物料编码', prop: 'materialCode' },
         { label: '物料描述', prop: 'materialDescription' },
-        { label: '工时', prop: 'hours', slotName: 'hours', align: 'right' },
+        { label: '工时(H)', prop: 'hours', slotName: 'hours', align: 'right' },
         { label: '最大数量' },
         { label: '当前库存' },
         { label: '仓库' },
@@ -1432,11 +1433,9 @@ export default {
     isInServiceOrTravel,
     onServiceChange (row) {
       const { hours, salesPrice } = row
-      if (hours && salesPrice) {
-        row.totalPrice = Number(hours * salesPrice).toFixed(2)
-      } else {
-        row.totalPrice = 0
-      }
+      row.totalPrice = (hours && salesPrice) 
+        ? Number(accMul(hours, salesPrice)).toFixed(2) 
+        : 0
     },
     onFormMaterialTypeChange (val) {
       console.log(val, typeof val, 'onFormMaterialTypeChange')
@@ -1454,13 +1453,10 @@ export default {
       })
     },
     onMaterialTypeChange (row) {
-      if (row.materialType === '3') {
-        row.totalPrice = 0
-      } else {
-        const { count, discountPrices } = row
-        // row.totalPrice = Number(((count * salesPrice * accDiv(discount, 100) || 0)).toFixed(2))
-        row.totalPrice = Number(accMul(count, discountPrices)).toFixed(2)
-      }
+      const { materialType, count, discountPrices } = row
+      row.totalPrice = (materialType === '3')
+        ? 0 
+        : Number(accMul(count, discountPrices)).toFixed(2)
       console.log(row, 'row change')
     },
     _normalizeTimeList (timeList) {
@@ -1474,30 +1470,52 @@ export default {
         8: -5,
         9: -6,
         10: -7,
-        11: -8
+        11: -9,
+        12: -8,
       }
       const NO_TOTAL_MONEY_MAP = { // 没服务费的
         4: -1,
         5: -2,
         9: -3,
         10: -4,
-        11: -5
+        11: -6,
+        12: -5
       }
-      const maxLen = Number(totalMoney) ? 9 : 6
-      const HAS_TOTAL_MONEY_TEXT = ['报价单提交审批', '工程审批', '总经理审批', '客户确认报价', '销售订单成立', '财务审批', '总经理审批', '待出库', '出库']
-      const NO_TOTAL_MONEY_TEXT = ['报价单提交审批', '工程审批', '总经理审批', '总经理审批', '待出库', '出库']
-      const TEXT_MAP = totalMoney ? HAS_TOTAL_MONEY_TEXT : NO_TOTAL_MONEY_TEXT
-      const TOTAL_MONEY_MAP = totalMoney ? HAS_TOTAL_MONEY_MAP : NO_TOTAL_MONEY_MAP
+      const isMaterialType = this.formData.isMaterialType
+      console.log(isMaterialType, 'isMaterialType')
+      let maxLen
+      const isBoolean = typeof isMaterialType === 'boolean'
+      if (isBoolean) {
+        maxLen = isMaterialType ? 7 : 10
+      } else {
+        maxLen = Number(totalMoney) ? 10 : 7
+      }
+      const HAS_TOTAL_MONEY_TEXT = ['报价单提交审批', '工程审批', '总经理审批', '客户确认报价', '销售订单成立', '财务审批', '总经理审批', '待出库', '部分出库', '已出库']
+      const NO_TOTAL_MONEY_TEXT = ['报价单提交审批', '工程审批', '总经理审批', '总经理审批', '待出库', '部分出库', '已出库']
+      let TEXT_MAP, TOTAL_MONEY_MAP
+      if (isBoolean) {
+        TEXT_MAP = !isMaterialType ?  HAS_TOTAL_MONEY_TEXT : NO_TOTAL_MONEY_TEXT
+        TOTAL_MONEY_MAP = !isMaterialType ? HAS_TOTAL_MONEY_MAP : NO_TOTAL_MONEY_MAP
+      } else {
+        TEXT_MAP = totalMoney ? HAS_TOTAL_MONEY_TEXT : NO_TOTAL_MONEY_TEXT
+        TOTAL_MONEY_MAP = totalMoney ? HAS_TOTAL_MONEY_MAP : NO_TOTAL_MONEY_MAP
+      }
+      // const TEXT_MAP = (isBoolean && !isMaterialType || totalMoney) ? HAS_TOTAL_MONEY_TEXT : NO_TOTAL_MONEY_TEXT
+      // const TOTAL_MONEY_MAP = (isBoolean && !isMaterialType || totalMoney) ? HAS_TOTAL_MONEY_MAP : NO_TOTAL_MONEY_MAP
       if (TOTAL_MONEY_MAP[quotationStatus]) {
         const length = TOTAL_MONEY_MAP[quotationStatus]
+        console.log(length, 'length')
+        timeList = TEXT_MAP.slice(length).map(() => {
+          return { isFinished: true }
+        })
         timeList = this.setFinishedStatus(timeList.slice(length))
       } else {
         timeList = []
       }
-      let isCurrent = !!timeList.length
+      let isCurrent = +quotationStatus !== 11
       while (timeList.length < maxLen) {
         timeList.push({
-          isFinished: false,
+          isFinished: +quotationStatus === 11,
           isCurrent
         })
         isCurrent = false
@@ -2494,6 +2512,9 @@ export default {
       height: 5px;
       margin: 10px 0 30px 40px;
       background-color: rgba(206, 206, 206, 1);
+      &.pay {
+        width: 900px;
+      }
       .content-wrapper {
         position: absolute;
         z-index: 2;

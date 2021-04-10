@@ -1,4 +1,4 @@
-<template>
+f<template>
   <div class="order-wrapper" v-loading="orderLoading">
     <!-- 标题头 -->
     <el-row 
@@ -460,7 +460,6 @@
         <div v-loading="dailyExpendLoading">
           <!-- 出差 -->
           <div class="form-item-wrapper travel" :class="{ 'uneditable global-unused': !this.ifFormEdit }" v-if="formData.reimburseTravellingAllowances.length">
-            <!-- <el-button v-if="ifShowTravel" @click="showForm(formData.reimburseTravellingAllowances, 'ifShowTravel')">添加出差补贴</el-button> -->
             <el-form 
               ref="travelForm" 
               :model="formData" 
@@ -537,7 +536,7 @@
           </div>
           <!-- 交通 -->
           <div class="form-item-wrapper" v-if="ifCOrE || formData.reimburseFares.length">
-            <el-button v-if="ifShowTraffic && !formData.reimburseFares.length" @click="showForm(formData.reimburseFares, 'ifShowTraffic')">添加交通费用</el-button>
+            <el-button v-if="!formData.reimburseFares.length" @click="showForm(formData.reimburseFares, 'ifShowTraffic')">添加交通费用</el-button>
             <el-form 
               v-else
               ref="trafficForm" 
@@ -710,7 +709,7 @@
           </div>
           <!-- 住宿 -->
           <div class="form-item-wrapper acc" :class="{ 'uneditable global-unused': !this.ifFormEdit }" v-if="ifCOrE || formData.reimburseAccommodationSubsidies.length">
-            <el-button v-if="ifShowAcc && !formData.reimburseAccommodationSubsidies.length" @click="showForm(formData.reimburseAccommodationSubsidies, 'ifShowAcc')">添加住宿补贴</el-button>
+            <el-button v-if="!formData.reimburseAccommodationSubsidies.length" @click="showForm(formData.reimburseAccommodationSubsidies, 'ifShowAcc')">添加住宿补贴</el-button>
             <el-form 
             v-else
             ref="accForm" 
@@ -868,7 +867,7 @@
           </div>
           <!-- 其它 -->
           <div class="form-item-wrapper other" :class="{ 'uneditable global-unused': !this.ifFormEdit }" v-if="ifCOrE || formData.reimburseOtherCharges.length">
-            <el-button v-if="ifShowOther && !formData.reimburseOtherCharges.length" @click="showForm(formData.reimburseOtherCharges, 'ifShowOther')">添加其他费用</el-button>
+            <el-button v-if="!formData.reimburseOtherCharges.length" @click="showForm(formData.reimburseOtherCharges, 'ifShowOther')">添加其他费用</el-button>
             <el-form 
               v-else
               ref="otherForm" 
@@ -1429,10 +1428,6 @@ export default {
       timelineList: [], // 总经理时间进度条
       orderLoading: false, // orderWrapper loading
       rightImg, // 箭头图标
-      ifShowTraffic: true, // 是否展示交通补贴表格， 以下类似
-      ifShowOther: true,
-      ifShowAcc: true,
-      ifShowTravel: true,
       currentIndex: 0, // 用来标记当前点击单元格所在表格中的索引值
       currentProp: '', // 当前选中的单元格的property, 对应table数据的key值
       currentLabel: '', // 当前选中的单元格的property, 对应table数据的label值
@@ -1555,29 +1550,8 @@ export default {
       immediate: true,
       // deep: true,
       handler (val) {
-        let { 
-          reimburseTravellingAllowances: travel,
-          reimburseFares: traffic,
-          reimburseAccommodationSubsidies: acc,
-          reimburseOtherCharges: other 
-        } = val
-        if (travel && travel.length) {
-          this.ifShowTravel = false
-        }
-        if (traffic && traffic.length) {
-          this.ifShowTraffic = false
-        }
-        if (acc && acc.length) {
-          this.ifShowAcc = false
-        }
-        if (other && other.length) {
-          this.ifShowOther = false
-        }
         this.formData = Object.assign({}, this.formData, val)
         console.log(this.formData, 'detailData')
-        // if (this.isGeneralStatus) { // 总经理审批和查看的时候才执行
-          
-        // }
         if (this.title === 'approve') { // 审批的时候要告诉审批人 住宿金额补贴是否符合标准
           const date = new Date()
           this.timeList = [date, (collections.addMonth(+date, 1)).toDate()]
@@ -1587,8 +1561,6 @@ export default {
           this._getHistoryCost() // 获取历史费用
           this._getReimburseOrgs() // 查询费用归属列表
           this.expenseCategoryList = this.formData.expenseCategoryList
-          // this.addSerialNumber(this.expenseCategoryList)
-          
           this.timelineList = this._normalizeTimelineList(this.formData.reimurseOperationHistories)
         }
         if (this.isCustomerSupervisor) {
@@ -2803,6 +2775,10 @@ export default {
             transport: operationType === 'add' ? '' : row.transport,
             from: operationType === 'add' ? '' : row.from,
             to: operationType === 'add' ? '' : row.to,
+            fromLng: operationType === 'add' ? '' : row.fromLng,
+            fromLat: operationType === 'add' ? '' : row.fromLat,
+            toLng: operationType === 'add' ? '' : row.toLng,
+            toLat: operationType === 'add' ? '' : row.toLat,
             invoiceTime: '',
             money: '',
             maxMoney: '',
@@ -3031,6 +3007,9 @@ export default {
           endDate,
           destination } = currentRow
         let formData = this.formData // 对报销人的信息进行赋值
+        if (this.formData.serviceOrderSapId === u_SAP_ID) {
+          return this.closeDialog()
+        }
         formData.userName = userName
         formData.orgName = orgName
         formData.serviceRelations = serviceRelations
@@ -3045,7 +3024,6 @@ export default {
         formData.businessTripDate = businessTripDate
         formData.endDate = endDate
         formData.destination = destination
-        this._checkTravelDays(currentRow)
         this._checkAccMoney()
         this._getServiceDailyExpendSum() // 获取报销单的日费
       }
@@ -3079,20 +3057,9 @@ export default {
         this.dailyExpendLoading = false
       }
     },
-    _checkTravelDays (currentRow) {
-      let { businessTripDate, endDate } = currentRow
-      if (!this.ifShowTravel) { // 如果出差表格出现了并且所填天数大于实际的天数
-        let actDays = this.calculateDays(businessTripDate, endDate)
-        let days = this.formData.reimburseTravellingAllowances[0].days
-        if (days > actDays) {
-          this.$message.warning('所填天数超过出差天数')
-          this.formData.reimburseTravellingAllowances[0].days = actDays
-        }
-      }
-    },
     _checkAccMoney () { // 出差表格和住宿表格的提示信息
-      if (!this.ifShowAcc) { // 如果存在住宿表格，则遍历表格中所有未被删除的项，对totalmoney进行判断
-        let accTableList = this.formData.reimburseAccommodationSubsidies
+      let accTableList = this.formData.reimburseAccommodationSubsidies
+      if (accTableList.length) { // 如果存在住宿表格，则遍历表格中所有未被删除的项，对totalmoney进行判断
         for (let i = 0; i < accTableList.length; i++) {
           let item = accTableList[i]
           let { money, isAdd } = item
@@ -3160,16 +3127,13 @@ export default {
       let accList = selectList.filter(item => item.reimburseType === Number(3))
       let otherList = selectList.filter(item => item.reimburseType === Number(4))
       if (trafficList.length) {
-        this.ifShowTraffic = false
         this.formData.reimburseFares.push(...trafficList)
       }
       if (accList.length) {
-        this.ifShowAcc = false
         this.formData.reimburseAccommodationSubsidies.push(...accList)
         this._checkAccMoney()
       }
       if (otherList.length) {
-        this.ifShowOther = false
         this.formData.reimburseOtherCharges.push(...otherList)
       }
     },

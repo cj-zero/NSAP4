@@ -143,8 +143,8 @@ export default {
         { btnText: '查看合同', handleClick: this.showContractPictures, options: { isInTable: false }, 
           isShow: !this.isProtected && this.quotationStatus >= 8, className: 'outline' 
         },
-        { btnText: '同意', handleClick: this.approve, isShow: this.status === 'approveSales' && this.isGeneralManager, options: { type: 'agree' } },
-        { btnText: '待定', handleClick: this.approve, options: { type: 'reject' }, 
+        { btnText: '同意', handleClick: this.approve, isShow: this.status === 'approveSales' && this.isGeneralManager, options: { type: 'agree' }, type: 'primary' },
+        { btnText: '待定', handleClick: this.approve, options: { type: 'reject' }, type: 'danger',
           isShow: ((this.status === 'approveSales' && this.isGeneralManager) || (this.isMaterialFinancial && this.status === 'pay')), 
         },
         // { btnText: '关闭', handleClick: this.handleClose, className: 'close' }      
@@ -228,7 +228,7 @@ export default {
         return this.$message.warning('请先选择数据')
       }
       const { id } = this.currentRow
-      print('/Material/Quotation/PrintSalesOrder', { number: id })
+      print('/Material/Quotation/PrintSalesOrder', { serialNumber: id })
     },
     _getList () {
       this.tableLoading = true

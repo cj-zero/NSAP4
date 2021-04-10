@@ -107,6 +107,15 @@
         >
         </common-table>
       </div>
+      <!-- 打印操作记录 -->
+      <template v-if="formData.quotationOperationHistorys && formData.quotationOperationHistorys.length">
+        <div class="divider"></div>
+        <common-table
+          :data="formData.quotationOperationHistorys"
+          :columns="historyColumns"
+          max-height="300px"
+        ></common-table>
+      </template>
     </el-scrollbar>
     <!-- 新增快递弹窗 -->
     <my-dialog
@@ -291,6 +300,13 @@ export default {
       hasAdd: false,
       pictureList: [], // 快递图片列表
       addVisible: false,
+      historyColumns: [
+        { label: '#', type: 'index', width: 50 },
+        { label: '操作记录', prop: 'action' },
+        { label: '操作人', prop: 'createUser' },
+        { label: '操作时间', prop: 'createTime' },
+        // { label: '备注', prop: 'remark' }
+      ],
       formData: {
         // id: '',  报价单号
         salesOrderId: '', // 销售单号

@@ -61,7 +61,7 @@ export default {
         ? `/Cert/DownloadCert`
         : `/Cert/DownloadBaseInfo`
       console.log(url, url + this.currentData.certNo, 'url')
-      const pdfURL = await getPdfURL(url, { number: this.currentData.certNo })
+      const pdfURL = await getPdfURL(url, { serialNumber: this.currentData.certNo })
       // downloadFile(url + this.currentData.certNo + `?X-Token=${this.$store.state.user.token}`)
       console.log(pdfURL, 'pdfURL')
       downloadFile(pdfURL)

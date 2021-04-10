@@ -130,8 +130,8 @@ export default {
       // 弹窗按钮
       return [
         // this.isMaterialFinancial 
-        {  btnText: '同意', isShow: this.isValid, handleClick: this.agree },
-        { btnText: '驳回', handleClick: this.reject, isShow: this.isValid, options: { type: 'reject' }},     
+        {  btnText: '同意', isShow: this.isValid, handleClick: this.agree, type: 'primary' },
+        { btnText: '驳回', handleClick: this.reject, isShow: this.isValid, options: { type: 'reject' }, type: 'danger'},     
       ] 
     },
     searchBtnText () {

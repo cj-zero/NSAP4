@@ -175,6 +175,7 @@ export default {
     padding: 10px !important;
   }
   .btn-item {
+    margin: 0 10px;
     border: 1px solid #DCDFE6;
     &.danger {
       background-color: #D9001B;

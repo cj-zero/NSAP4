@@ -96,7 +96,7 @@ export let tableMixin = {
         return this.$message.warning('请先选择报销单号')
       }
       const { id } = this.currentRow
-      print('/serve/Reimburse/Print', { number: id })
+      print('/serve/Reimburse/Print', { serialNumber: id })
       // console.log([printOrder, 'printOrder'])
       // window.open(`${process.env.VUE_APP_BASE_API}/serve/Reimburse/Print?ReimburseInfoId=${this.currentRow.id}&X-Token=${this.tokenValue}`)
       // window.open(`${process.env.VUE_APP_BASE_API}/serve/Reimburse/Print/${encrypReimburseId}?X-Token=${this.tokenValue}`)
