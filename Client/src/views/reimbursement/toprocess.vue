@@ -139,6 +139,7 @@ export default {
     },
     closeDialog () {
       this.$refs.order.resetInfo()
+      this.$refs.myDialog.close()
     }
   },
   created () {
