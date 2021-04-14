@@ -525,6 +525,25 @@ namespace OpenAuth.WebApi.Controllers.Material
                 throw new Exception(e.Message);
             }
         }
-
+        /// <summary>
+        /// 同步销售订单
+        /// </summary>
+        /// <param name="SalesOrderId"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> SyncSalesOrder(string SalesOrderId) 
+        {
+            var result = new Response();
+            try
+            {
+                await _app.SyncSalesOrder(SalesOrderId);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
     }
 }
