@@ -272,7 +272,9 @@ export default {
         this.total = res.count;
         // this.list = response.data.data;
         this.listLoading = false;
-      });
+      }).catch(err => {
+        this.$message.error(err.message)
+      }).finally(() => this.listLoading = false)
     },
 
     handleFilter() {
