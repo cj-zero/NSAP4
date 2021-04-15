@@ -41,15 +41,15 @@
         <template v-else-if="item.name === 'operation'">
           <template v-if="type === 'submit'">
             <el-button 
-              v-if="!(scope.row.activityName !== '待送审' && type === 'submit')"
-              type="primary" 
+              v-if="isShowBtn(scope.row.activityName)"
+              :type="scope.row.activityName === '待审核' ? 'danger' : 'primary'" 
               size="mini"
-              @click="submit(scope.row, 0)"
+              @click="submit(scope.row, scope.row.activityName === '待审核' ? 4 : 0)"
               v-loading.fullscreen.lock="isSend"
-              :element-loading-text="`正在送审中`"
+              :element-loading-text="showText(scope.row.activityName, true)"
               element-loading-spinner="el-icon-loading"
-              element-loading-background="rgba(0, 0, 0, 0.5)"
-            >送审</el-button>
+              element-loading-background="rgba(0, 0, 0, 0.4)"
+            >{{ showText(scope.row.activityName) }}</el-button>
           </template>
           <template v-else-if="type === 'query'">
             <el-button type="primary" size="mini" @click="download(scope.row)">下载</el-button>
@@ -111,6 +111,13 @@ export default {
   }
   },
   methods: {
+    isShowBtn (activityName) {
+      return this.type === 'submit' && ['待批准'].indexOf(activityName) === -1
+    },
+    showText (activityName, isLoadingText) {
+      const text = activityName === '待审核' ? '撤回' : '送审'
+      return isLoadingText ? `正在${text}中` : text
+    },
     clearSelection () {
       this.$refs.commonTable.clearSelection()
       this.selectList = []
@@ -127,7 +134,7 @@ export default {
     getColor (text) {
       // console.log(text, 'mapText', colorList[text])
       return {
-        color: colorList[text]
+        color: colorList[text] || '#cd2b25'
       }
     },
     handleSelectionChange (val) {
@@ -138,10 +145,12 @@ export default {
     },
     openDetail (row) {
       // 传出数据跟操作类型
-      this.$emit('openDetail', row)
+      const { activityName } = row
+      const hasSend = activityName !== '待审核' // 撤回
+      this.$emit('openDetail', row, hasSend)
     },
     submit (row, type) { // type: 0： 送审 1：撤回
-      this._certVerificate(row, type, textMap[type])
+      this._certVerificate(row, type, textMap[type] || '撤回')
     },
     async download (row) {
       let url = await getPdfURL('/Cert/DownloadCertPdf', { serialNumber: row.certNo })

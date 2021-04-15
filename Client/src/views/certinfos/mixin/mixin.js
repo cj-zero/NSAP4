@@ -16,30 +16,30 @@ export let certVerMixin = { // 审核操作mixin
       ) {
         return
       }
-      direction === 'left' ? (this.isLeftSend = true) : (this.isRightSend = true)
+      direction ? (direction === 'left' ? (this.isLeftSend = true) : (this.isRightSend = true)) : this.isSend = true
       let { id, flowInstanceId } = data
       certVerificate([{
         certInfoId: id,
         verification: {
           flowInstanceId,
-          verificationFinally: Number(type) === 0 ? '1' : '3',
+          verificationFinally: Number(type) === 4 ? 4 : ( Number(type) === 0 ? '1' : '3'),
           verificationOpinion: verificationOpinion || '',
           nodeRejectStep: '',
-          nodeRejectType: 0
+          nodeRejectType: Number(type) === 4 ? 1 : 0
         }
       }]).then(() => {
         this.$message({
           message: `${message}成功`
         })
-        this.isLeftSend = false
-        this.isRightSend = false
         this.$emit('handleSubmit')
       }).catch((err) => {
-        this.isLeftSend = false
-        this.isRightSend = false
         this.$emit('close')
         // this.$message.error(`${message}失败`)
         this.$message.error(`${err.message}`)
+      }).finally(() => {
+        this.isLeftSend = false
+        this.isRightSend = false
+        this.isSend = false
       })
     }
   }
@@ -52,7 +52,7 @@ export let commonMixin = {
       totalCount: 0,
       pageConfig: { // 分页配置
         page: 1,
-        limit: 20
+        limit: 50
       },
       visible: false, // 弹窗
       currentCertNo: '', // 当前的证书编号
@@ -110,13 +110,14 @@ export let commonMixin = {
       this.pageConfig = Object.assign({}, this.pageConfig, val)
       this.type === 'query' ? this._getQueryList() : this._loadApprover()
     },
-    onOpenDetail (params) {
+    onOpenDetail (params, hasSend) {
       let { id, certNo } = params
       this.currentCertNo = certNo
       this.currentData = params
       if (this.type === 'query') {
         this.currentId = id
       }
+      this.hasSend = hasSend
       this.visible = true
     },
     onHandleSubmit () {

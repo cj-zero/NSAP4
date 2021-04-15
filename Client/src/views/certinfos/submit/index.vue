@@ -32,6 +32,7 @@
       >
         <certifiate
           :type="type"
+          :hasSend="hasSend"
           :certNo="currentCertNo"
           :currentData="currentData"
           @handleSubmit="onHandleSubmit"
@@ -72,9 +73,11 @@ export default {
         { label: '资产编号', name: 'assetNo', width: '100' },
         { label: '校准日期', name: 'calibrationDate', width: '165' },
         { label: '状态', name: 'activityName', width: '100' },
-        { label: '操作', name: 'operation', width: '' }
+        { label: '操作', name: 'operation', width: '100' },
+        { label: '备注' }
       ],
-      type: 'submit'
+      type: 'submit',
+      hasSend: true
     }
   },
   methods: {

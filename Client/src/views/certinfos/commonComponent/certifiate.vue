@@ -2,7 +2,6 @@
   <div class="certifiate-wrapper">
     <el-row class="btn-wrapper">
       <el-button 
-        v-if="!(currentData.activityName !== '待送审' && type === 'submit')"
         type="primary" 
         size="small" 
         class="left-btn" 
@@ -11,7 +10,7 @@
         :element-loading-text="`正在${leftBtnText}中`"
         element-loading-spinner="el-icon-loading"
         element-loading-background="rgba(0, 0, 0, 0.5)"
-      >{{ leftBtnText }}</el-button>
+      >{{ leftBtnText }}</el-button> {{ leftBtnText }} {{ type }} {{ hasSend }}
       <el-button 
         type="primary" 
         size="small" 
@@ -20,7 +19,7 @@
         v-loading.fullscreen.lock="isRightSend"
         :element-loading-text="`正在${rightBtnText}中`"
         element-loading-spinner="el-icon-loading"
-        element-loading-background="rgba(0, 0, 0, 0.5)"
+        element-loading-background="rgba(0, 0, 0, 0.4)"
       >{{ rightBtnText }}</el-button>
     </el-row>
     <el-row v-if="type == 'review'">
@@ -77,6 +76,7 @@ import { certVerMixin } from '../mixin/mixin'
 import { getPdfURL } from '@/utils/utils'
 const leftTextMap = {
   submit: '送审',
+  reject: '撤回',
   review: '通过',
   query: '下载'
 }
@@ -89,6 +89,10 @@ export default {
     pdf
   },
   props: {
+    hasSend: {
+      type: Boolean,
+      default: true
+    }, // type === submit  送审还是撤回
     type: {
       type: String,
       default: ''
@@ -130,7 +134,7 @@ export default {
   },
   computed: {
     leftBtnText () {
-      return leftTextMap[this.type]
+      return (this.type === 'submit' && !this.hasSend) ? '撤回' : leftTextMap[this.type]
     },
     rightBtnText () {
       return rightTextMap[this.type]
@@ -145,6 +149,9 @@ export default {
         this._download()
         return
       }
+      console.log(type, message, direction)
+      // 4 撤回
+      type = (this.type === 'submit' && !this.hasSend) ? 4 : type
       this._certVerificate(this.currentData, type, message, direction, this.advice)
     },
     getNumPages (url) {
