@@ -3,9 +3,8 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
-          :listQuery="formQuery" 
+          :listQuery="listQuery" 
           :config="searchConfig"
-          @changeForm="onChangeForm" 
           @search="onSearch">
         </Search>
         <!-- <el-upload
@@ -94,6 +93,8 @@ import zxchat from '@/views/serve/callserve/chat/index'
 import { getQuotationList, getServiceOrderList, deleteOrder, repealOrder } from '@/api/material/quotation'
 import {  quotationTableMixin, categoryMixin, chatMixin, rolesMixin } from '../common/js/mixins'
 import { print } from '@/utils/utils'
+const W_100 = { width: '100px' }
+const W_150 = { width: '150px' }
 export default {
   name: 'quotation',
   mixins: [quotationTableMixin, categoryMixin, chatMixin, rolesMixin],
@@ -106,32 +107,33 @@ export default {
   computed: {
     searchConfig () {
       return [
-        { prop: 'quotationId', placeholder: '领料单号', width: 100 },
-        { prop: 'cardCode', placeholder: '客户名称', width: 100 },
-        { prop: 'serviceOrderSapId', placeholder: '服务ID', width: 100 },
-        { prop: 'createUser', placeholder: '申请人', width: 100 },
-        { prop: 'startCreateTime', placeholder: '创建开始日期', type: 'date', width: 150 },
-        { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
-        { type: 'search' },
-        { type: 'button', btnText: '新建', handleClick: this.openMaterialOrder, isSpecial: true, options: { isReceive: true }, isShow: !this.isMaterialInspection },
-        { type: 'button', btnText: '编辑', handleClick: this.edit, isSpecial: true, options: { isReceive: true, isUpdate: true }, isShow: !this.isMaterialInspection },
-        // { type: 'button', btnText: '编辑', handleClick: this._getQuotationDetail, isSpecial: true, options: { status: 'edit', isReceive: true } },
-        { type: 'button', btnText: '打印', handleClick: this.print, isSpecial: true, isShow: !this.isMaterialInspection },     
-        { type: 'button', btnText: '撤销', handleClick: this.repealOrder, style: { backgroundColor: '#f56c6c', color: '#fff' }, isShow: !this.isMaterialInspection },
-        { type: 'button', btnText: '删除', handleClick: this.deleteOrder, style: { backgroundColor: '#f56c6c', color: '#fff' }, isShow: !this.isMaterialInspection },
+        { prop: 'quotationId', component: { attrs: { placeholder: '领料单号', style: W_100 } } },
+        { prop: 'cardCode', component: { attrs: { placeholder: '客户名称', style: W_100 } } },
+        { prop: 'serviceOrderSapId', component: { attrs: { placeholder: '服务ID', style: W_100 } } },
+        { prop: 'createUser', component: { attrs: { placeholder: '申请人', style: W_100 } } },
+        { prop: 'startCreateTime', component: { tag: 'date', attrs: { placeholder: '创建开始日期', style: W_150 } } },
+        { prop: 'endCreateTime', component: { tag: 'date', attrs: { placeholder: '创建结束日期', style: W_150 } } },
+        { component: { tag: 's-button', attrs: { btnText: '查询', class: ['customer-btn-class'] }, on: { click: this.onSearch } } },
+        { component: { tag: 's-button', attrs: { btnText: '新建', class: ['customer-btn-class'] }, on: { click: this.openMaterialOrder } }, isShow: !this.isMaterialInspection },
+        { component: { tag: 's-button', attrs: { btnText: '编辑', class: ['customer-btn-class'] }, on: { click: this.edit.bind(this, { isReceive: true, isUpdate: true }) } }, isShow: !this.isMaterialInspection },
+        { component: { tag: 's-button', attrs: { btnText: '打印', class: ['customer-btn-class'] }, on: { click: this.print } }, isShow: !this.isMaterialInspection },
+        { component: { tag: 's-button', attrs: { btnText: '撤销', type: 'danger' }, on: { click: this.repealOrder } }, isShow: !this.isMaterialInspection },
+        { component: { tag: 's-button', attrs: { btnText: '删除', type: 'danger' }, on: { click: this.deleteOrder } }, isShow: !this.isMaterialInspection },
         { 
-          type: 'upload',
           isShow: this.isCustomerServiceSupervisor,
-          attrs: {
-            style: { display: 'inline-block' },
-            btnText: '上传物料信息', 
-            name: 'files',
-            headers: { "X-Token":this.$store.state.user.token },
-            action:  `${process.env.VUE_APP_BASE_API}/Material/Quotation/ImportMaterialPrice`, 
-            'show-file-list': false,
-            'on-success': this.onSuccess,
-            'on-error': this.onError
-          } 
+          component: {
+            tag: 's-upload',
+            attrs: {
+              style: { display: 'inline-block' },
+              uploadText: '上传物料信息', 
+              name: 'files',
+              headers: { "X-Token":this.$store.state.user.token },
+              action:  `${process.env.VUE_APP_BASE_API}/Material/Quotation/ImportMaterialPrice`, 
+              'show-file-list': false,
+              'on-success': this.onSuccess,
+              'on-error': this.onError
+            }
+          }
         }
       ]
     }, // 搜索配置
@@ -157,18 +159,16 @@ export default {
       isSalesOrder: false, // 判断点的是物料单还是销售订单
       importMaterialAction: `${process.env.VUE_APP_BASE_API}/Material/Quotation/ImportMaterialPrice`,
       isShowEditBtn: true, // 是否出现编辑按钮
-      formQuery: {
+      operationLoading: false,
+      listQuery: {
+        page: 1,
+        limit: 50,
         quotationId: '', // 领料单号
         cardCode: '', // 客户
         serviceOrderSapId: '', // 服务Id
         createUser: '', // 申请人
         startCreateTime: '', // 创建开始
         endCreateTime: '' // 创建结束
-      },
-      operationLoading: false,
-      listQuery: {
-        page: 1,
-        limit: 50,
       },
       hasEditBtn: false, // 用来区分编辑的查看状态跟可编辑状态
       dialogLoading: false,
@@ -205,6 +205,7 @@ export default {
       if (!currentRow) {
         return this.$message.warning('请先选择数据')
       }
+      console.log(options, 'options edit')
       const { quotationStatus } = currentRow
       if (quotationStatus > 3) {
         return this.$message.warning('当前状态不可编辑')
@@ -238,9 +239,8 @@ export default {
         this.tableLoading = false
       })
     },
-    openMaterialOrder (options) {
-      this.isReceive = options.isReceive
-      console.log(options.isReceive, 'options', options.isReceive)
+    openMaterialOrder () {
+      this.isReceive = true
       getServiceOrderList({ page: 1, limit: 1 }).then((res) => {
         this.customerList = res.data
         if (this.customerList && this.customerList.length) {

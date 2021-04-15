@@ -3,11 +3,10 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
-          :listQuery="formQuery" 
+          :listQuery="listQuery" 
           :config="searchConfig"
-          @changeForm="onChangeForm" 
-          @search="onSearch">
-        </Search>
+          @search="onSearch"
+        ></Search>
       </div>
     </sticky>
     <Layer>
@@ -105,6 +104,8 @@ import { processDownloadUrl } from '@/utils/file'
 import { formatDate, getWeek } from '@/utils/date'
 import { chatMixin } from '@/mixins/serve'
 // import tableData from './mock'
+const W_100 = { width: '100px' }
+const W_150 = { width: '150px' }
 export default {
   name: 'afterDelivery',
   mixins: [chatMixin],
@@ -120,16 +121,16 @@ export default {
   computed: {
     searchConfig () {
       return [
-        { prop: 'sapId', placeholder: '服务ID', width: 100 },
-        { prop: 'customer', placeholder: '客户', width: 100 },
-        { prop: 'expressNum', placeholder: '快递单号', width: 100 },
-        { prop: 'creater', placeholder: '寄件人', width: 100 },
-        { prop: 'expressState', placeholder: '快递状态', width: 100, type: 'select', options: this.statusOptions, isClear: false },
-        { prop: 'startDate', placeholder: '创建开始日期', type: 'date', width: 150 },
-        { prop: 'endDate', placeholder: '创建结束日期', type: 'date', width: 150 },
-        { type: 'search' },
-        { type: 'button', btnText: '寄出', handleClick: this.send, isSpecial: true },
-        { type: 'button', btnText: '撤回', handleClick: this.withDrawExpress, style: { backgroundColor: '#f56c6c', color: '#fff' } },
+        { prop: 'sapId',  component: { attrs: { style: W_100, placeholder: '服务ID' } } },
+        { prop: 'customer', component: { attrs: { placeholder: '客户', style: W_100 } } },
+        { prop: 'expressNum', component: { attrs: { placeholder: '快递单号', style: W_100 } } },
+        { prop: 'creater', component: { attrs: { placeholder: '寄件人', style: W_100 } } },
+        { prop: 'expressState', component: { tag: 'select', attrs: { placeholder: '快递状态', style: W_100, options: this.statusOptions, } } },
+        { prop: 'startDate', component: { tag: 'date', attrs: { placeholder: '创建开始日期', style: W_150 } }},
+        { prop: 'endDate', component: { tag: 'date', attrs: { placeholder: '创建结束日期', style: W_150 } }},
+        { component: { tag: 's-button', attrs: { btnText: '查询' }, on: { click: this.onSearch } } },
+        { component: { tag: 's-button', attrs: { btnText: '寄出' }, on: { click: this.send } } },
+        { component: { tag: 's-button', attrs: { btnText: '撤回', type: 'danger' }, on: { click: this.withDrawExpress } } },
       ]
     }, // 搜索配置
     btnList () {
@@ -304,13 +305,8 @@ export default {
       console.log(row)
       this.openTree(row.serviceOrderId, () => this.tableLoading = true, () => this.tableLoading = false)
     },
-    onChangeForm (val) {
-      this.listQuery.page = 1
-      Object.assign(this.listQuery, val)
-      this.onSearch()
-    },
     onSearch () {
-      // this.listQuery.page = 1
+      this.listQuery.page = 1
       this._getList()
     },
     handleCurrentChange ({ page, limit }) {

@@ -3,8 +3,8 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
+          :listQuery="listQuery"
           :config="searchConfig"
-          @changeForm="onChangeForm" 
           @search="onSearch">
         </Search>
       </div>
@@ -86,6 +86,7 @@ import Bmap from '@/components/bmap'
 const TRANSPORT_TYPE = 1 // 交通费用类型设为1
 const ACC_TYPE = 2 // 住宿费用类型设为2
 const OTHER_TYPE = 3 // 交通费用类型设为3
+const W_150 = { width: '150px' }
 export default {
   name: 'myCost',
   mixins: [categoryMixin],
@@ -109,13 +110,11 @@ export default {
       BMap: null,
       type: '', // 判断当前操作是新增还是编辑
       rightImg,
-      formQuery: { // 查询字段参数
-        startTime: '',
-        endTime: '',
-      },
       listQuery: { // 分页参数
         page: 1,
-        limit: 30
+        limit: 30,
+        startTime: '',
+        endTime: '',
       },
       textMap: {
         create: '新建',
@@ -128,12 +127,12 @@ export default {
       dialogLoading: false,
       categoryList: [], // 字典分类列表
       searchConfig: [ // 搜索配置
-        { placeholder: '填报起始时间', prop: 'startTime', type: 'date', width: 150 },
-        { placeholder: '填报结束时间', prop: 'endTime', type: 'date', width: 150 },
-        { type: 'search' },
-        { type: 'button', handleClick: this.create, btnText: '新建', isSpecial: true, options: { type: 'create' } },
-        { type: 'button', handleClick: this.getDetail, btnText: '编辑', options: { type: 'edit' } },
-        { type: 'button', handleClick: this.delete, btnText: '删除' },
+        { prop: 'startTime', component: { tag: 'date', attrs: { placeholder: '填报起始时间', style: W_150 } } },
+        { prop: 'endTime', component: { tag: 'date', attrs: { placeholder: '填报结束时间', style: W_150 } } },
+        { component: { tag: 's-button', attrs: { btnText: '查询' }, on: { click: this.onSearch } } },
+        { component: { tag: 's-button', attrs: { btnText: '新建' }, on: { click: this.create } } },
+        { component: { tag: 's-button', attrs: { btnText: '编辑' }, on: { click: this.edit } } },
+        { component: { tag: 's-button', attrs: { btnText: '删除' }, on: { click: this.delete } } }
       ],
       columns: [ // 表格配置
         { label: '序号', slotName: 'order' },
@@ -244,6 +243,9 @@ export default {
       this.BMap = BMap
       console.log(map, BMap)
     },
+    edit () {
+      this.getDetail({ type: 'edit' })
+    },
     getDetail (val) { // 获取详情
       let { type } = val
       let myExpendsId = ''
@@ -297,15 +299,12 @@ export default {
     onRowClick (row) {
       this.currentRow = row
     },
-    onChangeForm (val) {
-      Object.assign(this.listQuery, val)
-      this._getList()
-    },
     handleCurrentChange (val) {
       Object.assign(this.listQuery, val)
       this._getList()
     },
     onSearch () {
+      this.listQuery.page = 1
       this._getList()
     },
     create () {

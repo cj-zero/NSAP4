@@ -4,8 +4,8 @@
       <div class="filter-container">
         <permission-btn moduleName="problemtypes" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
         <Search 
+          :listQuery="listQuery"
           :config="searchConfig"
-          @changeForm="onChangeForm" 
           @search="onSearch"
           ></Search>
       </div>
@@ -157,16 +157,14 @@ export default {
   computed: {
     searchConfig () {
       return [
-        { width: 150, placeholder: '请输入内容', prop: 'key' },
-        { type: 'search' },
+        { prop: 'key', component: { attrs: { style: { width: '150px' },  placeholder: '请输入内容' } } },
+        { component: { tag: 's-button', attrs: { btnText: '查询' }, on: { click: this.onSearch } } }
       ]
     }
   },
   methods: {
-    onChangeForm (val) {
-      Object.assign(this.listQuery, val)
-    },
     onSearch () {
+      this.listQuery.page = 1
       this._getList()
     },
     handleSelectionChange(val) {

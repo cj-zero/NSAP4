@@ -3,9 +3,8 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
-          :listQuery="formQuery" 
+          :listQuery="listQuery" 
           :config="searchConfig"
-          @changeForm="onChangeForm" 
           @search="onSearch">
         </Search>
       </div>
@@ -97,6 +96,8 @@ import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import { getQuotationList } from '@/api/material/quotation'
 import {  quotationTableMixin, categoryMixin, chatMixin, rolesMixin } from '../common/js/mixins'
+const W_100 = { width: '100px' }
+const W_150 = { width: '150px' }
 // import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 const statusOptions = [
   { label: '全部', value: '' },
@@ -116,14 +117,14 @@ export default {
   computed: {
     searchConfig () {
       return [
-        { prop: 'startType', placeholder: '请选择', type: 'select', options: statusOptions },
-        { prop: 'quotationId', placeholder: '领料单号', width: 100 },
-        { prop: 'cardCode', placeholder: '客户名称', width: 100 },
-        { prop: 'serviceOrderSapId', placeholder: '服务ID', width: 100 },
-        { prop: 'createUser', placeholder: '申请人', width: 100 },
-        { prop: 'startCreateTime', placeholder: '创建开始日期', type: 'date', width: 150 },
-        { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
-        { type: 'search' }
+        { prop: 'startType', component: { tag: 'select', attrs: { placeholder: '请选择', options: statusOptions, style: W_100 } } }, 
+        { prop: 'quotationId', component: { attrs: { placeholder: '领料单号', style: W_100 } } }, 
+        { prop: 'cardCode', component: { attrs: { placeholder: '客户名称', style: W_100  } } }, 
+        { prop: 'serviceOrderSapId', component: { attrs: { placeholder: '服务ID', style: W_100  } } },
+        { prop: 'createUser', component: { attrs: { placeholder: '申请人', style: W_100  } } },
+        { prop: 'startCreateTime', component: { tag: 'date', attrs: { style: W_150, placeholder: '创建开始日期' } } }, 
+        { prop: 'endCreateTime', component: { tag: 'date', attrs: { style: W_150, placeholder: '创建结束日期' } } }, 
+        { component: { tag: 's-button', attrs: { btnText: '查询', type: 'primary' }, on: { click: this.onSearch } } },  
       ]
     }, // 搜索配置
     btnList () {
@@ -173,20 +174,17 @@ export default {
       quotationStatus: 0, // 当前物料单状态
       previewVisible: false,
       previewFileList: [],
-      formQuery: {
+      listQuery: {
         startType: '1',
+        pageStart: 1,
+        page: 1,
+        limit: 50,
         quotationId: '', // 领料单号
         cardCode: '', // 客户
         serviceOrderSapId: '', // 服务Id
         createUser: '', // 申请人
         startCreateTime: '', // 创建开始
         endCreateTime: '' // 创建结束
-      },
-      listQuery: {
-        startType: '1',
-        pageStart: 1,
-        page: 1,
-        limit: 50,
       },
       dialogLoading: false,
       tableLoading: false,

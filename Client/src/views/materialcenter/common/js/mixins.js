@@ -121,10 +121,6 @@ export const quotationTableMixin = {
       this.listQuery.page = 1
       this._getList()
     },
-    onChangeForm (val) {
-      this.listQuery.page = 1
-      Object.assign(this.listQuery, val)
-    },
     handleCurrentChange ({ page, limit }) {
       this.listQuery.page = page
       this.listQuery.limit = limit
@@ -358,11 +354,8 @@ export const returnTableMixin = { // 退料表格
       this._getList()
     },
     onSearch () {
-      this._getList()
-    },
-    onChangeForm (val) {
       this.listQuery.page = 1
-      Object.assign(this.listQuery, val)
+      this._getList()
     }
   }
 }
