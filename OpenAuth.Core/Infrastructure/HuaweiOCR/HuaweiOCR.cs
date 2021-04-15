@@ -88,8 +88,8 @@ namespace Infrastructure.HuaweiOCR
                                     invoiceNo = content?.ticket_id;
                                     invoiceDate = GetDateFormat(content?.departure_time);
                                     amountWithTax = decimal.Parse(content?.ticket_price.Replace("￥", string.Empty));
-                                    extend.OriginationStation = content?.destination_station;
-                                    extend.ArrivalStation = content?.departure_station;
+                                    extend.OriginationStation = content?.departure_station;
+                                    extend.ArrivalStation = content?.destination_station;
                                     extend.ServiceName = "交通费";
                                     ticketType = 2;
                                     break;
