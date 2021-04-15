@@ -3,9 +3,8 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
-          :listQuery="formQuery" 
+          :listQuery="listQuery" 
           :config="searchConfig"
-          @changeForm="onChangeForm" 
           @search="onSearch">
         </Search>
       </div>
@@ -76,6 +75,8 @@ import ReturnOrder from '../common/components/ReturnOrder'
 import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import { quotationTableMixin, chatMixin, returnTableMixin, afterReturnMixin } from '../common/js/mixins'
+const W_100 = { width: '100px' }
+const W_150 = { width: '150px' }
 export default {
   name: 'materialToReturnOrder',
   mixins: [quotationTableMixin, chatMixin, returnTableMixin, afterReturnMixin],
@@ -88,13 +89,13 @@ export default {
   computed: {
     searchConfig () {
       return [
-        { prop: 'id', placeholder: '退料单号', width: 100 },
-        { prop: 'customer', placeholder: '客户名称', width: 100 },
-        { prop: 'sapId', placeholder: '服务ID', width: 100 },
-        { prop: 'createName', placeholder: '申请人', width: 100 },
-        { prop: 'beginDate', placeholder: '创建开始日期', type: 'date', width: 150 },
-        { prop: 'endDate', placeholder: '创建结束日期', type: 'date', width: 150 },
-        { type: 'search' }
+        { prop: 'id', component: { attrs: { placeholder: '退料单号', style: W_100 } } },
+        { prop: 'customer', component: { attrs: { placeholder: '客户名称', style: W_100 } } },
+        { prop: 'sapId', component: { attrs: { placeholder: '服务ID', style: W_100 } } },
+        { prop: 'createName', component: { attrs: { placeholder: '申请人', style: W_100 } } },
+        { prop: 'beginDate', component: { tag: 'date', attrs: { placeholder: '创建开始日期', style: W_150 } } },
+        { prop: 'endDate', component: { tag: 'date', attrs: { placeholder: '创建结束日期', style: W_150 } } },
+        { component: { tag: 's-button', attrs: { btnText: '查询' }, on: { click: this.onSearch } } }
       ]
     }, // 搜索配置
     btnList () {

@@ -3,9 +3,8 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
-          :listQuery="formQuery" 
+          :listQuery="listQuery" 
           :config="searchConfig"
-          @changeForm="onChangeForm" 
           @search="onSearch">
         </Search>
       </div>
@@ -100,6 +99,7 @@ import { formatDate } from '@/utils/date'
 //   }]
 // })
 // console.log(tableData, 'date')
+const W_100 = { width: '100px' }
 export default {
   name: 'approvewarranty',
   mixins: [chatMixin],
@@ -112,10 +112,10 @@ export default {
   computed: {
     searchConfig () {
       return [
-        { prop: 'salesOrderId', placeholder: '销售单号', width: 100 },
-        { prop: 'customer', placeholder: '客户', width: 100 },
-        { prop: 'salesMan', placeholder: '销售员', width: 100 },
-        { type: 'search' }
+        { prop: 'salesOrderId', component: { attrs: { style: W_100, placeholder: '销售单号' } } },
+        { prop: 'customer', component: { attrs: { style: W_100, placeholder: '客户' } } },
+        { prop: 'salesMan', component: { attrs: { style: W_100, placeholder: '销售员' } } },
+        { component: { tag: 's-button', attrs: { btnText: '查询' }, on: { click: this.onSearch } } }
       ]
     }, // 搜索配置
     btnList () {
@@ -128,15 +128,13 @@ export default {
   },
   data () {
     return {
-      formQuery: {
-        quotationId: '', // 领料单号
-        cardCode: '', // 客户
-        salesMan: '', // 销售员
-      },
       listQuery: {
         page: 1,
         limit: 50,
-        state: 2
+        state: 2,
+        quotationId: '', // 领料单号
+        cardCode: '', // 客户
+        salesMan: '', // 销售员
       },
       dialogLoading: false,
       tableLoading: false,
@@ -199,9 +197,6 @@ export default {
     },
     onRowClick (row) {
       this.currentRow = JSON.parse(JSON.stringify(row))
-    },
-    onChangeForm (val) {
-      Object.assign(this.listQuery, val)
     },
     onSearch () {
       this.listQuery.page = 1

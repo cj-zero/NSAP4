@@ -3,8 +3,8 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
+          :listQuery="listQuery"
           :config="searchConfig"
-          @changeForm="onChangeForm" 
           @search="onSearch">
         </Search>
       </div>
@@ -98,9 +98,12 @@ export default {
     searchConfig () {
       return [
         ...this.commonSearch,
-        { type: 'search' },
-        { type: 'button', handleClick: this._pay, btnText: '支付', isSpecial: true, options:  { type: 'toPay' }, isShow: this.isCN },
-        { type: 'button', handleClick: this._export, btnText: '导出', isSpecial: true, isShow: this.isCN }
+        { component: { tag: 's-button', attrs: { btnText: '查询' }, on: { click: this.onSearch } } },
+        { component: { tag: 's-button', attrs: { btnText: '支付', type: 'primary' }, on: { click: this._pay } }, isShow: this.isCN },
+        { component: { tag: 's-button', attrs: { btnText: '导出', class: ['customer-btn-class'] }, on: { click: this._export } }, isShow: this.isCN },
+        // { type: 'search' },
+        // { type: 'button', handleClick: this._pay, btnText: '支付', isSpecial: true, options:  { type: 'toPay' }, isShow: this.isCN },
+        // { type: 'button', handleClick: this._export, btnText: '导出', isSpecial: true, isShow: this.isCN }
       ]
     }, // 搜索配置
     btnList () {
@@ -125,10 +128,6 @@ export default {
     }
   },
   methods: {
-    onChangeForm (val) {
-      this.currentFormQuery = val
-      Object.assign(this.listQuery, val)
-    },
     _pay () {
       this.selectList = this.$refs.table.getSelectionList()
       if (!this.selectList.length) {
