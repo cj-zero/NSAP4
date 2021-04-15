@@ -3,9 +3,8 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
-          :listQuery="formQuery" 
+          :listQuery="listQuery" 
           :config="searchConfig"
-          @changeForm="onChangeForm" 
           @search="onSearch">
         </Search>
       </div>
@@ -101,6 +100,8 @@ import {  quotationTableMixin, categoryMixin, chatMixin, rolesMixin } from '../c
 // import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import { processDownloadUrl } from '@/utils/file'
 import { print } from '@/utils/utils'
+const W_100 = { width: '100px' }
+const W_150 = { width: '150px' }
 const statusOptions = [
   { label: '全部', value: '' },
   { label: '未审批', value: '1' },
@@ -117,18 +118,18 @@ export default {
     // ElImageViewer
   },
   computed: {
+    
     searchConfig () {
       return [
-        { prop: 'startType', placeholder: '请选择', type: 'select', options: statusOptions },
-        { prop: 'salesOrderId', placeholder: '销售单号', width: 100 },
-        { prop: 'cardCode', placeholder: '客户名称', width: 100 },
-        { prop: 'serviceOrderSapId', placeholder: '服务ID', width: 100 },
-        { prop: 'createUser', placeholder: '申请人', width: 100 },
-        { prop: 'startCreateTime', placeholder: '创建开始日期', type: 'date', width: 150 },
-        { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
-        { type: 'search' },
-        { type: 'button', btnText: '打印', handleClick: this.print, isSpecial: true },
-        // { type: 'button', btnText: this.searchBtnText, handleClick: this._getQuotationDetail, options: { status: 'pay' }, isSpecial: true },
+        { prop: 'startType', component: { tag: 'select', attrs: { placeholder: '请选择', options: statusOptions, style: W_100 } } }, 
+        { prop: 'salesOrderId', component: { attrs: { placeholder: '销售单号', style: W_100 } } }, 
+        { prop: 'cardCode', component: { attrs: { placeholder: '客户名称', style: W_100  } } }, 
+        { prop: 'serviceOrderSapId', component: { attrs: { placeholder: '服务ID', style: W_100  } } },
+        { prop: 'createUser', component: { attrs: { placeholder: '申请人', style: W_100  } } },
+        { prop: 'startCreateTime', component: { tag: 'date', attrs: { style: W_150, placeholder: '创建开始日期' } } }, 
+        { prop: 'endCreateTime', component: { tag: 'date', attrs: { style: W_150, placeholder: '创建结束日期' } } }, 
+        { component: { tag: 's-button', attrs: { btnText: '查询' }, on: { click: this.onSearch } } },  
+        { component: { tag: 's-button', attrs: { btnText: '打印', class: ['customer-btn-class'] }, on: { click: this.print } } },  
       ]
     }, // 搜索配置
     btnList () {

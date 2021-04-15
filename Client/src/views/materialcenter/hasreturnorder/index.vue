@@ -3,9 +3,8 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
-          :listQuery="formQuery" 
+          :listQuery="listQuery" 
           :config="searchConfig"
-          @changeForm="onChangeForm" 
           @search="onSearch">
         </Search>
       </div>
@@ -75,6 +74,8 @@ import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import { chatMixin } from '../common/js/mixins'
 import { getClearReturnNoteList, getClearReturnNoteDetail } from '@/api/material/returnMaterial'
+const W_100 = { width: '100px' }
+const W_150 = { width: '100px' }
 export default {
   name: 'materialHasReturnOrder',
   mixins: [chatMixin],
@@ -86,16 +87,14 @@ export default {
   },
   data () {
     return {
-      formQuery: {
+      listQuery: {
+        page: 1,
+        limit: 50,
         sapId: '',
         customer: '',
         createName: '',
         beginDate: '',
         endDate: ''
-      },
-      listQuery: {
-        page: 1,
-        limit: 50,
       },
       tableLoading: false,
       tableData: [],
@@ -114,13 +113,19 @@ export default {
       ],
       status: '', // 报价单状态
       formData: null, // 详情信息
-      searchConfig: [        
-        { prop: 'sapId', placeholder: '服务ID', width: 100 },
-        { prop: 'customer', placeholder: '客户名称', width: 100 },
-        { prop: 'createrName', placeholder: '申请人', width: 100 },
-        { prop: 'beginDate', placeholder: '创建开始日期', type: 'date', width: 150 },
-        { prop: 'endDate', placeholder: '创建结束日期', type: 'date', width: 150 },
-        { type: 'search' }
+      searchConfig: [     
+        {  prop: 'sapId', component: { attrs: { placeholder: '服务ID', style: W_100 } } },   
+        {  prop: 'customer', component: { attrs: { placeholder: '客户名称', style: W_100 } } },   
+        {  prop: 'createrName', component: { attrs: { placeholder: '申请人', style: W_100 } } },   
+        {  prop: 'beginDate', component: { tag: 'date', attrs: { placeholder: '创建开始日期', style: W_150 } } },   
+        {  prop: 'endDate', component: { tag: 'date', attrs: { placeholder: '创建结束日期', style: W_150 } } },
+        { component: { tag: 's-button', attrs: { btnText: '查询' }, on: { click: this.onSearch } } }
+        // { prop: 'sapId', placeholder: '服务ID', width: 100 },
+        // { prop: 'customer', placeholder: '客户名称', width: 100 },
+        // { prop: 'createrName', placeholder: '申请人', width: 100 },
+        // { prop: 'beginDate', placeholder: '创建开始日期', type: 'date', width: 150 },
+        // { prop: 'endDate', placeholder: '创建结束日期', type: 'date', width: 150 },
+        // { type: 'search' }
       ],
       btnList: [
         { btnText: '关闭', handleClick: this.close, className: 'close' }      
@@ -170,11 +175,8 @@ export default {
       })
     },
     onSearch () {
-      this._getList()
-    },
-    onChangeForm (val) {
       this.listQuery.page = 1
-      Object.assign(this.listQuery, val)
+      this._getList()
     },
     handleCurrentChange ({ page, limit }) {
       this.listQuery.page = page

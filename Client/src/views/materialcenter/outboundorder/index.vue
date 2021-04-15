@@ -4,9 +4,8 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
-          :listQuery="formQuery" 
+          :listQuery="listQuery" 
           :config="searchConfig"
-          @changeForm="onChangeForm" 
           @search="onSearch">
         </Search>
       </div>
@@ -101,6 +100,8 @@ import { serializeParams } from '@/utils/process'
 // import { print } from '@/utils/utils'
 import elDragDialog from "@/directive/el-dragDialog";
 import addExpressInfo from './components/AddExpressInfo'
+const W_100 = { width: '100px' }
+const W_150 = { width: '150px' }
 export default {
   name: 'outBoundOrder',
   directives: {
@@ -118,16 +119,14 @@ export default {
   computed: {
     searchConfig () {
       return [
-        { prop: 'quotationId', placeholder: '出库单号', width: 100 },
-        { prop: 'cardCode', placeholder: '客户名称', width: 100 },
-        { prop: 'serviceOrderSapId', placeholder: '服务ID', width: 100 },
-        { prop: 'createUser', placeholder: '申请人', width: 100 },
-        { prop: 'startCreateTime', placeholder: '创建开始日期', type: 'date', width: 150 },
-        { prop: 'endCreateTime', placeholder: '创建结束日期', type: 'date', width: 150 },
-        { type: 'search' },
-        { type: 'button', btnText: '生成PDF', handleClick: this.print, isSpecial: true, isShow: this.isStorekeeper || this.isTechnical },   
-        // { type: 'button', btnText: '打印', handleClick: this.print, isSpecial: true },     
-        // { type: 'button', btnText: '出库', handleClick: this._getQuotationDetail, options: { status: 'outbound'}, isSpecial: true },
+        { prop: 'quotationId', component: { attrs: { placeholder: '出库单号', style: W_100 } } },
+        { prop: 'cardCode', component: { attrs: { placeholder: '客户名称', style: W_100 } } },
+        { prop: 'serviceOrderSapId', component: { attrs: { placeholder: '服务ID', style: W_100 } } },
+        { prop: 'createUser', component: { attrs: { placeholder: '申请人', style: W_100 } } },
+        { prop: 'startCreateTime', component: { tag: 'date', attrs: { placeholder: '创建开始日期', style: W_150 } } },
+        { prop: 'endCreateTime', component: { tag: 'date', attrs: { placeholder: '创建结束日期', style: W_150 } } },
+        { component: { tag: 's-button', attrs: { btnText: '查询'}, on: { click: this.onSearch } } },
+        { component: { tag: 's-button', attrs: { btnText: '生成PDF', type: 'primary' }, on: { click: this.print } }, isShow: this.isStorekeeper || this.isTechnical }
       ]
     }, // 搜索配置
     printText () {
@@ -148,20 +147,18 @@ export default {
         { label: '未出库', name: '1' },
         { label: '已出库', name: '2' }
       ],
-      formQuery: {
-        quotationId: '', // 领料单号
-        cardCode: '', // 客户
-        serviceOrderSapId: '', // 服务Id
-        createUser: '', // 申请人
-        startCreateTime: '', // 创建开始
-        endCreateTime: '' // 创建结束
-      },
       listQuery: {
         status: '2',
         startType: '',
         pageStart: 3,
         page: 1,
         limit: 50,
+        quotationId: '', // 领料单号
+        cardCode: '', // 客户
+        serviceOrderSapId: '', // 服务Id
+        createUser: '', // 申请人
+        startCreateTime: '', // 创建开始
+        endCreateTime: '' // 创建结束
       },
       dialogLoading: false,
       tableLoading: false,
@@ -222,6 +219,7 @@ export default {
         this.tableData = data
         this.total = count
         this.tableLoading = false
+        this.$refs.quotationTable.resetCurrentRow()
       }).catch(err => {
         this.$message.error(err.message)
         this.tableLoading = false

@@ -454,6 +454,8 @@ const SYS_Transportation = 'SYS_Transportation' // 交通方式
 const SYS_OtherExpenses = 'SYS_OtherExpenses' // 其它费用
 const SYS_ReimburseAccraditation = 'SYS_ReimburseAccraditation' // 备注弹窗的标签按钮 报销审批常用语
 const SYS_ReimburseAccommodation = 'SYS_ReimburseAccommodation' // 报销住宿标准
+const W_100 = { width: '100px' }
+const W_150 = { width: '150px' }
 export let categoryMixin = {
   data () {
     return {
@@ -654,22 +656,22 @@ export let categoryMixin = {
     },
     commonSearch () { // 搜索配置
       return [
-        { placeholder: '报销单号', prop: 'mainId', width: 100 },
-        { placeholder: '报销人', prop: 'createUserName', width: 100 },
-        { placeholder: '客户代码/名称', prop: 'terminalCustomer', width: 150 },
-        { placeholder: '服务ID', prop: 'serviceOrderId', width: 100 },
-        { placeholder: '报销部门', prop: 'orgName', width: 100 },
-        { placeholder: '报销状态', prop: 'status', width: 100, type: 'select', 
-          options: [{ label: '全部', value: '' }, ...this.reimburseStatusList], isShow: !!this.isCustomerSupervisor && !!this.isSubmit && !this.listQuery.status },
-        { placeholder: '费用承担', prop: 'bearToPay', width: 100, type: 'select', options: this.expenseList, isShow: !!this.isToPay },
-        // { placeholder: '责任承担', prop: 'responsibility', width: 100, type: 'select', options: this.responsibilityList },
-        { placeholder: '劳务关系', prop: 'serviceRelations', width: 120, type: 'select', options: this.serviceRelationsList, isShow: !!this.isToPay },
-        { placeholder: '填报起始时间', prop: 'staticDate', type: 'date', width: 150 },
-        { placeholder: '填报结束时间', prop: 'endDate', type: 'date', width: 150 },
-        { placeholder: '支付起始时间', prop: 'paymentStartDate', type: 'date', width: 150 },
-        { placeholder: '支付结束时间', prop: 'paymentEndDate', type: 'date', width: 150 },
-        { placeholder: '出差开始时间', prop: 'completionStartDate', type: 'date', width: 150, isShow: !!this.isSubmit && !!this.isCustomerSupervisor },
-        { placeholder: '出差结束时间', prop: 'completionEndDate', type: 'date', width: 150, isShow: !!this.isSubmit && !!this.isCustomerSupervisor }    
+        { prop: 'mainId', component: { attrs: { style: W_100, placeholder: '报销单号' } } },
+        { prop: 'createUserName', component: { attrs: { style: W_100, placeholder: '报销人' } } },
+        { prop: 'terminalCustomer', component: { attrs: { style: W_100, placeholder: '客户代码/名称' } } },
+        { prop: 'serviceOrderId', component: { attrs: { style: W_100, placeholder: '服务ID' } } },
+        { prop: 'orgName', component: { attrs: { style: W_100, placeholder: '报销部门' } } },
+        { prop: 'status', component: { tag: 'select', attrs: { style: W_100, placeholder: '报销状态', options: [{ label: '全部', value: '' }, ...this.reimburseStatusList] } },
+          isShow: !!this.isCustomerSupervisor && !!this.isSubmit && !this.listQuery.status 
+        },
+        { prop: 'bearToPay', component: { tag: 'select', attrs: { style: W_100, placeholder: '费用承担', options: this.expenseList } }, isShow: !!this.isToPay },
+        { prop: 'serviceRelations', component: { tag: 'select', attrs: { style: W_100, placeholder: '劳务关系', options: this.serviceRelationsList } }, isShow: !!this.isToPay },
+        { prop: 'staticDate', component: { tag: 'date', attrs: { placeholder: '填报起始时间', style: W_150 } } },
+        { prop: 'endDate', component: { tag: 'date', attrs: { placeholder: '填报结束时间', style: W_150 } } },
+        { prop: 'paymentStartDate', component: { tag: 'date', attrs: { placeholder: '支付起始时间', style: W_150 } } },
+        { prop: 'paymentEndDate', component: { tag: 'date', attrs: { placeholder: '支付结束时间', style: W_150 } } },
+        { prop: 'completionStartDate', component: { tag: 'date', attrs: { placeholder: '出差开始时间', style: W_150 } }, isShow: !!this.isSubmit && !!this.isCustomerSupervisor },
+        { prop: 'completionEndDate', component: { tag: 'date', attrs: { placeholder: '出差结束时间', style: W_150 } }, isShow: !!this.isSubmit && !!this.isCustomerSupervisor }, 
       ]
     }
   }
