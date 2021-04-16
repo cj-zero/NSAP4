@@ -1,7 +1,11 @@
 <template>
   <div class="app-container">
     <div class="bg-white">
-      <search @search="onSearch" :type="type" @approve="onApprove"></search>
+      <sticky :className="'sub-navbar'">
+        <div class="filter-container">
+          <search :config="searchConfig" :listQuery="pageConfig" @search="onSearch"></search>
+        </div>
+      </sticky>
       <common-table
         ref="table"
         :tableData="tableData"
@@ -47,7 +51,8 @@
 
 <script>
 import CommonTable from '../commonComponent/table'
-import Search from '../commonComponent/search'
+// import Search from '../commonComponent/search'
+import Search from '@/components/Search'
 import Pagination from '@/components/Pagination'
 import Certifiate from '../commonComponent/certifiate'
 import { commonMixin } from '../mixin/mixin'
@@ -72,7 +77,8 @@ export default {
         { label: '资产编号', name: 'assetNo', width: '100' },
         { label: '校准日期', name: 'calibrationDate', width: '165' },
         { label: '状态', name: 'activityName', width: '100' },
-        { label: '校准人', name: 'operator', width: '' }
+        { label: '校准人', name: 'operator', width: '' },
+        { label: '备注', name: 'rejectContent' }
       ],
       type: 'review'
     }

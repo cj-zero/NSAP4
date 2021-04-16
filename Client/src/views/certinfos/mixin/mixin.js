@@ -2,49 +2,43 @@ import { certVerificate } from '@/api/cerfiticate'
 export let certVerMixin = { // 审核操作mixin
   data () {
     return {
-      isSend: false, // 是否发送请求
-      isLeftSend: false, // 左侧请求按钮loading
-      isRightSend: false // 右侧请求按钮loading
+      isSend: false
     }
   },
   methods: {
-    _certVerificate (data, type, message, direction, verificationOpinion) { // type 0: 表示通过、送审等正常操作 2: 表示不通过、撤回等失败操作 3: 退回
-      if (this.isSend) return
-      if (
-        (direction === 'left' && this.isLeftSend === true) ||
-        (direction === 'right' && this.isRightSend === true)
-      ) {
-        return
-      }
-      direction ? (direction === 'left' ? (this.isLeftSend = true) : (this.isRightSend = true)) : this.isSend = true
+    _certVerificate (data, type, message, verificationOpinion) { // type 1: 表示通过、送审等正常操作 2: 表示不通过、撤回等失败操作 3: 退回
+      this.isSend = true
+      console.log(this.isSend, 'isSEND')
       let { id, flowInstanceId } = data
       certVerificate([{
         certInfoId: id,
         verification: {
           flowInstanceId,
-          verificationFinally: Number(type) === 4 ? 4 : ( Number(type) === 0 ? '1' : '3'),
+          verificationFinally: type,
           verificationOpinion: verificationOpinion || '',
           nodeRejectStep: '',
-          nodeRejectType: Number(type) === 4 ? 1 : 0
+          nodeRejectType: Number(type) === 1 ? 0 : 1
         }
       }]).then(() => {
-        this.$message({
-          message: `${message}成功`
-        })
-        this.$emit('handleSubmit')
+        this.$message.success(`${message}成功`)
+        this.isSend = false
+        this.onHandleSubmit ? this.onHandleSubmit() : this.$emit('handleSubmit')
       }).catch((err) => {
+        this.isSend = false
         this.$emit('close')
         // this.$message.error(`${message}失败`)
         this.$message.error(`${err.message}`)
-      }).finally(() => {
-        this.isLeftSend = false
-        this.isRightSend = false
-        this.isSend = false
       })
     }
   }
 }
-
+const W_100 = { width: '100px' }
+const W_370 = { width: '370px', display: 'inline-flex' }
+const activityStatusOptions = [
+  { label: '全部', value: '' },
+  { label: '待审核', value: '1' },
+  { label: '待批准', value: '2' },
+]
 export let commonMixin = {
   data () {
     return {
@@ -59,10 +53,36 @@ export let commonMixin = {
       currentData: {}, // 当前弹窗项的数据
       isLoading: true,
       selectList: [],
-      isBtnLock: false // 防止重复点击批量
+      isBtnLock: false, // 防止重复点击批量
+    }
+  },
+  computed: {
+    searchConfig () {
+      return [
+        { prop: 'certNo', component: { attrs: { placeholder: '证书编号', style: W_100 } } },
+        { prop: 'model', component: { attrs: { placeholder: '型号规格', style: W_100 } } },
+        { prop: 'sn', component: { attrs: { placeholder: '出厂编号', style: W_100 } } },
+        { prop: 'assetNo', component: { attrs: { placeholder: '资产编号', style: W_100 } } },
+        { prop: 'operator', component: { attrs: { placeholder: '校准人', style: W_100 } }, isShow: this.type !== 'submit' },
+        { prop: 'activityStatus', component: { tag: 'select', attrs: { options: activityStatusOptions, placeholder: '状态', style: W_100 } }, isShow: this.type === 'review' },
+        { prop: 'date', component: { 
+          tag: 'date',
+          attrs: { type: 'daterange', 'range-separator': '至', 'start-placeholder': '开始日期', 'end-placeholder': '结束日期', style: W_370 }, 
+          on: { change: this.onDateChange } } 
+        },
+        { component: { tag: 's-button', attrs: { btnText: '搜索', type: 'primary' }, on: { click: this.onSearch } } },
+        { component: { tag: 's-button', attrs: { btnText: '一键审批', type: 'primary' }, on: { click: this.onApprove } }, isShow: this.type === 'review' },
+      ]
     }
   },
   methods: {
+    onDateChange (val) {
+      if (val) {
+        this.pageConfig.calibrationDateFrom = val[0]
+        this.pageConfig.calibrationDateTo = val[1]
+      }
+      console.log(val, 'dateVal', this.form)
+    },
     _certVerificateList (list) { // 批量审批
       if (this.isBtnLock) return
       list = list.map(item => {
@@ -106,8 +126,9 @@ export let commonMixin = {
       this.pageConfig = Object.assign({}, this.pageConfig, pageConfig)
       this.type === 'query' ? this._getQueryList() : this._loadApprover()
     },
-    onSearch (val) {
-      this.pageConfig = Object.assign({}, this.pageConfig, val)
+    onSearch () {
+      // this.pageConfig = Object.assign({}, this.pageConfig, val)
+      this.pageConfig.page = 1
       this.type === 'query' ? this._getQueryList() : this._loadApprover()
     },
     onOpenDetail (params, hasSend) {

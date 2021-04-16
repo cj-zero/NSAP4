@@ -1,13 +1,23 @@
 <template>
-  <div class="app-container">
+  <div class="app-container"
+    v-loading.fullscreen="isSend"
+    element-loading-text="驳回中"
+    element-loading-spinner="el-icon-loading"
+    element-loading-background="rgba(0, 0, 0, 0.3)"
+  >
     <div class="bg-white">
-      <search @search="onSearch" type="query"></search>
+      <sticky :className="'sub-navbar'">
+        <div class="filter-container">
+          <search :config="searchConfig" :listQuery="pageConfig" @search="onSearch"></search>
+        </div>
+      </sticky>
       <common-table
         :tableData="tableData"
         :headOptions="headOptions"
         :type="type"
         :isLoading="isLoading"
         @openDetail="onOpenDetail"
+        @submit="onSubmit"
       >
       </common-table>
       <pagination
@@ -55,16 +65,17 @@
 
 <script>
 import CommonTable from '../commonComponent/table'
-import Search from '../commonComponent/search'
+// import Search from '../commonComponent/search'
+import Search from '@/components/Search'
 import Pagination from '@/components/Pagination'
 import OperationRecord from './component/operationRecord'
 import OriginRecord from './component/originRecord'
 import Certifiate from '../commonComponent/certifiate'
 import { queryLoad } from '@/api/cerfiticate'
-import { commonMixin } from '../mixin/mixin'
+import { commonMixin, certVerMixin } from '../mixin/mixin'
 export default {
   name: 'query',
-  mixins: [commonMixin],
+  mixins: [commonMixin, certVerMixin],
   components: {
     CommonTable,
     Pagination,
@@ -105,6 +116,9 @@ export default {
         this.isLoading = false
         this.$message.error(err.message)
       })
+    },
+    onSubmit ({ row, type, text }) {
+      this._certVerificate(row, type, text)
     }
   },
   created () {

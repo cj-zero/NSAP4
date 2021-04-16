@@ -44,15 +44,12 @@
               v-if="isShowBtn(scope.row.activityName)"
               :type="scope.row.activityName === '待审核' ? 'danger' : 'primary'" 
               size="mini"
-              @click="submit(scope.row, scope.row.activityName === '待审核' ? 4 : 0)"
-              v-loading.fullscreen.lock="isSend"
-              :element-loading-text="showText(scope.row.activityName, true)"
-              element-loading-spinner="el-icon-loading"
-              element-loading-background="rgba(0, 0, 0, 0.4)"
+              @click="submit(scope.row, scope.row.activityName === '待审核' ? 4 : 1)"
             >{{ showText(scope.row.activityName) }}</el-button>
           </template>
           <template v-else-if="type === 'query'">
             <el-button type="primary" size="mini" @click="download(scope.row)">下载</el-button>
+            <el-button v-if="scope.row.activityName !== '结束' && isAuthroize" type="danger" size="mini" @click="submit(scope.row, 3)">驳回</el-button>
           </template>
         </template>
         <!-- 证书编号 -->
@@ -71,10 +68,8 @@
 </template>
 
 <script>
-const textMap = ['送审', '撤回'] // 分别对应所在下标
-import { certVerMixin } from '../mixin/mixin'
 import { downloadFile } from '@/utils/file'
-import { getPdfURL } from '@/utils/utils'
+import { getPdfURL, isMatchRole } from '@/utils/utils'
 const colorList = {
   '待送审': '#cd2b25',
   '待审核': '#15a8ac',
@@ -82,7 +77,6 @@ const colorList = {
 }
 export default {
   components: {},
-  mixins: [certVerMixin],
   props: {
     tableData: { // table数据
       type: Array,
@@ -107,8 +101,9 @@ export default {
   },
   data () {
     return {
-      radio: ''
-  }
+      radio: '',
+      isAuthroize: isMatchRole('校准软件-授权签字人')
+    }
   },
   methods: {
     isShowBtn (activityName) {
@@ -116,14 +111,16 @@ export default {
     },
     showText (activityName, isLoadingText) {
       const text = activityName === '待审核' ? '撤回' : '送审'
-      return isLoadingText ? `正在${text}中` : text
+      if (this.isLoadingText) {
+        console.log(activityName, 'activityName')
+      }
+      return isLoadingText ? `${text}中` : text
     },
     clearSelection () {
       this.$refs.commonTable.clearSelection()
       this.selectList = []
     },
     selectable (row) {
-      console.log(row.activityName !== '待审核', 'selectable')
       return this.type === 'review' || (this.type === 'submit' && row.activityName !== '待审核')
     },
     rowStyle ({ rowIndex }) {
@@ -150,7 +147,11 @@ export default {
       this.$emit('openDetail', row, hasSend)
     },
     submit (row, type) { // type: 0： 送审 1：撤回
-      this._certVerificate(row, type, textMap[type] || '撤回')
+      const { activityName } = row
+      const text = activityName === '待审核' 
+        ? '撤回' 
+        : (activityName === '已完成' ? '驳回' : '送审')
+      this.$emit('submit', { row, type, text })
     },
     async download (row) {
       let url = await getPdfURL('/Cert/DownloadCertPdf', { serialNumber: row.certNo })
