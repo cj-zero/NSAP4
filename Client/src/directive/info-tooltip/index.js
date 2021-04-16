@@ -27,7 +27,6 @@ export default {
           const limitPlacementQueue = allPlacements.filter(placement => modifiers[placement])
           //设置显示位置，默认为top
           tooltip.placement = limitPlacementQueue.length ? limitPlacementQueue[0] : 'top'
-          console.log(tooltip.placement, 'placement')
           // 判断是否有限制最大宽度
           if (arg) {
             tooltip.tooltipStyle.maxWidth = arg + 'px'

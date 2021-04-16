@@ -102,7 +102,7 @@ const W_150 = { width: '150px' }
 const statusOptions = [
   { label: '全部', value: '' },
   { label: '未审批', value: '1' },
-  { label: '审批', value: '2' }
+  { label: '已审批', value: '2' }
 ]
 export default {
   name: 'materialSalesOrder',

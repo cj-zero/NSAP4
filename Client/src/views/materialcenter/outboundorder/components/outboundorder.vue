@@ -75,7 +75,7 @@
           @row-click="onExpressRowClick"
         >
           <template v-slot:expressInformation="{ row }">
-            <el-row v-infotooltip.top-start.ellipsis>
+            <el-row v-infotooltip.ellipsis>
               <img :src="rightImg" @click="_getExpressInfo(row)" class="search-icon">
               <span>{{ row.expressInformation }}</span>
             </el-row>
@@ -89,7 +89,7 @@
         </common-table>
         <el-row type="flex" class="freight" justify="end">
           <span class="title">总计</span>
-          <p v-infotooltip.ellipsis.top-start class="money">￥{{ freightTotal | toThousands }}</p>
+          <p v-infotooltip.ellipsis class="money">￥{{ freightTotal | toThousands }}</p>
         </el-row>
       </div>
       <div class="divider"></div>
@@ -358,6 +358,7 @@ export default {
         { label: '物料描述', prop: 'materialDescription' },
         { label: '总数量', prop: 'count', align: 'right' },
         { label: '单位', prop: 'unit', align: 'right' },
+        { label: '仓库', prop: 'whsCode', align: 'right' },
         { label: '已出库', prop: 'sentQuantity', align: 'right' },
         { label: '出库数量', prop: 'quantity', align: 'right' }
       ],

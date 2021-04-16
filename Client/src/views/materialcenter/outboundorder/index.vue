@@ -18,7 +18,7 @@
         :columns="quotationColumns"
         :loading="tableLoading">
         <template v-slot:totalMoney="{ row }">
-          <p v-infotooltip.top-start.ellipsis>{{ row.totalMoney | toThousands }}</p>
+          <p v-infotooltip.ellipsis>{{ row.totalMoney | toThousands }}</p>
         </template>
         <template v-slot:printStatus="{ row }">
           {{ printStatusMap[row.printWarehouse] }}
@@ -38,7 +38,7 @@
     <my-dialog
       title="打印出库单"
       ref="expressInfoDialog"
-      width="700px"
+      width="950px"
       :btnList="expressInfoBtnList"
       @opened="onExpressageOpened"
     >

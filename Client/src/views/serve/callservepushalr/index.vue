@@ -79,7 +79,7 @@
                     <div slot="content">
                       <p v-for="(content, index) in row.themeList" :key="index">{{ content }}</p>
                     </div>
-                    <span style="white-space: nowrap;">{{ row.fromTheme }}</span>
+                    <div style="white-space: nowrap;">{{ row.fromTheme }}</div>
                   </el-tooltip>
                 </template>
                 <template v-slot:status="{ row }">

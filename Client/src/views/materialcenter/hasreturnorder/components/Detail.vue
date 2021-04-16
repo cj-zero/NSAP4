@@ -27,7 +27,7 @@
       max-height="300px"
     >
       <template v-slot:notClearAmount="{ row }">
-        <p v-infotooltip.top-start.ellipsis>{{ row.notClearAmount | toThousands }}</p>
+        <p v-infotooltip.ellipsis>{{ row.notClearAmount | toThousands }}</p>
       </template>
     </common-table>
     <el-row class="money-wrapper" type="flex" align="middle" justify="end">
@@ -76,7 +76,7 @@ export default {
         { label: '物料描述', prop: 'materDescription' },
         { label: '已退数量', prop: 'alreadyReturnQty', align: 'right' },
         { label: '需退总计', prop: 'totalReturnCount', align: 'right' },
-        { label: '未清小计(￥)', prop: 'notClearAmount', align: 'right', slotName: 'notClearAmount' },
+        { label: '未清小计(￥)', prop: 'notClearAmount', align: 'right', slotName: 'notClearAmount', 'show-overflow-tooltip': false },
         { label: '状态', prop: 'status' }
       ]
     }

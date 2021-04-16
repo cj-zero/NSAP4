@@ -56,7 +56,7 @@
             <span class="picture" :class="{ 'finished': row.status === 1 }" @click="addExpressInfo">{{ formatOperationText(row) }}</span>
           </template>
           <template v-slot:expressInformation="{ row }">
-            <el-row v-infotooltip.top-start.ellipsis>
+            <el-row v-infotooltip.ellipsis>
               <img :src="rightImg" @click="_getExpressInfo(row)" class="search-icon">
               <span>{{ row.expressInformation }}</span>
             </el-row>
@@ -70,7 +70,7 @@
         </common-table>
         <el-row type="flex" class="freight" :class="{ 'quality': orderType === 'quality', 'storage': orderType === 'storage' }" justify="end">
           <span class="title">总计</span>
-          <p v-infotooltip.ellipsis.top-start class="money">￥{{ freightTotal | toThousands }}</p>
+          <p v-infotooltip.ellipsis class="money">￥{{ freightTotal | toThousands }}</p>
         </el-row>
       </div>
       <div class="divider"></div>

@@ -38,6 +38,9 @@
         max-height="350px"
         :data="materialList" 
         :columns="materialColumns">
+        <template v-slot:whsCode="{ row }">
+          <div class="bold" v-infotooltip.ellipsis>{{ row.whsCode }}</div>
+        </template>
         <template v-slot:quantity="{ row }">
           <el-input-number 
             size="mini"
@@ -114,6 +117,7 @@ export default {
         { label: '物料描述', prop: 'materialDescription' },
         { label: '总数量', prop: 'count', align: 'right' },
         { label: '单位', prop: 'unit', align: 'right' },
+        { label: '仓库', prop: 'whsCode', align: 'right', slotName: 'whsCode' },
         { label: '库存数量', prop: 'warehouseQuantity', align: 'right' },
         { label: '已出库', prop: 'sentQuantity', align: 'right' },
         { label: '出库数量', prop: 'quantity', slotName: 'quantity' }

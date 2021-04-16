@@ -28,7 +28,7 @@
         :columns="quotationColumns" 
         :loading="tableLoading">
         <template v-slot:totalMoney="{ row }">
-          <p v-infotooltip.ellipsis.top-start>{{ row.totalMoney | toThousands }}</p>
+          <p v-infotooltip.ellipsis>{{ row.totalMoney | toThousands }}</p>
         </template>
         <template v-slot:tentative="{ row }">
           {{ row.tentative ? '是' : '否' }}

@@ -26,7 +26,7 @@
           </div>
         </template>
         <template v-slot:fromTheme="{ row }">
-          <span v-infotooltip.top-start.ellipsis="row.themeList">{{ row.fromTheme }}</span>
+          <span v-infotooltip.ellipsis="row.themeList">{{ row.fromTheme }}</span>
         </template>
       </common-table>
       <pagination
