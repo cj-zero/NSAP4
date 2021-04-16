@@ -78,7 +78,7 @@ namespace OpenAuth.App
             //{
             //    objs = objs.Where(u => u.Id.Contains(request.key));
             //}
-            if (request.IsReimburse == null && !(bool)request.IsReimburse)
+            if (request.IsReimburse == null || !(bool)request.IsReimburse)
             {
                 // 主管只能看到本部门的技术员的评价
                 if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
