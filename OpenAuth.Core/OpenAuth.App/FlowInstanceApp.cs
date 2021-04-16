@@ -405,6 +405,67 @@ namespace OpenAuth.App
             return true;
         }
 
+        /// <summary>
+        /// 撤回
+        /// 同驳回方法
+        /// </summary>
+        /// <returns></returns>
+        public bool NodeRecall(VerificationReq reqest)
+        {
+            var user = _auth.GetCurrentUser().User;
+
+            FlowInstance flowInstance = Get(reqest.FlowInstanceId);
+
+            FlowRuntime wfruntime = new FlowRuntime(flowInstance);
+
+            string resnode = "";
+            resnode = string.IsNullOrEmpty(reqest.NodeRejectStep) ? wfruntime.RejectNode(reqest.NodeRejectType) : reqest.NodeRejectStep;
+
+            var tag = new Tag
+            {
+                Description = reqest.VerificationOpinion,
+                Taged = (int)TagState.Recall,
+                UserId = user.Id,
+                UserName = user.Name
+            };
+
+            wfruntime.MakeTagNode(wfruntime.currentNodeId, tag);
+            flowInstance.IsFinish = 2;//2表示召回（需要申请者重新提交表单）
+            if (resnode != "")
+            {
+                flowInstance.PreviousId = flowInstance.ActivityId;
+                flowInstance.ActivityId = resnode;
+                flowInstance.ActivityType = wfruntime.GetNodeType(resnode);
+                flowInstance.ActivityName = wfruntime.Nodes[resnode].name;
+                flowInstance.MakerList = GetNodeMarkers(wfruntime.Nodes[resnode]);//当前节点可执行的人信息
+
+                AddTransHistory(wfruntime);
+            }
+
+            UnitWork.Update(flowInstance);
+
+            UnitWork.Add(new FlowInstanceOperationHistory
+            {
+                InstanceId = reqest.FlowInstanceId
+                ,
+                CreateUserId = user.Id
+                ,
+                CreateUserName = user.Name
+                ,
+                CreateDate = DateTime.Now
+                ,
+                Content = "【"
+                          + wfruntime.currentNode.name
+                          + "】【" + DateTime.Now.ToString("yyyy-MM-dd HH:mm") + "】撤回,备注："
+                          + reqest.VerificationOpinion
+            });
+
+            UnitWork.Save();
+
+            wfruntime.NotifyThirdParty(_httpClientFactory.CreateClient(), tag);
+
+            return true;
+        }
         #endregion 流程处理API
 
         #region 获取各种节点的流程审核者
@@ -546,6 +607,11 @@ namespace OpenAuth.App
             if (isReject)  //驳回
             {
                 NodeReject(request);
+            } 
+            //2021-04-13 撤回暂时处理办法
+            else if (TagState.Recall.Equals((TagState)tag.Taged))
+            {
+                NodeRecall(request);//撤回
             }
             else
             {

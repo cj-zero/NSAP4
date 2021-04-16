@@ -32,6 +32,10 @@ namespace OpenAuth.App.Request
         /// </summary>
         public int FlowStatus { get; set; }
         /// <summary>
+        /// 证书状态（界面筛选条件）1-待审核 2-待批准
+        /// </summary>
+        public int? ActivityStatus { get; set; }
+        /// <summary>
         /// 校准日期开始
         /// </summary>
         public DateTime? CalibrationDateFrom { get; set; }

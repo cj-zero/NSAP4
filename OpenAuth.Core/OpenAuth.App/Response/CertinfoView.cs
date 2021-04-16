@@ -54,6 +54,10 @@ namespace OpenAuth.App.Response
         /// 工作流程绑定Id
         /// </summary>
         public string FlowInstanceId { get; set; }
+        /// <summary>
+        /// 驳回原因
+        /// </summary>
+        public string RejectContent { get; set; }
         public int? IsFinish { get; set; }
     }
 }

@@ -50,7 +50,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Response();
             try
             {
-                result.Message = await _app.CertVerification(req);
+                result = await _app.CertVerification(req);
             }
             catch(Exception ex)
             {

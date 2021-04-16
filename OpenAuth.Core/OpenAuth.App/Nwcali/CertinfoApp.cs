@@ -47,8 +47,11 @@ namespace OpenAuth.App
             //}
 
             var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("校准证书"));
+            //var fs = await UnitWork.Find<FlowInstance>(null)
+            //    .Where(o => o.IsFinish == 1 && o.SchemeId == mf.FlowSchemeId)//校准证书已结束流程
+            //    .ToListAsync();
             var fs = await UnitWork.Find<FlowInstance>(null)
-                .Where(o => o.IsFinish == 1 && o.SchemeId == mf.FlowSchemeId)//校准证书已结束流程
+                .Where(o => o.SchemeId == mf.FlowSchemeId  && (o.ActivityName.Contains("已完成") || o.IsFinish==1))//校准证书已完成流程,IsFinish==1为流程改动前真实结束的数据
                 .ToListAsync();
             var fsid = fs.Select(f => f.Id).ToList();
             var result = new TableData();
@@ -165,10 +168,15 @@ namespace OpenAuth.App
                 instances = await UnitWork.Find<FlowInstanceTransitionHistory>(u => u.CreateUserId == user.User.Id)
                     .Select(u => u.InstanceId).Distinct().ToListAsync();
 
+            var activeName = "";
+            if (request.ActivityStatus==1) activeName = "待审核";
+            else if (request.ActivityStatus == 2) activeName = "待批准";
+
             var fs = await UnitWork.Find<FlowInstance>(f => f.SchemeId == mf.FlowSchemeId)
                 .WhereIf(request.FlowStatus != 1, o => o.MakerList == "1" || o.MakerList.Contains(user.User.Id))//待办事项
-                .WhereIf(request.FlowStatus == 1, o => (o.ActivityName == "待送审" || instances.Contains(o.Id)) && o.ActivityName != "结束")
-                .WhereIf(request.FlowStatus == 2, o => o.ActivityName == "待审核" || o.ActivityName == "待批准")
+                .WhereIf(request.FlowStatus == 1, o => (o.ActivityName == "待送审" || instances.Contains(o.Id)) && (o.ActivityName != "结束" && o.ActivityName!="已完成"))
+                .WhereIf(request.FlowStatus == 2, o => (o.ActivityName == "待审核" || o.ActivityName == "待批准") && o.IsFinish==0) //证书审核只显示进行中待核审和待批准
+                .WhereIf(!string.IsNullOrWhiteSpace(activeName),o=>o.ActivityName==activeName)
                 .ToListAsync();
             var fsid = fs.Select(f => f.Id).ToList();
             var certObjs = UnitWork.Find<NwcaliBaseInfo>(null);
@@ -194,9 +202,20 @@ namespace OpenAuth.App
             certList.ForEach(c =>
             {
                 c.FlowInstance = fs.Find(f => f.Id.Equals(c.FlowInstanceId));
+
+
+                //驳回/撤回状态
+                if (c.FlowInstance.IsFinish == 4) c.FlowInstance.ActivityName = "驳回";
+                else if (c.FlowInstance.IsFinish == 2) c.FlowInstance.ActivityName = "撤回";
+                //c.FlowInstance.ActivityName = c.FlowInstance.IsFinish == 4 ? "驳回" : c.FlowInstance.ActivityName;
             });
             var view = certList.Select(c =>
             {
+                //增加驳回原因
+                var rejectcontent = "";
+                var his = UnitWork.Find<FlowInstanceOperationHistory>(h => h.InstanceId.Equals(c.FlowInstanceId) && h.Content.Contains("驳回")).OrderByDescending(h => h.CreateDate).FirstOrDefault();
+                rejectcontent = his != null ? his.Content.Split("：")[1] : "";
+
                 return new CertinfoView
                 {
                     Id = c.Id,
@@ -210,7 +229,8 @@ namespace OpenAuth.App
                     Model = c.TesterModel,
                     Operator = c.Operator,
                     Sn = c.TesterSn,
-                    FlowInstanceId = c.FlowInstanceId
+                    FlowInstanceId = c.FlowInstanceId,
+                    RejectContent = rejectcontent
                 };
             });
             var certCount1 = await certObjs.CountAsync();
@@ -243,9 +263,24 @@ namespace OpenAuth.App
                 list.ForEach(c =>
                 {
                     c.FlowInstance = fs.Find(f => f.Id.Equals(c.FlowInstanceId));
+
+                    //驳回/撤回状态
+                    if (c.FlowInstance.IsFinish == 4) c.FlowInstance.ActivityName = "驳回";
+                    else if (c.FlowInstance.IsFinish == 2) c.FlowInstance.ActivityName = "撤回";
+                    //c.FlowInstance.ActivityName = c.FlowInstance.IsFinish == 4 ? "驳回" : c.FlowInstance.ActivityName;
                 });
                 var view2 = list.Select(c =>
                 {
+                    //增加驳回原因
+                    var rejectcontent = "";
+                    var his = UnitWork.Find<FlowInstanceOperationHistory>(h => h.InstanceId.Equals(c.FlowInstanceId) && h.Content.Contains("驳回")).OrderByDescending(h => h.CreateDate).FirstOrDefault();
+                    rejectcontent = his != null ? his.Content.Split("：")[1] : "";
+                    //if (request.FlowStatus == 2 || (request.FlowStatus == 1 && c.FlowInstance.IsFinish != 0))
+                    //{
+                    //    var his = UnitWork.Find<FlowInstanceOperationHistory>(h => h.InstanceId.Equals(c.FlowInstanceId) && h.Content.Contains("驳回")).OrderByDescending(h => h.CreateDate).FirstOrDefault();
+                    //    rejectcontent = his != null ? his.Content.Split("：")[1] : "";
+                    //}
+
                     return new CertinfoView
                     {
                         Id = c.Id,
@@ -259,7 +294,8 @@ namespace OpenAuth.App
                         Model = c.Model,
                         Operator = c.Operator,
                         Sn = c.Sn,
-                        FlowInstanceId = c.FlowInstanceId
+                        FlowInstanceId = c.FlowInstanceId,
+                        RejectContent= rejectcontent
                     };
                 }).ToList(); 
                 view = view.Concat(view2);
@@ -274,8 +310,9 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        public async Task<string> CertVerification(List<CertVerificationReq> request)
+        public async Task<Infrastructure.Response> CertVerification(List<CertVerificationReq> request)
         {
+            var result = new Infrastructure.Response();
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
@@ -292,7 +329,7 @@ namespace OpenAuth.App
                         throw new CommonException("证书不存在", 80001);
                     var id = certInfo is null ? baseInfo.Id : certInfo.Id;
                     var certNo = certInfo is null ? baseInfo.CertificateNumber : certInfo.CertNo;
-                    var b = await CheckCanOperation(id, loginContext.User.Name);
+                    var b = await CheckCanOperation(id, loginContext.User.Name, req.Verification.VerificationFinally);
                     if (!b && loginContext.User.Account!= "zhoudingkun")
                     {
                         throw new CommonException("您无法操作此步骤。", 80011);
@@ -359,16 +396,25 @@ namespace OpenAuth.App
                                 CertInfoId = id,
                                 Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}驳回证书。"
                             });
-                            await _flowInstanceApp.DeleteAsync(f => f.Id == req.Verification.FlowInstanceId);
-                            var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name == "校准证书");
-                            var flowInstanceRequest = new AddFlowInstanceReq();
-                            flowInstanceRequest.SchemeId = mf.FlowSchemeId;
-                            flowInstanceRequest.FrmType = 2;
-                            flowInstanceRequest.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
-                            flowInstanceRequest.CustomName = $"校准证书{certNo}审批";
-                            flowInstanceRequest.FrmData = $"{{\"certNo\":\"{certNo}\",\"cert\":[{{\"key\":\"{DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString()}\",\"url\":\"/Cert/DownloadCertPdf/{certNo}\",\"percent\":100,\"status\":\"success\",\"isImg\":false}}]}}";
-                            var newFlowId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(flowInstanceRequest);
-                            await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { FlowInstanceId = newFlowId });
+                            //await _flowInstanceApp.DeleteAsync(f => f.Id == req.Verification.FlowInstanceId);
+                            //var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name == "校准证书");
+                            //var flowInstanceRequest = new AddFlowInstanceReq();
+                            //flowInstanceRequest.SchemeId = mf.FlowSchemeId;
+                            //flowInstanceRequest.FrmType = 2;
+                            //flowInstanceRequest.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
+                            //flowInstanceRequest.CustomName = $"校准证书{certNo}审批";
+                            //flowInstanceRequest.FrmData = $"{{\"certNo\":\"{certNo}\",\"cert\":[{{\"key\":\"{DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString()}\",\"url\":\"/Cert/DownloadCertPdf/{certNo}\",\"percent\":100,\"status\":\"success\",\"isImg\":false}}]}}";
+                            //var newFlowId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(flowInstanceRequest);
+                            //await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { FlowInstanceId = newFlowId });
+                            break;
+                        //撤回
+                        case "4":
+                            _flowInstanceApp.Verification(req.Verification);
+                            await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
+                            {
+                                CertInfoId = id,
+                                Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}撤回证书。"
+                            });
                             break;
                         default:
                             break;
@@ -376,7 +422,7 @@ namespace OpenAuth.App
                 }
                 catch (Exception e)
                 {
-
+                    result.Code = 500;
                     Message.Append("报错编号"+baseInfo.CertificateNumber +"报错信息："+ e.Message);
                 }
                 if (request.Count > 1) 
@@ -384,8 +430,22 @@ namespace OpenAuth.App
                     await Task.Delay(30000);
                 }
             }
-            return string.IsNullOrWhiteSpace(Message.ToString()) ? "审批成功" : Message.ToString();
+            result.Message= string.IsNullOrWhiteSpace(Message.ToString()) ? "审批成功" : Message.ToString();
+            return result;
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> LoadSaleInfo(QuerySaleOrDeviceOrCertListReq request)
+        {
+            var result = new TableData();
+            var fs = await UnitWork.Find<FlowInstance>(f => f.SchemeId == "q").ToListAsync();
+            return result;
+        }
+
 
         public void Add(AddOrUpdateCertinfoReq req)
         {
@@ -450,10 +510,58 @@ namespace OpenAuth.App
         /// <param name="id"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        private async Task<bool> CheckCanOperation(string id, string name)
+        private async Task<bool> CheckCanOperation(string id, string name,string operate)
         {
-            var h = await UnitWork.FindSingleAsync<CertOperationHistory>(c => c.CertInfoId.Equals(id) && c.Action.Contains(name));
-            return h is null;
+            //撤回操作不验证
+            if (operate.Equals("4")) return true;
+            var history = await UnitWork.Find<CertOperationHistory>(c => c.CertInfoId.Equals(id)).ToListAsync();
+            var rejectTime = history.Where(c=>c.Action.Contains("驳回")).OrderByDescending(c => c.CreateTime).Select(c => c.CreateTime).FirstOrDefault();
+            //有无驳回操作
+            if (rejectTime == null)
+            {
+                //有无撤回操作
+                rejectTime = history.Where(c => c.Action.Contains("撤回")).OrderByDescending(c => c.CreateTime).Select(c => c.CreateTime).FirstOrDefault();
+                if (rejectTime == null)
+                {
+                    //没有则直接验证是否有操作记录
+                    var a = history.FirstOrDefault(c => c.Action.Contains(name));
+                    return a is null;
+                }
+                else
+                {
+                    //有则验证撤回操作之后是否有操作记录
+                    var a = history.FirstOrDefault(c => c.CreateTime > rejectTime && c.Action.Contains(name));
+                    return a is null;
+                }
+            }
+            else
+            {
+                //驳回后的操作环节
+                var h1 = history.Where(c => c.CreateTime > rejectTime).ToList();
+                if (h1 != null)
+                {
+                    //是否是撤回后的环节
+                    var cht = h1.Where(c => c.Action.Contains("撤回")).OrderByDescending(c => c.CreateTime).Select(c => c.CreateTime).FirstOrDefault();
+                    if (cht != null)
+                    {
+                        var a = h1.FirstOrDefault(c => c.CreateTime > cht && c.Action.Contains(name));
+                        return a is null;
+                    }
+                    else
+                    {
+                        var a = h1.FirstOrDefault(c => c.Action.Contains(name));
+                        return a is null;
+                    }
+                }
+                else
+                {
+                    var a = h1.FirstOrDefault(c => c.Action.Contains(name));
+                    return a is null;
+                }
+            }
+            //var h = history.FirstOrDefault(c => c.CreateTime >= rejectTime && c.Action.Contains(name));
+            ////var h = await UnitWork.FindSingleAsync<CertOperationHistory>(c => c.CertInfoId.Equals(id) && c.Action.Contains(name));
+            //return h is null;
         }
 
         /// <summary>

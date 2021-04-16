@@ -108,11 +108,13 @@
     ///  1: 通过
     ///  2：不通过
     ///  3：驳回
+    ///  4：撤回
     /// </summary>
     public enum TagState
     {
         Ok = 1,
         No ,
-        Reject
+        Reject,
+        Recall
     }
 }
