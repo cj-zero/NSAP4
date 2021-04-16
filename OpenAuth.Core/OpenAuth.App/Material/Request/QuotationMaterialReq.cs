@@ -76,7 +76,7 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         ///仓库编号
         /// </summary>
-        public string WarehouseNumber { get; set; }
+        public string WhsCode { get; set; }
 
         /// <summary>
         ///被替换物料
@@ -98,6 +98,5 @@ namespace OpenAuth.App.Material.Request
         ///物料状态 1-更换 2-购买 3-赠送
         /// </summary>
         public string MaterialType { get; set; }
-
     }
 }

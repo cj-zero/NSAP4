@@ -128,6 +128,28 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return result;
         }
+        /// <summary>
+        /// 查询物料剩余库存
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetMaterialCodeOnHand([FromQuery] QueryQuotationListReq request)
+        {
+
+            var result = new TableData();
+            try
+            {
+                return await _app.GetMaterialCodeOnHand(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
 
         /// <summary>
         /// 加载物料列表

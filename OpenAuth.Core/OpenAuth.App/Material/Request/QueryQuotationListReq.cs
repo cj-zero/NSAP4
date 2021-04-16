@@ -7,6 +7,10 @@ namespace OpenAuth.App.Material.Request
 {
     public class QueryQuotationListReq : PageReq
     {
+        public QueryQuotationListReq() 
+        {
+            WhsCode = "37";
+        }
         /// <summary>
         /// appid
         /// </summary>
@@ -107,6 +111,11 @@ namespace OpenAuth.App.Material.Request
         /// 是否修改
         /// </summary>
         public bool? IsUpdate { get; set; }
+
+        /// <summary>
+        /// 仓库号
+        /// </summary>
+        public string WhsCode { get; set; }
 
         /// <summary>
         /// 打印物料id

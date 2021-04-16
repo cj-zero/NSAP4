@@ -45,5 +45,10 @@ namespace OpenAuth.App.Material.Response
         /// 服务id
         /// </summary>
         public string ServiceOrderSapId { get; set; }
+
+        /// <summary>
+        /// 仓库号
+        /// </summary>
+        public string WhsCode { get; set; }
     }
 }
