@@ -3,8 +3,8 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
+          :listQuery="listQuery"
           :config="searchConfig"
-          @changeForm="onChangeForm" 
           @search="onSearch">
         </Search>
       </div>
@@ -103,7 +103,7 @@ export default {
     searchConfig () {
       return [
         ...this.commonSearch,
-        { type: 'search' },
+        { component: { tag: 's-button', attrs: { btnText: '查询' }, on: { click: this.onSearch } } },
         // { type: 'button', btnText: '审批', isSpecial: true, handleClick: this.getDetail, options: { type: 'approve' } }
       ]
     }, // 搜索配置
@@ -127,10 +127,6 @@ export default {
     }
   },
   methods: {
-    onChangeForm (val) {
-      this.currentFormQuery = val
-      Object.assign(this.listQuery, val)
-    },
     async agree () { //同意
       this.$refs.order.openRemarkDialog('agree')
     }, 
@@ -139,6 +135,7 @@ export default {
     },
     closeDialog () {
       this.$refs.order.resetInfo()
+      this.$refs.myDialog.close()
     }
   },
   created () {

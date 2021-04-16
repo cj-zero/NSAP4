@@ -19,9 +19,9 @@ f<template>
     <el-row v-else type="flex" class="head-title-wrapper general-manager">
       <div style="margin-right: 15px;">
         <p style="margin-bottom: 4px">报销ID: <span>{{ formData.mainId }}</span></p>
-        <p>服务ID: <span>{{ formData.serviceOrderSapId }}</span></p>
+        <p class="pointer" style="text-decoration: underline;" @click="_openServiceOrHistory(true)">服务ID: <span>{{ formData.serviceOrderSapId }}</span></p>
       </div>
-      <div style="text-decoration: underline;">{{ formData.serviceRelations }}-{{ formData.orgName }}-{{ formData.userName }}</div>
+      <div class="pointer" style="text-decoration: underline;">{{ formData.serviceRelations }}-{{ formData.orgName }}-{{ formData.userName }}</div>
     </el-row>
     <!-- 时间进度轴，仅总经理可看 timelineList -->
     <template v-if="title === 'approve'">
@@ -2127,9 +2127,7 @@ export default {
       if (this.title === 'approve' && !isServe) {
         this.openHistory()
       } else {
-        if (!this.isGeneralManager) {
-          this.openServiceOrder(this.formData.serviceOrderId, () => this.orderLoading = true, () => this.orderLoading = false)
-        }
+        this.openServiceOrder(this.formData.serviceOrderId, () => this.orderLoading = true, () => this.orderLoading = false)
       } 
     },
     openTravelExpense () { // 新增差补

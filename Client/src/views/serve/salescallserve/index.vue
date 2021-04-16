@@ -20,16 +20,13 @@
           @click="handleFilter"
         >搜索</el-button> -->
         <Search 
-          :listQuery="formQuery"
+          :listQuery="listQuery"
           :config="searchConfig"
-          @changeForm="onChangeForm" 
-          @search="onSearch"
-          @advanced="onAdvanced"></Search>
+          @search="onSearch"></Search>
         <permission-btn moduleName="callserve" size="mini" v-on:btn-event="onBtnClicked"></permission-btn>
         <Search 
-          :listQuery="formQuery"
+          :listQuery="listQuery"
           :config="searchConfigAdv"
-          @changeForm="onAdvChangeForm" 
           @search="onSearch"
           v-show="advancedVisible"></Search>
       </div>
@@ -409,6 +406,12 @@ import Report from '../common/components/report'
 import Analysis from '../callserve/workOrderReport'
 import { chatMixin, reportMixin, tableMixin } from '../common/js/mixins'
 import { serializeParams } from '@/utils/process'
+const W_90 = { width: '90px' }
+const W_100 = { width: '100px' }
+const W_140 = { width: '140px' }
+const W_150 = { width: '150px' }
+const W_170 = { width: '170px' }
+const W_180 = { width: '180px' }
 export default {
   provide () {
     return {
@@ -425,27 +428,27 @@ export default {
     },
     searchConfig () {
       return [
-        { width: 100, placeholder: '服务ID', prop: 'QryU_SAP_ID' },
-        { width: 90, placeholder: '请选择呼叫状态', prop: 'QryState', options: [{ value: '', label: '全部' }, ...this.statusOptions], type: 'select' },
-        { width: 170, placeholder: '客户', prop: 'QryCustomer' },
-        { width: 150, placeholder: '序列号', prop: 'QryManufSN' },
-        { width: 90, placeholder: '接单员', prop: 'QryRecepUser' },
-        { width: 90, placeholder: '技术员', prop: 'QryTechName' },
-        { width: 90, placeholder: '主管', prop: 'QrySupervisor' },
-        { type: 'search' },
-        { type: 'search', btnText: '高级查询' }
+        { prop: 'QryU_SAP_ID', component: { attrs: {  placeholder: '服务ID', style: W_100 } } },
+        { prop: 'QryState', component: { tag: 'select', attrs: { options: [{ value: '', label: '全部' }, ...this.statusOptions], placeholder: '请选择呼叫状态', style: W_90 } } },
+        { prop: 'QryCustomer', component: { attrs: { placeholder: '客户', style: W_170 } } },
+        { prop: 'QryManufSN', component: { attrs: { placeholder: '序列号', style: W_150 } } },
+        { prop: 'QryRecepUser', component: { attrs: { placeholder: '接单员', style: W_90 } } },
+        { prop: 'QryTechName', component: { attrs: { placeholder: '技术员', style: W_90 } } },
+        { prop: 'QrySupervisor', component: { attrs: { placeholder: '主管', style: W_90 } } },
+        { component: { tag: 's-button', attrs: { btnText: '查询' }, on: { click: this.onSearch } } },
+        { component: { tag: 's-button', attrs: { btnText: '高级查询' }, on: { click: this.onAdvanced } } }
       ]
     },
     searchConfigAdv () {
       return [
-        { width: 140, placeholder: '问题类型', prop: 'QryProblemType', options: this.problemOptions, type: 'tree' },
-        { width: 100, placeholder: '呼叫类型', prop: 'QryFromType', options: this.options_type, type: 'select' },
-        { width: 180, placeholder: '呼叫主题', prop: 'QryFromTheme' },
-        { width: 140, placeholder: '联系电话', prop: 'ContactTel' },
-        { width: 150, placeholder: '创建开始日期', prop: 'QryCreateTimeFrom', type: 'date', showText: true },
-        { width: 150, placeholder: '创建截止日期', prop: 'QryCreateTimeTo', type: 'date' },
-        { width: 150, placeholder: '完工开始日期', prop: 'CompleteDate', type: 'date' },
-        { width: 150, placeholder: '完工截止日期', prop: 'EndCompleteDate', type: 'date' },
+        { prop: 'QryProblemType', component: { tag: 'tree', attrs: { options: this.problemOptions, placeholder: '问题类型', style: W_140 } } },
+        { prop: 'QryFromType', component: { tag: 'select', attrs: { options: this.options_type, placeholder: '呼叫类型', style: W_100 } } },
+        { prop: 'QryFromTheme', component: { attrs: {  placeholder: '呼叫主题', style: W_180 } } },
+        { prop: 'ContactTel', component: { attrs: {  placeholder: '联系电话', style: W_140 } } },
+        { prop: 'QryCreateTimeFrom', component: { tag: 'date', attrs: {  placeholder: '创建开始日期', style: W_150 } } },
+        { prop: 'QryCreateTimeTo', component: { tag: 'date', attrs: {  placeholder: '创建结束日期', style: W_150 } } },
+        { prop: 'CompleteDate', component: { tag: 'date', attrs: {  placeholder: '完工开始日期', style: W_150 } } },
+        { prop: 'EndCompleteDate', component: { tag: 'date', attrs: {  placeholder: '完工结束日期', style: W_150 } } }
       ]
     },
     commentBtnList () {
@@ -683,13 +686,6 @@ export default {
     onSearch () {
       this.listQuery.page = 1
       this.getList()
-    },
-    onChangeForm (val) {
-      Object.assign(this.listQuery, val)
-    },
-    onAdvChangeForm (val) {
-      delete val.QryState
-      Object.assign(this.listQuery, val)
     },
     onAdvanced () {
       this.advancedVisible = !this.advancedVisible

@@ -230,6 +230,6 @@ export default {
 
 <style lang="scss" scoped>
 .search-wrapper {
-  display: inline-block;
+  display: inline;
 }
 </style>>

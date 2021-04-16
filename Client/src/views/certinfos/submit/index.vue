@@ -1,7 +1,18 @@
 <template>
-  <div class="app-container">
+  <div 
+    class="app-container"
+    v-loading.fullscreen="isSend"
+    :element-loading-text="`${loadingText}中`"
+    element-loading-spinner="el-icon-loading"
+    element-loading-background="rgba(0, 0, 0, 0.3)"
+  >
     <div class="bg-white">
-      <search @search="onSearch" :type="type" @approve="onApprove"></search>
+      <sticky :className="'sub-navbar'">
+        <div class="filter-container">
+          <search :config="searchConfig" :listQuery="pageConfig" @search="onSearch"></search>
+        </div>
+      </sticky>
+      <!-- <search @search="onSearch" :type="type" @approve="onApprove"></search> -->
       <common-table
         ref="table"
         :isLoading="isLoading"
@@ -11,6 +22,7 @@
         @openDetail="onOpenDetail"
         @handleSubmit="onHandleSubmit"
         @selectionChange="onSelection"
+        @submit="onSubmit"
       >
       </common-table>
       <pagination
@@ -32,6 +44,7 @@
       >
         <certifiate
           :type="type"
+          :hasSend="hasSend"
           :certNo="currentCertNo"
           :currentData="currentData"
           @handleSubmit="onHandleSubmit"
@@ -47,14 +60,15 @@
 
 <script>
 import CommonTable from '../commonComponent/table'
-import Search from '../commonComponent/search'
+// import Search from '../commonComponent/search'
+import Search from '@/components/Search'
 import Pagination from '@/components/Pagination'
 import Certifiate from '../commonComponent/certifiate'
-import { commonMixin } from '../mixin/mixin'
+import { commonMixin, certVerMixin } from '../mixin/mixin'
 import { loadApprover } from '@/api/cerfiticate'
 export default {
   name: 'submit',
-  mixins: [commonMixin],
+  mixins: [commonMixin, certVerMixin],
   components: {
     CommonTable,
     Pagination,
@@ -72,9 +86,22 @@ export default {
         { label: '资产编号', name: 'assetNo', width: '100' },
         { label: '校准日期', name: 'calibrationDate', width: '165' },
         { label: '状态', name: 'activityName', width: '100' },
-        { label: '操作', name: 'operation', width: '' }
+        { label: '操作', name: 'operation', width: '100' },
+        { label: '备注', name: 'rejectContent' }
       ],
-      type: 'submit'
+      type: 'submit',
+      hasSend: true,
+      activityName: ''
+    }
+  },
+  watch: {
+    isSend (val) {
+      console.log(val, 'isSend')
+    }
+  },
+  computed: {
+    loadingText () {
+      return this.activityName === '待审核' ? '撤回' : '送审'
     }
   },
   methods: {
@@ -95,6 +122,10 @@ export default {
       }).catch(() => {
         this.isLoading = false
       })
+    },
+    onSubmit ({ row, type, text }) {
+      this.activityName = row.activityName
+      this._certVerificate(row, type, text)
     }
   },
   created () {
