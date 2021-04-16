@@ -194,7 +194,7 @@
         <template>
           <!-- 序列号查询表格 -->
           <div class="serial-wrapper">
-            <el-row type="flex" justify="space-between">
+            <el-row type="flex" align="middle">
               <div class="form-wrapper">
                 <el-form :model="listQuerySearial" size="mini">
                   <el-row type="flex">
@@ -223,6 +223,7 @@
                   </el-row>
                 </el-form>
               </div>
+              <span style="margin-left: 20px;">设备总数量: {{ serialNumberList.length }}</span>
             </el-row>
             <!-- 设备序列号表格 -->
             <div class="serial-table-wrapper">
@@ -318,7 +319,7 @@
                       style="width: 100%;"
                       clearable
                       no-data-text="请先选择物料类型"
-                      @change="onMaterialTypeChange(row, index)"
+                      @change="onMaterialTypeChange(row)"
                       placeholder="请选择">
                       <el-option
                         v-for="item in materialTypeOptions"
@@ -371,6 +372,30 @@
                       <i class="notice-icon el-icon-warning-outline" v-if="!isIntegerNumber(+row.maxQuantity)"></i>
                     </el-tooltip>
                   </el-row>
+                </template>
+                <template v-slot:warehouseQuantity="{ row }">
+                  <div :class="{ 'danger': row.count > row.warehouseQuantity }">{{ row.warehouseQuantity }}</div>
+                </template>
+                <template v-slot:whsCode="{ row, index }">
+                  <el-form-item
+                    style="height: 28px;"
+                    :prop="'list.' + index + '.' + 'whsCode'"
+                    :rules="materialRules['whsCode']"
+                  >
+                    <el-select
+                      v-infotooltip.top.ellipsis
+                      v-model="row.whsCode" 
+                      style="width: 100%;"
+                      :clearable="false"
+                      @change="onWhsCodeChange(row)">
+                      <el-option
+                        v-for="item in whsCodeOptions"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value">
+                      </el-option>
+                    </el-select>
+                  </el-form-item>
                 </template>
                 <!-- 备注 -->
                 <template v-slot:remark="{ row }">
@@ -431,48 +456,56 @@
           <div class="divider"></div>
           <!-- 服务费用和差旅费用 -->
           <div class="service-travel-wrapper">
-            <!-- <el-form
+            <el-form
               ref="serviceListForm"
               :model="serviceData"
               :show-message="false"
-            ></el-form> -->
-            <common-table 
-              :data="serviceData.serviceList"
-              :columns="serviceColumns"
             >
-              <template v-slot:hours="{ row }">
-                <!-- <el-form-item
-                  :prop="'serviceList.' + index + '.hours'"
-                > -->
-                  <el-input-number  
-                    style="width: 100%;"
-                    size="mini"
-                    :controls="false"
-                    :min="0"
-                    :precision="0"
-                    @change="onServiceChange(row)"
-                    :disabled="formData.isMaterialType === true"
-                    v-model="row.hours">
-                  </el-input-number>
-                <!-- </el-form-item> -->
-                
-              </template>
-              <template v-slot:salesPrice="{ row }">
-                <el-input-number  
-                  style="width: 100%;"
-                  size="mini"
-                  :controls="false"
-                  :precision="2"
-                  :min="0"
-                  @change="onServiceChange(row)"
-                  :disabled="formData.isMaterialType === true"
-                  v-model="row.salesPrice">
-                </el-input-number>
-              </template> 
-              <template v-slot:totalPrice="{ row }">
-                {{ row.totalPrice | toThousands }}
-              </template>   
-            </common-table>
+              <common-table 
+                :data="serviceData.serviceList"
+                :columns="serviceColumns"
+              >
+                <template v-slot:hours="{ row, index }">
+                  <el-form-item
+                    :prop="'serviceList.' + index + '.hours'"
+                    :rules="{ required: !!row.salesPrice, trigger: ['change', 'blur'], validator: validateHours }"
+                  >
+                    <el-input-number  
+                      placeholder="设备序列号倍数"
+                      style="width: 100%;"
+                      size="mini"
+                      :controls="false"
+                      :min="0"
+                      :precision="0"
+                      @change="onServiceChange(row)"
+                      :disabled="formData.isMaterialType === true"
+                      v-model="row.hours">
+                    </el-input-number>
+                  </el-form-item>
+                </template>
+                <template v-slot:salesPrice="{ row, index }">
+                  <el-form-item
+                    :prop="'serviceList.' + index + '.salesPrice'"
+                    :rules="{ required: !!row.hours, trigger: ['change', 'blur'] }"
+                  >
+                    <el-input-number  
+                      style="width: 100%;"
+                      size="mini"
+                      :controls="false"
+                      :precision="2"
+                      :min="0"
+                      @change="onServiceChange(row)"
+                      :disabled="formData.isMaterialType === true"
+                      v-model="row.salesPrice">
+                    </el-input-number>
+                  </el-form-item>
+                </template> 
+                <template v-slot:totalPrice="{ row }">
+                  {{ row.totalPrice | toThousands }}
+                </template>   
+              </common-table>
+            </el-form>
+            
             <el-row type="flex" align="middle" justify="end" style="margin-top: 10px;">
               <div style="margin-left: 10px;">
                 <span class="title">合计</span>
@@ -769,7 +802,8 @@ import {
   AddQuotationOrder, 
   updateQuotationOrder,
   // getQuotationMaterialsCode,
-  approveQuotationOrder
+  approveQuotationOrder,
+  getMaterialCodeOnHand
 } from '@/api/material/quotation'
 import Remark from '@/views/reimbursement/common/components/remark'
 import UpLoadFile from '@/components/upLoadFile'
@@ -1012,6 +1046,10 @@ export default {
       }
     }
     return {
+      whsCodeOptions: [
+        { label: '37', value: '37' }, 
+        { label: '15', value: '15' }
+      ],
       ifShowPrepaid: false, // 付款条件为预付的选项
       timeList: [],
       // 合同图片
@@ -1186,13 +1224,13 @@ export default {
         { label: '物料描述', prop: 'materialDescription' },
         { label: '数量', prop: 'count', slotName: 'count', align: 'right' },
         { label: '最大数量', prop: 'maxQuantity', align: 'right', slotName: 'maxQuantity', 'show-overflow-tooltip': false },
-        { label: '库存量', prop: 'warehouseQuantity', align: 'right' },
-        { label: '仓库', prop: 'warehouseNumber', align: 'right' },
+        { label: '库存量', prop: 'warehouseQuantity', align: 'right', slotName: 'warehouseQuantity', 'show-overflow-tooltip': false },
+        { label: '仓库', prop: 'whsCode', align: 'right', slotName: 'whsCode' },
         { label: '成本价', prop: 'unitPrice', align: 'right', slotName: 'unitPrice', 'show-overflow-tooltip': false },
         { label: '推荐单价', prop: 'salesPrice', align: 'right', slotName: 'salesPrice', 'show-overflow-tooltip': false },
         { label: '折扣(%)', prop: 'discount', slotName: 'discount', align: 'right' },
         { label: '销售单价', prop: 'discountPrices', align: 'right', slotName: 'discountPrices', 'show-overflow-tooltip': false },
-        { label: '小计', prop: 'totalPrice', disabled: true, align: 'right', slotName: 'totalPrice' },
+        { label: '小计', prop: 'totalPrice', disabled: true, align: 'right', slotName: 'totalPrice', 'show-overflow-tooltip': false },
         { label: '备注', slotName: 'remark', prop: 'remark' },
         { label: '操作', slotName: 'operation' }
       ],    
@@ -1201,7 +1239,8 @@ export default {
         count: [{ required: true, trigger: ['change', 'blur'] }],
         materialType: [{ required: true, trigger: ['change', 'blur'] }],
         discount: [{ required: true, trigger: ['change', 'blur'], validator: DISCOUNT_VALIDATOR }],
-        discountPrices: [{ required: true, trigger: ['change', 'blur'] }]
+        discountPrices: [{ required: true, trigger: ['change', 'blur'] }],
+        whsCode: [{ required: true, trigger: ['change', 'blur'] }]
       },
       // 物料汇总表格
       materialSummaryList: [],
@@ -1229,7 +1268,7 @@ export default {
         { label: '数量', prop: 'count', align: 'right', width: 70, slotName: 'count', 'show-overflow-tooltip': false },
         { label: '最大数量', prop: 'maxQuantity', align: 'right' },
         // { label: '库存量', prop: 'warehouseQuantity', align: 'right' },
-        // { label: '仓库', prop: 'warehouseNumber', align: 'right' },
+        // { label: '仓库', prop: 'whsCode', align: 'right' },
         { label: '成本价', prop: 'unitPrice', align: 'right', slotName: 'unitPrice', 'show-overflow-tooltip': false },
         { label: '推荐单价', prop: 'salesPrice', align: 'right', slotName: 'salesPrice', 'show-overflow-tooltip': false },
         { label: '销售单价', prop: 'discountPrices', align: 'right', slotName: 'discountPrices', 'show-overflow-tooltip': false },
@@ -1319,9 +1358,9 @@ export default {
         deliveryMethod: [{ required: true, trigger: ['change', 'blur'] }],
         collectionAddress: [{ required: true, trigger: ['change', 'blur'] }],
         isMaterialType: [{ required: true, trigger: ['change', 'blur'] }],
-        invoiceCompany: [{ required: !!(this.formData.taxRate || this.formData.invoiceCategory), trigger: ['change', 'blur'] }],
-        taxRate: [{ required: !!(this.formData.invoiceCompany || this.formData.invoiceCategory), trigger: ['change', 'blur'] }],
-        invoiceCategory: [{ required: !!(this.formData.taxRate || this.formData.invoiceCompany), trigger: ['change', 'blur'] }]
+        invoiceCompany: [{ required: !!(this.formData.taxRate || this.formData.invoiceCategory), trigger: ['change'] }],
+        taxRate: [{ required: !!(this.formData.invoiceCompany || this.formData.invoiceCategory), trigger: ['change'] }],
+        invoiceCategory: [{ required: !!(this.formData.taxRate || this.formData.invoiceCompany), trigger: ['change'] }]
       }
     },
     serviceData () {
@@ -1435,6 +1474,30 @@ export default {
   },
   methods: {
     isInServiceOrTravel,
+    // const SERVICE_CHARGE_VALIDATOR = function (rule, value, callback) { // 服务费校验规则
+    //   value = Number(value)
+    //   if (!isNaN(value) && value % 50 !== 0) {
+    //     console.log('error')
+    //     callback(new Error())
+    //   } else {
+    //     callback();
+    //   }
+    // }
+    validateHours (rule, value, callback) {
+      console.log(rule, 'rule validateHours')
+      console.log(typeof value, value, 'typeof')
+      const { required } = rule
+      const length = this.serialNumberList.length
+      if (length && required) {
+        const result = Number(value) % length
+        const isValid = isNumber(result) && result === 0 && Number(value) > 0
+        isValid ? callback() : callback(new Error())
+      } else if (required) {
+        Number(value) > 0 ? callback() : callback(new Error())
+      } else {
+        callback()
+      }
+    },
     onServiceChange (row) {
       const { hours, salesPrice } = row
       row.totalPrice = (hours && salesPrice) 
@@ -1463,6 +1526,17 @@ export default {
         : Number(accMul(count, discountPrices)).toFixed(2)
       console.log(row, 'row change')
     },
+    async onWhsCodeChange (row) {
+      const { whsCode, materialCode } = row
+      console.log(row.whsCode, 'whsCode')
+      try {
+        const { data } = await getMaterialCodeOnHand({ materialCode, whsCode })
+        row.warehouseQuantity = data.onHand
+      } catch (err) {
+        this.$message.error(err.message)
+        row.warehouseQuantity = ''
+      }
+    },
     _normalizeTimeList (timeList) {
       timeList = timeList.filter(item => item.approvalResult !== '暂定') // 把暂定的状态排除掉
       const { quotationStatus, totalMoney } = this.formData
@@ -1472,18 +1546,18 @@ export default {
         6: -3,
         7: -4,
         8: -5,
-        9: -6,
-        10: -7,
-        11: -9,
-        12: -8,
+        // 9: -6,
+        10: -6,
+        11: -8,
+        12: -7,
       }
       const NO_TOTAL_MONEY_MAP = { // 没服务费的
         4: -1,
         5: -2,
-        9: -3,
-        10: -4,
-        11: -6,
-        12: -5
+        // 9: -3,
+        10: -3,
+        11: -5,
+        12: -4
       }
       const isMaterialType = this.formData.isMaterialType
       console.log(isMaterialType, 'isMaterialType')
@@ -1494,8 +1568,8 @@ export default {
       } else {
         maxLen = Number(totalMoney) ? 10 : 7
       }
-      const HAS_TOTAL_MONEY_TEXT = ['报价单提交审批', '工程审批', '总经理审批', '客户确认报价', '销售订单成立', '财务审批', '总经理审批', '待出库', '部分出库', '已出库']
-      const NO_TOTAL_MONEY_TEXT = ['报价单提交审批', '工程审批', '总经理审批', '总经理审批', '待出库', '部分出库', '已出库']
+      const HAS_TOTAL_MONEY_TEXT = ['报价单提交审批', '工程审批', '总经理审批', '客户确认报价', '销售订单成立', '财务审批', '待出库', '部分出库', '已出库']
+      const NO_TOTAL_MONEY_TEXT = ['报价单提交审批', '工程审批', '总经理审批', '待出库', '部分出库', '已出库']
       let TEXT_MAP, TOTAL_MONEY_MAP
       if (isBoolean) {
         TEXT_MAP = !isMaterialType ?  HAS_TOTAL_MONEY_TEXT : NO_TOTAL_MONEY_TEXT
@@ -1966,7 +2040,7 @@ export default {
         item.discountPrices = item.salesPrice * 1
         item.count = 1
         item.warehouseQuantity = onHand
-        item.warehouseNumber = whsCode
+        item.whsCode = whsCode
         item.maxQuantity = quantity
         // item.maxQuantityText = Math.ceil(quantity)
         item.totalPrice = Number(accMul(item.salesPrice, item.count)).toFixed(2)
@@ -2093,6 +2167,7 @@ export default {
     async _operateOrder (isDraft) { // 提交 存稿 针对于报价单
       // 判断表头表单
       console.log(this.formData.quotationProducts)
+      
       let isFormValid = await this._checkFormData()
       console.log(isFormValid, 'isFormValid')
       if (!isFormValid) {
@@ -2134,6 +2209,20 @@ export default {
             }
           }
         }
+      }
+      let isServiceValid = true
+      console.log(this.formData.isMaterialType, 'materialType')
+      if (!this.formData.isMaterialType) {
+        try {
+          await this.$refs.serviceListForm.validate()
+        } catch (err) {
+          isServiceValid = false
+          console.log(err)
+        }
+      }
+      console.log(isServiceValid, 'isSERVICEVALID')
+      if (!isServiceValid) {
+        return Promise.reject({ message: '服务费维修费未按要求填写' })
       }
       this.serviceList.forEach((item, index) => {
         if (index === 0) {
@@ -2451,6 +2540,9 @@ export default {
           }
           .notice-icon {
             color: rgb(248, 181, 0);
+          }
+          .danger {
+            color: red;
           }
         }
         .icon-item {

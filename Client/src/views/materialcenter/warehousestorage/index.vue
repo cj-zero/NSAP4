@@ -17,7 +17,7 @@
         :columns="returnOrderColumns" 
         :loading="tableLoading">
         <template v-slot:totalMoney="{ row }">
-          <p v-infotooltip.top-start.ellipsis>{{ Number(row.totalMoney) | toThousands }}</p>
+          <p v-infotooltip.ellipsis>{{ Number(row.totalMoney) | toThousands }}</p>
         </template>
       </common-table>
       <pagination

@@ -501,7 +501,7 @@ f<template>
                           v-model="scope.row[item.prop]" 
                           :disabled="item.disabled" 
                           :placeholder="item.placeholder" 
-                          v-infotooltip:200.top-start>
+                          v-infotooltip:200>
                         </el-input>
                       </el-form-item>
                     </template>

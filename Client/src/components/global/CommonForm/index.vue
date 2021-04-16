@@ -29,7 +29,7 @@
                 v-model="model[item.attrs.prop]"
                 v-bind="item.attrs"
                 v-on="item.on"
-                v-infotooltip:200.top-start
+                v-infotooltip:200
               ></component>
             </el-form-item>
           </el-col>

@@ -91,11 +91,11 @@
                           :class="processPriorityStatus(scope.row)"
                         >{{priorityOptions[scope.row.priority - 1]}}</span>
                         <template v-else-if="fruit.name === 'fromTheme'">
-                          <el-tooltip placement="top-start">
+                          <el-tooltip placement="top">
                             <div slot="content">
                               <p v-for="(content, index) in scope.row.themeList" :key="index">{{ content }}</p>
                             </div>
-                            <span style="white-space: nowrap;">{{ scope.row[fruit.name] }}</span>
+                            <div style="white-space: nowrap;">{{ scope.row[fruit.name] }}</div>
                           </el-tooltip>
                         </template>
                         <span v-else>{{scope.row[fruit.name]}}</span>
@@ -137,7 +137,7 @@
                     <div slot="content">
                       <p v-for="(content, index) in scope.row.themeList" :key="index">{{ content }}</p>
                     </div>
-                    <span style="white-space: nowrap;">{{ scope.row[fruit.name] }}</span>
+                    <div style="white-space: nowrap;">{{ scope.row[fruit.name] }}</div>
                   </el-tooltip>
                 </template>
                 <span v-else-if="fruit.name === 'status'"

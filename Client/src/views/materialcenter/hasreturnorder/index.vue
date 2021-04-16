@@ -18,7 +18,7 @@
         :columns="returnOrderColumns" 
         :loading="tableLoading">
         <template v-slot:notClearAmoun="{ row }">
-          <p v-infotooltip.ellipsis.top-start>{{ row.notClearAmount | toThousands }}</p>
+          <p v-infotooltip.ellipsis>{{ row.notClearAmount | toThousands }}</p>
         </template>
       </common-table>
       <pagination
@@ -107,7 +107,7 @@ export default {
         { label: '客户名称', prop: 'customerName' },
         { label: '申请人', prop: 'createUser' },
         { label: '创建时间', prop: 'createDate' },
-        { label: '总金额', prop: 'notClearAmount', slotName: 'notClearAmoun', align: 'right' },
+        { label: '总金额', prop: 'notClearAmount', slotName: 'notClearAmoun', align: 'right', 'show-overflow-tooltip': false },
         { label: '备注', prop: 'remark' },
         // { label: '状态', prop: 'status' },
       ],

@@ -161,3 +161,11 @@ export function printPickingList (data) { // 打印出库单前置接口
     data
   })
 }
+
+export function getMaterialCodeOnHand (params) { // 根据仓库及物料编码获取库存
+  return request({
+    url: '/Material/Quotation/GetMaterialCodeOnHand',
+    method: 'get',
+    params
+  })
+}

@@ -25,7 +25,7 @@
           <p v-infotooltip.top.ellipsis>{{ row.balance | toThousands }}</p>
         </template>
         <template v-slot:totalMoney="{ row }">
-          <p v-infotooltip.top-start.ellipsis>{{ row.totalMoney | toThousands }}</p>
+          <p v-infotooltip.ellipsis>{{ row.totalMoney | toThousands }}</p>
         </template>
       </common-table>
       <pagination
@@ -144,10 +144,10 @@ export default {
         { btnText: '查看合同', handleClick: this.showContractPictures, options: { isInTable: false }, 
           isShow: !this.isProtected && this.quotationStatus >= 8, className: 'outline' 
         },
-        { btnText: '同意', handleClick: this.approve, isShow: this.status === 'approveSales' && this.isGeneralManager, options: { type: 'agree' }, type: 'primary' },
-        { btnText: '待定', handleClick: this.approve, options: { type: 'reject' }, type: 'danger',
-          isShow: ((this.status === 'approveSales' && this.isGeneralManager) || (this.isMaterialFinancial && this.status === 'pay')), 
-        },
+        // { btnText: '同意', handleClick: this.approve, isShow: this.status === 'approveSales' && this.isGeneralManager, options: { type: 'agree' }, type: 'primary' },
+        // { btnText: '待定', handleClick: this.approve, options: { type: 'reject' }, type: 'danger',
+        //   isShow: ((this.status === 'approveSales' && this.isGeneralManager) || (this.isMaterialFinancial && this.status === 'pay')), 
+        // },
         // { btnText: '关闭', handleClick: this.handleClose, className: 'close' }      
       ] 
     },
