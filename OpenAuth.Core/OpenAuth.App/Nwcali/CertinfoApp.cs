@@ -174,8 +174,8 @@ namespace OpenAuth.App
 
             var fs = await UnitWork.Find<FlowInstance>(f => f.SchemeId == mf.FlowSchemeId)
                 .WhereIf(request.FlowStatus != 1, o => o.MakerList == "1" || o.MakerList.Contains(user.User.Id))//待办事项
-                .WhereIf(request.FlowStatus == 1, o => (o.ActivityName == "待送审" || instances.Contains(o.Id)) && o.ActivityName != "结束")
-                .WhereIf(request.FlowStatus == 2, o => o.ActivityName == "待审核" || o.ActivityName == "待批准")
+                .WhereIf(request.FlowStatus == 1, o => (o.ActivityName == "待送审" || instances.Contains(o.Id)) && (o.ActivityName != "结束" && o.ActivityName!="已完成"))
+                .WhereIf(request.FlowStatus == 2, o => (o.ActivityName == "待审核" || o.ActivityName == "待批准") && o.IsFinish==0) //证书审核只显示进行中待核审和待批准
                 .WhereIf(!string.IsNullOrWhiteSpace(activeName),o=>o.ActivityName==activeName)
                 .ToListAsync();
             var fsid = fs.Select(f => f.Id).ToList();
@@ -213,11 +213,8 @@ namespace OpenAuth.App
             {
                 //增加驳回原因
                 var rejectcontent = "";
-                if (request.FlowStatus == 2 || (request.FlowStatus == 1 && c.FlowInstance.IsFinish != 0))
-                {
-                    var his = UnitWork.Find<FlowInstanceOperationHistory>(h => h.InstanceId.Equals(c.FlowInstanceId) && h.Content.Contains("驳回")).OrderByDescending(h => h.CreateDate).FirstOrDefault();
-                    rejectcontent = his != null ? his.Content.Split("：")[1] : "";
-                }
+                var his = UnitWork.Find<FlowInstanceOperationHistory>(h => h.InstanceId.Equals(c.FlowInstanceId) && h.Content.Contains("驳回")).OrderByDescending(h => h.CreateDate).FirstOrDefault();
+                rejectcontent = his != null ? his.Content.Split("：")[1] : "";
 
                 return new CertinfoView
                 {
@@ -276,11 +273,13 @@ namespace OpenAuth.App
                 {
                     //增加驳回原因
                     var rejectcontent = "";
-                    if (request.FlowStatus == 2 || (request.FlowStatus == 1 && c.FlowInstance.IsFinish != 0))
-                    {
-                        var his = UnitWork.Find<FlowInstanceOperationHistory>(h => h.InstanceId.Equals(c.FlowInstanceId) && h.Content.Contains("驳回")).OrderByDescending(h => h.CreateDate).FirstOrDefault();
-                        rejectcontent = his != null ? his.Content.Split("：")[1] : "";
-                    }
+                    var his = UnitWork.Find<FlowInstanceOperationHistory>(h => h.InstanceId.Equals(c.FlowInstanceId) && h.Content.Contains("驳回")).OrderByDescending(h => h.CreateDate).FirstOrDefault();
+                    rejectcontent = his != null ? his.Content.Split("：")[1] : "";
+                    //if (request.FlowStatus == 2 || (request.FlowStatus == 1 && c.FlowInstance.IsFinish != 0))
+                    //{
+                    //    var his = UnitWork.Find<FlowInstanceOperationHistory>(h => h.InstanceId.Equals(c.FlowInstanceId) && h.Content.Contains("驳回")).OrderByDescending(h => h.CreateDate).FirstOrDefault();
+                    //    rejectcontent = his != null ? his.Content.Split("：")[1] : "";
+                    //}
 
                     return new CertinfoView
                     {
@@ -538,7 +537,7 @@ namespace OpenAuth.App
             else
             {
                 //驳回后的操作环节
-                var h1 = history.Where(c => c.CreateTime >= rejectTime).ToList();
+                var h1 = history.Where(c => c.CreateTime > rejectTime).ToList();
                 if (h1 != null)
                 {
                     //是否是撤回后的环节
