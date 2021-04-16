@@ -165,7 +165,7 @@ namespace Sap.Handler.Service
 
                         dts.Lines.Quantity = string.IsNullOrWhiteSpace(dln1.Count.ToString()) ? '1' : double.Parse(dln1.Count.ToString());
 
-                        dts.Lines.WarehouseCode = "37"; //仓库编号默认37仓
+                        dts.Lines.WarehouseCode = dln1.WhsCode; //仓库编号
 
                         //if (!string.IsNullOrEmpty(dln1.BaseLine))
 
@@ -181,13 +181,13 @@ namespace Sap.Handler.Service
 
                         dts.Lines.SalesPersonCode = (int)slpcode; ; //销售员编号
 
-                        dts.Lines.UnitPrice = double.Parse(string.IsNullOrWhiteSpace(dln1.DiscountPrices.ToString()) ? "0" : dln1.DiscountPrices.ToString());            //单价
+                        //dts.Lines.UnitPrice = double.Parse(string.IsNullOrWhiteSpace(dln1.DiscountPrices.ToString()) ? "0" : dln1.DiscountPrices.ToString());            //单价
 
                         dts.Lines.Price = double.Parse(string.IsNullOrWhiteSpace(dln1.DiscountPrices.ToString()) ? "0" : dln1.DiscountPrices.ToString());
 
                         //dts.Lines.DiscountPercent = string.IsNullOrWhiteSpace(dln1.Discount.ToString()) ? 0.00 : double.Parse(dln1.Discount.ToString());//折扣率
 
-                        dts.Lines.LineTotal = string.IsNullOrWhiteSpace(dln1.TotalPrice.ToString()) ? 0.00 : double.Parse(dln1.TotalPrice.ToString());//总计
+                        //dts.Lines.LineTotal = string.IsNullOrWhiteSpace(dln1.TotalPrice.ToString()) ? 0.00 : double.Parse(dln1.TotalPrice.ToString());//总计
 
                         //dts.Lines.DiscountPercent = double.Parse(dln1.Discount == null ? "0" : (100 - dln1.Discount).ToString());     //折扣
 
@@ -306,16 +306,18 @@ namespace Sap.Handler.Service
                                 Quantity = dln1.Count,
                                 Price = dln1.DiscountPrices,
                                 LineTotal = dln1.DiscountPrices * dln1.Count,
-                                WhsCode = "37",
+                                WhsCode = dln1.WhsCode,
                                 DocDate = DateTime.Now,
                                 unitMsr = dln1.Unit
                             });
                         }
                         var itemcodes = quotation.QuotationMergeMaterials.Select(q => q.MaterialCode).ToList();
-                        var oitwList = await UnitWork.Find<OITW>(o => itemcodes.Contains(o.ItemCode) && o.WhsCode == "37").Select(o => new { o.ItemCode, o.IsCommited, o.OnHand, o.OnOrder }).ToListAsync();
+                        var WhsCodes = quotation.QuotationMergeMaterials.Select(q => q.WhsCode).Distinct().ToList();
+                        var oitwList = await UnitWork.Find<OITW>(o => itemcodes.Contains(o.ItemCode) && WhsCodes.Contains(o.WhsCode)).Select(o => new { o.ItemCode, o.IsCommited, o.OnHand, o.OnOrder }).ToListAsync();
                         foreach (var item in oitwList)
                         {
-                            await UnitWork.UpdateAsync<store_oitw>(o => o.sbo_id == 1 && o.ItemCode == item.ItemCode && o.WhsCode == "37", o => new store_oitw
+                            var WhsCode = quotation.QuotationMergeMaterials.Where(q => q.MaterialCode.Equals(item.ItemCode)).FirstOrDefault().WhsCode;
+                            await UnitWork.UpdateAsync<store_oitw>(o => o.sbo_id == 1 && o.ItemCode == item.ItemCode && o.WhsCode == WhsCode, o => new store_oitw
                             {
                                 OnHand = item.OnHand,
                                 IsCommited = item.IsCommited,
@@ -339,10 +341,10 @@ namespace Sap.Handler.Service
                         await UnitWork.SaveAsync();
                         await transaction.CommitAsync();
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
                         await transaction.RollbackAsync();
-                        Log.Logger.Warning($"同步3.0失败，SAP_ID：{docNum}", typeof(SellOrderSapHandler));
+                        Log.Logger.Warning($"同步3.0失败，SAP_ID：{docNum}"+ex.Message, typeof(SellOrderSapHandler));
                     }
                 }
                 Log.Logger.Warning($"同步成功，SAP_ID：{docNum}", typeof(SellOrderSapHandler));
