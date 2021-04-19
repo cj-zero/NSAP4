@@ -645,8 +645,9 @@ namespace OpenAuth.App.Material
             {
                 q.FromTheme = serialNumberList.Where(s => s.ManufacturerSerialNumber.Equals(q.ProductCode)).FirstOrDefault()?.FromTheme;
                 q.QuotationMaterials.AddRange(QuotationMergeMaterial.ToList());
+                q.QuotationMaterials = q.QuotationMaterials.OrderBy(m => m.MaterialCode).ToList();
             });
-
+            QuotationMergeMaterials = QuotationMergeMaterials.OrderBy(q => q.MaterialCode).ToList();
             if (Quotations.Status == 2)
             {
                 var ExpressageList = await UnitWork.Find<Expressage>(e => e.QuotationId.Equals(Quotations.Id)).Include(e => e.ExpressagePicture).Include(e => e.LogisticsRecords).ToListAsync();
@@ -1327,13 +1328,25 @@ namespace OpenAuth.App.Material
             }
             var expressageobj = new Expressage();
             var expressageMap = obj.ExpressageReqs.MapTo<Expressage>();
-            #region 判断库存量
+
+            #region 判断条件
+            var mergeMaterialList = await UnitWork.Find<QuotationMergeMaterial>(q =>q.QuotationId== expressageMap.QuotationId).Select(q => new { q.MaterialCode, q.Id, q.WhsCode }).ToListAsync();
+            
+            //判定是否存在成品
+            mergeMaterialList.ForEach(m =>
+            {
+                if (m.MaterialCode.Trim().Substring(0, 1) == "C") 
+                {
+                    throw new Exception("本出库单存在成品物料，请到ERP3.0进行交货操作。");
+                }
+            });
+            string message = null;
+            //判定库存数量
             var mergeMaterialIds = obj.QuotationMergeMaterialReqs.Select(q => q.Id).ToList();
-            var mergeMaterialList = await UnitWork.Find<QuotationMergeMaterial>(q => mergeMaterialIds.Contains(q.Id) && !q.MaterialCode.Equals("S111-SERVICE-GSF") && !q.MaterialCode.Equals("S111-SERVICE-CLF")).Select(q => new { q.MaterialCode, q.Id,q.WhsCode }).ToListAsync();
+            mergeMaterialList = mergeMaterialList.Where(q => mergeMaterialIds.Contains(q.Id) && !q.MaterialCode.Equals("S111-SERVICE-GSF") && !q.MaterialCode.Equals("S111-SERVICE-CLF")).ToList();
             var mergeMaterials = mergeMaterialList.Select(m => m.MaterialCode).ToList();
             var whscodes = mergeMaterialList.Select(m => m.WhsCode).Distinct();
             var onHand = await UnitWork.Find<OITW>(o => mergeMaterials.Contains(o.ItemCode) && whscodes.Contains(o.WhsCode)).Select(o => new { o.ItemCode, o.OnHand,o.WhsCode }).ToListAsync();
-            string message = null;
             onHand.ForEach(o =>
             {
                 var mergeMaterialid = mergeMaterialList.Where(m => m.MaterialCode.Equals(o.ItemCode) && m.WhsCode.Equals(o.WhsCode)).FirstOrDefault()?.Id;
@@ -1348,6 +1361,8 @@ namespace OpenAuth.App.Material
             {
                 throw new Exception(message + "数量降为负库存，不可交货");
             }
+           
+
             #endregion
             var dbContext = UnitWork.GetDbContext<Quotation>();
             List<LogisticsRecord> LogisticsRecords = new List<LogisticsRecord>();
@@ -1946,7 +1961,7 @@ namespace OpenAuth.App.Material
                 Unit = q.Unit,
                 SalesPrice = q.MaterialType == 1 ? 0.00M : (decimal)q.DiscountPrices,
                 TotalPrice = q.MaterialType == 1 ? 0.00M : (decimal)q.TotalPrice
-            }).ToList();
+            }).OrderBy(m => m.MaterialCode).ToList();
             var datas = await ExportAllHandler.Exporterpdf(materials, "PrintSalesOrder.cshtml", pdf =>
             {
                 pdf.IsWriteHtml = true;
@@ -2003,7 +2018,7 @@ namespace OpenAuth.App.Material
                 Unit = q.Unit,
                 SalesPrice = q.MaterialType == 1 ? 0.00M : (decimal)q.DiscountPrices,
                 TotalPrice = q.MaterialType == 1 ? 0.00M : (decimal)q.TotalPrice
-            });
+            }).OrderBy(q => q.MaterialCode).ToList();
             var datas = await ExportAllHandler.Exporterpdf(materials, "PrintQuotation.cshtml", pdf =>
             {
                 pdf.IsWriteHtml = true;
@@ -2076,7 +2091,7 @@ namespace OpenAuth.App.Material
                     SalesOrder = model.SalesOrderId.ToString(),
                     WhsCode=q.WhsCode,
                     Location = locationList.Where(l => l.ItemCode.Equals(q.MaterialCode)).FirstOrDefault()?.layer_no
-                });
+                }).OrderBy(q=>q.MaterialCode).ToList();
 
                 var datas = await ExportAllHandler.Exporterpdf(materials, "PrintPickingList.cshtml", pdf =>
                 {
