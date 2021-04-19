@@ -28,7 +28,7 @@ namespace Sap.Handler.Service
         public async Task SalesOfDelivery(AddOrUpdateQuotationReq obj)
         {
             int eCode;
-            string eMesg;
+            string eMesg = "";
             string docNum = string.Empty;
             try
             {
@@ -291,14 +291,19 @@ namespace Sap.Handler.Service
                 }
                 else 
                 {
+                    eMesg = "添加销售交货到SAP时异常！错误代码：出库量为零";
                     Log.Logger.Warning("添加销售交货到SAP时异常！错误代码：出库量为零");
                 }
             }
             catch (Exception e)
             {
+                eMesg = "调用接口添加销售交货时异常：" + e.ToString() + "";
                 Log.Logger.Warning("调用接口添加销售交货时异常：" + e.ToString() + "");
             }
-
+            if (!string.IsNullOrWhiteSpace(eMesg)) 
+            {
+                throw new Exception(eMesg.ToString());
+            }
         }
 
     }

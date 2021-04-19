@@ -1523,8 +1523,9 @@ namespace OpenAuth.App.Material
                             obj.Tentative = false;
                             obj.QuotationStatus = 10;
                             obj.Status = 2;
-                            #region 同步到SAP 并拿到服务单主键
+                            #region 报价单同步到SAP，ERP3.0
                             _capBus.Publish("Serve.SellOrder.Create", obj.Id);
+                            _capBus.Publish("Serve.SellOrder.ERPCreate", obj.Id);
                             #endregion
                         }
 
@@ -1539,9 +1540,9 @@ namespace OpenAuth.App.Material
                 {
                     qoh.Action = "客户确认报价单";
                     obj.QuotationStatus = 7;
-                    #region 同步到SAP 并拿到服务单主键
-
+                    #region 报价单同步到SAP，ERP3.0 
                     _capBus.Publish("Serve.SellOrder.Create", obj.Id);
+                    _capBus.Publish("Serve.SellOrder.ERPCreate", obj.Id);
                     #endregion
                 }
                 else if (obj.CreateUserId.Equals(loginUser.Id) && obj.QuotationStatus == 7)
@@ -1711,16 +1712,16 @@ namespace OpenAuth.App.Material
                 loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
             }
             #region 判断技术员余额
-            var ReturnNoteList = await UnitWork.Find<ReturnNote>(r => r.CreateUserId.Equals(loginUser.Id)).Include(r => r.ReturnnoteMaterials).ToListAsync();
+            //var ReturnNoteList = await UnitWork.Find<ReturnNote>(r => r.CreateUserId.Equals(loginUser.Id)).Include(r => r.ReturnnoteMaterials).ToListAsync();
 
-            List<int> returnNoteIds = ReturnNoteList.Select(s => s.Id).Distinct().ToList();
-            //计算剩余未结清金额
-            var notClearAmountList = (await UnitWork.Find<ReturnnoteMaterial>(w => returnNoteIds.Contains((int)w.ReturnNoteId) && w.Check == 1).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new { s.Key, GoodCount = s.Sum(s => s.GoodQty), SecondCount = s.Sum(s => s.SecondQty), DiscountPrices = s.ToList().FirstOrDefault().DiscountPrices, TotalCount = s.ToList().FirstOrDefault().TotalCount }).ToList();
-            var totalprice = notClearAmountList.Sum(s => s.DiscountPrices * (s.TotalCount - s.GoodCount - s.SecondCount));
-            if (totalprice > 4000)
-            {
-                throw new Exception("欠款已超出额度，不可领料。");
-            }
+            //List<int> returnNoteIds = ReturnNoteList.Select(s => s.Id).Distinct().ToList();
+            ////计算剩余未结清金额
+            //var notClearAmountList = (await UnitWork.Find<ReturnnoteMaterial>(w => returnNoteIds.Contains((int)w.ReturnNoteId) && w.Check == 1).ToListAsync()).GroupBy(g => g.MaterialCode).Select(s => new { s.Key, GoodCount = s.Sum(s => s.GoodQty), SecondCount = s.Sum(s => s.SecondQty), DiscountPrices = s.ToList().FirstOrDefault().DiscountPrices, TotalCount = s.ToList().FirstOrDefault().TotalCount }).ToList();
+            //var totalprice = notClearAmountList.Sum(s => s.DiscountPrices * (s.TotalCount - s.GoodCount - s.SecondCount));
+            //if (totalprice > 4000)
+            //{
+            //    throw new Exception("欠款已超出额度，不可领料。");
+            //}
             #endregion
 
             #region 判断是否存在相同物料
@@ -1980,10 +1981,10 @@ namespace OpenAuth.App.Material
             text = text.Replace("@Model.CreateTime", model.CreateTime.ToString("yyyy.MM.dd hh:mm"));
             text = text.Replace("@Model.SalesUser", model?.CreateUser.ToString());
             text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.Id.ToString()));
-            text = text.Replace("@Model.CustomerId", serverOrder?.CustomerId.ToString());
+            text = text.Replace("@Model.CustomerId", serverOrder?.TerminalCustomerId.ToString());
             text = text.Replace("@Model.CollectionAddress", model?.CollectionAddress.ToString());
             text = text.Replace("@Model.ShippingAddress", model?.ShippingAddress.ToString());
-            text = text.Replace("@Model.CustomerName", serverOrder?.CustomerName.ToString());
+            text = text.Replace("@Model.CustomerName", serverOrder?.TerminalCustomer.ToString());
             text = text.Replace("@Model.NewestContacter", serverOrder?.NewestContacter.ToString());
             text = text.Replace("@Model.NewestContactTel", serverOrder?.NewestContactTel.ToString());
             text = text.Replace("@Model.DeliveryMethod", CategoryList.Where(c => c.DtValue.Equals(model?.DeliveryMethod) && c.TypeId.Equals("SYS_DeliveryMethod")).FirstOrDefault()?.Name);
@@ -2143,131 +2144,7 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         public async Task SyncSalesOrder(string SalesOrderId)
         {
-            var loginContext = _auth.GetCurrentUser();
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-            var quotation = await UnitWork.Find<Quotation>(q => q.SalesOrderId==int.Parse(SalesOrderId)).AsNoTracking()
-              .Include(q => q.QuotationProducts).ThenInclude(q => q.QuotationMaterials).Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
-            var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(quotation.ServiceOrderId)).FirstOrDefaultAsync();
-            var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active == "Y").FirstOrDefaultAsync();
-            var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefaultAsync())?.SlpCode;
-            var ywy = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o => o.SlpCode).FirstOrDefaultAsync();
-            List<string> typeids = new List<string> { "SYS_MaterialInvoiceCategory", "SYS_MaterialTaxRate", "SYS_InvoiceCompany", "SYS_DeliveryMethod" };
-            var categoryList = await UnitWork.Find<Category>(c => typeids.Contains(c.TypeId)).ToListAsync();
-            var dbContext = UnitWork.GetDbContext<sale_ordr>();
-            using (var transaction = await dbContext.Database.BeginTransactionAsync()) 
-            {
-                try
-                {
-                    sale_ordr ordr = new sale_ordr()
-                    {
-                        sbo_id = 1,
-                        DocEntry = int.Parse(SalesOrderId),
-                        CardCode = serviceOrder.TerminalCustomerId, //客户id
-                        CardName = serviceOrder.TerminalCustomer,//客户名称
-                        SlpCode = (short)slpcode, //销售人代码
-                        CntctCode = int.Parse(string.IsNullOrWhiteSpace(oCPR.CntctCode.ToString()) ? "0" : oCPR.CntctCode.ToString()),//联系人
-                        Comments = quotation.Remark, //备注
-                        U_YWY = ywy.ToString(),//业务员
-                        U_FPLB = categoryList.Where(c => c.TypeId.Equals("SYS_MaterialInvoiceCategory") && c.DtValue.Equals(quotation.InvoiceCategory.ToString())).FirstOrDefault()?.Name,
-                        //U_ShipName = categoryList.Where(c => c.TypeId.Equals("SYS_DeliveryMethod") && c.DtValue.Equals(quotation.DeliveryMethod.ToString())).FirstOrDefault()?.DtCode,
-                        Address = quotation.CollectionAddress,
-                        U_SL = categoryList.Where(c => c.TypeId.Equals("SYS_MaterialTaxRate") && c.DtValue.Equals(quotation.TaxRate.ToString())).FirstOrDefault()?.Name,
-                        Address2 = quotation.ShippingAddress,
-                        DocTotal = decimal.Parse(!string.IsNullOrWhiteSpace(quotation.TotalMoney.ToString()) ? quotation.TotalMoney.ToString() : "0.00"),
-                        Indicator = categoryList.Where(c => c.TypeId.Equals("SYS_InvoiceCompany") && c.DtValue.Equals(quotation.InvoiceCompany.ToString())).FirstOrDefault()?.DtCode,
-                        DocDate = DateTime.Now,
-                        DocDueDate = Convert.ToDateTime(quotation.DeliveryDate),
-                        DocType = "I",
-                        PartSupply = "Y",
-                        Printed = "N",
-                        DocStatus = "O",
-                        Handwrtten = "N",
-                        Ref1 = SalesOrderId,
-                        GroupNum = short.Parse(categoryList.Where(c => c.TypeId.Equals("SYS_DeliveryMethod") && c.DtValue.Equals(quotation.DeliveryMethod.ToString())).FirstOrDefault()?.DtCode),
-                        TaxDate = DateTime.Now,
-                        DocRate = 1,//后期增加货币需要更改
-                        DocCur = "RMB",//后期增加货币需要更改
-                        DocNum = uint.Parse(SalesOrderId),
-                        UpdateDate = DateTime.Now,
-                        CANCELED = "N",
-                        U_ERPFrom = "4"
-                    };
-                    ordr = await UnitWork.AddAsync<sale_ordr,int>(ordr);
-                    var lineNums = await UnitWork.Find<RDR1>(o => o.DocEntry == int.Parse(SalesOrderId)).Select(o => new { o.LineNum, o.ItemCode }).ToListAsync();
-                    foreach (QuotationMergeMaterial dln1 in quotation.QuotationMergeMaterials)
-                    {
-                        await UnitWork.AddAsync<sale_rdr1,int>(new sale_rdr1
-                        {
-                            sbo_id = 1,
-                            DocEntry = int.Parse(SalesOrderId),
-                            LineNum = (int)lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode)).FirstOrDefault()?.LineNum,
-                            ItemCode = dln1.MaterialCode,
-                            LineStatus = "O",
-                            Rate = 1,//后期增加货币需要更改
-                            Currency = "RMB",
-                            PriceBefDi = dln1.DiscountPrices,
-                            StockPrice = dln1.CostPrice,
-                            OpenQty = dln1.Count,
-                            OpenSum = dln1.DiscountPrices * dln1.Count,
-                            AcctCode = "600101",
-                            OrderedQty = dln1.Count,
-                            PackQty = dln1.Count,
-                            OpenCreQty = dln1.Count,
-                            BaseCard = serviceOrder.TerminalCustomerId,
-                            StockValue = dln1.CostPrice * dln1.Count,
-                            GTotal = dln1.DiscountPrices * dln1.Count,
-                            LineVat = 0,
-                            VisOrder = (int)lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode)).FirstOrDefault()?.LineNum,
-                            GrssProfit = (dln1.DiscountPrices - dln1.CostPrice) * dln1.Count,
-                            ObjType = "17",
-                            Dscription = dln1.MaterialDescription,
-                            Quantity = dln1.Count,
-                            Price = dln1.DiscountPrices,
-                            LineTotal = dln1.DiscountPrices * dln1.Count,
-                            WhsCode = dln1.WhsCode,
-                            DocDate = DateTime.Now,
-                            unitMsr = dln1.Unit
-                        });
-                    }
-                    var itemcodes = quotation.QuotationMergeMaterials.Select(q => q.MaterialCode).ToList();
-                    var WhsCodes = quotation.QuotationMergeMaterials.Select(q => q.WhsCode).Distinct().ToList();
-                    var oitwList = await UnitWork.Find<OITW>(o => itemcodes.Contains(o.ItemCode) && WhsCodes.Contains(o.WhsCode)).Select(o => new { o.ItemCode, o.IsCommited, o.OnHand, o.OnOrder }).ToListAsync();
-                    foreach (var item in oitwList)
-                    {
-                        var WhsCode = quotation.QuotationMergeMaterials.Where(q => q.MaterialCode.Equals(item.ItemCode)).FirstOrDefault().WhsCode;
-                        await UnitWork.UpdateAsync<store_oitw>(o => o.sbo_id == 1 && o.ItemCode == item.ItemCode && o.WhsCode == WhsCode, o => new store_oitw
-                        {
-                            OnHand = item.OnHand,
-                            IsCommited = item.IsCommited,
-                            OnOrder = item.OnOrder
-                        });
-                    }
-                    var oitmList = await UnitWork.Find<OITM>(o => itemcodes.Contains(o.ItemCode)).Select(o => new { o.ItemCode, o.IsCommited, o.OnHand, o.OnOrder, o.LastPurCur, o.LastPurPrc, o.LastPurDat, o.UpdateDate }).ToListAsync();
-                    foreach (var item in oitmList)
-                    {
-                        await UnitWork.UpdateAsync<store_oitm>(o => o.sbo_id == 1 && o.ItemCode == item.ItemCode, o => new store_oitm
-                        {
-                            OnHand = item.OnHand,
-                            IsCommited = item.IsCommited,
-                            OnOrder = item.OnOrder,
-                            LastPurDat = item.LastPurDat,
-                            LastPurPrc = item.LastPurPrc,
-                            LastPurCur = item.LastPurCur,
-                            UpdateDate = item.UpdateDate
-                        });
-                    }
-                    await UnitWork.SaveAsync();
-                    await transaction.CommitAsync();
-                }
-                catch (Exception)
-                {
-                    await transaction.RollbackAsync();
-                }
-            }
-                
+            _capBus.Publish("Serve.SellOrder.ERPCreate", int.Parse(SalesOrderId));
         }
 
         public QuotationApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, ICapPublisher capBus, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
