@@ -1057,23 +1057,6 @@ export default {
         collectionDA: '',
         totalCostPrice: 0
       }, 
-      // 表单规则
-      formRules: {
-        serviceOrderSapId: [{ required: true }],
-        terminalCustomerId: [{ required: true }],
-        terminalCustomer: [{ required: true }],
-        newestContacter: [{ required: true }],
-        newestContactTel: [{ required: true }],
-        deliveryDate: [{ required: true, trigger: ['change', 'blur'] }],
-        acceptancePeriod: [{ required: true, trigger: ['change', 'blur'] }],
-        shippingAddress: [{ required: true, trigger: ['change', 'blur'] }],
-        acquisitionWay: [{ required: true, trigger: ['change', 'blur'] }],
-        moneyMeans: [{ required: true, trigger: ['change', 'blur'] }],
-        invoiceCompany: [{ required: true, trigger: ['change', 'blur'] }],
-        deliveryMethod: [{ required: true, trigger: ['change', 'blur'] }],
-        collectionAddress: [{ required: true, trigger: ['change', 'blur'] }],
-        isMaterialType: [{ required: true, trigger: ['change', 'blur'] }]
-      },
       serviceRules: {
         // serviceCharge: [{ validator: SERVICE_CHARGE_VALIDATOR, trigger: ['change', 'blur'] }],
       },
@@ -1320,6 +1303,27 @@ export default {
     }
   },
   computed: {
+    // 表单规则
+    formRules () {
+      return {
+        serviceOrderSapId: [{ required: true }],
+        terminalCustomerId: [{ required: true }],
+        terminalCustomer: [{ required: true }],
+        newestContacter: [{ required: true }],
+        newestContactTel: [{ required: true }],
+        deliveryDate: [{ required: true, trigger: ['change', 'blur'] }],
+        acceptancePeriod: [{ required: true, trigger: ['change', 'blur'] }],
+        shippingAddress: [{ required: true, trigger: ['change', 'blur'] }],
+        acquisitionWay: [{ required: true, trigger: ['change', 'blur'] }],
+        moneyMeans: [{ required: true, trigger: ['change', 'blur'] }],
+        deliveryMethod: [{ required: true, trigger: ['change', 'blur'] }],
+        collectionAddress: [{ required: true, trigger: ['change', 'blur'] }],
+        isMaterialType: [{ required: true, trigger: ['change', 'blur'] }],
+        invoiceCompany: [{ required: !!(this.formData.taxRate || this.formData.invoiceCategory), trigger: ['change', 'blur'] }],
+        taxRate: [{ required: !!(this.formData.invoiceCompany || this.formData.invoiceCategory), trigger: ['change', 'blur'] }],
+        invoiceCategory: [{ required: !!(this.formData.taxRate || this.formData.invoiceCompany), trigger: ['change', 'blur'] }]
+      }
+    },
     serviceData () {
       return {
         serviceList: this.serviceList || []

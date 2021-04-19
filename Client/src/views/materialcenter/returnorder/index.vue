@@ -3,9 +3,8 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
-          :listQuery="formQuery" 
+          :listQuery="listQuery" 
           :config="searchConfig"
-          @changeForm="onChangeForm" 
           @search="onSearch">
         </Search>
       </div>
@@ -78,6 +77,8 @@ import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import { quotationTableMixin, chatMixin, returnTableMixin } from '../common/js/mixins'
 import { getServiceOrderInfo, getReturnNoteList, getReturnNoteDetail, } from '@/api/material/returnMaterial'
+const W_100 = { width: '100px' }
+const W_150 = { width: '150px' }
 export default {
   name: 'materialToReturnOrder',
   mixins: [quotationTableMixin, chatMixin, returnTableMixin],
@@ -95,14 +96,14 @@ export default {
   computed: {
     searchConfig () {
       return [
-        { prop: 'id', placeholder: '退料单号', width: 100 },
-        { prop: 'customer', placeholder: '客户名称', width: 100 },
-        { prop: 'sapId', placeholder: '服务ID', width: 100 },
-        { prop: 'createName', placeholder: '申请人', width: 100 },
-        { prop: 'beginDate', placeholder: '创建开始日期', type: 'date', width: 150 },
-        { prop: 'endDate', placeholder: '创建结束日期', type: 'date', width: 150 },
-        { type: 'search' },
-        { type: 'button', btnText: '新建', handleClick: this.createOrder, isSpecial: true }
+        { prop: 'id', component: { attrs: { style: W_100, placeholder: '退料单号' } } },
+        { prop: 'customer', component: { attrs: { style: W_100, placeholder: '客户名称' } } },
+        { prop: 'sapId', component: { attrs: { style: W_100, placeholder: '服务ID' } } },
+        { prop: 'createName', component: { attrs: { style: W_100, placeholder: '申请人' } } },
+        { prop: 'beginDate', component: { tag: 'date', attrs: { style: W_150, placeholder: '创建开始日期' } } },
+        { prop: 'endDate', component: { tag: 'date', attrs: { style: W_150, placeholder: '创建结束日期' } } },
+        { component: { tag: 's-button', attrs: { btnText: '查询' }, on: { click: this.onSearch } } },
+        { component: { tag: 's-button', attrs: { btnText: '新建', class: ['customer-btn-class'] }, on: { click: this.createOrder } } }
       ]
     }, // 搜索配置
     btnList () {

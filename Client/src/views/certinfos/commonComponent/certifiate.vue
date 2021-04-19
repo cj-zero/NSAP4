@@ -1,26 +1,23 @@
 <template>
-  <div class="certifiate-wrapper">
+  <div 
+    class="certifiate-wrapper" 
+    v-loading.fullscreen.lock="isSend"
+    :element-loading-text="`${loadingBtnText}中`"
+    element-loading-spinner="el-icon-loading"
+    element-loading-background="rgba(0, 0, 0, 0.3)">
     <el-row class="btn-wrapper">
       <el-button 
-        v-if="!(currentData.activityName !== '待送审' && type === 'submit')"
+        v-if="!(type === 'submit' && currentData.activityName === '待批准')"
         type="primary" 
         size="small" 
         class="left-btn" 
-        @click="operate(0, leftBtnText, 'left')" 
-        v-loading.fullscreen.lock="isLeftSend"
-        :element-loading-text="`正在${leftBtnText}中`"
-        element-loading-spinner="el-icon-loading"
-        element-loading-background="rgba(0, 0, 0, 0.5)"
+        @click="operate(1, 'left')" 
       >{{ leftBtnText }}</el-button>
       <el-button 
         type="primary" 
         size="small" 
-        @click="operate(1, rightBtnText, 'right')" 
+        @click="operate(3, 'right')" 
         v-if="type !== 'query' && type !== 'submit'" 
-        v-loading.fullscreen.lock="isRightSend"
-        :element-loading-text="`正在${rightBtnText}中`"
-        element-loading-spinner="el-icon-loading"
-        element-loading-background="rgba(0, 0, 0, 0.5)"
       >{{ rightBtnText }}</el-button>
     </el-row>
     <el-row v-if="type == 'review'">
@@ -77,6 +74,7 @@ import { certVerMixin } from '../mixin/mixin'
 import { getPdfURL } from '@/utils/utils'
 const leftTextMap = {
   submit: '送审',
+  reject: '撤回',
   review: '通过',
   query: '下载'
 }
@@ -89,6 +87,10 @@ export default {
     pdf
   },
   props: {
+    hasSend: {
+      type: Boolean,
+      default: true
+    }, // type === submit  送审还是撤回
     type: {
       type: String,
       default: ''
@@ -111,6 +113,7 @@ export default {
   data () {
     return {
       advice: '',
+      direction: 'left',
       url: '',
       baseURL: `${process.env.VUE_APP_BASE_API}/Cert/DownloadCertPdf`,
       // url: 'http://192.168.1.207:52789/api/Cert/DownloadCertPdf/NWO080091?X-Token=1723b9dc',
@@ -130,22 +133,28 @@ export default {
   },
   computed: {
     leftBtnText () {
-      return leftTextMap[this.type]
+      return (this.type === 'submit' && !this.hasSend) ? '撤回' : leftTextMap[this.type]
     },
     rightBtnText () {
       return rightTextMap[this.type]
     },
+    loadingBtnText () {
+      return this.direction === 'left' ? this.leftBtnText : this.rightBtnText
+    }
     // pdfURL () {
     //   return `${this.baseURL}/${this.currentData.certNo}?X-Token=${this.$store.state.user.token}`
     // }
   },
   methods: {
-    operate (type, message, direction) {
+    operate (type, direction) {
+      let message = direction === 'left' ? this.leftBtnText : this.rightBtnText
+      this.direction = direction
       if (message === '下载') {
         this._download()
         return
       }
-      this._certVerificate(this.currentData, type, message, direction, this.advice)
+      type = (this.type === 'submit' && !this.hasSend) ? 4 : type // 4 撤回
+      this._certVerificate(this.currentData, type, message, this.advice)
     },
     getNumPages (url) {
       try {

@@ -4,8 +4,8 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
+          :listQuery="listQuery"
           :config="searchConfig"
-          @changeForm="onChangeForm" 
           @search="onSearch">
         </Search>
       </div>
@@ -119,13 +119,20 @@ export default {
     searchConfig () {
       return [
         ...this.commonSearch,
-        { type: 'search' },
-        { type: 'button', btnText: '新建', isSpecial: true, handleClick: this.addAccount },
-        { type: 'button', btnText: '编辑', handleClick: this.getDetail, options: { type: 'edit', name: 'mySubmit' } },
-        { type: 'button', btnText: '撤回', handleClick: this.recall },
-        { type: 'button', btnText: '删除', handleClick: this.deleteOrder },
-        { type: 'button', btnText: '打印', handleClick: this.print },
-        { type: 'button', btnText: '导出表格', handleClick: this.exportExcel, isShow: !!this.isCustomerSupervisor }
+        { component: { tag: 's-button', attrs: { btnText: '查询' }, on: { click: this.onSearch } } },
+        { component: { tag: 's-button', attrs: { btnText: '新建', class: ['customer-btn-class'] }, on: { click: this.addAccount } } },
+        { component: { tag: 's-button', attrs: { btnText: '编辑' }, on: { click: this.toEdit } } },
+        { component: { tag: 's-button', attrs: { btnText: '撤回', type: 'danger' }, on: { click: this.recall } } },
+        { component: { tag: 's-button', attrs: { btnText: '删除', type: 'danger' }, on: { click: this.deleteOrder } } },
+        { component: { tag: 's-button', attrs: { btnText: '打印' }, on: { click: this.print } } },
+        { component: { tag: 's-button', attrs: { btnText: '导出表格' }, on: { click: this.exportExcel } }, isShow: !!this.isCustomerSupervisor },
+        // { type: 'search' },
+        // { type: 'button', btnText: '新建', isSpecial: true, handleClick: this.addAccount },
+        // { type: 'button', btnText: '编辑', handleClick: this.getDetail, options: { type: 'edit', name: 'mySubmit' } },
+        // { type: 'button', btnText: '撤回', handleClick: this.recall },
+        // { type: 'button', btnText: '删除', handleClick: this.deleteOrder },
+        // { type: 'button', btnText: '打印', handleClick: this.print },
+        // { type: 'button', btnText: '导出表格', handleClick: this.exportExcel, isShow: !!this.isCustomerSupervisor }
       ]
     }, // 搜索配置
     btnList () {
@@ -194,9 +201,6 @@ export default {
       this.listQuery.page = 1
       this._getList()
     },
-    onChangeForm (val) {
-      Object.assign(this.listQuery, val)
-    },
     addAccount () { // 添加
       getOrder().then(res => {
         let data = res.data
@@ -229,6 +233,9 @@ export default {
       }).catch(() => {
         this.$message.error('获取服务单列表失败')
       })
+    },
+    toEdit () {
+      this.getDetail({ type: 'edit', name: 'mySubmit' })
     },
     recall () { // 撤回操作
       if (!this.currentRow) { // 编辑审核等操作
@@ -313,7 +320,7 @@ export default {
     saveAsDraft () { // 存为草稿
       this.title === 'create' // 判断是新建的还是已经创建的
         ? this._addOrder(true)
-        : this.edit(true)
+        : this._edit(true)
     }, 
     edit (isDraft) {
       // 编辑

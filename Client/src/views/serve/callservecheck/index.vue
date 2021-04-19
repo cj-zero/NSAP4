@@ -3,8 +3,8 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
+          :listQuery="listQuery"
           :config="searchConfig"
-          @changeForm="onChangeForm" 
           @search="onSearch">
         </Search>
         <!-- <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn> -->
@@ -58,6 +58,8 @@ import Search from '@/components/Search'
 import rightImg from '@/assets/table/right.png'
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import { serializeParams } from '@/utils/process'
+const W_100 = { width: '100px' }
+const W_150 = { width: '150px' }
 export default {
   name: "attendanceclock",
   components: {
@@ -74,14 +76,14 @@ export default {
   computed: {
     searchConfig () {
       return [
-        { width: 100, placeholder: '姓名', prop: 'Name' },
-        { width: 100, placeholder: '部门', prop: 'Org' },
-        { width: 100, placeholder: '拜访对象', prop: 'VisitTo' },
-        { width: 150, placeholder: '地址', prop: 'Location' },
-        { width: 150, placeholder: '起始日期', prop: 'DateFrom', type: 'date' },
-        { width: 150, placeholder: '结束日期', prop: 'DateTo', type: 'date' },
-        { type: 'search' },
-        { type: 'button', btnText: '导出', handleClick: this._export }
+        { prop: 'Name', component: { attrs: { style: W_100, placeholder: '姓名' } } },
+        { prop: 'Org', component: { attrs: { style: W_100, placeholder: '部门' } } },
+        { prop: 'VisitTo', component: { attrs: { style: W_100, placeholder: '拜访对象' } } },
+        { prop: 'Location', component: { attrs: { style: W_150, placeholder: '地址' } } },
+        { prop: 'DateFrom', component: { tag: 'date', attrs: { style: W_150, placeholder: '起始时间' } } },
+        { prop: 'DateTo', component: { tag: 'date', attrs: { style: W_150, placeholder: '结束时间' } } },
+        { component: { tag: 's-button', attrs: { btnText: '查询' }, on: { click: this.onSearch } } },
+        { component: { tag: 's-button', attrs: { btnText: '导出' }, on: { click: this._export } } }
       ]
     } 
   },
@@ -176,11 +178,6 @@ export default {
     onSearch () {
       this.listQuery.page = 1
       this.getList()
-    },
-    onChangeForm (val) {
-      Object.assign(this.listQuery, val)
-      console.log('changeForm')
-      // this.listQuery.page = 1
     },
     changeTable(result) {
       console.log(result);

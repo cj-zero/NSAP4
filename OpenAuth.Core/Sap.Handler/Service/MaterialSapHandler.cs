@@ -61,7 +61,7 @@ namespace Sap.Handler.Service
 
                     dts.DocDate = quotation.CreateTime;
 
-                    dts.Comments = quotation.Remark;
+                    dts.Comments = quotation.Remark +"基于销售订单"+ quotation.SalesOrderId;
 
                     dts.ContactPersonCode = int.Parse(string.IsNullOrWhiteSpace(oCPR.CntctCode.ToString()) ? "0" : oCPR.CntctCode.ToString()); ;
 
@@ -77,7 +77,7 @@ namespace Sap.Handler.Service
 
                     //dts.DocDate = DateTime.Parse(model.DocDate);
 
-                    dts.DocDueDate = Convert.ToDateTime(quotation.DeliveryDate);
+                    dts.DocDueDate = DateTime.Now;
 
                     //dts.TaxDate = DateTime.Parse(model.TaxDate);
 
@@ -234,8 +234,6 @@ namespace Sap.Handler.Service
 
                     #endregion
 
-
-
                     #region [添加行明细]
                     //int num = 0;
                     foreach (var dln1 in obj.QuotationMergeMaterialReqs)
@@ -247,7 +245,7 @@ namespace Sap.Handler.Service
 
                         dts.Lines.Quantity = string.IsNullOrEmpty(dln1.SentQuantity.ToString()) ? '1' : double.Parse(dln1.SentQuantity.ToString());
 
-                        dts.Lines.WarehouseCode = "37";
+                        dts.Lines.WarehouseCode = materials.WhsCode;
 
                         dts.Lines.BaseEntry = (int)quotation?.SalesOrderId;
 
@@ -279,7 +277,6 @@ namespace Sap.Handler.Service
                     }
 
                     #endregion
-
                     var res = dts.Add();
 
                     if (res != 0)
@@ -296,10 +293,7 @@ namespace Sap.Handler.Service
                 {
                     Log.Logger.Warning("添加销售交货到SAP时异常！错误代码：出库量为零");
                 }
-                
-
             }
-
             catch (Exception e)
             {
                 Log.Logger.Warning("调用接口添加销售交货时异常：" + e.ToString() + "");

@@ -74,6 +74,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.filter-items {
+  display: inline;
+}
 .add-btn {
   background-color: #F8B500;
   border-color: #fff;

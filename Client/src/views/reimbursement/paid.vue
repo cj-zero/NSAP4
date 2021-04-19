@@ -3,8 +3,8 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
+          :listQuery="listQuery"
           :config="searchConfig"
-          @changeForm="onChangeForm" 
           @search="onSearch">
         </Search>
       </div>
@@ -96,7 +96,7 @@ export default {
     searchConfig () {
       return [
         ...this.commonSearch,
-        { type: 'search' }
+        { component: { tag: 's-button', attrs: { btnText: '查询' }, on: { click: this.onSearch } } },
       ]
     }, // 搜索配置 
   },
@@ -122,9 +122,6 @@ export default {
     }
   },
   methods: {
-    onChangeForm (val) {
-      Object.assign(this.listQuery, val)
-    },
     closeDialog () {
       this.$refs.order.resetInfo()
     }

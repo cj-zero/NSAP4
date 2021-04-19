@@ -3,8 +3,8 @@
     <sticky :className="'sub-navbar'">
       <div class="filter-container">
         <Search 
+          :listQuery="listQuery"
           :config="searchConfig"
-          @changeForm="onChangeForm" 
           @search="onSearch">
         </Search>
         <!-- <permission-btn moduleName="callservesure" size="mini" v-on:btn-event="onBtnClicked"></permission-btn> -->
@@ -111,6 +111,9 @@ import zxchat from '../callserve/chat'
 import { chatMixin } from '../common/js/mixins'
 import rightImg from '@/assets/table/right.png'
 import Search from '@/components/Search'
+const W_100 = { width: '100px' }
+const W_150 = { width: '150px' }
+const W_170 = { width: '170px' }
 export default {
   name: "serviceevaluate",
   components: {
@@ -190,13 +193,13 @@ export default {
       downloadLoading: false,
       serveId: '',
       searchConfig: [
-        { width: 100, placeholder: '服务单号', prop: 'ServiceOrderId' },
-        { width: 170, placeholder: '客户', prop: 'CustomerId' },
-        { width: 100, placeholder: '技术员', prop: 'Technician' },
-        { width: 100, placeholder: '回访人', prop: 'VisitPeople' },
-        { width: 150, placeholder: '评价起始日期', prop: 'DateFrom', type: 'date' },
-        { width: 150, placeholder: '评价结束日期', prop: 'DateTo', type: 'date' },
-        { type: 'search' },
+        { prop: 'ServiceOrderId', component: { attrs: { placeholder: '服务单号', style: W_100 } } },
+        { prop: 'CustomerId', component: { attrs: { placeholder: '客户', style: W_170 } } },
+        { prop: 'Technician', component: { attrs: { placeholder: '技术员', style: W_100 } } },
+        { prop: 'VisitPeople', component: { attrs: { placeholder: '回访人', style: W_100 } } },
+        { prop: 'DateFrom', component: { tag: 'date', attrs: { placeholder: '评价起始日期', style: W_150 } } },
+        { prop: 'DateTo', component: { tag: 'date', attrs: { placeholder: '评价结束日期', style: W_150 } } },
+        { component: { tag: 's-button', attrs: { btnText: '查询' }, on: { click: this.onSearch } } }
       ]
     };
   },
@@ -239,10 +242,6 @@ export default {
       this.listQuery.page = 1
       this.getList()
     },
-    onChangeForm (val) {
-      Object.assign(this.listQuery, val)
-      // this.listQuery.page = 1
-    },
     rowClick() {
       // this.$refs.mainTable.clearSelection();
       // this.$refs.mainTable.toggleRowSelection(row);
@@ -272,9 +271,10 @@ export default {
         this.total = res.count;
         // this.list = response.data.data;
         this.listLoading = false;
-      });
+      }).catch(err => {
+        this.$message.error(err.message)
+      }).finally(() => this.listLoading = false)
     },
-
     handleFilter() {
       this.listQuery.page = 1;
       this.getList();

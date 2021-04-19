@@ -34,9 +34,9 @@ namespace Sap.Handler.Service
             var quotation = await UnitWork.Find<Quotation>(q => q.Id.Equals(theQuotationId)).AsNoTracking()
                .Include(q => q.QuotationProducts).ThenInclude(q => q.QuotationMaterials).Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
             var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(quotation.ServiceOrderId)).FirstOrDefaultAsync();
-            var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active=="Y").FirstOrDefaultAsync();
+            var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active == "Y").FirstOrDefaultAsync();
             var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefaultAsync())?.SlpCode;
-            var ywy = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o=>o.SlpCode).FirstOrDefaultAsync();
+            var ywy = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o => o.SlpCode).FirstOrDefaultAsync();
             List<string> typeids = new List<string> { "SYS_MaterialInvoiceCategory", "SYS_MaterialTaxRate", "SYS_InvoiceCompany", "SYS_DeliveryMethod" };
             var categoryList = await UnitWork.Find<Category>(c => typeids.Contains(c.TypeId)).ToListAsync();
             try
@@ -65,7 +65,7 @@ namespace Sap.Handler.Service
 
                     //dts.DocDate = DateTime.Parse(model.DocDate);
 
-                    dts.DocDueDate =Convert.ToDateTime(quotation.DeliveryDate);
+                    dts.DocDueDate = Convert.ToDateTime(quotation.DeliveryDate);
 
                     //if (!string.IsNullOrEmpty(model.TrnspCode))
 
@@ -105,19 +105,19 @@ namespace Sap.Handler.Service
 
                     {
                         var name = categoryList.Where(c => c.TypeId.Equals("SYS_MaterialInvoiceCategory") && c.DtValue.Equals(quotation.InvoiceCategory.ToString())).FirstOrDefault()?.Name;
-                        dts.UserFields.Fields.Item("U_FPLB").Value = name; 
+                        dts.UserFields.Fields.Item("U_FPLB").Value = name;
 
                     }
 
                     if (!string.IsNullOrWhiteSpace(quotation.TaxRate)) //税率
 
                     {
-                        var U_SL=categoryList.Where(c => c.TypeId.Equals("SYS_MaterialTaxRate") && c.DtValue.Equals(quotation.TaxRate.ToString())).FirstOrDefault()?.Name;
-                        dts.UserFields.Fields.Item("U_SL").Value = U_SL; 
+                        var U_SL = categoryList.Where(c => c.TypeId.Equals("SYS_MaterialTaxRate") && c.DtValue.Equals(quotation.TaxRate.ToString())).FirstOrDefault()?.Name;
+                        dts.UserFields.Fields.Item("U_SL").Value = U_SL;
 
                     }
 
-                    if (!string.IsNullOrWhiteSpace(ywy.ToString())) 
+                    if (!string.IsNullOrWhiteSpace(ywy.ToString()))
                     {
                         dts.UserFields.Fields.Item("U_YWY").Value = ywy.ToString();
                     }
@@ -130,15 +130,15 @@ namespace Sap.Handler.Service
 
                     dts.Address = quotation.CollectionAddress;       //收款方
 
-                    if (quotation.DeliveryMethod!=null &&!string.IsNullOrEmpty(quotation.DeliveryMethod))
+                    if (quotation.DeliveryMethod != null && !string.IsNullOrEmpty(quotation.DeliveryMethod))
 
                     {
-                        var DeliveryMethod=categoryList.Where(c => c.TypeId.Equals("SYS_DeliveryMethod") && c.DtValue.Equals(quotation.DeliveryMethod.ToString())).FirstOrDefault()?.DtCode;
-                        dts.PaymentGroupCode = DeliveryMethod != null?int.Parse(DeliveryMethod): 2;  //付款条件
+                        var DeliveryMethod = categoryList.Where(c => c.TypeId.Equals("SYS_DeliveryMethod") && c.DtValue.Equals(quotation.DeliveryMethod.ToString())).FirstOrDefault()?.DtCode;
+                        dts.PaymentGroupCode = DeliveryMethod != null ? int.Parse(DeliveryMethod) : 2;  //付款条件
 
                     }
 
-                    dts.Indicator = categoryList.Where(c => c.TypeId.Equals("SYS_InvoiceCompany") && c.DtValue.Equals(quotation.InvoiceCompany.ToString())).FirstOrDefault()?.DtCode ;    // 标识
+                    dts.Indicator = categoryList.Where(c => c.TypeId.Equals("SYS_InvoiceCompany") && c.DtValue.Equals(quotation.InvoiceCompany.ToString())).FirstOrDefault()?.DtCode;    // 标识
 
                     //dts.PaymentMethod = quotation.DeliveryMethod;    //付款方式
 
@@ -165,7 +165,7 @@ namespace Sap.Handler.Service
 
                         dts.Lines.Quantity = string.IsNullOrWhiteSpace(dln1.Count.ToString()) ? '1' : double.Parse(dln1.Count.ToString());
 
-                        dts.Lines.WarehouseCode = "37"; //仓库编号默认37仓
+                        dts.Lines.WarehouseCode = dln1.WhsCode; //仓库编号
 
                         //if (!string.IsNullOrEmpty(dln1.BaseLine))
 
@@ -179,15 +179,15 @@ namespace Sap.Handler.Service
 
                         //}
 
-                        dts.Lines.SalesPersonCode = (int)slpcode;; //销售员编号
+                        dts.Lines.SalesPersonCode = (int)slpcode; ; //销售员编号
 
-                        dts.Lines.UnitPrice = double.Parse(string.IsNullOrWhiteSpace(dln1.DiscountPrices.ToString()) ? "0" : dln1.DiscountPrices.ToString());            //单价
+                        //dts.Lines.UnitPrice = double.Parse(string.IsNullOrWhiteSpace(dln1.DiscountPrices.ToString()) ? "0" : dln1.DiscountPrices.ToString());            //单价
 
                         dts.Lines.Price = double.Parse(string.IsNullOrWhiteSpace(dln1.DiscountPrices.ToString()) ? "0" : dln1.DiscountPrices.ToString());
 
                         //dts.Lines.DiscountPercent = string.IsNullOrWhiteSpace(dln1.Discount.ToString()) ? 0.00 : double.Parse(dln1.Discount.ToString());//折扣率
 
-                        dts.Lines.LineTotal = string.IsNullOrWhiteSpace(dln1.TotalPrice.ToString()) ? 0.00 : double.Parse(dln1.TotalPrice.ToString());//总计
+                        //dts.Lines.LineTotal = string.IsNullOrWhiteSpace(dln1.TotalPrice.ToString()) ? 0.00 : double.Parse(dln1.TotalPrice.ToString());//总计
 
                         //dts.Lines.DiscountPercent = double.Parse(dln1.Discount == null ? "0" : (100 - dln1.Discount).ToString());     //折扣
 
@@ -229,10 +229,124 @@ namespace Sap.Handler.Service
             if (!string.IsNullOrEmpty(docNum))
             {
                 //如果同步成功则修改SellOrder
-                await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(quotation.Id), q => new Quotation { 
-                    SalesOrderId=int.Parse(docNum)
+                await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(quotation.Id), q => new Quotation
+                {
+                    SalesOrderId = int.Parse(docNum)
                 });
                 await UnitWork.SaveAsync();
+                var dbContext = UnitWork.GetDbContext<sale_ordr>();
+                using (var transaction = await dbContext.Database.BeginTransactionAsync())
+                {
+                    try
+                    {
+
+                        sale_ordr ordr = new sale_ordr()
+                        {
+                            sbo_id = 1,
+                            DocEntry = int.Parse(docNum),
+                            CardCode = serviceOrder.TerminalCustomerId, //客户id
+                            CardName = serviceOrder.TerminalCustomer,//客户名称
+                            SlpCode = (short)slpcode, //销售人代码
+                            CntctCode = int.Parse(string.IsNullOrWhiteSpace(oCPR.CntctCode.ToString()) ? "0" : oCPR.CntctCode.ToString()),//联系人
+                            Comments = quotation.Remark, //备注
+                            U_YWY = ywy.ToString(),//业务员
+                            U_FPLB = categoryList.Where(c => c.TypeId.Equals("SYS_MaterialInvoiceCategory") && c.DtValue.Equals(quotation.InvoiceCategory.ToString())).FirstOrDefault()?.Name,
+                            //U_ShipName = categoryList.Where(c => c.TypeId.Equals("SYS_DeliveryMethod") && c.DtValue.Equals(quotation.DeliveryMethod.ToString())).FirstOrDefault()?.DtCode,
+                            Address = quotation.CollectionAddress,
+                            U_SL = categoryList.Where(c => c.TypeId.Equals("SYS_MaterialTaxRate") && c.DtValue.Equals(quotation.TaxRate.ToString())).FirstOrDefault()?.Name,
+                            Address2 = quotation.ShippingAddress,
+                            DocTotal = decimal.Parse(!string.IsNullOrWhiteSpace(quotation.TotalMoney.ToString()) ? quotation.TotalMoney.ToString() : "0.00"),
+                            Indicator = categoryList.Where(c => c.TypeId.Equals("SYS_InvoiceCompany") && c.DtValue.Equals(quotation.InvoiceCompany.ToString())).FirstOrDefault()?.DtCode,
+                            DocDate = DateTime.Now,
+                            DocDueDate = Convert.ToDateTime(quotation.DeliveryDate),
+                            DocType = "I",
+                            PartSupply = "Y",
+                            Printed = "N",
+                            DocStatus = "O",
+                            Handwrtten = "N",
+                            Ref1 = docNum,
+                            GroupNum = short.Parse(categoryList.Where(c => c.TypeId.Equals("SYS_DeliveryMethod") && c.DtValue.Equals(quotation.DeliveryMethod.ToString())).FirstOrDefault()?.DtCode),
+                            TaxDate = DateTime.Now,
+                            DocRate = 1,//后期增加货币需要更改
+                            DocCur = "RMB",//后期增加货币需要更改
+                            DocNum = uint.Parse(docNum),
+                            UpdateDate = DateTime.Now,
+                            CANCELED = "N",
+                            U_ERPFrom = "4"
+                        };
+                        ordr = await UnitWork.AddAsync<sale_ordr,int>(ordr);
+                        var lineNums = await UnitWork.Find<RDR1>(o => o.DocEntry == int.Parse(docNum)).Select(o => new { o.LineNum, o.ItemCode }).ToListAsync();
+                        foreach (QuotationMergeMaterial dln1 in quotation.QuotationMergeMaterials)
+                        {
+                            await UnitWork.AddAsync<sale_rdr1, int>(new sale_rdr1
+                            {
+                                sbo_id = 1,
+                                DocEntry = int.Parse(docNum),
+                                LineNum = (int)lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode)).FirstOrDefault()?.LineNum,
+                                ItemCode = dln1.MaterialCode,
+                                LineStatus = "O",
+                                Rate = 1,//后期增加货币需要更改
+                                Currency = "RMB",
+                                PriceBefDi = dln1.DiscountPrices,
+                                StockPrice = dln1.CostPrice,
+                                OpenQty = dln1.Count,
+                                OpenSum = dln1.DiscountPrices * dln1.Count,
+                                AcctCode = "600101",
+                                OrderedQty = dln1.Count,
+                                PackQty = dln1.Count,
+                                OpenCreQty = dln1.Count,
+                                BaseCard = serviceOrder.TerminalCustomerId,
+                                StockValue = dln1.CostPrice * dln1.Count,
+                                GTotal = dln1.DiscountPrices * dln1.Count,
+                                LineVat = 0,
+                                VisOrder = (int)lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode)).FirstOrDefault()?.LineNum,
+                                GrssProfit = (dln1.DiscountPrices - dln1.CostPrice) * dln1.Count,
+                                ObjType = "17",
+                                Dscription = dln1.MaterialDescription,
+                                Quantity = dln1.Count,
+                                Price = dln1.DiscountPrices,
+                                LineTotal = dln1.DiscountPrices * dln1.Count,
+                                WhsCode = dln1.WhsCode,
+                                DocDate = DateTime.Now,
+                                unitMsr = dln1.Unit
+                            });
+                        }
+                        var itemcodes = quotation.QuotationMergeMaterials.Select(q => q.MaterialCode).ToList();
+                        var WhsCodes = quotation.QuotationMergeMaterials.Select(q => q.WhsCode).Distinct().ToList();
+                        var oitwList = await UnitWork.Find<OITW>(o => itemcodes.Contains(o.ItemCode) && WhsCodes.Contains(o.WhsCode)).Select(o => new { o.ItemCode, o.IsCommited, o.OnHand, o.OnOrder }).ToListAsync();
+                        foreach (var item in oitwList)
+                        {
+                            var WhsCode = quotation.QuotationMergeMaterials.Where(q => q.MaterialCode.Equals(item.ItemCode)).FirstOrDefault().WhsCode;
+                            await UnitWork.UpdateAsync<store_oitw>(o => o.sbo_id == 1 && o.ItemCode == item.ItemCode && o.WhsCode == WhsCode, o => new store_oitw
+                            {
+                                OnHand = item.OnHand,
+                                IsCommited = item.IsCommited,
+                                OnOrder = item.OnOrder
+                            });
+                        }
+                        var oitmList = await UnitWork.Find<OITM>(o => itemcodes.Contains(o.ItemCode)).Select(o => new { o.ItemCode, o.IsCommited, o.OnHand, o.OnOrder, o.LastPurCur, o.LastPurPrc, o.LastPurDat, o.UpdateDate }).ToListAsync();
+                        foreach (var item in oitmList)
+                        {
+                            await UnitWork.UpdateAsync<store_oitm>(o => o.sbo_id == 1 && o.ItemCode == item.ItemCode, o => new store_oitm
+                            {
+                                OnHand = item.OnHand,
+                                IsCommited = item.IsCommited,
+                                OnOrder = item.OnOrder,
+                                LastPurDat = item.LastPurDat,
+                                LastPurPrc = item.LastPurPrc,
+                                LastPurCur = item.LastPurCur,
+                                UpdateDate = item.UpdateDate
+                            });
+                        }
+                        await UnitWork.SaveAsync();
+                        await transaction.CommitAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        await transaction.RollbackAsync();
+                        Log.Logger.Warning($"同步3.0失败，SAP_ID：{docNum}"+ex.Message, typeof(SellOrderSapHandler));
+                    }
+                }
                 Log.Logger.Warning($"同步成功，SAP_ID：{docNum}", typeof(SellOrderSapHandler));
             }
             if (!string.IsNullOrWhiteSpace(allerror.ToString()))

@@ -62,6 +62,7 @@ import { isImage } from '@/utils/file'
 // import { print } from '@/utils/utils'
 // import { getSign } from '@/api/users'
 import { serializeParams } from '@/utils/process'
+const NOT_MATERIAL_CODE_LIST = ['S111-SERVICE-CLF', 'S111-SERVICE-GSF'] // 维修费 服务费
 function freightValidator (rule, value, callback) {
   value = Number(value)
   value > 0 ? callback() : callback(new Error('运费必须大于0'))
@@ -125,10 +126,10 @@ export default {
       this.materialLoading = true
       getMergeMaterial({ quotationId: this.formData.id }).then(res => {
         this.materialList = res.data.map(item => {
-          const { sentQuantity, count, warehouseQuantity } = item
+          const { sentQuantity, count, warehouseQuantity, materialCode } = item
           item.sentQuantity = Number(item.sentQuantity)
           const diff = count - sentQuantity
-          item.quantity = Number(diff <= warehouseQuantity ? diff : warehouseQuantity)
+          item.quantity = NOT_MATERIAL_CODE_LIST.indexOf(materialCode) > - 1 ? diff : (Number(diff <= warehouseQuantity ? diff : warehouseQuantity))
           return item
         })
         this.materialLoading = false
@@ -138,9 +139,9 @@ export default {
       })
     },
     calcMaxCount (row) {
-      const { count, sentQuantity, warehouseQuantity } = row
+      const { count, sentQuantity, warehouseQuantity, materialCode } = row
       const diff = count - sentQuantity
-      return diff <= warehouseQuantity ? diff : warehouseQuantity
+      return NOT_MATERIAL_CODE_LIST.indexOf(materialCode) > - 1 ? diff : (diff <= warehouseQuantity ? diff : warehouseQuantity)
     },
     validateMaterial () { // 只要有一个物料没有全部出库并且出库数量时大于0的 就可以提交
       return this.materialList.some(item => { 
@@ -150,8 +151,9 @@ export default {
       })
     },
     isOutboundAll (data) { // 判断是否物料的是否已经出料完成
-      const { count, sentQuantity, warehouseQuantity } = data
-      return (count - sentQuantity === 0) || ((count - sentQuantity) && warehouseQuantity === 0)
+      const { count, sentQuantity, warehouseQuantity, materialCode } = data
+      const diff = count - sentQuantity
+      return NOT_MATERIAL_CODE_LIST.indexOf(materialCode) > - 1 ? diff === 0 : ((diff === 0) || (diff && warehouseQuantity === 0))
     },
     onAccept (file) { // 限制发票文件上传的格式
       let { type } = file
