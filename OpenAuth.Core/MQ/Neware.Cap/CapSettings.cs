@@ -28,7 +28,7 @@ namespace Neware.Cap
         /// <summary>
         /// 重试的最大次数。当达到此设置值时，将不会再继续重试，通过改变此参数来设置重试的最大次数。
         /// </summary>
-        public int FailedRetryCount { get; set; } = 50;
+        public int FailedRetryCount { get; set; } = 1;
     }
     public class RabbitMqSetting
     {
