@@ -1360,7 +1360,7 @@ export default {
       this.listQuerySearch.CardCodeOrCardName = this.inputSearch;
       this.listQuerySearch.ManufSN = this.inputSerial
       // this.form.customerId = this.inputSearch;
-      this.listQuerySearch.slpName = this.inputName
+      this.listQuerySearch.slpName = this.inputSlpName
       this.listQuerySearch.Technician = this.inputTech
       this.listQuerySearch.Address = this.inputAddress
       this.getPartnerList(this.listQuerySearch, 'search')

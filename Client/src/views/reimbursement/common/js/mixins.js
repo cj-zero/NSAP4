@@ -56,7 +56,8 @@ export let tableMixin = {
         { label: '报销部门', prop: 'orgName', width: 70 },
         { label: '报销人', prop: 'userName', width: 70 },
         { label: '业务员', prop: 'salesMan', width: 80 },
-        { label: '填报日期', prop: 'fillTime', width: 85 }
+        { label: '填报日期', prop: 'fillTime', width: 85 },
+        { label: '更新日期', prop: 'updateTime' }
       ],
       tableData: [],
       total: 0, // 表格数据的总数量
