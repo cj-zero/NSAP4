@@ -64,6 +64,11 @@
         ///折后价格
         /// </summary>
         public decimal? DiscountPrices { get; set; }
+
+        /// <summary>
+        ///仓库号
+        /// </summary>
+        public string WhsCode { get; set; }
         //todo:添加自己的请求字段
     }
 }
