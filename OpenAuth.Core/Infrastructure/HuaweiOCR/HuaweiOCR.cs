@@ -134,7 +134,7 @@ namespace Infrastructure.HuaweiOCR
                             {
                                 InvoiceCode = invoiceCode,
                                 InvoiceNo = invoiceNo,
-                                InvoiceDate = invoiceDate,
+                                InvoiceDate = Convert.ToDateTime(invoiceDate).ToString("yyyy.MM.dd HH:mm:ss"),
                                 AmountWithTax = amountWithTax,
                                 CompanyName = companyName,
                                 CompanyTaxCode = companyTaxCode,
