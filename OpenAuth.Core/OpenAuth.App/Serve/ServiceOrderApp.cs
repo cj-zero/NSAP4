@@ -3886,6 +3886,11 @@ namespace OpenAuth.App
             //差旅费
             if (req.travelExpense.Days == 1)
             {
+                var num = await UnitWork.Find<ServiceDailyExpends>(w => w.CreateUserId == userInfo.UserID && w.CreateTime.Value.Day == DateTime.Now.Day && w.DailyExpenseType==1).CountAsync();
+                if (num > 0) 
+                {
+                    throw new Exception("已添加当天出差补贴，不可重复提交。");
+                }
                 //获取当前用户的差旅补贴值
                 var subsidies = await GetUserSubsides(userInfo.UserID);
                 var travelExpenseInfo = new ServiceDailyExpends { ServiceOrderId = req.ServiceOrderId, CreateTime = DateTime.Now, CreateUserId = userInfo.User.Id, CreateUserName = userInfo.User.Name, DailyExpenseType = 1, SerialNumber = 1, Days = 1, Money = subsidies, Remark = req.travelExpense.Remark, TotalMoney = subsidies };
