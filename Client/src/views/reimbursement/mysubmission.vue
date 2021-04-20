@@ -315,14 +315,14 @@ export default {
     submit () { // 提交
       this.title === 'create'
         ? this._addOrder()
-        : this.edit()
+        : this._edit()
     }, 
     saveAsDraft () { // 存为草稿
       this.title === 'create' // 判断是新建的还是已经创建的
         ? this._addOrder(true)
         : this._edit(true)
     }, 
-    edit (isDraft) {
+    _edit (isDraft) {
       // 编辑
       isDraft
         ? this.draftLoading = true

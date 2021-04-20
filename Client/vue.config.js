@@ -1,6 +1,6 @@
 const path = require('path')
 const CompressionPlugin = require('compression-webpack-plugin')
-const HardSourceWebpackPlugin = require('hard-source-webpack-plugin');
+// const HardSourceWebpackPlugin = require('hard-source-webpack-plugin');
 function resolve (dir) {
     return path.join(__dirname, '/', dir)
 }
@@ -29,16 +29,15 @@ module.exports = {
   // svg配置
   chainWebpack(config) {
     if (process.env.NODE_ENV === 'production') {
-      console.log('compress')
       config.plugin('CompressionPlugin')
         .use(CompressionPlugin, [])
         .end()
     }
-    if (process.env.NODE_ENV === 'development') {
-      config.plugin('HardSourceWebpackPlugin')
-        .use(HardSourceWebpackPlugin)
-        .end()
-    }
+    // if (process.env.NODE_ENV === 'development') {
+    //   config.plugin('HardSourceWebpackPlugin')
+    //     .use(HardSourceWebpackPlugin)
+    //     .end()
+    // }
     config.module
       .rule('svg')
       .exclude.add(resolve('src/icons'))
