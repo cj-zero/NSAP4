@@ -41,5 +41,11 @@ namespace OpenAuth.App.Serve.Response
         /// 是否已填写完日费
         /// </summary>
         public bool IsFinish { get; set; }
+
+        /// <summary>
+        /// 是否已填写差旅报销
+        /// </summary>
+        public bool IsDailyExpend { get; set; }
+        
     }
 }

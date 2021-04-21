@@ -192,7 +192,7 @@ namespace Infrastructure.TecentOCR
                             {
                                 InvoiceCode = invoiceCode,
                                 InvoiceNo = invoiceNo,
-                                InvoiceDate = Convert.ToDateTime(invoiceDate).ToString("yyyy.MM.dd HH:mm:ss"),
+                                InvoiceDate = invoiceDate,
                                 AmountWithTax = amountWithTax,
                                 CompanyName = companyName,
                                 CompanyTaxCode = companyTaxCode,
