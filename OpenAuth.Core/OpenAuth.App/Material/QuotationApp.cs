@@ -2035,7 +2035,7 @@ namespace OpenAuth.App.Material
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        public async Task PrintPickingList(List<QuotationMergeMaterialReq> req)
+        public async Task PrintStockRequisition(List<QuotationMergeMaterialReq> req)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -2065,18 +2065,18 @@ namespace OpenAuth.App.Material
                 var orgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.Id.Equals(SecondId)).Select(o => o.Name).FirstOrDefaultAsync();
 
                 var createTime = Convert.ToDateTime(model.QuotationOperationHistorys.Where(q => q.ApprovalStage.Equals(4)).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd");
-                var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PickingListHeader.html");
+                var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "StockRequisitionHeader.html");
                 var text = System.IO.File.ReadAllText(url);
                 text = text.Replace("@Model.PickingList", model.Id.ToString());
                 text = text.Replace("@Model.CreateTime", createTime);
                 text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.Id.ToString()));
                 text = text.Replace("@Model.OrgName", orgName);
-                var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PickingListHeader{model.Id}.html");
+                var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"StockRequisitionHeader{model.Id}.html");
                 System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
-                var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PickingListFooter.html");
+                var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "StockRequisitionFooter.html");
                 var foottext = System.IO.File.ReadAllText(footUrl);
                 foottext = foottext.Replace("@Model.User", loginContext.User.Name);
-                var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PickingListFooter{model.Id}.html");
+                var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"StockRequisitionFooter{model.Id}.html");
                 System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
                 var materialList = QuotationMergeMaterial.Select(m => m.MaterialCode).ToList();
                 var locationList = await UnitWork.Query<v_storeitemstock>(@$"select ItemCode,layer_no,unit_no,shelf_nm from v_storeitemstock").Where(v => materialList.Contains(v.ItemCode)).Select(v => new v_storeitemstock { ItemCode = v.ItemCode, layer_no = v.shelf_nm + "-" + v.layer_no + "-" + v.unit_no }).ToListAsync();
@@ -2093,7 +2093,7 @@ namespace OpenAuth.App.Material
                     Location = locationList.Where(l => l.ItemCode.Equals(q.MaterialCode)).FirstOrDefault()?.layer_no
                 }).OrderBy(q=>q.MaterialCode).ToList();
 
-                var datas = await ExportAllHandler.Exporterpdf(materials, "PrintPickingList.cshtml", pdf =>
+                var datas = await ExportAllHandler.Exporterpdf(materials, "StockRequisitionList.cshtml", pdf =>
                 {
                     pdf.IsWriteHtml = true;
                     pdf.PaperKind = PaperKind.A5;
@@ -2116,7 +2116,7 @@ namespace OpenAuth.App.Material
         /// <param name="QuotationId"></param>
         /// <param name="IsTrue"></param>
         /// <returns></returns>
-        public async Task<byte[]> PrintPickingList(string QuotationId, bool? IsTrue)
+        public async Task<byte[]> PrintStockRequisition(string QuotationId, bool? IsTrue)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -2126,7 +2126,7 @@ namespace OpenAuth.App.Material
             int PrintWarehouse = 3;string Action = "技术员打印";
             if (IsTrue != null && (bool)IsTrue)
             {
-                await PrintPickingList(new List<QuotationMergeMaterialReq> { new QuotationMergeMaterialReq { QuotationId = int.Parse(QuotationId) } });
+                await PrintStockRequisition(new List<QuotationMergeMaterialReq> { new QuotationMergeMaterialReq { QuotationId = int.Parse(QuotationId) } });
                 PrintWarehouse = 2;
             }
             var b = await RedisHelper.GetAsync<byte[]>(QuotationId);
@@ -2150,6 +2150,58 @@ namespace OpenAuth.App.Material
             });
             await UnitWork.SaveAsync();
             return b;
+        }
+
+        /// <summary>
+        /// 打印装箱清单
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        /// <returns></returns>
+        public async Task<byte[]> PrintPickingList(string QuotationId)
+        {
+            var quotationId = int.Parse(QuotationId);
+            var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(quotationId)).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
+            var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
+            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_AcquisitionWay") || u.TypeId.Equals("SYS_DeliveryMethod")).Select(u => new { u.Name, u.TypeId, u.DtValue, u.Description }).ToListAsync();
+
+            var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PickingListHeader.html");
+            var text = System.IO.File.ReadAllText(url);
+            text = text.Replace("@Model.QuotationId", model.Id.ToString());
+            text = text.Replace("@Model.CreateTime", model.CreateTime.ToString("yyyy.MM.dd hh:mm"));
+            text = text.Replace("@Model.SalesUser", model?.CreateUser.ToString());
+            text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.Id.ToString()));
+            text = text.Replace("@Model.CustomerId", serverOrder?.TerminalCustomerId.ToString());
+            text = text.Replace("@Model.CollectionAddress", model?.CollectionAddress.ToString());
+            text = text.Replace("@Model.ShippingAddress", model?.ShippingAddress.ToString());
+            text = text.Replace("@Model.CustomerName", serverOrder?.TerminalCustomer.ToString());
+            text = text.Replace("@Model.NewestContacter", serverOrder?.NewestContacter.ToString());
+            text = text.Replace("@Model.NewestContactTel", serverOrder?.NewestContactTel.ToString());
+            text = text.Replace("@Model.DeliveryMethod", CategoryList.Where(c => c.DtValue.Equals(model?.DeliveryMethod) && c.TypeId.Equals("SYS_DeliveryMethod")).FirstOrDefault()?.Name);
+            text = text.Replace("@Model.AcquisitionWay", CategoryList.Where(c => c.DtValue.Equals(model?.AcquisitionWay) && c.TypeId.Equals("SYS_AcquisitionWay")).FirstOrDefault()?.Name);
+            text = text.Replace("@Model.DeliveryDate", Convert.ToDateTime(model?.DeliveryDate).ToString("yyyy.MM.dd"));
+            text = text.Replace("@Model.AcceptancePeriod", Convert.ToDateTime(model?.DeliveryDate).AddDays(model.AcceptancePeriod == null ? 0 : (double)model.AcceptancePeriod).ToString("yyyy.MM.dd"));
+            text = text.Replace("@Model.Remark", model?.Remark);
+            var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PickingListHeader{model.Id}.html");
+            System.IO.File.WriteAllText(tempUrl, text,Encoding.Unicode);
+            var footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PickingListFooter.html");
+            var materials = model.QuotationMergeMaterials.Select(q => new PrintSalesOrderResp
+            {
+                MaterialCode = q.MaterialCode,
+                MaterialDescription = q.MaterialDescription,
+                Count = q.Count.ToString(),
+                Unit = q.Unit,
+                WhsCode=q.WhsCode
+            }).OrderBy(q => q.MaterialCode).ToList();
+            var datas = await ExportAllHandler.Exporterpdf(materials, "PrintPickingList.cshtml", pdf =>
+            {
+                pdf.IsWriteHtml = true;
+                pdf.PaperKind = PaperKind.A4;
+                pdf.Orientation = Orientation.Portrait;
+                pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+                pdf.FooterSettings = new FooterSettings() { HtmUrl = footerUrl };
+            });
+            System.IO.File.Delete(tempUrl);
+            return datas;
         }
 
         /// <summary>

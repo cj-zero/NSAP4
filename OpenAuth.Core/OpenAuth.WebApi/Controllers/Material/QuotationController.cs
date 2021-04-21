@@ -515,12 +515,12 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> PrintPickingList(List<QuotationMergeMaterialReq> req)
+        public async Task<Response> PrintStockRequisition(List<QuotationMergeMaterialReq> req)
         {
             var result = new Response();
             try
             {
-                await _app.PrintPickingList(req);
+                await _app.PrintStockRequisition(req);
             }
             catch (Exception e)
             {
@@ -536,11 +536,32 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <param name="IsTrue"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> PrintPicking(string serialNumber,bool? IsTrue)
+        public async Task<IActionResult> PrintStockRequisition(string serialNumber,bool? IsTrue)
         {
             try
             {
-                return File(await _app.PrintPickingList(serialNumber, IsTrue), "application/pdf");
+                return File(await _app.PrintStockRequisition(serialNumber, IsTrue), "application/pdf");
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+        }
+
+        /// <summary>
+        /// 打印装箱清单
+        /// </summary>
+        /// <param name="serialNumber"></param>
+        /// <param name="sign"></param>
+        /// <param name="timespan"></param>
+        /// <returns></returns>
+        [HttpGet]
+        //[ServiceFilter(typeof(CertAuthFilter))], string sign, string timespan
+        public async Task<IActionResult> PrintPickingList(string serialNumber)
+        {
+            try
+            {
+                return File(await _app.PrintPickingList(serialNumber), "application/pdf");
             }
             catch (Exception e)
             {

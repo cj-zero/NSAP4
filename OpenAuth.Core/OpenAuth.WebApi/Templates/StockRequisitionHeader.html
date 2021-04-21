@@ -1,0 +1,61 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <style type="text/css">
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        #tablebor {
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+
+        .TH td {
+            border-top-style: solid;
+            border-top-width: 1px;
+            border-bottom-style: solid;
+            border-bottom-width: 1px;
+        }
+
+        .floatdiv {
+            float: left;
+        }
+    </style>
+</head>
+<body style=" font-family: '华文宋体'; font-size:12pt;">
+    <div class="floatdiv">
+        <img src="logo.png" color="#6F6F6F" style="width: 120px;height: 45px;">
+    </div>
+    <div style="font-size:34pt; margin-left:80px" class="floatdiv">领/补料申请单</div>
+
+    <div style=" width:250px;height:80px; margin-top:-12px" class="floatdiv">
+        <p> &nbsp;  &nbsp; 单号：IM - <span style="font-size: 36pt;">@Model.PickingList</span></p>
+        <p> &nbsp;  &nbsp; 日期：@Model.CreateTime</p>
+    </div>
+    <img color="#6F6F6F" style="width: 110px;height:110px;  float:right;" src="@Model.QRcode" />
+    
+    <div style=" clear: both;">
+        <span>领料部门：@Model.OrgName</span>
+        <table style="margin-top:2px; font-size:15pt;">
+            <tr class="TH">
+                <td style="width: 30px; " align="center"># </td>
+                <td style="width: 160px;" align="left">&nbsp; 物料编码</td>
+                <td style="width: 320px;" align="left">&nbsp; 物料描述</td>
+                <td style="width: 110px;" align="right">从仓库 &nbsp;</td>
+                <td style="width: 90px; " align="right"> 数量&nbsp;</td>
+                <td style="width: 100px;" align="left">&nbsp;单位</td>
+                <td style="width: 80px;" align="left">库位 &nbsp;</td>
+            </tr>
+        </table>
+    </div>
+   <p style="height:9px"></p>
+</body>
+</html>

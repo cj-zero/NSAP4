@@ -1,61 +1,114 @@
 ﻿<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title></title>
-    <style type="text/css">
-        * {
-            padding: 0;
-            margin: 0;
-        }
+<style>
+    * {
+        padding: 0;
+        margin: 0;
+    }
 
-        table {
-            border-collapse: collapse;
-        }
+    table {
+        border-collapse: collapse;
+    }
 
-        #tablebor {
-            margin: 0 auto;
-            border-collapse: collapse;
-        }
+    #tablebor {
+        margin: 0 auto;
+        border-collapse: collapse;
+    }
 
-        .TH td {
-            border-top-style: solid;
-            border-top-width: 1px;
-            border-bottom-style: solid;
-            border-bottom-width: 1px;
-        }
+    .TH td {
+        border-style: solid;
+        border-width: 1px;
+    }
 
-        .floatdiv {
-            float: left;
-        }
-    </style>
-</head>
-<body style=" font-family: '华文宋体'; font-size:12pt;">
-    <div class="floatdiv">
-        <img src="logo.png" color="#6F6F6F" style="width: 120px;height: 45px;">
-    </div>
-    <div style="font-size:34pt; margin-left:80px" class="floatdiv">领/补料申请单</div>
+    #divtitle {
+        margin: 0 auto;
+    }
 
-    <div style=" width:250px;height:80px; margin-top:-12px" class="floatdiv">
-        <p> &nbsp;  &nbsp; 单号：IM - <span style="font-size: 36pt;">@Model.PickingList</span></p>
-        <p> &nbsp;  &nbsp; 日期：@Model.CreateTime</p>
-    </div>
-    <img color="#6F6F6F" style="width: 110px;height:110px;  float:right;" src="@Model.QRcode" />
-    
-    <div style=" clear: both;">
-        <span>领料部门：@Model.OrgName</span>
-        <table style="margin-top:2px; font-size:15pt;">
-            <tr class="TH">
-                <td style="width: 30px; " align="center"># </td>
-                <td style="width: 160px;" align="left">&nbsp; 物料编码</td>
-                <td style="width: 320px;" align="left">&nbsp; 物料描述</td>
-                <td style="width: 110px;" align="right">从仓库 &nbsp;</td>
-                <td style="width: 90px; " align="right"> 数量&nbsp;</td>
-                <td style="width: 100px;" align="left">&nbsp;单位</td>
-                <td style="width: 80px;" align="left">库位 &nbsp;</td>
+    #divcode {
+        height: 90px;
+        width: 1000px;
+        margin: 0 auto;
+        border: 1px solid black;
+        font-size: 13pt;
+    }
+
+    .font {
+        font-size: 14pt;
+        font-weight: 600;
+    }
+
+    .header {
+        font-family: '华文宋体';
+    }
+    .lableheader {
+        width: 90px;
+        text-align: right;
+        display: inline-block;
+        font-weight:900;
+    }
+</style>
+<header style="position: absolute; top:10px">
+    <div style=" width: 1000px;">
+        <div id="divtitle" style=" width: 1000px; height:60px;">
+            <div style="float:left;width: 180px;text-align:center;margin-left:350px">
+                <span style="font-size: 42px;">装箱清单发货单</span>
+            </div>
+            <div style="float:left;width: 220px;">
+                <p><label class="lableheader">单号：</label><span style="font-size: 30px; font-weight: 900;">PL-75896</span></p>
+                <p style="margin-top: 5px;"><label class="lableheader">日期：</label>@Model.CreateTime</p>
+                <p style="margin-top: 7px; "><label class="lableheader">基础凭证：</label>SE-@Model.SalesUser</p>
+                <p style="margin-top: 7px; "><label class="lableheader">销售：</label>@Model.SalesUser</p>
+                <p style="margin-top: 7px;"><label class="lableheader">客户PO：</label>@Model.SalesUser</p>
+            </div>
+            <div style="float:right; width: 240px; ">
+                <img color="#6F6F6F" style="width: 90px;height:90px; float: right; margin-top: 10px;" src="@Model.QRcode" />
+            </div>
+        </div>
+
+        <table style="margin-top: 30px;" id="divcode">
+            <tr>
+                <td align="left" style="width: 55pt;font-weight:900; ">&nbsp;客户代码：</td>
+                <td align="left" style="width: 40pt; ">@Model.CustomerId</td>
+                <td align="left" style="width: 35pt;font-weight:900;">&nbsp;联系人：</td>
+                <td align="left" style="width: 40pt; ">@Model.NewestContacter</td>
+                <td align="left" style="width: 30pt;font-weight:900; ">&nbsp;电话：</td>
+                <td align="left" style="width: 55pt; ">@Model.NewestContactTel</td>
+            </tr>
+            <tr>
+                <td style="font-weight: 900;">&nbsp;客户名称：</td>
+                <td colspan="3">
+                    @Model.CustomerName
+                </td>
+                <td>&nbsp;传真：</td>
+                <td>
+                </td>
+            </tr>
+            <tr>
+                <td style="font-weight: 900;">&nbsp;交货地址：</td>
+                <td style="width: 550pt;" colspan="5">
+                    @Model.ShippingAddress
+                </td>
+            </tr>
+        </table>
+        <table style="margin-top:6px;border: 1px solid black; width: 1000px;height:30px;">
+            <tr>
+
+                <td align="left" style="width: 55pt; font-weight:900;">&nbsp;交货日期：</td>
+                <td align="left" style="width: 40pt; ">@Model.DeliveryDate</td>
+                <td align="left" style="width: 35pt;font-weight:900;">&nbsp;交货方式：</td>
+                <td align="left" style="width: 40pt; ">@Model.AcquisitionWay</td>
+                <td align="left" style="width: 30pt; "></td>
+                <td align="left" style="width: 55pt; "></td>
+            </tr>
+        </table>
+        <table style="margin-top:6px; width:1000px;height:30px">
+            <tr class="TH" style="font-weight: 900;">
+                <td style="width: 30px;" align="center"># </td>
+                <td style="width: 150px;" align="left">&nbsp; 物料编码</td>
+                <td style="width: 500px;" align="left">&nbsp; 描述</td>
+                <td style="width: 50px;" align="right">&nbsp; 数量</td>
+                <td style="width: 50px; " align="left">&nbsp;单位</td>
+                <td style="width: 60px; " align="left">&nbsp;仓库 </td>
             </tr>
         </table>
     </div>
-   <p style="height:9px"></p>
-</body>
-</html>
+</header>
