@@ -5,7 +5,7 @@
     :element-loading-text="`${loadingBtnText}中`"
     element-loading-spinner="el-icon-loading"
     element-loading-background="rgba(0, 0, 0, 0.3)">
-    <el-row class="btn-wrapper">
+    <el-row class="btn-wrapper" v-if="ifShowBtn">
       <el-button 
         v-if="!(type === 'submit' && currentData.activityName === '待批准')"
         type="primary" 
@@ -87,6 +87,10 @@ export default {
     pdf
   },
   props: {
+    ifShowBtn: {
+      type: Boolean,
+      default: true
+    },
     hasSend: {
       type: Boolean,
       default: true
