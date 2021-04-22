@@ -96,7 +96,7 @@ import { formatDate } from '@/utils/date'
 import { mapMutations } from 'vuex'
 import JSZip from 'jszip'
 import FileSaver from 'file-saver'
-import { serializeParams } from '@/utils/process'
+// import { serializeParams } from '@/utils/process'
 const W_370 = { width: '370px', display: 'inline-flex' }
 const W_150 = { width: '150px' }
 export default {
@@ -197,12 +197,13 @@ export default {
         return this.$message.warning('当前未选中数据或所选数据没有证书编号')
       }
       const serialNumber = data.map(item => (item.certificateNumber || item.certNo))
-      const params = {
-        serialNumber,
-        'X-token': this.$store.state.user.token
-      }
-      const url = '/Cert/DownloadTest'
-      window.open(`${process.env.VUE_APP_BASE_API}${url}?${serializeParams(params)}`)
+      print('/Cert/BatchDownloadCertPdf', { serialNumber: serialNumber.join(',')  })
+      // const params = {
+      //   serialNumber,
+      //   'X-token': this.$store.state.user.token
+      // }
+      // const url = '/Cert/DownloadTest'
+      // window.open(`${process.env.VUE_APP_BASE_API}${url}?${serializeParams(params)}`)
       console.log(JSZip, getPdfURL, FileSaver, getFile, formatDate, downloadTest)
       // const promiseList = []
       // let zip = new JSZip();
