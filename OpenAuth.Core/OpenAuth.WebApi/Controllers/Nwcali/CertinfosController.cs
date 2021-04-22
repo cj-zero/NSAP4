@@ -40,6 +40,27 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 业务员证书查询列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> LoadSaleManLoad([FromQuery] QuerySaleOrDeviceOrCertListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result=await _app.LoadSaleInfo(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message= ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 证书审批操作
         /// </summary>
         /// <param name="req"></param>
