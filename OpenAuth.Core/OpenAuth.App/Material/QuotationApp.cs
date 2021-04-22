@@ -58,8 +58,12 @@ namespace OpenAuth.App.Material
                 loginUser = await GetUserId(Convert.ToInt32(request.AppId));
             }
             var result = new TableData();
-            var ServiceOrders = await UnitWork.Find<ServiceOrder>(null).WhereIf(!string.IsNullOrWhiteSpace(request.CardCode), q => q.CustomerId.Contains(request.CardCode) || q.CustomerName.Contains(request.CardCode)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId }).ToListAsync();
-            var ServiceOrderids = ServiceOrders.Select(s => s.Id).ToList();
+            List<int> ServiceOrderids = new List<int>();
+            if (!string.IsNullOrWhiteSpace(request.CardCode))
+            {
+                ServiceOrderids = await UnitWork.Find<ServiceOrder>(null).Where(q => q.CustomerId.Contains(request.CardCode) || q.CustomerName.Contains(request.CardCode)).Select(s =>s.Id).ToListAsync();
+                
+            }
             var Quotations = UnitWork.Find<Quotation>(null).Include(q => q.QuotationPictures).WhereIf(request.QuotationId.ToString() != null, q => q.Id.ToString().Contains(request.QuotationId.ToString()))
                                 .WhereIf(request.ServiceOrderSapId != null, q => q.ServiceOrderSapId.ToString().Contains(request.ServiceOrderSapId.ToString()))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUser), q => q.CreateUser.Contains(request.CreateUser))
@@ -67,13 +71,31 @@ namespace OpenAuth.App.Material
                                 .WhereIf(request.EndCreateTime != null, q => q.CreateTime < request.EndCreateTime)
                                 .WhereIf(request.Status != null, q => q.Status == request.Status)
                                 .WhereIf(request.SalesOrderId != null, q => q.SalesOrderId == request.SalesOrderId)
-                                .Where(q => ServiceOrderids.Contains(q.ServiceOrderId));
+                                .WhereIf(ServiceOrderids.Count()>0,q => ServiceOrderids.Contains(q.ServiceOrderId));
             if (!loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && !loginUser.Account.Equals(Define.SYSTEM_USERNAME))
             {
                 if (request.PageStart != null && request.PageStart == 1)
                 {
 
-                    if (loginContext.Roles.Any(r => r.Name.Equals("物料工程审批")))
+                    if (loginContext.Roles.Any(r => r.Name.Equals("销售员")))
+                    {
+                        switch (request.StartType)
+                        {
+                            case 1:
+                                Quotations = Quotations.Where(q => q.QuotationStatus == 3.1M);
+                                break;
+
+                            case 2:
+                                Quotations = Quotations.Where(q => q.QuotationStatus > 3.1M);
+                                break;
+                            default:
+                                Quotations = Quotations.Where(q => q.QuotationStatus >= 3.1M);
+                                break;
+                        }
+                        ServiceOrderids = await UnitWork.Find<ServiceOrder>(null).Where(q =>q.SalesManId.Equals(loginContext.User.Id)).Select(s =>s.Id).ToListAsync();
+                        Quotations = Quotations.Where(q => ServiceOrderids.Contains(q.ServiceOrderId));
+                    }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("物料工程审批")))
                     {
                         switch (request.StartType)
                         {
@@ -211,7 +233,8 @@ namespace OpenAuth.App.Material
             QuotationDate.ForEach(q => fileids.AddRange(q.QuotationPictures.Select(p => p.PictureId).ToList()));
 
             var file = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
-
+            ServiceOrderids = QuotationDate.Select(q => q.ServiceOrderId).ToList();
+            var ServiceOrders=await UnitWork.Find<ServiceOrder>(null).Where(q => ServiceOrderids.Contains(q.Id)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId }).ToListAsync();
             var query = from a in QuotationDate
                         join b in ServiceOrders on a.ServiceOrderId equals b.Id
                         select new { a, b };
@@ -693,7 +716,7 @@ namespace OpenAuth.App.Material
                         m.a.WhsCode
                     }).ToList()
                 }).ToList();
-                quotationsMap.QuotationOperationHistorys = quotationsMap.QuotationOperationHistorys.Where(q => q.ApprovalStage == -1).OrderBy(q => q.CreateTime).ToList();
+                quotationsMap.QuotationOperationHistorys = quotationsMap.QuotationOperationHistorys.Where(q => q.ApprovalStage == "-1").OrderBy(q => q.CreateTime).ToList();
                 result.Data = new
                 {
                     Expressages,
@@ -705,7 +728,7 @@ namespace OpenAuth.App.Material
             }
             else
             {
-                quotationsMap.QuotationOperationHistorys = quotationsMap.QuotationOperationHistorys.Where(q => q.ApprovalStage != -1).OrderBy(q=>q.CreateTime).ToList();
+                quotationsMap.QuotationOperationHistorys = quotationsMap.QuotationOperationHistorys.Where(q => q.ApprovalStage != "-1").OrderBy(q=>q.CreateTime).ToList();
                 result.Data = new
                 {
                     Quotations = quotationsMap,
@@ -915,7 +938,7 @@ namespace OpenAuth.App.Material
                     await UnitWork.SaveAsync();
                     if (!obj.IsDraft)
                     {
-                        QuotationObj.QuotationStatus = 4;
+                        QuotationObj.QuotationStatus = 3.1M;
 
                         #region 创建审批流程
                         //var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("物料报价单"));
@@ -1219,14 +1242,14 @@ namespace OpenAuth.App.Material
                         //afir.CustomName = $"物料报价单" + DateTime.Now;
                         //afir.OrgId = "";
                         //var FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(afir);
-                        //QuotationObj.FlowInstanceId = FlowInstanceId;
-                        QuotationObj.QuotationStatus = 4;
-                        await UnitWork.UpdateAsync<Quotation>(QuotationObj);
+                        ////QuotationObj.FlowInstanceId = FlowInstanceId;
+                        //QuotationObj.QuotationStatus = 4;
+                        //await UnitWork.UpdateAsync<Quotation>(QuotationObj);
                         #endregion
 
                         await UnitWork.UpdateAsync<Quotation>(u => u.Id == QuotationObj.Id, u => new Quotation
                         {
-                            QuotationStatus = 4,
+                            QuotationStatus = 3.1M,
                             CollectionAddress = QuotationObj.CollectionAddress,
                             ShippingAddress = QuotationObj.ShippingAddress,
                             DeliveryMethod = QuotationObj.DeliveryMethod,
@@ -1496,7 +1519,7 @@ namespace OpenAuth.App.Material
 
             var obj = await UnitWork.Find<Quotation>(q => q.Id == req.Id).Include(q => q.QuotationProducts).Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
 
-            qoh.ApprovalStage = obj.QuotationStatus;
+            qoh.ApprovalStage = obj.QuotationStatus.ToString();
 
             VerificationReq VerificationReqModle = new VerificationReq();
             if (req.IsReject)
@@ -1518,7 +1541,11 @@ namespace OpenAuth.App.Material
             }
             else
             {
-                if (loginContext.Roles.Any(r => r.Name.Equals("物料工程审批")) && obj.QuotationStatus == 4)
+                if (loginContext.Roles.Any(r => r.Name.Equals("销售员")) && obj.QuotationStatus == 3.1M)
+                {
+                    qoh.Action = "销售员审批";
+                    obj.QuotationStatus = 4;
+                }else if (loginContext.Roles.Any(r => r.Name.Equals("物料工程审批")) && obj.QuotationStatus == 4)
                 {
                     qoh.Action = "工程审批";
                     obj.QuotationStatus = 5;
@@ -1600,7 +1627,7 @@ namespace OpenAuth.App.Material
                 //};
                 if (req.IsTentative == true)
                 {
-                    obj.QuotationStatus = qoh.ApprovalStage;
+                    obj.QuotationStatus =decimal.Parse(qoh.ApprovalStage);
                     obj.Tentative = true;
                     qoh.ApprovalResult = "暂定";
                 }
@@ -2064,11 +2091,11 @@ namespace OpenAuth.App.Material
                 var SecondId = (await UnitWork.Find<Relevance>(r => r.FirstId.Equals(model.CreateUserId) && r.Key.Equals(Define.USERORG)).FirstOrDefaultAsync()).SecondId;
                 var orgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.Id.Equals(SecondId)).Select(o => o.Name).FirstOrDefaultAsync();
 
-                var createTime = Convert.ToDateTime(model.QuotationOperationHistorys.Where(q => q.ApprovalStage.Equals(4)).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd");
+                //var createTime = Convert.ToDateTime(model.QuotationOperationHistorys.Where(q => q.ApprovalStage.Equals("4")).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd");
                 var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "StockRequisitionHeader.html");
                 var text = System.IO.File.ReadAllText(url);
                 text = text.Replace("@Model.PickingList", model.Id.ToString());
-                text = text.Replace("@Model.CreateTime", createTime);
+                text = text.Replace("@Model.CreateTime", DateTime.Now.ToString("yyyy.MM.dd"));
                 text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.Id.ToString()));
                 text = text.Replace("@Model.OrgName", orgName);
                 var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"StockRequisitionHeader{model.Id}.html");
@@ -2123,26 +2150,16 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            int PrintWarehouse = 3;string Action = "技术员打印";
-            if (IsTrue != null && (bool)IsTrue)
-            {
-                await PrintStockRequisition(new List<QuotationMergeMaterialReq> { new QuotationMergeMaterialReq { QuotationId = int.Parse(QuotationId) } });
-                PrintWarehouse = 2;
-            }
             var b = await RedisHelper.GetAsync<byte[]>(QuotationId);
             await RedisHelper.DelAsync(QuotationId);
             var IsPrintWarehouse=(await UnitWork.Find<Quotation>(q => q.Id == int.Parse(QuotationId)).FirstOrDefaultAsync())?.PrintWarehouse;
-            if (IsPrintWarehouse == null ||(IsPrintWarehouse!=3 && IsPrintWarehouse!= PrintWarehouse)) 
+            if (IsPrintWarehouse == null ||IsPrintWarehouse!=3 ) 
             {
-                await UnitWork.UpdateAsync<Quotation>(q => q.Id == int.Parse(QuotationId), q => new Quotation { PrintWarehouse = PrintWarehouse });
+                await UnitWork.UpdateAsync<Quotation>(q => q.Id == int.Parse(QuotationId), q => new Quotation { PrintWarehouse = 3 });
             }
-            if (loginContext.Roles.Any(r => r.Name.Equals("仓库"))) 
-            {
-                Action = "仓库打印";
-            }
-            await UnitWork.AddAsync<QuotationOperationHistory>(new QuotationOperationHistory { 
-                Action= Action,
-                ApprovalStage=-1,
+            await UnitWork.AddAsync<QuotationOperationHistory>(new QuotationOperationHistory {
+                Action = "仓库打印",
+                ApprovalStage="-1",
                 CreateTime=DateTime.Now,
                 CreateUser= loginContext.User.Name,
                 CreateUserId=loginContext.User.Id,
@@ -2159,6 +2176,11 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         public async Task<byte[]> PrintPickingList(string QuotationId)
         {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
             var quotationId = int.Parse(QuotationId);
             var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(quotationId)).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
             var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
@@ -2201,6 +2223,22 @@ namespace OpenAuth.App.Material
                 pdf.FooterSettings = new FooterSettings() { HtmUrl = footerUrl };
             });
             System.IO.File.Delete(tempUrl);
+
+            var IsPrintWarehouse = (await UnitWork.Find<Quotation>(q => q.Id == int.Parse(QuotationId)).FirstOrDefaultAsync())?.PrintWarehouse;
+            if (IsPrintWarehouse == null || IsPrintWarehouse != 3 )
+            {
+                await UnitWork.UpdateAsync<Quotation>(q => q.Id == int.Parse(QuotationId), q => new Quotation { PrintWarehouse = 2 });
+            }
+            await UnitWork.AddAsync<QuotationOperationHistory>(new QuotationOperationHistory
+            {
+                Action = "技术员打印",
+                ApprovalStage = "-1",
+                CreateTime = DateTime.Now,
+                CreateUser = loginContext.User.Name,
+                CreateUserId = loginContext.User.Id,
+                QuotationId = int.Parse(QuotationId)
+            });
+            await UnitWork.SaveAsync();
             return datas;
         }
 

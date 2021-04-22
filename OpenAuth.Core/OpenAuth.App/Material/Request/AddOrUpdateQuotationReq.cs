@@ -94,7 +94,7 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         ///报价单审批状态
         /// </summary>
-        public int? QuotationStatus { get; set; }
+        public decimal? QuotationStatus { get; set; }
 
         /// <summary>
         ///备注

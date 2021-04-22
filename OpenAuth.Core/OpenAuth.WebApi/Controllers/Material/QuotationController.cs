@@ -556,8 +556,8 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <param name="timespan"></param>
         /// <returns></returns>
         [HttpGet]
-        //[ServiceFilter(typeof(CertAuthFilter))], string sign, string timespan
-        public async Task<IActionResult> PrintPickingList(string serialNumber)
+        [ServiceFilter(typeof(CertAuthFilter))]
+        public async Task<IActionResult> PrintPickingList(string serialNumber, string sign, string timespan)
         {
             try
             {

@@ -149,7 +149,7 @@ namespace OpenAuth.Repository.Domain
         ///报价单审批状态
         /// </summary>
         [Description("报价单审批状态")]
-        public int? QuotationStatus { get; set; }
+        public decimal? QuotationStatus { get; set; }
 
         /// <summary>
         ///领料方式
