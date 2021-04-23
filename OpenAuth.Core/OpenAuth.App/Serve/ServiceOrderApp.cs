@@ -3882,6 +3882,7 @@ namespace OpenAuth.App
                     await UnitWork.BatchDeleteAsync(serviceDailyAttachments.ToArray());
                 }
                 await UnitWork.BatchDeleteAsync(serviceDailyExpend.ToArray());
+                await UnitWork.SaveAsync();
             }
             //差旅费
             if (req.travelExpense.Days == 1)
