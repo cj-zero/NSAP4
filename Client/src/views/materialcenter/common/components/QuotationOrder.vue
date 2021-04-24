@@ -1704,12 +1704,15 @@ export default {
       }
       let newTimeList = []
       let PROCESS_TEXT = []
-      if (typeof this.startIndex === 'number') {
-        newTimeList = originTimeList.slice(this.startIndex)
-      }
       const { isMaterialType, totalMoney, quotationStatus } = this.formData
       const isBoolean = typeof isMaterialType === 'boolean'
       const hasMoney = Number(totalMoney) > 0
+      if (typeof this.startIndex === 'number' && +quotationStatus > 3) {
+        newTimeList = originTimeList.slice(this.startIndex)
+      }
+      if (!newTimeList.length) {
+        return newTimeList
+      }
       let isToOutbound = +quotationStatus <= 10 // 判断这个单子是不是未出库的状态
       let isGC = +quotationStatus === 4 // 判断当前状态是不是工程审批
       let cwIndex = findIndex(newTimeList, item => item.action === '财务审批') // 判断有没有财务审批
