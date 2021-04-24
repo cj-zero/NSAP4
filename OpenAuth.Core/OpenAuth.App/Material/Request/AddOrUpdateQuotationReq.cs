@@ -171,6 +171,11 @@ namespace OpenAuth.App.Material.Request
         public string OrgName { get; set; }
 
         /// <summary>
+        ///劳务关系
+        /// </summary>
+        public string ServiceRelations { get; set; }
+
+        /// <summary>
         ///税率
         /// </summary>
         public string TaxRate { get; set; }

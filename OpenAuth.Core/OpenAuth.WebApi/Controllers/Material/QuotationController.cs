@@ -533,14 +533,13 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// 打印领料单
         /// </summary>
         /// <param name="serialNumber"></param>
-        /// <param name="IsTrue"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> PrintStockRequisition(string serialNumber,bool? IsTrue)
+        public async Task<IActionResult> PrintStockRequisition(string serialNumber)
         {
             try
             {
-                return File(await _app.PrintStockRequisition(serialNumber, IsTrue), "application/pdf");
+                return File(await _app.PrintStockRequisition(serialNumber), "application/pdf");
             }
             catch (Exception e)
             {
@@ -552,16 +551,17 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// 打印装箱清单
         /// </summary>
         /// <param name="serialNumber"></param>
+        /// <param name="IsTrue"></param>
         /// <param name="sign"></param>
         /// <param name="timespan"></param>
         /// <returns></returns>
         [HttpGet]
         [ServiceFilter(typeof(CertAuthFilter))]
-        public async Task<IActionResult> PrintPickingList(string serialNumber, string sign, string timespan)
+        public async Task<IActionResult> PrintPickingList(string serialNumber,bool? IsTrue, string sign, string timespan)
         {
             try
             {
-                return File(await _app.PrintPickingList(serialNumber), "application/pdf");
+                return File(await _app.PrintPickingList(serialNumber, IsTrue), "application/pdf");
             }
             catch (Exception e)
             {
