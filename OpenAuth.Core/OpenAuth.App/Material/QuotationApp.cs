@@ -1368,8 +1368,12 @@ namespace OpenAuth.App.Material
             var expressageMap = obj.ExpressageReqs.MapTo<Expressage>();
 
             #region 判断条件
-            var mergeMaterialList = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId == expressageMap.QuotationId).Select(q => new { q.MaterialCode, q.Id, q.WhsCode }).ToListAsync();
-
+            var quotationObj=await UnitWork.Find<Quotation>(q => q.Id == expressageMap.QuotationId).Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
+            var mergeMaterialList = quotationObj.QuotationMergeMaterials.Select(q => new { q.MaterialCode, q.Id, q.WhsCode }).ToList();
+            if (quotationObj.SalesOrderId == null || quotationObj.SalesOrderId <= 0) 
+            {
+                throw new Exception("暂未生成销售订单，不可出库，请联系管理员。");
+            }
             //判定是否存在成品
             mergeMaterialList.ForEach(m =>
             {

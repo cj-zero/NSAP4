@@ -635,14 +635,14 @@ namespace OpenAuth.App
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == ReimburseResp.CreateUserId).Select(r => r.SecondId).ToListAsync();
             var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
             var serviceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id == ReimburseResp.ServiceOrderId).Include(s=>s.ServiceWorkOrders).FirstOrDefaultAsync();
-            var quotationIds = await UnitWork.Find<Quotation>(q => q.ServiceOrderId == ReimburseResp.ServiceOrderId && q.CreateUserId.Equals(ReimburseResp.CreateUserId) && q.Status==2).Select(q=>q.Id).ToListAsync();
+            var quotationIds = await UnitWork.Find<Quotation>(q => q.ServiceOrderId == ReimburseResp.ServiceOrderId && q.CreateUserId.Equals(ReimburseResp.CreateUserId) && q.QuotationStatus==11).Select(q=>q.Id).ToListAsync();
             List<AddOrUpdateQuotationReq> quotations = new List<AddOrUpdateQuotationReq>();
             foreach (var item in quotationIds)
             {
                 quotations.Add(await _quotation.GeneralDetails(item, null));
             }
-            //var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == ReimburseResp.ServiceOrderId && c.CreateUserId.Equals(ReimburseResp.CreateUserId) && c.ServiceMode == 1).ToListAsync();
-            //var completionreport = CompletionReports.FirstOrDefault();
+            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == ReimburseResp.ServiceOrderId && c.CreateUserId.Equals(ReimburseResp.CreateUserId) && c.ServiceMode == 1).ToListAsync();
+            var completionreport = CompletionReports.FirstOrDefault();
             result.Data = new
             {
                 ReimburseResp = ReimburseResp,
@@ -650,15 +650,15 @@ namespace OpenAuth.App
                 OrgName = orgname,
                 //TerminalCustomer = completionreport.TerminalCustomer,
                 //TerminalCustomerId = completionreport.TerminalCustomerId,
-                //FromTheme = completionreport.FromTheme,
-                //Becity = completionreport.Becity,
+                FromTheme = completionreport.FromTheme,
+                Becity = completionreport.Becity,
                 //CompleteAddress = ServiceOrders.Province + ServiceOrders.City + ServiceOrders.Area + ServiceOrders.Addr,
-                //Destination = completionreport.Destination,
+                Destination = completionreport.Destination,
                 //BusinessTripDate = CompletionReports.Min(c => c.BusinessTripDate),
                 //EndDate = CompletionReports.Max(c => c.EndDate),
-                //MaterialCode = completionreport.MaterialCode == "无序列号" ? "无序列号" : completionreport.MaterialCode.Substring(0, completionreport.MaterialCode.IndexOf("-"))
-                ServiceOrders= serviceOrders,
-                Quotations= quotations,
+                MaterialCode = completionreport.MaterialCode == "无序列号" ? "无序列号" : completionreport.MaterialCode.Substring(0, completionreport.MaterialCode.IndexOf("-")),
+                ServiceOrders = serviceOrders,
+                Quotations = quotations,
             };
 
             return result;
@@ -2064,7 +2064,7 @@ namespace OpenAuth.App
                 BusinessTripDate = CompletionReports.Where(c => c.CreateUserId.Equals(r.CreateUserId) && c.ServiceOrderId.Equals(r.ServiceOrderId)).Min(c => c.BusinessTripDate),
                 EndDate = CompletionReports.Where(c => c.CreateUserId.Equals(r.CreateUserId) && c.ServiceOrderId.Equals(r.ServiceOrderId)).Max(c => c.EndDate),
                 UserName = CompletionReports.Where(c => c.CreateUserId.Equals(r.CreateUserId) && c.ServiceOrderId.Equals(r.ServiceOrderId)).FirstOrDefault()?.TechnicianName,
-                OrgNnme= query.Where(q=>q.a.FirstId==r.CreateUserId).FirstOrDefault()?.b?.Name
+                OrgName= query.Where(q=>q.a.FirstId==r.CreateUserId).FirstOrDefault()?.b?.Name
             }).ToList();
 
 
@@ -2085,7 +2085,7 @@ namespace OpenAuth.App
                 r.BusinessTripDate,
                 r.EndDate,
                 r.UserName,
-                r.OrgNnme
+                r.OrgName
             }).OrderByDescending(r => r.MainId).ToList();
 
             return result;
