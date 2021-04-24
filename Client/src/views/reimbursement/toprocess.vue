@@ -158,6 +158,7 @@ export default {
   ::v-deep {
     .el-dialog {
       width: 100% !important;
+      min-width: 1100px;
       // left: 240px;
     }
   }
