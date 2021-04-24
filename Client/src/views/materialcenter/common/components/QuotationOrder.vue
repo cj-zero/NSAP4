@@ -241,10 +241,10 @@
                 <div>物料编码<span>{{ item.materialCode }}</span></div>
                 <div v-if="item.warrantyExpirationTime">保修到期<span>{{ item.warrantyExpirationTime | formatDateFilter }}</span></div>
               </el-row>
-              <el-row type="flex" style="margin: 6px 0;">
+              <!-- <el-row type="flex" style="margin: 6px 0;">
                 <div style="flex: 50px 0 0;color: #cbcbcb; margin-right: 10px;">呼叫主题</div>
                <div style="max-width: 100%;" v-infotooltip.top.ellipsis>{{ item.fromTheme }}</div>
-              </el-row>
+              </el-row> -->
               <common-table
                 :data="item.quotationMaterials" 
                 :columns="approveColumns" 
@@ -1702,14 +1702,14 @@ export default {
           break
         }
       }
-      let newTimeList = []
-      let PROCESS_TEXT = []
-      if (typeof this.startIndex === 'number') {
-        newTimeList = originTimeList.slice(this.startIndex)
-      }
       const { isMaterialType, totalMoney, quotationStatus } = this.formData
       const isBoolean = typeof isMaterialType === 'boolean'
       const hasMoney = Number(totalMoney) > 0
+      let newTimeList = []
+      let PROCESS_TEXT = []
+      if (typeof this.startIndex === 'number' && +quotationStatus >= 3) {
+        newTimeList = originTimeList.slice(this.startIndex)
+      }
       let isToOutbound = +quotationStatus <= 10 // 判断这个单子是不是未出库的状态
       let isGC = +quotationStatus === 4 // 判断当前状态是不是工程审批
       let cwIndex = findIndex(newTimeList, item => item.action === '财务审批') // 判断有没有财务审批
