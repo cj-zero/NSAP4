@@ -816,7 +816,7 @@ namespace OpenAuth.App.Material
                 //4.0存在物料价格，取4.0的价格为售后结算价，不存在就当前进货价*1.2 为售后结算价。销售价均为售后结算价*3
                 if (Prices != null)
                 {
-                    e.UnitPrice = Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
+                    e.UnitPrice = Prices?.SettlementPrice==null|| Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
                     //var s = e.UnitPrice.ToDouble().ToString();
                     //if (s.IndexOf(".") > 0)
                     //{
@@ -828,6 +828,7 @@ namespace OpenAuth.App.Material
                     //    }
                     //}
                     e.UnitPrice = decimal.Parse(e.UnitPrice.ToString("#0.0000"));
+                    e.lastPurPrc = e.UnitPrice * Prices?.SalesMultiple;
                 }
                 else
                 {
@@ -843,9 +844,9 @@ namespace OpenAuth.App.Material
                     //    }
                     //}
                     e.UnitPrice = decimal.Parse(e.UnitPrice.ToString("#0.0000"));
-
+                    e.lastPurPrc = e.UnitPrice * 3;
                 }
-                e.lastPurPrc = e.UnitPrice * 3;
+               
             });
             result.Data = Equipments.ToList();
             return result;
@@ -2243,7 +2244,8 @@ namespace OpenAuth.App.Material
             var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PickingListHeader.html");
             var text = System.IO.File.ReadAllText(url);
             text = text.Replace("@Model.QuotationId", model.Id.ToString());
-            text = text.Replace("@Model.CreateTime", model.CreateTime.ToString("yyyy.MM.dd hh:mm"));
+            text = text.Replace("@Model.SalesOrderId", model.SalesOrderId.ToString());
+            text = text.Replace("@Model.CreateTime",DateTime.Now.ToString("yyyy.MM.dd hh:mm"));//model.CreateTime.ToString("yyyy.MM.dd hh:mm")
             text = text.Replace("@Model.SalesUser", model?.CreateUser.ToString());
             text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.Id.ToString()));
             text = text.Replace("@Model.CustomerId", serverOrder?.TerminalCustomerId.ToString());
@@ -2259,7 +2261,11 @@ namespace OpenAuth.App.Material
             text = text.Replace("@Model.Remark", model?.Remark);
             var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PickingListHeader{model.Id}.html");
             System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
-            var footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PickingListFooter.html");
+            var footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PickingListFooter.html");
+            text = System.IO.File.ReadAllText(footerUrl);
+            text = text.Replace("@Model.UserName", loginContext.User.Name);
+            footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PickingListFooter{model.Id}.html");
+            System.IO.File.WriteAllText(footerUrl, text, Encoding.Unicode);
             if (logisticsRecords.Count > 0)
             {
                 var ids = logisticsRecords.Select(l => l.QuotationMaterialId).ToList();
@@ -2289,7 +2295,7 @@ namespace OpenAuth.App.Material
                 pdf.FooterSettings = new FooterSettings() { HtmUrl = footerUrl };
             });
             System.IO.File.Delete(tempUrl);
-
+            System.IO.File.Delete(footerUrl);
             var IsPrintWarehouse = (await UnitWork.Find<Quotation>(q => q.Id == int.Parse(QuotationId)).FirstOrDefaultAsync())?.PrintWarehouse;
             if (IsPrintWarehouse == null || IsPrintWarehouse != 3)
             {
