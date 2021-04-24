@@ -475,7 +475,7 @@ namespace OpenAuth.App.Material
                 //4.0存在物料价格，取4.0的价格为售后结算价，销售价取售后结算价*销售价倍数，不存在就当前进货价*1.2 为售后结算价。销售价为售后结算价*3
                 if (Prices != null)
                 {
-                    e.UnitPrice = Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
+                    e.UnitPrice = Prices?.SettlementPrice==null||Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
                     //var s = e.UnitPrice.ToDouble().ToString();
                     //if (s.IndexOf(".") > 0)
                     //{
