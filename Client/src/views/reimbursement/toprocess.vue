@@ -31,7 +31,6 @@
         class="dialog-clss"
         ref="myDialog"
         top="10px"
-        width="1050px"
         :btnList="btnList"
         @closed="closeDialog"
         @opened="onOpened"
@@ -158,7 +157,8 @@ export default {
 .dialog-clss {
   ::v-deep {
     .el-dialog {
-      left: 240px;
+      width: 100% !important;
+      // left: 240px;
     }
   }
 }

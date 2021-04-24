@@ -121,22 +121,22 @@
             </el-form-item>
           </template>
           <template v-slot:prepay>
-            <el-form-item label="预付" style="height: 18px;">
+            <el-form-item label="预付" style="height: 18px;"  v-if="formData.deliveryMethod === '3'">
               <div v-infotooltip.top.ellipsis>{{ formData.prepay }}{{ formData.prepay ? '%' : '' }}</div>
             </el-form-item>
           </template>
           <template v-slot:cashBeforeFelivery>
-            <el-form-item label="发货前" style="height: 18px;">
+            <el-form-item label="发货前" style="height: 18px;" v-if="formData.deliveryMethod === '3'">
               <div v-infotooltip.top.ellipsis>{{ formData.cashBeforeFelivery }}{{ formData.cashBeforeFelivery ? '%' : '' }}</div>
             </el-form-item>
           </template>
           <template v-slot:payOnReceipt>
-            <el-form-item label="货到验收" style="height: 18px;">
+            <el-form-item label="货到验收" style="height: 18px;" v-if="formData.deliveryMethod === '3'">
               <div v-infotooltip.top.ellipsis>{{ formData.payOnReceipt }}{{ formData.payOnReceipt ? '%' : '' }}</div>
             </el-form-item>
           </template>
           <template v-slot:paymentAfterWarranty>
-            <el-form-item label="质保后" style="height: 18px;">
+            <el-form-item label="质保后" style="height: 18px;" v-if="formData.deliveryMethod === '3'">
               <div v-infotooltip.top.ellipsis>{{ formData.paymentAfterWarranty }}{{ formData.paymentAfterWarranty ? '%' : '' }}</div>
             </el-form-item>
           </template>
@@ -208,12 +208,12 @@
             质保后<el-input-number v-model="formData.paymentAfterWarranty" :controls="false" :min="0"></el-input-number>%
           </el-row>
         </template>
-        <template v-else>
+        <!-- <template v-else>
           <span>预付{{ formData.prepay || 0 }}%</span>
           <span>发货前{{ formData.cashBeforeFelivery || 0 }}%</span>
           <span>货到验收{{ formData.payOnReceipt || 0 }}%</span>
           <span>质保后{{ formData.paymentAfterWarranty || 0 }}%</span>
-        </template>
+        </template> -->
       </el-row>
       <!-- 技术员回传文件 -->
       <el-row class="upload-file-wrapper" type="flex" v-if="status === 'upload' && isSales">
@@ -241,10 +241,10 @@
                 <div>物料编码<span>{{ item.materialCode }}</span></div>
                 <div v-if="item.warrantyExpirationTime">保修到期<span>{{ item.warrantyExpirationTime | formatDateFilter }}</span></div>
               </el-row>
-              <el-row type="flex" style="margin: 6px 0;">
+              <!-- <el-row type="flex" style="margin: 6px 0;">
                 <div style="flex: 50px 0 0;color: #cbcbcb; margin-right: 10px;">呼叫主题</div>
                <div style="max-width: 100%;" v-infotooltip.top.ellipsis>{{ item.fromTheme }}</div>
-              </el-row>
+              </el-row> -->
               <common-table
                 :data="item.quotationMaterials" 
                 :columns="approveColumns" 
@@ -1702,17 +1702,17 @@ export default {
           break
         }
       }
-      let newTimeList = []
-      let PROCESS_TEXT = []
       const { isMaterialType, totalMoney, quotationStatus } = this.formData
       const isBoolean = typeof isMaterialType === 'boolean'
       const hasMoney = Number(totalMoney) > 0
+      let newTimeList = []
+      let PROCESS_TEXT = []
       if (typeof this.startIndex === 'number' && +quotationStatus > 3) {
         newTimeList = originTimeList.slice(this.startIndex)
       }
-      if (!newTimeList.length) {
-        return newTimeList
-      }
+      // if (!newTimeList.length) {
+      //   return newTimeList
+      // }
       let isToOutbound = +quotationStatus <= 10 // 判断这个单子是不是未出库的状态
       let isGC = +quotationStatus === 4 // 判断当前状态是不是工程审批
       let cwIndex = findIndex(newTimeList, item => item.action === '财务审批') // 判断有没有财务审批

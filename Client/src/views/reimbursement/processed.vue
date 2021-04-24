@@ -32,7 +32,6 @@
       class="dialog-clss"
       ref="myDialog"
       top="10px"
-      width="1050px"
       @closed="closeDialog"
       @opened="onOpened"
       title="进程"
@@ -169,7 +168,8 @@ export default {
 .dialog-clss {
   ::v-deep {
     .el-dialog {
-      left: 240px;
+      width: 100% !important;
+      // left: 240px;
     }
   }
 }

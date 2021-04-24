@@ -301,13 +301,14 @@ export const configMixin = { // 表单配置
     },
     salesApproveFormItems () {
       return [
-        { span: 3, slotName: 'balance' },
-        { span: 3, slotName: 'totalBalance' },
-        { span: 5, slotName: 'collectionAddress' },
+        // { span: 3, slotName: 'balance' },
+        // { span: 3, slotName: 'totalBalance' },
         { tag: 'date', span: 3, attrs: { prop: 'deliveryDate', disabled: !this.ifEdit, 'value-format': 'yyyy-MM-dd', format: 'yyyy.MM.dd', 'picker-options': this.pickerOptions }, itemAttrs: { prop: 'deliveryDate', label: '交货日期' } },
-        { span: 2, slotName: 'acceptancePeriod' },
-        { tag: 'select', span: 2, attrs: { prop: 'moneyMeans', disabled: !this.ifEdit, options: this.moneyMeansList }, itemAttrs: { prop: 'moneyMeans', label: '业务货币' } },
-        { tag: 'select', span: 2, attrs: { prop: 'deliveryMethod', disabled: !this.ifEdit, options: this.deliveryMethodList,  }, itemAttrs: { prop: 'deliveryMethod', label: '付款条件' }, on: { change: this.onDeliveryMethodChange } },
+        { span: 3, slotName: 'acceptancePeriod' },
+        { span: 5, slotName: 'collectionAddress' },
+        
+        { tag: 'select', span: 3, attrs: { prop: 'moneyMeans', disabled: !this.ifEdit, options: this.moneyMeansList }, itemAttrs: { prop: 'moneyMeans', label: '业务货币' } },
+        { tag: 'select', span: 6, attrs: { prop: 'deliveryMethod', disabled: !this.ifEdit, options: this.deliveryMethodList,  }, itemAttrs: { prop: 'deliveryMethod', label: '付款条件' }, on: { change: this.onDeliveryMethodChange } },
         { span: 2, slotName: 'prepay' },
         { span: 2, slotName: 'cashBeforeFelivery', isEnd: true },
         { span: 3, slotName: 'taxRate' },
