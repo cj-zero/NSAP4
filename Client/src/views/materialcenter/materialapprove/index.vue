@@ -37,12 +37,14 @@
       />
     </Layer>
     <my-dialog 
+      class="dialog-clss"
       ref="quotationDialog"
       width="1180px"
       :loading="dialogLoading"
-      :title="`${title}物料领料单`"
+      :title="`${title}销售合同`"
       :btnList="btnList"
       @closed="closed"
+      :titleStyle="titleStyle"
     >
       <quotation-order 
         ref="quotationOrder" 
@@ -115,6 +117,9 @@ export default {
     // ElImageViewer
   },
   computed: {
+    titleStyle () {
+      return { height: '55px !important' }
+    },
     searchConfig () {
       return [
         { prop: 'startType', component: { tag: 'select', attrs: { placeholder: '请选择', options: statusOptions, style: W_100 } } }, 
@@ -139,7 +144,9 @@ export default {
       return this.isMaterialFinancial ? '收款' : '审批'
     },
     isValid () {
-      return (this.isMaterialsEngineer && this.quotationStatus === 4) || (this.isGeneralManager && this.quotationStatus === 5)
+      return (this.isMaterialsEngineer && this.quotationStatus === 4) || 
+        (this.isGeneralManager && this.quotationStatus === 5) ||
+        (this.isSalesMan && this.quotationStatus === 3.1)
     },
     title () {
       return this.isValid ? '审批' : '查看'
@@ -211,6 +218,7 @@ export default {
         this.tableLoading = false
       })
     },
+    
     agree (options) {
       this.$refs.quotationOrder.beforeApprove(options.type)
     },
@@ -246,6 +254,13 @@ export default {
     .show-btn {
       color: #F8B500;
       cursor: pointer;
+    }
+  }
+}
+.dialog-clss {
+  ::v-deep {
+    .el-dialog {
+      width: 100% !important;
     }
   }
 }
