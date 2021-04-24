@@ -10,6 +10,8 @@ using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using NStandard;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Material;
+using OpenAuth.App.Material.Request;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.App.Serve.Request;
@@ -23,6 +25,8 @@ namespace OpenAuth.App
     {
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
         private readonly FlowInstanceApp _flowInstanceApp;
+        private readonly QuotationApp _quotation;
+        
 
         //报销单据类型(0 报销单，1 出差补贴， 2 交通费用， 3 住宿补贴， 4 其他费用, 5 我的费用)
         /// <summary>
@@ -630,25 +634,31 @@ namespace OpenAuth.App
 
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == ReimburseResp.CreateUserId).Select(r => r.SecondId).ToListAsync();
             var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
-            var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id == ReimburseResp.ServiceOrderId).FirstOrDefaultAsync();
-            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == ReimburseResp.ServiceOrderId && c.CreateUserId.Equals(ReimburseResp.CreateUserId) && c.ServiceMode == 1).ToListAsync();
-            var completionreport = CompletionReports.FirstOrDefault();
-
+            var serviceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id == ReimburseResp.ServiceOrderId).Include(s=>s.ServiceWorkOrders).FirstOrDefaultAsync();
+            var quotationIds = await UnitWork.Find<Quotation>(q => q.ServiceOrderId == ReimburseResp.ServiceOrderId && q.CreateUserId.Equals(ReimburseResp.CreateUserId) && q.Status==2).Select(q=>q.Id).ToListAsync();
+            List<AddOrUpdateQuotationReq> quotations = new List<AddOrUpdateQuotationReq>();
+            foreach (var item in quotationIds)
+            {
+                quotations.Add(await _quotation.GeneralDetails(item, null));
+            }
+            //var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == ReimburseResp.ServiceOrderId && c.CreateUserId.Equals(ReimburseResp.CreateUserId) && c.ServiceMode == 1).ToListAsync();
+            //var completionreport = CompletionReports.FirstOrDefault();
             result.Data = new
             {
                 ReimburseResp = ReimburseResp,
                 UserName = await UnitWork.Find<User>(u => u.Id.Equals(ReimburseResp.CreateUserId)).Select(u => u.Name).FirstOrDefaultAsync(),
                 OrgName = orgname,
-                TerminalCustomer = completionreport.TerminalCustomer,
-                TerminalCustomerId = completionreport.TerminalCustomerId,
-                FromTheme = completionreport.FromTheme,
-                Becity = completionreport.Becity,
-                CompleteAddress = ServiceOrders.Province + ServiceOrders.City + ServiceOrders.Area + ServiceOrders.Addr,
-                Destination = completionreport.Destination,
-                BusinessTripDate = CompletionReports.Min(c => c.BusinessTripDate),
-                EndDate = CompletionReports.Max(c => c.EndDate),
-                MaterialCode = completionreport.MaterialCode == "无序列号" ? "无序列号" : completionreport.MaterialCode.Substring(0, completionreport.MaterialCode.IndexOf("-"))
-
+                //TerminalCustomer = completionreport.TerminalCustomer,
+                //TerminalCustomerId = completionreport.TerminalCustomerId,
+                //FromTheme = completionreport.FromTheme,
+                //Becity = completionreport.Becity,
+                //CompleteAddress = ServiceOrders.Province + ServiceOrders.City + ServiceOrders.Area + ServiceOrders.Addr,
+                //Destination = completionreport.Destination,
+                //BusinessTripDate = CompletionReports.Min(c => c.BusinessTripDate),
+                //EndDate = CompletionReports.Max(c => c.EndDate),
+                //MaterialCode = completionreport.MaterialCode == "无序列号" ? "无序列号" : completionreport.MaterialCode.Substring(0, completionreport.MaterialCode.IndexOf("-"))
+                ServiceOrders= serviceOrders,
+                Quotations= quotations,
             };
 
             return result;
@@ -2123,10 +2133,11 @@ namespace OpenAuth.App
 
         }
 
-        public ReimburseInfoApp(IUnitWork unitWork, ModuleFlowSchemeApp moduleFlowSchemeApp, FlowInstanceApp flowInstanceApp, IAuth auth) : base(unitWork, auth)
+        public ReimburseInfoApp(IUnitWork unitWork, ModuleFlowSchemeApp moduleFlowSchemeApp, FlowInstanceApp flowInstanceApp, IAuth auth,QuotationApp quotationApp) : base(unitWork, auth)
         {
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _flowInstanceApp = flowInstanceApp;
+            _quotation = quotationApp;
         }
     }
 }
