@@ -342,17 +342,18 @@ namespace OpenAuth.App
                     {
                         throw new CommonException("您无法操作此步骤。", 80011);
                     }
-                    if (flowInstance.ActivityName.Equals("待审核") || flowInstance.ActivityName.Equals("待批准"))
-                    {
-                        if (!flowInstance.MakerList.Contains(loginContext.User.Id))
-                        {
-                            throw new CommonException("您无法操作此步骤，或者该流程已经审批请刷新页面！", 80011);
-                        }
-                    }
                     var list = new List<WordModel>();
                     switch (req.Verification.VerificationFinally)
                     {
                         case "1":
+                            if (flowInstance.ActivityName.Equals("待审核") || flowInstance.ActivityName.Equals("待批准"))
+                            {
+                                if (!flowInstance.MakerList.Contains(loginContext.User.Id))
+                                {
+                                    throw new CommonException("您无法操作此步骤，或者该流程已经审批请刷新页面！", 80011);
+                                }
+                            }
+
                             #region 签名
                             if (flowInstance.ActivityName.Equals("待送审"))
                             {
