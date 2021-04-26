@@ -70,6 +70,7 @@ namespace OpenAuth.App.Material
                                 .WhereIf(request.StartCreateTime != null, q => q.CreateTime > request.StartCreateTime)
                                 .WhereIf(request.EndCreateTime != null, q => q.CreateTime < request.EndCreateTime)
                                 .WhereIf(request.Status != null, q => q.Status == request.Status)
+                                .WhereIf(request.QuotationStatus!=null,q=>q.QuotationStatus==request.QuotationStatus)
                                 .WhereIf(request.SalesOrderId != null, q => q.SalesOrderId == request.SalesOrderId)
                                 .WhereIf(ServiceOrderids.Count() > 0, q => ServiceOrderids.Contains(q.ServiceOrderId));
             if (!loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && !loginUser.Account.Equals(Define.SYSTEM_USERNAME))
@@ -251,7 +252,7 @@ namespace OpenAuth.App.Material
                 q.a.CreateUser,
                 q.a.Remark,
                 q.a.SalesOrderId,
-                q.a.CreateTime,
+                CreateTime=Convert.ToDateTime(q.a.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 q.a.QuotationStatus,
                 q.a.Tentative,
                 q.a.IsProtected,
