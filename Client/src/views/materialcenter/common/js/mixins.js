@@ -1,6 +1,5 @@
 import { getCategoryNameList } from '@/api/directory'
 import { getQuotationDetail } from '@/api/material/quotation' // 报价单详情
-// import { GetDetails } from '@/api/serve/callservesure' // 服务单
 import { getReturnNoteListByExpress, getReturnNoteDetailByExpress } from '@/api/material/returnMaterial' // 退料
 import { normalizeFormConfig } from '@/utils/format'
 import { processDownloadUrl } from '@/utils/file'
@@ -8,6 +7,8 @@ import { isMatchRole } from '@/utils/utils'
 import { chatMixin } from '@/mixins/serve'
 export { chatMixin }
 import { noop } from '@/utils/declaration'
+import { callSourseMap, callStatusMap, callTypeMap, priorityMap } from './serviceConfig'
+import { formatDate } from '@/utils/date'
 const statusMap = {
   4: 'approve',
   5: 'approve',
@@ -16,6 +17,7 @@ const statusMap = {
   8: 'pay', // 财务审批阶段
   9: 'approveSales' // 总经理审批阶段
 }
+
 export const quotationTableMixin = {
   provide () {
     return {
@@ -50,7 +52,7 @@ export const quotationTableMixin = {
     _openServiceOrder (row) {
       this.openServiceOrder(row.serviceOrderId, () => this.tableLoading = true, () => this.tableLoading = false)
     },
-    _getQuotationDetail (data) {
+    async _getQuotationDetail (data) {
       let quotationId
       let { status, isReceive, isSalesOrder, isView, isProtected, isUpdate } = data
       this.isReceive = !!isReceive // 判断销售订单还是报价单
@@ -108,8 +110,35 @@ export const quotationTableMixin = {
         let { id, pictureId } = pictureItem
         return processDownloadUrl(pictureId || id)
       })
+      this._normalizeServiceOrders(serviceOrders)
       // result
-      return { ...serviceOrders, ...quotations,  quotationMergeMaterials, expressages, quotationPictures }
+      return { ...serviceOrders, ...quotations,  quotationMergeMaterials, expressages, quotationPictures, serviceOrders }
+    },
+    _normalizeServiceOrders (serviceOrder) {
+      const { fromId } = serviceOrder
+      serviceOrder.fromId = callSourseMap[fromId]
+      let reg = /[\r|\r\n|\n\t\v]/g
+      serviceOrder.serviceWorkOrders.forEach(serviceOrder => {
+        let { warrantyEndDate, bookingDate, visitTime, liquidationDate, completeDate, status, fromType, priority } = serviceOrder
+        serviceOrder.status = callStatusMap[status]
+        serviceOrder.fromType = callTypeMap[fromType]
+        serviceOrder.priority = priorityMap[priority]
+        console.log('forEach')
+        serviceOrder.warrantyEndDate = formatDate(warrantyEndDate, 'YYYY-MM-DD HH:mm')
+        serviceOrder.bookingDate = formatDate(bookingDate, 'YYYY-MM-DD HH:mm')
+        serviceOrder.visitTime = formatDate(visitTime, 'YYYY-MM-DD HH:mm')
+        serviceOrder.liquidationDate = formatDate(liquidationDate, 'YYYY-MM-DD HH:mm')
+        serviceOrder.completeDate = formatDate(completeDate, 'YYYY-MM-DD HH:mm')
+        try {
+          const themeList = JSON.parse(serviceOrder.fromTheme.replace(reg, ''))
+          serviceOrder.newFormTheme = ''
+          themeList.forEach((item, index) => {
+            serviceOrder.newFormTheme += `${index}.${item.description}`
+          })
+        } catch (err) {
+          serviceOrder.newFormTheme = ''
+        }
+      })
     },
     _normalizeList (list) { // 格式化表格数据
       return list.map(item => {
@@ -216,7 +245,8 @@ export const rolesMixin = {
       isTechnical: isMatchRole('售后技术员'),
       isGeneralManager: isMatchRole('总经理'),
       isMaterialsEngineer: isMatchRole('物料工程审批'),
-      isMaterialInspection: isMatchRole('物料稽查')
+      isMaterialInspection: isMatchRole('物料稽查'),
+      isSalesMan: isMatchRole('销售员')
     }
   }
 }
@@ -267,6 +297,28 @@ export const configMixin = { // 表单配置
         { tag: 'select', span: 8, attrs: { prop: 'deliveryMethod', disabled: !this.ifEdit, options: this.deliveryMethodList,  }, itemAttrs: { prop: 'deliveryMethod', label: '付款条件' }, on: { change: this.onDeliveryMethodChange } },
         { tag: 'select', span: 4, attrs: { prop: 'invoiceCategory', disabled: !this.ifEdit, options: this.invoiceCategoryList,  }, itemAttrs: { prop: 'invoiceCategory', label: '发票类别' }, isEnd: true },
         { tag: 'select', span: 4, attrs: { prop: 'isMaterialType', disabled: !this.ifEdit, options: this.materialTypeList, }, itemAttrs: { prop: 'isMaterialType', label: '物料类型' }, on: { change: this.onFormMaterialTypeChange || noop }}
+      ]
+    },
+    salesApproveFormItems () {
+      return [
+        // { span: 3, slotName: 'balance' },
+        // { span: 3, slotName: 'totalBalance' },
+        { tag: 'date', span: 3, attrs: { prop: 'deliveryDate', disabled: !this.ifEdit, 'value-format': 'yyyy-MM-dd', format: 'yyyy.MM.dd', 'picker-options': this.pickerOptions }, itemAttrs: { prop: 'deliveryDate', label: '交货日期' } },
+        { span: 3, slotName: 'acceptancePeriod' },
+        { span: 5, slotName: 'collectionAddress' },
+        
+        { tag: 'select', span: 3, attrs: { prop: 'moneyMeans', disabled: !this.ifEdit, options: this.moneyMeansList }, itemAttrs: { prop: 'moneyMeans', label: '业务货币' } },
+        { tag: 'select', span: 6, attrs: { prop: 'deliveryMethod', disabled: !this.ifEdit, options: this.deliveryMethodList,  }, itemAttrs: { prop: 'deliveryMethod', label: '付款条件' }, on: { change: this.onDeliveryMethodChange } },
+        { span: 2, slotName: 'prepay' },
+        { span: 2, slotName: 'cashBeforeFelivery', isEnd: true },
+        { span: 3, slotName: 'taxRate' },
+        { tag: 'select', span: 3, attrs: { prop: 'invoiceCategory', disabled: !this.ifEdit, options: this.invoiceCategoryList,  }, itemAttrs: { prop: 'invoiceCategory', label: '发票类别' } },
+        { tag: 'select', span: 5, attrs: { prop: 'invoiceCompany', disabled: !this.ifEdit, options: this.invoiceCompanyList }, 
+          itemAttrs: { prop: 'invoiceCompany', label: '开票单位' } },
+        { tag: 'select', span: 3, attrs: { prop: 'acquisitionWay', disabled: !this.ifEdit, options: this.acquisitionWayList }, itemAttrs: { prop: 'acquisitionWay', label: '领料方式' } },
+        { tag: 'text', span: 6, attrs: { prop: 'remark', disabled: !this.ifEdit }, itemAttrs: { prop: 'remark', label: '备注' } },
+        { span: 2, slotName: 'payOnReceipt' },
+        { span: 2, slotName: 'paymentAfterWarranty' }
       ]
     },
     returnFormConfig () { // 退料单表单

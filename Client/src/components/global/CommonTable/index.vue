@@ -166,7 +166,7 @@ export default {
       noop()
     },
     normalizeColumns (columns) {
-      return columns.map(column => {
+      return columns.filter(column => column.ifRender !== false).map(column => {
         column = mergeConfig(defaultColumnConfig, column)
         if (column.component) {
           let component = column.component

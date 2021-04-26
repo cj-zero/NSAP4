@@ -1,5 +1,5 @@
 import store from '@/store'
-
+import axios from 'axios'
 export function download (src) {
   let canvas = document.createElement('canvas')
   const context = canvas.getContext("2d");
@@ -37,3 +37,16 @@ export function processDownloadUrl (pictureId) {
 }
 
 
+export function getFile (url, responseType = 'arraybuffer') {
+  return new Promise((resolve, reject) => {
+    axios({
+        method:'get',
+        url,
+        responseType
+    }).then(data => {
+        resolve(data.data)
+    }).catch(error => {
+        reject(error.toString())
+    })
+  })
+}

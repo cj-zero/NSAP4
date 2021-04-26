@@ -93,7 +93,8 @@ export const constantRouterMap = [
       meta: { title: '接口文档', icon: 'guide', sortNo: 0 },
       component: () => import('@/views/iframePage/index')
     }]
-  }
+  },
+  { path: '*', component: () => import('@/views/errorPage/404'), meta: { sortNo: 0 }, hidden: true },
   // {
   //   path: '/',
   //   hidden: true,
